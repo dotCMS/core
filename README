@@ -1,0 +1,82 @@
+h1. dotCMS
+
+h2. Open Source Enterprise Java Web Content Management System
+
+h3. "http://dotcms.com":http://dotcms.com
+
+dotCMS is an open source web content management system (CMS), written in Java.  dotCMS has been designed from the ground up to deliver personalized, permission based content to multiple channels, from websites to mobile devices to XML/JSon/RSS feeds.
+
+dotCMS works hard to get out of the way of web developers, making editing content, custom templating, dynamic scripting and customization/integration surprisingly easy.  And all the tooling in dotCMS has been designed to assist web teams to quickly deliver world class, scaleable and manageable websites, mobile apps or content driven applications. 
+
+Under the covers, dotCMS is a content repository.  You can build custom content types, relate content, permission content and enforce custom publishing workflows on the content, all from a friendly web UI.
+
+dotCMS is dual licensed.  The dotCMS Community Edition (CE) is licensed under the GPL 3.0 and is freely available for download and deployment for use within organizations.  dotCMS Enterprise Edition (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from "http://dotcms.com":dotCMS.
+
+
+h3. Features Include
+
+* Simple Authoring
+** In-context content authoring (EE)
+** Simple WYSIWYG editor for application like formatting
+** SEO friendly urls
+** Google and XML sitemaps
+** Integrated form builder (EE)
+** Multi-lingual management
+** Mobile-multi-channel publishing
+
+* Easy Content Contribution
+** WebDav interface for drag-and-drop uploads
+** Customized user views
+** Easy page creation
+** Drag-and-drop menus
+** Versioning with one click rollbacks
+** Content changes diff/redlining (EE)
+** Rich widget library
+** Simple content syndication
+
+* Document Management
+** Automatic Metadata parsing, creation (EE)
+** Customized workflow triggers (EE)
+** Multi-media widgets and libraries
+** Online image editing (EE)
+** Server side image resizing
+** Word to PDF support
+
+* Content Targeting and Campaigns
+** Out-of-the-box Campaign Management
+** Integrated content analytics
+** Geolocation
+** Click tracking
+** Mailing list management
+** Integration with 3rd party analytics
+
+* Intuitive Workflow
+** Simple visual workflow builder (EE)
+** Create simple to advanced workflows (EE)
+** Create custom interactions and triggers (EE)
+** Out-of-the-box task notification
+** Pessimistic content locking
+** Role based permissioning
+** LDAP & Active Directory support (EE)
+
+* Tagging and Taxonomy Management
+** Easy tag creation
+** Tag management and Library
+** Simple tag cloud
+** ** Taxonomy Management
+** Drag-and-drop Taxonomy hierarchy
+** Content relationships
+
+* Scalability and Performance
+** Multi-node clustering (EE)
+** Multi-tenet hosting
+** Cloud or On-premises deployment
+** Optional Solr plugin for faceted search (EE)
+** High performance distributed cache
+
+* Integration
+** Plugin Architecture
+** Runtime web services
+** JSPTool for JSP application integration
+** CMIS Compliance
+** Robust API
