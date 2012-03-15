@@ -4,13 +4,13 @@ h2. Open Source Enterprise Java Web Content Management System
 
 h3. "http://dotcms.com":http://dotcms.com
 
-dotCMS is an open source web content management system (CMS), written in Java.  dotCMS has been designed from the ground up to deliver personalized, permission based content to multiple channels, from websites to mobile devices to XML/JSon/RSS feeds.
+dotCMS is an open source web content management system (CMS), written in Java.  dotCMS has been designed from the ground up to deliver personalized, permission based content to multiple channels, from websites to mobile devices to XML/JSON/RSS feeds.
 
-dotCMS works hard to get out of the way of web developers, making editing content, custom templating, dynamic scripting and customization/integration surprisingly easy.  And all the tooling in dotCMS has been designed to assist web teams to quickly deliver world class, scaleable and manageable websites, mobile apps or content driven applications. 
+dotCMS works hard to get out of the way of web developers, making editing content, custom templating, dynamic scripting and customization/integration surprisingly easy.  And all the tooling in dotCMS has been designed to assist web teams to quickly deliver world class, scaleable and manageable websites, mobile apps or content driven applications that can be managed by users with little to no web experience.
 
-Under the covers, dotCMS is a content repository.  You can build custom content types, relate content, permission content and enforce custom publishing workflows on the content, all from a friendly web UI.
+Under the covers, dotCMS is a content repository.  You can build custom content types, relate content, tag content, permission content and enforce custom publishing workflows on the content, search content, search files, etc all from a friendly web UI.
 
-dotCMS is dual licensed.  The dotCMS Community Edition (CE) is licensed under the GPL 3.0 and is freely available for download and deployment for use within organizations.  dotCMS Enterprise Edition (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from "http://dotcms.com":dotCMS.
+dotCMS is dual licensed.  The dotCMS Community Edition (CE) is licensed under the GPL 3.0 and is freely available for download and deployment for use within organizations of all stripes.  dotCMS Enterprise Edition (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from "http://dotcms.com":dotCMS.
 
 
 h3. Features Include
