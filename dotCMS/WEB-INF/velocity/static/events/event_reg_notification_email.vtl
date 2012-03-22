@@ -1,0 +1,22 @@
+#set ($server_name = ${webapi.getServerName()})
+<html>
+	<link rel="stylesheet" href="http://$server_name/global/css/masterStyle.css" type="text/css">
+<body bgcolor="white">
+	<div id="bodyArea">
+		<table border="1" id="bodyID" bgcolor="#ffffff" cellpadding="4" cellspacing="2">
+			<tr>
+				<td>
+					<img src="http://$server_name/global/images/logo.gif"><BR>
+					<h2>A registration has been received to the Event: $event_title <br></h2>
+					<br>Here is your registration information:<br>
+					<B>Registration Date:</B> ${webapi.dateToHTML(${reg_registration_date})} <br>
+					<B>Name:</B> $reg_full_name <br>
+					<B>Registration Comments:</B><br>
+					$reg_comments<br>
+					<B>Number Attending:</B> $reg_number_attending
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

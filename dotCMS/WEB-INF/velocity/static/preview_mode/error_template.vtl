@@ -1,0 +1,17 @@
+#set($myRnd = $math.random)
+<div id="veloParseError$myRnd"
+	style='border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; position: absolute; font-family: verdana, sans-serif; font-size: 12px; font-color: black;color: black; top: 20px; padding: 10px; left: 20px; border: 1px solid gray; width: 600px; min-height: 200px; overflow: auto; background: #eeeeee; z-index: 101010'>
+
+<div class='dotMoveContent'><a class='dotRemoveContent'
+	onclick="document.getElementById('veloParseError$myRnd').style.display='none';"> </a></div>
+
+	<div style='margin-bottom: 10px; font-weight: bold; font-size: 120%'>Velocity Exception:</div>
+	
+		#if($subErrorTemplate)
+			#parse($subErrorTemplate)
+		#else
+			$veloError
+		#end
+
+
+</div>

@@ -1,0 +1,145 @@
+#if($request.getParameter("indexFolder"))
+	#set ($indexFolder = $request.getParameter("indexFolder"))
+#end
+
+#if(!$UtilMethods.isSet($showMediaTitle))
+	#set ($showMediaTitle = true)
+#end
+
+#if(!$UtilMethods.isSet($viewLargeImage))
+	#set ($viewLargeImage = false)
+#end
+
+#if(!$viewLargeImageLinkSpaceHeight)
+	#set ($viewLargeImageLinkSpaceHeight = "20")
+#end
+
+#if(!$mediaWidth)
+	#set ($mediaWidth = "600")
+#end
+
+#if(!$mediaHeight)
+	#set ($mediaHeight = "450")
+#end
+
+#if(!$thumbnailWidth)
+	#set ($thumbnailWidth = "90")
+#end
+
+#if(!$thumbnailHeight)
+	#set ($thumbnailHeight = "90")
+#end
+
+#if(!$largeImageWidth)
+	#set ($largeImageWidth = "800")
+#end
+
+#if(!$largeImageHeight)
+	#set ($largeImageHeight = "600")
+#end
+
+#if($UtilMethods.isSet($indexFolder))
+	<script type="text/javascript" src="/html/js/swfobject.js"></script>
+
+#if($viewLargeImage)
+	<script type="text/javascript" src="/html/js/lightbox/js/prototype.js"></script>
+	<script type="text/javascript" src="/html/js/lightbox/js/scriptaculous.js?load=effects"></script>
+	<script type="text/javascript" src="/html/js/lightbox/js/lightbox.js"></script>
+	<link rel="stylesheet" href="/html/js/lightbox/css/lightbox.css" type="text/css" media="screen" />
+#end
+
+	<script>
+		var viewLargeImageLinkId = new Array(); 
+		function showAsset(srcUri, type, inode, friendlyName) {
+			var htmlCode;
+		#if($viewLargeImage)
+			hideViewLargeImageLinks();
+		#end
+			if (type == 'image') {
+				htmlCode = '<img src="' + srcUri + '">';
+			#if($viewLargeImage)
+				document.getElementById('anchor' + inode).style.display="";
+			#end
+				document.getElementById('mediaShow').innerHTML = htmlCode;
+			} else if (type == 'video') {
+				var swfObj = new SWFObject("/html/flash/dotVideo.swf", "player", "${mediaWidth}", "${mediaHeight}", "8", "#000000"); 
+				swfObj.addParam("allowfullscreen","true");
+				swfObj.addVariable("autostart","false"); 
+				swfObj.addVariable("overstretch","false");
+				swfObj.addVariable("image","");  
+				swfObj.addVariable("width","${mediaWidth}");
+				swfObj.addVariable("height","${mediaHeight}");
+				swfObj.addVariable("volume","70");
+				swfObj.addVariable("file",srcUri);
+				swfObj.write("mediaShow"); 
+				document.getElementById("mediaShow").style.display="block";
+			}
+		}
+		
+		function hideViewLargeImageLinks() {
+			for (var i = 0; i < viewLargeImageLinkId.length; ++i) {
+				document.getElementById(viewLargeImageLinkId[i]).style.display="none";
+			}
+		}
+	</script>
+	#set ($files = $macro.getMediaGalleryFolderFiles($indexFolder,$host))
+	
+	#if ($random)
+		#set ($files = $contents.randomizeList($files, ''))
+	#end
+	
+	#if($files.size() > 0)
+	<div class="mediaGallery" id="mediaShow" name="mediaShow" style="width:${mediaWidth}; height:${mediaHeight}">
+	</div>
+	
+	#if($viewLargeImage)
+	<div class="viewLargeImageLink" style="height:${viewLargeImageLinkSpaceHeight}">
+		#foreach ($file in $files)
+			#set ($img = $file.photo)
+		<script>
+			viewLargeImageLinkId[viewLargeImageLinkId.length] = 'anchor${img.inode}';
+		</script>
+		<a id="anchor${img.inode}" name="anchor${img.inode}" href="/thumbnail?id=${img.identifier}&w=${largeImageWidth}&h=${largeImageHeight}&r=246&g=243&b=238" rel="lightbox" title="${img.friendlyName}" style="display:none">View Large Image</a>
+		#end
+	</div>
+	#end
+	
+	<div class="mediaGalleryList">
+		#foreach ($file in $files)
+			#set($cssClass = "mediaGalleryImage")
+			#if($velocityCount == $files.size())
+				#set($cssClass = "mediaGalleryImage last")
+			#end
+			<div class="${cssClass}">
+			#if (!$UtilMethods.isSet($file.movie))
+				#set ($img = $file.photo)
+				<a href="javascript:showAsset('/thumbnail?id=${img.identifier}&w=${mediaWidth}&h=${mediaHeight}&r=246&g=243&b=238', 'image', '${img.inode}', '${img.friendlyName}')" title="${img.friendlyName}"><img src="/thumbnail?inode=${img.inode}&w=${thumbnailWidth}&h=${thumbnailHeight}&r=246&g=243&b=238" alt="${img.title}" border="0" style="border: solid 1px #D7CCB3;"></a>
+				#if ($showMediaTitle)
+				<h2>$img.friendlyName</h2>
+				#end
+			#else
+				#set ($img = $file.photo)
+				#set ($mov = $file.movie)
+				<a href="javascript:showAsset('/dotAsset/${mov.identifier}.flv', 'video', '', '')" title="${mov.friendlyName}"><img src="/thumbnail?inode=${img.inode}&w=${thumbnailWidth}&h=${thumbnailHeight}&r=246&g=243&b=238" alt="${img.title}" border="0" style="border: solid 1px #D7CCB3;"></a>
+				#if ($showMediaTitle)
+				<h2>$mov.friendlyName</h2>
+				#end
+			#end
+			</div>
+		#end
+	</div>
+	<script>
+		#set ($file = $files.get(0))
+		#if (!$UtilMethods.isSet($file.movie))
+			#set ($img = $file.photo)
+				showAsset('/thumbnail?id=${img.identifier}&w=${mediaWidth}&h=${mediaHeight}&r=246&g=243&b=238', 'image', '${img.inode}', '${img.friendlyName}');
+		#else
+			#set ($img = $file.photo)
+			#set ($mov = $file.movie)
+				showAsset('/dotAsset/${mov.identifier}.flv', 'video', '', '');
+		#end
+	</script>
+	#end
+#else
+	No parameters given
+#end

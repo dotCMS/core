@@ -1,0 +1,117 @@
+<script type='text/javascript' src='/dwr/interface/AlertMessagesWebAPI.js'></script>
+<script type='text/javascript' src='/dwr/engine.js'></script>
+<script type='text/javascript' src='/dwr/util.js'></script>
+<script type="text/javascript">
+//<!--
+#set($user = $session.getAttribute("CMS_USER"))
+var userId = '$user.userId';
+var pageNumber = 1;
+function initAlertMessages() {
+	AlertMessagesWebAPI.viewReadMessages(userId, showResult);
+}
+function showResult(result) {
+	DWRUtil.removeAllRows("alerts_message");
+	var table = document.getElementById("alerts_message");
+	var factorPrevious = (pageNumber - 1) * 10;
+	var factorNext = pageNumber * 10;
+
+	if (result.length > 0) {
+		var row;
+		var cell;
+
+		for (var i = 0; i < result.length; i++) {
+			if ((i >= factorPrevious) && (i < factorNext)) {
+				row = table.insertRow(table.rows.length);
+				row.className = (i % 2)? 'odd':'even';
+
+				var alertTitle = result[i][0];
+				var alertMessage = result[i][1];
+				var alertOpenedDate = result[i][2];
+	
+				cell = row.insertCell (row.cells.length);
+	
+				cell = row.insertCell (row.cells.length);
+				cell.innerHTML = "<h4>" + alertTitle + "</h4> Viewed On: " + alertOpenedDate + "<br>" + alertMessage + "<br/>";
+	
+				cell = row.insertCell (row.cells.length);
+
+				row = table.insertRow(table.rows.length);
+				row.className = (i % 2)? 'odd':'even';
+				cell = row.insertCell (row.cells.length);
+				cell.colSpan = 3;
+				cell.innerHTML = "&nbsp;";
+
+			}
+		}
+	}
+	else {
+		var row = table.insertRow(table.rows.length);
+		var cell = row.insertCell (row.cells.length);
+		cell.innerHTML = "<p>No Viewed Messages</p>";
+	}
+	
+	var showingIdx1 = factorPrevious + 1;
+	var showingIdx2 = factorNext;
+	if (pageNumber > 1) {
+		document.getElementById("previousLink").style.display = "inline";
+	}
+	else {
+		document.getElementById("previousLink").style.display = "none";
+	}
+
+	if (factorNext < result.length) {
+		document.getElementById("nextLink").style.display = "inline";
+		showingIdx2 = factorPrevious + 10;
+	}
+	else {
+		document.getElementById("nextLink").style.display = "none";
+		showingIdx2 = result.length;
+	}
+
+	if (result.length > 0) {
+		document.getElementById("upperMessage").innerHTML = "<span style='font-size:11px;'>" + result.length+" viewed messages - showing "+showingIdx1+" - "+showingIdx2 +"</span>";
+	}
+}
+function nextPage() {
+	pageNumber++;
+	initAlertMessages();
+}
+function previousPage() {
+	pageNumber--;
+	initAlertMessages();
+}
+//-->
+</script>
+
+</head>
+<body>
+<form action="" method="post">
+<table width="100%" align="center" cellpadding="0" cellspacing="0">
+	<tr>
+		<td align="right">
+			<div id="upperMessage" class="links"></div>
+			<br>
+		</td>
+	</tr>
+	<tr>
+		<td >
+			<table width="100%" cellspacing="0" cellpadding="0" border="0" >
+				<tbody id="alerts_message">
+				</tbody>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<table width="100%" align="center" >
+				<tr>
+					<td width="50%" align="left"><div id="previousLink" style="display: none;"><a href="javascript:previousPage()" class="links">Previous</a></div></td>
+					<td width="50%" align="right"><div id="nextLink" style="display: none;"><a href="javascript:nextPage()" class="links">Next</a></div></td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+</form>
+
+<script language="javascript">initAlertMessages();</script>

@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_LayoutService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="LayoutManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_LayoutService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.LayoutManagerSoap"/>
+		<parameter name="wsdlPortType" value="LayoutManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="hasWrite" qname="operNS:hasWrite" returnQName="hasWriteReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://ejb.portal.liferay.com" qname="pk" type="tns:LayoutPK"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getLayout" qname="operNS:getLayout" returnQName="getLayoutReturn" returnType="rtns:LayoutModel" soapAction="">
+			<parameter xmlns:tns="http://ejb.portal.liferay.com" qname="pk" type="tns:LayoutPK"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="addGroupLayout" qname="operNS:addGroupLayout" returnQName="addGroupLayoutReturn" returnType="rtns:LayoutModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="groupId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="portletIds" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="addUserLayout" qname="operNS:addUserLayout" returnQName="addUserLayoutReturn" returnType="rtns:LayoutModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="portletIds" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="setDefaultLayout" qname="operNS:setDefaultLayout" soapAction="">
+			<parameter xmlns:tns="http://ejb.portal.liferay.com" qname="pk" type="tns:LayoutPK"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="defaultLayout" type="tns:boolean"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="updateLayout" qname="operNS:updateLayout" returnQName="updateLayoutReturn" returnType="rtns:LayoutModel" soapAction="">
+			<parameter xmlns:tns="http://ejb.portal.liferay.com" qname="pk" type="tns:LayoutPK"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="columnOrder" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="narrow1" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="narrow2" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="wide" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="stateMax" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="stateMin" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="modeEdit" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="modeHelp" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="updateLayout" qname="operNS:updateLayout" returnQName="updateLayoutReturn" returnType="rtns:LayoutModel" soapAction="">
+			<parameter xmlns:tns="http://ejb.portal.liferay.com" qname="pk" type="tns:LayoutPK"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="portletIds" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="updateLayout addUserLayout addGroupLayout getLayout setDefaultLayout hasWrite"/>
+		<typeMapping xmlns:ns="http://ejb.portal.liferay.com" qname="ns:LayoutPK" type="java:com.liferay.portal.ejb.LayoutPK" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_xsd_string" type="java:java.lang.String[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:LayoutModel" type="java:com.liferay.portal.model.LayoutModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

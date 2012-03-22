@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_PortletPreferencesService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="PortletPreferencesManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_PortletPreferencesService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.PortletPreferencesManagerSoap"/>
+		<parameter name="wsdlPortType" value="PortletPreferencesManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="deleteAllByGroup" qname="operNS:deleteAllByGroup" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="groupId" type="tns:string"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="deleteAllByGroup"/>
+	</service>
+</deployment>

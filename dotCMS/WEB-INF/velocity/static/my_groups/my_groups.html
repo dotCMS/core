@@ -1,0 +1,16 @@
+#if($UtilMethods.isSet($user))
+	  #if($UtilMethods.isSet($myGroupTitle))	
+	    $myGroupTitle
+	  #else
+	   <h2>My Groups</h2>
+	  #end
+	  #set($groupsList = $cmsuser.getUserGroups($user))
+	  #if($UtilMethods.isSet($groupsList) && $groupsList.size())
+	     #foreach($group in $groupsList)
+	       <li>$group.name</li>
+	     #end
+	  #else
+	     <li>No group available</li>
+	  #end
+	  </ul>
+#end

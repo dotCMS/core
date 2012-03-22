@@ -1,0 +1,47 @@
+#set($event = $eventsapi.getEvent($request.getParameter("event"))) 
+#set($recurance = $eventsapi.getEventRecurance($event)) 
+#set($categories = $eventsapi.getEventCategories($event)) 
+#set ($file = $eventsapi.getEventImage($event))
+
+<div class="eventDetails">
+	#if ($InodeUtils.isSet($file.getInode())) 				
+	<img src="/global/images/roundtn.gif" width="98" height="98" class="listImg" alt="" style="background: url(/thumbnail?inode=$file.getInode()&w=98&h=98) bottom left no-repeat;"/>
+	#end
+	<h1>$event.title</h1>
+	#if ($event.subtitle!="") 
+	<h2>$event.subtitle</h2>
+	#end
+						
+	<div class="description">
+		$event.description
+	</div>
+	
+	##if ($recurance) 
+	<!-- <div class="heading">Event Occurs:</div>$eventsapi.recuranceToString($recurance)<br /> -->
+	##end
+	#if ($event.location!="") 
+	<div class="heading">Location:</div>$event.location<br />
+	#end
+	#if ($event.webAddress!="") 
+	<div class="heading">Web Address:</div>$event.webAddress<br />
+	#end
+	
+	<h2>Contact Info</h1>
+	#if ($event.contactPhone!="")
+	<div class="heading">Phone:</div>$event.contactPhone<br />
+	#end
+	#if ($event.contactFax!="") 
+	<div class="heading">Fax:</div>$event.contactFax<br />
+	#end
+	#if ($event.contactEmail!="") 
+	<div class="heading">Email:</div>$event.contactEmail<br />
+	#end
+	#if ($event.contactCompany!="") 
+	<div class="heading">Organization:</div>$event.contactCompany<br />
+	#end
+	
+	<div style="text-align: right; margin-bottom: 15px;"><a href="#"><img src="/global/images/buytickets.gif" width="84" height="33" alt="" border="0" /></a></div> 
+
+</div>
+
+	

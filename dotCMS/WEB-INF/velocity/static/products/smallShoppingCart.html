@@ -1,0 +1,18 @@
+<script language="javascript">
+function viewCart()
+{
+	document.location.href = "/dotCMS/viewCart";
+}
+</script>
+
+<a href="javascript:viewCart()" >view cart</a><td>
+
+#set($session = $request.getSession())
+#set($shoppingCart = $session.getAttribute("shoppingCart"))
+#if ($shoppingCart)
+	#set($numItems = $shoppingCart.numberItems())
+#else
+	#set($numItems = 0)
+#end
+
+<a href="javascript:viewCart()" >view cart ($!{numItems})</a>			

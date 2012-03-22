@@ -1,0 +1,5 @@
+#set($userId = $session.getAttribute("userid"))
+
+You're account has been activated yet, please check your email for your activation email and click on link in it,
+if you haven't received it yet please click <a href="/dotCMS/activateAccount?dispatch=resendActivationEmail&userId=$userId">here</a>
+and we are going to send you the email again.

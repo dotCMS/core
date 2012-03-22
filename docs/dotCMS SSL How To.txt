@@ -1,0 +1,75 @@
+This Document will break down the steps for setting up an ssl cert for the dotcms. 
+
+1.- Make sure you have a jdk added to your path.  The easist way to do this is to type 'javac -version'
+	If you have the command you are good if not add it to your path.  set PATH=C:\Program Files\Java\jdk1.5.0\bin;%PATH%
+	
+2.- Next you need to get your SSL Cert.  If you already have one you should be able to renew it.  If not you will
+	need to get one.  Comodo - www.instantssl.com is the one we will use for this document but any one should work.  
+	You just need to make sure you can get the Root, INTER, and CRT(your cert) to import into Java.
+	
+3.- To get a new cert or renew your old cert you need to generate a Key and CSR.  
+
+4.- To Generate your key goto your command prompt and type 
+	'keytool -genkey -keyalg RSA -keystore domain.key -alias aliasname -validity 360'
+	replace domain.key with your <domain name>.key ie. dotcms.org.key and replace alias
+	with an alias for the.  The domain is a good thing to use here ie dotcms.org. Also
+	You may change the validity to the number of days your cert will be good for. 
+	
+	The following questions will be asked if not known:
+		{Enter keystore password: (NOTE remember this for later use)
+		What is your first and last name? - This is the Common Name (Domain Name)
+		What is the name of your organizational unit? 
+		What is the name of your organization? 
+		What is the name of your City or Locality? 
+		What is the name of your State or Province? 
+		What is the two-letter country code for this unit?}}
+
+	You will then be asked if the information is correct:
+
+		Is CN=www.yourdomain.com, OU=Your Oganizational Unit, O=Your Organization, L=Your City, ST=Your State, C=Your Country
+		correct?
+
+	When you answer 'y' or 'yes' the password is then requested:
+
+	Enter key password for <mykey> NOTE: Make a note of this password <mykey> is the default alias for the certificate
+	
+5.- Next you will need to use teh keystore to generate a CSR. Type 'keytool -certreq -keyalg RSA -file domain.csr -keystore domain.key -alias aliasname'
+	Replacing the domain.key and the alias with the same values as step 4. You will need to enter the keystore password. 
+	
+6.- Copy the text of your CRS to paste into the order for your ssl.  This is where instantssl.com or some other place
+	SSL place comes into the picture.
+	
+7.- Once you get your cert you should have the root, inter and domain crts.  You now need to import them into the keystore.
+
+8.- To import the ROOT crt type 'keytool -import -trustcacerts -alias root -file (ROOT CERTIFICATE FILE NAME) -keystore domain.key'
+	replacing the root cert file and domain.key as appropriate. 
+	
+9.- Do the same for the INTER as follows 'keytool -import -trustcacerts -alias INTER -file (INTERMEDIATE CA FILE NAME) -keystore domain.key'
+
+10.- Finally import the domain.crt type 'keytool -import -trustcacerts -alias yyy (where yyy is the alias specified during CSR creation) -file domain.crt -keystore domain.key'
+
+11.- You now need to edit your config in the application server to point to the keystore. This is different for every app server but usually in Orion it is in default-secure.xml, 
+	in Tomcat it is in the server.xml and  in resin it is in the resin.conf.  
+	
+12. Add the ssl connector to your conf/server.xml file
+
+	<!-- Define a SSL Coyote HTTP/1.1 Connector on port 443 --> <Connector address="<serverIP>" port="443" maxThreads="150"
+minSpareThreads="25" maxSpareThreads="75" enableLookups="false" disableUploadTimeout="true" acceptCount="100" debug="0" 
+scheme="https" secure="true" clientAuth="false" sslProtocol="TLS" keystoreFile="<path to your keystore file>" keystorePass="<keystore password>"/>
+
+
+13. This step is optional. If you wish to force ssl on the login page uncomment the following in liferay/WEB-INF/web.xml
+	<!-- 
+	<web-resource-collection>
+             <web-resource-name>Portal Login</web-resource-name>
+             <description>Secure the login page</description>
+             <url-pattern>/c/portal_public/layout</url-pattern>
+     </web-resource-collection>
+     <user-data-constraint>
+             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+     </user-data-constraint>
+     </security-constraint>
+	
+	 -->
+
+14.- That is it.  Enjoy secure access. 

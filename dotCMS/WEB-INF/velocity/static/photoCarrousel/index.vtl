@@ -1,0 +1,212 @@
+#set($widthStyle = $math.toInteger(${photoDimensions.width}) + 4)
+
+#if(!$UtilMethods.isSet($photoCarrouselTimeout))
+   #set($photoCarrouselTimeout = 3000)
+#end
+
+#if(!$UtilMethods.isSet($photoCarrouselEffectTimeout))
+   #set($photoCarrouselEffectTimeout = 10)
+#end
+
+<style type="text/css">
+
+ .carrouselItem {
+   float:left;
+   width:${widthStyle}px;
+ }
+
+.photoCarrouselThumbsDiv {
+	border:0;
+	margin:0;
+	padding:0;
+	width:${photoDimensions.width}px;
+}
+.photoCarrouselThumbsMoverWrapperDiv {
+	overflow:hidden;
+	position:relative;
+	width:${photoDimensions.width}px;
+}
+.photoCarrouselThumbsMoverDiv {	
+	left:0px;
+	position:relative;
+	width:${totalWidth}px;
+}	
+
+a.photoCarrouselThumbLink:link {
+	text-decoration:none;
+	border: 0;
+}
+
+.photoCarrouselThumbLink img {
+	border:0;
+	display:inline;
+}		
+
+.photoCarrouselControlsDiv {
+	text-align: center;
+}
+
+.photoCarrouselControlsDiv .previousPhoto,
+.photoCarrouselControlsDiv .nextPhoto
+{
+	cursor: pointer;
+}
+
+.photoCarrouselControlsDiv .nextPhoto {
+	float: right;
+}
+
+.photoCarrouselControlsDiv .previousPhoto {
+	float: left;
+}
+
+.photoCarrouselControlsDiv .counters {
+	margin: 0 auto;
+}
+</style>    
+
+<script language="javascript" type="text/javascript">
+	
+var totalPhotos = ${photosCount};
+var currentPhoto = 0;
+var offset = ${offset};
+var sliding = false;
+
+function nextPhoto(id) {
+	if (currentPhoto < totalPhotos - 1) {
+		if(sliding) return;
+		sliding = true;
+		
+		currentPhoto++;
+		var el = document.getElementById(id);
+		var currentLeft = el.style.left;
+		if(currentLeft == "") 
+			currentLeft = 0;
+		else
+			currentLeft = parseInt(currentLeft);
+		
+		var counters = document.getElementById('photoCarrouselCounters');
+		counters.innerHTML = (currentPhoto + 1) + " - " + totalPhotos;
+			
+		nextPhotoAnimator(id, currentLeft - offset);		
+	}
+}
+
+function nextPhotoAnimator(id, moveTo) {
+	var el = document.getElementById(id);
+	var currentLeft = el.style.left;
+	if(currentLeft == '') 
+		currentLeft = 0;
+	else
+		currentLeft = parseInt(currentLeft);
+	currentLeft = currentLeft - 2;
+	if(currentLeft < moveTo)
+		currentLeft = moveTo;
+	el.style.left = currentLeft + "px";
+	if (moveTo < currentLeft)
+	{
+		setTimeout('nextPhotoAnimator("' + id + '", ' + moveTo + ')', $photoCarrouselEffectTimeout);
+	}
+	else
+	{
+		sliding = false;
+		#if($photoCarrouselAutoSlide)
+			setTimeout('nextPhoto("photoCarrouselThumbsMoverDiv")', $photoCarrouselTimeout);
+		#end
+	}
+}
+
+function previousPhoto(id) {
+	if(currentPhoto > 0) {
+		if(sliding) return;
+		sliding = true;
+		currentPhoto--;
+		var el = document.getElementById(id);
+		var currentLeft = el.style.left;
+		if(currentLeft == "") 
+			currentLeft = 0;
+		else
+			currentLeft = parseInt(currentLeft);
+
+		var counters = document.getElementById('photoCarrouselCounters');
+		counters.innerHTML = (currentPhoto + 1) + " - " + totalPhotos;
+		
+		previousPhotoAnimator(id, currentLeft + offset);
+	}
+}
+
+function previousPhotoAnimator(id, moveTo) {
+	var el = document.getElementById(id);
+	var currentLeft = el.style.left;
+	if(currentLeft == '') 
+		currentLeft = 0;
+	else
+		currentLeft = parseInt(currentLeft);
+	currentLeft = currentLeft + 2;
+	if(currentLeft > moveTo)
+		currentLeft = moveTo;
+	el.style.left = currentLeft + "px";
+	if (moveTo > currentLeft)
+		setTimeout('previousPhotoAnimator("' + id + '", ' + moveTo + ')', $photoCarrouselEffectTimeout);
+	else
+		sliding = false;
+}
+	
+</script>
+<script type="text/javascript" src="/html/js/lightbox/js/prototype.js"></script>
+<script type="text/javascript" src="/html/js/lightbox/js/scriptaculous.js?load=effects"></script>
+<script type="text/javascript" src="/html/js/lightbox/js/lightbox.js"></script>
+<link rel="stylesheet" href="/html/js/lightbox/css/lightbox.css" type="text/css" media="screen" />
+
+#if(!($UtilMethods.isSet($showCaptions)))
+	#set($showCaptions = true)
+#end
+
+<div class="photoCarrouselThumbsDiv">
+	<div class="photoCarrouselThumbsMoverWrapperDiv">
+		<div id="photoCarrouselThumbsMoverDiv" class="photoCarrouselThumbsMoverDiv">
+		#foreach($photo in $photoList)
+			#if($photo.url)
+				#set($photoURL = $photo.url)
+			#end
+			#if($photo.link && !$photo.link.equals(''))
+				#set($photoLink = $photo.link)
+				#set($rel = '')
+			#else
+				#set($photoLink = $photo.url)
+				#set($rel = 'rel="lightbox[gallery]"')
+			#end
+
+			#if($photo.caption)
+				#set($photoCaption = $photo.caption)
+			#end
+			<div class="carrouselItem">
+			<a class="photoCarrouselThumbLink" href="$!{photoLink}" $rel>
+				<img id="${velocityCount}" class="photoCarrouselThumb" style="#if($UtilMethods.isSet($!{photoWidth})) width:$!{photoWidth}; #end #if($UtilMethods.isSet($!{photoHeight})) height:$!{photoHeight} #end" src="${photoURL}" style="visibility: visible;"/>
+			</a>
+			#if($showCaptions)
+			   <span align="center">$!photoCaption</span>
+			#end
+			</div>
+		#end
+		</div>
+	</div>
+	<div class="photoCarrouselControlsDiv">
+		<a onclick="nextPhoto('photoCarrouselThumbsMoverDiv')" class="nextPhoto"> 
+			<span>
+				&raquo;
+			</span>
+		</a>
+		<a onclick="previousPhoto('photoCarrouselThumbsMoverDiv')" class="previousPhoto"> 
+			<span>
+				&laquo;
+			</span>
+		</a>
+		<span id="photoCarrouselCounters" class="counters">1 - ${photosCount}</span>
+	</div>
+</div>
+<script>
+#if($photoCarrouselAutoSlide)
+	setTimeout('nextPhoto("photoCarrouselThumbsMoverDiv")', $photoCarrouselTimeout);
+#end
+</script>

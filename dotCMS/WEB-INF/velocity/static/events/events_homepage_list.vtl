@@ -1,0 +1,11 @@
+#if(!$maxevents)
+	#set ($maxevents = 3)
+#end
+#set ($events = $eventsapi.getUpcomingEventsList($category1, $category2, $category3, $maxevents))
+#foreach ($evt in $events)
+#if ($evt.title != '')
+<h3><a href="detail_view.${webapi.getPageFileExtension()}?event=$evt.inode">$evt.title</a></h3>
+<strong>$webapi.dateToHTMLDateTimeRange($evt.startDate, $evt.endDate)</strong><br>
+$UtilMethods.shortenString($evt.description, 100)
+#end
+#end

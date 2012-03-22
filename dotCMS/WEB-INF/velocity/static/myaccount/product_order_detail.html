@@ -1,0 +1,216 @@
+#parse('static/messages.html')
+#set( $statuses = $webevents.getRegistrationStatus())
+
+<script type="text/javascript">
+function back(type){	
+
+	var form = document.getElementById('orderForm');
+ 	form.dispatch.value="back";
+ 	form.btn_type.value=type;
+    form.referrer.value="/dotCMS/productHistoryDetail?inode=$orderForm.Inode";
+    form.submit();
+ 	
+}
+</script>
+<form action="/dotCMS/productHistoryDetail"  method="post" id="orderForm" name="orderForm" autocomplete="off">
+<input type="hidden" name="dispatch" value=""> 
+<input type="hidden" name="referrer" value=""> 
+<input type="hidden" name="btn_type" value="">
+<input type="hidden" name="inode" value="$request.getParameter('inode')">
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+	<tr>
+			<td align="right" height="22">
+				<div class="item">
+					<div class="curveLink" style="float: right;"><span><a href="/dotCMS/registrationHistory">Registration and Order History</a></span></div> 	
+					<div class="curveLink" style="float: right; margin-right: 15px;"><span><a href="/dotCMS/myAccount">My Profile</a></span></div>
+					<div class="clear">&nbsp;</div>
+				</div>
+			</td>
+	</tr>
+	<tr>
+		<td valign="top" align="left">
+		<h2>Order Detail</h2>
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			
+			<tr style="background: #5b7886;">
+				<Td colspan="2" style="color: #fff;"><b>Product Order Detail: Order # $!orderForm.inode</b></td>
+				<td colspan="2" style="color: #fff;"><b> Order Status: $statuses.get($webevents.valueOfStatus($!orderForm.orderStatus))</b></td>
+				
+			</tr>
+			
+		</table>
+		<br>
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			<tr style="background: #5b7886;">
+				<Td style="color: #FFF"><b>Product Name</b></td>
+				<Td style="color: #FFF"><b>Qty</b></td>
+				<Td style="color: #FFF"><b>Price</b></td>
+			</tr>
+			#set ($productItems = $orderForm.orderItemList)
+			#set ($discounts = $webapi.getDiscountsByOrder($orderForm))
+			#foreach($productItem in $productItems)
+				#set ($product = $productwebapi.getProductbyProductFormaId("$!productItem.productInode"))
+				<tr>
+					<Td><a href="/dotCMS/detailProduct?inode=$product.inode">$product.title</td>
+					<Td>$!productItem.itemQty</td>
+					#set($priceAmount = $!webapi.getItemPriceWithDiscount($!productItem,$discounts))
+					<Td>$ $webapi.toPriceFormat($priceAmount)</td>
+				</tr>
+			#end
+			<tr>
+				<td>&nbsp;</td>
+				<td colspan="2">
+				  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+					<tr>
+						<td align="right">Sub Total:&nbsp; </td>
+						<td align="right">$ $webapi.toPriceFormat($!orderForm.orderSubTotal)</td>
+					</tr>
+					<tr>
+						<td align="right">Shipping and Handling:&nbsp; </td>
+						<td align="right">$ $webapi.toPriceFormat($!orderForm.orderShipping)</td>
+					</tr>
+					<tr>
+						<td align="right">Tax:&nbsp; </td>
+						<td align="right">$ $webapi.toPriceFormat($!orderForm.orderTax)</td>
+					</tr>
+					<tr>
+						<td align="right"><b>Total:&nbsp; </b></td>
+						<td align="right"><b>$ $webapi.toPriceFormat($!orderForm.orderTotal)<b></td>
+					</tr>
+			   </table>
+			 </td>
+			</tr>
+		</table>
+		 <br>
+		 <table border="0" cellpadding="4" cellspacing="1" width="100%">
+		 	<tr style="background: #5b7886;">
+		 		<td colspan="2" style="color: #FFF;"><b>Billing Information:</b></td>
+		 		<td colspan="2" style="color: #FFF;"><b>Shipping Information:</b></td>
+		 	</tr>
+		 	<tr>
+		 		<td>Address Line 1: </td>
+		 		<td>$!orderForm.billingAddress1</td>
+		 		<td>Address Line 1: </td>
+		 		<td>$!orderForm.shippingAddress1</td>		 	
+		 	</tr>
+		 	<tr>
+		 		<td>Address Line 2: </td>
+		 		<td>$!orderForm.billingAddress2</td>
+		 		<td>Address Line 2: </td>
+		 		<td>$!orderForm.shippingAddress2</td>		 	
+		 	</tr>
+		 	<tr>
+		 		<td>City: </td>
+		 		<td>$!orderForm.billingCity</td>
+		 		<td>City: </td>
+		 		<td>$!orderForm.shippingCity</td>		 	
+		 	</tr>
+		 	<tr>
+		 		<td>State: </td>
+		 		<td>$!orderForm.billingState</td>
+		 		<td>State: </td>
+		 		<td>$!orderForm.shippingState</td>		 	
+		 	</tr>
+		 	<tr>
+		 		<td>Country: </td>
+		 		<td>$!orderForm.billingCountry</td>
+		 		<td>Country: </td>
+		 		<td>$!orderForm.shippingCountry</td>		 	
+		 	</tr>
+		 	<tr>
+		 		<td>Zip/Postal Code: </td>
+		 		<td>$!orderForm.billingZip</td>
+		 		<td>Zip/Postal Code: </td>
+		 		<td>$!orderForm.shippingZip</td>		 	
+		 	</tr>
+		 	<!-- 
+		 	<tr>
+		 		<td>Country: </td>
+		 		<td>$!orderForm.billingCountry</td>
+		 		<td>Country: </td>
+		 		<td>$!orderForm.shippingCountry</td>		 	
+		 	</tr>
+			 -->
+		 	<tr>
+		 		<td>Phone: </td>
+		 		<td>$!orderForm.billingPhone</td>
+		 		<td>Phone: </td>
+		 		<td>$!orderForm.shippingPhone</td>		 	
+		 	</tr>
+		 	<tr>
+		 		<td colspan="2"><h3>Payment Information:</h3></td>
+		 		#if($UtilMethods.isSet($orderForm.trackingNumber))
+		 		<td colspan="2"><h3>Tracking Information:</h3></td>
+		 		#else
+		 		<td colspan="2">&nbsp;</td>
+		 		#end
+		 	</tr>
+		 	<tr>
+		 		<TD>Payment Type:</TD>
+				<TD>
+				#set($paymentMethods = $productwebapi.getPaymentMethods()) 
+				#foreach($paymentMethod in $paymentMethods)
+					#if("$orderForm.paymentType" == "$paymentMethod.get('value')")
+						$paymentMethod.get("friendlyName") 
+					#end 
+				#end
+				</TD>
+		 		<td colspan="2">&nbsp;</td>		 	
+		 	</tr>
+		 	<tr>
+		 		#if($orderForm.isCreditCardPayment())
+				<TD>Name on Card:</TD>
+				<TD>$!orderForm.nameOnCard</TD>
+				#else
+				<TD>Bank Name:</TD>
+				<TD>$!orderForm.checkBankName</TD>
+				#end
+				#if($UtilMethods.isSet($orderForm.trackingNumber))
+		 		<td colspan="2">Please <a href="http://wwwapps.ups.com/WebTracking/processInputRequest?tracknum=12342434&AgreeToTermsAndConditions=yes">click here</a> to track your Package</td>		 	
+		 		#else
+		 		<td colspan="2">&nbsp;</td>
+		 		#end
+		 	</tr>
+		 	<tr>
+		 		#if($orderForm.isCreditCardPayment())
+				<TD>Card Type:</TD>
+				<TD>$!orderForm.cardType</TD>
+				#else
+				<TD>Check Number:</TD>
+				<TD>$!orderForm.checkNumber</TD>
+				#end				
+		 		<td colspan="2">&nbsp;</td>		 	
+		 	</tr>
+		 	<tr>	
+		 		#if($orderForm.isCreditCardPayment())
+				<TD>Card Number:</TD>
+				<TD>$!orderForm.cardNumber</TD>
+				#else
+				<TD colspan="2">&nbsp;</TD>
+				#end
+				<td colspan="2">&nbsp;</td>	
+			</tr> 
+			<tr>	
+		 		#if($orderForm.isCreditCardPayment())
+				<TD>Expiration Date:</TD>
+				<TD>$productwebapi.getMonth($!{orderForm.cardExpMonth}) / $!{orderForm.cardExpYear}</TD>
+				#else
+				<TD colspan="2">&nbsp;</TD>
+				#end
+				<td colspan="2">&nbsp;</td>	
+			</tr>
+		 </table>
+		 <br>
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			<tr>
+				<td align="center">
+				<!--<input type="button" name="btn-update-registration" id="btn-update-registration" onclick="back('save')" value="Save">&nbsp; -->
+				<div class="curveLink" style="margin-left: 360px;"><span><button name="btn-back" id="btn-back" onclick="back('back')" class="clearInputStyles">Back</button></span></div>
+				</td>
+			</tr>
+		</table>
+		</td>
+	</tr>
+</table>
+</form>

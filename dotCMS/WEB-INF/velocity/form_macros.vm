@@ -1,0 +1,341 @@
+#macro( countrySelectWithWidth $stringFieldName $width )
+	#set ($myval = $render.eval("form.bean.$stringFieldName"))
+	#set ($myval = $render.eval("$$myval"))
+	<select name="$stringFieldName" id="$stringFieldName" style="width:${width}px">
+		<option value="">Select Below
+		<option value="United States of America" #if($myval == "United States of America") selected="true" #end>United States of America
+		<option value="Puerto Rico" #if($myval == "Puerto Rico") selected="true" #end>Puerto Rico
+		<option value="Afghanistan" #if($myval == "Afghanistan") selected="true" #end>Afghanistan
+		<option value="Albania" #if($myval == "Albania") selected="true" #end>Albania
+		<option value="Algeria" #if($myval == "Algeria") selected="true" #end>Algeria
+		<option value="Andorra" #if($myval == "Andorra") selected="true" #end>Andorra
+		<option value="Angola" #if($myval == "Angola") selected="true" #end>Angola
+		<option value="Anguilla" #if($myval == "Anguilla") selected="true" #end>Anguilla
+		<option value="Antigua and Barbuda" #if($myval == "Antigua and Barbuda") selected="true" #end>Antigua and Barbuda
+		<option value="Argentina" #if($myval == "Argentina") selected="true" #end>Argentina
+		<option value="Armenia" #if($myval == "Armenia") selected="true" #end>Armenia
+		<option value="Aruba" #if($myval == "Aruba") selected="true" #end>Aruba
+		<option value="Australia" #if($myval == "Australia") selected="true" #end>Australia
+		<option value="Austria" #if($myval == "Austria") selected="true" #end>Austria
+		<option value="Azerbaijan" #if($myval == "Azerbaijan") selected="true" #end>Azerbaijan
+		<option value="Azores" #if($myval == "Azores") selected="true" #end>Azores
+		<option value="Bahamas" #if($myval == "Bahamas") selected="true" #end>Bahamas
+		<option value="Bahrain" #if($myval == "Bahrain") selected="true" #end>Bahrain
+		<option value="Bangladesh" #if($myval == "Bangladesh") selected="true" #end>Bangladesh
+		<option value="Barbados" #if($myval == "Barbados") selected="true" #end>Barbados
+		<option value="Belgium" #if($myval == "Belgium") selected="true" #end>Belgium
+		<option value="Belize" #if($myval == "Belize") selected="true" #end>Belize
+		<option value="Benin" #if($myval == "Benin") selected="true" #end>Benin
+		<option value="Bermuda" #if($myval == "Bermuda") selected="true" #end>Bermuda
+		<option value="Bhutan" #if($myval == "Bhutan") selected="true" #end>Bhutan
+		<option value="Bolivia" #if($myval == "Bolivia") selected="true" #end>Bolivia
+		<option value="Bosnia and Herzegovina" #if($myval == "Bosnia and Herzegovina") selected="true" #end>Bosnia and Herzegovina
+		<option value="Botswana" #if($myval == "Botswana") selected="true" #end>Botswana
+		<option value="Brazil" #if($myval == "Brazil") selected="true" #end>Brazil
+		<option value="British Virgin Islands" #if($myval == "British Virgin Islands") selected="true" #end>British Virgin Islands
+		<option value="Brunei Darussalam" #if($myval == "Brunei Darussalam") selected="true" #end>Brunei Darussalam
+		<option value="Bulgaria" #if($myval == "Bulgaria") selected="true" #end>Bulgaria
+		<option value="Myanmar" #if($myval == "Myanmar") selected="true" #end>Myanmar
+		<option value="Burundi" #if($myval == "Burundi") selected="true" #end>Burundi
+		<option value="Belarus" #if($myval == "Belarus") selected="true" #end>Belarus
+		<option value="Cameroon" #if($myval == "Cameroon") selected="true" #end>Cameroon
+		<option value="Canada" #if($myval == "Canada") selected="true" #end>Canada
+		<option value="Canary Islands" #if($myval == "Canary Islands") selected="true" #end>Canary Islands
+		<option value="Cape Verde" #if($myval == "Cape Verde") selected="true" #end>Cape Verde
+		<option value="Fed. States of Micronesia" #if($myval == "Fed. States of Micronesia") selected="true" #end>Fed. States of Micronesia
+		<option value="Cayman Islands" #if($myval == "Cayman Islands") selected="true" #end>Cayman Islands
+		<option value="Central African Republic" #if($myval == "Central African Republic") selected="true" #end>Central African Republic
+		<option value="Chad" #if($myval == "Chad") selected="true" #end>Chad
+		<option value="Chile" #if($myval == "Chile") selected="true" #end>Chile
+		<option value="Colombia" #if($myval == "Colombia") selected="true" #end>Colombia
+		<option value="Comoras" #if($myval == "Comoras") selected="true" #end>Comoras
+		<option value="Congo" #if($myval == "Congo") selected="true" #end>Congo
+		<option value="Cook Islands" #if($myval == "Cook Islands") selected="true" #end>Cook Islands
+		<option value="Costa Rica" #if($myval == "Costa Rica") selected="true" #end>Costa Rica
+		<option value="Croatia" #if($myval == "Croatia") selected="true" #end>Croatia
+		<option value="Cuba" #if($myval == "Cuba") selected="true" #end>Cuba
+		<option value="Cyprus" #if($myval == "Cyprus") selected="true" #end>Cyprus
+		<option value="Czech Republic" #if($myval == "Czech Republic") selected="true" #end>Czech Republic
+		<option value="Denmark" #if($myval == "Denmark") selected="true" #end>Denmark
+		<option value="Djibouti" #if($myval == "Djibouti") selected="true" #end>Djibouti
+		<option value="Dominica Commonwealth of" #if($myval == "Dominica Commonwealth of") selected="true" #end>Dominica Commonwealth of
+		<option value="Dominican Republic" #if($myval == "Dominican Republic") selected="true" #end>Dominican Republic
+		<option value="Ecuador" #if($myval == "Ecuador") selected="true" #end>Ecuador
+		<option value="Egypt" #if($myval == "Egypt") selected="true" #end>Egypt
+		<option value="El Salvador" #if($myval == "El Salvador") selected="true" #end>El Salvador
+		<option value="England" #if($myval == "England") selected="true" #end>England
+		<option value="Eritrea" #if($myval == "Eritrea") selected="true" #end>Eritrea
+		<option value="Equatorial Guinea" #if($myval == "Equatorial Guinea") selected="true" #end>Equatorial Guinea
+		<option value="Estonia" #if($myval == "Estonia") selected="true" #end>Estonia
+		<option value="Ethiopia" #if($myval == "Ethiopia") selected="true" #end>Ethiopia
+		<option value="Fiji" #if($myval == "Fiji") selected="true" #end>Fiji
+		<option value="Finland" #if($myval == "Finland") selected="true" #end>Finland
+		<option value="France" #if($myval == "France") selected="true" #end>France
+		<option value="French Polynesia" #if($myval == "French Polynesia") selected="true" #end>French Polynesia
+		<option value="French Guiana" #if($myval == "French Guiana") selected="true" #end>French Guiana
+		<option value="Gabon" #if($myval == "Gabon") selected="true" #end>Gabon
+		<option value="Gambia The" #if($myval == "Gambia The") selected="true" #end>Gambia The
+		<option value="Georgia" #if($myval == "Georgia") selected="true" #end>Georgia
+		<option value="Germany" #if($myval == "Germany") selected="true" #end>Germany
+		<option value="Ghana" #if($myval == "Ghana") selected="true" #end>Ghana
+		<option value="Gibraltar" #if($myval == "Gibraltar") selected="true" #end>Gibraltar
+		<option value="Greece" #if($myval == "Greece") selected="true" #end>Greece
+		<option value="Greenland" #if($myval == "Greenland") selected="true" #end>Greenland
+		<option value="Grenada" #if($myval == "Grenada") selected="true" #end>Grenada
+		<option value="Guadeloupe" #if($myval == "Guadeloupe") selected="true" #end>Guadeloupe
+		<option value="Guatemala" #if($myval == "Guatemala") selected="true" #end>Guatemala
+		<option value="Guinea" #if($myval == "Guinea") selected="true" #end>Guinea
+		<option value="Guinea Bissau" #if($myval == "Guinea Bissau") selected="true" #end>Guinea Bissau
+		<option value="Guyana" #if($myval == "Guyana") selected="true" #end>Guyana
+		<option value="Haiti" #if($myval == "Haiti") selected="true" #end>Haiti
+		<option value="Honduras" #if($myval == "Honduras") selected="true" #end>Honduras
+		<option value="Hong Kong" #if($myval == "Hong Kong") selected="true" #end>Hong Kong
+		<option value="Hungary" #if($myval == "Hungary") selected="true" #end>Hungary
+		<option value="Iceland" #if($myval == "Iceland") selected="true" #end>Iceland
+		<option value="India" #if($myval == "India") selected="true" #end>India
+		<option value="Indonesia" #if($myval == "Indonesia") selected="true" #end>Indonesia
+		<option value="Iran" #if($myval == "Iran") selected="true" #end>Iran
+		<option value="Iraq" #if($myval == "Iraq") selected="true" #end>Iraq
+		<option value="Ireland" #if($myval == "Ireland") selected="true" #end>Ireland
+		<option value="Isle of Man" #if($myval == "Isle of Man") selected="true" #end>Isle of Man
+		<option value="Israel" #if($myval == "Israel") selected="true" #end>Israel
+		<option value="Italy" #if($myval == "Italy") selected="true" #end>Italy
+		<option value="Cote D'Ivoire-Ivory Coast" #if($myval == "Cote D'Ivoire-Ivory Coast") selected="true" #end>Cote D'Ivoire-Ivory Coast
+		<option value="Jamaica" #if($myval == "Jamaica") selected="true" #end>Jamaica
+		<option value="Japan" #if($myval == "Japan") selected="true" #end>Japan
+		<option value="Jordan" #if($myval == "Jordan") selected="true" #end>Jordan
+		<option value="Cambodia" #if($myval == "Cambodia") selected="true" #end>Cambodia
+		<option value="Kazakstan" #if($myval == "Kazakstan") selected="true" #end>Kazakstan
+		<option value="Kenya" #if($myval == "Kenya") selected="true" #end>Kenya
+		<option value="Kiribati" #if($myval == "Kiribati") selected="true" #end>Kiribati
+		<option value="Korea (DPR)" #if($myval == "Korea (DPR)") selected="true" #end>Korea (DPR)
+		<option value="Korea(ROK)" #if($myval == "Korea(ROK)") selected="true" #end>Korea(ROK)
+		<option value="Kuwait" #if($myval == "Kuwait") selected="true" #end>Kuwait
+		<option value="Kyrgyzstan" #if($myval == "Kyrgyzstan") selected="true" #end>Kyrgyzstan
+		<option value="Laos" #if($myval == "Laos") selected="true" #end>Laos
+		<option value="Latvia" #if($myval == "Latvia") selected="true" #end>Latvia
+		<option value="Lebanon" #if($myval == "Lebanon") selected="true" #end>Lebanon
+		<option value="Lesotho" #if($myval == "Lesotho") selected="true" #end>Lesotho
+		<option value="Liberia" #if($myval == "Liberia") selected="true" #end>Liberia
+		<option value="Libya" #if($myval == "Libya") selected="true" #end>Libya
+		<option value="Liechtenstein" #if($myval == "Liechtenstein") selected="true" #end>Liechtenstein
+		<option value="Lithuania" #if($myval == "Lithuania") selected="true" #end>Lithuania
+		<option value="Luxembourg" #if($myval == "Luxembourg") selected="true" #end>Luxembourg
+		<option value="Macau" #if($myval == "Macau") selected="true" #end>Macau
+		<option value="Macedonia(F.Y.R.O.M.)" #if($myval == "Macedonia(F.Y.R.O.M.)") selected="true" #end>Macedonia(F.Y.R.O.M.)
+		<option value="Madagascar" #if($myval == "Madagascar") selected="true" #end>Madagascar
+		<option value="Madeira Islands" #if($myval == "Madeira Islands") selected="true" #end>Madeira Islands
+		<option value="Malawi" #if($myval == "Malawi") selected="true" #end>Malawi
+		<option value="Malaysia" #if($myval == "Malaysia") selected="true" #end>Malaysia
+		<option value="Maldives" #if($myval == "Maldives") selected="true" #end>Maldives
+		<option value="Mali" #if($myval == "Mali") selected="true" #end>Mali
+		<option value="Malta" #if($myval == "Malta") selected="true" #end>Malta
+		<option value="Martinique" #if($myval == "Martinique") selected="true" #end>Martinique
+		<option value="Marshall Islands" #if($myval == "Marshall Islands") selected="true" #end>Marshall Islands
+		<option value="Mauritania" #if($myval == "Mauritania") selected="true" #end>Mauritania
+		<option value="Mauritius" #if($myval == "Mauritius") selected="true" #end>Mauritius
+		<option value="Mexico" #if($myval == "Mexico") selected="true" #end>Mexico
+		<option value="Moldova" #if($myval == "Moldova") selected="true" #end>Moldova
+		<option value="Midway Islands" #if($myval == "Midway Islands") selected="true" #end>Midway Islands
+		<option value="Monaco" #if($myval == "Monaco") selected="true" #end>Monaco
+		<option value="Mongolia" #if($myval == "Mongolia") selected="true" #end>Mongolia
+		<option value="Morocco" #if($myval == "Morocco") selected="true" #end>Morocco
+		<option value="Montserrat" #if($myval == "Montserrat") selected="true" #end>Montserrat
+		<option value="Mozambique" #if($myval == "Mozambique") selected="true" #end>Mozambique
+		<option value="Nauru" #if($myval == "Nauru") selected="true" #end>Nauru
+		<option value="Nepal" #if($myval == "Nepal") selected="true" #end>Nepal
+		<option value="Namibia" #if($myval == "Namibia") selected="true" #end>Namibia
+		<option value="Netherlands" #if($myval == "Netherlands") selected="true" #end>Netherlands
+		<option value="Netherlands Antilles" #if($myval == "Netherlands Antilles") selected="true" #end>Netherlands Antilles
+		<option value="New Caledonia" #if($myval == "New Caledonia") selected="true" #end>New Caledonia
+		<option value="Papua New Guinea" #if($myval == "Papua New Guinea") selected="true" #end>Papua New Guinea
+		<option value="New Zealand" #if($myval == "New Zealand") selected="true" #end>New Zealand
+		<option value="Nicaragua" #if($myval == "Nicaragua") selected="true" #end>Nicaragua
+		<option value="Niger" #if($myval == "Niger") selected="true" #end>Niger
+		<option value="Nigeria" #if($myval == "Nigeria") selected="true" #end>Nigeria
+		<option value="Niue Island" #if($myval == "Niue Island") selected="true" #end>Niue Island
+		<option value="Northern Ireland" #if($myval == "Northern Ireland") selected="true" #end>Northern Ireland
+		<option value="Norway" #if($myval == "Norway") selected="true" #end>Norway
+		<option value="Okinawa" #if($myval == "Okinawa") selected="true" #end>Okinawa
+		<option value="Oman" #if($myval == "Oman") selected="true" #end>Oman
+		<option value="Pakistan" #if($myval == "Pakistan") selected="true" #end>Pakistan
+		<option value="Palau" #if($myval == "Palau") selected="true" #end>Palau
+		<option value="Panama" #if($myval == "Panama") selected="true" #end>Panama
+		<option value="Paraguay" #if($myval == "Paraguay") selected="true" #end>Paraguay
+		<option value="China Peoples Republic Of" #if($myval == "China Peoples Republic Of") selected="true" #end>China Peoples Republic Of
+		<option value="Peru" #if($myval == "Peru") selected="true" #end>Peru
+		<option value="Philippines" #if($myval == "Philippines") selected="true" #end>Philippines
+		<option value="Poland" #if($myval == "Poland") selected="true" #end>Poland
+		<option value="Portugal" #if($myval == "Portugal") selected="true" #end>Portugal
+		<option value="Qatar" #if($myval == "Qatar") selected="true" #end>Qatar
+		<option value="Zimbabwe" #if($myval == "Zimbabwe") selected="true" #end>Zimbabwe
+		<option value="Reunion" #if($myval == "Reunion") selected="true" #end>Reunion
+		<option value="Romania" #if($myval == "Romania") selected="true" #end>Romania
+		<option value="Russia" #if($myval == "Russia") selected="true" #end>Russia
+		<option value="St. Kitts and Nevis" #if($myval == "St. Kitts and Nevis") selected="true" #end>St. Kitts and Nevis
+		<option value="Rwanda" #if($myval == "Rwanda") selected="true" #end>Rwanda
+		<option value="San Marino" #if($myval == "San Marino") selected="true" #end>San Marino
+		<option value="Sao Tome Principe" #if($myval == "Sao Tome Principe") selected="true" #end>Sao Tome Principe
+		<option value="Saudi Arabia" #if($myval == "Saudi Arabia") selected="true" #end>Saudi Arabia
+		<option value="Scotland" #if($myval == "Scotland") selected="true" #end>Scotland
+		<option value="Senegal" #if($myval == "Senegal") selected="true" #end>Senegal
+		<option value="Seychelles" #if($myval == "Seychelles") selected="true" #end>Seychelles
+		<option value="Sierra Leone" #if($myval == "Sierra Leone") selected="true" #end>Sierra Leone
+		<option value="Slovakia" #if($myval == "Slovakia") selected="true" #end>Slovakia
+		<option value="Slovenia" #if($myval == "Slovenia") selected="true" #end>Slovenia
+		<option value="Singapore" #if($myval == "Singapore") selected="true" #end>Singapore
+		<option value="Solomon Islands" #if($myval == "Solomon Islands") selected="true" #end>Solomon Islands
+		<option value="Somalia" #if($myval == "Somalia") selected="true" #end>Somalia
+		<option value="South Africa" #if($myval == "South Africa") selected="true" #end>South Africa
+		<option value="Spain" #if($myval == "Spain") selected="true" #end>Spain
+		<option value="Sri Lanka" #if($myval == "Sri Lanka") selected="true" #end>Sri Lanka
+		<option value="St. Lucia" #if($myval == "St. Lucia") selected="true" #end>St. Lucia
+		<option value="St. Vincent & Grenadines" #if($myval == "St. Vincent & Grenadines") selected="true" #end>St. Vincent & Grenadines
+		<option value="Sudan" #if($myval == "Sudan") selected="true" #end>Sudan
+		<option value="Suriname" #if($myval == "Suriname") selected="true" #end>Suriname
+		<option value="Swaziland" #if($myval == "Swaziland") selected="true" #end>Swaziland
+		<option value="Sweden" #if($myval == "Sweden") selected="true" #end>Sweden
+		<option value="Switzerland" #if($myval == "Switzerland") selected="true" #end>Switzerland
+		<option value="Syria" #if($myval == "Syria") selected="true" #end>Syria
+		<option value="Tahiti" #if($myval == "Tahiti") selected="true" #end>Tahiti
+		<option value="Taiwan" #if($myval == "Taiwan") selected="true" #end>Taiwan
+		<option value="Tajikstan" #if($myval == "Tajikstan") selected="true" #end>Tajikstan
+		<option value="Tanzania" #if($myval == "Tanzania") selected="true" #end>Tanzania
+		<option value="Thailand" #if($myval == "Thailand") selected="true" #end>Thailand
+		<option value="Togo" #if($myval == "Togo") selected="true" #end>Togo
+		<option value="Tonga Islands" #if($myval == "Tonga Islands") selected="true" #end>Tonga Islands
+		<option value="Trinidad and Tobago" #if($myval == "Trinidad and Tobago") selected="true" #end>Trinidad and Tobago
+		<option value="Tunisia" #if($myval == "Tunisia") selected="true" #end>Tunisia
+		<option value="Turkmenistan" #if($myval == "Turkmenistan") selected="true" #end>Turkmenistan
+		<option value="Turkey" #if($myval == "Turkey") selected="true" #end>Turkey
+		<option value="Turks and Caicos Islands" #if($myval == "Turks and Caicos Islands") selected="true" #end>Turks and Caicos Islands
+		<option value="Tuvalu" #if($myval == "Tuvalu") selected="true" #end>Tuvalu
+		<option value="United Kingdom" #if($myval == "United Kingdom") selected="true" #end>United Kingdom
+		<option value="Ukraine" #if($myval == "Ukraine") selected="true" #end>Ukraine
+		<option value="Uganda" #if($myval == "Uganda") selected="true" #end>Uganda
+		<option value="United Arab Emirates" #if($myval == "United Arab Emirates") selected="true" #end>United Arab Emirates
+		<option value="United States Virgin Islands" #if($myval == "United States Virgin Islands") selected="true" #end>United States Virgin Islands
+		<option value="Burkina Faso" #if($myval == "Burkina Faso") selected="true" #end>Burkina Faso
+		<option value="Uzbekistan" #if($myval == "Uzbekistan") selected="true" #end>Uzbekistan
+		<option value="Uruguay" #if($myval == "Uruguay") selected="true" #end>Uruguay
+		<option value="Vanuatu" #if($myval == "Vanuatu") selected="true" #end>Vanuatu
+		<option value="Vatican City" #if($myval == "Vatican City") selected="true" #end>Vatican City
+		<option value="Venezuela" #if($myval == "Venezuela") selected="true" #end>Venezuela
+		<option value="Vietnam" #if($myval == "Vietnam") selected="true" #end>Vietnam
+		<option value="Wales" #if($myval == "Wales") selected="true" #end>Wales
+		<option value="West Bank" #if($myval == "West Bank") selected="true" #end>West Bank
+		<option value="West Indies Assoc. States" #if($myval == "West Indies Assoc. States") selected="true" #end>West Indies Assoc. States
+		<option value="Western Samoa" #if($myval == "Western Samoa") selected="true" #end>Western Samoa
+		<option value="Yemen" #if($myval == "Yemen") selected="true" #end>Yemen
+		<option value="Yugoslavia Fed. Rep. Of" #if($myval == "Yugoslavia Fed. Rep. Of") selected="true" #end>Yugoslavia Fed. Rep. Of
+		<option value="Yukon Territory Canada" #if($myval == "Yukon Territory Canada") selected="true" #end>Yukon Territory Canada
+		<option value="Zaire" #if($myval == "Zaire") selected="true" #end>Zaire
+		<option value="Zambia" #if($myval == "Zambia") selected="true" #end>Zambia
+		<option value="Newfoundland Canada" #if($myval == "Newfoundland Canada") selected="true" #end>Newfoundland Canada
+		<option value="Northwest Territory Canada" #if($myval == "Northwest Territory Canada") selected="true" #end>Northwest Territory Canada
+		<option value="Nova Scotia Canada" #if($myval == "Nova Scotia Canada") selected="true" #end>Nova Scotia Canada
+		<option value="Ontario Canada" #if($myval == "Ontario Canada") selected="true" #end>Ontario Canada
+		<option value="Prince Edward Isld Canada" #if($myval == "Prince Edward Isld Canada") selected="true" #end>Prince Edward Isld Canada
+		<option value="Quebec Canada" #if($myval == "Quebec Canada") selected="true" #end>Quebec Canada
+		<option value="Saskatchewan Canada" #if($myval == "Saskatchewan Canada") selected="true" #end>Saskatchewan Canada
+		<option value="Alberta Canada" #if($myval == "Alberta Canada") selected="true" #end>Alberta Canada
+		<option value="British Columbia Canada" #if($myval == "British Columbia Canada") selected="true" #end>British Columbia Canada
+		<option value="Manitoba Canada" #if($myval == "Manitoba Canada") selected="true" #end>Manitoba Canada
+		<option value="New Brunswick Canada" #if($myval == "New Brunswick Canada") selected="true" #end>New Brunswick Canada
+	</select>
+#end
+
+#macro( countrySelect $stringFieldName )
+	#countrySelectWithWidth($stringFieldName "200")
+#end
+
+
+#macro( stateSelectWithWidth  $stringFieldName $width )
+	#set ($myval = $render.eval("form.bean.$stringFieldName"))
+	#set ($myval = $render.eval("$$myval"))
+	<select name="$stringFieldName" id="$stringFieldName" size="1" style="width:${width}px;">
+		<option value="">Select Below
+	    <option value="FL" #if($myval == "FL") selected="true" #end>Florida</option>
+		<option value="AL" #if($myval == "AL") selected="true" #end>Alabama</option>
+	    <option value="AK" #if($myval == "AK") selected="true" #end>Alaska</option>
+	    <option value="AZ" #if($myval == "AZ") selected="true" #end>Arizona</option>
+	    <option value="AR" #if($myval == "AR") selected="true" #end>Arkansas</option>
+	    <option value="CA" #if($myval == "CA") selected="true" #end>California</option>
+	    <option value="CO" #if($myval == "CO") selected="true" #end>Colorado</option>
+	    <option value="CT" #if($myval == "CT") selected="true" #end>Connecticut</option>
+	    <option value="DE" #if($myval == "DE") selected="true" #end>Delaware</option>
+	    <option value="DC" #if($myval == "DC") selected="true" #end>District of Columbia</option>
+	    <option value="FL" #if($myval == "FL") selected="true" #end>Florida</option>
+	    <option value="GA" #if($myval == "GA") selected="true" #end>Georgia</option>
+	    <option value="HI" #if($myval == "HI") selected="true" #end>Hawaii</option>
+	    <option value="ID" #if($myval == "ID") selected="true" #end>Idaho</option>
+	    <option value="IL" #if($myval == "IL") selected="true" #end>Illinois</option>
+	    <option value="IN" #if($myval == "IN") selected="true" #end>Indiana</option>
+	    <option value="IA" #if($myval == "IA") selected="true" #end>Iowa</option>
+	    <option value="KS" #if($myval == "KS") selected="true" #end>Kansas</option>
+	    <option value="KY" #if($myval == "KY") selected="true" #end>Kentucky</option>
+	    <option value="LA" #if($myval == "LA") selected="true" #end>Louisiana</option>
+	    <option value="ME" #if($myval == "ME") selected="true" #end>Maine</option>
+	    <option value="MD" #if($myval == "MD") selected="true" #end>Maryland</option>
+	    <option value="MA" #if($myval == "MA") selected="true" #end>Massachusetts</option>
+	    <option value="MI" #if($myval == "MI") selected="true" #end>Michigan</option>
+	    <option value="MN" #if($myval == "MN") selected="true" #end>Minnesota</option>
+	    <option value="MS" #if($myval == "MS") selected="true" #end>Mississippi</option>
+	    <option value="MO" #if($myval == "MO") selected="true" #end>Missouri</option>
+	    <option value="MT" #if($myval == "MT") selected="true" #end>Montana</option>
+	    <option value="NE" #if($myval == "NE") selected="true" #end>Nebraska</option>
+	    <option value="NV" #if($myval == "NV") selected="true" #end>Nevada</option>
+	    <option value="NH" #if($myval == "NH") selected="true" #end>New Hampshire</option>
+	    <option value="NJ" #if($myval == "NJ") selected="true" #end>New Jersey</option>
+	    <option value="NM" #if($myval == "NM") selected="true" #end>New Mexico</option>
+	    <option value="NY" #if($myval == "NY") selected="true" #end>New York</option>
+	    <option value="NC" #if($myval == "NC") selected="true" #end>North Carolina</option>
+	    <option value="ND" #if($myval == "ND") selected="true" #end>North Dakota</option>
+	    <option value="OH" #if($myval == "OH") selected="true" #end>Ohio</option>
+	    <option value="OK" #if($myval == "OK") selected="true" #end>Oklahoma</option>
+	    <option value="OR" #if($myval == "OR") selected="true" #end>Oregon</option>
+	    <option value="PA" #if($myval == "PA") selected="true" #end>Pennsylvania</option>
+	    <option value="RI" #if($myval == "RI") selected="true" #end>Rhode Island</option>
+	    <option value="SC" #if($myval == "SC") selected="true" #end>South Carolina</option>
+	    <option value="SD" #if($myval == "SD") selected="true" #end>South Dakota</option>
+	    <option value="TN" #if($myval == "TN") selected="true" #end>Tennessee</option>
+	    <option value="TX" #if($myval == "TX") selected="true" #end>Texas</option>
+	    <option value="UT" #if($myval == "UT") selected="true" #end>Utah</option>
+	    <option value="VT" #if($myval == "VT") selected="true" #end>Vermont</option>
+	    <option value="VA" #if($myval == "VA") selected="true" #end>Virginia</option>
+	    <option value="WA" #if($myval == "WA") selected="true" #end>Washington</option>
+	    <option value="WV" #if($myval == "WV") selected="true" #end>West Virginia</option>
+	    <option value="WI" #if($myval == "WI") selected="true" #end>Wisconsin</option>
+	    <option value="WY" #if($myval == "WY") selected="true" #end>Wyoming</option>
+	    <option value="otherCountry" #if($myval == "otherCountry") selected="true" #end>None - Outside of USA</option>
+	</select> 
+#end
+
+#macro( stateSelect $stringFieldName )
+	#stateSelectWithWidth($stringFieldName "")
+#end
+
+
+#macro( degreeRadio $stringFieldName)
+	#set ($myval = $render.eval("form.bean.$stringFieldName"))
+	#set ($myval = $render.eval("$$myval"))
+	<input style="width:15px;" type="radio" name="$stringFieldName" id="degreelths" value="Less Than HS" #if($myval == "Less Than HS") checked #end />
+	<label for="degreelths">Less than High School</label>
+	<br />
+	<input style="width:15px;" type="radio" name="$stringFieldName" id="degreehs" value="HS" #if($myval == "HS") checked #end />
+	<label for="degreehs">High School</label>
+	<br />
+	<input style="width:15px;"  type="radio" name="$stringFieldName" id="degreeaa" value="AA" #if($myval == "AA") checked #end />
+	<label for="degreeaa">A.A./A.S.</label>
+	<br />
+	<input style="width:15px;"  type="radio" name="$stringFieldName" id="degreebachelor" value="Bachelors" #if($myval == "Bachelors") checked #end />
+	<label for="degreebachelor">Bachelor's</label>
+	<br />
+	<input style="width:15px;"  type="radio" name="$stringFieldName" id="degreemaster" value="Masters" #if($myval == "Masters") checked #end />
+	<label for="degreemaster">Master's</label>
+	<br />
+	<input style="width:15px;"  type="radio" name="$stringFieldName" id="degreepostgrad" value="Postgrad" #if($myval == "Postgrad") checked #end />
+	<label for="degreepostgrad">Post-graduate </label>
+
+
+#end

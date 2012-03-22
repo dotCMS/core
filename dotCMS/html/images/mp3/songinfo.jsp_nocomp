@@ -1,0 +1,7 @@
+<% response.setContentType("text/plain"); %><%@ page import="java.util.Map,com.dotmarketing.util.MP3Utils" %><%
+	Map tags = null;
+	if(request.getParameter("mydata")!=null){
+	tags = MP3Utils.ParseMP3File(request.getParameter("mydata"));
+%>mpTitle=<%= tags.get("Title") %>&mpArtist=<%= tags.get("Artist") %>&mpAlbum=<%= tags.get("Album") %>&mpYear=<%= tags.get("Year") %>&mpBitRate=<%= tags.get("Bitrate") %>&mpFrequency=<%= tags.get("Frequency") %>&mpDuration=<%= tags.get("Duration") %>&mpChannel=<%= tags.get("ChannelMode") %>
+<% }else{ %> mydata is a required parameter<% } %>
+

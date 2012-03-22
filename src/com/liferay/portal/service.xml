@@ -1,0 +1,956 @@
+<?xml version="1.0"?>
+<!DOCTYPE service-builder PUBLIC "-//Liferay//DTD Service Builder 3.6.1//EN" "http://www.liferay.com/dtd/liferay-service-builder_3_6_1.dtd">
+
+<service-builder root-dir=".." package-dir="com.liferay">
+	<portlet name="Portal" short-name="" />
+	<entity name="Account" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="accountId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+		<column name="userId" type="String" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="parentAccountId" type="String" />
+		<column name="name" type="String" />
+		<column name="legalName" type="String" />
+		<column name="legalId" type="String" />
+		<column name="legalType" type="String" />
+		<column name="sicCode" type="String" />
+		<column name="tickerSymbol" type="String" />
+		<column name="industry" type="String" />
+		<column name="type" type="String" />
+		<column name="size" type="String" />
+	</entity>
+	<entity name="Address" local-service="true" persistence-class="com.liferay.portal.service.persistence.AddressPersistence2">
+
+		<!-- PK fields -->
+
+		<column name="addressId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+		<column name="userId" type="String" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="className" type="String" />
+		<column name="classPK" type="String" />
+		<column name="description" type="String" />
+		<column name="street1" type="String" />
+		<column name="street2" type="String" />
+		<column name="city" type="String" />
+		<column name="state" type="String" />
+		<column name="zip" type="String" />
+		<column name="country" type="String" />
+		<column name="phone" type="String" />
+		<column name="fax" type="String" />
+		<column name="cell" type="String" />
+		<column name="pager" type="String" />
+		<column name="tollFree" type="String" />
+		<column name="priority" type="int" />
+
+		<!-- Order -->
+
+		<order by="asc">
+			<order-column name="companyId" />
+			<order-column name="className" />
+			<order-column name="classPK" />
+			<order-column name="priority" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="UserId" return-type="Collection">
+			<finder-column name="userId" />
+		</finder>
+		<finder name="C_C" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="className" />
+		</finder>
+		<finder name="C_C_C" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="className" />
+			<finder-column name="classPK" />
+		</finder>
+	</entity>
+	<entity name="ColorScheme" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="colorSchemeId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="settings" type="String" />
+	</entity>
+	<entity name="Company" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="companyId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="key" type="String" />
+		<column name="portalURL" type="String" />
+		<column name="homeURL" type="String" />
+		<column name="mx" type="String" />
+	</entity>
+	<entity name="Contact" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="contactId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+		<column name="userId" type="String" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="parentContactId" type="String" />
+		<column name="firstName" type="String" />
+		<column name="middleName" type="String" />
+		<column name="lastName" type="String" />
+		<column name="nickName" type="String" />
+		<column name="emailAddress1" type="String" />
+		<column name="emailAddress2" type="String" />
+		<column name="smsId" type="String" />
+		<column name="aimId" type="String" />
+		<column name="icqId" type="String" />
+		<column name="msnId" type="String" />
+		<column name="skypeId" type="String" />
+		<column name="ymId" type="String" />
+		<column name="website" type="String" />
+		<column name="male" type="boolean" />
+		<column name="birthday" type="Date" />
+		<column name="timeZoneId" type="String" />
+		<column name="employeeNumber" type="String" />
+		<column name="jobTitle" type="String" />
+		<column name="jobClass" type="String" />
+		<column name="hoursOfOperation" type="String" />
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="UserId" return-type="Collection">
+			<finder-column name="userId" />
+		</finder>
+	</entity>
+	<entity name="ContactOrgDepartmentLevel">
+
+		<!-- PK fields -->
+
+		<column name="contactId" type="String" primary="true" />
+		<column name="orgDepartmentId" type="String" primary="true" />
+		<column name="levelId" type="String" primary="true" />
+	</entity>
+	<entity name="Country">
+
+		<!-- PK fields -->
+
+		<column name="countryId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="countryCode" type="String" />
+		<column name="name" type="String" />
+		<column name="active" type="boolean" />
+	</entity>
+	<entity name="DataTracker">
+
+		<!-- PK fields -->
+
+		<column name="dataTrackerId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+		<column name="createdOn" type="Date" />
+		<column name="createdByUserId" type="String" />
+		<column name="createdByUserName" type="String" />	 
+		<column name="updatedOn" type="Date" />
+		<column name="updatedBy" type="String" />
+		
+		<!-- Other fields -->
+
+		<column name="className" type="String" />
+		<column name="classPK" type="String" />
+		<column name="active" type="boolean" />
+	</entity>
+	<entity name="EmailAddress">
+
+		<!-- PK fields -->
+
+		<column name="emailAddressId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="className" type="String" />
+		<column name="classPK" type="String" />
+		<column name="address" type="String" />
+		<column name="typeId" type="String" />
+		<column name="primary" type="boolean" />
+	</entity>
+	<entity name="Group" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="groupId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="parentGroupId" type="String" />
+		<column name="name" type="String" />
+		<column name="description" type="String" />
+		<column name="friendlyURL" type="String" />
+		<column name="themeId" type="String" />
+		<column name="colorSchemeId" type="String" />
+		<column name="availability" type="String" />
+
+		<!-- Relationships -->
+
+		<column name="orgs" type="Collection" entity="Organization" mapping-table="Orgs_Groups" />
+		<column name="roles" type="Collection" entity="Role" mapping-table="Groups_Roles" />
+		<column name="users" type="Collection" entity="User" mapping-table="Users_Groups" />
+
+		<!-- Order -->
+
+		<order by="asc">
+			<order-column name="name" case-sensitive="false" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="C_N" return-type="Group">
+			<finder-column name="companyId" />
+			<finder-column name="name" />
+		</finder>
+		<finder name="C_F" return-type="Group">
+			<finder-column name="companyId" />
+			<finder-column name="friendlyURL" />
+		</finder>
+
+		<!-- References -->
+
+		<reference package-path="com.liferay.portlet.bookmarks" entity="BookmarksEntry" />
+		<reference package-path="com.liferay.portlet.bookmarks" entity="BookmarksFolder" />
+		<reference package-path="com.liferay.portlet.calendar" entity="CalEvent" />
+		<reference package-path="com.liferay.portlet.documentlibrary" entity="DLRepository" />
+		<reference package-path="com.liferay.portlet.imagegallery" entity="IGFolder" />
+		<reference package-path="com.liferay.portlet.journal" entity="JournalArticle" />
+		<reference package-path="com.liferay.portlet.messageboards" entity="MBTopic" />
+		<reference package-path="com.liferay.portlet.polls" entity="PollsQuestion" />
+	</entity>
+	<entity name="Image" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="imageId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="text" type="String" />
+
+		<!-- Order -->
+
+		<order by="asc">
+			<order-column name="imageId" />
+		</order>
+	</entity>
+	<entity name="Layout" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="layoutId" type="String" primary="true" />
+		<column name="userId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="parentLayoutId" type="String" />
+		<column name="name" type="String" />
+		<column name="type" type="String" />
+		<column name="typeSettings" type="String" />
+		<column name="friendlyURL" type="String" />
+		<column name="priority" type="int" />
+
+		<!-- Order -->
+
+		<order by="asc">
+			<order-column name="parentLayoutId" />
+			<order-column name="priority" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="UserId" return-type="Collection">
+			<finder-column name="userId" />
+		</finder>
+		<finder name="U_P" return-type="Collection">
+			<finder-column name="userId" />
+			<finder-column name="parentLayoutId" />
+		</finder>
+		<finder name="U_F" return-type="Layout">
+			<finder-column name="userId" />
+			<finder-column name="friendlyURL" />
+		</finder>
+
+		<!-- References -->
+
+		<reference package-path="com.liferay.portlet.journal" entity="JournalContentSearch" />
+	</entity>
+	<entity name="LayoutTemplate" />
+	<entity name="ListType">
+
+		<!-- PK fields -->
+
+		<column name="listTypeId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="name" type="String" />
+		<column name="description" type="String" />
+		<column name="type" type="String" />
+	</entity>
+	<entity name="Note" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="noteId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+		<column name="userId" type="String" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="className" type="String" />
+		<column name="classPK" type="String" />
+		<column name="content" type="String" />
+
+		<!-- Order -->
+
+		<order by="desc">
+			<order-column name="companyId" />
+			<order-column name="className" />
+			<order-column name="classPK" />
+			<order-column name="createDate" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="UserId" return-type="Collection">
+			<finder-column name="userId" />
+		</finder>
+		<finder name="C_C" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="className" />
+		</finder>
+		<finder name="C_C_C" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="className" />
+			<finder-column name="classPK" />
+		</finder>
+	</entity>
+	<entity name="Organization" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="organizationId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="parentOrganizationId" type="String" />
+		<column name="name" type="String" />
+		<column name="description" type="String" />
+		<column name="recursable" type="boolean" />
+		<column name="countryId" type="String" />
+		<column name="statusId" type="String" />		
+
+		<!-- Relationships -->
+
+		<column name="groups" type="Collection" entity="Group" mapping-table="Orgs_Groups" />
+		<column name="roles" type="Collection" entity="Role" mapping-table="Orgs_Roles" />
+		<column name="users" type="Collection" entity="User" mapping-table="Orgs_Users" />
+	</entity>
+	<entity name="OrgDepartment">
+
+		<!-- PK fields -->
+
+		<column name="orgDepartmentId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="organizationId" type="String" />
+		<column name="typeId" type="String" />
+		<column name="primaryContactId" type="String" />
+	</entity>
+	<entity name="OrgGroupRole">
+
+		<!-- PK fields -->
+
+		<column name="organizationId" type="String" primary="true" />
+		<column name="groupId" type="String" primary="true" />
+		<column name="roleId" type="String" primary="true" />
+
+		<!-- Finder methods -->
+
+		<finder name="RoleId" return-type="Collection">
+			<finder-column name="roleId" />
+		</finder>
+	</entity>
+	<entity name="OrgLabor">
+
+		<!-- PK fields -->
+
+		<column name="orgLaborId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="organizationId" type="String" />
+		<column name="typeId" type="String" />
+		<column name="sundayOpenTime" type="String" />		
+		<column name="sundayCloseTime" type="String" />
+		<column name="mondayOpenTime" type="String" />		
+		<column name="mondayCloseTime" type="String" />
+		<column name="tuesdayOpenTime" type="String" />	 
+		<column name="tuesdayCloseTime" type="String" />
+		<column name="wednesdayOpenTime" type="String" />	 
+		<column name="wednesdayCloseTime" type="String" />
+		<column name="thursdayOpenTime" type="String" />		
+		<column name="thursdayCloseTime" type="String" />
+		<column name="fridayOpenTime" type="String" />		
+		<column name="fridayCloseTime" type="String" />
+		<column name="saturdayOpenTime" type="String" />		
+		<column name="saturdayCloseTime" type="String" />
+	</entity>
+	<entity name="PasswordTracker" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="passwordTrackerId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="userId" type="String" />
+		<column name="createDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="password" type="String" />
+
+		<!-- Order -->
+
+		<order by="desc">
+			<order-column name="userId" />
+			<order-column name="createDate" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="UserId" return-type="Collection">
+			<finder-column name="userId" />
+		</finder>
+	</entity>
+	<entity name="Permission" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="permissionId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="name" type="String" />
+		<column name="actionId" type="String" />
+		<column name="resourceId" type="String" />
+
+		<!-- Relationships -->
+
+		<column name="roles" type="Collection" entity="Role" mapping-table="Roles_Permissions" />
+		
+		<!-- Finder methods -->
+
+		<finder name="A_R" return-type="Collection">
+			<finder-column name="actionId" />
+			<finder-column name="resourceId" />
+		</finder>
+	</entity>
+	<entity name="Phone">
+
+		<!-- PK fields -->
+
+		<column name="phoneId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="className" type="String" />
+		<column name="classPK" type="String" />
+		<column name="phoneNumber" type="String" />
+		<column name="extension" type="String" />
+		<column name="typeId" type="String" />
+		<column name="primary" type="boolean" />
+	</entity>
+	<entity name="Portal" />
+	<entity name="Portlet">
+
+		<!-- PK fields -->
+
+		<column name="portletId" type="String" primary="true" />
+		<column name="companyId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="narrow" type="boolean" />
+		<column name="roles" type="String" />
+		<column name="active" type="boolean" />
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+	</entity>
+	<entity name="PortletPreferences" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="portletId" type="String" primary="true" />
+		<column name="layoutId" type="String" primary="true" />
+		<column name="userId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="preferences" type="String" />
+
+		<!-- Finder methods -->
+
+		<finder name="LayoutId" return-type="Collection">
+			<finder-column name="layoutId" />
+		</finder>
+		<finder name="UserId" return-type="Collection">
+			<finder-column name="userId" />
+		</finder>
+		<finder name="L_U" return-type="Collection">
+			<finder-column name="layoutId" />
+			<finder-column name="userId" />
+		</finder>
+	</entity>
+	<entity name="Properties">
+
+		<!-- PK fields -->
+
+		<column name="companyId" type="String" primary="true" />
+		<column name="type" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="properties" type="String" />
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+	</entity>
+	<entity name="Region">
+
+		<!-- PK fields -->
+
+		<column name="regionId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="countryCode" type="String" />
+		<column name="regionCode" type="String" />
+		<column name="name" type="String" />
+	</entity>
+	<entity name="Release" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="releaseId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="buildNumber" type="int" />
+		<column name="buildDate" type="Date" />
+	</entity>
+	<entity name="Resource">
+
+		<!-- PK fields -->
+
+		<column name="resourceId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="name" type="String" />
+		<column name="description" type="String" />
+		<column name="typeId" type="String" />
+		<column name="primKey" type="String" />
+
+		<!-- Finder methods -->
+
+		<finder name="N_P_T" return-type="Collection">
+			<finder-column name="name" />
+			<finder-column name="primKey" />
+			<finder-column name="typeId" />
+		</finder>
+	</entity>
+	<entity name="ResourceType">
+
+		<!-- PK fields -->
+
+		<column name="resourceTypeId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="name" type="String" />
+		<column name="description" type="String" />
+	</entity>
+	<entity name="Role" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="roleId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="name" type="String" />
+
+		<!-- Relationships -->
+
+		<column name="groups" type="Collection" entity="Group" mapping-table="Groups_Roles" />
+		<column name="orgs" type="Collection" entity="Organization" mapping-table="Orgs_Roles" />
+		<column name="permissions" type="Collection" entity="Permission" mapping-table="Roles_Permissions" />
+		<column name="users" type="Collection" entity="User" mapping-table="Users_Roles" />
+
+		<!-- Order -->
+
+		<order by="asc">
+			<order-column name="name" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="C_N" return-type="Role">
+			<finder-column name="companyId" />
+			<finder-column name="name" />
+		</finder>
+	</entity>
+	<entity name="Theme" />
+	<entity name="User" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="userId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="password" type="String" />
+		<column name="passwordEncrypted" type="boolean" />
+		<column name="passwordExpirationDate" type="Date" />
+		<column name="passwordReset" type="boolean" />
+		<column name="firstName" type="String" />
+		<column name="middleName" type="String" />
+		<column name="lastName" type="String" />
+		<column name="nickName" type="String" />
+		<column name="male" type="boolean" />
+		<column name="birthday" type="Date" />
+		<column name="emailAddress" type="String" />
+		<column name="smsId" type="String" />
+		<column name="aimId" type="String" />
+		<column name="icqId" type="String" />
+		<column name="msnId" type="String" />
+		<column name="ymId" type="String" />
+		<column name="favoriteActivity" type="String" />
+		<column name="favoriteBibleVerse" type="String" />
+		<column name="favoriteFood" type="String" />
+		<column name="favoriteMovie" type="String" />
+		<column name="favoriteMusic" type="String" />
+		<column name="languageId" type="String" />
+		<column name="timeZoneId" type="String" />
+		<column name="themeId" type="String" />
+		<column name="colorSchemeId" type="String" />
+		<column name="greeting" type="String" />
+		<column name="resolution" type="String" />
+		<column name="comments" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="loginDate" type="Date" />
+		<column name="loginIP" type="String" />
+		<column name="lastLoginDate" type="Date" />
+		<column name="lastLoginIP" type="String" />
+		<column name="failedLoginAttempts" type="int" />
+		<column name="agreedToTermsOfUse" type="boolean" />
+		<column name="active" type="boolean" />
+
+		<!-- Relationships -->
+
+		<column name="groups" type="Collection" entity="Group" mapping-table="Users_Groups" />
+		<column name="orgs" type="Collection" entity="Organization" mapping-table="Orgs_Users" />
+		<column name="roles" type="Collection" entity="Role" mapping-table="Users_Roles" />
+		<column name="comicEntries" type="Collection" entity="com.liferay.portlet.comic.ComicEntry" mapping-table="Users_ComicEntries" />
+		<column name="projProjects" type="Collection" entity="com.liferay.portlet.project.ProjProject" mapping-table="Users_ProjProjects" />
+		<column name="projTasks" type="Collection" entity="com.liferay.portlet.project.ProjTask" mapping-table="Users_ProjTasks" />
+
+		<!-- Order -->
+
+		<order by="asc">
+			<order-column name="firstName" case-sensitive="false" />
+			<order-column name="middleName" case-sensitive="false" />
+			<order-column name="lastName" case-sensitive="false" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="C_U" return-type="User">
+			<finder-column name="companyId" />
+			<finder-column name="userId" />
+		</finder>
+		<finder name="C_P" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="password" />
+		</finder>
+		<finder name="C_EA" return-type="User">
+			<finder-column name="companyId" />
+			<finder-column name="emailAddress" />
+		</finder>
+
+		<!-- References -->
+
+		<reference package-path="com.liferay.portlet.addressbook" entity="ABContact" />
+		<reference package-path="com.liferay.portlet.addressbook" entity="ABList" />
+		<reference package-path="com.liferay.portlet.biblejournal" entity="BJEntry" />
+		<reference package-path="com.liferay.portlet.biblejournal" entity="BJTopic" />
+		<reference package-path="com.liferay.portlet.biblejournal" entity="BJVerse" />
+		<reference package-path="com.liferay.portlet.blogs" entity="BlogsCategory" />
+		<reference package-path="com.liferay.portlet.blogs" entity="BlogsEntry" />
+		<reference package-path="com.liferay.portlet.blogs" entity="BlogsLink" />
+		<reference package-path="com.liferay.portlet.blogs" entity="BlogsUser" />
+		<reference package-path="com.liferay.portlet.bookmarks" entity="BookmarksEntry" />
+		<reference package-path="com.liferay.portlet.bookmarks" entity="BookmarksFolder" />
+		<reference package-path="com.liferay.portlet.calendar" entity="CalEvent" />
+		<reference package-path="com.liferay.portlet.calendar" entity="CalTask" />
+		<reference package-path="com.liferay.portlet.documentlibrary" entity="DLFileRank" />
+		<reference package-path="com.liferay.portlet.messageboards" entity="MBMessageFlag" />
+		<reference package-path="com.liferay.portlet.network" entity="NetworkAddress" />
+		<reference package-path="com.liferay.portlet.shopping" entity="ShoppingCart" />
+		<reference package-path="com.liferay.portlet.shopping" entity="ShoppingItem" />
+		<reference package-path="com.liferay.portlet.wiki" entity="WikiNode" />
+	</entity>
+	<entity name="UserIdMapper" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="userId" type="String" primary="true" />
+		<column name="type" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="description" type="String" />
+		<column name="externalUserId" type="String" />
+
+		<!-- Finder methods -->
+
+		<finder name="UserId" return-type="Collection">
+			<finder-column name="userId" />
+		</finder>
+	</entity>
+	<entity name="UserTracker" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="userTrackerId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+		<column name="userId" type="String" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="remoteAddr" type="String" />
+		<column name="remoteHost" type="String" />
+		<column name="userAgent" type="String" />
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="UserId" return-type="Collection">
+			<finder-column name="userId" />
+		</finder>
+	</entity>
+	<entity name="UserTrackerPath" local-service="true">
+
+		<!-- PK fields -->
+
+		<column name="userTrackerPathId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="userTrackerId" type="String" />
+		<column name="path" type="String" />
+		<column name="pathDate" type="Date" />
+
+		<!-- Finder methods -->
+
+		<finder name="UserTrackerId" return-type="Collection">
+			<finder-column name="userTrackerId" />
+		</finder>
+	</entity>
+	<entity name="Website">
+
+		<!-- PK fields -->
+
+		<column name="websiteId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="className" type="String" />
+		<column name="classPK" type="String" />
+		<column name="url" type="String" />
+		<column name="typeId" type="String" />
+		<column name="primary" type="boolean" />
+	</entity>
+	<exceptions>
+		<exception>AccountName</exception>
+		<exception>AddressCell</exception>
+		<exception>AddressCity</exception>
+		<exception>AddressCountry</exception>
+		<exception>AddressDescription</exception>
+		<exception>AddressFax</exception>
+		<exception>AddressPager</exception>
+		<exception>AddressPhone</exception>
+		<exception>AddressState</exception>
+		<exception>AddressStreet</exception>
+		<exception>AddressTollFree</exception>
+		<exception>AddressZip</exception>
+		<exception>Captcha</exception>
+		<exception>DuplicateGroup</exception>
+		<exception>DuplicateRole</exception>
+		<exception>DuplicateUserEmailAddress</exception>
+		<exception>DuplicateUserId</exception>
+		<exception>GroupFriendlyURL</exception>
+		<exception>GroupName</exception>
+		<exception>LayoutFriendlyURL</exception>
+		<exception>LayoutName</exception>
+		<exception>LayoutType</exception>
+		<exception>NoteContent</exception>
+		<exception>PortletActive</exception>
+		<exception>PortletDefaultPreferences</exception>
+		<exception>RequiredGroup</exception>
+		<exception>RequiredLayout</exception>
+		<exception>RequiredRole</exception>
+		<exception>RequiredUser</exception>
+		<exception>ReservedUserEmailAddress</exception>
+		<exception>ReservedUserId</exception>
+		<exception>RoleName</exception>
+		<exception>SendPassword</exception>
+		<exception>UserActive</exception>
+		<exception>UserEmailAddress</exception>
+		<exception>UserFirstName</exception>
+		<exception>UserId</exception>
+		<exception>UserIdMapperExternalUserId</exception>
+		<exception>UserLastName</exception>
+		<exception>UserPassword</exception>
+		<exception>UserPortrait</exception>
+		<exception>UserSms</exception>
+	</exceptions>
+</service-builder>

@@ -1,0 +1,16 @@
+##
+## IMPORTANT NOTICE!!
+## 
+## This file is included at the end of the main client html page on every request, it is extremely important that 
+## no major html code gets written within this file and that any javascript code included here will not conflict with the 
+## client HTML/Javascript code 
+## 
+## 
+##
+
+#if($EDIT_MODE)
+	##Including css stylesheet for preview mode controls included in the page
+	<script type="text/javascript">
+		document.write('<style type="text/css"> @import "/html/css/preview.css"; </style>');
+	</script>
+#end

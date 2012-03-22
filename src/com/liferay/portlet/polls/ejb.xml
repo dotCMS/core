@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+
+<build-ejb root-dir=".." package-dir="com.liferay.portlet">
+	<portlet name="Polls" short-name="Polls" />
+	<ejb name="PollsChoice">
+
+		<!-- PK fields -->
+
+		<column name="questionId" type="String" primary="true" />
+		<column name="choiceId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="description" type="String" />
+
+		<!-- Order -->
+
+		<order by="asc">
+			<column name="choiceId" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="QuestionId" return-type="Collection">
+			<column name="questionId" />
+		</finder>
+	</ejb>
+	<ejb name="PollsDisplay" local-manager="true">
+
+		<!-- PK fields -->
+
+		<column name="layoutId" type="String" primary="true" />
+		<column name="userId" type="String" primary="true" />
+		<column name="portletId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="questionId" type="String" />
+
+		<!-- Finder methods -->
+
+		<finder name="UserId" return-type="Collection">
+			<column name="userId" />
+		</finder>
+		<finder name="QuestionId" return-type="Collection">
+			<column name="questionId" />
+		</finder>
+		<finder name="L_U" return-type="Collection">
+			<column name="layoutId" />
+			<column name="userId" />
+		</finder>
+	</ejb>
+	<ejb name="PollsQuestion" local-manager="true">
+
+		<!-- PK fields -->
+
+		<column name="questionId" type="String" primary="true" />
+
+		<!-- Portlet instance -->
+
+		<column name="portletId" type="String" />
+
+		<!-- Group instance -->
+
+		<column name="groupId" type="String" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+		<column name="userId" type="String" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="title" type="String" />
+		<column name="description" type="String" />
+		<column name="expirationDate" type="Date" />
+		<column name="lastVoteDate" type="Date" />
+
+		<!-- Order -->
+
+		<order by="desc">
+			<column name="createDate" />
+		</order>
+
+		<!-- Finder methods -->
+
+		<finder name="GroupId" return-type="Collection">
+			<column name="groupId" />
+		</finder>
+		<finder name="P_G_C" return-type="Collection">
+			<column name="portletId" />
+			<column name="groupId" />
+			<column name="companyId" />
+		</finder>
+
+		<!-- References -->
+
+		<reference package-path="com.liferay.portal" ejb="User" />
+	</ejb>
+	<ejb name="PollsVote">
+
+		<!-- PK fields -->
+
+		<column name="questionId" type="String" primary="true" />
+		<column name="userId" type="String" primary="true" />
+
+		<!-- Other fields -->
+
+		<column name="choiceId" type="String" />
+		<column name="voteDate" type="Date" />
+
+		<!-- Finder methods -->
+
+		<finder name="QuestionId" return-type="Collection">
+			<column name="questionId" />
+		</finder>
+		<finder name="Q_C" return-type="Collection">
+			<column name="questionId" />
+			<column name="choiceId" />
+		</finder>
+	</ejb>
+	<exceptions>
+		<exception>DuplicateVote</exception>
+		<exception>QuestionChoice</exception>
+		<exception>QuestionDescription</exception>
+		<exception>QuestionExpirationDate</exception>
+		<exception>QuestionTitle</exception>
+	</exceptions>
+</build-ejb>

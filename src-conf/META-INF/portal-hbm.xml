@@ -1,0 +1,226 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD//EN" "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.liferay.portal.ejb.AddressHBM" table="Address">
+		<!--<cache usage="read-write" />-->
+		<id name="addressId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="companyId" />
+		<property name="userId" />
+		<property name="userName" />
+		<property name="createDate" />
+		<property name="modifiedDate" />
+		<property name="className" />
+		<property name="classPK" />
+		<property name="description" />
+		<property name="street1" />
+		<property name="street2" />
+		<property name="city" />
+		<property name="state" />
+		<property name="zip" />
+		<property name="country" />
+		<property name="phone" />
+		<property name="fax" />
+		<property name="cell" />
+		<property name="priority" type="com.liferay.util.dao.hibernate.IntegerType" />
+	</class>
+	<class name="com.liferay.portal.ejb.CompanyHBM" table="Company">
+		<!--<cache usage="read-write" />-->
+		<id name="companyId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="key" column="key_" />
+		<property name="portalURL" />
+		<property name="homeURL" />
+		<property name="mx" />
+		<property name="name" />
+		<property name="shortName" />
+		<property name="type" column="type_" />
+		<property name="size" column="size_" />
+		<property name="street" />
+		<property name="city" />
+		<property name="state" />
+		<property name="zip" />
+		<property name="phone" />
+		<property name="fax" />
+		<property name="emailAddress" />
+		<property name="authType" />
+		<property name="autoLogin" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="strangers" type="com.liferay.util.dao.hibernate.BooleanType" />
+	</class>
+	<class name="com.liferay.portal.ejb.ImageHBM" table="Image">
+		<!--<cache usage="read-write" />-->
+		<id name="imageId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="text" column="text_" />
+	</class>
+	
+	<class name="com.liferay.portal.ejb.PasswordTrackerHBM" table="PasswordTracker">
+		<!--<cache usage="read-write" />-->
+		<id name="passwordTrackerId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="userId" />
+		<property name="createDate" />
+		<property name="password" column="password_" />
+	</class>
+	<class name="com.liferay.portal.ejb.PortletHBM" table="Portlet">
+		<!--<cache usage="read-write" />-->
+		<composite-id name="primaryKey" class="com.liferay.portal.ejb.PortletPK">
+			<key-property name="portletId" />
+			<key-property name="groupId" />
+			<key-property name="companyId" />
+		</composite-id>
+		<property name="defaultPreferences" />
+		<property name="narrow" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="roles" />
+		<property name="active" column="active_" type="com.liferay.util.dao.hibernate.BooleanType" />
+	</class>
+	<class name="com.liferay.portal.ejb.PortletPreferencesHBM" table="PortletPreferences">
+		<!--<cache usage="read-write" />-->
+		<composite-id name="primaryKey" class="com.liferay.portal.ejb.PortletPreferencesPK">
+			<key-property name="portletId" />
+			<key-property name="layoutId" />
+			<key-property name="userId" />
+		</composite-id>
+		<property name="preferences" />
+	</class>
+	<class name="com.liferay.portal.ejb.ReleaseHBM" table="Release_">
+		<!--<cache usage="read-write" />-->
+		<id name="releaseId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="createDate" />
+		<property name="modifiedDate" />
+		<property name="buildNumber" type="com.liferay.util.dao.hibernate.IntegerType" />
+		<property name="buildDate" />
+	</class>
+	
+	<class name="com.liferay.portal.ejb.UserHBM" table="User_">
+		<!--<cache usage="read-write" />-->
+		<id name="userId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="companyId" />
+		<property name="password" column="password_" />
+		<property name="passwordEncrypted" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="passwordExpirationDate" />
+		<property name="passwordReset" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="firstName" />
+		<property name="middleName" />
+		<property name="lastName" />
+		<property name="nickName" />
+		<property name="male" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="birthday" />
+		<property name="emailAddress" />
+		<property name="smsId" />
+		<property name="aimId" />
+		<property name="icqId" />
+		<property name="msnId" />
+		<property name="ymId" />
+		<property name="favoriteActivity" />
+		<property name="favoriteBibleVerse" />
+		<property name="favoriteFood" />
+		<property name="favoriteMovie" />
+		<property name="favoriteMusic" />
+		<property name="languageId" />
+		<property name="timeZoneId" />
+		<property name="skinId" />
+		<property name="dottedSkins" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="roundedSkins" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="greeting" />
+		<property name="resolution" />
+		<property name="refreshRate" />
+		<property name="comments" />
+		<property name="createDate" />
+		<property name="loginDate" />
+		<property name="loginIP" />
+		<property name="lastLoginDate" />
+		<property name="lastLoginIP" />
+		<property name="failedLoginAttempts" type="com.liferay.util.dao.hibernate.IntegerType" />
+		<property name="agreedToTermsOfUse" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="active" column="active_" type="com.liferay.util.dao.hibernate.BooleanType" />
+	</class>
+	<class name="com.liferay.portal.ejb.UserTrackerHBM" table="UserTracker">
+		<!--<cache usage="read-write" />-->
+		<id name="userTrackerId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="companyId" />
+		<property name="userId" />
+		<property name="modifiedDate" />
+		<property name="remoteAddr" />
+		<property name="remoteHost" />
+		<property name="userAgent" />
+	</class>
+	<class name="com.liferay.portal.ejb.UserTrackerPathHBM" table="UserTrackerPath">
+		<!--<cache usage="read-write" />-->
+		<id name="userTrackerPathId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="userTrackerId" />
+		<property name="path" />
+		<property name="pathDate" />
+	</class>
+	
+
+	<class name="com.liferay.portlet.admin.ejb.AdminConfigHBM" table="AdminConfig">
+		<!--<cache usage="read-write" />-->
+		<id name="configId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="companyId" />
+		<property name="type" column="type_" />
+		<property name="name" />
+		<property name="config" />
+	</class>
+
+
+	<class name="com.liferay.portlet.polls.ejb.PollsChoiceHBM" table="PollsChoice">
+		<!--<cache usage="read-write" />-->
+		<composite-id name="primaryKey" class="com.liferay.portlet.polls.ejb.PollsChoicePK">
+			<key-property name="questionId" />
+			<key-property name="choiceId" />
+		</composite-id>
+		<property name="description" />
+	</class>
+	<class name="com.liferay.portlet.polls.ejb.PollsDisplayHBM" table="PollsDisplay">
+		<!--<cache usage="read-write" />-->
+		<composite-id name="primaryKey" class="com.liferay.portlet.polls.ejb.PollsDisplayPK">
+			<key-property name="userId" />
+			<key-property name="portletId" />
+		</composite-id>
+		<property name="questionId" />
+	</class>
+	<class name="com.liferay.portlet.polls.ejb.PollsQuestionHBM" table="PollsQuestion">
+		<!--<cache usage="read-write" />-->
+		<id name="questionId" type="java.lang.String">
+			<generator class="assigned" />
+		</id>
+		<property name="portletId" />
+		<property name="groupId" />
+		<property name="companyId" />
+		<property name="userId" />
+		<property name="userName" />
+		<property name="createDate" />
+		<property name="modifiedDate" />
+		<property name="title" />
+		<property name="description" />
+		<property name="expirationDate" />
+		<property name="lastVoteDate" />
+	</class>
+	<class name="com.liferay.portlet.polls.ejb.PollsVoteHBM" table="PollsVote">
+		<!--<cache usage="read-write" />-->
+		<composite-id name="primaryKey" class="com.liferay.portlet.polls.ejb.PollsVotePK">
+			<key-property name="questionId" />
+			<key-property name="userId" />
+		</composite-id>
+		<property name="choiceId" />
+		<property name="voteDate" />
+	</class>
+
+	
+</hibernate-mapping>

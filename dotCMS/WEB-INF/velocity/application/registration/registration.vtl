@@ -1,0 +1,373 @@
+#set($forgotPassword =  $request.getAttribute("forgotPassword"))
+#set($theCategories = $categories.getCategoriesByEntityName("category","Preferences","$!{dotRegistrationForm.category}",true,true,3,false))
+<!-- SCRIPT FOR AJAX MANAGEMENT -->
+<script language="javascript" type="text/javascript" src='/html/js/states_and_countries.js'></script>
+<script type='text/javascript' src='/dwr/engine.js'></script>
+<script type='text/javascript' src='/dwr/util.js'></script>
+<!-- END SCRIPT FOR AJAX MANAGEMENT -->
+<script languaje="javascript">
+
+//Submit the form
+function submitForm()
+{
+	$("dotRegistrationForm").submit();
+}
+
+function forgotPassword() {
+	var form = $("dotRegistrationForm");
+	form.action = "/dotCMS/addRegistration?dispatch=forgotPassword";
+	form.submit();
+}
+
+function cancel()
+{
+	var form = $("dotRegistrationForm");
+	form.action = "/dotCMS/addRegistration?dispatch=cancel";
+	form.submit();
+}
+function changeStateTextLayer(){
+	var state = document.getElementById("state").value;
+	if (state == "otherCountry")
+	{
+		showLayer("stateTextDiv");
+		document.getElementById("stateOtherCountryText").focus();
+	}
+	else 
+	{
+		document.getElementById("stateOtherCountryText").value = "";
+		hideLayer("stateTextDiv");
+	}
+}
+
+//Layer Management Variables
+styleReference = "style.";
+visibleLayer = "inline";
+browser = "Explorer";
+
+//Layer Management
+function referenceLayer(layerName) 
+{ 
+	//if (browser=="Netscape") 
+	//	return "document.layers['"+layerName+"']."; 
+	//else 
+	//	return "document.all['"+layerName+"']."; 
+	return "document.getElementById('" + layerName + "').";	
+}
+
+function hideLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"'); 
+}
+
+function showLayer(layerName) 
+{ 
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"'); 
+} 
+   
+function change(layer)
+{
+	var layerInstance = document.getElementById(layer);
+	if (layerInstance.style.display == 'none')
+	{
+		showLayer(layer);
+	}
+	else
+	{
+		hideLayer(layer);
+	}
+	return false;
+}
+
+function createNew()
+{
+	hideLayer('loginLayer');
+	showLayer('createLayer');
+	return false;
+}
+
+	  
+	  function passFieldChanged () {
+	  	$("dotRegistrationForm").passChanged.value="true";
+	  }
+	  
+
+	  function trim(str)
+	  {
+	  	return str.replace(/^\s*|\s*$/g,"");
+	  }
+
+//New functions for the events registration
+function findMe () {
+	$("findMeForm").submit();
+}
+	function Trim(TRIM_VALUE){
+		if(TRIM_VALUE.length < 1){
+		return"";
+		}
+		TRIM_VALUE = RTrim(TRIM_VALUE);
+		TRIM_VALUE = LTrim(TRIM_VALUE);
+		if(TRIM_VALUE==""){
+		return "";
+		}
+		else{
+		return TRIM_VALUE;
+		}
+	} 
+
+	function RTrim(VALUE){
+		var w_space = String.fromCharCode(32);
+		var v_length = VALUE.length;
+		var strTemp = "";
+		if(v_length < 0){
+		return"";
+		}
+		var iTemp = v_length -1;
+		
+		while(iTemp > -1){
+		if(VALUE.charAt(iTemp) == w_space){
+		}
+		else{
+		strTemp = VALUE.substring(0,iTemp +1);
+		break;
+		}
+		iTemp = iTemp-1;
+		
+		} 
+		return strTemp;
+	} 
+
+	function LTrim(VALUE){
+		var w_space = String.fromCharCode(32);
+		if(v_length < 1){
+		return"";
+		}
+		var v_length = VALUE.length;
+		var strTemp = "";
+		
+		var iTemp = 0;
+		
+		while(iTemp < v_length){
+		if(VALUE.charAt(iTemp) == w_space){
+		}
+		else{
+		strTemp = VALUE.substring(iTemp,v_length);
+		break;
+		}
+		iTemp = iTemp + 1;
+		} 
+		return strTemp;
+	} 
+</script>
+
+<style>
+@import url(/global/css/form.css);
+
+/* put in width of widest label */
+fieldset label,
+.fieldset .label{
+	width: 110px;
+}
+fieldset fieldset,
+fieldset .buttonGroup,
+.fieldset .buttonGroup{
+	padding-left: 110px;
+}
+fieldset fieldset legend{
+	margin-left: -110px;
+}
+</style>
+
+
+
+#if ((($!{dotRegistrationForm.from} == "webEventRegistration") || ($!{dotRegistrationForm.from} == "purchaseOrder")) && !($request.getAttribute("errorCreate") == true))
+<!--  User login box -->	
+
+<div id="loginLayer">	
+#dotParse('/application/login/login_form.vtl')	
+</div>
+
+<!--  END User login box-->
+	#set($display = 'style="display:none"')
+#else
+	#set($display = '')
+<div style="text-algin: center;">
+	#dotParse('/application/messages.vtl')
+</div>
+#end
+<div $display id="createLayer">
+
+<form action="/dotCMS/addRegistration" method="post" name="dotRegistrationForm" id="dotRegistrationForm" autocomplete="off">
+	<input type="hidden" name="referrer" value="$!{dotRegistrationForm.referrer}">
+	<input type="hidden" name="from" value="$!{dotRegistrationForm.from}">
+	<input type="hidden" name="noOrganization" value="false">
+	<!-- User Information -->
+	<!-- User ID-->
+	<input type="hidden" name="userID" value="$!{dotRegistrationForm.userID}">
+	<!-- Ext User Inode-->
+	<input type="hidden" name="extUserInode" value="$!{dotRegistrationForm.extUserInode}">
+	<!-- User Proxy Inode-->
+	<input type="hidden" name="userProxyInode" value="$!{dotRegistrationForm.userProxyInode}">
+	<!-- dispatch action -->
+	<input type="hidden" name="dispatch" value="saveRegistration" id="dispatch">
+
+
+
+
+	<fieldset>
+		<legend>User Information</legend>	
+		
+		<label class="required" for="emailAddress">Email:</label>
+		<input tabindex="4" type="text" name="emailAddress" id="emailAddress" value="$!{dotRegistrationForm.emailAddress}"><br />
+
+		#if($forgotPassword)
+		<div class="buttonGroup">
+			<a href="/dotCMS/forgotPassword?email=$!{dotRegistrationForm.emailAddress}" class="button">forgot your password?</a>
+		</div>
+		#end
+		
+		<label for="password" class="required">Password: <a href="#required">*</a></label>
+		<input type="hidden" name="passChanged" value="$!{dotRegistrationForm.passChanged}">
+		<input tabindex="5" type="password" onchange="passFieldChanged()" name="password" id="password" value="$!{dotRegistrationForm.password}"><br />
+		
+		<label for="verifyPassword" class="required">Verify Password: <a href="#required">*</a></label>
+		<input tabindex="6" type="password" onchange="passFieldChanged()" name="verifyPassword" id="verifyPassword" value="$!{dotRegistrationForm.verifyPassword}"><br />
+		
+		<label>Prefix:</label>
+		#set( $mr = "")
+		#set( $mrs = "")
+		#set( $miss = "")
+		#set( $dr = "")
+		#if($!{dotRegistrationForm.prefix} == "mr")
+			#set( $mr = "selected")
+		#end
+		#if($!{dotRegistrationForm.prefix} == "mrs")
+			#set( $mrs = "selected")
+		#end
+		#if($!{dotRegistrationForm.prefix} == "miss")
+			#set( $miss = "selected")
+		#end
+		#if($!{dotRegistrationForm.prefix} == "dr")
+			#set( $dr = "selected")
+		#end
+		<select tabindex="7" name="prefix" value="$!{dotRegistrationForm.prefix}">
+			<option value="mr" $!{mr}>Mr.</option>
+			<option value="mrs" $!{mrs}>Mrs.</option>
+			<option value="miss" $!{miss}>Ms.</option>
+			<option value="dr" $!{dr}>Dr.</option>
+		</select><br />
+
+		<label class="required">First Name: <a href="#required">*</a></label>
+		<input tabindex="8" type="text" name="firstName" value="$!{dotRegistrationForm.firstName}"><br />
+	
+		<label class="required">Last Name: <a href="#required">*</a></label>
+		<input tabindex="9" type="text" name="lastName" value="$!{dotRegistrationForm.lastName}"><br />
+		
+		<label>Suffix:</label>
+		<input tabindex="10" type="text" name="suffix" value="$!{dotRegistrationForm.suffix}"><br />
+
+		<label>Title:</label>
+		<input tabindex="11" type="text" name="title" value="$!{dotRegistrationForm.title}"><br />
+
+	</fieldset>
+
+
+	<!-- END USER INFORMATION -->
+
+
+	<!-- Mailing Address -->
+	<fieldset>
+		<legend>My Mailing Address</legend>
+		
+		<fieldset>
+			<legend class="required">Address Type <a href="#required">*</a></legend>
+			<input type="hidden" name="addressID" value="$!{dotRegistrationForm.addressID}">
+			#set( $work = "")
+			#set( $home = "")
+			#if($!{dotRegistrationForm.description} == "work")
+				#set( $work = "checked")
+			#end
+			#if($!{dotRegistrationForm.description} == "home")
+				#set( $home = "checked")
+			#end
+			<input tabindex="19" type="radio" id="workAddress" name="description" value="work" $!{work}><label>Work Address</label>
+			<input tabindex="20" type="radio" id="homeAddress" name="description" value="home" $!{home}><label>Home Address</label>
+		</fieldset>
+
+		<label class="required">Street1: <a href="#required">*</a></label>
+		<input tabindex="21" type="text" name="street1" value="$!{dotRegistrationForm.street1}"><br />
+		
+		<label>Street 2:</label>
+		<input tabindex="22" type="text" name="street2" value="$!{dotRegistrationForm.street2}"><br />
+
+		<label class="required">City: <a href="#required">*</a></label>
+		<input tabindex="23" type="text" name="city" value="$!{dotRegistrationForm.city}"><br />
+		
+		<fieldset class="hideLabels inline">
+			<legend class="required">State: <a href="#required">*</a></legend>
+			<select name="state" id="state" onchange="changeStateTextLayer();">
+				<script language="javascript">
+				writeStatesOptions('$!dotRegistrationForm.state');
+				</script>
+			</select>
+			<label>State in the US</label>
+			<div id="stateTextDiv">
+				<input type="text" name="stateOtherCountryText" id="stateOtherCountryText" value="$!orderForm.stateOtherCountryText" />
+				<label>Other State</label>
+			</div>
+		</fieldset>
+		
+		<label class="required">Country: <a href="#required">*</a></label>
+		<script language="javascript">writeCountriesSelect("country", '$!dotRegistrationForm.country');</script><br />
+	
+		<label class="required">Zip: <a href="#required">*</a></label>
+		<input tabindex="25" type="text" name="zip" value="$!{dotRegistrationForm.zip}"><br />
+	
+		<label class="required">Phone: <a href="#required">*</a></label>
+		<input tabindex="26" type="text" name="phone" value="$!{dotRegistrationForm.phone}"><br />
+
+		<label>Fax:</label>
+		<input tabindex="27" type="text" name="fax" value="$!{dotRegistrationForm.fax}"><br />
+
+#if(!$UtilMethods.isSet($theCategories))
+
+		<div class="buttonGroup">
+			<a href="javascript:cancel();" class="button">Cancel</a>
+			<a href="javascript:submitForm();" class="activeButton">Next</a>
+		</div>
+
+#end
+
+
+
+	</fieldset>	
+<!-- END Mailing Aaddres -->
+
+<!-- My Profile And Preferences -->
+#if($UtilMethods.isSet($theCategories))
+
+	<fieldset id="preferences">
+		<legend>My Profile and Preferences</legend>
+		<p>Please select the areas that interest you most.</p>		
+		$theCategories
+
+
+	<div class="buttonGroup">
+		<a href="javascript:cancel();" class="button">Cancel</a>
+		<a href="javascript:submitForm();" class="activeButton">Next</a>
+	</div>
+
+
+	</fieldset>
+
+#end
+<!-- END My Profile And Preferences -->			
+
+	<div class="key">	
+		<a name="required" id="required">*required fields</a>
+	</div>
+	
+</form>
+<script languaje="javascript">
+changeStateTextLayer();
+</script>
+</div>

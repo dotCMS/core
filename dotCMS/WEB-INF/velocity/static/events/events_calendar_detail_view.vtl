@@ -1,0 +1,143 @@
+#set($event = $eventsapi.getEvent($request.getParameter("event"))) 
+#set($recurance = $eventsapi.getEventRecurance($event)) 
+#set($categories = $eventsapi.getEventCategories($event)) 
+#set($attachments = $eventsapi.getEventAttachments($event))
+#set($rowCount = 0)
+<BR>
+<h2>$event.title</h2>
+<BR>
+<table width="100%" border="0" cellpadding="5" cellspacing="1">
+
+	#if ($event.subtitle!="") 
+		<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+		#set ($rowCount = $rowCount + 1)
+			<TD><strong>Subtitle:</strong></TD>
+			<TD width="100%">
+				$event.subtitle
+			</TD>
+		</tr>
+	#end
+	#if ($event.startDate!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+		<TD><strong>Date/Time:</strong></TD>
+		<TD>
+			$webapi.dateToHTMLDateTimeRange($event.startDate, $event.endDate)
+		</TD>
+	</tr>
+	#end
+	#if ($recurance) 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+			<td><strong>Event Occurs:</strong></td>
+			<td>
+				$eventsapi.recuranceToString($recurance)
+			</td>
+	</tr>
+	#end
+	#if ($event.location!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+			<td><strong>Location:</strong></td>
+			<td>
+				$event.location
+			</td>
+	</tr>
+	#end
+	#if ($event.webAddress!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+			<td><strong>Web Address:</strong></td>
+			<td>
+				$event.webAddress
+			</td>
+	</tr>
+	#end
+	#foreach ($categoryKey in $categories.keySet())
+		<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+		#set ($rowCount = $rowCount + 1)
+			<TD valign="top"><strong>$categoryKey:</strong></TD>
+			<TD>
+			#foreach ($category in $categories.get($categoryKey))
+					$category.categoryName<br>
+			#end
+			</td>
+		</tr>
+	#end
+
+
+	<tr class="calDetailSeparator"><td colspan=2><b>Contact Info</b></td></tr>
+
+	#if ($event.contactName!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+				<td><strong>Contact Name:</strong></td>
+				<td>$event.contactName</td>
+	</tr>
+	#end
+	#if ($event.contactPhone!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+				<td><strong>Contact Phone:</strong></td>
+				<td>$event.contactPhone</td>
+	</tr>
+	#end
+	#if ($event.contactFax!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+				<td><strong>Contact Fax:</strong></td>
+				<td>$event.contactFax</td>
+	</tr>
+	#end
+	#if ($event.contactEmail!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+				<td><strong>Contact Email:</strong></td>
+				<td>$event.contactEmail</td>
+	</tr>
+	#end
+	#if ($event.contactCompany!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+				<td nowrap><span style="display: inline;"><strong>Contact Organization:</strong></span></td>
+				<td>$event.contactCompany</td>
+	</tr>
+	#end
+	#if ($event.description!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+				<td colspan="2">
+				<strong>Description:</strong><BR>
+				$event.description</td>
+	</tr>
+	#end
+	#if ($event.directions!="") 
+	<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+	#set ($rowCount = $rowCount + 1)
+				<td colspan="2"><strong>Directions:</strong><BR>
+				$event.directions
+				</td>
+	</tr>
+	#end
+	#if($attachments.size() > 0)
+		<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+		#set ($rowCount = $rowCount + 1)
+			<TD valign="top"><strong>Related Files:</strong></TD>
+			<TD>
+			#foreach($file in $attachments)
+				<table><tr>
+					<td><a href="#" onclick="javascript:window.open('$file.getURI()'); return false"><img src="/icon?i=$file.fileName" width="16" height="16" align=absmiddle border="0" vspace=1 hspace=1></a></td>
+					<td><a href="#" onclick="javascript:window.open('$file.getURI()'); return false">$file.fileName</a></td>
+				</tr></table>
+			#end
+			</TD>
+		</tr>
+	#end
+	#if ($event.registration)
+		<tr class=#if ($rowCount % 2 == 0)"calDetailLight"#else"calDetailDark"#end>
+		#set ($rowCount = $rowCount + 1)
+				<td align="center" colspan="2"><a href="/dotCMS/registerToEvent?event_inode=$event.inode">Register to the event</a></td>
+		</tr>
+	#end
+</table>
+<p>&nbsp;</p>

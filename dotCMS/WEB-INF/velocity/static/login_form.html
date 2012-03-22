@@ -1,0 +1,102 @@
+#set ($categories = $webapi.getUserInterestsCategories())
+<script>
+	function doLogin(){
+		document.getElementById("my_account_fm").submit();
+	}
+
+	function createAnAccount()
+	{
+		var form = document.getElementById("createAccountForm");
+		form.submit();
+	}
+
+</script>
+<script language="javascript">
+	function clickHidden()
+	{
+		var checked = (document.forms[1].mailingListAux.checked == true ? "true" : "false");
+		//alert(checked);
+		document.forms[1].mail.value = checked;
+		//alert(document.forms[1].mail.value);
+	}
+</script>
+
+
+
+
+<table align="center">
+	<tr>
+		<td>#parse('static/messages.html')</td>
+	</tr>
+</table>
+
+<table width="100%">
+	<tr>
+		<td valign="top" style="padding-left: 30px;">
+
+
+<h3>Registration</h3>
+  <form action="/dotCMS/addRegistration" method="post" id="createAccountForm" name="createAccountForm" autocomplete="off">
+	<table cellpadding="4">
+	<tr>
+		<td>Not a registered user?</td>
+	</tr>
+		<tr>
+		<td>Create your Account Now!</td>
+	</tr>
+	<tr>
+		<td>It's free and it only takes a minute</td>
+	</tr>
+	<tr>
+		<td align="center">
+
+			<div class="curveLink" style="margin-left: 20px;"><span><button class="clearInputStyles" onClick="createAnAccount();">Create Account</button></span></div>
+		</td>
+	</tr>
+	</table>
+  </form>
+
+		</td>
+		<td valign="top">
+
+
+<h3>Login</h3>
+<table cellpadding="4">
+  <form action="/dotCMS/login" method="post" id="my_account_fm" name="my_account_fm">
+    <input name="dispatch" type="hidden" value="login">
+    <input name="referrer" type="hidden" value="$!{request.getParameter("referrer")}">
+	<tr>
+		<td colspan="2">Already a registered user?</td>
+	</tr>
+	<tr>
+		<td colspan="2">Login Now!</td>
+	</tr>
+    <tr>
+		<td align="right"><b>Email:</b></td>
+    	<td><input name="userName" id="userNameText" class="text" type="text" value="$!loginForm.userName"></td>
+    </tr>
+    <tr>
+		<td align="right"><b>Password:</b></td>
+    	<td><input  name="password"  type="password" class="text" value="" onKeyPress="if (event.keyCode == 13) { doLogin(); }"></td>
+    </tr>
+    <tr>
+		<td align="right"><input name="rememberMe" type="checkbox" style="margin-left:10px; width:20px"></td>
+    	<td>Remember my user information<br /> on this computer</td>
+    </tr>
+    <tr>
+		<td align="center" colspan="2">
+    			<div class="curveLink" style="margin-left: 180px;"><span><button class="clearInputStyles" onClick="doLogin();" name="Login">Login</button></span></div>
+    	</td>
+    </tr>
+    <tr>
+		<td colspan="2" align="center">
+    			<a href="/dotCMS/forgotPassword">forgot your password?</a>
+    	</td>
+    </tr>
+  </form>
+</table>
+
+
+		</td>
+	</tr>
+</table>

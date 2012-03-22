@@ -1,0 +1,419 @@
+<?xml version="1.0"?>
+<!--
+	Copyright 2003-2004 The Apache Software Foundation.
+	
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+	
+	$Id: toolbox.xml,v 1.9 2005/06/14 15:03:06 maria Exp $
+-->
+<toolbox>
+	<!-- Velocity View Tools Start -->
+	 <tool>
+	   <key>alternator</key>
+	   <scope>application</scope>
+	   <class>org.apache.velocity.tools.generic.AlternatorTool</class>
+	 </tool>
+		
+	<tool>
+		<key>cookietool</key>
+		<scope>request</scope>
+		<class>org.apache.velocity.tools.view.tools.CookieTool</class>
+	</tool>	
+		
+	<tool>
+		<key>math</key>
+		<scope>application</scope>
+		<class>org.apache.velocity.tools.generic.MathTool</class>
+	</tool>
+	<tool>
+		<key>text</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.LanguageWebAPI</class>
+	</tool>
+	<tool>
+		<key>listTool</key>
+		<scope>application</scope>
+		<class>org.apache.velocity.tools.generic.ListTool</class>
+	</tool>
+	<tool>
+		<key>errors</key>
+		<scope>request</scope>
+		<class>org.apache.velocity.tools.struts.ErrorsTool</class>
+	</tool>
+	<tool>
+	  <key>esc</key>
+	  <scope>application</scope>
+	  <class>org.apache.velocity.tools.generic.EscapeTool</class>
+	</tool>
+	<tool>
+		<key>sorter</key>
+		<scope>application</scope>
+		<class>org.apache.velocity.tools.generic.SortTool</class>
+	</tool>
+	<tool>
+		<key>messages</key>
+		<scope>request</scope>
+		<class>
+			org.apache.velocity.tools.struts.ActionMessagesTool
+		</class>
+	</tool>
+	<tool>
+		<key>form</key>
+		<scope>request</scope>
+		<class>org.apache.velocity.tools.struts.FormTool</class>
+	</tool>
+	<tool>
+		<key>mill</key>
+		<scope>request</scope>
+		<class>org.apache.velocity.tools.generic.IteratorTool</class>
+	</tool>
+	<tool>
+		<key>date</key>
+		<scope>application</scope>
+		<class>org.apache.velocity.tools.generic.DateTool</class>
+	</tool>
+	<tool>
+		<key>number</key>
+		<scope>application</scope>
+		<class>org.apache.velocity.tools.generic.NumberTool</class>
+	</tool>
+	<tool>
+		<key>render</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.DotRenderTool</class>
+	</tool>
+	<tool>
+		<key>import</key>
+		<scope>request</scope>
+		<class>org.apache.velocity.tools.view.tools.ImportTool</class>
+	</tool>
+	<tool>
+	   <key>parser</key>
+	   <class>org.apache.velocity.tools.generic.ValueParser</class>
+ 	</tool>
+	<!-- Velocity View Tools End -->
+	
+	
+	
+	<!-- Dotmarketing View Tools Start -->
+	
+	<tool>
+		<key>rssapi</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.RSSWebAPI</class>
+	</tool>
+	<tool>
+		<key>webapi</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.WebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>velutil</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.VelocityWebUtil</class>
+	</tool>
+	
+	<tool>
+		<key>googleapi</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.GoogleMiniApi</class>
+	</tool>
+	
+	<tool>
+		<key>commentsapi</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.CommentsWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>usercommentsapi</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.UserCommentsWebAPI</class>
+	</tool>
+	<tool>
+		<key>categories</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.CategoriesWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>cmsuser</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.CMSUsersWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>website</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.WebsiteWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>contents</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.ContentsWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>structures</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.StructuresWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>pageAPI</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.HTMLPageWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>containerAPI</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.ContainerWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>folderAPI</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.FolderWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>sitemapapi</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.SiteMapWebAPI</class>
+	</tool>
+	<tool>
+		<key>macro</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.DotCMSMacroWebAPI</class>
+	</tool>
+	<tool>
+		<key>video</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.VideoGalleryWebApi</class>
+	</tool>
+	
+	<tool>
+		<key>globalvars</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.LanguageWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>nav</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.NavigationWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>glossary</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.LanguageWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>utilHtml</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.util.UtilHTML</class>
+	</tool>
+	
+	 <tool>
+		<key>config</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.util.Config</class>
+	 </tool>
+	 
+	 <tool>
+		<key>rating</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.RatingWebAPI</class>
+	 </tool>
+	
+	 <tool>
+		<key>alertMessagesWebAPI</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.util.AlertMessagesWebAPI</class>
+	 </tool>
+	<tool>
+		<key>favorites</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.FavoritesWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>tags</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.TagsWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>crypt</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.CryptWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>stringsapi</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.StringsWebApi</class>
+	</tool>
+	
+	<tool>
+		<key>mailinglist</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.MailingListWebAPI</class>
+	</tool>
+	
+    <tool>
+		<key>poll</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.PollsWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>calendar</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.portlets.calendar.viewtools.CalendarWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>dateviewapi</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.DateViewWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>photoTool</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.PictureGalleryWebAPI</class>
+	</tool>
+	<tool>
+		<key>languagewebapi</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.LanguageWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>pluginapitool</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.PluginWebAPI</class>
+	</tool>
+	
+		<!-- this tool is used in the backend to pull language keys based on the back-end language -->		
+	<tool>
+		<key>langbackendwebapi</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.LanguageWebAPI</class>
+	</tool>
+	
+	<tool>
+		<key>xsstool</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.XssWebAPI</class>
+	</tool>
+	<tool>
+		<key>xmltool</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.XmlTool</class>
+	</tool>
+	<tool>
+		<key>xmlTool</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.XmlTool</class>
+	</tool>
+	<tool>
+		<key>xslttool</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.XsltTool</class>
+	</tool>
+	<tool>
+		<key>php</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.scripting.viewtool.PHPTool</class>
+	</tool>
+	<tool>
+		<key>groovy</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.scripting.viewtool.GroovyTool</class>
+	</tool>
+	<tool>
+		<key>ruby</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.scripting.viewtool.RubyTool</class>
+	</tool>
+	<tool>
+		<key>python</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.scripting.viewtool.PythonTool</class>
+	</tool>
+	
+<tool>
+		<key>js</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.scripting.viewtool.JSTool</class>
+	</tool>
+	<tool>
+		<key>sitesearch</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPI</class>
+	</tool>
+	<tool>
+		<key>jsp</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.scripting.viewtool.JSPTool</class>
+	</tool>
+	
+	<tool>
+		<key>mailer</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.MailerTool</class>
+	</tool>
+	
+	<tool>
+		<key>json</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.JSONTool</class>
+	</tool>
+	
+	<tool>
+		<key>dotlogger</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.DotLoggerTool</class>
+	</tool>
+	
+	<tool>
+		<key>dotcontent</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.content.ContentTool</class>
+	</tool>
+	
+	<tool>
+		<key>filetool</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.FileTool</class>
+	</tool>
+		
+	<tool>
+		<key>workflow</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.WorkflowTool</class>
+	</tool>
+	
+	<!-- Dotmarketing View Tools End -->
+	
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN PLUGINS -->
+ 	<!-- END PLUGINS -->
+</toolbox>

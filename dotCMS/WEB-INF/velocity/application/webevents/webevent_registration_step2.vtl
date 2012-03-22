@@ -1,0 +1,314 @@
+#set($event=$webevents.getWebEvent($webEventRegistrationForm.eventInode))
+#set($location=$webevents.getWebEventLocation($webEventRegistrationForm.eventLocationInode))
+#set($attendees=$webEventRegistrationForm.eventAttendees)
+
+<script type='text/javascript' src='/dwr/util.js'></script>
+<script language="javascript" type="text/javascript" src='/html/js/states_and_countries.js'></script>
+
+<script type="text/javascript">
+<!--
+
+	function disableAll () {
+		try
+		{
+			var links = document.links;
+			for (var i = 0; i < links.length; i++) {
+				var link = links[i];
+				link.href = "#";
+			}
+
+			for (var i = 0; i < document.all.length; i++) {
+				var elem = document.all[i];
+				if (elem.type == "button") {
+					elem.disabled = true;
+				}
+			}
+		}
+		catch(e)
+		{
+			document.getElementById("backBtn").disabled = true;
+			document.getElementById("submitBtn").disabled = true;
+		}
+	}
+
+	function placeOrder() {
+		if (!confirm("Are you sure you want to Place your Order Now?")) {
+			return;
+		}
+
+		//Disabling all buttons
+		disableAll ();
+
+		var form = document.getElementById("checkoutForm");
+		document.getElementById("submitBtn").value="Processing...";
+		form.dispatch.value="toStep3";
+		form.submit ();
+	}
+
+	function makeChanges() {
+		var form = document.getElementById("checkoutForm");
+		form.dispatch.value="toStep1";
+		form.submit ();
+	}
+
+	function paymentTypeChanged() {
+		var form = document.getElementById("checkoutForm");
+
+		if (form.paymentType.value == "1") {
+			showLayer("cardInfoTable");
+		} else {
+			hideLayer("cardInfoTable");
+	 	}
+
+		if (form.paymentType.value == "3") {
+			showLayer("poInfoTable");
+		} else {
+			hideLayer("poInfoTable");
+	 	}
+ 	}
+
+	function changeBillingStateTextLayer(){
+		var state = document.getElementById("billingState").value;
+		if (state == "otherCountry")
+		{
+			showLayer("billingStateTextDiv");
+			document.getElementById("billingStateOtherCountryText").value = "";
+			document.getElementById("billingStateOtherCountryText").focus();
+		}
+		else 
+		{
+			document.getElementById("billingStateOtherCountryText").value = "";
+			hideLayer("billingStateTextDiv");
+		}
+	}
+	//Layer Management Variables
+	styleReference = "style.";
+	visibleLayer = "inline";
+	browser = "Explorer";
+	
+	function referenceLayer(layerName)
+	{
+		return "document.getElementById('" + layerName + "').";
+	}
+	function hideLayer(layerName)
+	{
+		eval(referenceLayer(layerName)+styleReference+ 'display="none"');
+	}
+	
+	function showLayer(layerName)
+	{
+		eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"');
+	}
+
+//-->
+</script>
+
+
+	
+		#dotParse('/application/messages.vtl')
+	
+		
+		<h3>Your Registrations:</h3>
+         <br/>
+	    <p><b>$!event.title</b><br/>
+		<!-- <a href="/conferences_webinar/institute_detail.${webapi.getPageFileExtension()}?inode=$event.inode"> -->
+		$!location.toString()</p>
+		<!-- </a>  -->
+		#set($total = 0)
+		         
+				<table cellpadding="2" cellspacing="0" border="0" width="100%"> 
+				#foreach ($attendee in $attendees)
+					#set($total = $math.add($total, $attendee.registrationPrice))
+					<tr>
+						<td width="33%"><strong>Name:</strong> $attendee.firstName $attendee.lastName</td>
+						<td><strong>Attd. Price: </strong>$$!webapi.toPriceFormat($attendee.registrationPrice)</td>
+						<td>
+						#if ($event.isInstitute())
+						  <strong>Badge Name:</strong>  #if($attendee.badgeName != "")$attendee.badgeName #else No Badge Name #end <br/>
+						#else
+						&nbsp;
+						#end
+						</td>
+					</tr>
+				#end
+				</table>
+				
+				<p style="margin-top:4px;">&nbsp;<strong>Total:$$!webapi.toPriceFormat($total)</strong></p><br/>
+	      
+	    <style>
+			@import url(/global/css/form.css);
+			
+			/* put in width of widest label */
+			fieldset label{
+			width: 120px;
+			}
+			fieldset fieldset,
+			fieldset .buttonGroup{
+			padding-left: 120px;
+			}
+			fieldset fieldset legend{
+			margin-left: -120px;
+			}
+		
+		</style>
+								
+								
+		<form  name="checkoutForm" action="/dotCMS/eventRegistration" id="checkoutForm" autocomplete="off">
+                  <fieldset>
+                  <legend>Registration Payment</legend>
+		<input type="hidden" name="dispatch" value="toStep3">
+		<input type="hidden" name="org.apache.struts.taglib.html.TOKEN" value="$request.getSession().getAttribute("org.apache.struts.action.TOKEN")">
+		<br/>
+			
+			
+		#if (!$event.isInstitute())
+         <p>Please note: if paying by check you will not receive a link to the webinar until payment is received; if you are paying by credit card 
+		 you will receive a confirmation within 1 hour containing the webinar link.</P>
+		#end
+			
+		
+		<h3>Payment Information:</h3>
+							
+		<label for="paymentType">Payment Type:</label>
+		#set($paymentMethods = $webevents.getPaymentMethods($event.isInstitute()))
+		<select name="paymentType" onchange="paymentTypeChanged()" style="width:130px;">
+		#foreach ($paymentMethod in $paymentMethods)
+			<option value="$paymentMethod.get("value")"
+				#if($webEventRegistrationForm.paymentType == $webapi.parseInt($paymentMethod.get("value")))
+					selected
+				#end>
+				$paymentMethod.get("friendlyName")
+			</option>
+		#end
+		</select>
+		<br/>
+							
+		<div id="poInfoTable">	
+		<label for="poNumber" class="required">PO Number: <a href="#required">*</a></label>
+		<input type="text" name="poNumber" value="$!orderForm.poNumber">
+		<br/>
+		</div>
+				
+		<div id="cardInfoTable">	
+		<label for="cardName" class="required">Name on Card: <a href="#required">*</a></label>
+		<input type="text" name="cardName" size="20" value="$!webEventRegistrationForm.cardName">
+		<br/>
+		
+		<label for="cardNumber" class="required">Card Number: <a href="#required">*</a></label>
+		<input type="text" name="cardNumber" size="20" maxlength="16" value="$!webEventRegistrationForm.cardNumber">
+		<br/>
+		
+		
+		<label for="cardVerificationValue" class="required">Card CVV Number: <a href="#required">*</a></label>
+		<input type="text" name="cardVerificationValue" size="20" maxlength="4" value="$!webEventRegistrationForm.cardVerificationValue">
+		<br/>
+								
+		<label for="cardType" class="required">Card Type: <a href="#required">*</a></label>					
+		#set($cardTypes = $webevents.getCreditCardTypes())
+		<select name="cardType">
+		#foreach ($cardType in $cardTypes)
+			<option value="$cardType"
+				#if($webEventRegistrationForm.cardType == $cardType)
+					selected
+				#end>
+				$cardType
+			</option>
+		#end
+		</select>
+		<br/>
+		
+
+		<label for="" class="required">Expiration Month: <a href="#required">*</a></label>
+		#monthsIntValues("cardExpMonth" "$!webEventRegistrationForm.cardExpMonth") <br/>
+		<label for="" class="required">Expiration Year: <a href="#required">*</a></label>
+		<select name="cardExpYear" style="width:130px;">
+		#set($year = $webapi.getActualYear())
+		#foreach($i in [0..10])
+			<option value="$year"
+				#if($webapi.parseInt($webEventRegistrationForm.cardExpYear) == $year)
+					selected #end>$year</option>
+			#set($year = $year + 1)
+		#end
+		</select>
+		<br/>
+		</div>
+							
+	     <div style="clear:both;"><br/></div>					
+
+		<h3>Billing Information:</h3>
+		<p>Please enter or confirm your billing information:</p>
+
+	
+		<label for="billingAddress1" class="required">Street1 <a href="#required">*</a></label>
+		<input type="text" name="billingAddress1" value="$!webEventRegistrationForm.billingAddress1">
+		<br/>
+	
+	
+		<label for="billingAddress2">Street2</label>
+		<input type="text" name="billingAddress2" value="$!webEventRegistrationForm.billingAddress2">
+		<br/>
+	
+	
+		<label for="billingCity" class="required">City <a href="#required">*</a></label>
+		<input type="text" name="billingCity" value="$!webEventRegistrationForm.billingCity">
+		<br/>
+	
+	
+	         <label for="billingState" class="required">State <a href="#required">*</a></label>
+		<select name="billingState" id="billingState" onchange="changeBillingStateTextLayer();">
+		<script language="javascript">
+		writeStatesOptions('$!webEventRegistrationForm.billingState');
+		</script>
+		</select>
+		<div id="billingStateTextDiv">
+			<input type="text" name="billingStateOtherCountryText" id="billingStateOtherCountryText" value="$!webEventRegistrationForm.billingStateOtherCountryText">
+		</div>
+		<br/>			
+	    
+	
+	         <label for="billingCountry" class="required">Country <a href="#required">*</a></label>
+		<script language="javascript">
+		writeCountriesSelect("billingCountry", '$!webEventRegistrationForm.billingCountry');
+		</script>
+        <br/>
+	
+		<label for="billingZip" class="required">Zip <a href="#required">*</a></label>
+		<input type="text" name="billingZip" value="$!webEventRegistrationForm.billingZip">
+	         <br/>
+	
+		<label for="billingContactName" class="required">Billing Contact's<br>Person Name <a href="#required">*</a></label>
+		<input type="text" name="billingContactName" value="$!webEventRegistrationForm.billingContactName">
+		<br/>
+	
+		<label for="billingContactPhone" class="required">Phone <a href="#required">*</a></label>
+		<input type="text" name="billingContactPhone" value="$!webEventRegistrationForm.billingContactPhone">
+		<br/>
+	
+		<label for="billingContactEmail" class="required">Email <a href="#required">*</a></label>
+		<input type="text" name="billingContactEmail" value="$!webEventRegistrationForm.billingContactEmail">
+		<br/>
+        <br/>
+          
+		  <div class="buttonGrouper" style="clear:both;">
+		  <br/>
+		  <a href="javascript:makeChanges();" id="backBtn" name="backBtn" class="button">Make Changes</a>
+		  <a href="javascript:placeOrder();"  id="submitBtn" name="submitBtn" class="activeButton">Place Order Now!</a>
+		  <br/>
+		  </div>
+				 
+	         </fieldset>
+		</form>
+		
+		<div class="key"><a name="required" id="required">* Required Fields</a></div>
+		
+		<br>
+			
+			
+
+<br /><br />
+<script type="text/javascript">
+<!--
+	paymentTypeChanged();
+	changeBillingStateTextLayer();
+//-->
+</script>

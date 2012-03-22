@@ -1,0 +1,60 @@
+#macro-login-box {
+	width: 250px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+.macro-login-box-row label {
+	display: inline;
+}
+
+#macro-login-logged-in-box{
+	padding: 10px;
+	width: 250px;
+}
+
+.macro-login-box-row {
+	padding: 5px;
+	clear: both;
+}
+.macro-login-box-row-center{
+	padding: 5px;
+	text-align: center;
+}
+
+.macro-login-box-row-center label{
+	display: inline;
+	float:none;
+}
+
+.macro-login-box-row label{
+	width: 70px;
+	float: left;
+	text-align: right;
+	padding-right: 5px;
+	padding-top: 3px;
+	display: inline;
+}
+#macro-login-user-name{
+	padding: 3px;
+}
+
+#macro-login-password {
+	padding: 3px;
+}
+
+#macro-login-button {
+	height: 30px;
+	width: 100px;
+}
+
+#macro-login-message {
+	text-align: center;
+}
+
+#macro-login-logged-in-message {
+	text-align: center;
+}
+#macro-login-forgot-password{
+	padding: 5px;
+	text-align: center;
+}

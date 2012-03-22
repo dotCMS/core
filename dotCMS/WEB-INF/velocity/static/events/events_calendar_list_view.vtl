@@ -1,0 +1,149 @@
+#set($calendarmap = $eventsapi.getCalendarMap($request.getParameter("year"), $request.getParameter("month")))
+#set($calendardata = $calendarmap.get("data"))
+#set($eventscalendar = $eventsapi.getEventsInCalendar($request.getParameter("year"), $request.getParameter("month")))
+#set($cats = $eventsapi.getEventsCategories())
+#set($month = $calendarmap.get("month"))
+#set($year= $calendarmap.get("year"))
+#set($selectedWeek= $request.getParameter("week"))
+#set($selectedDay= $request.getParameter("day"))
+<!--
+ ------------    CALENDAR TOP START    ------------
+-->
+<script>
+
+	function doChangeCategory(){
+		var ele = document.getElementById("cat0Select");
+		var i = 0;
+		var params = "";
+		while (ele != null) {
+			var cat = ele[ele.selectedIndex].value;
+			params += '&category'+i+'Id=' + cat;
+			i++;
+			ele = document.getElementById("cat"+i+"Select");
+		}
+		window.location = '?month=$!month&year=$!year'+params;
+	}
+
+	function doChangeDate(month, year){
+		var ele = document.getElementById("cat0Select");
+		var i = 0;
+		var params = "";
+		while (ele != null) {
+			var cat = ele[ele.selectedIndex].value;
+			params += '&category'+i+'Id=' + cat;
+			i++;
+			ele = document.getElementById("cat"+i+"Select");
+		}
+		window.location = '?month='+month+'&year='+year+params;
+	}
+
+	function doCalendarView(){
+		var ele = document.getElementById("cat0Select");
+		var i = 0;
+		var params = "";
+		while (ele != null) {
+			var cat = ele[ele.selectedIndex].value;
+			params += '&category'+i+'Id=' + cat;
+			i++;
+			ele = document.getElementById("cat"+i+"Select");
+		}
+		window.location = 'index.${webapi.getPageFileExtension()}?month=$!month&year=$!year#if($selectedWeek)&week=$selectedWeek#end'+params;
+	}
+	
+</script>
+<style TYPE="text/css" MEDIA="all">
+	@import url(/global/css/calendarStyles.css);
+</style>
+	<table cellspacing="0" cellpadding="0" id="calendarTable">
+		<tr>
+			<td>
+
+				<div id="viewBtn"><a href="#" onclick="doCalendarView()" class="readMore"><img src="/portal/images/calendar/btn_calView.gif" width="85" height="19" border="0" /></a></div>
+				<div id="calSearch">
+					<table cellpadding="7" cellspacing="0" align=center height="40">
+						<tr>
+							<td><strong>Search:</strong></td>
+							#foreach ($categoriesList in $cats)
+								#set ($idx = $velocityCount - 1)
+							<td><select id="cat${idx}Select" name="cat${idx}Select" onchange="doChangeCategory()">
+								<option value="">All</option>
+								#foreach ($category in $categoriesList)
+								<option value="$category.inode"
+									#if ($request.getParameter("category${idx}Id"))
+										#if($request.getParameter("category${idx}Id")==$category.inode)
+									selected
+										#end
+									#end
+								>$category.categoryName</option>
+								#end
+							</select></td>
+							#end
+						</tr>
+					</table>
+					<table cellpadding="0" cellspacing="0" id="calMonth">
+						<tr>
+                            #set($nextMonth = $calendarmap.get("nextMonth"))
+                            #set($nextYear = $calendarmap.get("year"))
+                            #if ($nextMonth == "0")
+                                #set($nextYear = $calendarmap.get("nextYear"))
+                            #end
+                            #set($prevMonth = $calendarmap.get("prevMonth"))
+                            #set($prevYear = $calendarmap.get("year"))
+                            #if($prevMonth == "11")
+                                #set($prevYear = $calendarmap.get("prevYear"))
+                            #end
+							<td width="50%" align=right><a onclick="doChangeDate($prevMonth, $prevYear)" href="#" class="nextArrow"><img src="/portal/images/calendar/arrow_left.gif" width="17" height="14" alt="" border="0" /></a></td>
+							<td nowrap class="month" align="center" width="200"><a onclick="doChangeDate($month, $year)" href="#" class="month">$!calendarmap.get("monthStr") $!calendarmap.get("year")</a></td>
+							<td width="50%"><a onclick="doChangeDate($nextMonth, $nextYear)" href="#" class="nextArrow"><img src="/portal/images/calendar/arrow_right.gif" width="17" height="14" alt="" border="0" /></a></td>
+						</tr>
+					</table>
+				</div>
+
+
+			</td>
+		</tr>
+<!--
+ ------------    CALENDAR BODY START    ------------
+-->
+		<tr>
+			<td>
+
+				<table cellpadding="0" cellspacing="3" align=center id="listBody">
+			#set($weeknum = 0)
+			#foreach( $week in $calendardata )
+				#if (!$selectedWeek || $webapi.parseInt($selectedWeek) == $weeknum)
+					#set($daynum = 0)
+					#foreach( $day in $week )
+						#if (!$selectedDay || $selectedDay == $day)
+							#if ($day != "")
+					<tr>
+						<td class="day">$webapi.dateToHTMLPrettyDay($webapi.parseInt($year), $webapi.parseInt($month), $webapi.parseInt($day))</td>
+					</tr>
+					<tr>
+						<td valign=top>
+							<ul>
+								#foreach( $event in $eventscalendar.get($weeknum).get($daynum))
+								<li><a href="detail_view.${webapi.getPageFileExtension()}?event=$event.inode"><strong>$event.title</strong>#if ($event.subtitle != "") - $event.subtitle #end @ $webapi.dateToHTMLTimeRange($event.startDate, $event.endDate)</a></li>
+								#end
+							</ul>
+						</td>
+					</tr>
+							#end
+						#end
+						#set($daynum = $daynum + 1)
+					#end					
+				#end
+			#set($weeknum = $weeknum + 1)
+			#end
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td align=right>
+				<a href="#top" class="readMore"><img src="/portal/images/calendar/btn_back_top.gif" width="85" height="19" border="0" /></a>
+			</td>
+		</tr>
+	</table>
+<!--
+ ------------    CALENDAR END    ------------
+-->

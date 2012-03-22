@@ -1,0 +1,312 @@
+#if($commentDateDescending == 'true' || $commentDateDescending == true)
+	#set($commentDateDescending = true)
+#else
+	#set($commentDateDescending = false)
+#end
+
+
+##This macro is only used inside the Comments macro to display the comments threading
+#macro(showRecursiveComments $tempCommentContentInode $currentDepth)
+	#set ($tempRelatedMatches = $commentsapi.getComments($tempCommentContentInode))
+	#foreach($match in $tempRelatedMatches)
+		#set($marginLeft= $math.mul($currentDepth,10))
+		#getContentDetail("$match.inode")
+		<p style="margin-left:${marginLeft}px;">
+			<b>$author | Posted $UtilMethods.dateToHTMLDate($datePublished,'MMM dd, yyyy hh:mm a')</b><br>
+			$xsstool.strip($comment)
+			#if($currentDepth < $maxDepth)
+				<span class="arrowLink"><a href="javascript:_createPostCommentPlace('$match.inode');_dotReply('$match.inode');">Reply to this comment</a></span><br/>
+				<div id="$match.inode"></div>
+			#end
+			<br>
+		</p>
+		#if($currentDepth < $maxDepth)
+			#showRecursiveComments($match.inode, $math.add($currentDepth,1))
+		#end
+	#end
+#end
+
+
+
+
+#set($superParentInode = $_commentContentInode)
+#set($user = $session.getAttribute("CMS_USER"))
+#set($commentForm = $session.getAttribute("commentsForm"))
+$session.removeAttribute("commentsForm")
+#set ($relatedMatches = $commentsapi.getComments($_commentContentInode, $commentDateDescending))
+#if(!$webapi.isSet($emailTemplate))
+	#set($emailTemplate = 'static/comments/comments_email_template.html')  
+#end
+
+#if(!$UtilMethods.isSet($commentReferer))
+	#if($URLMapContent)
+		#set($commentReferer =	$contents.getUrlMapForContentlet($URLMapContent.identifier))
+	#else
+		#set($commentReferer =	"${VTLSERVLET_URI}?$!{request.getQueryString()}")
+	#end
+#end
+
+#if($pdfExport == false)
+
+
+#if($commentUseCaptcha == 'true' || $commentUseCaptcha == true)
+	#set($commentUseCaptcha = true)
+#else
+	#set($commentUseCaptcha = false)
+
+#end
+#if($commentUseAudioCaptcha == 'true' || $commentUseAudioCaptcha == true)
+	#set($commentUseAudioCaptcha = true)
+#else
+	#set($commentUseAudioCaptcha = false)
+#end
+
+
+
+
+<script language="javascript">
+
+/*
+ * http://jira.dotmarketing.net/browse/DOTCMS-1682
+ */
+
+//This function deals with the replies and new comments
+
+ function _dotReply(commentInode){
+
+	  document.getElementById('contentInode').value=commentInode;
+	  var commentForm =  document.getElementById('commentForm');
+	  if(commentForm){
+		  commentForm.style.display="";
+	  }
+	  var nameField = document.getElementById('name');
+		if(nameField){
+			nameField.focus();
+		}
+	}
+	
+	
+	
+//This function creates the form for posting the comments. Output HTML is returned at the end of the function since
+//there are different parts on the page that use this HTML to open a form to write a comment. When a link is clicked
+//to post a new comment, the div id just following the link is passed as an argument to this function. 
+
+ function _createPostCommentPlace(activatedDiv){
+	 //activeDiv is the div which is being worked on. It gets its value from the hidden field selectedDiv which is
+	 //"" initially
+	 	var activeDiv = document.getElementById("selectedDiv").value;
+
+	 	if(activeDiv != "" && activeDiv != activatedDiv){
+	 		document.getElementById(activeDiv).innerHTML = " ";
+	 	} 	
+
+		
+
+		var HTML = "<form action=\"/dotCMS/comments\" method=\"post\" id=\"commentsForm\" name=\"commentsForm\">";
+
+		HTML += "<input type=\"hidden\" id=\"dispatch\" name=\"dispatch\" value=\"saveComments\" />";
+		HTML += "<input type=\"hidden\" id=\"commentAutoPublish\" name=\"commentAutoPublish\" value=\"$!commentAutoPublish\" />";
+		HTML += "<input type=\"hidden\" id=\"commentUseCaptcha\" name=\"commentUseCaptcha\" value=\"$!commentUseCaptcha\" />";
+		HTML += "<input type=\"hidden\" id=\"commentStripHtml\" name=\"commentStripHtml\" value=\"$!commentStripHtml\" />";
+		HTML += "<input type=\"hidden\" id=\"commentForceLogin\" name=\"commentForceLogin\" value=\"$!commentForceLogin\" />";
+		HTML += "<input type=\"hidden\" id=\"commentTitle\" name=\"commentTitle\" value=\"$!commentTitle\" />";
+		HTML += "<input type=\"hidden\" id=\"referrer\" name=\"referrer\" value=\"$commentReferer\" />";
+		HTML += "<input type=\"hidden\" id=\"contentInode\" name=\"contentInode\" value=\"$!superParentInode\" />";
+		HTML += "<input type=\"hidden\" id=\"emailTemplate\" name=\"emailTemplate\" value=\"$!emailTemplate\" />";
+		HTML += "<input type=\"hidden\" id=\"commentsModeration\" name=\"commentsModeration\" value=\"$!commentsModeration\" />";
+		HTML += "<input type=\"hidden\" id=\"commentUseAudioCaptcha\" name=\"commentUseAudioCaptcha\" value=\"$!commentUseAudioCaptcha\" />";
+
+		#set($name = $commentForm.getName())
+		#if(!$UtilMethods.isSet($name) && $UtilMethods.isSet($user))
+			#set($name = $user.getFullName())
+		#end
+
+		HTML += "<label for=\"name\">*Name:</label>";
+		HTML += "<input id=\"name\" name=\"name\"  type=\"text\" value=\"$!UtilMethods.xmlEscape($!name)\">";
+		HTML += "<br>";
+
+		#set($commentEmail = $commentForm.getEmail())
+		#if(!$UtilMethods.isSet($commentEmail) && $UtilMethods.isSet($user))
+			#set($commentEmail = $user.getEmailAddress())
+		#end
+
+		HTML += "<label for=\"email\">*Email:</label>";
+		HTML += "<input id=\"email\" name=\"email\"  type=\"text\" value=\"$!UtilMethods.xmlEscape($commentEmail)\">";
+		HTML += "<br>";
+		HTML += "<label for=\"website\">Website:</label>";
+		HTML += "<input id=\"website\" name=\"website\"  type=\"text\" value=\"$!UtilMethods.xmlEscape($commentForm.getWebsite())\">";
+		HTML += "<br>";
+		HTML += "<label for=\"notify\" class=\"CheckBox\"><input name=\"notify\" value=\"yes\" type=\"checkbox\" $checked\"> Please notify me of upcoming comments via email.</label>";
+
+		#set($checked = '')
+		#if($!commentForm.isNotify())
+			#set($checked = 'checked')		
+		#end
+		HTML += "";
+		HTML += "<div class=\"clear\">&nbsp;</div>";
+
+
+		#if($commentStripHtml)
+			HTML += "<span class=\"greyText\">(HTML not permitted)</span>";
+		#end
+		HTML += "<br>";
+		HTML += "<textarea name=\"comment\" id=\"comment-textarea\">$!commentForm.getComment()</textarea>";
+		HTML += "<div class=\"clear\">&nbsp;</div>";
+
+
+		
+		#if($commentUseCaptcha)
+			HTML += "<div id=\"comments-captcha-image\" name=\"captchaImage\"><img src='/Captcha.jpg?$math.getRandom()'  width='200' height='50' alt='Captcha' title='Captcha Image'/></div>";
+			HTML += "<div id=\"comments-captcha-audio\"></div>";
+			HTML += "<div id=\"comments-captcha-tools\">";
+			HTML += "<div id=\"comments-captcha-reset\" onclick='javascript:resetCaptcha();'></div>";
+			HTML += "<div id=\"comments-captcha-audio-play\" class='captcha-audio-play' onclick='javascript:playAudioCaptcha();'></div>";
+			HTML += "<div class='clear'>&nbsp;</div></div><br>";
+			HTML += "<label for=\"captcha\">*$glossary.get('Image Text'):</label>";
+			HTML += "<input type='text' id=\"captcha-text\" name=\"captcha\"  type=\"text\" >";
+		#end
+		
+
+
+		HTML += "<div class='comments-required-astrix'>* $glossary.get('required')</div>";
+
+		#set($checked = '')
+		#if($!commentForm.isAccept())
+			#set($checked = 'checked')
+		#end
+
+		HTML += "<input type=\"hidden\" name=\"accept\" value=\"yes\" >";
+		//This hidden field is sent with the form to fill the activeDiv property of CommentsForm
+		HTML += "<input type=\"hidden\" name=\"activeDiv\" value=\"" + activatedDiv + "\" >";
+		HTML += "<div class=\"clear\">&nbsp;</div>";
+		HTML += "<div id=\"comment-button\">";
+		HTML += "<input class=\"post\" name=\"submit\" value=\"Post Comment\" type=\"submit\">";
+		HTML += "</div>";
+		HTML += "</form>";
+
+		//The inner HTML of the div is set to the output HTML
+		document.getElementById(activatedDiv).innerHTML = HTML;
+		
+		document.getElementById("selectedDiv").value = activatedDiv;
+
+		return HTML;
+	}
+ 
+</script>
+#end
+<!-- COMMENTS START -->
+<div class="comments" id="commentsIdt">
+	<a  name="comments"></a>
+	<input type="hidden" id="selectedDiv" value="$!{commentForm.getActiveDiv()}" >
+	#if($commentTitle)
+		<div class="comments-title">
+			<h5>$commentTitle</h5>
+		</div>
+	#end
+	#set($actualDepth = 1)
+	#foreach($match in $relatedMatches)
+		<div class="comment">	
+			<div class="comment-attribution">
+				<span class="commenter-name">$match.author</span>
+				<span class="comment-time">
+					$dateviewapi.friendly($match.datePublished)
+				</span>
+				<div class="clear">&nbsp;</div>
+			</div>
+			<div class="comment-text">
+				<div class="comment-arrow"></div>
+				<div class="comment-title">
+				</div>
+				<div class="comment-comment">
+					$xsstool.strip($match.comment)
+				
+					#if($actualDepth < $maxDepth)					
+						<span class="comment-reply">
+							<a href="javascript:_createPostCommentPlace('$match.inode');_dotReply('$match.inode')">$glossary.get("reply")</a>
+						</span>
+						<div id="$match.inode"></div>
+					#end
+				</div>
+				<div class="comment-replies">
+					#if($actualDepth < $maxDepth)
+						#showRecursiveComments($match.inode $math.add($actualDepth,1))
+					#end
+				</div>
+				<div class="clear">&nbsp;</div>
+			</div>
+			<div class="clear">&nbsp;</div>
+		</div>
+	#end
+
+	#if(!($commentForceLogin == 'true' && !($UtilMethods.isSet($user))))
+		<div class="comments-form">
+			<div class="comments-messages">
+				#parse('static/messages.html')
+			</div>
+		
+
+		
+			<div class="comments-form-top">&nbsp;</div>
+			<div class="comments-form-link">
+				<h5><span class="arrowLink"><a href="javascript:_createPostCommentPlace('formBody');_dotReply('formBody')">Post a Comment</a></span></h5>
+			</div>
+			
+				<h2><span class="arrowLink"><a href="javascript:_createPostCommentPlace('formBody');_dotReply('formBody')">Post a Comment</a></span></h2>
+			
+				<div class="comments-form-body" id="formBody">
+			
+			</div>			
+			<div class="comments-form-bottom">&nbsp;</div>
+		</div>
+	#else
+		<div class="comments-form">
+			<div class="comments-form-top">&nbsp;</div>
+			<div class="comments-form-link">
+				Please <a href="/dotCMS/login">login</a> to submit a comment
+				$session.setAttribute("REDIRECT_AFTER_LOGIN","${VTLSERVLET_URI}?$!{request.getQueryString()}")
+			</div>
+			<div class="comments-form-bottom">&nbsp;</div>
+		</div>
+	#end
+	<div class="clear">&nbsp;</div>
+</div>
+
+<script language="javascript">
+	#if($UtilMethods.isSet($!{commentForm.getActiveDiv()}))		
+		var sdiv = document.getElementById("selectedDiv").value;		
+		if(sdiv != null){				
+			document.getElementById(sdiv).value = _createPostCommentPlace(sdiv);				
+		}
+	#end		
+	
+	_createPostCommentPlace('formBody');
+	
+	
+	function playAudioCaptcha(){
+		document.getElementById('comments-captcha-audio-play').setAttribute("class","captcha-audio-playing");
+		var rand=Math.floor(Math.random()*999999999);
+		document.getElementById('comments-captcha-audio').innerHTML = '<embed hidden="false" src="/audioCaptcha.wav?r=' + rand +'" id="captcha-sound" controller="false" width="0" height="0" autoplay="true" autostart="true" type="audio/wav" />';
+			
+		setTimeout(function(){
+			document.getElementById('comments-captcha-audio-play').setAttribute("class","captcha-audio-play");
+		},8000);
+
+	}
+	
+	
+	function resetCaptcha(){
+		var rand=Math.floor(Math.random()*999999999)
+		document.getElementById('comments-captcha-image').innerHTML = "<img width='200' height='50' src='/Captcha.jpg?r=" + rand + "'>";
+	}
+	
+	
+	
+	
+</script>
+
+<!-- COMMENTS ENDS -->
+
+
+
+
+	

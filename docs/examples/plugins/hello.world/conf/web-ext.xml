@@ -1,0 +1,20 @@
+<servlet>
+	<servlet-name>HelloWorldServlet</servlet-name>
+	<servlet-class>com.dotmarketing.plugins.hello.world.HelloWorldServlet</servlet-class>
+</servlet>
+
+<servlet-mapping>
+	<servlet-name>HelloWorldServlet</servlet-name>
+	<url-pattern>/servlets/plugins/hello.world/hello</url-pattern>
+</servlet-mapping>
+
+<security-constraint>
+		<web-resource-collection>
+	             <web-resource-name>Portal Login</web-resource-name>
+	             <description>Secure the login page</description>
+	             <url-pattern>/c/portal_public/layout</url-pattern>
+	     </web-resource-collection>
+	     <user-data-constraint>
+	             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+	     </user-data-constraint>
+</security-constraint>	

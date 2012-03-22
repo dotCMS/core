@@ -1,0 +1,280 @@
+
+
+#main {width:920px;}
+#toolBar{background:#fff;width:920px;}
+#controlTable{width:920px; border-collapse:collapse;}
+
+
+
+.imageToolButtonBar {
+	background:#fff;
+	height:29px;
+	border:1px solid silver;
+	margin-width:0 1px;
+	padding:5px 15px 1px 15px;
+	vertical-align: middle;
+}
+
+
+#exif { clear:both; height:2em; }
+
+
+
+#imageToolIframe{
+width:920px;margin:0;padding:0;	
+}
+
+#showScaleSlider{
+	margin-top:10px;
+	width:250px; 
+	height:20px;
+}
+#imageViewPort{
+	overflow:auto;
+	border:1px solid silver;
+	border-width: 0 1px;
+	height:400px;
+	width:918px;
+	vertical-align:top;
+	padding:0px;
+	margin:0px;
+ 	text-align:left;
+ 	background-color:#eeeeee;
+}
+
+/* style the image */
+#me {
+
+}
+
+#saveAsDialog{
+	width:350px;
+	height:170px;	
+}
+
+#saveAsDiaTable{
+	margin:auto;
+	margin-top:10px;
+		
+}
+
+#saveAsDiaTable td{
+	padding:8px;
+
+}
+#saveAsFileExt{
+	font-weight:bold;	
+}
+#cropDim{
+	display:none;
+}
+
+/* part of the widget: drag handle styles */
+.imageDragger {
+	/* required: */
+	position:absolute;
+	/* optional: */
+	cursor:move;
+	z-index:999;
+	background:#fff;
+	border:2px dotted #000;
+	min-width:50px;
+	min-height:50px;
+
+}
+
+#cropSizeBox{
+	float:left;
+	border:1px solid silver;
+	opacity: 1;
+	min-width:46px;
+	height:20px;
+	color:black;
+	white-space:nowrap;
+}
+
+.textInputClass{
+	border:1px solid silver;
+	width:35px;
+	margin:2px;
+
+	height:23px;
+}
+
+
+.baseImageDim{
+	width:45px;
+	margin:2px;
+	height:23px;
+	overflow:hidden;
+	display:inline-block;
+	padding-top:4px;
+}
+
+#buttonControl{
+	width:920px;
+	padding:10px;
+	border:1px solid silver;
+}
+#doCropButton{
+	display:none;
+}
+
+#viewingUrlDiv{
+	padding:10px;
+	text-align:center;
+}
+#viewingUrl{
+	border:1px solid silver;padding:3px;width:600px;
+}
+
+#filtersUndoDiv{
+	
+	text-align:left;
+}
+#filterListTd{
+	vertical-align:top;	
+	padding:0px;
+}
+#filterListBox{
+	height:115px;
+	display:block;
+}
+#filterListDiv{
+	width:115px;
+	overflow-y:auto;
+	height:80px;
+	overflow-x:hidden;
+}
+
+        
+.loader{
+      	background:url('/html/js/dotcms/dijit/image/loading.gif') no-repeat center center;
+}
+.filterListItem{
+	text-align:left;
+	cursor: pointer;
+	width:100px;
+	padding:2px;
+	border:1px solid silver;	
+	background:url('/html/images/icons/minus-small-circle.png') no-repeat right center ;
+}
+
+        
+#controlTable td{
+	border:1px solid silver;
+	padding:3px;	
+	text-align:center;
+	white-space: nowrap;
+	vertical-align: middle;
+}
+#showScaleSlider td{
+	border:0px solid silver;
+	padding:0px;	
+}
+
+#hsbDialog{
+	width:400px;
+	height:300px;	
+}
+
+#hsbTable{
+	border:1px solid silver;	
+	width:90%
+}
+#hsbTable td{
+	padding:4px;
+	border:1px solid silver;
+	height:20px;
+	vertical-align: top;
+}
+#hsbTable .colorSlider td{
+	padding:0px;
+	border:0px solid silver;
+}
+
+.colorSlider{
+	width:200px;	
+}
+
+.thumbnailDiv {
+	cursor:pointer;
+	padding:3px 15px 3px 15px;
+	border:silver 2px dotted;
+	min-width:120px;
+	min-height:120px;
+	position:relative;
+	
+}
+.thumbnailDivHover{
+	cursor:pointer;
+	padding:3px 15px 3px 15px;
+	border:blue 2px dotted;
+	position:relative;
+}
+.editImageText{
+	cursor:pointer;
+	position:absolute;
+	bottom:10px;
+	right:10px;
+	opacity:.50;
+	background:white;
+	border:1px solid gray;
+	padding:3px;
+	width:80px;
+	hieght:50px;
+	text-align:center;
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+}
+
+/*********
+
+Resize Handle
+
+********/
+
+.dojoxResizeHandle {
+	float: right;
+	position: absolute;
+	right: 2px;
+	bottom: 2px;
+	width: 13px;
+	height: 13px;
+	z-index: 20;
+	background-image: url('/html/js/dotcms/dijit/image/resize.png');
+	line-height: 0px;
+}
+
+.dojoxResizeNW {
+	cursor: nw-resize;
+}
+
+.dojoxResizeNE {
+	cursor: ne-resize; 
+}
+
+.dojoxResizeW {
+	cursor: w-resize; 
+}
+
+
+.dojoxResizeN { 
+	cursor: n-resize; 
+}
+
+.dojoxResizeHandleClone {
+	position:absolute; top:0; left:0; 
+	border:1px dashed #666; 
+	z-index:999; 
+}
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,140 @@
+.editRow{width:97%;margin:auto;}
+.editRow:hover th{background:#C1D9EE;}
+.editRow:hover td{background:#DBEBF9;}
+ol.wfStepsList{margin:15px 15px 20px 15px;}
+ol.wfStepsList li{padding:3px 10px;margin:0 10px; list-style:decimal; border-bottom:1px dashed #ccc; list-style-position:inside;}
+ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
+.wfSchemeShowSteps{
+	padding:10px;
+	margin:10px;
+	border-radius:7px;
+	margin-left:30px;
+	background:#eeeeee;
+	width:90%;	
+}
+#wfStepsBoundingBoxMain{
+	margin:10px;
+	padding:10px;
+	border:1px solid white;
+	display: block;
+	position:relative;
+}
+.wfStepBoundingBox{
+	margin-bottom:20px;
+	border:1px solid silver;
+
+	padding-bottom:10px;
+	border-radius:7px;
+}
+.topspacing{
+	margin:10px;
+}
+.wfStepTitle{
+	padding-left:10px;
+	padding-right:10px;
+	background: #eeeeee;
+	font-weight: bold;
+	margin-bottom:20px;
+}
+.wfStepTitleDivs{
+	padding-top:10px;
+	padding-bottom:10px;
+}
+
+.wfActionList{
+	margin-left:20px;
+	margin-right:50px;
+	margin-top:-1px;
+	padding:10px;
+	border:1px solid silver;
+	font-weight: bold;
+	width:95%;
+}
+.wfActionList td{
+	padding:10px;
+	border-bottom:1px solid silver;
+	cursor: pointer;
+}
+.wfXBox{
+	width:20px;border-right:1px solid silver;text-align: center;cursor:pointer;
+}
+
+  .container {
+
+     display: block;
+ }
+.showPointer{
+	cursor: pointer;
+}
+.wfAddActionButtonRow{
+	margin:10px;
+
+	text-align: center;	
+	
+}
+.wfWhoCanUseDiv{
+	padding:10px;	
+}
+#actionletsTbl{
+	width:80%;
+	margin:auto;
+	margin-bottom:20px;
+	margin-top:20px;
+}
+
+.saveButtonHide{
+	//visibility:hidden;	
+	//font-:1px solid white;	
+}
+.saveButtonDivShow{
+	font-weight:bold;	
+}
+#wacHeader{
+	margin-bottom:20px;	
+
+	
+}
+#wacTitle{
+	float:left;
+	margin-top:20px;
+
+}
+#wacMessage{
+	text-align: left;
+	width:250px;	
+	float:right;
+}
+#actionClassParamsDia{
+	width:600px;
+	min-height:250px;
+}
+.wfnoSubActions{
+	text-align: center;
+	padding:10px;	
+}
+.wfParamTextArea{
+	min-height:40px;
+	max-height:120px;	
+}
+#stepEditDia{
+	height:250px;
+	width:380px;
+	margin:auto;
+}
+
+
+#contentletWfDialog{
+	width:500px;
+	height:300px;
+	
+}
+#wfEditSchemeDia{
+	width:550px;
+	height:330px;
+	margin:auto;
+}
+#contentletWfCP{
+	width:500px;
+	height:300px;
+	margin:auto;
+}

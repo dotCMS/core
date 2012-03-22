@@ -1,0 +1,148 @@
+<script language="javascript" type="text/javascript" src='/html/js/states_and_countries.js'></script>
+<script>
+//Layer Management Variables
+styleReference = "style.";
+visibleLayer = "inline";
+browser = "Explorer";
+
+//Layer Management
+function referenceLayer(layerName)
+{
+//	if (browser == "Netscape")
+//		return "document.layers['"+layerName+"'].";
+//	else
+//		return "document.all['"+layerName+"'].";
+	return "document.getElementById('" + layerName + "').";
+}
+function doSubmit(){
+	document.getElementById("myAccountForm").submit();
+}
+function hideLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"');
+}
+
+function showLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"');
+}
+function changeStateTextLayer(){
+	var state = document.getElementById("state").value;
+	if (state == "otherCountry")
+	{
+		showLayer("stateTextDiv");
+		document.getElementById("stateOtherCountryText").focus();
+	}
+	else 
+	{
+		document.getElementById("stateOtherCountryText").value = "";
+		hideLayer("stateTextDiv");
+	}
+}
+</script>
+
+<style>
+@import url(/global/css/form.css);
+
+/* put in width of widest label */
+fieldset label,
+.fieldset .label{
+	width: 140px;
+}
+fieldset fieldset,
+fieldset .buttonGroup,
+.fieldset .buttonGroup{
+	padding-left: 140px;
+}
+fieldset fieldset legend{
+	margin-left: -140px;
+}
+
+</style>
+
+	<form action="/dotCMS/myAccount" method="post" id="myAccountForm" name="myAccountForm" autocomplete="off">
+	<input type="hidden" name="dispatch" value="saveUserAddress">
+	<input type="hidden" name="userId" value="${myAccountForm.userId}">
+		
+		<div class="text-align: center;">
+		#parse('static/messages.html')
+		</div>
+		
+		<div class="buttonGroup" style="margin-top: -35px; text-align: right;">
+			<a href="/dotCMS/registrationHistory" class="button">Registration and Order History</a>
+			<a href="/dotCMS/myAccount" class="button">My Account</a>
+		</div>
+
+		<fieldset>
+			<legend>Mailing Address</legend>
+			
+			<fieldset>
+				<legend>Address Type</legend>
+				
+				<input type="radio" name="description" id="homeAddress" value="home" #if($!myAccountForm.description == "home") checked #end />
+				<label for="homeAddress">Home Address</label>
+				
+				<input type="radio" name="description" id="workAddress" value="work" #if($!myAccountForm.description == "work") checked #end />
+				<label for="workAddress">Work Address</label>
+				
+				<input type="radio" name="description" id="otherAddress" value="other" #if(!$!myAccountForm.description || ($!myAccountForm.description != "home" && $!myAccountForm.description != "work")) checked #end />
+				<label for="otherAddress">Other</label>
+					
+			</fieldset>
+			
+			<label class="required" for="street1" >Address Street 1: <a href="#required">*</a></label>
+			<input type="text" name="street1" id="street1" value="$!myAccountForm.street1" style="width:150px"><br />
+			
+			<label for="street2">Address Street 2:</label>
+			<input type="text" name="street2" id="street2" value="$!myAccountForm.street2" style="width:150px"><br />
+			
+			<label class="required" for="city">City: <a href="#required">*</a></label>
+			<input type="text" name="city" id="city" value="$!myAccountForm.city" style="width:150px"><br />
+			
+			<fieldset class="inline hideLabels">
+				<legend class="required">State: <a href="#required">*</a></legend>
+
+				<select name="state" onchange="changeStateTextLayer();" id="state"> 
+					<script language="javascript">
+					writeStatesOptions('$!myAccountForm.state');
+					</script>
+				</select>
+				<label for="state">State in the US</label>
+				
+				<div id="stateTextDiv">
+					<input type="text" name="stateOtherCountryText" id="stateOtherCountryText" value="$!myAccountForm.stateOtherCountryText">
+					<label for="stateOtherCountryText">Other State</label>
+				</div>
+				
+			</fieldset>
+
+			
+			<label class="required" for="country">Country: <a href="#required">*</a></label>
+			<script language="javascript">
+				writeCountriesSelect('country','$!myAccountForm.country');
+			</script><br />
+			
+			<label class="required" for="zip">Zip: <a href="#required">*</a></label>
+			<input type="text" name="zip" id="zip" value="$!myAccountForm.zip" style="width:150px"><br />
+			
+			<label class="required" for="phone">Phone: <a href="#required">*</a></label>
+			<input type="text" name="phone" id="phone" value="$!myAccountForm.phone" style="width:150px"><br />
+			
+			<label for="fax">Fax:</label>
+			<input type="text" name="fax" id="fax" value="$!myAccountForm.fax" style="width:150px">
+
+			<div class="buttonGroup">
+				<a href="javascript:window.location='/dotCMS/myAccount?userId=$!{myAccountForm.userId}';" class="button">Back</a>
+				<a href="javascript:doSubmit();" class="activeButton">Save</a>
+			</div>
+			
+		</fieldset>
+		
+		<div class="key">
+			<a name="required" id="required">*required fields</a>
+		</div>
+
+	</form>
+<script languaje="javascript">
+changeStateTextLayer();
+</script>

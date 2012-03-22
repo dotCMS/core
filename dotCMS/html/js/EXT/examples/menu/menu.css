@@ -1,0 +1,183 @@
+/*
+ * Ext Core Library Examples 3.0
+ * http://extjs.com/
+ * Copyright(c) 2006-2009, Ext JS, LLC.
+ * 
+ * The MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ * 
+ */
+
+/*-- required & default rules --*/
+.ux-menu-container {
+    position: relative;
+}
+
+.ux-menu,
+.ux-menu ul {
+    list-style-image: none;
+    list-style-position: outside;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+.ux-menu li {
+    position: relative;
+    float: left;
+}
+
+.ux-menu ul {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.ext-border-box .ux-menu-ie-iframe,
+.ext-ie7 .ux-menu-ie-iframe {
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+    zoom: 1;
+    z-index: -1;
+    filter:mask();
+}
+
+.ux-menu-vertical .ux-menu-item-main {
+    clear: left;
+}
+
+.ux-menu a {
+    display: block;
+    position: relative;
+    text-decoration: none;
+    color: #432;
+    border-left: 1px solid #e3dad1;
+    border-top: 1px solid #e3dad1;
+    border-bottom: 1px solid #e3dad1;    
+    background: #f3efec url(images/menu-item-bg.png) repeat;
+    font-size: 12px;
+    line-height: 12px;
+    padding: 10px 14px;
+}
+
+.ux-menu a.ux-menu-link-last {
+    border-right: 1px solid #e3dad1;
+}
+
+ux.menu ul a {
+    width: 100%;
+}
+
+.ux-menu a:focus,
+.ux-menu a:hover,
+.ux-menu a.ux-menu-link-hover {
+    border-color: #d2e3f4;
+    background: url(images/menu-item-bg-over.png) repeat;
+    outline: 0;
+}
+
+.ext-ie .ux-menu-clearfix {
+    zoom: 1;
+}
+
+.ux-menu-clearfix:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+}
+
+.ux-menu a.ux-menu-link-parent {
+    padding-right: 24px;
+    min-width: 1px;
+}
+
+.ux-menu ul a,
+.ux-menu.ux-menu-vertical a {
+    border-bottom: 0px;    
+    border-right: 1px solid #e3dad1;
+}
+
+.ux-menu ul a.ux-menu-link-last,
+.ux-menu.ux-menu-vertical a.ux-menu-link-last {
+    border-bottom: 1px solid #e3dad1;
+}
+
+.ux-menu-arrow {
+    display: block;
+    width: 8px;
+    height: 6px;
+    right: 10px;
+    top: 14px;
+    position: absolute;
+    background: url(images/menu-arrow-down.png) no-repeat;
+    font-size: 0;
+}
+
+.ux-menu.ux-menu-vertical .ux-menu-arrow,
+.ux-menu ul .ux-menu-arrow  {
+    width: 6px;
+    height: 8px;
+    top: 13px; 
+    background: url(images/menu-arrow-right.png) no-repeat;
+}
+
+.ext-border-box .ux-menu-arrow {
+    top: 17px;
+}
+.ext-border-box .ux-menu.ux-menu-vertical .ux-menu-arrow,
+.ext-border-box .ux-menu ul .ux-menu-arrow {
+    top: 16px;
+}
+
+.ux-menu ul.ux-menu-hidden {
+    display: none;
+}
+
+/*
+.current {
+  background:#fff!important;
+}
+*/
+/*
+
+.ux-menu.ux-menu-horizontal > .ux-menu-item-first > a {
+    background: transparent url(images/menu-item-first.png) no-repeat center left;
+}
+.ux-menu.ux-menu-horizontal > .ux-menu-item-last > a {
+    background: transparent url(images/menu-item-last.png) no-repeat center right;
+}
+
+.ux-menu.ux-menu-horizontal > .ux-menu-item-first.ux-menu-item-hover > a {
+    background: transparent url(images/menu-item-first-over.png) no-repeat center left;
+}
+.ux-menu.ux-menu-horizontal > .ux-menu-item-last.ux-menu-item-hover > a {
+    background: transparent url(images/menu-item-last-over.png) no-repeat center right;
+}
+
+.ux-menu.ux-menu-horizontal > li.ux-menu-item-main > a {
+    padding-bottom: 12px;
+}*/

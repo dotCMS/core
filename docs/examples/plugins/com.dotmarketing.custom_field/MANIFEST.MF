@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Deploy-Class: com.dotmarketing.plugins.custom.field.CustomFieldPluginDeployer
+Plugin-Name: Custom Field
+Plugin-Version: 1
+Author: dotCMS

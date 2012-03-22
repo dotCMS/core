@@ -1,0 +1,112 @@
+<script language="JavaScript" type="text/javascript" src="/html/js/social_bookmarks/social_bookmarks.js"></script>
+
+#if ($UtilMethods.isSet($socialBookmarksShareIcon))
+<a href="javascript: dotCMS_SB_toggle('socialBookmarks');" class="dotCMS-btn" border="0">
+   <img src="${socialBookmarksShareIcon}" border="0" alt="Share">
+</a>
+#else
+<a href="javascript: dotCMS_SB_toggle('socialBookmarks');" class="dotCMS-btn">Share</a>
+#end
+
+<div id="dotCMS-socialBookmarks">
+	<div id="socialBookmarks" style="display: none;">
+	    <ul> 	
+		
+	   #foreach($socialBookmark in ${socialBookmarksList})
+	       	#if($socialBookmark == "digg")
+			<li>
+				<a rel="nofollow" href="http://digg.com/" onclick="dotCMS_SB_bookmark('digg', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/digg_trans.gif" border="0" alt="Add to: Digg" />   #if(!$UtilMethods.isSet($onlyIcons)) Digg #end  
+				</a>
+			</li>
+			#elseif($socialBookmark == "delicious") 
+			<li>
+				<a rel="nofollow" href="http://del.icio.us/" onclick="dotCMS_SB_bookmark('delicious', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/del_trans.gif" border="0" alt="Add to: Del.icio.us" />  #if(!$UtilMethods.isSet($onlyIcons)) Del.icio.us #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "yahoo")
+			<li>
+				<a rel="nofollow" href="http://www.yahoo.com/" onclick="dotCMS_SB_bookmark('yahoo', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/yahoo_trans.gif" border="0" alt="Add to: Yahoo" /> #if(!$UtilMethods.isSet($onlyIcons)) Yahoo #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "google")
+			<li>
+				<a rel="nofollow" href="http://www.google.com/" onclick="dotCMS_SB_bookmark('google', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/google_trans.gif" border="0" alt="Add to: Google" /> #if(!$UtilMethods.isSet($onlyIcons)) Google #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "newsvine")
+			<li>
+				<a rel="nofollow" href="http://www.newsvine.com/" onclick="dotCMS_SB_bookmark('newsvine', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/newsvine_trans.gif" border="0" alt="Add to: Newsvine" /> #if(!$UtilMethods.isSet($onlyIcons)) Newsvine #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "reddit")
+			<li>
+				<a rel="nofollow" href="http://reddit.com/" onclick="dotCMS_SB_bookmark('reddit', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/reddit_trans.png" border="0" alt="Add to: Reddit" />  #if(!$UtilMethods.isSet($onlyIcons)) Reddit #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "stumble")
+			<li>
+				<a rel="nofollow" href="http://www.stumbleupon.com/" onclick="dotCMS_SB_bookmark('stumble', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/stumble_trans.gif" border="0" alt="Add to: StumbleUpon" />  #if(!$UtilMethods.isSet($onlyIcons)) StumbleUpon #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "technorati")
+			<li>
+				<a rel="nofollow" href="http://technorati.com/" onclick="dotCMS_SB_bookmark('technorati', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/technorati_trans.png" border="0" alt="Add to: Technorati" />  #if(!$UtilMethods.isSet($onlyIcons)) Technorati #end 
+				</a>
+			</li>
+		    #elseif($socialBookmark == "wists")
+			<li>
+				<a rel="nofollow" href="http://wists.com/" onclick="dotCMS_SB_bookmark('wists', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/wists_trans.png" border="0" alt="Add to: Wists" />  #if(!$UtilMethods.isSet($onlyIcons)) Wists #end 
+				</a>
+			</li>
+		    #elseif($socialBookmark == "spurl")
+			<li>
+				<a rel="nofollow" href="http://www.spurl.net/" onclick="dotCMS_SB_bookmark('spurl', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/spurl_trans.gif" border="0" alt="Add to: Spurl" />  #if(!$UtilMethods.isSet($onlyIcons)) Spurl #end 
+				</a>
+			</li>
+		    #elseif($socialBookmark == "connotea")
+			<li>
+				<a rel="nofollow" href="http://www.connotea.org/" onclick="dotCMS_SB_bookmark('connotea', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/connotea_trans.png" border="0" alt="Add to: Connotea" />  #if(!$UtilMethods.isSet($onlyIcons)) Connotea #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "co.mments")
+			<li>
+				<a rel="nofollow" href="http://co.mments.com/" onclick="dotCMS_SB_bookmark('comments', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/comments_trans.gif" border="0" alt="Add to: Co.mments" />  #if(!$UtilMethods.isSet($onlyIcons)) Co.mments #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "blogmarks")
+			<li>
+				<a rel="nofollow" href="http://blogmarks.net/" onclick="dotCMS_SB_bookmark('blogmarks', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/blogmarks_trans.png" border="0" alt="Add to: Blogmarks" />  #if(!$UtilMethods.isSet($onlyIcons)) Blogmarks #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "blinklist")
+			<li>
+				<a rel="nofollow" href="http://www.blinklist.com/" onclick="dotCMS_SB_bookmark('blinklist', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/blinklist_trans.png" border="0" alt="Add to: Blinklist" />  #if(!$UtilMethods.isSet($onlyIcons)) Blinklist #end 
+				</a>
+			</li>
+			#elseif($socialBookmark == "blinkbits")
+			<li>
+				<a rel="nofollow" href="http://www.blinkbits.com/" onclick="dotCMS_SB_bookmark('blinkbits', pageTitle, pageURL);return false;" border="0">
+					<img src="/html/js/social_bookmarks/images/blinkbits_trans.png" border="0" alt="Add to: Blinkbits" />  #if(!$UtilMethods.isSet($onlyIcons)) Blinkbits #end 
+				</a>
+			</li>
+	        #end
+	        
+	    #end 
+			<li><a href="javascript: dotCMS_SB_toggle('socialBookmarks');" class="dotCMS-close">close X</a></li>
+		</ul>
+	</div>	
+</div>

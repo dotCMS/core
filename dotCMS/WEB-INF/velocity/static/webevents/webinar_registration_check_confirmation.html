@@ -1,0 +1,147 @@
+#if ($request.getParameter("registrationInode"))
+#set($registration=$webevents.getRegistration($request.getParameter("registrationInode")))
+#else
+#set($registration=$request.getSession().getAttribute("com.dotmarketing.webevents.registration.bean"))
+#end
+
+#set($event=$webevents.getWebEvent($registration.eventInode))
+#set($location=$webevents.getWebEventLocation($registration.eventLocationInode))
+#set($attendees=$webevents.getRegistrationAttendees($registration))
+
+<script type="text/javascript">
+<!--
+
+//-->
+</script>
+
+
+<style>
+td{
+padding:5px 20px;
+}
+.border{
+background:black;
+}
+.border td{
+background:#FFF;
+}
+.font{
+font-size:20px;
+font-weight:bold;
+}
+</style>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+	<tr>
+		<td>
+			<table width="100%" border="0" cellspacing="0" cellpadding="0">
+				<tr>
+					<td>#parse('static/messages.html')</td>
+				</tr>
+				<tr>
+					<td valign="top" align="left">
+						<b>Thanks for your Registration Order #${registration.inode}</b><br>
+						Here is a summary of your registration. An email will be sent to this email address: $registration.billingContactEmail with the
+						registration information. Please submit payment to the address below.  Once payment is received a confirmation email will be sent with information to access the webinar.
+					</td>
+				</tr>
+			</table>	
+
+			<table width="100%" border="0" cellspacing="0" cellpadding="0">	
+				<tr>
+					<td>
+						<table>
+								<tr>
+									<td colspan="1">
+										<img src="/global/images/logo.jpg" alt="Studergroup Logo" /><br />
+										<div style="padding-left:10px;">
+											913 Gulf Breeze Parkway Suite #6<br />
+											Gulf Breeze, FL 32561<br />
+											EIN: 59-3691553<br />
+										</div>
+									</td>
+								</tr>
+						</table>
+					</td>
+					
+					<td align="right" >
+						<div class="font">Invoice</div>
+						<br />
+						<table class="border" cellspacing="1">			
+							<tr>
+								<td>Date</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>					
+								<td>Invoice #</td>
+								<td>&nbsp;</td>					
+							</tr>
+						</table>
+					</td>
+				</tr>	
+			</table>	
+			
+			<div style="text-align:right;">	
+			<table align="right" class="border" cellspacing="1">
+				<tr>
+					<td align="center">P.O. NO.</td>
+					<td align="center">TERMS</td>
+					<td align="center">DUE DATE</td>
+				</tr>
+				
+				<tr>
+					<td align="center">$!{registration.poNumber}</td>
+					<td align="center">&nbsp;</td>
+					<td align="center">&nbsp;</td>
+				</tr>
+			</table>
+			</div>
+			
+			<!-- ITEMS -->
+				<table width="100%" style="clear:both;position:relative; top:-1px;" class="border" cellspacing="1">
+				  <tr>
+					<td colspan="1" style="width:400px;"><b>Your Registrations</b></td>
+					<td style="width:50px;" align="center"><b>Amount</b></td>
+				  </tr>
+				  		
+						#set($total = 0)
+							#foreach ($attendee in $attendees)
+						#set($total = $math.add($total,$attendee.registrationPrice))
+				  <tr>
+			  		<td>
+						<table width="100%">
+							<tr>
+								<td><strong>$!event.title</strong></td>
+							</tr>
+							<tr>
+								<td>
+								$!location.toString()
+								</td>
+							</tr>								
+							<tr>
+								<td><strong>Name:</strong> $attendee.firstName $attendee.lastName
+								</td>
+							</tr>
+							
+						</table>
+					</td>	
+						<td align="center">$$!webapi.toPriceFormat($attendee.registrationPrice)</td>
+						#end
+					<tr>
+						<td align="left" style="font-size:16px;"><strong>Total</strong></td>
+						<td align="center" nowrap="nowrap">$$!webapi.toPriceFormat($total)<br><br></td>
+					</tr>
+					</tr>
+				</table>
+			
+				<table width="100%" style="clear:both;position:relative; top:1px;" cellspacing="1">
+				<tr>
+					<td>The Studer Group, L.L.C.
+					<br />
+					850-934-1099
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>

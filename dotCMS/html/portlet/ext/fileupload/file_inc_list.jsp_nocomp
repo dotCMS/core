@@ -1,0 +1,74 @@
+<%@ taglib prefix="logic" uri="/WEB-INF/tld/struts-logic.tld" %>
+<%
+if(com.dotmarketing.util.InodeUtils.isSet(inodeObject.getInode())){%>
+	<% request.setAttribute("files", com.dotmarketing.portlets.fileupload.factories.FileFactory.getChildrenFilesByOrder(inodeObject));%>
+	<script>
+	    function uploadFile(x){
+	        window.location = "<%= CTX_PATH %>/ext/fileupload/upload_file?parent=<%=inodeObject.getInode()%>&inode=" + x + "&referer=<%= java.net.URLEncoder.encode(referer) %>";
+	    }
+	    function deleteFile(x){
+	        if(confirm("Are you sure you would like to delete this file?")){
+	        	window.location="<%= CTX_PATH %>/ext/fileupload/upload_file?cmd=<%= Constants.DELETE %>&parent=<%=inodeObject.getInode()%>&inode=" + x + "&referer=<%= java.net.URLEncoder.encode(referer) %>";
+	        }
+	    }
+	    function doSubmit() {
+	    	form = document.getElementById("fileForm");
+	    	form.action = "<%=CTX_PATH%>/ext/fileupload/upload_file";
+	    	submitForm(form);
+	    }
+	</script>
+	
+	<span class="shimIcon" style="height:30px;"></span>
+	<table width="90%" cellspacing="0" cellpadding="3" align="center">
+		<tr>
+			<td align=right>
+			   <button dojoType="dijit.form.Button" onClick="uploadFile('')">Upload File</button>
+			</td>
+		</tr>
+	</table>
+	<table cellspacing="1" width="90%" cellpadding="3" align="center" class="adminTable">
+		<TR class="beta">
+			<TD>&nbsp;</TD>
+			<TD width=70%><B><font class="beta" size="2">Name</font></b></TD>
+			<TD><b><font class="beta" size="2">Order</b></font></TD>
+		</TR>
+		<%int x=1;%>
+		<form action="/ext/fileupload/upload_file" method="POST" id="fileForm">
+		<input type="hidden" name="cmd" value="REORDER">
+		<input type="hidden" name="referer" value="<%= java.net.URLEncoder.encode("/c/ext/fileupload/edit_file?inode=" + request.getParameter("inode"))%>">
+		<input type="hidden" name="count" value="<%=((java.util.List) request.getAttribute("files")).size()%>">
+		<logic:iterate name="files" id="f" type="com.dotmarketing.portlets.fileupload.model.FileUpload">
+			<TR>
+				<input type="hidden" name="inode<%=(x-1)%>" value="<%=f.getInode()%>"> 
+								<TD nowrap align=center><font class="gamma" size="2">
+				<a href="javascript: deleteFile('<%=f.getInode()%>');">del</a></font></TD>
+				<TD nowrap>
+				<font class="gamma" size="2">
+					<a href="/portal/uploads/<%=inodeObject.getInode()%>/<%=f.getInode()%>.<%=com.dotmarketing.util.UtilMethods.getFileExtension(f.getFileName())%>"><img src="/icon?i=<%=f.getFileName()%>" width="16" height="16" align=absmiddle border="0" vspace=1 hspace=1></a>
+					<a href="/portal/uploads/<%=inodeObject.getInode()%>/<%=f.getInode()%>.<%=com.dotmarketing.util.UtilMethods.getFileExtension(f.getFileName())%>"><%=f.getFileName()%></a></TD>				
+				<td align=center><input name="newOrder<%=(x-1)%>" type="text" class="text" value="<%=x++%>" style="width: 20px"></td>
+			</TR>
+		</logic:iterate>
+		<%if(((java.util.List) request.getAttribute("files")).size() > 1){%>
+		<tr>
+			<td colspan=3 align="right">
+			  <button dojoType="dijit.form.Button" onClick="doSubmit()">re-order</button>
+			</td>
+		</tr>
+		<%}%>
+		<%if(((java.util.List) request.getAttribute("files")).size() == 0){%>
+		<tr>
+			<td colspan=3 align="center">
+			<font class="bg" size="2">
+			There are no files to show
+			</font>
+			</td>
+		</tr>
+		<%}%>
+		</form>
+		<tr height="100%">
+			<td colspan=4>&nbsp;</td>
+		</tr>
+	</TABLE>
+	<span class="shimIcon"></span>
+<%}%>

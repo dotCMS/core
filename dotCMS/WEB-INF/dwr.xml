@@ -1,0 +1,115 @@
+<!DOCTYPE dwr PUBLIC "-//GetAhead Limited//DTD Direct Web Remoting 3.0//EN" "http://getahead.org/dwr//dwr30.dtd">
+<dwr>
+  <allow>
+    <create creator="new" javascript="JDate">
+      <param name="class" value="java.util.Date"/>
+    </create>
+    <create creator="new" javascript="StructureAjax" scope="session">
+      <param name="class" value="com.dotmarketing.portlets.structure.ajax.StructureAjax"/>
+    </create>
+    <create creator="new" javascript="ContentletAjax" scope="request">
+      <param name="class" value="com.dotmarketing.portlets.contentlet.ajax.ContentletAjax"/>
+    </create>
+    <create creator="new" javascript="CategoryAjax" scope="request">
+      <param name="class" value="com.dotmarketing.portlets.categories.ajax.CategoryAjax"/>
+    </create>
+    <create creator="new" javascript="BrowserAjax" scope="session">
+      <param name="class" value="com.dotmarketing.portlets.browser.ajax.BrowserAjax"/>
+    </create>
+    <create creator="new" javascript="TagAjax" scope="application">
+      <param name="class" value="com.dotmarketing.tag.ajax.TagAjax"/>
+    </create>
+    <create creator="new" javascript="CMSMaintenanceAjax" scope="request">
+      <param name="class" value="com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjax"/>
+    </create>
+    <create creator="new" javascript="AlertMessagesWebAPI" scope="application">
+      <param name="class" value="com.dotmarketing.util.AlertMessagesWebAPI"/>
+    </create>
+    <create creator="new" javascript="UserAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.user.ajax.UserAjax"/>
+    </create>
+    <create creator="new" javascript="RoleAjax" scope="application">
+      <param name="class" value="com.dotmarketing.business.ajax.RoleAjax"/>
+    </create>
+    <create creator="new" javascript="CampaignsAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.campaigns.ajax.CampaignsAjax"/>
+    </create>
+    <create creator="new" javascript="MailingListAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.mailinglists.ajax.MailingListAjax"/>
+    </create>
+    <create creator="new" javascript="RatingAjax" scope="application">
+      <param name="class" value="com.dotmarketing.cms.rating.ajax.RatingAjax"/>
+    </create>
+    <create creator="new" javascript="PollsAjax" scope="application">
+      <param name="class" value="com.dotmarketing.cms.polls.ajax.PollsAjax"/>
+    </create>
+    <create creator="new" javascript="CalendarAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.calendar.ajax.CalendarAjax"/>
+    </create>
+    <create creator="new" javascript="LanguageAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjax"/>
+    </create>
+    <create creator="new" javascript="InodeAjax" scope="request">
+      <param name="class" value="com.dotmarketing.business.ajax.InodeAjax"/>
+    </create>
+    <create creator="new" javascript="PermissionAjax" scope="request">
+      <param name="class" value="com.dotmarketing.business.ajax.PermissionAjax"/>
+    </create>
+    <create creator="new" javascript="HostAjax" scope="application">
+      <param name="class" value="com.dotmarketing.business.ajax.HostAjax"/>
+    </create>
+    <create creator="new" javascript="HostVariableAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.hostvariable.ajax.HostVariableAjax"/>
+    </create>
+    <create creator="new" javascript="FileAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.files.ajax.FileAjax"/>
+    </create>
+    <create creator="new" javascript="ContainerAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.containers.ajax.ContainerAjax"/>
+    </create>
+    <create creator="new" javascript="TemplateAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.templates.ajax.TemplateAjax"/>
+    </create>
+    <create creator="new" javascript="HTMLPageViewAjax" scope="application">
+      <param name="class" value="com.dotmarketing.portlets.htmlpageviews.ajax.HTMLPageViewAjax"/>
+    </create>
+    <create creator="new" javascript="ImportContentletAjax" scope="request">
+      <param name="class" value="com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjax"/>
+    </create>
+    <create creator="new" javascript="DashboardAjax" scope="application">
+      <param name="class" value="com.dotcms.enterprise.priv.DashboardAjax"/>
+    </create>
+    <create creator="new" javascript="AutoUpdaterAjax" scope="application">
+      <param name="class" value="com.dotmarketing.business.ajax.AutoUpdaterAjax"/>
+    </create>
+    <create creator="new" javascript="FieldVariableAjax" scope="session">
+      <param name="class" value="com.dotmarketing.portlets.structure.ajax.FieldVariableAjax"/>
+    </create>
+    <create creator="new" javascript="FileAssetAjax" scope="request">
+      <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
+    </create>    
+    <!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN PLUGINS -->
+	<!-- END PLUGINS -->
+	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
+	<convert converter="bean" match="com.dotmarketing.cms.polls.ajax.PollsAjax$VoteAnswer"/>
+	<convert converter="bean" match="com.dotmarketing.portlets.categories.model.Category"/>
+	<convert converter="bean" match="com.dotmarketing.tag.model.Tag"/>
+	<convert converter="bean" match="com.dotmarketing.tag.model.TagInode"/>
+	<convert converter="bean" match="com.dotmarketing.portlets.communications.model.Communication"/>
+	<convert converter="bean" match="com.dotmarketing.portlets.languagesmanager.model.LanguageKey"/>
+	<convert converter="bean" match="com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory$StatisticBetweenDates"/>
+	<convert converter="bean" match="com.dotmarketing.portlets.dashboard.model.DashboardSummaryVisits"/>
+	<convert converter="bean" match="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod"/>
+	<convert match="java.lang.Exception" converter="exception">
+	  <param name='include' value='message,lineNumber'/>
+	</convert>	
+	<convert match="java.lang.StackTraceElement" converter="bean"/>
+	<convert converter="null" match="java.io.File"/>
+	<convert converter="bean" 
+      match="com.dotmarketing.business.PermissionableObjectDWR">
+      <param name="include" 
+        value="id,type,isParentPermissionable,doesUserHavePermissionsToEdit,isFolder,isHost"/>
+    </convert>
+  </allow>
+</dwr>

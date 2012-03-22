@@ -1,0 +1,135 @@
+<script type='text/javascript' src='/dwr/engine.js'></script>
+<script type='text/javascript' src='/dwr/interface/RatingAjax.js'></script>
+
+#if(!$UtilMethods.isSet($off_image))
+   #set($off_image = '/html/images/star_off.gif')
+#end
+#if(!$UtilMethods.isSet($on_image))
+   #set($on_image = '/html/images/star_on.gif') 
+#end
+#if(!$UtilMethods.isSet($check_image))
+   #set($check_image = '/html/images/star_checked.gif') 
+#end
+
+##http://jira.dotmarketing.net/browse/DOTCMS-3956
+
+#set($contentInode = $rating.convertToJSCompatibleInode(${content.inode}))
+
+
+<script type="text/javascript">
+
+	#if($userRated)
+	var  user_rated_id_$contentInode = $userRated;
+	  
+	#else
+	var user_rated_id_$contentInode = false;
+	#end
+	var user_rating_id_$contentInode= ${userRating};
+	var average_rating_id_$contentInode = ${averageRating};
+	
+	function doStarOver_id_$contentInode(rating) {
+		for(i = 0; i < ${rating.maxRatingValue}; i++) {
+			if(i < rating) {
+				var ele = document.getElementById("id_${content.inode}_rating_" + i);
+				ele.style.background= "url(${check_image})";
+			} else {
+				var ele = document.getElementById("id_${content.inode}_rating_" + i);
+				ele.style.background= "url(${off_image})";
+			}
+		}
+	}
+
+	function doStarOut_id_$contentInode() {
+		if(user_rated_id_$contentInode)
+			var rating = user_rating_id_$contentInode;
+		else
+			var rating = average_rating_id_$contentInode;
+		
+		for(i = 0; i < ${rating.maxRatingValue}; i++) {
+			if(i < rating) {
+				var ele = document.getElementById("id_${content.inode}_rating_" + i);
+    			if(user_rated_id_$contentInode)
+    				ele.style.background= "url(${check_image})";
+    			else
+    				ele.style.background= "url(${on_image})";
+			
+			} else {
+				var ele = document.getElementById("id_${content.inode}_rating_" + i);
+				ele.style.background= "url(${off_image})";
+			}
+		}
+	}
+	
+	function rateThis_id_$contentInode(rating) {
+		doMyRatingOver_id_$contentInode(rating);
+		RatingAjax.rateContent("${content.identifier}", rating, rateThis_id_$contentInode_Response);
+		var message = document.getElementById("rating_message_id_${content.inode}");
+		message.innerHTML = "$text.get('messages.star-rating.saving')";
+		message.style.visibility = "visible";
+		setTimeout('hide_rating_message_id_$contentInode()', 3000);
+	}
+
+	function rateThis_id_$contentInode_Response(rating) {
+		var message = document.getElementById("rating_message_id_${content.inode}");
+		message.innerHTML = "$text.get('messages.star-rating.saved')";
+		message.style.visibility = "visible";
+		setTimeout('hide_rating_message_id_$contentInode()', 3000);
+	}
+
+	function doMyRatingOver_id_$contentInode(rating) {
+		for(i = 0; i < ${rating.maxRatingValue}; i++) {
+			if(i < rating) {
+				var ele = document.getElementById("id_${content.inode}_rating_" + i);
+				ele.style.background= "url(${check_image})";
+			} else {
+				var ele = document.getElementById("id_${content.inode}_rating_" + i);
+				ele.style.background= "url(${off_image})";
+			}
+		}
+		user_rated_id_$contentInode = true;
+		user_rating_id_$contentInode = rating;
+	}
+	
+	function hide_rating_message_id_$contentInode() {
+		document.getElementById("rating_message_id_${content.inode}").style.visibility = "hidden";
+	}
+</script>
+
+#if(!$UtilMethods.isSet($doNotIncludeStyles) || $doNotIncludeStyles == false)
+<style type="text/css">
+	.averageRatingTable tr{
+  		font: 8pt arial,helvetica,sans-serif;
+  		height: 15px;
+  		style="padding: 0;
+  		margin: 0;
+	}
+	
+	.averageRatingTable td {
+		width: 16px;  cursor: pointer; cursor: hand; padding: 0; margin: 0; background-repeat: no-repeat;
+    }
+</style>
+#end
+
+
+<table class="averageRatingTable" id="rating_table_id_${content.inode}" cellpadding="0" cellspacing="0" border="0" onmouseover="hide_rating_message_id_$contentInode()" >
+	<tbody>
+	<tr >
+		#set($ratingsRange = [1..${rating.maxRatingValue}])
+		#foreach($ratingNumber in $ratingsRange)
+			#set($ratingIdx = $ratingNumber - 1)
+			
+		<td id="id_${content.inode}_rating_$ratingIdx" 
+			onmouseover="doStarOver_id_$contentInode(${ratingNumber})" 
+			onmouseout="doStarOut_id_$contentInode()"
+			onclick="rateThis_id_$contentInode(${ratingNumber})" title="Rate this $ratingNumber star out of ${rating.maxRatingValue}" 
+			style="width: 16px;  cursor: pointer; cursor: hand; padding: 0; margin: 0; background-repeat: no-repeat;">&nbsp;</td>
+		#end
+	</tr>
+	</tbody>
+</table>
+<div id="rating_message_id_${content.inode}" style="visibility:hidden" class="contentRatingMessage"></div>
+
+<script type="text/javascript">
+     
+	doStarOut_id_$contentInode();
+</script>

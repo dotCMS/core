@@ -1,0 +1,27 @@
+#set($events = $webevents.getUpcomingWebEvents())
+#set($redirect = $request.getSession().removeAttribute("REDIRECT_AFTER_LOGIN"))
+#foreach($event in $events)
+	#set($eventImage = ${webapi.getLiveFileAsset($event.eventImage1)})
+	#set($eventLocations = $webevents.getUpcomingWebEventLocationsPerEvent($event))
+	<div class="item">
+		<a href="/conferences_webinar/institute_detail.${webapi.getPageFileExtension()}?inode=${event.inode}"><h3><U>$!event.title</U></h3></a>
+
+		<ul>
+			#foreach($location in $eventLocations)
+			<li>
+			#if (!$location.isFull())
+			<!--<a href="/dotCMS/eventRegistration?eventInode=$event.inode&eventLocationInode=$location.inode">-->
+			<a href="/conferences_webinar/institute_detail.$webapi.getPageFileExtension()?inode=${event.inode}">
+			$!location.toShortString()</a>
+			#else
+			<a href="/conferences_webinar/institute_detail.${webapi.getPageFileExtension()}?inode=${event.inode}">$!location.toShortString()</a>
+			#end
+			</li>
+
+			#end
+		</ul>
+
+		<!-- <div class="curveLink"><span><a href="/conferences_webinar/institute_detail.${webapi.getPageFileExtension()}?inode=${event.inode}">Learn More</a></span></div> -->
+
+	</div>
+#end

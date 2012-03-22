@@ -1,0 +1,20 @@
+{
+ 	"content": {
+	     "dynamic_templates": [
+	          {
+	              "template_1": {
+					"_all": { 
+					    "indexAnalyzer": "whitespace", 
+					    "searchAnalyzer": "whitespace", 
+					    "store": "false" 
+					}, 
+                    "match": "*_dotraw",
+                    "mapping": {
+                         "type": "string",
+                         "index" : "not_analyzed"
+                    }
+	              }
+	         }
+	    ]
+	}
+}

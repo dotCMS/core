@@ -1,0 +1,72 @@
+.recurenceWrapper,
+.recurenceWrapper img,
+.recurenceWrapper input,
+{
+	vertical-align: middle;
+}
+
+.recurenceWrapper {
+	margin-top: 5px;
+	border: 1px solid #B6CBEB;
+	padding: 5px;
+}
+
+.eventRecurrence {
+	width: 300px;
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+.recurrenceInterval {
+	width: 25px;
+}
+.recurrenceWeekDay {
+	width: 100px;
+	float: left;
+}
+
+.locationSuggestions {
+	border: 1px solid #CCCCCC;
+	text-align: left;
+	background-color: white;
+	padding: 3px;
+	width: 490px;
+	margin-top: -1px;
+}
+
+.locationSuggestions a:hover {
+	text-decoration: underline;
+}
+
+#showAllLocations {
+	border: 0;
+	margin: 0;
+	padding: 0;
+	margin-left: -1px;
+}
+
+#showAllLocations img {
+	border: 0;
+	margin: 0;
+	vertical-align: top;
+}
+
+.locationMap {
+	border: 1px solid gray;
+	width: 300px;
+	background-color: white;
+}
+
+#locationMapControls {
+	text-align: right;
+}
+
+#locationMapMessage {
+	color: red;
+	text-align: center;
+}
+
+#showAllLocationsImg {
+	cursor: pointer;
+	margin-left: -5px;
+}

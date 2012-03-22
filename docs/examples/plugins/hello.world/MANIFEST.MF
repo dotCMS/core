@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Deploy-Class: com.dotmarketing.plugins.hello.world.HelloWorldPluginDeployer
+Plugin-Name: Hello World
+Plugin-Version: 1.1
+Author: dotCMS

@@ -1,0 +1,282 @@
+<style>
+
+.request_info{
+width:740px;
+}
+
+.request_info label, .request_info span, .request_info select, .request_info input{
+float:left;
+margin:12px 4px;
+}
+
+
+.request_info span{
+margin:10px 0px;
+}
+
+.request_info select, .request_info input{
+margin-right:5px;
+
+}
+
+.request_info textarea{
+border:1px solid #6F7357;
+border-top:0px;
+width:738px;
+}
+
+
+
+.personal_info{
+background:url(/global/images/template/bg_request_info.gif) repeat-y 20px 0px;
+}
+
+
+.personal_info label{
+width:84px;
+}
+
+
+
+.mailing label{
+width:65px;
+}
+
+.top_wrapper{
+min-height:440px;
+_height:440px;
+background:url(/global/images/template/bg_request_info_bottom.gif) repeat-x bottom; 
+margin:0px 0px 20px 0px;
+}
+
+
+.personal_info , .mailing{
+width:345px;
+float:left;
+padding:0px 10px ;
+}
+
+
+
+.request_info p {
+background-color:#EBE8DA;
+padding:2px;
+color:#F16000;
+font-weight:bold;
+padding-left:4px;
+border:1px solid #6F7357;
+text-align:center;
+margin-bottom:0px;
+}
+
+
+.personal_info p , .mailing p{
+margin-bottom:0px;
+margin-right:10px;
+}
+
+#submit_info{
+height:22px;
+display:block;
+width:160px;
+border:1px solid #6F7357;
+margin:30px 0px 20px 0px;
+padding-top:3px;
+text-align:center;
+color:#FFF;
+background-color:#F16000;
+font-size:12px;
+text-decoration:none;
+}
+
+#submit_info:hover{
+background-color:#6F7357;
+}
+
+</style>
+
+<script language="javascript" src="/html/js/states_and_countries.js">
+</script>
+
+<script language="JavaScript" type="text/javascript" src='/global/js/form_validation.js'></script>
+
+<script>
+function doSubmit(){
+	var x = checkForm();
+	if(x){
+	
+		document.fm.submit();
+	}
+
+
+}
+</script>
+
+#parse('/static/messages.html')
+
+
+
+<div class="request_info">
+	<form id="fm" name="fm" action="/dotCMS/inquiry" method="post" onsubmit="return checkForm()">
+		<input type="hidden" name="dispatch" value="inquiry">
+		<input type="hidden" name="password1" value="password1">
+		<input type="hidden" name="password2" value="password1">
+	    <input type="hidden" name="company" value="none">
+	    <input type="hidden" name="organization" value="none">
+	    <input type="hidden" name="website" value="none">
+	    
+	    
+	    <input type="hidden" name="url" value="none">
+    	<!--  application Body Start -->
+		
+		<div style="clear:both;"></div>
+        
+		<div class="top_wrapper">
+		<div class="personal_info">
+		<p>Personal Information</p>
+		
+		
+		<label for="email">eMail: *</label>
+		<input class="text" required="email" pretty="Email Address" type="text" name="email" value="$!createAccountForm.email" style="width:228px;" maxlength="40">
+		<div style="clear:both;"></div>
+	
+		
+	    <label for="prefix">Prefix:</label>
+			<select name="prefix">
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Mr."))
+					#set($selected = "selected")
+				#end						
+				<option $selected>Mr.</option>
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Miss"))
+					#set($selected = "selected")
+				#end						
+				<option $selected>Miss</option>
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Mrs."))
+					#set($selected = "selected")
+				#end						
+				<option $selected>Mrs.</option>
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Ms."))
+					#set($selected = "selected")
+				#end						
+				<option $selected>Ms.</option>
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Dr."))
+					#set($selected = "selected")
+				#end						
+				<option $selected>Dr.</option>
+			</select>
+			<div style="clear:both;"></div>
+						
+		
+		<label for="firstName">First Name: *</label>
+		<input class="text" type="text" required="text" pretty="First Name" name="firstName" value="$!createAccountForm.firstName" maxlength="30" style="width:110px;"/>
+		<div style="clear:both;"></div>
+		
+		
+		<label for="middleName">MI:</label>
+		<input class="text" type="text" name="middleName" size="5" maxlength="2" value="$!createAccountForm.middleName" style="width:15px;" />
+		<div style="clear:both;"></div>
+		
+		<label for="lastName">Last Name: *</label>
+		<input class="text" type="text" required="text" pretty="Last Name" name="lastName" value="$!createAccountForm.lastName" maxlength="50" style="width:110px;" />
+		<div style="clear:both;"></div>
+		
+		
+		<label for="title">Title:</label>
+		<input class="text" type="text" name="title" value="$!createAccountForm.title" maxlength="30" style="width:228px;" />
+		<div style="clear:both;"></div>
+		
+		
+		<label for="school">School:</label>
+		<input class="text" type="text" name="school" value="$!createAccountForm.school" style="width:228px;" maxlength="40" />
+		<div style="clear:both;"></div>
+		
+		
+		<label for="graduation_year">Graduation Year:</label>
+		<input class="text" type="text" name="graduation_year" value="$!createAccountForm.graduation_year" maxlength="4" style="width:60px;" />
+		<div style="clear:both;"></div>
+		
+		<span class="mRed">Mandatory Fields *</span>
+		<div style="clear:both;"></div>
+		
+		</div>					
+		
+		
+		
+		<div class="mailing">
+		<p>Mailing Address</p>
+		
+		<label for="address1">Street 1:</label>
+		<input class="text" type="text" name="address1" value="$!createAccountForm.address1" maxlength="60" style="width:249px;" />
+		<div style="clear:both;"></div>
+				
+		<label for="address2">Street 2:</label>
+		<input class="text" type="text" name="address2" value="$!createAccountForm.address2" maxlength="60" style="width:249px;" />
+		<div style="clear:both;"></div>
+				
+		<label for="city">City:</label>
+		<input class="text" type="text" name="city" value="$!createAccountForm.city"  maxlength="60" style="width:152px;"/> 
+		<div style="clear:both;"></div>
+			
+		<label for="state">State:</label>
+		
+			<script language="javascritp">
+				writeStatesSelect("state","$!createAccountForm.state");
+			</script>
+        <div style="clear:both;"></div>
+	
+		<label for="zip">Zip:</label>
+		<input class="text" size="10" type="text" name="zip" value="$!createAccountForm.zip" maxlength="10" style="width:70px;" />
+		<div style="clear:both;"></div>
+		
+		<label for="phone">Phone:</label>
+		<input class="text" type="text" name="phone" value="$!createAccountForm.phone" maxlength="15" style="width:152px;"/>
+		
+		<div style="clear:both;"></div>
+		</div>
+		
+		</div><!--end of top wrapper -->
+		
+		<div style="clear:both;"></div>
+		
+			
+
+        
+        #foreach($x in $request.getParameterValues('cats'))
+        	#set($test = "${test},${x},")
+        #end
+       
+		#foreach($cat in $categories.getCategoriesListByEntityName("UserProxy"))
+		
+			<div class="categories" style="border: 1px dotted gray;padding: 10px;float:left;">
+				$cat.categoryName: (check all that apply)
+				#foreach($childCat in $categories.getChildrenCategories($cat))
+					<br><input type="checkbox" name="categories" value="$childCat.inode"  id="cats$childCat.inode" 
+						#if($test.indexOf(",${childCat.inode},") > -1) 
+							checked 
+						#end style="float:none;margin:2px;padding:0px;border:0px;"><label style="float:none;margin:3px;margin-top:-1px;padding:0px;" for="cats$childCat.inode">$childCat.categoryName</label>
+				#end
+			</div>	
+			<div style="float: left;height: 10px;">&nbsp;&nbsp;</div>
+		#end
+		
+		
+		<div style="clear:both;"></div>
+		
+		<p>Questions or Comments</p>
+		<textarea name="comments" id="commentsIdt" cols="85" rows="8">$!createAccountForm.comments</textarea>
+		
+		
+		<div style="clear:both;"></div>		
+		
+	   <a href="javascript: doSubmit()" id="submit_info">Submit Information</a>
+       <div style="clear:both;"><br/></div>		
+        
+
+	</form>
+	
+</div>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jbosscache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:jboss:jbosscache-core:config:3.2">
+
+
+<!--  THIS FILE IS NO LONGER USED, UNLESS YOU EXPLICITLY USE THE DOTJBOSSCACHELOADER -->
+<!--  THIS FILE IS NO LONGER USED, UNLESS YOU EXPLICITLY USE THE DOTJBOSSCACHELOADER -->
+<!--  THIS FILE IS NO LONGER USED, UNLESS YOU EXPLICITLY USE THE DOTJBOSSCACHELOADER -->
+
+   <locking
+         isolationLevel="REPEATABLE_READ"
+         lockParentForChildInsertRemove="false"
+         lockAcquisitionTimeout="20000"
+         nodeLockingScheme="mvcc"
+         writeSkewCheck="false"
+         useLockStriping="false"
+         concurrencyLevel="500"/>
+
+
+<loaders passivation="false" shared="false">
+      <loader class="com.dotmarketing.cache.H2CacheLoader" async="false" fetchPersistentState="false"
+              ignoreModifications="false" purgeOnStartup="false">
+         <properties>  
+         </properties>        
+
+      
+      </loader>
+   </loaders>
+
+
+<!-- EVICTION -->
+
+</jbosscache>

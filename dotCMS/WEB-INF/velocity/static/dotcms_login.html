@@ -1,0 +1,143 @@
+#set ($categories = $webapi.getUserInterestsCategories())
+#set($referrer =  $!{request.getAttribute("referrer")})
+#if(!$UtilMethods.isSet($referrer))
+	#set($referrer =  $!{request.getParameter("referrer")})
+#end
+
+<script>
+	function doLogin(){
+		document.getElementById("my_account_fm").submit();
+	}
+	function doQuickCreate(){
+		var ele;
+		var val = document.getElementById("categories");
+		val.value = "";
+		#foreach ($cat in ${categories})
+			ele = document.createAccountForm.cat$cat.inode;;
+			for(i =0;i< ele.length; i++){
+				if(ele[i].checked){
+					val.value = val.value + ","  + ele[i].value;
+				}
+				else{
+					val.value.replace(","  + ele[i].value, "");
+				}
+			}
+		#end
+		document.getElementById("createAccountForm").submit();
+	}
+
+</script>
+<script language="javascript">
+	function clickHidden()
+	{
+		var checked = (document.forms[1].mailingListAux.checked == true ? "true" : "false");
+		//alert(checked);
+		document.forms[1].mailSubscription.value = checked;
+		//alert(document.forms[1].mail.value);
+	}
+</script>
+
+<br>
+#parse('static/messages.html')
+
+<fieldset>
+<legend><b>Login</b></legend>
+<table cellpadding="4" width="400">
+  <form action="/dotCMS/login" method="post" id="my_account_fm" name="my_account_fm">
+    <input name="dispatch" type="hidden" value="login">
+    <input name="referrer" type="hidden" value="$!referrer">
+
+    <tr>
+		<td align="right" width="200">E-mail Address:</td>
+    	<td><input name="userName" id="userNameText" class="text" type="text" value="$!loginForm.userName"></td>
+    </tr>
+    <tr>
+		<td align="right">Password:</td>
+    	<td><input  name="password"  type="password" class="text" value="" onKeyPress="if (event.keyCode == 13) { doLogin(); }"></td>
+    </tr>
+    <tr>
+		<td align="right">Remember Me:</td>
+    	<td><input name="rememberMe" style="border:0px;" type="checkbox" style="margin-left:10px; width:20px"></td>
+    </tr>
+    <tr>
+		<td align="center" colspan="2">
+<a href="javascript:doLogin()" class="button">Login</a>
+    	</td>
+    </tr>
+    <tr>
+		<td colspan="2" align="right">
+    			<a href="/dotCMS/forgotPassword">forgot your password?</a>
+    	</td>
+    </tr>
+  </form>
+</table>
+</fieldset>
+<br />
+<center>
+<h2>Register now for free access!</h2>
+</center>
+<blockquote>
+Thanks for your interest in dotCMS Software. If you don't have a login,
+you can create one below. Please note that you must provide us
+with the following information in order to download dotCMS software, access to dotCMS documentation and learn more about dotCMS support options.
+</blockquote>
+<fieldset>
+<legend><b>Registration</b></legend>
+<form action="/dotCMS/createAccount" method="post" id="createAccountForm" name="createAccountForm">
+<input name="dispatch" type="hidden" value="quickCreate">
+<input name="description" type="hidden" value="Other">
+<input type="hidden" id="categories" name="categories" value="$!myAccountForm.categories">
+<input type="hidden" name="mailSubscription">
+
+<input type="hidden" name="toEmail" value="info@dotmarketing.com">
+<input type="hidden" name="subject" value="dotcms.org: New Account Created">
+<input type="hidden" name="fromName" value="">
+<input type="hidden" name="fromEmail" value="">
+
+<table cellpadding="4" width="400">
+	<tr>
+		<td align="right" width="200"><img src="/html/images/required.gif" width="9" height="9">&nbsp;E-mail Address:</td>
+		<td><input name="userName" id="userNameText" class="text" type="text" value="$!createAccountForm.userName"></td>
+	</tr>
+	<tr>
+		<td align="right"><img src="/html/images/required.gif" width="9" height="9">&nbsp;Password:</td>
+		<td><input name="password1" type="password" class="text" value="$!createAccountForm.password1"></td>
+	</tr>
+	<tr>
+		<td align="right"><img src="/html/images/required.gif" width="9" height="9">&nbsp;Confirm Password:</td>
+		<td><input  name="password2" type="password" class="text" value="$!createAccountForm.password2"></td>
+	</tr>
+
+  <tr>
+  		<td align="right"><img src="/html/images/required.gif" width="9" height="9">&nbsp;First Name:</td>
+  		<td><input type="text" name="firstName" class="text" value="$!createAccountForm.firstName"></td>
+  </tr>
+  <tr>
+  		<td align="right"><img src="/html/images/required.gif" width="9" height="9">&nbsp;Last Name:</td>
+  		<td><input type="text" name="lastName" class="text" value="$!createAccountForm.lastName"></td>
+  </tr>
+  <tr>
+  		<td align="right"><img src="/html/images/required.gif" width="9" height="9">&nbsp;Organization:</td>
+  		<td><input type="text" name="organization" class="text" value="$!createAccountForm.organization"></td>
+  </tr>
+  <tr>
+  		<td align="right"><img src="/html/images/required.gif" width="9" height="9">&nbsp;Website:</td>
+  		<td><input type="text" name="website" class="text" value="$!createAccountForm.website"></td>
+  </tr>
+  <tr>
+  		<td valign="top" align="right">Comments / Questions:</td>
+  		<td><textarea name="comments">$!createAccountForm.comments</textarea></td>
+  </tr>
+  <tr>
+  		<td align="right">Subscribe to the mailing list?</td>
+  		<td><input type="checkbox" style="border: 0px" name="mailingListAux" onclick="clickHidden();"></td>
+  </tr>
+	<tr>
+		<td align="center" colspan="2">
+<a href="javascript:doQuickCreate();" class="button"> Register Now </a>
+		</td>
+	</tr>
+</form>
+</table>
+</fieldset>""  
+"" 

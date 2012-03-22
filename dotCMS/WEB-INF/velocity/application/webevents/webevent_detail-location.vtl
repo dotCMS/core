@@ -1,0 +1,61 @@
+#if (!$event)
+	#set($event = $webevents.getWebEvent($request.getParameter("inode")))
+#end
+#set($eventLocations = $webevents.getUpcomingWebEventLocationsPerEvent($event))
+			
+			<h2>Comments &amp; Testimonials</h2>
+			<div class="item">
+			
+				<div class="curveLink"><span><a href="/dotCMS/webEventComments?inode=$event.inode">Comments &amp; Testimonials</a></span></div>
+				<div><br/></div>
+				<div class="curveLink"><span><a href="/conferences_events/post_comments.${webapi.getPageFileExtension()}?inode=$event.inode">Post Your Comments</a></span></div>
+				<div style="clear:both;"><br/></div>
+			</div>
+			
+			#if ($event.isInstitute())
+			<br/><br/>
+			<h2>Locations</h2>
+			#else
+			<h2>Dates</h2>
+			#end
+
+			#foreach ($location in $eventLocations)
+				<div class="item">
+				$!location.toShortString()
+				#if ($location.isFull())
+				<BR><font color="red">Session is FULL!<br>Call 850-934-1099 to be notified if openings occur.</font>
+				#else
+				#if ($location.isAlmostAtCapacity())
+				<BR><font color="red"> Almost at Capacity</font>
+				#end
+				#end
+				<div class="curve">
+					<div class="curveTop">
+						<!-- <span class="left">&amp;amp;amp;amp;amp;amp;amp;amp;amp;nbsp;</span><span class="right">&amp;amp;amp;amp;amp;amp;amp;amp;amp;nbsp;</span>&amp;amp;amp;amp;amp;amp;amp;amp;amp;nbsp; -->
+					</div>
+					<div class="middle">
+						<div class="clear">&nbsp;</div>
+						#set($price = $webevents.getEventLocationPrice($location))
+						Tuition: $ $!webapi.toPriceFormat($price)<br />
+						#if (!$location.isFull())
+                                                               <br/><a href="/dotCMS/eventRegistration?eventInode=$event.inode&eventLocationInode=$location.inode" class="button" style="padding:6px 8px; text-decoration:none; font-weight:bold;">Register</a><br/>
+						#end
+							#if($event.isInstitute())
+								#if($location.hotelLink && $webapi.castToInt($location.hotelLink) != 0)
+								<div class="curveLink"><span><a href="$webevents.getHotelLinkURL($location.hotelLink)">Hotel Information</a></span></div>
+								#end
+							#end
+						</div>
+
+						<div class="clear">&nbsp;</div>
+					</div>
+					<div class="curveBottom">
+						<span class="left">&nbsp;</span><span class="right">&nbsp;</span>&nbsp;
+					</div>
+				</div>
+			#end
+			#if ($eventLocations.size() == 0)
+
+				No Locations Found
+
+			#end

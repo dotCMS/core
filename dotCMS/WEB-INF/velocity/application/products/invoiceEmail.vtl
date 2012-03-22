@@ -1,0 +1,147 @@
+#set($orderForm = $productwebapi.loadOrderForm())
+#set($discounts = $webapi.getDiscountsByOrder($orderForm))
+<br/>
+<font font-face="Arial, Helvetica, sans-serif" color="#666666" >
+<form action="/dotCMS/viewCart" method="post" autocomplete="off">
+<table width="100%" border="0" cellspacing="0" cellpadding="6">
+	<tr>
+		<td><font color="#B52E00"><b>Thank you for your order # $!orderForm.inode</b></font></td>
+	</tr>
+	<tr>
+		<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >
+		Here is a summary of your order. You will be able to view the status and order history on "Your Profile" information.<br>
+		You will also get an email with tracking information once the order is been shipped.
+                  </font>
+		</td>
+	</tr>
+	<tr>
+		<td>&nbsp;</td>
+	</tr>
+	<tr>
+		<td>
+		<font color="#B52E00"><b>Your order will be shipped to 
+		#if ($!orderForm.paymentType == "ch")
+			(upon receipt of payment)
+		#end
+		:
+		</b></font>
+		</td>
+	</tr>
+	<tr>
+	<td>
+		<table  width="100%" border="0" cellspacing="0" cellpadding="10">
+			<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$productwebapi.getUserFullName($orderForm)</font></td></tr>
+			#if(!($!orderForm.shippingLabel == ""))
+				<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$!orderForm.shippingLabel</font></td></tr>
+			#end
+			<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$!orderForm.shippingAddress1</font></td></tr>
+			#if(!($!orderForm.shippingAddress2 == ""))
+				<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$!orderForm.shippingAddress2</font></td></tr>
+			#end
+			<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$!orderForm.shippingCity, $!orderForm.shippingState $!orderForm.shippingZip</font></td></tr>
+			<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$!orderForm.shippingCountry</font></td></tr>
+		</table>
+	</td>
+	</tr>
+	<tr><td>&nbsp;</td></tr>
+	<tr>
+		<td><font color="#B52E00"><b>Items Ordered:</b></font></td>
+	</tr>
+	<tr><td>&nbsp;</td></tr>
+	<tr>
+	<td>
+	<!-- ITEMS -->
+		<table width="100%" border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<!--<td width="20%"><b>Image</b></td>-->
+			<td width="40%"><font color="#B52E00"><b>Item Description</b></font></td>
+			<td width="15%"><font color="#B52E00"><b>Qty</b></font></td>
+			<td width="25%"><font color="#B52E00"><b>Price Each</b></font></td>
+			<td width="15%"><font color="#B52E00"><b>Amount</b></font></td>
+		</tr>
+		#foreach($orderItem in $!orderForm.orderItemList)
+			#set($product = $productwebapi.getProductbyProductFormaId("$orderItem.productInode"))
+		<tr>
+			<!--<td><img src="/thumbnail?inode=$!{product.smallImageInode}&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;w=100&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;h=100" onclick="opencenter('$!{product.largeImageInode}')"></td>-->
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$product.title <br> $orderItem.formatName</font></td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$orderItem.itemQty</font></td>
+			<td>
+				#set($priceAmount = $!webapi.getItemPriceWithDiscount($orderItem,$discounts))
+				#set($lineTotal = $math.mul($priceAmount,$orderItem.itemQty))
+				<font font-face="Arial, Helvetica, sans-serif" color="#666666" >$ $!webapi.toPriceFormat($priceAmount)</font>
+			</td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$ $!webapi.toPriceFormat($lineTotal)</font></td>
+		</tr>
+		#end
+		<tr>
+			<!--<td>&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;nbsp;</td>-->
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >Sub-Total:</font></td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$ $!webapi.toPriceFormat($orderForm.orderSubTotal)</font></td>
+		</tr>
+		<tr>			
+			<!--<td>&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;nbsp;</td>-->
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td nowrap><font font-face="Arial, Helvetica, sans-serif" color="#666666" >Shipping / Handling:</font></td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$ $!webapi.toPriceFormat($orderForm.orderShipping)</font></td>
+		</tr>
+		#if($!orderForm.shippingState == 'FL')
+		<tr>			
+			<!--<td>&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;nbsp;</td>-->
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >Tax (6.5%) FL:</font></td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$ $!webapi.toPriceFormat($orderForm.orderTax)</font></td>
+		</tr>
+		#end
+		<tr>			
+			<!--<td>&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;nbsp;</td>-->
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >Total:</font></td>
+			<td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >$ $!webapi.toPriceFormat($orderForm.orderTotal)</font></td>
+		</tr>
+	</table>
+	<!-- END ITEMS -->
+	</td>
+	</tr>
+	<tr><td>&nbsp;</td></tr>
+	#if ($!orderForm.paymentType == "cc")
+	<tr>
+		<td>
+		<font font-face="Arial, Helvetica, sans-serif" color="#666666" >Your Credit Card ending  $!webapi.toCCFormat($!orderForm.cardNumber) was succesfully charged for $ $!webapi.toPriceFormat($!orderForm.orderTotal)</font>		</td>
+	</tr>
+	#elseif($!orderForm.paymentType == "ch")
+	<tr>
+		<td>
+		<table>
+			<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >Products are shipped upon receipt of payment.</font></td></tr>
+
+<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >Please note: You will also receive an invoice following your order from the Finance department.</font></td></tr>
+			<tr>
+			<td>
+				<font font-face="Arial, Helvetica, sans-serif" color="#666666" >Please print this page and place it with the check in a stamped envelope.</font>
+			</td>
+			</tr>
+			<tr><td><font font-face="Arial, Helvetica, sans-serif" color="#666666" >Total: $ $!webapi.toPriceFormat($!orderForm.orderTotal)</font></td></tr>
+			<!--<tr><td>Bank Name: $!orderForm.checkBankName</td></tr>
+			<tr><td>Check Number: $!orderForm.checkNumber</td></tr>-->
+		</td>
+	</tr>
+	#elseif($!orderForm.paymentType == "po")
+	<tr>
+		<td>
+		</td>
+	</tr>
+	#end
+	<tr><td>&nbsp;</td></tr>
+	<tr>
+		<td>
+			<font font-face="Arial, Helvetica, sans-serif" color="#666666" >Thank you for your order. We appreciate your business and look forward to serving you in the future.</font>
+		</td>
+	</tr>
+</table>
+</form>
+</font>

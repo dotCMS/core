@@ -1,0 +1,112 @@
+/*
+ * Ext Core Library Examples 3.0
+ * http://extjs.com/
+ * Copyright(c) 2006-2009, Ext JS, LLC.
+ * 
+ * The MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ * 
+ */
+
+.ux-carousel-container {
+    overflow: hidden;
+    position: relative;
+}
+
+.ux-carousel-slides-wrap {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.ux-carousel-slide {
+    float: left;
+    overflow: hidden;
+    text-align: center;
+}
+
+.ux-carousel-nav {
+    height: 29px;
+    width: 100%;
+    background-color: #d1ccc7;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.7;
+    filter:alpha(opacity=70);
+}
+
+.ux-carousel-caption {
+    font-size: 20px;
+    float: left;
+    padding: 2px 5px;
+    margin: 0;
+    text-transform: none;
+    color: black;
+    overflow: hidden;
+    height: 29px;
+    width: 100px;
+}
+
+.ux-carousel-nav-prev,
+.ux-carousel-nav-next,
+.ux-carousel-nav-play {
+    height: 24px;
+    display: block;
+    float: right;
+    margin: 2px 0;
+    background-position: 0 24px;
+}
+
+.ux-carousel-nav .ux-carousel-nav-prev {
+    background-image: url('images/prev.png');
+    width: 31px;    
+}
+
+.ux-carousel-nav .ux-carousel-nav-next {
+    background-image: url('images/next.png');
+    margin-right: 2px;
+    width: 30px;
+}
+
+.ux-carousel-nav-play {
+    background-image: url('images/play_pause.png');
+    width: 24px;
+}
+
+.ux-carousel-nav-play:hover {
+    background-position: 0 0; 
+}
+.ux-carousel-nav-play.ux-carousel-playing {
+    background-position: 24px 24px;
+}
+.ux-carousel-nav-play.ux-carousel-playing:hover {
+    background-position: 24px 0;
+}
+
+.ux-carousel-nav-prev:hover,
+.ux-carousel-nav-next:hover {
+    background-position: 0 48px;
+}
+
+.ux-carousel-nav-prev.ux-carousel-nav-disabled,
+.ux-carousel-nav-next.ux-carousel-nav-disabled {
+    background-position: 0 0;
+}

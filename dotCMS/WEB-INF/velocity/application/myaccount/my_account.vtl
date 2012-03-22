@@ -1,0 +1,97 @@
+#parse('static/messages.html')
+<style>
+
+@import url(/global/css/form.css);
+
+.fieldset .label{
+	width: 200px;
+}
+
+</style>
+
+<div class="buttonGroup" style="text-align: right; margin-top: -35px;">
+	<a href="/dotCMS/registrationHistory" class="button">Registration and Order History</a>
+	<a href="/dotCMS/myAccount" class="button">My Account</a>
+</div>
+
+
+		<div class="fieldset">		
+		<a href="/dotCMS/myAccount?dispatch=editUserCategories&userId=$!{myAccountForm.userId}" class="button" style="float: right;">edit</a>
+		<span class="legend">Personalize Your Experience</span><br />
+
+			#foreach ($cat in ${preferences})
+
+				<span class="label">$cat.categoryName:</span>
+				<span class="input">
+					#set ($children = ${categories.getChildrenCategories($cat)})
+					#set ($selected = false)
+					#foreach($child in $children)
+						#if($UtilMethods.contains($myAccountForm.category, $child.inode))
+							$child.categoryName <BR>
+							#set ($selected = true)
+						#end
+					#end
+					#if(!$selected) None Selected #end
+				</span><br />
+			#end
+</div>
+
+<div class="fieldset">
+			<A href="/dotCMS/myAccount?dispatch=editUserInfo&userId=$!{myAccountForm.userId}" class="button" style="float: right;">edit</a>
+			<span class="legend">Username and Password</span><br />
+			
+			<span class="label">First Name:</span>
+				<span class="input">$!myAccountForm.firstName</span><br />
+
+			<span class="label">Last Name:</span>
+				<span class="input">$!myAccountForm.lastName</span><br />
+			
+			<span class="label">Title:</span>
+				<span class="input">$!myAccountForm.title</span><br />
+			
+			<span class="label">Username / E-mail address:</span>
+				<span class="input">$!myAccountForm.emailAddress</span><br />
+			
+			<span class="label">Password:</span>
+				<span class="input">*************</span><br />
+			
+</div>			
+<div class="fieldset">		
+<a href="/dotCMS/myAccount?dispatch=editUserAddress&userId=$!{myAccountForm.userID}" class="button" style="float: right;">edit</a>
+<span class="legend">Mailing Address</span><br />
+
+
+		
+					#if ($myAccountForm.description == "home")
+						<span class="label"><strong>Home Address</strong></span><br />
+					#elseif ($myAccountForm.description == "work")
+						<span class="label"><strong>Work Address</strong></span><br />
+					#else
+						<span class="label"><strong>Other</strong></span><br />
+					#end
+			<span class="label">Address Street 1</span>
+				<span class="input">$!myAccountForm.street1</span><br />
+			
+			<span class="label">Address Street 2</span>
+				<span class="input">$!myAccountForm.street2</span><br />
+			
+			<span class="label">City</span>
+				<span class="input">$!myAccountForm.city</span><br />
+			
+			<span class="label">State</span>
+				<span class="input">$!myAccountForm.state</span><br />
+			
+			<span class="label">Country</span>
+				<span class="input">$!myAccountForm.country</span><br />
+			
+			<span class="label">Zip</span>
+				<span class="input">$!myAccountForm.zip</span><br />
+			
+			<span class="label">Phone</span>
+				<span class="input">$!myAccountForm.phone</span><br />
+			
+			<span class="label">Fax</span>
+				<span class="input">$!myAccountForm.fax</span><br />
+			
+		</div>
+

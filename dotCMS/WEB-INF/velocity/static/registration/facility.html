@@ -1,0 +1,112 @@
+#set($currentOrganization = $request.getParameter("currentOrganization"))
+<script language="javascript">
+
+function submitForm()
+{
+	document.getElementById("dotRegistrationForm").submit();
+}
+
+#if ($request.getParameter("callback") == "true")
+	window.opener.callback('$!{dotRegistrationForm.organizationInodeAux}',
+	'$!{dotRegistrationForm.organizationTitle}',
+	'$!{dotRegistrationForm.organizationStreet1}',
+	'$!{dotRegistrationForm.organizationStreet2}',
+	'$!{dotRegistrationForm.organizationCity}',
+	'$!{dotRegistrationForm.organizationState}',
+	'$!{dotRegistrationForm.organizationZip}',
+	'$!{dotRegistrationForm.organizationPhone}',
+	'$!{dotRegistrationForm.organizationFax}');
+	window.close();
+#end
+
+</script>
+<style type="text/css" media="all">
+	@import url(/global/css/global.css);
+	@import url(/global/css/curves.css);
+	@import url(/global/css/content.css);
+</style>
+
+<table align="center">
+	<tr>
+		<td>#parse('static/messages.html')</td>
+	</tr>
+</table>
+<h2 style="margin-left: 20px;">Organization Information</h2>
+
+
+<table style="font-size: 11px; margin-left: 35px;">
+<form action="/dotCMS/addFacility" method="post" name="dotRegistrationForm" id="dotRegistrationForm" autocomplete="off">
+<input type="hidden" name="referrer" value="$!{dotRegistrationForm.referer}">
+<tr>
+	<td><!-- Organization Inode--></td>
+	<td><input type="hidden" name="organizationInodeAux" value="$!{dotRegistrationForm.organizationInodeAux}"></td>
+</tr>
+<tr>
+	<td><!-- dispatch action --></td>
+	<td><input type="hidden" name="dispatch" value="saveOrganization"></td>
+</tr>
+<tr>
+	<td><b>Type of Organization:</b></td>
+	<td>
+		$categories.getCategoriesByEntityName("category","Organization","$!{dotRegistrationForm.organizationInodeAux}",false,false,1,false)
+	</td>
+</tr>
+<tr>
+	<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Organization Name:</b></td>
+	<td><input type="text" name="organizationTitle" value="$!{dotRegistrationForm.organizationTitle}"></td>
+</tr>
+<tr>
+	<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Street 1:</b></td>
+	<td><input type="text" name="organizationStreet1" value="$!{dotRegistrationForm.organizationStreet1}"></td>
+</tr>
+<tr>
+	<td><b>&nbsp;&nbsp;&nbsp;Street 2:</b></td>
+	<td><input type="text" name="organizationStreet2" value="$!{dotRegistrationForm.organizationStreet2}"></td>
+</tr>
+<tr>
+	<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;City:</b></td>
+	<td><input type="text" name="organizationCity" value="$!{dotRegistrationForm.organizationCity}"></td>
+</tr>
+<tr>
+	<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;State:</b></td>
+	<td><input type="text" name="organizationState" value="$!{dotRegistrationForm.organizationState}" MAXLENGTH="2"></td>
+</tr>
+<tr>
+	<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Zip:</b></td>
+	<td><input type="text" name="organizationZip" value="$!{dotRegistrationForm.organizationZip}"></td>
+</tr>
+<tr>
+	<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Phone:</b></td>
+	<td><input type="text" name="organizationPhone" value="$!{dotRegistrationForm.organizationPhone}"></td>
+</tr>
+<tr>
+	<td><b>&nbsp;&nbsp;&nbsp;Fax:</b></td>
+	<td><input type="text" name="organizationFax" value="$!{dotRegistrationForm.organizationFax}"></td>
+</tr>
+
+<tr align="center">
+<td colspan="2" class="mainCol">
+<table align="center" class="mainCol">
+	<tr>
+		<td>
+			<div class="curveLink"><span><button onClick="window.close();" class="clearInputStyles">Cancel</button></span></div>
+		</td>
+		<td>
+			<div class="curveLink"><span><button onClick="submitForm()" class="clearInputStyles">Add Organization</button></span></div>
+		</td>
+	</tr>
+</table>
+
+</td>
+</tr>
+<tr>
+<td colspan="2">&nbsp;</td>
+</tr>
+<tr>
+	<td><img src="/html/images/required.gif" width="9" height="9">&nbsp;Required Fields</td>
+</tr>
+</table>
+</form>
+<div class="item"></div>
+""  
+"" 

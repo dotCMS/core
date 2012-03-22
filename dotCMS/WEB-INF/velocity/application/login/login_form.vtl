@@ -1,0 +1,118 @@
+#set ($categories = $webapi.getUserInterestsCategories())
+
+##This logic determines where to return in case of login success
+##if a referer parameter is passed then it will be used as the redirection path
+##overriding the REDIRECT_AFTER_LOGIN session variable
+##if referer is not used the REDIRECT_AFTER_LOGIN variable will be used
+##if not REDIRECT_AFTER_LOGIN is set then will try to grab the http referer header
+#if($request.getParameter("referer"))
+	$request.getSession().setAttribute('REDIRECT_AFTER_LOGIN', $request.getParameter("redirect"))
+#elseif(!$request.getSession().getAttribute('REDIRECT_AFTER_LOGIN'))
+   #if($request.getHeader("referer"))
+		$request.getSession().setAttribute('REDIRECT_AFTER_LOGIN', $request.getHeader("referer"))
+   #elseif($request.getHeader("Referer"))
+		$request.getSession().setAttribute('REDIRECT_AFTER_LOGIN', $request.getHeader("Referer"))
+   #else
+		$request.getSession().setAttribute('REDIRECT_AFTER_LOGIN', '/')
+   #end
+#end
+
+#parse('form_macros.vm')
+<script>
+	function doLogin(){
+		document.getElementById("my_account_fm").submit();
+	}
+
+	function createAnAccount()
+	{
+		var form = document.getElementById("createAccountForm");
+		form.submit();
+	}
+	
+</script>
+<script language="javascript">
+	function clickHidden()
+	{
+		var checked = (document.forms[1].mailingListAux.checked == true ? "true" : "false");
+		//alert(checked);
+		document.forms[1].mail.value = checked;
+		//alert(document.forms[1].mail.value);
+	}
+</script>
+
+
+<style>
+@import url(/global/css/form.css);
+
+/* put in width of widest label */
+fieldset label,
+.fieldset .label{
+	width: 180px;
+}
+fieldset fieldset,
+fieldset .buttonGroup,
+.fieldset .buttonGroup{
+	padding-left: 180px;
+}
+fieldset fieldset legend{
+	margin-left: -180px;
+}
+</style>
+
+<div style="text-algin: center;">
+	#parse('static/messages.html')
+</div>
+
+
+<div style="width: 300px; float: left; margin-right: 20px;">
+<div class="fieldset">
+	<span class="legend">Registration</span><br />
+	
+	<form action="/dotCMS/addRegistration" method="post" id="createAccountForm" name="createAccountForm" autocomplete="off">
+    		<input name="referrer" type="hidden" value="$!referrer">
+	
+		<p>Not a registered user?<br>
+		Create your Account Now!<br>
+		It's free and it only takes a minute!</p>
+		
+		<a href="javascript:createAnAccount();" class="button">Create Account</a>
+  	</form>
+</div>
+</div>
+
+<div style="width: 370px; float: left;">
+<fieldset>
+	<legend>Login</legend>
+
+	<form action="/dotCMS/login" method="post" id="my_account_fm" name="my_account_fm">
+		<input name="dispatch" type="hidden" value="login">
+		
+		##The referrer parameter is used by the login action (/dotCMS/login) to know where the login page lives
+		## it has nothing to be with where the login is redirected on sucess for that the 
+		##REDIRECT_AFTER_LOGIN session variable is used
+		<input name="referrer" type="hidden" value="$!{request.getRequestURI()}">
+	
+		<p>Already a registered user?<br>
+		Login Now!</p>
+		
+		<label>Email:</label>
+		<input name="userName" id="userNameText" class="text" type="text" value="$!loginForm.userName"><br>
+	
+		<label>Password:</label>
+		<input  name="password"  type="password" class="text" value="" onKeyPress="if (event.keyCode == 13) { doLogin(); }"><br>
+	
+		<label>Remember my user information<br /> on this computer:</label>
+		<input name="rememberMe" type="checkbox"><br>
+
+		
+		<p><a href="/dotCMS/forgotPassword" style="float: left; clear: both;">Forgot your Password?</a></p>
+			
+		<div class="buttonGroup">
+			<a href="javascript:doLogin();" class="button">Login</a>
+		</div>
+	
+	</form>
+
+</fieldset>
+</div>
+

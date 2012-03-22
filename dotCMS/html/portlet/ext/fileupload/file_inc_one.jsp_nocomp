@@ -1,0 +1,40 @@
+<%
+if(com.dotmarketing.util.InodeUtils.isSet(inodeObject.getInode())){%>
+	<% request.setAttribute("files", com.dotmarketing.portlets.fileupload.factories.FileFactory.getChildrenFilesByOrder(inodeObject));%>
+	<script>
+	    function uploadFile(x){
+	        window.location = "<%= CTX_PATH %>/ext/fileupload/upload_file?parent=<%=inodeObject.getInode()%>&inode=" + x + "&referer=<%= java.net.URLEncoder.encode(referer) %>";
+	    }
+	    function deleteFile(x){
+	        if(confirm("Are you sure you would like to delete this file?")){
+	        	window.location="<%= CTX_PATH %>/ext/fileupload/upload_file?cmd=<%= Constants.DELETE %>&parent=<%=inodeObject.getInode()%>&inode=" + x + "&referer=<%= java.net.URLEncoder.encode(referer) %>";
+	        }
+	    }
+	</script>
+
+	<table cellspacing="0" cellpadding="2" align="left">
+		<%if(((java.util.List) request.getAttribute("files")).size() >= 1){%>
+		<tr>
+			<% com.dotmarketing.portlets.fileupload.model.FileUpload f = (com.dotmarketing.portlets.fileupload.model.FileUpload) ((java.util.List) request.getAttribute("files")).get(0); %>
+			<TD nowrap>
+				<font class="gamma" size="2">
+				<a href="/portal/uploads/<%=inodeObject.getInode()%>/<%=f.getInode()%>.<%=com.dotmarketing.util.UtilMethods.getFileExtension(f.getFileName())%>"><img src="/icon?i=<%=f.getFileName()%>" width="16" height="16" align=absmiddle border="0" vspace=1 hspace=1></a>
+				<a href="/portal/uploads/<%=inodeObject.getInode()%>/<%=f.getInode()%>.<%=com.dotmarketing.util.UtilMethods.getFileExtension(f.getFileName())%>"><%=f.getFileName()%></a>
+			</TD>				
+			<TD nowrap align=center><font class="gamma" size="2">
+				( <a href="javascript: uploadFile('<%=f.getInode()%>');">change</a> |
+				<a href="javascript: deleteFile('<%=f.getInode()%>');">del</a> ) </font>
+			</TD>
+		</tr>
+		<%}%>
+		<%if(((java.util.List) request.getAttribute("files")).size() == 0){%>
+		<tr>
+			<td align="left">
+			<font class="gamma" size="2">
+			<a href="javascript:uploadFile('');">Click here to upload</a>
+			</font>
+			</td>
+		</tr>
+		<%}%>
+	</TABLE>
+<%}%>

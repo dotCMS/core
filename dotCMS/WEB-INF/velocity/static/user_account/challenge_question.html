@@ -1,0 +1,53 @@
+#set($referrer =  $!{request.getAttribute("referrer")})
+#if(!$UtilMethods.isSet($referrer))
+	#set($referrer =  $!{request.getParameter("referrer")})
+#end
+#set($email = $forgotPasswordForm.email)
+#set($acckey = $forgotPasswordForm.accKey)
+#set ($challenge_question = $cmsuser.getUserChallengeQuestionByEmail($email))
+
+
+<script>
+	function sendAnswer(){
+		document.getElementById("challenge_question_fm").submit();
+	}
+</script>
+
+<br>
+#parse('static/messages.html')
+
+<fieldset>
+<legend><b>Challenge Question</b></legend>
+<form action="/dotCMS/forgotPassword" method="post" id="challenge_question_fm" name="challenge_question_fm">
+	<input name="dispatch" type="hidden" value="verifyChallengeQuestion">
+    <input name="accKey" type="hidden" value="$!forgotPasswordForm.accKey">
+    <input name="referrer" type="hidden" value="$!referrer">
+	<table cellpadding="4">
+		<tr>
+			<td align="right" width="100">E-mail Address:</td>
+			<td align="left">
+				<input name="email" id="emailAddressText" class="text" type="text" value=""><br/>
+				Give us an email you want to receive your new password if not will use the email
+				we have in your profile
+			</td>
+		</tr>
+		#if($webapi.isSet($challenge_question))
+		<tr>
+			<td align="right">$challenge_question:</td>
+			<td align="left"><input name="challengeQuestionAnswer"  id="challengeQuestionAnswerText" type="text" class="text" value="" onKeyPress="if (event.keyCode == 13) { sendAnswer(); }"></td>
+		</tr>
+		<tr>
+			<td align="center" colspan="2">
+				#set ($email = $request.getAttribute("email"))
+				<input name="userName" id="userNameText" type="hidden" value="$email">
+				<a href="javascript:sendAnswer()" class="button">Send Password</a>
+			</td>
+		</tr>
+		#else
+		<tr>
+			<td colspan="2" align="center">We are sorry but you don't have a challenge question associated to your profile, please contact
+				the site administrator to reset your password</td>
+		</tr>
+		#end
+	</table>
+</form>

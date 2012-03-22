@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%c] %m%n" />
+		</layout>
+	</appender>
+
+	<category name="com.liferay">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.filters">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.jdbc">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portal.servlet">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portal.spring">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portal.struts">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portal.util">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portal.wsrp">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portlet.chat">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portlet.jcvs">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portlet.journal">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.portlet.teststruts">
+		<priority value="INFO" />
+	</category>
+
+	<category name="com.liferay.portlet.wsrp">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.objectparadigms">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.opensymphony.oscache">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="com.oroad.stxx">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="de.nava.informa">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="httpclient.wire">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="net.sf.hibernate">
+		<priority value="WARN" />
+	</category>
+
+	<category name="org.apache.axis">
+		<priority value="INFO" />
+	</category>
+
+	<category name="org.apache.commons.digester">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.apache.commons.beanutils">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.apache.commons.fileupload">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.apache.commons.httpclient">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.apache.commons.validator">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.apache.struts">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.apache.wsrp4j">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.codehaus">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.jgroups">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.quartz">
+		<priority value="ERROR" />
+	</category>
+
+	<category name="org.pdfbox">
+		<priority value="INFO" />
+	</category>
+
+	<category name="org.springframework">
+		<priority value="ERROR" />
+	</category>
+
+	<root>
+		<priority value="INFO" />
+		<appender-ref ref="CONSOLE" />
+	</root>
+</log4j:configuration>

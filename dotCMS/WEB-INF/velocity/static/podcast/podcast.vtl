@@ -1,0 +1,90 @@
+## HERE COMES THE MACRO
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+
+<channel>
+<title>$!{podCastTitle}</title>
+
+<link>$!{podCastURL}</link>
+
+#if($UtilMethods.isSet($!{podCastLanguage}))
+<language>$!{podCastLanguage}</language>
+#end
+
+#if($UtilMethods.isSet($podCastCopyright))
+<copyright>$!{podCastCopyright}</copyright>
+#end
+
+#if($UtilMethods.isSet($!{podCastSubtitle}))
+<itunes:subtitle>$!{podCastSubtitle}</itunes:subtitle>
+#end
+
+#if($UtilMethods.isSet($!{podCastAuthor}))
+<itunes:author>$!{podCastAuthor}</itunes:author>
+#end
+
+#if($UtilMethods.isSet($!{podCastSummary}))
+<itunes:summary>$!{podCastSummary}</itunes:summary>
+#end
+
+#if($UtilMethods.isSet($!{podCastDescription}))
+<description>$!{podCastDescription}</description>
+#end
+#if($UtilMethods.isSet($!{podCastOwnerName}) || $UtilMethods.isSet($!{podCastOwnerEmail}))
+<itunes:owner>
+  #if($UtilMethods.isSet($!{podCastOwnerName}))
+    <itunes:name>$!{podCastOwnerName}</itunes:name>
+  #end
+  #if($UtilMethods.isSet($!{podCastOwnerEmail}))
+    <itunes:email>$!{podCastOwnerEmail}</itunes:email>
+  #end
+</itunes:owner>
+#end
+
+#if($UtilMethods.isSet($!{$podCastImage}))
+<itunes:image href="$!{$podCastImage}" />
+#end
+
+#set($podCastCategories = $podCastCategory.split(","))
+#foreach($localPodCastCategory in $podCastCategories)
+   <itunes:category text="$!{localPodCastCategory}" />
+#end
+
+#foreach($podcast in $podcasts)
+<item>
+
+   #set($podCastTitle = $podcast.get("$podCastTitleField"))
+   <title>$!{podCastTitle}</title>
+
+   #set($podCastAuthor = $podcast.get("$podCastAuthorField"))
+   <itunes:author>$!{podCastAuthor}</itunes:author>
+
+   #set($podCastSubtitle = $podcast.get("$podCastSubtitleField"))
+   <itunes:subtitle>$!{podCastSubtitle}</itunes:subtitle>
+
+   #set($podCastSummary = $podcast.get("$podCastSummaryField"))
+   <itunes:summary>$!{podCastSummary}</itunes:summary>
+
+   #set($podCastEnclosure = $podcast.get("$podCastEnclosureField"))
+   #set($podCastEnclosureLength = $podcast.get("$podCastEnclosureLengthField"))
+   #set($podCastEnclosureType = $podcast.get("$podCastEnclosureTypeField"))
+   <enclosure url="$!{podCastEnclosure}" length="$!{podCastEnclosureLength}" type="$!{podCastEnclosureType}" />
+
+   #set($podCastGUID = $podcast.get("$podCastGUIDField"))
+   <guid>$!{podCastGUID}</guid>
+ 
+   #set($podCastModDate = $!$podcast.get('contentLastModDate'))
+   <pubDate>$!{podCastModDate}</pubDate>
+                       
+   #set($podCastDuration = $podcast.get("$podCastDurationField"))
+   <itunes:duration>$!{podCastDuration}</itunes:duration>
+
+   #set($podCastKeywords = $podcast.get("$podCastKeywordsField"))
+   <itunes:keywords>$!{podCastKeywords}</itunes:keywords>
+</item>
+#end
+
+</channel>
+
+</rss>
+## HERE END THE MACRO

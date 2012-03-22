@@ -1,0 +1,43 @@
+#set ($order = $request.getParameter('order'))
+#set ($userId = $request.getParameter('user'))
+#set ($user = $productwebapi.getUserByOrder("$userId"))
+#set ($orderTrackingNumber = $request.getParameter('trackingNumber'))
+#set ($orderItemList = $productwebapi.getOrderItemListByOrder("$order"))
+<br>
+<p>
+Dear $!{user.firstName} $!{user.lastName}
+</p>
+<br>
+<p>
+Thank you again for ordering a Studer Group Resource. We wanted to let
+you know that your order
+has shipped.
+</p><br>
+<p>
+You can track your shipment at http://www.ups.com using this tracking number
+$!orderTrackingNumber, or simply by clicking <a href="http://wwwapps.ups.com/etracking/tracking.cgi?tracknum=$!orderTrackingNumber">here</a>.
+</p><br>
+The following items were included in this shipment:
+<table border="1" cellspacing=0 width="400">
+<tr>
+<td>Item Description</td>
+<td align="center">Qty</td>
+</tr>
+#foreach($orderItem in $orderItemList)
+#set ($product = $productwebapi.getProductbyProductFormaId($orderItem.productInode))
+<tr>
+<td>$!product.title</td>
+<td align="center">$orderItem.itemQty</td>
+</tr>
+#end
+</table>
+<p><br>
+===============================================
+<br>
+<b>The Studer Group</b><br>
+913 Gulf Breeze Parkway, Suite 6 <br>
+Gulf Breeze, FL 32561 <br>
+U.S.A. 850-934-1099 <br><br>
+If you have any questions please do not hesitate to call 850-934-1099<br>
+or email us at <b>resources@studergroup.com</b>.
+</p>

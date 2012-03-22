@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Ext Menu Example</title>
+
+    	<link href="../examples.css" rel="stylesheet" />
+    	<link href="menu.css" rel="stylesheet" />
+
+    	<script src="../../ext-core-debug.js"></script>
+        <script src="menu.js"></script>
+
+        <script>
+            Ext.onReady(function() {
+                new Ext.ux.Menu('simple-horizontal-menu', {
+                    transitionType: 'slide',
+                    direction: 'horizontal', // default
+                    delay: 0.2,              // default
+                    autoWidth: true,         // default
+                    transitionDuration: 0.3, // default
+                    animate: true,           // default
+                    currentClass: 'current'  // default
+                });
+                new Ext.ux.Menu('simple-vertical-menu', {
+                    direction: 'vertical'
+                });
+            });
+        </script>
+        <style>
+            .ux-menu a.current {
+                background-image: url('images/menu-item-bg-current.png');
+                border-color: #cbc0b7;
+            }
+        </style>
+    </head>
+
+    <body>
+    	<h3>Simple horizontal menu</h3>
+        <ul id="simple-horizontal-menu">
+    		<li>
+    		    <a href="#">menu item 1</a>
+                <ul>
+                    <li><a href="#">sub menu item 1</a></li>
+                    <li>
+                        <a href="#">sub menu item 2</a>
+                        <ul>
+                            <li><a href="#">sub sub menu item 1</a></li>
+                            <li><a href="#">sub sub menu item 2</a></li>
+                            <li><a href="#">sub sub menu item 3</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#">sub menu item 3</a></li>
+                </ul>
+            </li>
+            <li><a href="#">menu item 2</a></li>
+            <li>
+                <a href="#">menu item 3</a>
+                <ul>
+                    <li><a href="#">sub menu item 4</a></li>
+                    <li><a href="#">sub menu item 5</a></li>
+                    <li><a href="#">sub menu item 6</a></li>
+                </ul>
+            </li>
+            <li><a href="#">menu item 4</a></li>
+        </ul>
+
+    	<h3>Simple vertical menu</h3>
+        <ul id="simple-vertical-menu">
+    		<li>
+    		    <a href="#">menu item 1</a>
+                <ul>
+                    <li><a href="#">sub menu item 1</a></li>
+                    <li>
+                        <a href="#">sub menu item 2</a>
+                        <ul>
+                            <li><a href="#">sub sub menu item 1</a></li>
+                            <li><a href="#">sub sub menu item 2</a></li>
+                            <li><a href="#">sub sub menu item 3</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#">sub menu item 3</a></li>
+                </ul>
+            </li>
+            <li><a href="#">menu item 2</a></li>
+            <li>
+                <a href="#">menu item 3</a>
+                <ul>
+                    <li class="current"><a href="#">sub menu item 4</a></li>
+                    <li><a href="#">sub menu item 5</a></li>
+                    <li><a href="#">sub menu item 6</a></li>
+                </ul>
+            </li>
+            <li><a href="#">menu item 4</a></li>
+        </ul>
+    </body>
+</html>

@@ -1,0 +1,39 @@
+The dotcms provides a very easy way to integrate with Active Directory.  It is designed to work with Active Directory 2003 
+but should work with Active Directory 2000.  The dotcms also provides some config options to help make the LDAP integration
+as flexible and seemless as possible. All the configuration to integrate into the dotcms can be done via a property file.  
+It should be noted that the dotcms expects a first name, last name, street address, city, zip, and state to function properly. 
+Groups can be maintained in Active Directory but it is possible to turn off the syncing of groups. All user information 
+and group information will be synced from Active Directory to the dotcms, never the other way.  So if you update a user in 
+the dotcms but not in Active Directory the next time the user logs into the dotcms it will sync the user to the information
+found in Active Directory.  This is also true of groups. 
+
+Use the following parameters in the portal-ext.properties to integrate the dotcms and Active Directory.
+	
+	# The pipeline tells the dotcms to integrate with AD2003
+    auth.pipeline.pre=com.dotmarketing.auth.impl.ActiveDirectory2003
+	# This should not be changed
+    auth.impl.ldap.initial.context.factory=com.sun.jndi.ldap.LdapCtxFactory
+	# This is not currently used
+    auth.impl.ldap.security.authentication=none
+	# This is the AD host
+    auth.impl.ldap.host=123.123.123.123
+	# This is the AD port
+    auth.impl.ldap.port=389
+    # should be full dn of user for connecting to AD
+    auth.impl.ldap.userid=CN=LdapAdmin,CN=Users,DC=miami,DC=dotmarketing,DC=com
+	# AD users password
+    auth.impl.ldap.password=securePassword
+	# This is the base dn to search from.  The dotcms will look for users on the level and beneath.
+    auth.impl.ldap.domainlookup=DC=miami,DC=dotmarketing,DC=com
+	# If you want to manage your dotcms groups in AD set this to true.  It is recommended that you manage your groups in
+	# AD. This way users will always the the correct permissions even if they haven't ever been in the system before.
+    auth.impl.build.groups=true
+	# If you use AD to manage your groups you might want to use the filter to look only for groups that begin with a reqex.
+	# So you could create all dotcms groups with the prefix dotcms.  The dotcms will get only the groups that match the regex. 
+	# Use the next property if you need to strip away a prefix. 
+    auth.impl.ldap.build.group.name.filter=/.*/
+	# Prefix the dotcms should strip from group name.  Leave blank to not strip any prefix.
+	auth.impl.ldap.build.group.name.filter.strip=
+	# If you use AD to for user authentication you probably don't need to forgot password and change password functionality.
+	# Setting this to false will remove that functionality from the dotcms.  
+	password.forgot.show=true

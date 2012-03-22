@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!DOCTYPE service-builder PUBLIC "-//Liferay//DTD Service Builder 3.6.1//EN" "http://www.liferay.com/dtd/liferay-service-builder_3_6_1.dtd">
+
+<service-builder root-dir=".." package-dir="com.liferay.portlet">
+	<portlet name="Admin" short-name="Admin" />
+	<entity name="AdminConfig">
+
+		<!-- PK fields -->
+
+		<column name="configId" type="String" primary="true" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="String" />
+
+		<!-- Other fields -->
+
+		<column name="type" type="String" />
+		<column name="name" type="String" />
+		<column name="config" type="String" />
+
+		<!-- Finder methods -->
+
+		<finder name="CompanyId" return-type="Collection">
+			<finder-column name="companyId" />
+		</finder>
+		<finder name="C_T" return-type="Collection">
+			<finder-column name="companyId" />
+			<finder-column name="type" />
+		</finder>
+
+		<!-- References -->
+
+		<reference package-path="com.liferay.portal" entity="User" />
+	</entity>
+</service-builder>

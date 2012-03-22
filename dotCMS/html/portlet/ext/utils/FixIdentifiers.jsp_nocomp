@@ -1,0 +1,181 @@
+<%@page import="com.dotmarketing.beans.Tree"%>
+<%@page import="com.dotmarketing.factories.TreeFactory"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+<%@page import="com.dotmarketing.portlets.containers.model.Container"%>
+<%@page import="com.dotmarketing.portlets.links.model.Link"%>
+<%@page import="com.dotmarketing.portlets.templates.model.Template"%>
+<%@page import="com.dotmarketing.portlets.files.model.File"%>
+<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
+<%@page import="com.dotmarketing.beans.WebAsset"%>
+<%@page import="com.dotmarketing.beans.Inode"%>
+<%@page import="com.dotmarketing.factories.InodeFactory"%>
+<%@page import="java.util.List"%>
+<%@page import="com.dotmarketing.beans.Identifier"%>
+<%@page import="java.util.HashMap"%>
+<%@page import="java.util.ArrayList"%>
+<%@page import="com.dotmarketing.db.DotConnect"%>
+<%@ page import="com.dotmarketing.util.InodeUtils" %>
+<%
+
+DotConnect dc = new DotConnect ();
+
+out.println("<BR><b>Fixing identifiers by URIs</b><BR>");
+
+dc.setSQL("select inode, uri, host_inode from identifier where (host_inode, uri) in " +
+	"(select host_inode, uri from identifier group by host_inode, uri having count(*) > 1) order by host_inode, uri, inode");
+
+ArrayList<HashMap> results = dc.getResults();
+
+HashMap<String,HashMap> idenByURI = new HashMap ();
+String lastURI = "";
+
+for (HashMap map : results) {
+    String currentURI = (String)map.get("uri");
+    String currentHost = (String)map.get("host_inode");
+    if (!currentURI.equals(lastURI)) {
+		out.println("<BR><b>Inspecting uri: " + currentURI + "</b><BR>");
+		lastURI = currentURI;
+    }
+    HashMap<String, Object> idenStruc = idenByURI.get(currentURI);
+    List identifiers = new ArrayList ();
+    Identifier baseIden = null;
+    if (idenStruc == null) {
+        idenStruc = new HashMap<String, Object> ();
+        identifiers = new ArrayList ();
+        idenStruc.put("baseIden", baseIden);
+        idenStruc.put("identifiers", identifiers);
+    } else {
+        baseIden = (Identifier)idenStruc.get("baseIden");
+        identifiers = (List)idenStruc.get("identifiers");
+    }
+    Identifier identifier = (Identifier)InodeFactory.getInode((String)map.get("inode"), Identifier.class);
+    if (InodeUtils.isSet(identifier.getInode())) {
+    	identifiers.add(identifier);
+        out.println("identifier: " + identifier.getInode() + " add to the list for uri: " + currentHost + ":" + currentURI + "<BR>");
+        dc.setSQL("select count (*) as count from tree where parent = " + map.get("inode"));
+    	ArrayList<HashMap<String, String>> countResult = dc.getResults();
+        if (countResult.size() > 0 && countResult.get(0).get("count") != null && 
+                Integer.parseInt((String)countResult.get(0).get("count")) > 0) {
+            if (baseIden == null)  {
+                out.println("<i>set identifier: " + identifier.getInode() + " as base identifier for uri: " + currentHost + ":" + currentURI + "</i><BR>");
+                baseIden = identifier;
+            } else {
+            if(InodeUtils.compareInodes(baseIden.getInode(),identifier.getInode())                
+                    out.println("<i>selected identifier: " + identifier.getInode() + " for uri: " + currentHost + ":" + currentURI + ", replaced identifier: " + baseIden.getInode() + "</i><BR>");
+                    baseIden = identifier;
+                }
+            }
+            idenStruc.put("baseIden", baseIden);
+        } 
+
+    } else {
+    	out.println("Identifier not in db found!:S: " + map.get("inode") + "<BR>");
+    }
+    idenByURI.put(currentHost + ":" + currentURI, idenStruc);
+}
+
+lastURI = "";
+for (String currentURI : idenByURI.keySet()) {
+    HashMap<String, Object> identStruct = idenByURI.get(currentURI);
+    if (!currentURI.equals(lastURI)) {
+		out.println("<BR><b>Processing uri: " + currentURI + "</b><BR>");
+		lastURI = currentURI;
+    }
+    Identifier baseIden = (Identifier)identStruct.get("baseIden");
+    List<Identifier> identifiers = (List)identStruct.get("identifiers");
+    if (baseIden != null)  {
+		for (Identifier iden : identifiers) {
+		    if (!iden.getInode().equalsIgnoreCase(baseIden.getInode())) {
+		        List<Inode> inodes = InodeFactory.getInodesOfClassByCondition(Inode.class, "identifier = " + iden.getInode());
+		        for (Inode asset : inodes) {
+		            if(asset instanceof HTMLPage) {
+		                ((HTMLPage)asset).setWorking(false);
+		                ((HTMLPage)asset).setLive(false);
+		            } else if(asset instanceof File) {
+		                ((File)asset).setWorking(false);
+		                ((File)asset).setLive(false);
+		            } else if(asset instanceof Template) {
+		                ((Template)asset).setWorking(false);
+		                ((Template)asset).setLive(false);
+		            } else if(asset instanceof Link) {
+		                ((Link)asset).setWorking(false);
+		                ((Link)asset).setLive(false);
+		            } else if(asset instanceof Container) {
+		                ((Container)asset).setWorking(false);
+		                ((Container)asset).setLive(false);
+		            } else if(asset instanceof Contentlet) {
+		                ((Contentlet)asset).setWorking(false);
+		                ((Contentlet)asset).setLive(false);
+		            }
+		            asset.setIdentifier(baseIden.getInode());
+		            InodeFactory.saveInode(asset);
+		            Tree tree = TreeFactory.getTree(baseIden.getInode(), asset.getInode());
+		            tree.setParent(baseIden.getInode());
+		            tree.setChild(asset.getInode());
+		            tree.setRelationType("child");
+		            TreeFactory.saveTree(tree);
+		        }
+				out.println("<BR>Removing invalid identifier: " + iden.getInode() + "<BR>");
+		        dc.setSQL("delete from tree where parent = " + iden.getInode());
+		        dc.getResult();
+		        InodeFactory.deleteInode(iden);
+		    }
+		}
+    } else {
+		out.println("<BR>This uri doesn't have a valid baseIden to be used to fix it!!<BR>");
+    }
+    
+}
+
+out.print("<BR><b> END Fixing identifiers by URIs</b><BR>");
+
+//Fixing contentlet Identifier Duplicates
+
+out.print("<br/><b>Fixing contentlet duplicate identifiers</b><br/><br/>");
+List<Contentlet> list = InodeFactory.getInodesOfClass(Contentlet.class);
+for (Contentlet cont : list) {
+	List<Identifier> idenList = InodeFactory.getParentsOfClass(cont, Identifier.class);
+	if (idenList.size() > 1) {
+		out.print("<b>Multiple identifiers associated with a contentlet: " + cont.getInode() + "</b><br/>");
+		for (Identifier iden : idenList) {
+			if (InodeUtils.isSet(cont.getIdentifier()) && (!iden.getInode().equalsIgnoreCase(cont.getIdentifier()))) {
+				Tree tree = TreeFactory.getTree(iden, cont);
+				TreeFactory.deleteTree(tree);
+				out.print("Removing duplicate identifier association Tree parent: " + iden.getInode() + " - child: " + cont.getInode() + "<br/>");
+			}
+			if (!InodeUtils.isSet(cont.getIdentifier())&& (!iden.getInode() - 1.equalsIgnoreCase(cont.getInode()))) {
+				Tree tree = TreeFactory.getTree(iden, cont);
+				TreeFactory.deleteTree(tree);
+				out.print("Removing duplicate identifier association Tree parent: " + iden.getInode() + " - child: " + cont.getInode() + "<br/>");
+			}
+		}
+	}
+}
+
+out.print("<BR><b> END Fixing contentlet duplicate identifiers</b><BR>");
+
+out.print("<br/><b>Fixing HTMLPage duplicate identifiers</b><br/><br/>");
+List<HTMLPage> listPages = InodeFactory.getInodesOfClass(HTMLPage.class);
+for (HTMLPage mypage : listPages) {
+	List<Identifier> idenList = InodeFactory.getParentsOfClass(mypage, Identifier.class);
+	if (idenList.size() > 1) {
+		out.print("<b>Multiple identifiers associated with a HTMLPage: " + mypage.getInode() + "</b><br/>");
+		for (Identifier iden : idenList) {
+			if (InodeUtils.isSet(mypage.getIdentifier()) && !iden.getInode().equalsIgnoreCase(mypage.getIdentifier())) {
+				Tree tree = TreeFactory.getTree(iden, mypage);
+				TreeFactory.deleteTree(tree);
+				out.print("Removing duplicate identifier association Tree parent: " + iden.getInode() + " - child: " + mypage.getInode() + "<br/>");
+			}
+			if (!InodeUtils.isSet(mypage.getIdentifier()) && (!iden.getInode() - 1.equalIgnorecase(mypage.getInode()))) {
+				Tree tree = TreeFactory.getTree(iden, mypage);
+				TreeFactory.deleteTree(tree);
+				out.print("Removing duplicate identifier association Tree parent: " + iden.getInode() + " - child: " + mypage.getInode() + "<br/>");
+			}
+		}
+	}
+}
+
+out.print("<BR><b> END Fixing HTMLPage duplicate identifiers</b><BR>");
+
+
+%>

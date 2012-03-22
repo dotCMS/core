@@ -1,0 +1,89 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title></title>
+</head>
+<body bgcolor="#EBE8DA">
+
+<!-- velocity variables  for styles-->
+
+#set($h1='size="4" color="#6C6C69"')
+#set($h2='size="3" color="#60605D"')
+#set($link='color="#2F5090"')
+#set($all='size="3" color="#60605F"')
+
+<table cellpadding="0" cellspacing="0" border="0" width="660" bgcolor="#FFFFFF">
+  <tr><td colspan="3"><img src="/portal/images/table_border.gif"  alt=""/></td></tr>
+
+   <tr>
+    <td rowspan="3" width="20"><img src="/portal/images/shim.gif" alt="" /></td>
+	<td width="620">&nbsp;</td>
+    <td rowspan="3" width="20"><img src="/portal/images/shim.gif" alt="" /></td>
+  </tr>
+
+  <tr>
+	 <td align="left">
+	 <img src="/portal/images/logo.gif"/>
+	 </td>
+  </tr>
+
+   <tr>
+    <td>&nbsp;</td>
+  </tr>
+
+  <tr><td colspan="3"><img src="/portal/images/table_border.gif"  alt=""/></td></tr>
+</table>
+
+<br/>
+
+<table cellpadding="0" cellspacing="0" border="0" width="660" bgcolor="#FFFFFF">
+
+  <tr><td colspan="3"><img src="/portal/images/table_border.gif"  alt=""/></td></tr>
+
+  <tr>
+    <td rowspan="3" width="20"><img src="/portal/images/shim.gif" alt="" /></td>
+	<td width="620">&nbsp;</td>
+    <td rowspan="3" width="20"><img src="/portal/images/shim.gif" alt="" /></td>
+  </tr>
+
+  <tr>
+	 <td align="left">
+
+	 <h1><font $h1>Event Info</font></h1>
+
+	 <font $all>
+
+		<p><b>Event:</b> ${eventTitle}</p>
+		<p><b>Approval Status:</b> ${approvalStatus}</p>
+		<p><b>Subtitle:</b> ${eventSubtitle}</p>
+		<p><b>Date/Time:</b> ${eventDateTime}</p>
+		<p><b>Event Occurs:</b> ${eventRecurance}</p>
+		<p><b>Facility:</b> ${eventFacility}</p>
+		<p><b>Web Address:</b> ${eventWebAddress}</p>
+		<p><b>Received Administrative Approval:</b> ${eventReceivedAdminApproval}</p>
+		<p><b>User Name:</b> ${eventUserName}</p>
+		<p><b>User Email/Login:</b> ${eventUserEmailAddress}</p>
+		<p><b>Contact Name:</b> ${eventContactName}</p>
+		<p><b>Contact Phone:</b> ${eventContactPhone}</p>
+		<p><b>Contact Fax:</b> ${eventContactFax}</p>
+		<p><b>Contact Email:</b> ${eventContactEmail}</p>
+		<p><b>Contact Organization:</b> ${eventContactCompany}</p>
+		<p><b>Description:</b> ${eventDescription}</p>
+		<p><b>Directions:</b> ${eventDirections}</p>
+
+	 </font>
+	 </td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;</td>
+  </tr>
+
+  <tr><td colspan="3"><img src="/portal/images/table_border.gif"  alt=""/></td></tr>
+
+</table>
+
+
+
+</body>
+</html>

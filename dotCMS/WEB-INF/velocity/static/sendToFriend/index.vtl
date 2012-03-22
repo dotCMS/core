@@ -1,0 +1,62 @@
+<div id="#if($webapi.isSet($sendToFriendId))$sendToFriendId#{else}sendarticletofriend#{end}" style="$!sendToFriendStyle" class="$!sendToFriendCSSClass">
+	<script src="/html/js/form_validation.js" type="text/javascript"></script>
+	<script src="/html/js/send_to_friend.js" type="text/javascript"></script>
+	<form name="sendToFriendForm" method="post" action="/dotCMS/sendArticleEmail" onsubmit="return checkFormSendToFriend()">
+	
+	#if ($UtilMethods.isSet($request.getQueryString())) 
+		#set ($sendToFriendURL = "$!VTLSERVLET_URI?$request.getQueryString()")
+	#else
+		#set ($sendToFriendURL = "$!VTLSERVLET_URI")
+	#end
+		
+		<input type="hidden" name="returnUrl" id="send_to_friend_returnUrl" value="$!sendToFriendURL" />
+		<input type="hidden" name="errorURL" id="send_to_friend_errorURL" value="$!sendToFriendURL" />
+		<input type="hidden" name="linkurl" id="send_to_friend_linkurl" value="http://${host.hostname}$!sendToFriendURL" />
+		<input type="hidden" name="subject" id="send_to_friend_subject" value="$subject" />
+		<input type="hidden" name="order" id="send_to_friend_order" value="username,message,linkurl" />
+		<input type="hidden" name="articletext" id="send_to_friend_articletext" value="$UtilMethods.htmlifyString($!articleText.trim())" />
+		<input type="hidden" name="emailTemplate" id="send_to_friend_template" value="$!emailTemplate" />
+
+	#if($UtilMethods.isSet($parameters))
+	   #set($keys = $parameters.keySet())
+   	   #foreach($key in $keys)
+   	        #set ($value = $parameters.get($!key))
+   	   	#if ($UtilMethods.isSet($value))
+   	        #set ($value = $UtilMethods.escapeHTMLSpecialChars($value))
+   	   	#end
+		<input type="hidden" name="$key" id="${key}_id" value="$value" />
+	   #end
+	#end
+
+
+		<dl>
+			<dt><label for="username">Your Name: *</label></dt>
+			<dd><input name="username" id="send_to_friend_username" value="$!username" type="text" /></dd>
+
+			<dt><label for="send_to_friend_from">Your Email: *</label></dt>
+			<dd><input name="from" id="send_to_friend_from" value="$!from" type="text" /></dd>
+
+			<dt><label for="send_to_friend_to">Email Address of Recipient: *</label></dt>
+			<dd><input name="to" id="send_to_friend_to" value="$!to" type="text" /></dd>
+
+			<dt><label for="message">Message:</label></dt>
+			<dd><textarea name="message" id="message" cols="9" rows="6">$!message</textarea></dd>
+
+			#if($UtilMethods.isSet($articleText))
+			<dt>&nbsp;</dt>
+			<dd><input type="radio" name="send" value="link" checked="checked" />Send Link&nbsp;&nbsp;<input type="radio" name="send" value="full_text" />Send Full Text</dd>
+			#else
+			  <dd><input type="hidden" name="send" value="link" /></dd>
+			#end
+
+			<dt>Required Fields *</dt>
+			<dd>&nbsp;</dd>
+		</dl>
+
+		<div class="buttonGroup">
+			<a href="javascript:showDiv('sendarticletofriend');">Close</a>
+			<input value="Submit" id="send_to_friend_submit" type="submit" />
+		</div>
+
+	</form>	
+</div>

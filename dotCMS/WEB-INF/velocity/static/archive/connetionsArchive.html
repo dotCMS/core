@@ -1,0 +1,15 @@
+#set($month = $request.getParameter('month'))
+#set($year = $request.getParameter('year'))
+#set($initial = "${year}${month}01")
+#set($final  = "${year}${month}30")
+#set($queryFeatures = '+type:content +deleted:false +structureInode:70 +(+languageId:1* +live:true +modDate:[$initial TO $final] )')
+#pullContent($queryFeatures '100' 'date1 desc')
+#foreach($content in $list)
+<p class="clearfix">
+<a href="/$content.storyType/index.${webapi.getPageFileExtension()}?inode=$content.inode">
+<img src="/resize_image?inode=$content.authorImage&w=77" alt="$content.author" />
+	<span class="connH">$content.title</span><br />
+	<span class="connT">$content.modDate</span><br />
+	<b>By $content.author</b></a><br>
+</p>
+#end

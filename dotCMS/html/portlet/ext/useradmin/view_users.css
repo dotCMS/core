@@ -1,0 +1,67 @@
+.fullUserName{font-weight:bold;padding:5px 0 0 10px;display:block;}
+.buttonRow{margin-bottom:0;}
+.dijitContentPane {overflow:hidden;padding:0;}
+.dijitTabListContainer-top{
+	top: 3px !important;
+}
+
+#usersListWrapper{margin-top:38px;}
+#loadingUsers, #loadingUserProfile, #loadingRolesWrapper {
+	text-align: center;
+	padding: 100px;
+}
+
+#usersGrid table, #userAddressesGrid table {
+	margin: 0;
+}
+	
+#userRolesTreeWrapper, #userInfoWrapper, #additionalUserInfoFormWrapper, #marketingInfoWrapper, #usersListWrapper {
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+#userTabsContainer, #userAdditionalInfoForm{
+	overflow:hidden;
+}
+.addressesBox{width:95%;margin:0 0 20px 20px;}
+
+/* addresses pop-up */
+#addAddressDialog {
+	width: 475px;
+}
+
+.userInfoForm dd.empty {
+    float: left;
+    width: 1%;
+    margin-left: 0;
+}
+
+.userInfoForm dt.empty {
+    float: left;
+    width: 1%;
+    margin-left: 0;
+}
+
+.userInfoForm dt.wide {
+	width:95%; 
+	float:none;
+    margin-left: 0;
+}
+
+.userInfoForm dd.wide {
+	width:95%; 
+	float:none;
+    margin-left: 0;
+}
+
+#additionalUserInfoFormWrapper {
+	overflow: auto;
+}
+
+#noRolesFound {
+	position: absolute;
+}
+
+	
+
+	

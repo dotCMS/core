@@ -1,0 +1,3755 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Form Builder 2.6</title>
+</head>
+<body onload="createPrefabObjectSelect(); createPrefabObjectCheckboxes(); checkUncheck('text_required_input', 'set_up_text_form_required'); refreshViews();">
+<!-- Style -->
+<style>
+	table.text
+		{
+			font-family:Times New Roman, Times, serif;
+			color:#000000;
+			font-size:12px;
+			border-style:solid;
+			border-width:medium;
+		}
+</style>
+
+<!-- Scripting -->
+<script language="JavaScript" type="text/JavaScript">
+
+// initialize variables
+var refresh_rate = new Number;
+refresh_rate = 250;
+
+var form_identifier = new String;
+var date = new Date();
+var string_date = new String;
+string_date = date.getTime();
+form_identifier = 'new_form_' + string_date;
+
+var codeBuffer = new Array();
+// codeBuffer keys
+var html = new Number;
+var key = new Number;
+var name = new Number;
+var type = new Number;
+var properties = new Number;
+var edit_permissions = new Number;
+html = 0;
+key = 1;
+name = 2;
+type = 3;
+properties = 4;
+edit_permissions = 5;
+
+var refresh_object_view = new Boolean;
+var refresh_design_view = new Boolean;
+var refresh_code_view = new Boolean;
+refresh_object_view = true;
+refresh_design_view = true;
+refresh_code_view = true;
+
+codeBuffer[0] = new Array();
+codeBuffer[0][this.html] = '<form id="' + form_identifier + '" name="' + form_identifier + '" method="post" action="/dotCMS/sendEmail" onsubmit="return checkForm();">' + "\n" + '     <table align="center">';
+codeBuffer[0][this.key] = 0;
+codeBuffer[0][this.name] = 'Form';
+codeBuffer[0][this.type] = 'form';
+codeBuffer[0][this.properties] = new Array();
+codeBuffer[0][this.edit_permissions] = false;
+
+
+var form_list = new Array();
+form_list[0] = 'set_up_email_form';
+form_list[1] = 'set_up_return_url_form';
+form_list[2] = 'set_up_database_category_form';
+form_list[3] = 'set_up_thank_you_form';
+form_list[4] = 'set_up_text_form';
+form_list[5] = 'set_up_header_form';
+form_list[6] = 'set_up_textarea_form';
+form_list[7] = 'set_up_checkbox_form';
+form_list[8] = 'set_up_select_form';
+form_list[9] = 'set_up_radio_checkbox_group_form';
+
+var errors = new String;
+errors = '';
+
+var set_up_email_key = new Number;
+var set_up_thank_you_key = new Number;
+var set_up_return_url_key = new Number;
+var set_up_database_category_key = new Number;
+
+set_up_email_key = 0;
+set_up_thank_you_key = 0;
+set_up_return_url_key = 0;
+set_up_database_category_key = 0;
+
+var standard_format_outer_shell_1 =  new String;
+var standard_format_center_shell =  new String;
+var standard_format_outer_shell_2 =  new String;
+
+standard_format_outer_shell_1 = '          <tr>\n               <td align="right">';
+standard_format_center_shell = '</td>\n               <td align="left">';
+standard_format_outer_shell_2 = '</td>\n          </tr>';
+
+var alternate_format_outer_shell_1 =  new String;
+var alternate_format_outer_shell_2 =  new String;
+
+alternate_format_outer_shell_1 = '          <tr>\n               <td colspan="2" align="left">';
+alternate_format_outer_shell_2 = '</td>\n          </tr>';
+
+alternate_format_outer_shell_3 = '          <tr>\n               <td colspan="2" align="center">';
+alternate_format_outer_shell_4 = '</td>\n          </tr>';
+
+var object_keys = new Array;
+var object_names = new Array;
+
+var prefabObjects = new Array;
+
+prefabObjects[0] = new Array();
+prefabObjects[0][this.html] = '';
+prefabObjects[0][this.key] = 0;
+prefabObjects[0][this.name] = 'Prefix';
+prefabObjects[0][this.type] = 'text';
+prefabObjects[0][this.properties] =  new Array();
+	prefabObjects[0][this.properties][0] = 'Prefix:';
+	prefabObjects[0][this.properties][1] = 'prefix';
+	prefabObjects[0][this.properties][2] = false;
+	prefabObjects[0][this.properties][3] = 'text';
+	prefabObjects[0][this.properties][4] = '';
+	prefabObjects[0][this.properties][5] = 'Prefix';
+	prefabObjects[0][this.properties][6] = 'Type your preferred prefix here. Examples: Dr., Mr., Mrs., Ms., Prof.';
+prefabObjects[0][this.edit_permissions] = true;
+
+prefabObjects[1] = new Array();
+prefabObjects[1][this.html] = '';
+prefabObjects[1][this.key] = 1;
+prefabObjects[1][this.name] = 'Title';
+prefabObjects[1][this.type] = 'text';
+prefabObjects[1][this.properties] =  new Array();
+	prefabObjects[1][this.properties][0] = 'Title:';
+	prefabObjects[1][this.properties][1] = 'title';
+	prefabObjects[1][this.properties][2] = false;
+	prefabObjects[1][this.properties][3] = 'text';
+	prefabObjects[1][this.properties][4] = '';
+	prefabObjects[1][this.properties][5] = 'Title';
+	prefabObjects[1][this.properties][6] = 'Type your title here. Examples: President, Vice President, CEO, CFO, Programmer';
+prefabObjects[1][this.edit_permissions] = true;
+
+prefabObjects[2] = new Array();
+prefabObjects[2][this.html] = '';
+prefabObjects[2][this.key] = 2;
+prefabObjects[2][this.name] = 'First Name';
+prefabObjects[2][this.type] = 'text';
+prefabObjects[2][this.properties] =  new Array();
+	prefabObjects[2][this.properties][0] = 'First Name:';
+	prefabObjects[2][this.properties][1] = 'firstName';
+	prefabObjects[2][this.properties][2] = true;
+	prefabObjects[2][this.properties][3] = 'text';
+	prefabObjects[2][this.properties][4] = '';
+	prefabObjects[2][this.properties][5] = 'First Name';
+	prefabObjects[2][this.properties][6] = 'Type your first name here.';
+prefabObjects[2][this.edit_permissions] = true;
+
+prefabObjects[3] = new Array();
+prefabObjects[3][this.html] = '';
+prefabObjects[3][this.key] = 3;
+prefabObjects[3][this.name] = 'Middle Initial';
+prefabObjects[3][this.type] = 'text';
+prefabObjects[3][this.properties] =  new Array();
+	prefabObjects[3][this.properties][0] = 'Middle Initial:';
+	prefabObjects[3][this.properties][1] = 'middleInitial';
+	prefabObjects[3][this.properties][2] = false;
+	prefabObjects[3][this.properties][3] = 'text';
+	prefabObjects[3][this.properties][4] = '';
+	prefabObjects[3][this.properties][5] = 'Middle Initial';
+	prefabObjects[3][this.properties][6] = 'Type your middle initial here.';
+prefabObjects[3][this.edit_permissions] = true;
+
+prefabObjects[4] = new Array();
+prefabObjects[4][this.html] = '';
+prefabObjects[4][this.key] = 4;
+prefabObjects[4][this.name] = 'Middle Name';
+prefabObjects[4][this.type] = 'text';
+prefabObjects[4][this.properties] =  new Array();
+	prefabObjects[4][this.properties][0] = 'Middle Name:';
+	prefabObjects[4][this.properties][1] = 'middleName';
+	prefabObjects[4][this.properties][2] = false;
+	prefabObjects[4][this.properties][3] = 'text';
+	prefabObjects[4][this.properties][4] = '';
+	prefabObjects[4][this.properties][5] = 'Middle Name';
+	prefabObjects[4][this.properties][6] = 'Type your middle name here.';
+prefabObjects[4][this.edit_permissions] = true;
+
+prefabObjects[5] = new Array();
+prefabObjects[5][this.html] = '';
+prefabObjects[5][this.key] = 5;
+prefabObjects[5][this.name] = 'Last Name';
+prefabObjects[5][this.type] = 'text';
+prefabObjects[5][this.properties] =  new Array();
+	prefabObjects[5][this.properties][0] = 'Last Name:';
+	prefabObjects[5][this.properties][1] = 'lastName';
+	prefabObjects[5][this.properties][2] = true;
+	prefabObjects[5][this.properties][3] = 'text';
+	prefabObjects[5][this.properties][4] = '';
+	prefabObjects[5][this.properties][5] = 'Last Name';
+	prefabObjects[5][this.properties][6] = 'Type your last name here.';
+prefabObjects[5][this.edit_permissions] = true;
+
+prefabObjects[6] = new Array();
+prefabObjects[6][this.html] = '';
+prefabObjects[6][this.key] = 6;
+prefabObjects[6][this.name] = 'Full Name';
+prefabObjects[6][this.type] = 'text';
+prefabObjects[6][this.properties] =  new Array();
+	prefabObjects[6][this.properties][0] = 'Full Name:';
+	prefabObjects[6][this.properties][1] = 'fullName';
+	prefabObjects[6][this.properties][2] = true;
+	prefabObjects[6][this.properties][3] = 'text';
+	prefabObjects[6][this.properties][4] = '';
+	prefabObjects[6][this.properties][5] = 'Full Name';
+	prefabObjects[6][this.properties][6] = 'Type your full name here.';
+prefabObjects[6][this.edit_permissions] = true;
+
+prefabObjects[7] = new Array();
+prefabObjects[7][this.html] = '';
+prefabObjects[7][this.key] = 7;
+prefabObjects[7][this.name] = 'Organization';
+prefabObjects[7][this.type] = 'text';
+prefabObjects[7][this.properties] =  new Array();
+	prefabObjects[7][this.properties][0] = 'Organization:';
+	prefabObjects[7][this.properties][1] = 'organization';
+	prefabObjects[7][this.properties][2] = false;
+	prefabObjects[7][this.properties][3] = 'text';
+	prefabObjects[7][this.properties][4] = '';
+	prefabObjects[7][this.properties][5] = 'Organization';
+	prefabObjects[7][this.properties][6] = 'Type your organization name here.';
+prefabObjects[7][this.edit_permissions] = true;
+
+prefabObjects[8] = new Array();
+prefabObjects[8][this.html] = '';
+prefabObjects[8][this.key] = 8;
+prefabObjects[8][this.name] = 'Phone';
+prefabObjects[8][this.type] = 'text';
+prefabObjects[8][this.properties] =  new Array();
+	prefabObjects[8][this.properties][0] = 'Phone:';
+	prefabObjects[8][this.properties][1] = 'phone';
+	prefabObjects[8][this.properties][2] = true;
+	prefabObjects[8][this.properties][3] = 'text';
+	prefabObjects[8][this.properties][4] = '';
+	prefabObjects[8][this.properties][5] = 'Phone';
+	prefabObjects[8][this.properties][6] = 'Type your phone number here.';
+prefabObjects[8][this.edit_permissions] = true;
+
+prefabObjects[9] = new Array();
+prefabObjects[9][this.html] = '';
+prefabObjects[9][this.key] = 9;
+prefabObjects[9][this.name] = 'Address';
+prefabObjects[9][this.type] = 'text';
+prefabObjects[9][this.properties] =  new Array();
+	prefabObjects[9][this.properties][0] = 'Address:';
+	prefabObjects[9][this.properties][1] = 'address';
+	prefabObjects[9][this.properties][2] = true;
+	prefabObjects[9][this.properties][3] = 'text';
+	prefabObjects[9][this.properties][4] = '';
+	prefabObjects[9][this.properties][5] = 'Address';
+	prefabObjects[9][this.properties][6] = 'Type your address here.';
+prefabObjects[9][this.edit_permissions] = true;
+
+prefabObjects[10] = new Array();
+prefabObjects[10][this.html] = '';
+prefabObjects[10][this.key] = 10;
+prefabObjects[10][this.name] = 'Address1';
+prefabObjects[10][this.type] = 'text';
+prefabObjects[10][this.properties] =  new Array();
+	prefabObjects[10][this.properties][0] = 'Address:';
+	prefabObjects[10][this.properties][1] = 'address1';
+	prefabObjects[10][this.properties][2] = true;
+	prefabObjects[10][this.properties][3] = 'text';
+	prefabObjects[10][this.properties][4] = '';
+	prefabObjects[10][this.properties][5] = 'Address';
+	prefabObjects[10][this.properties][6] = 'Type the first line of your address here.';
+prefabObjects[10][this.edit_permissions] = true;
+
+prefabObjects[11] = new Array();
+prefabObjects[11][this.html] = '';
+prefabObjects[11][this.key] = 11;
+prefabObjects[11][this.name] = 'Address2 (with blank label)';
+prefabObjects[11][this.type] = 'text';
+prefabObjects[11][this.properties] =  new Array();
+	prefabObjects[11][this.properties][0] = ' ';
+	prefabObjects[11][this.properties][1] = 'address2';
+	prefabObjects[11][this.properties][2] = false;
+	prefabObjects[11][this.properties][3] = 'text';
+	prefabObjects[11][this.properties][4] = '';
+	prefabObjects[11][this.properties][5] = 'Address';
+	prefabObjects[11][this.properties][6] = 'Type the second line of your address here.';
+prefabObjects[11][this.edit_permissions] = true;
+
+prefabObjects[12] = new Array();
+prefabObjects[12][this.html] = '';
+prefabObjects[12][this.key] = 12;
+prefabObjects[12][this.name] = 'City';
+prefabObjects[12][this.type] = 'text';
+prefabObjects[12][this.properties] =  new Array();
+	prefabObjects[12][this.properties][0] = 'City:';
+	prefabObjects[12][this.properties][1] = 'city';
+	prefabObjects[12][this.properties][2] = true;
+	prefabObjects[12][this.properties][3] = 'text';
+	prefabObjects[12][this.properties][4] = '';
+	prefabObjects[12][this.properties][5] = 'City';
+	prefabObjects[12][this.properties][6] = 'Type your city here.';
+prefabObjects[12][this.edit_permissions] = true;
+
+prefabObjects[13] = new Array();
+prefabObjects[13][this.html] = '';
+prefabObjects[13][this.key] = 13;
+prefabObjects[13][this.name] = 'State';
+prefabObjects[13][this.type] = 'select';
+prefabObjects[13][this.properties] =  new Array();
+	prefabObjects[13][this.properties][0] = 'State:';
+	prefabObjects[13][this.properties][1] = 'state';
+	prefabObjects[13][this.properties][2] = true;
+	prefabObjects[13][this.properties][3] = 'Alabama,Alaska,Arizona,Arkansas,California,Colorado,Connecticut,Delaware,Florida,Georgia,Hawaii,Idaho,Illinois,Indiana,Iowa,Kansas,Kentucky,Louisiana,Maine,Maryland,Massachusetts,Michigan,Minnesota,Mississippi,Missouri,Montana,Nebraska,Nevada,New Hampshire,New Jersey,New Mexico,New York,North Carolina,North Dakota,Ohio,Oklahoma,Oregon,Pennsylvania,Rhode Island,South Carolina,South Dakota,Tennessee,Texas,Utah,Vermont,Virginia,Washington,West Virginia,Wisconsin,Wyoming';
+	prefabObjects[13][this.properties][4] = 'State';
+	prefabObjects[13][this.properties][5] = 'Select your state.';
+prefabObjects[13][this.edit_permissions] = true;
+
+prefabObjects[14] = new Array();
+prefabObjects[14][this.html] = '';
+prefabObjects[14][this.key] = 14;
+prefabObjects[14][this.name] = 'Zip';
+prefabObjects[14][this.type] = 'text';
+prefabObjects[14][this.properties] =  new Array();
+	prefabObjects[14][this.properties][0] = 'Zip:';
+	prefabObjects[14][this.properties][1] = 'zip';
+	prefabObjects[14][this.properties][2] = true;
+	prefabObjects[14][this.properties][3] = 'text';
+	prefabObjects[14][this.properties][4] = '';
+	prefabObjects[14][this.properties][5] = 'Zip';
+	prefabObjects[14][this.properties][6] = 'Type your postal code here.';
+prefabObjects[14][this.edit_permissions] = true;
+
+prefabObjects[15] = new Array();
+prefabObjects[15][this.html] = '';
+prefabObjects[15][this.key] = 15;
+prefabObjects[15][this.name] = 'Country';
+prefabObjects[15][this.type] = 'select';
+prefabObjects[15][this.properties] =  new Array();
+	prefabObjects[15][this.properties][0] = 'Country:';
+	prefabObjects[15][this.properties][1] = 'country';
+	prefabObjects[15][this.properties][2] = true;
+	prefabObjects[15][this.properties][3] = 'Afghanistan,Akrotiri,Albania,Algeria,American Samoa,Andorra,Angola,Anguilla,Antarctica,Antigua and Barbuda,Arctic Ocean,Argentina,Armenia,Aruba,Ashmore and Cartier Islands,Atlantic Ocean,Australia,Austria,Azerbaijan,The Bahamas,Bahrain,Bangladesh,Barbados,Belarus,Belgium,Belize,Benin,Bermuda,Bhutan,Bolivia,Bosnia and Herzegovina,Botswana,Bouvet Island,Brazil,British Indian Ocean Territory,British Virgin Islands,Brunei,Bulgaria,Burkina Faso,Burma,Burundi,Cambodia,Cameroon,Canada,Cape Verde,Cayman Islands,Central African Republic,Chad,Chile,China,Christmas Island,Clipperton Island,Cocos (Keeling) Islands,Colombia,Comoros,Democratic Republic of the Congo,Republic of the Congo,Cook Islands,Coral Sea Islands,Costa Rica,Cote d\'Ivoire,Croatia,Cuba,Cyprus,Czech Republic,Denmark,Dhekelia,Djibouti,Dominica,Dominican Republic,East Timor,Ecuador,Egypt,El Salvador,Equatorial Guinea,Eritrea,Estonia,Ethiopia,European Union,Falkland Islands (Islas Malvinas),Faroe Islands,Fiji,Finland,France,French Polynesia,French Southern and Antarctic Lands,Gabon,The Gambia,Gaza Strip,Georgia,Germany,Ghana,Gibraltar,Greece,Greenland,Grenada,Guam,Guatemala,Guernsey,Guinea,Guinea-Bissau,Guyana,Haiti,Heard Island and McDonald Islands,Honduras,Hong Kong,Hungary,Iceland,Iles Eparses,India,Indian Ocean,Indonesia,Iran,Iraq,Ireland,Isle of Man,Israel,Italy,Jamaica,Jan Mayen,Japan,Jersey,Jordan,Kazakhstan,Kenya,Kiribati,North Korea,South Korea,Kuwait,Kyrgyzstan,Laos,Latvia,Lebanon,Lesotho,Liberia,Libya,Liechtenstein,Lithuania,Luxembourg,Macau,Macedonia,Madagascar,Malawi,Malaysia,Maldives,Mali,Malta,Marshall Islands,Mauritania,Mauritius,Mayotte,Mexico,Federated States of Micronesia,Moldova,Monaco,Mongolia,Montenegro,Montserrat,Morocco,Mozambique,Namibia,Nauru,Navassa Island,Nepal,Netherlands,Netherlands Antilles,New Caledonia,New Zealand,Nicaragua,Niger,Nigeria,Niue,Norfolk Island,Northern Mariana Islands,Norway,Oman,Pacific Ocean,Pakistan,Palau,Panama,Papua New Guinea,Paracel Islands,Paraguay,Peru,Philippines,Pitcairn Islands,Poland,Portugal,Puerto Rico,Qatar,Romania,Russia,Rwanda,Saint Helena,Saint Kitts and Nevis,Saint Lucia,Saint Pierre and Miquelon,Saint Vincent and the Grenadines,Samoa,San Marino,Sao Tome and Principe,Saudi Arabia,Senegal,Serbia,Seychelles,Sierra Leone,Singapore,Slovakia,Slovenia,Solomon Islands,Somalia,South Africa,South Georgia and the South Sandwich Islands,Southern Ocean,Spain,Spratly Islands,Sri Lanka,Sudan,Suriname,Svalbard,Swaziland,Sweden,Switzerland,Syria,Tajikistan,Tanzania,Thailand,Taiwan,Togo,Tokelau,Tonga,Trinidad and Tobago,Tunisia,Turkey,Turkmenistan,Turks and Caicos Islands,Tuvalu,Uganda,Ukraine,United Arab Emirates,United Kingdom,United States,United States Pacific Island Wildlife Refuges,Uruguay,Uzbekistan,Vanuatu,Venezuela,Vietnam,Virgin Islands,Wake Island,Wallis and Futuna,West Bank,Western Sahara,Yemen,Zambia,Zimbabwe ';
+	prefabObjects[15][this.properties][4] = 'Country';
+	prefabObjects[15][this.properties][5] = 'Select your country.';
+prefabObjects[15][this.edit_permissions] = true;
+
+prefabObjects[16] = new Array();
+prefabObjects[16][this.html] = '';
+prefabObjects[16][this.key] = 16;
+prefabObjects[16][this.name] = 'Email';
+prefabObjects[16][this.type] = 'text';
+prefabObjects[16][this.properties] =  new Array();
+	prefabObjects[16][this.properties][0] = 'Email:';
+	prefabObjects[16][this.properties][1] = 'email';
+	prefabObjects[16][this.properties][2] = true;
+	prefabObjects[16][this.properties][3] = 'email';
+	prefabObjects[16][this.properties][4] = '';
+	prefabObjects[16][this.properties][5] = 'Email';
+	prefabObjects[16][this.properties][6] = 'Type your email address here.';
+prefabObjects[16][this.edit_permissions] = true;
+
+// show or hide a given element (toggled, element must exist)
+function showHide(targetID) 
+	{
+		var element = document.getElementById(targetID);
+
+		if(element.style.display == 'none')
+			{
+				element.style.display = 'inline';
+			}
+		else
+			{
+				element.style.display =  'none';
+			}
+		
+		if(document.getElementById(targetID + '_plus') && document.getElementById(targetID + '_minus'))
+			{
+				showPlusMinus(targetID);
+			}
+
+	}
+
+// show or hide a given element's plus or minus indicator (toggled, element must exist)	
+function showPlusMinus(targetID)
+	{
+		var element = document.getElementById(targetID);
+
+		if(element.style.display == 'none')
+			{
+				plus = document.getElementById(targetID + '_plus');
+				minus = document.getElementById(targetID + '_minus');
+				plus.style.display = 'inline';
+				minus.style.display = 'none';
+			}
+		else
+			{
+				plus = document.getElementById(targetID + '_plus');
+				minus = document.getElementById(targetID + '_minus');
+				plus.style.display = 'none';
+				minus.style.display = 'inline';
+			}
+	}
+	
+// show a given form ("span" element), hide all others (element must exist)
+function showForm(targetID)
+	{
+		var element = document.getElementById(targetID);
+		
+		errors = '';
+		
+		hideForm(targetID);
+		element.style.display = 'inline';
+		
+		for (form_list_key in form_list)
+			{
+				if(form_list[form_list_key] != targetID)
+					{
+						hideForm(form_list[form_list_key]);
+					}
+			}
+	}
+
+// hide a given form ("span" element), (element must exist)	
+function hideForm(targetID)
+	{
+		var element = document.getElementById(targetID);
+		
+		errors = '';
+		
+		element.style.display = 'none';
+	}
+	
+// replace spaces with underscores for field names et al.
+function replaceSpace(originalText)
+	{
+		originalText = originalText.replace(' ', '_');
+		if(originalText.indexOf(" ") != -1)
+			{
+				originalText = replaceSpace(originalText);
+			}
+			
+		return originalText;
+	}
+	
+// add HTML special characters to xml
+function addHTMLSpecialChars(originalText)
+	{
+		originalText = originalText.replace('<', '&lt;');
+		if(originalText.indexOf("<") != -1)
+			{
+				originalText = addHTMLSpecialChars(originalText);
+			}
+			
+		originalText = originalText.replace('>', '&gt;');
+		if(originalText.indexOf(">") != -1)
+			{
+				originalText = addHTMLSpecialChars(originalText);
+			}
+			
+		return originalText;
+	}
+	
+// remove HTML special characters from xml 
+function removeHTMLSpecialChars(originalText)
+	{
+		originalText = originalText.replace('&lt;', '<');
+		if(originalText.indexOf("&lt;") != -1)
+			{
+				originalText = removeHTMLSpecialChars(originalText);
+			}
+			
+		originalText = originalText.replace('&gt;', '>');
+		if(originalText.indexOf("&gt;") != -1)
+			{
+				originalText = removeHTMLSpecialChars(originalText);
+			}
+			
+		return originalText;
+	}
+
+// firefox fix, make sure checkbox status matches span visibility status, (called on click of checkbox) (both elements must exist)
+function checkUncheck(targetID1,targetID2)
+	{
+		var element1 = document.getElementById(targetID1);
+		var element2 = document.getElementById(targetID2);
+
+		if(element2.style.display == 'none')
+			{
+				element1.checked = false;
+			}
+		else
+			{
+				element1.checked = true;
+			}
+
+	}
+
+// assign value of current code buffer to "textarea" element (element must exist)	
+function dumpBufferCode(targetID)
+	{
+		code = new String;
+		code = '';
+		
+		// javascript tag must be added like this so that browser does not try to parse it.
+		code = '<';
+		code = code + 'script language="JavaScript" type="text/javascript" src="/global/js/form_validation.js"></script';
+		code = code + '>' + "\n";
+		
+		if(set_up_thank_you_key != 0)
+			{
+				if(codeBuffer[set_up_thank_you_key][this.properties][3] == true || codeBuffer[set_up_thank_you_key][this.properties][3] == 'true')
+					{
+						code = code + '<';
+						code = code + 'script language="JavaScript" type="text/javascript">';
+						code = code + '\n     function humanizeKey(key)';
+						code = code + '\n          {';
+						code = code + '\n             if(key == "prefix")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Prefix";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "title")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Title";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "firstName")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "First Name";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "middleInitial")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Middle Initial";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "lastName")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Last Name";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "fullName")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Full Name";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "organization")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Organization";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "phone")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Phone";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "address")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Address";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "address1")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Address First Line";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "address2")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Address Seconde Line";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "city")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "City";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "state")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "State";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "zip")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Zip";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "country")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Country";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "email")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Email";';
+						code = code + '\n          		}';
+						code = code + '\n             else';
+						code = code + '\n          		{';
+						code = code + '\n             		if(key.indexOf("_") != -1)';
+						code = code + '\n          				{';
+						code = code + '\n          					key_array = key.split("_");';
+						code = code + '\n';
+						code = code + '\n          					newKey = new String;';
+						code = code + '\n          					newKey = ""';
+						code = code + '\n';
+						code = code + '\n          					for(index_key in key_array)';
+						code = code + '\n          						{';
+						code = code + '\n									if ( !isNaN( parseInt( index_key ) ) )';
+						code = code + '\n										{';
+						code = code + '\n          									newKey = newKey + key_array[index_key].substring(0,1).toUpperCase() + key_array[index_key].substring(1).toLowerCase() + " ";';
+						code = code + '\n										}';
+						code = code + '\n          						}';
+						code = code + '\n';
+						code = code + '\n          					return newKey;';
+						code = code + '\n          				}';
+						code = code + '\n             		else';
+						code = code + '\n          				{';
+						code = code + '\n          					return key;';
+						code = code + '\n          				}';
+						code = code + '\n          		}';
+						code = code + '\n';
+						code = code + '\n          	return key;';
+						code = code + '\n          }';
+						code = code + '\n     function appendDataToThankYouEmail()';
+						code = code + '\n          {';
+						code = code + '\n          	if(document.getElementById("autoReplyText") != null)';
+						code = code + '\n          		{';
+						code = code + '\n          			if(document.getElementById("order") != null)';
+						code = code + '\n          				{';
+						code = code + '\n          					document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value + "<br><br>You submitted the following information:<br><table borderColor=#DDDDDD border=1 cellpadding=1 cellspacing=0 >"';
+						code = code + '\n';
+						code = code + '\n          					var order_content = new String;';
+						code = code + '\n          					order_content = document.getElementById("order").value;';
+						code = code + '\n          					order_array = order_content.split(",");';
+						code = code + '\n';
+						code = code + '\n          					for(order_key in order_array)';
+						code = code + '\n          						{';
+						code = code + '\n          							if(document.getElementById(order_array[order_key]) != null)';
+						code = code + '\n          								{';
+						code = code + '\n          									if(document.getElementById(order_array[order_key]).value == "on" && document.getElementById(order_array[order_key]).checked == true)';
+						code = code + '\n          										{';
+						code = code + '\n          											document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value  + "<tr>" + "<td align=right><b>" + humanizeKey(order_array[order_key]) + ":&nbsp;</b></td>" + "<td>" + "True" + "</td></tr>";';
+						code = code + '\n          										}';
+						code = code + '\n          									else if(document.getElementById(order_array[order_key]).value == "on" && document.getElementById(order_array[order_key]).checked == false)';
+						code = code + '\n          										{';
+						code = code + '\n          											document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value  + "<tr>" + "<td align=right><b>" + humanizeKey(order_array[order_key]) + ":&nbsp;</b></td>" + "<td>" + "False" + "</td></tr>";';
+						code = code + '\n          										}';
+						code = code + '\n          									else';
+						code = code + '\n          										{';
+						code = code + '\n          											document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value  + "<tr>" + "<td align=right><b>" + humanizeKey(order_array[order_key]) + ":&nbsp;</b></td>" + "<td>" + document.getElementById(order_array[order_key]).value + "</td></tr>";';
+						code = code + '\n          										}';
+						code = code + '\n          								}';
+						code = code + '\n          						}';
+						code = code + '\n							document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value  + "</table>";';
+						code = code + '\n          				}';
+						code = code + '\n          		}';
+						code = code + '\n          }\n</script';
+						code = code + '>' + "\n";
+					}
+			}
+		
+		for (code_buffer_key in codeBuffer)
+			{
+				if(codeBuffer[code_buffer_key][this.html].length > 0)
+					{
+						code = code + codeBuffer[code_buffer_key][this.html] + "\n";
+					}
+			}
+		
+		if(set_up_thank_you_key != 0)
+			{
+				if(codeBuffer[set_up_thank_you_key][this.properties][3] == true || codeBuffer[set_up_thank_you_key][this.properties][3] == 'true')
+					{
+						code = code + standard_format_outer_shell_1 + '&nbsp;' + standard_format_center_shell + '<input type="submit" id="submit_form" name="submit_form" value="Submit" title="Click to submit form." onclick="javascript: appendDataToThankYouEmail();">' + standard_format_outer_shell_2;
+					}
+				else
+					{
+						code = code + standard_format_outer_shell_1 + '&nbsp;' + standard_format_center_shell + '<input type="submit" id="submit_form" name="submit_form" value="Submit" title="Click to submit form.">' + standard_format_outer_shell_2;
+					}
+			}
+		else
+			{
+				code = code + standard_format_outer_shell_1 + '&nbsp;' + standard_format_center_shell + '<input type="submit" id="submit_form" name="submit_form" value="Submit" title="Click to submit form.">' + standard_format_outer_shell_2;
+			}
+		
+		code = code + "\n" + "     </table>" + "\n" + "<input type='hidden' name='html' id='html' value='true' />" + "\n" + "</form>";
+		element = document.getElementById(targetID);
+		element.value = code;
+	}
+
+// assign value of current code buffer to "tr" element (element must exist)
+function dumpBufferView(targetID)
+	{
+		code = new String;
+		code = '';
+		
+		// javascript tag must be added like this so that browser does not try to parse it.
+		code = '<';
+		code = code + 'script language="JavaScript" type="text/javascript" src="/global/js/form_validation.js"></script';
+		code = code + '>' + "\n";
+		
+		if(set_up_thank_you_key != 0)
+			{
+				if(codeBuffer[set_up_thank_you_key][this.properties][3] == true || codeBuffer[set_up_thank_you_key][this.properties][3] == 'true')
+					{
+						code = code + '<';
+						code = code + 'script language="JavaScript" type="text/javascript">';
+						code = code + '\n     function humanizeKey(key)';
+						code = code + '\n          {';
+						code = code + '\n             if(key == "prefix")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Prefix";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "title")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Title";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "firstName")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "First Name";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "middleInitial")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Middle Initial";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "lastName")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Last Name";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "fullName")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Full Name";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "organization")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Organization";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "phone")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Phone";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "address")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Address";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "address1")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Address First Line";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "address2")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Address Seconde Line";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "city")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "City";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "state")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "State";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "zip")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Zip";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "country")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Country";';
+						code = code + '\n          		}';
+						code = code + '\n             else if(key == "email")';
+						code = code + '\n          		{';
+						code = code + '\n          			return "Email";';
+						code = code + '\n          		}';
+						code = code + '\n             else';
+						code = code + '\n          		{';
+						code = code + '\n             		if(key.indexOf("_") != -1)';
+						code = code + '\n          				{';
+						code = code + '\n          					key_array = key.split("_");';
+						code = code + '\n';
+						code = code + '\n          					newKey = new String;';
+						code = code + '\n          					newKey = ""';
+						code = code + '\n';
+						code = code + '\n          					for(index_key in key_array)';
+						code = code + '\n          						{';
+						code = code + '\n									if ( !isNaN( parseInt( index_key ) ) )';
+						code = code + '\n										{';
+						code = code + '\n          									newKey = newKey + key_array[index_key].substring(0,1).toUpperCase() + key_array[index_key].substring(1).toLowerCase() + " ";';
+						code = code + '\n										}';
+						code = code + '\n          						}';
+						code = code + '\n';
+						code = code + '\n          					return newKey;';
+						code = code + '\n          				}';
+						code = code + '\n             		else';
+						code = code + '\n          				{';
+						code = code + '\n          					return key;';
+						code = code + '\n          				}';
+						code = code + '\n          		}';
+						code = code + '\n';
+						code = code + '\n          	return key;';
+						code = code + '\n          }';
+						code = code + '\n     function appendDataToThankYouEmail()';
+						code = code + '\n          {';
+						code = code + '\n          	if(document.getElementById("autoReplyText") != null)';
+						code = code + '\n          		{';
+						code = code + '\n          			if(document.getElementById("order") != null)';
+						code = code + '\n          				{';
+						code = code + '\n          					document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value + "<br><br>You submitted the following information:<br><table borderColor=#DDDDDD border=1 cellpadding=1 cellspacing=0 >"';
+						code = code + '\n';
+						code = code + '\n          					var order_content = new String;';
+						code = code + '\n          					order_content = document.getElementById("order").value;';
+						code = code + '\n          					order_array = order_content.split(",");';
+						code = code + '\n';
+						code = code + '\n          					for(order_key in order_array)';
+						code = code + '\n          						{';
+						code = code + '\n          							if(document.getElementById(order_array[order_key]) != null)';
+						code = code + '\n          								{';
+						code = code + '\n          									if(document.getElementById(order_array[order_key]).value == "on" && document.getElementById(order_array[order_key]).checked == true)';
+						code = code + '\n          										{';
+						code = code + '\n          											document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value  + "<tr>" + "<td align=right><b>" + humanizeKey(order_array[order_key]) + ":&nbsp;</b></td>" + "<td>" + "True" + "</td></tr>";';
+						code = code + '\n          										}';
+						code = code + '\n          									else if(document.getElementById(order_array[order_key]).value == "on" && document.getElementById(order_array[order_key]).checked == false)';
+						code = code + '\n          										{';
+						code = code + '\n          											document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value  + "<tr>" + "<td align=right><b>" + humanizeKey(order_array[order_key]) + ":&nbsp;</b></td>" + "<td>" + "False" + "</td></tr>";';
+						code = code + '\n          										}';
+						code = code + '\n          									else';
+						code = code + '\n          										{';
+						code = code + '\n          											document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value  + "<tr>" + "<td align=right><b>" + humanizeKey(order_array[order_key]) + ":&nbsp;</b></td>" + "<td>" + document.getElementById(order_array[order_key]).value + "</td></tr>";';
+						code = code + '\n          										}';
+						code = code + '\n          								}';
+						code = code + '\n          						}';
+						code = code + '\n							document.getElementById("autoReplyText").value = document.getElementById("autoReplyText").value  + "</table>";';
+						code = code + '\n          				}';
+						code = code + '\n          		}';
+						code = code + '\n          }\n</script';
+						code = code + '>' + "\n";
+					}
+			}
+		
+		for (code_buffer_key in codeBuffer)
+			{
+				if(codeBuffer[code_buffer_key][this.html].length > 0)
+					{
+						code = code + codeBuffer[code_buffer_key][this.html] + "\n";
+					}
+			}
+		
+		if(set_up_thank_you_key != 0)
+			{
+				if(codeBuffer[set_up_thank_you_key][this.properties][3] == true || codeBuffer[set_up_thank_you_key][this.properties][3] == 'true')
+					{
+						code = code + standard_format_outer_shell_1 + '&nbsp;' + standard_format_center_shell + '<input type="submit" id="submit_form" name="submit_form" value="Submit" title="Click to submit form." onclick="javascript: appendDataToThankYouEmail();">' + standard_format_outer_shell_2;
+					}
+				else
+					{
+						code = code + standard_format_outer_shell_1 + '&nbsp;' + standard_format_center_shell + '<input type="submit" id="submit_form" name="submit_form" value="Submit" title="Click to submit form.">' + standard_format_outer_shell_2;
+					}
+			}
+		else
+			{
+				code = code + standard_format_outer_shell_1 + '&nbsp;' + standard_format_center_shell + '<input type="submit" id="submit_form" name="submit_form" value="Submit" title="Click to submit form.">' + standard_format_outer_shell_2;
+			}
+		
+		code = code + "\n" + "     </table>" + "\n" + "<input type='hidden' name='html' id='html' value='true' />" + "\n" + "</form>";
+		document.getElementById(targetID).innerHTML = code;		
+	}
+
+// assign value of current objects to "tr" element while adding controls (element must exist)
+function dumpObjects(targetID)
+	{
+		code = new String;
+		code = '';
+		
+		if(codeBuffer.length > 0)
+			{	
+				var first_time = new Boolean;
+				first_time = true;
+				
+				var array_keys = new Array;
+				
+				var counter = new Number;
+				counter = 0;
+				
+				for (code_buffer_key in codeBuffer)
+					{
+						if(codeBuffer[code_buffer_key][this.key] > 0)
+							{
+
+								if(codeBuffer[code_buffer_key][this.edit_permissions] == true || codeBuffer[code_buffer_key][this.key] == set_up_thank_you_key)
+									{
+										array_keys[counter] = codeBuffer[code_buffer_key][this.key];
+										counter++;
+									}
+							}
+					}
+					
+				if(array_keys.length > 0)
+					{
+						code = '<table align="center">' + "\n";
+						code = code + '     <tr>' + "\n";
+						code = code + '          <td align="center">Field Name</td>' + "\n";
+						code = code + '          <td align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>' + "\n";
+						code = code + '          <td align="center">Field Type</td>' + "\n";
+						code = code + '          <td align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>' + "\n";
+						code = code + '          <td align="center" colspan="3">Options</td>' + "\n";
+						code = code + '     </tr>' + "\n";
+					}
+				
+				counter = 0;
+				for (code_buffer_key in codeBuffer)
+					{
+						if(code_buffer_key > 0 && codeBuffer[code_buffer_key][this.name].length > 0 && (codeBuffer[code_buffer_key][this.edit_permissions] == true || codeBuffer[code_buffer_key][this.key] == set_up_thank_you_key))
+							{
+								code = code + '     <tr>' + "\n";
+								code = code + '          <td align="center">' + codeBuffer[code_buffer_key][this.name] + '</td>' + "\n";
+								code = code + '          <td align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>\n';
+								code = code + '          <td align="center">' + codeBuffer[code_buffer_key][this.type] + '</td>' + "\n";
+								code = code + '          <td align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>\n';
+								code = code + '          <td align="center">';
+								if(!first_time)
+									{
+										code = code + '<input type="button" title="Click here to move this object up." onclick="javascript: objectSwap(' + code_buffer_key + ',' + array_keys[(counter-1)] + '); dumpObjects(\'object_table_column\'); dumpBufferView(\'view_table_column\'); dumpBufferCode(\'code_text_area\');" value="Move Up">';
+									}
+								else
+									{
+										code = code + '&nbsp;';
+									}
+								code = code + '</td>\n          <td align="center">';
+								if(counter != (array_keys.length - 1))
+									{
+										code = code + '<input type="button" title="Click here to move this object down." onclick="javascript: objectSwap(' + code_buffer_key + ',' + array_keys[(counter + 1)] + '); dumpObjects(\'object_table_column\'); dumpBufferView(\'view_table_column\'); dumpBufferCode(\'code_text_area\');" value="Move Down">';
+									}
+								else
+									{
+										code = code + '&nbsp;';
+									}
+								code = code + '</td>          <td align="center">';
+								if(codeBuffer[code_buffer_key][this.edit_permissions] && codeBuffer[code_buffer_key][this.type] != 'spacer')
+									{
+										code = code + '<input type="button" title="Click here to edit this object." onclick="javascript: errors=\'\';  refreshViews(); dumpErrors(\'form_errors\'); editObject(' + code_buffer_key + ');" value="Edit">';
+									}
+								else if(codeBuffer[code_buffer_key][this.key] == set_up_thank_you_key)
+									{
+										code = code + '<input type="button" title="Click here to edit this object." onclick="javascript: errors=\'\';  refreshViews(); dumpErrors(\'form_errors\'); showForm(\'set_up_thank_you_form\');  document.getElementById(\'from_thank_you_input\').focus();" value="Edit">';
+									}
+								else
+									{
+										code = code + '&nbsp;';
+									}
+								code = code + '</td>          <td align="center">';
+								code = code + '<input type="button" title="Click here to delete this object." onclick="javascript: errors=\'\';  refreshViews(); dumpErrors(\'form_errors\'); objectDelete(' + code_buffer_key + '); dumpObjects(\'object_table_column\'); dumpBufferView(\'view_table_column\'); dumpBufferCode(\'code_text_area\');" value="Delete">';
+								code = code + '</td>' + "\n";
+								code = code + '     </tr>' + "\n";
+								first_time = false;
+								counter++;
+							}
+					}
+				code = code + '</table>';
+			}
+		document.getElementById(targetID).innerHTML = code;		
+	}
+	
+// assign XML value of current code buffer to "textarea" element (element must exist)	
+function dumpXMLCode(targetID)
+	{
+		xml_code = new String;
+		tab = new String;
+		xml_code = '';
+		tab = '     ';
+		
+		xml_code = xml_code + '<xml>' + '\n';
+		
+		for (code_buffer_key in codeBuffer)
+			{
+				xml_code = xml_code + tab + '<object_' + code_buffer_key + '>' + '\n';
+				
+					xml_code = xml_code + tab + tab + '<html>';
+					xml_code = xml_code + addHTMLSpecialChars(codeBuffer[code_buffer_key][this.html]);
+					xml_code = xml_code + '</html>' + '\n';
+					
+					xml_code = xml_code + tab + tab + '<key>';
+					xml_code = xml_code + codeBuffer[code_buffer_key][this.key];
+					xml_code = xml_code + '</key>' + '\n';
+					
+					xml_code = xml_code + tab + tab + '<name>';
+					xml_code = xml_code + codeBuffer[code_buffer_key][this.name];
+					xml_code = xml_code + '</name>' + '\n';
+					
+					xml_code = xml_code + tab + tab + '<type>';
+					xml_code = xml_code + codeBuffer[code_buffer_key][this.type];
+					xml_code = xml_code + '</type>' + '\n';
+					
+					xml_code = xml_code + tab + tab + '<properties>' + '\n';
+					
+					for (properties_key in codeBuffer[code_buffer_key][this.properties])
+						{
+							xml_code = xml_code + tab + tab + tab + '<properties_' + properties_key + '>';
+							xml_code = xml_code + codeBuffer[code_buffer_key][this.properties][properties_key];
+							xml_code = xml_code + '</properties_' + properties_key + '>' + '\n';
+						}
+					
+					xml_code = xml_code + tab + tab + '</properties>' + '\n';
+					
+					xml_code = xml_code + tab + tab + '<edit_permissions>';
+					xml_code = xml_code + codeBuffer[code_buffer_key][this.edit_permissions];
+					xml_code = xml_code + '</edit_permissions>' + '\n';
+					
+				xml_code = xml_code + tab + '</object_' + code_buffer_key + '>' + '\n';
+			}
+			
+		xml_code = xml_code + '</xml>' + '\n';
+			
+		element = document.getElementById(targetID);
+		element.value = xml_code;
+	}
+	
+// create array of objects by reading the XML code in the textarea 'xml_code_loader_text_area'
+function loadXMLCode()
+	{		
+		xml_code = new String;
+		tab = new String;
+		tagFound = new Boolean;
+		counter = new Number;
+		xml_code = document.getElementById('xml_code_loader_text_area').value;
+		tab = '     ';
+		tagFound = true;
+		counter = 0;
+		
+		if(xml_code != '' || !xml_code.indexOf('<xml>'))
+			{
+				// erase the current object array
+				for (code_buffer_key in codeBuffer)
+					{
+						codeBuffer[code_buffer_key] = new Array();
+					}
+				
+				while(tagFound)
+					{
+						if(xml_code.indexOf('object_' + counter) != -1 && xml_code.indexOf('/object_' + counter) != -1)
+							{
+								codeBuffer[counter] = new Array();
+								objectString = new String;
+								objectString = xml_code;
+								objectString = objectString.substring(objectString.indexOf('object_' + counter), objectString.indexOf('/object_' + counter));
+								
+								htmlString = new String;
+								htmlString = objectString;
+								htmlString = htmlString.substring(htmlString.indexOf('<html>') + 6, htmlString.indexOf('</html>'));
+								codeBuffer[counter][this.html] = removeHTMLSpecialChars(htmlString);
+								
+								keyString = new String;
+								keyString = objectString;
+								keyString = keyString.substring(keyString.indexOf('<key>') + 5, keyString.indexOf('</key>'));
+								codeBuffer[counter][this.key] = keyString;
+								
+								nameString = new String;
+								nameString = objectString;
+								nameString = nameString.substring(nameString.indexOf('<name>') + 6, nameString.indexOf('</name>'));
+								codeBuffer[counter][this.name] = nameString;
+								
+								typeString = new String;
+								typeString = objectString;
+								typeString = typeString.substring(typeString.indexOf('<type>') + 6, typeString.indexOf('</type>'));
+								codeBuffer[counter][this.type] = typeString;
+								
+								propertiesString = new String;
+								propertiesString = objectString;
+								propertiesString = propertiesString.substring(propertiesString.indexOf('<properties>') + 12, propertiesString.indexOf('</properties>'));
+								
+								properties_xml_code = new String;
+								propertiesTagFound = new Boolean;
+								propertiesCounter = new Number;
+								properties_xml_code = propertiesString;
+								propertiesTagFound = true;
+								propertiesCounter = 0;
+								
+								codeBuffer[counter][this.properties] =  new Array();
+								
+								while(propertiesTagFound)
+									{	
+										if(properties_xml_code.indexOf('<properties_' + propertiesCounter + '>') != -1 && properties_xml_code.indexOf('</properties_' + propertiesCounter + '>') != -1)
+											{
+												
+												propertyString = new String;
+												propertyKey = new String;
+												propertyString = properties_xml_code;
+												propertyKey = '<properties_' + propertiesCounter + '>';
+												propertyString = propertyString.substring(propertyString.indexOf('<properties_' + propertiesCounter + '>') + propertyKey.length, propertyString.indexOf('</properties_' + propertiesCounter + '>'));
+												
+												if(propertyString == 'true')
+													{
+														codeBuffer[counter][this.properties][propertiesCounter] = new Boolean;
+														codeBuffer[counter][this.properties][propertiesCounter] = true;
+													}
+												else if(propertyString == 'false')
+													{
+														codeBuffer[counter][this.properties][propertiesCounter] = new Boolean;
+														codeBuffer[counter][this.properties][propertiesCounter] = false;
+													}
+												else
+													{
+														codeBuffer[counter][this.properties][propertiesCounter] = propertyString;
+													}
+													
+												codeBuffer[counter][this.properties][propertiesCounter] = propertyString;
+												propertiesCounter++;
+											}
+										else
+											{
+												propertiesTagFound = false;
+											}
+									}
+									
+								edit_permissionsString = new String;
+								edit_permissionsString = objectString;
+								edit_permissionsString = edit_permissionsString.substring(edit_permissionsString.indexOf('<edit_permissions>') + 18, edit_permissionsString.indexOf('</edit_permissions>'));
+								
+								if(edit_permissionsString == 'true')
+									{
+										codeBuffer[counter][this.edit_permissions] = true;
+									}
+								else if(edit_permissionsString == 'false')
+									{
+										codeBuffer[counter][this.edit_permissions] = false;
+									}
+									
+								if(nameString == 'Database Category Settings' && typeString == 'hidden')
+									{
+										set_up_database_category_key = counter;
+										document.getElementById('database_category_input').value = codeBuffer[counter][this.properties][0];
+									}
+									
+								if(nameString == 'Return URL Settings' && typeString == 'hidden')
+									{
+										set_up_return_url_key = counter;
+										document.getElementById('return_url_input').value = codeBuffer[counter][this.properties][0];
+									}
+									
+								if(nameString == 'Email Settings' && typeString == 'hidden')
+									{
+										set_up_email_key = counter;
+										document.getElementById('from_email_input').value = codeBuffer[counter][this.properties][0];
+										document.getElementById('to_email_input').value = codeBuffer[counter][this.properties][1];
+										document.getElementById('subject_email_input').value = codeBuffer[counter][this.properties][2];
+										document.getElementById('cc_email_input').value = codeBuffer[counter][this.properties][3];
+										document.getElementById('bcc_email_input').value = codeBuffer[counter][this.properties][4];
+									}
+									
+								if(nameString == 'Thank You Email Fields (Hidden)' && typeString == 'hidden')
+									{
+										set_up_thank_you_key = counter;
+										document.getElementById('from_thank_you_input').value = codeBuffer[counter][this.properties][0];
+										document.getElementById('subject_thank_you_input').value = codeBuffer[counter][this.properties][1];
+										document.getElementById('text_thank_you_input').value = codeBuffer[counter][this.properties][2];
+										document.getElementById('append_data_thank_you_input').checked = codeBuffer[counter][this.properties][3];
+									}
+								
+								counter++;
+								
+							}
+						else
+							{
+								tagFound = false;
+							}
+					}
+					
+				if(document.getElementById('xml_code_loader_content').style.display == 'inline')
+					{
+						showHide('xml_code_loader_content');
+					}
+				document.getElementById('xml_code_loader_text_area').value = '';
+				refreshViews();
+			}
+	}
+
+//refresh all 4 views and set order
+function refreshViews()
+	{
+		setOrder();
+		dumpObjects('object_table_column');
+		dumpBufferView('view_table_column');
+		dumpBufferCode('code_text_area');
+		dumpXMLCode('xml_code_text_area');
+	}
+//swap the order of 2 objects in the databuffer	
+function objectSwap(key1,key2)
+	{
+		var temp_html1 = new String
+		var temp_key1 = new String;
+		var temp_name1 = new String;
+		var temp_type1 = new String;
+		var temp_properties1 = new Array();
+		var temp_edit_permissions1 = new Boolean;
+		
+		var temp_html2 = new String
+		var temp_key2 = new String;
+		var temp_name2 = new String;
+		var temp_type2 = new String;
+		var temp_properties2 = new Array();
+		var temp_edit_permissions2 = new Boolean;
+		
+		temp_html1 = codeBuffer[key1][this.html];
+		temp_key1 = codeBuffer[key1][this.key];
+		temp_name1 = codeBuffer[key1][this.name];
+		temp_type1 = codeBuffer[key1][this.type];
+		temp_properties1 = codeBuffer[key1][this.properties];
+		temp_edit_permissions1 = codeBuffer[key1][this.edit_permissions];
+		
+		temp_html2 = codeBuffer[key2][this.html];
+		temp_key2 = codeBuffer[key2][this.key];
+		temp_name2 = codeBuffer[key2][this.name];
+		temp_type2 = codeBuffer[key2][this.type];
+		temp_properties2 = codeBuffer[key2][this.properties];
+		temp_edit_permissions2 = codeBuffer[key2][this.edit_permissions];
+		
+		codeBuffer[key1][this.html] = temp_html2;
+		codeBuffer[key1][this.key] = temp_key1;
+		codeBuffer[key1][this.name] = temp_name2;
+		codeBuffer[key1][this.type] = temp_type2;
+		codeBuffer[key1][this.properties] = temp_properties2;
+		codeBuffer[key1][this.edit_permissions] = temp_edit_permissions2;
+		if(temp_name2 == "Thank You Email Fields (Hidden)")
+			{
+				set_up_thank_you_key = temp_key1;
+			}
+		
+		codeBuffer[key2][this.html] = temp_html1;
+		codeBuffer[key2][this.key] = temp_key2;
+		codeBuffer[key2][this.name] = temp_name1;
+		codeBuffer[key2][this.type] = temp_type1;
+		codeBuffer[key2][this.properties] = temp_properties1;
+		codeBuffer[key2][this.edit_permissions] = temp_edit_permissions1;
+		if(temp_name1 == "Thank You Email Fields (Hidden)")
+			{
+				set_up_thank_you_key = temp_key2;
+			}
+			
+		refreshViews();
+	}
+
+//delete an object from the buffer	
+function objectDelete(key_to_delete)
+	{	
+		codeBuffer[key_to_delete][this.html] = '';
+		codeBuffer[key_to_delete][this.key] = key_to_delete;
+		codeBuffer[key_to_delete][this.name] = '';
+		codeBuffer[key_to_delete][this.type] = 'hidden';
+		codeBuffer[key_to_delete][this.properties] = new Array();
+		codeBuffer[key_to_delete][this.edit_permissions] = false;
+		
+		refreshViews();
+	}
+	
+// assign value of current errors to "tr" element (element must exist)
+function dumpErrors(targetID)
+	{
+		var code = new String;
+		code = '';
+
+		code = '<font color="#FF0000">' + errors + '</font>';
+		document.getElementById(targetID).innerHTML = code;		
+	}
+
+// create prefab object select box
+function createPrefabObjectSelect()
+	{
+		var code = new String;
+		code = '';
+		
+		code = '<select id="prefab_objects_select" name="prefab_objects_select">';
+		for(prefab_object_key in prefabObjects)
+			{
+				code = code + '<option value="' + prefab_object_key + '">' + prefabObjects[prefab_object_key][this.name] + ' (' + prefabObjects[prefab_object_key][this.type] + ')' + '</option>';
+			}
+		code = code + '</select>&nbsp;<input type="button" id="checkbox_view_button" name="checkbox_view_button" value="Checklist" title="Click here to view a checkbox list instead of a select box." onclick="javascript: showHide(\'pre_made_fields_select\'); showHide(\'pre_made_fields_checkboxes\');" /><br>';
+		code = code + '&nbsp;<input type="button" id="prefab_objects_edit_button" name="prefab_objects_edit_button" value="Select and Edit" title="Click here to load the selected prefabricated field into the work area." onclick="javascript: loadObject(document.getElementById(\'prefab_objects_select\').value,false);" />';
+		code = code + '&nbsp;<input type="button" id="prefab_objects_add_button" name="prefab_objects_add_button" value="Select and Add" title="Click here to add the selected prefabricated field to your form." onclick="javascript: loadObject(document.getElementById(\'prefab_objects_select\').value,true);" />';
+		document.getElementById('prefab_objects_select_holder').innerHTML = code;
+	}
+	
+// create prefab object checkboxes
+function createPrefabObjectCheckboxes()
+	{
+		var code = new String;
+		var firstTime = new Boolean;
+		code = '';
+		
+		code = '<input type="button" id="select_view_button" name="select_view_button" value="Select Box" title="Click here to view a select box instead of a checkbox list." onclick="javascript: showHide(\'pre_made_fields_checkboxes\'); showHide(\'pre_made_fields_select\');" /><br>';
+		for(prefab_object_key in prefabObjects)
+			{
+				code = code + '<input type="checkbox" id="checkbox_' + prefab_object_key + '" name="checkbox_' + prefab_object_key + '" value="' + prefab_object_key + '">' + prefabObjects[prefab_object_key][this.name] + ' (' + prefabObjects[prefab_object_key][this.type] + ')<br>';
+			}
+		code = code + '&nbsp;<input type="button" id="prefab_objects_add_checked_button" name="prefab_objects_add_checked_button" value="Add Checked Fields" title="Click here to load checked prefabricated fields to your form." onclick="javascript: loadCheckedObjects();" />';
+		document.getElementById('prefab_objects_checkbox_holder').innerHTML = code;
+	}
+	
+// assign value of current status to "tr" element (element must exist)
+function getCurrentStatus(targetID)
+	{
+		var code = new String;
+		var current_status_good = new Boolean;
+		code = '';
+		current_status_good = true;
+		
+		if(codeBuffer.length > 2)
+			{
+				if(set_up_database_category_key == 0)
+					{
+						code = code + "<li>" + '<font color="#FF0000">Step 1 Name Your Form</font>' + "</li>" + "\n";
+						current_status_good = false;
+					}
+				if(set_up_return_url_key == 0)
+					{
+						code = code + "<li>" + '<font color="#FF0000">Step 3 Set Up Thank You Webpage</font>' + "</li>" + "\n";
+						current_status_good = false;
+					}
+				if(set_up_email_key == 0)
+					{
+						code = code + "<li>" + '<font color="#FF0000">Step 4 Set Up Email To Staff</font>' + "</li>" + "\n";
+						current_status_good = false;
+					}
+				if(set_up_thank_you_key != 0 && !document.getElementById('email'))
+					{
+						code = code + "<li>" + '<font color="#FF0000">Create text box field named "email".</font>' + "</li>" + "\n";
+						current_status_good = false;
+					}
+			}
+			
+		if(current_status_good)
+			{
+				code = code + alternate_format_outer_shell_1 + '</ol><b>Current Status: <font color="#00AA00">Ready</font></b>' + alternate_format_outer_shell_2 + "<br><br>" + "\n";
+			}
+		else
+			{
+				code = code + alternate_format_outer_shell_1 + '</ol><b>Current Status: <font color="#FF0000">Not Ready</font></b>' + alternate_format_outer_shell_2 + "<br><br>" + "\n";
+				code = standard_format_outer_shell_1 + '<b>Required Steps:</b>' + standard_format_center_shell + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + standard_format_outer_shell_2 + "<br><ol>" + "\n" + code;
+				code = code + "</ol>";
+			}
+			
+		// if nothing has been done, set status to "Initialized", overrides previous status content
+		if(codeBuffer.length == 2)
+			{
+				code = alternate_format_outer_shell_1 + '<b>Current Status: <font color="#0000FF">Initialized</font></b>' + alternate_format_outer_shell_2 + "<br><br>" + "\n";	
+			}
+			
+		document.getElementById(targetID).innerHTML = code;		
+	}
+
+// validate string email	
+function validateEmail(email)
+	{
+		valid = false;
+		
+		if(email.indexOf('@') != -1 && email.indexOf('.') != -1)
+			{
+				valid = true;
+			}
+			
+		return valid;
+	}
+
+// validate string string	
+function validateString(string)
+	{
+		valid = false;
+		if(string.length > 0)
+			{
+				valid = true;
+			}
+			
+		return valid;
+	}
+
+// update "order" field of form to reflect the order of all the visible objects that are not hidden, headers, or spacers
+function setOrder()
+	{
+		var content = new String;
+		
+		content = "          " + '<input type="hidden" name="order" id="order" value="';
+		for (code_buffer_key in codeBuffer)
+			{
+				if(code_buffer_key != 0 && code_buffer_key != 1 && codeBuffer[code_buffer_key][this.type] != 'hidden' && codeBuffer[code_buffer_key][this.type] != 'header' && codeBuffer[code_buffer_key][this.type] != 'spacer' && codeBuffer[code_buffer_key][this.type] != 'comment')
+					{
+						content = content + codeBuffer[code_buffer_key][this.name] + ',';
+					}
+			}
+			
+		if(content != "          " + '<input type="hidden" name="order" id="order" value="')
+			{
+				content = content.substr(0,(content.length-1));
+			}
+		
+		if(codeBuffer.length > 2)
+			{
+				content = content + '">' + "\n";
+				content = content + '          <tr>' + "\n";
+				content = content + '               <td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.<br><br></td>' + "\n";
+				content = content + '          </tr>';
+			}
+		else
+			{
+				content = content + '">';
+			}
+		
+		codeBuffer[1] = new Array();
+		codeBuffer[1][this.html] = content;
+		codeBuffer[1][this.key] = 1;
+		codeBuffer[1][this.name] = 'Order';
+		codeBuffer[1][this.type] = 'hidden';
+		codeBuffer[1][this.properties] = new Array();
+		codeBuffer[1][this.edit_permissions] = false;
+	}
+
+// validate Set Up Email option, inject HTML into buffer	
+function submitSetUpEmail()
+	{
+		var from = new String;
+		var to = new String;
+		var cc = new String;
+		var bcc = new String;
+		var subject = new String;
+		errors = '';
+		
+		from = document.getElementById('from_email_input').value;
+		to = document.getElementById('to_email_input').value;
+		cc = document.getElementById('cc_email_input').value;
+		bcc = document.getElementById('bcc_email_input').value;
+		subject = document.getElementById('subject_email_input').value;
+		
+		if(!validateString(from))
+			{
+				errors = errors + '"From" cannot be blank.<br>';
+			}
+		if(!validateEmail(from) && validateString(from))
+			{
+				errors = errors + '"From" must be a valid email address.<br>';
+			}
+		if(!validateString(to))
+			{
+				errors = errors + '"To" cannot be blank.<br>';
+			}
+		if(!validateEmail(to) && validateString(to))
+			{
+				errors = errors + '"To" must be a valid email address.<br>';
+			}
+		if(!validateEmail(cc) && validateString(cc))
+			{
+				errors = errors + '"Cc" must be a valid email address.<br>';
+			}
+		if(!validateEmail(bcc) && validateString(bcc))
+			{
+				errors = errors + '"Bcc" must be a valid email address.<br>';
+			}
+		if(!validateString(subject))
+			{
+				errors = errors + '"Subject" cannot be blank.<br>';
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+					
+				content = "          " + '<input type="hidden" name="from" id="from" value="' + from + '">' + "\n";
+				content = content + "          " + '<input type="hidden" name="to" id="to" value="' + to + '">' + "\n";
+				content = content + "          " + '<input type="hidden" name="subject" id="subject" value="' + subject + '">' + "\n";
+				if(validateString(cc))
+					{
+						content = content  + "          " + '<input type="hidden" name="cc" id="cc" value="' + cc + '">' + "\n";
+					}
+				if(validateString(bcc))
+					{
+						content = content + "          " + '<input type="hidden" name="bcc" id="bcc" value="' + bcc + '">';
+					}
+					
+				if(set_up_email_key > 0)
+					{
+						codeBuffer[set_up_email_key][this.html] = content;
+						codeBuffer[set_up_email_key][this.key] = set_up_email_key;
+						codeBuffer[set_up_email_key][this.name] = 'Email Settings';
+						codeBuffer[set_up_email_key][this.type] = 'hidden';
+						codeBuffer[set_up_email_key][this.properties] = new Array();
+							codeBuffer[set_up_email_key][this.properties][0] = from;
+							codeBuffer[set_up_email_key][this.properties][1] = to;
+							codeBuffer[set_up_email_key][this.properties][2] = subject;
+							codeBuffer[set_up_email_key][this.properties][3] = cc;
+							codeBuffer[set_up_email_key][this.properties][4] = bcc;
+						codeBuffer[set_up_email_key][this.edit_permissions] = false;
+						hideForm('set_up_email_form');
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						
+						set_up_email_key = new_key;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = 'Email Settings';
+						codeBuffer[new_key][this.type] = 'hidden';
+						codeBuffer[new_key][this.properties] = new Array();
+							codeBuffer[new_key][this.properties][0] = from;
+							codeBuffer[new_key][this.properties][1] = to;
+							codeBuffer[new_key][this.properties][2] = subject;
+							codeBuffer[new_key][this.properties][3] = cc;
+							codeBuffer[new_key][this.properties][4] = bcc;
+						codeBuffer[new_key][this.edit_permissions] = false;
+						hideForm('set_up_email_form');
+					}
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+
+// validate Set Up Return Url option, inject into buffer
+function submitSetUpReturnUrl()
+	{
+		var url = new String;
+		errors = '';
+		
+		url = document.getElementById('return_url_input').value;
+		
+		if(!validateString(url))
+			{
+				errors = errors + '"URL" cannot be blank.<br>';
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+					
+				content = "          " + '<input type="hidden" name="returnUrl" id="returnUrl" value="' + url + '">';
+				
+				if(set_up_return_url_key > 0)
+					{
+						codeBuffer[set_up_return_url_key][this.html] = content;
+						codeBuffer[set_up_return_url_key][this.key] = set_up_return_url_key;
+						codeBuffer[set_up_return_url_key][this.name] = 'Return URL Settings';
+						codeBuffer[set_up_return_url_key][this.type] = 'hidden';
+						codeBuffer[set_up_return_url_key][this.properties] = new Array();
+							codeBuffer[set_up_return_url_key][this.properties][0] = url;
+						codeBuffer[set_up_return_url_key][this.edit_permissions] = false;
+						hideForm('set_up_return_url_form');
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						
+						set_up_return_url_key = new_key;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = 'Return URL Settings';
+						codeBuffer[new_key][this.type] = 'hidden';
+						codeBuffer[new_key][this.properties] = new Array();
+							codeBuffer[new_key][this.properties][0] = url;
+						codeBuffer[new_key][this.edit_permissions] = false;
+						hideForm('set_up_return_url_form');
+					}
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+	
+// validate Set Up Database Category option, inject into buffer
+function submitSetUpDatabaseCategory()
+	{
+		var formType = new String;
+		errors = '';
+		
+		formType = replaceSpace(document.getElementById('database_category_input').value);
+		
+		if(!validateString(formType))
+			{
+				errors = errors + '"Category" cannot be blank.<br>';
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+					
+				content = "          " + '<input type="hidden" name="formType" id="formType" value="' + formType + '">';
+				
+				if(set_up_database_category_key > 0)
+					{
+						codeBuffer[set_up_database_category_key][this.html] = content;
+						codeBuffer[set_up_database_category_key][this.key] = set_up_database_category_key;
+						codeBuffer[set_up_database_category_key][this.name] = 'Database Category Settings';
+						codeBuffer[set_up_database_category_key][this.type] = 'hidden';
+						codeBuffer[set_up_database_category_key][this.properties] = new Array();
+							codeBuffer[set_up_database_category_key][this.properties][0] = formType;
+						codeBuffer[set_up_database_category_key][this.edit_permissions] = false;
+						hideForm('set_up_database_category_form');
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						
+						set_up_database_category_key = new_key;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = 'Database Category Settings';
+						codeBuffer[new_key][this.type] = 'hidden';
+						codeBuffer[new_key][this.properties] = new Array();
+							codeBuffer[new_key][this.properties][0] = formType;
+						codeBuffer[new_key][this.edit_permissions] = false;
+						hideForm('set_up_database_category_form');
+					}
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+	
+// validate Set Up Thank You Email option, inject HTML into buffer	
+function submitSetUpThankYou()
+	{
+		var from = new String;
+		var subject = new String;
+		var text = new String;
+		var append_data = new Boolean;
+		errors = '';
+		
+		from = document.getElementById('from_thank_you_input').value;
+		subject = document.getElementById('subject_thank_you_input').value;
+		text = document.getElementById('text_thank_you_input').value;
+		append_data = document.getElementById('append_data_thank_you_input').checked;
+		
+		if(!validateString(from))
+			{
+				errors = errors + '"From" cannot be blank.<br>';
+			}
+		if(!validateEmail(from) && validateString(from))
+			{
+				errors = errors + '"From" must be a valid email address.<br>';
+			}
+		if(!validateString(subject))
+			{
+				errors = errors + '"Subject" cannot be blank.<br>';
+			}
+		if(!validateString(text))
+			{
+				errors = errors + '"Text" cannot be blank.<br>';
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+					
+				content = "          " + '<input type="hidden" name="autoReplyTo" id="autoReplyTo" value="">';
+				content = content + '\n          <';
+				content = content + 'script language="JavaScript" type="text/JavaScript"> \n';
+				content = content + '               var get_reply_to_email_interval = setInterval("getAutoReplyToEmail()", 250);\n';
+				content = content + '               function getAutoReplyToEmail() \n';
+				content = content + '                    { \n';
+				content = content + '                         document.getElementById("autoReplyTo").value = document.getElementById("email").value; \n';
+				content = content + '                    } \n';
+				content = content + '          </script';
+				content = content + '> \n';
+				content = content + "          " + '<input type="hidden" name="autoReplyFrom" id="autoReplyFrom" value="' + from + '">' + "\n";
+				content = content + "          " + '<input type="hidden" name="autoReplySubject" id="autoReplySubject" value="' + subject + '">' + "\n";
+				content = content + "          " + '<input type="hidden" name="autoReplyText" id="autoReplyText" value="' + text + '">';
+				
+				if(set_up_thank_you_key > 0)
+					{
+						codeBuffer[set_up_thank_you_key][html] = content;
+						codeBuffer[set_up_thank_you_key][key] = set_up_thank_you_key;
+						codeBuffer[set_up_thank_you_key][name] = 'Thank You Email Fields (Hidden)';
+						codeBuffer[set_up_thank_you_key][type] = 'hidden';
+						codeBuffer[set_up_thank_you_key][properties] = new Array();
+							codeBuffer[set_up_thank_you_key][properties][0] = from;
+							codeBuffer[set_up_thank_you_key][properties][1] = subject;
+							codeBuffer[set_up_thank_you_key][properties][2] = text;
+							codeBuffer[set_up_thank_you_key][properties][3] = append_data;
+						codeBuffer[set_up_thank_you_key][edit_permissions] = false;
+						hideForm('set_up_thank_you_form');
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						set_up_thank_you_key = new_key;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = 'Thank You Email Fields (Hidden)';
+						codeBuffer[new_key][this.type] = 'hidden';
+						codeBuffer[new_key][this.properties] = new Array();
+							codeBuffer[new_key][this.properties][0] = from;
+							codeBuffer[new_key][this.properties][1] = subject;
+							codeBuffer[new_key][this.properties][2] = text;
+							codeBuffer[new_key][this.properties][3] = append_data;
+						codeBuffer[new_key][this.edit_permissions] = false;
+						hideForm('set_up_thank_you_form');
+					}
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+
+// loads an object for editing
+function editObject(object_edit_key)
+	{
+		if(codeBuffer[object_edit_key][this.edit_permissions] == true)
+			{
+				if(codeBuffer[object_edit_key][this.type] == 'text')
+					{
+						initializeSetUpTextForm();
+						showForm('set_up_text_form');
+						document.getElementById('text_key_input').value = object_edit_key;
+						document.getElementById('text_label_input').value = codeBuffer[object_edit_key][this.properties][0];
+						document.getElementById('text_name_input').value = codeBuffer[object_edit_key][this.properties][1];
+						document.getElementById('text_required_input').checked = codeBuffer[object_edit_key][this.properties][2];
+						if(codeBuffer[object_edit_key][this.properties][2] == true || codeBuffer[object_edit_key][this.properties][2] == 'true')
+							{
+								document.getElementById('set_up_text_form_required').style.display = 'inline';
+							}
+						else
+							{
+								document.getElementById('set_up_text_form_required').style.display = 'none';
+							}
+						checkUncheck('text_required_input', 'set_up_text_form_required');
+						document.getElementById('text_type_input').value = codeBuffer[object_edit_key][this.properties][3];
+						document.getElementById('text_length_input').value = codeBuffer[object_edit_key][this.properties][4];
+						document.getElementById('text_pretty_input').value = codeBuffer[object_edit_key][this.properties][5];
+						document.getElementById('text_tip_input').value = codeBuffer[object_edit_key][this.properties][6];
+						document.getElementById('text_label_input').focus();
+					}
+				else if(codeBuffer[object_edit_key][this.type] == 'header')
+					{
+						initializeSetUpHeaderForm();
+						showForm('set_up_header_form');
+						document.getElementById('header_key_input').value = object_edit_key;
+						document.getElementById('header_text_input').value = codeBuffer[object_edit_key][this.name];
+						document.getElementById('header_text_input').focus();
+					}
+				else if(codeBuffer[object_edit_key][this.type] == 'comment')
+					{
+						initializeSetUpCommentForm();
+						showForm('set_up_comment_form');
+						document.getElementById('comment_key_input').value = object_edit_key;
+						document.getElementById('comment_text_input').value = codeBuffer[object_edit_key][this.name];
+						document.getElementById('comment_text_input').focus();
+					}
+				else if(codeBuffer[object_edit_key][this.type] == 'textarea')
+					{
+						initializeSetUpTextareaForm();
+						showForm('set_up_textarea_form');
+						document.getElementById('textarea_key_input').value = object_edit_key;
+						document.getElementById('textarea_label_input').value = codeBuffer[object_edit_key][this.properties][0];
+						document.getElementById('textarea_name_input').value = codeBuffer[object_edit_key][this.properties][1];
+						document.getElementById('textarea_required_input').checked = codeBuffer[object_edit_key][this.properties][2];
+						if(codeBuffer[object_edit_key][this.properties][2] == true || codeBuffer[object_edit_key][this.properties][2] == 'true')
+							{
+								document.getElementById('set_up_textarea_form_required').style.display = 'inline';
+							}
+						else
+							{
+								document.getElementById('set_up_textarea_form_required').style.display = 'none';
+							}
+						checkUncheck('textarea_required_input', 'set_up_textarea_form_required');
+						document.getElementById('textarea_type_input').value = codeBuffer[object_edit_key][this.properties][3];
+						document.getElementById('textarea_length_input').value = codeBuffer[object_edit_key][this.properties][4];
+						document.getElementById('textarea_pretty_input').value = codeBuffer[object_edit_key][this.properties][5];
+						document.getElementById('textarea_tip_input').value = codeBuffer[object_edit_key][this.properties][6];
+						document.getElementById('textarea_label_input').focus();
+					}
+				else if(codeBuffer[object_edit_key][this.type] == 'checkbox')
+					{
+						initializeSetUpCheckboxForm();
+						showForm('set_up_checkbox_form');
+						document.getElementById('checkbox_key_input').value = object_edit_key;
+						document.getElementById('checkbox_label_input').value = codeBuffer[object_edit_key][this.properties][0];
+						document.getElementById('checkbox_name_input').value = codeBuffer[object_edit_key][this.properties][1];
+						document.getElementById('checkbox_tip_input').value = codeBuffer[object_edit_key][this.properties][2];
+						document.getElementById('checkbox_label_input').focus();
+					}
+				else if(codeBuffer[object_edit_key][this.type] == 'select')
+					{
+						initializeSetUpSelectForm();
+						showForm('set_up_select_form');
+						document.getElementById('select_key_input').value = object_edit_key;
+						document.getElementById('select_label_input').value = codeBuffer[object_edit_key][this.properties][0];
+						document.getElementById('select_name_input').value = codeBuffer[object_edit_key][this.properties][1];
+						document.getElementById('select_required_input').checked = codeBuffer[object_edit_key][this.properties][2];
+						if(codeBuffer[object_edit_key][this.properties][2] == true || codeBuffer[object_edit_key][this.properties][2] == 'true')
+							{
+								document.getElementById('set_up_select_form_required').style.display = 'inline';
+							}
+						else
+							{
+								document.getElementById('set_up_select_form_required').style.display = 'none';
+							}
+						checkUncheck('select_required_input', 'set_up_select_form_required');
+						document.getElementById('select_options_input').value = codeBuffer[object_edit_key][this.properties][3];
+						document.getElementById('select_pretty_input').value = codeBuffer[object_edit_key][this.properties][4];
+						document.getElementById('select_tip_input').value = codeBuffer[object_edit_key][this.properties][5];
+						document.getElementById('select_label_input').focus();
+					}
+				else if(codeBuffer[object_edit_key][this.type] == 'radio_group' || codeBuffer[object_edit_key][this.type] == 'checkbox_group')
+					{
+						initializeSetUpRadioCheckboxGroupForm();
+						showForm('set_up_radio_checkbox_group_form');
+						document.getElementById('radio_checkbox_group_key_input').value = object_edit_key;
+						document.getElementById('radio_checkbox_group_type_input').value = codeBuffer[object_edit_key][this.properties][0];
+						document.getElementById('radio_checkbox_group_options_per_row_input').value = codeBuffer[object_edit_key][this.properties][1];
+						document.getElementById('radio_checkbox_group_label_input').value = codeBuffer[object_edit_key][this.properties][2];
+						document.getElementById('radio_checkbox_group_name_input').value = codeBuffer[object_edit_key][this.properties][3];
+						document.getElementById('radio_checkbox_group_required_input').checked = codeBuffer[object_edit_key][this.properties][4];
+						if(codeBuffer[object_edit_key][this.properties][4] == true || codeBuffer[object_edit_key][this.properties][4] == 'true')
+							{
+								document.getElementById('set_up_radio_checkbox_group_form_required').style.display = 'inline';
+							}
+						else
+							{
+								document.getElementById('set_up_radio_checkbox_group_form_required').style.display = 'none';
+							}
+						checkUncheck('radio_checkbox_group_required_input', 'set_up_radio_checkbox_group_form_required');
+						document.getElementById('radio_checkbox_group_options_input').value = codeBuffer[object_edit_key][this.properties][5];
+						document.getElementById('radio_checkbox_group_required_number_input').value = codeBuffer[object_edit_key][this.properties][6];
+						document.getElementById('radio_checkbox_group_pretty_input').value = codeBuffer[object_edit_key][this.properties][7];
+						document.getElementById('radio_checkbox_group_tip_input').value = codeBuffer[object_edit_key][this.properties][8];
+						document.getElementById('radio_checkbox_group_label_input').focus();
+					}
+			}
+		else
+			{
+				alert("Error: This object cannot be edited.");
+			}
+	}
+
+
+// loads all checked prefabricated objects into form
+function loadCheckedObjects()
+	{
+		for(prefab_object_key in prefabObjects)
+			{
+				if(document.getElementById('checkbox_' + prefab_object_key).checked)
+					{
+						loadObject(document.getElementById('checkbox_' + prefab_object_key).value,true);
+					}
+			}
+	}
+	
+// loads a prefabricated object for editing
+function loadObject(object_load_key,auto_add)
+	{
+		if(prefabObjects[object_load_key][this.edit_permissions] == true)
+			{
+				if(prefabObjects[object_load_key][this.type] == 'text')
+					{
+						initializeSetUpTextForm();
+						showForm('set_up_text_form');
+						document.getElementById('text_key_input').value = 'NULL';
+						document.getElementById('text_label_input').value = prefabObjects[object_load_key][this.properties][0];
+						document.getElementById('text_name_input').value = prefabObjects[object_load_key][this.properties][1];
+						document.getElementById('text_required_input').checked = prefabObjects[object_load_key][this.properties][2];
+						if(prefabObjects[object_load_key][this.properties][2] == true || prefabObjects[object_load_key][this.properties][2] == 'true')
+							{
+								document.getElementById('set_up_text_form_required').style.display = 'inline';
+							}
+						else
+							{
+								document.getElementById('set_up_text_form_required').style.display = 'none';
+							}
+						checkUncheck('text_required_input', 'set_up_text_form_required');
+						document.getElementById('text_type_input').value = prefabObjects[object_load_key][this.properties][3];
+						document.getElementById('text_length_input').value = prefabObjects[object_load_key][this.properties][4];
+						document.getElementById('text_pretty_input').value = prefabObjects[object_load_key][this.properties][5];
+						document.getElementById('text_tip_input').value = prefabObjects[object_load_key][this.properties][6];
+						document.getElementById('text_label_input').focus();
+						if(auto_add == true)
+							{
+								submitSetUpTextForm();
+							}
+					}
+				else if(prefabObjects[object_load_key][this.type] == 'header')
+					{
+						initializeSetUpHeaderForm();
+						showForm('set_up_header_form');
+						document.getElementById('header_key_input').value = 'NULL';
+						document.getElementById('header_text_input').value = prefabObjects[object_load_key][this.name];
+						document.getElementById('header_text_input').focus();
+						if(auto_add == true)
+							{
+								submitSetUpHeaderForm();
+							}
+					}
+				else if(prefabObjects[object_load_key][this.type] == 'comment')
+					{
+						initializeSetUpCommentForm();
+						showForm('set_up_comment_form');
+						document.getElementById('comment_key_input').value = 'NULL';
+						document.getElementById('comment_text_input').value = prefabObjects[object_load_key][this.name];
+						document.getElementById('comment_text_input').focus();
+						if(auto_add == true)
+							{
+								submitSetUpCommentForm();
+							}
+					}
+				else if(prefabObjects[object_load_key][this.type] == 'textarea')
+					{
+						initializeSetUpTextareaForm();
+						showForm('set_up_textarea_form');
+						document.getElementById('textarea_key_input').value = 'NULL';
+						document.getElementById('textarea_label_input').value = prefabObjects[object_load_key][this.properties][0];
+						document.getElementById('textarea_name_input').value = prefabObjects[object_load_key][this.properties][1];
+						document.getElementById('textarea_required_input').checked = prefabObjects[object_load_key][this.properties][2];
+						if(prefabObjects[object_load_key][this.properties][2] == true || prefabObjects[object_load_key][this.properties][2] == 'true')
+							{
+								document.getElementById('set_up_textarea_form_required').style.display = 'inline';
+							}
+						else
+							{
+								document.getElementById('set_up_textarea_form_required').style.display = 'none';
+							}
+						checkUncheck('textarea_required_input', 'set_up_textarea_form_required');
+						document.getElementById('textarea_type_input').value = prefabObjects[object_load_key][this.properties][3];
+						document.getElementById('textarea_length_input').value = prefabObjects[object_load_key][this.properties][4];
+						document.getElementById('textarea_pretty_input').value = prefabObjects[object_load_key][this.properties][5];
+						document.getElementById('textarea_tip_input').value = prefabObjects[object_load_key][this.properties][6];
+						document.getElementById('textarea_rows_input').value = prefabObjects[object_load_key][this.properties][7];
+						document.getElementById('textarea_cols_input').value = prefabObjects[object_load_key][this.properties][8];
+						document.getElementById('textarea_label_input').focus();
+						if(auto_add == true)
+							{
+								submitSetUpTextareaForm();
+							}
+					}
+				else if(prefabObjects[object_load_key][this.type] == 'checkbox')
+					{
+						initializeSetUpCheckboxForm();
+						showForm('set_up_checkbox_form');
+						document.getElementById('checkbox_key_input').value = 'NULL';
+						document.getElementById('checkbox_label_input').value = prefabObjects[object_load_key][this.properties][0];
+						document.getElementById('checkbox_name_input').value = prefabObjects[object_load_key][this.properties][1];
+						document.getElementById('checkbox_tip_input').value = prefabObjects[object_load_key][this.properties][2];
+						document.getElementById('checkbox_label_input').focus();
+						if(auto_add == true)
+							{
+								submitSetUpCheckboxForm();
+							}
+					}
+				else if(prefabObjects[object_load_key][this.type] == 'select')
+					{
+						initializeSetUpSelectForm();
+						showForm('set_up_select_form');
+						document.getElementById('select_key_input').value = 'NULL';
+						document.getElementById('select_label_input').value = prefabObjects[object_load_key][this.properties][0];
+						document.getElementById('select_name_input').value = prefabObjects[object_load_key][this.properties][1];
+						document.getElementById('select_required_input').checked = prefabObjects[object_load_key][this.properties][2];
+						if(prefabObjects[object_load_key][this.properties][2] == true || prefabObjects[object_load_key][this.properties][2] == 'true')
+							{
+								document.getElementById('set_up_select_form_required').style.display = 'inline';
+							}
+						else
+							{
+								document.getElementById('set_up_select_form_required').style.display = 'none';
+							}
+						checkUncheck('select_required_input', 'set_up_select_form_required');
+						document.getElementById('select_options_input').value = prefabObjects[object_load_key][this.properties][3];
+						document.getElementById('select_pretty_input').value = prefabObjects[object_load_key][this.properties][4];
+						document.getElementById('select_tip_input').value = prefabObjects[object_load_key][this.properties][5];
+						document.getElementById('select_label_input').focus();
+						if(auto_add == true)
+							{
+								submitSetUpSelectForm();
+							}
+					}
+				else if(prefabObjects[object_load_key][this.type] == 'radio_group' || prefabObjects[object_load_key][this.type] == 'checkbox_group')
+					{
+						initializeSetUpRadioCheckboxGroupForm();
+						showForm('set_up_radio_checkbox_group_form');
+						document.getElementById('radio_checkbox_group_key_input').value = 'NULL';
+						document.getElementById('radio_checkbox_group_type_input').value = prefabObjects[object_load_key][this.properties][0];
+						document.getElementById('radio_checkbox_group_options_per_row_input').value = prefabObjects[object_load_key][this.properties][1];
+						document.getElementById('radio_checkbox_group_label_input').value = prefabObjects[object_load_key][this.properties][2];
+						document.getElementById('radio_checkbox_group_name_input').value = prefabObjects[object_load_key][this.properties][3];
+						document.getElementById('radio_checkbox_group_required_input').checked = prefabObjects[object_load_key][this.properties][4];
+						if(prefabObjects[object_load_key][this.properties][4] == true || prefabObjects[object_load_key][this.properties][4] == 'true')
+							{
+								document.getElementById('set_up_radio_checkbox_group_form_required').style.display = 'inline';
+							}
+						else
+							{
+								document.getElementById('set_up_radio_checkbox_group_form_required').style.display = 'none';
+							}
+						checkUncheck('radio_checkbox_group_required_input', 'set_up_radio_checkbox_group_form_required');
+						document.getElementById('radio_checkbox_group_options_input').value = prefabObjects[object_load_key][this.properties][5];
+						document.getElementById('radio_checkbox_group_required_number_input').value = prefabObjects[object_load_key][this.properties][6];
+						document.getElementById('radio_checkbox_group_pretty_input').value = prefabObjects[object_load_key][this.properties][7];
+						document.getElementById('radio_checkbox_group_tip_input').value = prefabObjects[object_load_key][this.properties][8];
+						document.getElementById('radio_checkbox_group_label_input').focus();
+						if(auto_add == true)
+							{
+								submitSetUpRadioCheckboxGroupForm();
+							}
+					}
+			}
+		else
+			{
+				alert("Error: This object cannot be edited.");
+			}
+	}
+
+// clears the text box form
+function initializeSetUpTextForm()
+	{
+		document.getElementById('text_key_input').value = 'NULL';
+		document.getElementById('text_label_input').value = '';
+		document.getElementById('text_name_input').value = '';
+		document.getElementById('text_required_input').checked = false;
+		document.getElementById('text_type_input').value = 'text';
+		document.getElementById('text_length_input').value = '';
+		document.getElementById('text_pretty_input').value = '';
+		document.getElementById('text_tip_input').value = '';
+	}
+
+// validate Set Up Text Box option, inject HTML into buffer	
+function submitSetUpTextForm()
+	{
+		var object_key = new Number;
+		var label = new String;
+		var name = new String;
+		var require_field = Boolean;
+		var required = new String;
+		var length = new Number;
+		var pretty = new String;
+		var tip = new String;
+		errors = '';
+		
+		object_key = document.getElementById('text_key_input').value;
+		label = document.getElementById('text_label_input').value;
+		name = replaceSpace(document.getElementById('text_name_input').value);
+		require_field = document.getElementById('text_required_input').checked;
+		required = document.getElementById('text_type_input').value;
+		length = document.getElementById('text_length_input').value;
+		pretty = document.getElementById('text_pretty_input').value;
+		tip = document.getElementById('text_tip_input').value;
+		
+		if(!validateString(label))
+			{
+				errors = errors + '"Label" cannot be blank.<br>';
+			}
+		if(!validateString(name))
+			{
+				errors = errors + '"Name" cannot be blank.<br>';
+			}
+		if(validateString(name))
+			{
+				if(document.getElementById(name) && object_key == 'NULL')
+					{
+						errors = errors + "Field named " + name + " already exists, please choose another name.";
+					}
+			}
+		if(require_field)
+			{
+				if(!validateString(pretty))
+					{
+						errors = errors + '"Name of field in error message" cannot be blank.<br>';
+					}
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+				
+				content = standard_format_outer_shell_1;
+				if(require_field)
+					{
+						content = content + '<font color="#FF0000">*</font>&nbsp;';
+					}
+				content = content + label + standard_format_center_shell;
+				content = content + '<input type="text" id="' + name + '" name="' + name + '" ';
+				if(require_field)
+					{
+						content = content + 'required="' + required + '" '
+						if(validateString(name) && length > 0)
+							{
+								content = content + 'requiredLength="' + length + '" ';
+							}
+						content = content + 'pretty="' + pretty + '" ';
+					}
+				if(validateString(tip))
+					{
+						content = content + 'title="' + tip + '"';
+					}
+				content = content + '>' + standard_format_outer_shell_2;
+				
+				if(object_key != 'NULL')
+					{
+						codeBuffer[object_key] = new Array();
+						codeBuffer[object_key][this.html] = content;
+						codeBuffer[object_key][this.key] = object_key;
+						codeBuffer[object_key][this.name] = name;
+						codeBuffer[object_key][this.type] = 'text';
+						codeBuffer[object_key][this.properties] =  new Array();
+							codeBuffer[object_key][this.properties][0] = label;
+							codeBuffer[object_key][this.properties][1] = name;
+							codeBuffer[object_key][this.properties][2] = require_field;
+							codeBuffer[object_key][this.properties][3] = required;
+							codeBuffer[object_key][this.properties][4] = length;
+							codeBuffer[object_key][this.properties][5] = pretty;
+							codeBuffer[object_key][this.properties][6] = tip;
+						codeBuffer[object_key][this.edit_permissions] = true;
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = name;
+						codeBuffer[new_key][this.type] = 'text';
+						codeBuffer[new_key][this.properties] =  new Array();
+							codeBuffer[new_key][this.properties][0] = label;
+							codeBuffer[new_key][this.properties][1] = name;
+							codeBuffer[new_key][this.properties][2] = require_field;
+							codeBuffer[new_key][this.properties][3] = required;
+							codeBuffer[new_key][this.properties][4] = length;
+							codeBuffer[new_key][this.properties][5] = pretty;
+							codeBuffer[new_key][this.properties][6] = tip;
+						codeBuffer[new_key][this.edit_permissions] = true;
+					}
+					
+				hideForm('set_up_text_form');
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+
+// clears the header form
+function initializeSetUpHeaderForm()
+	{
+		document.getElementById('header_key_input').value = 'NULL';
+		document.getElementById('header_text_input').value = '';
+	}
+
+// validate Set Up Header Box option, inject HTML into buffer	
+function submitSetUpHeaderForm()
+	{
+		var object_key = new Number;
+		var header = new String;
+		errors = '';
+		
+		object_key = document.getElementById('header_key_input').value;
+		header = document.getElementById('header_text_input').value;
+		
+		if(!validateString(header))
+			{
+				errors = errors + '"Header" cannot be blank.<br>';
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+
+				content = standard_format_outer_shell_1 + '<b>' + header + '</b>' + standard_format_center_shell;
+				content = content + '&nbsp;';
+				content = content + standard_format_outer_shell_2;
+				
+				if(object_key != 'NULL')
+					{
+						codeBuffer[object_key] = new Array();
+						codeBuffer[object_key][this.html] = content;
+						codeBuffer[object_key][this.key] = object_key;
+						codeBuffer[object_key][this.name] = header;
+						codeBuffer[object_key][this.type] = 'header';
+						codeBuffer[object_key][this.properties] =  new Array();
+						codeBuffer[object_key][this.edit_permissions] = true;
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = header;
+						codeBuffer[new_key][this.type] = 'header';
+						codeBuffer[new_key][this.properties] =  new Array();
+						codeBuffer[new_key][this.edit_permissions] = true;
+					}
+					
+				hideForm('set_up_header_form');
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+	
+// clears the comment form
+function initializeSetUpCommentForm()
+	{
+		document.getElementById('comment_key_input').value = 'NULL';
+		document.getElementById('comment_text_input').value = '';
+	}
+
+// validate Set Up Comment Box option, inject HTML into buffer	
+function submitSetUpCommentForm()
+	{
+		var object_key = new Number;
+		var comment = new String;
+		errors = '';
+		
+		object_key = document.getElementById('comment_key_input').value;
+		comment = document.getElementById('comment_text_input').value;
+		
+		if(!validateString(comment))
+			{
+				errors = errors + '"Text" cannot be blank.<br>';
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+
+				content = alternate_format_outer_shell_3 + comment + alternate_format_outer_shell_4;
+				
+				if(object_key != 'NULL')
+					{
+						codeBuffer[object_key] = new Array();
+						codeBuffer[object_key][this.html] = content;
+						codeBuffer[object_key][this.key] = object_key;
+						codeBuffer[object_key][this.name] = comment;
+						codeBuffer[object_key][this.type] = 'comment';
+						codeBuffer[object_key][this.properties] =  new Array();
+						codeBuffer[object_key][this.edit_permissions] = true;
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = comment;
+						codeBuffer[new_key][this.type] = 'comment';
+						codeBuffer[new_key][this.properties] =  new Array();
+						codeBuffer[new_key][this.edit_permissions] = true;
+					}
+					
+				hideForm('set_up_comment_form');
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+	
+// inject spacer HTML into buffer	
+function submitSetUpSpacerForm()
+	{
+		var content = new String;
+		var new_key = new Number;
+
+		content = alternate_format_outer_shell_1 + '&nbsp;' + alternate_format_outer_shell_2;
+		
+		new_key = codeBuffer.length;
+		codeBuffer[new_key] = new Array();
+		codeBuffer[new_key][this.html] = content;
+		codeBuffer[new_key][this.key] = new_key;
+		codeBuffer[new_key][this.name] = 'Spacer';
+		codeBuffer[new_key][this.type] = 'spacer';
+		codeBuffer[new_key][this.properties] =  new Array();
+		codeBuffer[new_key][this.edit_permissions] = true;
+		
+		refreshViews();
+	}
+
+// clears the textarea box form
+function initializeSetUpTextareaForm()
+	{
+		document.getElementById('textarea_key_input').value = 'NULL';
+		document.getElementById('textarea_label_input').value = '';
+		document.getElementById('textarea_name_input').value = '';
+		document.getElementById('textarea_required_input').checked = false;
+		document.getElementById('textarea_type_input').value = 'text';
+		document.getElementById('textarea_length_input').value = '';
+		document.getElementById('textarea_pretty_input').value = '';
+		document.getElementById('textarea_tip_input').value = '';
+	}
+
+// validate Set Up Textarea Box option, inject HTML into buffer	
+function submitSetUpTextareaForm()
+	{
+		var object_key = new Number;
+		var label = new String;
+		var name = new String;
+		var require_field = Boolean;
+		var required = new String;
+		var length = new Number;
+		var pretty = new String;
+		var tip = new String;
+		var rows = new Number;
+		var cols = new Number;
+
+		errors = '';
+		
+		object_key = document.getElementById('textarea_key_input').value;
+		label = document.getElementById('textarea_label_input').value;
+		name = replaceSpace(document.getElementById('textarea_name_input').value);
+		require_field = document.getElementById('textarea_required_input').checked;
+		required = document.getElementById('textarea_type_input').value;
+		length = document.getElementById('textarea_length_input').value;
+		pretty = document.getElementById('textarea_pretty_input').value;
+		tip = document.getElementById('textarea_tip_input').value;
+		rows = document.getElementById('textarea_rows_input').value;
+		cols = document.getElementById('textarea_cols_input').value;
+		
+		if(!validateString(label))
+			{
+				errors = errors + '"Label" cannot be blank.<br>';
+			}
+		if(!validateString(name))
+			{
+				errors = errors + '"Name" cannot be blank.<br>';
+			}
+		if(validateString(name))
+			{
+				if(document.getElementById(name) && object_key == 'NULL')
+					{
+						errors = errors + "Field named " + name + " already exists, please choose another name.";
+					}
+			}
+		if(require_field)
+			{
+				if(!validateString(pretty))
+					{
+						errors = errors + '"Name of field in error message" cannot be blank.<br>';
+					}
+			}
+		if(!validateString(rows))
+			{
+				errors = errors + '"Rows" cannot be blank.<br>';
+			}
+		if(!validateString(cols))
+			{
+				errors = errors + '"Cols" cannot be blank.<br>';
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+				
+				content = alternate_format_outer_shell_1;
+				if(require_field)
+					{
+						content = content + '<font color="#FF0000">*</font>&nbsp;';
+					}
+				content = content + label + alternate_format_outer_shell_2 + "\n";
+				content = content + alternate_format_outer_shell_3 + '<textarea rows="' + rows + '" cols="' + cols + '" id="' + name + '" name="' + name + '" ';
+				if(require_field)
+					{
+						content = content + 'required="' + required + '" '
+						if(validateString(name) && length > 0)
+							{
+								content = content + 'requiredLength="' + length + '" ';
+							}
+						content = content + 'pretty="' + pretty + '" ';
+					}
+				if(validateString(tip))
+					{
+						content = content + 'title="' + tip + '"';
+					}
+				content = content + '>';
+				if(!require_field)
+					{
+						content = content + '&nbsp;';
+					}
+				content = content + '</textarea>' + alternate_format_outer_shell_4;
+				
+				if(object_key != 'NULL')
+					{
+						codeBuffer[object_key] = new Array();
+						codeBuffer[object_key][this.html] = content;
+						codeBuffer[object_key][this.key] = object_key;
+						codeBuffer[object_key][this.name] = name;
+						codeBuffer[object_key][this.type] = 'textarea';
+						codeBuffer[object_key][this.properties] =  new Array();
+							codeBuffer[object_key][this.properties][0] = label;
+							codeBuffer[object_key][this.properties][1] = name;
+							codeBuffer[object_key][this.properties][2] = require_field;
+							codeBuffer[object_key][this.properties][3] = required;
+							codeBuffer[object_key][this.properties][4] = length;
+							codeBuffer[object_key][this.properties][5] = pretty;
+							codeBuffer[object_key][this.properties][6] = tip;
+							codeBuffer[object_key][this.properties][7] = rows;
+							codeBuffer[object_key][this.properties][8] = cols;
+						codeBuffer[object_key][this.edit_permissions] = true;
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = name;
+						codeBuffer[new_key][this.type] = 'textarea';
+						codeBuffer[new_key][this.properties] =  new Array();
+							codeBuffer[new_key][this.properties][0] = label;
+							codeBuffer[new_key][this.properties][1] = name;
+							codeBuffer[new_key][this.properties][2] = require_field;
+							codeBuffer[new_key][this.properties][3] = required;
+							codeBuffer[new_key][this.properties][4] = length;
+							codeBuffer[new_key][this.properties][5] = pretty;
+							codeBuffer[new_key][this.properties][6] = tip;
+							codeBuffer[new_key][this.properties][7] = rows;
+							codeBuffer[new_key][this.properties][8] = cols;
+						codeBuffer[new_key][this.edit_permissions] = true;
+					}
+					
+				hideForm('set_up_textarea_form');
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+
+// clears the checkbox box form
+function initializeSetUpCheckboxForm()
+	{
+		document.getElementById('checkbox_key_input').value = 'NULL';
+		document.getElementById('checkbox_label_input').value = '';
+		document.getElementById('checkbox_name_input').value = '';
+		document.getElementById('checkbox_tip_input').value = '';
+	}
+
+// validate Set Up Checkbox Box option, inject HTML into buffer	
+function submitSetUpCheckboxForm()
+	{
+		var object_key = new Number;
+		var label = new String;
+		var name = new String;
+		var tip = new String;
+		errors = '';
+		
+		object_key = document.getElementById('checkbox_key_input').value;
+		label = document.getElementById('checkbox_label_input').value;
+		name = replaceSpace(document.getElementById('checkbox_name_input').value);
+		tip = document.getElementById('checkbox_tip_input').value;
+		
+		if(!validateString(label))
+			{
+				errors = errors + '"Label" cannot be blank.<br>';
+			}
+		if(!validateString(name))
+			{
+				errors = errors + '"Name" cannot be blank.<br>';
+			}
+		if(validateString(name))
+			{
+				if(document.getElementById(name) && object_key == 'NULL')
+					{
+						errors = errors + "Field named " + name + " already exists, please choose another name.";
+					}
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+				
+				content = standard_format_outer_shell_1 + label + standard_format_center_shell;
+				content = content + '<input type="checkbox" id="' + name + '" name="' + name + '" ';
+				if(validateString(tip))
+					{
+						content = content + 'title="' + tip + '"';
+					}
+				content = content + '>' + standard_format_outer_shell_2;
+				
+				if(object_key != 'NULL')
+					{
+						codeBuffer[object_key] = new Array();
+						codeBuffer[object_key][this.html] = content;
+						codeBuffer[object_key][this.key] = object_key;
+						codeBuffer[object_key][this.name] = name;
+						codeBuffer[object_key][this.type] = 'checkbox';
+						codeBuffer[object_key][this.properties] =  new Array();
+							codeBuffer[object_key][this.properties][0] = label;
+							codeBuffer[object_key][this.properties][1] = name;
+							codeBuffer[object_key][this.properties][2] = tip;
+						codeBuffer[object_key][this.edit_permissions] = true;
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = name;
+						codeBuffer[new_key][this.type] = 'checkbox';
+						codeBuffer[new_key][this.properties] =  new Array();
+							codeBuffer[new_key][this.properties][0] = label;
+							codeBuffer[new_key][this.properties][1] = name;
+							codeBuffer[new_key][this.properties][2] = tip;
+						codeBuffer[new_key][this.edit_permissions] = true;
+					}
+					
+				hideForm('set_up_checkbox_form');
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+	
+// clears the select box form
+function initializeSetUpSelectForm()
+	{
+		document.getElementById('select_key_input').value = 'NULL';
+		document.getElementById('select_label_input').value = '';
+		document.getElementById('select_name_input').value = '';
+		document.getElementById('select_required_input').checked = false;
+		document.getElementById('select_options_input').value = '';
+		document.getElementById('select_pretty_input').value = '';
+		document.getElementById('select_tip_input').value = '';
+	}
+
+// validate Set Up Select Box option, inject HTML into buffer	
+function submitSetUpSelectForm()
+	{
+		var object_key = new Number;
+		var label = new String;
+		var name = new String;
+		var require_field = Boolean;
+		var required = new String;
+		var option = new String;
+		var pretty = new String;
+		var tip = new String;
+		errors = '';
+		
+		object_key = document.getElementById('select_key_input').value;
+		label = document.getElementById('select_label_input').value;
+		name = replaceSpace(document.getElementById('select_name_input').value);
+		require_field = document.getElementById('select_required_input').checked;
+		required = 'text';
+		option = document.getElementById('select_options_input').value;
+		pretty = document.getElementById('select_pretty_input').value;
+		tip = document.getElementById('select_tip_input').value;
+		
+		options_array = option.split(",");
+		
+		// function to clean spaces
+		/*for(option_key in options_array)
+			{
+				while(options_array[option_key].indexOf(" ") != -1)
+					{
+						options_array[option_key] = options_array[option_key].replace(" ","");
+					}
+			}*/
+		
+		if(!validateString(label))
+			{
+				errors = errors + '"Label" cannot be blank.<br>';
+			}
+		if(!validateString(name))
+			{
+				errors = errors + '"Name" cannot be blank.<br>';
+			}
+		if(validateString(name))
+			{
+				if(document.getElementById(name) && object_key == 'NULL')
+					{
+						errors = errors + "Field named " + name + " already exists, please choose another name.";
+					}
+			}
+		if(!validateString(name))
+			{
+				errors = errors + '"Options" cannot be blank.<br>';
+			}
+		if(require_field)
+			{
+				if(!validateString(pretty))
+					{
+						errors = errors + '"Name of field in error message" cannot be blank.<br>';
+					}
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+				
+				content = standard_format_outer_shell_1;
+				if(require_field)
+					{
+						content = content + '<font color="#FF0000">*</font>&nbsp;';
+					}
+				content = content + label + standard_format_center_shell;
+				content = content + "\n" + '                    <select id="' + name + '" name="' + name + '" ';
+				if(require_field)
+					{
+						content = content + 'required="select" ';
+						content = content + 'pretty="' + pretty + '" ';
+					}
+				if(validateString(tip))
+					{
+						content = content + 'title="' + tip + '"';
+					}
+				content = content + '>' + "\n";
+				for(option_key in options_array)
+					{
+						if(require_field && option_key == 0 && options_array[option_key] != '')
+							{
+								content = content + '                         <option value=""></option>' + "\n";
+							}
+						content = content + '                         <option value="' + options_array[option_key] + '">' + options_array[option_key] + '</option>' + "\n";
+					}
+				content = content + '                    </select>' + "\n               " + standard_format_outer_shell_2;
+				
+				if(object_key != 'NULL')
+					{
+						codeBuffer[object_key] = new Array();
+						codeBuffer[object_key][this.html] = content;
+						codeBuffer[object_key][this.key] = object_key;
+						codeBuffer[object_key][this.name] = name;
+						codeBuffer[object_key][this.type] = 'select';
+						codeBuffer[object_key][this.properties] =  new Array();
+							codeBuffer[object_key][this.properties][0] = label;
+							codeBuffer[object_key][this.properties][1] = name;
+							codeBuffer[object_key][this.properties][2] = require_field;
+							codeBuffer[object_key][this.properties][3] = option;
+							codeBuffer[object_key][this.properties][4] = pretty;
+							codeBuffer[object_key][this.properties][5] = tip;
+						codeBuffer[object_key][this.edit_permissions] = true;
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = name;
+						codeBuffer[new_key][this.type] = 'select';
+						codeBuffer[new_key][this.properties] =  new Array();
+							codeBuffer[new_key][this.properties][0] = label;
+							codeBuffer[new_key][this.properties][1] = name;
+							codeBuffer[new_key][this.properties][2] = require_field;
+							codeBuffer[new_key][this.properties][3] = option;
+							codeBuffer[new_key][this.properties][4] = pretty;
+							codeBuffer[new_key][this.properties][5] = tip;
+						codeBuffer[new_key][this.edit_permissions] = true;
+					}
+					
+				hideForm('set_up_select_form');
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+
+// clears the radio/check box group form
+function initializeSetUpRadioCheckboxGroupForm()
+	{
+		document.getElementById('radio_checkbox_group_key_input').value = 'NULL';
+		document.getElementById('radio_checkbox_group_type_input').value = 'radio';
+		document.getElementById('radio_checkbox_group_options_per_row_input').value = '3';
+		document.getElementById('radio_checkbox_group_label_input').value = '';
+		document.getElementById('radio_checkbox_group_name_input').value = '';
+		document.getElementById('radio_checkbox_group_required_input').checked = false;
+		document.getElementById('radio_checkbox_group_options_input').value = '';
+		document.getElementById('radio_checkbox_group_required_number_input').value = '1';
+		document.getElementById('radio_checkbox_group_pretty_input').value = '';
+		document.getElementById('radio_checkbox_group_tip_input').value = '';
+	}
+
+// validate Set Up Radio/Check Box Group option, inject HTML into buffer	
+function submitSetUpRadioCheckboxGroupForm()
+	{
+		var object_key = new Number;
+		var type = new String;
+		var label = new String;
+		var name = new String;
+		var require_field = Boolean;
+		var required = new String;
+		var option = new String;
+		var requiredNumber = new String;
+		var pretty = new String;
+		var tip = new String;
+		errors = '';
+		
+		object_key = document.getElementById('radio_checkbox_group_key_input').value;
+		type = document.getElementById('radio_checkbox_group_type_input').value;
+		options_per_row = document.getElementById('radio_checkbox_group_options_per_row_input').value;
+		label = document.getElementById('radio_checkbox_group_label_input').value;
+		name = replaceSpace(document.getElementById('radio_checkbox_group_name_input').value);
+		require_field = document.getElementById('radio_checkbox_group_required_input').checked;
+		option = document.getElementById('radio_checkbox_group_options_input').value;
+		requiredNumber = document.getElementById('radio_checkbox_group_required_number_input').value;
+		pretty = document.getElementById('radio_checkbox_group_pretty_input').value;
+		tip = document.getElementById('radio_checkbox_group_tip_input').value;
+		
+		options_array = option.split(",");
+		
+		// function to clean spaces
+		/*for(option_key in options_array)
+			{
+				while(options_array[option_key].indexOf(" ") != -1)
+					{
+						options_array[option_key] = options_array[option_key].replace(" ","");
+					}
+			}*/
+		
+		if(!validateString(label))
+			{
+				errors = errors + '"Label" cannot be blank.<br>';
+			}
+		if(!validateString(name))
+			{
+				errors = errors + '"Name" cannot be blank.<br>';
+			}
+		if(validateString(name))
+			{
+				if(document.getElementById(name) && object_key == 'NULL')
+					{
+						errors = errors + "Field named " + name + " already exists, please choose another name.";
+					}
+			}
+		if(!validateString(name))
+			{
+				errors = errors + '"Options" cannot be blank.<br>';
+			}
+		if(require_field)
+			{
+				if(type == 'checkbox')
+							{
+								if(!validateString(requiredNumber))
+									{
+										errors = errors + '"Required Number" cannot be blank.<br>';
+									}
+							}
+				if(validateString(requiredNumber))
+					{
+						if(type == 'checkbox')
+							{
+								if(requiredNumber < 1)
+									{
+										errors = errors + '"Required Number" must be greater than 1.<br>';
+									}
+								if(requiredNumber > (options_array.length - 1))
+									{
+										errors = errors + '"Required Number" must be 1 less than the total number of options.<br>The current number of options is ' + options_array.length + ', so the maximum number that can be required is ' + (options_array.length - 1) + '.<br>';
+									}
+							}
+					}
+				if(!validateString(pretty))
+					{
+						errors = errors + '"Name of field in error message" cannot be blank.<br>';
+					}
+			}
+			
+		if(!validateString(errors))
+			{
+				var content = new String;
+				var new_key = new Number;
+				var object_counter = new Number;
+				object_counter = 0;
+				
+				content = alternate_format_outer_shell_1;
+				if(require_field)
+					{
+						content = content + '<font color="#FF0000">*</font>&nbsp;';
+					}
+				content = content + label + alternate_format_outer_shell_2 + "\n";
+				content = content + alternate_format_outer_shell_3;
+				
+				if(type == 'checkbox')
+					{
+						content = content + "\n" + '                    <input type="hidden" id="' + name + "_" + string_date + '" name="' + name + '" value="" />';
+					}
+				
+				for(option_key in options_array)
+					{
+						object_counter++;
+						
+						if(option_key == 0)
+							{
+								content = content + "\n" + '                    <input type="' + type + '" id="' + name + '" name="' + name + '" value="' + options_array[option_key] + '" ';
+								if(require_field)
+									{
+										if(type == 'checkbox')
+											{
+												content = content + 'required="checkbox" ';
+											}
+										else
+											{
+												content = content + 'required="radio" ';
+											}
+										
+										content = content + 'required="radio" ';
+										if(type == 'checkbox')
+											{
+												content = content + 'requiredNumber="' + requiredNumber + '" ';
+											}
+										content = content + 'pretty="' + pretty + '" ';
+									}
+								if(validateString(tip))
+									{
+										content = content + ' title="' + tip + '"';
+									}
+								if(require_field && type == 'checkbox')
+									{
+										content = content + ' onclick="saveSelected' + name + "_" + string_date + '(this.form.' + name + ');"';
+									}
+								content = content + '>' + options_array[option_key];
+							}
+						else
+							{
+								content = content + '                    <input type="' + type + '" id="' + name + '" name="' + name + '" value="' + options_array[option_key] + '"';
+								if(validateString(tip))
+									{
+										content = content + ' title="' + tip + '"';
+									}
+								if(type == 'checkbox')
+									{
+										content = content + ' onclick="saveSelected' + name + "_" + string_date + '(this.form.' + name + ');"';
+									}
+								content = content + '>' + options_array[option_key];
+							}
+							
+						if((object_counter == options_per_row) && (option_key != (options_array.length - 1)))
+							{
+								content = content + "\n" + '                    <br>' + "\n";
+								object_counter = 0;
+							}
+						else if(option_key != (options_array.length - 1))
+							{
+								content = content + "\n";
+							}
+						else
+							{
+								content = content + "\n" + '               ' + alternate_format_outer_shell_4;
+							}
+					}
+					
+				if(type == 'checkbox')
+					{
+						content = content + '\n          <';
+						content = content + 'script language="JavaScript" type="text/JavaScript"> \n';
+						content = content + '               function getSelected' + name + "_" + string_date + '(opt)\n';
+						content = content + '                    {\n';
+            				content = content + '                         var selected = new Array();\n';
+            				content = content + '                         var index = 0;\n';
+            				content = content + '                         for (var intLoop = 0; intLoop < opt.length; intLoop++)\n';
+						content = content + '                              {\n';
+            				content = content + '                                   if ((opt[intLoop].selected) || (opt[intLoop].checked))\n';
+						content = content + '                                        {\n';
+            				content = content + '                                             index = selected.length;\n';
+            				content = content + '                                             selected[index] = new Object;\n';
+           				content = content + '                                             selected[index].value = opt[intLoop].value;\n';
+           				content = content + '                                             selected[index].index = intLoop;\n';
+            				content = content + '                                        }\n';
+            				content = content + '                              }\n';
+           				content = content + '                         return selected;\n';
+        					content = content + '                    }\n';
+ 						content = content + '\n';
+         					content = content + '               function saveSelected' + name + "_" + string_date + '(opt)\n';
+						content = content + '                    {\n';
+            				content = content + '                         var sel = getSelected' + name + "_" + string_date + '(opt);\n';
+            				content = content + '                         var strSel = "";\n';
+            				content = content + '                         for ( var item = 0; item < sel.length; item++ ) \n';
+						content = content + '               		      {\n';
+						content = content + '               		           if(strSel == "")\n';
+						content = content + '               			           {\n';
+						content = content + '               				           strSel += sel[item].value;\n';
+						content = content + '               			           }\n';
+						content = content + '               			      else\n';
+						content = content + '               			           {\n';
+						content = content + '               				           strSel += "," + sel[item].value;\n';
+						content = content + '               			           }\n';
+						content = content + '               	            }\n';
+						content = content + '                         document.getElementById("' + name + "_" + string_date + '").value = strSel;\n';
+        					content = content + '                    } \n';
+						content = content + '          </script';
+						content = content + '> \n';
+					}
+				
+				if(object_key != 'NULL')
+					{
+						codeBuffer[object_key] = new Array();
+						codeBuffer[object_key][this.html] = content;
+						codeBuffer[object_key][this.key] = object_key;
+						codeBuffer[object_key][this.name] = name;
+						codeBuffer[object_key][this.type] = type + '_group';
+						codeBuffer[object_key][this.properties] =  new Array();
+							codeBuffer[object_key][this.properties][0] = type;
+							codeBuffer[object_key][this.properties][1] = options_per_row;
+							codeBuffer[object_key][this.properties][2] = label;
+							codeBuffer[object_key][this.properties][3] = name;
+							codeBuffer[object_key][this.properties][4] = require_field;
+							codeBuffer[object_key][this.properties][5] = option;
+							codeBuffer[object_key][this.properties][6] = requiredNumber;
+							codeBuffer[object_key][this.properties][7] = pretty;
+							codeBuffer[object_key][this.properties][8] = tip;
+						codeBuffer[object_key][this.edit_permissions] = true;
+					}
+				else
+					{
+						new_key = codeBuffer.length;
+						codeBuffer[new_key] = new Array();
+						codeBuffer[new_key][this.html] = content;
+						codeBuffer[new_key][this.key] = new_key;
+						codeBuffer[new_key][this.name] = name;
+						codeBuffer[new_key][this.type] = type + '_group';
+						codeBuffer[new_key][this.properties] =  new Array();
+							codeBuffer[new_key][this.properties][0] = type;
+							codeBuffer[new_key][this.properties][1] = options_per_row;
+							codeBuffer[new_key][this.properties][2] = label;
+							codeBuffer[new_key][this.properties][3] = name;
+							codeBuffer[new_key][this.properties][4] = require_field;
+							codeBuffer[new_key][this.properties][5] = option;
+							codeBuffer[new_key][this.properties][6] = requiredNumber;
+							codeBuffer[new_key][this.properties][7] = pretty;
+							codeBuffer[new_key][this.properties][8] = tip;
+						codeBuffer[new_key][this.edit_permissions] = true;
+					}
+					
+				hideForm('set_up_radio_checkbox_group_form');
+				
+			}
+			
+		dumpErrors('form_errors');
+		refreshViews();
+	}
+
+</script>
+
+<!-- Begin Content -->
+
+<center><h2>dotCMS Form Builder</h2></center>
+<br>
+<table width="100%" border="none" class="text"cellspacing="0" align="center" >
+	<tr>
+		<td width="70%" valign="top"><b>Work Area:</b>
+			<table width="100%" border="1" class="text" bordercolor="#013567" bgcolor="#FFFFFF" cellspacing="0" align="center" title="The work area.">
+				<tr>
+					<td colspan="2" valign="top" align="center">
+						<span id="set_up_email_form" name="set_up_email_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;From: </td>
+												<td align="left"><input id="from_email_input" size="45" name="from_email_input" type="text" title="Who the email appears to be from.  Example: website@gettysburg.edu" /> (Example: "someone@somewhere.xxx")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;To: </td>
+												<td align="left"><input id="to_email_input" size="45" name="to_email_input" type="text" title="Who the email will be sent to." /> (Example: "someone@somewhere.xxx")</td>
+											</tr>
+											<tr>
+												<td align="right">Cc: </td>
+												<td align="left"><input id="cc_email_input" size="45" name="cc_email_input" type="text" title="Who the email will be copied to." /> (Example: "someone@somewhere.xxx")</td>
+											</tr>
+											<tr>
+												<td align="right">Bcc: </td>
+												<td align="left"><input id="bcc_email_input" size="45" name="bcc_email_input" type="text" title="Who the email will be blind copied to." /> (Example: "someone@somewhere.xxx")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Subject: </td>
+												<td align="left"><input id="subject_email_input" size="45" name="subject_email_input" type="text" title="Subject of the email." /> (Example: "New alumni survey form submitted.")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;</td>
+												<td align="left">(Note: You may add multiple email addresses separated by commas. Example: "someone@somewhere.xxx,someoneelse@somewhereelse.xxx")</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_email" name="cancel_set_up_email" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_email_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_email" name="submit_set_up_email" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpEmail();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_return_url_form" name="set_up_return_url_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;URL: </td>
+												<td align="left"><input size="45" id="return_url_input" name="return_url_input" type="text" title="Where the user will be sent after they submit the form. (Within the Gettysburg College Website)" /></td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;</td>
+												<td align="left">(Note: Must be part of the Gettysburg Website. Example: "/somefolder/somefile.xxx" You do not need to have "http://wwww.gettysburg.edu", the CMS assumes you are at the Gettysburg Website.)</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_return_url" name="cancel_set_up_return_url" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_return_url_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_return_url" name="submit_set_up_return_url" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpReturnUrl();" />&nbsp;&nbsp;&nbsp;<input type="button" id="test_set_up_return_url" name="test_set_up_return_url" value="Test" title="Click to test URL in a new window."  onclick="javascript: window.open('http://www.gettysburg.edu' + document.getElementById('return_url_input').value);" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_database_category_form" name="set_up_database_category_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Form Name: </td>
+												<td align="left"><input size="45" id="database_category_input" name="database_category_input" type="text" title="The category name for the CMS database is based on this." /></td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;</td>
+												<td align="left">(Be as descriptive as possible.  Example: "gettysburg_alumni_survey_feb_2007")</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_database_category" name="cancel_set_up_database_category" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_database_category_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_database_category" name="submit_set_up_database_category" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpDatabaseCategory();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_thank_you_form" name="set_up_thank_you_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<table>
+											<tr>
+												<td colspan="2">Note: To complete "Thank You Email" setup you need to add a text box named "email".</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;From: </td>
+												<td align="left"><input id="from_thank_you_input" name="from_thank_you_input" type="text" title="Who the thank you email appears to be from.  Example: support@gettysburg.edu" /> (Example: "someone@somewhere.xxx")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Subject: </td>
+												<td align="left"><input id="subject_thank_you_input" name="subject_thank_you_input" type="text" title="Subject of thank you email." /> (Example: "Thank You")</td>
+											</tr>
+											<tr>
+												<td align="right" valign="top"><font color="#FF0000">*</font>&nbsp;Text: </td>
+												<td align="left"><textarea id="text_thank_you_input" name="text_thank_you_input" title="Body text of thank you email." rows="8" cols="65" ></textarea><br>(Example: "Thank you for completing the Gettysburg Alumni survey...")</td>
+											</tr>
+											<tr>
+												<td align="right"><input id="append_data_thank_you_input" name="append_data_thank_you_input" type="checkbox" title="Check this box to send user a copy of the form data they submit." /></td>
+												<td align="left">&nbsp;Check this box to send user a copy of the form data they submit.</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_thank_you" name="cancel_set_up_thank_you" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_thank_you_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_thank_you" name="submit_set_up_thank_you" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpThankYou();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_text_form" name="set_up_text_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="hidden" id="text_key_input" name="text_key_input" />
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Label: </td>
+												<td align="left"><input id="text_label_input" name="text_label_input" type="text" title="Label for text box." /> (Example: "First Name")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Name: </td>
+												<td align="left"><input id="text_name_input" name="text_name_input" type="text" title="Name for text box." /> (Example: "first_name")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Tool Tip: </td>
+												<td align="left"><input id="text_tip_input" name="text_tip_input" type="text" title="Tool Tip for text box." /> (Example: "Enter you first name.")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Required? </td>
+												<td align="left"><input id="text_required_input" name="text_required_input" type="checkbox" title="Check to make this text box required." onclick="showHide('set_up_text_form_required'); checkUncheck('text_required_input', 'set_up_text_form_required');" /></td>
+											</tr>
+										</table>
+										<span id="set_up_text_form_required" name="set_up_text_form_required" style="display:none;">
+											<table>
+												<tr>
+													<td align="right"><font color="#FF0000">*</font>&nbsp;Required Type: </td>
+													<td align="left">
+														<select id="text_type_input" name="text_type_input" title="Select the type of input this text box will accept.">
+															<option value="text">Must be text. ( AaBbCc123#$\_/+=... )</option>
+															<option value="email">Must be an email address. ( someone@somewhere.xxx )</option>
+															<option value="number">Must be a number. ( 12345... )</option>
+															<option value="date">Must be a date. ( 01/01/2007 )</option>
+														</select></td>
+												</tr>
+												<tr>
+													<td align="right">Required Length: </td>
+													<td align="left"><input id="text_length_input" name="text_length_input" type="text" title="How many characters long the input must be. (Optional)" /> (Note: Forces user input to be exactly this many characters long.)</td>
+												</tr>
+												<tr>
+													<td align="right"><font color="#FF0000">*</font>&nbsp;Name of field in error message: </td>
+													<td align="left"><input id="text_pretty_input" name="text_pretty_input" type="text" title="How the text box will be described in the error message." /> (Example: "First Name")</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_text_form" name="cancel_set_up_text_form" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_text_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_text_form" name="submit_set_up_text_form" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpTextForm();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_header_form" name="set_up_header_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="hidden" id="header_key_input" name="text_key_input" />
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Header: </td>
+												<td align="left"><input id="header_text_input" name="header_text_input" type="text" title="Name of section heading." /> (Example: "Personal Information:")</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_text_form" name="cancel_set_up_header_form" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_header_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_header_form" name="submit_set_up_header_form" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpHeaderForm();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_comment_form" name="set_up_comment_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="hidden" id="comment_key_input" name="text_key_input" />
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Text: </td>
+												<td align="left"><input id="comment_text_input" name="comment_text_input" type="text" title="Text to display." /> (Example: "(Please limit your answers to 50 words or less.)")</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_text_form" name="cancel_set_up_comment_form" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_comment_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_comment_form" name="submit_set_up_comment_form" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpCommentForm();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_textarea_form" name="set_up_textarea_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="hidden" id="textarea_key_input" name="textarea_key_input" />
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Label: </td>
+												<td align="left"><input id="textarea_label_input" name="textarea_label_input" type="textarea" title="Label for text area." /> (Example: "Describe your experience at Gettysburg College:")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Name: </td>
+												<td align="left"><input id="textarea_name_input" name="textarea_name_input" type="textarea" title="Name for text area." /> (Example: "gettysburg_experience")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Tool Tip: </td>
+												<td align="left"><input id="textarea_tip_input" name="textarea_tip_input" type="textarea" title="Tool Tip for text area." /> (Example: "Type your description here.")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Rows: </td>
+												<td align="left"><input id="textarea_rows_input" name="textarea_rows_input" type="textarea" title="Number of rows of text in the text area." value="4" /> (Example: "4")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Columns: </td>
+												<td align="left"><input id="textarea_cols_input" name="textarea_cols_input" type="textarea" title="Approximate number of characters in a row." value="30" /> (Example: "30")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Required? </td>
+												<td align="left"><input id="textarea_required_input" name="textarea_required_input" type="checkbox" title="Check to make this text area required." onclick="showHide('set_up_textarea_form_required'); checkUncheck('textarea_required_input', 'set_up_textarea_form_required');" /></td>
+											</tr>
+										</table>
+										<span id="set_up_textarea_form_required" name="set_up_textarea_form_required" style="display:none;">
+											<table>
+												<tr>
+													<td align="right"><font color="#FF0000">*</font>&nbsp;Required Type: </td>
+													<td align="left">
+														<select id="textarea_type_input" name="textarea_type_input" title="Select the type of input this text area will accept.">
+															<option value="text">Must be text. ( AaBbCc123#$\_/+=... )</option>
+															<option value="email">Must be an email address. ( someone@somewhere.xxx )</option>
+															<option value="number">Must be a number. ( 12345... )</option>
+															<option value="date">Must be a date. ( 01/01/2007 )</option>
+														</select></td>
+												</tr>
+												<tr>
+													<td align="right">Required Length: </td>
+													<td align="left"><input id="textarea_length_input" name="textarea_length_input" type="textarea" title="How many characters long the input must be. (Optional)" /> (Note: "Forces user input must be exaclty this many characters long.")</td>
+												</tr>
+												<tr>
+													<td align="right"><font color="#FF0000">*</font>&nbsp;Name of field in error message: </td>
+													<td align="left"><input id="textarea_pretty_input" name="textarea_pretty_input" type="textarea" title="How the text area will be described in the error message." /> (Example: "Gettysburg experience description")</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_textarea_form" name="cancel_set_up_textarea_form" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_textarea_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_textarea_form" name="submit_set_up_textarea_form" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpTextareaForm();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_checkbox_form" name="set_up_checkbox_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="hidden" id="checkbox_key_input" name="checkbox_key_input" />
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Label: </td>
+												<td align="left"><input id="checkbox_label_input" name="checkbox_label_input" type="text" title="Label for check box." /> (Example: "Check this box to be added to our mailing list:")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Name: </td>
+												<td align="left"><input id="checkbox_name_input" name="checkbox_name_input" type="text" title="Name for check box." /> (Example: "add_to_mailing_list")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Tool Tip: </td>
+												<td align="left"><input id="checkbox_tip_input" name="checkbox_tip_input" type="text" title="Tool Tip for check box." /> (Example: "Click here to check.")</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_checkbox_form" name="cancel_set_up_checkbox_form" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_checkbox_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_checkbox_form" name="submit_set_up_checkbox_form" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpCheckboxForm();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_select_form" name="set_up_select_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="hidden" id="select_key_input" name="select_key_input" />
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Label: </td>
+												<td align="left"><input id="select_label_input" name="select_label_input" type="text" title="Label for select box." /> (Example: "Favorite Color:")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Name: </td>
+												<td align="left"><input id="select_name_input" name="select_name_input" type="text" title="Name for select box." /> (Example: "favorite_color")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Tool Tip: </td>
+												<td align="left"><input id="select_tip_input" name="select_tip_input" type="text" title="Tool Tip for select box." /> (Note: Tool Tips are not supported for select boxes in Internet Explorer. Example: "Click to select.")</td>
+											</tr>
+											<tr>
+												<td align="right" valign="top"><font color="#FF0000">*</font>&nbsp;Options: </td>
+												<td align="left"><input id="select_options_input" name="select_options_input" type="text" title="The options a user may select from the select box." /> (Comma separated list.  Example: "Red,Blue,Green,Yellow,Purple")<br>(Start the list with a comma to make a blank first option. Example: ",Red,Blue,Green,Yellow,Purple")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Required? </td>
+												<td align="left"><input id="select_required_input" name="select_required_input" type="checkbox" title="Check to make this select box required." onclick="showHide('set_up_select_form_required'); checkUncheck('select_required_input', 'set_up_select_form_required');" /></td>
+											</tr>
+										</table>
+										<span id="set_up_select_form_required" name="set_up_select_form_required" style="display:none;">
+											<table>
+												<tr>
+													<td align="right"><font color="#FF0000">*</font>&nbsp;Name of field in error message: </td>
+													<td align="left"><input id="select_pretty_input" name="select_pretty_input" type="text" title="How the select box will be described in the error message." /> (Example: "Favorite Color")</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_select_form" name="cancel_set_up_select_form" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_select_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_select_form" name="submit_set_up_select_form" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpSelectForm();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<span id="set_up_radio_checkbox_group_form" name="set_up_radio_checkbox_group_form" style="display:none;">
+							<table width="100%" align="center">
+								<tr>
+									<td colspan="2" align="center">(<font color="#FF0000">*</font>) denotes required information.</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="hidden" id="radio_checkbox_group_key_input" name="radio_checkbox_group_key_input" />
+										<table>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Group Type: </td>
+												<td align="left">
+													<select id="radio_checkbox_group_type_input" name="radio_checkbox_group_type_input" title="Type of group.">
+														<option value="radio">Radio Buttons</option>
+														<option value="checkbox">Check Boxes</option>
+													</select> (Note: Radio Buttons can only have one option selected, while check boxes can have many options selected.)</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Options Per Row: </td>
+												<td align="left"><input id="radio_checkbox_group_options_per_row_input" name="radio_checkbox_group_options_per_row_input" type="text" title="How many options will be in one row." /> (Example: "3")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Label: </td>
+												<td align="left"><input id="radio_checkbox_group_label_input" name="radio_checkbox_group_label_input" type="text" title="Label for Radio/Check Box group." /> (Example: "Pick 2 activities you are interested in:")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Name: </td>
+												<td align="left"><input id="radio_checkbox_group_name_input" name="radio_checkbox_group_name_input" type="text" title="Name for Radio/Check Box group." /> (Example: "activities_interest")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Tool Tip: </td>
+												<td align="left"><input id="radio_checkbox_group_tip_input" name="radio_checkbox_group_tip_input" type="text" title="Tool Tip for Radio/Check Box group." /> (Example: "Click to select.")</td>
+											</tr>
+											<tr>
+												<td align="right"><font color="#FF0000">*</font>&nbsp;Options: </td>
+												<td align="left"><input id="radio_checkbox_group_options_input" name="radio_checkbox_group_options_input" type="text" title="The options a user may select from the Radio/Check Box group." /> (Comma separated list.  Example: "Swimming,Skiing,Biking,Running,Jogging")</td>
+											</tr>
+											<tr>
+												<td align="right">&nbsp;Required? </td>
+												<td align="left"><input id="radio_checkbox_group_required_input" name="radio_checkbox_group_required_input" type="checkbox" title="Check to make this Radio/Check Box group required." onclick="showHide('set_up_radio_checkbox_group_form_required'); checkUncheck('radio_checkbox_group_required_input', 'set_up_radio_checkbox_group_form_required');" /></td>
+											</tr>
+										</table>
+										<span id="set_up_radio_checkbox_group_form_required" name="set_up_radio_checkbox_group_form_required" style="display:none;">
+											<table>
+												<tr>
+													<td align="right">&nbsp;Required Number: </td>
+													<td align="left"><input id="radio_checkbox_group_required_number_input" name="radio_checkbox_group_required_number_input" type="text" title="How many options the user must select from the Radio/Check Box group." /> (Note: Required for Check Box groups only. Example: "2")</td>
+												</tr>
+												<tr>
+													<td align="right"><font color="#FF0000">*</font>&nbsp;Name of field in error message: </td>
+													<td align="left"><input id="radio_checkbox_group_pretty_input" name="radio_checkbox_group_pretty_input" type="text" title="How the Radio/Check Box group will be described in the error message." /> (Example: "Activities")</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="button" id="cancel_set_up_radio_checkbox_group_form" name="cancel_set_up_radio_checkbox_group_form" value="Cancel" title="Click to cancel."  onclick="javascript: errors='';  refreshViews(); dumpErrors('form_errors'); hideForm('set_up_radio_checkbox_group_form');" />&nbsp;&nbsp;&nbsp;<input type="button" id="submit_set_up_radio_checkbox_group_form" name="submit_set_up_radio_checkbox_group_form" value="Add To Form" title="Click to add to form."  onclick="javascript: submitSetUpRadioCheckboxGroupForm();" />
+									</td>
+								</tr>
+							</table>
+						</span>
+						<table style="display:inline;">
+							<tr>
+								<td id="form_errors" name="form_errors" colspan="2" align="center">&nbsp;</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<!-- Design View -->
+				<tr>
+					<td colspan="2" onclick="javascript: showHide('design_content');" style="cursor:pointer;" title="Click to show/hide."><b><span id="design_content_plus" name="design_content_plus" style="display:none;";><b>&nbsp;+&nbsp;</b></span><span id="design_content_minus" name="design_content_minus" style="display:inline;";><b>&nbsp;-&nbsp;</b></span><u>Preview Your Form</u></b> &nbsp;&nbsp;&nbsp;&nbsp;(A quick peak at the general structure of the form.)</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<span id="design_content" name="design_content" style="display:inline;">
+							<table width="100%" title="What your form will look like in the user's browser." onmouseover="javascript: refresh_design_view = false;" onmouseout="javascript: refresh_design_view = true;">
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<table width="90%">
+											<tr>
+												<td id="view_table_column" name="view_table_column">&nbsp;</td>
+											</tr>								
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+							</table>
+						</span>
+					</td>
+				</tr>
+				<!-- Object View -->
+				<tr>
+					<td colspan="2" onclick="javascript: showHide('object_content');" style="cursor:pointer;" title="Click to show/hide."><b><span id="object_content_plus" name="object_content_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="object_content_minus" name="object_content_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Edit Your Form</u></b> &nbsp;&nbsp;&nbsp;&nbsp;(Use this view to organize your form fields.)</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<span id="object_content" name="object_content" style="display:none;">
+							<table width="100%" title="The editable fields in your form." onmouseover="javascript: refresh_object_view = false;" onmouseout="javascript: refresh_object_view = true;">
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<table width="90%">
+											<tr>
+												<td id="object_table_column" name="object_table_column">&nbsp;</td>
+											</tr>								
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+							</table>
+						</span>
+					</td>
+				</tr>
+				<!-- Code View -->
+				<tr>
+					<td colspan="2" onclick="javascript: showHide('code_content');" style="cursor:pointer;" title="Click to show/hide."><b><span id="code_content_plus" name="code_content_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="code_content_minus" name="code_content_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>HTML Code of Your Form</u></b> &nbsp;&nbsp;&nbsp;&nbsp;(Copy this text and paste it into your CMS page body area.)</td>
+				</tr>	
+				<tr>
+					<td colspan="2">
+						<span id="code_content" name="code_content" style="display:none;">
+							<table width="100%" title="The HTML code needed to create your form." onmouseover="javascript: refresh_code_view = false;" onmouseout="javascript: refresh_code_view = true;">
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<textarea id="code_text_area" name="code_text_area" rows="35" cols="90" title="The HTML code needed to create your form."></textarea>
+									</td>
+								</tr>
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+							</table>
+						</span>
+					</td>
+				</tr>
+				<!-- XML View -->
+				<tr>
+					<td colspan="2" onclick="javascript: showHide('xml_code_content');" style="cursor:pointer;" title="Click to show/hide."><b><span id="xml_code_content_plus" name="xml_code_content_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="xml_code_content_minus" name="xml_code_content_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Save Your Form</u></b> &nbsp;&nbsp;&nbsp;&nbsp;(This section will give you an XML file that can be saved as plain text and then reloaded in the Reload Your Form section below.)</td>
+				</tr>	
+				<tr>
+					<td colspan="2">
+						<span id="xml_code_content" name="xml_code_content" style="display:none;">
+							<table width="100%" title="The XML representation of your form." onmouseover="javascript: refresh_xml_code_view = false;" onmouseout="javascript: refresh_xml_code_view = true;">
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<textarea id="xml_code_text_area" name="xml_code_text_area" rows="35" cols="90" title="The XML representation of your form."></textarea>
+									</td>
+								</tr>
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+							</table>
+						</span>
+					</td>
+				</tr>
+				<!-- XML Loader -->
+				<tr>
+					<td onclick="javascript: showHide('xml_code_loader_content');" style="cursor:pointer;" title="Click to show/hide."><b><span id="xml_code_loader_content_plus" name="xml_code_loader_content_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="xml_code_loader_content_minus" name="xml_code_loader_content_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Reload Your Form</u></b> &nbsp;&nbsp;&nbsp;&nbsp;(Paste the copy of the plain text document you saved into this area then click the Reload Form button.)</td>
+					<td><input type="button" id="load_xml" name="load_xml" value="Reload Form" onclick="javascript: loadXMLCode();" /></td>
+				</tr>	
+				<tr>
+					<td colspan="2">
+						<span id="xml_code_loader_content" name="xml_code_loader_content" style="display:none;">
+							<table width="100%" title="Paste the saved XML representation of your form here." onmouseover="javascript: refresh_xml_code_loader_view = false;" onmouseout="javascript: refresh_xml_code_loader_view = true;">
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<textarea id="xml_code_loader_text_area" name="xml_code_loader_text_area" rows="35" cols="90" title="The XML representation of your form."></textarea>
+									</td>
+								</tr>
+								<tr>
+									<td>&nbsp;</td>
+								</tr>
+							</table>
+						</span>
+					</td>
+				</tr>
+			</table>
+		</td>
+		<td width="30%" valign="top"><b>Menu Area:</b>
+			<table width="100%" title="The main menu.">
+				<tr>
+					<td valign="top" align="center">
+						<span id="menu" name="menu" style="display:inline;">
+							<table align="left">
+								<tr>
+									<td align="center">(<font color="#FF0000">*</font>) denotes required steps.</td>
+								</tr>
+								<tr>
+									<td align="center">&nbsp;</td>
+								</tr>
+								<tr>
+									<td align="left" onclick="javascript: showHide('step_1');" style="cursor:pointer;" title="Click to show/hide."><font color="#013567" size="+1"><span id="step_1_plus" name="step_1_plus" style="display:none;";><b>&nbsp;+&nbsp;</b></span><span id="step_1_minus" name="step_1_minus" style="display:inline;";><b>&nbsp;-&nbsp;</b></span><u>Step 1</u></font>&nbsp;<font color="#FF0000">*</font></td>
+								</tr>
+								<tr>
+									<td>
+										<span id="step_1" name="step_1" style="display:inline;">
+											<table width="100%">
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+												<tr>
+													<td align="center">
+														<input type="button" id="set_up_database_category" name="set_up_database_category" value="Name Your Form" title="Use this option to determine where the data will be saved after the form is submitted."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); showForm('set_up_database_category_form');  document.getElementById('database_category_input').focus();" />
+													</td>
+												</tr>
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+								<tr>
+									<td align="left" onclick="javascript: showHide('step_2');" style="cursor:pointer;" title="Click to show/hide."><font color="#013567" size="+1"><span id="step_2_plus" name="step_2_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="step_2_minus" name="step_2_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Step 2 (Build Your Form)</u></font></td>
+								</tr>
+								<tr>
+									<td>
+										<span id="step_2" name="step_2" style="display:none;">
+											<table width="100%" align="left">
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+												<tr>
+													<td align="left">
+														<table>
+															<tr>
+																<td align="left" onclick="javascript: showHide('pre_made_fields');" style="cursor:pointer;" title="Click to show/hide.">&nbsp;&nbsp;&nbsp;&nbsp;<font color="#013567"><span id="pre_made_fields_plus" name="pre_made_fields_plus" style="display:none;";><b>&nbsp;+&nbsp;</b></span><span id="pre_made_fields_minus" name="pre_made_fields_minus" style="display:inline;";><b>&nbsp;-&nbsp;</b></span><u>Pre-made Fields</u></font></td>
+															</tr>
+															<tr>
+																<td>
+																	<span id="pre_made_fields" name="pre_made_fields" style="display:inline;">
+																		<span id="pre_made_fields_select" name="pre_made_fields_select" style="display:inline;">
+																			<table width="100%">
+																				<tr>
+																					<td align="left" id="prefab_objects_select_holder" name="prefab_objects_select_holder"></td>
+																				</tr>
+																			</table>
+																		</span>
+																		<span id="pre_made_fields_checkboxes" name="pre_made_fields_checkboxes" style="display:none;">
+																			<table width="100%">
+																				<tr>
+																					<td align="left" id="prefab_objects_checkbox_holder" name="prefab_objects_checkbox_holder"></td>
+																				</tr>
+																			</table>
+																		</span>
+																	</span>
+																</td>
+															</tr>
+														</table>
+													</td>
+												</tr>
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+												<tr>
+													<td align="left" onclick="javascript: showHide('custom_formats');" style="cursor:pointer;" title="Click to show/hide.">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#013567"><span id="custom_formats_plus" name="custom_formats_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="custom_formats_minus" name="custom_formats_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Custom Formats</u></font></td>
+												</tr>
+												<tr>
+													<td>
+														<span id="custom_formats" name="custom_formats" style="display:none;">
+															<table width="100%">
+																<tr>
+																	<td align="center">
+																		&nbsp;<input type="button" id="set_up_header" name="set_up_header" value="Add Header" title="Use this option to add a section header to your form."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); initializeSetUpHeaderForm(); showForm('set_up_header_form'); document.getElementById('header_text_input').focus();" />
+																	</td>
+																</tr>
+																<tr>
+																	<td align="center">
+																		&nbsp;<input type="button" id="set_up_spacer" name="set_up_spacer" value="Add Spacer" title="Use this option to add white space to your form. (instant)"  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); submitSetUpSpacerForm();" />
+																	</td>
+																</tr>
+																<tr>
+																	<td align="center">
+																		&nbsp;<input type="button" id="set_up_comment" name="set_up_comment" value="Add Instructions/Comments" title="Use this option to add instructions or comments to your form."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); initializeSetUpCommentForm(); showForm('set_up_comment_form'); document.getElementById('comment_text_input').focus();" />
+																	</td>
+																</tr>
+																<tr>
+																	<td align="center">&nbsp;</td>
+																</tr>
+															</table>
+														</span>
+													</td>
+												</tr>
+												<tr>
+													<td align="left" onclick="javascript: showHide('custom_fields');" style="cursor:pointer;" title="Click to show/hide.">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#013567"><span id="custom_fields_plus" name="custom_fields_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="custom_fields_minus" name="custom_fields_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Custom Fields</u></font></td>
+												</tr>
+												<tr>
+													<td>
+														<span id="custom_fields" name="custom_fields" style="display:none;">
+															<table width="100%">
+																<tr>
+																	<td align="center">
+																		&nbsp;<input type="button" id="set_up_text" name="set_up_text" value="Add Text Box" title="Use this option to add a text box."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); initializeSetUpTextForm(); showForm('set_up_text_form'); document.getElementById('set_up_text_form_required').style.display = 'none'; checkUncheck('text_required_input', 'set_up_text_form_required'); document.getElementById('text_label_input').focus();" />
+																	</td>
+																</tr>
+																<tr>
+																	<td align="center">
+																		&nbsp;<input type="button" id="set_up_checkbox" name="set_up_checkbox" value="Add Check Box" title="Use this option to add a check box to your form."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); initializeSetUpCheckboxForm(); showForm('set_up_checkbox_form'); document.getElementById('checkbox_label_input').focus();" />
+																	</td>
+																</tr>
+																<tr>
+																	<td align="center">
+																		&nbsp;<input type="button" id="set_up_radio_checkbox_group" name="set_up_radio_checkbox_group" value="Add Radio/Check Box Group" title="Use this option to add a Radio/Check Box Group to your form."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); initializeSetUpRadioCheckboxGroupForm(); showForm('set_up_radio_checkbox_group_form'); document.getElementById('set_up_radio_checkbox_group_form_required').style.display = 'none'; checkUncheck('radio_checkbox_group_required_input', 'set_up_radio_checkbox_group_form_required'); document.getElementById('radio_checkbox_group_type_input').focus();" />
+																	</td>
+																</tr>
+																<tr>
+																	<td align="center">
+																		&nbsp;<input type="button" id="set_up_select" name="set_up_select" value="Add Select Box" title="Use this option to add a select box to your form."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); initializeSetUpSelectForm(); showForm('set_up_select_form'); document.getElementById('set_up_select_form_required').style.display = 'none'; checkUncheck('select_required_input', 'set_up_select_form_required'); document.getElementById('select_label_input').focus();" />
+																	</td>
+																</tr>
+																<tr>
+																	<td align="center">
+																		&nbsp;<input type="button" id="set_up_textarea" name="set_up_textarea" value="Add Text Area" title="Use this option to add a text area to your form."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); initializeSetUpTextareaForm(); showForm('set_up_textarea_form'); document.getElementById('set_up_textarea_form_required').style.display = 'none'; checkUncheck('textarea_required_input', 'set_up_textarea_form_required'); document.getElementById('textarea_label_input').focus();" />
+																	</td>
+																</tr>
+																<tr>
+																	<td align="center">&nbsp;</td>
+																</tr>
+															</table>
+														</span>
+													</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+								<tr>
+									<td align="left" onclick="javascript: showHide('step_3');" style="cursor:pointer;" title="Click to show/hide."><font color="#013567" size="+1"><span id="step_3_plus" name="step_3_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="step_3_minus" name="step_3_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Step 3</u></font>&nbsp;<font color="#FF0000">*</font></td>
+								</tr>
+								<tr>
+									<td>
+										<span id="step_3" name="step_3" style="display:none;">
+											<table width="100%">
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+												<tr>
+													<td align="center">
+														<input type="button" id="set_up_return_url" name="set_up_return_url" value="Set Up Thank You Webpage" title="Use this option to determine where the user will be sent after the form is submitted."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); showForm('set_up_return_url_form');  document.getElementById('return_url_input').focus();" />
+													</td>
+												</tr>
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+								<tr>
+									<td align="left" onclick="javascript: showHide('step_4');" style="cursor:pointer;" title="Click to show/hide."><font color="#013567" size="+1"><span id="step_4_plus" name="step_4_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="step_4_minus" name="step_4_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Step 4</u></font>&nbsp;<font color="#FF0000">*</font></td>
+								</tr>
+								<tr>
+									<td>
+										<span id="step_4" name="step_4" style="display:none;">
+											<table width="100%">
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+												<tr>
+													<td align="center">
+														<input type="button" id="set_up_email" name="set_up_email" value="Set Up Email To Staff" title="Use this option to determine who will be sent an email when the form is submitted."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); showForm('set_up_email_form');  document.getElementById('from_email_input').focus();" />
+													</td>
+												</tr>
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+								<tr>
+									<td align="left" onclick="javascript: showHide('step_5');" style="cursor:pointer;" title="Click to show/hide."><font color="#013567" size="+1"><span id="step_5_plus" name="step_5_plus" style="display:inline;";><b>&nbsp;+&nbsp;</b></span><span id="step_5_minus" name="step_5_minus" style="display:none;";><b>&nbsp;-&nbsp;</b></span><u>Step 5 (Optional)</u></font></td>
+								</tr>
+								<tr>
+									<td>
+										<span id="step_5" name="step_5" style="display:none;">
+											<table width="100%">
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+												<tr>
+													<td align="center">
+														&nbsp;<input type="button" id="set_up_thank_you" name="set_up_thank_you" value="Set Up Thank You Email" title="Use this option to send the form submitter a thank you email."  onclick="javascript: errors=''; refreshViews(); dumpErrors('form_errors'); showForm('set_up_thank_you_form');  document.getElementById('from_thank_you_input').focus();" />
+													</td>
+												</tr>
+												<tr>
+													<td align="center">&nbsp;</td>
+												</tr>
+											</table>
+										</span>
+									</td>
+								</tr>
+							</table>
+						</span>
+					</td>
+				</tr>
+			</table>
+			<b>Status Area:</b>
+			<table width="100%" title="The status notification area.">
+				<tr>
+					<td valign="top" align="center">
+						<span id="status_span" name="status_span" style="display:inline;">
+							<table align="center">
+								<script language="JavaScript" type="text/JavaScript">
+									var getCurrentStatus_interval = setInterval('getCurrentStatus(\'status_object_holder\')', refresh_rate);
+								</script>
+								<tr>
+									<td id="status_object_holder" name="status_object_holder" align="left">&nbsp;</td>
+								</tr>
+							</table>
+						</span>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+<!-- End Content -->
+</body>
+</html>

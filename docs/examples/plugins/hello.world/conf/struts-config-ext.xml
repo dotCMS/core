@@ -1,0 +1,7 @@
+<!-- Use this file to add front end struts actions. You override backend portal struts action by providing an 
+Action with the same path attribute or a form-bean with the same name  -->
+<action path="/ext/strutshello/view_hello" type="com.dotmarketing.plugins.hello.world.portlet.struts.ViewHelloWorld">
+	<forward name="portlet.ext.plugins.hello.world.struts" path="portlet.ext.plugins.hello.world.struts" />
+	<forward name="portlet.ext.plugins.hello.world.struts.max" path="portlet.ext.plugins.hello.world.struts.max" />
+</action>
+     

@@ -1,0 +1,771 @@
+#set($dojoPath = $webapi.getConfigVar('path.to.dojo'))
+#set ($referer = "$previewPageURL&inode=$HTMLPAGE_INODE&language=${language}")
+#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet")))
+	#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.clickstream.uri.override")))
+		#set($referer =	"$request.getAttribute('com.dotmarketing.clickstream.uri.override')?")
+	#end
+#end
+<script type="text/javascript" src="/dwr/engine.js"></script>
+<script type="text/javascript" src="/dwr/util.js"></script>
+<script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/ContainerAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/BrowserAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
+<script type='text/javascript' src='/html/js/uuidUtils.js'></script>
+<script type='text/javascript' src='/html/js/tag.js'></script>
+<style type="text/css">
+	.formRow{clear:right;clear:left;clear:both;}
+</style>
+
+<script>
+	
+	//Widget functions
+	var _dotStructureTypeName = "";
+	var _dotPage = 1;
+	var _dotPerPage = 12;
+	var _dotWidgetNameSelected, _dotWidgetInodeSelected;
+	var _dotWidgetSearchString = "";
+	var _inodeCounter = 0;
+	
+	function openAddWidget(containerInode) {
+		hideCurrentMenu();	
+	   	document.getElementById('container').value = containerInode;
+       	var myDialog = dijit.byId("dotAddWidget");
+       	myDialog.titleNode.innerHTML='<img src="/html/images/icons/gear.png" width="16" height="16" align="absbottom" hspace="3" />$langbackendwebapi.get("modes.Add-Widget")';
+       	dojo.parser.parse("dotAddWidget");
+      	myDialog.show();
+	}
+	
+	function _dotWidgetInitiate(){
+		_dotWidgetCleanResultsData();
+		dijit.byId('widgetSearch').setDisabled(true);
+		dijit.byId('widgetSearch').attr('iconClass','searchIconDis');
+		dijit.byId('widgetAdd').setDisabled(true);
+		dijit.byId('widgetAdd').attr('iconClass','plusIconDis');
+		dijit.byId('_dotWidgetAjaxSearch').attr('disabled', true);
+		dijit.byId('widgetAdd').setLabel("$languagewebapi.getFromUserLanguage('modes.Create-New')");	
+		var _dotWidgetSelect = document.getElementById("_dotWidgetSelect");
+			var woptions = _dotWidgetSelect.options;
+			for(i=0;i<woptions.length;i++){
+				_dotWidgetSelect[i].selected = false;
+			}
+	}
+
+	function _dotWidgetSelected(){
+		var _dotWidgetSelect = document.getElementById("_dotWidgetSelect");
+		var selIndex = _dotWidgetSelect.selectedIndex;
+		var woptions = _dotWidgetSelect.options;
+		_dotWidgetNameSelected = woptions[selIndex].text;
+		_dotWidgetInodeSelected = woptions[selIndex].value;
+		_dotStructureTypeName = _dotWidgetNameSelected;
+		_dotWidgetSearchString = "";
+		if(_dotWidgetInodeSelected == 0){
+			_dotWidgetCleanResultsData();
+			return;
+		}
+		var categoriesValues = new Array ();
+		var fieldsValues = new Array ();
+		fieldsValues[0] = "text1";
+		fieldsValues[1] = dijit.byId('_dotWidgetAjaxSearch').attr('value');
+		ContentletAjax.searchContentlet(_dotWidgetInodeSelected, fieldsValues, categoriesValues, false, false, _dotPage, _dotPerPage, "title asc", _dotFillWidgetResults);
+	}
+	
+	function _dotWidgetSearch(){
+		_dotPage = 1;
+		var _dotWidgetAjaxSearch = document.getElementById("_dotWidgetAjaxSearch");
+		var categoriesValues = new Array ();
+		var fieldsValues = new Array ();
+		fieldsValues[0] = "text1";
+		fieldsValues[1] = _dotWidgetAjaxSearch.value;
+		_dotWidgetSearchString = _dotWidgetAjaxSearch.value;
+		ContentletAjax.searchContentlet(_dotWidgetInodeSelected, fieldsValues, categoriesValues, false, false, _dotPage, _dotPerPage,"title asc", _dotFillWidgetResults);
+	}
+	
+	function _dotFillWidgetResults(widgets){
+		_dotWidgetCleanResultsData();
+					
+		var _dotWidgetListings = document.getElementById("_dotWidgetListings");
+		var counters = widgets[0];
+		var hasNext = counters["hasNext"];
+		var hasPrevious = counters["hasPrevious"];
+		var total = counters["total"];
+		
+		dijit.byId('widgetSearch').setDisabled(false);
+		dijit.byId('widgetSearch').attr('iconClass','searchIcon');
+		dijit.byId('widgetAdd').setDisabled(false);
+		dijit.byId('widgetAdd').attr('iconClass','plusIcon');
+		dijit.byId('_dotWidgetAjaxSearch').attr('disabled', false);	
+		dijit.byId('widgetAdd').setLabel("$languagewebapi.getFromUserLanguage('modes.Create-New') "  + _dotStructureTypeName );
+		
+		var header = widgets[1][0];
+		
+		widgets = widgets.slice(2,widgets.length);
+		for(var i = _dotWidgetListings.rows.length - 1; i > 0; i--){
+			_dotWidgetListings.deleteRow(i);
+		}
+		for (var i = 0; i < widgets.length; i++) {
+		    if(widgets[i].inode){
+				var row = _dotWidgetListings.insertRow(i);
+	
+				var myTd = document.createElement('td'); 
+				dojo.attr(myTd,{
+				    style:{
+				        width:"75px"
+				    }
+				});
+				row.appendChild(myTd);
+	
+				var x = widgets[i].inode ;
+	            var dojoWidget = dijit.byId("select_" + x); 
+	            if (dojoWidget != null)
+	            	dojoWidget.destroy();
+	            
+	            var x2 = "'" + x + "'";
+	            myTd.innerHTML = '<button dojoType="dijit.form.Button" id="select_' + x + '" onClick="dotAddWidgetToContainer(' + x2 + ')" type="button">$languagewebapi.getFromUserLanguage("modes.Select")</button>';
+				var myTd = document.createElement('td'); 
+				myTd.innerHTML = widgets[i][header["fieldVelocityVarName"]];
+				row.appendChild(myTd);
+			}
+		}
+		
+		dojo.parser.parse(dojo.byId('_dotWidgetListings'));
+		
+		if(hasNext || hasPrevious){
+		
+			var row = _dotWidgetListings.insertRow(_dotWidgetListings.rows.length);
+			var html = '<td colspan="2" style="border-top:1px solid #B8B8B8;"><table width="100%" border="0"><tr>';
+			if (hasPrevious) {
+				html = html + '<td width="100"><a href="javascript:_dotPrevWidgetPage()">$languagewebapi.getFromUserLanguage("modes.Previous")</a></td>';
+			} else {
+				html = html + '<td width="100">&nbsp;</td>';
+			}
+			html = html + '<td align="center">$languagewebapi.getFromUserLanguage("modes.Page") ' + _dotPage; + '</td>';
+			if(hasNext){
+				html = html + '<td align="right" width="100"><a href="javascript:_dotNextWidgetPage()">$languagewebapi.getFromUserLanguage("modes.Next")</a></td></tr></table></td>';	
+			} else {
+				html = html + '<td width="100">&nbsp;<td></tr></table</td>';
+			}
+			
+			if(dojo.isIE){//DOTCMS-5146
+				
+				if (hasPrevious) {
+					var cell1 = row.insertCell();
+					cell1.width = "100";										
+					cell1.innerHTML='<a href="javascript:_dotPrevWidgetPage()">$languagewebapi.getFromUserLanguage("modes.Previous")</a>';
+				} else {
+					var cell1 = row.insertCell();
+					cell1.width = "100";										
+					cell1.innerHTML='&nbsp;';
+				}
+				
+				var cell2 = row.insertCell();
+				cell2.align = "center";										
+				cell2.innerHTML='$languagewebapi.getFromUserLanguage("modes.Page") ' + _dotPage;		
+				
+				if(hasNext){
+					var cell3 = row.insertCell();
+					cell3.width = "100";
+					cell3.align= "right";										
+					cell3.innerHTML = '<a href="javascript:_dotNextWidgetPage()">$languagewebapi.getFromUserLanguage("modes.Next")</a>';	
+				} else {
+					var cell3 = row.insertCell();
+					cell3.width = "100";															
+					cell3.innerHTML = '&nbsp;';				
+				}
+																
+			}else{
+				row.innerHTML=html;
+			}
+		}
+	}
+	
+	function _dotNextWidgetPage(){
+		_dotPage = _dotPage + 1;
+		_dotWidgetSelected();
+	}
+	
+	function _dotPrevWidgetPage(){
+		_dotPage = _dotPage - 1;
+		_dotWidgetSelected();
+	}
+	
+	function _dotCloseWidgetDiv(){
+		var myDialog = dijit.byId("dotAddWidget");
+		myDialog.hide();
+	}
+			
+	function _dotWidgetCleanResultsData(){
+		var _dotWidgetListings = document.getElementById("_dotWidgetListings");
+		for(var i = _dotWidgetListings.rows.length - 1; i >= 0; i--){
+			_dotWidgetListings.deleteRow(i);
+		}
+		var row = _dotWidgetListings.insertRow(0);
+		var td = row.insertCell(0);
+		td.innerHTML='&nbsp;';
+		td.setAttribute('style','padding-top:3px;padding-bottom:3px');
+	}
+	
+
+
+	// Form functions
+
+	var _dotFormStructureTypeName = "";
+	var _dotFormNameSelected="";
+	var _dotFormInodeSelected="";
+	var _dotFormSearchString = "";
+	
+	function openAddForm(containerInode) {
+		hideCurrentMenu();	
+		document.getElementById('container').value=containerInode;
+	    var myDialog = dijit.byId("dotAddForm");
+	    myDialog.titleNode.innerHTML='<img src="/html/images/icons/ui-scroll-pane-form.png" width="16" height="16" align="absbottom" hspace="3" />$languagewebapi.getFromUserLanguage("add-form")';
+	    myDialog.show();
+	}
+			
+	function _dotFormSelected(_dotFormInodeSelected){
+		console.log(_dotFormInodeSelected);
+		ContentletAjax.searchFormWidget(_dotFormInodeSelected, _dotFillFormResults);
+	}
+	
+	function _dotFillFormResults(forms){
+		dotAddFormToContainer(forms.inode);	
+	}
+	
+	function _dotCloseFormDiv(){
+       var myDialog = dijit.byId("dotAddForm");
+       myDialog.hide();
+	}
+			
+	function _dotFormClearFields(){
+		var _dotFormListings = document.getElementById("_dotFormListings");
+		for(var i = _dotFormListings.rows.length - 1; i >= 0; i--){
+			_dotFormListings.deleteRow(i);
+		}			
+	}
+	// End form functions
+	
+	//Container/Content Controls Functions
+
+	var currentMenu;
+	function showHideMenu(x, evt, sender){
+        
+		var ele = dojo.byId("control-" + x);
+
+		//Displaying the control
+		if(dojo.style(ele, 'display') == "none") {
+			hideCurrentMenu();
+			dojo.style(ele, { display: '', zIndex: 1000 })
+			currentMenu = "control-" + x;
+		}
+		else{
+			dojo.style(ele, { display: 'none', zIndex: -1 })
+			return;
+		}
+
+		var menuFrameDim = dojo.marginBox('frameMenu');
+		var senderCoords = dojo.coords (sender);
+		var windowDim = dojo.marginBox(dojo.body());
+		var menuDim = dojo.marginBox(ele);
+		
+		//Repositioning it to the mouse position
+		var posx = senderCoords.x + menuFrameDim.w;
+		if(posx + menuDim.w > windowDim.w - 5) posx = windowDim.w - 5 - menuDim.w;
+		var posy = senderCoords.y + senderCoords.h;
+		
+		dojo.style(ele, { position: 'absolute', top: posy+'px', left: posx+'px' })
+		
+	}
+	
+	
+	function hideCurrentMenu() {
+		if(currentMenu != null) {
+			dojo.style(currentMenu, { display: 'none' })
+		}
+	}	
+	dojo.connect(window, 'onresize', this, hideCurrentMenu);
+	
+	function backToCMS(){
+		window.location  = "${viewFoldersURL}";
+	}
+
+	function livePage(){
+		window.location  = "${VTLSERVLET_URI}?livePage=1";
+	}
+	function previewPage(){
+		window.location  = "${VTLSERVLET_URI}?previewPage=1";
+	}
+
+	function popBrowser(x){
+	 	document.getElementById('container').value=x;
+		form = document.getElementById('submitParent');
+	    form.cmd.value="addChild";
+	    var content = 'contentlets';
+		var popup = 'contentlet';
+		newwin = window.open('${viewFoldersURL}&view=${view}&content='+content+'&popup='+popup+'&container=' + x + '&child=true#treeTop', 'newwin', 'scrollbars=yes,width=700,height=400,scrollbars=yes,resizable=yes');
+	}
+
+    var reuseContentDialog;
+	function popContentletsBrowser(x){
+	 	document.getElementById('container').value=x;
+		form = document.getElementById('submitParent');
+	    form.cmd.value="addChild";
+	    var content = 'contentlets';
+		var popup = 'contentlet';		
+		
+		// DOTCMS-6097
+		newwin = false;		
+		var onContentSelection = function(cont){
+			document.getElementById(popup).value = cont.inode;
+			document.getElementById("selected"+popup).value = cont.inode;
+			parameter = document.getElementById("submitParent").value;			
+			submitParent(parameter);
+			};
+		var callback = function(containerStructure){
+			var strInode = containerStructure['inode'];			
+			dojo.require("dotcms.dijit.form.ContentSelector");			
+			
+			// http://jira.dotmarketing.net/browse/DOTCMS-6269
+			if(reuseContentDialog)
+			   reuseContentDialog.dialog.destroyRecursive();
+			
+			reuseContentDialog = new dotcms.dijit.form.ContentSelector({
+						structureInode:strInode,
+						onContentSelected:onContentSelection
+					});
+			reuseContentDialog.show();
+		};		
+		ContainerAjax.getContainerStructure(x,callback);
+	}
+
+	function submitParent(){
+		if(newwin) newwin.close();
+		form = document.getElementById('submitParent');
+	        form.cmd.value="addChild";
+		form.submit();
+	}
+
+	function addPage(){
+	 	document.getElementById('htmlPage').value='0';
+		form = document.getElementById('submitParent');
+	        form.cmd.value="editHTMLPage";
+	        form.submit();
+	}
+
+	function editPage(){
+	 	document.getElementById('htmlPage').value='$htmlPageInode';
+		form = document.getElementById('submitParent');
+	        form.cmd.value="editHTMLPage";
+	        form.submit();
+	}
+
+	function publishAll(){
+		if(confirm('$languagewebapi.getFromUserLanguage("modes.Are-you-sure-you-would-like-to-publish-this-page")')){
+		form = document.getElementById('submitParent');
+	        form.cmd.value="publishHTMLPage";
+	        form.htmlPage.value='$htmlPageInode';
+	        form.submit();
+		}
+	}
+
+	function editTemplate(){
+		document.getElementById('htmlPage').value='$htmlPageInode';
+		form = document.getElementById('submitParent');
+	        form.cmd.value="editTemplate";
+	        form.submit();
+
+	}
+
+	function makeHomePage(){
+	 	document.getElementById('htmlPage').value='$htmlPageInode';
+		form = document.getElementById('submitParent');
+	        form.cmd.value="makeHomePage";
+	        form.submit();
+
+	}
+
+	function removeContentlet(x,y){
+	 	document.getElementById('container').value=x;
+	 	document.getElementById('contentlet').value=y;
+		form = document.getElementById('submitParent');
+		form.cmd.value="removeChild";
+		form.submit();
+	}
+
+	function addContentlet(x){
+	 	document.getElementById('container').value=x;
+	 	document.getElementById('contentlet').value=0;
+		form = document.getElementById('submitParent');
+		form.cmd.value="newedit";
+		form.submit();
+	}
+	
+	function addWidget(structure){
+	 	document.getElementById('contentlet').value=0;
+	 	document.getElementById('_dotAddWidget').value='true';
+	 	document.getElementById('selectedStructure').value=structure;
+		form = document.getElementById('submitParent');
+		form.cmd.value="newedit";
+		form.submit();
+	}
+	function addNewForm(){
+	 	document.getElementById('contentlet').value=0;
+		form = document.getElementById('submitParent');
+		form.cmd.value="createForm";
+		form.submit();
+	}
+
+	function dotAddWidgetToContainer(widgetInode){
+		document.getElementById('contentlet').value=widgetInode;
+		form = document.getElementById('submitParent');
+	    form.cmd.value="addChild";
+		form.submit();
+	}
+	
+	function dotAddFormToContainer(formInode){
+		document.getElementById('contentlet').value=formInode;
+		form = document.getElementById('submitParent');
+	    form.cmd.value="addChild";
+		form.submit();
+	}
+
+	function editContentlet(x,y){
+	 	document.getElementById('container').value=x;
+	 	document.getElementById('contentlet').value=y;
+		form = document.getElementById('submitParent');
+		form.cmd.value="edit";
+		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
+			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
+		#end
+		form.submit();
+	}
+	
+	function editEvent(x){
+	 	document.getElementById('event').value=x;
+		form = document.getElementById('submitParent');
+        form.cmd.value="editEvent";
+        form.submit();
+	}
+	
+	function moveDown(x,y,z){
+	 	document.getElementById('container').value=x;
+	 	document.getElementById('contentlet').value=y;
+	 	document.getElementById('static').value=z;
+		form = document.getElementById('submitParent');
+        form.cmd.value="moveDown";
+        ##DOTCMS-5363
+		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
+			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
+		#end        
+        form.submit();
+	}
+
+	function moveUp(x,y,z){
+	 	document.getElementById('container').value=x;
+	 	document.getElementById('contentlet').value=y;
+	 	document.getElementById('static').value=z;
+
+		form = document.getElementById('submitParent');
+        form.cmd.value="moveUp";
+        ##DOTCMS-5363
+		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
+			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
+		#end        
+        form.submit();
+
+	}
+
+	function editContainer(x){
+	 	document.getElementById('container').value=x;
+		form = document.getElementById('submitParent');
+        form.cmd.value="editContainer";
+        form.submit();
+	}
+
+	function editFile(x){
+	 	document.getElementById('file').value=x;
+		form = document.getElementById('submitParent');
+        form.cmd.value="editFile";
+        form.submit();
+	}
+
+	function submitMenu(formName) {
+		form = document.getElementById(formName);
+		formsubmitParent = document.getElementById("submitParent");
+		form.referer.value = formsubmitParent.referer.value;
+		form.submit();
+	}
+	
+	function addContentletChapter(x){
+		document.getElementById('container').value=0;
+	 	document.getElementById('contentlet').value=0;
+	 	document.getElementById('selectedStructure').value=x;
+	 	document.getElementById('selectedStructureFake').value=x;
+	 	form = document.getElementById('submitParent');
+		form.cmd.value="newedit";
+		form.selectedStructure.value=x;
+		form.submit();
+	}
+	
+	function getPosition(who){
+		var T= 0,L= 0;
+   		while(who){
+  			L+= who.offsetLeft;
+   			T+= who.offsetTop;
+      		who= who.offsetParent;
+		}    		
+  		return [L,T + 25];    
+	}	
+	
+	var _dotInnerHTML = new Array();
+
+	function _dotRevertInlineEdit(inode,fieldVar){
+	
+	    //http://jira.dotmarketing.net/browse/DOTCMS-6251
+		if (!('filter' in Array.prototype)) {
+            Array.prototype.filter= function(filter, that /*opt*/) {
+                var other= [], v;
+                for (var i=0, n= this.length; i<n; i++)
+                    if (i in this && filter.call(that, v= this[i], i, this))
+                        other.push(v);
+                return other;
+            };
+        }
+	
+		var iframe = window.frames[1];	
+	    dojo.setContext(iframe.window, iframe.window.document);
+	    
+		// get editable area
+	    var editable = dojo.byId("editable-"+inode+ fieldVar);
+
+
+	    // do the undo for all fields of the content
+	    for(i =0;i<_dotInnerHTML.length;i++){
+	    	if(_dotInnerHTML[i][0] == inode + fieldVar){
+	    		editable.innerHTML = _dotInnerHTML[i][1];
+	    	}
+	    	else if(_dotInnerHTML[i][0].indexOf(inode) > -1){
+	    		var newFieldVar = _dotInnerHTML[i][0].replace(inode, "");
+	    		var otherField = dojo.byId("editable-"+inode+ newFieldVar);
+	    		otherField.innerHTML = _dotInnerHTML[i][1];
+	    		
+	    	}
+	    }
+	    
+	    // function for removing the innerHTML from array
+	   	var removeItem = function(x) {
+		   return (x[0].indexOf(inode)<0);
+		}
+	    _dotInnerHTML = _dotInnerHTML.filter(removeItem);
+	    
+	    // remove the inline controls
+	   var inlineVar = "inline-"+inode;
+	   dojo.destroy(dojo.byId(inlineVar));
+	   
+		// restore the normal container based edit control
+		var normalEditControls = dojo.byId("edit-"+inode);
+	   	if(normalEditControls){
+	   		dojo.style(normalEditControls, "display", "block");
+	   	}
+	   
+	   
+	   
+		dojo.setContext(window, window.document);
+	    
+	}
+
+
+
+
+	function _dotChangeEditContentEditControl(inode, fieldVar){
+
+	   	var iframe = window.frames[1];
+	    dojo.setContext(iframe.window, iframe.window.document);
+
+		// editable area
+	    var editable = dojo.byId("editable-"+inode + fieldVar);
+
+		// only store undo data if we don't alreay have it
+		var addToArr =true;
+	    for(i =0;i<_dotInnerHTML.length;i++){
+	    	if(_dotInnerHTML[i][0] == inode + fieldVar){
+	    		addToArr=false;
+	    	}
+	    }
+		if(addToArr){
+			var myArr = [inode+ fieldVar, editable.innerHTML];
+			_dotInnerHTML.push(myArr);
+		}
+		
+		// if we already have the inline controls for the inode, return
+		if(dojo.byId("inline-" + inode) != undefined){
+			dojo.setContext(window, window.document);
+			return;
+		}
+		
+
+		
+		// get the normal container based edit control
+		var normalEditControls = dojo.byId("edit-"+inode);
+
+
+		// create the inline button control bar
+		var inlineControls = dojo.create('div', {id: "inline-" + inode,Class:"dotContentletInlineEdit"}, iframe.window.document.body);
+		var inlineSave = dojo.create('span', {Class:"dotInlineSave"}, inlineControls);
+		var inlineRefresh = dojo.create('span', {Class:"dotInlineRefresh"}, inlineControls);
+
+		dojo.connect(inlineSave, "onclick", function(){
+			parent._dotSaveDraftContentViaAjax(inode);
+		});
+		dojo.connect(inlineRefresh, "onclick", function(){
+			parent._dotRevertInlineEdit(inode, fieldVar);
+		});
+
+		dojo.style(inlineControls, "position", "absolute");
+
+
+		// place control bar at the top field of the piece of content
+
+	   	if(normalEditControls){
+
+	   		if(dojo.isIE || dojo.isMozilla || dojo.isFF){
+	   		   ec = dojo.position(normalEditControls,true);
+	   		}else{
+	   		   ec = dojo.coords(normalEditControls);
+	   		}
+	   		dojo.style(inlineControls, "top", (ec.y + dojo.body().scrollTop) + "px" );
+   			dojo.style(inlineControls, "left", (ec.x + dojo.body().scrollLeft) + "px" );
+   			dojo.style(normalEditControls, "display", "none");
+	   	}
+	   	else{
+
+			var topNode =  dojo.query(".dotContentletInline" + inode)[0];
+			var ec2 = null;
+			if(dojo.isIE || dojo.isMozilla || dojo.isFF){
+	   		   ec2 = dojo.position(topNode,true);
+	   		}else{
+	   		   ec2 = dojo.coords(topNode);
+	   		}
+		   	dojo.style(inlineControls, "top", ((ec2.y - 32) + dojo.body().scrollTop) + "px" );
+	   		dojo.style(inlineControls, "left", (ec2.x + dojo.body().scrollLeft) + "px" );
+	   	}
+	   	
+	   	dojo.style(inlineControls, "display", "block");
+		dojo.setContext(window, window.document);
+	}
+	
+	var _dotInodeLookupTable = new Array();
+	
+	function _dotSaveDraftContentViaAjax(inode){
+	    var contentData = [];
+	    var separator = 'com.dotmarketing.contentlet.form_name_value_separator';
+	    var iframe = window.frames[1];
+   		dojo.setContext(iframe.window, iframe.window.document);
+   		var els = dojo.query(".dotContentletInline" + inode);
+	    for (i = 0; i< els.length; i++) {
+	     
+	          contentData.push(els[i].title+separator+els[i].innerHTML);
+	    }
+	    
+	  	// function for removing the undo innerHTML from array
+	   	var removeItem = function(x) {
+		   return (x[0].indexOf(inode)<0);
+		}
+	    _dotInnerHTML = dojo.filter(_dotInnerHTML,removeItem);
+	    dojo.setContext(window, window.document);
+	    
+	    dijit.byId('savingContentDialog').show(); 	  
+
+   		ContentletAjax.saveContentProperties(inode,contentData,false,false,false,saveContentCallback);
+	}
+	
+	function saveContentCallback(data){	
+	    var errorDisplayElement = dijit.byId('saveContentErrors');
+	    if(data["saveContentErrors"] != null ){	// To show DotContentletValidationExceptions.		
+			var exceptionData = data["saveContentErrors"];			
+			var errorList = "";			
+			for (var i = 0; i < exceptionData.length; i++) {
+				var error = exceptionData[i];				
+				errorList = errorList+"<li>"+error+"</li>";					
+			}	
+        dojo.byId('exceptionData').innerHTML = "<ul>"+errorList+"</ul>";
+		dijit.byId('savingContentDialog').hide();
+		errorDisplayElement.show();					
+	   }else{
+	     dijit.byId('savingContentDialog').hide();
+	   }
+	   var editVar = "edit-"+data.contentletInode;
+	   var inlineVar = "inline-"+data.contentletInode;
+	   dojo.setContext(window.frames[1].window, window.frames[1].window.document);
+	   dojo.destroy(dojo.byId(inlineVar));
+	   
+	   
+	   
+	   
+	   
+		// container based edit control
+		var normalEditControls = dojo.byId("edit-"+data.contentletInode);
+	   	if(normalEditControls){
+	   		dojo.style(normalEditControls, "display", "block");
+	   	}
+	   
+	   
+	   
+		dojo.setContext(window, window.document);
+	}
+	
+	dojo.addOnLoad(
+	  function(){
+			if(document.body.className == undefined){
+				document.body.className = "dmundra";
+			}
+			else{
+				document.body.className = document.body.className  + " dmundra";
+			}
+	  	}
+	);
+
+	dojo.connect(dijit.byId("dotAddWidget"), "hide", _dotWidgetInitiate);
+    	
+    	
+</script>
+<div style="display:none">
+    <form action="${directorURL}" id="submitParent" method="post" target="_top">
+        <input type="hidden" name="referer" id="referer" value="$referer">
+        <input type="hidden" name="cmd" id="cmd" value="">
+        <input type="hidden" name="container" id="container" value="">
+        <input type="hidden" name="htmlPage" id="htmlPage" value="$htmlPageInode">
+        <input type="hidden" name="contentlet" id="contentlet" value="">
+        <input type="hidden" name="_dotAddWidget" id="_dotAddWidget" value="">
+        <input type="hidden" name="event" id="event" value="">
+        <input type="hidden" name="file" id="file" value="">
+        <input type="hidden" name="selectedcontentlet" id="selectedcontentlet" value="">
+        <input type="hidden" name="menuItem" id="menuItem" value="">
+        <input type="hidden" name="level" id="level" value="">
+        <input type="hidden" name="static" id="static" value="">
+        <input type="hidden" name="language" id="language" value="${language}">
+        <input type="hidden" name="parentFolder" id="parentFolder" value="">
+        <input type="hidden" name="selectedStructure" id="selectedStructure" value="">
+        <input type="hidden" name="selectedStructureFake" id="selectedStructureFake" value="">
+    </form>
+</div>
+
+<div id="savingContentDialog" dojoType="dijit.Dialog" title="$langbackendwebapi.get("saving-content")" style="display: none;color:#555555; font:13px/138.5% Verdana,Geneva,Arial,sans-serif;">
+	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
+</div>
+<script type="text/javascript">
+	dojo.addOnLoad(function () {
+		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');	
+	});
+</script>
+
+<div id="saveContentErrors" style="display: none;color:#555555; font:13px/138.5% Verdana,Geneva,Arial,sans-serif;" dojoType="dijit.Dialog" >
+	<div dojoType="dijit.layout.ContentPane" id="exceptionData" hasShadow="true"></div>
+	<div class="formRow" style="text-align:center">
+		<button dojoType="dijit.form.Button"  onClick="dijit.byId('saveContentErrors').hide()" type="button">$langbackendwebapi.get("close")</button>
+	</div>
+</div>
+
+
+

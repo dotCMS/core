@@ -1,0 +1,58 @@
+#set($_dotWidgetSelectorIncluded = true)
+
+<script type="text/javascript">
+
+function _dotWidgetSelectOnChange() {
+	if(dojo.byId('widgetSearch').disabled)
+		dojo.byId('widgetSearch').disabled = false;
+	dijit.byId('_dotWidgetAjaxSearch').attr('value', '');
+	_dotPage = 1;
+	_dotWidgetSelected();
+}
+
+</script>
+
+<div id="dotAddWidget" dojoType="dijit.Dialog" style="display:none">
+	<div class="dotAddPopUp">
+		#set($_dotWidgets=$structures.findWidgets(true))
+		#if($_dotWidgets.size() > 0)
+			<table id="editModeWidgetPopupTable">
+				<tr>
+					<td  valign="top" width="250" style="padding-right:10px;">
+						<div class="dotPopUpText"><strong>$languagewebapi.getFromUserLanguage("modes.Select-the-type")</strong> $languagewebapi.getFromUserLanguage("modes.of-widget-you-would-like-to-insert-or-create-from-the-list-below")</div>
+						<select id="_dotWidgetSelect" class="dotLightboxSelect" #if($_dotWidgets.size()>20)size="20"#else size="$math.add($_dotWidgets.size(),1)"#end onchange="_dotWidgetSelectOnChange();">
+							#set($widgets=$structures.findWidgets(true))
+							#foreach($w in $_dotWidgets)
+							    #if(!$w.isSystem())
+								<option value="$w.inode">$w.name</option>
+								#end
+							#end
+						</select>
+					</td>
+					<td valign="top" style="padding-top:10px;">
+						
+						<table id="editModeWidgetPopupTableRight">
+							<tr>
+								<td><input type="text" dojoType="dijit.form.TextBox" id="_dotWidgetAjaxSearch" style="width:170px;height:18px;" /></td>
+								<td><button dojoType="dijit.form.Button" id="widgetSearch" onclick="_dotWidgetSearch();" disabled="true" iconClass="searchIcon">$languagewebapi.getFromUserLanguage("modes.Search")</button></td>
+								<td align="right" width="100%"><button dojoType="dijit.form.Button" id="widgetAdd" onclick="addWidget(_dotWidgetInodeSelected);" iconClass="plusIcon" disabled="true">$languagewebapi.getFromUserLanguage("modes.Create-New")</button></td>
+							</tr>
+						</table>
+						
+						<div class="dotLightboxListBox">
+							<table id="_dotWidgetListings" width="100%">
+								<tr><td>&nbsp;</td></tr>
+							</table>
+						</div>
+						
+						<a href="http://www.dotcms.org/doc/widget" target="_blank" class="dotLearnMore">
+							$langbackendwebapi.get("modes.Learn-how-to-create-new-widget-types")
+						</a>
+					<td>
+				</tr>
+			</table>
+		#else
+			$languagewebapi.getFromUserLanguage("modes.No-Widgets-Have-Been-Created")<h1>
+		#end
+	</div>
+</div>

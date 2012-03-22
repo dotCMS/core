@@ -1,0 +1,105 @@
+============================
+Overview
+============================
+
+This brief guide gives some tips to be taken into account to work with an i18ned database
+for dotCMS. 
+
+If you plan to support internationalization in the future, it is advisable to create a database
+with UTF-8 encoding from the beginning to avoid problems during import.
+
+
+============================
+PostgreSQL (tested on 8.1.2)
+============================
+
+  * Migrating a previous database:
+
+  1) Stop dotCMS.
+  2) Export a copy.
+	pg_dump �i -d --encoding=UTF8 -U <user> dotcms > <Path>\dotcms_multilang.sql
+
+  3) Rename the database.
+
+	ALTER DATABASE dotcms RENAME TO dotcms_ascii;
+
+  4) Since there may be special characters in text (char, varchar and text) columns, this file (step 1) should pass through 
+     a conversion process. For instance, open it with a (encoding-capable) text editor and save it with UTF-8 encoding 
+     or use command line tool (i.e, like grep/iconv combination, if in *nix) to try to get the right encoding.
+  5) Create a database specifying the appropriate format:
+
+	CREATE DATABASE dotcms ENCODING = 'UTF8';
+
+  6) Import data file:
+
+	psql -v ON_ERROR_STOP=1 -U <user> -o result.txt dotcms < <Path>\dotcms_multilang.sql
+
+  7) Start dotCMS and test. If everything is fine, you can delete dotcms_ascii database. Otherwise, put its old name back again.
+
+  * Beginning a new database:
+
+  1) Create a database specifying the appropriate format:
+
+	CREATE DATABASE dotcms ENCODING = 'UTF8';
+
+  2) Run .SQL script files as shown in file Step 1- Installing dotCMS from Release.txt, section �3.b�.
+
+  * Remarks: If previous (source) database encoding is SQL_ASCII, certain character sequence can be stored and be invalid
+             when importing the data. By the time of this writing, the only workaround available in such cases is to remove
+             invalid character sequences or replace them with something equivalent.
+  
+  
+============================
+MySQL (tested on 5.0)
+============================
+
+  * Migrating a previous database:
+
+  1) Stop dotCMS.
+  2) Backup database (just to restore it in case of problems). For example:
+
+	mysqldump -u <user> -p �c dotcms > <filename>
+
+  3) Run ./sql/changes/mysql/2008-01-22-i18n.sql
+
+  4) Start dotCMS and test. If everything is not fine, you can restore the original database, for example:
+
+	mysql -u <user> -p dotcms < <filename>
+
+  * Beginning a new database:
+
+  1) Create a database specifying the appropriate format:
+
+	CREATE DATABASE dotcms CHARACTER SET utf8;
+
+  2) Run .SQL script files as shown in file Step 1- Installing dotCMS from Release.txt, section �3.b�.
+ 
+
+=============
+Oracle
+=============
+
+Please, refer to Oracle's documentation.
+
+
+=============
+MS SQL Server
+=============
+
+Please, refer to Microsoft's documentation.
+
+==========================
+Fixing wysiwyg editor
+==========================
+The wysiwyg editor default replaces internationalized characters with their corresponding
+entity names. For example, the Greek word "Ελληνικα" will be converted to something like
+"&Epsilon;&lambda;&lambda;&eta
+;&nu;&iota;&kappa;&alpha;" and will be stored like this
+in the database.
+
+If you wish to prevent teh editor from escaping your characters, you can do the following:
+- Go to dotcms-installation-root/liferay/html/portlet/ext/contentlet/
+- Open edit_contentlet_js.jsp
+- Find entity_encoding : "named" in line 1266
+- Change "named" to "raw"
+reference http://wiki.moxiecode.com/index.php/TinyMCE:Configuration/entity_encoding

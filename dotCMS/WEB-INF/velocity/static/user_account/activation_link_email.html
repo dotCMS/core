@@ -1,0 +1,84 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title></title>
+</head>
+<body bgcolor="#EBE8DA">
+
+<!-- velocity variables  for styles-->
+
+#set($h1='size="4" color="#6C6C69"')
+#set($h2='size="3" color="#60605D"')
+#set($link='color="#2F5090"')
+#set($all='size="3" color="#60605F"')
+
+<table cellpadding="0" cellspacing="0" border="0" width="660" bgcolor="#FFFFFF">
+  <tr><td colspan="3"><img src="/portal/images/table_border.gif"  alt=""/></td></tr>
+
+   <tr>
+    <td rowspan="3" width="20"><img src="/portal/images/shim.gif" alt="" /></td>
+	<td width="620">&nbsp;</td>
+    <td rowspan="3" width="20"><img src="/portal/images/shim.gif" alt="" /></td>
+  </tr>
+
+  <tr>
+	 <td align="left">
+	 <img src="/portal/images/logo.gif"/>
+	 </td>
+  </tr>
+
+   <tr>
+    <td>&nbsp;</td>
+  </tr>
+
+  <tr><td colspan="3"><img src="/portal/images/table_border.gif"  alt=""/></td></tr>
+</table>
+
+<br/>
+
+<table cellpadding="0" cellspacing="0" border="0" width="660" bgcolor="#FFFFFF">
+
+  <tr><td colspan="3"><img src="/portal/images/table_border.gif"  alt=""/></td></tr>
+
+  <tr>
+    <td rowspan="3" width="20"><img src="/portal/images/shim.gif" alt="" /></td>
+	<td width="620">&nbsp;</td>
+    <td rowspan="3" width="20"><img src="/portal/images/shim.gif" alt="" /></td>
+  </tr>
+
+  <tr>
+	 <td align="left">
+
+	 <h1><font $h1>Dear $user.firstName,</font></h1>
+
+	 <font $all>
+
+		<br>
+		Hi, <br>
+		please click the following link to complete your registration <br>
+		on $company. <br>
+		<br>
+		If you can't click the activation link in this mail, please copy and paste <br>
+		the link into your browser and press the enter key. Your account will then be <br>
+		activated. <br>
+		<br>
+		<a href="http://$host.hostname/dotCMS/activateAccount?acckey=$linkurl" class='$link'>http://$host.hostname/dotCMS/activateAccount?acckey=$linkurl</a> <br>
+		<br>
+		Sincerely, $host.hostname <br>
+		<br>
+	 </font>
+	 </td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;</td>
+  </tr>
+
+  <tr><td colspan="3"><img src="/portal/images/table_border.gif"  alt=""/></td></tr>
+
+</table>
+
+
+
+</body>
+</html>

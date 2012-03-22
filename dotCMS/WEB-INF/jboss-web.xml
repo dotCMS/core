@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss-web>
+    <!-- dotCMS must run in a root context -->
+    <context-root>/</context-root>
+    <!--  
+    Uncomment the following element to use a virtual host.  
+    The configured virtual host must match a virtual host configured in JBoss
+    -->
+    <!--
+    <virtual-host>dotcms.test.org</virtual-host> 
+    -->
+</jboss-web>

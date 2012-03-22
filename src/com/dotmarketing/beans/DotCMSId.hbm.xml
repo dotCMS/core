@@ -1,0 +1,1449 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 2.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
+<hibernate-mapping>
+
+
+	<class name="com.dotmarketing.beans.Inode" table="inode">
+		<id name="inode" column="inode" type="string" length="36" unsaved-value="">
+			<!-- please put both sequence and native types so the  -->
+			<!-- DotSQLGeneratorTask works  -->
+			<generator class="com.dotmarketing.util.UUIDGenerator" /> 
+			<!-- generator class="sequence">
+				<param name="sequence">inode_seq</param>
+			</generator -->
+		</id>
+		
+		<property name="owner" type="string" />
+		<property name="iDate" type="java.util.Date" />
+		<property name="type" type="string" not-null="true">
+			<column name="type" length="64" index="idx_index_1" />
+		</property>
+		
+		<joined-subclass name="com.dotmarketing.portlets.categories.model.Category" table="category">
+			<key column="inode" />
+			<property length="255" name="categoryName" not-null="true" type="string">
+				<column name="category_name" index="idx_category_1" />
+			</property>
+
+			<property length="20" name="key" type="string">
+				<column name="category_key" index="idx_category_2" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="active" name="active" type="boolean" />
+			<property column="keywords" name="keywords" type="string" length="123456789"/>
+			<property column="category_velocity_var_name" name="categoryVelocityVarName" type="string" length="255"/>
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.files.model.File" table="file_asset">
+			<key column="inode" />
+			<property column="file_name" length="255" name="fileName" type="string" />
+			<property column="file_size" length="4" name="size" type="integer" />
+			<property column="width" length="4" name="width" type="integer" />
+			<property column="height" length="4" name="height" type="integer" />
+			<property column="mime_type" length="255" name="mimeType" type="string" />
+			<property column="author" length="255" name="author" type="string" />
+			<property column="publish_date" length="23" name="publishDate" type="java.util.Date" />
+			<!-- attributes from Web Asset , All Assets should have this -->
+			<property column="show_on_menu" name="showOnMenu" type="boolean" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="friendly_name" length="255" name="friendlyName" type="string" />
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
+			<property column="mod_user" name="modUser" length="100" type="string">
+				<column name="mod_user" index="idx_file_1" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+			<!-- attributes from Web Asset - All Assets should have this -->
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.contentlet.business.Contentlet" table="contentlet">
+			<key column="inode" />
+			<!-- attributes from Web Asset , All Assets should have this -->
+			<property column="show_on_menu" name="showOnMenu" type="boolean" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
+			<property column="mod_user" name="modUser" length="100" type="string">
+				<column name="mod_user" index="idx_contentlet_1" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="friendly_name" name="friendlyName" length="255" type="string" />
+			<!-- attributes from Web Asset - All Assets should have this -->
+			<property column="structure_inode" name="structureInode" length="36" type="string" />
+			<!-- content reviewing fields -->
+			<property column="last_review" name="lastReview" type="java.util.Date" />
+			<property column="next_review" name="nextReview" type="java.util.Date" />
+			<property column="review_interval" name="reviewInterval" type="string" />
+			<property column="disabled_wysiwyg" name="disabledWysiwyg" type="string" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+			<property column="language_id" name="languageId" type="long" />
+			<!-- ### GENERIC FIELDS TO SAVE DATA ### -->
+			<property column="date1" name="date1" type="java.util.Date" />
+			<property column="date2" name="date2" type="java.util.Date" />
+			<property column="date3" name="date3" type="java.util.Date" />
+			<property column="date4" name="date4" type="java.util.Date" />
+			<property column="date5" name="date5" type="java.util.Date" />
+			<property column="date6" name="date6" type="java.util.Date" />
+			<property column="date7" name="date7" type="java.util.Date" />
+			<property column="date8" name="date8" type="java.util.Date" />
+			<property column="date9" name="date9" type="java.util.Date" />
+			<property column="date10" name="date10" type="java.util.Date" />
+			<property column="date11" name="date11" type="java.util.Date" />
+			<property column="date12" name="date12" type="java.util.Date" />
+			<property column="date13" name="date13" type="java.util.Date" />
+			<property column="date14" name="date14" type="java.util.Date" />
+			<property column="date15" name="date15" type="java.util.Date" />
+			<property column="date16" name="date16" type="java.util.Date" />
+			<property column="date17" name="date17" type="java.util.Date" />
+			<property column="date18" name="date18" type="java.util.Date" />
+			<property column="date19" name="date19" type="java.util.Date" />
+			<property column="date20" name="date20" type="java.util.Date" />
+			<property column="date21" name="date21" type="java.util.Date" />
+			<property column="date22" name="date22" type="java.util.Date" />
+			<property column="date23" name="date23" type="java.util.Date" />
+			<property column="date24" name="date24" type="java.util.Date" />
+			<property column="date25" name="date25" type="java.util.Date" />
+
+			<property column="text1" length="255" name="text1" type="string" />
+			<property column="text2" length="255" name="text2" type="string" />
+			<property column="text3" length="255" name="text3" type="string" />
+			<property column="text4" length="255" name="text4" type="string" />
+			<property column="text5" length="255" name="text5" type="string" />
+			<property column="text6" length="255" name="text6" type="string" />
+			<property column="text7" length="255" name="text7" type="string" />
+			<property column="text8" length="255" name="text8" type="string" />
+			<property column="text9" length="255" name="text9" type="string" />
+			<property column="text10" length="255" name="text10" type="string" />
+			<property column="text11" length="255" name="text11" type="string" />
+			<property column="text12" length="255" name="text12" type="string" />
+			<property column="text13" length="255" name="text13" type="string" />
+			<property column="text14" length="255" name="text14" type="string" />
+			<property column="text15" length="255" name="text15" type="string" />
+			<property column="text16" length="255" name="text16" type="string" />
+			<property column="text17" length="255" name="text17" type="string" />
+			<property column="text18" length="255" name="text18" type="string" />
+			<property column="text19" length="255" name="text19" type="string" />
+			<property column="text20" length="255" name="text20" type="string" />
+			<property column="text21" length="255" name="text21" type="string" />
+			<property column="text22" length="255" name="text22" type="string" />
+			<property column="text23" length="255" name="text23" type="string" />
+			<property column="text24" length="255" name="text24" type="string" />
+			<property column="text25" length="255" name="text25" type="string" />
+
+			<property column="text_area1"  length="123456789" name="text_area1" type="string" />
+			<property column="text_area2" length="123456789" name="text_area2" type="string" />
+			<property column="text_area3" length="123456789" name="text_area3" type="string" />
+			<property column="text_area4" length="123456789" name="text_area4" type="string" />
+			<property column="text_area5" length="123456789" name="text_area5" type="string" />
+			<property column="text_area6" length="123456789" name="text_area6" type="string" />
+			<property column="text_area7" length="123456789" name="text_area7" type="string" />
+			<property column="text_area8" length="123456789" name="text_area8" type="string" />
+			<property column="text_area9" length="123456789" name="text_area9" type="string" />
+			<property column="text_area10" length="123456789" name="text_area10" type="string" />
+			<property column="text_area11" length="123456789" name="text_area11" type="string" />
+			<property column="text_area12" length="123456789" name="text_area12" type="string" />
+			<property column="text_area13" length="123456789" name="text_area13" type="string" />
+			<property column="text_area14" length="123456789" name="text_area14" type="string" />
+			<property column="text_area15" length="123456789" name="text_area15" type="string" />
+			<property column="text_area16" length="123456789" name="text_area16" type="string" />
+			<property column="text_area17" length="123456789" name="text_area17" type="string" />
+			<property column="text_area18" length="123456789" name="text_area18" type="string" />
+			<property column="text_area19" length="123456789" name="text_area19" type="string" />
+			<property column="text_area20" length="123456789" name="text_area20" type="string" />
+			<property column="text_area21" length="123456789" name="text_area21" type="string" />
+			<property column="text_area22" length="123456789" name="text_area22" type="string" />
+			<property column="text_area23" length="123456789" name="text_area23" type="string" />
+			<property column="text_area24" length="123456789" name="text_area24" type="string" />
+			<property column="text_area25" length="123456789" name="text_area25" type="string" />
+			<property column="integer1" name="integer1" type="long" />
+			<property column="integer2" name="integer2" type="long" />
+			<property column="integer3" name="integer3" type="long" />
+			<property column="integer4" name="integer4" type="long" />
+			<property column="integer5" name="integer5" type="long" />
+			<property column="integer6" name="integer6" type="long" />
+			<property column="integer7" name="integer7" type="long" />
+			<property column="integer8" name="integer8" type="long" />
+			<property column="integer9" name="integer9" type="long" />
+			<property column="integer10" name="integer10" type="long" />
+			<property column="integer11" name="integer11" type="long" />
+			<property column="integer12" name="integer12" type="long" />
+			<property column="integer13" name="integer13" type="long" />
+			<property column="integer14" name="integer14" type="long" />
+			<property column="integer15" name="integer15" type="long" />
+			<property column="integer16" name="integer16" type="long" />
+			<property column="integer17" name="integer17" type="long" />
+			<property column="integer18" name="integer18" type="long" />
+			<property column="integer19" name="integer19" type="long" />
+			<property column="integer20" name="integer20" type="long" />
+			<property column="integer21" name="integer21" type="long" />
+			<property column="integer22" name="integer22" type="long" />
+			<property column="integer23" name="integer23" type="long" />
+			<property column="integer24" name="integer24" type="long" />
+			<property column="integer25" name="integer25" type="long" />
+			<property column="`float1`" name="float1" type="float" />
+			<property column="`float2`" name="float2" type="float" />
+			<property column="`float3`" name="float3" type="float" />
+			<property column="`float4`" name="float4" type="float" />
+			<property column="`float5`" name="float5" type="float" />
+			<property column="`float6`" name="float6" type="float" />
+			<property column="`float7`" name="float7" type="float" />
+			<property column="`float8`" name="float8" type="float" />
+			<property column="`float9`" name="float9" type="float" />
+			<property column="`float10`" name="float10" type="float" />
+			<property column="`float11`" name="float11" type="float" />
+			<property column="`float12`" name="float12" type="float" />
+			<property column="`float13`" name="float13" type="float" />
+			<property column="`float14`" name="float14" type="float" />
+			<property column="`float15`" name="float15" type="float" />
+			<property column="`float16`" name="float16" type="float" />
+			<property column="`float17`" name="float17" type="float" />
+			<property column="`float18`" name="float18" type="float" />
+			<property column="`float19`" name="float19" type="float" />
+			<property column="`float20`" name="float20" type="float" />
+			<property column="`float21`" name="float21" type="float" />
+			<property column="`float22`" name="float22" type="float" />
+			<property column="`float23`" name="float23" type="float" />
+			<property column="`float24`" name="float24" type="float" />
+			<property column="`float25`" name="float25" type="float" />
+
+			<property column="bool1" name="bool1" type="boolean" />
+			<property column="bool2" name="bool2" type="boolean" />
+			<property column="bool3" name="bool3" type="boolean" />
+			<property column="bool4" name="bool4" type="boolean" />
+			<property column="bool5" name="bool5" type="boolean" />
+			<property column="bool6" name="bool6" type="boolean" />
+			<property column="bool7" name="bool7" type="boolean" />
+			<property column="bool8" name="bool8" type="boolean" />
+			<property column="bool9" name="bool9" type="boolean" />
+			<property column="bool10" name="bool10" type="boolean" />
+			<property column="bool11" name="bool11" type="boolean" />
+			<property column="bool12" name="bool12" type="boolean" />
+			<property column="bool13" name="bool13" type="boolean" />
+			<property column="bool14" name="bool14" type="boolean" />
+			<property column="bool15" name="bool15" type="boolean" />
+			<property column="bool16" name="bool16" type="boolean" />
+			<property column="bool17" name="bool17" type="boolean" />
+			<property column="bool18" name="bool18" type="boolean" />
+			<property column="bool19" name="bool19" type="boolean" />
+			<property column="bool20" name="bool20" type="boolean" />
+			<property column="bool21" name="bool21" type="boolean" />
+			<property column="bool22" name="bool22" type="boolean" />
+			<property column="bool23" name="bool23" type="boolean" />
+			<property column="bool24" name="bool24" type="boolean" />
+			<property column="bool25" name="bool25" type="boolean" />
+			
+			<!-- ### END GENERIC FIELDS TO SAVE DATA ### -->
+		</joined-subclass>
+
+
+		<joined-subclass name="com.dotmarketing.portlets.containers.model.Container" table="containers">
+			<key column="inode" />
+			<property column="code" name="code" type="string" length="123456789" />
+			<property column="pre_loop" name="preLoop" type="string" length="123456789" />
+			<property column="post_loop" name="postLoop" type="string"  length="123456789"/>
+			<property column="show_on_menu" name="showOnMenu" type="boolean" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
+			<property column="mod_user" name="modUser" length="100" type="string">
+				<column name="mod_user" index="idx_container_1" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="friendly_name" name="friendlyName" length="255" type="string" />
+			<property column="max_contentlets" length="4" name="maxContentlets" type="integer" />
+			<property column="use_div" name="useDiv" type="boolean" />
+			<property column="staticify" name="staticify" type="boolean" />
+			<property column="sort_contentlets_by" name="sortContentletsBy" type="string" />
+			<property column="lucene_query" name="luceneQuery" type="string" length="123456789" />
+			<property column="notes" name="notes" type="string" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+			<property column="structure_inode" length="36" name="structureInode" type="string" />
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.folders.model.Folder" table="folder">
+			<key column="inode" />
+			<property length="255" name="name" not-null="true" type="string">
+				<column name="name" index="idx_folder_1" />
+			</property>
+			<property column="title" length="255" name="title" not-null="true" type="string" />
+			<property column="show_on_menu" length="1" name="showOnMenu" type="boolean" />
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="files_masks" length="255" name="filesMasks" type="string" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+			<property column="default_file_type" length="36" name="defaultFileType" type="string" />
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.templates.model.Template" table="template">
+			<key column="inode" />
+			<property column="show_on_menu" name="showOnMenu" type="boolean" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
+			<property column="mod_user" name="modUser" length="100" type="string">
+				<column name="mod_user" index="idx_template_1" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="friendly_name" name="friendlyName" length="255" type="string" />
+			<property column="body" name="body" type="string" length="123456789" />
+			<property column="header" name="header" type="string" length="123456789" />
+			<property column="footer" name="footer" type="string" length="123456789" />
+			<property column="image" name="image" length="36" type="string" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.htmlpages.model.HTMLPage" table="htmlpage">
+			<key column="inode" />
+			<!-- Web Asset properties -->
+			<property column="show_on_menu" name="showOnMenu" type="boolean" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
+			<property column="mod_user" name="modUser" length="100" type="string">
+				<column name="mod_user" index="idx_htmlpage_1" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="friendly_name" name="friendlyName" length="255" type="string" />
+			<!-- Web Asset properties -->
+			<property column="metadata" name="metadata" type="string" length="123456789" />
+			<property column="start_date" name="startDate" type="java.util.Date" />
+			<property column="end_date" name="endDate" type="java.util.Date" />
+			<property column="page_url" name="pageUrl" type="string" length="255" />
+			<property column="https_required" name="httpsRequired" type="boolean" />
+			<property column="redirect" name="redirect" type="string" length="255" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+			<property column="seo_description" name="seoDescription" type="string" length="123456789" />
+			<property column="seo_keywords" name="seoKeywords" type="string" length="123456789" />
+			<property column="cache_ttl" name="cacheTTL" type="long" />
+			<property column="template_id" length="36" name="templateId" type="string" />
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.links.model.Link" table="links">
+			<key column="inode" />
+			<!-- Web Asset properties -->
+			<property column="show_on_menu" name="showOnMenu" type="boolean" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
+			<property column="mod_user" name="modUser" length="100" type="string">
+				<column name="mod_user" index="idx_links_1" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="friendly_name" name="friendlyName" length="255" type="string" />
+			<!-- Web Asset properties -->
+			<property column="protocal" name="protocal" type="string" length="100" />
+			<property column="url" name="url" type="string" length="255" />
+			<property column="target" name="target" type="string" length="100" />
+			<property column="internal_link_identifier" name="internalLinkIdentifier" type="string" length="36" />
+			<property column="link_type" name="linkType" type="string" />
+			<property column="link_code" name="linkCode" type="string" length="123456789" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+		</joined-subclass>
+		<joined-subclass name="com.dotmarketing.portlets.mailinglists.model.MailingList" table="mailing_list">
+			<key column="inode" />
+			<property column="title" name="title" type="string" />
+			<property column="public_list" name="publicList" type="boolean" />
+			<property name="userId" type="string">
+				<column name="user_id" index="idx_mailinglist_1" />
+			</property>
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.campaigns.model.Campaign" table="campaign">
+			<key column="inode" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="from_email" length="255" name="fromEmail" type="string" />
+			<property column="from_name" length="255" name="fromName" type="string" />
+			<property column="subject" length="255" name="subject" type="string" />
+			<property column="message" name="message" type="string" length="123456789" />
+			<property name="userId" type="string">
+				<column length="255" name="user_id" index="idx_campaign_1" />
+			</property>
+			<property name="CStartDate" type="java.util.Date">
+				<column name="start_date" index="idx_campaign_2" />
+			</property>
+			<property name="completedDate" type="java.util.Date">
+				<column name="completed_date" index="idx_campaign_3" />
+			</property>
+			<property column="active" name="active" type="boolean" />
+			<property column="locked" name="locked" type="boolean" />
+			<property column="sends_per_hour" length="15" name="sendsPerHour" type="string" />
+			<property column="sendEmail" name="sendEmail" type="boolean" />
+			<property column="communicationInode" name="communicationInode" type="string" length="36" />
+			<property column="userFilterInode" name="userFilterInode" type="string" length="36" />
+			<property column="sendto" length="15" name="sendTo" type="string" />
+			<property column="isRecurrent" name="isRecurrent" type="boolean" />
+			<property column="wasSent" name="wasSent" type="boolean" />
+			<property name="expirationDate" type="java.util.Date">
+				<column name="expiration_date" index="idx_campaign_4" />
+			</property>
+			<property column="parent_campaign" name="parentCampaign" type="string" length="36" />
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.campaigns.model.Recipient" table="recipient">
+			<key column="inode" />
+			<property column="name" length="255" name="name" type="string" />
+			<property column="lastname" length="255" name="lastname" type="string" />
+			<property name="email" type="string">
+				<column name="email" length="255" index="idx_recipiets_1" />
+			</property>
+			<property name="sent" type="java.util.Date">
+				<column name="sent" index="idx_recipiets_2" />
+			</property>
+			<property column="opened" length="23" name="opened" type="java.util.Date" />
+			<property column="last_result" length="10" name="lastResult" type="integer" />
+			<property column="last_message" length="255" name="lastMessage" type="string" />
+			<property name="userId" type="string">
+				<column name="user_id" length="100" index="idx_communication_user_id" />
+			</property>
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.campaigns.model.Click" table="click">
+			<key column="inode" />
+			<property name="link" type="string">
+				<column length="255" name="link" index="idx_click_1" />
+			</property>
+			<property column="click_count" length="10" name="clickCount" type="integer" />
+		</joined-subclass>
+
+        <!-- Communications Manager-->
+		<joined-subclass name="com.dotmarketing.portlets.communications.model.Communication" table="communication">
+			<key column="inode" />
+			<property column="title" length="255" name="title" type="string" />
+            <property column="trackback_link_inode" name="trackBackLinkInode" type="string" length="36" />
+			<property column="communication_type" length="255" name="communicationType" type="string" />
+			<property column="from_name" length="255" name="fromName" type="string" />			
+			<property column="from_email" length="255" name="fromEmail" type="string" />
+			<property column="email_subject" length="255" name="emailSubject" type="string" />
+			<property column="html_page_inode" name="htmlPage" type="string" length="36" />
+			<property column="text_message" name="textMessage" type="string" length="123456789" />
+			<property column="mod_date" name="modDate" type="java.util.Date" />
+			<property column="modified_by" length="255" name="modifiedBy" type="string"/>
+			<property column="ext_comm_id" length="255" name="externalCommunicationIdentifier" type="string"/>
+		</joined-subclass>
+        <!-- Communications Manager-->
+
+		<joined-subclass name="com.dotmarketing.beans.UserProxy" table="user_proxy">
+			<key column="inode" />
+			<property name="userId" type="string" not-null="true">
+				<column name="user_id" length="255" unique-key="idx_user_proxy_1" />
+			</property>
+			<property name="prefix" type="string">
+				<column length="255" name="prefix" />
+			</property>
+			<property name="suffix" type="string">
+				<column length="255" name="suffix" />
+			</property>
+			<property name="title" type="string">
+				<column length="255" name="title" />
+			</property>
+			<property name="school" type="string">
+				<column length="255" name="school" />
+			</property>
+			<property name="howHeard" type="string">
+				<column length="255" name="how_heard" />
+			</property>
+			<property name="company" type="string">
+				<column length="255" name="company" />
+			</property>
+			<property name="longLivedCookie" type="string">
+				<column length="255" name="long_lived_cookie" />
+			</property>
+			<property name="website" type="string">
+				<column length="255" name="website" />
+			</property>
+			<property name="graduationYear" type="java.lang.Integer">
+				<column name="graduation_year" />
+			</property>
+			<property name="organization" type="string">
+				<column length="255" name="organization" />
+			</property>
+			<property column="mail_subscription" name="mailSubscription" type="boolean" />
+			<property name="var1" type="string">
+				<column length="255" name="var1" />
+			</property>
+			<property name="var2" type="string">
+				<column length="255" name="var2" />
+			</property>
+			<property name="var3" type="string">
+				<column length="255" name="var3" />
+			</property>
+			<property name="var4" type="string">
+				<column length="255" name="var4" />
+			</property>
+			<property name="var5" type="string">
+				<column length="255" name="var5" />
+			</property>
+			<property name="var6" type="string">
+				<column length="255" name="var6" />
+			</property>
+			<property name="var7" type="string">
+				<column length="255" name="var7" />
+			</property>
+			<property name="var8" type="string">
+				<column length="255" name="var8" />
+			</property>
+			<property name="var9" type="string">
+				<column length="255" name="var9" />
+			</property>
+			<property name="var10" type="string">
+				<column length="255" name="var10" />
+			</property>
+			<property name="var11" type="string">
+				<column length="255" name="var11" />
+			</property>
+			<property name="var12" type="string">
+				<column length="255" name="var12" />
+			</property>
+			<property name="var13" type="string">
+				<column length="255" name="var13" />
+			</property>
+			<property name="var14" type="string">
+				<column length="255" name="var14" />
+			</property>
+			<property name="var15" type="string">
+				<column length="255" name="var15" />
+			</property>
+			<property name="var16" type="string">
+				<column length="255" name="var16" />
+			</property>
+			<property name="var17" type="string">
+				<column length="255" name="var17" />
+			</property>
+			<property name="var18" type="string">
+				<column length="255" name="var18" />
+			</property>
+			<property name="var19" type="string">
+				<column length="255" name="var19" />
+			</property>
+			<property name="var20" type="string">
+				<column length="255" name="var20" />
+			</property>
+			<property name="var21" type="string">
+				<column length="255" name="var21" />
+			</property>
+			<property name="var22" type="string">
+				<column length="255" name="var22" />
+			</property>
+			<property name="var23" type="string">
+				<column length="255" name="var23" />
+			</property>
+			<property name="var24" type="string">
+				<column length="255" name="var24" />
+			</property>
+			<property name="var25" type="string">
+				<column length="255" name="var25" />
+			</property>
+			<property column="last_result" length="10" name="lastResult" type="integer" />
+			<property column="last_message" length="255" name="lastMessage" type="string" />
+			<property column="no_click_tracking" name="noclicktracking" type="boolean" />
+			<property column="cquestionid" name="challengeQuestionId" type="string" />
+			<property column="cqanswer" name="challengeQuestionAnswer" type="string" />
+			<property column="chapter_officer" length="255" name="chapterOfficer" type="string" />
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.virtuallinks.model.VirtualLink" table="virtual_link">
+			<key column="inode" />
+			<property name="title" length="255" type="string" column="title" />
+			<property name="url" type="string">
+				<column name="url" length="255" index="idx_virtual_link_1" />
+			</property>
+
+			<property name="uri" length="255" type="string" column="uri" />
+			<property name="active" type="boolean" />
+		</joined-subclass>		
+		
+		<joined-subclass name="com.dotmarketing.portlets.structure.model.Structure" table="structure">
+			<key column="inode" />
+			<property column="name" name="name" type="string" length="255" />
+			<property column="description" name="description" type="string" length="255" />
+			<property column="default_structure" name="defaultStructure" type="boolean" />
+			<property column="review_interval" name="reviewInterval" type="string" />
+			<property column="reviewer_role" name="reviewerRole" type="string" />
+			<property column="page_detail" name="detailPage" type="string" length="36" />
+			<property column="structuretype" name="structureType" type="integer" />
+			<property column="system" name="system" type="boolean" not-null="false" />
+			<property column="fixed" name="fixed" type="boolean" not-null="true" />
+			<property column="velocity_var_name" name="velocityVarName" type="string" length="255"/>
+			<property column="url_map_pattern" name="urlMapPattern" type="string" length="512" not-null="false" />
+			<property column="host" name="host" type="string" length="36" not-null="true"/>
+			<property column="folder" name="folder" type="string" length="36" not-null="true"/>
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.structure.model.Relationship" table="relationship">
+			<key column="inode" />
+			<property name="parentStructureInode" type="string" length="36" >
+				<column name="parent_structure_inode" index="idx_relationship_1" />
+			</property>
+			<property name="childStructureInode" type="string" length="36" >
+				<column name="child_structure_inode" index="idx_relationship_2" />
+			</property>
+			<property column="parent_relation_name" name="parentRelationName" type="string" length="255" />
+			<property column="child_relation_name" name="childRelationName" type="string" length="255" />
+			<property column="relation_type_value" name="relationTypeValue" type="string" length="255" />
+			<property column="cardinality" name="cardinality" type="int" />
+			<property column="parent_required" name="parentRequired" type="boolean" />
+			<property column="child_required" name="childRequired" type="boolean" />
+			<property column="fixed" name="fixed" type="boolean" />
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.structure.model.Field" table="field">
+			<key column="inode" />
+			<property name="structureInode" type="string" length="36" >
+				<column name="structure_inode" index="idx_field_1" />
+			</property>
+			<property column="field_name" name="fieldName" type="string" length="255" />
+			<property column="field_type" name="fieldType" type="string" length="255" />
+			<property column="field_relation_type" name="fieldRelationType" type="string" length="255" />
+			<property column="field_contentlet" name="fieldContentlet" type="string" length="255" />
+			<property column="required" name="required" type="boolean" />
+			<property column="indexed" name="indexed" type="boolean" />
+			<property column="listed" name="listed" type="boolean" />
+			<property column="velocity_var_name" name="velocityVarName" type="string" length="255" />
+			<property column="sort_order" name="sortOrder" type="integer" />
+			<property column="field_values" name="values" type="string" length="123456789" />
+			<property column="regex_check" name="regexCheck" type="string" length="255" />
+			<property column="hint" name="hint" type="string" length="255" />
+			<property column="default_value" name="defaultValue" type="string" length="255" />
+			<property column="fixed" name="fixed" type="boolean"  />
+			<property column="read_only" name="readOnly" type="boolean" />
+		    <property column="searchable" name="searchable" type="boolean" />
+		    <property column="unique_" name="unique" type="boolean" />
+		</joined-subclass>
+		
+		<joined-subclass name="com.dotmarketing.portlets.user.model.UserComment" table="user_comments">
+			<key column="inode" />
+			<property name="userId" type="string">
+				<column name="user_id" index="idx_user_comments_1" />
+			</property>
+			<property name="date" column="cdate" type="java.util.Date" />
+			<property name="commentUserId" column="comment_user_id" length="100" type="string" />
+			<property name="typeComment" column="type" length="255" type="string" />
+			<property name="method" column="method" length="255" type="string" />
+			<property name="subject" column="subject" length="255" type="string" />
+			<property name="comment" column="ucomment" type="string"  length="123456789"/>
+			<property name="communicationId" column="communication_id" length="36" type="string" />
+		</joined-subclass>		
+
+		<joined-subclass name="com.dotmarketing.portlets.userfilter.model.UserFilter" table="user_filter">
+			<key column="inode" />
+			<property column="title" length="255" name="userFilterTitle" type="string" />
+			<property column="firstname" length="100" name="firstName" type="string" />
+			<property column="middlename" length="100" name="middleName" type="string" />
+			<property column="lastname" length="100" name="lastName" type="string" />
+			<property column="emailaddress" length="100" name="emailAddress" type="string" />
+			<property column="birthdayTypeSearch" length="100" name="dateOfBirthTypeSearch" type="string" />
+			<property column="birthday" length="23" name="dateOfBirthSinceDate" type="java.util.Date"/>
+			<property column="birthdayFrom" length="23" name="dateOfBirthFromDate" type="java.util.Date"/>
+			<property column="birthdayTo" length="23" name="dateOfBirthToDate" type="java.util.Date"/>
+			<property column="lastLoginTypeSearch" length="100" name="lastLoginTypeSearch" type="string" />
+			<property column="lastLoginSince" length="100" name="lastLoginSince" type="string" />
+ 			<property column="loginFrom" length="23" name="lastLoginDateFromDate" type="java.util.Date"/>
+			<property column="loginTo" length="23" name="lastLoginDateToDate" type="java.util.Date"/>
+			<property column="createdTypeSearch" length="100" name="createdTypeSearch" type="string" />
+			<property column="createdSince" length="100" name="createdSince" type="string" />
+			<property column="createdFrom" length="23" name="createdDateFromDate" type="java.util.Date"/>
+			<property column="createdTo" length="23" name="createdDateToDate" type="java.util.Date"/>
+			<property column="lastVisitTypeSearch" length="100" name="lastVisitTypeSearch" type="string" />
+			<property column="lastVisitSince" length="100" name="lastVisitSince" type="string" />
+			<property column="lastVisitFrom" length="23" name="lastVisitDateFromDate" type="java.util.Date"/>
+			<property column="lastVisitTo" length="23" name="lastVisitDateToDate" type="java.util.Date"/>
+			<property column="city" length="100" name="city" type="string" />
+			<property column="state" length="100" name="state" type="string" />
+			<property column="country" length="100" name="country" type="string" />
+			<property column="zip" length="100" name="zip" type="string" />
+			<property column="cell" length="100" name="cellPhone" type="string" />
+			<property column="phone" length="100" name="phone" type="string" />
+			<property column="fax" length="100" name="fax" type="string" />
+			<property column="active_" name="active" type="string" />
+			<property column="tagname" length="255" name="tagName" type="string" />
+			<property column="var1" length="255" name="var1" type="string" />
+			<property column="var2" length="255" name="var2" type="string" />
+			<property column="var3" length="255" name="var3" type="string" />
+			<property column="var4" length="255" name="var4" type="string" />
+			<property column="var5" length="255" name="var5" type="string" />
+			<property column="var6" length="255" name="var6" type="string" />
+			<property column="var7" length="255" name="var7" type="string" />
+			<property column="var8" length="255" name="var8" type="string" />
+			<property column="var9" length="255" name="var9" type="string" />
+			<property column="var10" length="255" name="var10" type="string" />
+			<property column="var11" length="255" name="var11" type="string" />
+			<property column="var12" length="255" name="var12" type="string" />
+			<property column="var13" length="255" name="var13" type="string" />
+			<property column="var14" length="255" name="var14" type="string" />
+			<property column="var15" length="255" name="var15" type="string" />
+			<property column="var16" length="255" name="var16" type="string" />
+			<property column="var17" length="255" name="var17" type="string" />
+			<property column="var18" length="255" name="var18" type="string" />
+			<property column="var19" length="255" name="var19" type="string" />
+			<property column="var20" length="255" name="var20" type="string" />
+			<property column="var21" length="255" name="var21" type="string" />
+			<property column="var22" length="255" name="var22" type="string" />
+			<property column="var23" length="255" name="var23" type="string" />
+			<property column="var24" length="255" name="var24" type="string" />
+			<property column="var25" length="255" name="var25" type="string" />
+			<property column="categories" length="255" name="categories" type="string" />
+		</joined-subclass>
+
+		<joined-subclass name="com.dotmarketing.portlets.report.model.Report" table="report_asset">
+			<key column="inode" />
+			<property column="report_name" length="255" name="reportName" type="string" not-null="true" />
+			<property column="report_description" length="1000" name="reportDescription" type="string" not-null="true" />
+			<property column="requires_input" name="requiresInput" type="boolean" />
+			<property column="ds" length="100" name="ds" type="string" not-null="true" />
+			<property column="web_form_report" name="webFormReport" type="boolean" />
+		</joined-subclass>
+		
+		<joined-subclass name="com.dotmarketing.portlets.report.model.ReportParameter" table="report_parameter">
+			<key column="inode" />
+			<property name="reportInode" type="string" >
+				<column name="report_inode" length="36" unique-key="reportParameteridx1"/>
+			</property>
+			<property column="parameter_description" length="1000" name="description" type="string" />
+			<property name="name" length="100" type="string" >
+				<column name="parameter_name" unique-key="reportParameteridx1"/>
+			</property>
+			<property column="class_type" name="classType" length="250" type="string" />
+			<property column="default_value" length="4000" name="defaultValue" type="string"  />
+		</joined-subclass>
+		
+	
+		
+	</class>
+	   <!--  Workflow Entities -->
+		<class name="com.dotmarketing.portlets.workflows.model.WorkflowTask" table="workflow_task">
+			 <id name="id" column="id" type="string" length="36" unsaved-value="">
+		        <generator class="com.dotmarketing.util.UUIDGenerator" />
+		    </id>
+			<property column="creation_date" name="creationDate" type="java.util.Date" />
+			<property column="mod_date" name="modDate" type="java.util.Date" />
+			<property column="due_date" name="dueDate" type="java.util.Date" />
+			<property name="createdBy" type="string">
+				<column name="created_by" index="idx_workflow_5" />
+			</property>
+			<property name="assignedTo" type="string">
+				<column name="assigned_to" index="idx_workflow_1" />
+			</property>
+			<property name="belongsTo" type="string">
+				<column name="belongs_to" index="idx_workflow_2" />
+			</property>
+			<property column="title" name="title" type="string" />
+			<property column="description" name="description" type="string" length="123456789" />
+			<property name="status" type="string">
+				<column name="status" index="idx_workflow_3" />
+			</property>
+			<property name="webasset" type="string" length="36">
+				<column name="webasset" index="idx_workflow_4" />
+			</property>
+		</class>
+
+		<class name="com.dotmarketing.portlets.workflows.model.WorkflowComment" table="workflow_comment">
+			<id name="id" column="id" type="string" length="36" unsaved-value="">
+		        <generator class="com.dotmarketing.util.UUIDGenerator" />
+		    </id>
+			<property column="creation_date" name="creationDate" type="java.util.Date" />
+			<property column="posted_by" name="postedBy" type="string" />
+			<property column="wf_comment" name="comment" type="string"  length="123456789" />
+			<property column="workflowtask_id" name ="workflowtaskId" type="string" length="36"/>
+		</class>
+
+		<class name="com.dotmarketing.portlets.workflows.model.WorkflowHistory" table="workflow_history">
+			<id name="id" column="id" type="string" length="36" unsaved-value="">
+		        <generator class="com.dotmarketing.util.UUIDGenerator" />
+		    </id>
+			<property column="creation_date" name="creationDate" type="java.util.Date" />
+			<property column="made_by" name="madeBy" type="string" />
+			<property column="change_desc" name="changeDescription" type="string" length="123456789" />
+			<property column="workflowtask_id" name ="workflowtaskId" type="string" length="36"/>
+			<property column="workflow_action_id" name ="actionId" type="string" length="36"/>
+			<property column="workflow_step_id" name ="stepId" type="string" length="36"/>
+		</class>
+		
+		<class name="com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles" table="workflowtask_files">
+	      <id name="id" column="id" type="string" length="36" unsaved-value="">
+		   <generator class="com.dotmarketing.util.UUIDGenerator" />
+		  </id>
+		  <property name="workflowtaskId" type="string">
+			<column name="workflowtask_id" length="36" not-null="true" />
+		  </property>
+		  <property name="fileInode" type="string">
+			<column name="file_inode" length="36" not-null="true"/>
+		  </property>
+	    </class>
+		<!--  end workflow entities -->
+	
+
+	<class name="com.dotmarketing.beans.Permission" table="permission">
+		<id name="id" column="id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">permission_seq</param>
+			</generator -->
+			<generator class="native"/>
+		</id>
+		<property name="type" type="string" not-null="true">
+			<column name="permission_type" length="100" unique-key="idx_permission_1" index="idx_permission_2"/>
+		</property>
+		<property name="inode" type="string" not-null="true">
+			<column name="inode_id" length="36" unique-key="idx_permission_1" index="idx_permission_2"/>
+		</property>
+		<property name="roleId" type="string">
+			<column name="roleid" length="36" unique-key="idx_permission_1" index="idx_permission_3"/>
+		</property>
+		<property name="permission" type="integer">
+			<column name="permission" />
+		</property>
+	</class>
+
+	<class name="com.dotmarketing.beans.PermissionReference" table="permission_reference">
+		<id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+		</id>
+		<property name="assetId" type="string" not-null="true">
+			<column name="asset_id" length="36" unique-key="ux_permission_reference_1"/>
+		</property>
+		<property name="referenceId" type="string" not-null="true">
+			<column name="reference_id" length="36" />
+		</property>
+		<property name="type" type="string" not-null="true">
+			<column name="permission_type" length="100" />
+		</property>
+	</class>	
+	
+	<class name="com.dotmarketing.beans.Tree" table="tree">
+		<composite-id unsaved-value="any">
+			<key-property name="child" column="child" type="string" length="36" />
+			<key-property name="parent" column="parent" type="string" length="36" />
+			<key-property name="relationType" column="relation_type" length="64" type="string"/>
+		</composite-id>
+		<property name="treeOrder" column="tree_order" length="10" type="integer" />
+	</class>
+
+	<class name="com.dotmarketing.beans.MultiTree" table="multi_tree">
+
+		<composite-id unsaved-value="any">
+			<key-property name="child" column="child" type="string" length="36" />
+			<key-property name="parent1" column="parent1" type="string" length="36" />
+			<key-property name="parent2" column="parent2" type="string" length="36" />
+		</composite-id>
+		<property name="relationType" type="string">
+			<column name="relation_type" length="64" index="idx_multitree_1" />
+		</property>
+		<property name="treeOrder" column="tree_order" length="10" type="integer" />
+	</class>
+
+	<class name="com.dotmarketing.portlets.user.model.UserPreference" table="user_preferences">
+		<id name="id" column="id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">user_preferences_seq</param>
+			</generator -->
+			<generator class="native"/>
+		</id>
+		<property name="userId" column="user_id" type="string" length="100" not-null="true" />
+		<property name="preference" type="string">
+			<column name="preference" length="255" index="idx_preference_1" />
+		</property>
+		<property column="pref_value" name="value" length="123456789" type="string" />
+	</class>
+
+	<class name="com.dotmarketing.portlets.languagesmanager.model.Language" table="language">
+		<id name="id" column="id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">language_seq</param>
+			</generator -->
+			<generator class="native"/>
+		</id>
+		<property name="languageCode" column="language_code" length="5" type="string" />
+		<property name="countryCode" column="country_code" length="255" type="string" />
+		<property name="language" column="language" length="255" type="string" />
+		<property name="country" column="country" length="255" type="string" />
+	</class>
+
+	<class name="com.dotmarketing.beans.Clickstream" table="clickstream">
+		<id name="clickstreamId" column="clickstream_id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">clickstream_seq</param>
+			</generator -->
+			<generator class="native"/>
+		</id>
+		<property name="cookieId" type="string">
+			<column name="cookie_id" length="255" index="idx_user_clickstream_1" />
+		</property>
+		<property name="userId" type="string">
+			<column name="user_id" length="255" index="idx_user_clickstream_2" />
+		</property>
+		<property column="start_date" name="start" type="java.util.Date" />
+		<property column="end_date" name="lastRequest" type="java.util.Date" />
+		<property column="referer" name="initialReferrer" length="255" type="string" />
+		<property name="remoteAddress" type="string">
+			<column name="remote_address" length="255" index="idx_user_clickstream17" />
+		</property>
+		<property column="remote_hostname" name="remoteHostname" length="255" type="string" />
+		<property column="user_agent" name="userAgent" length="255" type="string" />
+		<property column="bot" name="bot" type="boolean" />
+		<property name="numberOfRequests" type="int" column="number_of_requests" />
+		<property name="hostId" type="string">
+			<column name="host_id" length="36" index="idx_user_clickstream11" />
+		</property>
+		<property name="lastPageId" type="string">
+			<column name="last_page_id" length="50" index="idx_user_clickstream12" />
+		</property>
+		<property name="firstPageId" type="string">
+			<column name="first_page_id" length="50" index="idx_user_clickstream13" />
+		</property>
+		<property name="operatingSystem" type="string">
+			<column name="operating_system" length="50" index="idx_user_clickstream14" />
+		</property>
+		<property name="browserName" type="string">
+			<column name="browser_name" length="50" index="idx_user_clickstream15" />
+		</property>
+		<property name="browserVersion" type="string">
+			<column name="browser_version" length="50" index="idx_user_clickstream16" />
+		</property>
+		<property name="mobileDevice" type="boolean" column="mobile_device" />
+
+		<bag name="clickstreamRequests" lazy="true" order-by="request_order" inverse="true">
+			<key column="clickstream_id" />
+			<one-to-many class="com.dotmarketing.beans.ClickstreamRequest" />
+		</bag>
+	</class>
+
+	<class name="com.dotmarketing.beans.ClickstreamRequest" table="clickstream_request">
+		<id name="clickstreamRequestId" column="clickstream_request_id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">clickstream_request_seq</param>
+			</generator -->
+			<generator class="native"/>
+		</id>
+		<property name="clickstreamId" type="long">
+			<column name="clickstream_id" index="idx_user_clickstream_request_1" />
+		</property>
+		<property column="server_name" name="serverName" length="255" type="string" />
+		<property column="protocol" name="protocol" length="255" type="string" />
+		<property column="server_port" name="serverPort" length="10" type="integer" />
+		<property name="requestURI" type="string">
+			<column name="request_uri" length="255" index="idx_user_clickstream_request_2" />
+		</property>
+		<property column="request_order" name="requestOrder" length="10" type="integer" />
+		<property column="query_string" name="queryString" length="123456789" type="string" />
+		<property column="language_id" name="languageId" type="long" />
+		<property name="timestamp" type="java.util.Date">
+		    <column name="timestampper" index="idx_user_clickstream_request_4" />
+		</property>
+		<property column="host_id" name="hostId" type="string" length="36" />
+		<property name="associatedIdentifier" type="string">
+			<column name="associated_identifier" length="36" index="idx_user_clickstream_request_3" />
+		</property>
+	</class>
+	
+	<class name="com.dotmarketing.beans.Clickstream404" table="clickstream_404">
+		<id name="clickstream404Id" column="clickstream_404_id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">clickstream_404_seq</param>
+			</generator -->
+			<generator class="native"/>
+		</id>    
+        <property column="referer_uri" name="refererURI" length="255" type="string" />
+        <property column="query_string" name="queryString" length="123456789" type="string" />
+		<property name="requestURI" type="string">
+			<column name="request_uri" length="255" index="idx_user_clickstream_404_1" />
+		</property>
+		<property name="userId" type="string">
+			<column name="user_id" length="255" index="idx_user_clickstream_404_2" />
+		</property>
+		<property name="hostId" type="string">
+			<column name="host_id" length="36" index="idx_user_clickstream_404_3" />
+		</property>
+		<property column="timestampper" name="timestamp" type="java.util.Date" />
+	</class>
+
+	<class name="com.dotmarketing.portlets.webforms.model.WebForm" table="web_form">
+		<id name="webFormId" column="web_form_id" type="string" length="36" unsaved-value="any">
+			<!-- generator class="sequence">
+				<param name="sequence">web_form_seq</param>
+			</generator 
+			<generator class="native"/> -->
+			<generator class="com.dotmarketing.util.UUIDGenerator" /> 
+		</id>
+		<property name="formType" type="string">
+			<column name="form_type" length="255" index="idx_user_webform_1" />
+		</property>
+		<property column="submit_date" name="submitDate" type="java.util.Date" />
+		<property column="prefix" name="prefix" type="string" />
+		<property column="first_name" name="firstName" type="string" />
+		<property column="middle_initial" name="middleInitial" type="string" />
+		<property column="middle_name" name="middleName" type="string" />
+		<property column="full_name" name="fullName" type="string" />
+		<property column="organization" name="organization" type="string" />
+		<property column="title" name="title" type="string" />
+		<property column="last_name" name="lastName" type="string" />
+		<property column="address" name="address" type="string" />
+		<property column="address1" name="address1" type="string" />
+		<property column="address2" name="address2" type="string" />
+		<property column="city" name="city" type="string" />
+		<property column="state" name="state" type="string" />
+		<property column="zip" name="zip" type="string" />
+		<property column="country" name="country" type="string" />
+		<property column="phone" name="phone" type="string" />
+		<property column="email" name="email" type="string" />
+		<property column="custom_fields" name="customFields" type="string" length="123456789" />
+		<property column="user_inode" length="36" name="userInode" type="string" />
+		<property column="categories" length="255" name="categories" type="string" />
+	</class>
+		
+	<class name="com.dotmarketing.beans.Rating" table="content_rating">
+	  <id name="id" column="id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">content_rating_sequence</param>
+			</generator -->
+			<generator class="native"/>
+	  </id>
+	  	<property column="rating" name="rating" type="float" />
+	  	<property column="user_id" name="userId" length="255" type="string" />
+	  	<property column="session_id" name="sessionId" length="255" type="string" />
+	  	<property column="identifier" name="identifier" length="36" type="string" />
+	  	<property column="rating_date" name="ratingDate" type="java.util.Date" />
+	  	<property column="user_ip" name="userIP" length="255" type="string" />
+	  	<property column="long_live_cookie_id" name="longLiveCookiesId" length="255" type="string" />
+	</class>
+
+	<class name="com.dotmarketing.tag.model.Tag" table="tag">
+		<id name="tagId" column="tag_id" length="100" type="string">
+			<generator class="com.dotmarketing.util.UUIDGenerator" /> 
+		</id>
+		<property name="tagName" column="tagName" type="string" />
+		<property name="hostId" column="host_id" type="string" length="255" />
+		<property name="userId" column="user_id" type="string" length="255" />
+	</class>
+	
+	<class name="com.dotmarketing.tag.model.TagInode" table="tag_inode">
+		<composite-id unsaved-value="any">
+			<key-property name="tagId" column="tag_id" type="string" length="100" />
+			<key-property name="inode" column="inode" length="100" type="string" />
+		</composite-id>
+	</class>
+	
+	<class name="com.dotmarketing.beans.ChallengeQuestion" table="challenge_question">
+		<id name="challengeQuestionId" column="cquestionid" type="long">
+			<generator class="assigned" />
+		</id>
+		<property name="challengeQuestionText" column="cqtext" type="string" />
+	</class>
+	<class name="com.dotmarketing.beans.Trackback" table="trackback">
+	  <id name="id" column="id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">trackback_sequence</param>
+			</generator -->
+			<generator class="native"/>
+	  </id>
+	  	<property name="assetIdentifier" not-null="true" type="string">
+			<column name="asset_identifier" length="36" index="idx_trackback_1" />
+		</property>
+	  	<property column="title" name="title" length="255" type="string" />
+	  	<property column="excerpt" name="excerpt" length="255" type="string" />
+	  	<property name="url" length="255" not-null="true" type="string">
+			<column name="url" index="idx_trackback_2" />
+		</property>
+	  	<property column="blog_name" name="blogName" length="255" type="string" />
+	  	<property column="track_date" name="trackDate" type="java.util.Date" not-null="true" />
+	</class>
+	<class name="com.dotmarketing.beans.UsersToDelete" table="users_to_delete">
+		<id name="id" column="id" type="long">
+			<generator class="native"/>
+			<!-- generator class="sequence">
+				<param name="sequence">user_to_delete_seq</param>
+			</generator -->
+		</id>
+		<property name="userId" column="user_id" type="string" />
+	</class>
+	<class name="com.dotmarketing.portlets.calendar.model.CalendarReminder" table="calendar_reminder">
+    	<composite-id>
+        	<key-property name="userId" column="user_id" type="string"/>
+        	<key-property name="eventId" column="event_id" type="string" length="36" />
+        	<key-property name="sendDate" column="send_date" type="java.util.Date"/>
+    	</composite-id>		
+	</class>
+	
+		<!--  Start Of Mapping for the chains and links module -->
+	
+	<class name="com.dotmarketing.portlets.chains.model.Chain" table="chain">
+		<id name="id" column="id" type="long">
+			<generator class="native"/>
+			<!-- generator class="sequence">
+				<param name="sequence">chain_seq</param>
+			</generator-->
+		</id>
+		<property name="key" type="string" not-null="true">
+			<column name="key_name" length="255" index="idx_chain_key_name" unique="true" />
+		</property>	
+		<property name="name" column="name" type="string" not-null="true"/>	
+		<property name="successValue" column="success_value" type="string" not-null="true"/>	
+		<property name="failureValue" column="failure_value" type="string" not-null="true"/>	
+	</class>
+	<class name="com.dotmarketing.portlets.chains.model.ChainState" table="chain_state">
+		<id name="id" column="id" type="long">
+			<generator class="native"/>
+			<!--  generator class="sequence">
+				<param name="sequence">chain_state_seq</param>
+			</generator -->
+		</id>
+       	<property name="chainId" column="chain_id" type="long" not-null="true"/>
+       	<property name="linkCodeId" column="link_code_id" type="long" not-null="true"/>
+		<property name="order" column="state_order" type="long" not-null="true"/>	
+	</class>
+	<class name="com.dotmarketing.portlets.chains.model.ChainLinkCode" table="chain_link_code">
+		<id name="id" column="id" type="long">
+			<generator class="native"/>
+			<!--  generator class="sequence">
+				<param name="sequence">chain_link_code_seq</param>
+			</generator -->
+		</id>
+		<property name="className" type="string">
+			<column name="class_name" length="255" index="idx_chain_link_code_classname" unique="true" />
+		</property>	
+		<property name="code" column="code" type="string" length="123456789"  not-null="true"/>	
+		<property name="lastModifiedDate" column="last_mod_date" type="date"  not-null="true"/>	
+		<property name="languageKey" column="language" type="string"  not-null="true"/>	
+	</class>
+	<class name="com.dotmarketing.portlets.chains.model.ChainStateParameter" table="chain_state_parameter">
+		<id name="id" column="id" type="long">
+			<generator class="native"/>
+			<!--  generator class="sequence">
+				<param name="sequence">chain_state_parameter_seq</param>
+			</generator -->
+		</id>
+		<property name="chainStateId" column="chain_state_id" type="long"  not-null="true"/>	
+		<property name="name" column="name" type="string" not-null="true"/>	
+		<property name="value" column="value" type="string" not-null="true"/>	
+	</class>
+	
+	<!--  End Of Mapping for the chains and links module -->
+	
+	<!-- Mapping for Plugin Tables -->
+	
+	<class name="com.dotmarketing.plugin.model.Plugin" table="plugin">
+		<id name="id" column="id" type="string" unsaved-value="any">
+			<generator class="assigned"/>
+		</id>	
+		<property name="pluginName" column="plugin_name" type="string" not-null="true"/>	
+		<property name="pluginVersion" column="plugin_version" type="string" not-null="true"/>	
+		<property name="author" column="author" type="string" not-null="true"/>
+		<property name="firstDeployedDate" column="first_deployed_date" type="date"  not-null="true"/>	
+		<property name="lastDeployedDate" column="last_deployed_date" type="date"  not-null="true"/>	
+	</class>
+
+	<!-- End Mapping for Plugin Tables -->
+	
+	<class name="com.dotmarketing.business.Role" table="cms_role">
+		<id name="id" column="id" type="string" length="36" unsaved-value="">
+			<generator class="com.dotmarketing.util.UUIDGenerator" /> 
+		</id>
+		<property name="name" column="role_name" type="string" not-null="true"/>	
+		<property name="description" column="description" length="123456789" type="string" />	
+		<property name="roleKey" column="role_key" type="string" not-null="false" length="255" />
+		<property name="DBFQN" column="db_fqn" type="string" not-null="true" length="1000" />
+		<property name="parent" column="parent" type="string" length="36" not-null="true"/>
+		<property column="edit_permissions" name="editPermissions" type="boolean" />
+		<property column="edit_users" name="editUsers" type="boolean" />
+		<property column="edit_layouts" name="editLayouts" type="boolean" />
+		<property column="locked" name="locked" type="boolean" />
+		<property column="system" name="system" type="boolean" />		
+	</class>
+	
+	<class name="com.dotmarketing.business.UsersRoles" table="users_cms_roles">
+		<id name="id" column="id" type="string" length="36" unsaved-value="">
+			<generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="userId" column="user_id" type="string" length="100" not-null="true"/>	
+		<property name="roleId" column="role_id" length="36" type="string" not-null="true"/>			
+	</class>
+	
+	<class name="com.dotmarketing.business.LayoutsRoles" table="layouts_cms_roles">
+		<id name="id" column="id" type="string" length="36" unsaved-value="">
+			<generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="layoutId" column="layout_id" type="string" length="36" not-null="true"/>	
+		<property name="roleId" column="role_id" type="string" length="36" not-null="true"/>			
+	</class>
+	
+	<class name="com.dotmarketing.business.Layout" table="cms_layout">
+		<id name="id" column="id" type="string" length="36" unsaved-value="">
+			<generator class="com.dotmarketing.util.UUIDGenerator" /> 
+		</id>
+		<property name="name" column="layout_name" type="string" not-null="true"/>	
+		<property name="description" column="description" type="string" />	
+		<property column="tab_order" name="tabOrder" type="integer" />		
+	</class>
+	
+	<class name="com.dotmarketing.business.PortletsLayouts" table="cms_layouts_portlets">
+		<id name="id" column="id" type="string" length="36" unsaved-value="">
+			<generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="layoutId" column="layout_id" type="string" length="36" not-null="true"/>	
+		<property name="portletId" column="portlet_id" type="string" length="100" not-null="true"/>
+		<property column="portlet_order" name="portletOrder" type="integer" />	
+	</class>
+	
+	<class  name="com.dotmarketing.portlets.hostvariable.model.HostVariable" table="host_variable">
+		<id name="id" column="id" type="string" length="36" unsaved-value="any">
+			<generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="hostId" column="host_id" type="string" length="36" />	
+		<property name="name" column="variable_name" type="string" />	
+		<property name="key" column="variable_key" type="string" />
+		<property name="value" column="variable_value" type="string"  />	
+		<property name="lastModifierId" column="user_id" type="string" />	
+		<property name="lastModDate" column="last_mod_date" type="date"  />	
+	</class>
+	
+	<class  name="com.dotmarketing.beans.FixAudit" table="fixes_audit">
+		<id name="id" column="id" type="string" length="36" unsaved-value="any">
+			<generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="tableName" column="table_name" type="string" />	
+		<property name="action" column="action" type="string"  />	
+		<property name="recordsAltered" column="records_altered" type="integer" />	
+		<property name="datetime" column="datetime" type="date"  />	
+	</class>
+	
+    <class name="com.dotmarketing.beans.Identifier" table="identifier">
+	    <id name="id" column="id" type="string" length="36" unsaved-value="">
+		  <generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="parentPath" type="string">
+			<column name="parent_path" length="255" unique-key="idx_identifier_1" />
+		</property>
+		<property name="assetName" type="string">
+			<column name="asset_name" length="255" unique-key="idx_identifier_1" />
+		</property>
+		<property name="hostId" type="string">
+			<column name="host_inode" length="36" unique-key="idx_identifier_1" />
+		</property>
+		<property name="assetType" type="string" not-null="true">
+			<column name="asset_type" length="64" />
+		</property>
+	</class>
+	
+	<class name="com.dotmarketing.beans.TemplateContainers" table="template_containers">
+	    <id name="id" column="id" type="string" length="36" unsaved-value="">
+		  <generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="templateId" type="string">
+			<column name="template_id" length="36" not-null="true" />
+		</property>
+		<property name="containerId" type="string">
+			<column name="container_id" length="36" not-null="true"/>
+		</property>
+	</class>
+
+    <!-- Dashboard -->
+	
+	<class name="com.dotmarketing.portlets.dashboard.model.DashboardWorkStream" table="analytic_summary_workstream">
+	    <id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+	    </id>
+	    <property column="inode" name="inode" length="255" type="string" />
+	  	<property column="asset_type" name="assetType" length="255" type="string" />
+	  	<property name="modUserId" type="string" not-null="true">
+			<column name="mod_user_id" length="255" index="idx_dashboard_workstream_1" />
+		</property>
+		<property name="hostId" type="string" not-null="true">
+			<column name="host_id" length="36" index="idx_dashboard_workstream_2" />
+		</property>
+		<property name="modDate" type="java.util.Date" not-null="true">
+			<column name="mod_date" index="idx_dashboard_workstream_3" />
+		</property>
+	  	<property column="action" name="action" length="255" type="string" />
+	  	<property column="name" name="name" length="255" type="string" />
+	</class>
+	
+	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod" table="analytic_summary_period">
+	    <id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+	    </id>
+	  	<property name="fullDate" type="java.util.Date" not-null="true" >
+			<column name="full_date" unique-key="idx_analytic_summary_period_1" />
+		</property>	
+	  	<property name="day" type="integer" not-null="true" >
+			<column name="day" index="idx_analytic_summary_period_2" />
+		</property>	
+		<property name="week" type="integer" not-null="true" >
+			<column name="week" index="idx_analytic_summary_period_3" />
+		</property>	
+		<property name="month" type="integer" not-null="true">
+			<column name="month" index="idx_analytic_summary_period_4" />
+		</property>	
+		<property name="year" length="255" type="string" not-null="true">
+			<column name="year" index="idx_analytic_summary_period_5" />
+		</property>	
+	  	<property column="dayName" name="dayName" length="50" type="string" not-null="true" />
+	  	<property column="monthName" name="monthName" length="50" type="string" not-null="true" />		
+	</class>
+	
+	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryVisits" table="analytic_summary_visits">
+	    <id name="id" column="id" type="long" unsaved-value="0">
+		    <generator class="native"/>
+	    </id>
+		<many-to-one name="summaryPeriod" class="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod" column="summary_period_id" not-null="true"/> 	
+		<property name="hostId" type="string" not-null="true">
+			<column name="host_id" length="36" index="idx_analytic_summary_visits_1" />
+		</property>
+		<property name="visitTime" type="java.util.Date">
+			<column name="visit_time" index="idx_analytic_summary_visits_2" />
+		</property>	
+		<property column="visits" name="visits" type="long" />	 
+	</class>
+	
+    <class name="com.dotmarketing.portlets.dashboard.model.DashboardSummary404" table="analytic_summary_404">
+	    <id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+	    </id>
+	  	<many-to-one name="summaryPeriod" class="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod" column="summary_period_id" not-null="true"/> 	
+	    <property name="hostId" type="string" not-null="true">
+			<column name="host_id" length="36" index="idx_analytic_summary_404_1" />
+		</property>
+		<property column="uri" name="uri" length="255" type="string" />
+		<property column="referer_uri" name="refererUri" length="255" type="string" />
+		<set name="userPreferences" cascade="all" inverse="true">
+             <key column="summary_404_id"/>
+             <one-to-many class="com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences"/>
+        </set>		
+	</class>
+	
+	<class name="com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences" table="dashboard_user_preferences">
+	    <id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+	    </id>
+	  	<many-to-one name="summary404" class="com.dotmarketing.portlets.dashboard.model.DashboardSummary404" column="summary_404_id"/> 	
+	    <property name="userId" type="string" not-null="true">
+			<column name="user_id" length="255" index="idx_dashboard_prefs_2" />
+		</property>
+		<property column="ignored" name="ignored" type="boolean" />
+		<property column="mod_date" name="modDate" type="java.util.Date" />
+	</class>
+	
+	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummary" table="analytic_summary">
+	    <id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+	    </id>
+	  	<many-to-one name="summaryPeriod" class="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod">
+	     	<column name="summary_period_id" not-null="true" unique-key="summary_key"/>
+	  	</many-to-one>
+		<property name="hostId" type="string" not-null="true">
+			<column name="host_id" length="36" not-null="true" index="idx_analytic_summary_1" unique-key="summary_key"/>
+		</property>
+		<property name="visits" type="long">
+			<column name="visits" index="idx_analytic_summary_2" />
+		</property>
+		<property name="pageViews" type="long">
+			<column name="page_views" index="idx_analytic_summary_3" />
+		</property>
+		<property column="unique_visits" name="uniqueVisits" type="long" />	
+		<property column="new_visits" name="newVisits" type="long" />
+		<property column="direct_traffic" name="directTraffic" type="long" />	
+		<property column="referring_sites" name="referringSites" type="long" />	
+		<property column="search_engines" name="searchEngines" type="long" />	
+		<property column="bounce_rate" name="bounceRate" type="int" />	
+		<property column="avg_time_on_site" name="avgTimeOnSite" type="java.util.Date" />	
+	</class>
+	
+	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryReferer" table="analytic_summary_referer">
+	   	<id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+	    </id>
+		<many-to-one name="summary" class="com.dotmarketing.portlets.dashboard.model.DashboardSummary" column="summary_id" not-null="true"/> 
+		<property column="hits" name="hits" type="long" />	
+		<property column="uri" name="uri" length="255" type="string" />
+	</class>
+	
+    <class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPage" table="analytic_summary_pages">
+	   	<id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+	    </id>
+		<many-to-one name="summary" class="com.dotmarketing.portlets.dashboard.model.DashboardSummary" column="summary_id" not-null="true"/> 
+		<property column="inode" name="inode" length="255" type="string" />
+		<property column="hits" name="hits" type="long" />	
+		<property column="uri" name="uri" length="255" type="string" />
+	</class>
+	
+	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryContent" table="analytic_summary_content">
+	   	<id name="id" column="id" type="long" unsaved-value="0">
+			<generator class="native"/>
+	    </id>
+		<many-to-one name="summary" class="com.dotmarketing.portlets.dashboard.model.DashboardSummary" column="summary_id" not-null="true"/> 
+		<property column="inode" name="inode" length="255" type="string" />
+		<property column="hits" name="hits" type="long" />	
+		<property column="uri" name="uri" length="255" type="string" />
+		<property column="title" name="title" length="255" type="string" />
+	</class>
+
+	<!-- Dashboard -->
+	
+	<!-- Version info for Versionable objects -->
+    <class name="com.dotmarketing.portlets.files.model.FileAssetVersionInfo" table="fileasset_version_info">
+        <id column="identifier"    name="identifier"   length="36" type="string">
+            <generator class="assigned"/>
+        </id>
+        <property column="working_inode" name="workingInode" length="36" type="string"  not-null="true" />
+        <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
+        <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
+        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
+        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="true"/>
+    </class>
+    <class name="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" table="contentlet_version_info">
+        <composite-id>
+            <key-property name="identifier" type="string" column="identifier" length="36"/>
+            <key-property name="lang" type="long" column="lang" />
+        </composite-id>
+        <property column="working_inode" name="workingInode" length="36"  type="string"  not-null="true" />
+        <property column="live_inode"    name="liveInode"    length="36"  type="string"  not-null="false"/>
+        <property column="deleted"       name="deleted"                   type="boolean" not-null="true" />
+        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
+        <property column="locked_on"     name="lockedOn"                  type="date"    not-null="false"/>
+    </class>
+    <class name="com.dotmarketing.portlets.templates.model.TemplateVersionInfo" table="template_version_info">
+        <id column="identifier"    name="identifier"   length="36" type="string">
+            <generator class="assigned"/>
+        </id>
+        <property column="working_inode" name="workingInode" length="36" type="string"  not-null="true" />
+        <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
+        <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
+        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
+        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+    </class>
+    <class name="com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo" table="htmlpage_version_info">
+        <id column="identifier"    name="identifier"   length="36" type="string">
+            <generator class="assigned"/>
+        </id>
+        <property column="working_inode" name="workingInode" length="36" type="string"  not-null="true" />
+        <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
+        <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
+        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
+        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+    </class>
+    <class name="com.dotmarketing.portlets.containers.model.ContainerVersionInfo" table="container_version_info">
+        <id column="identifier"    name="identifier"   length="36" type="string">
+            <generator class="assigned"/>
+        </id>
+        <property column="working_inode" name="workingInode" length="36" type="string"  not-null="true" />
+        <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
+        <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
+        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
+        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+    </class>
+    <class name="com.dotmarketing.portlets.links.model.LinkVersionInfo" table="link_version_info">
+        <id column="identifier"    name="identifier"   length="36" type="string">
+            <generator class="assigned"/>
+        </id>
+        <property column="working_inode" name="workingInode" length="36" type="string"  not-null="true" />
+        <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
+        <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
+        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
+        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+    </class>
+	
+	<class  name="com.dotmarketing.portlets.structure.model.FieldVariable" table="field_variable">
+		<id name="id" column="id" type="string" length="36" unsaved-value="any">
+			<generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="fieldId" column="field_id" type="string" length="36"/>
+		<property name="name" column="variable_name" type="string" />
+		<property name="key" column="variable_key" type="string" />
+		<property name="value" column="variable_value" type="string" length="123456789" />
+		<property name="lastModifierId" column="user_id" type="string" />
+		<property name="lastModDate" column="last_mod_date" type="date"  />
+	</class>
+
+</hibernate-mapping>

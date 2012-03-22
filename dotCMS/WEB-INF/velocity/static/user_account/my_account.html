@@ -1,0 +1,144 @@
+#parse('static/messages.html')
+<script>
+	function doSubmit(){
+		var ele;
+		var val = document.getElementById("categories");
+		val.value = "";
+		#foreach ($cat in ${categories})
+			ele = document.getElementById("cat$cat.inode");
+			for(i =0;i< ele.length; i++){
+				if(ele[i].selected){
+					val.value = val.value + ","  + ele[i].value;
+				}
+				else{
+					val.value.replace(","  + ele[i].value, "");
+				}
+			}
+		#end
+		document.getElementById("myAccountForm").submit();
+}
+	function clickHidden()
+	{
+		var checked = (document.forms[0].mailingListAux.checked == true ? "true" : "false");
+		document.forms[0].mailSubscription.value = checked;
+	}
+
+	function doSubmit()
+	{		
+		document.forms[0].submit();
+		return false;
+	}
+
+	function movePassword()
+	{
+		var password = document.forms[0].password1.value;
+		document.forms[0].passwordChanged.value = "true";
+	}
+</script>
+<style type="text/css">
+<!--
+input.text{
+  font-family: verdana, helvetica, arial;
+  font-size: 11px;
+  border: 1px silver solid;
+  width: 200px;
+  height: 15px;
+}
+
+input.btn{
+  font-family: verdana, helvetica, arial;
+  font-size: 11px;
+  width: 100px;
+}
+
+textarea{
+  font-family: verdana, helvetica, arial;
+  font-size: 11px;
+  border: 1px silver solid;
+  width: 200px;
+  height: 50px;
+}
+.mRed{
+color: red;
+}
+
+fieldset{
+				 border: 1px silver solid;
+}
+legend{
+color: #666666;
+}
+-->
+</style>
+<fieldset>
+<legend><b>My Account</b></legend>
+<table cellpadding="4" width="400">
+	<form action="/dotCMS/myAccount" method="post">
+	<input type="hidden" name="dispatch" value="saveUserInfo">
+	<input type="hidden" name="userName" value="$!myAccountForm.userName">
+
+<!--  application Body Start -->					
+					<tr>
+						<td valign="top" class="header" colspan="2">E-mail/Username and Password</td>
+					</tr>
+					<tr>
+						<td width="240" class="highlight">UserName / E-mail Address:</td>
+						<td>$!myAccountForm.userName</td>
+					</tr>
+					<tr>
+						<td class="highlight">Password: </td>
+						<td><input class="text" type="password" name="password1" value="********" onKeyUp="movePassword();"></td>
+					</tr>
+					<tr>
+						<td class="highlight">Confirm Password:</td>
+						<td><input class="text" type="password" name="password2" value="********"></td>
+					</tr>
+					<tr>
+						<td colspan="2"><input type="hidden" name="passwordCurrent" value=""></td>
+					</tr>
+
+					<tr>
+						<td class="header" valign="top" width="230" colspan="2">Personal Information and Subscriptions</td>
+					</tr>
+
+
+					<tr>
+						<td class="highlight">First Name: </td>
+						<td><input class="text" type="text" name="firstName" value="$!myAccountForm.firstName"></td>
+					</tr>
+					<tr>
+						<td class="highlight">Last Name: </td>
+						<td><input class="text" type="text" name="lastName" value="$!myAccountForm.lastName"></td>
+					</tr>
+					<tr>
+						<td class="highlight">Company / Institution: </td>
+						<td><input class="text" type="text" name="organization" value="$!myAccountForm.organization"></td>
+					</tr>
+					<tr>
+						<td class="highlight">Website: </td>
+						<td><input class="text" type="text" name="website" value="$!myAccountForm.website"></td>
+					</tr>
+					<tr>
+						<td class="highlight">Subscribe to our mailing list?:</td>
+						#if($!myAccountForm.mailSubscription == true)
+							#set ($mail = "checked")
+						#else
+							#set ($mail = "")
+						#end
+						<td><input type="checkbox" name="mailingListAux" $!mail onClick="clickHidden();"></td>
+					</tr>
+					<tr>
+						<td colspan="2"><input type="hidden" name="mailSubscription" value="$!myAccountForm.mailSubscription"></td>
+					</tr>
+					<tr align="center">
+						<td colspan="2"><input class="btn" type="button" value="Save Changes" onClick="return doSubmit();"></td>
+					</tr>
+					<tr>
+						<td colspan=2><img src="/html/images/shim.gif" width="10" height="1"></td>
+					</tr>
+				<!--  application Body End -->
+				</form>
+				</table>
+</fieldset>
+""  
+"" 

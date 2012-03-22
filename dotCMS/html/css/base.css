@@ -1,0 +1,62 @@
+/* ---------------------- YUI supplement ---------------------- */
+#doc,#doc1,#doc2,#doc3,#doc4{min-width:970px;}
+#hd{margin-top:45px;}
+#bd{background:#fff;border: 1px solid #C9C9C9;border-top:0px;padding:10px 0;-moz-box-shadow:0px -1px 6px rgba(0, 0, 0, 0.2);-webkit-box-shadow:0px -1px 6px rgba(0, 0, 0, 0.2);box-shadow:0px -1px 6px rgba(0, 0, 0, 0.2);}
+#ft{padding:0;margin:0;height:0px;}
+/* ---------------------- END YUI supplement ---------------------- */
+
+/* ---------------------- HTML tag styles ---------------------- */
+body{outline:none !important;font:13px/1.22 Verdana, Geneva,  Arial, sans-serif;*font-size:small;*font:x-small;color:#555;line-height:138.5%;background-color:#f3f3f3;}/* 13pt */
+h1{font-size:174%;}/* 23pt */
+h2{font-size:138.5%;line-height:115%;margin:0 0 .2em 0;font-weight:normal;}/* 18pt */
+h3{font-size:100%;margin:0 0 .2em 0;font-weight:bold;}/* 18pt */
+h4{font-weight:bold;}/* 13pt */
+h5{font-size:77%;}/* 10pt */
+h6{font-size:77%;font-style: italic;}/* 10pt */
+p,fieldset{margin:0 0 1.5em 0;}
+a{color: #2C548D;}
+a:hover{}
+em {font-style:italic;}
+strong,b{font-weight:bold;}
+blockquote{margin:1em;}
+ol{margin-left:3em;}
+ul{margin-left:2.5em;}
+ol li {list-style: none outside;}
+ul li {list-style: none outside;}
+table {font-size:inherit;}
+td {}
+dl {margin:0 0 0 0;}
+dt {float:left; clear:left; margin:0px 0px 10px 0px;  font-size:12px; padding-top:8px;width:30%; text-align:right;/* position:relative; */ /*IEWin hack*/}
+dd {clear:right;font-size:12px;padding-top:8px; padding-left:10px;  margin:0px 0px 10px 30%; text-align:left; }
+dt.wide, dd.wide{width:100%; clear:both;}
+button,select,input,label{font-family:Verdana,Geneva,Arial,sans-serif;}
+
+
+.inputCaption{font-size:85%;color:#888;font-style:italic;}
+dd.inputCaption, dd.buttonCaption{margin-top:-10px;}
+
+
+.dl50-50 dt {width:50%;}
+.dl50-50 dd {margin-left:50%;}
+
+input{color:#555555;padding:2px 5px 0 5px;}
+
+
+select {font-size: 93%;padding: 2px;color:#555;}
+fieldset{border:1px solid #ccc; padding:20px;}
+legend{font-weight:bold;padding:2px 10px; background:#fff; color:#444; border:1px solid #ccc; }
+pre,code,kbd,samp,tt{font-family:monospace;*font-size:108%;line-height:99%;}
+sup{font-size:60%;}
+abbr,acronym {border-bottom:1px dotted #555;cursor:help;}
+hr{background-color:#ccc;height:1px;color:#ccc;border:0px;margin:10px 0px;}
+
+.formRow{clear:right;clear:left;clear:both;}
+
+.formLine{clear:both;}
+.formLine *{float:left;}
+.formLine label{display:block; margin:0px 5px 0px 0px; font-weight:bold;}
+.formLine input , .formLine select, .formLine div{margin:0px 20px 0px 0px;}
+
+.clear{clear:both;font-size:0;height:0;line-height:0;margin:0;padding:0;}
+.hidden{position:absolute;left:0px;top:-500px;width:1px;height:1px;overflow:hidden;}
+/* ---------------------- END HTML tag styles ---------------------- */

@@ -1,0 +1,64 @@
+body{margin:0;padding:0;font-family: Verdana, Geneva,  Arial, sans-serif;font-size: 11px;background:#eee;}
+.clear{clear:both;height:0px;font-size:0;line-height:0;}
+a{color:#5b5b5b;text-decoration:none;}
+a:hover{color:#0c74a2;}
+h2{font-size:11px;font-weight:bold;display:block;padding:5px 0;margin:0;color:#5B5B5B;}
+.clear{clear:both;font-size:0;height:0;line-height:0;margin:0;padding:0;}
+
+div.maxmin{position:absolute;top:0px;right:0px;width:10px;bottom:0px;height:100%;background: #e6e9ee;border-left: 1px solid #fff;border-right: 1px solid #aaa;}
+#max_bar{background: #e6e9ee url(/html/images/skin/arrowClose.gif) no-repeat 50% 50%;}
+#min_bar{background: #e6e9ee url(/html/images/skin/arrowOpen.gif) no-repeat 50% 50%;}
+#min_bar{display: none;}
+
+hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: none none solid; }
+
+.dmundra #mainTabContainer{border:0;border-bottom:1px solid #ddd;}
+.dmundra .dijitLayoutContainer{position:relative;background: #eee url(/html/images/skin/previewTab_bg.gif) repeat-x;padding:0;}
+.dmundra .dijitTabContainerTop-dijitContentPane{background-color:#eee;padding:0;margin:0;border:none;}
+.dmundra .dijitTabPaneWrapper {absolute;background:#eee;border:none;}
+.dmundra .dijitTabChecked,.dmundra .dijitTabContainerTop-tabs .dijitTabChecked {background:#eee;border:1px solid #ccc;border-bottom:1px solid #eee;}
+.dmundra .dijitTab{margin-right:0px;margin-left:4px;background: #eee url(/html/images/skin/previewTab.gif) repeat-x;border-bottom:#ccc;}
+.dmundra .dijitTabInnerDiv {padding:3px 8px 7px 7px;}
+.dmundra .dijitTabContainerBottom-spacer, .dmundra .dijitTabContainerTop-spacer{background:#eee;}
+.dmundra .dijitTabContainerTop-tabs .dijitTabChecked {border-bottom-color:#eee;}
+.dmundra .dijitTabPaneWrapper {background:none;border-style:none;border-width:0px;border:none;}
+.dmundra .dijitTabListWrapper {top:5px;}
+.dmundra .dijitTabContainerTop-dijitContentPane{padding-bottom:10px;}
+
+.dmundra .dijitButtonText {display:inline-block;width:150px;text-align:left;}
+
+.dijitButtonNode button{width:175px;text-align:left;}
+
+.pageTools{border:1px solid #ddd;border-top:1px solid #ccc;border-left:1px solid #ccc;background:#fff;margin:10px 0 10px 6px;padding:5px;width:172px;}
+.pageTools a{display:block;line-height:18px;padding:3px;}
+.pageTools a:hover{background-color:#cbe1f2;}
+.pageTools a span, .pageTools .disabled span{margin:0 5px 0 0;}
+
+
+#buttonRow{padding:0 0 12px 5px;border-top:1px solid #fff;border-bottom:1px solid #ccc;}
+.logout{position:absolute;bottom:15px;left:10px;}
+
+.sideMenu{width:210px;overflow:hidden;}
+	
+.lang{color:#5b5b5b;border-top:1px solid #fff;border-bottom:1px solid #ccc;padding:5px 0 12px 10px;margin:10px 0 10px 0;}
+.lang a{padding:3px;border-top: solid 1px #fff;border-right: solid 1px #ccc;border-left: solid 1px #FFF;border-bottom: solid 1px #ccc;}
+.lang a:hover{background-color:#E3E3E4;border-top: solid 1px #ccc;border-right: solid 1px #fff;border-left: solid 1px #ccc;border-bottom: solid 1px #ccc;}
+.lang span{padding:0px;background-color:#E3E3E4;border-top: solid 1px #ccc;border-right: solid 1px #fff;border-left: solid 1px #ccc;border-bottom: solid 1px #ccc;}
+
+.closeIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -260px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.redlineIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -60px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.cancelIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -120px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.newPageIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -400px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.newTaskIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -520px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.statisticsIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -720px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.pagePropIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -900px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.publishIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.templateIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+
+.disabled{display:block;line-height:18px;padding:3px;color:#aaa;text-decoration:none;}
+.disabled .statisticsIcon {background: url(/html/images/icons/dotcms-sprite-off.png) no-repeat -1px -720px;}
+.disabled .pagePropIcon {background: url(/html/images/icons/dotcms-sprite-off.png) no-repeat -1px -900px;}
+.disabled .publishIcon {background: url(/html/images/icons/dotcms-sprite-off.png) no-repeat -1px -320px;}
+.disabled .templateIcon{background: url(/html/images/icons/dotcms-sprite-off.png) no-repeat -21px -1220px;}
+
+

@@ -1,0 +1,387 @@
+<%@ include file="/html/portlet/ext/files/init.jsp" %>
+<%@ include file="/html/common/messages_inc.jsp" %>
+<%@ page import="com.dotmarketing.business.PermissionAPI"%>
+<%@ page import="com.dotmarketing.util.InodeUtils"%>
+
+<!---  When the file upload is in a popup -->
+<%if(request.getAttribute("inode") != null){%>
+	<% com.dotmarketing.portlets.files.model.File myFile = (com.dotmarketing.portlets.files.model.File) com.dotmarketing.factories.InodeFactory.getInode(request.getAttribute("inode").toString(), com.dotmarketing.portlets.files.model.File.class);%>
+	<script>
+		try {
+			opener.setImage('<%=  myFile.getInode()%>','<%= myFile.getFileName()%>');
+		} catch () { }
+<%
+		if(request.getParameter("popup")) {
+%>
+		opener.callback<%=request.getParameter("popup")%>('<%=  myFile.getInode()%>', '<%=  myFile.getIdentifier()%>', '<%= myFile.getFileName()%>', '<%= myFile.getURI() %>');
+<%
+		}
+%>
+		window.close();
+	</script>
+<%
+	return;
+}
+%>
+<!---  When the file upload is in a popup -->
+
+<%
+// variable that is set to make page a popup
+boolean popup = false;
+if(request.getParameter("popup")!=null){
+	popup = true;
+}
+
+//gets file object
+com.dotmarketing.portlets.files.model.File file;
+if (request.getAttribute(com.dotmarketing.util.WebKeys.FILE_EDIT)!=null) {
+	file = (com.dotmarketing.portlets.files.model.File) request.getAttribute(com.dotmarketing.util.WebKeys.FILE_EDIT);
+}
+else {
+	file = (com.dotmarketing.portlets.files.model.File) com.dotmarketing.factories.InodeFactory.getInode(request.getParameter("inode"), com.dotmarketing.portlets.files.model.File.class);
+}
+
+//gets referer
+String referer = null;
+if(!popup){
+	referer = (request.getParameter("referer") != null ) ? request.getParameter("referer") : CTX_PATH +"/ext/files/view_files" ;
+}
+
+//url to use as a referer to get back to this page
+String this_page = java.net.URLEncoder.encode(CTX_PATH + "/ext/files/upload_file?" + request.getQueryString(),"UTF-8");
+
+//gets parent identifier to get the categories selected for this file
+com.dotmarketing.beans.Identifier identifier = com.dotmarketing.factories.IdentifierFactory.getParentIdentifier(file);
+
+//gets user roles
+com.liferay.portal.model.Role[] roles = (com.liferay.portal.model.Role[])com.dotmarketing.factories.RoleFactory.getAllRolesForUser(user.getUserId()).toArray(new com.liferay.portal.model.Role[0]);
+//gets parent folder
+com.dotmarketing.portlets.folders.model.Folder folder = (com.dotmarketing.portlets.folders.model.Folder) com.dotmarketing.factories.InodeFactory.getInode(String.valueOf(file.getParent()),com.dotmarketing.portlets.folders.model.Folder.class);
+PermissionAPI perAPI = APILocator.getPermissionAPI();
+boolean canUserWriteTofolder = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_WRITE,user);
+
+//for the calendars
+int[] monthIds = CalendarUtil.getMonthIds();
+String[] months = CalendarUtil.getMonths(locale);
+String[] days = CalendarUtil.getDays(locale);
+//gets publish date from the file
+java.util.Date publishDate = (file.getPublishDate()!=null) ? file.getPublishDate() : new java.util.Date();
+%>
+<script src="/html/js/uuidUtils.js" type="text/javascript"></script>
+<script>
+
+	var copyAsset = false;
+
+    function doUpload(subcmd){
+
+        var form = document.getElementById("fm");
+
+		if (form.categorySelect) {
+	        for (i=0;i<form.categorySelect.options.length;i++) {
+	        	if (form.categorySelect.options[i].selected) {
+	        		form.categories.value += form.categorySelect.options[i].value + ",";
+	        	}
+	        }
+	    }
+		if (!isInodeSet(form.parent.value)) {
+			alert("Please select a Folder before saving");
+			browseTree('folders','parent');
+			return false;
+		}
+
+        x = document.getElementById("uploadedFile").value.split("\\");
+        var fileName = x[x.length -1];
+
+
+        while(fileName.indexOf(" ") > -1){
+            fileName = fileName.replace(" ", "");
+        }
+
+		<% if (!InodeUtils.isSet(file.getInode())) { %>
+        if (fileName.length ==0) {
+    		alert("Please upload a file");
+    		return false;
+        }
+		<% } %>
+        if (fileName.length !=0) {
+        	if (!confirm("Upload file " + fileName + "?")){
+        		return false;
+        	}
+        }
+
+		var sdMonth = parseFloat(form.calendar_sd_month[form.calendar_sd_month.selectedIndex].value) + 1;
+		var sdDay = form.calendar_sd_day[form.calendar_sd_day.selectedIndex].value;
+		var sdYear = form.calendar_sd_year[form.calendar_sd_year.selectedIndex].value;
+
+		form.webPublishDate.value = sdMonth + "/" + sdDay + "/" + sdYear;
+
+        document.getElementById("tableDiv").style.display = "none";
+        document.getElementById("messageDiv").style.display = "";
+        dijit.byId('saveButton').setAttribute('disabled',true);	
+    	dijit.byId('savePublishButton').setAttribute('disabled',true);	
+
+        form.fileName.value=fileName;
+        //form.action="";
+        form.subcmd.value = subcmd;
+        form.cmd.value="<%= Constants.ADD %>";
+
+        submitForm(form);
+    }
+
+
+	function submitParent(element){
+	<% if(!popup){ %>
+		if (copyAsset) {
+			var form = document.getElementById("fm");
+			disableButtons(form);
+			var parent = document.getElementById("parent").value;
+			self.location = '<%=CTX_PATH%>/ext/files/upload_file?cmd=copy&parent=' + parent + '&inode=<%=file.getInode()%>&referer=<%=java.net.URLEncoder.encode(referer,"UTF-8")%>';
+		}
+	<% } %>
+	}
+	function copyFile() {
+		copyAsset = true;
+		var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
+		newwin = window.open('<%=CTX_PATH%>/ext/folders/view_folders_popup?view=' + view + '&content=folders&popup=parent#treeTop', "newwin", 'width=700,height=400,scrollbars=yes,resizable=yes');
+	}
+
+
+	function cancelEdit()
+	{
+		<% if(!popup){ %>
+			self.location = '<%=CTX_PATH%>/ext/files/upload_file?cmd=unlock&inode=<%=file.getInode()%>&referer=<%=java.net.URLEncoder.encode(referer,"UTF-8")%>';
+		<% }else{ %>
+			self.close();
+		<% } %>
+	}
+
+	<% if(!popup){ %>
+	function editText(inode) {
+      newwin = window.open('<%=CTX_PATH%>/ext/wysiwyg/edit_text?inode='+inode+'&referer=<%=this_page%>', "newwin", 'width=600,height=500,scrollbars=yes,resizable=1');
+	}
+	<% } %>
+
+	function browseTree(content,popup) {
+	   view = "<%= java.net.URLEncoder.encode("(live=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
+	   browsetreewin = window.open('<%=CTX_PATH%>/ext/folders/view_folders_popup?view=' + view + '&content='+content+'&popup='+popup+'#treeTop', "browsetreewin", 'width=700,height=400,scrollbars=yes,resizable=yes');
+	}
+	
+	function beLazier(){
+
+			var ele = document.getElementById("uploadedFile").value;
+
+			var arr = ele.split("\\");
+			if(arr.length ==1){
+						  var arr = ele.split("/");
+			}
+			val = arr[(arr.length -1)];
+			var test = false;
+			var newVal = "";
+			for(i=0 ; i < val.length ; i++){
+				var c =     val.substring(i,i+1);
+				 if(c == "_") {
+				 	  c = " ";
+				}
+				if(test == true || i == 0){
+					 test = false;
+				     c = c.toUpperCase();
+				}
+				if(c == " "){
+                 	 test = true;
+				}
+
+
+			    if(c == ".") break;
+				newVal = newVal +   c;
+			}
+
+		var ele = document.getElementById("titleField");
+		if(ele.value.length ==0 ){
+			ele.value = newVal;
+		}
+	}
+
+	function setDate(id, month, day, year) {
+			if (id == "calendar_0") {
+				myForm.calendar_sd_month.selectedIndex = getIndex(myForm.calendar_sd_month, month);
+				myForm.calendar_sd_day.selectedIndex = getIndex(myForm.calendar_sd_day, day);
+				myForm.calendar_sd_year.selectedIndex = getIndex(myForm.calendar_sd_year, year);
+			}
+	}
+
+</script>
+
+<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
+	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"file-upload\") %>" />
+    <body class="Body" onLoad="this.focus()" leftmargin="0" topmargin="0" marginheight="0">
+		<table width="70%" border="0" cellspacing="1" cellpadding="4" align="center">
+			<tr>
+				<td>
+
+					 <!--<div id="tableDiv" style="visibility: show; position:relative; z-index: 100">-->
+					 <div id="tableDiv" style="display: ; position:relative; z-index: 100">
+
+						<table width="100%" cellspacing="1" cellpadding="4" align="center">
+							 <html:form action='/ext/files/upload_file' method="POST"  styleId="fm" enctype="multipart/form-data" onsubmit="return false;">
+							 <input type="hidden" name="inode" value="<%=file.getInode()%>">
+							 <input type="hidden" name="popup" value="<%=request.getParameter("popup")!=null?request.getParameter("parentCallbackId"):""%>">
+							 <input type="hidden" name="inode_version" value="<%=request.getParameter("inode_version")%>">
+							 <input type="hidden" name="cmd" value="<%=Constants.ADD%>">
+							 <input type="hidden" name="fileName" value="">
+							 <input name="subcmd" type="hidden" value="">
+							 <input type="hidden" name="submitParent" id="submitParent" value="inode">
+							 <html:hidden property="maxSize" />
+							 <html:hidden property="maxWidth" />
+							 <html:hidden property="maxHeight" />
+							 <html:hidden property="minHeight" />
+			 				 <input type="hidden" name="webPublishDate" value="">
+			 				 <input type="hidden" name="categories" value="">
+
+							<TR>
+								 <td><font class="gamma" size="2">Upload New File:</font></td>
+								 <TD><input type="file" class="form-text" style="width:350" name="uploadedFile" id="uploadedFile" onBlur="beLazier();"></TD>
+							 </TR>
+							 <%if(InodeUtils.isSet(file.getInode())){%>
+							 <TR>
+								 <td>&nbsp;</td>
+								 <TD><font class="gamma" size="2">(must be type: <%=file.getMimeType()%>)</font></TD>
+							 </TR>
+							 <% } %>
+							 <TR>
+								 <td><font class="gamma" size="2">Title (shown on Menu):</font></td>
+								 <TD><html:text style="width:70%;" styleClass="form-text" property="title"  styleId="titleField" /></TD>
+							 </TR>
+							 <TR>
+								 <td><font class="gamma" size="2">Description:</font></td>
+								 <TD><html:text style="width:70%;" styleClass="form-text" property="friendlyName" styleId="friendlyNameField" /></TD>
+							 </TR>
+							<tr>
+								<td>
+								<font class="bg" size="2">Folder:</font>
+								</td>
+								<td nowrap>
+									<% if(!InodeUtils.isSet(file.getParent())) { %>
+									<html:text readonly="true" style="width:60%;" styleClass="form-text" property="selectedparent" styleId="selectedparent" />
+									<button dojoType="dijit.form.Button" onClick="browseTree('folders','parent')">Browse for Folder</button>
+									<% } else { %>
+									<html:hidden property="selectedparent" styleId="selectedparent" />
+									<html:text readonly="true" style="width:100%;border:0px;" styleClass="form-text" property="selectedparentPath" styleId="selectedparentPath" />
+									<% } %>
+									<html:hidden styleClass="form-text" property="parent" styleId="parent" />
+								</td>
+							</tr>
+							<tr>
+								<td>
+								<font class="bg" size="2">Publish Date</font>
+								</td>
+								<td>
+									<script language="JavaScript">
+									var myForm = document.getElementById("fm");
+									</script>
+									<select name="calendar_sd_month">
+										<%
+										Calendar publishDateCal = new GregorianCalendar();
+										publishDateCal.setTime(publishDate);
+										String sdMonth = Integer.toString(publishDateCal.get(Calendar.MONTH));
+										for (int i = 0; i < months.length; i++) {
+										%>
+											<option <%= (sdMonth.equals(Integer.toString(monthIds[i]))) ? "selected" : "" %> value="<%= monthIds[i] %>"><%= months[i] %></option>
+										<%
+										}
+										%>
+									</select>
+									<select name="calendar_sd_day">
+										<%
+										String sdDay = Integer.toString(publishDateCal.get(Calendar.DATE));
+										for (int i = 1; i <= 31; i++) {
+										%>
+											<option <%= (sdDay.equals(Integer.toString(i))) ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+										<%
+										}
+										%>
+									</select>
+									<select name="calendar_sd_year">
+										<%
+										int currentYear = publishDateCal.get(Calendar.YEAR);
+										String sdYear = Integer.toString(publishDateCal.get(Calendar.YEAR));
+										for (int i = currentYear; i <= currentYear + 10; i++) {
+										%>
+											<option <%= (sdYear.equals(Integer.toString(i))) ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+										<%
+										}
+										%>
+									</select>
+									<a href="javascript: var pickDateWindow = window.open('<%= CTX_PATH %>/calendar/pick_date?calendar_pd_id=calendar_0&calendar_pd_sy=<%= currentYear %>&calendar_pd_ey=<%= currentYear + 10 %>&calendar_pd_dm=' + myForm.calendar_sd_month[myForm.calendar_sd_month.selectedIndex].value + '&calendar_pd_dy=' + myForm.calendar_sd_year[myForm.calendar_sd_year.selectedIndex].value, 'pickDate', 'directories=no,height=275,location=no,menubar=no,resizable=no,scrollbars=no,status=no,toolbar=no,width=250'); void(''); pickDateWindow.focus();"><img align="absmiddle" border="0" hspace="0" src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0"></a>
+
+								</td>
+							</tr>
+						    <TR>
+								 <td><font class="gamma" size="2">Author:</font></td>
+								 <TD><html:text style="width:70%;" styleClass="form-text" property="author" styleId="author" /></TD>
+							 </TR>
+								
+							<%if(InodeUtils.isSet(file.getInode())){%>
+								<tr>
+									<td><font class="gamma" size="2">Resource Link:</font></td>
+									<td><a href="http://<%=request.getServerName()%><%=UtilMethods.encodeURIComponent(identifier.getURI())%>" target="_new">
+									<font class="gamma" size="2"><%=identifier.getURI()%></a>
+									<% if (file.getMimeType().indexOf("text")!=-1) { %>
+									<a href="#" onClick="javascript:editText('<%= file.getInode() %>')"><b>(edit text)</b></a>
+									<% } %>
+									</font>
+									</td>
+								</tr>
+							<%}%>
+							 <input type="hidden" name="userId" value="<%= user.getUserId() %>">
+							 <% if(popup){ %>
+							 <input name="popup" type="hidden" value="1">
+							 <% }else{ %>
+							 <input name="referer" type="hidden" value="<%= referer %>">
+							 <% } %>
+							 <TR>
+								 <td><font class="gamma" size="2">Show on Menu:</font></td>
+								 <TD><html:checkbox styleClass="form-text" property="showOnMenu" /></TD>
+							 </TR>
+							<tr>
+								<td>
+								<font class="gamma" size="2">Sort Order:</font>
+								</td>
+								<td>
+								<html:text styleClass="form-text" property="sortOrder" size="3" />
+								</td>
+							</tr>
+						     <TR>
+								<TD colspan=2 align=center>
+
+								<button dojoType="dijit.form.Button" onClick="doUpload('')" id="saveButton">Save</button>
+								<button dojoType="dijit.form.Button" onClick="cancelEdit()">Cancel</button>
+								
+								<% if (canUserWriteTofolder) { %>
+								<button dojoType="dijit.form.Button"  onClick="doUpload('publish')" id="savePublishButton">Save and Publish</button>
+								<% } %>
+								<% if (InodeUtils.isSet(file.getInode()) && !popup) { %>
+									<button dojoType="dijit.form.Button" onClick="copyFile()">Copy</button>
+									<% if (file.getMimeType().indexOf("text")!=-1) { %>
+									<button dojoType="dijit.form.Button" onClick="editText('<%= file.getInode() %>')">Edit Text</button>	
+									<% } %>
+								<% } %>
+								 </TD>
+							 </TR>
+							 </html:form>
+						 </TABLE>
+					</div>
+					<!--<div id="messageDiv" style="visibility: hidden;show; position:relative; z-index: 100">-->
+					<div id="messageDiv" style="display: none;show; position:relative; z-index: 100">
+						<font class="gamma" size="2">
+						File Uploading  . . .<BR><B>Note:</B> This window will redirect you back when the file has been uploaded
+						</font>
+					</DIV>
+				</td>
+			</tr>
+		</table>
+	</body>
+</liferay:box>
+
+<script>
+document.getElementById("uploadedFile").focus();
+</script>

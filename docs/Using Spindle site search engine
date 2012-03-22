@@ -1,0 +1,81 @@
+HOWTO Enable Spindle Search
+
+1) Spindle will automatically create a separate search index for each virtual host on the server. To create a search index for a host, start the server and invoke the http://YOUR_HOST_NAME/dotBuildSearchServlet servlet, this servlet needs to be periodical triggered
+in order to keep the search index up to date.
+
+2) Setup the search result page,
+   3.1) Create a search result page in the CMS.
+   3.2) Include the example code that I've attached at the end of this page
+
+3) Test the new page, it accepts 'search_query' as a string parameter to execute the search.
+
+
+----- Search results page
+
+#set($result = $searchapi.doSearch($request))
+<!-- set(result = searchapi.doSearch()) -->
+#set($searchResults = $result.get('searchResults'))
+#set($start = $result.get('start'))
+#set($end = $result.get('end'))
+#set($page = $result.get('page'))
+#set($total = $result.get('total'))
+#set($resultTotal = $result.get('resultTotal'))
+#set($searchQuery = $result.get('searchQuery'))
+
+<table width="95%" border="0" cellspacing="0" cellpadding="3" align=center>
+	<tr><td colspan="2"><img src="/global/images/shim.gif" width="1" height="15"></td></tr>
+	<tr bgcolor="#D7E3DC">
+		<td colspan="2">Your search for "$!searchQuery" returned <span style="color:#FE7831"><strong>$resultTotal</strong></span> results. Showing $start to $end.</td>
+	</tr>
+	<tr><td colspan="2"><img src="/global/images/shim.gif" width="1" height="15"></td></tr>
+</table>
+<table width="80%" border="0" cellspacing="0" cellpadding="3" align=center>
+
+	#foreach( $searchResult in $searchResults )
+	#set ($score = $math.mul($math.toInteger(100),$searchResult.score))
+	#set ($score = $math.roundToInt($score))
+	<tr>
+		<td><a href="$searchResult.url"><strong>$searchResult.title</strong></a></td>
+		<td align="right" nowrap><span style="color:#FE7831"><strong>Score: $!score%</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+	</tr>
+	<tr>
+		<td colspan="2" class="content">
+			$searchResult.desc ...
+		</td>
+	</tr>
+	<tr><td colspan="2"><img src="/global/images/shim.gif" width="1" height="20"></td></tr>
+
+	#end
+
+	#set ($page = $math.toInteger($page))
+	#set ($total = $math.toInteger($total))
+
+	<tr>
+	    <td colspan="2" align=center>
+	        <table cellpadding="0" cellspacing="0">
+	            <tr>
+	                <td nowrap>                       
+	                    #if ($page > 0)
+	                        #set ($pageBack = $math.sub($page,$math.toInteger(1)))
+	                        #set ($pageBack = $math.roundToInt($pageBack))
+	                        <a href="?search_query=$searchQuery&page=$pageBack" class="readMore">&lt; Previous</a> 
+	                    #end
+	                </td>
+	                <td nowrap>                       
+	                    #if ($page < $total)
+	                        #set ($pageFwd = $math.add($math.toInteger(1),$page))
+	                        #set ($pageFwd = $math.roundToInt($pageFwd))
+	                        <a href="?search_query=$searchQuery&page=$pageFwd"  class="readMore">Next &gt;</a> 
+	                    #end
+	                </td>
+	            </tr>
+				<tr><td colspan="2"><img src="/global/images/shim.gif" width="1" height="15"></td></tr>
+	        </table>
+	    </td>
+	</tr>   
+
+</table>
+
+
+
+

@@ -1,0 +1,848 @@
+#set($dojoPath = $webapi.getConfigVar("path.to.dojo"))
+#if(!$UtilMethods.isSet($dojoPath))
+	#set($dojoPath = "/html/js/dojo/1.4.0")
+#end
+#if(!$UtilMethods.isSet($contentFormReferer))
+	#set($contentFormReferer = "${VTLSERVLET_URI}")
+#end
+
+<link rel="stylesheet" type="text/css" href="${dojoPath}/dijit/themes/dmundra/dmundra.css" media="screen">
+<link rel="stylesheet" type="text/css" href="${dojoPath}/dojox/grid/resources/Grid.css" media="screen">
+<link rel="stylesheet" type="text/css" href="${dojoPath}/dojox/grid/resources/tundraGrid.css" media="screen">
+<link rel="stylesheet" href="/html/css/content/forms.css" type="text/css" media="screen" />
+#if($UtilMethods.isSet($contentFormMacroCSS))
+	<link rel="stylesheet" href="$contentFormMacroCSS" type="text/css" media="screen" />
+#end
+
+<script type="text/javascript">
+djConfig={
+               parseOnLoad: true,
+               isDebug: false
+       };
+</script>
+<script type="text/javascript" src="${dojoPath}/dojo/dojo.js"></script>
+<script type="text/javascript" src="${dojoPath}/dojo/dot-dojo.js"></script>
+<script type="text/javascript" src="/html/js/content/content_form_macro.js"></script>
+<script type="text/javascript" src="/dwr/engine.js"></script>
+<script type="text/javascript" src="/dwr/util.js"></script>
+<script type="text/javascript" src="/dwr/interface/TagAjax.js"></script>
+<script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
+
+<script type="text/javascript">
+var theme = 'dmundra';
+	if(dojo.body()){
+		if(!dojo.hasClass(dojo.body(),theme)){
+	    	    dojo.addClass(dojo.body(),theme);
+		}
+	}
+
+	dojo.require("dojo.parser");
+	var DWRUtil = dwr.util;
+</script>
+
+#if(!$UtilMethods.isSet("$!errorMessagesPath"))
+	#set($errorMessagesPath = 'static/content/error_messages.vtl')
+#end
+#parse($errorMessagesPath)
+
+#set($structure = $structures.findStructure($structureName))
+#if(!$UtilMethods.isSet($structure) || !$UtilMethods.isSet($structure.getInode()))
+	#set($structure = $structures.findStructureByName($structureName))
+#end
+
+#set($fields = $structures.getFields($structure))
+#set($options= "")
+#set($lineDividerOpen = false)
+
+#set($structureRelationShips = $structures.getStructureRelationShips($structure))
+#if($UtilMethods.isSet($structureRelationShips) && $structureRelationShips.size() > 0)
+	#foreach($relationship in $structureRelationShips)
+
+		#set($temp = $render.eval($render.eval("\\$$relationship.getRelationTypeValue()")))
+
+	    #if(("$!relationship.getParentStructure().inode" == "$structure.inode" && $relationship.isChildRequired()) || ("$!relationship.getChildStructure().inode" == "$structure.inode" && $relationship.isParentRequired()))
+
+	    	#if($UtilMethods.isSet($temp) && $temp.indexOf("$relationship.getRelationTypeValue()") == -1)
+
+	    	    #if("$!relationship.getChildStructure().inode" == "$structure.inode" && "$!relationship.getCardinality()"=="0" && $temp.indexOf(',') != -1)
+	    	    	#set($options = "")
+	    	    	#set($relationShipsError = "$!{relationShipsError} $text.get('org.dotcms.frontend.content.submission.1.n.cardinality') ${relationship.getRelationTypeValue()} $text.get('org.dotcms.frontend.content.submission.not.allow.multiple.parents')")
+	    	    #else
+	    			#set($options = "${options}${relationship.getRelationTypeValue()}=${temp};")
+	    		#end
+	    	#else
+				#set($options = "")
+	    	    #set($relationShipsError = "$!{relationShipsError} $text.get('org.dotcms.frontend.content.submission.missing.relationship') ${relationship.getRelationTypeValue()}<br/>")
+	    	#end
+	    #else
+	    	#if($UtilMethods.isSet($temp) && $temp.indexOf("$relationship.getRelationTypeValue()") == -1)
+	    		#if("$!relationship.getChildStructure().inode" == "$structure.inode" && "$!relationship.getCardinality()"=="0" && $temp.indexOf(',') != -1)
+	    	    	#set($options = "")
+	    	    	#set($relationShipsError = "$!{relationShipsError} $text.get('org.dotcms.frontend.content.submission.1.n.cardinality') ${relationship.getRelationTypeValue()} $text.get('org.dotcms.frontend.content.submission.not.allow.multiple.parents')")
+	    	    #else
+	    			#set($options = "${options}${relationship.getRelationTypeValue()}=${temp};")
+	    		#end
+	    	#end
+	    #end
+	#end
+#end
+
+#if(!$UtilMethods.isSet($user) && $UtilMethods.isSet($cmsuser))
+	#set($user = $cmsuser.getLoggedInUser($request))
+#end
+
+#if(!$UtilMethods.isSet("$!structure") || !$UtilMethods.isSet($structure.inode))
+
+<div class="submitContent">
+	<div class="formTop">&nbsp;</div>
+	<div class="formBody">
+		$text.get('org.dotcms.frontend.content.submission.structure.dont.exists')
+	</div>
+</div>
+
+#elseif($UtilMethods.isSet("$!relationShipsError"))
+
+ <div class="submitContent">
+	<div class="formTop">&nbsp;</div>
+	<div class="formBody">
+		$relationShipsError
+	</div>
+</div>
+
+#elseif($structures.haveEditPermision($structure, null) || ($UtilMethods.isSet($user) && $structures.haveEditPermision($structure, $user)))
+
+	#if($UtilMethods.isSet($contentAutoPublish))
+		#set($options = "${options}contentAutoPublish=${contentAutoPublish};")
+	#end
+	#if($UtilMethods.isSet($contentUseCaptcha))
+		#set($options = "${options}contentUseCaptcha=${contentUseCaptcha};")
+	#else
+		#set($contentUseCaptcha =  false)
+	#end
+	#if($UtilMethods.isSet($contentUseAudioCaptcha))
+		#set($options = "${options}contentUseAudioCaptcha=${contentUseAudioCaptcha};")
+	#else
+		#set($contentUseAudioCaptcha =  false)
+	#end
+	#if($UtilMethods.isSet($contentModeration))
+		#set($options = "${options}contentModeration=${contentModeration};")
+	#end
+
+	#if($UtilMethods.isSet($showOnlyRequiredFields))
+		#set($options = "${options}showOnlyRequiredFields=${showOnlyRequiredFields};")
+	#else
+		#set($showOnlyRequiredFields = false)
+	#end
+
+
+    #set($isDontShowFields = true)
+    #set($dontShowFields = "$dontShowFields,numberOfVotes,averageRating,commentscount")
+	#set($options = "${options}dontShowFields=${dontShowFields};")
+
+
+################################################################################
+## Start Form
+################################################################################
+<div class="submitContent">
+	<form action="/dotCMS/submitContent" enctype="multipart/form-data" method="post" id="submitContentForm" name="submitContentForm">
+		<input type="hidden" name="dispatch" value="submitContent" />
+		<input type="hidden" name="options" value="$crypt.crypt($options)" />
+		<input type="hidden" name="structure" value="$structure.inode" />
+		<input type="hidden" id="referrer" name="referrer" value="$contentFormReferer" />
+		<input type="hidden" name="userId" value="$!user.userId" />
+		#if($UtilMethods.isSet($contentFormReturnPageOverride))
+			<input type="hidden" name="formReturnPageOverride" value="$contentFormReturnPageOverride" />
+		#end
+		#set($tabCount = 0)
+		#set($titleField =$structures.findFieldByVarName($structure, "formTitle"))
+		#set($firstField = $fields.get(0))
+		#set($firstTabId = "contentTab")
+		#set($firstFieldSetId = "contentFieldSet")
+		#if(${titleField.values} != '' )
+			#set($firstTabName = "${titleField.values}")
+			#set($submitTabName = "${titleField.values}")
+		#else
+			#set($firstTabName = "Start")
+			#set($submitTabName = "Start")
+		#end
+		#if($firstField.fieldType == 'tab_divider')
+			#set($_dummy = $fields.remove(0))
+			#set($firstTabId = "${firstField.velocityVarName}Tab")
+			#set($firstTabName = "${firstField.fieldName}")
+			#set($secondField = $fields.get(0))
+			#if($secondField.fieldType == 'line_divider')
+				#set($_dummy = $fields.remove(0))
+				#set($firstFieldSetId = "${secondField.velocityVarName}FieldSet")
+			#end
+		#elseif($firstField.fieldType == 'line_divider'))
+			#set($_dummy = $fields.remove(0))
+			#set($firstFieldSetId = "${firstField.velocityVarName}FieldSet")
+		#end
+
+		########################################
+		## do we have tabs?
+		########################################
+		#set($_submitContentHasTabs = false)
+	    #set($numberOfTabs = 0)
+	    #foreach($field in $fields)
+			#if($field.fieldType == 'tab_divider' && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+		    #set($_submitContentHasTabs = true)
+		    #set($numberOfTabs = ($numberOfTabs+1))
+		   #end
+	    #end
+
+		#if($_submitContentHasTabs)
+			<div class="tabSet">
+				<ul>
+					<li id="${firstTabId}Tab" class="alpha">${firstTabName}</li>
+				    <script language="javascript">
+				        var index=0;
+				        tabsList[index] = "${firstTabId}";
+				        tabsRequiredList["${firstTabId}"]=0;
+				        index++;
+				    </script>
+
+				    #foreach($field in $fields)
+						#if($field.fieldType == 'tab_divider' && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+						#set($numberOfTabs = $numberOfTabs - 1)
+						#set($className = '')
+							#if($numberOfTabs == 0)
+								<script language="javascript">
+									lastTabId = "${field.velocityVarName}TabTab";
+								</script>
+								#set($className = ' last')
+							#end
+							<li id="${field.velocityVarName}TabTab" class="beta${className}">${field.fieldName}</li>
+				    		<script language="javascript">
+							        tabsList[index] = "${field.velocityVarName}Tab";
+							        tabsRequiredList["${field.velocityVarName}Tab"]=0;
+							        index++;
+							</script>
+						#end
+			    	#end
+		    	</ul>
+		    </div><!-- end .tabSet -->
+		    <div style="clear:both"></div>
+	    #end
+
+
+
+	    <div id="$firstTabId" class="contentTab first">
+	        #set($currentTab = $firstTabId)
+	    	<div id="${firstTabId}Properties">
+	    	<dl class="formFieldSet">
+			<script src="/html/js/tinymce/jscripts/tiny_mce/tiny_mce.js" type="text/javascript"></script>
+		    <script type="text/javascript">
+				tinyMCE.init({
+		       			mode : "none",
+		       			theme : "advanced",
+		       			 theme_advanced_blockformats : "p,h1,h2,h3,code",
+		       			theme_advanced_toolbar_align : "left",
+				        theme_advanced_buttons1 : "bold,italic,underline,undo,redo,bullist,numlist,link,separator,formatselect",
+				        theme_advanced_buttons2 : "",
+				        theme_advanced_buttons3 : ""
+		       		});
+
+		       	function enableWYSIWYG(textAreaId){
+		    		try {
+		    			tinyMCE.execCommand('mceAddControl', false, textAreaId);
+		    		}catch(e){
+		    			alert(e.message);
+		    		}
+		    		enabledWYSIWYG[textAreaId] = true;
+		      	}
+		    </script>
+	        #foreach($field in $fields)
+
+				#if($field.fieldType == 'tab_divider' && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+
+
+							</dl>
+						</div>
+
+				</div>
+				<div id="tabButton$tabCount" class="submitButton" #if($tabCount > 0) style="display:none" #end >
+				   #if($tabCount > 0)
+				    <button dojoType="dijit.form.Button" onclick="showPreviousTab(); return false;" >$text.get('org.dotcms.frontend.content.submission.previous')</button>
+				   #end
+					<button dojoType="dijit.form.Button" onclick="showNextTab(); return false;" >$text.get('org.dotcms.frontend.content.submission.next')</button>
+			    </div>
+			    #set($tabCount = $math.add($tabCount ,1))
+			    #set($submitTabName = "${field.velocityVarName}Tab")
+			    #set($currentTab = "${field.velocityVarName}Tab")
+
+				<div id="${field.velocityVarName}Tab" class="contentTab" style="display:none;">
+	    				<div id="${field.velocityVarName}TabProperties" >
+	    					<dl class="formFieldSet">
+				#elseif($field.fieldType == 'line_divider' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+					</dl>
+					<dl class="formFieldSet" id="${field.velocityVarName}FieldSet">
+						<div class="group">
+		    				<div class="formDivider">${field.fieldName}</div>
+	    				</div><!-- end .group -->
+
+				#elseif($field.fieldType == 'categories_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+						#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
+	            	    #else
+	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
+	            	    #end
+						#set($fieldAux = $field)
+						#parse('/static/content/category_tab_field_render.vtl')
+
+				#elseif($field.fieldType == 'permissions_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+
+
+
+				#elseif($field.fieldType == 'relationships_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+
+
+
+				#elseif(!$structures.isFieldConstant($field) && $field.fieldName != 'Form Host')
+					#set($fieldAux = $field)
+				    <div class="group">
+				    <dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
+	    			#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+	    				<label for="${field.velocityVarName}FieldLabel">#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
+	    			#end
+	    			</dt>
+	    			#set($velocityVarName = "default${field.velocityVarName.substring(0,1).toUpperCase()}${field.velocityVarName.substring(1)}")
+	    			#set($tempVelocityVar = $render.eval($render.eval("\\$$velocityVarName")))
+
+					<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
+	            	#if($field.fieldType == 'text' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
+	            	    #end
+	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/text_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'textarea' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
+	            	    #end
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/textarea_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'wysiwyg' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $!field.defaultValue )
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/wysiwyg_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'tag' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $!field.defaultValue )
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/tag_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'checkbox' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $!field.defaultValue.split('\|'))
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/checkbox_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'radio' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $!field.defaultValue )
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/radio_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'select' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue=$request.getParameter("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue=$tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue=$!field.defaultValue)
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/select_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'multi_select' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $request.getParameterValues("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar))
+	            	    	#set($fieldDefaultValue = $tempVelocityVar )
+	            	    #else
+	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/multiselect_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'date' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/date_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'time' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("${field.velocityVarName}")))
+	            		    #set($temp_currentDate = $UtilMethods.dateToHTMLDate($UtilMethods.getCurrentDate(),'M/d/yyyy'))
+	            		    #set($temp_currentDateTime = $request.getParameter("${field.velocityVarName}"))
+	            	    	#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/time_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'date_time' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            		    #set($temp_currentDate = $date.toDate('yyyy-MM-dd',$request.getParameter("${field.velocityVarName}Date")))
+	            		    #set($temp_currentDate = $UtilMethods.dateToHTMLDate($temp_currentDate,'M/d/yyyy'))
+	            		    #set($temp_currentDateTime = $request.getParameter("${field.velocityVarName}Time"))
+	            	    	#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/datetime_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'file' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = "")
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/file_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'image' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = "")
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/image_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'binary' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = "")
+	            	    #end
+
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/binary_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+
+	            	#elseif($field.fieldType == 'custom_field' && !($showOnlyRequiredFields && !$field.isRequired()) )
+
+	            		#if($field.fieldContentlet.contains("text") || $field.fieldContentlet.contains("float") || $field.fieldContentlet.contains("int") )
+		            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+		            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+		            	    	#set($fieldDefaultValue = $tempVelocityVar)
+		            	    #else
+		            	    	#set($fieldDefaultValue = $!field.defaultValue)
+		            	    #end
+		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            				#parse('/static/content/hidden_field_render.vtl')
+	            		    #else
+	            				#parse('/static/content/text_field_render.vtl')
+	            				<script language="javascript">
+					        		updateTabCounter("$currentTab");
+					        	</script>
+	            			#end
+
+	       	           #elseif ($field.fieldContentlet.contains("date"))
+		            	   #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+		            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
+		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+		            	    	#set($fieldDefaultValue = $tempVelocityVar)
+		            	    #else
+		            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
+		            	    #end
+		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            				#parse('/static/content/hidden_field_render.vtl')
+	            		    #else
+	            				#parse('/static/content/date_field_render.vtl')
+	            				<script language="javascript">
+					        		updateTabCounter("$currentTab");
+					        	</script>
+	            			#end
+
+	            	   #elseif ($field.fieldContentlet.contains("bool"))
+			            	#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+		            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
+		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+		            	    	#set($fieldDefaultValue = $tempVelocityVar)
+		            	    #else
+		            	    	#set($fieldDefaultValue = $!field.defaultValue.split('\|'))
+		            	    #end
+
+		            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+		            			#parse('/static/content/hidden_field_render.vtl')
+		            		#else
+		            			#parse('/static/content/checkbox_field_render.vtl')
+		            			<script language="javascript">
+						        	updateTabCounter("$currentTab");
+						        </script>
+		            		#end
+
+	            	    #end
+
+	            	#elseif($field.fieldType == 'category' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#if($UtilMethods.isSet($request.getParameter("categoryNames")))
+	            	    	#set($fieldDefaultValue = $request.getParameterValues("categories"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = [])
+	            	    #end
+
+	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/category_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
+					#end
+	    			</dd>
+	    			</div><!-- end .group -->
+
+				#end
+			#end
+
+			#if($contentUseCaptcha)
+				<div class="group">
+				    <dt class="formFieldLabel">
+		    			<label for="captchaformFieldLabel">$text.get('org.dotcms.frontend.content.submission.captcha')</label>
+		    		</dt>
+		    		<dd class="formFieldInput">
+		    			<div id="captcha-image">
+			    			<img src="/Captcha.jpg?$math.getRandom()"  width='200' height='50' alt="Captcha" title="Captcha Image"/>
+			    		</div>
+							<div id="captcha-tools">
+								<div id="captcha-reset" title="reset captcha" onclick='javascript:resetCaptcha();'><a title="reset captcha" href="javascript:resetCaptcha();"></a></div>
+								<div id="captcha-audio-play" title="listen to captcha" class='audio-play' onclick='javascript:playAudioCaptcha();'><a title="listen to captcha" href="javascript:playAudioCaptcha();"></a></div>
+
+								<div class='clear'>&nbsp;</div>
+
+							</div>
+
+			    		<div id="captcha-audio" style="width:0px;height:0px;"></div>
+
+			        </dd>
+		         </div>
+		         <div class="group">
+				    <dt class="formFieldLabel">
+		    			<label for="captcha"><img src="/html/images/icons/required.gif"/> $text.get('org.dotcms.frontend.content.submission.captcha.validation.image')</label>
+		    		</dt>
+		    		<dd class="formFieldInput">
+			        	<input id="captcha" name="captcha"  dojoType="dijit.form.TextBox" maxlength="20" type="text" ><span id="alertcaptcha" class="errorMessages"></span>
+			        </dd>
+		        </div>
+		    #end
+
+
+
+					</dl>
+				</div>
+
+		</div>
+
+
+		<div id="tabButton$tabCount" ></div>
+		<div id="submitButton" class="submitButton" #if($tabCount > 0) style="display:none" #end>
+		   #if($tabCount > 0)
+		    <button dojoType="dijit.form.Button" onclick="showPreviousTab();" >$text.get('org.dotcms.frontend.content.submission.previous')</button>
+		   #end
+		   <button dojoType="dijit.form.Button" onclick="submitContent('$submitTabName');">$text.get('org.dotcms.frontend.content.submission.save')</button>
+	    </div>
+	</form>
+	<div style="clear:both"></div>
+</div>
+#elseif($UtilMethods.isSet($user) && !$structures.haveEditPermision($structure, $user))
+
+  <div class="submitContent">
+		<div class="formTop">&nbsp;</div>
+		<div class="formBody">
+			$text.get('org.dotcms.frontend.content.submission.not.proper.permissions')
+		</div>
+		<div style="clear:both"></div>
+	</div>
+
+#else
+
+	<div class="submitContent">
+		<div class="formTop">&nbsp;</div>
+		<div class="formBody">
+			$text.get('org.dotcms.frontend.content.submission.login.message1') <a href="/dotCMS/login">$text.get('org.dotcms.frontend.content.submission.login.message2')</a> $text.get('org.dotcms.frontend.content.submission.login.message3') ${structure.name}.
+			$session.setAttribute("REDIRECT_AFTER_LOGIN","${VTLSERVLET_URI}?$!{request.getQueryString()}")
+		</div>
+		<div style="clear:both"></div>
+	</div>
+
+#end
+
+<script language="javascript">
+
+	function checkTabFields(tab){
+
+
+	if("$firstTabId"==tab) {
+
+	    #foreach($field in $fields)
+
+    	    #if($field.fieldType == 'tab_divider' && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+			    }else if("${field.velocityVarName}Tab"==tab) {
+			#else
+
+				#if($field.isRequired())
+
+					#if("$field.getFieldType().toUpperCase()"=="TEXT")
+				    	#if($field.getFieldContentlet().indexOf('integer') != -1 || $field.getFieldContentlet().indexOf('float') != -1)
+				    		if(!numberValid(document.getElementById("$field.velocityVarName"), "$field.fieldName")){
+								return false;
+							}
+				    	#else
+				    		requiredLength = (document.getElementById("$field.velocityVarName").getAttribute("requiredLength")!= undefined) ? document.getElementById("$field.velocityVarName").getAttribute("requiredLength") : 1;
+			            	if(!lengthValid(document.getElementById("$field.velocityVarName"), requiredLength, "$field.fieldName")){
+			                	return false;
+			            	}
+			         	#end
+					#end
+
+					#if("$field.getFieldType().toUpperCase()"=="CATEGORY")
+						if(!categoryValid("$field.velocityVarName", "$field.fieldName")){
+			               	return false;
+			            }
+			        #end
+
+					#if("$field.getFieldType().toUpperCase()"=="RADIO")
+						radios = eval("document.submitContentForm.${field.velocityVarName}");
+			       		radiosLength = radios.length;
+			       		if(!radioValid(radios,radiosLength,"$field.fieldName")){
+			       			return false;
+			       		}
+					#end
+
+					#if("$field.getFieldType().toUpperCase()"=="CHECKBOX")
+
+						checkboxes = eval("document.submitContentForm.${field.velocityVarName}");
+					 	requiredNumber = (checkboxes[0].getAttribute("requiredNumber")!= undefined) ? checkboxes[0].getAttribute("requiredNumber") : 1;
+			        	prettyText = "$field.fieldName";
+			       		checkboxesLength = checkboxes.length;
+			       		if(!checkboxValid(checkboxes,checkboxesLength,requiredNumber,prettyText)){
+			       			return false;
+			       		}
+					#end
+
+					#if("$field.getFieldType().toUpperCase()"=="WYSIWYG" || "$field.getFieldType().toUpperCase()"=="TEXTAREA")
+						if(isWYSIWYGEnabled("$field.velocityVarName")){
+				    		tinyMCE.triggerSave(false,false);
+				    	}
+
+						requiredLength = (document.getElementById("$field.velocityVarName").getAttribute("requiredLength")!= undefined) ? document.getElementById("$field.velocityVarName").getAttribute("requiredLength") : 1;
+						if(!lengthValidText(document.getElementById("$field.velocityVarName"), requiredLength , "$field.fieldName")){
+							return false;
+						}
+					#end
+					#if("$field.getFieldType().toUpperCase()"=="TAG")
+						requiredLength = (document.getElementById("tags").getAttribute("requiredLength")!= undefined) ? document.getElementById("$field.velocityVarName").getAttribute("requiredLength") : 1;
+						if(!lengthValidText(document.getElementById("tags"), requiredLength , "$field.fieldName")){
+							return false;
+						}
+					#end
+					#if("$field.getFieldType().toUpperCase()"=="CATEGORY_TAB" || "$field.getFieldType().toUpperCase()"=="SELECT" || "$field.getFieldType().toUpperCase()"=="MULTI_SELECT")
+						if(!selectValid(dijit.byId("${field.velocityVarName}"), "$field.fieldName")){
+			        		return false;
+			        	}
+					#end
+
+					#if("$field.getFieldType().toUpperCase()"=="FILE" || "$field.getFieldType().toUpperCase()"=="IMAGE")
+						if(!fileValid(document.getElementById("$field.velocityVarName"),"$field.fieldName")){
+							return false
+						}
+					#end
+				#end
+
+
+				#if($UtilMethods.isSet($field.getRegexCheck()))
+					if("$!field.getRegexCheck()" != ""){
+
+			       		if(!validateRegularExpresion(document.getElementById("$field.velocityVarName"), "$regExp", "$field.fieldName")){
+							return false;
+						}
+			    	}
+				#end
+			#end
+    	#end
+
+    	#if($contentUseCaptcha || $contentUseAudioCaptcha)
+	    	if(!lengthValid(document.getElementById("captcha"), 1, "captcha")){
+				return false;
+			}
+	    #end
+    }
+
+
+    return true;
+}
+
+	function playAudioCaptcha(){
+		document.getElementById('captcha-audio-play').setAttribute("class","captcha-audio-playing");
+		var rand=Math.floor(Math.random()*999999999);
+		document.getElementById('captcha-audio').innerHTML = '<embed hidden="false" src="/audioCaptcha.wav?r=' + rand +'" id="captcha-sound" controller="false" width="0" height="0" autoplay="true" autostart="true" type="audio/wav" />';
+
+		setTimeout(function(){
+			document.getElementById('captcha-audio-play').setAttribute("class","captcha-audio-play");
+		},8000);
+
+	}
+
+
+	function resetCaptcha(){
+		var rand=Math.floor(Math.random()*999999999)
+		document.getElementById('captcha-image').innerHTML = "<img width='200' height='50'  src='/Captcha.jpg?r=" + rand + "'>";
+	}
+
+
+
+updateTabList();
+
+
+
+
+
+
+
+
+
+</script>

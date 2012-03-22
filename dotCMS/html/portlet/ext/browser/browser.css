@@ -1,0 +1,50 @@
+.browserTable{font-size:85%;width:100%;margin-bottom:20px;}
+.browserTable th{font-weight:bold;padding:7px 8px;}
+.browserTable td{padding:6px 10px;border-top: 1px dotted silver;cursor: hand;white-space: nowrap;}
+.browserTable td a{text-decoration: none; color: black;}
+
+.contentRowSelected {background: #E0E9F6;}
+.contentRowRoller {background: #E0E9F6;}
+.contentRowNotShowOnMenu {background: #EFEFEF;}
+
+.assetRef {width: 100%; display: block;}
+
+.nameTD{width: 30%;}
+.menuTD{width: 5%;text-align: center;}
+.statusTD{width: 8%;text-align: center;}
+.descriptionTD{width: 30%;}
+.modUserTD{width: 10%;}
+.modDateTD{width: 17%;}
+.nameTD img, .nameTD span {vertical-align: middle;}
+
+/* if scolling, add these.. */
+	#assetListHead{_padding-right: 0;}
+/* end if scrolling */
+
+ul, li {list-style: none;padding: 0;margin: 0;}
+#TreeUL{font-size:85%;color: black;}
+#TreeUL li li {padding: 10px 0 0 20px;}
+#TreeUL img {border: 0;vertical-align: middle;}
+#TreeUL a {cursor: pointer;color: black;}
+#TreeUL span {cursor: hand;}
+.folderSelected {font-weight: bold;}
+.nameChangeText {font-size:85%;}
+	
+/*Context menues */
+.contextPopupMenuBox{
+		position: absolute;width:140px;padding:0;margin:0;
+		background: #fff;
+		background-color: #fff;
+		background-image:none;
+		border: 1px solid #D1D1D1;
+		font-size:85%;
+		-moz-box-shadow:0px 0px 5px #ccc;-webkit-box-shadow:0px 0px 5px #ccc;
+	}
+
+a.contextPopupMenu{display: block;background-color:#fff;padding: 5px 0;width: 100%;color:black;text-decoration: none;cursor: hand;}
+a.contextPopupMenu:hover{background-color: #C1D9EE;}
+a.contextPopupMenu img{margin: 0px 10px 0px 10px;}
+
+div.contextMenuHover {margin-left: 3px;}
+.pop_divider{border-bottom:1px dotted silver;background-color: #fff;}
+#newArrowHack {float: right;width: 16;height: 16;margin-right: 10px;background: url(/html/images/icons/arrow-000-medium.png);cursor: pointer;}

@@ -1,0 +1,582 @@
+<xml>
+     <object_0>
+          <html>&lt;form id="new_form_1208193501310" name="new_form_1208193501310" method="post" action="/dotCMS/sendEmail" onsubmit="return checkForm();"&gt;
+     &lt;table align="center"&gt;</html>
+          <key>0</key>
+          <name>Form</name>
+          <type>form</type>
+          <properties>
+          </properties>
+          <edit_permissions>false</edit_permissions>
+     </object_0>
+     <object_1>
+          <html>          &lt;input type="hidden" name="order" id="order" value="title,firstName,middleInitial,lastName,address1,address2,city,state,zip,phone,email,add_to_mailing_list,favorite_sport,favorite_color,activities_interest,gettysburg_experience"&gt;
+          &lt;tr&gt;
+               &lt;td colspan="2" align="center"&gt;(&lt;font color="#FF0000"&gt;*&lt;/font&gt;) denotes required information.&lt;br&gt;&lt;br&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>1</key>
+          <name>Order</name>
+          <type>hidden</type>
+          <properties>
+          </properties>
+          <edit_permissions>false</edit_permissions>
+     </object_1>
+     <object_2>
+          <html>          &lt;input type="hidden" name="formType" id="formType" value="gettysburg_alumni_survey_apr_2008"&gt;</html>
+          <key>2</key>
+          <name>Database Category Settings</name>
+          <type>hidden</type>
+          <properties>
+               <properties_0>gettysburg_alumni_survey_apr_2008</properties_0>
+          </properties>
+          <edit_permissions>false</edit_permissions>
+     </object_2>
+     <object_3>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;b&gt;Personal Information:&lt;/b&gt;&lt;/td&gt;
+               &lt;td align="left"&gt;&nbsp;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>3</key>
+          <name>Personal Information:</name>
+          <type>header</type>
+          <properties>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_3>
+     <object_4>
+          <html></html>
+          <key>4</key>
+          <name></name>
+          <type>hidden</type>
+          <properties>
+          </properties>
+          <edit_permissions>false</edit_permissions>
+     </object_4>
+     <object_5>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;Title:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="title" name="title" title="Type your title here. Examples: President, Vice President, CEO, CFO, Programmer"&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>5</key>
+          <name>title</name>
+          <type>text</type>
+          <properties>
+               <properties_0>Title:</properties_0>
+               <properties_1>title</properties_1>
+               <properties_2>false</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Title</properties_5>
+               <properties_6>Type your title here. Examples: President, Vice President, CEO, CFO, Programmer</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_5>
+     <object_6>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;font color="#FF0000"&gt;*&lt;/font&gt;&nbsp;First Name:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="firstName" name="firstName" required="text" pretty="First Name" title="Type your first name here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>6</key>
+          <name>firstName</name>
+          <type>text</type>
+          <properties>
+               <properties_0>First Name:</properties_0>
+               <properties_1>firstName</properties_1>
+               <properties_2>true</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>First Name</properties_5>
+               <properties_6>Type your first name here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_6>
+     <object_7>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;Middle Initial:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="middleInitial" name="middleInitial" title="Type your middle initial here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>7</key>
+          <name>middleInitial</name>
+          <type>text</type>
+          <properties>
+               <properties_0>Middle Initial:</properties_0>
+               <properties_1>middleInitial</properties_1>
+               <properties_2>false</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Middle Initial</properties_5>
+               <properties_6>Type your middle initial here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_7>
+     <object_8>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;font color="#FF0000"&gt;*&lt;/font&gt;&nbsp;Last Name:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="lastName" name="lastName" required="text" pretty="Last Name" title="Type your last name here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>8</key>
+          <name>lastName</name>
+          <type>text</type>
+          <properties>
+               <properties_0>Last Name:</properties_0>
+               <properties_1>lastName</properties_1>
+               <properties_2>true</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Last Name</properties_5>
+               <properties_6>Type your last name here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_8>
+     <object_9>
+          <html>          &lt;tr&gt;
+               &lt;td colspan="2" align="left"&gt;&nbsp;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>9</key>
+          <name>Spacer</name>
+          <type>spacer</type>
+          <properties>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_9>
+     <object_10>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;b&gt;Contact Information:&lt;/b&gt;&lt;/td&gt;
+               &lt;td align="left"&gt;&nbsp;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>10</key>
+          <name>Contact Information:</name>
+          <type>header</type>
+          <properties>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_10>
+     <object_11>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;font color="#FF0000"&gt;*&lt;/font&gt;&nbsp;Address:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="address1" name="address1" required="text" pretty="Address" title="Type the first line of your address here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>11</key>
+          <name>address1</name>
+          <type>text</type>
+          <properties>
+               <properties_0>Address:</properties_0>
+               <properties_1>address1</properties_1>
+               <properties_2>true</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Address</properties_5>
+               <properties_6>Type the first line of your address here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_11>
+     <object_12>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt; &lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="address2" name="address2" title="Type the second line of your address here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>12</key>
+          <name>address2</name>
+          <type>text</type>
+          <properties>
+               <properties_0> </properties_0>
+               <properties_1>address2</properties_1>
+               <properties_2>false</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Address</properties_5>
+               <properties_6>Type the second line of your address here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_12>
+     <object_13>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;font color="#FF0000"&gt;*&lt;/font&gt;&nbsp;City:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="city" name="city" required="text" pretty="City" title="Type your city here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>13</key>
+          <name>city</name>
+          <type>text</type>
+          <properties>
+               <properties_0>City:</properties_0>
+               <properties_1>city</properties_1>
+               <properties_2>true</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>City</properties_5>
+               <properties_6>Type your city here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_13>
+     <object_14>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;font color="#FF0000"&gt;*&lt;/font&gt;&nbsp;State:&lt;/td&gt;
+               &lt;td align="left"&gt;
+                    &lt;select id="state" name="state" required="select" pretty="State" title="Select your state."&gt;
+                         &lt;option value=""&gt;&lt;/option&gt;
+                         &lt;option value="Alabama"&gt;Alabama&lt;/option&gt;
+                         &lt;option value="Alaska"&gt;Alaska&lt;/option&gt;
+                         &lt;option value="Arizona"&gt;Arizona&lt;/option&gt;
+                         &lt;option value="Arkansas"&gt;Arkansas&lt;/option&gt;
+                         &lt;option value="California"&gt;California&lt;/option&gt;
+                         &lt;option value="Colorado"&gt;Colorado&lt;/option&gt;
+                         &lt;option value="Connecticut"&gt;Connecticut&lt;/option&gt;
+                         &lt;option value="Delaware"&gt;Delaware&lt;/option&gt;
+                         &lt;option value="Florida"&gt;Florida&lt;/option&gt;
+                         &lt;option value="Georgia"&gt;Georgia&lt;/option&gt;
+                         &lt;option value="Hawaii"&gt;Hawaii&lt;/option&gt;
+                         &lt;option value="Idaho"&gt;Idaho&lt;/option&gt;
+                         &lt;option value="Illinois"&gt;Illinois&lt;/option&gt;
+                         &lt;option value="Indiana"&gt;Indiana&lt;/option&gt;
+                         &lt;option value="Iowa"&gt;Iowa&lt;/option&gt;
+                         &lt;option value="Kansas"&gt;Kansas&lt;/option&gt;
+                         &lt;option value="Kentucky"&gt;Kentucky&lt;/option&gt;
+                         &lt;option value="Louisiana"&gt;Louisiana&lt;/option&gt;
+                         &lt;option value="Maine"&gt;Maine&lt;/option&gt;
+                         &lt;option value="Maryland"&gt;Maryland&lt;/option&gt;
+                         &lt;option value="Massachusetts"&gt;Massachusetts&lt;/option&gt;
+                         &lt;option value="Michigan"&gt;Michigan&lt;/option&gt;
+                         &lt;option value="Minnesota"&gt;Minnesota&lt;/option&gt;
+                         &lt;option value="Mississippi"&gt;Mississippi&lt;/option&gt;
+                         &lt;option value="Missouri"&gt;Missouri&lt;/option&gt;
+                         &lt;option value="Montana"&gt;Montana&lt;/option&gt;
+                         &lt;option value="Nebraska"&gt;Nebraska&lt;/option&gt;
+                         &lt;option value="Nevada"&gt;Nevada&lt;/option&gt;
+                         &lt;option value="New Hampshire"&gt;New Hampshire&lt;/option&gt;
+                         &lt;option value="New Jersey"&gt;New Jersey&lt;/option&gt;
+                         &lt;option value="New Mexico"&gt;New Mexico&lt;/option&gt;
+                         &lt;option value="New York"&gt;New York&lt;/option&gt;
+                         &lt;option value="North Carolina"&gt;North Carolina&lt;/option&gt;
+                         &lt;option value="North Dakota"&gt;North Dakota&lt;/option&gt;
+                         &lt;option value="Ohio"&gt;Ohio&lt;/option&gt;
+                         &lt;option value="Oklahoma"&gt;Oklahoma&lt;/option&gt;
+                         &lt;option value="Oregon"&gt;Oregon&lt;/option&gt;
+                         &lt;option value="Pennsylvania"&gt;Pennsylvania&lt;/option&gt;
+                         &lt;option value="Rhode Island"&gt;Rhode Island&lt;/option&gt;
+                         &lt;option value="South Carolina"&gt;South Carolina&lt;/option&gt;
+                         &lt;option value="South Dakota"&gt;South Dakota&lt;/option&gt;
+                         &lt;option value="Tennessee"&gt;Tennessee&lt;/option&gt;
+                         &lt;option value="Texas"&gt;Texas&lt;/option&gt;
+                         &lt;option value="Utah"&gt;Utah&lt;/option&gt;
+                         &lt;option value="Vermont"&gt;Vermont&lt;/option&gt;
+                         &lt;option value="Virginia"&gt;Virginia&lt;/option&gt;
+                         &lt;option value="Washington"&gt;Washington&lt;/option&gt;
+                         &lt;option value="West Virginia"&gt;West Virginia&lt;/option&gt;
+                         &lt;option value="Wisconsin"&gt;Wisconsin&lt;/option&gt;
+                         &lt;option value="Wyoming"&gt;Wyoming&lt;/option&gt;
+                    &lt;/select&gt;
+               &lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>14</key>
+          <name>state</name>
+          <type>select</type>
+          <properties>
+               <properties_0>State:</properties_0>
+               <properties_1>state</properties_1>
+               <properties_2>true</properties_2>
+               <properties_3>Alabama,Alaska,Arizona,Arkansas,California,Colorado,Connecticut,Delaware,Florida,Georgia,Hawaii,Idaho,Illinois,Indiana,Iowa,Kansas,Kentucky,Louisiana,Maine,Maryland,Massachusetts,Michigan,Minnesota,Mississippi,Missouri,Montana,Nebraska,Nevada,New Hampshire,New Jersey,New Mexico,New York,North Carolina,North Dakota,Ohio,Oklahoma,Oregon,Pennsylvania,Rhode Island,South Carolina,South Dakota,Tennessee,Texas,Utah,Vermont,Virginia,Washington,West Virginia,Wisconsin,Wyoming</properties_3>
+               <properties_4>State</properties_4>
+               <properties_5>Select your state.</properties_5>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_14>
+     <object_15>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;font color="#FF0000"&gt;*&lt;/font&gt;&nbsp;Zip:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="zip" name="zip" required="text" pretty="Zip" title="Type your postal code here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>15</key>
+          <name>zip</name>
+          <type>text</type>
+          <properties>
+               <properties_0>Zip:</properties_0>
+               <properties_1>zip</properties_1>
+               <properties_2>true</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Zip</properties_5>
+               <properties_6>Type your postal code here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_15>
+     <object_16>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;font color="#FF0000"&gt;*&lt;/font&gt;&nbsp;Phone:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="phone" name="phone" required="text" pretty="Phone" title="Type your phone number here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>16</key>
+          <name>phone</name>
+          <type>text</type>
+          <properties>
+               <properties_0>Phone:</properties_0>
+               <properties_1>phone</properties_1>
+               <properties_2>true</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Phone</properties_5>
+               <properties_6>Type your phone number here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_16>
+     <object_17>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;font color="#FF0000"&gt;*&lt;/font&gt;&nbsp;Email:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="text" id="email" name="email" required="email" pretty="Email" title="Type your email address here."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>17</key>
+          <name>email</name>
+          <type>text</type>
+          <properties>
+               <properties_0>Email:</properties_0>
+               <properties_1>email</properties_1>
+               <properties_2>true</properties_2>
+               <properties_3>email</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Email</properties_5>
+               <properties_6>Type your email address here.</properties_6>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_17>
+     <object_18>
+          <html>          &lt;tr&gt;
+               &lt;td colspan="2" align="left"&gt;&nbsp;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>18</key>
+          <name>Spacer</name>
+          <type>spacer</type>
+          <properties>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_18>
+     <object_19>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;&lt;b&gt;Survey Information:&lt;/b&gt;&lt;/td&gt;
+               &lt;td align="left"&gt;&nbsp;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>19</key>
+          <name>Survey Information:</name>
+          <type>header</type>
+          <properties>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_19>
+     <object_20>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;Check this box to be added to our mailing list:&lt;/td&gt;
+               &lt;td align="left"&gt;&lt;input type="checkbox" id="add_to_mailing_list" name="add_to_mailing_list" title="Click here to check."&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>20</key>
+          <name>add_to_mailing_list</name>
+          <type>checkbox</type>
+          <properties>
+               <properties_0>Check this box to be added to our mailing list:</properties_0>
+               <properties_1>add_to_mailing_list</properties_1>
+               <properties_2>Click here to check.</properties_2>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_20>
+     <object_21>
+          <html>          &lt;tr&gt;
+               &lt;td align="right"&gt;Favorite Sport:&lt;/td&gt;
+               &lt;td align="left"&gt;
+                    &lt;select id="favorite_sport" name="favorite_sport" title="Click to Select."&gt;
+                         &lt;option value=""&gt;&lt;/option&gt;
+                         &lt;option value="Football"&gt;Football&lt;/option&gt;
+                         &lt;option value="Baseball"&gt;Baseball&lt;/option&gt;
+                         &lt;option value="Softball"&gt;Softball&lt;/option&gt;
+                         &lt;option value="Soccer"&gt;Soccer&lt;/option&gt;
+                         &lt;option value="Field Hockey"&gt;Field Hockey&lt;/option&gt;
+                         &lt;option value="Basketball"&gt;Basketball&lt;/option&gt;
+                    &lt;/select&gt;
+               &lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>21</key>
+          <name>favorite_sport</name>
+          <type>select</type>
+          <properties>
+               <properties_0>Favorite Sport:</properties_0>
+               <properties_1>favorite_sport</properties_1>
+               <properties_2>false</properties_2>
+               <properties_3>,Football,Baseball,Softball,Soccer,Field Hockey,Basketball</properties_3>
+               <properties_4></properties_4>
+               <properties_5>Click to Select.</properties_5>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_21>
+     <object_22>
+          <html>          &lt;tr&gt;
+               &lt;td colspan="2" align="left"&gt;Choose your favorite color:&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+               &lt;td colspan="2" align="center"&gt;
+                    &lt;input type="radio" id="favorite_color" name="favorite_color" value="Red"  title="Click to select."&gt;Red
+                    &lt;input type="radio" id="favorite_color" name="favorite_color" value="Blue" title="Click to select."&gt;Blue
+                    &lt;input type="radio" id="favorite_color" name="favorite_color" value="Green" title="Click to select."&gt;Green
+                    &lt;br&gt;
+                    &lt;input type="radio" id="favorite_color" name="favorite_color" value="Orange" title="Click to select."&gt;Orange
+                    &lt;input type="radio" id="favorite_color" name="favorite_color" value="Purple" title="Click to select."&gt;Purple
+               &lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>22</key>
+          <name>favorite_color</name>
+          <type>radio_group</type>
+          <properties>
+               <properties_0>radio</properties_0>
+               <properties_1>3</properties_1>
+               <properties_2>Choose your favorite color:</properties_2>
+               <properties_3>favorite_color</properties_3>
+               <properties_4>false</properties_4>
+               <properties_5>Red,Blue,Green,Orange,Purple</properties_5>
+               <properties_6>1</properties_6>
+               <properties_7></properties_7>
+               <properties_8>Click to select.</properties_8>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_22>
+     <object_23>
+          <html>          &lt;tr&gt;
+               &lt;td colspan="2" align="left"&gt;Check any activities you are interested in:&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+               &lt;td colspan="2" align="center"&gt;
+                    &lt;input type="hidden" id="activities_interest_1208193501310" name="activities_interest" value="" /&gt;
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Swimming"  title="Click to select."&gt;Swimming
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Skiing" title="Click to select." onclick="saveSelectedactivities_interest_1208193501310(this.form.activities_interest);"&gt;Skiing
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Biking" title="Click to select." onclick="saveSelectedactivities_interest_1208193501310(this.form.activities_interest);"&gt;Biking
+                    &lt;br&gt;
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Running" title="Click to select." onclick="saveSelectedactivities_interest_1208193501310(this.form.activities_interest);"&gt;Running
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Jogging" title="Click to select." onclick="saveSelectedactivities_interest_1208193501310(this.form.activities_interest);"&gt;Jogging
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Boating" title="Click to select." onclick="saveSelectedactivities_interest_1208193501310(this.form.activities_interest);"&gt;Boating
+                    &lt;br&gt;
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Racing" title="Click to select." onclick="saveSelectedactivities_interest_1208193501310(this.form.activities_interest);"&gt;Racing
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Diving" title="Click to select." onclick="saveSelectedactivities_interest_1208193501310(this.form.activities_interest);"&gt;Diving
+                    &lt;input type="checkbox" id="activities_interest" name="activities_interest" value="Climbing" title="Click to select." onclick="saveSelectedactivities_interest_1208193501310(this.form.activities_interest);"&gt;Climbing
+               &lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;script language="JavaScript" type="text/JavaScript"&gt; 
+               function getSelectedactivities_interest_1208193501310(opt)
+                    {
+                         var selected = new Array();
+                         var index = 0;
+                         for (var intLoop = 0; intLoop &lt; opt.length; intLoop++)
+                              {
+                                   if ((opt[intLoop].selected) || (opt[intLoop].checked))
+                                        {
+                                             index = selected.length;
+                                             selected[index] = new Object;
+                                             selected[index].value = opt[intLoop].value;
+                                             selected[index].index = intLoop;
+                                        }
+                              }
+                         return selected;
+                    }
+
+               function saveSelectedactivities_interest_1208193501310(opt)
+                    {
+                         var sel = getSelectedactivities_interest_1208193501310(opt);
+                         var strSel = "";
+                         for ( var item = 0; item &lt; sel.length; item++ ) 
+               		      {
+               		           if(strSel == "")
+               			           {
+               				           strSel += sel[item].value;
+               			           }
+               			      else
+               			           {
+               				           strSel += "," + sel[item].value;
+               			           }
+               	            }
+                         document.getElementById("activities_interest_1208193501310").value = strSel;
+                    } 
+          &lt;/script&gt; 
+</html>
+          <key>23</key>
+          <name>activities_interest</name>
+          <type>checkbox_group</type>
+          <properties>
+               <properties_0>checkbox</properties_0>
+               <properties_1>3</properties_1>
+               <properties_2>Check any activities you are interested in:</properties_2>
+               <properties_3>activities_interest</properties_3>
+               <properties_4>false</properties_4>
+               <properties_5>Swimming,Skiing,Biking,Running,Jogging,Boating,Racing,Diving,Climbing</properties_5>
+               <properties_6>1</properties_6>
+               <properties_7></properties_7>
+               <properties_8>Click to select.</properties_8>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_23>
+     <object_24>
+          <html>          &lt;tr&gt;
+               &lt;td colspan="2" align="left"&gt;Describe your experience at Gettysburg College:&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+               &lt;td colspan="2" align="center"&gt;&lt;textarea rows="4" cols="30" id="gettysburg_experience" name="gettysburg_experience" title="Type your description here."&gt;&nbsp;&lt;/textarea&gt;&lt;/td&gt;
+          &lt;/tr&gt;</html>
+          <key>24</key>
+          <name>gettysburg_experience</name>
+          <type>textarea</type>
+          <properties>
+               <properties_0>Describe your experience at Gettysburg College:</properties_0>
+               <properties_1>gettysburg_experience</properties_1>
+               <properties_2>false</properties_2>
+               <properties_3>text</properties_3>
+               <properties_4></properties_4>
+               <properties_5></properties_5>
+               <properties_6>Type your description here.</properties_6>
+               <properties_7>4</properties_7>
+               <properties_8>30</properties_8>
+          </properties>
+          <edit_permissions>true</edit_permissions>
+     </object_24>
+     <object_25>
+          <html>          &lt;input type="hidden" name="returnUrl" id="returnUrl" value="/about/offices/it/ds/testing_folder/form_testingthankyoupage.dot"&gt;</html>
+          <key>25</key>
+          <name>Return URL Settings</name>
+          <type>hidden</type>
+          <properties>
+               <properties_0>/about/offices/it/ds/testing_folder/form_testingthankyoupage.dot</properties_0>
+          </properties>
+          <edit_permissions>false</edit_permissions>
+     </object_25>
+     <object_26>
+          <html>          &lt;input type="hidden" name="from" id="from" value="nkeiter@gettysburg.edu"&gt;
+          &lt;input type="hidden" name="to" id="to" value="nkeiter@gettysburg.edu"&gt;
+          &lt;input type="hidden" name="subject" id="subject" value="New alumni survey form submitted."&gt;
+</html>
+          <key>26</key>
+          <name>Email Settings</name>
+          <type>hidden</type>
+          <properties>
+               <properties_0>nkeiter@gettysburg.edu</properties_0>
+               <properties_1>nkeiter@gettysburg.edu</properties_1>
+               <properties_2>New alumni survey form submitted.</properties_2>
+               <properties_3></properties_3>
+               <properties_4></properties_4>
+          </properties>
+          <edit_permissions>false</edit_permissions>
+     </object_26>
+     <object_27>
+          <html>          &lt;input type="hidden" name="autoReplyTo" id="autoReplyTo" value=""&gt;
+          &lt;script language="JavaScript" type="text/JavaScript"&gt; 
+               var get_reply_to_email_interval = setInterval("getAutoReplyToEmail()", 250);
+               function getAutoReplyToEmail() 
+                    { 
+                         document.getElementById("autoReplyTo").value = document.getElementById("email").value; 
+                    } 
+          &lt;/script&gt; 
+          &lt;input type="hidden" name="autoReplyFrom" id="autoReplyFrom" value="nkeiter@gettysburg.edu"&gt;
+          &lt;input type="hidden" name="autoReplySubject" id="autoReplySubject" value="Thank You"&gt;
+          &lt;input type="hidden" name="autoReplyText" id="autoReplyText" value="Thank you for completing the Gettysburg Alumni survey."&gt;</html>
+          <key>27</key>
+          <name>Thank You Email Fields (Hidden)</name>
+          <type>hidden</type>
+          <properties>
+               <properties_0>nkeiter@gettysburg.edu</properties_0>
+               <properties_1>Thank You</properties_1>
+               <properties_2>Thank you for completing the Gettysburg Alumni survey.</properties_2>
+               <properties_3>true</properties_3>
+          </properties>
+          <edit_permissions>false</edit_permissions>
+     </object_27>
+</xml>

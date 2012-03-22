@@ -1,0 +1,160 @@
+#set($name = $mailingListsSubscribeForm.name)
+#if(!$name)
+	#set($name = $request.getParameter('name'))
+#end
+#set($lastName = $mailingListsSubscribeForm.lastName)
+#if(!$lastName)
+	#set($lastName = $request.getParameter('lastName'))
+#end
+#set($emailAddress = $mailingListsSubscribeForm.emailAddress)
+#if(!$emailAddress)
+	#set($emailAddress = $request.getParameter('emailAddress'))
+#end
+#if(!$emailAddress)
+	#set($emailAddress = $request.getParameter('email'))
+#end
+
+#set($mailingLists = $mailinglist.getAllPublicLists())
+#set($mailingListUnsubscribers = $mailinglist.getUnsubscribersMailingList())
+#set($subcribedMailinglists = $mailinglist.getMailingListsBySubscriberEmail($emailAddress))
+
+<script language="javascript">
+	function unsubscribeFromAllChanged () {
+		var cb = document.getElementById ("unsubscribeFromAllCB");
+		if (cb.checked) {
+#foreach($mailingList in $mailingLists)
+	#if ($mailingList.title != $mailingListUnsubscribers)
+			var cb2 = document.getElementById ("mailingListsCB-$mailingList.inode");
+			cb2.checked = false;
+			cb2.disabled = true;
+    #end
+#end
+		} else {
+#foreach($mailingList in $mailingLists)
+	#if ($mailingList.title != $mailingListUnsubscribers)
+			var cb2 = document.getElementById ("mailingListsCB-$mailingList.inode");
+			cb2.disabled = false;
+    #end
+#end
+		}
+	}
+
+	function echeck(str) {
+
+		var at="@"
+		var dot="."
+		var lat=str.indexOf(at)
+		var lstr=str.length
+		var ldot=str.indexOf(dot)
+		if (str.indexOf(at)==-1){
+		   return false
+		}
+
+		if (str.indexOf(at)==-1 || str.indexOf(at)==0 || str.indexOf(at)==lstr){
+		   return false
+		}
+
+		if (str.indexOf(dot)==-1 || str.indexOf(dot)==0 || str.indexOf(dot)==lstr){
+		    return false
+		}
+
+		 if (str.indexOf(at,(lat+1))!=-1){
+		    return false
+		 }
+
+		 if (str.substring(lat-1,lat)==dot || str.substring(lat+1,lat+2)==dot){
+		    return false
+		 }
+
+		 if (str.indexOf(dot,(lat+2))==-1){
+		    return false
+		 }
+
+		 if (str.indexOf(" ")!=-1){
+		    return false
+		 }
+
+ 		 return true
+	}
+
+
+	function doSubmit () {
+		var name = document.getElementById ("nameText");
+		var lastName = document.getElementById ("lastNameText");
+		var emailAddress = document.getElementById ("emailAddressText");
+		if (name.value == "") {
+			alert ("Please specify a name.");
+			return false;
+		}
+		if (lastName.value == "") {
+			alert ("Please specify a last name.");
+			return false;
+		}
+		if (name.value == "") {
+			alert ("Please specify a name.");
+			return false;
+		}
+		if (emailAddress.value == "" || !echeck(emailAddress.value)) {
+			alert ("Please specify a valid email.");
+			return false;
+		}
+		var form = document.getElementById ("mailingListsSubscribeForm");
+		form.submit ();
+	}
+
+</script>
+#parse('static/messages.html')
+<table border="0" align="center" cellpadding="0" cellspacing="5">
+	<form action="/dotCMS/subscribe" method="post" id="mailingListsSubscribeForm">
+	<input type="hidden" name="dispatch" value="createAndSubscribe">
+	<input type="hidden" name="referrer" value="$request.requestURI">
+	#if($subscribeReturn)
+	<input type="hidden" name="return" value="$subscribeReturn">
+	#else
+	<input type="hidden" name="return" value="$request.requestURI">
+	#end
+	<tr>
+		<td align="center" colspan="2"><b>Update Your Email preferences</b></td>
+	</tr>
+	<tr>
+		<td align="right">First Name:</td>
+    	<td align="left"><input type="text" size="20" name="name" id="nameText" value="$!{name}"></td>
+	</tr>
+	<tr>
+		<td align="right">Last Name:</td>
+    	<td align="left"><input type="text" size="20" name="lastName" id="lastNameText" value="$!{lastName}"></td>
+	</tr>
+	<tr>
+		<td align="right">Email:</td>
+    	<td align="left"><input type="text" size="20" name="emailAddress" id="emailAddressText" value="$!{emailAddress}"></td>
+	</tr>
+	<tr>
+		<td></td>
+		<td align="left">Choose a mailing list:</td>
+	</tr>
+#foreach($mailingList in $mailingLists)
+	#if ($mailingList.inode != $mailingListUnsubscribers.inode)
+	<tr>
+		<td align="right"><input type="checkbox" name="mailingListsInodes" value="$mailingList.inode" id="mailingListsCB-$mailingList.inode"
+		#foreach($subcribedMailinglist in $subcribedMailinglists)
+			#if ($subcribedMailinglist.inode == $InodeUtils.isSet($mailingList.inode))
+			checked
+			#end
+		#end
+		></td>
+    	<td align="left">$mailingList.title</td>
+	</tr>
+    #end
+#end
+	<tr>
+		<td align="right"><input type="checkbox" name="unsubscribeFromAll" id="unsubscribeFromAllCB"  value="1" onclick="unsubscribeFromAllChanged()"></td>
+    	<td align="left">Please do not send<br>me any more emails.</td>
+	</tr>
+	<tr>
+		<td align="center" colspan="2"><input type="button" name="Submit" value="Save" onclick="doSubmit()"></td>
+	</tr>
+	<tr>
+		<td align="center" colspan="2">$glossary.get('already_dotcms_user') <a href="/dotCMS/login?referrer=${VTLSERVLET_URI}">$glossary.get('mailing_list_login_now')</a> $glossary.get('mailing_list_manage_subscriptions')</td>
+	</tr>
+	</form>
+</table>

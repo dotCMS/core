@@ -1,0 +1,50 @@
+<script>
+	function doSubmit(){
+		document.getElementById("myAccountForm").submit();
+	}
+</script>
+
+
+<style>
+@import url(/global/css/form.css);
+
+/* put in width of widest label */
+fieldset label,
+.fieldset .label{
+	width: 175px;
+}
+fieldset fieldset,
+fieldset .buttonGroup{
+	padding-left: 175px;
+}
+fieldset fieldset legend{
+	margin-left: -175px;
+}
+
+</style>
+
+	<form action="/dotCMS/myAccount" method="post" id="myAccountForm" name="myAccountForm" autocomplete="off">
+	<input type="hidden" name="dispatch" value="saveUserCategories">
+	<input type="hidden" name="userId" value="${myAccountForm.userId}">
+	<div id="messagesMessages">
+		#parse('static/messages.html')
+	</div>
+	
+<div class="buttonGroup"  style="text-align: right; margin-top: -50px;">
+	<a href="/dotCMS/registrationHistory" class="button">Registration and Order History</a>
+	<a href="/dotCMS/myAccount" class="button">My Account</a>
+</div>
+
+<fieldset>
+	<legend>Edit User Experience</legend>
+	
+	$categories.getCategoriesByEntityName("category","Preferences",$!{myAccountForm.userProxyInode},true,true,-1,false)
+
+	<div class="buttonGroup">			
+		<a href="javascript:window.location='/dotCMS/myAccount?userId=$!{myAccountForm.userId}';" class="button">Back</a>
+		<a href="javascript:doSubmit();" class="activeButton">Save</a
+	</div>
+
+</fieldset>
+
+</form>

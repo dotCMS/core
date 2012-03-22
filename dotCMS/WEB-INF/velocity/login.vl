@@ -1,0 +1,90 @@
+<script language="JavaScript" src="/html/js/util.js"></script>
+
+<script language="JavaScript">
+	function signIn() {
+		
+		if (document.fm.my_account_r_m.checked) {
+			document.fm.my_account_r_m_param.value = "on";
+		}
+		else {
+			document.fm.my_account_r_m_param.value = "off";
+		}
+		
+		document.fm.my_account_cmd.value = "auth";
+		document.fm.referer.value = "/c";
+		submitForm(document.fm);
+	}
+</script>
+
+<table border="0" cellpadding="4" cellspacing="0" width="100%">
+<tr>
+	<td align="center">
+			<table border="0" cellpadding="0" cellspacing="2">
+
+			<form action="/c/my_account/login" method="post" name="fm">
+			<input name="my_account_cmd" type="hidden" value="">
+			<input name="referer" type="hidden" value="/c">
+			<input name="my_account_r_m_param" type="hidden" value="">
+
+			<tr>
+				<td>
+					<font class="gamma" size="2">
+						Email Address
+					</font>
+				</td>
+				<td width="10">
+					&nbsp;
+				</td>
+				<td>
+					<input class="form-text" name="my_account_login" size="25" tabindex="1" type="text" value="">
+				</td>
+				<td width="10">
+					&nbsp;
+				</td>
+				<td>
+						<table border="0" cellpadding="0" cellspacing="0">
+						<tr>
+							<td nowrap>
+								<font class="gamma" size="1">Remember Me</font>
+							</td>
+							<td align="right">
+								<input name="my_account_r_m" type="checkbox">
+							</td>
+						</tr>
+						</table>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<font class="gamma" size="2">Password</font>
+				</td>
+				<td width="10">
+					&nbsp;
+				</td>
+				<td>
+					<input class="form-text" name="my_account_password" size="25" tabindex="2" type="password" value="" onKeyPress="if (event.keyCode == 13) { signIn(); }">
+				</td>
+				<td width="10">
+					&nbsp;
+				</td>
+				<td>
+					<input type="button" value="Sign In" onClick="signIn();">
+				</td>
+			</tr>
+			<tr>
+				<td align="center" colspan="5">
+					<font class="gamma" size="1">
+						<a class="gamma" href="/c/my_account/create_account">Create Account</a>
+						/
+						<a class="gamma" href="/c/my_account/login">Forgot Password?</a>
+					</font>
+				</td>
+			</tr>
+
+			</form>
+
+			</table>
+
+	</td>
+</tr>
+</table>

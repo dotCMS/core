@@ -1,0 +1,236 @@
+<style>
+@import url(/application/products/css/products.css);
+</style>
+
+<div class="products">
+
+<script language="javascript">
+
+
+function opencenter(inode)
+{
+	var width = 600;
+	var height= 600;
+	var left = Math.floor( (screen.width - width) / 2);
+	var top = Math.floor( (screen.height - height) / 2);
+	var parameter = "scrollbars=yes,resizable=yes,status=yes,toolbar=no,width=" + width + ",height=" + height+ ",top=" + top + ",left="+ left;
+
+	url = "/application/products/popup.${webapi.getPageFileExtension()}?inode=" + inode;	
+	window.open(url,"largeProduct",parameter,false);
+}
+
+function remove(inode)
+{
+	var form = document.getElementById("viewCart");
+	form.action = "/dotCMS/addToCart";
+	form.dispatch.value = "remove";
+	form.inode.value = inode;
+	form.submit();
+}
+
+function addDiscount()
+{
+	var form = document.getElementById("viewCart");
+	form.action = "/dotCMS/addToCart";
+	form.dispatch.value = "addDiscount";
+	form.submit();
+}
+
+function removeDiscount(inode)
+{
+	var form = document.getElementById("viewCart");
+	form.action = "/dotCMS/addToCart";
+	form.dispatch.value = "removeDiscount";
+	form.inode.value = inode;
+	form.submit();
+}
+
+function continueShopping()
+{
+	var form = document.getElementById("viewCart");
+	form.action = "/dotCMS/featuredProducts";
+	form.dispatch.value = "unspecified";
+	form.submit();
+	//document.location.href = "/dotCMS/featuredProducts";
+}
+
+function updateCart()
+{
+	var form = document.getElementById("viewCart");
+	form.action = "/dotCMS/addToCart";
+	form.dispatch.value = "update";
+	form.submit();
+}
+
+function checkOutNow()
+{
+	var form = document.getElementById("viewCart");
+	//form.action = "https://${FSP_SERVER_NAME}/dotCMS/checkOutCart";
+	form.action = "http://${FSP_SERVER_NAME}/dotCMS/checkOutCart";
+	form.dispatch.value = "unspecified";
+	form.submit();
+	//document.location.href = "/dotCMS/checkOutCart";
+}
+
+</script>
+
+<form action="/dotCMS/viewCart" method="get" autocomplete="off" id="viewCart">
+<input type="hidden" name="categoryInode" value="$!{productsForm.categoryInode}">
+<input type="hidden" name="orderBy" value="$!{productsForm.orderBy}">
+<input type="hidden" name="page" value="$!{productsForm.page}">
+<input type="hidden" name="pageSize" value="$!{productsForm.pageSize}">
+<input type="hidden" name="direction" value="$!{productsForm.direction}">
+<input type="hidden" name="filter" value="$!{productsForm.filter}">
+<input type="hidden" name="inode" value="">
+<input type="hidden" name="bulk" value="false">
+<input type="hidden" name="dispatch" value="">
+
+	<table class="shoppingCartItems" cellspacing="0">
+
+		#set($session = $request.getSession())
+		#set($shoppingCart = $session.getAttribute("shoppingCart"))
+		#if ($shoppingCart)
+			#set($holders = $shoppingCart.holders)
+			#set($checkOut = $holders.size())
+		#end
+		#if ($shoppingCart)
+			#set($discountCodes = $shoppingCart.discountCodes)
+		#end
+
+		#if($holders.size()>0)	
+
+		<tr>
+			<th colspan="2">&nbsp;</th>
+			<th>Item Description</th>
+			<th>Qty</th>
+
+			#if(${discountCodes.size()} == 0)
+				<th>Price</th>
+			#else
+				<th>Reg. Price</th>
+				<th>Discounted Price</th>
+			#end
+			
+		</tr>
+		#else
+		<tr class="empty">
+			<td>Your shopping cart is currently empty.</td>
+		</tr>
+	
+		#end 
+
+		#set($subTotal = 0)
+
+
+		#foreach($holder in ${holders})
+			#set($format = $holder.format)
+			#set($product = $format.product)
+		<tr>
+			<td><a href="javascript:remove('$format.inode')">remove</a></td>
+			<td><img src="/thumbnail?inode=$!{product.smallImageInode}&w=50&h=50" onclick="opencenter('$!{product.largeImageInode}')" style="padding: 10px;"></td>
+			<td><h3>$product.title</h3> $format.formatName</td>
+			<td><input type="text" name="$format.inode" size="4" value="$holder.quantity"></td>
+
+			#if(${discountCodes.size()} == 0)
+				#if($webapi.isPartner() == true)
+					#set($priceAmount = ${format.getQuantityPrice($holder.quantity).partnerPriceWithDiscount})
+				#else
+					#set($priceAmount = ${format.getQuantityPrice($holder.quantity).retailPriceWithDiscount})
+				#end
+			#else
+				#if($webapi.isPartner() == true)
+					#set($originalPriceAmount = ${format.getQuantityPrice($holder.quantity).partnerPriceWithDiscount})
+					#set($priceAmount = ${format.getQuantityPrice($holder.quantity,$discountCodes).partnerPriceWithDiscount})
+				#else
+					#set($originalPriceAmount = ${format.getQuantityPrice($holder.quantity).retailPriceWithDiscount})
+					#set($priceAmount = ${format.getQuantityPrice($holder.quantity,$discountCodes).retailPriceWithDiscount})
+				#end
+			#end
+			
+			#set($lineTotal = $math.mul($priceAmount,$holder.quantity))
+			#set($subTotal = $math.add($subTotal,$lineTotal))
+
+			#if(${discountCodes.size()} == 0)
+			<!-- regular price -->
+				<td>
+					$ $!webapi.toPriceFormat($priceAmount)
+				</td>
+			#else
+			<!-- with discount -->
+				<td class="regPrice">
+					<!-- this should be the original price -->
+					<span class="strikedout">$ $!webapi.toPriceFormat($originalPriceAmount)</span>
+				</td>
+				<td class="discPrice">
+					<!-- this should be the discounted price -->
+					$ $!webapi.toPriceFormat($priceAmount)
+				</td>
+			#end
+			
+		</tr>
+		#end
+
+		
+		
+	</table>
+		
+		<div class="discBox">
+			<div class="addDisc">
+				<span class="title">
+					<span>Do you have a coupon?</span><br />
+					If so, enter the code here
+				</span>
+					<input type="text" value="" name="discount" size="10">
+				<a href="javascript:addDiscount();" class="button">Apply Discount</a>
+			</div>
+		
+		
+			#if(${discountCodes.size()} != 0)
+			<table width="100%">
+			<tr>
+				<td><b>Code ID</b></td>
+				<td><b>Description</b></td>
+				<td><b>Amount</b></td>
+				<!--<td><b>Start Date</b></td>
+				<td><b>End Date</b></td>-->
+				<td><b>Action</b></td>
+			</tr>
+			
+			#foreach($discountCode in ${discountCodes})
+				<tr>
+				<td>$discountCode.codeId</td>
+				<td>$discountCode.codeDescription</td>
+				#if($discountCode.discountType == 1)
+					#set($precurrency = '')
+					#set($postcurrency = '%')
+					#set($discountAmount = $UtilMethods.toPercentageFormat($discountCode.discountAmount))
+				#else
+					#set($precurrency = '$')
+					#set($postcurrency = '')
+					#set($discountAmount = $UtilMethods.toPriceFormat($discountCode.discountAmount))
+				#end
+				<td>$precurrency $discountAmount $postcurrency</td>
+				<!--<td>$!date.format('MM-dd-yyyy',$!{discountCode.startDate})</td>
+				<td>$!date.format('MM-dd-yyyy',$!{discountCode.endDate})</td>-->
+				<td><a href="javascript:removeDiscount('$discountCode.codeId');">remove</a></td>
+				</tr>
+			#end	
+			</table>
+			#end
+		</div>
+
+
+		#set($totalFinal = $math.max($subTotal,0))
+		<div class="totalPrice">Total: $ $!webapi.toPriceFormat($totalFinal)</div>
+		
+	<hr style="clear: both;" />
+		<div class="cartButtons">	
+				<a href="javascript:continueShopping();" class="button">Continue Shopping</a>
+				<a href="javascript:updateCart();" class="button">Update Cart</a>
+			#if($checkOut > 0)
+				<a href="javascript:checkOutNow();" class="activeButton">Checkout Now</a>
+			#end
+		</div>
+</form>
+
+</div>

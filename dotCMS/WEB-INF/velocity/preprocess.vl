@@ -1,0 +1,21 @@
+##
+## IMPORTANT NOTICE!!
+## 
+## This file is included at the beginning of the main client html page on every request, it is extremely important that 
+## no major html code gets written within this file and that any javascript code included here will not conflict with the 
+## client HTML/Javascript code 
+## 
+## 
+##
+#if ($UtilMethods.isSet($HTMLPAGE_REDIRECT))
+	#set ($REDIRECT_URL = "$HTMLPAGE_REDIRECT")
+#end
+#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet")))
+	#set($ENABLE_LEGACY_URLMAP_CONTENT = $webapi.getConfigVar('ENABLE_LEGACY_URLMAP_CONTENT'))
+	#if($UtilMethods.isSet($ENABLE_LEGACY_URLMAP_CONTENT) && $ENABLE_LEGACY_URLMAP_CONTENT == "true")
+		#getContentMapDetailByIdentifier($request.getAttribute("com.dotmarketing.wiki.contentlet"))
+		#set($URLMapContent = $content)
+	#else
+		#set($URLMapContent = $dotcontent.find($request.getAttribute("com.dotmarketing.wiki.contentlet")))
+	#end
+#end

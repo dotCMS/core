@@ -1,0 +1,34 @@
+pre.widget
+{border:1px solid #e1e1e1;background:#ffffff;padding:10px;
+}
+
+code.html span.comment         { color: #999;}
+code.html span.tag             { color: #07f;}
+code.html span.string         { color: #080;}
+code.html span.attribute     { color: #07f;}
+code.html span.doctype         { color: #07f;}
+
+code.css span.comment          {color: #999;}
+code.css span.keywords         {color: #fd2;}
+code.css span.selectors        {color: #0b0;}
+code.css span.properties    {color: #66f;}
+code.css span.units            {color: #33c;}
+code.css span.urls            {color: #4a0;}
+
+code.javascript span.comment     { color: #999; }
+code.javascript span.brackets     { color: #07f; }
+code.javascript span.string     { color: #4a0; }
+code.javascript span.keywords     { color: #07f; }
+code.javascript span.exp         { color: #808; }
+code.javascript span.global     { color: #06e; }
+
+pre{
+ overflow-x: auto; /* Use horizontal scroller if needed; for Firefox 2, not needed in Firefox 3 */
+ white-space: pre-wrap; /* css-3 */
+ white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+ white-space: -pre-wrap; /* Opera 4-6 */
+ white-space: -o-pre-wrap; /* Opera 7 */
+ /* width: 99%; */
+ word-wrap: break-word; /* Internet Explorer 5.5+ */
+	
+}

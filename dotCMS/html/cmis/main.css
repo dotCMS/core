@@ -1,0 +1,151 @@
+body {
+	background: #eee url(bg-body.png) top center repeat-y;
+	color: #333;
+	font-family: Georgia, Times New Roman, serif;
+	margin: 0 auto 0;
+	padding: 0;
+}
+
+.logo {
+	float: right;
+}
+
+.twocols {
+	background: #eee url(bg-twocols.png) top center repeat-y;
+}
+
+a, a:visited {
+	color: #58a;
+	text-decoration: none;
+}
+
+a:hover {
+	background-color: #ffc;
+	text-decoration: underline;
+}
+
+img {
+	border-style: none;
+}
+
+.header {
+	background: #fff;
+	margin: 0 auto 0;
+	text-align: left;
+	padding: 9px 0 29px 0;
+	width: 960px;
+	border-top: 10px solid #ccc;
+}
+
+.header a {
+	font-family: Helvetica, Verdana, sans-serif;
+	letter-spacing: -1px;
+	font-size: 31px;
+	font-weight: bold;
+	color: #58a;
+	text-decoration: none;
+	padding: 0 10px 0 0;
+	margin: 0;
+}
+
+.header a:hover {
+	color: #69d;
+	text-decoration: underline;
+}
+
+.leftcol {
+	width: 440px;
+	margin: 0 20px 0 0;
+	padding: 5px 0 5px 0;
+}
+
+.rightcol {
+	width: 440px;
+	margin: 0 20px 0 0;
+	padding: 5px 0 5px 0;
+}
+
+.formtable {
+	margin-top: 20px;
+	width: 600px;
+	padding: 0;
+	clear: both;
+}
+
+.formtable td {
+	padding: 5px;
+	width: 300px;
+	border-top: dotted #ddd 1px;
+}
+
+.formtable input.text {
+	width: 300px;
+}
+
+
+.content {
+	width: 960px;
+	margin: 0 auto 0;
+	padding: 0;
+	clear: both;
+}
+
+.content p {
+	padding: 0 0 15px 0;
+	margin: 0;
+	line-height: 20px;
+	font-size: 14px;
+}
+
+.content p img {
+	float: left;
+	border: none;
+	margin-right: 15px;
+	margin-bottom: 10px;
+}
+
+.content h1 {
+	border-top: 2px solid olive;
+	color: #58a;
+	font-family: Helvetica,Verdana,sans-serif;
+	font-size: 18px;
+	font-weight: bold;
+	line-height: 20px;
+	margin: 0;
+	padding: 5px 0;
+}
+
+.content h1 a {
+	color: #58a;
+	margin-left: -5px;
+	padding: 0 10px 0 5px;
+	text-decoration: none;
+}
+
+.content h1 a:hover {
+	background-color: #ffc;
+	color: #68b;
+}
+
+.content h2 {
+	color: olive;
+	font-size: 12px;
+	font-family: Helvetica, Verdana, sans-serif;
+	font-weight: bold;
+	margin: 20px 0 5px 0;
+	padding: 3px 0 3px 0;
+	border-top: 2px solid olive;
+	border-bottom: 1px dotted #ccc;
+}
+
+.footer {
+	font-size: 12px;
+	background: #fff;
+	width: 960px;
+	margin: 0 auto 0;
+	padding: 10px 0 10px 0;
+	text-align: left;
+	border-top: 1px solid #ccc;
+	clear: both;
+}
+

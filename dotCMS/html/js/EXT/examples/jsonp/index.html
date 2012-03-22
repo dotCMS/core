@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Ext JSONP Flickr Example</title>		
+        
+    	<link href="../examples.css" rel="stylesheet" />
+        
+    	<script src="../../ext-core-debug.js"></script>
+        <script src="jsonp.js"></script>
+        
+        <script>
+            Ext.onReady(function() {
+                var resultTemplate = new Ext.Template.from('result-template');
+                
+                var updateResults = function(data) {
+                    Ext.fly('resultset').update('');
+                    Ext.each(data.items, function() {
+                        this.src = this.media.m;
+                        resultTemplate.append('resultset', this);
+                    });
+                }
+                
+                Ext.get('search-form').on('submit', function(ev) {
+                    ev.preventDefault();
+                    Ext.ux.JSONP.request('http://api.flickr.com/services/feeds/photos_public.gne', {
+                        callbackKey: 'jsoncallback',
+                        params: {
+                            format: 'json',
+                            tags: Ext.fly('search-value').dom.value,
+                            tagmode: 'all',
+                            lang: 'en-us'                            
+                        },
+                        callback: updateResults
+                    });
+                    return false;
+                });
+            })
+        </script>
+        
+        <style>
+            #resultset {
+                margin-top: 10px;
+            }
+            
+            .result {
+                float: left;
+                overflow: hidden;
+                width: 270px;
+                height: 260px;
+                background: transparent url(images/result-bg.png) no-repeat scroll center bottom;
+                margin: 0 10px 10px 0;
+                text-align: center;
+            }
+            
+            .header {
+                background: transparent url(images/result-header.png) no-repeat scroll center top;
+                padding: 5px 10px 8px 10px;
+                text-align: left;
+            }
+            
+            .result img {
+                max-height: 195px;
+                padding: 10px;
+            }
+            
+            .header h4 {
+                font: bold 13px tahoma,arial,sans-serif;
+                color: #444;
+                margin: 0;
+                height: 16px;         /*  Prevent long titles from expanding the header. */
+                overflow: hidden;     /*  Some authors are a little too verbose. :)      */
+            }
+            
+            .header h5 {
+                font: normal 11px tahoma,arial,sans-serif;
+                color: #666;
+                margin: 0;
+                height: 13px;
+                overflow: hidden;
+            }            
+        </style>        
+    </head>
+
+    <body>
+    	<h2>Example</h2>
+    
+    	<h3>Simple JSONP Flickr Feed loading using Templates</h3>
+        <form id="search-form" action="#">
+            <input type="text" value="ExtJS, Screenshot" id="search-value">
+            <button type="submit" id="search-button">Search</button>            
+        </form>
+        
+        <div id="resultset"></div>
+        
+        <textarea id="result-template" style="display: none">
+            <div class="result">
+                <div class="header">
+                    <h4>{title}</h4>
+                    <h5>{author}</h5>
+                </div>
+                <img src="{src}" title="{title}">
+            </div>
+        </textarea>
+    </body>
+</html>

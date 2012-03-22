@@ -1,0 +1,199 @@
+#parse('static/messages.html')
+#set( $statuses = $webevents.getRegistrationStatus())
+
+<script type="text/javascript">
+function back(type){	
+
+	var form = document.getElementById('orderForm');
+ 	form.dispatch.value="back";
+ 	form.btn_type.value=type;
+    form.referrer.value="/dotCMS/productHistoryDetail?inode=$orderForm.Inode";
+    form.submit();
+ 	
+}
+</script>
+<form action="/dotCMS/productHistoryDetail"  method="post" id="orderForm" name="orderForm" autocomplete="off">
+<input type="hidden" name="dispatch" value=""> 
+<input type="hidden" name="referrer" value=""> 
+<input type="hidden" name="btn_type" value="">
+<input type="hidden" name="inode" value="$request.getParameter('inode')">
+
+<style>
+@import url(/global/css/form.css);
+
+/* put in width of widest label */
+fieldset label,
+.fieldset .label{
+	width: 130px;
+}
+fieldset fieldset,
+fieldset .buttonGroup,
+.fieldset .buttonGroup{
+	padding-left: 130px;
+}
+fieldset fieldset legend{
+	margin-left: -130px;
+}
+
+</style>
+
+<div class="buttonGroup" style="text-align: right; margin-top: -35px;">
+	<a href="/dotCMS/registrationHistory" class="button">Registration and Order History</a>
+	<a href="/dotCMS/myAccount" class="button">My Account</a>
+</div>
+
+<h2>Order Detail</h2>
+<strong>Product Order Detail:</strong> Order # $!orderForm.inode<br />
+<strong>Order Status:</strong> $statuses.get($webevents.valueOfStatus($!orderForm.orderStatus))
+<br /><br />
+
+<table border="0" cellpadding="4" cellspacing="0" width="100%">
+	<tr>
+		<th>Product Name</th>
+		<th>Qty</th>
+		<th>Price</b></th>
+	</tr>
+	#set ($productItems = $orderForm.orderItemList)
+	#set ($discounts = $webapi.getDiscountsByOrder($orderForm))
+	#foreach($productItem in $productItems)
+		#set ($product = $productwebapi.getProductbyProductFormaId("$!productItem.productInode"))
+		<tr>
+			<td><a href="/dotCMS/detailProduct?inode=$product.inode">$product.title</td>
+			<td>$!productItem.itemQty</td>
+			#set($priceAmount = $!webapi.getItemPriceWithDiscount($!productItem,$discounts))
+			<td>$ $webapi.toPriceFormat($priceAmount)</td>
+		</tr>
+	#end
+	<tr>
+	
+	<tr>
+		<td align="right" colspan="2" style="border: 0;">Sub Total:</td>
+		<td>$ $webapi.toPriceFormat($!orderForm.orderSubTotal)</td>
+	</tr>
+	<tr>
+		<td align="right" colspan="2" style="border: 0;">Shipping and Handling:</td>
+		<td>$ $webapi.toPriceFormat($!orderForm.orderShipping)</td>
+	</tr>
+	<tr>
+		<td align="right" colspan="2" style="border: 0;">Tax:</td>
+		<td>$ $webapi.toPriceFormat($!orderForm.orderTax)</td>
+	</tr>
+	<tr>
+		<td align="right" colspan="2" style="border: 0;"><b>Total:</b></td>
+		<td><b>$ $webapi.toPriceFormat($!orderForm.orderTotal)<b></td>
+	</tr>
+</table>
+
+
+<div class="fieldset" style="margin-top: -100px; width: 370px;">
+
+#if($UtilMethods.isSet($orderForm.trackingNumber))		
+	<div class="legend">Tracking Information</div>
+	
+	#if($UtilMethods.isSet($orderForm.trackingNumber))
+		<p>Please <a href="http://wwwapps.ups.com/WebTracking/processInputRequest?tracknum=12342434&AgreeToTermsAndConditions=yes">click here</a>
+		to track your Package</p>		 	
+	#end	
+#else
+	<div class="legend">Payment Information</div><br />
+
+	<span class="label">Payment Type:</span>
+	<span class="input">
+	#set($paymentMethods = $productwebapi.getPaymentMethods()) 
+	#foreach($paymentMethod in $paymentMethods)
+		#if("$orderForm.paymentType" == "$paymentMethod.get('value')")
+			$paymentMethod.get("friendlyName") 
+		#end 
+	#end
+	</span><br />
+
+	#if($orderForm.isCreditCardPayment())
+		<span class="label">Name on Card:</span>
+		<span class="input">$!orderForm.nameOnCard</span><br />
+		
+		<span class="label">Card Type:</span>
+		<span class="input">$!orderForm.cardType</span><br />
+		
+		<span class="label">Card Number:</span>
+		<span class="input">$!orderForm.cardNumber</span><br />
+		
+		<span class="label">Expiration Date:</span>
+		<span class="input">$productwebapi.getMonth($!{orderForm.cardExpMonth}) / $!{orderForm.cardExpYear}</span><br />
+	#else
+		<span class="label">Bank Name:</span>
+		<span class="input">$!orderForm.checkBankName</span><br />
+		
+		<span class="label">Check Number:</span>
+		<span class="input">$!orderForm.checkNumber</span><br />
+	#end
+#end
+</div>
+
+ 
+<br />
+
+<div class="fieldset" style="float: left; width: 295px;">	
+	<div class="legend">Billing Information</div><br />
+	
+	<span class="label">Address Line 1:</span>
+	<span class="input">$!orderForm.billingAddress1</span><br />
+	
+	<span class="label">Address Line 2:</span>
+	<span class="input">$!orderForm.billingAddress2</span><br />
+	
+	<span class="label">City:</span>
+	<span class="input">$!orderForm.billingCity</span><br />
+	
+	<span class="label">State:</span>
+	<span class="input">$!orderForm.billingState</span><br />
+	
+	<span class="label">Country:</span>
+	<span class="input">$!orderForm.billingCountry</span><br />
+	
+	<span class="label">Zip/Postal Code:</span>
+	<span class="input">$!orderForm.billingZip</span><br />
+	
+	<span class="label">Phone:</span>
+	<span class="input">$!orderForm.billingPhone</span><br />
+	
+	<span class="label">Country:</span>
+	<span class="input">$!orderForm.billingCountry</span><br />
+
+</div>
+
+
+
+<div class="fieldset" style="float: left; width: 295px; margin-left: 25px;">	
+	<div class="legend">Shipping Information</div><br />
+	
+	<span class="label">Address Line 1:</span>
+	<span class="input">$!orderForm.shippingAddress1</span><br />
+	
+	<span class="label">Address Line 2:</span>
+	<span class="input">$!orderForm.shippingAddress2</span><br />
+	
+	<span class="label">City:</span>
+	<span class="input">$!orderForm.shippingCity</span><br />
+	
+	<span class="label">State:</span>
+	<span class="input">$!orderForm.shippingState</span><br />
+	
+	<span class="label">Country:</span>
+	<span class="input">$!orderForm.shippingCountry</span><br />
+	
+	<span class="label">Zip/Postal Code:</span>
+	<span class="input">$!orderForm.shippingZip</span><br />
+	
+	<span class="label">Phone:</span>
+	<span class="input">$!orderForm.shippingPhone</span><br />
+	
+	<span class="label">Shipping Date:</span>
+	<span class="input">$UtilMethods.htmlDateToHTMLTime($!orderForm.shippingDate)</span><br />
+	
+</div>
+	
+<div class="buttonGroup" style="text-align: center;">
+		<a href="javascript:back('back')" class="button">Back</a>
+</div>
+
+</form>

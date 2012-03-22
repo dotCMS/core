@@ -1,0 +1,77 @@
+##
+##  IMPORTANT NOTE!!!
+##	
+##	This is a file that gets included with every content within the client code, it is extremely important that NO conflicting HTML and Javascript
+##  gets included in this file, major javascript and html operations should be performed in the parent document via the preview_mode.vtl and 
+##  preview_mode_controls.vtl files.
+##
+##  Also any html code written in the file should carefully select the ids of the elements so the never conflict with other ids within the client page. 
+##	
+##  Also any css class reference included in your html code here needs to be carefully named check the comments on the preview.css file for instructions on
+##  this matter
+##
+
+
+<div class="dotContentletControls">
+
+	## Parse contentlet to see if widget
+	#set($_widget = false)
+	#if($isWidget.equalsIgnoreCase("true"))
+		#set($_widget = true)
+	#end
+	#if($isFormWidget.equalsIgnoreCase("true"))
+		#set($_isFormWidget = true)
+	#end
+
+<!-- START EDIT CONTENT BUTTON -->
+	<div id="edit-$CONTENT_INODE" class="dotContentletEdit">	
+		#if($_widget == true)
+				#if($_isFormWidget)
+				
+				#elseif($EDIT_CONTENT_PERMISSION && $CONTAINER_NUM_CONTENTLETS > 0)
+					<a class="dotEditWidget" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$langbackendwebapi.get("modes.Edit-Widget")</a>
+				#else
+					<span class="dotEditWidgetDisabled">$langbackendwebapi.get("modes.Edit-Widget")</span>
+				#end
+		#else
+			#if($EDIT_CONTENT_PERMISSION && $CONTAINER_NUM_CONTENTLETS > 0)
+				<a class="dotEditContent" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$langbackendwebapi.get("modes.Edit-Content")</a>
+			#else
+				<span class="dotEditContentDisabled">$langbackendwebapi.get("modes.Edit-Content")</span>
+			#end
+		#end
+	</div>		
+<!-- END EDIT CONTENT BUTTON -->	
+
+
+
+<!-- START REORDER BUTTON -->
+	<div class="dotMoveContent">	
+		#if($STATIC_CONTAINER && $USE_CONTAINER_PERMISSION && $ADD_CHILDREN_HTMLPAGE_PERMISSION && $CONTAINER_MAX_CONTENTLETS > 1  && $CONTAINER_NUM_CONTENTLETS > 1)
+			<a class="dotMoveContentUp" href="javascript:parent.moveUp('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
+				<!-- $langbackendwebapi.get("modes.Move-Content-Up") -->
+			</a>
+			<a class="dotMoveContentDown" href="javascript:parent.moveDown('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
+				<!-- $langbackendwebapi.get("modes.Move-Content-Down") -->
+			</a>
+		#else
+			<span class="dotMoveContentUpDisabled"> <!-- $langbackendwebapi.get("modes.Move-Content-Up") --> </span>
+			<span class="dotMoveContentDownDisabled"> <!-- $langbackendwebapi.get("modes.Move-Content-Down") --> </span>
+		#end
+		#if($ADD_CHILDREN_HTMLPAGE_PERMISSION && $USE_CONTAINER_PERMISSION && $STATIC_CONTAINER  && $CONTAINER_NUM_CONTENTLETS > 0)
+			<a class="dotRemoveContent" href="javascript: parent.removeContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">
+				<!-- $langbackendwebapi.get("modes.Remove-Content") -->
+			</a>
+		#else
+			<span class="dotRemoveContent"> <!-- $langbackendwebapi.get("modes.Remove-Content") --> </span>
+		#end
+	</div>
+<!-- END REORDER BUTTON -->
+
+</div>
+
+
+
+
+
+

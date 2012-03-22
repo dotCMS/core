@@ -1,0 +1,53 @@
+<script language="javascript">
+
+function typeProduct(inode,catName)
+{
+	//var form = document.getElementById("listProducts");
+	//form.page.value = 0;
+	//form.categoryInode.value = inode;
+	//submit();
+	window.location.href = "/dotCMS/listProducts?categoryInode=" + inode + "&pageTitle=" + escape(catName);
+}
+
+</script>
+
+<style type="text/css">
+@import url(/application/products/css/products.css);
+</style>
+
+
+
+<h2>Browse by</h2>
+
+<div class="products">
+<ul class="storeMenu">
+#if(!$InodeUtils.isSet(${productsForm.categoryInode}))
+	#set($class = "selected")
+#else
+	#set($class = " ")
+#end
+
+#set($productsForm = $productwebapi.loadTypeProducts($productsForm,$request))
+
+
+#foreach($typeProduct in ${productsForm.listTypeProducts})
+	#if($InodeUtils.isSet(${productsForm.categoryInode}) == ($InodeUtils.isSet(${typeProduct.inode})))
+		#set($class = "active")
+		<li class="${class}"><a href="javascript:typeProduct('${typeProduct.inode}','${typeProduct.categoryName}');" >${typeProduct.categoryName}</a></li>
+	#else
+		#set($class = " ")
+		<li><a href="javascript:typeProduct('${typeProduct.inode}','${typeProduct.categoryName}');" >${typeProduct.categoryName}</a></li>
+	#end
+
+#end
+</ul>
+
+
+
+<div class="buttonGroup">
+ <a href="http://${FSP_SERVER_NAME}/dotCMS/viewCart" class="button">My Cart</a>
+ <a href="http://${FSP_SERVER_NAME}/dotCMS/checkOutCart" class="activeButton">Check Out</a>
+</div>
+
+
+</div>

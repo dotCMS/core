@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <!DOCTYPE urlrewrite
+    PUBLIC "-//tuckey.org//DTD UrlRewrite 3.2//EN"
+    "http://tuckey.org/res/dtds/urlrewrite3.2.dtd">
+<urlrewrite>
+<!--  
+
+    <rule>
+    	<from>^/denver$</from>
+    	<to type="redirect">/where/denver/</to>
+    </rule>
+    
+    <rule>
+    	<from>^/denver/(.*)$</from>
+    	<to type="proxy">http://localhost/where/denver/$1</to>
+    </rule>
+    
+
+-->
+<!-- BEGIN PLUGINS -->
+<!-- END PLUGINS -->
+</urlrewrite>

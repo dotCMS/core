@@ -1,0 +1,486 @@
+#if($ADMIN_MODE)
+#if($request.getAttribute('archive'))
+    #set($archive = $request.getAttribute('archive'))
+#end
+##macro(shortenString $stringToShorten)${UtilMethods.prettyShortenString($stringToShorten, 20)}#end
+#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.clickstream.uri.override")))
+    #set($VTLSERVLET_URI =  $request.getAttribute("com.dotmarketing.clickstream.uri.override"))
+#end
+#set($dojoPath = $webapi.getConfigVar('path.to.dojo'))
+#if(!$UtilMethods.isSet($dojoPath))
+    #set($dojoPath = "/html/js/dojo/1.4.0")
+#end
+
+##DOTCMS-5365
+#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
+    #set($VTLSERVLET_URI =  $request.getAttribute("com.dotmarketing.wiki.contentlet.url"))
+#end
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<style type="text/css">
+    @import "$dojoPath/dijit/themes/dmundra/dmundra.css";
+    @import "/html/css/leftPreview.css";
+</style>
+
+<script type="text/javascript" src="$dojoPath/dojo/dojo.js" djConfig="parseOnLoad:true, isDebug:false"></script>
+<script type="text/javascript" src="$dojoPath/dojo/dot-dojo.js"></script>
+<script type="text/javascript">
+    dojo.require("dojo.parser");
+    dojo.require("dijit.form.Button");
+    dojo.require('dijit.layout.TabContainer');
+    dojo.require('dijit.layout.ContentPane');
+    dojo.require('dijit.form.FilteringSelect');
+    dojo.require('dojo.data.ItemFileReadStore');
+    dojo.require("dojo.fx");
+</script>
+
+#if($VTLSERVLET_URI.indexOf("?") > -1)
+    #set ($referer = "${VTLSERVLET_URI}&language=${language}&host_id=${host.identifier}")
+#else
+    #set ($referer = "${VTLSERVLET_URI}?language=${language}&host_id=${host.identifier}")
+#end
+<script type="text/javascript" src="/dwr/engine.js"></script>
+<script type="text/javascript" src="/dwr/util.js"></script>
+<script type="text/javascript" src="/dwr/interface/ContentletAjax.js"></script>
+<script type="text/javascript">
+
+    function protoUpdateWrapper(element,code){
+        element.innerHTML='';
+        element.innerHTML=code;
+        ##Element.update(element,code);
+    }
+
+    function protoInsertionBottomWrapper(element,code){
+        Insertion.Bottom(element,code);
+    }
+
+    function backToCMS(){
+        #if($UtilMethods.isSet(${viewBrowserURL}))
+            window.top.location  = "${viewBrowserURL}";
+        #else
+            window.top.location  = "/c/";
+        #end
+    }
+
+    function livePage(){
+       window.top.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&livePage=1&host_id=${host.identifier}";
+    }
+
+    function changeLanguage(lang){
+        if(lang != $language){
+            #if($livePage=="1")
+                window.top.frameMain.location  = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&livePage=1&host_id=${host.identifier}";
+            #else
+                #if($previewPage=="1")
+                    window.top.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&previewPage=1&host_id=${host.identifier}";
+                #else
+                    window.top.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&previewPage=2&host_id=${host.identifier}";
+                #end
+            #end
+        }
+    }
+
+    function previewPage(){
+       window.top.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&previewPage=2&host_id=${host.identifier}";
+    }
+
+    function editingPage(){
+        window.top.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&previewPage=1&host_id=${host.identifier}";
+    }
+
+    function popBrowser(x){
+        document.getElementById('container').value=x;
+        document.getElementById('cmd').value="addChild";
+        newwin = window.open('${viewFoldersURL}&view=${view}&content=contentlets&popup=contentlet&child=true#treeTop', 'newwin', 'scrollbars=yes,width=700,height=400,scrollbars=yes,resizable=yes');
+    }
+
+    function submitParent(){
+        if(newwin) newwin.close();
+        document.getElementById('submitParent').submit();
+
+    }
+
+    function addPage(){
+        document.getElementById('htmlPage').value='0';
+        document.getElementById('cmd').value="newHTMLPage";
+        document.getElementById('submitParent').submit();
+    }
+
+    function editPage(){
+        document.getElementById('htmlPage').value='$htmlPageInode';
+        document.getElementById('cmd').value="editHTMLPage";
+        document.getElementById('submitParent').submit();
+    }
+
+    function viewStatistics(){
+        document.getElementById('htmlPage').value='$htmlPageInode';
+        document.getElementById('cmd').value="viewStatistics";
+        document.getElementById('submitParent').submit();
+    }
+
+    function viewTask(id){
+        document.getElementById('taskInode').value=id;
+        document.getElementById('cmd').value="viewWorkflow";
+        document.getElementById('submitParent').submit();
+    }
+
+    function addTask(){
+        document.getElementById('htmlPage').value='$htmlPageInode';
+        document.getElementById('cmd').value="addWorkflow";
+        document.getElementById('submitParent').submit();
+    }
+
+    function publishAll(){
+        if(confirm("$languagewebapi.getFromUserLanguage("message.confirm.modes.publish.page")")){
+            document.getElementById('htmlPage').value='$htmlPageInode';
+            document.getElementById('cmd').value="publishHTMLPage";
+            document.getElementById('submitParent').submit();
+        }
+    }
+    function editTemplate(){
+            //document.getElementById('htmlPage').value='$htmlPageInode';
+            document.getElementById('cmd').value="editTemplate";
+            document.getElementById('submitParent').submit();
+    }
+
+    function makeHomePage(){
+            document.getElementById('htmlPage').value='$htmlPageInode';
+            document.getElementById('cmd').value="makeHomePage";
+            document.getElementById('submitParent').submit();
+    }
+
+    function submitMenu() {
+        form = document.getElementById("form_menu");
+        formsubmitParent = document.getElementById("submitParent");
+        form.referer.value = formsubmitParent.referer.value;
+        form.submit();
+    }
+    function doLogout() {
+        top.window.location="/c/portal/logout?referer=/";
+    }
+    var is_collapsed = false;
+
+    function ToggleCollapse() {
+        if (is_collapsed) {
+            parent.document.getElementById('frameMenu').style.width="210px";
+            document.getElementById("main_window").style.display = 'block';
+            document.getElementById("max_bar").style.display = "block";
+            document.getElementById("max_bar").style.backgroundColor = "#E6E9EE";
+            document.getElementById("min_bar").style.display = 'none';
+            document.getElementById("min_bar").style.backgroundColor = "#E6E9EE";
+            document.getElementsByTagName("html")[0].style.overflow = "";
+            is_collapsed = false;
+            parent.resetFrameWidth();
+        } else {
+            document.getElementById("main_window").style.display = 'none';
+            document.getElementById("max_bar").style.display = "none";
+            document.getElementById("max_bar").style.backgroundColor = "#E6E9EE";
+            document.getElementById("min_bar").style.backgroundColor = "#E6E9EE";
+            document.getElementById("min_bar").style.display = 'block';
+            document.getElementsByTagName("html")[0].style.overflow = "hidden";
+            parent.document.getElementById('frameMenu').style.width="11px";
+            is_collapsed = true;
+            parent.resetFrameWidth();
+        }
+    }
+    function viewDiff(){
+
+        #if($UtilMethods.isSet($request.getAttribute('com.dotmarketing.wiki.contentlet')))
+            parent.frameMain.location="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=$htmlPageInode&contentId=$request.getAttribute('com.dotmarketing.wiki.contentlet')";
+        #else
+            parent.frameMain.location="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=$htmlPageInode";
+        #end
+
+    }
+</script>
+</head>
+<body class="dmundra">
+
+<!-- Start Frame Max-Min -->
+    <div class="maxmin" id="min_bar" style="z-index:1000"
+         onmouseover="this.style.backgroundColor='#cbe1f2'"
+         onmouseout="this.style.backgroundColor='#E6E9EE'"
+         onclick="ToggleCollapse()"
+         title="Expand pane">
+    </div>
+    <div class="maxmin" id="max_bar" style="z-index:1000"
+         onmouseover="this.style.backgroundColor='#cbe1f2'"
+         onmouseout="this.style.backgroundColor='#E6E9EE'"
+         title="Collapse pane"
+         onclick="ToggleCollapse()">
+    </div>
+<!-- END Frame Max-Min -->
+
+<script>
+        dojo.subscribe("mainTabContainer-selectChild", function(child){
+
+            if("previewModeTab" == child.id){
+                previewPage();
+            }
+            else if("editModeTab" == child.id){
+                editingPage();
+            }
+            else{
+                livePage();
+            }
+        });
+</script>
+
+<div id="main_window" class="sideMenu">
+
+<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+
+<!-- Edit Mode -->
+    <div id="editModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Edit")" #if ($EDIT_MODE && $ADMIN_MODE) selected="true" #end>
+        
+        <div class="pageTools">
+        
+        	#if($PUBLISH_HTMLPAGE_PERMISSION)
+                <a href="javascript: publishAll();">
+                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
+                </a>
+            #else
+				<span class="disabled">
+               		<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
+               	</span>
+            #end
+            
+            <a href="javascript: editPage();">
+            	<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
+            </a>
+            <a href="javascript: viewStatistics();">
+            	<span class="statisticsIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Statistics")
+            </a>
+            
+            #if($EDIT_TEMPLATE_PERMISSION)
+                <a href="javascript: editTemplate();">
+                	<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
+                </a>
+            #else
+                <span class="disabled">
+					<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
+				</span>
+            #end
+            
+            <hr/>
+            
+            <a href="javascript: addPage();">
+    			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
+			</a>
+			
+            <hr/>
+            
+            <a href="javascript: addTask();">
+	           <span class="newTaskIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-a-Task")
+	        </a>
+        </div>
+        
+    </div>
+<!-- /Edit Mode -->
+
+<!-- Preview Mode -->
+    <div id="previewModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Preview")" #if ($PREVIEW_MODE && $ADMIN_MODE) selected="true" #end>
+        <div class="pageTools">
+        
+        	#if($PUBLISH_HTMLPAGE_PERMISSION)
+                <a href="javascript: publishAll();">
+                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
+                </a>
+            #else
+                <span class="disabled">
+                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
+                </span>
+            #end
+            
+            <span class="disabled">
+            	<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
+            </span>
+            
+            <span class="disabled">
+            	<span class="statisticsIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Statistics")
+            </span>
+
+            <span class="disabled">
+            	<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
+            </span>
+            
+            <hr/>
+            
+            #if($canViewDiff)
+                <a href="javascript: viewDiff();">
+                	<span class="redlineIcon"></span> $languagewebapi.getFromUserLanguage("modes.Whats-Changed")
+                </a>
+            #end
+            
+            <hr/>
+            
+            <a href="javascript: addPage();">
+    			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
+			</a>
+			
+            <hr/>
+            
+            <a href="javascript: addTask();">
+	           <span class="newTaskIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-a-Task")
+	        </a>
+        </div>
+    </div>
+<!-- /Preview Mode -->
+
+<!-- Live Mode -->
+    <div id="liveModeTab" dojoType="dijit.layout.ContentPane" title="$langbackendwebapi.get("modes.Live")" #if (!$EDIT_MODE && $ADMIN_MODE) selected="true" #end>
+        <div class="pageTools">
+            
+            <span class="disabled">
+            	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
+            </span>
+            
+            <span class="disabled">
+            	<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
+            </span>
+            
+            <span class="disabled">
+            	<span class="statisticsIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Statistics")
+            </span>
+            
+            <span class="disabled">
+            	<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
+            </span>
+            
+            <hr/>
+            
+            <a href="javascript: addPage();">
+    			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
+			</a>
+			
+            <hr/>
+            
+            <a href="javascript: addTask();">
+	           <span class="newTaskIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-a-Task")
+	        </a>
+        </div>
+    </div>
+<!-- /Live Mode -->
+</div>
+
+<div class="clear"></div>
+
+<!-- Start Languages -->
+    #if($languages.size() > 1)
+        <div class="lang">
+
+            <div id="combo_zone2">
+                <input id="language_id"/>
+            </div>
+
+              <script>
+
+                  // http://jira.dotmarketing.net/browse/DOTCMS-6148
+                  #set($myString="{identifier:'id',imageurl:'imageurl',label:'label',items:[")
+
+                  #set($imageURL="/html/images/languages/all.gif")
+                  #set($style="background-image:url(URLHERE);width:16px;height:11px;margin:3px 5px;display:inline-block;vertical-align:middle")
+                  #set($first=true)
+                  #foreach($lang in $languages)
+                      #set($imageURL="/html/images/languages/${lang.languageCode}_${lang.countryCode}.gif")
+                      #set($display="${lang.language} - ${lang.country}")
+                      #if($first)
+                        #set($first=false)
+                      #else
+                        #set($myString="${myString},")
+                      #end
+                      #set($myString="${myString}{id:'${lang.id}',")
+                      #set($myString="${myString}value:'${lang.id}',")
+                      #set($myString="${myString}imageurl:'${imageURL}',")
+                      #set($myString="${myString}lang:'${display}',")
+                      #set($elStyle=$style.replaceAll("URLHERE",$imageURL))
+                      #set($myString="${myString}label:'<span style=\"${elStyle}\"></span>${display}'}")
+                  #end
+                  #set($myString="${myString}]}")
+
+                function updateSelectBoxImage(myselect) {
+                    var imagestyle = "url('" + myselect.item.imageurl + "')";
+                    var selField = dojo.query('#combo_zone2 div.dijitInputField')[0];
+                    dojo.style(selField, "backgroundImage", imagestyle);
+                    dojo.style(selField, "backgroundRepeat", "no-repeat");
+                    dojo.style(selField, "padding", "0px 0px 0px 25px");
+                    dojo.style(selField, "backgroundColor", "transparent");
+                    dojo.style(selField, "backgroundPosition", "3px 6px");
+                }
+
+                    var storeData=${myString};
+                    var langStore = new dojo.data.ItemFileReadStore({data: storeData});
+                    var myselect = new dijit.form.FilteringSelect({
+                             id: "language_id",
+                             name: "language_id",
+                             value: '',
+                             required: true,
+                             store: langStore,
+                             searchAttr: "lang",
+                             labelAttr: "label",
+                             labelType: "html",
+                             onChange: function() {
+                                 var el=dijit.byId('language_id');
+                                 updateSelectBoxImage(el);
+                                 changeLanguage(el.item.value);
+                             },
+                             labelFunc: function(item, store) { return store.getValue(item, "label"); }
+                        },
+                        dojo.byId("language_id"));
+                        myselect.setValue('${language}');
+
+            </script>
+        </div>
+    #end
+<!-- End Languages -->
+
+    <div class="clear"></div>
+    
+<!-- Start Controles -->
+	<div id="buttonRow">
+	    <button dojoType="dijit.form.Button" onClick='backToCMS()' iconClass="cancelIcon" >
+	        $languagewebapi.getFromUserLanguage("Admin-Screen")
+	    </button>
+	</div>
+	<div class="clear"></div>
+	
+	<div class="logout">
+	    <button dojoType="dijit.form.Button" onClick='doLogout()' iconClass="closeIcon">
+            $languagewebapi.getFromUserLanguage("Logout")
+        </button>
+	</div>
+
+<!-- END Controles -->
+
+</div>
+
+<div style="display:none">
+<form action="${directorURL}" id="submitParent" method="post" target="_top">
+    <input type="hidden" name="referer" id="referer" value="$referer"><BR>
+    <input type="hidden" name="taskInode" id="taskInode" value=""><BR>
+    <input type="hidden" name="cmd" id="cmd" value="addChild"><BR>
+    <input type="hidden" name="container" id="container" value=""><BR>
+    <input type="hidden" name="htmlPage" id="htmlPage" value="$htmlPageInode"><BR>
+    <input type="hidden" name="contentlet" id="contentlet" value=""><BR>
+    <input type="hidden" name="selectedcontentlet" id="selectedcontentlet" value=""><BR>
+    <input type="hidden" name="menuItem" id="menuItem" value=""><BR>
+    <input type="hidden" name="level" id="level" value=""><BR>
+    <input type="hidden" name="static" id="static" value=""><BR>
+    <input type="hidden" name="course" id="course" value=""><BR>
+    <input type="hidden" name="department" id="department" value=""><BR>
+    <input type="hidden" name="package" id="package" value=""><BR>
+    <input type="hidden" name="category" id="category" value=""><BR>
+    <input type="hidden" name="parentFolder" id="parentFolder" value=""><BR>
+</form>
+</div>
+
+</body>
+</html>
+
+
+
+#end
+

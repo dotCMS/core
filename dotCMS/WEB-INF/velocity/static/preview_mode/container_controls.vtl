@@ -1,0 +1,68 @@
+##
+##  IMPORTANT NOTE!!!
+##	
+##	This is a file that gets included with every container within the client code, it is extremely important that NO conflicting HTML and Javascript
+##  gets included in this file, major javascript and html operations should be performed in the parent document via the preview_mode.vtl and 
+##  preview_mode_controls.vtl files.
+##
+##  Also any html code written in the file should carefully select the ids of the elements so the never conflict with other ids within the client page. 
+##	
+##  Also any css class reference included in your html code here needs to be carefully named check the comments on the preview.css file for instructions on
+##  this matter
+##
+
+<div class="dotContainerControls">
+	<div class="dotContainerControlsAnchor">
+		<a onmouseover="this.style.color='#6986ba';" onmouseout="this.style.color='#777';" href="javascript: ;" onclick="javascript:parent.showHideMenu('$CONTAINER_INODE', event, this);" id="controlAnchor$CONTAINER_INODE">
+			$langbackendwebapi.get("modes.Add-Content")
+		</a>
+	</div>
+	<div class="dotContainerNotesAnchor">
+		<a href="javascript: ;" id="containerNotes${CONTAINER_INODE}" onclick="javascript:parent.showHideMenu('notes-${CONTAINER_INODE}', event, this);">
+			<img src="/html/images/preview/btn_container_note.gif" alt='$langbackendwebapi.get("modes.Container-Notes")' width="27" height="24" border="0">
+		</a>
+	</div>
+</div>
+
+<script type="text/javascript" language="javascript">
+
+	//Controls get written to the parent html document outside the client html code iframe
+	parent.dojo.global.controlsHTML +=
+	'<div style="display: none;" class="dotControls" id="control-${CONTAINER_INODE}">\n'+
+		#if($CONTAINER_MAX_CONTENTLETS > $CONTAINER_NUM_CONTENTLETS && $STATIC_CONTAINER && $USE_CONTAINER_PERMISSION && $ADD_CHILDREN_HTMLPAGE_PERMISSION)
+			#if($ADD_CONTENT_PERMISSION)
+				'<span class="dotNewContent"><a href="javascript:addContentlet(\'$CONTAINER_INODE\');">$langbackendwebapi.get("modes.New-Content")</a></span>\n'+
+			#end
+			'<span class="dotReuseContent"><a href="javascript:popContentletsBrowser(\'$CONTAINER_INODE\');" onclick="parent.showHideMenu(\'$CONTAINER_INODE\');">$langbackendwebapi.get("modes.Reuse-Content")</a></span>\n'+
+			'<span class="dotAddWidget"><a href="javascript:parent.openAddWidget(\'${CONTAINER_INODE}\');">$langbackendwebapi.get("modes.Add-Widget")</a></span>\n'+
+			'<span class="dotAddForm"><a href="javascript:openAddForm(\'${CONTAINER_INODE}\');">$langbackendwebapi.get("modes.Add-Form")</a></span>\n'+
+		#else
+			'<span class="dotNewContentDisabled">$langbackendwebapi.get("modes.New-Content")</span>\n'+
+			'<span class="dotReuseContentDisabled">$langbackendwebapi.get("modes.Reuse-Content")</span>\n'+
+			'<span class="dotAddWidgetDisabled">$langbackendwebapi.get("modes.Add-Widget")</span>\n'+
+			'<span class="dotAddFormDisabled">$langbackendwebapi.get("modes.Add-Form")</span>\n'+
+		#end
+		'<span class="dotControlsClose"><a href="javascript:parent.showHideMenu(\'$CONTAINER_INODE\');">$langbackendwebapi.get("modes.Close")</a></span>\n'+
+	'</div>\n' + 
+	
+	'<div style="display: none;" class="dotNoteBox" id="control-notes-${CONTAINER_INODE}">\n' +            
+			'<div class="dotNoteBoxBar"><img src="/html/images/preview/container.gif" width="27" height="23" align="absmiddle">$langbackendwebapi.get("modes.Container")</div>\n'+                   
+          	'<div class="dotContainerInfo">\n' +
+          		'<strong>$langbackendwebapi.get("modes.Name"):</strong> ${UtilMethods.makeJavaSafe(${CONTAINER_NAME})}<br />\n' +
+          		'<strong>$langbackendwebapi.get("modes.Accepts"):</strong> ${UtilMethods.makeJavaSafe(${CONTAINER_STRUCTURE_NAME})}<br />\n' +
+        		#if($CONTAINER_NOTES) 
+          			"<textarea class='dotNoteTextarea'>$UtilMethods.escapeDoubleQuotes(${CONTAINER_NOTES.replaceAll("\n","\\n").replaceAll("\r","")})</textarea>\n" +
+          		#end
+			'</div>\n' +
+			'<div class="dotNoteBoxButtons">\n' +
+				'<a href="javascript:parent.showHideMenu(\'notes-${CONTAINER_INODE}\')" class="dotNoteClose">$langbackendwebapi.get("modes.Close")</a>\n' +
+				#if($EDIT_CONTAINER_PERMISSION)
+					'<a href="javascript:editContainer(\'$CONTAINER_INODE\');" class="dotNoteEdit">$langbackendwebapi.get("modes.Edit")</a>\n' +
+				#end
+			'</div>\n' +
+	'</div>\n';
+	
+	parent.document.getElementById("controlsdiv").innerHTML = parent.dojo.global.controlsHTML;//DOTCMS-6329
+
+</script>
+

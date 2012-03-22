@@ -1,0 +1,4 @@
+<rule>
+	<from>^/dotCMSPluginsRcool$</from>
+	<to type="redirect">/yesTheyAre/</to>
+</rule>

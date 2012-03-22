@@ -1,0 +1,174 @@
+<?xml version="1.0"?>
+<!DOCTYPE display>
+
+<display>
+	<!-- category name="category.christianity">
+		<portlet id="7" />
+		<portlet id="29" />
+		<portlet id="51" />
+		<portlet id="46" />
+		<portlet id="21" />
+		<portlet id="44" />
+		<portlet id="32" />
+		<portlet id="45" />
+	</category-->
+	<!--category name="category.community">
+		<portlet id="10" />
+		<portlet id="33" status="new" />
+		<portlet id="8" / >
+		<portlet id="52" />
+		<portlet id="11" />
+		<portlet id="22" status="alpha" />
+		<portlet id="1" />
+		<portlet id="42" status="alpha" />
+		<portlet id="19" />
+		<portlet id="24" />
+	</category-->
+	<!--category name="category.development">
+		<portlet id="38" />
+		<portlet id="40" status="alpha" />
+		<portlet id="43" status="alpha" />
+		<portlet id="41" />
+	</category-->
+	<!--category name="category.entertainment">
+		<portlet id="14" />
+		<portlet id="6" />
+		<portlet id="37" />
+	</category-->
+	<!--category name="category.finance">
+		<portlet id="13" />
+		<portlet id="16" />
+		<portlet id="12" />
+	</category-->
+	<!--category name="category.library">
+		<portlet id="20" />
+		<portlet id="31" />
+		<portlet id="64" />
+	</category-->
+	<!--category name="category.news">
+		<portlet id="53" />
+		<portlet id="15" status="new" />
+		<portlet id="5" />
+		<portlet id="39" />
+		<portlet id="4" />
+	</category-->
+	<category name="category.polls">
+		<portlet id="25" />
+		<portlet id="59" />
+		<portlet id="60" />
+		<portlet id="61" />
+		<portlet id="62" />
+		<portlet id="63" />
+	</category>
+	<!--category name="category.science">
+		<portlet id="49" />
+	</category-->
+	<!--category name="category.shopping">
+		<portlet id="67" />
+		<portlet id="34" />
+	</category-->
+	<!--category name="category.test">
+		<portlet id="69" status="beta" />
+		<portlet id="50" />
+		<portlet id="47" />
+		<portlet id="48" />
+		<portlet id="EXT_1" />
+		<portlet id="66" />
+	</category-->
+	
+	<category name="category.tools">
+		<!--portlet id="9" /-->
+		<!--portlet id="65" /-->
+		<!--portlet id="28" /-->
+		<!--portlet id="17" /-->
+		<!--portlet id="23" /-->
+		<!--portlet id="35" /-->
+		<!--portlet id="18" /-->
+		<portlet id="2" />
+		<!--portlet id="30" /-->
+		<!--portlet id="26" /-->
+		<!--portlet id="3" /-->
+		<!--portlet id="27" /-->
+	</category>
+	<!--category name="category.wiki">
+		<portlet id="36" />
+		<portlet id="54" />
+		<portlet id="55" />
+		<portlet id="56" />
+		<portlet id="57" />
+		<portlet id="58" />
+	</category-->
+	<!--category name="category.wsrp">
+		<portlet id="68" status="new" />
+	</category-->
+	<category name="category.userManagement">
+		<portlet id="EXT_ORG"/>
+		<portlet id="EXT_USERS" />
+		<portlet id="EXT_USERMANAGER" />
+		<portlet id="EXT_USER_COMMENTS"/>
+		<portlet id="EXT_USER_CLICKS"/>
+		<portlet id="9" />
+		<portlet id="EXT_USERFILTER"/>
+		<portlet id="EXT_USER_ACCOUNT_NOTES"/>
+	</category>
+	<category name="category.eCommerce">
+		<portlet id="EXT_PRODUCT"/>	
+		<portlet id="EXT_ECO_ORDER"/>	
+		<portlet id="EXT_DISCOUNTCODE"/>
+	</category>
+	<category name="category.events">
+		<portlet id="EXT_WEBEVENTS"/>
+		<portlet id="EXT_EVE_REG"/>
+		<portlet id="EXT_EVENTS"/>
+		<portlet id="EXT_FACILITY"/>
+		<portlet id="EXT_EVENTSAPPROVAL"/>
+	</category>
+	<category name="category.calendar">
+		<portlet id="EXT_CALENDAR"/>
+	</category>
+	<category name="category.contentManagementAdmin">
+		<portlet id="EXT_CMS_MAINTENANCE" />
+		<portlet id="EXT_SCHEDULER" />
+		<!--portlet id="EXT_WEBFORMS"/-->
+		<portlet id="EXT_VIRTUAL_LINKS" />
+		<portlet id="EXT_STRUCTURE" />
+		<portlet id="EXT_FORM_HANDLER" />
+		<portlet id="EXT_LANG" />
+		<portlet id="EXT_LUCENE_TOOL" />
+		<portlet id="EXT_SITESEARCH" />
+	</category>
+	<category name="category.marketing">
+		<portlet id="EXT_MAILINGLISTBUILDER" />
+		<portlet id="EXT_19" />
+		<portlet id="EXT_16" />
+		<portlet id="EXT_COMMUNICATIONS_MANAGER"/>
+	</category>
+
+	<category name="category.contentManagement">
+		<portlet id="EXT_3" />
+		<portlet id="EXT_4" />
+		<portlet id="EXT_6" />
+		<portlet id="EXT_8" />
+		<portlet id="EXT_BROWSER" />
+		<portlet id="EXT_11" />
+		<portlet id="EXT_12" />
+		<portlet id="EXT_13" />
+		<portlet id="EXT_18" />
+		<portlet id="EXT_20" />
+		<portlet id="EXT_22" />
+		<portlet id="EXT_JOBS" />
+		<portlet id="EXT_KCO" />
+		<portlet id="EXT_21"/>
+		<portlet id="EXT_HTMLPAGE_VIEWS"/>
+		<portlet id="EXT_5"/>
+		<portlet id="EXT_2"/>
+		<portlet id="EXT_15"/>
+		<portlet id="EXT_17"/>
+		<portlet id="EXT_CONTENTRATINGS"/>
+		<portlet id="EXT_TAG_MANAGER" />
+	</category>	
+
+	<category name="category.analysis">
+		<portlet id="EXT_REPORTMANAGER" />
+	</category>
+</display>

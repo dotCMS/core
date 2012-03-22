@@ -1,0 +1,23 @@
+
+
+<div style='padding-left: 10px;'>on template : $veloError.templateName</div>
+<div style='padding-left: 10px;'>line : $veloError.lineNumber</div>
+<div style='padding-left: 10px;'>column : $veloError.columnNumber</div>
+<div style='padding-left: 10px;'> $prettyError</div>
+<div style='margin-bottom: 10px; margin-top: 20px; font-weight: bold; font-size: 120%'>Code:</div>
+
+<hr width=70% align=left>
+
+<span style='font-family: monospace'> 
+#foreach($line in $badCode)
+	#if($line.badLine)
+		$line.lineNumber :	<font color="red">$line.code</font>
+	#else
+		$line.lineNumber :	$line.code
+	#end
+	&nbsp;<br>
+#end
+</span>
+
+<hr width=70% align=left>
+

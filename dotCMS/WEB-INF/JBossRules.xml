@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package name="JBossRules" xmlns="http://drools.org/drools-3.0"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+	xs:schemaLocation="http://drools.org/drools-3.0 drools-3.0.xsd">
+
+	   
+	<import name="javax.servlet.http.HttpServletRequest"/>
+	<import name="com.dotmarketing.util.WebKeys" />
+	<import name="javax.servlet.http.HttpSession" />
+	<import name="com.dotmarketing.portlets.user.action.EditUserCommentAction" />
+	<import name="com.dotmarketing.portlets.user.struts.UserCommentsForm" />
+	<import name="com.liferay.portal.model.User" />
+	<import name="com.dotmarketing.factories.UserProxyFactory" />
+	<import name="com.dotmarketing.beans.UserProxy" />
+	<import name="com.dotmarketing.util.UtilMethods" />
+	<import name="com.dotmarketing.tag.factories.TagFactory" />
+
+<!--
+	<rule name="Test 01">
+		<lhs>
+			<column identifier="request" object-type="HttpServletRequest">
+				<predicate field-name="requestURI" identifier="requestURI" >
+					requestURI.startsWith("/dotCMS/login")
+				</predicate>
+				<predicate field-name="session" identifier="session" >
+					session.getAttribute(WebKeys.CMS_USER) != null
+				</predicate>
+			</column>
+		</lhs>
+
+		<rhs>
+			User user = (User) session.getAttribute(WebKeys.CMS_USER);
+			UserProxy userProxy = UserProxyFactory.getUserProxy(user);
+			EditUserCommentAction action = new EditUserCommentAction();
+			UserCommentsForm userCommentForm = new UserCommentsForm();
+			userCommentForm.setMethod("Other");
+			userCommentForm.setSubject("JBoss Rule Test");
+			userCommentForm.setComment("Comment: JBoss Rule Test");
+			userCommentForm.setUserComment("UserComment: JBoss Rule Test");
+			userCommentForm.setCommentUserId("CommentUserId: JBoss Rule Test");
+			userCommentForm.setUserProxy(userProxy.getInode());
+			try {
+				action._saveWebAsset(null, null, null, userCommentForm, user);
+			} catch (Exception e) {
+			}
+		</rhs>
+	</rule>
+	
+	<rule name="Test 02">
+		<lhs>
+			<column identifier="request" object-type="HttpServletRequest">
+				<predicate field-name="requestURI" identifier="requestURI" >
+					requestURI.equals("/")
+				</predicate>
+				<predicate field-name="session" identifier="session" >
+					session.getAttribute(WebKeys.CMS_USER) != null
+				</predicate>
+			</column>
+		</lhs>
+
+		<rhs>
+			Integer homePageTimesVisited = (Integer) session.getAttribute("homePageTimesVisited");
+			if (homePageTimesVisited == null) {
+				session.setAttribute("homePageTimesVisited", new Integer(1));
+			} else {
+				if (homePageTimesVisited.intValue() != 3) {
+					session.setAttribute("homePageTimesVisited", new Integer(homePageTimesVisited.intValue() + 1));
+				} else {
+					User user = (User) session.getAttribute(WebKeys.CMS_USER);
+					UserProxy userProxy = UserProxyFactory.getUserProxy(user);
+					TagFactory.getTag("Home Page", user.getUserId());
+					TagFactory.addTagInode("Home Page", "" + userProxy.getInode());
+				}
+			}
+		</rhs>
+	</rule>
+	 -->
+</package>

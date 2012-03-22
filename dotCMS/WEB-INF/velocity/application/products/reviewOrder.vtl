@@ -1,0 +1,401 @@
+#parse('static/messages.html')
+<style>
+@import url(/global/css/form.css);
+
+/* put in width of widest label */
+fieldset label,
+.fieldset .label,
+.fieldset label{
+	width: 155px;
+}
+fieldset fieldset,
+fieldset .buttonGroup,
+.fieldset .buttonGroup{
+	padding-left: 155px;
+}
+fieldset fieldset legend{
+	margin-left: -155px;
+}
+</style>
+<script language="javascript" type="text/javascript" src='/html/js/states_and_countries.js'></script>
+<script languaje="javascript">
+function viewCart()
+{
+	document.location.href = "/dotCMS/viewCart";
+}
+
+function makeChanges()
+{
+	var form = document.getElementById("reviewOrder");
+	form.action = "/dotCMS/checkOutCart";
+	form.dispatch.value = "reload"
+	form.submit();
+}
+
+function purchase()
+{
+	var form = document.getElementById("reviewOrder");
+	form.action = "/dotCMS/purchaseOrder";
+	form.dispatch.value = "unspecified"
+	form.submit();
+}
+
+function shippingMethodChange()
+{
+	var form = document.getElementById("reviewOrder");
+	form.action = "/dotCMS/reviewOrder";
+	form.dispatch.value = "loadAmounts"
+	form.submit();
+}
+
+//Layer Management Variables
+styleReference = "style.";
+visibleLayer = "inline";
+browser = "Explorer";
+
+//Layer Management
+function referenceLayer(layerName)
+{
+	//if (browser == "Netscape")
+	//	return "document.layers['"+layerName+"'].";
+	//else
+	//	return "document.all['"+layerName+"'].";
+	return "document.getElementById('" + layerName + "').";
+}
+
+function hideLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"');
+}
+
+function showLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"');
+}
+
+function changeLayer()
+{
+	var form = document.getElementById("reviewOrder");
+	var paymentType = form.paymentType.value;
+	if (paymentType == "cc")
+	{
+		showLayer("cc");
+		hideLayer("check");
+		hideLayer("po");
+	}
+	else if(paymentType == "ch")
+	{
+		showLayer("check");
+		hideLayer("cc");
+		hideLayer("po");
+	}
+	else if(paymentType == "po")
+	{
+		showLayer("po");
+		hideLayer("cc");
+		hideLayer("check");
+	}
+}
+
+function updateStates()
+{
+	var form = document.getElementById("reviewOrder");
+	//Billing State
+	var billingState = writeStatesName('$!orderForm.billingState');
+	form.billingStateText.value = billingState;
+	//Shipping State
+	var shippingState = writeStatesName('$!orderForm.shippingState');
+	form.shippingStateText.value = shippingState;
+}
+</script>
+#set($session = $request.getSession())
+#set($user = $session.getAttribute("cms.user"))
+<form action="/dotCMS/checkOutCart" method="post" autocomplete="off" id="reviewOrder">
+	<input type="hidden" name="org.apache.struts.taglib.html.TOKEN" value="$request.getSession().getAttribute("org.apache.struts.action.TOKEN")">
+	<input type="hidden" name="inode" value="$!orderForm.inode">
+	<input type="hidden" name="dispatch" value="">
+
+<div style="float: left; width: 335px; margin-right: 20px;">	
+<div class="fieldset">
+	<div class="legend">Billing Address</div><br />
+	<input type="hidden" name="billingAddressType" value="$!orderForm.billingAddressType">
+	
+	#if($!orderForm.billingAddressType == "Work")
+		<span class="label">Company Name:</span>
+		<span class="input">$webapi.getUserCompanyName()</span><br />
+	#end
+	
+	<span class="label">User Name:</span>
+	<span class="input">$webapi.getUserFullName()</span><br />
+
+	<span class="label">Address Street 1:</span>
+	<input type="hidden" name="billingAddress1" value="$!orderForm.billingAddress1" style="border:0px" readonly>
+	<span class="input">$!orderForm.billingAddress1</span><br />
+
+	<span class="label">Address Street 2:</span>
+	<input type="hidden" name="billingAddress2" value="$!orderForm.billingAddress2" style="border:0px" readonly>
+	<span class="input">$!orderForm.billingAddress2</span><br />
+
+	<span class="label">City:</span>
+	<input type="hidden" name="billingCity" value="$!orderForm.billingCity" style="border:0px" readonly>
+	<span class="input">$!orderForm.billingCity</span><br />
+
+	<span class="label">State:</span>
+	<input type="hidden" name="billingState" id="billingState" value="$!orderForm.billingState">
+	<input type="hidden" name="billingStateText" id="billingStateText" value="">
+	<input type="hidden" name="billingStateOtherCountryText" id="billingStateOtherCountryText" value="$!orderForm.billingStateOtherCountryText">
+	<span class="input">
+	#if ($orderForm.billingState == "otherCountry")
+		$!orderForm.billingStateOtherCountryText
+	#else
+		$!orderForm.billingState
+	#end
+	</span><br />
+
+	<span class="label">Country:</span>
+	<input type="hidden" name="billingCountry" id="billingCountry" value="$!orderForm.billingCountry">
+	<input type="hidden" name="billingCountryText" id="billingCountryText" value="">
+	<span class="input">$!orderForm.billingCountry</span><br />
+
+	<span class="label">Zip:</span>
+	<input type="hidden" name="billingZip" value="$!orderForm.billingZip" style="border:0px" readonly>
+	<span class="input">$!orderForm.billingZip</span><br />
+
+	#if($!orderForm.billingAddressType.equals('Work'))
+		<span class="label">Billing Contact's Person Name:</span>
+		<input type="hidden" name="billingContactName" value="$!orderForm.billingContactName" style="border:0px" readonly>
+		<span class="input">$!orderForm.billingContactName</span><br />
+	
+		<span class="label">Phone:</span>
+		<input type="hidden" name="billingContactPhone" value="$!orderForm.billingContactPhone" style="border:0px" readonly>
+		<span class="input">$!orderForm.billingContactPhone</span><br />
+	
+		<span class="label">Email:</span>
+		<input type="hidden" name="billingContactEmail" value="$!orderForm.billingContactEmail" style="border:0px" readonly>
+		<span class="input">$!orderForm.billingContactEmail</span><br />
+	#end
+
+</div>
+
+<div class="fieldset">
+	<div class="legend">Shipping Address</div><br />
+	
+	#if($!orderForm.shippingAddressType == "Work")	
+		<span class="label">Company Name</span>
+		<span class="input">$webapi.getUserCompanyName()</span><br />
+	#end
+	
+	<span class="label">User Name:</span>
+	<span class="input">$webapi.getUserFullName()</span><br />
+
+	<input type="hidden" name="shippingAddressType" value="$!orderForm.shippingAddressType" />
+	
+	<span class="label">Shipping Label:</span>
+	<input type="hidden" name="shippingLabel" value="$!orderForm.shippingLabel" style="border:0px" readonly>
+	<span class="input">$!orderForm.shippingLabel</span><br />
+	
+	<span class="label">Address Street 1:</span>
+	<input type="hidden" name="shippingAddress1" value="$!orderForm.shippingAddress1" style="border:0px" readonly>
+	<span class="input">$!orderForm.shippingAddress1</span><br />
+
+	<span class="label">Address Street 2:</span>
+	<input type="hidden" name="shippingAddress2" value="$!orderForm.shippingAddress2" style="border:0px" readonly>
+	<span class="input">$!orderForm.shippingAddress2</span><br />
+
+	<span class="label">City:</span>
+	<input type="hidden" name="shippingCity" value="$!orderForm.shippingCity" style="border:0px" readonly>
+	<span class="input">$!orderForm.shippingCity</span><br />
+
+	<span class="label">State:</span>
+	<input type="hidden" name="shippingState" id="shippingState" value="$!orderForm.shippingState">
+	<input type="hidden" name="shippingStateText" id="shippingStateText" value="">
+	<input type="hidden" name="shippingStateOtherCountryText" id="shippingStateOtherCountryText" value="$!orderForm.shippingStateOtherCountryText">
+	<span class="input">
+	#if ($orderForm.shippingState == "otherCountry")
+		$!orderForm.shippingStateOtherCountryText
+	#else
+		$!orderForm.shippingState
+	#end
+	</span><br />
+
+	<span class="label">Country:</span>
+	<input type="hidden" name="shippingCountry" id="shippingCountry" value="$!orderForm.shippingCountry">
+	<input type="hidden" name="shippingCountryText" id="shippingCountryText" value="">
+	<span class="input">$!orderForm.shippingCountry</span><br />
+
+	<span class="label">Zip:</span>
+	<input type="hidden" name="shippingZip" value="$!orderForm.shippingZip" style="border:0px" readonly>
+	<span class="input">$!orderForm.shippingZip</span><br />
+
+	<span class="label">Phone:</span>
+	<input type="hidden" name="shippingPhone" value="$!orderForm.shippingPhone" style="border:0px" readonly>
+	<span class="input">$!orderForm.shippingPhone</span><br />
+
+	<span class="label">Fax:</span>
+	<input type="hidden" name="shippingFax" value="$!orderForm.shippingFax" style="border:0px" readonly>
+	<span class="input">$!orderForm.shippingFax</span><br />
+
+</div>					
+</div>
+
+<div style="float: left; width: 340px;">					
+<div class="fieldset">
+	<div class="legend">Payment Information</div><br />
+				
+	#set($paymentType = $!orderForm.paymentType)
+
+	<span class="label">Payment Type:</span>
+	#if($paymentType == 'cc')
+		#set($selected = $config.getStringProperty("ECOM_CREDIT_CARD_FN"))
+	#elseif($paymentType == 'ch')
+		#set($selected = $config.getStringProperty("ECOM_CHECK_FN"))
+	#elseif($paymentType == 'po')
+		#set($selected = $config.getStringProperty("ECOM_PURCHASE_ORDER_FN"))
+	#end
+	<input type="hidden" name="paymentType" value="$paymentType">
+	<span class="input">$!selected</span><br />
+
+	
+	<div id="cc">
+		<span class="label">Name on Card:</span>
+		<input type="hidden" name="nameOnCard" value="$!orderForm.nameOnCard" style="border:0px" readonly>
+		<span class="input">$!orderForm.nameOnCard</span><br />
+
+		<span class="label">Card Type:</span>		
+		#set($cardType = $!orderForm.cardType)
+		#if($cardType == 'vs')
+			#set($selected = "Visa")
+		#elseif($cardType == 'mc')
+			#set($selected = "Masterd Card")
+		#elseif($cardType == 'ae')
+			#set($selected = "American Express")
+		#elseif($cardType == 'dc')
+			#set($selected = "Discover")
+		#end
+		<input type="hidden" name="cardType" value="$cardType">
+		<span class="input">$!selected</span><br />
+		
+		<span class="label">Card Number:</span>		
+		<input type="hidden" name="cardNumberString" value="$!webapi.toCCFormat($!orderForm.cardNumber)" style="border:0px" readonly>
+		<input type="hidden" name="cardNumber" value="$!orderForm.cardNumber">
+		<span class="input">$!webapi.toCCFormat($!orderForm.cardNumber)</span><br />
+
+		<span class="label">Expiration Date:</span>
+		#set($now = $date.getDate())
+		#set($month = $!orderForm.cardExpMonth)
+		#set($year =  $!orderForm.cardExpYear)
+		<input type="hidden" name="cardExpMonth" value="$!orderForm.cardExpMonth">
+		<input type="hidden" name="cardExpYear" value="$!orderForm.cardExpYear">
+		<span class="input">$webapi.toMonthFormat($month) $!year</span><br />
+		
+		<span class="label">Card Verification Value:</span>
+		<input type="hidden" name="cardVerificationValue" value="$!orderForm.cardVerificationValue" style="border:0px" readonly>
+		<span class="input">$!orderForm.cardVerificationValue</span><br />
+
+	</div>
+
+	<div id="po">
+		<span class="label">PO Number</span>
+		<input type="hidden" name="poNumber" value="$!orderForm.poNumber" style="border:0px" readonly>
+		<span class="input">$!orderForm.poNumber</span><br />	
+	</div>
+	
+</div>
+
+#set($shoppingCart = $session.getAttribute("shoppingCart"))
+#if ($shoppingCart)
+	#set($holders = $shoppingCart.holders)
+#end
+#if ($shoppingCart)
+	#set($discountCodes = $shoppingCart.discountCodes)
+#end
+<!-- subtotal items -->
+
+#foreach($holder in ${holders})
+	#set($format = $holder.format)
+	#set($product = $format.product)
+	#set($priceAmount = $holder.price)
+	#set($lineTotal = $holder.lineTotal)
+#end
+
+<!-- Discounts -->
+#set($totalDiscount = $orderForm.orderDiscount)
+
+<!-- subtotal - discounts -->
+#set($totalFinal = $math.sub($orderForm.orderSubTotal,$totalDiscount))
+<input type="hidden" name="orderSubTotal" value="$totalFinal">
+<input type="hidden" name="orderDiscount" value="$orderForm.orderDiscount">
+
+<div class="fieldset">
+	<div class="legend">Charges</div><br />
+	
+	<span class="label">Subtotal:</span>
+	<input type="hidden" name="orderSubTotalDiscount" value="$!totalFinal" style="border:0px" readonly>
+	<span class="input">$ $!webapi.toPriceFormat($!totalFinal)</span><br />
+
+	#set($shipping = $orderForm.orderShipping)
+	<span class="label">Shipping and Handling:</span>
+	<input type="hidden" name="orderShipping" value="$!shipping" style="border:0px" readonly>
+	<span class="input">$ $!webapi.toPriceFormat($!shipping)</span><br />
+
+	#set($tax = 0)
+	#if($!orderForm.billingState == 'FL')
+	#set($tax = $orderForm.orderTax)
+	<span class="label">Tax (6.5%) FL:</span>
+	<input type="hidden" name="orderTax" value="$!tax" style="border:0px" readonly>
+	<span class="input">$ $!webapi.toPriceFormat($!tax)</span><br />
+	#end
+
+	#set($totalInvoice = $orderForm.orderTotal)
+	<span class="label">Total:</span>
+	<input type="hidden" name="orderTotal" value="$!totalInvoice" style="border:0px" readonly>
+	<span class="input">$ $!webapi.toPriceFormat($!totalInvoice)</span><br />
+
+	
+	#set($isShippingZero = $orderForm.isShippingZero)
+	#if($isShippingZero)
+		<p class="mRed">We will apply shipping later, we are only applying handling charges now.</p>
+	#end
+	
+	
+	<label for="orderShipType">Select different shipping:</label>
+	<select name="orderShipType" id="orderShipType" onchange="shippingMethodChange();">
+		#set($ground = $config.getIntProperty("SHIPPING_GROUND"))
+		#if($orderForm.orderShipType == $ground)
+			#set($seledtedShipping = "SELECTED")
+		#else
+			#set($seledtedShipping = "aux")
+		#end
+		<option value="$ground" $seledtedShipping>Ground</option>
+		#set($priority = $config.getIntProperty("SHIPPING_PRIORITY"))
+		#if($orderForm.orderShipType == $priority)
+			#set($seledtedShipping = "SELECTED")
+		#else
+			#set($seledtedShipping = "")
+		#end
+		<option value="$priority" $seledtedShipping>Second Day</option>
+		#set($nextDay = $config.getIntProperty("SHIPPING_NEXT_DAY"))
+		#if($orderForm.orderShipType == $nextDay)
+			#set($seledtedShipping = "SELECTED")
+		#else
+			#set($seledtedShipping = "")
+		#end
+		<option value="$nextDay" $seledtedShipping>Next Day</option>
+	</select>
+	
+	
+
+</div>
+
+<div class="buttonGroup" style="text-align: center;">
+	<a href="javascript:makeChanges();" class="button">Make Changes</a>
+	<a href="javascript:purchase();" class="activeButton">Purchase Now</a>
+</div>
+
+</div>
+
+</form>
+<script languaje="javascript">
+changeLayer();
+updateStates();
+</script>

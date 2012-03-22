@@ -1,0 +1,40 @@
+<!-- Use this file to add portlets and extend the portlet file -->
+
+<portlet>
+	<portlet-name>EXT_HELLO_WORLD</portlet-name>
+	<display-name>HELLO WORLD</display-name>
+	<portlet-class>com.liferay.portlet.VelocityPortlet</portlet-class>
+	<init-param>
+			<name>view-template</name>
+			<value>/static/plugins/hello.world/portlet/view.vm</value>
+	</init-param>
+	<expiration-cache>0</expiration-cache>
+	<supports>
+		<mime-type>text/html</mime-type>
+	</supports>
+	<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+	<security-role-ref>
+		<role-name>CMS User</role-name>
+	</security-role-ref>
+</portlet>
+
+<portlet>
+		<portlet-name>EXT_STRUTS_HELLO_WORLD</portlet-name>
+		<display-name>Struts Hello World Example</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/strutshello/view_hello</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>

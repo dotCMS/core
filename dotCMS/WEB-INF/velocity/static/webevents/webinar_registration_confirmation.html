@@ -1,0 +1,78 @@
+#set($registration=$request.getSession().getAttribute("com.dotmarketing.webevents.registration.bean"))
+#set($event=$webevents.getWebEvent($registration.eventInode))
+#set($location=$webevents.getWebEventLocation($registration.eventLocationInode))
+#set($attendees=$webevents.getRegistrationAttendees($registration))
+#set($company=$webevents.getContactOrganizationTitle($registration))
+#foreach ($attendee in $attendees)
+	#set($firstName = $attendee.firstName)
+	#set($lastName = $attendee.lastName)
+	#set($email = $attendee.email)
+#end
+<script type="text/javascript">
+<!--
+
+//-->
+</script>
+
+<style>
+td{
+padding:5px 20px;
+}
+.border{
+background:black;
+}
+.border td{
+background:#FFF;
+}
+.font{
+font-size:20px;
+font-weight:bold;
+}
+</style>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+	<tr>
+		<td>
+			<table width="100%" border="0" cellspacing="0" cellpadding="0">
+				<tr>
+					<td>#parse('static/messages.html')</td>
+				</tr>
+				<tr>
+					<td valign="top" align="left">
+						<b>Thanks for your Registration Order #${registration.inode}</b><br>
+					</td>
+				</tr>
+			</table>
+
+
+<table width="90%" border="1">
+  <tr>
+    <td><p>
+      <img src="http://www.studergroup.com/global/images/genesys_banner.gif"></p>
+      <p align="center"><strong>Thank you $!firstName $!lastName  for registering for our upcoming Webinar.</strong></p>
+      <p align="center">Your Registration Order number is #$!{registration.inode}</p>
+      #set($price = $webevents.getEventLocationPrice($location))
+      <p align="center">The cost of the webinar is $!{price}.</p>
+      <p align="center">Below please find the access information you'll need to attend the event:</p>
+      <p align="center"><b>$!event.title</b></p>
+      <p align="center"><strong>Date range:</strong> $!location.toString()</p>
+      <p align="center"><strong>PDF:</strong>A pdf of the webinar presentation can be downloaded from the below link. Please feel free to print for your attendees.</p>
+      <p align="center"><strong>Webinar Link:</strong> <a href="${webevents.getHotelLinkURL($location.hotelLink)}/tokenPasser.jsp?email=$!email&company=$!company&fname=$!firstName&lname=$!lastName">${webevents.getHotelLinkURL($location.hotelLink)}/tokenPasser.jsp?email=$!email&company=$!company&fname=$!firstName&lname=$!lastName</a></p>
+      <p align="center"><strong>Please note: You will need to access the link using the same email address used in your registration.</strong></p>
+      <p align="center"><strong>Registrants have the opportunity to purchase a CD-ROM of the webinar for $25.</strong></p>
+	  <p align="center"><strong>Use this discount code, $!location.hotelName </strong></p>
+	  <p align="center"><strong>and order at www.firestarterpublishing.com. This CD will be available on $!webevents.dateToPrettyHTMLDate($!location.startDate)</strong></p>
+      <p align="center">If you have any inquiries regarding this webinar please email:</p>
+      <p align="center"><a href="mailto:leaders@studergroup.com?subject=$!event.title">leaders@studergroup.com</a></p>
+<p align="center">For technical assistance please call Talkpoint at 800 773 3371.</p>
+      <p align="center">Thank you for your interest in this event, we look forward to having you join us.</p>
+      <p align="left">CME Requirements</p>
+      <p align="left">The Studer Group is accredited by the Accreditation Council for Continuing Medical Education to provide continuing medical education for physicians and in order to meet the requirements, you MUST complete the zoomerang survey in full offered at the end of the webinar. Once submitted, you will be notified of your completed credits. The Studer Group designates this educational activity for a maximum of 1 hour in Category 1 Credit towards the AMA Physician's Recognition Award. Each physician should claim only those hours of credit that he/she actually spent in the educational activity.</p>
+      </td>
+  </tr>
+</table>
+</td></tr></table>
+
+
+

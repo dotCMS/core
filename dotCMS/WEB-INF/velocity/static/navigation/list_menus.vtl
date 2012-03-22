@@ -1,0 +1,69 @@
+#macro (showNavigationLevel $menuLevel $levelPath $level $menuSpans $firstItemClass $lastItemClass $menuIdPrefix)
+	#set ($VTLSERVLET_DECODED_URI = "${UtilMethods.decodeURL($VTLSERVLET_URI)}")
+	#if ($UtilMethods.isSet($menuLevel) && $UtilMethods.isSet($menuLevel.size()) && ($menuLevel.size() > 0) && ($UtilMethods.inString($VTLSERVLET_DECODED_URI, $levelPath) || ($UtilMethods.isSet($openAllLevels) && $openAllLevels == true)))
+		<ul>
+		#foreach ($menuItem in $menuLevel)
+			#if (!$UtilMethods.isSet($menuItem.linkType))
+				#set($menuItem.linkType = "")
+			#end
+			#if (($menuItem.type == "LINK") && ($menuItem.linkType == "CODE"))
+				$menuItem.path
+			#else
+				#set ($li = "<li")
+				#if ((($menuItem.type == "LINK") && ($UtilMethods.inString($VTLSERVLET_DECODED_URI, "${menuItem.protocal}${menuItem.name}"))) || (($menuItem.type == "FOLDER") && ($UtilMethods.inString($VTLSERVLET_DECODED_URI, "${menuItem.path}") || ($UtilMethods.isSet($openAllLevels) && $openAllLevels == true))) || (($menuItem.type != "LINK") && ($menuItem.type != "FOLDER") && ($UtilMethods.inString($VTLSERVLET_DECODED_URI, "${menuItem.path}${menuItem.name}"))))
+					#set ($li = "${li} class='active'")
+				#end
+				#if ($menuItem.type == "LINK")
+					#set ($link = "${menuItem.protocal}${menuItem.name}")
+				#elseif ($menuItem.type == "FOLDER")
+					#set ($link = "${menuItem.path}")
+				#else
+					#set ($link = "${menuItem.path}$!{menuItem.name}")
+				#end
+
+				#set ($folderId = "")
+				#if ($menuItem.type == "FOLDER")
+					#set ($folderId = "${menuItem.name}")
+					#if ($UtilMethods.isSet($menuIdPrefix))
+						#set ($folderId = "${menuIdPrefix}_${folderId}")
+					#end
+					#set ($folderId = "id='${folderId}'")
+				#end
+
+				#set ($styleClass = " ")
+				#if ($menuItem.isFirstItem && $UtilMethods.isSet($firstItemClass))
+					#set ($styleClass = "class='${firstItemClass}_${level}'")
+				#elseif ($menuItem.isLastItem && $UtilMethods.isSet($lastItemClass))
+					#set ($styleClass = "class='${lastItemClass}_${level}'")
+				#end
+
+				#set ($target = "")
+				#if (($menuItem.type == "LINK") && $UtilMethods.isSet($menuItem.target))
+					#set ($target = "target='${menuItem.target}'")
+				#end
+
+				#if ($menuItem.type == "LINK")
+					#set ($li = "${li} ${folderId}><a ${styleClass} href='$!{link}' ${target}>")
+				#else
+					#set ($li = "${li} ${folderId}><a ${styleClass} href='${UtilMethods.encodeURIComponent($link)}' ${target}>")
+				#end
+				#if ($menuSpans)
+					#set ($li = "${li} <span>$menuItem.title</span>")
+				#else
+					#set ($li = "${li} $menuItem.title")
+				#end
+				#set ($li = "${li}</a>")
+				#if ($menuItem.type == "FOLDER")
+				        $li
+					#showNavigationLevel($menuItem.submenu $menuItem.path $math.add($level, 1) $menuSpans $firstItemClass $lastItemClass $menuIdPrefix)
+					</li>
+				#else
+				$li</li>
+				#end
+			#end
+		#end
+		</ul>
+	#end
+#end
+
+#showNavigationLevel($navigationItems '/' 1 $menuSpans $firstItemClass $lastItemClass $menuIdPrefix)

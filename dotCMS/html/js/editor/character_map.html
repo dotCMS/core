@@ -1,0 +1,124 @@
+<html>
+<head>
+	<title>Character Map</title>
+	<script language="JavaScript">
+		var chars = [
+			"&#162;",
+			"&#163;",
+			"&#165;",
+			"&#169;",
+			"&#171;",
+			"&#187;",
+			"&#174;",
+			"&#188;",
+			"&#189;",
+			"&#190;",
+			"&#192;",
+			"&#194;",
+			"&#198;",
+			"&#199;",
+			"&#200;",
+			"&#201;",
+			"&#202;",
+			"&#204;",
+			"&#206;",
+			"&#210;",
+			"&#212;",
+			"&#217;",
+			"&#219;",
+			"&#224;",
+			"&#225;",
+			"&#226;",
+			"&#230;",
+			"&#231;",
+			"&#232;",
+			"&#233;",
+			"&#234;",
+			"&#236;",
+			"&#238;",
+			"&#242;",
+			"&#244;",
+			"&#249;",
+			"&#251;"
+		];
+
+		function createTable(rows, cols) {
+			var table = "";
+
+			var k = 0;
+
+			for (var i = 1; i <= rows; i++) {
+				table += "<tr>";
+
+				for (var j = 1; j <= cols; j++) {
+					table += "<td align='center' id='" + k + "' width='" + (100 / cols) + "%'";
+
+					if (k < chars.length) {
+						table += " onClick='insert(this);' onMouseOver='hover(this, true);' onMouseOut='hover(this, false);'>";
+						table += "<font face='MS Sans Serif' size='2'>";
+						table += chars[k++];
+					}
+					else {
+						table += ">";
+						table += "<font face='MS Sans Serif' size='2'>";
+						table += "&nbsp;";
+					}
+
+					table += "</font>";
+					table += "</td>";
+				}
+
+				table += "</tr>";
+
+				if (k >= chars.length) {
+					break;
+				}
+			}
+
+			return table;
+		}
+
+		function hover(el, value) {
+			if (value) {
+				el.style.border = "1px Solid Black";
+			}
+			else {
+				el.style.border = "1px Solid #DCDCDC";
+			}
+		}
+
+		function insert(el) {
+			opener.insertHTML(chars[el.id]);
+
+			window.close();
+		}
+	</script>
+</head>
+
+<body bgcolor="Silver" leftmargin="0" marginheight="0" marginwidth="0" rightmargin="0" topmargin="0">
+
+<table border="0" cellpadding="10" cellspacing="0" width="100%">
+<tr>
+	<td>
+		<table border="1" bordercolor="#DCDCDC" bgcolor="#C0C0C0" cellpadding="2" cellspacing="0" width="100%">
+
+		<script language="JavaScript">
+			document.write(createTable(10, 8));
+		</script>
+
+		</table>
+
+		<table border="0" cellpadding="8" cellspacing="0" width="100%">
+		<tr>
+			<td align="right" nowrap>
+				<input type="button" value="Cancel" onClick="self.close();">
+			</td>
+		</tr>
+		</table>
+	</td>
+</tr>
+</table>
+
+</body>
+
+</html>

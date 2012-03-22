@@ -1,0 +1,27 @@
+This doc will cover instructions for setting up the dotCMS as
+a windows service.  To do this there is a service which acts
+as a wrapper around the dotCMS.  To setup this service please 
+follow teh following steps
+
+1.- From the root of your dotCMS goto .\bin\windows_service\conf
+	and open the file wrapper.conf.   This is the file that will
+	be used to configure the service.
+	
+2.- In the wrapper.conf you need to set the following properties
+	a)wrapper.java.command - this should be set to the location of your 
+		jdk.
+	b)wrapper.java.classpath.2 - this needs to point to the tools.jar under
+		the lib of your jdk.
+	c)wrapper.java.classpath.3 - this needs to point to the bootstrap.jar 
+		under the bin directory of your dotCMS install.
+	d)wrapper.java.additional.3 - this needs to point to the jaas.conf of
+		under the conf dirertory of your dotCMS install.
+	e)wrapper.java.additional.4 - this needs to point to the endorsed 
+		directory under the common directory of your dotCMS install.
+	f)wrapper.java.additional.5 - this needs to point to the root of your
+		dotCMS install.
+	g)wrapper.java.additional.6 - this needs to point to the root of your
+		dotCMS install.
+	h)wrapper.java.additional.7 - this needs to point to the temp directory
+		found on the root of your dotCMS install.
+3.- .\bin\windows_service\bin and type wrapper.exe -i ..\conf\wrapper.conf

@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+
+<undeployment xmlns="http://xml.apache.org/axis/wsdd/">
+	<service name="Portal_LayerService"/>
+</undeployment>

@@ -1,0 +1,279 @@
+#set($productsForm = $productwebapi.loadTypeProducts($productsForm,$request))
+#set($productsForm = $productwebapi.loadProduct($productsForm,$request))
+
+#set($productFilesList = $productwebapi.loadProductFilesList($request))
+
+#set($product = $productsForm.getListProducts().get(0))
+
+#set($redirect = $request.getSession().removeAttribute("REDIRECT_AFTER_LOGIN"))
+
+<style type="text/css">
+@import url(/application/products/css/products.css);
+</style>
+
+<div class="products">
+
+<script language="javascript">
+
+function opencenter(inode)
+{
+	var width = 600;
+	var height= 700;
+	var left = Math.floor( (screen.width - width) / 2);
+	var top = Math.floor( (screen.height - height) / 2);
+	var parameter = "scrollbars=yes,resizable=yes,status=no,toolbar=no,width=" + width + ",height=" + height+ ",top=" + top + ",left="+ left;
+
+	url = "/application/products/popup.${webapi.getPageFileExtension()}?inode=" + inode;	
+	window.open(url,"largeProduct",parameter,false);
+}
+
+function next()
+{
+	var form = document.getElementById("listProducts");
+	var page = form.page.value;
+	page = parseInt(page) + 1;
+	form.page.value = page;
+	submit();
+}
+
+function back()
+{
+	var form = document.getElementById("listProducts");
+	var page = form.page.value;
+	page = parseInt(page) - 1;
+	form.page.value = page;
+	submit();
+}
+
+function submit()
+{
+	var form = document.getElementById("listProducts");
+	//form.pageSize.value = "5";
+	form.submit();
+}
+
+function addToCart(inode)
+{
+	var form = document.getElementById("listProducts");
+	var referrer = document.location.href;
+	referrer = escape(referrer);
+
+	var quantity = 1;
+	
+
+	/*var action = "/dotCMS/addToCart?referrer=" + referrer;
+	action += "&shoppingCartFormatInode=" + inode;
+	action += "&shoppingCartFormatQuantity=" + quantity;
+	document.location.href = action;*/
+	form.action = "/dotCMS/addToCart";
+	form.referrer.value = referrer;
+	form.shoppingCartFormatInode.value = inode;
+	form.shoppingCartFormatQuantity.value = quantity;
+	form.submit();
+}
+
+var lastInode = $!{product.smallImageInode};
+function changeProductImage (inode) {
+	document.click.src='/resize_image?inode='+inode+'&w=230';
+	lastInode = inode;
+}
+
+</script>
+<form action="/dotCMS/listProducts" id="listProducts" method="get" autocomplete="off">
+<table align="center">
+	<tr>
+		<td>#parse('static/messages.html')</td>
+	</tr>
+</table>
+<input type="hidden" name="categoryInode" value="$!{productsForm.categoryInode}">
+<input type="hidden" name="orderBy" value="$!{productsForm.orderBy}">
+<input type="hidden" name="page" value="$!{productsForm.page}">
+<input type="hidden" name="pageSize" value="$!{productsForm.pageSize}">
+<input type="hidden" name="direction" value="$!{productsForm.direction}">
+<input type="hidden" name="filter" value="$!{productsForm.filter}">
+<input type="hidden" name="referrer" value="">
+<input type="hidden" name="shoppingCartFormatInode" value="">
+<input type="hidden" name="shoppingCartFormatQuantity" value="">
+<!-- LIST PRODUCTS -->
+
+<div style="">
+							
+<div style="float:left; width:250px;">				
+#if (${product.smallImageInode} && $InodeUtils.isSet(${product.smallImageInode}))
+  
+	<img src="/resize_image?inode=$!{product.smallImageInode}&w=230" onclick="opencenter(lastInode)" name="click"><br/>	
+#end
+
+/*changes made by kowsalya according to jira-2143 WO */
+	
+<div style="margin:15px 0px;">
+
+#if ($InodeUtils.isSet(${product.mediumImageInode}))
+
+#if ($InodeUtils.isSet(${product.smallImageInode}))
+  	<img src="/resize_image?inode=$!{product.smallImageInode}&w=70"  onclick="changeProductImage($!{product.smallImageInode})" style="margin:0px 3px;" />
+#end	
+
+#end
+
+#if ($InodeUtils.isSet(${product.mediumImageInode}))
+  	<img src="/resize_image?inode=$!{product.mediumImageInode}&w=70"  onclick="changeProductImage($!{product.mediumImageInode})"  style="margin:0px 3px;" />
+#end	
+
+#if ($InodeUtils.isSet(${product.largeImageInode}))
+  	<img src="/resize_image?inode=$!{product.largeImageInode}&w=70"  onclick="changeProductImage($!{product.largeImageInode})"  style="margin:0px 3px;" />
+#end	
+</div>
+
+
+</div>
+
+
+
+<div style="float:left; width:400px;">
+   $product.shortDescription <br /><br />
+			  
+<hr/><br/>
+#set($formats = $product.formats)
+			#set($software = $product.productType.categoryName.equals("Software"))
+			#if($formats.size() == 1)
+				#set($format = $formats.get(0))
+				<table style="width: 100%; clear: both;">
+					<tr>
+					#if($webapi.isPartner() == true)
+						#set($priceAmount = $!{format.getQuantityPrice(1).partnerPrice})
+					#else
+						#set($priceAmount = $!{format.getQuantityPrice(1).retailPrice})
+					#end
+					#set($pnzero = !$webapi.equalsNumbers($priceAmount,0))
+					#if(!$software || $pnzero)
+					<td>Price: $ $!webapi.toPriceFormat($priceAmount) #if($webapi.isPartner() == true && ($!{format.getQuantityPrice(1).partnerPrice} != $!{format.getQuantityPrice(1).retailPrice}) )<img src="/global/images/key_small.gif"/>#end</td>
+					
+					#set($hasBulkPricing = $product.hasBulkPricing())
+					#if($hasBulkPricing)
+					<td>
+						<a href="#bulk">(Bulk Pricing available)</a>
+					</td>
+					#end					
+					#if((!$product.isOnlyOnPartners()) || ($webapi.isPartner()))
+					<td class="addToCart">
+						<a href="javascript:addToCart('$format.inode');" class="button">Add to Cart</a>
+					#end
+					#else
+						<td>Email <a href='mailto:info@firestarterpublishing.com'>info@firestarterpublishing.com</a> or <br> call 866-354-3473 for more information</td>
+						<td>&nbsp;</td>
+						<td>&nbsp;</td>
+					#end
+				</tr>
+				</table><br />	
+							
+			#else
+				<table style="width: 100%; clear: both;">
+				#foreach($format in $formats)
+				<tr>
+					<td>$!{format.formatName}</td>
+					#if($webapi.isPartner() == true)
+						#set($priceAmount = $!{format.getQuantityPrice(1).partnerPrice})
+					#else
+						#set($priceAmount = $!{format.getQuantityPrice(1).retailPrice})
+					#end
+					#set($pnzero = !$webapi.equalsNumbers($priceAmount,0))
+					#if(!$software || $pnzero)
+					<td>Price: $ $!webapi.toPriceFormat($priceAmount) #if($webapi.isPartner() == true && ($!{format.getQuantityPrice(1).partnerPrice} != $!{format.getQuantityPrice(1).retailPrice}))<img src="/global/images/key_small.gif"/>#end</td>
+					
+					#set($hasBulkPricing = $product.hasBulkPricing())
+					#if($hasBulkPricing)
+					<td>
+						<a href="#bulk">(Bulk Pricing available)</a>
+					</td>
+					#end
+					#if((!$product.isOnlyOnPartners()) || ($webapi.isPartner()))
+					<td class="addToCart">
+						<a href="javascript:addToCart('$format.inode');" class="button">Add to Cart</a>
+					</td>
+					#end
+					#else
+						<td>Email <a href='mailto:info@firestarterpublishing.com'>info@firestarterpublishing.com</a> or <br> call 866-354-3473 for more information</td>
+						<td>&nbsp;</td>
+						<td>&nbsp;</td>
+					#end
+				</tr>
+				#end
+				</table><br />
+			#end
+			<hr />
+			
+			<div style="clear:both;"></div>
+			</div>
+			
+			<div style="clear:both;"><br/></div>
+			
+			
+			#if ($UtilMethods.isSet($product.longDescription))
+				$product.longDescription<br />
+			#end
+			
+			#set($relatedProducts = $product.relatedProducts)
+			#if($relatedProducts.size() > 0)
+			<h3>Related Products: </h3>
+				<ul>
+				#foreach($relatedProduct in $relatedProducts)
+					<li>
+						<a href="/dotCMS/detailProduct?inode=$relatedProduct.inode&pageTitle=$relatedProduct.title">$relatedProduct.title</a>
+					</li>
+				#end
+				</ul> 
+			#end
+
+
+			
+			#if($hasBulkPricing)
+				<br />
+				<div style="background: #D5D5D7; padding: 2px 20px; border: none;">
+				<a name="bulk"><h3>Bulk Pricing Chart</h3></a>
+			#end
+			
+					#foreach($format in $formats)
+						#if($format.getHasBulkPrices() == true)
+	
+							#set($prices = $format.getBulkPrices())
+							
+							<table style="float: left; margin-right: 10px; margin-bottom: 15px; width: 220px;">
+							<tr><td valign="top" colspan="2"><b>$format.formatName</b></td></tr>
+							#foreach($price in $prices)
+							<tr>
+								<td valign="top" align="right">$price.minQty - $price.maxQty :</td>
+								<td valign="top">$ $!webapi.toPriceFormat($price.retailPrice) each</td>
+							</tr>
+							#end
+							</table>
+							
+
+						#end
+					#end
+					<div class="clear">&nbsp;</div>
+			
+			#if($hasBulkPricing)
+				</div>
+			#end
+			
+			#if($productFilesList.size() > 0)
+			<h3>Related Files: </h3>
+				<ul>
+				#foreach($productFile in $productFilesList)
+					<li>
+						<a href="$productFile.URI">$productFile.fileName</a>
+					</li>
+				#end
+				</ul> 
+			#end
+</div>
+
+</form>
+#if($request.getParameter("bulk") == "true")
+<script language="javascript">
+document.location = "#bulk";
+</script>
+#end
+
+</div>

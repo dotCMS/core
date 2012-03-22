@@ -1,0 +1,171 @@
+<script language="javascript" type="text/javascript" src='/html/js/states_and_countries.js'></script>
+<script>
+//Layer Management Variables
+styleReference = "style.";
+visibleLayer = "inline";
+browser = "Explorer";
+
+//Layer Management
+function referenceLayer(layerName)
+{
+//	if (browser == "Netscape")
+//		return "document.layers['"+layerName+"'].";
+//	else
+//		return "document.all['"+layerName+"'].";
+	return "document.getElementById('" + layerName + "').";
+}
+function doSubmit(){
+	document.getElementById("myAccountForm").submit();
+}
+function hideLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"');
+}
+
+function showLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"');
+}
+function changeStateTextLayer(){
+	var state = document.getElementById("state").value;
+	if (state == "otherCountry")
+	{
+		showLayer("stateTextDiv");
+		document.getElementById("stateOtherCountryText").focus();
+	}
+	else 
+	{
+		document.getElementById("stateOtherCountryText").value = "";
+		hideLayer("stateTextDiv");
+	}
+}
+</script>
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+	<form action="/dotCMS/myAccount" method="post" id="myAccountForm" name="myAccountForm" autocomplete="off">
+	<input type="hidden" name="dispatch" value="saveUserAddress">
+	<input type="hidden" name="userId" value="${myAccountForm.userId}">
+		<tr>
+			<td>#parse('static/messages.html')</td>
+		</tr>
+		<tr>
+			<td align="right" height="22">
+				<div class="item">
+				<div class="curveLink" style="float: right;"><span><a href="/dotCMS/registrationHistory">Registration and Order History</a></span></div>
+
+				<div class="curveLink" style="float: right; margin-right: 15px;"><span><a href="/dotCMS/myAccount">My Profile</a></span></div>
+				<div class="clear">&nbsp;</div>
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top" style="padding-left: 220px;">
+					<table cellpadding="0" cellspacing="0" border="0" id="formTable">
+						<tr>
+							<td bgcolor="#ffffff" colspan="3" valign="top"><img src="/portal/images/shim.gif" width="1" height="1"></td>
+						</tr>
+						<tr>
+							<td colspan="3"><br></td>
+						</tr>
+						<tr>
+							<td></td>
+							<td colspan="2">
+								<input type="radio" name="description" value="home" #if($!myAccountForm.description == "home") checked #end> Home Address
+								<input type="radio" name="description" value="work" #if($!myAccountForm.description == "work") checked #end> Work Address
+								<input type="radio" name="description" value="other" #if(!$!myAccountForm.description || ($!myAccountForm.description != "home" && $!myAccountForm.description != "work")) checked #end> Other
+							 </td>
+						</tr>
+						<tr>
+							<td colspan="3" height="5"></td>
+						</tr>
+						<tr>
+							<td colspan="3" bgcolor="#DDDDDD"><img src="/portal/images/shim.gif" width="1" height="1"></td>
+						</tr>
+						<tr>
+							<td colspan="3"><br></td>
+						</tr>
+						<tr>
+							<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+							<td>Address Street 1: </td>
+							<td><input type="text" name="street1" value="$!myAccountForm.street1" style="width:150px"></td>
+						</tr>
+						<tr>
+							<td></td>
+							<td> Address Street 2: </td>
+							<td><input type="text" name="street2" value="$!myAccountForm.street2" style="width:150px"></td>
+						</tr>
+						<tr>
+							<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+							<td>City: </td>
+							<td><input type="text" name="city" value="$!myAccountForm.city" style="width:150px"></td>
+						</tr>
+						<tr>
+							<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+							<td>State: </td>
+							<td>
+								<select name="state" onchange="changeStateTextLayer();" id ="state"> 
+								<script language="javascript">
+								writeStatesOptions('$!myAccountForm.state');
+								</script>
+								</select>
+								<div id="stateTextDiv">
+									<input type="text" name="stateOtherCountryText" id="stateOtherCountryText" value="$!myAccountForm.stateOtherCountryText">
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+							<td>Country: </td>
+							<td>
+								<select name="country" id = "country">
+								<script language="javascript">writeCountriesSelect('country','$!myAccountForm.country');</script>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+							<td>Zip: </td>
+							<td><input type="text" name="zip" value="$!myAccountForm.zip" style="width:150px"></td>
+						</tr>
+						<tr>
+							<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+							<td>Phone: </td>
+							<td><input type="text" name="phone" value="$!myAccountForm.phone" style="width:150px"></td>
+						</tr>
+						<tr>
+							<td></td>
+							<td> Fax: </td>
+							<td><input type="text" name="fax" value="$!myAccountForm.fax" style="width:150px"></td>
+						</tr>
+						<tr>
+							<td colspan="3"><br></td>
+						</tr>
+						<tr>
+							<td colspan="3" bgcolor="#DDDDDD"><img src="/portal/images/shim.gif" width="1" height="1"></td>
+						</tr>
+						<tr>
+							<td colspan="3" bgcolor="#ffffff"><br></td>
+						</tr>
+						<tr>
+							<td bgcolor="#ffffff" colspan="3" align="center">
+								<table>
+									<tr>
+										<td>
+											<div class="curveLink" style="float: right; padding-right: 20px;"><span><button class="clearInputStyles" onclick="window.location='/dotCMS/myAccount?userId=$!{myAccountForm.userId}';">Back</button></span></div>
+										</td>
+										<td>
+											<div class="curveLink"><span><button class="clearInputStyles" onclick="doSubmit();">Save</button></span></div>
+										</td>
+									</tr>
+								</table><br /> <br />
+							</td>
+						</tr>
+					</table>
+
+			</td>
+		</tr>
+	</form>
+</table>
+<script language="javascript">
+changeStateTextLayer();
+</script>""  
+"" 

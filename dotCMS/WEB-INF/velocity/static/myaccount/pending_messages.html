@@ -1,0 +1,217 @@
+<script type='text/javascript' src='/dwr/interface/AlertMessagesWebAPI.js'></script>
+<script type='text/javascript' src='/dwr/engine.js'></script>
+<script type='text/javascript' src='/dwr/util.js'></script>
+<script type="text/javascript">
+//<!--
+#set($user = $session.getAttribute("CMS_USER"))
+var userId = '$user.userId';
+var pageNumber = 1;
+var redirect;
+var seenLastPage = false;
+function initAlertMessages() {
+	AlertMessagesWebAPI.getAlertMessages(userId, showResult);
+}
+function viewMyMessages() {
+	redirect = "/application/login/viewed_messages.${webapi.getPageFileExtension()}";
+	closePage();
+}
+
+function toggleClose(){
+    var actionIgnoreElems = document.getElementsByName("actionIgnore");
+	if (actionIgnoreElems[1].checked || actionIgnoreElems[0].checked ){
+		document.getElementById('closeButton').style.display="block";
+	}
+	else{
+		document.getElementById('closeButton').style.display="none";
+	}
+}
+
+function closePage() {
+	var actionIgnoreElems = document.getElementsByName("actionIgnore");
+	var actionIgnore = actionIgnoreElems[1].value;
+	if (actionIgnoreElems[0].checked) {
+		actionIgnore = actionIgnoreElems[0].value;
+	}
+
+	if (actionIgnore != 'checkLater') {
+		AlertMessagesWebAPI.readAlertMessages(userId, readMessages);
+	}
+	else {
+		readMessages();
+	}
+}
+function readMessages(result) {
+	try {
+		dialog.destroy();
+	}
+	catch (e) {}
+	if (redirect) {
+		self.parent.location.href = redirect;
+	}
+}
+
+function showResult(result) {
+
+	DWRUtil.removeAllRows("alerts_message");
+	var table = document.getElementById("alerts_message");
+	var factorPrevious = pageNumber - 1;
+	var factorNext = pageNumber;
+
+	if (result.length > 0) {
+		var row;
+		var cell;
+
+		for (var i = 0; i < result.length; i++) {
+			if ((i >= factorPrevious) && (i < factorNext)) {
+				row = table.insertRow(table.rows.length);
+				row.className = (i % 2)? 'odd':'even';
+
+				var alertTitle = result[i][0];
+				var alertMessage = result[i][1];
+
+				cell = row.insertCell (row.cells.length);
+
+				cell = row.insertCell (row.cells.length);
+				cell.innerHTML = "<div style='height:180px; overflow:auto;' class='wrap'><h3>" + alertTitle + "</h3><p>" + alertMessage + "</p></div>";
+
+				cell = row.insertCell (row.cells.length);
+
+				row = table.insertRow(table.rows.length);
+				row.className = (i % 2)? 'odd':'even';
+				cell = row.insertCell (row.cells.length);
+				cell.colSpan = 3;
+				cell.innerHTML = "&nbsp;";
+
+			}
+		}
+	}
+	else {
+		var row = table.insertRow(table.rows.length);
+		var cell = row.insertCell (row.cells.length);
+		cell.innerHTML = "No Pending Messages";
+	}
+
+	var showingIdx1 = factorPrevious + 1;
+	var showingIdx2 = factorNext;
+	if (pageNumber > 1) {
+		document.getElementById("previousLink").style.display = "inline";
+	}
+	else {
+		document.getElementById("previousLink").style.display = "none";
+	}
+
+	if (factorNext < result.length) {
+		document.getElementById("nextLink").style.display = "inline";
+		showingIdx2 = factorPrevious + 1;
+	}
+	else {
+		seenLastPage = true;
+		showingIdx2 = result.length;
+		document.getElementById("nextLink").style.display = "none";
+	    document.getElementById('closeButton').style.display="block";
+	}
+
+	if (result.length > 0) {
+		document.getElementById("upperMessage").innerHTML ="<span style=\"font-size:11px;\">" + result.length+" pending messages - showing "+showingIdx1+" - "+result.length + "</span>";
+	}
+}
+function nextPage() {
+	pageNumber++;
+	initAlertMessages();
+}
+function previousPage() {
+	pageNumber--;
+	initAlertMessages();
+}
+function notUser() {
+	try {
+		dialog.destroy();
+	}
+	catch (e) {}
+	self.parent.location.href = "/dotCMS/logout";
+}
+
+//-->
+</script>
+
+<div class="pop_up">
+<img src="/global/images/wireframe/icon_alert_message.gif" alt="alerts" id="header_img" />
+
+<form action="" method="post">
+<table width="100%" align="center" class="wrapTable" cellpadding="0" cellspacing="0">
+	<tr>
+		<td align="right">
+			<span class="smallFont">Not $webapi.userFullName? <a href="javascript:notUser();" class="smallFont">Log Out</a></span><br />
+			<div id="upperMessage" class="links">
+			</div>
+			<br>
+		</td>
+	</tr>
+
+   <tr><td class="top_line">&nbsp;</td></tr>
+
+	<tr>
+		<td>
+			<table width="100%" cellspacing="0" cellpadding="2" border="0" align="center" >
+				<tbody id="alerts_message">
+				</tbody>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td width="100%">
+			<table width="100%" align="center" class="prev_next" cellpadding="0" cellspacing="0">
+				<tr>
+					<td width="50%" align="left"><div id="previousLink" style="display: none;"><a href="javascript:previousPage()" class="btn_med">Previous</a></div></td>
+					<td width="50%" align="right"><div id="nextLink" style="display: none;"><a href="javascript:nextPage()" class="btn_med">Next</a></div></td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td align="center">
+			<table width="100%" align="center" border="0">
+				<tr>
+					<td align="left" class="links">
+						<div id="ignoreMsgLink" class="down_links">
+							&nbsp;<input type="radio" value="checkLater" name="actionIgnore"  onclick="toggleClose()" />Show them later  &nbsp;  &nbsp;
+							<input type="radio" value="checkNone" name="actionIgnore" onclick="toggleClose()" />Do not show again
+						</div>
+					</td>
+
+					<td align="right">
+						<a href="#" onclick="javascript:viewMyMessages()" class="down_links">My Alerts</a>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<br>
+			<br>
+			<table width="100%" align="center" border="0">
+				<tr>
+					<td width="50%" align="left"></td>
+					<td width="50%" align="right">
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+
+	<tr>
+	  <td align="center">
+	  	<div id="closeButton" style="display:none;">
+			<a href="javascript:closePage()" class="btn_blue_50">Close</a>
+		</div>
+	  </td>
+	</tr>
+</table>
+</form>
+
+<div style="clear:both"></div>
+
+</div>
+
+<script language="javascript">initAlertMessages();</script>

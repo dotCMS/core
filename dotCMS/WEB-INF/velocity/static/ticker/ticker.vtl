@@ -1,0 +1,72 @@
+#set ($count = 0)
+
+<div id="ticker">
+	<div id="ticker-feed"></a></div>
+	<div id="ticker-content" onmouseover="pauseTicker()" onmouseout="unpauseTicker()"><a href="#" id="ticker-link"></a><div id="ticker-description"></div></div>
+</div>
+
+<script type="text/javascript" src="/html/js/ticker.js">
+</script>
+
+<script type="text/javascript">
+#foreach ($content in $list)
+
+	#set ($titleValue = $UtilMethods.escapeHTMLSpecialChars($content.get($titleField)))
+	#if ($UtilMethods.isSet($descriptionField))
+		#set ($descValue = $UtilMethods.escapeHTMLSpecialChars($content.get($descriptionField)))
+	#end
+
+	#if ($UtilMethods.isSet($descValue))
+		titles[$count] = "$titleValue";
+		descriptions[$count] = "$descValue";
+	#else
+		titles[$count] = "$titleValue";
+	#end
+
+	#set($useItemLink='true')
+	#permalink("$content.get('inode')")
+	links[$count] = "$webapi.trim($itemlink)";
+
+	#set($count = $count + 1)
+
+#end
+
+#if ($fadeInLenth) 
+	var fadeInLenth = ${fadeInLenth};
+#end
+
+#if ($fadeInLength) 
+	var fadeInLenth = ${fadeInLength};
+#end
+
+#if ($fadeOutLenth) 
+	var fadeOutLenth = ${fadeOutLenth};
+#end
+
+#if ($fadeOutLength) 
+	var fadeOutLenth = ${fadeOutLength};
+#end
+
+#if ($displayLength) 
+	var displayLength = ${displayLength};
+#end
+
+#if ($fgcolor) 
+	var fgcolor = "${fgcolor}";
+#end
+
+#if ($bgcolor) 
+	var bgcolor = "${bgcolor}";
+#end
+
+#if ($fgcolorDescription) 
+	var fgcolorDescription = "${fgcolorDescription}";
+#end
+
+#if ($bgcolorDescription) 
+	var bgcolorDescription = "${bgcolorDescription}";
+#end
+
+startTicker();
+
+</script>

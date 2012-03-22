@@ -1,0 +1,117 @@
+#if($email) 
+I'm an email
+	#set($registration=$webevents.getRegistration($request.getParameter("registrationInode")))
+#else
+I'm not an email
+	#set($registration=$request.getSession().getAttribute("com.dotmarketing.webevents.registration.bean"))
+#end
+
+#set($event=$webevents.getWebEvent($registration.eventInode))
+#set($location=$webevents.getWebEventLocation($registration.eventLocationInode))
+#set($attendees=$webevents.getRegistrationAttendees($registration))
+
+
+<table cellpadding="10"><tr><td> 
+#dotParse('/application/messages.vtl')
+
+<h3>Thanks for your Registration Order #${registration.inode}</h3>
+<p>
+	Here is a summary of your registration. An email will be sent to this email address: $registration.billingContactEmail with the
+	registration information. You will be able to view, edit and add attendees by going to "My Profile".
+</p>
+
+
+
+
+<br/>
+<div style="text-align:right;">	
+						<table align="left" border="1" cellspacing="0" cellpadding="8">
+							<tr>
+								<td align="center">P.O. NO.</td>
+								<td align="center">TERMS</td>
+								<td align="center">DUE DATE</td>
+							</tr>
+				
+							<tr>
+								<td align="center">$!{registration.poNumber}&nbsp;</td>
+								<td align="center">&nbsp;</td>
+								<td align="center">&nbsp;</td>
+							</tr>
+						</table>
+						</div>
+			
+					
+	
+						<table border="1" cellspacing="0" cellpadding="8" align="right">			
+							<tr>
+								<td>Date</td>
+								<td> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</td>
+							</tr>
+							<tr>					
+								<td>Invoice #</td>
+								<td> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</td>					
+							</tr>
+						</table><br /><br /><br /><br /><br />
+		<!-- ITEMS -->
+			<table width="100%" style="clear:both;position:relative; top:-1px;" border="1" cellspacing="0" cellpadding="8">
+			  <tr>
+				<td colspan="1" style="width:400px;"><h3>Your Registrations</h3></td>
+				<td style="width:50px;" align="center"><h3>Amount</h3></td>
+			  </tr>
+					
+					#set($total = 0)
+						#foreach ($attendee in $attendees)
+					#set($total = $math.add($total,$attendee.registrationPrice))
+			  <tr>
+				<td>
+					<table width="100%">
+						<tr>
+							<td><strong>$!event.title</strong></td>
+						</tr>
+						<tr>
+							<td>
+							$!location.toString()
+							</td>
+						</tr>								
+						<tr>
+							<td><strong>Name:</strong> $attendee.firstName $attendee.lastName
+							<br />
+							<strong>Badge Name:</strong> #if($attendee.badgeName != "")$attendee.badgeName #else No Badge Name #end
+							</td>
+						</tr>
+						
+					</table>
+				</td>	
+					<td align="center">$$!webapi.toPriceFormat($attendee.registrationPrice)</td>
+					#end
+				<tr>
+					<td align="left"><h3>Total</h3></td>
+					<td align="center" nowrap="nowrap">$$!webapi.toPriceFormat($total)<br><br></td>
+				</tr>
+			</table>
+		
+	</td>
+</tr>
+</table>
+
+
+#if ($registration.paymentType==2)
+<p><br/><br/>
+	
+	<p><span style="color:#B52E00;">Please print this page and place it with the check in a stamped envelope. Make checks payable to:</span><br /><br />
+
+	<strong>FMI</strong><br />
+	5171 Glenwood Ave<br>
+	Suite 200<br>
+	Raleigh, NC 27612<br><br><br>
+	Phone: 919.787.8400<br>
+	Fax: 919.785.9320<br><br />
+
+	Thank you for your order. We appreciate your business and look forward to serving you in the future.
+	
+</p>
+#end
+
+<br/>
+
+

@@ -1,0 +1,9 @@
+#set($eventObj = $eventsapi.getEvent($eventRegistrationForm.eventInode)) 
+<table border="0" width="550" align="center" cellpadding="0" cellspacing="5">
+	<tr>
+    	<td colspan="3" align="center">Thank You! for your registration to the event: $eventObj.title</td>
+    </tr>
+    <tr>
+    	<td colspan="3" align="center">You will receive a confirmation email soon!</td>
+    </tr>
+</table>

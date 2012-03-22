@@ -1,0 +1,459 @@
+#set($forgotPassword =  $request.getAttribute("forgotPassword"))
+#set($theCategories = $categories.getCategoriesByEntityName("category","Preferences","$!{dotRegistrationForm.category}",true,true,3,false))
+<!-- SCRIPT FOR AJAX MANAGEMENT -->
+<script language="javascript" type="text/javascript" src='/html/js/states_and_countries.js'></script>
+<script type='text/javascript' src='/dwr/engine.js'></script>
+<script type='text/javascript' src='/dwr/util.js'></script>
+<!-- END SCRIPT FOR AJAX MANAGEMENT -->
+<script language="javascript">
+
+//Submit the form
+function submitForm()
+{
+	$("dotRegistrationForm").submit();
+}
+
+function forgotPassword() {
+	var form = $("dotRegistrationForm");
+	form.action = "/dotCMS/addRegistration?dispatch=forgotPassword";
+	form.submit();
+}
+
+function cancel()
+{
+	var form = $("dotRegistrationForm");
+	form.action = "/dotCMS/addRegistration?dispatch=cancel";
+	form.submit();
+}
+function changeStateTextLayer(){
+	var state = document.getElementById("state").value;
+	if (state == "otherCountry")
+	{
+		showLayer("stateTextDiv");
+		document.getElementById("stateOtherCountryText").focus();
+	}
+	else 
+	{
+		document.getElementById("stateOtherCountryText").value = "";
+		hideLayer("stateTextDiv");
+	}
+}
+
+//Layer Management Variables
+styleReference = "style.";
+visibleLayer = "inline";
+browser = "Explorer";
+
+//Layer Management
+function referenceLayer(layerName) 
+{ 
+	//if (browser=="Netscape") 
+	//	return "document.layers['"+layerName+"']."; 
+	//else 
+	//	return "document.all['"+layerName+"']."; 
+	return "document.getElementById('" + layerName + "').";	
+}
+
+function hideLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"'); 
+}
+
+function showLayer(layerName) 
+{ 
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"'); 
+} 
+   
+function change(layer)
+{
+	var layerInstance = document.getElementById(layer);
+	if (layerInstance.style.display == 'none')
+	{
+		showLayer(layer);
+	}
+	else
+	{
+		hideLayer(layer);
+	}
+	return false;
+}
+
+function createNew()
+{
+	hideLayer('loginLayer');
+	showLayer('createLayer');
+	return false;
+}
+
+	  
+	  function passFieldChanged () {
+	  	$("dotRegistrationForm").passChanged.value="true";
+	  }
+	  
+
+	  function trim(str)
+	  {
+	  	return str.replace(/^\s*|\s*$/g,"");
+	  }
+
+//New functions for the events registration
+function findMe () {
+	$("findMeForm").submit();
+}
+	function Trim(TRIM_VALUE){
+		if(TRIM_VALUE.length < 1){
+		return"";
+		}
+		TRIM_VALUE = RTrim(TRIM_VALUE);
+		TRIM_VALUE = LTrim(TRIM_VALUE);
+		if(TRIM_VALUE==""){
+		return "";
+		}
+		else{
+		return TRIM_VALUE;
+		}
+	} 
+
+	function RTrim(VALUE){
+		var w_space = String.fromCharCode(32);
+		var v_length = VALUE.length;
+		var strTemp = "";
+		if(v_length < 0){
+		return"";
+		}
+		var iTemp = v_length -1;
+		
+		while(iTemp > -1){
+		if(VALUE.charAt(iTemp) == w_space){
+		}
+		else{
+		strTemp = VALUE.substring(0,iTemp +1);
+		break;
+		}
+		iTemp = iTemp-1;
+		
+		} 
+		return strTemp;
+	} 
+
+	function LTrim(VALUE){
+		var w_space = String.fromCharCode(32);
+		if(v_length < 1){
+		return"";
+		}
+		var v_length = VALUE.length;
+		var strTemp = "";
+		
+		var iTemp = 0;
+		
+		while(iTemp < v_length){
+		if(VALUE.charAt(iTemp) == w_space){
+		}
+		else{
+		strTemp = VALUE.substring(iTemp,v_length);
+		break;
+		}
+		iTemp = iTemp + 1;
+		} 
+		return strTemp;
+	} 
+</script>
+
+<table align="center">
+	<tr>
+		<td>#parse('static/messages.html')</td>
+	</tr>
+</table>
+
+	#if ((($!{dotRegistrationForm.from} == "webEventRegistration") || ($!{dotRegistrationForm.from} == "purchaseOrder")) && !($request.getAttribute("errorCreate") == true))
+	<!--  User login box -->	
+	<div id="loginLayer">
+	<form action="/dotCMS/addRegistration" method="post" name="findMeForm" id="findMeForm" autocomplete="off">
+		
+		<table>
+		<tr valign="top">
+		
+	<td>
+	<table cellpadding="4">
+	<tr>
+		<td><b>Registration</b></td>
+	</tr>
+	<tr>
+		<td>Not a DotCMS user?</td>
+	</tr>
+	<tr>
+		<td>Create your DotCMS Account now!</td>
+	</tr>
+	<tr>
+		<td>It's free and it only takes a minute</td>
+	</tr>
+	<tr>
+		<td align="center">
+			
+			<div class="curveLink" style="margin-left: 20px;"><span><button class="clearInputStyles" onClick="return createNew();">Create Account</button></span></div>
+		</td>
+	</tr>
+	</table>
+	</td>
+	<td>
+	<input type="hidden" name="referrer" value="$!{dotRegistrationForm.referrer}">
+	<input type="hidden" name="from" value="$!{dotRegistrationForm.from}">
+	<input type="hidden" name="dispatch" value="findMe">
+	
+	<table style="margin-left: 170px;" cellpadding="4">
+		<tr>
+			<td colspan="2"><b>Login</b></td>
+		</tr>
+		<tr>
+			<td colspan="2">Already a DotCMS User?</td>
+		</tr>
+		<tr>
+			<td colspan="2">Login Now!</td>
+		</tr>
+	    <tr>
+			<td align="right">&nbsp;&nbsp;&nbsp;<b>Email:</b></td>
+	    	<td><input name="findMeEmailAddress" tabindex="1" id="findMeEmailAddress" class="text" type="text" value="">&nbsp;&nbsp;</td>
+			
+	    </tr>
+	    <tr>
+			<td align="right">&nbsp;&nbsp;&nbsp;<b>Password:</b></td>
+	    	<td>
+				<input  name="findMePassword" tabindex="2" type="password" class="text" value="" onKeyPress="if (event.keyCode == 13) { findMe(); }">
+			</td>			
+	    </tr>
+		<tr align="right">
+			<td>&nbsp;</td>
+			<td>
+				<div class="curveLink" style="margin: 0;">
+					<span>
+						<button onClick="findMe();" name="FindMe" tabindex="3" class="clearInputStyles">Login</button>
+					</span>
+				</div>
+			</td>
+		</tr>
+	    <tr>
+			<td colspan="2" align="center">
+			#if($request.getAttribute("refererForgotPassword"))
+				#set($auxForgotPassword = $request.getAttribute("refererForgotPassword"))
+				#set($forgotPassword = "/dotCMS/forgotPassword?referer=$auxForgotPassword")
+			#else
+				#set($forgotPassword = "/dotCMS/forgotPassword")
+			#end
+    			<a href="$!forgotPassword">forgot your password?</a> 
+			</td>
+	    </tr>
+	</table>
+	</td>
+	</tr>
+	</table>
+	<div class="item"></div>
+	</form>
+	</div>
+	<!--  END User login box-->
+		#set($display = 'style="display:none"')
+	#else
+		#set($display = '')
+	#end
+	<div $display id="createLayer">
+	<form action="/dotCMS/addRegistration" method="post" name="dotRegistrationForm" id="dotRegistrationForm" autocomplete="off">
+	<input type="hidden" name="referrer" value="$!{dotRegistrationForm.referrer}">
+	<input type="hidden" name="from" value="$!{dotRegistrationForm.from}">
+	<input type="hidden" name="noOrganization" value="false">
+	<!-- User Information -->
+	
+	<h2 style="margin-left: 170px;">User Information</h2>
+	<table style="margin-left: 170px;">
+	<tr>
+		<td><!-- User ID--></td>
+		<td><input type="hidden" name="userID" value="$!{dotRegistrationForm.userID}"></td>
+	</tr>
+	<tr>
+		<td><!-- Ext User Inode--></td>
+		<td><input type="hidden" name="extUserInode" value="$!{dotRegistrationForm.extUserInode}"></td>
+	</tr>
+	<tr>
+		<td><!-- User Proxy Inode--></td>
+		<td><input type="hidden" name="userProxyInode" value="$!{dotRegistrationForm.userProxyInode}"></td>
+	</tr>
+	<tr>
+		<td><!-- dispatch action --></td>
+		<td><input type="hidden" name="dispatch" value="saveRegistration" id="dispatch"></td>
+	</tr>
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Email:</b></td>
+		<td><input tabindex="4" type="text" name="emailAddress" value="$!{dotRegistrationForm.emailAddress}">
+		#if($forgotPassword)
+			<a href="/dotCMS/forgotPassword?email=$!{dotRegistrationForm.emailAddress}">forgot your password?</a>
+		#end
+		</td>
+	</tr>
+	
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Password:</b></td>
+		<td><input type="hidden" name="passChanged" value="$!{dotRegistrationForm.passChanged}"><input tabindex="5" type="password" onchange="passFieldChanged()" name="password" value="$!{dotRegistrationForm.password}"></td>
+	</tr>
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Verify Password:</b></td>
+		<td><input tabindex="6" type="password" onchange="passFieldChanged()" name="verifyPassword" value="$!{dotRegistrationForm.verifyPassword}"></td>
+	</tr>
+	<tr>
+		<td>&nbsp;&nbsp;&nbsp;<b>Prefix:</b></td>
+		<td>
+			#set( $mr = "")
+			#set( $mrs = "")
+			#set( $miss = "")
+			#set( $dr = "")
+			#if($!{dotRegistrationForm.prefix} == "mr")
+				#set( $mr = "selected")
+			#end
+			#if($!{dotRegistrationForm.prefix} == "mrs")
+				#set( $mrs = "selected")
+			#end
+			#if($!{dotRegistrationForm.prefix} == "miss")
+				#set( $miss = "selected")
+			#end
+			#if($!{dotRegistrationForm.prefix} == "dr")
+				#set( $dr = "selected")
+			#end
+			<select tabindex="7" name="prefix" value="$!{dotRegistrationForm.prefix}">
+				<option value="mr" $!{mr}>Mr.</option>
+				<option value="mrs" $!{mrs}>Mrs.</option>
+				<option value="miss" $!{miss}>Ms.</option>
+				<option value="dr" $!{dr}>Dr.</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;First Name:</b></td>
+		<td><input tabindex="8" type="text" name="firstName" value="$!{dotRegistrationForm.firstName}"></td>
+	</tr>
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Last Name:</b></td>
+		<td><input tabindex="9" type="text" name="lastName" value="$!{dotRegistrationForm.lastName}"></td>
+	</tr>
+	<tr>
+		<td><b>&nbsp;&nbsp;&nbsp;Suffix:</b></td>
+		<td><input tabindex="10" type="text" name="suffix" value="$!{dotRegistrationForm.suffix}"></td>
+	</tr>
+	<tr>	
+		<td><b>&nbsp;&nbsp;&nbsp;Title:</b></td>
+		<td><input tabindex="11" type="text" name="title" value="$!{dotRegistrationForm.title}"></td>
+	</tr>
+	<tr>
+		<td>&nbsp;&nbsp;&nbsp;<img src="/html/images/required.gif" width="9" height="9">&nbsp;Required Fields</td>
+	</tr>
+	</table>
+	<div class="item"></div>
+	<!-- END USER INFORMATION -->
+
+	<div class="item"></div>
+
+	<!-- Mailing Address -->
+
+	<h2 style="margin-left: 170px;">My Mailing Address</h2>
+	<table style="margin-left: 170px;">
+	<tr>
+		<td></td>
+		<td><input type="hidden" name="addressID" value="$!{dotRegistrationForm.addressID}"></td>
+	</tr>
+	<tr>
+		<td></td>
+		<td></td>
+	</tr>
+		<tr>
+		#set( $work = "")
+		#set( $home = "")
+		#if($!{dotRegistrationForm.description} == "work")
+			#set( $work = "checked")
+		#end
+		#if($!{dotRegistrationForm.description} == "home")
+			#set( $home = "checked")
+		#end
+		<td><input tabindex="19" type="radio" name="description" value="work" $!{work}>Work Address</td>
+		<td><input tabindex="20" type="radio" name="description" value="home" $!{home}>Home Address</td>
+	</tr>
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Street1:</b></td>
+		<td><input tabindex="21" type="text" name="street1" value="$!{dotRegistrationForm.street1}"></td>
+	</tr>
+	<tr>
+		<td>&nbsp;&nbsp;&nbsp;<b>Street 2:</b></td>
+		<td><input tabindex="22" type="text" name="street2" value="$!{dotRegistrationForm.street2}"></td>
+	</tr>
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;City:</b></td>
+		<td><input tabindex="23" type="text" name="city" value="$!{dotRegistrationForm.city}"></td>
+	</tr>
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;State:</b></td>
+		<td>
+		<select name="state" id="state" onchange="changeStateTextLayer();">
+		<script language="javascript">
+		writeStatesOptions('$!dotRegistrationForm.state');
+		</script>
+		</select>
+		<div id="stateTextDiv">
+			<input type="text" name="stateOtherCountryText" id = "stateOtherCountryText" value="$!orderForm.stateOtherCountryText">
+		</div>
+		</td>
+	</tr>
+	
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Country:</b></td>
+		<td>
+		<script language="javascript">writeCountriesSelect("country", '$!dotRegistrationForm.country');</script>
+		</td>
+	</tr>
+	
+	
+	<tr>
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Zip:</b></td>
+		<td><input tabindex="25" type="text" name="zip" value="$!{dotRegistrationForm.zip}"></td>
+	</tr>
+	<tr>	
+		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Phone:</b></td>
+		<td><input tabindex="26" type="text" name="phone" value="$!{dotRegistrationForm.phone}"></td>
+	</tr>
+	<tr>	
+		<td>&nbsp;&nbsp;&nbsp;<b>Fax:</b></td>
+		<td><input tabindex="27" type="text" name="fax" value="$!{dotRegistrationForm.fax}"></td>
+	</tr>
+	</table>
+	<div class="item"></div>
+	
+	<!-- END Mailing Aaddres -->
+	<!-- My Profile And Preferences -->
+#if($UtilMethods.isSet($theCategories))
+	<h2 style="margin-left: 170px;">My Profile and Preferences</h2>
+	<div id="preferences">
+	<table style="margin-left: 170px;">	
+		
+		<tr>
+			<td>Please select the areas that interest you most.</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>			
+			<td>$theCategories</td>
+		</tr>
+	</table>
+	</div>
+	<div class="item"></div>
+#end
+	<!-- END My Profile And Preferences -->			
+	<table width="100%">	
+		<tr>
+			<td width="50%">
+				<div class="curveLink" style="float: right; margin-right: 2px;"><span><button onClick="cancel();" class="clearInputStyles">Cancel</button></span></div>
+			</td>
+			<td width="50%">
+				<div class="curveLink" style="margin-left: 2px;"><span><button onClick="submitForm();" class="clearInputStyles">Next</button></span></div>
+			</td>
+		</tr>
+	</table>
+	</form>
+<script language="javascript">
+changeStateTextLayer();
+</script>
+</div>

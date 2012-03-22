@@ -1,0 +1,340 @@
+#set($organizationTitle = "Please enter the information below to select your organization")
+#if ($!{myAccountForm.organizationTitle} != "")
+	#set($organizationTitle = $!{myAccountForm.organizationTitle})
+#end
+
+<script type='text/javascript' src='/dwr/interface/OrganizationAjax.js'></script>
+<script type='text/javascript' src='/dwr/engine.js'></script>
+<script type='text/javascript' src='/dwr/util.js'></script>
+
+<script>
+	function doSubmit(){
+		document.getElementById("myAccountForm").submit();
+	}
+
+	//Open the Facility PopUp
+	function openPopUp(url)
+	{
+		var width = 850;
+		var height = 575;
+		var left = Math.floor( (screen.width - width) / 2);
+		var top = Math.floor( (screen.height - height) / 2);
+		var parameter = "scrollbars=yes,resizable=yes,status=yes,toolbar=no,width=" + width + ",height=" + height+ ",top=" + top + ",left="+ left;
+
+		window.open(url,"facility",parameter,false);
+		toggleBox('organizationsLayer',0);
+	}
+
+	//Callback from the facility PopUp
+	function callback(organizationInode,organizationTitle,street1,street2,state,city,zip,phone,fax)
+	{
+		var form = document.getElementById("myAccountForm");
+		form.organizationInodeAux.value = organizationInode;
+		form.organizationTitle.value = organizationTitle;
+	}
+
+	  function getRadio(organization) {
+	      return '<input type="radio" value="' + organization["inode"] + '" onclick="OrganizationAjax.getOrganizationMap(organizationSelected, ' + organization["inode"] + ')" name="organizationInode" id="organizationInode">';
+	  }
+
+	  function getName(organization) 
+	  { 
+		  return '<a href="javascript:OrganizationAjax.getOrganizationMap(organizationSelected, ' + organization["inode"] + ');">' + organization["title"] + '</a>';
+	  }
+
+	  function getAddress(organization) { 
+  		var address = "(" + organization["city"];
+  		address +=  ", " + organization["state"];
+  		address +=  ", " + organization["zip"] + ")";	  	
+	  	return address; 
+		}
+
+	  function direct(data) {
+	  	return data;
+	  }
+
+	  function empty(data) {
+	  	return "";
+	  }
+
+	  function fillTable(organizations){  	
+	  	var table;
+	  	var orgField = document.getElementById("orgField").value;
+	  	if (orgField == "zipCode")
+		  table = "organizationsTableByZipCode";
+	  	else
+		  table = "organizationsTableByPartnerKey";
+      	DWRUtil.removeAllRows("organizationsTableByPartnerKey");
+      	DWRUtil.removeAllRows("organizationsTableByZipCode");
+      	if (organizations.length > 0)
+	  	{		
+	      DWRUtil.addRows(table, organizations, [ getName, getAddress ]);
+	  	}
+	  	else
+	  	{		
+	      DWRUtil.addRows(table, {"No organizations found":""}, [ empty, direct ]);
+	  	}
+	}
+	  
+	  function passFieldChanged () {
+	  	$("dotRegistrationForm").passChanged.value="true";
+	  }
+	  
+	  function zipChanged() {
+		toggleBox ("organizationsLayerByZipCode", 0);
+		toggleBox ("organizationsLayerByPartnerKey", 0);
+		DWRUtil.removeAllRows("organizationsTableByZipCode");
+		DWRUtil.removeAllRows("organizationsTableByPartnerKey");
+		document.getElementById("orgField").value = "zipCode";
+		document.getElementById("partnerKey").value = ""
+  		var zip = document.getElementById("zipCode").value;
+  		if (zip == "" || zip.length < 3) {
+      		toggleBox ("organizationsLayerByZipCode", 0);
+    	} else {
+ 	  		OrganizationAjax.getOrganizationsByZipCodeLike (fillTable, zip);
+ 	  		toggleBox ("organizationsLayerByZipCode", 1);
+ 		}
+	}
+
+	function getByPartnerKey(){
+	    document.getElementById("zipCode").value = "";
+	  	document.getElementById("orgField").value = "partnerKey";
+	  	toggleBox ("organizationsLayerByZipCode", 0);
+		toggleBox ("organizationsLayerByPartnerKey", 0);
+		DWRUtil.removeAllRows("organizationsTableByZipCode");
+		DWRUtil.removeAllRows("organizationsTableByPartnerKey");
+	   	var key = document.getElementById("partnerKey").value;
+	   	OrganizationAjax.getOrganizationsByPartnerKey (fillTable, key);
+ 	  	toggleBox ("organizationsLayerByPartnerKey", 1);
+	  }
+
+	  function toggleBox(szDivID, iState) // 1 visible, 0 hidden
+	  {
+	     var obj = document.layers ? document.layers[szDivID] :
+  	     document.getElementById ?  document.getElementById(szDivID).style :
+	     document.all[szDivID].style;
+	     obj.visibility = document.layers ? (iState ? "show" : "hide") :
+	     (iState ? "visible" : "hidden");
+	  }
+
+	  function fillAddress(organizations)
+	  {
+	      var table;
+		  var orgField = document.getElementById("orgField").value;
+		  if (orgField == "zipCode")
+			  table = "organizationsTableByZipCode";
+		  else
+			  table = "organizationsTableByPartnerKey";
+	      DWRUtil.removeAllRows(table);
+	      if (organizations.length > 0)
+		  {
+ 			 var organization = organizations[0];
+		     organizationSelected(organization);
+		  }
+		  else
+		  {
+		      DWRUtil.addRows(table, {"No organizations found":""}, [ empty, direct ]);
+  	   	  	  toggleBox ("organizationsLayer", 1);
+		  }
+	  }
+
+	  function organizationSelected(organization)
+	  {
+	  	var layer;
+	  	var orgField = document.getElementById("orgField").value;
+	  	if (orgField == "zipCode")
+		  	layer = "organizationsLayerByZipCode";
+	  	else
+		  	layer = "organizationsLayerByPartnerKey";
+  		toggleBox (layer, 0);
+		var organizationInode = organization["inode"];
+		var organizationTitle = organization["title"];
+		var street1 = organization["street1"];
+	  	var street2 = organization["street2"];
+  		var state = organization["state"];
+        var city = organization["city"];
+  		var zip = organization["zip"];
+  		var phone = organization["phone"];
+  		var fax = organization["fax"];
+
+		var form = document.getElementById("myAccountForm");
+		form.organizationInodeAux.value = organizationInode;
+		form.organizationTitle.value = organizationTitle;
+		document.getElementById("organizationTitle").innerHTML = organizationTitle;
+		document.getElementById($("orgField").value).focus();
+	  } 
+
+	  function iDontBelongChecked() {
+	  		var layer;
+		    var orgField = document.getElementById("orgField").value;
+		    if (orgField == "zipCode")
+			  layer = "organizationsLayerByZipCode";
+		    else
+			  layer = "organizationsLayerByPartnerKey";
+	  		toggleBox (layer, 0);
+	  		var form = document.getElementById("myAccountForm");
+			form.organizationInodeAux.value = "";
+			document.getElementById("organizationTitle").innerHTML = "I don't belong to an organization";
+			document.myAccountForm.zipCode.value = "";
+			document.myAccountForm.partnerKey.value = "";
+			document.getElementById($("orgField").value).focus();
+	  }
+</script>
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+	<form action="/dotCMS/myAccount" method="post" id="myAccountForm"
+		name="myAccountForm" autocomplete="off"><input type="hidden" name="dispatch"
+		value="saveUserOrganization"> <input type="hidden" name="userId"
+		value="${myAccountForm.userId}">
+		<input type="hidden" id="orgField" name="orgField" value="">
+	<tr>
+		<!--  <td>#parse('static/messages.html')</td> -->
+		#if ($request.getSession().getAttribute('REDIRECT_AFTER_UPDATE_ACCOUNT_INFO'))		
+			<span><b>You have successfully logged in with the DotCMS site.</b></span>
+			<span class="mRed">Please take a moment to update your profile and select your organization's information. </span>
+		#else
+			<td>#parse('static/messages.html')</td>
+		#end
+	</tr>
+	<tr>
+		<td align="right" height="22">
+		<div class="item">
+		#if (!$request.getSession().getAttribute('REDIRECT_AFTER_UPDATE_ACCOUNT_INFO'))
+		<div class="curveLink" style="float: right;"><span><a href="/dotCMS/registrationHistory">Registration and Order History</a></span></div>
+
+		<div class="curveLink" style="float: right; margin-right: 15px;"><span><a href="/dotCMS/myAccount">My Profile</a></span></div>
+		#end
+		<div class="clear">&nbsp;</div>
+		</div>
+		</td>
+	</tr>
+	<tr>
+		<td valign="top" align="left" style="padding-left: 170px;"><!-- My Organization Information -->
+		<table border="0" cellspacing="0" cellpadding="0">
+			<tr>
+				<td><b>Current Organization: &nbsp;</b></td>
+				<td>
+					<span id="organizationTitle">$!{organizationTitle}</span>
+					<input type="hidden" name="organizationTitle" value="$!{organizationTitle}">
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+			</tr>
+			
+			<tr>
+				<td><b>Zip Code:</b></td>
+				<td><input type="text" name="zipCode" id="zipCode"
+					onkeyup="zipChanged();"></td>
+			</tr>
+			<tr>
+				<td colspan="3">
+				<div id="organizationsLayerByZipCode"
+					style="position: absolute; visibility: hidden; z-index: 1000; ">
+				<table border="0" bgcolor="white" style="border: thin solid black;z-index: 1000;">
+					<thead>
+						<tr>
+							
+							<th>Organization</th>
+							<th>Address</th>
+						</tr>
+					</thead>
+					<tbody id="organizationsTableByZipCode" name="organizationsTableByZipCode"></tbody>
+					<tfoot id="footer" name="footer">
+						<tr>
+							<td colspan="3">
+								<input type="radio"	onclick="openPopUp('/dotCMS/addFacility')" name="organizationInode" id="organizationInode">
+								I don't see my organization please add
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<input type="radio" name="noOrganizationR" onclick="iDontBelongChecked()">
+								I don't belong to an Organization
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3" align="center">
+							<a href="#" onclick="toggleBox('organizationsLayerByZipCode',0);return false;">Close</a>
+							</td>
+						</tr>
+					</tfoot>
+				</table>
+				</div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2" align="center"><b><font size="+1">OR</font></b></td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+			</tr>
+			<tr>
+				<td><b>Partner Key:</b></td>
+				<td><input type="text" name="partnerKey" id="partnerKey">
+				<input tabindex="17" type="button" value="Verify My Key" onclick="getByPartnerKey()">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2" align="center"></td>
+			</tr>
+			<tr>
+				<td><input type="hidden" name="organizationInodeAux"
+					value="$!{myAccountForm.organizationInodeAux}"></td>
+			</tr>
+			<tr>
+			<td colspan="3">
+			<div id="organizationsLayerByPartnerKey"
+				style="position: absolute; visibility: hidden; z-index: 1000; ">
+			<table border="0" bgcolor="white" style="border: thin solid black;z-index: 1000;">
+				<thead>
+					<tr>
+						<th>Organization</th>
+						<th>Address</th>
+					</tr>
+				</thead>
+				<tbody id="organizationsTableByPartnerKey" name="organizationsTableByPartnerKey"></tbody>
+				<tfoot id="footer" name="footer">
+					<tr>
+						<td colspan="3" align="center">
+						<a href="#" onclick="toggleBox('organizationsLayerByPartnerKey',0);return false;">Close</a>
+						</td>
+					</tr>
+				</tfoot>
+			</table>
+			</div>
+			</td>
+		</tr>
+			<tr>
+				<td bgcolor="#ffffff" colspan="2" align="center"><br></td>
+			</tr>
+			<tr>
+				<td bgcolor="#ffffff" colspan="2" align="center">
+				<table>
+					<tr>
+						<td>
+							#if (!$request.getSession().getAttribute('REDIRECT_AFTER_UPDATE_ACCOUNT_INFO'))
+							<div class="curveLink" style="float: right; padding-right: 20px;"><span><button class="clearInputStyles" onclick="window.location='/dotCMS/myAccount?userId=$!{myAccountForm.userId}';">Back</button></span></div>
+							#end
+						</td>
+						<td>
+							<div class="curveLink"><span><button class="clearInputStyles" onclick="doSubmit();">Save</button></span></div>
+						</td>
+					</tr>
+				</table><br /> <br />
+				</td>
+			</tr>
+			
+		</table>
+		<!-- END My Organization Information --></td>
+	</tr>
+	<tr>
+	<td>
+			#if ($request.getSession().getAttribute('REDIRECT_AFTER_UPDATE_ACCOUNT_INFO'))		
+				<span><b>Thank you, this will ensure you have access to the most up to date information and save you time when registering for an event or placing an order.</b></span>
+			#end
+		</td>	
+			</tr>
+	</form>
+</table>
+<script type="text/javascript">
+</script>
