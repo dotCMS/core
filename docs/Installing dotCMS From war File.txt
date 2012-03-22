@@ -1,0 +1,10 @@
+Installing dotCMS in JBoss from the war distribution.
+
+1.- Follow the first two steps from "Installing dotCMS from SVN" to get your enviroment ready.
+2.- In case you want to run dotCMS in a virtual host, edit the jboss-web.xml in dotCMS/WEB-INF.
+	You have to deploy dotCMS to a root context.
+3.- Create the war file by running "ant war". The file will be created as build/war/dotcms.war
+4.- Create a database and load the initial schema using the file located in build/sql.  Choose the file according to you database.
+5.- Create a dataSource and copy the ds.xml file to the deploy directory.  The JDNI name must be jdbc/dotCMSPool.
+6.- Copy the jdbc driver corresponding to your database to the {JBOSS_HOME}/lib
+7.- Deploy the war in the deploy directory.

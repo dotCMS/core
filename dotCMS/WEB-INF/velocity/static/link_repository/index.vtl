@@ -1,0 +1,12 @@
+<ul>
+#foreach($link in $linkList)
+  #if($!{link.linkType} == 'CODE')
+    #set($lc = $link.getLinkCode())
+    #set($lc = $UtilMethods.espaceVariableForVelocity($lc))
+    #set($lc = $UtilMethods.restoreVariableForVelocity($lc))
+    <li>$UtilMethods.evaluateVelocity($lc,$velocityContext)</li>
+  #else
+    <li><a href="$!{link.protocal}$!{link.url}" target="$!{link.target}">$!{link.title}</a></li>
+  #end
+#end
+</ul>

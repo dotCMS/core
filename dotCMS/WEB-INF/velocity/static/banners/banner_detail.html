@@ -1,0 +1,23 @@
+
+#set($inode = $request.getParameter("inode"))
+#set ($bannerFile = "banners/${inode}.banner")
+#parse($bannerFile)
+<table cellpadding="0" cellspacing="0" border="0">
+		<tr>
+			<td>
+			    <img src="/sponsorships/images/headers/hd_sponsordetail.gif" width="200" height="28" alt="" border="0">
+				<p>
+				<div class="sponsorships_head">$!{BannerTitle}</div>
+				<div class="sponsorships_links">
+				#if ($BannerLink != "")
+				<a href="http://${BannerLink}" target="_blank" class="sponsorships_links">${BannerLink}</a>
+	            #end
+	            </div>
+                #if ($BannerImageURI != "")
+                <img src="${BannerImageURI}" alt="${BannerImageTitle}" width="${BannerImageWidth}" height="${BannerImageHeight}" border="0" align="right">
+                #end
+				</p>
+				${BannerBody}
+			</td>
+		</tr>
+</table>

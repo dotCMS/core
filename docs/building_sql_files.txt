@@ -1,0 +1,27 @@
+It is now possible to build the dotcms sql files by using an ant task. There are two different tasks that build different dbs. The first ant task buildsql builds the dbs that use a sequence (oracle, postgresql) for a primary key. The second ant task buildmXsql builds the dbs that use an autonumber/identity (mssql and mysql). The ant task trys to do a find and replace on the Inode.hbm.xml to make sure the id generators are correct for each build.
+
+The class responsable for this task is:
+com.dotmarketing.db.DotSQLGeneratorTask
+
+How to build the sql files
+
+   1. Make sure that your Inode.hbm.xml is in good shape. This means that the Inode.hbm.xml file needs to have both sequence and native generators listed where needed and commented out. Also, make sure any indexes you need created are referenced in the file as well in the column elements.
+   2. Install ant 1.6+
+   3. if a unix box, symlink your $ANT_HOME/bin/ant to /bin/ant
+   4. if a windows box, make sure that the $ANT_HOME/bin is in your path. Try:
+      set PATH=%PATH%;c:\path_to_ant
+   5. cd into the $DOTCMS_HOME
+   6. type
+      ant buildsql
+      The ant script will read the Inode.hbm.xml and generate the files for postgreSQL and Oracle databases (dbs that use sequences for autonumbering). then type
+      ant buildmXsql
+      which will build the MySQL.sql files and the "Sybase" sql files, which is for MSSQL.
+   7. All generated SQL files are placed into $DOTCMS_HOME/build/sql
+
+Then when creating a new database, you have to use two files, the liferay .sql file and the dotcms.sql file
+If you were creating the a new postgres instance, you would do:
+
+psql -f ./build/sql/postgresql.sql DATABASENAME
+
+
+The first time dotCMS starts up, it will install a basic site for you to use as an example or starter.

@@ -1,0 +1,118 @@
+#if($request.getParameter("indexFolder"))
+	#set ($indexFolder = $request.getParameter("indexFolder"))
+#end
+
+#if(!$UtilMethods.isSet($w))
+	#set ($width = "&w=100")
+#else
+	#set ($width = "&w=${w}")
+#end
+
+#if(!$UtilMethods.isSet($h))
+	#set ($height = "&h=100")
+#else
+	#set ($height = "&h=${h}")
+#end
+
+#if(!$UtilMethods.isSet($showVideoTitle))
+	#set($showVideoTitle = true)
+#end
+
+#if(!$UtilMethods.isSet($showVideoDescription))
+	#set($showVideoDescription = true)
+#end
+
+#if(!$UtilMethods.isSet($r))
+	#set($r = "")
+#else
+	#set($r = "&r=${r}")
+#end
+#if(!$UtilMethods.isSet($g))
+	#set($g = "")
+#else
+	#set($g = "&g=${g}")
+#end
+#if(!$UtilMethods.isSet($b))
+	#set($b = "")
+#else
+	#set($b = "&b=${b}")
+#end
+
+#if($UtilMethods.isSet($indexFolder))
+	<script type="text/javascript" src="/html/js/swfobject.js"></script>
+	<script type="text/javascript" src="/html/js/pagination/paginator.js"></script>
+	<script type="text/javascript" src="/html/js/pagination/getElementsBySelector.js"></script>
+
+	 
+	<script type="text/javascript">
+	function videoURL(url,inode){ 
+		var swfObj = new SWFObject("/html/flash/dotVideo.swf", "player", "480", "400", "8", "#000000"); 
+		swfObj.addParam("allowfullscreen","true");
+		swfObj.addParam("wmode", "transparent");
+ 		swfObj.addVariable("autostart","false"); 
+ 		swfObj.addVariable("overstretch","false");
+ 		swfObj.addVariable("image","");  
+ 		swfObj.addVariable("width","480");
+ 		swfObj.addVariable("height","400");
+ 		swfObj.addVariable("volume","70");
+ 		swfObj.addVariable("file",url);
+		swfObj.write("flashVideo" + inode); 
+		document.getElementById("playerWrapper" + inode).style.display="block";
+	} 
+	function closePlayer(inode){ 
+		videoURL('none',inode); 
+		document.getElementById("playerWrapper" + inode).style.display="none" 
+	}
+
+	</script>
+	#set ($videos = $video.getVideoGalleryByPath("$indexFolder", "$host.identifier"))
+	#if(!$UtilMethods.isSet($galleriesToShow))
+       #set($galleriesToShow = $videos.size())
+    #else
+    <script type="text/javascript">
+			window.onload = function(){
+				paginate(${galleriesToShow},'vids')
+			}
+	</script>
+	#end
+	
+	#if($videos.size() > 0)
+	<div id="videoGalleryList" class="videoGalleryList">
+		#foreach ($vid in $videos)
+			#set($cssClass = "videoGalleryItem")
+			#if($velocityCount == $videos.size())
+				#set($cssClass = "videoGalleryItem last")
+			#end
+			#set ($videoURI = $vid.URI)
+			#set($imageFileList = $video.getVideoImages("$videoURI", "$host.identifier"))
+			#set($imgInode = "")
+			#foreach ($img in $imageFileList)
+				#set ($imgIdentifier = $img.identifier)
+			#end
+		<p>
+			<div id="vids" class="${cssClass}">
+			    #if($UtilMethods.isSet($imgIdentifier))
+				   <a href="javascript:videoURL('${vid.URI}','${vid.inode}');"><img src="/thumbnail?id=${imgIdentifier}${width}${height}${r}${g}${b}"></a>
+				#end
+				<span class="videoGalleryItemTitle"><a href="javascript:videoURL('${vid.URI}','${vid.inode}');">#if($showVideoTitle== true)${vid.title}#end</a></span>
+				<span class="videoGalleryItemDesc">#if($showVideoDescription== true)${vid.friendlyName}#end</span>
+
+				<div id="playerWrapper${vid.inode}" class="floatingPlayer" style="display:none">
+					<div id="flashVideo${vid.inode}"> 
+						<div>
+							You will need a current version of Flash to view this content. <br /><a href="http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash" target="_blank">Click here to download the latest Flash player.</a> 
+						</div> 
+					</div> 
+					<a href="javascript:closePlayer('${vid.inode}')">close X</a> 
+				</div> 
+			</div>
+		</p>
+		#end
+	</div>
+	#if($galleriesToShow != $videos.size())
+          <a href="#" id="prevLink">Previous</a> <a href="#" id="nextLink">Next</a>
+	#end
+	#end
+#else
+	No parameters given
+#end

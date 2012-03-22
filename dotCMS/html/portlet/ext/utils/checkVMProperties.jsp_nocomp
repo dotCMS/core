@@ -1,0 +1,23 @@
+<%@page import="java.util.Enumeration"%>
+<%@page import="java.util.TimeZone"%>
+<%@page import="java.util.Properties"%>
+<%@ page import="com.dotmarketing.factories.InodeFactory" %>
+<%@ page import="com.dotmarketing.beans.Host" %>
+<%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
+<%
+
+	Properties props = System.getProperties();
+
+	Enumeration keys = props.keys();
+	
+	while (keys.hasMoreElements()) {
+
+		String key = (String)keys.nextElement();
+		String propValue = props.getProperty(key);
+%>
+	<%= key %> = <%= propValue %> <br/>
+<%
+
+	}
+	
+%>

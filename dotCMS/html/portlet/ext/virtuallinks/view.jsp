@@ -1,0 +1,1 @@
+<%@ include file="/html/portlet/ext/virtuallinks/view_virtuallinks.jsp" %>

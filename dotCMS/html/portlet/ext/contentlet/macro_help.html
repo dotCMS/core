@@ -1,0 +1,2988 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Using Macros</title>
+  <link rel="stylesheet" type="text/css" media="screen" href="/html/css/dot_admin.css">
+  <link rel="stylesheet" type="text/css"
+ href="/html/skin/color/01/en_US.css">
+</head>
+<body onLoad="this.focus();">
+<a name="top"></a>
+<p>Macros available in the dotCMS system
+</p>
+<ul>
+	<li><a href="#addThis">AddThis Social Bookmarks</a></li>
+	<li><a href="#addBrowserBookmark">Add Browser Bookmark</a></li>
+	<li><a href="#buildRSS">Build RSS Feed</a></li>
+	<li><a href="#buildRSSFromContent">Build RSS From Content</a></li>
+	<li><a href="#comment">Comment: Add a generic Comment component</a></li>
+	<li><a href="#getRating">Content Rating</a></li>
+	<li><a href="#ticker">Content Ticker</a></li>
+	<li><a href="#crumbtrail">Crumbtrails</a></li>
+	<li><a href="#dateFormatting">Date Formatting</a></li>
+	<li><a href="#pulltrackbacks">Display File, Page, or Contentlet Trackback History</a></li>
+	<li><a href="#resizeImages">Displaying Resized Images</a></li>
+	<li><a href="#thumbnailImages">Displaying Thumbnail Images</a></li>
+	<li><a href="#encrypt">Encrypt and Decrypt</a></li>
+	<li><a href="#eventListing">Events Listings</a></li>
+	<li><a href="#SQLQuery">Executing a SQL Query</a></li>
+	<li><a href="#addfavorites">Add to Favorites</a></li>
+	<li><a href="#getfavorites">Get Favorites</a></li>
+	<li><a href="#detailPageLink">Gets the details page link for a given contentlet</a></li>
+	<li><a href="#fileRepository">File Repository</a></li>
+	<li><a href="#linkRepository">Link Repository</a></li>
+	<li><a href="#getContent">Loads a Piece of Content</a></li>
+	<li><a href="#googleMiniSearch">Google Mini Search</a></li>
+	<li><a href="#googleCustomSearch">Google Custom Search</a></li>
+	<li><a href="#FSFiles">List Files on the File System</a></li>
+	<li><a href="#loginForm">Create the Login Form</a></li>
+	<li><a href="#googleMap">Google Maps</a></li>
+	<li><a href="#googleMapDirections">Google Maps Directions</a></li>
+	<li><a href="#mailingList">Mailing List</a></li>
+	<li><a href="#mediaGallery">Media Gallery</a></li>
+	<li><a href="#mp3PlayerButton">MP3 Player Button</a></li>
+	<li><a href="#mp3PlayerExtended">MP3 Player Extended</a></li>
+	<li><a href="#mp3Player">MP3 Player (Streaming)</a></li>
+	<li><a href="#myGroups">My Groups</a></li>
+	<li><a href="#menuBuilder">Navigation Menu Builder</a></li>
+	<li><a href="#pageContent">Paginated Pull and Display of Contents</a></li>
+	<li><a href="#pdfExport">PDF Export</a></li>
+	<li><a href="#permalink">Permanent Link: Add Permanent Link to a File, Page or Contentlet</a></li>
+	<li><a href="#trackback">Permanent Link Trackback: Add RDF Trackback to a File, Page or Contentlet</a></li>
+	<li><a href="#photoCarrousel">Photo Carousel</a></li>
+	<li><a href="#photoGallery">Photo Gallery</a></li>
+	<li><a href="#printAverageRating">Print the Average Rating of a Content</a></li>
+	<li><a href="#printNumberOfVotes">Print the Number of Votes on a Content</a></li>
+	<li><a href="#poll">Show Polls</a></li>
+	<li><a href="#pullRSSFeed">Pull RSS Feed</a></li>
+	<li><a href="#pullContents">Pulling and Displaying Contents</a></li>
+	<li><a href="#pullRelatedContent">Pulling and Displaying Related Content (Relationships)</a></li>
+	<li><a href="#randomImage">Random Image</a></li>
+	<li><a href="#selectedInode">Retrieve Selected Inode</a></li>
+	<li><a href="#sendtofriend">Send To Friend</a></li>
+	<li><a href="#siteMap">Site Map: Add Sitemap to a Page from the Root of the Site</a></li>
+	<li><a href="#siteMapFolder">Site Map: Add a Site Map to a Page from a Specified Folder to a Specific Depth</a></li>
+	<li><a href="#slideShow">Slide Show: Add a Flash Slide Show to display a set of 'Slide Image' related to a 'Slide Show' content</a></li>
+	<li><a href="#socialBookmarks">Social Bookmarks</a></li>
+	<li><a href="#subscribe">Subscribe: A form for user to subscribe to public dotCMS mailing lists</a></li>
+	<li><a href="#submitContent">Submit Content</a></li>
+	<li><a href="#textArea">Text Area</a></li>
+	<li><a href="#tagCloud">Tag Cloud</a></li>
+	<li><a href="#titleGenerator">Title Generator</a></li>
+	<li><a href="#videoGallery">Video Gallery</a></li>
+	<li><a href="#videoPlayer">Video Player</a></li>
+	<!-- BEGIN LI PLUGINS -->
+	<!-- END LI PLUGINS -->
+</ul>
+<a name="addThis"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>AddThis Social Bookmarks</legend>
+This macro generates bookmark links to the most popular social bookmarking sites
+ with the use of the AddThis javascript library (http://www.addthis.com)
+<br>
+<p><b>Macro Syntax:</b></p>
+<pre>
+#addThis(accountID)
+<br></pre>
+<b>Arguments:</b>
+<ul>
+    <li><i>accountID</i><br />
+		This is the AddThis account ID.</li><br/>
+	<b>Optional Parameters:</b>
+	  <li><i>addthis_logo (velocity variable not a parameter)</i><br />
+		The logo to display on the popup window (about 200x50 pixels). The popup window is show when the user selects the 'More' choice<br/>
+	    Example: addthis_logo = 'http://www.your-website.com/img/mylogo.gif';
+	  </li>
+	  <li><i>addthis_logo_background (velocity variable not a parameter)</i><br />
+		The color to use as a background around the logo in the popup<br/>
+		Example: addthis_logo_background = 'EFEFEF';
+	  </li>
+     <li><i>addthis_logo_color  (velocity variable not a parameter)</i><br>
+	   The color to use for the text next to the logo in the popup<br/>
+		Example: addthis_logo_color = '666666';
+	  </li>
+	  <li><i>addthis_brand (velocity variable not a parameter)</i><br/>
+	  	The brand name to display in the drop-down (top right)<br/>
+		Example: addthis_brand = 'My Website';
+	  </li>
+	  <li><i>addthis_options (velocity variable not a parameter)</i><br>
+	  	A comma-separated ordered list of options to include in the drop-down<br/>
+		Example: addthis_options = 'favorites, email, digg, delicious, more';<br/>
+		Currently supported options:<br/>
+		delicious, digg, email, favorites, facebook, fark, furl, google, live, myweb, myspace, newsvine, reddit, slashdot, stumbleupon, technorati, twitter, more (the default is currently 'favorites, digg, delicious, google, myspace, facebook, reddit, newsvine, live, more', in that order).
+	  </li>
+	  <li><i>addthis_bookmark_name (velocity variable not a parameter)</i><br/>
+	  	The title name for the bookmark entry. If is not set, by default is display the page title<br/>
+		Example: addthis_bookmark_name = 'My Link';
+	  </li>
+	  <li><i>addthis_offset_top (velocity variable not a parameter)</i><br/>
+	  	Vertical offset for the drop-down window (in pixels)<br/>
+		Example: addthis_offset_top = 2
+	  </li>
+	  <li><i>addthis_offset_left (velocity variable not a parameter)</i><br/>
+	  	Horizontal offset for the drop-down window (in pixels)<br/>
+		Example: addthis_offset_left = 2;
+	  </li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will generate the links to the chosen sites
+<p><b>Example 1: </b>
+<pre>#addThis('dotmarketingAddThis')</pre>
+</p>
+<br>
+<p><b>Example 2: </b>
+<pre>
+#set($addthis_logo ='http://www.mysite.com/global/images/logo.gif')
+#set($addthis_logo_background='EFEFEF')
+#set($addthis_logo_color='666666')
+#set($addthis_brand='My Site')
+#set($addthis_options='delicious, digg, google, newsvine')
+#set($addthis_offset_top='10')
+#set($addthis_offset_left='10')
+#set($addthis_bookmark_name='My Link Page')
+</pre>
+<pre>#addThis('dotmarketingAddThis')</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="addBrowserBookmark"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Add Browser Bookmark</legend>
+This macro generates a bookmark link on Internet Explorer and/or Firefox browser favorites folder
+<br>
+<p><b>Macro Syntax:</b></p>
+<pre>
+#addBrowserBookmark()
+<br></pre>
+<b>Arguments:</b>
+<p><b>Usage:</b></p>
+The macro will generate the link to the chosen sites on the browser favorite folder
+<p><b>Example : </b>
+<pre>#addBrowserBookmark()</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="buildRSS"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Build RSS</legend>
+This macro generates a RSS xml from a map list. Then name of the keys in the map have to be:
+'title' (String - required), 'link' (Identifier - required), 'description' (String - required),
+'guid' (Identifier -required), 'pubdate' (Date - optional) and 'author' (String - optional).
+This macro uses the permalink macro to generate the items link in the RSS.
+<p><b>Macro Syntax:</b></p>
+<pre>#buildRSS(channelTitle channelLink channelDescription list)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>channelTitle</i><br>
+This is the value for the title tag of the channel. </li>
+<li><i>channelLink</i><br>
+This is the value for the link tag of the channel. </li>
+<li><i>channelDescription</i><br>
+This is the value for the description tag of the channel. </li>
+<li><i>list</i><br>
+This is the map list of contents to display in the RSS. </li>
+<b>Optional Parameters:</b>
+<li><i>channelLanguage (velocity variable not a parameter)</i><br>
+This is the value for the language tag of the channel. </li>
+<li><i>channelCopyright (velocity variable not a parameter)</i><br>
+This is the value for the copyright tag of the channel. </li>
+<li><i>channelPubDate (velocity variable not a parameter)</i><br>
+This is the value for the publication date tag of the channel. </li>
+<li><i>channelLastBuildDate (velocity variable not a parameter)</i><br>
+This is the value for the last build date tag of the channel. </li>
+<li><i>channelDocs (velocity variable not a parameter)</i><br>
+This is the value for the docs tag of the channel. </li>
+<li><i>channelGenerator (velocity variable not a parameter)</i><br>
+This is the value for the generator tag of the channel. </li>
+<li><i>channelManagingEditor (velocity variable not a parameter)</i><br>
+This is the value for the managing editor tag of the channel. </li>
+<li><i>channelWebMaster (velocity variable not a parameter)</i><br>
+This is the value for the Web Master tag of the channel. </li>
+<li><i>channelWebMaster (velocity variable not a parameter)</i><br>
+This is the value for the Web Master tag of the channel. </li>
+<li><i>permalinkDetailPage (velocity variable not a parameter)</i><br>
+This is the identifier of the page that we need to display the contents in the item link.
+It uses the permalink macro.</li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will display all the content obtained by the pullcontent macro in the RSS
+<p><b>Example: </b>
+This show a simple way to call the macro with the required fields
+<pre>
+#set($contentList = $!{contents.getEmptyList()})<br/>
+	#pullContent($query '0' 'modDate desc')<br/>
+	#foreach($content in $list)<br/>
+		#set($item = $!{contents.getEmptyMap()})<br/>
+		#set($_dummy = $item.put('guid', $!content.identifier))<br/>
+		#set($_dummy = $item.put('title', $content.title))<br/>
+		#set($_dummy = $item.put('description', $content.description))<br/>
+		#set($_dummy = $item.put('link', $!content.identifier))<br/>
+		#set($_dummy = $item.put('pubdate', $!content.contentLastModDate))<br/>
+		#set($_dummy = $!contentList.add($item))<br/>
+	#end<br/>
+<br/>
+#buildRSS('Channel Title','http://hostname/test/test.dot','Channel description', $contentList)</pre>
+</p>
+<p><b>Example2: </b>
+This example shows how to include one o more of the optional parameters
+<pre>#set($permalinkDetailPage='123')<br/>
+#set($contentList = $!{contents.getEmptyList()})<br/>
+	#pullContent($query '0' 'modDate desc')<br/>
+	#foreach($content in $list)<br/>
+		#set($item = $!{contents.getEmptyMap()})<br/>
+		#set($_dummy = $item.put('guid', $!content.identifier))<br/>
+		#set($_dummy = $item.put('title', $content.titleField))<br/>
+		#set($_dummy = $item.put('description', $content.description))<br/>
+		#set($_dummy = $item.put('link', $!content.identifier))<br/>
+		#set($_dummy = $item.put('pubdate', $!content.contentLastModDate))<br/>
+		#set($_dummy = $!contentList.add($item))<br/>
+	#end<br/>
+<br/>
+#buildRSS('Channel Title','http://hostname/test/test.dot','Channel description', $contentList)
+</p>
+<br>
+</fieldset>
+<a name="buildRSSFromContent"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Build RSS From Content</legend>
+This macro generates an RSS xml from a content lucene query.
+<p><b>Macro Syntax:</b></p>
+<pre>#buildRSSFromContent(channelTitle channelLink channelDescription query titleField descriptionField)<br></pre>
+<b>Arguments:</b>
+<ul>
+ <li><i>channelTitle</i><br>
+This is the value for the title tag of the channel. </li>
+<li><i>channelLink</i><br>
+This is the value for the link tag of the channel. </li>
+<li><i>channelDescription</i><br>
+This is the value for the description tag of the channel. </li>
+<li><i>query</i><br>
+This is the lucene query to be use to get the contents to display in the RSS. </li>
+<li><i>titleField</i><br>
+This is the content velocity name of the the field you want to display as title in the item tag. </li>
+<li><i>descriptionField</i><br>
+This is the content velocity name of the the field you want to display as description in the item tag. </li>
+<b>Optional Parameters:</b>
+<li><i>channelLanguage (velocity variable not a parameter)</i><br>
+This is the value for the language tag of the channel. </li>
+<li><i>channelCopyright (velocity variable not a parameter)</i><br>
+This is the value for the copyright tag of the channel. </li>
+<li><i>channelPubDate (velocity variable not a parameter)</i><br>
+This is the value for the publication date tag of the channel. </li>
+<li><i>channelLastBuildDate (velocity variable not a parameter)</i><br>
+This is the value for the last build date tag of the channel. </li>
+<li><i>channelDocs (velocity variable not a parameter)</i><br>
+This is the value for the docs tag of the channel. </li>
+<li><i>channelGenerator (velocity variable not a parameter)</i><br>
+This is the value for the generator tag of the channel. </li>
+<li><i>channelManagingEditor (velocity variable not a parameter)</i><br>
+This is the value for the managing editor tag of the channel. </li>
+<li><i>channelWebMaster (velocity variable not a parameter)</i><br>
+This is the value for the Web Master tag of the channel. </li>
+<li><i>channelWebMaster (velocity variable not a parameter)</i><br>
+This is the value for the Web Master tag of the channel. </li>
+<li><i>permalinkDetailPage (velocity variable not a parameter)</i><br>
+This is the identifier of the page that we need to display the contents in the item link.
+It uses the permalink macro. </li>
+<li><i>orderBy (velocity variable not a parameter)</i><br>
+This is the order by field use in the pullcontent macro. Default value 'modDate desc'
+It use the pullcontent macro. </li>
+<li><i>limit (velocity variable not a parameter)</i><br>
+This is the max number of element to get. Default value '0' show all.
+It use the pullcontent macro. </li>
+<li><i>rssPublicationDateField (velocity variable not a parameter)</i><br>
+This is the content field name to be used as the publication date for each RSS entry.</li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will display all the content obtained by the pullcontent macro in the RSS
+<p><b>Example: </b>
+This show a simple way to call the macro with the required fields
+<pre>#buildRSSFromContent('Channel Title','http://hostname/test/test.dot','Channel description','+type:content +deleted:false +structureInode:77290 +(+languageId:1* +live:true))','test1','test6')</pre>
+</p>
+<p><b>Example2: </b>
+This example shows how to include one o more of the optional parameters.
+<pre>#set($permalinkDetailPage='123')<br/> #buildRSSFromContent('Test Title','http://hostname/test/test.dot','Channel description','+type:content +deleted:false +structureInode:77290 +(+languageId:1* +live:true))','test1','test6')</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="comment"/>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>comment: Add a Generic comment Component to a Page</legend>
+This macro will allow you to add a generic component to any contentlet in the system. If you set the
+commentsModeration you could create workflow task over this component.
+<p><b>Macro Syntax:</b></p>
+<pre>   comment($contentlet.inode)
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>contentlet inode</i><br />
+	This is the inode of the contentlet that will be commented.</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>commentForceLogin (velocity variable not a parameter)</i><br />
+	Optional: If set to "true" the user should be logged before could submit a comment<br/>
+	Default: false
+  </li>
+  <li><i>commentAutoPublish (velocity variable not a parameter)</i><br />
+	Optional: Controls whether the comment is automatically published or not.<br/>
+	Default: true
+  </li>
+  <li><i>commentUseCaptcha (velocity variable not a parameter)</i><br />
+	Optional: If set to "true" shows a captcha image to the comment's form, to validate human interaction<br/>
+	Default: false
+  </li>
+  <li><i>commentUseAudioCaptcha (velocity variable not a parameter)</i><br />
+	Optional: If set to "true" shows a audio captcha to the comment's form, to validate human interaction<br/>
+	Default: false
+  </li>
+  <li><i>commentUseAudioCaptchaHeight (velocity variable not a parameter)</i><br />
+	Optional: If 'commentUseAudioCaptcha' var is set to "true", this will be the height of the space that the audio player will be used<br/>
+	Default: 30
+  </li>
+  <li><i>commentStripHTML (velocity variable not a parameter)</i><br />
+	Optional: If set to "true" any html code that's sent in the comment field would be removed<br/>
+	Default: false
+  </li>
+  <li><i>commentTitle (velocity variable not a parameter)</i><br />
+	Optional: If set, that will be the name of the question to comment
+  </li>
+  <li><i>commentsModeration (velocity variable not a parameter)</i><br/>
+    Optional: If set, that will be the name of the role to assign the workflow </li>
+   <li><i>maxDepth (velocity variable not a parameter)</i><br/>
+    Optional: If set, that will be the number of levels you could make a comment. Comments will be displayed in a threaded view - Comments in reply to other comments.<br/>Default: 1 </li>
+    <li><i>commentSourceCode </i><br>
+	If this variable is set will use the specified vtl to display the Comment.</li>
+</ul>
+<p><b>Usage:</b><br>
+Use this macro if you want to add a form to comment a contentlet, the macro, will add a form to add new comments and list the comments
+order by publish date.
+</p>
+<p><b>Example 1:</b>
+#set($commentForceLogin = 'false')<br/>
+#set($commentAutoPublish = 'true')<br/>
+#set($commentUseCaptcha = 'true')<br/>
+#set($commentUseAudioCaptcha = 'true')<br/>
+#set($commentUseAudioCaptchaHeight = 200)<br/>
+#set($commentStripHTML = 'false')<br/>
+#set($commentTitle = 'This is the question to comment')<br/>
+#comment($content.inode)<br/>
+</p>
+<pre>
+<p><b>Example 2: </b>
+This example generate a content comment and a workflow task
+from that comment
+<pre>#set($commentForceLogin = 'false')<br/>
+#set($commentAutoPublish = 'true')<br/>
+#set($commentUseCaptcha = 'false')<br/>
+#set($commentStripHTML = 'false')<br/>#set($commentsModeration = 'Editor')<br/>#set($commentForceLogin= 'true')<br/>#comment($content.inode)</pre>
+</p>
+<br />
+</pre>
+</fieldset>
+<a name="dateFormatting"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Return diferent messages depending the input date. The input date must be before the current date.</legend>
+<p><b>View Tool Syntax:</b></p>
+<pre>$dateviewapi.friendly(date)
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>date (date/required)</i><br />
+	Date to diff with the current date.</li>
+</ul>
+<p><b>Usage:</b><br/><br/>
+Use this to show the difference date and time between a string date (before the current date) and the current date.
+<p><b>Example 1:</b></p>
+<pre><xmp>
+Wed, 02 Apr 2008 16:23:14 +0000<br>
+#set ($tempDate = $UtilMethods.parseDate("Wed, 02 Apr 2008 16:23:14 +0000", "EEE, dd MMM yyyy HH:mm:ss +SSSS"))
+Result Message: $dateviewapi.friendly($tempDate)<br>
+</xmp></pre>
+<b>Assuming that current date is: Fri, 02 May 2008 17:20:00 - The output will be: Wed., April 2, 4:23 PM</b>
+<p><b>Example 2:</b></p>
+<pre><xmp>
+Sat, 26 Apr 2008 16:23:14 +0000<br>
+#set ($tempDate = $UtilMethods.parseDate("Sat, 26 Apr 2008 16:23:14 +0000", "EEE, dd MMM yyyy HH:mm:ss +SSSS"))
+Result Message: $dateviewapi.friendly($tempDate)<br>
+</xmp></pre>
+<b>Assuming that current date is: Fri, 02 May 2008 17:20:00 - The output will be: Saturday at 4:23 PM</b>
+<p><b>Example 3:</b></p>
+<pre><xmp>
+Thu, 01 May 2008 16:23:14 +0000<br>
+#set ($tempDate = $UtilMethods.parseDate("Thu, 01 May 2008 16:23:14 +0000", "EEE, dd MMM yyyy HH:mm:ss +SSSS"))
+Result Message: $dateviewapi.friendly($tempDate)<br>
+</xmp></pre>
+<b>Assuming that current date is: Fri, 02 May 2008 17:20:00 - The output will be: Yesterday at 4:23 PM</b>
+<p><b>Example 4:</b></p>
+<pre><xmp>
+Fri, 02 May 2008 14:20:00 +0000<br>
+#set ($tempDate = $UtilMethods.parseDate("Fri, 02 May 2008 14:20:00 +0000", "EEE, dd MMM yyyy HH:mm:ss +SSSS"))
+Result Message: $dateviewapi.friendly($tempDate)<br>
+</xmp></pre>
+<b>Assuming that current date is: Fri, 02 Apr 2008 17:20:00 - The output will be: 3 hour(s) ago</b>
+<p><b>Example 5:</b></p>
+<pre><xmp>
+Fri, 02 May 2008 17:10:00 +0000<br>
+#set ($tempDate = $UtilMethods.parseDate("Fri, 02 May 2008 17:10:00 +0000", "EEE, dd MMM yyyy HH:mm:ss +SSSS"))
+Result Message: $dateviewapi.friendly($tempDate)<br>
+</xmp></pre>
+<b>Assuming that current date is: Fri, 02 May 2008 17:20:00 - The output will be: 10 minute(s) ago</b>
+</fieldset>
+<br>
+<a name="detailPageLink"/>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>detailPageLink : Gets the details page link for a given contentlet.</legend>
+The link title can also be specified, otherwise the macro
+will attemtp to find a contentlet field with the name 'title'
+and use this as the default link title.
+If the 'Detail Page' structure field has not been set, the link will be composed of the
+current page url plus the parameter.
+Note that the name of the request parameter used for passing the selected inode to the details page,
+is determined by the properties key "INODE_PARAMETER_NAME". In case this key
+is missing, the parameter name defaults to "inode"
+<p><b>Macro Syntax:</b></p>
+<pre>detailPageLink($content)
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>content</i><br />
+	This is the content to get the detail page for</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+	<li><i>$linkTitle = 'My Title'</i>
+(default Title of passed in Content) Use to override the title.  The title is used to display the link</li>
+</ul>
+<p><b>Usage:</b><br>
+Use this macro to get the detail page for a piece of content
+</p>
+<p><b>Example 1:</b>
+#set($linkTitle = 'My Title')
+#detailPageLink($content)
+</p>
+<pre>
+<br />
+</pre>
+</fieldset>
+<a name="getRating"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Content Rating</legend>
+The getRating macro, it's used to display a five start scale, that's the user's evaluation on the article. Also the macro allows the user evaluate this contentlet.
+<p><b>Macro Syntax:</b></p>
+<pre>#getRating(content_identifier)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>content_inode</i><br>
+This is the identifier of the contentlet to be evaluated by the rating macro</li>
+</ul>
+<p><b>Usage:</b></p>
+This macro will automatically show a five start menu indicating the acceptances for the contentlet.
+<p><b>Example: </b>
+<pre>#getRating($content.identifier)</pre>
+</p>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>doNotIncludeStyles</i><br>
+By default the file repository macro includes its own css styles inline in the page, that fails to validate against the w3c validator (http://validator.w3.org/),
+if you want your page to correctly validate you got to set this property true and include your css manually in the head of your page.
+</li>
+  <li><i>getRatingSourceCode</i><br>
+  If you want to overrite the whole source code of the macro, by default the macro use the original code
+  </li>
+  <li><i>off_image</i><br>
+  If you want to overrite the default off image
+  </li>
+  <li><i>on_image</i><br>
+    If you want to overrite the default on image
+</li>
+  <li><i>checked_image</i><br>
+  If you want to overrite the default checked image
+</li>
+<br>
+</fieldset>
+<br/>
+<a name="ticker"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Content Ticker</legend>
+<p>This macro takes a list of content items, and displays them each based on the titleField and titleDescription. It rotates each piece of content
+and fades them out of the page to show the next one. Optional parameters can determine the fade length and colors as well as the time
+between each ticker display.
+</p>
+<p><b>Macro Syntax:</b></p>
+<pre>#ticker()</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>titleField</i><br>
+  This is the field from the structure that will be displayed on the ticker for each content piece</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>descriptionField</i><br>
+  This is the field from the structure that will be displayed on the ticker for each content piece below the title.</li>
+  <li><i>fadeInLength</i><br>
+  This determines the length in milliseconds it takes to fade the text in</li>
+  <li><i>fadeOutLength</i><br>
+  This determines the length in milliseconds it takes to fade the text out</li>
+  <li><i>displayLength</i><br>
+  This determines the length in milliseconds from one fade in to the next</li>
+  <li><i>fgcolor</i><br>
+  This determines the color to display the link text before it fades in.</li>
+  <li><i>bgcolor</i><br>
+  This determines the color that the link text fades in to.</li>
+  <li><i>fgcolorDescription</i><br>
+  This determines the color to display the description text before it fades in.</li>
+  <li><i>bgcolorDescription</i><br>
+  This determines the color that the description text fades in to.</li>
+  <li><i>tickerSourceCode</i><br>
+  Render another html code to show the ticker if wanted.</li>
+</ul>
+<p><b>Usage:</b><br>
+Use this macro if you want to add a content ticker to your site.
+You need to call the pullContent macro before calling the ticker macro, to provide the ticker with the list of content to display.
+</p>
+<p><b>Example:</b>
+</p>
+<pre>
+#pullContent('+type:content +deleted:false +structureInode:5 +(+languageId:1* +live:true)' '10' '')
+#set($titleField = 'NewsHeadline')
+#ticker($titleField)
+</pre>
+<p><b>Example with Optional Parameters:</b>
+</p>
+<pre>
+#pullContent('+type:content +deleted:false +structureInode:5 +(+languageId:1* +live:true)' '10' '')
+#set($titleField = 'NewsHeadline')
+#set($descriptionField = 'NewsSummary')
+#set ($fadeInLenth = 500)
+#set ($fadeOutLenth = 500)
+#set ($displayLength = 2000)
+#set ($fgcolor = "#1A50B8")
+#set ($bgcolor = "#ffffff")
+#set ($fgcolorDescription = "#AAAAAA")
+#set ($bgcolorDescription = "#ffffff")
+#set ($tickerSourceCode = "/my_velocity_files/my_ticker.vtl")
+#ticker($titleField)
+</pre>
+<br />
+</fieldset>
+<a name="crumbtrail"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Crumbtrail Builder</legend>
+This macro will build a crumbtrail using the path to the current page using unordered lists.  This list can then be formated by css.  The resulting code will look like.
+<pre>&lt;ul&gt;
+	&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;a href="/folder_name/"&gt;Folder Name&lt;/a&gt;&lt;/li&gt;
+	&lt;li&gt;Page Name&lt;/li&gt;  <-- No Link for current page
+&lt;/ul&gt;
+</pre>
+<p><b>Macro Syntax:</b></p>
+<pre>#crumbTrail()<br></pre>
+<b>Arguments:</b>
+<br/>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>homePath</i><br>
+  The homepath can be set to point the home which is the beginning of the crumbtrail to a specified path.</li>
+</ul>
+<p><b>Usage:</b><br>
+The crumbtrail builder will create an unordered list of links, starting from the site root or "Home Page".
+It will then use the folder names for folders, build the path to the current page, and then display the page title as the last link.
+The resulting html can be easily formatted by wrapping it in a &lt;div&gt; tag and assigning it appropiate css styles.
+</p>
+<p><b>Example 1:</b>
+</p>
+<pre>&lt;div id="crumbtrail"&gt;
+   #crumbTrail()
+&lt;/div&gt;
+</pre>
+This would build the required crumbtrail to the current page.
+<br/>
+<p><b>Example 2:</b>
+</p>
+<pre>
+#set($homePath = '/about/')
+&lt;div id="crumbtrail"&gt;
+   #crumbTrail()
+&lt;/div&gt;
+</pre>
+This would build the required crumbtrail to the current page, setting the path of the home folder point to index page on the "about" folder.<br/><br/>
+If your are in http://www.yoursite.com/athletics/news/news_list.dot and set the homePath point to about folder, you will get this result.
+<pre>&lt;ul&gt;
+	&lt;li&gt;&lt;a href="/about/"&gt;Home&lt;/a&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;a href="/athletics/"&gt;Athletics&lt;/a&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;a href="/athletics/news/"&gt;News&lt;/a&gt;&lt;/li&gt;
+	&lt;li&gt;News Listing&lt;/li&gt;  <-- No Link for current page
+&lt;/ul&gt;
+</pre>
+</fieldset>
+<br>
+<a name="pulltrackbacks"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Display File, Page or Contentlet Trackback History</legend>
+This macro display a list of all the trackback pings made to the permalink
+showing the title,url, trackback date,blog name, and asset Identifier
+<p><b>Macro Syntax:</b></p>
+<pre>#pullTrackbacks(identifier)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>identifier</i><br>
+This is the identifier or inode of the file, page or contentlet, you want to display the trackback pings history.</li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example: </b>
+<pre>#pullTrackbacks('12345')<br/>
+#if($list.size() >0)<br/>
+#foreach($track in $list)<br/>
+	<b>Asset Identifier:</b>$!{track.assetIdentifier}<br/>
+	<b>Title:</b>$!{track.title}<br/>
+	<b>Excerpt:</b>$!{track.excerpt}<br/>
+	<b>URL:</b>$!{track.url}<br/>
+	<b>Blog Name:</b>$!{track.blogName}<br/>
+	<b>Trackback Date:</b>$!{track.trackDate}<br/>
+#end<br/>
+#else<br/>
+	<li>No Trackbacks found</li><br/>
+#end<br/>
+</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="resizeImages"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Displaying Resized Images</legend>
+This macro will automatically create and display a resized image in your image html tag, with the height and width you
+specify in the servlet parameters. The servlet allows you to create new images with the size you prefer, specifying
+the width, height or both. If you want to display an image, but you don't know the exact values of the width and height to
+display the image proportionally, this servlet allows you specify the maximum height and maximun width the image could have,
+and generate a proportional image that doesn't exceed those values.
+<p><b>Macro Syntax:</b></p>
+<pre>   &lt;img src="/resize_image?[[path] or [identifier]]
+   &[ [[height] and/or [width]] or [[maxh] and [maxw]] ]"&gt;
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>path</i><br>
+This is the root folder of the image (optional). You could use the image path or the image identifier parameter
+to specify the image to be resized. It is mandatory that only one of the two be used.</li>
+<li><i>id</i><br>
+This is the image identifier (optional).  You could use the image path or the image identifier parameter to specify the image to be resized.
+It is mandatory that only one of the two be used.</li>
+<li><i>h</i><br>
+This is the new image height (optional). You could use the image height parameter alone or in combination with the width ("w") parameter.</li>
+<li><i>w</i><br>
+This is the new image width (optional).  You could use the image width parameter alone or in combination with the height ("h") parameter.</li>
+<li><i>maxh</i><br>
+This is the image new maximum height could have (optional). If you use this parameter it must include the maximum width ("maxw") parameter.</li>
+<li><i>maxw</i><br>
+This is the image new maximum width could have (optional). If you use this parameter it must include the maximum height ("maxh") parameter.</li>
+</ul>
+<p><b>Usage:</b><br>
+The use of this servlet is very easy. You only have to add in the src attribute of the html image tag, the following text
+&lt; img src="/resize_image?&lt;parameters&gt; " &gt;
+</p>
+<p><b>Example:</b>
+</p>
+<pre>   &lt;img src="/resize_image?path=/images/image.jpg&maxw=120&maxh=130"&gt;
+   &lt;img src="/resize_image?id=91&maxw=120&maxh=130"&gt;
+   &lt;img src="/resize_image?path=/images/image.jpg&w=80&h=80"&gt;
+   &lt;img src="/resize_image?id=91&w=80&h=80"&gt;
+   &lt;img src="/resize_image?path=/images/image.jpg&w=80"&gt;
+   &lt;img src="/resize_image?id=91&w=80"&gt;
+   &lt;img src="/resize_image?path=/images/image.jpg&h=80"&gt;
+   &lt;img src="/resize_image?id=91&h=80"&gt;
+</pre>
+</fieldset>
+<a name="thumbnailImages"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Displaying Thumbnail Images</legend>
+This macro will automatically create and display a thumbnail image in your image html tag, with the height and width you
+specify in the servlet parameters. The servlet allows you to create new images with the size you prefer, specifying
+the width, height or both.The thumbnail generates an image with a background color and places the resized image within the thumbnail.
+The background color can be changed with the parameters r,g,b.
+<p><b>Macro Syntax:</b></p>
+<pre>   &lt;img src="/thumbnail?id=[identifier]&[ [[height] and/or [width]] or [[r] and [g] and [b]] ]"&gt;
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>id</i><br>
+This is the image identifier parameter to specify the image to be resized. It is mandatory that only one of the two be used.</li>
+<li><i>h</i><br>
+This is the new image height (optional). You could use the image height parameter alone or in combination with the width ("w") parameter.</li>
+<li><i>w</i><br>
+This is the new image width (optional).  You could use the image width parameter alone or in combination with the height ("h") parameter.</li>
+<li><i>r</i><br>
+This is the R from the RGB background color to use for the image. By default the RGB is White (255,255,255).</li>
+<li><i>g</i><br>
+This is the G from the RGB background color to use for the image. By default the RGB is White (255,255,255).</li>
+<li><i>g</i><br>
+This is the B from the RGB background color to use for the image. By default the RGB is White (255,255,255).</li>
+</ul>
+<p><b>Usage:</b><br>
+The use of this servlet is very easy. You only have to add in the src attribute of the html image tag, the following text
+&lt; img src="/thumbnail?&lt;parameters&gt; " &gt;
+</p>
+<p><b>Example:</b>
+</p>
+<pre>
+   &lt;img src="/thumbnail?id=91&w=120&h=130"&gt;
+   &lt;img src="/thumbnail?id=91&w=120"&gt;
+   &lt;img src="/thumbnail?id=91&h=130"&gt;
+   &lt;img src="/thumbnail?id=91&w=120&h=130&r=200&g=100&b=50"&gt;
+</pre>
+</fieldset>
+<a name="decrypt"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Decrypt</legend>
+This macro allows to decrypt a string that was encrypted with #encrypt. The decrypted value is saved in the variable: $decryptedStr.
+If you want to echo out the decrypted value use: $crypt.decrypt('string to decrypt').
+<p><b>Macro Syntax:</b></p>
+<pre>#decrypt('string to decrypt')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>string to decrypt</i><br>
+  This is the string that will be decrypted.
+  </li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example:</b>
+</p>
+<pre>
+#encrypt('website@dotcms.org')
+#decrypt($encryptedStr)
+This is the decrypted value = $decryptedStr
+</pre>
+<pre>
+<input type="hidden" name="to" value="$crypt.decrypt($crypt.crypt('website@dotcms.org'))">
+</pre>
+</fieldset>
+<a name="encrypt"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Encrypt</legend>
+This macro allows to encrypt a string. The encryted emails can be used in email forms to avoid having email address in plain text.
+The encrypted value is saved in the variable: $encryptedStr.
+If you want to echo out the decrypted value use: $crypt.crypt('string to encrypt').
+<p><b>Macro Syntax:</b></p>
+<pre>#encrypt('string to encrypt')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>string to encrypt</i><br>
+  This is the string that will be encrypted.
+  </li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example:</b>
+</p>
+<pre>
+#encrypt('website@dotcms.org')
+#set ($to = $encryptedStr)
+<input type="hidden" name="to" value="$to">
+</pre>
+<pre>
+<input type="hidden" name="to" value="$crypt.crypt('website@dotcms.org')">
+</pre>
+</fieldset>
+<a name="eventListing"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Events Listings</legend>
+<p><b>Macro Syntax:</b></p>
+<pre>#events('from' 'to')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>from</i><br>
+This is the from date, or start date, of your events listing. It must be in (mm/dd/yy) format.</li>
+  <li><i>to</i><br>
+This is the "to date", or end date, of your events listing. It must be in (mm/dd/yy) format.</li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example:</b>
+</p>
+<pre>#events('1/1/2006' '2/1/2006')
+</pre>
+</fieldset>
+<br>
+<a name="SQLQuery"/>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Execute SQL Query</legend>
+This macro will allow you to execute a select statement on any predefined datasource.
+<p><b>Macro Syntax:</b></p>
+<pre>   #getSQLResults('select * from table')
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>dbConnection</i><br />
+Optional: By default the macro will execute your query against the dotCMS database unless you set a dbConnection.</li>
+  <li><i>dbStartRow</i><br />
+Optional: If you set dbStartRow your results will start at the given row.<  The dbStartRow is zero based meaning that the first row is row 0./li>
+</ul>
+  <li><i>dbMaxRow</i><br />
+Optional: If you set dbMaxRow your results will be limited to your maxRows.  When possible your should do this with a limit in your query./li>
+</ul>
+<p><b>Usage:</b><br>
+Use this macro if you want to pull data from a database and display the results within some piece of content. If the SQL throws an error it will store the error in a variable named SQLError.  See the example below for instructions on how to use this.  It is only optional that you check for the error but it is recommended that you do so that your sql won't fail silently.
+</p>
+<p><b>Example:</b>
+</p>
+<pre>#set ($dbConnection = 'jdbc/test1')
+#set ($dbStartRow = 1)
+#set ($dbMaxRow = 4)
+#getSQLResults('select * from test order by id')
+$SQLError
+#foreach($r in $results)
+$r.id
+<br />
+#end
+</pre>
+<p><b>Example 2 - Here you see the the error being checked for and a custom message being throw on error:</b>
+</p>
+<pre>#set ($dbConnection = 'jdbc/test1')
+#set ($dbStartRow = 1)
+#set ($dbMaxRow = 4)
+#getSQLResults('select * from test order by id')
+#if($SQLError)
+Custom SQL message - I Failed
+#else
+#foreach($r in $results)
+$r.id
+<br />
+#end
+#end
+</pre>
+</fieldset>
+<br>
+<a name="addfavorites"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Add to Favorites</legend>
+This macro will display a button that will allow the user to add this page to their bookmarks / favorites.
+This only works for logged in users in the frontend. If the user is not logged in the macro will redirect the user
+to the login page.
+<p><b>Macro Syntax:</b></p>
+<pre>   #addToFavorites()
+</pre>
+<b>Optional:<br/></b>
+<ul>
+  <li><i>addFavoritesLabel</i><br>
+  This is the label used on the button before the page has been added to the user's favorites. Default label: Add to Favorites.</li>
+  <li><i>removeFavoritesLabel</i><br>
+  This is the label used on the button after the page has been added to the user's favorites. Default label: Remove from Favorites.</li>
+</ul>
+<p><b>Example:</b>
+</p>
+<pre>#addToFavorites()
+</pre>
+This will add the Add to Favorites button with default labels.
+<pre>
+#set($addFavoritesLabel = 'Add to My Favorites')
+#set($removeFavoritesLabel = 'Remove from My Favorites')
+#addToFavorites()
+</pre>
+This will add the Add to Favorites button with specified labels.
+</fieldset>
+<br>
+<a name="getfavorites"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Get Favorites</legend>
+This macro will return a list of the logged in user favorites.
+If the user is not logged in the list will be returned empty.
+<p><b>Macro Syntax:</b></p>
+<pre>#getFavorites()
+</pre>
+<p><b>Example:</b>
+</p>
+<pre>#getFavorites()
+<ul>
+#foreach($page in $list)
+<li><a href="$page.page_url">$page.page_title</a></li>
+#end
+</ul>
+#end
+</pre>
+This will get the list of favorites and print them in an unordered list.
+</fieldset>
+<br>
+<a name="fileRepository"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>File Repository</legend>
+This macro will automatically create a file repository using the path sent to it as the "root" folder.
+<p><b>Macro Syntax:</b></p>
+<pre>   #fileRepository('path')
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>path</i><br>
+This is root folder of the file repository. The end user will only be able to view files and folders under this directory.</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>doNotIncludeStyles</i><br>
+By default the file repository macro includes its own css styles inline in the page, that fails to validate against the w3c validator (http://validator.w3.org/),
+if you want your page to correctly validate you got to set this property true and include your css manually in the head of your page.
+</li>
+<li><i>fileRepositorySourceCode</i><br />
+  This can be used as the display logic instead of the default html({velocityHome}/static/file_repository/index.html)</li>
+<li><i>tableSummary</i><br />
+  This can be used to set the summary property of the generated table</li>
+</ul>
+<p><b>Usage:</b><br>
+The repository will show a list of files and folders that the view user has permissions to view. If the user is not logged in, they will only be able to view files and folders that have the CMS_ANONYMOUS read permission.  If the user is logged in, they will be able to view any files and folders they have read permission on.
+</p>
+<p><b>Example:</b>
+</p>
+<pre>   #fileRepository('/resources/documentation')
+</pre>
+This would build a file repository from the contents found in the CMS folder /resources/documentation.  If there were any sub folders, the user would be able to click through and view these as well.
+<pre> #set($fileRepositorySourceCode = '/application/file_repository.vtl')
+#fileRepository('/documentation/repository')
+And the /application/file_repository.vtl file could look like this
+#foreach($file in $fileRepository_filesList)
+#set($imgpath = "/resize_image?path=/dotAsset/${file.identifier}.${file.getExtension()}&w=178")
+<BR><XMP><img src='$imgpath' alt=""/></XMP>
+#end
+<BR>
+Another example of code for /application/file_repository.vtl could be like this:
+<XMP><ul></XMP>
+#foreach($file in $fileRepository_filesList)
+<XMP><li></XMP>
+<B>Filename:</B> ${fileRepository_showFolder}${file.fileName}
+<BR><B>Extension: </B>${file.getExtension()}
+<BR><B>Friendly Name:</B>$!{file.friendlyName}
+<BR><B>File Size:</B>$!{file.size}
+<BR><B>Publish Date</B>: $!{file.publishDate}
+<XMP></li></XMP>
+#end
+<XMP></ul></XMP>
+</pre>
+</fieldset>
+<a name="linkRepository"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Link Repository</legend>
+This macro will automatically create a link repository using the path sent to it as the "root" folder.
+<p><b>Macro Syntax:</b></p>
+<pre>   #linkRepository('path')
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>path</i><br>
+This is root folder of the link repository. The end user will only be able to view links that belong to this directory.</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+<li><i>fileRepositorySourceCode</i><br />
+  This can be used as the display logic instead of the default html ({velocityHome}/static/link_repository/index.html)</li>
+</ul>
+<p><b>Usage:</b><br>
+The repository will show a list of links.
+</p>
+<p><b>Example:</b>
+</p>
+<pre>   #linkRepository('/resources/documentation')
+</pre>
+This would build a link repository from the contents found in the CMS folder /resources/documentation.
+<pre>
+#set($linkRepositorySourceCode = '/application/file_repository.vtl')
+#linkRepository('/documentation/repository')
+And the /application/file_repository.vtl file could look like this
+<XMP><ul></XMP>
+#foreach($link in $linkList)
+  #if($!{link.linkType} == 'CODE')
+    #set($lc = $link.getLinkCode())
+    #set($lc = $UtilMethods.espaceVariableForVelocity($lc))
+    #set($lc = $UtilMethods.restoreVariableForVelocity($lc))
+    <XMP><li>$UtilMethods.evaluateVelocity($lc,$velocityContext)</li></XMP>
+  #else
+    <XMP><li><a href="$!{link.protocal}$!{link.url}" target="$!{link.target}">$!{link.title}</a></li></XMP>
+  #end
+#end
+<XMP></ul></XMP>
+</pre>
+</fieldset>
+<br>
+<a name="getContent"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset>
+	<legend>Loads a Piece of Content From its Identifier</legend>
+	This macro will take an identifier of a piece of content and sets it to a variable $content
+	<p><b>Macro Syntax:</b></p>
+	<pre>
+		#getContent(contentIdentifier)
+	</pre>
+	<p><b>Example:</b></p>
+	<pre>
+		#set($id = $request.getParameter("id"))<br />
+		#if($id)<br />
+			#getContent($id)<br />
+		#end<br />
+		My title is $content.title
+	</pre>
+</fieldset>
+<br>
+<a name="googleMiniSearch"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Let you retrieve result from a google mini appliance.</legend>
+<p><b>View Tool Syntax:</b></p>
+<pre>$googleapi.searchGoogleMini(client, collection, subcollection, query, metaquery, start, num, autoFilter)
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>client (string/required)</i><br />
+	This is the frontend client name, as its setup in the google mini appliance.</li>
+  <li><i>collection (string/required)</i><br />
+	Name of the google collection to search on.
+  </li>
+  <li><i>subcollection (string/non required)</i><br />
+	Name of the google sub collection to search on. This property is not supported by all the google mini appliances.
+  </li>
+  <li><i>query (string/non required)</i><br />
+	The user query to narrow the results.
+  </li>
+  <li><i>metaquery (string/non required)</i><br />
+	Restricts the search results to documents with meta tags whose values contain the words or phrases specified.<br/>
+	This parameter requires the following sintax: [metatag name]:[metatag content]<br/>
+	Using | as the or operator and . as the AND operator <br/>
+	E.G.1. "department:Human Resources|department:Finance" <br/>
+		Meaning all the results where metatag deparment contains the phrase "Human Resources" or contains the word "Finance"<br/>
+	E.G.2. "department:Human Resources.department:Finance"<br/>
+		Meaning all the results where metatag deparment contains the phrase "Human Resources" and contains the word "Finance"
+  </li>
+  <li><i>start (number)</i><br />
+	Index where to start the search. Starting on 0.
+  </li>
+  <li><i>num (number)</i><br />
+	Number of results to retrieve, -1 to retrieve all results.
+  </li>
+  <li><i>autoFilter (boolean true/false)</i><br />
+	Activates or deactivates automatic results filtering performed by Google search. <br />
+	Currently, Google search uses two techniques for automatic filtering of results: <br />
+	Duplicate Snippet Filter - If multiple documents contain the same information in their snippets in response to a query, then only the most relevant document of that set will be displayed in the results.<br />
+	Duplicate Directory Filter - If there are many results in a single web directory, then only the two most relevant results for that directory will be returned in the results. An output flag indicates that more results are available from that directory.<br />
+  </li>
+</ul>
+<p><b>Usage:</b><br/><br/>
+Use this to pull search results from a google mini appliance, to make this web api work you have to setup the variable GOOGLE_MINI_SEARCH_URL on the
+dotmarketing.config.properties file pointing to the google mini appliance url like GOOGLE_MINI_SEARCH_URL=http://googlemini.dotcms.org<br /><br />
+The api returns an specific GoogleMiniSearch object that contains all the variables necessary to display all the retrieved results.<br /><br />
+<b>GoogleMiniSearch Object - Attributes</b><br />
+<pre>
+	<i>searchTime</i> - The time taken by the appliance to retrieve the results<br />
+	<i>query</i> - The request query<br />
+	<i>fromIndex</i> - The start index of results<br />
+	<i>toIndex</i> - The end index of retrieved results<br />
+	<i>estimatedTotal</i> - The estimated total of result based on the given query<br />
+	<i>searchResults</i> - The list of results, this is a list of GoogleMiniSearchResult objects<br />
+	<i>hasNextPage()</i> - Method that returns true if results has a next page to display<br />
+	<i>hasPreviousPage()</i> - Method that returns true if results has a previous page to display<br />
+</pre>
+<b>GoogleMiniSearchResult - Attributes</b><br />
+<pre>
+	<i>identationLevel</i> - Level of indentation used for inner results<br />
+	<i>mimeType</i> - Mime type of the result<br />
+	<i>resultURL</i> - The url to the result<br />
+	<i>title</i> - The title<br />
+	<i>generalRatingRelevance</i> - Relevance of the document in google mini<br />
+	<i>additionalSearchDetails</i> - More details about the retrived document <br />
+	<i>snippet</i> - Result snippet <br />
+	<i>metaTagsFields</i> - A map of metatags associated to the result<br />
+</pre>
+</p>
+<p><b>Example:</b></p>
+<pre><xmp>
+#set($searchObj = $googleapi.searchGoogleMini("default_frontend", "Main_Site", "", "Knight", "", 0, 100, false))
+<b>Search Summary</b><br/>
+<b>Total Search time:</b> $searchObj.searchTime<br/>
+<b>Query:</b> $searchObj.query<br/>
+<b>From Index:</b> $searchObj.fromIndex<br/>
+<b>To Index:</b> $searchObj.toIndex<br/>
+<b>Estimated Total:</b> $searchObj.estimatedTotal<br/>
+<b>Has Next Results Page:</b> $searchObj.hasNextPage()<br/>
+<b>Has Previous Results Page:</b> $searchObj.hasPreviousPage()<br/>
+<b>Estimated Total of Results:</b> $searchObj.estimatedTotal<br/>
+<br/>
+#foreach($result in $searchObj.searchResults)
+	<b>Result Index:</b> $result.resultIndex<br/>
+	<b>Identation Level:</b> $result.identationLevel<br/>
+	<b>Title:</b> $result.title<br/>
+	<b>Snippet:</b> $result.snippet<br/>
+	<b>Result URL:</b> <a href="$result.resultURL">$result.resultURL</a><br/>
+	<b>General Rating Relevance:</b> $result.generalRatingRelevance<br/>
+	<b>Mime Type:</b> $result.mimeType<br/>
+	<b>Additional Search Details:</b> $result.additionalSearchDetails<br/>
+	<b>Meta Tags Fields:</b> $result.metaTagsFields<br/>
+	<hr/>
+#end
+</xmp></pre>
+</fieldset>
+<br/>
+<a name="googleCustomSearch"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Let you retrieve result from a google custom search.</legend>
+<p><b>View Tool Syntax:</b></p>
+<pre>$googleapi.searchGoogleCustom(client, query, start, num, autoFilter)
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>client (string/non required)</i><br />
+	This is the frontend client name, as its setup in the google custom search. Null can be used if you want to use the default value 'GOOGLE_CUSTOM_SEARCH_CSEID' configured in 'dotmarketing-config.properties'.</li>
+  <li><i>query (string/non required)</i><br />
+	The user query to narrow the results.
+  </li>
+  <li><i>start (number)</i><br />
+	Index where to start the search. Starting on 0.
+  </li>
+  <li><i>num (number)</i><br />
+	Number of results to retrieve, -1 to retrieve all results. (Maximum value is 20. If you request more than 20 results, only 20 results will be returned)
+  </li>
+  <li><i>autoFilter (boolean true/false)</i><br />
+	Activates or deactivates automatic results filtering performed by Google search. <br />
+	Currently, Google search uses two techniques for automatic filtering of results: <br />
+	Duplicate Snippet Filter - If multiple documents contain the same information in their snippets in response to a query, then only the most relevant document of that set will be displayed in the results.<br />
+	Duplicate Directory Filter - If there are many results in a single web directory, then only the two most relevant results for that directory will be returned in the results. An output flag indicates that more results are available from that directory.<br />
+  </li>
+</ul>
+<p><b>Usage:</b><br/><br/>
+Use this to pull search results from a google custom search, to make this web api work you have to setup the variables GOOGLE_CUSTOM_SEARCH_URL and GOOGLE_CUSTOM_SEARCH_CSEID on the
+dotmarketing.config.properties file pointing to the google custom search url like GOOGLE_CUSTOM_SEARCH_URL=http://www.google.com and GOOGLE_CUSTOM_SEARCH_CSEID=xxxxxxxxxxxxxxxxxxxxx:yyyyyyyyyyy<br /><br />
+The api returns an specific GoogleMiniSearch object that contains all the variables necessary to display all the retrieved results.<br /><br />
+<b>GoogleMiniSearch Object - Attributes</b><br />
+<pre>
+	<i>searchTime</i> - The time taken by the appliance to retrieve the results<br />
+	<i>query</i> - The request query<br />
+	<i>params</i> - Hashmap with param names and values;
+	<i>contextTitle</i> - String with the context title;
+	<i>fromIndex</i> - The start index of results<br />
+	<i>toIndex</i> - The end index of retrieved results<br />
+	<i>estimatedTotal</i> - The estimated total of result based on the given query<br />
+	<i>searchResults</i> - The list of results, this is a list of GoogleMiniSearchResult objects<br />
+	<i>hasNextPage()</i> - Method that returns true if results has a next page to display<br />
+	<i>hasPreviousPage()</i> - Method that returns true if results has a previous page to display<br />
+</pre>
+<b>GoogleMiniSearchResult - Attributes</b><br />
+<pre>
+	<i>identationLevel</i> - Level of indentation used for inner results<br />
+	<i>mimeType</i> - Mime type of the result<br />
+	<i>resultURL</i> - The url to the result<br />
+	<i>title</i> - The title<br />
+	<i>generalRatingRelevance</i> - Relevance of the document in google mini<br />
+	<i>additionalSearchDetails</i> - More details about the retrived document <br />
+	<i>snippet</i> - Result snippet <br />
+	<i>metaTagsFields</i> - A map of metatags associated to the result<br />
+	<i>language</i> - Language associated to the result<br />
+	<i>label</i> - Label associated to the result<br />
+	<i>documentCacheSize</i> - Document Cache Size associated to the result<br />
+	<i>documentCacheId</i> - Document Cache Id associated to the result<br />
+</pre>
+</p>
+<p><b>Example:</b></p>
+<pre><xmp>
+#set($searchObj = $googleapi.searchGoogleCustom("", "Knight", 0, 100, false))
+<b>Search Summary</b><br/>
+<b>Total Search time:</b> $searchObj.searchTime<br/>
+<b>Query:</b> $searchObj.query<br/>
+#foreach($param in $searchObj.params)
+	<b>Param Name:</b> $param.key<br/>
+	#foreach($paramValue in $param.value)
+		<b>$paramValue.key:</b> $paramValue.value<br/>
+		<hr/>
+	#end
+	<hr/>
+#end
+<b>From Index:</b> $searchObj.fromIndex<br/>
+<b>To Index:</b> $searchObj.toIndex<br/>
+<b>Estimated Total:</b> $searchObj.estimatedTotal<br/>
+<b>Has Next Results Page:</b> $searchObj.hasNextPage()<br/>
+<b>Has Previous Results Page:</b> $searchObj.hasPreviousPage()<br/>
+<b>Estimated Total of Results:</b> $searchObj.estimatedTotal<br/>
+<br/>
+#foreach($result in $searchObj.searchResults)
+	<b>Result Index:</b> $result.resultIndex<br/>
+	<b>Identation Level:</b> $result.identationLevel<br/>
+	<b>Title:</b> $result.title<br/>
+	<b>Snippet:</b> $result.snippet<br/>
+	<b>Result URL:</b> <a href="$result.resultURL">$result.resultURL</a><br/>
+	<b>General Rating Relevance:</b> $result.generalRatingRelevance<br/>
+	<b>Mime Type:</b> $result.mimeType<br/>
+	<b>Additional Search Details:</b> $result.additionalSearchDetails<br/>
+	<b>Meta Tags Fields:</b> $result.metaTagsFields<br/>
+	<hr/>
+#end
+</xmp></pre>
+</fieldset>
+<br/>
+<a name="FSFiles"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>List of Files from Underlying File System</legend>
+This macro will return a list of files that are available in a folder on the underlying file system.
+<p><b>Macro Syntax:</b></p>
+<pre>   #getFilesFromFS('path')
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>path</i><br>
+This is the folder of the directory under the WEB-ROOT. The end user will only be able to view files under this directory.</li>
+</ul>
+<p><b>Usage:</b><br>
+The repository will show a list of files in a folder on the underlying file system.  WARNING:  THIS MACRO BYPASSES THE CMS PERMISSIONS COMPLETELY.
+</p>
+<p><b>Example:</b>
+</p>
+<pre>#getFilesFromFS('/css')
+#foreach($file in $files)
+   title: $!file.name <br>
+   size : $!file.size <br>
+   prettySize : $!file.prettySize <br>
+   date : $!file.date<br>
+   prettyDate : $!file.prettyDate <br>
+   link: <a href="$!file.link">$!file.link</a> <br>
+#end
+</pre>
+This would build a list of file information found in the file system folder $WEB-ROOT/css.
+</fieldset>
+<!--
+	<li><a href="#loginForm">Create the Login Form</a></li>
+	-->
+<br>
+<a name="loginForm"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Create the Login Form</legend>
+The macro create a form that let the user to login, retrieve their password or create a new account
+<p><b>Macro Syntax:</b></p>
+<pre>   #loginForm()
+</pre>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>loginFormShowRegistrationLink</i><br>
+  If the variable is set to true the login form will display the "Create new account" link</li>
+  <li><i>loginFormRegistrationLinkText </i><br>
+  This is the text that will display the "Create new account" link</li>
+  <li><i>loginFormSourceCode </i><br>
+  This property can be used to override the current login code.</li>
+</ul>
+<p><b>Example:</b>
+</p>
+<pre>
+#loginForm()
+</pre>
+<p><b>Example: using the optional parameters. This example shows a "Create New Account" link under the Login button</b>
+<pre>
+#set($loginFormShowRegistrationLink = true)
+#set($loginFormRegistrationLinkText = "Create new account")
+#loginForm()
+</pre>
+</p>
+</fieldset>
+<br>
+<a name="googleMap"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Add map from Google Maps</legend>
+This macro generates a map from Google Maps and display a marker over the specified address.
+<p><b>Macro Syntax:</b></p>
+<pre>#googleMap($key)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>key</i><br>
+This is a key required by the Google Maps API, the key is given by the google maps page.<br>
+<a href="http://code.google.com/apis/maps/">http://code.google.com/apis/maps/</a>
+</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>address</i><br>
+The address to be displayed on the map. This is the normal form to display an address, but if the address is not set, you could use the lat and long form</li>
+  <li><i>lat</i><br>
+The latitude of the address to be displayed on the map. The address variable could not be set. The latitude value should be a number between -90 and +90 degrees</li>
+  <li><i>lnt</i><br>
+The longitude of the address to be displayed on the map. The address variable could not be set. The longitude value should be a number between -180 and +180 degrees</li>
+  <li><i>width</i><br>
+The width of the map in pixels. Default: 700.</li>
+  <li><i>height</i><br>
+the height of the map in pixels. Default: 400.</li>
+  <li><i>map_id</i><br>
+the ID of the map, each map should have its own ID. Default: 'map_canvas'.</li>
+  <li><i>zoom</i><br>
+The zoom level of the map, it comes from 0 to 19. Default: 13.</li>
+  <li><i>style</i><br>
+the styles added to the map.</li>
+  <li><i>class</i><br>
+the class set to the map.</li>
+  <li><i>zoomControl</i><br>
+if there should be a zoom control in the map. Default: true</li>
+  <li><i>typeControl</i><br>
+if there should be a map type control in the map. Default: true</li>
+<p><b>Example: </b>Using the address to display the location.
+<pre>
+#set($zoomControl = false)
+#set($typeControl = false)
+#set($width = 700)
+#set($height = 400)
+#set($zoom = 10)
+#set($address = 'New York, NY')
+#set($key= 'ABQIAAAAD2HtMh5r6mfecenHsTsY4hQg63Lr_pVOuAxOwcwgB1dTWzIhpBSFkfJ3i9-I1-cz0qscObKevYORqw')
+#googleMap($key)
+</pre>
+</p>
+<p><b>Example 2: </b>Using the latitude and logitude to display the location.
+<pre>
+&lt;!-- Set the latitude --&gt;
+#set($lat = '37.4419')
+&lt;!-- Set the longitude --&gt;
+#set($lng = '-122.1419')
+&lt;!-- Set the zoom of the map --&gt;
+#set($zoom = 10)
+#set($key= 'ABQIAAAAD2HtMh5r6mfecenHsTsY4hQg63Lr_pVOuAxOwcwgB1dTWzIhpBSFkfJ3i9-I1-cz0qscObKevYORqw')
+#googleMap($key)
+</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="googleMapDirections"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Add a direction map from Google Maps</legend>
+This macro generates a direction maps from Google Maps and display two markers one on the starting position and one on the ending position, and the directions how to arrive from the staring to the ending position. It also return a velocity variable $urlForPrint, a link that show the direction in print mode. 
+<p><b>Macro Syntax:</b></p>
+<pre>#googleMapDirections($from,$to,$key)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>from</i><br>
+The initial address to be displayed on the map.</li>
+  <li><i>to</i><br>
+The final address to be displayed on the map.</li>
+  <li><i>key</i><br>
+This is a key required by the Google Maps API, the key is given by the google maps page.<br>
+<a href="http://code.google.com/apis/maps/">http://code.google.com/apis/maps/</a>
+</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>width</i><br>
+The width of the map and text in pixels. Default: 700.</li>
+  <li><i>height</i><br>
+the height of the map in pixels. Default: 400.</li>
+  <li><i>map_id_directions</i><br>
+the ID of the map, each map should have its own ID. Default: 'map_canvas_directions'.</li>
+  <li><i>text_id_directions</i><br>
+the ID of the text, each text should have its own ID. Default: 'map_text_directions'.</li>
+  <li><i>mapAlign</i><br>
+The align of the map, the map on 'top', the map on the 'left', the map on the 'right'. Default: 'top'.</li>
+  <li><i>style</i><br>
+the styles added to the map.</li>
+  <li><i>class</i><br>
+the class set to the map.</li>
+  <li><i>zoomControl</i><br>
+if there should be a zoom control in the map. Default: true</li>
+  <li><i>typeControl</i><br>
+if there should be a map type control in the map. Default: true</li>
+  <li><i>hostLanguage</i><br>
+Variable to specify the host language in print mode url. Default: en</li>
+  <li><i>printMode</i><br>
+Variable to specify the print mode. Default: 2</li>
+<p><b>Example: </b>
+<pre>
+#set($zoomControl = false)
+#set($typeControl = false)
+#set($width = 700)
+#set($height = 400)
+#set($mapAlign = 'top')
+#set($map_id_directions = 'mapCanvas1')
+#set($text_id_directions = 'textCanvas1')
+#set($from = 'Los Angeles, CA')
+#set($to = 'New York, NY')
+#googleMapDirections($from,$to,$key)
+&lt;a href="${urlForPrint}"&gt;Print Mode&lt;/a&gt;
+</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="mailingList"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Mailing List Generated on a Web Form that Displays the Public Mailing Lists</legend>
+This macro generates a checkbox list for all public mailing lists, in order to manage the
+user's email subscriptions to these mailing lists. This macro can be used either the user is
+logged in or using encrypted user id when the user is not logged in.
+<p><b>Macro Syntax:</b></p>
+<pre>#mailingList()<br></pre>
+<p><b>Usage:</b></p>
+The macro will display all public mailing lists name
+<p><b>Example: </b>
+Let's assume we have a page with this macro, let's call it mailinglists_subscription.dot, if the user is logged in, this page can be accessed directly and its content will have the following macro call
+<pre>      #mailingLists()</pre>
+</p>
+<p><b>Example2: </b>
+The user is not logged in, but we can access the prior page passing through the respective encrypted userId using the respective request parameter
+<pre>      mailinglists_subscription.dot?ui=UUZVXTMAEvP6ABUja7Rkhg==</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="mediaGallery"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Media Gallery</legend>
+<br/>
+The Media Gallery "macro" pulls and displays all the photos (jpgs and gifs files) and videos (flvs files) of a given folder, it also
+pulls and displays sub folders if they contain photos.
+If a JPG image with the same name as the video file is provided it will be displayed as a thumbnail of the video.
+<br/>
+<p><b>Macro Syntax:</b></p>
+<pre>#mediaGallery('/thefolder')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>thefolder</i><br>
+Path to the folder that contains the photos, sub photo and/or videos galleries.</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>showMediaTitle</i><br>
+Set to false if you want to hide the photo and video names from the listing. Default: true.</li>
+  <li><i>random</i><br>
+Set to true if you want to show the listing in a random order. If this parameter is not setted, the order will be the sortOrder value in DotCMS.</li>
+  <li><i>viewLargeImage</i><br>
+If this parameter is set to true, a link will appear below the media image to open the same image using Lightbox javascripts. Default: false.</li>
+  <li><i>viewLargeImageLinkSpaceHeight</i><br>
+Set the height space used by the link to view large image. Only works if viewLargeImage is set to true. Default: 20.</li>
+  <li><i>mediaWidth</i><br>
+Width used to display the full image or video. Default: 600.</li>
+  <li><i>mediaHeight</i><br>
+Height used to display the full image or video. Default: 450.</li>
+  <li><i>thumbnailWidth</i><br>
+Width used to display the thumbnails. Default: 90.</li>
+  <li><i>thumbnailHeight</i><br>
+Height used to display the thumbnails. Default: 90.</li>
+  <li><i>largeImageWidth</i><br>
+Width used to display the image with Lightbox javascripts. Only works if viewLargeImage is set to true. Default: 800.</li>
+  <li><i>largeImageHeight</i><br>
+Height used to display the image with Lightbox javascripts. Only works if viewLargeImage is set to true. Default: 600.</li>
+</ul>
+<p><b>Usage:</b></p>
+#set ($mediaWidth= "300")<br>
+#set ($mediaHeight = "225")<br>
+#set ($thumbnailWidth = "45")<br>
+#set ($thumbnailHeight = "45")<br>
+#set ($largeImageWidth = "400")<br>
+#set ($largeImageHeight = "300")<br>
+#set ($showMediaTitle = false)<br>
+#set ($random = true)<br>
+#set ($viewLargeImage = true)<br>
+#set ($viewLargeImageLinkSpaceHeight = "40")<br>
+#mediaGallery('/test/gallery')<br>
+</fieldset>
+<br>
+<a name="mp3Player"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>MP3 Player</legend>
+This macro will embed a streaming, flash based mp3 player using mp3s
+files you have uploaded into dotCMS.&nbsp; dotCMS will parse the
+xml file info and automatically display the song information in the player.
+<p><b>Macro Syntax:</b></p>
+<pre>#mp3Player('path')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>path</i><br>
+This is the cms path to the uploaded mp3 files or the xml file with the play list.
+The path will look something like: /your/mp3s/file.mp3 </li>
+or path will look something like: /your/mp3s/playlist.xml </li>
+</ul>
+<b>Optional:</b><br/>
+<ul>
+  <li><i>mp3PlayerSourceCode</i><br>
+If this variable is set the macro will use this variable as the path to your custom vtl code.
+  </li>
+</ul>
+<p><b>Usage:</b></p>
+This macro will automatically display the following mp3 player
+<p><b>Example:</b>
+</p>
+<pre>#mp3Player('/path/to/mp3s/file.mp3')</pre>
+<pre>#mp3Player('/path/to/mp3s/playlist.xml')</pre>
+<pre>
+The file /path/to/playlist.xml needs to generate the following format:
+<XMP>
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist version="1" xmlns="http://xspf.org/ns/0/">
+<trackList>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file1.mp3</location>
+<creator>File Creator 1</creator>
+<title>File Title #1</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file1.jpg</image>
+</track>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file2.mp3</location>
+<creator>File Creator 2</creator>
+<title>File Title #2</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file2.jpg</image>
+</track>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file3.mp3</location>
+<creator>File Creator 3</creator>
+<title>File Title #3</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file3.jpg</image>
+</track>
+</trackList>
+</playlist>
+</XMP>
+</pre>
+</fieldset>
+<a name="mp3PlayerButton"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>MP3 Player Button</legend>
+This macro will embed a streaming, flash based mp3 player button using mp3s files you have uploaded into dotCMS.
+<p><b>Macro Syntax:</b></p>
+<pre>#mp3PlayerButton('song_url')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>song_url</i><br>
+This is the cms path to the folder which holds your uploaded file with the mp3 filename and extension.
+The path will look something like: /your/mp3s/filename.mp3<br>
+This can specify an xml file with a predefined playlist.
+In this case the path will look something like: /path/to/playlist.xml</li>
+</ul>
+<b>Optional:</b><br/>
+<ul>
+  <li><i>mp3PlayerButtonSourceCode</i><br>
+If this variable is set the macro will use this variable as the path to your custom vtl code.
+  </li>
+</ul>
+<p><b>Usage:</b></p>
+This macro will automatically display the following mp3 player
+<p>
+<p>
+<img src="/html/images/musicplayer.gif">
+</p>
+<p>
+<b>Example:</b>
+</p>
+<pre>#mp3PlayerButton('/path/to/mp3s/example.mp3')</pre>
+<pre>#mp3PlayerButton('/path/to/playlist.xml')</pre>
+<pre>
+The file /path/to/playlist.xml needs to generate the following format:
+<XMP>
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist version="1" xmlns="http://xspf.org/ns/0/">
+<trackList>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file1.mp3</location>
+<creator>File Creator 1</creator>
+<title>File Title #1</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file1.jpg</image>
+</track>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file2.mp3</location>
+<creator>File Creator 2</creator>
+<title>File Title #2</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file2.jpg</image>
+</track>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file3.mp3</location>
+<creator>File Creator 3</creator>
+<title>File Title #3</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file3.jpg</image>
+</track>
+</trackList>
+</playlist>
+</XMP>
+</pre>
+</fieldset>
+<a name="mp3PlayerExtended"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>MP3 Player Extended</legend>
+This macro will embed a streaming, flash based mp3 player button using mp3s files you have uploaded into dotCMS.
+<p><b>Macro Syntax:</b></p>
+<pre>#mp3PlayerExtended('song_url')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>song_url</i><br>
+This is the cms path to the folder which holds your uploaded file with the mp3 filename and extension.
+The path will look something like: /your/mp3s/filename.mp3<br>
+This can specify a xml file with a predefined playlist.
+In this case the path will look something like: /path/to/playlist.xml</li>
+</ul>
+<b>Optional:</b><br/>
+<ul>
+  <li><i>mp3PlayerExtendedSourceCode</i><br>
+If this variable is set the macro will use this variable as the path to your custom vtl code.
+  </li>
+</ul>
+<p><b>Usage:</b></p>
+This macro will automatically display the following mp3 extended player
+<p>
+<p>
+<img src="/html/images/xspf_player_extended.gif">
+</p>
+<b>Example:</b>
+</p>
+<pre>#mp3PlayerExtended('/path/to/mp3s/example.mp3')</pre>
+<pre>#mp3PlayerButton('/path/to/playlist.xml')</pre>
+<pre>
+The file /path/to/playlist.xml needs to generate the following format:
+<XMP>
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist version="1" xmlns="http://xspf.org/ns/0/">
+<trackList>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file1.mp3</location>
+<creator>File Creator 1</creator>
+<title>File Title #1</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file1.jpg</image>
+</track>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file2.mp3</location>
+<creator>File Creator 2</creator>
+<title>File Title #2</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file2.jpg</image>
+</track>
+<track>
+<location>http://$!{host.getHostname}/mp3s/file3.mp3</location>
+<creator>File Creator 3</creator>
+<title>File Title #3</title>
+<genre>Other</genre>
+<image>http://$!{host.getHostname}/mp3s/file3.jpg</image>
+</track>
+</trackList>
+</playlist>
+</XMP>
+</pre>
+</fieldset>
+<br>
+<a name="myGroups"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>My Groups</legend>
+This macro will display a list of the groups joined by a user in the CMS.
+<p><b>Macro Syntax:</b></p>
+<pre>#myGroups($user)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>user</i><br>
+This is the user.</li>
+</ul>
+<b>Optional:<br/></b>
+  <ul>
+  <li><i>myGroupTitle</i><br>
+  If this variable is set will show another header instead of "My Groups".
+  </li>
+  <li><i>myGroupsSourceCode</i><br>
+  If this variable is set will use the specified vtl to display the user groups.
+  </li>
+</ul>
+<p><b>Example:</b></p>
+<pre>#myGroups($user)
+</pre>
+This would display the groups of the user logged in.
+</p>
+<p><b>Example 2:</b></p>
+<pre>
+#set($myGroupTitle= "&lt;b&gt;${user.fullName} Groups&lt;/b&gt;")
+#myGroups($user)
+</pre>
+This would display the groups of the user logged in, but other header for the list.
+</p>
+</fieldset>
+<br>
+<a name="menuBuilder"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Navigation/Menu Builder</legend>
+This macro will build a navigational menu using unordered lists sutiable for standard top or left-hand navigation. These lists can then be formated by css.  The resulting code will look like
+(where the 2nd &lt;li&gt; is the active link).
+<pre>&lt;ul&gt;
+	&lt;li&gt;&lt;a href="/path/to/pageOrFolder"&gt;Menu item 1&lt;/a&gt;&lt;/li&gt;
+	&lt;li class="active"&gt;&lt;a href="/path/to/pageOrFolder"&gt;Menu item 2&lt;/a&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;a href="/path/to/pageOrFolder"&gt;Menu item 3&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</pre>
+<p><b>Macro Syntax:</b></p>
+<pre>#navigation(startLevel levelsToShow)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>startLevel</i><br>
+This is navigational level to start the menu on. </li>
+  <li><i>levelsToShow</i><br>
+This is how deep you would like the generated menu to be.</li>
+</ul>
+<b>Optional:<br/></b>
+  <li><i>menuSpans</i><br>
+If the $menuSpans variable is set to true before the macro is called, then &lt;span&gt; tags will be added around each menu link, like:<br/>
+&lt;li&gt;&lt;span&gt;&lt;a href="/path/to/pageOrFolder"&gt;Menu item 1&lt;/a&gt;&lt;/span&gt;&lt;/li&gt;
+  </li>
+  <li><i>openAllLevels</i><br>
+  If this variable is set all menu items will be displayed on the navigation with no regard to where the user is on the site.
+  This is very useful for top navigation drop downs that need to show all links.
+  </li>
+  <li><i>firstItemClass</i><br>
+  CSS class to be included on every first item of a menu ul.
+  </li>
+  <li><i>lastItemClass</i><br>
+  CSS class to be included on every first item of a menu ul.
+  </li>
+  <li><i>menuIdPrefix</i><br>
+  	Prefix to be prepend to every id on the generated navigation menu.
+  </li>
+  <li><i>navigationSourceCode</i><br>
+  	Render another html code to show the menu if wanted. When creating your own source code consider this information:
+  	The menu items will be a list saved in this variable $navigationItems. Each item in that list will contain the following
+  	Attribute or attribute (information), depending the type of item:<br>
+  	<br>
+	Type FOLDER<br>
+	Attribute="type"		value="FOLDER"<br>
+	Attribute="title"		String<br>
+	Attribute="name"		String<br>
+	Attribute="path"		String<br>
+	Attribute="submenu"		ArrayList of the next level<br>
+	Attribute="isFirstItem"	Boolean<br>
+	Attribute="isLastItem"	Boolean<br>
+	<br>
+	Type CODED LINK<br>
+	Attribute="type"		value="LINK"<br>
+	Attribute="path"		String<br>
+	Attribute="linkType"	value="CODE"<br>
+	Attribute="isFirstItem"	Boolean<br>
+	Attribute="isLastItem"	Boolean<br>
+	<br>
+	Type LINK<br>
+	Attribute="type"		value="LINK"<br>
+	Attribute="name"		String<br>
+	Attribute="protocal"	String<br>
+	Attribute="target"		String<br>
+	Attribute="title"		String<br>
+	Attribute="isFirstItem"	Boolean<br>
+	Attribute="isLastItem"	Boolean<br>
+	<br>
+	Type HTMLPAGE<br>
+	Attribute="type"		value="HTMLPAGE"<br>
+	Attribute="name"		String<br>
+	Attribute="path"		String<br>
+	Attribute="title"		String<br>
+	Attribute="isFirstItem"	Boolean<br>
+	Attribute="isLastItem"	Boolean<br>
+	<br>
+	Type FILE<br>
+	Attribute="type"		value="FILE"<br>
+	Attribute="name"		String<br>
+	Attribute="path"		String<br>
+	Attribute="title"		String<br>
+	Attribute="isFirstItem"	Boolean<br>
+	Attribute="isLastItem"	Boolean<br>
+  </li>
+<p><b>Syntax:</b></p>
+<pre><br/></pre>
+<pre>#navigation(startLevel levelsToShow)<br></pre>
+<p><b>Example 1:</b></p>
+<pre>&lt;div id="topNav"&gt;
+   #navigation(1,1)
+&lt;/div&gt;
+</pre>
+This would build a top level menu one level deep.
+</p>
+<p><b>Example 2:</b></p>
+<pre>&lt;div id="leftNav"&gt;
+   #navigation(2,2)
+&lt;/div&gt;
+</pre>
+This would build a navigation bar 2 levels deep, which would open as the user clicked into a subsection.
+</p>
+<p><b>Example 3:</b></p>
+<pre>&lt;div id="leftNav"&gt;
+#set($menuSpans = true)
+#navigation(2,2)
+&lt;/div&gt;
+</pre>
+This would build a navigation bar 2 levels deep, which would open as the user clicked into a subsection.
+It will also add span tags around all links.
+</p>
+<p><b>Example 4:</b></p>
+<pre>&lt;div id="leftNav"&gt;
+#set($openAllLevels=true)
+#navigation(2,2)
+&lt;/div&gt;
+</pre>
+This would build a navigation bar 2 levels deep, which would open as the user clicked into a subsection.
+</p>
+<p><b>Example 5:</b></p>
+<pre>&lt;div id="leftNav"&gt;
+#set ($navigationSourceCode = '/my_velocity_files/my_navigation.vtl')
+#navigation(2,2)
+&lt;/div&gt;
+</pre>
+This would build a navigation with your own source code.
+</p>
+</fieldset>
+<br>
+<a name="pageContent"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Paging Contents</legend>
+Any list of contents in the content database can be pulled and
+displayed in a paginated fashion on the front end of your website
+by using the #pageContent() macro
+<p><b>Macro Syntax:</b></p>
+<pre>#pageContent('query' 'sort by' '# per page' '# current page')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>query</i><br>
+A lucene query that is copied from the "Content Manager" search screen.
+To see this query, search the content and click the "Show Query".
+Select the query and hit ctrl+c to copy to your clipboard. Return to
+the content where you want to pull the list and paste it (ctrl+v) into the
+macro.</li>
+  <li><i>sort by</i><br>
+The name of the field you would like to sort the results by. This is
+the "DB Column" name found on the struture.</li>
+  <li><i># per page</i><br>
+Maximum number of contentlets to display per page</li>
+  <li><i># current page</i><br>
+Number of the page currently displayed</li>
+</ul>
+<p><b>Usage:</b></p>
+This macro returns a list of content(s) on a variable named $list of contentlets $content.
+The contentlet's properties can be displayed by referencing their variable names.
+So $content.firstName would display the variable named firstName for the listed contents.
+The variable name can be found in the structure detail for the content type being used.
+<BR>If you need to add a link to a content detail page you will need to use the content's
+inode by adding this variable: $content.inode.
+<BR>Also, there are a group of variables set by this macro that help you know
+things like $totalResults that contains the total number of contents, $totalPages for the total number of pages,
+$firstPageRecord for the first record number of the current page,
+$lastPageRecord for the last record number of the current page,
+$hasNextPage true if has a next page,
+$hasPreviousPage true if has a previos page
+<p><b>Example:</b>
+</p>
+<pre>#pageContent('+type:content +live:true +structureInode:5' 'date1' '5' '1')<br>
+#foreach($content in $list)<br>
+   title: $!content.contentTitle<br>
+   summary: $!content.NewsSummary<br>
+#end<br></pre>
+</fieldset>
+<br/>
+<a name="pdfExport"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>PDF Export</legend>
+Creates an icon that exports the current page as a PDF document
+<p><b>Macro Syntax:</b></p>
+<pre>#pdfExport()<br></pre>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>pdfExportIcon</i><br>
+Point to an image file to show as the icon. Default: /portal/images/icons/pdf.gif.</li>
+  <li><i>pdfExportAltText</i><br>
+Sets the alt text. Default: Export to PDF.</li>
+  <li><i>pdfUserURL</i><br>
+If set to true, the macro will pass the URL to servlet, otherwise it will pass the identifier.  Passing the URL is useful for wiki pages. Default: false.</li>
+  <li><i>pdfFileName</i><br>
+Sets the name of the PDF.  If not set it will be set to the page title.
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example:</b>
+</p>
+<pre>#pdfExport()<br>
+</pre>
+<p><b>Example with optional parameters:</b>
+</p>
+<pre>
+#set($pdfFileName='My PDF Title')
+#set($pdfExportIcon='/html/images/icons/pdf.gif')
+#set($pdfExportAltText='Create PDF document')
+#pdfExport()<br>
+</pre>
+</fieldset>
+<br/>
+<a name="permalink"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Permanent Link to a File, Page, or Contentlet</legend>
+This macro create a permanent link to a File, Page or Contentlet from the identifier or inode of them and add
+the trackback RDF reference to the page. <br/>
+In the case where the identifier is from a contentlet, you could include which page you want to display the
+contentlet information, adding the page identifier in the optional parameter "permalinkDetailPage", if this
+parameter is not pass, the macro will look if the contentlet structure have a detail page set, using this page
+if this page is not set then use the same page where the permalink is include adding in the url the ?id param with
+the identifier.
+<p><b>Macro Syntax:</b></p>
+<pre>#permalink(identifier)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>identifier</i><br>
+This is the identifier or inode of the file, page or contentlet, you want to create the link.</li>
+<b>Optional Parameters:</b>
+<li><i>permalinkDetailPage (velocity variable not a parameter)</i><br>
+This is the identifier of the page that display the contentlet information. This parameter is only use for
+contentlets</li>
+<li><i>permalinkTitle (velocity variable not a parameter)</i><br>
+This is the link title. if is not set the default title is "Permalink"</li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example: </b>
+<pre>#permalink('12345')</pre>
+</p>
+<br>
+<p><b>Example2: </b>
+<pre>#set($permalinkDetailPage='78945') #permalink('12345')</pre>
+</p>
+<br>
+<p><b>Example3: </b>
+<pre>#set($permalinkTitle ="The Title") #permalink('12345')</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="subscribe"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Subscribe to public Mailing Lists</legend>
+This macro generates a checkbox list for all public mailing lists, in order to manage the
+user's email subscriptions to these mailing lists. 
+The big difference between this macro the mailing lists macro is that this macro does not require the user to be 
+logged in, the form request the user email address and it validates if a user with that email address exists if it doesn't
+then it creates the user and then execute the mailing list subscriptions
+<p><b>Macro Syntax:</b></p>
+<pre>#subscribe()<br></pre>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>subscribeReturn</i><br>
+This could be set to any page you want the macro to return after the user has been subscribed to the desired mailing lists.</li>
+  <li><i>subscribeSourceCode</i><br>
+This optional parameter could be used to override the code that displays the form for mailing lists subscriptions with your own
+html.</li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will display all public mailing lists as checkboxes plus fields for the user email address, first name and last name.
+If an email address is passed to the page as a request parameter, named email, the macro will match the
+given email address with the current email subscriptions pre-checking the mailing lists that the user is already subscribed.
+<br/>
+When the form is submitted the email address is checked to see if the user already exists in the system, if no user exists then 
+a user is created, subsequently the user is associated with the selected mailing lists.
+<br/>
+The form generates at the end a special checkbox for the user to subscribe to the "do not send me any emails" list.
+<br>
+</fieldset>
+<br/>
+<a name="trackback"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Permanent Link Trackback: Add RDF Trackback to a File, Page or Contentlet</legend>
+This macro create the RDF tracback reference in the page for a permanent link to a file, page or contentlet
+in the case of the contentlet it check if receive a parameter called "permalinkDetailPage" that is the inode
+or identifier of the content page detail. If not, check if the struture have a page default or return to the
+same page adding the parameter
+<p><b>Macro Syntax:</b></p>
+<pre>#trackback(identifier)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>identifier</i><br>
+This is the identifier or inode of the file, page or contentlet, you want to create the RDF reference.</li>
+<b>Optional Parameters:</b>
+<li><i>permalinkDetailPage (velocity variable not a parameter)</i><br>
+This is the identifier of the page that display the contentlet or inode of the file, page or contentlet, you want to create the link.</li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example: </b>
+<pre>#trackback('12345')</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="photoCarrousel"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Photo Carousel</legend>
+This macro generates a carousel of photos, displaying sequentially one after another.
+<p><b>Macro Syntax:</b></p>
+<pre>#photoCarrousel (photoList photoDimensions)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>imageFolder</i><br>
+  This is the path where the images to be displayed are stored.
+  </li>
+  <li><i>photoList</i><br>
+This is the list of photos to be displayed on a carousel. Every element of this list specifies the image url and the link where the image will redirect when it's clicked.
+This is only a required parameter if the imageFolder hasn't been defined.
+</li>
+<li><i>photoDimensions</i><br>
+This is a list that specifies the width and height of the image to be displayed. </li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>photoCarrouselAutoSlide</i><br>
+Set to true if you want an automatic sequential display of the photos, otherwise set to false.</li>
+  <li><i>imageFolder</i><br>
+The URI of the folder that have the images.</li>
+  <li><i>photoCarrouselSourceCode</i><br>
+The URI with the page that will display the images.</li>
+  <li><i>showCaptions</i><br>
+This variable determine if the macro will display the images' caption. Default value true</li>
+  <li><i>$photoCarrouselTimeout</i><br>
+How much time (in milliseconds) each image is displayed. Default value 3000</li>
+  <li><i>$photoCarrouselEffectTimeout</i><br>
+How much time (in milliseconds) each step of the transition last. Default value 10</li>
+</ul>
+
+<p><b>Usage:</b></p>
+The macro will display a carrousel of photos
+<p><b>Example 1: </b>
+This show a simple way to call the macro setting the image folder
+<pre>
+#set($imageFolder = '/global/images/screencaps/')
+#set($photoDimensions = $contents.getEmptyMap())
+#set($dummy = $!photoDimensions.put("width", "125"))
+#set($dummy = $!photoDimensions.put("height", "125"))
+#set($photoCarrouselAutoSlide = true)
+#set($photoList = $contents.getEmptyList())
+#photoCarrousel($photoList $photoDimensions)
+</pre>
+</p>
+<p><b>Example 2: </b>
+This show a simple way to call the macro with the photo list fields
+<pre>
+#set($photoList = $contents.getEmptyList())
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/1.jpg"))
+#set($dummy = $!photo.put("link", "http://www.yahoo.com"))
+#set($dummy = $!photoList.add($photo))
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/2.jpg"))
+#set($dummy = $!photo.put("link", "http://www.google.com"))
+#set($dummy = $!photoList.add($photo))
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/3.jpg"))
+#set($dummy = $!photo.put("link", "http://www.dotcms.org"))
+#set($dummy = $!photoList.add($photo))
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/4.jpg"))
+#set($dummy = $!photo.put("link", "http://www.hotmail.com"))
+#set($dummy = $!photoList.add($photo))
+#set($photoDimensions = $contents.getEmptyMap())
+#set($dummy = $!photoDimensions.put("width", "125"))
+#set($dummy = $!photoDimensions.put("height", "125"))
+#set($photoCarrouselAutoSlide = true)
+#photoCarrousel($photoList $photoDimensions)
+</pre>
+</p>
+<p><b>Example 3: </b>
+This show a simple way to call the macro with the photo list fields and showing captions
+<pre>
+#set($photoList = $contents.getEmptyList())
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/1.jpg"))
+#set($dummy = $!photo.put("link", "http://www.yahoo.com"))
+#set($dummy = $!photo.put("caption", "Yahoo"))
+#set($dummy = $!photoList.add($photo))
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/2.jpg"))
+#set($dummy = $!photo.put("link", "http://www.google.com"))
+#set($dummy = $!photo.put("caption", "Google"))
+#set($dummy = $!photoList.add($photo))
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/3.jpg"))
+#set($dummy = $!photo.put("link", "http://www.dotcms.org"))
+#set($dummy = $!photo.put("caption", "dotCMS"))
+#set($dummy = $!photoList.add($photo))
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/4.jpg"))
+#set($dummy = $!photo.put("link", "http://www.hotmail.com"))
+#set($dummy = $!photo.put("caption", "HotMail"))
+#set($dummy = $!photoList.add($photo))
+#set($photoDimensions = $contents.getEmptyMap())
+#set($dummy = $!photoDimensions.put("width", "125"))
+#set($dummy = $!photoDimensions.put("height", "125"))
+#set($photoCarrouselAutoSlide = true)
+#photoCarrousel($photoList $photoDimensions)
+</pre>
+</p>
+<br>
+</fieldset>
+<a name="photoGallery"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Photo Gallery</legend>
+<br/>
+The Photo Gallery "macro" pulls and displays all the photos (jpgs and gifs files) of a given folder, it also
+pulls and displays sub folders if they contain photos.
+<br/>
+<p><b>Macro Syntax:</b></p>
+<pre>#photoGallery('/thefolder')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>thefolder</i><br>
+Path to the folder that contains the photos and/or sub photo galleries.</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>showPhotoTitle</i><br>
+Set to false if you want to hide the photo names from the listing. Default: true.</li>
+  <li><i>showSubgalleryTitle</i><br>
+Set to false if you want to hide the sub galleries names from the listing. Default: true.</li>
+  <li><i>photoWidth</i><br>
+Width used to display the full image. Default: 600.</li>
+  <li><i>photoHeight</i><br>
+Height used to display the full image. Default: 450.</li>
+  <li><i>thumbnailWidth</i><br>
+Width used to display the thumbnails. Default: 90.</li>
+  <li><i>thumbnailHeight</i><br>
+Height used to display the thumbnails. Default: 90.</li>
+  <li><i>indexImage</i><br>
+By default when the macro selects the index image of a folder it uses index.jpg,
+if no index.jpg is found then it uses the first image found in the folder, but this
+behavior can be changed setting the defualt indexImage name to use. E.G. #set($indexImage="myIndex.jpg")</li>
+  <li><i>doNotIncludeCSS</i><br>
+By default the photo gallery macro includes the lightbox css styles inline in the page, that fails to validate against the w3c validator (http://validator.w3.org/),
+if you want your page to correctly validate you got to set this property true and include your css manually in the head of your page,
+&lt;link rel="stylesheet" href="/html/js/lightbox/css/lightbox.css" type="text/css" media="screen" /&gt;
+</li>
+  <li><i>photoGallerySourceCode</i><br/>
+Overiding the dotCMS photo Gallery source code:<br/>
+The photo gallery source code is stored in your dotCMS here: /static/photo_gallery/photo_gallery.html<br/>
+The following variable can be set to override the photo gallery source code:<br/>
+#set ($photoGallerySourceCode = '/application/velocity/photo_gallery.vtl') <br/>
+This will override the source code we're using to display the photo gallery. 
+  </li>
+</ul>
+<p><b>Usage:</b></p>
+Let say you have a folder structure like the following:
+<br/><br/>
+/photo_galleries -> folder where resides photos and sub galleries<br/>
+/photo_galleries/photo1.jpg  -> image of this top level gallery<br/>
+/photo_galleries/photo2.jpg  -> image of this top level gallery<br/>
+/photo_galleries/gallery_1  -> folder where the first gallery resides<br/>
+/photo_galleries/gallery_1/index.jpg  -> main image of this gallery<br/>
+/photo_galleries/gallery_1/XXX.jpg  -> any other image of this gallery<br/>
+...<br/>
+/photo_galleries/gallery_2  -> folder where the second gallery resides<br/>
+/photo_galleries/gallery_2/index.jpg  -> main image of this gallery<br/>
+/photo_galleries/gallery_2/XXX.jpg  -> any other image of this gallery<br/>
+...<br/><br/>
+So calling,
+<pre>#photoGallery('/photo_galleries')</pre>
+Will display photo1 and photo2 as photos located
+in the /photo_galleries folder and then will list gallery1 and gallery2 as sub photo galleries of the /photo_galleries
+folder, the index.jpg (or index.gif) images are used as the main images when sub photo galleries thumbnails are
+shown, if the subfolder doesn't contain an index image then the first image found in the folder will
+be used as the index image.
+<br/><br/>
+To use the optional parameters you have to set them before the macro is called. <b>E.G.</b><br/>
+#set($showPhotoTitle = false)<br/>
+#photoGallery('/photo_galleries')
+</fieldset>
+<br>
+<a name="printAverageRating"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Print Average Content Rating</legend>
+Prints out the average rating calculated by the dotCMS from the rating votes.
+It prints out the average rating formatted with two decimals. I.E. X.XX
+<p><b>Macro Syntax:</b></p>
+<pre>#printAverageRating(content_identifier)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>content_inode</i><br>
+This is the identifier of the contentlet to be evaluated by the macro</li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example: </b>
+<pre>
+	#printAverageRating($content.identifier)
+</pre>
+</p>
+<br>
+</fieldset>
+<br/><a name="printNumberOfVotes"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Print the Number of Votes of a Rated Content</legend>
+Prints out the number of votes of a content
+<p><b>Macro Syntax:</b></p>
+<pre>#printNumberOfVotes(content_identifier)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>content_inode</i><br>
+This is the identifier of the contentlet to be evaluated by the macro</li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example: </b>
+<pre>
+	#printNumberOfVotes($content.identifier)
+</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="poll"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Pull RSS Feed</legend>
+This macro will retrieve a poll list is no questionId is set or a poll question to vote or
+a poll results
+<p><b>Macro Syntax:</b></p>
+<pre>#poll('questionId')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>questionId</i><br>
+This is the poll question id to be display.</li>
+  <li><i>allowViewResults</i><br />
+Optional: This parameter allows a user to see the results of a poll without voting. Default: false</li>
+  <li><i>maxPollDisplayNumber</i><br />
+Optional: This parameter allows to show only a fraction of the active poll questions. By default display all active poll questions.
+Only works when no questionIs is set when the macro is called.</li>
+  <li><i>portletGroupIds</i><br />
+Optional: Poll question can be configured from differents DotCMS Groups. This array list indicate from which DotCMS Group can be pulled
+the poll questions.</li>
+</ul>
+<p><b>Usage:</b></p>
+<p><b>Example:</b>
+</p>
+This example returns a list with the active poll.<br>
+<pre>#poll('')</pre>
+<p><b>Example 2:</b>
+</p>
+This example returns a poll question id to vote.<br>
+<pre>#poll('123')</pre>
+<p><b>Example3:</b>
+</p>
+This example returns a poll question id to vote. In this case the user could see the results without voting<br>
+<pre>#set($allowViewResults = true)<br/>#poll('123')</pre>
+<p><b>Example4:</b>
+</p>
+This example returns the poll questions from the group id 12345<br>
+<pre>#set ($portletGroupIds = $contents.getEmptyList())<br/>#set ($_dummy = $portletGroupIds.add('12345'))<br/>#poll('')</pre>
+</fieldset>
+<br />
+<a name="pullRSSFeed"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Pull RSS Feed</legend>
+This macro will retrieve a RSS Feed and will return it in a list
+<p><b>Macro Syntax:</b></p>
+<pre>#pullRSSFeed('url')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>url</i><br>
+This is the URL where the RSS Feed is located.</li>
+  <li><i>rssTotal</i><br />
+Optional: The maximum number of entries retrieved by the macro.</li>
+  <li><i>rssFilter</i><br />
+Optional: A list of words that have to be in the title, these words are used to filter the RSS Feed entries.</li>
+</ul>
+<p><b>Usage:</b></p>
+This macro returns a list with the RSS Feed. the macro will return the data in a variable called $list of contentlets $content.The
+contentlet's properties can be displayed by referencing their variable names.
+So $content.title would display the RSS entry title. there are four variable:<br>
+title<br>
+link<br>
+description<br>
+pubDate<br>
+<p><b>Example:</b>
+</p>
+<pre>#set($rssFilter = ['dotcms','dotmarketing'])<br>#set($rssTotal = 10)<br>#pullRSSFeed('http://somesite/topnews.rss')<br>#foreach($content in $list)<br>   title: $!content.title<br>   description: $!content.description<br>#end<br></pre>
+</fieldset>
+<br />
+<a name="pullContents"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Pulling Content</legend>
+Any content or list of content in the content database can be pulled
+and displayed on the front end of your website by using the
+#pullContent() macro.
+<p><b>Macro Syntax:</b></p>
+<pre>#pullContent('query' '# results' 'sort by')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>query</i><br>
+A lucene query that is copied from the "Content Manager" search screen.
+To see this query, search the content and click the "Show Query".
+Select the query and hit ctrl+c to copy to your clipboard. Return to
+the content you want to pull the list and paste it (ctrl+v) into the
+macro.</li>
+  <li><i># results</i><br>
+Maximum number of contentlets to display on the listing</li>
+  <li><i>sort by</i><br>
+The name of the field you would like to sort the results by. This is the "DB Column" name found on the structure.
+If you want to return randomized results, you need to send sortBy as random.
+</li>
+</ul>
+<p><b>Usage:</b></p>
+This macro returns a list or a single piece of content. If you specified more than
+one result you will have a variable named $list of contentlets $content. If you specified
+one piece of content, you can ignore the list and just use the $content variable. The
+contentlet's properties can be displayed by referencing their variable names.
+So $content.firstName would display the variable named firstName for the listed contents.
+The variable name can be found in the structure detail for the content type being used.
+<BR>If you need to add a link to a content detail page you will need to use the content's
+inode by adding this variable: $content.inode
+<p><b>Example 1:</b> This pulls a list of 5 content objects with structure inode 5 ordered by date1, and it displays the title and summary of each one.
+</p>
+<pre>#pullContent('+type:content +live:true +structureInode:5' '5' 'date1')<br>#foreach($content in $list)<br>   title: $!content.contentTitle<br>   summary: $!content.NewsSummary<br>#end<br></pre>
+<br />
+<p><b>Example 2:</b> This pulls a list of 1 random content objects with structure inode 5, and it displays the title and summary of each one.
+</p>
+<pre>#pullContent('+type:content +live:true +structureInode:5' '1' 'random')<br>#foreach($content in $list)<br>   title: $!content.contentTitle<br>   summary: $!content.NewsSummary<br>#end<br></pre>
+</fieldset>
+<br />
+<a name="pullRelatedContent"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Pulling and Displaying Related Content (Relationships)</legend>
+Any related content (driven by structure relationships) can be pulled
+and displayed on the front end of your website by using the
+#pullRelatedContent() macro.
+<p><b>Macro Syntax:</b></p>
+<pre>#pullRelatedContent('relationship name' 'content inode' 'limit' 'sort by')<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>relationship name</i><br>
+The name of the relationship as appears in the structures/relationships portlet. If you are pulling from a same structures
+kind of relation you will have to care about the optional 'pullParents' parameter.</li>
+  <li><i>'content identifier'</i><br>
+The content identifier which is the parent/child/sibbling of the related content you want to get.
+  <li><i>limit</i><br>
+To restrict the number of results to show, if 0 is specified then it will pull all the results</li>
+  <li><i>sort by</i><br>
+To specify a sort by criteria by field variable name as listed in the structures portlet, if blank it will sort by the relationship order,
+also the varible named modDate is accepted to sort the results by last modified date.</li>
+<b>Optional Parameters:</b>
+<li><i>Condition (velocity variable not a parameter)</i><br>
+A lucene query that will be applied to the child before retrieve they</li>
+<li><i>pullParents</i><br>
+This optional parameter is only required when you are pulling relationships of the same structure, on those cases you need to
+specify if you want to pull parents or children of the given content, so by default is going to pull children unless you set pullParents = true</li>
+</ul>
+<p><b>Usage:</b></p>
+This macro returns a list of related content. After the macro is called you will have a variable
+named $list of content objects. The content's properties can be displayed by referencing their variable names.
+So $content.firstName would display the variable named firstName for the listed contents.
+The variable name can be found in the structure detail for the content type being used.
+<BR>If you need to add a link to a content detail page you will need to use the content's
+inode by adding this variable: $content.inode
+<p><b>Example 1: This pulls a list of up to 100 content related to content with identifier 4686 that is related through relationship: Annual_Report_Article-Audio and it orders it by Headline, Text and Modified Date</b>
+</p>
+<pre>
+#pullRelatedContent('Annual_Report_Article-Audio' '4686' '100' 'fullHeadline asc, bodyText desc, modDate')
+<br>#foreach($content in $list)<br>   headline: $!content.fullHeadline<br>   body: $!content.bodyText<br>#end<br></pre>
+<p><b>Example 2: This pulls a list of up to 100 content related to content with identifier 4686 that is related through relationship: Annual_Report_Article-Audio and it orders it by Headline, Text and Modified Date.
+This only pulls content that match the condition where the Headline starts with the word "test".</b>
+</p>
+<pre>
+#set ($condition = '+fullHeadline:test*')
+#pullRelatedContent('Annual_Report_Article-Audio' '4686' '100' 'fullHeadline asc, bodyText desc, modDate')
+<br>#foreach($content in $list)<br>   headline: $!content.fullHeadline<br>   body: $!content.bodyText<br>#end<br></pre>
+</fieldset>
+<br/>
+<a name="randomImage"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Random Image: Return a random image from a specified folder</legend>
+You must provide to this macro a path in order in order to return a random image
+<p><b>Macro Syntax:</b></p>
+<pre>#randomImage (path)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>path</i><br>
+This is the path to a folder.</li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will return the image selected in the variable $image
+<p><b>Example: </b>
+<pre>
+#set ($path = '/global/images/')
+#randomImage($path)
+&lt;img src="/resize_image?inode=$!{image.inode}&w=911&h=322" alt="Top Banner" width="911" height="322" /&gt;
+</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="selectedInode"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Retrieve Selected Inode</legend>
+Gets the inode selected by the user.
+Typically this will be used in 'detail' style pages (e.g. /news/details.dot),
+and therefore the inode will actually correspond to a selected contentlet.
+Note that the name of the request parameter used for extracting the selected inode,
+is determined by the properties key "INODE_PARAMETER_NAME". In case this key
+is missing, the parameter name defaults to "inode"
+<p><b>Macro Syntax:</b></p>
+<pre>#selectedInode()<br></pre>
+<p><b>Usage:</b></p>
+The macro will get the passed in inode for you
+<p><b>Example: </b>
+<pre>
+#selectedInode()</pre>
+</p>
+<br>
+</fieldset>
+<a name="sendtofriend"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Send To Friend</legend>
+This macro generates a form to send an article to a friend by email.
+<p><b>Macro Syntax:</b></p>
+<pre>#sendtofriend (articleText)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>articleText</i><br>
+This is the value for Article Text, sent on the email. </li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>sendToFriendId</i><br>
+This is the value of the form div.</li>
+  <li><i>sendToFriendStyle</i><br>
+This is the value of the style of the form div. By default it's "display:none;", so the form is hidden</li>
+  <li><i>sendToFriendCSSClass</i><br>
+This is the value of the CSS class of the form div.</li>
+  <li><i>subject</i><br>
+This is the value for the email subject.</li>
+  <li><i>emailTemplate</i><br>
+The path of the template used to deliver the email.<br>
+<b>Note:</b> the template couldn't call any velocity macro or webAPI, so we have to pass all the data using the "parameters" variable explained below.
+</li>
+  <li><i>parameters</i><br>
+This is a hash table of parameters that will be added to the email and could be used in the template</li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will display a send to friend form
+<p><b>Example: </b>
+This shows a simple way to call the macro with the required fields
+<pre>
+#set($sendToFriendStyle = "display:inline;")
+#sendtofriend('This is a Send To Friend test!!!')</pre>
+</p>
+<p><b>Example: </b>
+This example call the macro with a template and with some custom parameters
+<pre>
+&lt;!--Create the hashmap--&gt;
+#set($parameters = $contents.getEmptyMap())
+&lt;!--Set the parameters--&gt;
+#set($dummy = $parameters.put('eventId',$eventId))
+#set($dummy = $parameters.put('eventTitle',$content.title))
+#set($dummy = $parameters.put('eventSubtitle',$content.subtitle))
+#set($dummy = $parameters.put('eventDescription',$content.description))
+#set($dummy = $parameters.put('eventImage',$content.largeImage))
+#set($dummy = $parameters.put('eventStartDate',$UtilMethods.dateToHTMLDate($content.startDate,'hh:mm a')))
+&lt;!--Set the template--&gt;
+#set($emailTemplate = "/calendar/sendfriendemailtemplate.dot")
+&lt;!--Call the macro--&gt;
+#set($sendToFriendStyle = "display:inline;")
+#sendtofriend('This is a Send To Friend test!!!')
+</pre>
+</p>
+<br>
+</fieldset>
+<a name="siteMap"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Site Map: Add a Site Map to a Page.</legend>
+<p><b>Macro Syntax:</b></p>
+<pre>   #sitemap()
+</pre>
+<p><b>Usage:</b><br>
+Use this macro if you want to add a site map for your whole site.
+</p>
+  <b>Optional Parameters:</b>
+   <li><i>reverseOrder  (velocity variable not a parameter)</i><br>
+   Set this boolean to true to return the Site Map ordered descending. Default: false.</li>
+  <li><i>showHome</i><br/>
+  	Set to true if you want to display a link to Home Page
+  </li>
+  <li><i>siteMapIdPrefix</i><br>
+  	Prefix to be prepend to every id on the generated sitemap.
+  </li>
+<p><b>Example:</b>
+</p>
+#sitemap()
+This would build a site map for everything from the root fo the site.  It will stop at 100 levels deep.
+<br />
+</fieldset>
+<a name="siteMapFolder"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Site Map Folder: Add a Site Map to a Page from a Folder to a Specific Depth.</legend>
+<p><b>Macro Syntax:</b></p>
+<pre>#siteMapFolder(2,2,&#39;/folder1/myFolder&#39;)
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>startLevel</i><br />
+	This is number of folders the map should start at from the path.</li>
+  <li><i>depth</i><br />
+	This is how many folders to drill inside of from the start depth.
+  </li>
+  <li><i>path</i><br />
+	This is the path to the folder to start at.
+  </li>
+  <b>Optional Parameters:</b>
+   <li><i>reverseOrder  (velocity variable not a parameter)</i><br>
+   Set this boolean to true to return the Site Map ordered descending. Default: false.</li>
+  <li><i>showHome</i><br/>
+  	Set to true if you want to display a link to Home Page
+  </li>
+  <li><i>siteMapIdPrefix</i><br>
+  	Prefix to be prepend to every id on the generated sitemap.
+  </li>
+</ul>
+<p><b>Usage:</b><br>
+Use this macro if you want to add a site map to your page from a specific path.  You can specify how many level from the path to start and end.
+</p>
+<p><b>Example:</b>
+<pre>
+#siteMapFolder(2,2,&#39;/folder1/myFolder&#39;)
+</pre>
+This would build a site map for everything 2 levels beneath /folder1/myFolder and go 2 levels deep.
+</p>
+<br/><br/>
+<p><b>Example2:</b>
+<pre>
+#set($reverseOrder = true)
+#siteMapFolder(2,2,&#39;/folder1/myFolder&#39;)
+</pre>
+This would build a site map for everything 2 levels beneath /folder1/myFolder and go 2 levels deep in inverse order.
+</p>
+<p><b>Example3:</b>
+<pre>
+#set($showHome = true)
+#siteMapFolder(2,2,&#39;/folder1/myFolder&#39;)
+</pre>
+This would build a site map for everything 2 levels beneath /folder1/myFolder and go 2 levels deep adding a link called: Home linked to the site's Home Page.
+</p>
+<br />
+</fieldset>
+<a name="slideShow"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Slide Show: Add a Flash Slide Show to display a set of 'Slide Image' related to a 'Slide Show' content.</legend>
+<p><b>Macro Syntax:</b></p>
+<pre>#slideshow(title)
+</pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>title</i><br />
+	The title of the 'Slide Show' content to show.</li>
+  </li>
+</ul>
+<p><b>Usage:</b><br>
+Use this macro if you want to add a flash slide show of a set of related images.
+</p>
+<p><b>Example:</b>
+<pre>
+#slideshow(&#39;Slide Show Content Title&#39;)
+</pre>
+This bring all the 'Slide Image' related to the 'Slide Show' content with title 'Slide Show Content Title'.
+</p>
+<br/>
+</fieldset>
+<a name="socialBookmarks"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Social Bookmarks</legend>
+This macro generates bookmark links to the most popular social bookmarking sites
+such as Digg, Del.icio.us or Reddit, you can choose from more than 10 different sites.
+<br>
+Available sites:
+blinkbits,
+blinklist,
+blogmarks,
+co.mments,
+connotea,
+del.icio.us,
+digg,
+google,
+newsvine,
+reddit,
+spurl,
+stumble upon,
+technorati,
+wists,
+yahoo.
+<p><b>Macro Syntax:</b></p>
+<pre>
+#socialBookmarks()
+<br></pre>
+<b>Arguments:</b>
+<ul>
+	<li><i>socialBookmarksList</i></li><br/>
+	The list of social bookmarking sites to display
+</ul>
+<b>Optional Arguments:</b>
+<ul>
+<li><i>socialBookmarksSourceCode </i><br>
+If this variable is set will use the specified vtl to display the Social Bookmarks.</li>
+</ul>
+<ul>
+<li><i>onlyIcons</i><br>
+Set this to true if you don't want to display the labels of the social bookmarking sites. It's set to false by default.</li>
+</ul>
+<ul>
+<li><i>socialBookmarksShareIcon</i><br>
+Set the path to an icon you want to show in order to replace the 'Share' link text.</li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will generate the links to the chosen sites, given a list of the different
+bookmarking sites you wish to include.
+<p><b>Example 1: </b>
+<pre>#set ($onlyIcons = "true")</pre>
+<pre>#set ($socialBookmarksList = ['digg','delicious','yahoo','google','newsvine'])</pre>
+<pre>#set ($socialBookmarksShareIcon = "/test/bookmark_icon.gif")</pre>
+<pre>#socialBookmarks()</pre>
+</p>
+<br>
+<p><b>Example 2: </b>
+<pre>#set ($socialBookmarksList = ['digg','delicious','yahoo','google','newsvine'])</pre>
+<pre>#set ($socialBookmarksSourceCode = '/my_velocity_files/my_bookmarks.vtl')</pre>
+</p>
+</fieldset>
+<br/>
+<a name="submitContent"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Submit Content</legend>
+This macro allow to create content for a particular structure in the Front-End, for the user's that have publish permission over the structure for some role.
+This macro could be use with captcha validation, creation of a work flow task to a particular role moderator and auto publish content, it is necessary.<br/>
+If the structure have a required relationship condition the Webmaster should add $relationship_name variable with the identifier of the other contentlet
+that want to use.<br/>
+If the user wants to use a different default field value could add a $default&#60;Velocity field name&#62;.<br/>
+<p><b>Macro Syntax:</b></p>
+<pre>#submitContent('Structure name')<br/></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>Structure name</i><br />
+	This is the name of the structure of the contentlet that will be generated.</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>contentAutoPublish (velocity variable not a parameter)</i><br />
+	Optional: Controls whether the contentlet is automatically published or not.<br/>
+	Default: false
+  </li>
+  <li><i>contentUseCaptcha (velocity variable not a parameter)</i><br />
+	Optional: If set to "true" shows a captcha image to the content's form, to validate human interaction<br/>
+	Default: false
+  </li>
+  <li><i>contentUseAudioCaptcha (velocity variable not a parameter)</i><br />
+	Optional: If set to "true" shows a audio captcha to the content's form, to validate human interaction<br/>
+	Default: false
+  </li>
+  <li><i>contentUseAudioCaptchaHeight (velocity variable not a parameter)</i><br />
+	Optional: If 'contentUseAudioCaptcha' var is set to "true", this will be the height of the space that the audio player will be used<br/>
+	Default: 30
+  </li>
+  <li><i>contentModeration (velocity variable not a parameter)</i><br/>
+    Optional: If set, that will be the name of the role to assign the workflow
+ </li>
+  <li><i>showOnlyRequiredFields (velocity variable not a parameter)</i><br />
+	Optional: If set to "true" shows only the structure required fields<br/>
+	Default: false
+  </li>
+  <li><i>dontShowFields (velocity variable not a parameter)</i><br />
+	Optional: If set, that will not display the structure fields listed in the array. for example ['description','photo']
+  </li>
+  <li><i>default&#60;velocity field name&#62; (velocity variable not a parameter)</i><br/>
+    If the Webmaster wants to use a different default value for a particular field, could add a default variable<br/>
+    For example: to change the default value for the summary field, should be added a variable like this
+     <pre>#set($defaultSummary= 'Test Summary')</pre>
+    </li>
+   <li><i>&#60;relationship_name&#62; (velocity variable not a parameter)</i><br/>
+    If the structure have a required relationship, the Webmaster have to set an array variable with the relationship name and the identifier(s) of the corresponding structure contentlet.<br/>
+    For example: if a required relationship between News and Comments Structures exists, the Webmaster should add a variable like this
+     <pre> #set($News_Comments= ['1234','9876'])</pre>
+    The values in the list must be the identifiers of the contentlets to be related by default to the new content. If any of them is invalid, the relationship could not be saved.
+    This feature also applies for non requiered relationships.
+    </li>
+    <li><i>dateCalendarCSS (velocity variable not a parameter)</i><br/>
+    Optional: If set, that will set the style sheet for the calendar popup.
+    </li>
+    <li><i>contentFormMacroCSS (velocity variable not a parameter)</i><br/>
+    Optional: If set, that will set the style sheet for the submit content form.
+    </li>
+    <li><i>errorMessagesPath (velocity variable not a parameter)</i><br/>
+    Optional: If set, that will set the page that display the error and succes message. by default is set to static/messages.html.
+    </li>
+</ul>
+<p><b>Usage:</b><br>
+Use this macro if you want to add a form to create a contentlet for a particular structure, the macro, will add a form to add new contentlet.
+</p>
+<p><b>Example 1:</b>
+This example generate a News content.
+<br/>
+<pre>
+#submitContent("News") <br/>
+</pre>
+</p>
+<p><b>Example 2:</b>
+This example generate a News content with: image captha validation and a workflow task, modify the default value for the title field
+and add two required relationship to the contentlet with the comment structure.
+<br/>
+<pre>
+#set($contentUseCaptcha = true)<br/>
+#set($contentModeration= 'Report User')<br/>
+#set($defaultTitle = 'TEST TITLE')<br/>
+#set($News-Comments = ['321229','321231'])<br/>
+#submitContent("News") <br/>
+</pre>
+</p>
+<p><b>Example 3: </b>
+This example generate a News content with: audio captcha validation, content auto publish, showing only the required fields,
+hidden the info, test and photo fields, and modifying the default description field value,.
+<br/>
+<pre>
+#set($contentUseCaptcha = true)<br/>
+#set($contentUseAudioCaptcha = true)<br/>
+#set($contentAutoPublish = true)<br/>
+#set($showOnlyRequiredFields = true)<br/>
+#set($dontShowFields = ['info','test','photo'])<br/>
+#set($defaultDescription = 'TEST Description')<br/>
+#submitContent("News") <br/>
+</pre>
+</p>
+</fieldset>
+<br/>
+<a name="tagCloud"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Generates a Tag Cloud Based on Used Content Tags</legend>
+This macro generates a list of tag links with all the tags used on the
+content of the given structures, every link generated is associated
+one of the following css classes [xSmallTag, smallTag, mediumTag, largeTag, xLargeTag]
+depending on the usage of the tag.
+<p><b>Macro Syntax:</b></p>
+<pre>#tagCloud(structureNames url maxNumberOfTags)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>structureNames</i><br>
+The list of structure names you want to use to pull the tag usage. ["name1", "name2", ...] </li>
+  <li><i>url</i><br>
+The url that is going to be used to link the tags in the cloud. To this url the macro adds the tag and the
+tag count as parameters of this url. &lt;your url&gt;?tag=&lt;tag&gt;&tagCount=&lt;N&gt;</li>
+  <li><i>maxNumberOfTags</i><br>
+Maximum number of tags to display on the listing, if 0 is provided then all the tags will be listed</li>
+</ul>
+<b>Optional Arguments:</b>
+<ul>
+  <li><i>ignoredTags</i><br>
+A list of tags you want to be ignored by the macro, I.E. [tag1,tag2]</li>
+  <li><i>tagCloudNoStyles</i>
+     This will remove all embedded styles. To use #set($tagCloudNoStyles=true) before calling the macro. 
+  </li>
+</ul>
+<p><b>Example 1: </b>
+<pre>#tagCloud(["White Papers", "Blogs", "Testimonial"] '/mypage.dot' 40)</pre>
+</p>
+<br>
+<p><b>Example 2: </b>
+<pre>#set($ignoredTags = ["tag1", "tag2"])</pre><br/>
+<pre>#tagCloud(["White Papers", "Blogs", "Testimonial"] '/mypage.dot' 40)</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="textArea"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Create a text area for a form.  This is needed so you can create a text area in the backend of the dotcms.</legend>
+<p><b>Macro Syntax:</b></p>
+<pre>#textArea(name style)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>name</i><br>
+text area html widget name</li>
+  <li><i>style</i><br>
+style to apply to testarea.  ie.. width:200px</li>
+</ul>
+<b>Optional Arguments:</b>
+<ul>
+	<li><i>id</i><br>
+Text Area ID</li>
+  <li><i>value</i><br>
+Text Area Initally Value</li>
+</ul>
+<p><b>Example 1: </b>
+<pre>#textArea($myName "width:200px")</pre>
+</p>
+<br>
+<p><b>Example 2: </b>
+<pre>#set($id = "myID")</pre><br/>
+<pre>#set($value = $myValue)</pre><br/>
+<pre>#textArea("myName" "width:200px")</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="titleGenerator"></a>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Title Generator</legend>
+This macro will create an image with the title sent as parameter.
+<p><b>Macro Syntax:</b></p>
+<pre>   #titleImage('title')
+</pre>
+<b>Arguments:</b>
+<ul>
+<li><i>title</i><br>
+The title text that will be shown in the image</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+<li><i>Font Face</i><br>
+Font Face: This is the font face to use when generating the image<br>
+#set ($font = 'tahoma')</li>
+<li><i>Font Size</i><br>
+Font Size: This is the font size to use when generating the image<br>
+#set ($size = '20')</li>
+<li><i>Font Color</i><br>
+Font Color: This is the RGB numbers for the color to use when generating the image<br>
+#set ($color = '30,30,30')</li>
+<li><i>Break</i><br>
+Break: This is the maximum number of characters per line on the image. This is optional, if not defined all the title will be displayed on one line<br>
+#set ($break = '30')</li>
+<li><i>textLayout</i><br>
+textLayout: Some types of fonts doesn't render well using the bounds of the font, this problem could be fixed using the bounds of the textLayout, this parameter tells the system to use the Text layour's bounds instead of the Font's bounds<br>
+#set ($textLayout = 'true')</li>
+  <li><i>background</i><br>
+  The backgrounds color of the image (optional). Default: '255,255,255'.</li>
+  </li>
+  <li><i>nocache</i><br>
+  if nocache is set, we will regenerate the image file every hit.</li>
+</ul>
+<p><b>Example:</b>
+</p>
+<pre>   #set ($font = 'tahoma')
+   #set ($size = '20')
+   #set ($color = '30,30,30')
+   #titleImage('Test Title')
+</pre>
+<p><b>Example 2:</b>
+</p>
+<pre>   #set ($font = 'tahoma')
+   #set ($size = '20')
+   #set ($color = '30,30,30')
+   #set ($background = "transparent")
+   #titleImage('firstString&secondString')
+</pre>
+<p><b>Example 3:</b>
+</p>
+<pre>   #set ($font = 'tahoma')
+   #set ($size = '20')
+   #set ($color = '30,30,30')
+   #set ($background = "255,255,255")
+   #titleImage('firstString')
+</pre>
+</fieldset>
+<br>
+<a name="videoGallery"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Video Gallery</legend>
+This macro pulls all FLV files from a folder and displays a flash video player for each video.
+If a JPG image with the same name as the video file is provided it will be displayed as a thumbnail of the video.
+<p><b>Macro Syntax:</b></p>
+<pre>#videoGallery(url)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>url</i><br>
+This is the path in the CMS where the videos and images are stored.</li>
+</ul>
+<b>Optional:</b>
+<ul>
+  <li><i>width</i><br>
+  This is the width used to create the image thumbnail. If not defined width defaults to 90 pixels.
+  </li>
+  <li><i>height</i><br>
+  This is the height used to create the image thumbnail. If not defined height defaults to 90 pixels.
+  </li>
+  <li><i>showVideoTitle</i><br>
+  Set this to false if you don't want to display the video title. It's set to true by default.
+  </li>
+  <li><i>showVideoDescription</i><br>
+  Set this to false if you don't want to display the video description. It's set to true by default.
+  </li>
+  <li><i>r</i><br>
+  This is the R color (R,G,B) to use as thumbnail background color. By default background color is set to white.
+  </li>
+  <li><i>g</i><br>
+  This is the g color (R,G,B) to use as thumbnail background color. By default background color is set to white.
+  </li>
+  <li><i>b</i><br>
+  This is the b color (R,G,B) to use as thumbnail background color. By default background color is set to white.
+  </li>
+  <li><i>galleriesToShow</i><br>
+  This variable determines how many videos to show at a time. If not defined all videos are displayed, if set the galleriesToShow videos will be displayed with links to view Next and Previous.
+  </li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will create a video gallery of all videos in the folder: /videos/.
+<p><b>Example: </b>
+<pre>#videoGallery('/videos/')</pre>
+</p>
+<p><b>Example2: </b>
+<pre>
+#set($showVideoTitle = false)
+#set($showVideoDescription = false)
+#videoGallery('/videos/')
+</pre>
+This will display the video gallery with no titles and no descriptions for each video.
+</p>
+<p><b>Example3: </b>
+<pre>
+#set($w = 200)
+#set($h = 200)
+#videoGallery('/videos/')
+</pre>
+This will display the video gallery with image thumbnails of 200 x 200.
+</p>
+<p><b>Example4: </b>
+<pre>
+#set($galleriesToShow = 2)
+#videoGallery('/videos/')
+</pre>
+This will display the video gallery with only two videos at a time, it will display links to Next and Previous to view the rest.
+</p>
+<br>
+</fieldset>
+<br/>
+<a name="videoPlayer"></a></p>
+<div align="right"><a href="#top">back to top</a></div>
+<fieldset><legend>Video Player: Play Video in a Flash Video Player</legend>
+You can provide this macro a URL to a .flv file and it will provide a player for your video.
+<p><b>Macro Syntax:</b></p>
+<pre>#videoPlayer(url)<br></pre>
+<b>Arguments:</b>
+<ul>
+  <li><i>url</i><br>
+This is the path to the flv.</li>
+</ul>
+<b>Optional Parameters:</b>
+<ul>
+  <li><i>videoPlayerPath</i><br>
+  This is the base location of the player (optional).  You could use this variable to set another base location to the video player's components, the javascript and the flash files. Default: '/html/'.</li>
+  </li>
+  <li><i>width</i><br>
+  This is the new video width (optional).  You could use the video width parameter alone or in combination with the height parameter. Default: 275.</li>
+  </li>
+  <li><i>height</i><br>
+  This is the new video height (optional).  You could use the video height parameter alone or in combination with the width parameter. Default: 265.</li>
+  <li><i>autostart</i><br>
+  If the video plays automatically when it loads. Default: true.</li>
+  <li><i>backgroundColor</i><br>
+  The backgrounds color of the player. Default: #ffffff.</li>
+  <li><i>scale</i><br>
+  <b>default</b> (Show all) makes the entire movie visible in the specified area without distortion, while maintaining the original aspect ratio of the movie. Borders may appear on two sides of the movie.<br>
+  <b>noorder</b> scales the movie to fill the specified area, without distortion but possibly with some cropping, while maintaining the original aspect ratio of the movie.<br>
+  <b>exactfit</b> makes the entire movie visible in the specified area without trying to preserve the original aspect ratio. Distortion may occur.<br>
+  Default: 'default'.</li>
+  <li><i>autostart</i><br>
+  <b>true</b> if you want to play the movie automatically when the video player is loaded.<br>
+  <b>false</b> the movie won't be played automatically.<br>
+  Default: 'true'.</li>
+  <li><i>overstretch</i><br>
+  <b>true</b> will support overstretch.<br>
+  <b>false</b> won't support overstretch.<br>
+  Default: 'false'.</li>
+  <li><i>image</i><br>
+  The image to show in the player. Default: default.jpg.</li>
+</ul>
+<p><b>Usage:</b></p>
+The macro will play the video within an embedded flash player
+<p><b>Example: </b>
+<pre>#videoPlayer('/global/videos/myvideo.flv')</pre>
+</p>
+<br>
+<p><b>Example2: </b>
+<pre>
+#set($width = '500')
+#set($height = '500')
+#set($autostart = 'true')
+#set($backgroundColor = '#000000')
+#set($scale = 'default')
+#videoPlayer('/global/videos/myvideo.flv')
+</pre>
+</p>
+<br>
+</fieldset>
+<br/>
+<!-- BEGIN DOC PLUGINS -->
+<!-- END DOC PLUGINS -->
+</body>
+</html>

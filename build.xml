@@ -1,0 +1,909 @@
+<?xml version="1.0"?>
+
+
+<project name="dotcms.org" default="compile" basedir=".">
+	<!-- property name="build.compiler" value="jikes" / -->
+
+	<!-- Load version props -->
+	<property file="src/com/liferay/portal/util/build.properties"/>
+	<property file="test/build.properties" />
+	
+	<!-- vars -->
+	<property name="src.dir" value="src" />
+	<property name="src.conf.dir" value="src-conf" />
+	<property name="src.tests.dir" value="test" />
+	<property name="src.jsp" value="build/jsp" />
+	<property name="sql.dotcms.dir" value="sql/cms" />
+	<property name="sql.liferay.dir" value="sql/portal" />
+	<property name="sql.quartz.dir" value="sql/quartz" />
+	<property name="sql.dotcms.oracle" value="dotcms_oracle.sql" />
+	<property name="sql.liferay.oracle" value="portal-oracle.sql" />
+	<property name="sql.quartz.oracle" value="tables_oracle.sql" />
+	<property name="sql.dotcms.postgres" value="dotcms_postgresql.sql" />
+	<property name="sql.dotcms.extra.postgres" value="dotcms_extra_postgres.sql" />
+	<property name="sql.dotcms.extra.oracle" value="dotcms_extra_oracle.sql" />
+	<property name="sql.dotcms.extra.mssql" value="dotcms_extra_mssql.sql" />
+	<property name="sql.dotcms.extra.mysql" value="dotcms_extra_mysql.sql" />
+	<property name="sql.liferay.postgres" value="portal-postgresql.sql" />
+	<property name="sql.quartz.postgres" value="tables_postgres.sql" />
+	<property name="sql.dotcms.mssql" value="dotcms_mssql-sybase.sql" />
+	<property name="sql.liferay.mssql" value="portal-sql-server.sql" />
+	<property name="sql.quartz.mssql" value="tables_mssql.sql" />
+	<property name="sql.dotcms.mysql" value="dotcms_mysql.sql" />
+	<property name="sql.liferay.mysql" value="portal-mysql.sql" />
+	<property name="sql.quartz.mysql" value="tables_mysql.sql" />
+	<property name="build.dir" value="build" />
+	<property name="build.classes" value="${build.dir}/classes" />
+	<property name="build.ant" value="${build.dir}/ant" />
+	<property name="build.log4j" value="${build.dir}/log4j" />
+	<property name="build.lib" value="${build.dir}/lib" />
+	<property name="lib.app" value="${basedir}/dotCMS/WEB-INF/lib" />
+	<property name="classes.app" value="${basedir}/dotCMS/WEB-INF/classes" />
+	<property name="build.war" value="${build.dir}/war" />
+	<property name="build.compiler.fulldepend" value="true" />
+	<property name="deploy.dir" value="${basedir}/dotCMS/WEB-INF/lib" />
+	<property name="distribution.output" value="../dist" />
+	<property name="ant.build.javac.target" value="1.5"/>
+	<property name="war.name" value="dotcms"/>
+	<property name="build.temp" value="build_temp" />
+	<property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
+	<property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
+	<property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
+	<property name="agent.version" value="28"/>
+	
+	<property name="plugin.root.dir.default" value="${basedir}/dotCMS"/>
+	<property name="plugin.jar.deploy.dir.default" value="${basedir}/../../dotCMS/WEB-INF/lib" />
+
+
+	<path id="build-classpath">
+		<pathelement path="${build.classes}" />
+	</path>
+
+	<path id="files-classpath">
+		<pathelement location="${java.home}/../lib/tools.jar"/>
+		<fileset dir="tomcat/bin">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="tomcat/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${lib.app}">
+			<include name="**/*.jar" />
+			<exclude name="**/dotcms*.jar" />
+		</fileset>
+		<pathelement path="${build.classes}" />
+	</path>
+
+	<!-- classpath only used for plugins no other task should use becuase it locks the jar files -->
+	<path id="ant-files-classpath">
+		<pathelement location="${java.home}/../lib/tools.jar"/>
+		<fileset dir="tomcat/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${lib.app}">
+			<include name="log4j.jar" />
+			<include name="dotcms_ant.jar" />
+		</fileset>
+	</path>
+
+	<!-- Target to create the build directories prior to the -->
+	<!-- compile target. -->
+	<target name="prepare">
+		<mkdir dir="${distribution.output}" />
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${build.classes}" />
+		<mkdir dir="${build.lib}" />
+	</target>
+	
+	<target name="clean-tinymce-gz" description="Removes all generated .gz pre-compressed files by tinymce_gzip.jsp">
+		<delete>
+			<fileset dir="dotCMS/html/js/tinymce/jscripts/tiny_mce/" includes="*.gz"/>
+		</delete>
+	</target>	                                                                
+
+	<target name="clean-core" description="Removes all compiled classes, jar." depends="check-src-build">
+		<replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
+		  	replace="&lt;!-- BEGIN JSPS --&gt; &lt;!-- END JSPS --&gt;">
+			<fileset dir="dotCMS/WEB-INF/">
+				<include name="web.xml"/>
+			</fileset>
+		</replaceregexp>
+		<delete>
+			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
+		</delete>
+		<delete dir="${build.dir}" />
+		<delete dir="${src.jsp}" />
+		<delete dir="${distribution.output}" />
+		<delete failonerror="false" includeemptydirs="true">
+			<fileset dir="${classes.app}" includes="**/*" />
+		</delete>
+	</target>
+
+
+	<target name="clean-jsp" description="Removes all generated files.">
+		<delete dir="work/Catalina" />
+	</target>
+
+	<target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
+		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+			<classpath refid="files-classpath" />
+		</javac>
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" />
+		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
+	</target>
+
+	<target name="compile-anttasks" depends="prepare" description="Compiles source code need for clean and deploy plugins.">
+		<mkdir dir="${build.ant}" />
+		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.ant}" 
+			source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" 
+			memoryinitialsize="256m" memorymaximumsize="512m" >
+			<classpath refid="files-classpath" />
+			<include name="com/dotmarketing/plugin/ant/**"/>
+			<include name="com/dotmarketing/plugin/util/**"/>
+
+		</javac>
+	</target>
+
+	<target name="compile-log4jappends" depends="prepare" description="Compiles source code need for our async appender.">
+		<mkdir dir="${build.log4j}" />
+		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}" 
+			source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" 
+			memoryinitialsize="256m" memorymaximumsize="512m" >
+			<classpath refid="files-classpath" />
+			<include name="org/apache/log4j/appender/**"/>
+
+		</javac>
+	</target>
+
+	<target name="checkWindows">
+		<condition property="isWindows">
+			<os family="windows" />
+		</condition>
+	</target>
+
+
+
+
+	<target name="jar" depends="compile" description="Generates dotcms.jar in the 'lib' directory.">
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" />
+		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
+		<copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
+
+		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" >
+			<exclude name="com/dotmarketing/plugin/ant/**"/>
+			<exclude name="com/dotmarketing/plugin/util/**"/>
+		</jar>
+	</target>
+
+    <target name="jar-with-tests" depends="compile, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
+		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" />
+		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
+		<copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
+
+		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" >
+			<exclude name="com/dotmarketing/plugin/ant/**"/>
+			<exclude name="com/dotmarketing/plugin/util/**"/>
+		</jar>
+	</target>
+
+	<target name="jar-anttasks" depends="compile-anttasks" description="Generates dotcms-ant.jar in the 'lib' directory.">
+		<jar jarfile="${build.lib}/dotcms_ant.jar" basedir="${build.ant}"/>
+	</target>
+
+	<target name="jar-log4jtasks" depends="compile-log4jappends" description="Generates dotcms-log4j.jar in the 'tomcat/lib' directory.">
+		<jar jarfile="${build.lib}/dotcms_log4j.jar" basedir="${build.log4j}"/>
+	</target>
+	
+	<!-- Configure the directory into which the web application is built -->
+	<property name="build" value="build" />
+
+	<!-- Configure the folder and context path for this application -->
+	<property name="webapp" value="dotCMS" />
+	<property name="path" value="/dotCMS" />
+
+	<property name="webapp.path" value="${build}/webapp${path}" />
+
+
+	<target name="deploy-config" >
+		<copy todir="${classes.app}">
+			<fileset dir="${src.conf.dir}">
+				<exclude name="**/.svn" />
+			</fileset>
+		</copy>
+	</target>
+
+
+	<target name="deploy-core" depends="jsp,jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+		<delete>
+			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
+		</delete>
+		<copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <!-- Freetts -->
+		<delete dir="${build.classes}" />
+	</target>
+
+    <target name="deploy-core-with-tests" depends="jsp,jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+		<delete>
+			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
+		</delete>
+		<copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <!-- Freetts -->
+		<delete dir="${build.classes}" />
+	</target>
+
+	<target name="build-core" depends="jsp,jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+
+	<target name="build-core-no-jsp" depends="jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+
+	<target name="deploy-no-jsp" depends="jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+		<delete>
+			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
+		</delete>
+		<copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+	</target>
+
+	<target name="deploy-anttasks" depends="jar-anttasks" description="builds and deploys core and plugins">
+		<delete>
+			<fileset dir="${deploy.dir}" includes="dotcms_ant.jar" />
+		</delete>
+		<copy file="${build.lib}/dotcms_ant.jar" tofile="${deploy.dir}/dotcms_ant.jar" />
+
+	</target>
+
+	<target name="rep">
+		<loadfile property="generated.web"
+      srcFile="dotCMS/WEB-INF/generated_web.xml"/>
+
+		<replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
+	  	replace="&lt;!-- BEGIN JSPS --&gt; ${generated.web} &lt;!-- END JSPS --&gt;">
+			<fileset dir="dotCMS/WEB-INF/">
+				<include name="web.xml"/>
+			</fileset>
+		</replaceregexp>
+	</target>
+
+	<target name="cleanrep">
+
+
+		<replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
+	  	replace="&lt;!-- BEGIN JSPS --&gt; XXX  &lt;!-- END JSPS --&gt;">
+			<fileset dir="dotCMS/WEB-INF/">
+				<include name="web.xml"/>
+			</fileset>
+		</replaceregexp>
+	</target>
+
+	<target name="jsp" depends="compile">
+
+		<taskdef classname="com.dotmarketing.util.jasper.DotJasperTask" name="jasper2" >
+			<classpath id="jspc.classpath" refid="files-classpath">
+			</classpath>
+		</taskdef>
+
+
+		<jasper2
+             validateXml="false" 
+             uriroot="dotCMS" 
+             javaEncoding="UTF-8"
+             webXmlFragment="dotCMS/WEB-INF/generated_web.xml" 
+             outputDir="${src.jsp}/">
+
+		</jasper2>
+		<javac debug="true" debuglevel="lines,vars,source" 
+		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.5" 
+		target="1.5" compiler="javac1.5" nowarn="true" optimize="true" 
+		memoryinitialsize="256m" memorymaximumsize="512m">
+			<classpath refid="files-classpath" />
+		</javac>
+
+		<loadfile property="generated.web"
+	      srcFile="dotCMS/WEB-INF/generated_web.xml"/>
+
+		<replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
+		  	replace="&lt;!-- BEGIN JSPS --&gt; ${generated.web} &lt;!-- END JSPS --&gt;">
+			<fileset dir="dotCMS/WEB-INF/">
+				<include name="web.xml"/>
+			</fileset>
+		</replaceregexp>
+	</target>
+
+	<target name="buildsql" depends="buildseqsql, buildmXsql">
+	</target>
+
+	<target name="buildseqsql" depends="compile" description="builds the oracle and postgresql sql schema for dotcms. also leaves Inode.hbm.xml in a state for sequence databases">
+
+		<taskdef name="buildSQLTask" classname="com.dotmarketing.db.DotSQLGeneratorTask" >
+			<classpath>
+				<path refid="files-classpath" />
+			</classpath>
+		</taskdef>
+
+		<buildSQLTask dialect="net.sf.hibernate.dialect.PostgreSQLDialect" />
+		<buildSQLTask dialect="net.sf.hibernate.dialect.OracleDialect" />
+		<concat destfile="${build.dir}/sql/postgres.sql" fixlastline="yes">
+			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.postgres}" />
+			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.postgres}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.postgres}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.postgres}" />
+		</concat>
+
+		<concat destfile="${build.dir}/sql/oracle.sql" fixlastline="yes">
+			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.oracle}" />
+			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.oracle}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.oracle}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.oracle}" />
+		</concat>
+
+		<replaceregexp byline="true" file="${build.dir}/sql/oracle.sql">
+			<regexp pattern="nclob_description" />
+			<substitution expression="long_description" />
+		</replaceregexp>
+		<copy file="${build.dir}/sql/oracle.sql" todir="${classes.app}"/>
+		<copy file="${build.dir}/sql/postgres.sql" todir="${classes.app}"/>
+
+	</target>
+
+	<target name="buildmXsql" depends="compile" description="builds the mssql and mysql sql schema for dotcms. Leaves Inode.hbm.xml in a state for mssql/mysql">
+
+		<taskdef name="buildSQLTask" classname="com.dotmarketing.db.DotSQLGeneratorTask">
+			<classpath>
+				<path refid="files-classpath" />
+			</classpath>
+		</taskdef>
+
+		<buildSQLTask dialect="net.sf.hibernate.dialect.MySQLDialect" />
+		<buildSQLTask dialect="net.sf.hibernate.dialect.SybaseDialect" />
+
+		<concat destfile="${build.dir}/sql/mssql.sql" fixlastline="yes">
+			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.mssql}" />
+			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.mssql}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.mssql}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.mssql}" />
+		</concat>
+
+		<concat destfile="${build.dir}/sql/mysql.sql" fixlastline="yes">
+			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.mysql}" />
+			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.mysql}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.mysql}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.mysql}" />
+		</concat>
+		<replace file="${build.dir}/sql/mysql.sql">
+			<replacetoken>VARCHAR(1)</replacetoken>
+			<replacevalue>tinyint(1)</replacevalue>
+		</replace>
+
+		<replace file="${build.dir}/sql/mysql.sql">
+			<replacetoken>varchar(1)</replacetoken>
+			<replacevalue>tinyint(1)</replacevalue>
+		</replace>
+		<mkdir dir="dotCMS/WEB-INF/classes"/>
+		<copy file="${build.dir}/sql/mysql.sql" todir="${classes.app}"/>
+		<copy file="${build.dir}/sql/mssql.sql" todir="${classes.app}"/>
+	</target>
+
+	<target name="create-dist" description="creates a zip file for dbs that autoincrement like MSSQL and MySQL distribution">
+
+		<antcall target="clean" />
+
+		<antcall target="deploy-core" />
+
+		<copy todir="${distribution.output}">
+			<fileset dir=".">
+				<exclude name="**/.svn" />
+				<exclude name="tomcat/logs/**" />
+				<exclude name="dotCMS/WEB-INF/dotlucene/**" />
+				<exclude name="dotCMS/assets/**" />
+				<exclude name="dotCMS/dotsecure/**" />
+				
+				<exclude name="dotCMS/html/js/dojo/src/**" />
+				<exclude name="tomcat/temp/**" />
+				<exclude name="build/**" />
+				<exclude name="tomcat/work/**" />
+				<exclude name="src/**" />
+				<exclude name="test/**" />
+				<exclude name=".*" />
+				<exclude name=".settings/**" />
+			</fileset>
+		</copy>
+		<mkdir dir="${distribution.output}/tomcat/logs" />
+		<mkdir dir="${distribution.output}/tomcat/temp" />
+
+		<antcall target="javadoc" />
+
+		<zip destfile="${distribution.output}/../dotcms_${dotcms.release.version}.zip" basedir="${distribution.output}" />
+		<delete dir="${distribution.output}" />
+	</target>
+
+	<target name="javadoc" description="creates javadoc for dotCMS">
+		<javadoc maxmemory="1024m" packagenames="com.dotmarketing.*" sourcepath="${src.dir}" excludepackagenames="com.dummy.test.doc-files.*" defaultexcludes="yes" destdir="dotCMS/api" author="true" version="true" use="true" windowtitle="dotCMS API">
+			<doctitle>
+				<![CDATA[
+			<h1>dotCMS 1.9 API Specification</h1>
+			<br>
+				<div align='right'>
+					<FONT size='-1'>
+						<A href='http://jira.dotmarketing.net/browse/DOTCMS' target='_blank'>Submit a bug or feature</A>&nbsp;</FONT>
+				</div>
+			]]>
+			</doctitle>
+			<bottom>
+				<![CDATA[<i>Copyright &#169; 2010 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
+		<tag name="todo" scope="all" description="To do:" />
+	</javadoc>
+
+</target>
+
+
+<target name="deleteliferayjsps">
+
+	<delete dir="dotCMS/html/portlet">
+		<exclude name="ext**" />
+		<exclude name="admin/**" />
+		<exclude name="my_account/**" />
+	</delete>
+
+</target>
+
+
+<target name="war-file" description="builds dotCMS as a war">
+	
+	<mkdir dir="${build.war}"/>
+
+	<zip destfile="${build.war}/${war.name}.war">
+		<zipfileset dir="dotCMS/" >
+			<exclude name="**/.svn"/>
+			<exclude name="assets/"/>
+			<exclude name="WEB-INF/backup/"/>
+			<exclude name="WEB-INF/dotlucene/"/>
+			<exclude name="dot_secure/"/>
+			<exclude name="dotsecure/"/>
+		</zipfileset>
+	</zip>
+
+</target>
+
+
+
+<target name="war-no-jsp" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
+	<antcall target="war-file"/>
+</target>
+
+<target name="war" depends="deploy-core,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
+	<antcall target="war-file"/>
+</target>
+
+
+<!-- Unit testing and code coverage -->
+
+<path id="emma.lib" >
+	<pathelement location="dotCMS/WEB-INF/lib/emma.jar" />
+	<pathelement location="dotCMS/WEB-INF/lib/emma_ant.jar" />
+</path>
+<property name="instrumented.dir" value="build/instrumented" />
+<property name="coverage.dir" value="build/coverage" />
+<property name="tests.dir" value="build/tests" />
+
+
+<target name="instrument-classes" depends="">
+	<taskdef resource="emma_ant.properties" classpathref="emma.lib" />
+	<delete dir="${instrumented.dir}"/>
+	<delete file="${coverage.dir}/metadata.emma"/>
+	<mkdir dir="${instrumented.dir}"/>
+	<emma enabled="true" >
+		<instr instrpathref="build-classpath"
+		           destdir="${instrumented.dir}"	
+		           metadatafile="${coverage.dir}/metadata.emma"
+		           merge="true">
+			<filter value="com.dotmarketing.*"/>
+			<filter excludes="*Test, *Exception"/>
+		</instr>
+	</emma>
+</target>
+	
+<taskdef resource="cactus.tasks">
+  <classpath>
+    <pathelement location="${lib.app}/cactus.core.framework.uberjar.javaEE.14-1.8.0.jar"/>
+    <pathelement location="${lib.app}/cactus.integration.shared.api-1.8.0.jar"/>
+    <pathelement location="${lib.app}/cactus.integration.ant-1.8.0.jar"/>
+    <pathelement location="${lib.app}/cargo-ant-0.9.jar"/>
+    <pathelement location="${lib.app}/cargo-core-uberjar-0.9.jar"/>
+    <pathelement location="${lib.app}/lib/commons-httpclient-3.1.jar"/>
+    <pathelement location="${lib.app}/lib/commons-logging-1.1.1.jar"/>
+    <pathelement location="${lib.app}/lib/aspectjrt-1.5.3.jar"/>
+  </classpath>
+</taskdef>
+	
+
+	<!-- Main test target, this tasks will run all the unit tests of the application -->
+	<target name="test-dotcms" depends="deploy-tests, set-properties, create-db">
+		<runservertests
+		    testurl="http://localhost:${server.port}"
+		    starttarget="tomcat-start"
+		    stoptarget="tomcat-stop"
+		    testtarget="test-all-junits"/>
+		<antcall target="restore-files"/>
+		<antcall target="drop-db"/>
+	</target>	
+	
+	<!-- Hit the tests servlet to run all the unit tests of the application -->
+	<target name="test-all-junits" depends="">
+		<condition property="get.ok">  
+		<http url="http://localhost:${server.port}/servlet/test" errorsbeginat="400">
+		</http>  
+		</condition>  
+		<fail unless="get.ok" message="One or more tests failed!!!" />
+		<echo message="dotCMS successfully tested"/>
+	</target>	
+		
+	<target name="tomcat-start" >
+		<java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
+	        <jvmarg value="-Dcatalina.home=tomcat"/>
+			<jvmarg value="-Xms1G"/>
+			<jvmarg value="-XX:MaxPermSize=512m"/>
+			<arg value="start"/>
+			<classpath>
+	          <fileset dir="tomcat">
+	              <include name="bin/bootstrap.jar"/>
+	          </fileset>
+	        </classpath>
+	    </java>
+	</target>
+	
+	<target name="tomcat-stop">
+		 <java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
+	        <jvmarg value="-Dcatalina.home=tomcat"/>
+		 	<arg value="stop"/>
+		 	<classpath>
+	          <fileset dir="tomcat">
+	              <include name="bin/bootstrap.jar"/>
+	          </fileset>
+	        </classpath>
+	    </java>
+	</target>
+	
+	<!-- Creates an empty db. Attributes are defined in the build.properties file -->	
+	<target name="create-db" >
+		<sql driver="org.postgresql.Driver"
+			url="${db.base.url}"
+			userid="${db.username}"
+			password="${db.password}"
+			autocommit="true"
+			classpathref="files-classpath">
+			DROP DATABASE IF EXISTS ${db.name};
+			CREATE DATABASE ${db.name};
+		</sql>
+	</target>
+	
+	<!-- Drops the test db. Attributes are defined in the build.properties file -->	
+	<target name="drop-db" >
+				<sql driver="org.postgresql.Driver"
+					url="${db.base.url}"
+					userid="${db.username}"
+					password="${db.password}"
+					autocommit="true"
+					classpathref="files-classpath">
+					select pg_terminate_backend(procpid) from pg_stat_activity where datname='${db.name}';
+					DROP DATABASE IF EXISTS ${db.name};
+				</sql>
+			</target>
+
+	<!-- Prepare and relocate the server.xml and ROOT.xml used for the test while backing up the originals -->	
+	<!-- The db attributes and tomcat port is defined in the build.properties file -->	
+	<target name="set-properties" depends="">
+		<move file="tomcat/conf/server.xml" tofile="${src.tests.dir}/server-orig.bck"/>
+		<move file="tomcat/conf/Catalina/localhost/ROOT.xml" tofile="${src.tests.dir}/ROOT-orig.bck"/>
+		<copy file="${src.tests.dir}/server.xml" todir="tomcat/conf"/>
+		<copy file="${src.tests.dir}/ROOT.xml" todir="tomcat/conf/Catalina/localhost"/>
+		<replace file="tomcat/conf/server.xml" token="{port}" value="${server.port}"/>
+		<replace file="tomcat/conf/Catalina/localhost/ROOT.xml">
+			<replacefilter token="{url}" value="${db.url}"/>
+			<replacefilter token="{username}" value="${db.username}"/>
+			<replacefilter token="{password}" value="${db.password}"/>
+		</replace>
+	</target>
+	
+	<!-- Reestablish the original server.xml and ROOT.xml files -->	
+	<target name="restore-files" depends="">
+		<move file="${src.tests.dir}/server-orig.bck" tofile="tomcat/conf/server.xml" overwrite="true"/>
+		<move file="${src.tests.dir}/ROOT-orig.bck" tofile="tomcat/conf/Catalina/localhost/ROOT.xml" overwrite="true"/>
+	</target>
+
+<target name="start-server-for-tests" depends="">
+
+	<mkdir dir="${coverage.dir}"/>
+
+	<copy file="tomcat/conf/server.xml" tofile="tomcat/conf/server-orig.xml" overwrite="true"/>
+	<copy file="tomcat/conf/server-tests.xml" tofile="tomcat/conf/server.xml" overwrite="true"/>
+	<exec osfamily="unix" executable="${basedir}/tomcat/bin/catalina.sh">
+		<arg value="tests"/>
+	</exec>
+	<exec osfamily="windows" executable="${basedir}/tomcat/bin/catalina.bat">
+		<arg value="start"/>
+	</exec>
+	<echo message="server starting">
+	</echo>
+	<sleep seconds="30"/>
+</target>
+
+<target name="shutdown-server-for-tests">
+
+	<exec osfamily="unix" executable="${basedir}/tomcat/bin/catalina.sh">
+		<arg value="stop"/>
+	</exec>
+	<exec osfamily="windows" executable="${basedir}/tomcat/bin/catalina.bat">
+		<arg value="stop"/>
+	</exec>
+
+	<echo message="server going down">
+	</echo>
+	<sleep seconds="10"/>
+	<move file="tomcat/conf/server-orig.xml" tofile="tomcat/conf/server.xml" overwrite="true"/>
+
+</target>
+
+<target name="generate-coverage-reports">
+	<taskdef resource="emma_ant.properties" classpathref="emma.lib" />
+	<emma enabled="true" >
+		<report sourcepath="${src.dir}"
+	              sort="+block,+name,+method,+class"
+	              metrics="method:70,block:80,line:80,class:100">
+			<fileset dir="${coverage.dir}" >
+				<include name="*.emma" />
+			</fileset>
+			<txt outfile="${coverage.dir}/coverage.txt" depth="package" columns="class,method,block,line,name" />
+			<xml outfile="${coverage.dir}/coverage.xml" depth="package" />
+			<html outfile="${coverage.dir}/coverage.html" depth="method" columns="name,class,method,block,line" />
+		</report>
+	</emma>
+</target>
+
+<target name="compile-tests" depends="prepare,compile,deploy-config" description="Compiles all test source code.">
+	<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+		<classpath refid="files-classpath" />
+	</javac>
+	<copy todir="${build.classes}">
+		<fileset dir="${src.tests.dir}">
+			<exclude name="**/*.java"/>
+		</fileset>
+	</copy>
+
+</target>
+
+
+<target name="tests" depends="compile, buildsql, buildmXsql, compile-tests, instrument-classes, start-server-for-tests" description="runs unit tests">
+
+
+	<mkdir dir="${tests.dir}" />
+	<mkdir dir="${tests.dir}/report/html" />
+
+	<junit printsummary="yes" haltonfailure="no" failureproperty="tests.failed">
+
+		<classpath>
+			<path refid="files-classpath">
+			</path>
+			<path path="${classes.app}">
+			</path>
+		</classpath>
+
+		<formatter type="xml" />
+
+		<test name="com.dotmarketing.DotcmsTestSuite" haltonfailure="no" outfile="${tests.dir}/test-dotcms.results">
+		</test>
+
+	</junit>
+
+	<antcall target="shutdown-server-for-tests">
+	</antcall>
+
+
+
+	<antcall target="generate-coverage-reports">
+	</antcall>
+
+	<junitreport todir="${tests.dir}/report/html">
+		<fileset dir="${tests.dir}">
+			<include name="test-*.xml"/>
+		</fileset>
+		<report format="frames" todir="${tests.dir}/report/html"/>
+	</junitreport>
+
+	<delete dir="${instrumented.dir}" />
+
+	<fail if="tests.failed"/>
+
+
+</target>
+
+
+
+
+<!--Plugin tasks-->
+
+<target name="build" depends="build-core,build-plugins" description="build the dotCMS core and plugins" />
+
+<target name="deploy" depends="build, deploy-core, deploy-plugins" description="builds and deploys core and plugins" />
+
+<target name="deploy-tests" depends="build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
+
+<target name="deploy-dev" depends="deploy-plugins"/>
+
+<target name="clean" depends="clean-plugins,undeploy-plugins,clean-core,clean-tinymce-gz" description="cleans plugins, core and undeploys plugins" />
+
+<macrodef name="iterate">
+	<attribute name="target"/>
+	<sequential>
+		<subant target="@{target}">
+			<fileset dir="plugins" includes="*/build.xml"/>
+		</subant>
+	</sequential>
+</macrodef>
+
+<target name="build-plugins" description="builds plugins but does not deploy">
+	<iterate target="build"/>
+</target>
+
+<target name="clean-plugins" description="undeploys and cleans plugins" depends="undeploy-plugins">
+	<iterate target="clean"/>
+</target>
+
+<target name="unbuild-plugins" description="cleans plugins">
+	<iterate target="clean"/>
+</target>
+
+<target name="-check-use-file">
+   <available property="file.exists" file="build.properties"/>
+</target>
+	
+<target name="use-file" depends="-check-use-file" if="file.exists">
+	<loadproperties srcFile="build.properties"/>
+</target>	
+	
+	
+<target name="setup-deploy-location" depends="use-file" description="sets up the locations where to deploy">
+	<condition property="plugin.root.dir"  value="${target.root}" else="${plugin.root.dir.default}">
+		<isset property="target.root"/> 
+	</condition>
+	<condition property="plugin.jar.deploy.dir"  value="${target.root}/WEB-INF/lib" else="${plugin.root.dir.default}/WEB-INF/lib">
+		<isset property="target.root"/> 
+	</condition>
+	<echo>Deploying plugins to: ${plugin.root.dir} | ${plugin.jar.deploy.dir}</echo>
+</target>
+
+<target name="deploy-plugins" depends="build-plugins,setup-deploy-location" description="builds and deploys plugins">
+	<echo>Copying plugins to: ${plugin.root.dir}</echo>
+	<copy todir="${plugin.root.dir}/WEB-INF/classes" file="plugins/plugins.xml" />
+	<subant target="deploy-plugin" genericantfile="${basedir}/build.xml">
+		<dirset dir="plugins" includes="*"/>
+		<property name="plugin.root.dir" value="${plugin.root.dir}"/>
+		<property name="plugin.jar.deploy.dir" value="${plugin.jar.deploy.dir}"/>
+				
+	</subant>
+	<taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
+		<classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath">
+		</classpath>
+	</taskdef>
+	<echo>Deploying plugins from: ${plugin.root.dir}</echo>
+			
+		
+	<plugin-deploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
+</target>
+
+<target name="deploy-plugin">
+	<copy  todir="${plugin.jar.deploy.dir}">
+		<fileset dir="build/jar/" />
+	</copy>
+	
+</target>
+
+<target name="undeploy-plugins" depends="setup-deploy-location" description="undeploys all plugins, returns overridden files to default state">
+	<taskdef classname="com.dotmarketing.plugin.ant.UndeployTask" name="plugin-undeploy-task">
+		<classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath">
+		</classpath>
+	</taskdef>
+	<plugin-undeploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
+	<delete>
+		<fileset dir="${plugin.root.dir}/WEB-INF/lib" includes="**/plugin-*.jar"/>
+		<fileset dir="${plugin.root.dir}/WEB-INF/lib" includes="**/pluginlib-*.jar"/>
+	</delete>
+	<delete file="${plugin.root.dir}/WEB-INF/classes/plugins.xml" />
+	<delete dir="${plugin.root.dir}/html/plugins" failonerror="false" />
+	<antcall target="deploy-config" />
+</target>
+
+<target name="clean-plugins-libs" depends="setup-deploy-location">
+	<delete>
+		<fileset dir="${plugin.root.dir}/WEB-INF/lib" includes="**/plugin-*.jar"/>
+		<fileset dir="${plugin.root.dir}/WEB-INF/lib" includes="**/pluginlib-*.jar"/>
+	</delete>
+</target>
+
+
+<target name="prepare-temp">
+	<delete dir="${build.temp}"/>
+	<mkdir dir="${build.temp}"/>
+	<copy todir="${build.temp}">
+		<fileset dir="." >
+			<include name="src-conf/"/>
+			<include name="dotCMS/WEB-INF/lib/"/>
+			<include name="tomcat/lib/"/>
+			<include name="plugins/" />
+			<include name="bin/" />
+
+			<include name="dotCMS/"/>
+			<exclude name="**/.svn"/>
+			<exclude name="dotCMS/assets/"/>
+			<exclude name="dotCMS/WEB-INF/backup/"/>
+			<exclude name="dotCMS/dotsecure/"/>
+		</fileset>
+	</copy>
+</target>
+
+
+<target name="clean-temp">
+	<delete dir="${build.temp}"/>
+</target>
+
+<target name="check-src-build" description="Checks to see if a build-core is possible. Fails if the src directory is missing or if the autoupdater is present. This prevents sourceless installs from running a clean" >
+	<available file="${src.dir}/com/dotmarketing" type="dir" property="src.dir.present" />
+	<fail message="Source directory not present. If trying to deploy plugins, please use bin/deploy-plugins.sh or bin/deploy-plugins.bat instead" unless="src.dir.present" />
+	<available file="bin/autoUpdater.jar" type="file" property="autoupdater.present" />
+	<fail message="Autoupdater present. If trying to deploy plugins, please use bin/deploy-plugins.sh or bin/deploy-plugins.bat instead" if="autoupdater.present" />
+</target>
+	
+<!--AUTO UPDATER -->
+	
+<path id="autoupdater-classpath">
+	<fileset dir="${basedir}/bin/autoupdater/libs">
+		<include name="**/*.jar" />
+	</fileset>
+</path>	
+
+<target name="build-autoupdater-classpath">
+   <manifestclasspath property="autoupdater-jar-cp" jarfile="${dist.autoupdater}/autoUpdater.jar">
+	 <classpath refid="autoupdater-classpath" />
+  </manifestclasspath>
+</target>
+	
+<target name="clean-autoupdater">
+	<delete file="${dist.autoupdater}/autoUpdater.jar" failonerror="false" />
+	<delete dir="${build.autoupdater}" failonerror="false"/>
+</target>
+	
+<target name="compile-autoupdater" depends="prepare" description="Compiles autoupdater source.">
+	<mkdir dir="${build.autoupdater}" />
+	<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}" 
+				source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" 
+				memoryinitialsize="256m" memorymaximumsize="512m" >
+				<classpath refid="files-classpath" />
+				<include name="com/dotcms/autoupdater/**"/>
+	</javac>
+	<copy file="${src.dir}/com/dotcms/autoupdater/update.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/update.properties" />
+	<copy file="${src.dir}/com/dotcms/autoupdater/messages.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/messages.properties" />	
+</target>
+	
+<target name="jar-autoupdater" depends="compile-autoupdater,build-autoupdater-classpath" description="Generates autoUpdater.jar in the 'autoupdater/dist' directory.">
+		<jar jarfile="${dist.autoupdater}/autoUpdater.jar" basedir="${build.autoupdater}">
+			<manifest>
+				<attribute name="Main-Class" value="com.dotcms.autoupdater.UpdateAgent"/>
+				<attribute name="Agent-Version" value="${agent.version}"/>
+				<attribute name="Release-Version" value="${dotcms.release.version}"/>
+	            <attribute name="Class-Path" value="${autoupdater-jar-cp}"/>
+			</manifest>
+		</jar>
+</target>
+	
+		
+</project>
+
+
+
+

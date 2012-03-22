@@ -1,0 +1,217 @@
+#set($session = $request.getSession())
+#set($creditCardForm = $session.getAttribute('createAccountFormGift'))
+#set($message = $request.getParameter('message'))
+
+<script language='javascript' src='/html/js/states_and_countries.js'>
+</script>
+
+<script language="javascript">
+
+function submitForm()
+{
+	accountForm = document.getElementById('fm');   	
+	accountForm.submit();
+}
+
+function disableAmount()
+{
+	accountForm = document.getElementById('fm'); 
+	if(accountForm.otheramount.checked)
+	{
+		accountForm.amount.selectedIndex = 0;
+		accountForm.amount.disabled = true;
+		accountForm.amount2.disabled = false;
+	}
+	else
+	{
+		accountForm.amount.disabled = false;
+		accountForm.amount2.disabled = true;
+		accountForm.amount2.value = "";
+
+	}
+}
+
+</script>
+
+<p class="required">*Required Fields</p>
+
+#if(!$UtilMethods.isSet($message))
+	#parse('/static/messages.html')
+#else
+	$message
+#end
+<h3>Personal Information</h3>
+
+<div id="update_form">
+<form id='fm' action='/dotCMS/testCC' method='post'>
+<input type='hidden' name='dispatch' value='processTestCC'>
+
+<label for="title">Title</label>
+<select id="title" name="title" style="width:50px;">
+	#set($selected = "")
+	#if($!createAccountForm.title == "Mr")
+		#set($selected = "selected")
+	#end
+	<option value="Mr" $!selected>Mr</option>
+	#set($selected = "")
+	#if($!createAccountForm.title == "Ms")
+		#set($selected = "selected")
+	#end
+	<option value="Ms" $!selected>Ms</option>
+	#set($selected = "")
+	#if($!createAccountForm.title == "Mrs")
+		#set($selected = "selected")
+	#end
+	<option value="Mrs" $!selected>Mrs</option>
+	#set($selected = "")
+	#if($!createAccountForm.title == "Dr")
+		#set($selected = "selected")
+	#end
+	<option value="Dr" $!selected>Dr</option>
+</select>
+
+<label for="billingFirstName" class="required">*First Name</label>
+<input type="text" id="billingFirstName" name="billingFirstName" value="$!createAccountForm.billingFirstName" style="width:80px;" maxlength="20"/>
+
+
+<label for="middleName">MI</label>
+<input type="text" id="middleName" name="middleName" value="$!createAccountForm.middleName" style="width:15px;" maxlength="20"/>
+
+<label for="billingLastName" class="required">*Last Name</label>
+<input type="text" id="billingLastName" name="billingLastName" value="$!createAccountForm.billingLastName" style="width:80px;" maxlength="20" />
+
+<div style="clear:both;"></div>
+
+
+<label for="billingStreet" class="required">*Address 1</label>
+<input type="text" id="billingAddress1" name="billingAddress1" value="$!createAccountForm.billingAddress1" style="width:200px;" maxlength="50" />
+
+
+<label for="billingStreet2">Address 2</label>
+<input type="text" id="billingAddress2" name="billingAddress2" value="$!createAccountForm.billingAddress2" style="width:140px;" maxlength="30" />
+
+<div style="clear:both;"></div>
+
+
+<label for="billingCity" class="required">*City</label>
+<input type="text" id="billingCity" name="billingCity" value="$!createAccountForm.billingCity" style="width:90px;"  maxlength="50" />
+
+
+<label for="billingState" class="required">*State</label>
+	<script language="javascript">
+		writeShortStatesSelect('billingState','$!createAccountForm.billingState');
+	</script>
+
+<label for="billingZip" class="required">*Zip</label>
+<input type="text" id="billingZip" name="billingZip" value="$!createAccountForm.billingZip" style="width:50px;" maxlength="10"/>
+
+
+<label for="billingCountry" class="required">*Country</label>
+<input type="text" id="billingCountry" name="billingCountry" value="$!createAccountForm.billingCountry" style="width:62px;" maxlength="20" />
+
+
+<div style="clear:both;"></div>
+
+<label for="billingPhone" class="required">*Phone Number</label>
+<input type="text" id="billingPhone" name="billingPhone" value="$!createAccountForm.billingPhone" style="width:140px;" maxlength="20"/>
+
+
+<label for="billingEmail" class="required">*Email</label>
+<input type="text" id="billingEmail" name="billingEmail" value="$!createAccountForm.billingEmail" style="width:140px;" maxlength="40"/>
+
+<div style="clear:both;"></div>
+<hr/>
+<h3 class="required">*Amount of Contribution</h3>
+<input type="text" value="$!createAccountForm.orderTotal" style="width:80px;" name="orderTotal" id="orderTotal" /> <span style="font-size:10px;">(In U.S dollars)</span>
+
+<h3>Payment Information</h3>
+<br/>
+
+<div style="clear:both;"> </div>
+
+<label for="cardType">Card </label>
+ <select id="cardType" name="cardType">
+   <option value="null">Choose one:</option>
+    #set($selected = "")
+	#if($!createAccountForm.cardType == "American_Express")
+		#set($selected = "selected")
+	#end
+   <option value="American_Express" $!selected>American Express</option>
+    #set($selected = "")
+	#if($!createAccountForm.cardType == "Visa")
+		#set($selected = "selected")
+	#end
+   <option value="Visa" $selected>Visa</option>
+    #set($selected = "")
+	#if($!createAccountForm.cardType == "Master_Card")
+		#set($selected = "selected")
+	#end
+   <option value="Master_Card" $selected>Master Card</option>
+   #set($selected = "")
+	#if($!createAccountForm.cardType == "Discover")
+		#set($selected = "selected")
+	#end
+   <option value="Discover" $selected>Discover</option>
+ </select>
+
+<div style="clear:both;"> </div>
+
+<label for="cardNumber">Credit Card Number:</label>
+<input type="text" id="cardNumber" name="cardNumber" value="$!createAccountForm.cardNumber" style="width:250px;" maxlength="20"/>
+
+<div style="clear:both"></div>
+
+<label for="cardVerificationValue">Credit Card CVV Number:</label>
+<input type="text" id="cardVerificationValue" name="cardVerificationValue" value="$!createAccountForm.cardVerificationValue" style="width:250px;" maxlength="20"/>
+
+<div style="clear:both"></div>
+
+<label for="cardExpMonth">Expiration Month:</label>
+<select id="cardExpMonth" name="cardExpMonth" style="width:50px; margin-right:5px;">
+<option value="null">MM</option>
+#foreach($i in [0..11])
+  	#set($selected = "")
+	#if($math.toInteger($!createAccountForm.cardExpMonth) == $i)
+		#set($selected = "selected")
+	#end
+  <option value="$i" $!selected>$math.add($i,1)</option>
+#end
+</select>
+
+
+
+<label for="cardExpYear" style="margin-left:20px;">Expiration Year:</label>
+<select id="cardExpYear" name="cardExpYear" style="width:76px; margin-right:5px;">
+<option value="null">YYYY</option>
+#set($dateYear = $math.toInteger($date.get('yyyy')))
+
+#set($bound=$math.toInteger($math.add($math.toInteger($dateYear),$math.toInteger(20))))
+
+#foreach($i in [$dateYear..$bound])
+  	#set($selected = "")
+	#if($math.toInteger($!createAccountForm.cardExpYear) == $i)
+		#set($selected = "selected")
+	#end
+  <option value="$i" $!selected>$i</option>
+#end
+</select>
+
+<div style="clear:both;"> </div>
+
+<label for="nameOnCard">Name as it appears on the card</label>
+<input type="text" id="nameOnCard" name="nameOnCard" value="$!createAccountForm.nameOnCard" maxlength="40" style="width:180px;" />
+<div style="clear:both;"> </div>
+
+<p/>
+<input type="radio" value="Authorize" id="typeOfPaymentLinkAuthorize" name="typeOfPayment" style="width:20px; float:left; margin-right:2px;"/>
+Authorize
+<p/>
+<input type="radio" value="LinkPoint" id="typeOfPaymentLinkPoint" name="typeOfPayment" style="width:20px; float:left; margin-right:2px;"/>
+LinkPoint
+<p/>
+<input type="radio" value="Verisign" id="typeOfPaymentLinkPoint" name="typeOfPayment" style="width:20px; float:left; margin-right:2px;"/>
+Verisign
+
+</form>
+<input type="image" onclick="submitForm();" src="/global/images/template/btn_submit_info.gif"  style="width:145px; height:22px;" />
+</div>

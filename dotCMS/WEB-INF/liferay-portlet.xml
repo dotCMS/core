@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<!DOCTYPE portlets>
+
+<portlets>
+	<!-- portlet id="1" struts-path="mail" scheduler-class="com.liferay.portlet.mail.job.Scheduler" preferences-sharing-type="user" /-->
+	<portlet id="2" struts-path="my_account" />
+	<!-- portlet id="3" struts-path="search" narrow="true" / -->
+	<!--portlet id="4" struts-path="weather" narrow="true" /-->
+	<!--portlet id="5" struts-path="news" /-->
+	<!--portlet id="6" struts-path="reverend_fun" narrow="true" /-->
+	<!--portlet id="7" struts-path="bible_gateway" /-->
+	<!-- portlet id="8" struts-path="calendar" scheduler-class="com.liferay.portlet.calendar.job.Scheduler" preferences-sharing-type="user" show-portlet-access-denied="true" show-portlet-inactive="true" ns-4-compatible="false" /-->
+	<portlet id="9" struts-path="admin" narrow="true" />
+	<!--portlet id="10" struts-path="address_book" /-->
+	<!--portlet id="11" struts-path="directory" /-->
+	<!--portlet id="12" struts-path="stocks" narrow="true" /-->
+	<!--portlet id="13" struts-path="calculator" narrow="true" /-->
+	<!--portlet id="14" struts-path="games" narrow="true" / -->
+	<!--portlet id="15" struts-path="journal" indexer-class="com.liferay.portlet.journal.util.Indexer" scheduler-class="com.liferay.portlet.journal.job.Scheduler" /-->
+	<!--portlet id="16" struts-path="currency_converter" /-->
+	<!--portlet id="17" struts-path="csz_search" narrow="true" /-->
+	<!--portlet id="18" struts-path="maps" narrow="true" /-->
+	<!--portlet id="19" struts-path="message_boards" indexer-class="com.liferay.portlet.messageboards.util.Indexer" preferences-sharing-type="user" /-->
+	<!--portlet id="20" struts-path="document_library" indexer-class="com.liferay.portlet.documentlibrary.util.Indexer" ns-4-compatible="false" /-->
+	<!--portlet id="21" struts-path="random_bible_verse" preferences-sharing-type="user" narrow="true" /-->
+	<!--portlet id="22" struts-path="instant_messenger" narrow="true" include="false" / -->
+	<!--portlet id="23" struts-path="dictionary" narrow="true" / -->
+	<!--portlet id="24" struts-path="sms" / -->
+	<portlet id="25" struts-path="polls" scheduler-class="com.liferay.portlet.polls.job.Scheduler" />
+	<!--portlet id="26" struts-path="translator" / -->
+	<!--portlet id="27" struts-path="unit_converter" narrow="true" / -->
+	<!--portlet id="28" struts-path="bookmarks" preferences-sharing-type="user" ns-4-compatible="false" /-->
+	<!--portlet id="29" struts-path="bible_journal" preferences-sharing-type="user" narrow="true" /-->
+	<!--portlet id="30" struts-path="network" scheduler-class="com.liferay.portlet.network.job.Scheduler" preferences-sharing-type="user" narrow="true" /-->
+	<!--portlet id="31" struts-path="image_gallery" /-->
+	<!--portlet id="32" struts-path="today_in_christian_history" narrow="true" /-->
+	<!--portlet id="33" struts-path="blogs" indexer-class="com.liferay.portlet.blogs.util.Indexer" ns-4-compatible="false" /-->
+	<!--portlet id="34" struts-path="shopping" preferences-sharing-type="user" /-->
+	<!--portlet id="35" struts-path="google" preferences-sharing-type="user" narrow="true" /-->
+	<!--portlet id="36" struts-path="wiki" indexer-class="com.liferay.portlet.wiki.util.Indexer" narrow="true" /-->
+	<!--portlet id="37" struts-path="words" narrow="true" /-->
+	<!--portlet id="38" struts-path="jcvs" narrow="true" /-->
+	<!--portlet id="39" struts-path="rss" /-->
+	<!--portlet id="40" struts-path="project" /-->
+	<!--portlet id="41" struts-path="tasks" narrow="true" /-->
+	<!--portlet id="42" struts-path="meeting_rooms" narrow="true" include="false" /-->
+	<!--portlet id="43" struts-path="skills" narrow="true" include="false" /-->
+	<!--portlet id="44" struts-path="stand_to_reason" narrow="true" /-->
+	<!--portlet id="45" struts-path="westminster_catechism" narrow="true" /-->
+	<!--portlet id="46" struts-path="gospel_for_asia" ns-4-compatible="false" /-->
+	<!--portlet id="47" struts-path="hello_world" narrow="true" /-->
+	<!--portlet id="48" struts-path="iframe" ns-4-compatible="false" /-->
+	<!--portlet id="49" struts-path="chemistry" narrow="true" /-->
+	<!--portlet id="50" struts-path="hello_velocity" narrow="true" /-->
+	<!--portlet id="51" struts-path="global_prayer_digest" ns-4-compatible="false" /-->
+	<!--portlet id="52" struts-path="chat" /-->
+	<!--portlet id="53" struts-path="company_news" indexer-class="com.liferay.portlet.journal.util.ChildIndexer" /-->
+	<!--portlet id="54" struts-path="wiki_display" /-->
+	<!--portlet id="55" struts-path="wiki_display_2" /-->
+	<!--portlet id="56" struts-path="wiki_display_3" /-->
+	<!--portlet id="57" struts-path="wiki_display_4" /-->
+	<!--portlet id="58" struts-path="wiki_display_5" /-->
+	<portlet id="59" struts-path="polls_display" narrow="true" />
+	<portlet id="60" struts-path="polls_display_2" narrow="true" />
+	<portlet id="61" struts-path="polls_display_3" narrow="true" />
+	<portlet id="62" struts-path="polls_display_4" narrow="true" />
+	<portlet id="63" struts-path="polls_display_5" narrow="true" />
+	<!--portlet id="64" struts-path="recent_documents" narrow="true" ns-4-compatible="false" /-->
+	<!--portlet id="65" struts-path="analog_clock" narrow="true" /-->
+	<!--portlet id="66" struts-path="httpbridge" /-->
+	<!--portlet id="67" struts-path="amazon_rankings" narrow="true" /-->
+	<!--portlet id="68" struts-path="wsrp" use-default-template="true" /-->
+	<!--portlet id="69" struts-path="hello_laszlo" narrow="true" /-->
+	<!-- Custom Portlets -->
+
+	<portlet id="EXT_1" struts-path="ext/inodes" narrow="true" />
+	<portlet id="EXT_2" struts-path="ext/banners" />
+	<portlet id="EXT_3" struts-path="ext/files" narrow="true"/>
+	<portlet id="EXT_4" struts-path="ext/categories"  narrow="true"  />
+	<portlet id="EXT_5" struts-path="ext/wysiwyg" />
+	<portlet id="EXT_6" struts-path="ext/entities" narrow="true"  />
+	<portlet id="EXT_8" struts-path="ext/folders" />
+	<portlet id="EXT_BROWSER" struts-path="ext/browser" />
+	<portlet id="EXT_11" struts-path="ext/contentlet" narrow="true"/>
+	<portlet id="EXT_12" struts-path="ext/containers" narrow="true"/>
+	<portlet id="EXT_13" struts-path="ext/templates" narrow="true"/>
+	<portlet id="EXT_15" struts-path="ext/htmlpages" narrow="true"/>
+	<portlet id="EXT_16" struts-path="ext/mailinglists" />
+	<portlet id="EXT_17" struts-path="ext/director" />
+	<portlet id="EXT_18" struts-path="ext/links" narrow="true"/>
+	<portlet id="EXT_19" struts-path="ext/campaigns"/>
+	<portlet id="EXT_21" struts-path="ext/workflows" />
+	<portlet id="EXT_HTMLPAGE_VIEWS" struts-path="ext/htmlpageviews" />
+	<portlet id="EXT_USER_CLICKS" struts-path="ext/userclicks" />
+	<portlet id="EXT_USER_COMMENTS" struts-path="ext/usercomments" />
+	<portlet id="EXT_VIRTUAL_LINKS" struts-path="ext/virtuallinks" />
+	<portlet id="EXT_LANG" struts-path="ext/languages_manager" narrow="true" />
+	<portlet id="EXT_EVENTS" struts-path="ext/events" />
+	<portlet id="EXT_STRUCTURE" struts-path="ext/structure"/>
+	<portlet id="EXT_ORG" struts-path="ext/organization"/>
+	<portlet id="EXT_USERMANAGER" struts-path="ext/usermanager" />
+	<portlet id="EXT_USER_ADMIN" struts-path="ext/useradmin" />
+	<portlet id="EXT_ROLE_ADMIN" struts-path="ext/roleadmin" />
+	<portlet id="EXT_WEBFORMS" struts-path="ext/webforms" narrow="true" />
+	<portlet id="EXT_FACILITY" struts-path="ext/facilities" narrow="true"/>
+	<portlet id="EXT_EVENTS" struts-path="ext/events" />
+	<portlet id="EXT_EVENTSAPPROVAL" struts-path="ext/eventsapproval" />
+	<portlet id="EXT_USER_ACCOUNT_NOTES" struts-path="ext/user" />
+	<portlet id="EXT_CMS_MAINTENANCE" struts-path="ext/cmsmaintenance" narrow="true"/>
+	<portlet id="EXT_PRODUCT" struts-path="ext/product" />		
+	<portlet id="EXT_ECO_ORDER" struts-path="ext/order_manager" />
+	<portlet id="EXT_EVE_REG" struts-path="ext/event_registration" />
+	<portlet id="EXT_WEBEVENTS" struts-path="ext/webevents" />
+	<portlet id="EXT_COMMUNICATIONS_MANAGER" struts-path="ext/communications" />
+	<portlet id="EXT_DISCOUNTCODE" struts-path="ext/discountcode" />
+	<portlet id="EXT_CONTENTRATINGS" struts-path="ext/contentratings" narrow="true" />
+	<portlet id="EXT_USERFILTER" struts-path="ext/userfilter" />
+	<portlet id="EXT_SCHEDULER" struts-path="ext/scheduler" />
+	<portlet id="EXT_REPORTMANAGER" struts-path="ext/report" />
+	<portlet id="EXT_CALENDAR" struts-path="ext/calendar" />
+	<portlet id="EXT_FORM_HANDLER" struts-path="ext/formhandler"/>
+	<portlet id="EXT_HOSTADMIN" struts-path="ext/hostadmin"/>
+	<portlet id="EXT_LUCENE_TOOL"  />
+	<portlet id="EXT_LICENSE_MANAGER"  />
+	<portlet id="EXT_SITESEARCH"  />
+	<portlet id="EXT_DASHBOARD" struts-path="ext/dashboard" />
+	<portlet id="WORKFLOW_SCHEMES"  />
+	<portlet id="EXT_TAG_MANAGER" struts-path="tag_manager" />
+	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
+</portlets>

@@ -1,0 +1,97 @@
+#if($UtilMethods.isSet($questionId))
+   	#set($list = $poll.displayActivePolls($questionId))
+#elseif ($UtilMethods.isSet($portletGroupIds))
+	#set($list = $poll.displayActivePolls('createDate', -1, $portletGroupIds))
+#else
+	#set($list = $poll.displayActivePolls('createDate', -1))
+#end
+
+
+#if("true" == $showVotes)
+	#set($showVotes = true)
+#else
+	#set($showVotes = false)
+#end
+$request.setAttribute("showVotes", $showVotes)
+
+
+#if("true" == $allowViewResults)
+	#set($allowViewResults = true)
+#else
+	#set($allowViewResults = false)
+#end
+$request.setAttribute("allowViewResults", $allowViewResults)
+
+
+
+#if($UtilMethods.isSet($maxPollDisplayNumber) && $maxPollDisplayNumber < $list.size())
+	#set($list = $list.subList(0, $maxPollDisplayNumber))
+	#set($moreQuestions = true)
+#end
+	
+	
+	
+<script type='text/javascript' src='/dwr/engine.js'></script>
+<script type='text/javascript' src='/dwr/interface/PollsAjax.js'></script>
+<script type="text/javascript">
+
+      function vote(questionId) {
+         var selectedChoice = "";
+		 var questionName = "question" + questionId;
+		 var answerName = "answers" + questionId;
+ 		 var callBackName = "callBack" + questionId;
+ 		  
+		 var choices = document.getElementsByName(questionName);
+		   
+		  
+       	 for (var i = 0; i < choices.length; i++ ) {
+            if(choices[i].checked == true)  {
+               	selectedChoice = choices[i].value;
+	       		break;
+    		}
+         }
+       	 if(selectedChoice==""){
+         	alert("Please select an option before voting.");
+         }
+		 else{ 
+	          document.getElementById(answerName).innerHTML = "Loading...";   
+	          PollsAjax.vote(questionId,selectedChoice,$showVotes,callBackVote);
+		 }
+     }
+
+      function callBackVote(data)  {	         
+		var questionId = data.questionId;
+		var answerName = "answers" + questionId;
+		var htmlCode = data.htmlCode;
+		document.getElementById(answerName).innerHTML = htmlCode;
+      }	
+      
+      function showResults(questionId) {
+	      var answerName = "answers" + questionId;
+	      document.getElementById(answerName).innerHTML = "Loading...";   
+	      PollsAjax.displayPollResults(questionId,$showVotes,callBackResults);
+      }
+
+      function callBackResults(data){
+		var questionId = data.questionId;
+	 	var answerName = "answers" + questionId;
+	 	var htmlCode = data.htmlCode;
+	 	document.getElementById(answerName).innerHTML = htmlCode;
+	 	
+      }
+             	
+</script>	
+
+<div id="pollsArea">   
+   #foreach($pollItem in $list)
+	<div class='poll'>
+		#set($localQuestionId = $pollItem.getQuestionId())
+		<div id="description$!{localQuestionId}" class="poll-description">	  
+			$pollItem.getDescription()
+		</div>
+		<div id="answers$!{localQuestionId}"  class="poll-answers">
+			$poll.displayPoll($localQuestionId).getHtmlCode()
+		</div>
+	</div>	      
+   #end
+</div>

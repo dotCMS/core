@@ -1,0 +1,86 @@
+<table class="accordionEntry">
+    <tr>
+		<td colspan="7" style="padding:5px;padding-left:10px;font-style:italic">${permissionsOnChildren1} "${name}" ${permissionsOnChildren2} </td>
+    </tr>
+    <tr>
+		<th class="permissionType">${foldersWillInherit}</th>
+		<td><input type="checkbox" dojoType="dijit.form.CheckBox" id="folders-view-permission-${id}" onclick="viewPermissionChanged('folders', '${id}')" ${foldersViewPermissionChecked} ${editPermissionDisabled} /></td>
+		<td><input type="checkbox" dojoType="dijit.form.CheckBox" id="folders-add-children-permission-${id}" onclick="addChildrenPermissionChanged('folders', '${id}')" ${foldersAddChildrenPermissionChecked} ${editPermissionDisabled} /></td>
+		<td><input type="checkbox" dojoType="dijit.form.CheckBox" id="folders-edit-permission-${id}" onclick="editPermissionChanged('folders', '${id}')" ${foldersEditPermissionChecked} ${editPermissionDisabled} /></td>
+		<td>NA</td>
+		<td><input type="checkbox" dojoType="dijit.form.CheckBox" id="folders-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('folders', '${id}')" ${foldersEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+		<td>NA</td>
+    </tr>
+    <tr>
+		<th class="permissionType">${containersWillInherit}</th>
+		<td><input type="checkbox" dojoType="dijit.form.CheckBox" id="containers-view-permission-${id}" onclick="viewPermissionChanged('containers', '${id}')" ${containersViewPermissionChecked} ${editPermissionDisabled} /></td>
+		<td>NA</td>
+		<td><input type="checkbox" dojoType="dijit.form.CheckBox" id="containers-edit-permission-${id}" onclick="editPermissionChanged('containers', '${id}')" ${containersEditPermissionChecked} ${editPermissionDisabled} /></td>
+		<td><input type="checkbox" dojoType="dijit.form.CheckBox" id="containers-publish-permission-${id}" onclick="publishPermissionChanged('containers', '${id}')" ${containersPublishPermissionChecked} ${editPermissionDisabled} /></td>
+		<td><input type="checkbox" dojoType="dijit.form.CheckBox" id="containers-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('containers', '${id}')" ${containersEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+		<td>NA</td>
+    </tr>
+    <tr>
+        <th class="permissionType">${templatesWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="templates-view-permission-${id}" onclick="viewPermissionChanged('templates', '${id}')" ${templatesViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="templates-edit-permission-${id}" onclick="editPermissionChanged('templates', '${id}')" ${templatesEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="templates-publish-permission-${id}" onclick="publishPermissionChanged('templates', '${id}')" ${templatesPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="templates-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('templates', '${id}')" ${templatesEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
+    <tr>
+        <th class="permissionType">${pagesWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="pages-view-permission-${id}" onclick="viewPermissionChanged('pages', '${id}')" ${pagesViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="pages-add-children-permission-${id}" onclick="addChildrenPermissionChanged('pages', '${id}')" ${pagesAddChildrenPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="pages-edit-permission-${id}" onclick="editPermissionChanged('pages', '${id}')" ${pagesEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="pages-publish-permission-${id}" onclick="publishPermissionChanged('pages', '${id}')" ${pagesPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="pages-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('pages', '${id}')" ${pagesEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
+    <tr>
+        <th class="permissionType">${filesWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="files-view-permission-${id}" onclick="viewPermissionChanged('files', '${id}')" ${filesViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="files-edit-permission-${id}" onclick="editPermissionChanged('files', '${id}')" ${filesEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="files-publish-permission-${id}" onclick="publishPermissionChanged('files', '${id}')" ${filesPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="files-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('files', '${id}')" ${filesEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
+    <tr>
+        <th class="permissionType">${linksWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="links-view-permission-${id}" onclick="viewPermissionChanged('links', '${id}')" ${linksViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="links-edit-permission-${id}" onclick="editPermissionChanged('links', '${id}')" ${linksEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="links-publish-permission-${id}" onclick="publishPermissionChanged('links', '${id}')" ${linksPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="links-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('links', '${id}')" ${linksEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
+    <tr>
+        <th class="permissionType">${structureWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-view-permission-${id}" onclick="viewPermissionChanged('structure', '${id}')" ${structureViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-edit-permission-${id}" onclick="editPermissionChanged('structure', '${id}')" ${structureEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-publish-permission-${id}" onclick="publishPermissionChanged('structure', '${id}')" ${structurePublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('structure', '${id}')" ${structureEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
+    <tr>
+        <th class="permissionType">${contentWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-view-permission-${id}" onclick="viewPermissionChanged('content', '${id}')" ${contentViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-edit-permission-${id}" onclick="editPermissionChanged('content', '${id}')" ${contentEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-publish-permission-${id}" onclick="publishPermissionChanged('content', '${id}')" ${contentPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('content', '${id}')" ${contentEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
+     <tr>
+        <th class="permissionType">${categoriesWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="categories-view-permission-${id}" onclick="viewPermissionChanged('categories', '${id}')" ${categoriesViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="categories-edit-permission-${id}" onclick="editPermissionChanged('categories', '${id}')" ${categoriesEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="categories-publish-permission-${id}" onclick="publishPermissionChanged('categories', '${id}')" ${categoriesPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="categories-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('categories', '${id}')" ${categoriesEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
+</table>

@@ -1,0 +1,4 @@
+({
+huePickerTitle: "Nyansevelger",
+saturationPickerTitle: "Metningsvelger"
+})

@@ -1,0 +1,264 @@
+#parse('static/messages.html')
+<script type="text/javascript">
+function editAttendee(inodeId,firstName,lastName,badgeName,email,title){
+document.getElementById("doSubmit").value = "true";
+ 	var form = document.getElementById('webEventRegistrationForm');
+ 	form.currentAttendeeInode.value=inodeId;
+ 	form.currentAttendeeFirstName.value=firstName;
+ 	form.currentAttendeeLastName.value=lastName;
+ 	form.currentAttendeeBadgeName.value=badgeName;
+ 	form.currentAttendeeEmail.value=email;
+ 	form.currentAttendeeTitle.value=title;
+ 	
+ 	document.getElementById('btn-edit-attendee').disabled=false;
+
+}
+ 
+function submitEditAttendee(){
+document.getElementById("doSubmit").value = "true";
+  var form = document.getElementById('webEventRegistrationForm');
+  form.dispatch.value="saveAttendee";
+  form.submit();
+}
+
+function submitAddAttendee()
+{
+document.getElementById("doSubmit").value = "false";
+	var accept = confirm('To add an attendee a new registration will be created for this attendee.');
+	if (accept)
+	{
+		window.location.href="/dotCMS/eventRegistration?eventInode=$webEventRegistrationForm.eventInode&eventLocationInode=$webEventRegistrationForm.eventLocationInode"; 
+	}
+	return accept;
+}
+
+function updateRegistration(){
+	document.getElementById("doSubmit").value = "true";
+  var form = document.getElementById('webEventRegistrationForm');
+  form.dispatch.value="save";
+  form.referrer.value="/dotCMS/registrationHistoryDetail?inode=$webEventRegistrationForm.eventInode";
+  form.submit();
+}
+
+function back(){	
+	document.getElementById("doSubmit").value = "true";
+	var form = document.getElementById('webEventRegistrationForm');
+ 	form.currentAttendeeInode.value="";
+ 	form.currentAttendeeFirstName.value="";
+ 	form.currentAttendeeLastName.value="";
+ 	form.currentAttendeeBadgeName.value="";
+ 	form.currentAttendeeEmail.value="";
+ 	form.currentAttendeeTitle.value="";
+ 	
+ 	form.dispatch.value="back";
+    form.referrer.value="/dotCMS/registrationHistoryDetail?inode=$webEventRegistrationForm.eventInode";
+    form.submit();
+ 	
+}
+
+function blankForm(){
+	form.currentAttendeeInode.value="";
+ 	form.currentAttendeeFirstName.value="";
+ 	form.currentAttendeeLastName.value="";
+ 	form.currentAttendeeBadgeName.value="";
+ 	form.currentAttendeeEmail.value="";
+ 	form.currentAttendeeTitle.value="";
+}
+function validate(){
+	return (document.getElementById("doSubmit").value == "true")
+}
+</script>
+
+<form action="/dotCMS/registrationHistoryDetail"  method="post" id="webEventRegistrationForm" name="webEventRegistrationForm" autocomplete="off" onsubmit="return validate();">
+<input type="hidden" name="dispatch" value=""> 
+<input type="hidden" name="referrer" value=""> 
+<input type="hidden" name="inode" value="$request.getParameter('inode')">
+<input type="hidden" id="doSubmit" value="true">
+<input type="hidden" name="eventInode" value="$!webEventRegistrationForm.eventInode">
+<input type="hidden" name="eventLocationInode" value="$!webEventRegistrationForm.eventLocationInode">
+<input type="hidden" name="userInode" value="$!webEventRegistrationForm.userInode">
+
+
+<table cellpadding="0" cellspacing="0" border="0">
+	<tr>
+		<td align="right" height="22"><a href="/dotCMS/myAccount"
+			onMouseover="document.image1.src='/global/images/my_account.gif'"
+			onMouseout="document.image1.src='/global/images/my_account_gr.gif'">
+		<img src="/global/images/my_account.gif" name="image1" border="0" style="float:right;"> </a> 
+		<img src="/global/images/registration_history.gif" border="0" style="float:right; margin-right:1px;">
+		</td>
+	</tr>
+	<tr>
+		<td valign="top" align="left">
+		<fieldset><legend><b>Order and Registration History</b></legend>
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			<tr class="beta">
+				<Td colspan=2>
+				<fieldset style="background:gray;"><b>Billing Address:</b></fieldset>
+				</td>
+				<Td colspan=2>
+				<fieldset style="background:gray;"><b>Payment Information:</b></fieldset>
+				</td>
+			</tr>
+			<tr>
+				<TD>Address Street1:</TD>
+				<TD>$!webEventRegistrationForm.billingAddress1</TD>
+				<TD>Payment Type:</TD>
+				<TD>
+				#set($paymentMethods = $webevents.getPaymentMethods()) 
+				#foreach($paymentMethod in $paymentMethods)
+					#if($webEventRegistrationForm.paymentType == $webapi.parseInt($paymentMethod.get('value')))
+						$paymentMethod.get("friendlyName") 
+					#end 
+				#end
+				</TD>
+			</tr>
+			<tr>
+				<TD>Address Street2:</TD>
+				<TD>$!webEventRegistrationForm.billingAddress2</TD>
+				#if($webEventRegistrationForm.isCreditCardPayment())
+				<TD>Name on Card:</TD>
+				<TD>$!webEventRegistrationForm.cardName</TD>
+				#else
+				<TD>Bank Name:</TD>
+				<TD>$!webEventRegistrationForm.checkBankName</TD>
+				#end
+			</tr>
+			<tr>
+				<TD>City:</TD>
+				<TD>$!webEventRegistrationForm.billingCity</TD>
+				#if($webEventRegistrationForm.isCreditCardPayment())
+				<TD>Card Type:</TD>
+				<TD>$!webEventRegistrationForm.cardType</TD>
+				#else
+				<TD>Check Number:</TD>
+				<TD>$!webEventRegistrationForm.checkNumber</TD>
+				#end
+			</tr>
+			<tr>
+				<TD>State:</TD>
+				<TD>$!webEventRegistrationForm.billingState</TD>
+				#if($webEventRegistrationForm.isCreditCardPayment())
+				<TD>Card Number:</TD>
+				<TD>$!webEventRegistrationForm.cardNumber</TD>
+				#else
+				<TD colspan="2">&nbsp;</TD>
+				#end
+			</tr>
+			<tr>
+				<TD>Zip:</TD>
+				<TD>$!webEventRegistrationForm.billingZip</TD>
+				#if($webEventRegistrationForm.isCreditCardPayment())
+				<TD>Expiration Date:</TD>
+				<TD>$!{webEventRegistrationForm.cardExpMonth} / $!{webEventRegistrationForm.cardExpYear}</TD>
+				#else
+				<TD colspan="2">&nbsp;</TD>
+				#end
+			</tr>
+			<tr>
+				<TD>Contact's Person Name:</TD>
+				<TD>$!webEventRegistrationForm.billingContactName</TD>
+				<TD colspan="2">&nbsp;</TD>
+			</tr>
+			<tr>
+				<TD>Contact's Person Phone:</TD>
+				<TD>$!webEventRegistrationForm.billingContactPhone</TD>
+				<TD>Total: </TD>
+				<TD>$ $webapi.toPriceFormat($webEventRegistrationForm.totalRegistration)</TD>
+			</tr>
+			<tr>
+				<TD>Contact's Person Email:</TD>
+				<TD>$!webEventRegistrationForm.billingContactEmail</TD>
+				<TD>Total Paid: </TD>
+				<TD>$ $webapi.toPriceFormat($webEventRegistrationForm.totalPaid)</TD>
+			</tr>
+		</table>
+
+		<fieldset style="background:gray;"><b>Attendees</b></fieldset>
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			#set($attendees=$webEventRegistrationForm.eventAttendees) 
+			#if($attendees.size() > 0) 
+				#set ($total = 0) 
+			#foreach($attendee in $attendees) 
+			#set ($total = $math.add($total,$attendee.registrationPrice))
+			<tr>
+				<td align="center" width="50"><a
+					href='javascript:editAttendee("$attendee.inode","$attendee.firstName","$attendee.lastName","$attendee.badgeName","$attendee.email","$attendee.title");'>
+				<img src="/portal/images/icon_edit.gif" border="0"></a></td>
+				<td align="center">${attendee.firstName} ${attendee.lastName}</td>
+				<td align="center">$attendee.email</td>
+				<td align="center">$ $webapi.toPriceFormat($attendee.registrationPrice)</td>
+			</tr>
+			#end
+			<tr>
+				<td colspan="2">&nbsp;</td>
+				<td colspan="2" align="right"><B>Total: </B>$ $webapi.toPriceFormat($total)</td>
+			</tr>
+			#else
+			<tr>
+				<td colspan="4" align="center">There are no Attendees to show</td>
+			</tr>
+			#end
+		</table>
+		<fieldset style="background:gray;"><b>Add/Edit Attendee:</b></fieldset>
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			<tr>
+				<td>&nbsp;</td>
+				<Td><input type=hidden name="currentAttendeeInode"
+					id="currentAttendeeInode"
+					value="$!webEventRegistrationForm.currentAttendeeInode"></Td>
+			</tr>
+			<tr>
+				<Td><img src="/html/images/required.gif">First Name:</td>
+				<td><input type=text name="currentAttendeeFirstName"
+					id="currentAttendeeFirstName"
+					value="$!webEventRegistrationForm.currentAttendeeFirstName"></Td>
+			</tr>
+			<tr>
+				<Td><img src="/html/images/required.gif">Last Name:</td>
+				<td><input type=text name="currentAttendeeLastName"
+					id="currentAttendeeLastName"
+					value="$!webEventRegistrationForm.currentAttendeeLastName"></Td>
+			</tr>
+			<tr>
+				<Td>&nbsp;&nbsp;Preferred Name on Badge:</td>
+				<td><input type=text name="currentAttendeeBadgeName"
+					id="currentAttendeeBadgeName"
+					value="$!webEventRegistrationForm.currentAttendeeBadgeName"></Td>
+			</tr>
+			<tr>
+				<Td><img src="/html/images/required.gif">Email address:</td>
+				<td><input type=text name="currentAttendeeEmail"
+					id="currentAttendeeEmail"
+					value="$!webEventRegistrationForm.currentAttendeeEmail"></Td>
+			</tr>
+			<tr>
+				<Td>&nbsp;&nbsp;Title for Badge:</td>
+				<td><input type=text name="currentAttendeeTitle"
+					id="currentAttendeeTitle"
+					value="$!webEventRegistrationForm.currentAttendeeTitle"></Td>
+			</tr>
+			<tr>
+				<td colspan="2" align="center"><input type="button"
+					name="btn-edit-attendee" id="btn-edit-attendee"
+					onclick="submitEditAttendee()" value="Update Attendee" #if(!$InodeUtils.isSet($webEventRegistrationForm.currentAttendeeInode)) disabled="true" #end></td>
+			</tr>
+		</table>
+		<br>
+		<br>
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			<tr>
+				<td align="right">
+				<input type="button" name="btn-add-attendee" id="btn-add-attendee" onclick="submitAddAttendee()" value="Add Attendee(s)">&nbsp; 
+				<input type="button" name="btn-update-registration" id="btn-update-registration" onclick="updateRegistration()" value="Update Registration">&nbsp; 
+				<input type="button" name="btn-back" id="btn-back" onclick="back()" value="Back">
+				</td>
+			</tr>
+		</table>
+		</fieldset>
+		</td>
+	</tr>
+</table>
+</form>
+""  
+"" 

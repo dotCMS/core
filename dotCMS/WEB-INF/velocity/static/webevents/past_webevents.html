@@ -1,0 +1,38 @@
+#set($events = $webevents.getPastWebEvents())
+
+#foreach($event in $events)
+	#set($eventImage = ${webapi.getLiveFileAsset($event.eventImage1)})
+	#set($eventLocations = $webevents.getPastWebEventLocationsPerEvent($event))
+
+
+	<div class="item">
+	<h3><a href="/conferences_webinar/institute_detail.${webapi.getPageFileExtension()}?inode=${event.inode}">$!event.title</a></h3>
+	
+	#if ($InodeUtils.isSet($eventImage.inode))
+		<a href="/conferences_webinar/institute_detail.${webapi.getPageFileExtension()}?inode=${event.inode}"><img src="/thumbnail?inode=${eventImage.inode}&w=${eventImage.width}&h=${eventImage.height}" style="float: right; padding-left: 10px;" /></a>
+	#end
+	
+	$!event.summary<br><br>
+	<strong>Locations and Dates:</strong><br>
+	<ul>
+	#foreach($location in $eventLocations)
+		<li>
+
+			#if($InodeUtils.isSet($location.pastEventLink))
+			<a href="$webevents.getPastEventLinkURL($location.pastEventLink)">
+				$!location.toString()
+			</a>
+			#else
+				$webevents.getEventDateRange($location.startDate, $location.endDate), 
+				$!location.hotelName,
+				$!{location.city}, $!{location.state}
+			#end
+		</li>
+	#end
+	#if($eventLocations.size() == 0) 
+		<li>No Locations Found</li>
+	#end
+	</ul>
+	</div>
+#end
+

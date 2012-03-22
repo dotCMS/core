@@ -1,0 +1,92 @@
+
+#if($canAddForm == true) 
+	<div id="dotAddForm" dojoType="dijit.Dialog" style="display:none;" onfocus='blur()'>
+		<div class="dotAddPopUp">
+			<table class="dotFormTable">
+				<tr>
+					<td>
+						<div class="dotPopUpText"><strong>$languagewebapi.getFromUserLanguage("modes.Select-the-type")</strong> $languagewebapi.getFromUserLanguage("modes.of-form-you-would-like-to-insert")</div>
+					</td>
+					<td>
+						<div style="margin-right:10px;text-align:right;">
+							<button dojoType="dijit.form.Button" align="right" onCLick="addNewForm();" iconClass="formNewIcon">
+		          				$languagewebapi.getFromUserLanguage("Add-New-Form")
+		    				</button>
+		    			</div>
+		    		</td>
+		    	</tr>
+			</table>
+			<div class="dotFormListBox">
+			#set($_dotForms=$structures.findForms(true))
+			#if($_dotForms.size() > 0)
+				<table id="_dotFormSelect">
+					#foreach($f in $_dotForms)
+						<tr>
+							<td style="width:16px;text-align:center;"><img src="/html/images/icons/ui-scroll-pane-form.png" width="16" height="16" /></td>
+							<td>$f.name</td>
+							<td style="width:75px;text-align:center;">
+								<button dojoType="dijit.form.Button" onClick="_dotFormSelected('$f.inode');">
+									$languagewebapi.getFromUserLanguage("modes.Select")
+								</button>
+							</td>
+						</tr>
+					#end
+				</table>		
+			#else
+				$languagewebapi.getFromUserLanguage("modes.No-Forms-Have-Been-Created")
+			#end
+			</div>
+			
+			<a href="http://www.dotcms.org/doc/form-creation" target="_blank" class="dotLearnMore">
+					$langbackendwebapi.get("modes.Learn-how-to-create-new-form-types")
+			</a>
+			
+		</div>
+	
+	</div>
+#else
+	<div id="dotAddForm" dojoType="dijit.Dialog" style="display:none; height:500px; width:1200px;" onfocus='blur()'>
+		<div >
+				<div style="float:left;width:50%;padding:50px">
+					<h2>$langbackendwebapi.get("Forms-and-Form-Builder")</h2>
+					<br />
+					<p>
+						$langbackendwebapi.get("Forms-and-Form-Builder-in-Enterprise")
+					</p>
+					<ul>
+						<li style="list-style: square;padding-bottom:5px;">
+							<a href="" target="_blank">
+								$langbackendwebapi.get("Learn-more-about-dotCMS-Enterprise")
+							</a>
+						</li>
+						
+						<li style="list-style: square;padding-bottom:5px;">
+							<a href="http://www.dotcms.com/contact-us" target="_blank">
+								$langbackendwebapi.get("Contact-Us-for-more-Information") 
+							</a>
+						</li>
+						<li style="list-style: square;padding-bottom:5px;">
+							<a href="/html/dotCMS_form_builder/form_builder_2_7.html" target="_blank">
+								$langbackendwebapi.get("Still-use-legacy-form-builder")
+							</a>
+						</li>
+					</ul>
+				</div>
+				<div style="float:left;text-align:center;">
+			
+			
+			
+			
+						<div style="width:400px;height:345px;background:#eee;border:1px solid gray;margin:10px; ">
+										<embed src="http://blip.tv/play/AYHmnwUC" type="application/x-shockwave-flash" width="400" height="345" allowscriptaccess="always" allowfullscreen="true"></embed>
+					
+						</div>
+			
+			
+						$langbackendwebapi.get("watch-easy-form-creation")
+					
+			
+				</div>
+		</div>		
+	</div>
+#end

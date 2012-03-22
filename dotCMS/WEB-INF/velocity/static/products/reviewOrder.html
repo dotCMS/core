@@ -1,0 +1,558 @@
+#parse('static/messages.html')
+<script language="javascript" type="text/javascript" src='/html/js/states_and_countries.js'></script>
+<script language="javascript">
+function viewCart()
+{
+	document.location.href = "/dotCMS/viewCart";
+}
+
+function makeChanges()
+{
+	var form = document.getElementById("reviewOrder");
+	form.action = "/dotCMS/checkOutCart";
+	form.dispatch.value = "reload"
+	form.submit();
+}
+
+function purchase()
+{
+	var form = document.getElementById("reviewOrder");
+	form.action = "/dotCMS/purchaseOrder";
+	form.dispatch.value = "unspecified"
+	form.submit();
+}
+
+function shippingMethodChange()
+{
+	var form = document.getElementById("reviewOrder");
+	form.action = "/dotCMS/reviewOrder";
+	form.dispatch.value = "loadAmounts"
+	form.submit();
+}
+
+//Layer Management Variables
+styleReference = "style.";
+visibleLayer = "inline";
+browser = "Explorer";
+
+//Layer Management
+function referenceLayer(layerName)
+{
+	//if (browser == "Netscape")
+	//	return "document.layers['"+layerName+"'].";
+	//else
+	//	return "document.all['"+layerName+"'].";
+	return "document.getElementById('" + layerName + "').";
+}
+
+function hideLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"');
+}
+
+function showLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"');
+}
+
+function changeLayer()
+{
+	var form = document.getElementById("reviewOrder");
+	var paymentType = form.paymentType.value;
+	if (paymentType == "cc")
+	{
+		showLayer("cc");
+		hideLayer("check");
+		hideLayer("po");
+	}
+	else if(paymentType == "ch")
+	{
+		showLayer("check");
+		hideLayer("cc");
+		hideLayer("po");
+	}
+	else if(paymentType == "po")
+	{
+		showLayer("po");
+		hideLayer("cc");
+		hideLayer("check");
+	}
+}
+
+function updateStates()
+{
+	var form = document.getElementById("reviewOrder");
+	//Billing State
+	var billingState = writeStatesName('$!orderForm.billingState');
+	form.billingStateText.value = billingState;
+	//Shipping State
+	var shippingState = writeStatesName('$!orderForm.shippingState');
+	form.shippingStateText.value = shippingState;
+}
+</script>
+#set($session = $request.getSession())
+#set($user = $session.getAttribute("cms.user"))
+<form action="/dotCMS/checkOutCart" method="post" autocomplete="off" id="reviewOrder">
+<input type="hidden" name="org.apache.struts.taglib.html.TOKEN" value="$request.getSession().getAttribute("org.apache.struts.action.TOKEN")">
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+	<tr valign="top">
+		<td width="50%">
+		<table border="0" width="100%" cellspacing="0" cellpadding="0">
+			<tr>
+				<td colspan="5">
+				<input type="hidden" name="inode" value="$!orderForm.inode">
+				<input type="hidden" name="dispatch" value="">
+				<input type="hidden" name="homeAddress1" value="$!orderForm.homeAddress1">
+				<input type="hidden" name="homeAddress2" value="$!orderForm.homeAddress2">
+				<input type="hidden" name="homeLabel" value="$!orderForm.homeLabel" >
+				<input type="hidden" name="homeCity" value="$!orderForm.homeCity" >
+				<input type="hidden" name="homeState" value="$!orderForm.homeState" >
+				<input type="hidden" name="homeStateOtherCountryText" value="$!orderForm.homeStateOtherCountryText"> 
+				<input type="hidden" name="homeZip" value="$!orderForm.homeZip" >
+				<input type="hidden" name="homeCountry" value="$!orderForm.homeCountry" >
+				<input type="hidden" name="homePhone" value="$!orderForm.homePhone"> 
+				<input type="hidden" name="homeFax" value="$!orderForm.homeFax" >
+				<input type="hidden" name="homeFirstName" value="$!orderForm.homeFirstName" >
+				<input type="hidden" name="homeLastName" value="$!orderForm.homeLastName" >
+				<input type="hidden" name="homeContactName" value="$!orderForm.homeContactName" >
+				<input type="hidden" name="homeContactPhone" value="$!orderForm.homeContactPhone" >
+				<input type="hidden" name="homeContactEmail" value="$!orderForm.homeContactEmail">
+				<input type="hidden" name="workAddress1" value="$!orderForm.workAddress1">
+				<input type="hidden" name="workAddress2" value="$!orderForm.workAddress2">
+				<input type="hidden" name="workLabel" value="$!orderForm.workLabel">
+				<input type="hidden" name="workCity" value="$!orderForm.workCity" >
+				<input type="hidden" name="workState" value="$!orderForm.workState">
+				<input type="hidden" name="workStateOtherCountryText" value="$!orderForm.workStateOtherCountryText" >
+				<input type="hidden" name="workZip" value="$!orderForm.workZip">
+				<input type="hidden" name="workCountry" value="$!orderForm.workCountry">
+				<input type="hidden" name="workPhone" value="$!orderForm.workPhone">
+				<input type="hidden" name="workFax" value="$!orderForm.workFax">
+				<input type="hidden" name="workFirstName" value="$!orderForm.workFirstName">
+				<input type="hidden" name="workLastName" value="$!orderForm.workLastName">
+				<input type="hidden" name="workContactName" value="$!orderForm.workContactName">
+				<input type="hidden" name="workContactPhone" value="$!orderForm.workContactPhone">
+				<input type="hidden" name="workContactEmail" value="$!orderForm.workContactEmail" >
+				<input type="hidden" name="billingFirstName" value="$!orderForm.billingFirstName" >
+				<input type="hidden" name="billingLastName" value="$!orderForm.billingLastName" >
+				<input type="hidden" name="billingContactName" value="$!orderForm.billingContactName" >
+				<input type="hidden" name="billingContactPhone" value="$!orderForm.billingContactPhone" >
+				<input type="hidden" name="billingContactEmail" value="$!orderForm.billingContactEmail">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="5"><b>Billing Address:</b></td>
+			</tr>
+			<tr>
+				<td colspan="5"><input type="hidden" name="billingAddressType" value="$!orderForm.billingAddressType"></td>
+			</tr>
+			#if($!orderForm.billingAddressType == "Work")
+			<tr>
+				<td>Company Name</td>
+				<td>$webapi.getUserCompanyName()</td>
+			</tr>
+			#end
+			<tr>
+				<td>User Name:</td>
+				<td>$webapi.getUserFullName()</td>
+			</tr>
+			<tr>
+				<td width="50%">Address Street 1:</td>
+				<td width="50%">
+					<input type="hidden" name="billingAddress1" value="$!orderForm.billingAddress1" style="border:0px" readonly>
+					$!orderForm.billingAddress1
+				</td>
+			</tr>
+			<tr>
+				<td>Address Street 2:</td>
+				<td>
+					<input type="hidden" name="billingAddress2" value="$!orderForm.billingAddress2" style="border:0px" readonly>
+					$!orderForm.billingAddress2
+				</td>
+			</tr>
+			<tr>
+				<td>City:</td>
+				<td>
+					<input type="hidden" name="billingCity" value="$!orderForm.billingCity" style="border:0px" readonly>
+					$!orderForm.billingCity
+				</td>
+			</tr>
+			<tr>
+				<td>State:</td>
+				<td>
+					<input type="hidden" name="billingState" id="billingState" value="$!orderForm.billingState">
+					#if ($orderForm.billingState == "otherCountry")
+						$!orderForm.billingStateOtherCountryText
+					#else
+						$!orderForm.billingState
+					#end
+					<input type="hidden" name="billingStateText" id="billingStateText" value="">
+					<input type="hidden" name="billingStateOtherCountryText" id="billingStateOtherCountryText" value="$!orderForm.billingStateOtherCountryText">
+				</td>
+			</tr>
+			<tr>
+				<td>Country:</td>
+				<td>
+					<input type="hidden" name="billingCountry" id="billingCountry" value="$!orderForm.billingCountry">
+					$!orderForm.billingCountry
+					<input type="hidden" name="billingCountryText" id="billingCountryText" value="">
+				</td>
+			</tr>
+			<tr>
+				<td>Zip:</td>
+				<td>
+					<input type="hidden" name="billingZip" value="$!orderForm.billingZip" style="border:0px" readonly>
+					$!orderForm.billingZip
+				</td>
+			</tr>
+			#if($!orderForm.billingAddressType.equals('Work'))
+			<tr>
+				<td>Billing Contact's Person Name:</td>
+				<td>
+					<input type="hidden" name="billingContactName" value="$!orderForm.billingContactName" style="border:0px" readonly>
+					<input type="hidden" name="billingFirstName" value="$!orderForm.billingFirstName" style="border:0px" readonly>
+					<input type="hidden" name="billingLastName" value="$!orderForm.billingLastName" style="border:0px" readonly>
+			 		$!orderForm.billingContactName
+				</td>
+			</tr>
+			<tr>
+				<td>Phone:</td>
+				<td>
+					<input type="hidden" name="billingContactPhone" value="$!orderForm.billingContactPhone" style="border:0px" readonly>
+					$!orderForm.billingContactPhone
+				</td>
+			</tr>
+			<tr>
+				<td>Email:</td>
+				<td>
+					<input type="hidden" name="billingContactEmail" value="$!orderForm.billingContactEmail" style="border:0px" readonly>
+					$!orderForm.billingContactEmail
+				</td>
+			</tr>
+			#end
+		</table>
+		</td>
+		<td width="50%">
+		<table border="0" width="100%" cellspacing="0" cellpadding="0">
+			<tr>
+				<td colspan="5"><b>Shipping Address:</b></td>
+			</tr>
+			#if($!orderForm.shippingAddressType == "Work")
+			<tr>
+				<td>Company Name</td>
+				<td>$webapi.getUserCompanyName()</td>
+			</tr>
+			#end
+			<tr>
+				<td>User Name:</td>
+				<!-- <td>$webapi.getUserFullName()</td> -->
+				<td>$!orderForm.billingFirstName&nbsp;$!orderForm.billingLastName</td>
+			</tr>
+			<tr>
+				<td colspan="5"><input type="hidden" name="shippingAddressType" value="$!orderForm.shippingAddressType"</td>
+			</tr>
+			<tr>
+				<td>Shipping Label:</td>
+				<td>
+					<input type="hidden" name="shippingLabel" value="$!orderForm.shippingLabel" style="border:0px" readonly>
+					$!orderForm.shippingLabel
+				</td>
+			</tr>
+			<tr>
+				<td width="50%">Address Street 1:</td>
+				<td width="50%">
+					<input type="hidden" name="shippingAddress1" value="$!orderForm.shippingAddress1" style="border:0px" readonly>
+					$!orderForm.shippingAddress1
+				</td>
+
+			</tr>
+			<tr>
+				<td>Address Street 2:</td>
+				<td>
+					<input type="hidden" name="shippingAddress2" value="$!orderForm.shippingAddress2" style="border:0px" readonly>
+					$!orderForm.shippingAddress2
+				</td>
+			</tr>
+			<tr>
+				<td>City:</td>
+				<td>
+					<input type="hidden" name="shippingCity" value="$!orderForm.shippingCity" style="border:0px" readonly>
+					$!orderForm.shippingCity
+				</td>
+			</tr>
+			<tr>
+				<td>State:</td>
+				<td>
+					
+					<input type="hidden" name="shippingState" id="shippingState" value="$!orderForm.shippingState">
+					#if ($orderForm.shippingState == "otherCountry")
+						$!orderForm.shippingStateOtherCountryText
+					#else
+						$!orderForm.shippingState
+					#end
+					<input type="hidden" name="shippingStateText" id="shippingStateText"value="">
+					<input type="hidden" name="shippingStateOtherCountryText" id="shippingStateOtherCountryText" value="$!orderForm.shippingStateOtherCountryText">
+				</td>
+			</tr>
+			<tr>
+				<td>Country:</td>
+				<td>
+					<input type="hidden" name="shippingCountry" id="shippingCountry" value="$!orderForm.shippingCountry">
+					$!orderForm.shippingCountry
+					<input type="hidden" name="shippingCountryText" id="shippingCountryText" value="">
+				</td>
+			</tr>
+			<tr>
+				<td>Zip:</td>
+				<td>
+					<input type="hidden" name="shippingZip" value="$!orderForm.shippingZip" style="border:0px" readonly>
+					$!orderForm.shippingZip
+				</td>
+			</tr>
+			<tr>
+				<td>Phone:</td>
+				<td>
+					<input type="hidden" name="shippingPhone" value="$!orderForm.shippingPhone" style="border:0px" readonly>
+					$!orderForm.shippingPhone
+				</td>
+			</tr>
+			<tr>
+				<td>Fax:</td>
+				<td>
+					<input type="hidden" name="shippingFax" value="$!orderForm.shippingFax" style="border:0px" readonly>
+					$!orderForm.shippingFax
+				</td>
+			</tr>
+		</table>
+		</td>
+	</tr>
+	<tr><td colspan="2">&nbsp;</td></tr>
+	<tr>
+		<td>
+		<table border="0" width="100%" cellspacing="0" cellpadding="0">
+			<tr>
+				<td colspan="2"><b>Payment Information:</b></td>
+			</tr>
+			<tr>
+				#set($paymentType = $!orderForm.paymentType)
+				<td width="50%">Payment Type:</td>
+				<td width="50%">
+					#if($paymentType == 'cc')
+						#set($selected = $config.getStringProperty("ECOM_CREDIT_CARD_FN"))
+					#elseif($paymentType == 'ch')
+						#set($selected = $config.getStringProperty("ECOM_CHECK_FN"))
+					#elseif($paymentType == 'po')
+						#set($selected = $config.getStringProperty("ECOM_PURCHASE_ORDER_FN"))
+					#end
+					<input type="hidden" name="paymentType" value="$paymentType">$!selected
+				</td>
+			</tr>
+			<tr>
+			<td colspan="2">
+			<div id="cc">
+			<table width="100%" cellspacing="0" cellpadding="0" border="0">
+			<tr>
+				<td width="50%">Name on Card:</td>
+				<td width="50%">
+					<input type="hidden" name="nameOnCard" value="$!orderForm.nameOnCard" style="border:0px" readonly>
+					$!orderForm.nameOnCard
+				</td>
+			</tr>
+			<tr>
+				<td>Card Type</td>
+				<td>
+					#set($cardType = $!orderForm.cardType)
+					#if($cardType == 'vs')
+						#set($selected = "Visa")
+					#elseif($cardType == 'mc')
+						#set($selected = "Masterd Card")
+					#elseif($cardType == 'ae')
+						#set($selected = "American Express")
+					#elseif($cardType == 'dc')
+						#set($selected = "Discover")
+					#end
+					<input type="hidden" name="cardType" value="$cardType">$!selected
+				</td>
+			</tr>
+			<tr>
+				<td>Card Number:</td>
+				<td>
+					<input type="hidden" name="cardNumberString" value="$!webapi.toCCFormat($!orderForm.cardNumber)" style="border:0px" readonly>
+					<input type="hidden" name="cardNumber" value="$!orderForm.cardNumber">
+					$!webapi.toCCFormat($!orderForm.cardNumber)
+				</td>
+			</tr>
+			<tr>
+				<td>Expiration Date:</td>
+				#set($now = $date.getDate())
+				#set($month = $!orderForm.cardExpMonth)
+				#set($year =  $!orderForm.cardExpYear)
+				<td>
+					<input type="hidden" name="cardExpMonth" value="$!orderForm.cardExpMonth">
+					<input type="hidden" name="cardExpYear" value="$!orderForm.cardExpYear">
+					$webapi.toMonthFormat($month) $!year
+				</td>
+			</tr>
+			<tr>
+				<td>Card Verification Value:</td>
+				<td>
+					<input type="hidden" name="cardVerificationValue" value="$!orderForm.cardVerificationValue" style="border:0px" readonly>
+					$!orderForm.cardVerificationValue
+				</td>
+			</tr>
+			</table>
+			</div>
+			</td>
+			</tr>
+			<tr>
+			<td colspan="2">
+			<div id="check">
+			</div>
+			</td>
+			</tr>
+			<tr>
+			<td colspan="2">
+			<div id="po">
+			
+				<table width="100%" cellspacing="0" cellpadding="0">
+					<tr>
+						<td width="50%">PO Number</td>
+						<td width="50%">
+							<input type="hidden" name="poNumber" value="$!orderForm.poNumber" style="border:0px" readonly>
+							$!orderForm.poNumber
+						</td>
+					</tr>
+				</table>
+			
+			</div>
+			</td>
+			</tr>
+			</table>
+		</td>
+		<td>&nbsp;</td>
+	</tr>
+	<tr><td colspan="2">&nbsp;</td></tr>
+	<tr>
+	<td>
+	#set($shoppingCart = $session.getAttribute("shoppingCart"))
+	#if ($shoppingCart)
+		#set($holders = $shoppingCart.holders)
+	#end
+	#if ($shoppingCart)
+		#set($discountCodes = $shoppingCart.discountCodes)
+	#end
+	<!-- subtotal items -->
+	
+	#foreach($holder in ${holders})
+		#set($format = $holder.format)
+		#set($product = $format.product)
+		#set($priceAmount = $holder.price)
+		#set($lineTotal = $holder.lineTotal)
+	#end
+	
+	<!-- Discounts -->
+	#set($totalDiscount = $orderForm.orderDiscount)
+
+	<!-- subtotal - discounts -->
+	#set($totalFinal = $math.sub($orderForm.orderSubTotal,$totalDiscount))
+	<input type="hidden" name="orderSubTotal" value="$totalFinal">
+	<input type="hidden" name="orderDiscount" value="$orderForm.orderDiscount">
+	<table width="100%" border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td colspan="2"><b>Charges:</b></td>
+		</tr>
+		<tr>
+			<td width="50%">Subtotal:</td>
+			<td width="50%">
+				<input type="hidden" name="orderSubTotalDiscount" value="$!totalFinal" style="border:0px" readonly>
+				$ $!webapi.toPriceFormat($!totalFinal)
+			</td>
+		</tr>
+		#set($shipping = $orderForm.orderShipping)
+		<tr>
+			<td>Shipping and Handling:</td>
+			<td>
+				<input type="hidden" name="orderShipping" value="$!shipping" style="border:0px" readonly>
+				$ $!webapi.toPriceFormat($!shipping)
+			</td>
+		</tr>
+		#set($tax = 0)
+		#if($!orderForm.billingState == 'FL')
+		#set($tax = $orderForm.orderTax)
+		<tr>
+			<td>Tax (6.5%) FL:</td>
+			<td>
+				<input type="hidden" name="orderTax" value="$!tax" style="border:0px" readonly>
+				$ $!webapi.toPriceFormat($!tax)
+			</td>
+		</tr>
+		#end
+		#set($totalInvoice = $orderForm.orderTotal)
+		<tr>
+			<td>Total:</td>
+			<td>
+				<input type="hidden" name="orderTotal" value="$!totalInvoice" style="border:0px" readonly>
+				$ $!webapi.toPriceFormat($!totalInvoice)
+			</td>
+		</tr>
+	</table>
+	</td>
+	<td>
+		<table width="100%" border="0" cellspacing="0" cellpadding="0">
+		#set($isShippingZero = $orderForm.isShippingZero)
+		#if($isShippingZero)
+		<tr>
+			<td colspan="2" class="mRed">We will apply shipping later, we are only applying handling charges now.</td>
+		</tr>
+		#end
+		<tr>
+			<td width="50%">Select different shipping:</td>
+			<td width="50%">
+				<select name="orderShipType" onchange="shippingMethodChange();">
+					#set($ground = $config.getIntProperty("SHIPPING_GROUND"))
+					#if($orderForm.orderShipType == $ground)
+						#set($seledtedShipping = "SELECTED")
+					#else
+						#set($seledtedShipping = "aux")
+					#end
+					<option value="$ground" $seledtedShipping>Ground</option>
+					#set($priority = $config.getIntProperty("SHIPPING_PRIORITY"))
+					#if($orderForm.orderShipType == $priority)
+						#set($seledtedShipping = "SELECTED")
+					#else
+						#set($seledtedShipping = "")
+					#end
+					<option value="$priority" $seledtedShipping>Second Day</option>
+					#set($nextDay = $config.getIntProperty("SHIPPING_NEXT_DAY"))
+					#if($orderForm.orderShipType == $nextDay)
+						#set($seledtedShipping = "SELECTED")
+					#else
+						#set($seledtedShipping = "")
+					#end
+					<option value="$nextDay" $seledtedShipping>Next Day</option>
+				</select>
+			</td>
+		</tr>
+		</table>
+	</td>
+	</tr>
+	<tr><td colspan="2">&nbsp;</td></tr>
+	<tr>
+		<td colspan="2">
+			<table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top: dashed 1px #ccc;">
+				<tr>
+					<td width="50%" align="center">
+						<div class="curveLink" style="float: right; margin-right: 10px;"><span><button onclick="makeChanges();" class="clearInputStyles">Make Changes</button></span></div>
+					</td>
+					<td width="50%" align="center">
+						<div class="curveLink"><span><button onclick="purchase();" class="clearInputStyles">Purchase Now</button></span></div>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+</form>
+<script language="javascript">
+changeLayer();
+updateStates();
+</script>

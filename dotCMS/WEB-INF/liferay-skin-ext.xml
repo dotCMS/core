@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!DOCTYPE skins>
+
+<skins>
+	<skin id="EXT_01" name="Team.Works">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#142D5B"
+			foreground="#FFFFFF"
+
+			neg-alert="#A50029"
+			pos-alert="#3872AD"
+		/>
+		<beta
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#7797BE"
+			foreground="#FFFFFF"
+
+			neg-alert="#A50029"
+			pos-alert="#3872AD"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#F3F3F5"
+			foreground="#000000"
+
+			neg-alert="#A50029"
+			pos-alert="#3872AD"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#A50029"
+			pos-alert="#3872AD"
+		/>
+	</skin>
+</skins>

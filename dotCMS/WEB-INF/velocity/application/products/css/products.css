@@ -1,0 +1,196 @@
+.shoppingCartItems{
+width: 100%;
+margin-bottom: 15px;
+}
+.shoppingCartItems .empty td{
+text-align: center;
+padding: 20px;
+font-size: 16px;
+border-top: solid 1px #666;
+font-style: italic;
+}
+.shoppingCartItems th{
+border-top: solid 1px #666;
+border-bottom: solid 1px #666;
+color: #336699;
+padding: 5px;
+}
+.shoppingCartItems td{
+border-bottom: solid 1px #ccc;
+padding: 10px 5px;
+}
+.shoppingCartItems .description h3{
+margin: 0;
+}
+.shoppingCartItems .regPrice,
+.shoppingCartItems .discPrice{
+text-align: center;
+}
+
+.discBox{
+float: left;
+border: solid 1px #666;
+background: #ccc;
+width: 380px;
+margin-right: 20px;
+}
+.discBox .addDisc{
+padding: 10px;
+height: 28px;
+}
+.products{
+width:  100%;
+}
+.products .addDisc .button{
+float: left;
+display: block;
+margin: 0 0 0 10px;
+top: -6px; 
+left: 20px; 
+position: relative;
+}
+.addDisc .title{
+height: 20px;
+display: block;
+float: left;
+}
+.addDisc .title span{
+margin: 0;
+font-size: 12px;
+color: #336699; 
+font-weight: bold;
+}
+.addDisc input{
+display: block;
+float: left;
+width: 65px;
+_width: 62px;
+vertical-align: middle;
+margin-left: 6px;
+margin-top: 6px;
+}
+
+.discBox table{
+clear: both;
+background: #fff;
+width: 100%;
+border: solid 5px #fff;
+}
+.products{
+width: 100%;
+}
+.products a.button,
+.products a.activeButton{
+padding: 5px 10px;
+margin: 10px;
+margin-left: 0px;
+text-decoration: none;
+border: solid 1px #152B55;
+font-weight: bold;
+position: relative;
+}
+
+.products a.button{
+background:url(/global/images/btn_on.gif) repeat-x #5B80C2;
+color: #fff;
+}
+
+.products a.button:hover{
+background:url(/global/images/btn_off.gif) repeat-x #5B80C2;
+color: #fff;
+}
+
+.products a.activeButton{
+background:url(/global/images/btn_on2.gif) repeat-x #5B80C2;
+color: #fff;
+}
+.products a.activeButton:hover{
+background:url(/global/images/btn_off2.gif) repeat-x #5B80C2;
+color: #fff;
+}
+
+
+.products hr{
+clear: both;
+margin-top: 20px;
+}
+.cartButtons{
+margin-top: 20px;
+text-align: right;
+}
+a.next{
+background:url(/global/images/buttonActive_bg.gif) repeat-x #FE9800;
+}
+
+.discPrice{
+font-weight: bold;
+}
+.totalPrice{
+float: right;
+font-size: 15px;
+font-weight: bold;
+padding-right: 30px;
+color: #336699;
+}
+.strikedout{
+text-decoration: line-through;
+}
+
+
+/* ITEM LIST */
+
+.products .item{
+margin-bottom: 15px;
+border-bottom: solid 1px #ccc;
+padding: 10px 15px;
+margin-bottom: 15px;
+}
+.products .featuredItem{
+border: solid 1px #ccc;
+background: #eee;
+width: 489px;
+}
+.products .featuredItem h3,
+.products .item h3{
+margin-bottom: 10px;
+}
+.products .featuredItem h2{
+margin-bottom: 10px;
+}
+
+.item .button,
+.featuredItem .button{
+float: right;
+}
+
+
+/* STORE MENU */
+
+ul.storeMenu{
+margin-bottom: 10px;
+}
+ul.storeMenu .active{
+font-weight: bold
+}
+.products .buttonHolder{
+border-top: solid 1px #ccc;
+padding-top: 25px;
+}
+
+.products .buttonHolder a.button,
+.products .buttonHolder a.activeButton{
+padding: 5px 9px;
+}
+.products .postComments{
+background: #83A1AF; 
+padding: 0px 20px 20px 20px; 
+width: 475px;
+margin: 0 auto;
+}
+.products td.addToCart{
+text-align: right;
+}
+
+
+
+

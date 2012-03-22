@@ -1,0 +1,37 @@
+<div id="permissionTitleTableWrapper-${id}">
+    <table class="permissionTable">
+        <tr>
+            <th class="permissionType permissionTitle">${name} <img src="${icon}"/></th>
+            <td>
+				<div id="view-permission-${id}-wrapper" style='${view-permission-style}'>
+                	<input type="checkbox" dojoType="dijit.form.CheckBox" onclick="viewPermissionChanged(null, '${id}')" id="view-permission-${id}" ${viewPermissionChecked} ${editPermissionDisabled} />
+				</div>
+            </td>
+            <td>
+				<div id="add-children-permission-${id}-wrapper" style='${add-children-permission-style}'>
+	                <input type="checkbox" dojoType="dijit.form.CheckBox" onclick="addChildrenPermissionChanged(null, '${id}')" id="add-children-permission-${id}" ${addChildrenPermissionChecked} ${editPermissionDisabled} />
+				</div>
+            </td>
+            <td>
+				<div id="edit-permission-${id}-wrapper" style='${edit-permission-style}'>
+            	    <input type="checkbox" dojoType="dijit.form.CheckBox" onclick="editPermissionChanged(null, '${id}')" id="edit-permission-${id}" ${editPermissionChecked} ${editPermissionDisabled} />
+				</div>
+            </td>
+            <td>
+				<div id="publish-permission-${id}-wrapper" style='${publish-permission-style}'>
+        	        <input type="checkbox" dojoType="dijit.form.CheckBox" onclick="publishPermissionChanged(null, '${id}')" id="publish-permission-${id}" ${publishPermissionChecked} ${editPermissionDisabled} />
+				</div>
+            </td>
+            <td>
+				<div id="edit-permissions-permission-${id}-wrapper" style='${edit-permissions-permission-style}'>
+    	            <input type="checkbox" dojoType="dijit.form.CheckBox" onclick="editPermissionsPermissionChanged(null, '${id}')" id="edit-permissions-permission-${id}" ${editPermissionsPermissionChecked} ${editPermissionDisabled} />
+				</div>
+            </td>
+            <td>
+            	<div id="virtual-links-permission-${id}-wrapper" style='${virtual-links-permission-style}'>
+	                <input type="checkbox" dojoType="dijit.form.CheckBox" onclick="virtualLinksPermissionChanged(null, '${id}')" id="virtual-links-permission-${id}" ${virtualLinksPermissionChecked} ${editPermissionDisabled} />
+				</div>
+            </td>
+        </tr>
+    </table>
+</div>

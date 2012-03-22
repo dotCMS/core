@@ -1,0 +1,181 @@
+#set($event=$webevents.getWebEvent($webEventRegistrationForm.eventInode))
+#set($location=$webevents.getWebEventLocation($webEventRegistrationForm.eventLocationInode))
+#set($attendees=$webEventRegistrationForm.eventAttendees)
+
+<script language="javascript">
+	function saveAttendee() {
+		var form = document.getElementById("attendeeForm");
+		form.dispatch.value="saveAttendee";
+		#if ($request.getParameter("dispatch") == "editAttendee")
+		form.isnew.value="false";
+		#end
+		form.submit ();
+	}
+	function deleteAttendee(firstName, lastName,emailAddress) {
+		var form = document.getElementById("attendeeForm");
+		form.dispatch.value="deleteAttendee";
+		form.currentAttendeeEmail.value=emailAddress;
+		form.currentAttendeeFirstName.value=firstName;
+		form.currentAttendeeLastName.value=lastName;
+		form.submit ();
+	}
+	function editAttendee(firstName, lastName, emailAddress) {
+		var form = document.getElementById("attendeeForm");
+		form.dispatch.value="editAttendee";
+		form.currentAttendeeEmail.value=emailAddress;
+		form.currentAttendeeFirstName.value=firstName;
+		form.currentAttendeeLastName.value=lastName;
+		form.submit ();
+	}
+	function toStep2() {
+		var form = document.getElementById("attendeeForm");
+		//form.action = "https://${SERVER_NAME}/dotCMS/eventRegistration";
+		form.action = "http://${SERVER_NAME}/dotCMS/eventRegistration";
+		form.dispatch.value="toStep2";
+		form.submit ();
+	}
+
+	function addMySelf()
+	{
+		var form = document.getElementById("attendeeForm");
+		form.currentAttendeeFirstName.value = "$!{user.firstName}";
+		form.currentAttendeeLastName.value = "$!{user.lastName}";
+		form.currentAttendeeBadgeName.value = "$!{user.fullName}";
+		form.currentAttendeeEmail.value = "$!{user.emailAddress}";
+		form.currentAttendeeTitle.value = "$!webapi.userTitle";
+		form.submit();
+	}
+</script>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+
+	<tr>
+		<td>#parse('static/messages.html')</td>
+	</tr>
+	<tr>
+		<td valign="top" align="left">
+		<h3>Your Registrations:</h3>
+		<table cellpadding="3" cellspacing="0" border="0" id="formTable" width="100%">
+			<tr>
+				<td><b><a href="/conferences_webinar/institute_detail.${webapi.getPageFileExtension()}?inode=$event.inode">$!event.title</a></b></td>
+			</tr>
+			<tr>
+				<td><a href="/conferences_webinar/institute_detail.${webapi.getPageFileExtension()}?inode=$event.inode">
+				$!location.toString()
+				</a>
+				<div class="item"></div>
+				</td>
+			</tr>
+			#if(${attendees.size()} ==0)
+				<tr>
+					<td>
+						<b>No Attendees Registered</b>. 
+						<div class="curveLink"><span><button onclick="addMySelf();" class="clearInputStyles">Add Myself Now</button></span></div>
+					</td>
+				</tr>
+			#else
+			<tr>
+				<td>
+
+					<b>Attendee List</b>
+				</td>
+			</tr>
+			#end
+			#foreach ($attendee in $attendees)
+			<tr>
+				<td nowrap="nowrap">&nbsp;&nbsp;&nbsp;&nbsp;<strong>Name:</strong> $attendee.firstName $attendee.lastName</td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap">&nbsp;&nbsp;&nbsp;&nbsp;<strong>Badge Name:</strong> #if($attendee.badgeName != "")$attendee.badgeName #else No Badge Name #end<BR>
+					<table border=0>
+						<tr>
+							<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+							<td nowrap="nowrap">
+								<div class="curveLink"><span><button onclick="deleteAttendee('$webapi.javaScriptify($attendee.firstName)','$webapi.javaScriptify($attendee.lastName)','$attendee.email')" class="clearInputStyles">Delete</button></span></div>
+							</td>
+							<td nowrap="nowrap">
+								<div class="curveLink"><span><button onclick="editAttendee('$webapi.javaScriptify($attendee.firstName)','$webapi.javaScriptify($attendee.lastName)','$attendee.email')" class="clearInputStyles">Change</button></span></div>
+							</td>
+						</tr>
+					</table>
+					<br>&nbsp;
+				</td>
+			</tr>
+			#end
+		</table>
+		<div class="item"></div>
+		
+		<form name="attendeeForm" action="/dotCMS/eventRegistration" id="attendeeForm" autocomplete="off">
+		<input type="hidden" name="dispatch" value="saveAttendee">
+		<input type="hidden" name="isnew" value="true">
+			<h3>
+				#if ($request.getParameter("dispatch") == "editAttendee")
+					Edit Attendee
+					<input type="hidden" name="currentAttendeeLastEmail" value="$webEventRegistrationForm.currentAttendeeEmail">
+					<input type="hidden" name="currentAttendeeLastFirstName" value="$webEventRegistrationForm.currentAttendeeFirstName">
+					<input type="hidden" name="currentAttendeeLastLastName" value="$webEventRegistrationForm.currentAttendeeLastName">
+					<p>
+				#else
+					Adding Attendees
+					</p>
+				#end
+			</h3>
+			<p>
+			Here you can register one or more attendees for this event. For each attendee, fill in their information below and hit "Submit" to save it.  <br />
+			#if(${attendees.size()} ==0)<b>Note:</b> You can click on <A href="javascript:addMySelf();">Add Myself Now</a> to automatically populate the fields with your information. #end
+			</p>
+		<table cellpadding="4" cellspacing="0" border="0" id="formTable" width="100%">
+			<tr>
+				<td nowrap="nowrap" align"right"><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;First Name:</b></td>
+				<td><input type="text" name="currentAttendeeFirstName" value="$webEventRegistrationForm.currentAttendeeFirstName"></td>
+				<td width="100%"></td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align"right"><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Last Name:</b></td>
+				<td><input type="text" name="currentAttendeeLastName" value="$webEventRegistrationForm.currentAttendeeLastName"></td>
+				<td width="100%"></td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align"right"><b>&nbsp;&nbsp;&nbsp;Preferred Badge Name:</b></td>
+				<td><input type="text" name="currentAttendeeBadgeName" value="$webEventRegistrationForm.currentAttendeeBadgeName"></td>
+				<td width="100%"></td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align"right"><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Email address:</b></td>
+				<td><input type="text" name="currentAttendeeEmail" value="$webEventRegistrationForm.currentAttendeeEmail"></td>
+				<td width="100%"></td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align"right"><img src="/html/images/required.gif" width="9" height="9">&nbsp;<b>Title for Badge:</b></td>
+				<td><input type="text" name="currentAttendeeTitle" value="$webEventRegistrationForm.currentAttendeeTitle"></td>
+				<td width="100%"></td>
+			</tr>
+			<tr>
+				#if ($request.getParameter("dispatch") == "editAttendee")
+					<td colspan="2" align="right">
+						<div class="curveLink"><span><button onclick="saveAttendee();" class="clearInputStyles">Submit Change</button></span></div>
+					</td>
+					<td align="right">&nbsp;</td>
+				#else
+					<td colspan="2" align="right">
+						<div class="curveLink"><span><button onclick="saveAttendee();" class="clearInputStyles">Submit Attendee</button></span></div>
+					</td>
+					#if ($attendees.size() > 0)
+						<td align="right">
+							<div class="curveLink"><span><button onclick="toStep2();" class="clearInputStyles">Proceed To Checkout</button></span></div>
+						</td>
+					#else
+						<td align="right">&nbsp;</td>
+					#end
+				</td>
+				#end
+			</tr>
+		</table>
+		<div class="item"></div>
+
+		</form>
+		</td>
+	</tr>
+</table>
+""  
+"" 

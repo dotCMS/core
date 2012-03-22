@@ -1,0 +1,174 @@
+.errorMessages{
+  font: bold;
+  color: red;
+  text-align: left;
+  margin-left: 10px;
+}
+.dateFieldWrapper {
+}
+
+.dateTimeField {
+	float: left;
+}
+
+.dateField {
+	float: left;
+}
+
+.dateFieldCalButton {
+	margin-top: 2px;
+	margin-left: 3px;
+	margin-right: 3px;
+	background: url(/html/skin/image/dotcms/icons/calendar.gif) no-repeat;	
+	width: 16px;
+	height: 16px;
+	cursor: default;	
+	float: left;
+}
+
+.dateTimeFieldCalButton {
+	margin-top: 2px;
+	margin-left: 3px;
+	margin-right: 3px;
+	background: url(/html/skin/image/dotcms/icons/calendar.gif) no-repeat;	
+	width: 16px;
+	height: 16px;
+	cursor: default;
+	float: left;
+}
+
+.showCategoriesBtn {
+	background: url(/html/skin/image/dotcms/icon_drop_big.gif) no-repeat;
+	width: 24px;
+	height: 25px;
+	cursor: default;	
+}
+
+.categoriesKeywordBox {
+	height: 19px;
+	float: left;
+}
+ 
+.showCategoriesBtn {
+	margin-left: -1px;
+	float: left;
+}
+
+.categoriesBox {
+	border: 1px solid gray;
+	width: 167px;
+}
+
+.selectedCategoriesBox {
+	width: 167px;
+}
+
+.removeCategoryBtn {
+	background: url('/html/skin/image/dotcms/icons/cross.gif') no-repeat;
+	width: 16px;	
+	height: 16px;	
+	cursor: default;
+	float: left;}
+
+.formFieldSet {
+	margin: 5px;
+	padding: 5px; 
+	text-align:justify;
+	border: 1px solid #B6CBEB;
+}
+
+.formFieldSet line{
+	margin: 5px;
+	padding: 5px; 
+	text-align:justify;
+	border-top: 1px solid #B6CBEB;
+}
+a.beta {
+	background:transparent url(/html/skin/image/dotcms/tab_n.gif) no-repeat scroll 0 0;
+	color:#666666;
+	cursor:pointer;
+	display:block;
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size:0.9em;
+	height:25px;
+		margin-bottom:-12px;
+	padding:6px 0;
+	width:125px;
+	float:left;
+}
+
+a.alpha{
+	background:transparent url(/html/skin/image/dotcms/tab_s.gif) no-repeat scroll 0 0;
+	color:#FFFFFF;
+	cursor:pointer;
+	display:block;
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size:0.9em;
+	height:25px;
+	margin-bottom:-12px;
+	padding:6px 0;
+	width:125px;
+	float:left;
+}	
+.contentletTab {
+	border: 1px solid #B6CBEB; 
+	width: 927px;	
+}
+
+.contentTab first{
+    margin: 5px;
+    border: 1px solid #B6CBEB; 
+	width: 927px;
+}
+
+.contentletCategoriesGroup {
+	vertical-align: top;
+}
+
+.categoryGroupName {
+	float: left;
+}
+
+.submitContent{
+	border: 2px solid #B6CBEB;
+	margin: 5px;
+}
+
+.formFieldLabel label{
+	margin-left:10px;
+}
+
+.submitButton{
+	vertical-align: middle;
+	text-align: center;
+}
+
+.blueline{
+ background-color: #B6CBEB;
+ background: #B6CBEB;
+ color: #B6CBEB;
+}
+
+.fieldWrapper {
+	padding-bottom: 10px;
+}
+
+.fieldLabel {
+	width: 200px;
+	text-align: right;
+	padding-right: 10px;
+	float: left;
+	font-weight: bold;
+}
+
+.fieldValue {
+	text-align: left;
+	float: left;	
+	vertical-align: middle;
+	width: 650px;
+}
+
+.multiSelectField {
+	min-width: 250px;
+	min-height: 100px;
+}

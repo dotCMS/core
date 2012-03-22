@@ -1,0 +1,108 @@
+#parse('static/messages.vtl')
+#set($eventObj = $eventsapi.getEvent($eventRegistrationForm.eventInode)) 
+<SCRIPT type="text/javascript">
+	
+	function checkEmailFormat(email) {
+		if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)){
+			return (true)
+		}
+		return (false)
+	}
+	
+	function IsNumeric(sText)
+	{
+		var ValidChars = "0123456789.";
+		var IsNumber=true;
+	   	var Char;
+		 
+	   	for (i = 0; i < sText.length && IsNumber == true; i++) 
+		{ 
+	    	Char = sText.charAt(i); 
+		  	if (ValidChars.indexOf(Char) == -1) 
+		    {
+		    	IsNumber = false;
+		    }
+		}
+		return IsNumber;
+	}
+   	
+   		function doSubmit () {
+  			var form = document.getElementById("registrationForm");
+  			
+  			//Validations before submit
+  			/*if (form.fullName.value == "") {
+  				alert ("A name is required");
+  				form.fullName.focus ();
+  				return false;
+  			}
+  			if (form.email.value == "") {
+  				alert ("An email is required");
+  				form.email.focus ();
+  				return false;
+  			}
+  			if (!checkEmailFormat(form.email.value)) {
+  				alert ("Invalid email format");
+  				form.email.focus ();
+  				return false;
+  			}
+  			if (!IsNumeric(form.numberAttending.value)) {
+  				alert ("Number Attending must be numeric");
+  				form.numberAttending.focus ();
+  				return false;
+  			}*/
+
+  			//Submitting the form	
+  			form.dispatch.value = "save";
+ 			form.submit ();
+  		}
+</SCRIPT>
+
+<form action="/dotCMS/registerToEvent" method="post" id="registrationForm">
+<input type="hidden" name="dispatch" id="dispatch" value="" /> 
+<input type="hidden" name="inode" id="inode" value="$!eventRegistrationForm.inode"/> 
+<input type="hidden" name="eventInode" id="eventInode" value="$!eventRegistrationForm.eventInode"/>
+<input type="hidden" name="registationRandomId" id="registationRandomId" value="$!eventRegistrationForm.registationRandomId"/>
+<table border="0" width="550" align="center" cellpadding="0"
+	cellspacing="5">
+	<tr>
+		<td colspan="3"><h2><strong>$!eventObj.title</strong></h2></td>
+	</tr>
+	<tr>
+		<td colspan="3" height="15"></td>
+	</tr>
+	<tr>
+		<td align="right">Name:</td>
+		<td><input type="text" name="fullName" value="$!eventRegistrationForm.fullName" id="fullName" style="width: 200px;"/>&nbsp;<FONT
+			style="color: red;">*</FONT></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td align="right">Number Attending:</td>
+		<td><input align="right" type="text" name="numberAttending"	maxlength="2" value="$!eventRegistrationForm.numberAttending" style="width:20px"/></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td align="right" valign="top">Comments:</td>
+		<td colspan="2"><TEXTAREA name="comments"
+			style="width: 332px;height: 80px">$!eventRegistrationForm.comments</TEXTAREA></td>
+	</tr>
+	<tr>
+		<td align="right">Email Address:</td>
+		<td><input type="text" name="email" value="$!eventRegistrationForm.email"
+		id="email" style="width: 200px;"/>&nbsp;<FONT style="color: red;">*</FONT></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td colspan="2"></td>
+		<td colspan="1" height="15" align="left"><FONT style="color: red;">*
+		required fields</FONT></td>
+	</tr>
+	<tr>
+		<td colspan="3" height="15"></td>
+	</tr>
+	<tr>
+		<td colspan="3" align="center"><input type="button"
+			onclick="doSubmit()" value="Register to Event" /></td>
+	</tr>
+</table>
+</form>

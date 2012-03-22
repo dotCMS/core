@@ -1,0 +1,26 @@
+#hostPreviewWrapper {
+	padding: 15px 0;
+	text-align: center;
+}
+
+#hostPreviewWrapper img {
+	border: 2px gray solid;
+	width: 200px;
+	height: 200px;
+}
+
+.listingTable td img {
+	vertical-align: middle;
+}
+
+#addHostDialog {
+	width: 450px;
+}
+
+#addNewHostStep1Parameters {
+	text-align: center;
+}
+
+#hostTemplateWrapper {
+	text-align: center;
+}

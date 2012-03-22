@@ -1,0 +1,566 @@
+
+<%@ page language="java" import="java.util.*" %>
+<%@ page import="com.dotmarketing.util.UtilMethods" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
+<%@ page import="com.dotmarketing.factories.InodeFactory" %>
+<%@ page import="com.dotmarketing.portlets.links.factories.LinkFactory" %>
+<%@ page import="com.dotmarketing.portlets.links.model.Link" %>
+<%@ page import="com.dotmarketing.db.DotConnect" %>
+<%@ page import="com.liferay.portal.model.User" %>
+<%@ page import="com.liferay.portal.ejb.UserLocalManagerUtil" %>
+<%@ page import="com.liferay.portal.model.Role" %>
+<%@ page import="com.dotmarketing.util.Config" %>
+<%@ page import="com.dotmarketing.portlets.containers.factories.ContainerFactory" %>
+<%@ page import="com.dotmarketing.portlets.containers.model.Container" %>
+<%@ page import="com.dotmarketing.portlets.templates.model.Template" %>
+<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
+<%@ page import="com.dotmarketing.db.HibernateUtil" %>
+<%@ page import="java.io.PrintWriter" %>
+<%@ page import="java.io.StringWriter" %>
+<%@ page import="com.dotmarketing.portlets.templates.factories.TemplateFactory" %>
+<%@ page import="com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory" %>
+<%@ page import="java.util.regex.Matcher" %>
+<%@ page import="java.util.regex.Pattern" %>
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+
+    <title>Search And Replace Utility</title>
+
+  </head>
+
+  <body>
+  	<SCRIPT language="javascript">
+  		function doSubmit () {
+  			if (document.searchReplaceForm.searchString.value == "") {
+  				alert ("Please specify a search string");
+  				return;
+  			}
+  			if (confirm ("Are you sure?")) {
+  				document.searchReplaceForm.submit ();
+  			}
+  		}
+  	</SCRIPT>
+
+<%
+	boolean isAdmin = false;
+	try {
+%>
+<%@ include file="/html/common/init.jsp" %>
+<%
+		User currentUser = user;
+		if (currentUser != null) {
+			Iterator roles = com.dotmarketing.factories.RoleFactory.getAllRolesForUser(currentUser.getUserId()).iterator();
+			while (roles.hasNext()) {
+				Role role = (Role)roles.next();
+				if (role.getName().equals(Config.getStringProperty("ADMINISTRATOR_ROLE"))) {
+					isAdmin = true;
+					break;
+				}
+			}
+		}
+	} catch (Exception e) 
+	{
+		System.out.println(e.getMessage());
+	}
+
+	if (isAdmin) {
+
+		String searchString = request.getParameter("searchString");
+		String replaceString = request.getParameter("replaceString");
+		if (UtilMethods.isSet(searchString) && UtilMethods.isSet(replaceString)) {
+
+			//HibernateUtil dh = new HibernateUtil ();
+			HibernateUtil dh = new HibernateUtil(Contentlet.class);
+			dh.startTransaction();
+
+			try {
+
+				//Contentlets
+				String originalPatter = searchString;
+				String newPatter = replaceString;
+				Pattern patter = Pattern.compile(originalPatter);
+				Matcher matcher = patter.matcher("");
+				int cicleValue = 1000;
+				int offSet = 0;
+				int contentletsCounter = 0;
+				
+				//Construct the query
+				StringBuffer sqlQuery = new StringBuffer();
+				sqlQuery.append("SELECT {contentlet.*} FROM contentlet, inode contentlet_1_ ");
+				sqlQuery.append("WHERE contentlet.inode = contentlet_1_.inode");
+				sqlQuery.append(" ORDER BY contentlet.inode ASC");		
+				
+				//Set the pagination parameters
+				String query = sqlQuery.toString(); 
+				dh.setSQLQuery(query);
+				dh.setFirstResult(offSet);
+				dh.setMaxResults(cicleValue);
+
+				//Execute the query
+
+				List<Contentlet> contentlets = dh.list();
+				int size = contentlets.size();
+				while(size > 0)
+				{			
+					for(int i = 0;i < size;i++)
+					{
+						Contentlet contentlet = contentlets.get(i);
+						//text 1
+						if (UtilMethods.isSet(contentlet.getText1()))
+						{
+							matcher.reset(contentlet.getText1());
+							contentlet.setText1(matcher.replaceAll(newPatter));
+						}
+						//text 2
+						if (UtilMethods.isSet(contentlet.getText2()))
+						{
+							matcher.reset(contentlet.getText2());
+							contentlet.setText2(matcher.replaceAll(newPatter));
+						}
+						//text 3
+						if (UtilMethods.isSet(contentlet.getText3()))
+						{
+							matcher.reset(contentlet.getText3());
+							contentlet.setText3(matcher.replaceAll(newPatter));
+						}
+						//text 4
+						if (UtilMethods.isSet(contentlet.getText4()))
+						{
+							matcher.reset(contentlet.getText4());
+							contentlet.setText4(matcher.replaceAll(newPatter));
+						}
+						//text 5
+						if (UtilMethods.isSet(contentlet.getText5()))
+						{
+							matcher.reset(contentlet.getText5());
+							contentlet.setText5(matcher.replaceAll(newPatter));
+						}
+						//text 6
+						if (UtilMethods.isSet(contentlet.getText6()))
+						{
+							matcher.reset(contentlet.getText6());
+							contentlet.setText6(matcher.replaceAll(newPatter));
+						}
+						//text 7
+						if (UtilMethods.isSet(contentlet.getText7()))
+						{
+							matcher.reset(contentlet.getText7());
+							contentlet.setText7(matcher.replaceAll(newPatter));
+						}
+						//text 8
+						if (UtilMethods.isSet(contentlet.getText8()))
+						{
+							matcher.reset(contentlet.getText8());
+							contentlet.setText8(matcher.replaceAll(newPatter));
+						}
+						//text 9
+						if (UtilMethods.isSet(contentlet.getText9()))
+						{
+							matcher.reset(contentlet.getText9());
+							contentlet.setText9(matcher.replaceAll(newPatter));
+						}
+						//text 10
+						if (UtilMethods.isSet(contentlet.getText10()))
+						{
+							matcher.reset(contentlet.getText10());
+							contentlet.setText10(matcher.replaceAll(newPatter));
+						}
+						//text 11
+						if (UtilMethods.isSet(contentlet.getText11()))
+						{
+							matcher.reset(contentlet.getText11());
+							contentlet.setText11(matcher.replaceAll(newPatter));
+						}
+						//text 12
+						if (UtilMethods.isSet(contentlet.getText12()))
+						{
+							matcher.reset(contentlet.getText12());
+							contentlet.setText12(matcher.replaceAll(newPatter));
+						}
+						//text 13
+						if (UtilMethods.isSet(contentlet.getText13()))
+						{
+							matcher.reset(contentlet.getText13());
+							contentlet.setText13(matcher.replaceAll(newPatter));
+						}
+						//text 14
+						if (UtilMethods.isSet(contentlet.getText14()))
+						{
+							matcher.reset(contentlet.getText14());
+							contentlet.setText14(matcher.replaceAll(newPatter));
+						}
+						//text 15
+						if (UtilMethods.isSet(contentlet.getText15()))
+						{
+							matcher.reset(contentlet.getText15());
+							contentlet.setText15(matcher.replaceAll(newPatter));
+						}
+						//text 16
+						if (UtilMethods.isSet(contentlet.getText16()))
+						{
+							matcher.reset(contentlet.getText16());
+							contentlet.setText16(matcher.replaceAll(newPatter));
+						}
+						//text 17
+						if (UtilMethods.isSet(contentlet.getText17()))
+						{
+							matcher.reset(contentlet.getText17());
+							contentlet.setText17(matcher.replaceAll(newPatter));
+						}
+						//text 18
+						if (UtilMethods.isSet(contentlet.getText18()))
+						{
+							matcher.reset(contentlet.getText18());
+							contentlet.setText18(matcher.replaceAll(newPatter));
+						}
+						//text 19
+						if (UtilMethods.isSet(contentlet.getText19()))
+						{
+							matcher.reset(contentlet.getText19());
+							contentlet.setText19(matcher.replaceAll(newPatter));
+						}
+						//text 20
+						if (UtilMethods.isSet(contentlet.getText20()))
+						{
+							matcher.reset(contentlet.getText20());
+							contentlet.setText20(matcher.replaceAll(newPatter));
+						}
+						//text 21
+						if (UtilMethods.isSet(contentlet.getText21()))
+						{
+							matcher.reset(contentlet.getText21());
+							contentlet.setText21(matcher.replaceAll(newPatter));
+						}
+						//text 22
+						if (UtilMethods.isSet(contentlet.getText22()))
+						{
+							matcher.reset(contentlet.getText22());
+							contentlet.setText22(matcher.replaceAll(newPatter));
+						}
+						//text 23
+						if (UtilMethods.isSet(contentlet.getText23()))
+						{
+							matcher.reset(contentlet.getText23());
+							contentlet.setText23(matcher.replaceAll(newPatter));
+						}
+						//text24
+						if (UtilMethods.isSet(contentlet.getText24()))
+						{
+							matcher.reset(contentlet.getText24());
+							contentlet.setText24(matcher.replaceAll(newPatter));
+						}
+						//text 25
+						if (UtilMethods.isSet(contentlet.getText25()))
+						{
+							matcher.reset(contentlet.getText25());
+							contentlet.setText25(matcher.replaceAll(newPatter));
+						}
+						//Text Area 1
+						if (UtilMethods.isSet(contentlet.getText_area1()))
+						{
+							matcher.reset(contentlet.getText_area1());
+							contentlet.setText_area1(matcher.replaceAll(newPatter));
+						}
+						//Text Area 2
+						if (UtilMethods.isSet(contentlet.getText_area2()))
+						{
+							matcher.reset(contentlet.getText_area2());
+							contentlet.setText_area2(matcher.replaceAll(newPatter));
+						}
+						//Text Area 3
+						if (UtilMethods.isSet(contentlet.getText_area3()))
+						{
+							matcher.reset(contentlet.getText_area3());
+							contentlet.setText_area3(matcher.replaceAll(newPatter));
+						}
+						//Text Area 4
+						if (UtilMethods.isSet(contentlet.getText_area4()))
+						{
+							matcher.reset(contentlet.getText_area4());
+							contentlet.setText_area4(matcher.replaceAll(newPatter));
+						}
+						//Text Area 5
+						if (UtilMethods.isSet(contentlet.getText_area5()))
+						{
+							matcher.reset(contentlet.getText_area5());
+							contentlet.setText_area5(matcher.replaceAll(newPatter));
+						}
+						//Text Area 6
+						if (UtilMethods.isSet(contentlet.getText_area6()))
+						{
+							matcher.reset(contentlet.getText_area6());
+							contentlet.setText_area6(matcher.replaceAll(newPatter));
+						}
+						//Text Area 7
+						if (UtilMethods.isSet(contentlet.getText_area7()))
+						{
+							matcher.reset(contentlet.getText_area7());
+							contentlet.setText_area7(matcher.replaceAll(newPatter));
+						}
+						//Text Area 8
+						if (UtilMethods.isSet(contentlet.getText_area8()))
+						{
+							matcher.reset(contentlet.getText_area8());
+							contentlet.setText_area8(matcher.replaceAll(newPatter));
+						}
+						//Text Area 9
+						if (UtilMethods.isSet(contentlet.getText_area9()))
+						{
+							matcher.reset(contentlet.getText_area9());
+							contentlet.setText_area9(matcher.replaceAll(newPatter));
+						}
+						//Text Area 10
+						if (UtilMethods.isSet(contentlet.getText_area10()))
+						{
+							matcher.reset(contentlet.getText_area10());
+							contentlet.setText_area10(matcher.replaceAll(newPatter));
+						}
+						//Text Area 11
+						if (UtilMethods.isSet(contentlet.getText_area11()))
+						{
+							matcher.reset(contentlet.getText_area11());
+							contentlet.setText_area11(matcher.replaceAll(newPatter));
+						}
+						//Text Area 12
+						if (UtilMethods.isSet(contentlet.getText_area12()))
+						{
+							matcher.reset(contentlet.getText_area12());
+							contentlet.setText_area12(matcher.replaceAll(newPatter));
+						}
+						//Text Area 13
+						if (UtilMethods.isSet(contentlet.getText_area13()))
+						{
+							matcher.reset(contentlet.getText_area13());
+							contentlet.setText_area13(matcher.replaceAll(newPatter));
+						}
+						//Text Area 14
+						if (UtilMethods.isSet(contentlet.getText_area14()))
+						{
+							matcher.reset(contentlet.getText_area14());
+							contentlet.setText_area14(matcher.replaceAll(newPatter));
+						}
+						//Text Area 15
+						if (UtilMethods.isSet(contentlet.getText_area15()))
+						{
+							matcher.reset(contentlet.getText_area15());
+							contentlet.setText_area15(matcher.replaceAll(newPatter));
+						}
+						//Text Area 16
+						if (UtilMethods.isSet(contentlet.getText_area16()))
+						{
+							matcher.reset(contentlet.getText_area16());
+							contentlet.setText_area16(matcher.replaceAll(newPatter));
+						}
+						//Text Area 17
+						if (UtilMethods.isSet(contentlet.getText_area17()))
+						{
+							matcher.reset(contentlet.getText_area17());
+							contentlet.setText_area17(matcher.replaceAll(newPatter));
+						}
+						//Text Area 18
+						if (UtilMethods.isSet(contentlet.getText_area18()))
+						{
+							matcher.reset(contentlet.getText_area18());
+							contentlet.setText_area18(matcher.replaceAll(newPatter));
+						}
+						//Text Area 19
+						if (UtilMethods.isSet(contentlet.getText_area19()))
+						{
+							matcher.reset(contentlet.getText_area19());
+							contentlet.setText_area19(matcher.replaceAll(newPatter));
+						}
+						//Text Area 20
+						if (UtilMethods.isSet(contentlet.getText_area20()))
+						{
+							matcher.reset(contentlet.getText_area20());
+							contentlet.setText_area20(matcher.replaceAll(newPatter));
+						}
+						//Text Area 21
+						if (UtilMethods.isSet(contentlet.getText_area21()))
+						{
+							matcher.reset(contentlet.getText_area21());
+							contentlet.setText_area21(matcher.replaceAll(newPatter));
+						}
+						//Text Area 22
+						if (UtilMethods.isSet(contentlet.getText_area22()))
+						{
+							matcher.reset(contentlet.getText_area22());
+							contentlet.setText_area22(matcher.replaceAll(newPatter));
+						}
+						//Text Area 23
+						if (UtilMethods.isSet(contentlet.getText_area23()))
+						{
+							matcher.reset(contentlet.getText_area23());
+							contentlet.setText_area23(matcher.replaceAll(newPatter));
+						}
+						//Text Area 24
+						if (UtilMethods.isSet(contentlet.getText_area24()))
+						{
+							matcher.reset(contentlet.getText_area24());
+							contentlet.setText_area24(matcher.replaceAll(newPatter));
+						}
+						//Text Area 25
+						if (UtilMethods.isSet(contentlet.getText_area25()))
+						{
+							matcher.reset(contentlet.getText_area25());
+							contentlet.setText_area25(matcher.replaceAll(newPatter));
+						}
+						InodeFactory.saveInode(contentlet);
+						contentletsCounter++;
+						
+					}
+					offSet += cicleValue;
+					dh.setFirstResult(offSet);
+					dh.setMaxResults(cicleValue);
+					contentlets = dh.list();
+					size = contentlets.size();
+				}
+
+				
+				//Links
+				int linksCounter = 0;
+				
+				List links = LinkFactory.getLinkByCondition("url like '%" + searchString + "%'");
+				Iterator it = links.iterator();
+				while (it.hasNext()) {
+					Link link = (Link)it.next();
+					String url = link.getUrl();
+					url = url.replaceAll(searchString, replaceString);
+					link.setUrl(url);
+					InodeFactory.saveInode(link);
+					linksCounter++;
+				}
+
+				//Containers
+				int containersCounter = 0;
+				List containers = ContainerFactory.getContainerByCondition("(code like '%" + searchString + "%' or pre_loop like '%" + searchString + "%' or post_loop like '%" + searchString + "%')");
+				it = containers.iterator();
+				while (it.hasNext()) {
+					Container container = (Container)it.next();
+					String code = container.getCode();
+					code = code.replaceAll(searchString, replaceString);
+					container.setCode(code);
+					String preLoop = container.getPreLoop();
+					preLoop = preLoop.replaceAll(searchString, replaceString);
+					container.setPreLoop(preLoop);
+					String postLoop = container.getPostLoop();
+					postLoop = postLoop.replaceAll(searchString, replaceString);
+					container.setPostLoop(postLoop);
+					InodeFactory.saveInode(container);
+					containersCounter++;
+				}
+
+
+				//Templates
+				int templatesCounter = 0;
+
+				List templates = TemplateFactory.getTemplateByCondition("body like '%" + searchString + "%'");
+				it = templates.iterator();
+				while (it.hasNext()) {
+					Template template = (Template)it.next();
+					String body = template.getBody();
+					body = body.replaceAll(searchString, replaceString);
+					template.setBody(body);
+					InodeFactory.saveInode(template);
+					templatesCounter++;
+				}
+				
+
+				//HTML Pages
+				int pagesCounter = 0;
+				List pages = HTMLPageFactory.getHTMLPageByCondition("redirect like '%" + searchString + "%'");
+				it = pages.iterator();
+				while (it.hasNext()) {
+					HTMLPage htmlpage = (HTMLPage)it.next();
+					String redirect = htmlpage.getRedirect();
+					redirect = redirect.replaceAll(searchString, replaceString);
+					htmlpage.setRedirect(redirect);
+					InodeFactory.saveInode(htmlpage);
+					pagesCounter++;
+				}
+
+				dh.commitTransaction();
+
+%>
+		<h1 align="center">Modifications Summary</h1>
+		<TABLE align="center">
+			<TR>
+				<TD align="center">
+					<%=contentletsCounter%> Contentlets proccesed!!<br>
+					<%=linksCounter%> Links modified!!<br>
+					<%=containersCounter%> Containers modified!!<br>
+					<%=templatesCounter%> Templates modified!!<br>
+					<%=pagesCounter%> HTMLPages modified!!<br>
+				</TD>
+			</TR>
+		</TABLE>
+<%
+			} catch (Exception e) {
+				dh.rollbackTransaction();
+%>
+		<h1>A error occured running the replace, the transaction was rollbacked!!</h1>
+		<h2>Exception message: <%=e.getMessage()%></h2>
+		<%
+			StringWriter sw = new StringWriter ();
+			PrintWriter pw = new PrintWriter (sw);
+			e.printStackTrace(pw);
+		%>
+		<%= UtilMethods.formatter(sw.toString(), "\n", "<br>") %>
+<%
+			}
+		} else {
+%>			<h1 align="center">CMS Search And Replace</h1>
+
+			<TABLE align="center" width="60%">
+				<tr>
+					<td>
+			<form name="searchReplaceForm" method="post">
+				<h3>This page make a bulk replace of ALL the text occurrences from contentlets (body, summary, other_text), links (url), containers (pre_loop, code, post_loop), templates (body) and htmlpages (redirects)</h3>
+				<h2>We recommend you make a DB backup before use this page.</h2>
+				<br>
+				<table align="center">
+					<tr>
+						<td colspan="2">
+							<b>Please specify the following parameters and click submit:</b><br>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							String to replace:
+						</td>
+						<td>
+							<input type="text" name="searchString" size="50">
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Replace by:
+						</td>
+						<td>
+							<input type="text" name="replaceString" size="50"><br>
+						</td>
+					</tr>
+					<tr>
+						<td align="center" colspan="2">
+							<button dojoType="dijit.form.Button" onclick="doSubmit();">Submit</button>
+							<br/>
+						</td>
+					</tr>
+				</table>
+			</form>
+					</td>
+				</tr>
+			</TABLE>
+<%
+		}
+	} else {
+%>
+		<h1 align="center">This page is reserved for administrators use, login as an administrator <a href="/c">here</a></h1> 
+<%
+	}
+%>
+  </body>
+</html>

@@ -1,0 +1,1949 @@
+####Creates the Horizontal Menu based on the path
+#macro(createHorizontalMenu $menuPath)
+	#set ($hMenuPath = $hormb.createMenu($menuPath,$VTLSERVLET_URI,$host,"dropDownMenu",0))
+	$velutil.mergeTemplate($hMenuPath)
+#end
+
+#macro(createStaticMenu $menuPath)
+	#set ($hMenuPath = $staticmb.createMenu($menuPath,$VTLSERVLET_URI,$host,"sideMenu",0))
+	$velutil.mergeTemplate($hMenuPath)
+#end
+
+#macro(createStaticMenu)
+	#set ($hMenuPath = $staticmb.createMenu("",$VTLSERVLET_URI,$host,"sideMenu",0))
+	$velutil.mergeTemplate($hMenuPath)
+#end
+
+#macro(createStaticMenu $menuPath $divId)
+	#set ($hMenuPath = $staticmb.createMenu($menuPath,$VTLSERVLET_URI,$host,$divId,0))
+	$velutil.mergeTemplate($hMenuPath)
+#end
+ 
+#macro(videoPlayer $URL)
+
+    #if(!$UtilMethods.isSet($width))
+       #set($width = '480')
+    #end
+    #if(!$UtilMethods.isSet($height))
+       #set($height = '400')
+    #else
+       #set($heightInt = $UtilMethods.parseLong($height, 360))
+       #set($heightInt = $heightInt + 40)
+       #set($height = $UtilMethods.toString($heightInt))
+    #end
+    #if(!$UtilMethods.isSet($autostart))
+       #set($autostart = 'true')   
+    #end
+    #if(!$UtilMethods.isSet($backgroundColor))
+       #set($backgroundColor = '#ffffff')
+    #end
+    #if(!$UtilMethods.isSet($scale))
+       #set($scale = 'default')
+    #end
+    #if(!$UtilMethods.isSet($overstretch))
+       #set($overstretch = 'false')
+    #end
+    #if(!$UtilMethods.isSet($image))
+       #set($image = 'default.jpg')
+    #end
+    #if(!$UtilMethods.isSet($allowFullScreen))
+       #set($allowFullScreen = 'true')
+    #end
+
+    #if($URL.indexOf('/dotAsset/') != -1)
+    	#set ($identifier = $URL.substring(10, $URL.indexOf('.flv')))
+    #else
+    	#set ($identifier = $webapi.getIdentifierByURI($URL))
+    #end
+    
+	#set($videoPlayerDiv = "flashVideo${identifier}")
+    
+    #if(!$UtilMethods.isSet(${videoPlayerPath}))
+       #set($videoPlayerPath = '/html/')
+    #end
+    
+	<script type="text/javascript" src="${videoPlayerPath}js/swfobject.js"></script>
+	<div id="playerWrapper${identifier}">
+		<div id="$videoPlayerDiv">
+			<div>You will need a current version of Flash to view this content. <br /><a href="http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash" target="_blank">Click here to download the latest Flash player.</a></div>		
+		</div>
+	</div>
+	<script type="text/javascript">
+			
+		function playVideo(url, divId){
+			var swfObj = new SWFObject("${videoPlayerPath}flash/dotVideo.swf", "player", "${width}", "${height}", "8", "${backgroundColor}");
+			swfObj.addParam("scale", "${scale}");
+			swfObj.addParam("allowfullscreen",${allowFullScreen});
+			swfObj.addParam("wmode", "transparent");
+	 		swfObj.addVariable("autostart","${autostart}"); 
+	 		swfObj.addVariable("overstretch","${overstretch}");
+	 		swfObj.addVariable("image","${image}");  
+	 		swfObj.addVariable("width","${width}");
+	 		swfObj.addVariable("height","${height}");
+	 		swfObj.addVariable("volume","70");
+	 		swfObj.addVariable("file","${URL}");
+			swfObj.write(divId); 
+		} 
+		
+		function stopVideo(divId){ 
+			playVideo('none',divId); 
+		}
+		
+		playVideo("$URL", "$videoPlayerDiv");	
+		
+	</script>
+
+
+#end
+
+#macro(mp3Player $path )
+
+	#set($format = "slim")
+	#set($width = "400")
+	#set($height = "15")
+	#if($mp3PlayerSourceCode)
+		#dotParse($mp3PlayerSourceCode)
+	#else
+		$velutil.mergeTemplate('static/dotradio/dotRadio.vtl')
+	#end
+
+#end
+
+#macro(mp3PlayerExtended $path)
+
+	#set($format = "full")
+	#set($width = "400")
+	#set($height = "170")
+	#if($mp3PlayerExtendedSourceCode)
+		#dotParse($mp3PlayerExtendedSourceCode)
+	#else
+		$velutil.mergeTemplate('static/dotradio/dotRadio.vtl')
+	#end
+    
+#end
+
+#macro(mp3PlayerButton $song_url)
+	
+	#if($mp3PlayerButtonSourceCode)
+		#dotParse($mp3PlayerButtonSourceCode)
+	#else
+		
+    	<script src="/html/js/flash/detectFlash.js" language="javascript"></script>
+    	<script src="/html/js/flash/detectFlash.vbs" language="VBScript"></script>
+    	<script type="text/javascript">
+    	if (DetectFlashVer(requiredMajorVersion, requiredMinorVersion, requiredRevision)) {
+    	#if (-1 < $song_url.indexOf(".xml"))
+    		document.write('<object type="application/x-shockwave-flash" data="/html/flash/xspf_button/musicplayer.swf?playlist_url=$song_url" height="17" width="17">');
+    		document.write('<param name="movie" value="/html/flash/xspf_button/musicplayer.swf?playlist_url=$song_url">');
+    	#else
+    		document.write('<object type="application/x-shockwave-flash" data="/html/flash/xspf_button/musicplayer.swf?song_url=$song_url&song_title=$song_url" height="17" width="17">');
+    		document.write('<param name="movie" value="/html/flash/xspf_button/musicplayer.swf?song_url=$song_url&song_title=$song_url">');
+    	#end
+    		document.write('<img src="noflash.gif" mce_src="noflash.gif" alt="" height="17" width="17">');
+    		document.write('</object>');
+    	} else {
+        	var alternateContent = 'Your computer needs the most recent version of Macromedia Flash Player to play this file. Please visit this '
+            	                   + '<a href=http://www.macromedia.com/go/getflash>link</a>'
+                	               + ' to upgrade to this version.';
+    	    document.write(alternateContent);
+    	}
+    	</script>
+
+	#end
+	
+#end
+
+## Because DOTCM-274 task we change the name of the parameter in the pull content
+## to avoid the problen of not evaluation of the query variable when the macro is 
+## called more that one time in the same page
+
+#macro(pullContent $pullquery $limit $sortBy)
+	## needed so we can parse dynamic variables 
+	#set($query = $render.eval($pullquery))
+	
+	#set($language= '')
+	#if(!$UtilMethods.contains($query,'languageId'))
+		#if($request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+			#set($language= ' +languageId:'+$request.session.getAttribute("com.dotmarketing.htmlpage.language")+' ')
+			#set($query=$UtilMethods.concat($query,$language))
+		#end 
+	#end
+  
+  	#if(!( $UtilMethods.contains($query,'live:') || $UtilMethods.contains($query,'working:') ))      
+		#set($query=$UtilMethods.concat($query,' +live:true '))
+	#end
+	
+	  
+  	#if(!$UtilMethods.contains($query,'deleted:'))      
+		#set($query=$UtilMethods.concat($query,' +deleted:false '))
+	#end
+	#set($list = ${contents.getEmptyList()})
+	
+	#set($_inodeList = $contents.pullContent($query,$limit,$sortBy,$EDIT_MODE))
+
+	#if(!$UtilMethods.isSet($_inodeList.size()))
+		$!_inodeList
+	#else
+		#foreach($_inode in $_inodeList)
+		    #getContentMapDetail($_inode)
+			#set($_dummy = $!list.add($content))
+		#end
+		#if($sortBy == 'random')
+		   #set($list = $contents.randomizeList($list, $limit) )
+		#end
+		#if($list && $list.size() > 0)	
+			#set ($content = $list.get(0))
+		#end
+	#end
+#end
+
+#macro (pageRelatedContent $relationship $contId $numToPull $sortBy $numPerPageString $currentPageString)
+    #pullRelatedContent("$relationship","$contId","$numToPull","$sortBy")   
+
+    ##Set our results to resemble what would be passed with the regular paginated content pull so they are interchangable.
+    #*
+    <!--<p>
+    $totalResults: total number of contents<br />
+    $totalPages: total number of pages<br />
+    $firstPageRecord: first record number of the current page<br />
+    $lastPageRecord: last record number of the current page<br />
+
+    $hasNextPage: true if has a next page<br />
+    $hasPreviousPage: true if has a previous page
+    </p>-->
+    *#
+
+    #set($numPerPage = $webapi.parseLong($numPerPageString))
+    #set($currentPage = $webapi.parseLong($currentPageString))
+
+    #set($totalResults = $list.size())
+    #set($totalPages = $list.size() / $numPerPage)
+    #if(($list.size() % $numPerPage) > 0)
+        #set($totalPages = $totalPages + 1)
+    #end
+    #set($pageLong = $webapi.parseLong($currentPage))
+    #set($firstPageRecord = ($pageLong - 1) * $numPerPage + 1)
+    #set($lastPageRecord = ($pageLong) * $numPerPage)
+    #if($list.size() <= $numPerPage * $pageLong)
+        #set($hasNextPage = false)
+    #else
+        #set($hasNextPage = true)
+    #end
+    #if($pageLong == 1)
+        #set($hasPreviousPage = false)
+    #else
+        #set($hasPreviousPage = true)
+    #end
+
+    #set($tempList = $!{contents.getEmptyList()})
+    #foreach($content in $list)
+        #if($velocityCount >= $firstPageRecord && $velocityCount <= $lastPageRecord)
+            #set($_dummy = $tempList.add($content))
+        #end
+        #if($velocityCount > $lastPageRecord)
+            #break
+        #end
+    #end
+
+    #set($list = $tempList)
+#end
+
+## Get pageContent Pagination
+## params $query the lucene query
+## E.G.
+##			+text1:test text2:you
+## params $orderBy the field(s) name you want sort by. 
+## E.G.
+##			text1 asc
+## params $perPage number of contents showed per page
+## params $currentPageNumber number of the page currently displayed
+#macro(pageContent $pullquery $sortBy $perPage $currentPageNumber)
+	## needed so we can parse dynamic variables 
+	#set($query = $render.eval($pullquery))
+	
+	#if(!$UtilMethods.contains($query,'languageId'))
+		#if($request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+			#set($language= ' +languageId:'+$request.session.getAttribute("com.dotmarketing.htmlpage.language")+' ')
+			#set($query=$UtilMethods.concat($query,$language))
+		#end
+	#end
+	
+	#if(!( $UtilMethods.contains($query,'live:') || $UtilMethods.contains($query,'working:') ))
+		#set($query=$UtilMethods.concat($query,' +live:true '))
+	#end
+
+	#if(!$UtilMethods.contains($query,'deleted:'))
+		#set($query=$UtilMethods.concat($query,' +deleted:false '))
+	#end 
+	
+	#set($list = ${contents.getEmptyList()})
+	
+	#set($results = $contents.pageContent($query,$sortBy,$perPage,$currentPageNumber))
+	#set($_inodeList = $results.get("_inodeList"))
+	
+	#set($totalResults = $math.toInteger($results.get("_total")))
+	#set($firstPageRecord = $math.add($math.mul($math.sub($currentPageNumber, 1), $perPage),1))
+	#set($lastPageRecord = $math.sub($math.add($firstPageRecord, $perPage), 1))
+	#set($hasNextPage = true)
+	#if($UtilMethods.isSet($lastPageRecord) && $lastPageRecord >= $math.toInteger($totalResults))
+		#set($lastPageRecord = $math.toInteger($totalResults))
+		#set($hasNextPage = false)
+	#end
+	#if($UtilMethods.isSet($firstPageRecord) && $firstPageRecord > 1)
+		#set($hasPreviousPage = true)
+	#else
+		#set($hasPreviousPage = false)
+	#end	
+	#set($totalPages = $math.ceil($math.div($totalResults, $perPage)))
+	
+	#if($math.abs($totalPages) < $totalPages)
+		#set($totalPages = $math.add($math.abs($totalPages), 1))
+	#end
+		
+	#foreach($_inode in $_inodeList)
+	    #getContentMapDetail($_inode)
+		##$_inode.inode - $_inode.identifier - $content
+		$!list.add(${math.sub($velocityCount,1)}, $content)
+        #set($content = "")
+	#end
+	
+#end 
+
+##Get related contentlets from relationships
+## params $relationshipName The name of the relationship as you can find it in the structures portlet
+## params $identifier The contentlet identifier
+## params $limit The max number of results to pull if 0 is specified no limit will be used
+## params $orderBy the field(s) name you want sort by. 
+## E.G. 
+##           imageTitle
+##           imageTile desc, longDescription asc
+#macro(pullRelatedContent $relationshipName $identifier $limit $orderBy)
+    #set($x = "")
+    #set($x = $webapi.getIdentifierInode($identifier))
+    #if(!$UtilMethods.isSet($x))
+       #set($x = $inode)
+    #end
+	
+	#set($relationshipNameQ = $relationshipName)
+	
+	#set($relationship = $contents.getRelationshipByName($relationshipName))
+	
+	#if($relationship.parentStructureInode == $relationship.childStructureInode)
+		#if($pullParents)
+			#set($relationshipNameQ = "${relationshipName.trim()}-child")
+		#else
+			#set($relationshipNameQ = "${relationshipName.trim()}-parent")
+		#end
+	#end
+	
+	#set($language= '')
+	#if($request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+		#set($language= " +languageId:${request.session.getAttribute('com.dotmarketing.htmlpage.language')} ")
+	#end 
+		
+	#set($pullquery = "+type:content +live:true +deleted:false $language +${relationshipNameQ}:${x}")
+		
+	#if($!{condition})
+           #set($pullquery = "$!{pullquery} $!{condition}")
+	#end
+
+	#if($orderBy == "") 
+		#set($orderByQ = "${relationshipName}-${x}-order")
+	#else
+		#set($orderByQ = "$orderBy")
+	#end
+	#pullContent($pullquery $limit $orderByQ)
+	#set($x = 0)
+#end
+
+#macro(photoGallery $localIndexFolder)
+    #set($indexFolder = $localIndexFolder)
+    #if($request.getParameter("indexFolder"))
+    	#set ($indexFolder = $request.getParameter("indexFolder"))
+    #end
+    
+    #if(!$photoWidth)
+    	#set ($photoWidth = "600")
+    #end
+    
+    #if(!$photoHeight)
+    	#set ($photoHeight = "450")
+    #end
+    
+    #if(!$thumbnailWidth)
+    	#set ($thumbnailWidth = "90")
+    #end
+    
+    #if(!$thumbnailHeight)
+    	#set ($thumbnailHeight = "90")
+    #end
+    
+    #if(!$UtilMethods.isSet($showSubgalleryTitle))
+    	#set($showSubgalleryTitle = true)
+    #end
+    
+    #if(!$UtilMethods.isSet($showPhotoTitle))
+    	#set($showPhotoTitle = true)
+    #end
+    
+    #if($UtilMethods.isSet($indexFolder))
+		
+		#set ($folderImages = $photoTool.getPhotoGalleryFolderImages($indexFolder,$host))
+		#set ($images = $photoTool.getPhotoGalleryIndexImages($indexFolder, $host, $indexImage))
+		
+		#if($photoGallerySourceCode)
+			#dotParse($photoGallerySourceCode)
+		#else
+			$velutil.mergeTemplate('/static/photo_gallery/photo_gallery.html')
+		#end
+	#else
+		#if (!($UtilMethods.isSet($dontShowMessage) && ($dontShowMessage == 'true')))
+			index folder is required
+		#end
+	#end
+#end
+
+#macro(videoGallery $indexFolder)
+	#if($videoGallerySourceCode)
+		#dotParse($videoGallerySourceCode)
+	#else
+    	$velutil.mergeTemplate('/static/video_gallery/video_gallery.html')
+    #end
+#end
+
+#macro(mediaGallery $indexFolder)
+    #if($mediaGallerySourceCode)
+		#dotParse($mediaGallerySourceCode)
+	#else
+		$velutil.mergeTemplate('/static/media_gallery/media_gallery.html')
+	#end
+#end
+
+##Gets Crumbtrail
+#macro(crumbTrail)
+	#if ($multilingual_navigation)
+		#set($_dummy = $request.setAttribute('dot_multilingual_navigation', true))
+	#end
+	#if ($UtilMethods.isSet($crumbTitle))
+		$render.eval(${nav.crumbTrail($request, $crumbSeparatorImage, $homePath, $crumbTitle)})
+	#else
+		$render.eval(${nav.crumbTrail($request, $crumbSeparatorImage, $homePath)})
+	#end
+#end
+
+##Gets Navigation
+#macro (navigation $startLevel $depth)
+	#set ($path = $nav.createMenuByDepth($startLevel, $depth, $request))
+	#if ($path != "")
+		$velutil.mergeTemplate($path)
+		#if ($EDIT_MODE)
+			#set ($PUBLISH_PERMISSION = $pageAPI.canUserPublish($HTMLPAGE_IDENTIFIER, false))
+			#set ($startFromPath = $nav.getStartFromPath(1, $request))
+			#set ($folder = $folderAPI.findCurrentFolder($startFromPath, $host))
+			#set ($menuId = $folder.inode)
+			<form action="${directorURL}" method="post" name="dot_form_menu_${nav.getFormCount()}" id="dot_form_menu_${nav.getFormCount()}">
+				<input type="hidden" name="cmd" value="orderMenu" />
+				<input type="hidden" name="path" value="$startFromPath" />
+				<input type="hidden" name="hostId" value="${host.identifier}" />
+				<input type="hidden" name="pagePath" value="${VTLSERVLET_URI}" />
+				<input type="hidden" name="referer" value="${VTLSERVLET_URI}" />
+				<input type="hidden" name="startLevel" value="${startLevel}" />
+				<input type="hidden" name="depth" value="${depth}" />
+				#if ($PUBLISH_PERMISSION)
+					<div class="dotMenuReorder"><a href="javascript:document.getElementById('dot_form_menu_${nav.getFormCount()}').submit();"></a></div>
+				#else
+					<div class="dotMenuReorder"></div>
+				#end
+				
+			</form>
+			$nav.increaseFormCount()
+		#end
+		#if ($navigationSourceCode)
+			#dotParse($navigationSourceCode)
+			
+			##Clearing navigationSourceCode value to fix in edit mode when calling this macro two or more times, will not reuse this value even the variable is declared later.
+			#set ($navigationSourceCode = false)
+			
+		#else
+			$velutil.mergeTemplate('/static/navigation/list_menus.vtl')
+		#end
+	#end
+#end
+
+##Gets Site Map Navigation
+#macro (siteMapFolder $startLevel $depth $path)
+	#if(!$UtilMethods.isSet($reverseOrder))
+		#set($reverseOrder = false)
+	#end
+	#if($UtilMethods.isSet($!siteMapIdPrefix))
+		$request.setAttribute("siteMapIdPrefix", $siteMapIdPrefix)
+	#end
+	<div class="siteMap"> 
+	  #if ($showHome) 
+		  $velutil.mergeTemplate($nav.createSiteMapMenu($startLevel, $depth, $path, $request, $showHome, $reverseOrder))
+	  #else
+		  $velutil.mergeTemplate($nav.createSiteMapMenu($startLevel, $depth, $path, $request, false, $reverseOrder))
+	  #end
+	
+	</div>
+	
+	#if($UtilMethods.isSet($!siteMapIdPrefix))
+		$request.removeAttribute("siteMapIdPrefix")
+	#end	
+
+#end
+
+##Gets Site Map Navigation
+
+
+#macro (sitemap)
+	#if($UtilMethods.isSet($!siteMapIdPrefix))
+		$request.setAttribute("siteMapIdPrefix", $siteMapIdPrefix)
+	#end
+	<div class="siteMap"> 
+	  #if ($showHome) 
+		  $velutil.mergeTemplate($nav.createSiteMapMenu(1, 100,"/",$request,$showHome))
+	  #else
+		  $velutil.mergeTemplate($nav.createSiteMapMenu(1, 100,"/",$request,false))
+	  #end
+	</div>
+	
+	#if($UtilMethods.isSet($!siteMapIdPrefix))
+		$request.removeAttribute("siteMapIdPrefix")
+	#end	
+#end
+
+
+##Gets Folder And Files List
+#macro (fileRepository $rootFolder)
+	#set($fileRepository_showFolder = $macro.getFolderPath($rootFolder , $request))
+	#set($fileRepository_rootFolder = $rootFolder)
+	#set ($fileRepository_foldersList = $macro.getfileRepository($fileRepository_showFolder, "true", $request))
+	#set ($fileRepository_filesList = $macro.getfileRepository($fileRepository_showFolder, "false", $request))
+	#if($UtilMethods.isSet($fileRepositorySourceCode))
+		#dotParse($fileRepositorySourceCode)
+	#else
+		$velutil.mergeTemplate('/static/file_repository/index.html')
+	#end
+#end
+
+##Gets Links List and display they
+#macro (linkRepository $rootFolder)
+	#set($linkList = $macro.getLinkRepository($rootFolder, $request))
+	#if($UtilMethods.isSet($linkRepositorySourceCode))	     
+		#dotParse($linkRepositorySourceCode)
+	#else    
+		$velutil.mergeTemplate('/static/link_repository/index.vtl')
+	#end
+#end
+
+##Gets Folder And Files List
+#macro (getFileList $rootFolder)
+	#set($fileRepository_showFolder = $macro.getFolderPath($rootFolder , $request))
+	#set ($filesList = $macro.getfileRepository($fileRepository_showFolder, "false", $request))
+#end
+
+##Gets Events List
+#macro(getEvents $categories $limit $start_day_offset $days_to_show)
+	#set ($list = $macro.getEvents($categories, $limit, $start_day_offset, $days_to_show) )
+#end
+
+#macro(comment $commentContentInode)
+	#set($_commentContentInode = $commentContentInode)
+	#if(!$UtilMethods.isSet("$!maxDepth") || $maxDepth < 1)
+		#set($maxDepth = 1)
+	#end
+	#if($commentSourceCode)
+		#dotParse($commentSourceCode)
+	#else
+		$velutil.mergeTemplate('/static/comments/listcomments.html')
+	#end
+#end
+
+
+##Gets File List from a folder on the FS
+#macro(getFilesFromFS $folder)
+	#set ($files = $macro.getFileSystemFolder($folder) )
+#end
+
+#macro (getRating $identifier)
+	#if($pdfExport == false)
+		#getContentMapDetail($identifier)
+	    #if($InodeUtils.isSet($content.identifier))
+			#set ($averageRating = $rating.getAverageRating($content.identifier))
+	    
+			#if (!$averageRating || $averageRating < 0)
+				#set ($averageRating = 0)
+			#end
+		
+			#set($userRated = $rating.wasAlreadyRated($content.identifier))
+			#if($userRated)
+				#set($userRating = $rating.getRating($content.identifier))
+			#else
+				#set($userRating = 0)
+			#end
+	
+			#if($getRatingSourceCode)
+				#dotParse($getRatingSourceCode)
+			#else
+				$velutil.mergeTemplate('/static/getRating/index.vtl')
+			#end			
+		#elseif($EDIT_MODE)
+			Invalid inode passed to the macro
+		#end
+	#end
+#end
+
+#macro (printAverageRating $identifier)
+	#getContentMapDetail($identifier)
+	#set ($averageRating = $rating.getAverageRating($content.identifier))
+	#if (!$averageRating || $averageRating < 0)
+		#set ($averageRating = 0)
+	#end
+	$number.format('#.00', $averageRating)
+#end
+
+#macro (printNumberOfVotes $identifier)
+	#getContentMapDetail($identifier)
+	#set ($numberOfVotes = $rating.getRatingVotesNumber($content.identifier))
+	#if (!$numberOfVotes || $numberOfVotes < 0)
+		#set ($numberOfVotes = 0)
+	#end
+	$numberOfVotes
+#end
+
+##Execute SQL on any datasource
+#macro(getSQLResults $sql)
+	#set ($SQLError = '')
+	#set($query = $render.eval($sql))
+	#if(!$dbStartRow)
+		#set ($dbStartRow = 0)
+	#end
+	#if(!$dbMaxRow)
+		#set ($dbMaxRow  = 0)
+	#end
+	#if(!$dbConnection)
+		#set ($dbConnection = "default")
+	#end
+	#set ($results = $macro.getSQLResults($dbConnection, $query, $dbStartRow, $dbMaxRow))
+	#if($results.size() > 0 && $results.get(0).hasDotConnectSQLError.equals('true'))
+		#set ($SQLError = $results.get(0).dotConnectSQLError)
+		$results.clear()
+	#end
+	
+	#set ($dbStartRow = 0)
+	#set ($dbMaxRow  = 0)
+	#set ($dbConnection = "default")
+#end
+
+
+##Display the slideshow 
+#macro(slideshow $title)
+        #set($localTitle = $title)
+	#if(!$UtilMethods.isSet($slideshow_swf))
+		#set($slideshow_swf = '/html/flash/slideshow.swf')
+	#end
+	#if(!$UtilMethods.isSet($slideshow_width))
+		#set($slideshow_width = 275)
+	#end
+	#if(!$UtilMethods.isSet($slideshow_height))
+		#set($slideshow_height = 306)
+	#end
+	#if(!$UtilMethods.isSet($slideshow_image_width))
+		#set($slideshow_image_width = 275)
+	#end
+	#if(!$UtilMethods.isSet($slideshow_image_height))
+		#set($slideshow_image_height = 194)
+	#end
+	#set($isAutoPlayVar = "")
+	#if($UtilMethods.isSet($isAutoPlay) && !$isAutoPlay)
+		#set($isAutoPlayVar = "&isAutoPlay=false")
+	#end
+
+	#if($UtilMethods.isSet($!slideshow_sourcecode))
+	   #dotParse($slideshow_sourcecode)
+	#else
+    	   <script type="text/javascript" src="/html/js/flashobject.js"></script> 
+	   <div id="slideshowWrapper">
+   		   <div>
+			   You will need a current version of Flash to view this content. <br /><a href="http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash" target="_blank">Click here to download the latest Flash player.</a>
+		   </div>
+	   </div>
+	   <script type="text/javascript">
+		var fo = new FlashObject("${slideshow_swf}?xmlURL=/dot_slideshow?slideShowTitle=${localTitle}$!{isAutoPlayVar}&widths=${slideshow_image_width}&heights=${slideshow_image_height}", "mymovie", "${slideshow_width}", "${slideshow_height}", "7", "#ffffff");
+		fo.addParam("quality", "high");
+		fo.addParam("wmode", "transparent");
+		fo.addParam("salign", "t");
+		//fo.addParam("scale", "noscale");
+		fo.addParam("allowScriptAccess", "sameDomain");
+		fo.addParam("swliveconnect", "true");
+		fo.write("slideshowWrapper");
+	   </script>
+	#end
+#end
+
+##Send to Friend
+#macro(sendtofriend $articleText)
+
+	#if(!$UtilMethods.isSet($subject))
+		#set($subject="Send to Friend")
+	#end
+
+	#if(!$UtilMethods.isSet($sendToFriendStyle))
+		#set($sendToFriendStyle = "display:none;")
+	#end
+    #if($sendToFriendSourceCode)
+		#dotParse($sendToFriendSourceCode)
+	#else
+	    $velutil.mergeTemplate('/static/sendToFriend/index.vtl')
+    #end
+#end
+
+#macro (getPerzonalizedCategories)
+	#if ($request.session.getAttribute("cms.user"))
+		#set($user = $request.session.getAttribute("cms.user"))
+	#else
+		#set($user = ${webapi.getUserByLongLiveCookie()})
+	#end
+	
+	#if($UtilMethods.isSet($user))
+		#set($list = ${categories.getCategoriesByUser($user)})
+	#else
+		#set($list = ${webapi.getCategoriesByNonLoggedUser()})
+	#end
+#end
+
+#macro (getPerzonalizedTags)
+	#if ($request.session.getAttribute("cms.user"))
+		#set($user = $request.session.getAttribute("cms.user"))
+	#else
+		#set($user = ${webapi.getUserByLongLiveCookie()})
+	#end
+	
+	#if($UtilMethods.isSet($user))
+		#set($list = ${tags.getTagsByUser($user)})
+	#else
+		#set($list = ${tags.getTagsByNonLoggedUser()})
+	#end
+#end
+
+#macro (pullPersonalizedContentByCategories $query $limit $sortBy $list)
+	#if(!$UtilMethods.isSet($list) || ($list.size() == 0))
+		#getPerzonalizedCategories()
+	#end
+
+	#if ($list && $list.size() > 0)
+		## needed so we can parse dynamic variables 
+		#set($query = $render.eval($query))
+	
+		#if($sortBy == 'random')
+			#set($_inodeList = $contents.pullPersonalizedContentByCategories($query,'0','',$list))
+		#else
+			#set($_inodeList = $contents.pullPersonalizedContentByCategories($query,$limit,$sortBy,$list))
+		#end
+	
+		#set($list = ${contents.getEmptyList()})
+		#foreach($_inode in $_inodeList)
+		    #getContentMapDetail($_inode)
+			$!list.add(${math.sub($velocityCount,1)}, $content)
+		#end
+	
+		#if($sortBy == 'random')
+		   #set($list = $contents.randomizeList($list, $limit) )
+		#end
+	#else
+		#set($list = ${contents.getEmptyList()})
+	#end
+#end
+
+#macro (pullPersonalizedContentByTags $query $limit $sortBy $list $tagFields)
+	#if(!$UtilMethods.isSet($list) || ($list.size() == 0))
+		#getPerzonalizedTags()
+	#end
+
+	#if ($list && $list.size() > 0)
+		#set($queryTags = '')
+		#foreach($_tag in $list)
+			#if ($tagFields && $tagFields.size() > 0)
+				#foreach($_tagField in $tagFields)
+					#set($queryTags = "$queryTags $_tagField: $UtilMethods.doubleQuoteIt($_tag.tagName)")
+				#end
+			#end
+		#end
+		#if($UtilMethods.isSet($queryTags))
+			#set($query = "$query +($queryTags.trim())")
+		#end
+
+		#pullContent($query $limit $sortBy)
+
+	#else
+		#set($list = ${contents.getEmptyList()})
+	#end
+#end
+
+#macro (addToFavorites)
+        #if (!$UtilMethods.isSet($addFavoritesLabel))
+		#set($addFavoritesLabel = 'Add to Favorites')
+	#end
+        #if (!$UtilMethods.isSet($removeFavoritesLabel))
+		#set($removeFavoritesLabel = 'Remove from Favorites')
+	#end
+	
+	#set($submitLabel = $addFavoritesLabel)
+	#set($user = $request.session.getAttribute("cms.user"))
+	#set($url_page = $!VTLSERVLET_URI)
+	#set($url_params = $!request.getQueryString())
+
+	#if ($user)
+		#if (${favorites.isUrlFavorite($!url_page, $!url_params, $user.userId)})
+			#set($submitLabel = $removeFavoritesLabel)
+		#end
+	#end
+<script language="JavaScript" type="text/javascript">
+function submitFavoriteForm() {
+	var form = document.getElementById("addToFavoritesForm");
+	form.submit();
+}
+</script>
+<div id="addToFavoritesDiv" name="addToFavoritesDiv">
+	<form name="addToFavoritesForm" id="addToFavoritesForm" method="post" action="/dotCMS/addFavorites">
+		<input type="hidden" name="url_page" id="url_page" value="$!url_page">
+		<input type="hidden" name="url_params" id="url_params" value="$!url_params">
+		<a href="javascript:parent.submitFavoriteForm();">$submitLabel</a>
+	</form>	
+</div>
+#end
+
+#macro (getFavorites)
+	#set($user = $request.session.getAttribute("cms.user"))
+	#set($list = ${contents.getEmptyList()})
+	#if ($user)
+		#set($list = $request.session.getAttribute("com.dotmarketing.user_favorites"))
+		#if (!$list || $list.size() == 0)
+			#set($list = ${favorites.getFavorites($user.userId)})
+		#end
+	#end
+#end
+
+#macro (encrypt $someText)
+	#set ($encryptedStr = $crypt.crypt($someText))
+#end
+
+#macro (decrypt $someText)
+	#set ($decryptedStr = $crypt.decrypt($someText))
+#end
+
+
+#macro (setLanguage)
+   #set($lang = 1)
+   #if ($request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+	   #set($lang = $request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+   #end
+#end
+
+
+
+
+##Manages mailing list associated with the logged in user or if you passed the user id encrypted through the request
+
+#macro (mailingLists)
+
+	#if(!$UtilMethods.isSet($mailingListsReferrer))
+		#set($mailingListsReferrer = $!VTLSERVLET_URI)
+	 	#set($url_params = $!request.getQueryString())
+	 	#if($UtilMethods.isSet($url_params))
+	 		#set($mailingListsReferrer = "${mailingListsReferrer}?${url_params}")
+	 	#end	
+	#end
+
+	#set($userIdEncrypted = $request.getParameter("ui"))
+	#if(!$UtilMethods.isSet($userIdEncrypted))
+		#set($userIdEncrypted = $request.getAttribute("ui"))
+	#end
+	
+	#if($UtilMethods.isSet($userIdEncrypted))
+		#set($userId = $crypt.decrypt($userIdEncrypted))
+		#set($user = $cmsuser.getUserByUserId($userId))
+	#elseif($UtilMethods.isSet($cmsuser.getLoggedInUser($request)))
+		#set($user = $cmsuser.getLoggedInUser($request))
+		#set($userIdEncrypted = $crypt.crypt($user.userId))
+	#end
+	
+	#if ($user)
+
+		$velutil.mergeTemplate('static/messages.html')
+		
+		$velutil.mergeTemplate('/static/mailingList/index.vtl')
+	
+	#end
+#end
+
+##Presents a form to subscribe to the public mailing lists of the system, 
+##if the provided email address doesn't exists it gets created as a user account in the system
+#macro(subscribe)
+	#if($subscribeSourceCode)
+		#dotParse($subscribeSourceCode)
+	#else
+		$velutil.mergeTemplate('static/subscribe.html')
+	#end
+#end
+
+##creates a tag cloud providing the structure names, the return url and the maximum number of the top most popular tags to display
+#macro (tagCloud $structureNames $urlAddress $maxNumberOfTags)
+	#if($UtilMethods.isSet($structureNames))
+		
+		#set($tagCloudStructures = $webapi.splitString($structureNames, ","))
+			
+		## Generate a key for the block cache
+		#if(!$UtilMethods.isSet($tagCloudCacheKey))
+			#set($tagCloudCacheKey = "")
+			#foreach($structureName in $tagCloudStructures) 
+				#set($tagCloudCacheKey = "$!{tagCloudCacheKey}${structureName}")
+			#end
+			
+			#foreach($ignoredTag in $ignoredTags)
+				#set($tagCloudCacheKey = "$!{tagCloudCacheKey}${ignoredTag}")
+			#end
+			
+			#set($tagCloudCacheKey = "$!{tagCloudCacheKey}$!{tagCloudNoStyles}$!{urlAddress}$!{maxNumberOfTags}")
+			
+			#if($tagCloudCacheKey.length() > 255) 
+				#set($tagCloudCacheKey = "${tagCloudCacheKey.hashCode()}")
+
+				#if($tagCloudCacheKey.length() > 255)
+					#set($tagCloudCacheKey = $tagCloudCacheKey.substring(0,254))
+				#end
+			#end
+		#end
+		
+		## Time to Live
+		#if(!$UtilMethods.isSet($tagCloudCacheTTL))
+			## Default 24 hours = 24*60*60 = 86400 seconds
+			#set($tagCloudCacheTTL = 86400)
+		#end
+		
+		## Cache this part
+		#dotcache($tagCloudCacheKey $tagCloudCacheTTL)
+		
+			##Get the top most popular tags
+			#set($tagsCount = $macro.getTagsCount($tagCloudStructures, $maxNumberOfTags, $ignoredTags, $request))
+	
+			## calculate the ranges
+			#set($tagCountMin = 0)
+			#set($tagCountMax = 0)
+			#foreach($tagCount in $tagsCount)
+				#if($tagCountMin == 0)
+					#set($tagCountMin = $tagCount)
+				#end
+				#if($tagCountMin > $tagCount)
+					#set($tagCountMin = $tagCount)
+				#end
+				#if($tagCountMax < $tagCount)
+					#set($tagCountMax = $tagCount)
+				#end
+			#end
+	
+			#set($rangeMinMax = $tagCountMax - $tagCountMin)
+	
+			#set($interval = 1)
+			#if($rangeMinMax > 5)
+				#set($interval = $rangeMinMax / 5)
+			#end
+	
+			#set($range1 = $tagCountMin)
+			#set($range2 = $range1 + $interval)
+			#set($range3 = $range2 + $interval)
+			#set($range4 = $range3 + $interval)
+			#set($range5 = $range4 + $interval)
+	
+			#if ($urlAddress.indexOf("?") > 0)
+			    #if($urlAddress.indexOf("&amp;") == -1)
+			    	#set($url = "${urlAddress.replaceAll('&','&amp;')}&amp;tag=")
+			    #else
+					#set($url = "${urlAddress}&amp;tag=")
+				#end
+			#else
+				#set($url = "$urlAddress?tag=")
+			#end
+	
+			#if(!$tagCloudNoStyles)
+				<style type="text/css" media="all">
+				   .tagCloud .xSmallTag{
+					font-size: .75em;
+				   }
+				   .tagCloud .smallTag{
+					font-size: .95em;
+				   }
+				   .tagCloud .mediumTag{
+					font-size: 1.25em; 
+				   }
+				   .tagCloud .largeTag{
+					font-size: 2.0em;
+				   }
+				   .tagCloud .xLargeTag{
+					font-size: 3.5em;
+				   }
+				</style>
+				<div class="tagCloud">
+			#end
+	
+			##Sort tag count alpha
+			#set($tagSorted = $macro.sortAlpha($tagsCount.keySet()))
+	
+			#foreach($tag in $tagSorted)
+				#set($tagCount = $tagsCount.get($tag))
+	
+				#set($class = "xSmallTag")
+				#if($tagCount > $range5)
+					#set($class = "xLargeTag")
+				#elseif($tagCount > $range4)
+					#set($class = "largeTag")
+				#elseif($tagCount > $range3)
+					#set($class = "mediumTag")
+				#elseif($tagCount > $range2)
+					#set($class = "smallTag")
+				#end
+	
+				<a href="$url$webapi.encodeURL($tag)&amp;tagCount=${tagCount}" class="$class">$tag</a>
+			#end
+			
+			#if(!$tagCloudNoStyles)
+				</div>
+			#end
+			
+		#end ## End the Block Cache	
+	#end
+	
+	## Clear Variables
+	#set($tagCloudCacheKey = "")
+	#set($tagCloudCacheTTL = "")
+	
+#end
+
+#*
+
+Usage Example
+
+#set($photoList = $contents.getEmptyList())
+
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/1.jpg"))
+#set($dummy = $!photo.put("link", "http://www.yahoo.com"))
+#set($dummy = $!photoList.add($photo))
+
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/2.jpg"))
+#set($dummy = $!photo.put("link", "http://www.google.com"))
+#set($dummy = $!photoList.add($photo))
+
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/3.jpg"))
+#set($dummy = $!photo.put("link", "http://www.dotcms.org"))
+#set($dummy = $!photoList.add($photo))
+
+#set($photo = $contents.getEmptyMap())
+#set($dummy = $!photo.put("url", "/html/4.jpg"))
+#set($dummy = $!photo.put("link", "http://www.hotmail.com"))
+#set($dummy = $!photoList.add($photo))
+
+#set($photoDimensions = $contents.getEmptyMap())
+#set($dummy = $!photoDimensions.put("width", "125"))
+#set($dummy = $!photoDimensions.put("height", "125"))
+
+#set($photoCarrouselAutoSlide = true)
+
+#photoCarrousel($photoList $photoDimensions)
+
+*#
+#macro(photoCarrousel $photoList $photoDimensions)
+	##CHECK THE PHOTO LIST
+	#if(!$UtilMethods.isSet($photoList) || $photoList.size() == 0)
+		#if(!$UtilMethods.isSet($photoList))
+			#set($photoList = $contents.getEmptyList())
+		#end
+		#set ($images = $photoTool.getPhotoGalleryFolderImages($imageFolder,$host))
+		#foreach ($img in $images)
+			#set($photo = $contents.getEmptyMap())
+			#set($dummy = $!photo.put("url", $img.getURI()))
+			#set($dummy = $!photo.put("link", ""))
+			#set($dummy = $!photo.put("caption", $img.title))
+			#set($dummy = $!photoList.add($photo))
+		#end
+
+	#end
+
+	#set($photosCount = $photoList.size())
+
+	#if(!$UtilMethods.isSet($photoDimensions.width))
+		#set($dummy = $!photoDimensions.put("width", "100"))
+	#end
+	#set($photoWidth = $photoDimensions.width)
+
+	#if(!$UtilMethods.isSet($photoDimensions.height))
+		#set($dummy = $!photoDimensions.put("height", "100"))
+	#end
+	#set($photoHeight = $photoDimensions.height)
+	#set($totalWidth = $math.mul($photoWidth, $math.add($photosCount, 1)))
+	#set($offset = $math.add($photoWidth, 4))
+	
+	#if($photoCarrouselSourceCode)
+		#dotParse($photoCarrouselSourceCode)
+	#else
+		$velutil.mergeTemplate('/static/photoCarrousel/index.vtl')
+	#end
+#end
+
+## This macro create a permanent link to a file, page or contentlet
+## in the case of the contentlet it check if receive a parameter
+## called $permalinkDetailPage that is the inode or identifier of the content page detail
+## if not, check if the struture have a page default or return to the same
+## page adding the parameter
+## If you need to add a specific name for the link you need to add a parameter 
+## $!permalinkTitle
+
+#macro(permalink $inode)
+
+	#set($_permalink_contentId = $inode)
+	
+	#getContentMapDetail($_permalink_contentId)
+
+	#if($UtilMethods.isSet($content))
+		##This case is for contentlet
+		#getContentMapDetail($inode)
+		#set($_permalink_assetTitle= $content.contentTitle)
+		#set($_permalink_assetIdentifier=$content.identifier)
+	    
+		#if($UtilMethods.isSet("$!permalinkDetailPage"))
+			#set($_permalinkreference= "/${permalinkDetailPage}")
+		#else
+	    	#set($_permalink__structure = $contents.getStructureByInode("$content.structureInode"))
+	    	#if($UtilMethods.isSet("$!{_permalink__structure.pagedetail}") )
+				#set($_permalinkreference= "/${_permalink__structure.pagedetail}")
+			#else
+				#set($_permalinkreference="/${HTMLPAGE_IDENTIFIER}")
+			#end	
+		#end
+	#else
+		##This case is for pages and files
+		#set($_permalink_asset = $webapi.getIdentifierByInode("$inode"))
+		#set($_permalink_assetTitle= $_permalink_asset.URI)
+		#set($_permalink_assetIdentifier= $_permalink_asset.inode)
+
+	#end
+
+	##Check for particular link name
+	#if(!$UtilMethods.isSet("$!permalinkTitle"))
+		#set($permalinkTitle= "Permalink")
+	#end
+
+	#set($_permalink_hostName = $request.serverName)
+	#if($request.serverPort != 80)
+		#set($_permalink_hostName = "${_permalink_hostName}:${request.serverPort}")
+	#end
+	
+	#set($_permalinkreference= "http://${_permalink_hostName}/permalink/${_permalink_assetIdentifier}$!{_permalinkreference}")
+
+	#if($UtilMethods.isSet($useItemLink) && $useItemLink)
+		#set($itemlink = ${_permalinkreference})
+	#else
+	        <!--
+		<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+	         xmlns:dc="http://purl.org/dc/elements/1.1/">
+		<rdf:Description
+	    	rdf:about=${_permalinkreference}"
+	    	dc:identifier="$!{_permalinkreference}"
+	    	trackback:ping="$!{_permalinkreference}"
+	    	dc:title="$!{_permalink_assetTitle}" />
+		</rdf:RDF> 
+		-->
+	
+		<a href="${_permalinkreference}" class="permalink">${permalinkTitle}</a>
+    #end
+    
+	#set($_permalinkreference="")
+	#set($_permalink_structure = "")
+	#set($_permalink_assetTitle= "")
+	#set($_permalink_assetIdentifier="")
+	#set($_permalink_asset = "")
+	
+	#if($UtilMethods.isSet($useItemLink))
+		#set($useItemLink = false)
+	#end
+	
+#end
+
+## This macro create the RDF tracback reference in the page for a permanent link to a file, page or contentlet
+## in the case of the contentlet it check if receive a parameter
+## called $permalinkDetailPage that is the inode or identifier of the content page detail
+## if not, check if the struture have a page default or return to the same
+## page adding the parameter
+## This macro can be used to include the trackback rdf xml info without having to include the permalink
+## the rdf xml info is used by the trackback autodiscovery protocol and need to be included in the page
+## to make external references ping the dotcms
+
+#macro(trackback $inode)
+
+	#set($contentId = $inode)
+	
+	#getContentMapDetail($contentId)
+
+	#if($UtilMethods.isSet($content))
+		##This case is for contentlet
+		#set($assetTitle= $content.contentTitle)
+		#set($assetIdentifier=$content.identifier)
+		
+	    #if($UtilMethods.isSet("$!permalinkDetailPage"))
+			#set($_permalinkreference= "/${permalinkDetailPage}")
+		#else
+	    	#set($_structure = $contents.getStructureByInode($content.structureInode))
+	    	#if($UtilMethods.isSet("$!{_structure.pagedetail}") && $_structure.pagedetail > 0 )
+				#set($_permalinkreference= "/${_structure.pagedetail}")
+			#else
+				#set($_permalinkreference="/${HTMLPAGE_INODE}")
+			#end	
+		#end
+		
+	#else
+		##This case is for pages and files
+		#set($asset = $webapi.getIdentifierByInode("$inode"))
+		#set($assetTitle= $asset.URI)
+		#set($assetIdentifier= $asset.inode)
+
+	#end
+
+	#set($_permalinkreference= "http://${host.hostname}/permalink/${assetIdentifier}$!{_permalinkreference}")
+
+	<!--
+	<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+	<rdf:Description
+    	rdf:about="$!{_permalinkreference}"
+    	dc:identifier="$!{_permalinkreference}"
+    	trackback:ping="$!{_permalinkreference}"
+    	dc:title="$!{assetTitle}" />
+	</rdf:RDF> 
+	-->
+
+	#set($_permalinkreference="")
+	#set($_structure = "")
+	#set($assetTitle= "")
+	#set($assetIdentifier="")
+	#set($asset = "")
+#end
+
+
+## This macro create to display the trackback pings to a permalink 
+#macro(pullTrackbacks $id)
+	#set($list = $webapi.getTrackbacksByIdentifier($id))
+#end
+
+##pull the content and generate the rss xml from the specified query
+#macro(buildRSSFromContent $channelTitle $channelLink $channelDescription $query $titleField $descriptionField)
+	
+	#set($contentList = $!{contents.getEmptyList()})
+	#if(!$UtilMethods.isSet("$!orderBy"))
+		#set($orderBy = 'modDate desc')
+	#end
+	#if(!$UtilMethods.isSet("$!limit"))
+		#set($limit = '0')
+	#end
+	#pullContent($query $limit $orderBy)
+	#foreach($content in $list)
+		#set($item = $!{contents.getEmptyMap()})
+		#set($_dummy = $item.put('guid', $!content.get('identifier')))
+		#set($_dummy = $item.put('title', $content.get($titleField)))
+		#set($_dummy = $item.put('description', $content.get($descriptionField)))
+		#set($useItemLink='rss')
+		#permalink("$content.get('identifier')")
+		#set($_dummy = $item.put('link', ${webapi.trim($itemlink)} ))
+		
+		#if($UtilMethods.isSet($rssPublicationDateField))
+			#set($_dummy = $item.put('pubdate', $!content.get($rssPublicationDateField)))
+		#else
+			#set($_dummy = $item.put('pubdate', $!content.get('contentLastModDate')))
+		#end
+		
+		##ADD ITEM TO THE LIST
+		#set($_dummy = $!contentList.add($item))
+		#set($useItemLink="")
+		#set($itemlink="")
+	#end
+	
+	#buildRSS($channelTitle $channelLink $channelDescription $contentList)
+#end 
+
+##pull the content and generate the rss xml from the specified list
+#macro(buildRSS $channelTitle $channelLink $channelDescription $contentList)
+    #set($url = ${request.getRequestURL().toString()})
+	<?xml version="1.0"?>
+	<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	   <channel>
+	      <title>${webapi.xmlEscape($channelTitle)}</title>
+	      <link>${webapi.xmlEscape($channelLink)}</link>
+	      <description>${webapi.xmlEscape($channelDescription)}</description>
+	      <atom:link href="${webapi.xmlEscape($url)}" rel="self" type="application/rss+xml" />
+	      
+	      ##Optional Channels Fields
+	      #if($UtilMethods.isSet("$!channelLanguage"))
+	      <language>${webapi.xmlEscape($channelLanguage)}</language>
+	      #end
+	      #if($UtilMethods.isSet("$!channelCopyright"))
+	      <copyright>${webapi.xmlEscape($channelCopyright)}</copyright>
+	      #end
+	      #if($UtilMethods.isSet("$!channelPubDate"))
+	      <pubDate>${channelPubDate}</pubDate>
+		  #end
+		  #if($UtilMethods.isSet("$!channelLastBuildDate"))
+	      <lastBuildDate>${channelLastBuildDate}</lastBuildDate>
+	      #end
+	      #if($UtilMethods.isSet("$!channelDocs"))
+	      <docs>${webapi.xmlEscape($channelDocs)}</docs>
+	      #end
+	      #if($UtilMethods.isSet("$!channelGenerator"))
+	      <generator>${webapi.xmlEscape($channelGenerator)}</generator>
+	      #end
+	      #if($UtilMethods.isSet("$!channelManagingEditor"))
+	      <managingEditor>${webapi.xmlEscape($channelManagingEditor)}</managingEditor>
+	      #end
+	      #if($UtilMethods.isSet("$!channelWebMaster"))
+	      <webMaster>${webapi.xmlEscape($channelWebMaster)}</webMaster>
+	      #end
+	      
+	      #foreach($item in $contentList)
+	      	  
+		      <item>
+		      	<title>${webapi.xmlEscape($item.get('title'))}</title>
+		        <link>${webapi.xmlEscape($item.get('link'))}</link>
+		      	<description>${webapi.xmlEscape($item.get('description'))}</description>
+		        #if($UtilMethods.isSet("$!item.get('pubdate')"))
+		        <pubDate>${UtilMethods.dateToHTMLDate($item.get('pubdate'),"EEE, dd MMM yyyy HH:mm:ss z")}</pubDate>
+		        #end
+				#if($UtilMethods.isSet("$!item.get('author')"))
+		        <author>${webapi.xmlEscape($item.get('author'))}</author>
+		        #end
+		        <guid isPermaLink="false" >${item.get('guid')}</guid>
+		      </item>
+		        
+	      #end
+		</channel>
+	</rss>
+#end 
+
+
+#macro(ticker $titleField)
+	#if ($tickerSourceCode)
+		#dotParse($tickerSourceCode)
+			
+		##Clearing tickerSourceCode value to fix in edit mode when calling this macro two or more times, will not reuse this value even the variable is declared later.
+		#set ($tickerSourceCode = false)
+	#else
+		#if ($list.size() > 0)
+			$velutil.mergeTemplate('/static/ticker/ticker.vtl')
+    	#end
+	#end
+#end
+
+## This macro pulls a contentlet from a structure
+## and tries to match based on the $request.uri 
+
+#macro(getContentletByUri $structureName $fieldName )
+	#set($getContentletByUri_oldContent = $content)
+	#set($getContentletByUri_ID = $contents.getContentletByUrl($request,  $structureName,$fieldName))
+	#if($UtilMethods.isSet($getContentletByUri_ID))
+		#getContentMapDetailByIdentifier($getContentletByUri_ID)
+		#set($contentletByUri = $content)
+		#set($content = $getContentletByUri_oldContent)
+	#end
+	#set($getContentletByUri_oldContent = "")
+#end
+
+#macro (events $fromDate $toDate)
+	#set($fromDateObj = $UtilMethods.parseDate($fromDate, "MM/dd/yyyy"))
+	#set($toDateObj = $UtilMethods.parseDate($toDate, "MM/dd/yyyy"))
+
+	#set($list = $eventsapi.getEventsByDateRange($fromDateObj, $toDateObj))
+#end
+
+## This macro builds the sharing tools links
+## dynamically given a list of bookmarks to be shown.
+## i.e $socialBookmarksList = ['digg','delicious','yahoo','google','newsvine']
+
+#macro (socialBookmarks)
+   #if($UtilMethods.isSet($socialBookmarksList))
+     
+	#if($socialBookmarksSourceCode)
+		#dotParse($socialBookmarksSourceCode)
+	#else
+		$velutil.mergeTemplate('/static/social_bookmarks/social_bookmarks.html')
+	#end
+	
+   #end
+#end
+
+
+## This macro gets the latest events 
+#macro (latestEvents)
+	#if($UtilMethods.isSet("$!maxEvents"))
+	  #set($eventsList = $eventsapi.getLatestEvents($maxEvents))
+	#else
+	  #set($eventsList = $eventsapi.getLatestEvents(0))
+	#end  
+#end 
+
+
+#*
+	This macro shows a poll given a question id.
+	If questionId is not set return all the active questions
+*#
+#macro (poll $questionId)
+
+   #if($UtilMethods.isSet($questionId))	
+      #if($poll.questionExists($questionId))
+         #if($poll.hasExpired($questionId))
+            #if($EDIT_MODE) 
+               <div>
+                  This Poll has expired 		 
+               </div>
+            #end        	         	         
+         #end
+      #else
+         #set($questionId = '')
+      #end	
+   #else
+      #set($questionId = '')
+   #end
+
+   #if($showVotes)
+      $request.setAttribute("showVotes", true)
+   #else
+      $request.setAttribute("showVotes", false)
+   #end
+   #if($allowViewResults)
+      $request.setAttribute("allowViewResults", true)
+   #else
+      $request.setAttribute("allowViewResults", false)
+#end
+   $velutil.mergeTemplate('/static/polls/index.vtl')	 
+#end
+
+#* 
+Gets the details page link for a given contentlet.
+The link title can also be specified, otherwise the macro
+will attemtp to find a contentlet field with the name 'title'
+and use this as the default link title.
+If the 'Detail Page' structure field has not been set, the link will be composed of the 
+current page url plus the parameter.
+Note that the name of the request parameter used for passing the selected inode to the details page, 
+is determined by the properties key "INODE_PARAMETER_NAME". In case this key
+is missing, the parameter name defaults to "inode"
+
+"linkTitle" is an optional paramater.  If it is not set the title will default to the content.title
+*#
+#macro(detailPageLink $content)
+	#if($UtilMethods.isSet($config.getStringProperty("INODE_PARAMETER_NAME")))
+		#set($parameterName = $config.getStringProperty("INODE_PARAMETER_NAME"))
+	#else
+		#set($parameterName = "inode")
+	#end
+
+	#if($UtilMethods.isSet($linkTitle))
+		#set($title = $linkTitle)
+	#else
+		#set($title = $content.title)
+	#end
+
+	#if($UtilMethods.isSet($content.detailPageURI))
+		<a href="$content.detailPageURI?$parameterName=$content.inode">$title</a>
+	#else
+		<a href="$VTLSERVLET_URI?$parameterName=$content.inode">$title</a>
+	#end
+#end
+
+#* 
+Gets the inode selected by the user.
+Typically this will be used in 'detail' style pages (e.g. /news/details.dot),
+and therefore the inode will actually correspond to a selected contentlet.
+Note that the name of the request parameter used for extracting the selected inode, 
+is determined by the properties key "INODE_PARAMETER_NAME". In case this key
+is missing, the parameter name defaults to "inode"
+*#
+#macro(selectedInode)
+	#if($UtilMethods.isSet($config.getStringProperty("INODE_PARAMETER_NAME")))
+		#set($parameterName = $config.getStringProperty("INODE_PARAMETER_NAME"))
+		#set($inode = $request.getParameter("$parameterName"))
+	#else
+		#set($inode = $request.getParameter('inode'))
+	#end
+#end
+	
+#*
+Redirects to the the counts click action which checks for 
+a Count Clicks field that counts the number of times that the link was clicked
+and redirects to the specified link. If the link is not set then it uses the permalink
+macro to get the content's permalink.
+*#
+#macro(countContentClicks $id)
+	#getContentMapDetail($id)
+	#if(!$UtilMethods.isSet($redirectURL))
+	  #set($useItemLink = true)
+      #permalink($content.identifier)
+	  #set($countLink="/dotCMS/countContentClicks?inode=$content.inode&redirect=$itemlink")
+	#else
+	  #set($countLink="/dotCMS/countContentClicks?inode=$content.inode&redirect=$redirectURL")
+	#end
+#end
+
+#*
+Creates a div'ed login form that can be dropped in on any page to authenticate the user
+*#
+#macro(loginForm)
+	#set($prefixVars = "_login")
+	#if($UtilMethods.isSet($loginFormSourceCode))
+		#dotParse($loginFormSourceCode)
+	#else
+		$velutil.mergeTemplate('/static/login/login_macro.vtl')
+	#end
+#end
+
+#*
+Macro to get a random image from a folder.
+*#
+#macro(randomImage $rootFolder)
+	#set ($fileRepository_showFolder = $macro.getFolderPath($rootFolder , $request)) 
+	#set ($fileRepository_rootFolder = $rootFolder) 
+	#set ($fileRepository_foldersList = $macro.getfileRepository($fileRepository_showFolder, "true", $request)) 
+	#set ($fileRepository_filesList = $macro.getfileRepository($fileRepository_showFolder, "false", $request)) 
+
+	#set($image = $UtilMethods.randomList($fileRepository_filesList,1)) 
+	#set($image = $image.get(0))
+#end
+
+#*
+Use to place a text area inside of a contentlet. You need this to place a text area inside a piece of content on the dotCMS backend. 
+Has 2 option variables id and value which can be set. 
+*#
+#macro(textArea $name $style)
+	<textarea #if($InodeUtils.isSet($id))id="$id"#end name="$name" style="$style">#if($UtilMethods.isSet($value))$value#end</textarea>  
+#end
+
+#*
+ Macro to submit content from frontend
+*#
+#macro(submitContent $structureNameAux)
+   #set($structureName = $structureNameAux)
+   #if ($UtilMethods.isSet($submitContentSrc))
+      #dotParse($submitContentSrc)
+   #else
+      $velutil.mergeTemplate('/static/content/content_form_macro.vtl')
+   #end
+#end 
+
+#*
+ Macro to list user groups on frontend
+*#
+
+#macro(myGroups $user)
+
+	#if($myGroupSourceCode)
+		#dotParse($myGroupsSourceCode)
+	#else
+		$velutil.mergeTemplate('/static/my_groups/my_groups.html')
+	#end
+		
+#end
+
+#macro (pdfExport)
+	#set ($pdfInternalIcon='/html/images/icons/pdf.png')
+	#if($UtilMethods.isSet($pdfExportIcon))
+		#set ($pdfInternalIcon=$pdfExportIcon)
+	#end
+	#set ($pdfInternalAltText='Export to PDF')
+	#if($UtilMethods.isSet($pdfExportAltText))
+		#set ($pdfInternalAltText=$pdfExportAltText)
+	#end
+	#if($UtilMethods.isSet($pdfFileName))
+		#set ($pdfInternalFileName=$pdfFileName)
+	#else
+		#set ($pdfInternalFileName= "${UtilMethods.encodeURL($pageTitle)}.pdf")
+	#end
+	#set($_parList = $request.getParameterNames())
+	#set($_parString ='')
+	#foreach($_parName in $_parList)
+		#set($_parValue = $request.getParameter($_parName))
+		#if($UtilMethods.isSet($request.getParameterValues($_parName)))
+			#set($valuesList = $request.getParameterValues($_parName))
+			#foreach($subValue in $valuesList)
+			 	#set($_parString = $_parString + '&' + $_parName + '=' + $webapi.encodeURL($subValue))
+			#end
+		#else
+			#set($_parString = $_parString + '&' + $_parName + '=' + $webapi.encodeURL($_parValue))
+		#end			
+	#end
+	#set($_outString ='<a href="/servlets/htmlpdf?_dot_pdfpage=')
+	#if($pdfUserURL)
+		#set($_outString =$_outString + ${request.getAttribute("javax.servlet.forward.request_uri")})
+	#else
+		#set($_outString =$_outString + ${HTMLPAGE_IDENTIFIER})
+	#end
+	#set($_outString =$_outString + "&fname=${pdfInternalFileName}")	
+	#set($_outString =$_outString +${_parString}+'"><img src="'+${pdfInternalIcon}+'" alt="'+${pdfInternalAltText}+'"/></a>')
+	$_outString
+#end
+
+#macro(googleMap $key)
+
+#if(!$UtilMethods.isSet($width))
+   #set($width = 700)
+#end
+
+#if(!$UtilMethods.isSet($height))
+   #set($height = 400)
+#end
+
+#if(!$UtilMethods.isSet($map_id))
+   #set($map_id = 'map_canvas')
+#end
+
+#if(!$UtilMethods.isSet($zoom))
+   #set($zoom = 13)
+#end
+
+#if(!$UtilMethods.isSet($class))
+   #set($class = "class='$!{class}'")
+#end
+
+#if(!$UtilMethods.isSet($zoomControl))
+   #set($zoomControl = true)
+#end
+
+#if(!$UtilMethods.isSet($typeControl))
+   #set($typeControl = true)
+#end
+
+<!-- The DIV where the map will be displayed -->
+<div id="$!{map_id}" $!{class} style="width: $!{width}px; height: $!{height}px; $!{style}"></div>
+<!-- END The DIV where the map will be displayed -->
+
+<!-- The link to the Google Maps API code using the key for this site -->
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=$!{key}" type="text/javascript"></script>
+<!-- END The link to the Google Maps API code using the key for this site -->
+
+<script type="text/javascript">
+
+//The MAP object
+var map = new GMap2(document.getElementById("${map_id}"));
+//The GEOCoder object that locate the address on this map
+var geocoder = new GClientGeocoder();
+//The zoom level
+var zoomMap = ${zoom};
+//The Address to be located
+var address = "$!{address}";
+var lat = "$!{lat}";
+var lng = "$!{lng}";
+
+
+//The method that initialize the map
+function initialize${map_id}()
+{
+  if (GBrowserIsCompatible())
+  {
+    #if($zoomControl)
+       map.addControl(new GLargeMapControl());
+    #end
+    #if($typeControl)
+       map.addControl(new GMapTypeControl());
+    #end
+    if(address)
+    {
+       showAddress${map_id}(address);
+    }
+    else
+    {
+       var point = new GLatLng(lat,lng);
+       setAddress${map_id}(point);
+    }    
+  }
+}
+
+function showAddress${map_id}(address) 
+{
+  geocoder.getLatLng(address,setAddress${map_id});
+}
+
+function setAddress${map_id}(point) 
+{      
+  if (!point) 
+  {        
+    alert("The address " + address + " coudn't be found");      
+  } 
+  else 
+  {        
+    map.setCenter(point,zoomMap);
+    var marker = new GMarker(point);        
+    map.addOverlay(marker); 
+   }    
+} 
+
+function unloadDirection${map_id}()
+{
+   GUnload();
+}
+
+initialize${map_id}();
+window.onunload = unloadDirection${map_id};
+</script>
+#end
+
+
+#macro(googleMapDirections $from $to $key)
+
+#if(!$UtilMethods.isSet($width))
+   #set($width = 700)
+#end
+
+#if(!$UtilMethods.isSet($height))
+   #set($height = 400)
+#end
+
+#if(!$UtilMethods.isSet($map_id_directions))
+   #set($map_id_directions = 'map_canvas_directions')
+#end
+
+#if(!$UtilMethods.isSet($text_id_directions))
+   #set($text_id_directions = 'map_text_directions')
+#end
+
+#if(!$UtilMethods.isSet($class))
+   #set($class = "class='$!{class}'")
+#end
+
+#if(!$UtilMethods.isSet($mapAlign))
+   #set($mapAlign = "top")
+#end
+
+#if(!$UtilMethods.isSet($zoomControl))
+   #set($zoomControl = true)
+#end
+
+#if(!$UtilMethods.isSet($typeControl))
+   #set($typeControl = true)
+#end
+
+#if(!$UtilMethods.isSet($hostLanguage))
+   #set($hostLanguage = "en")
+#end
+
+#if(!$UtilMethods.isSet($printMode))
+   #set($printMode = 2)
+#end
+
+<!-- The DIV where the map will be displayed -->
+<div>
+#if($mapAlign == "top")
+  <div id="$!{map_id_directions}" $!{class} style="width: $!{width}px; height: $!{height}px; $!{style}"></div>
+  <div id="$!{text_id_directions}" $!{class} style="width: $!{width}px; $!{style}"></div>
+#elseif($mapAlign == "left")
+  <div id="$!{map_id_directions}" $!{class} style="float: left; width: $!{width}px; height: $!{height}px; $!{style}"></div>
+  <div id="$!{text_id_directions}" $!{class} style="float: left; width: $!{width}px; $!{style}"></div>
+  <div style="clear:left"></div>
+#elseif($mapAlign == "right")
+  <div id="$!{text_id_directions}" $!{class} style="float: left; width: $!{width}px; $!{style}"></div>
+  <div id="$!{map_id_directions}" $!{class} style="float: left;  width: $!{width}px; height: $!{height}px; $!{style}"></div>
+  <div style="clear:left"></div>
+#end
+</div>
+<!-- END The DIV where the map will be displayed -->
+
+<!-- The link to the Google Maps API code using the key for this site -->
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=$!{key}" type="text/javascript"></script>
+<!-- END The link to the Google Maps API code using the key for this site -->
+
+<script type="text/javascript">
+
+//The MAP object
+var mapDirection = new GMap2(document.getElementById("${map_id_directions}"));
+//Direction Text Object
+var directionsPanel = document.getElementById("${text_id_directions}");
+var directions;
+
+//The GEOCoder object that locate the address on this map
+var geocoder = new GClientGeocoder();
+//The Address to be located
+var address = "${address}";
+
+//The method that initialize the map
+function initializeDirection${map_id_directions}()
+{
+  if (GBrowserIsCompatible())
+  {
+    #if($zoomControl)
+       mapDirection.addControl(new GLargeMapControl());
+    #end
+    #if($typeControl)
+       mapDirection.addControl(new GMapTypeControl());
+    #end
+    directions = new GDirections(mapDirection, directionsPanel); 
+    GEvent.addListener(directions,"error", handleErrors${map_id_directions});
+    directions.load("from: $from to: $to");
+  }
+}
+
+//The method that handle the Erros
+function handleErrors${map_id_directions}()
+{
+  if (directions.getStatus().code == G_GEO_UNKNOWN_ADDRESS)
+    alert("No corresponding geographic location could be found for one of the specified addresses. This may be due to the fact that the address is relatively new, or it may be incorrect.\nError code: " + directions.getStatus().code);
+  else if (directions.getStatus().code == G_GEO_SERVER_ERROR)
+    alert("A geocoding or directions request could not be successfully processed, yet the exact reason for the failure is not known.\n Error code: " + directions.getStatus().code);
+  else if (directions.getStatus().code == G_GEO_MISSING_QUERY)
+    alert("The HTTP q parameter was either missing or had no value. For geocoder requests, this means that an empty address was specified as input. For directions requests, this means that no query was specified in the input.\n Error code: " + directions.getStatus().code);
+  else if (directions.getStatus().code == G_GEO_BAD_KEY)
+    alert("The given key is either invalid or does not match the domain for which it was given. \n Error code: " + directions.getStatus().code);
+  else if (directions.getStatus().code == G_GEO_BAD_REQUEST)
+    alert("A directions request could not be successfully parsed.\n Error code: " + directions.getStatus().code);
+  else
+    alert("An unknown error occurred.");
+}
+
+function unloadDirection${map_id_directions}()
+{
+   GUnload();
+}
+
+initializeDirection${map_id_directions}();
+window.onunload = unloadDirection${map_id_directions};
+</script>
+
+#set($urlForPrint = "http://maps.google.com/maps?f=d&amp;saddr=${from}&amp;daddr=${to}&amp;hl=${hostLanguage}&amp;pw=${printMode}")
+
+#end
+
+#macro(addThis $accountID)
+<script type="text/javascript">
+addthis_pub             = "$accountID"; 
+                                  
+#if($UtilMethods.isSet($addthis_logo))
+addthis_logo            = "$addthis_logo";
+#end
+
+#if($UtilMethods.isSet($addthis_logo_background)) 
+addthis_logo_background = "$addthis_logo_background";
+#end
+
+#if($UtilMethods.isSet($addthis_logo_color))
+addthis_logo_color      = "$addthis_logo_color";
+#end
+
+#if($UtilMethods.isSet($addthis_brand))
+addthis_brand           = "$addthis_brand";
+#end
+
+#if($UtilMethods.isSet($addthis_options))
+addthis_options         = "$addthis_options";
+#end
+
+#if($UtilMethods.isSet($addthis_offset_top))
+addthis_offset_top = "$addthis_offset_top";
+#end
+
+#if($UtilMethods.isSet($addthis_offset_left))
+addthis_offset_left = "$addthis_offset_left";
+#end
+
+</script>
+<a href="http://www.addthis.com/bookmark.php" onmouseover="return addthis_open(this, '', '', '$!{addthis_bookmark_name}')" onmouseout="addthis_close()" onclick="return addthis_sendto()"><img src="http://s9.addthis.com/button1-share.gif" width="125" height="16" border="0" alt="" /></a>
+<script type="text/javascript" src="http://s7.addthis.com/js/152/addthis_widget.js"></script>
+             
+#end
+
+#macro(addBrowserBookmark )
+<script type="text/javascript">
+	function addBookmark(title, url) { 
+	   
+        if (window.sidebar) { // firefox 
+              window.sidebar.addPanel(title, url,""); 
+        } else if( document.all ) { //MSIE 
+                window.external.AddFavorite( url, title); 
+        } else { 
+        	alert("Sorry, your browser doesn't support this"); 
+        } 
+	}
+</script>
+
+<a href="#" onclick="addBookmark(document.title,location.href )">Bookmark</a>
+#end
+
+#macro (titleImage $title)
+	#if ($title)
+		#if ($font)
+			#set ($font = "&font=${font}.ttf")
+		#end
+		#if ($size)
+			#set ($size = "&size=${size}")
+		#end
+		#if ($color)
+			#set ($color = "&color=${color}")
+		#end
+		#if($textLayout)
+			#set($textLayout = "&textLayout=$!{textLayout}")
+		#end
+		#if($background)
+			#set($background = "&background=$!{background}") 
+		#end
+		#if($aa)
+            #set($aa = "&aa=$!{aa}")
+		#end
+		#if($nocache)
+            #set($nocache = "&nocache=$!{nocache}")
+		#end
+			
+		#if ($break)
+			<img src="/titleServlet?text=$UtilMethods.encodeURL($title)&break=$break$!{font}$!{size}$!{color}$!{textLayout}$!{background}$!{aa}$!{nocache}" alt="$title">
+		#else
+			<img src="/titleServlet?text=$UtilMethods.encodeURL($title)$!{font}$!{size}$!{color}$!{textLayout}$!{background}$!{aa}$!{nocache}" alt="$title">
+		#end
+     #end
+#end
+
+#*
+  this macro create the XML format for a podcast that can be added to itunes, for more info check this link
+  http://www.apple.com/itunes/podcasts/specs.html#example
+
+  The Fields in the structure that have all the items data
+  #set($podCastTitleField = "title") -- title
+  #set($podCastAuthorField = "author") -- author
+  #set($podCastSubtitleField = "subtitle") -- subtitle
+  #set($podCastSummaryField = "summary") -- summary
+  #set($podCastEnclosureField = "enclosure") -- this is the link to the podcast file
+  #set($podCastEnclosureLengthField = "enclosureLength") -- the length of the file
+  #set($podCastEnclosureTypeField = "enclosureType") -- the type of the file
+  #set($podCastGUIDField = "identifier") -- this is a global id of the entry
+  #set($podCastDurationField = "duration") -- duration
+  #set($podCastKeywordsField = "keywords") -- keywords
+
+  The Fields of the podcast itself
+  #set($podCastTitle="Test Title") -- title 
+  #set($podCastSubtitle="Test Subtitle") -- subtitle
+  #set($podCastAuthor="This is the author") -- author
+  #set($podCastLanguage="en-us")  -- language
+  #set($podCastCopyright="Copyright 2010") -- copyright
+  #set($podCastSummary="This is the summary of the podcast") -- summary
+  #set($podCastDescription="This is the description of the podcast and the description is a bit longer than the summary, which is shorter") -- description
+  #set($podCastOwnerName="John Doe") -- owner
+  #set($podCastOwnerEmail="john.doe@example.com") -- owner's email
+  #set($podCastImage="http://localhost/thumbnail?id=7762&w=700&h=700") -- image of the podcast
+  #set($podCastCategory="Technology, Gadgets") -- categories
+  #set($podCastURL = "$VTLSERVLET_URI") -- URL of this file
+
+  #buildPodcast($podCastTitle,$podCastURL,$podCastDescription,$list)
+*#
+
+#macro(buildPodcast $podCastTitle $podCastURL $podCastDescription $podcasts)
+	#if($podCastSourceCode)
+		#dotParse($podCastSourceCode)
+	#else
+		$velutil.mergeTemplate('/static/podcast/podcast.vtl')
+	#end
+#end

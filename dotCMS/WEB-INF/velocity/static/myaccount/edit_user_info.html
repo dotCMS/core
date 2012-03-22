@@ -1,0 +1,158 @@
+
+<script>
+function doSubmit(){
+	document.getElementById("myAccountForm").submit();
+}
+function prefixChanged (obj) {
+	if (obj.options[obj.selectedIndex].value == "other") {
+		document.myAccountForm.otherPrefix.readOnly = false;
+		document.myAccountForm.otherPrefix.focus();
+	} else {
+		document.myAccountForm.otherPrefix.readOnly = true;
+	}
+}
+</script>
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+	<form action="/dotCMS/myAccount" method="post" id="myAccountForm"
+		name="myAccountForm" autocomplete="off"><input type="hidden" name="dispatch"
+		value="saveUserInfo"> <input type="hidden" name="userID"
+		value="${myAccountForm.userID}">
+	<tr>
+		<td align="right" height="22">
+		<div class="item">
+		<div class="curveLink" style="float: right;"><span><a href="/dotCMS/registrationHistory">Registration and Order History</a></span></div>
+
+		<div class="curveLink" style="float: right; margin-right: 15px;"><span><a href="/dotCMS/myAccount">My Profile</a></span></div>
+		<div class="clear">&nbsp;</div>
+		</div>
+		</td>
+	</tr>
+	<tr>
+		<td>#parse('static/messages.html')</td>
+	</tr>
+	<tr>
+		<td valign="top" align="left" style="padding-left: 170px;" >
+		<table cellpadding="0" cellspacing="0"border="0" id="formTable">
+			<!--  application Body Start -->
+			<tr>
+				<td bgcolor="#ffffff" colspan="3" valign="top"><img
+					src="/portal/images/shim.gif" width="1" height="1"></td>
+			</tr>
+			<tr>
+				<td colspan="3"><br></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td width="280">Prefix:</td>
+				<td>
+					#if($!{myAccountForm.prefix} == "mr")
+						#set( $mr = "selected")
+					#elseif($!{myAccountForm.prefix} == "mrs")
+						#set( $mrs = "selected")
+					#elseif($!{myAccountForm.prefix} == "miss")
+						#set( $miss = "selected")
+					#elseif($!{myAccountForm.prefix} == "dr")
+						#set( $dr =	"selected")
+					#else
+						#set( $other = "selected")
+					#end
+					<select	name="prefix" value="$!{myAccountForm.prefix}" onchange="prefixChanged(this)">
+						<option value="mr"$!{mr}>Mr.</option>
+						<option value="mrs"$!{mrs}>Mrs.</option>
+						<option value="miss"$!{miss}>Ms.</option>
+						<option value="dr"$!{dr}>Dr.</option>
+						<option value="other"$!{other}>Other</option>
+					</select>
+					<input type="text" style="width:87px" name="otherPrefix"
+						value="#if(${other})$!{myAccountForm.prefix}#end" #if(!${other})
+						readonly="readonly" #end>
+				</td>
+			</tr>
+			<tr>
+				<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+				<td>First Name:</td>
+				<td><input type="text" name="firstName"
+					value="$!myAccountForm.firstName" style="width:150px"></td>
+			</tr>
+			<tr>
+				<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+				<td>Last Name:</td>
+				<td><input type="text" name="lastName"
+					value="$!myAccountForm.lastName" style="width:150px"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td>Suffix:</td>
+				<td><input type="text" name="suffix" value="$!myAccountForm.suffix"
+					style="width:150px"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td>Title:</td>
+				<td><input type="text" name="title" value="$!myAccountForm.title"
+					style="width:150px"></td>
+			</tr>
+			<tr>
+				<td colspan="3"><br></td>
+			</tr>
+			<tr>
+				<td colspan="3" bgcolor="#DDDDDD"><img src="/portal/images/shim.gif" width="1" height="1"></td>
+			</tr>
+			<tr>
+				<td colspan="3" valign="top"><br></td>
+			</tr>
+			<tr>
+				<td align="right"><img src="/html/images/required.gif">&nbsp;</td>
+				<td>Username / E-mail address:</td>
+				<td><input type="text" name="emailAddress"
+					value="$!myAccountForm.emailAddress" style="width:150px"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td>Current Password:</td>
+				<td><input type="password" name="password" value=""
+					style="width:150px"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td>New Password:</td>
+				<td><input type="password" name="newPassword" style="width:150px"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td>New Password again:</td>
+				<td><input type="password" name="verifyPassword" style="width:150px"></td>
+			</tr>
+			<tr>
+				<td colspan="3" valign="top"><br></td>
+			</tr>
+			<tr>
+				<td colspan="3" bgcolor="#DDDDDD"><img src="/portal/images/shim.gif"
+					width="1" height="1"></td>
+			</tr>
+			<tr>
+				<td colspan="3" bgcolor="#ffffff"><br>
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="#ffffff" colspan="3" align="center">
+					<table>
+					<tr>
+						<td>
+							<div class="curveLink" style="float: right; padding-right: 20px;"><span><button class="clearInputStyles" onclick="window.location='/dotCMS/myAccount?userId=$!{myAccountForm.userID}';">Back</button></span></div>
+						</td>
+						<td>
+							<div class="curveLink"><span><button class="clearInputStyles" onclick="doSubmit();">Save</button></span></div>
+						</td>
+					</tr>
+					</table><br /> <br />
+				</td>
+			</tr>
+
+		</table>
+		</td>
+	</tr>
+	</form>
+</table>
+""  
+"" 

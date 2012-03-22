@@ -1,0 +1,98 @@
+#if ($!referrer)
+	#set($referrer =  $!{request.getAttribute("referrer")})
+	#if(!$UtilMethods.isSet($referrer))
+		#set($referrer =  $!{request.getParameter("referrer")})
+	#end
+#end
+
+#set ($email = $request.getParameter("email"))
+#if ($!email)
+	#set ($email = $request.getAttribute("email"))
+#end
+
+#set ($emailAddress = $request.getParameter("emailAddress"))
+#if (!$UtilMethods.isSet($emailAddress))
+    #set ($emailAddress = $request.getAttribute("emailAddress"))
+	#if (!$UtilMethods.isSet($emailAddress))
+		#set ($emailAddress = $email)
+	#end
+#end
+
+#set ($userName = $request.getParameter("userName"))
+#if (!$UtilMethods.isSet($userName))
+    #set ($userName = $request.getAttribute("userName"))
+	#if (!$UtilMethods.isSet($userName))
+		#set ($userName = $email)
+	#end
+#end
+
+#parse('form_macros.vm')
+<script>
+	function sendAnswer(){
+		document.getElementById("challenge_question_fm").submit();
+	}
+
+	function findQuestion(){
+		document.getElementById("find_question_fm").submit();
+	}
+
+</script>
+
+#if($UtilMethods.isSet($emailAddress))
+	<form action="/dotCMS/forgotPassword" method="post" id="challenge_question_fm" name="challenge_question_fm">
+	     
+		<fieldset> 
+		<legend>Login Challenge Question</legend> 
+		<input name="dispatch" type="hidden" value="verifyChallengeQuestion">
+	    <input name="referrer" type="hidden" value="$!referrer">
+	    <input name="showChallengeQuestion" type="hidden" value="$!showChallengeQuestion">
+	#if (($validatingByUserId) && ($validatingByUserId == 'true'))
+		#set ($challenge_question = $cmsuser.getUserChallengeQuestionByUserId($!loginForm.userName))
+	#else
+		#set ($challenge_question = $cmsuser.getUserChallengeQuestionByEmail($!loginForm.userName))
+	#end
+	#if (!$challenge_question)
+		#set ($challenge_question = $cmsuser.getUserChallengeQuestionByEmail($userName))
+	#end
+	
+	#if (!$UtilMethods.isSet($challenge_question))
+		<div id="messagesMessages">
+			<ul>
+				#set($company = $UtilMethods.getDefaultCompany())
+				#set($emailCompany = '')
+				#if($UtilMethods.isSet($company))
+					#set($emailCompany = $company.getEmailAddress())
+				#end
+    			<li>You have not set a security question. Please email <a href="mailto:$!emailCompany">$!emailCompany</a> to access your account</li>
+	    	</ul>
+		</div>
+	#else
+		<label for="accKey">E-mail Address:</label>
+		#if ($emailAddress)
+		<input name="accKey" id="accKey" class="text" type="text" value="$!emailAddress">
+		#else
+		<input name="accKey" id="accKey" class="text" type="text" value="$loginForm.userName">
+		#end
+		
+		<label for="challengeQuestionAnswer">$challenge_question</label>
+		<input name="challengeQuestionAnswer"  id="challengeQuestionAnswerText" type="text" class="text" value="" onKeyPress="if (event.keyCode == 13) { 	sendAnswer(); }">
+		#if ($loginForm.userName)
+		<input name="userName" id="userNameText" type="hidden" value="$loginForm.userName">
+		#else
+		<input name="userName" id="userNameText" type="hidden" value="$!userName">
+		#end
+	#end	
+		<a href="javascript:sendAnswer()" class="button">Send Password</a>
+		</fieldset>
+	</form>
+	
+#else
+	<form action="/dotCMS/forgotPassword" method="post" id="find_question_fm" name="find_question_fm">
+	    <fieldset><legend>Find Security Question</legend>
+			<input name="referrer" type="hidden" value="$!referrer">
+			<label for="accKey">E-mail Address:</label>		
+			<input name="email" id="email" class="text" type="text" value="">
+			<a href="javascript:findQuestion();" class="button">Find my security question</a>
+		</fieldset>
+	</form>
+#end

@@ -1,0 +1,66 @@
+#set($referrer =  $!{request.getAttribute("referrer")})
+#if(!$UtilMethods.isSet($referrer))
+	#set($referrer =  $!{request.getParameter("referrer")})
+#end
+<script>
+	function doSaveChanges(){
+		document.getElementById("myAccountForm").submit();
+	}
+</script>
+<style>
+@import url(/global/css/form.css);
+
+/* put in width of widest label */
+fieldset label,
+.fieldset .label{
+	width: 180px;
+}
+fieldset fieldset,
+fieldset .buttonGroup,
+.fieldset .buttonGroup{
+	padding-left: 180px;
+}
+fieldset fieldset legend{
+	margin-left: -180px;
+}
+</style>
+
+<div style="text-algin: center;">
+	#parse('static/messages.html')
+</div>
+
+<div style="width: 370px; float: left;">
+<fieldset>
+
+<legend><b>My Interests</b></legend>
+
+	<form id="myAccountForm" action="/dotCMS/editInterests" method="post">
+		<input type="hidden" name="dispatch" value="saveUserInfo">
+		<input type="hidden" name="userId" value="$!myAccountForm.userId">
+		<input name="referrer" type="hidden" value="$!referrer">
+
+<!--  application Body Start -->
+	#set($user = $session.getAttribute("CMS_USER"))
+	#if($UtilMethods.isSet($user))
+		#set($categoriesUser = ${categories.getCategoriesByUser($user)})
+		#foreach($cat in $categories.getAllCategoriesListByEntityName("UserProxy"))
+			$cat.categoryName: <br>
+			<div class="categories">
+			#foreach($childCat in $categories.getChildrenCategories($cat))
+				<label for="cats$childCat.inode">$childCat.categoryName</label>
+				<input type="checkbox" style="border:0px;" name="category" value="$childCat.inode" id="cats$childCat.inode" #if($categoriesUser.contains($childCat)) checked #end>
+				<br>
+			#end
+			</div>
+			<br>
+		#end
+	#end
+
+		<div class="buttonGroup">
+			<a href="#" onclick="doSaveChanges();" class="button">Save Changes</a>
+		</div>
+<!--  application Body End -->
+	</form>
+
+</fieldset>
+</div>

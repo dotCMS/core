@@ -1,0 +1,101 @@
+#parse('static/messages.html')
+#set ($registrations = $webevents.getWebEventRegistrationByUser($user.userId))
+#set ($orders = $productwebapi.getProductOrdersByUser($user.userId))
+#set( $statuses = $webevents.getRegistrationStatus())
+
+<script language=javascript>
+
+function save(){
+	window.location.href=top.location.href;
+
+}
+
+function back(){
+	window.location.href="/dotCMS/myAccount";
+
+}
+</script>
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+	<!--<tr>
+		<td align="right" height="22"><a href="/dotCMS/myAccount"
+			onMouseover="document.image1.src='/global/images/my_account.gif'"
+			onMouseout="document.image1.src='/global/images/my_account_gr.gif'">
+		<img src="/global/images/my_account.gif" name="image1"
+			border="0" style="float:right;"> </a> <img
+			src="/global/images/registration_history.gif" border="0"
+			style="float:right; margin-right:1px;"></td>
+	</tr>-->
+		<tr>
+			<td align="right" height="22">
+				<div class="item">
+					<div class="curveLink" style="float: right;"><span><a href="/dotCMS/registrationHistory">Registration and Order History</a></span></div>
+					<div class="curveLink" style="float: right; margin-right: 15px;"><span><a href="/dotCMS/myAccount">My Profile</a></span></div>
+					<div class="clear">&nbsp;</div>
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top" align="left">
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			<tr class="beta">
+				<td align=left>You can View and edit your Event Registrations and/or Fire Starter Orders</td>
+			</tr>
+		</table>
+		<br>
+		<h3>Event / Institutes Registration History</h3>
+				<table border="0" style="background: #5b7886;" cellpadding="8" cellspacing="0" width="100%">
+					<tr style="color: #fff;">
+						<Td>Order#</Td>
+						<Td>Event</Td>
+						<Td>Order Date</Td>
+						<Td>Status</Td>
+						<Td>Total</Td>
+					</tr>
+					#foreach($registration in $registrations)
+					  #set ($event = $webevents.getWebEvent($registration.eventInode) )
+					  #if ($registration.registrationStatus != 6)
+					<tr>
+						<Td style="background: #fff;" nowrap><a href="/dotCMS/registrationHistoryDetail?inode=$registration.inode">$!registration.inode</a></Td>
+						<Td style="background: #fff;"><a href="/dotCMS/registrationHistoryDetail?inode=$registration.inode">$!event.title</a></Td>
+						<Td style="background: #fff;" nowrap>$UtilMethods.htmlDateToHTMLTime($!registration.datePosted)</Td>
+						<Td style="background: #fff;" nowrap>$statuses.get($webevents.valueOfStatus($!registration.registrationStatus))</Td>
+						<Td style="background: #fff;" nowrap>$ $webapi.toPriceFormat($!registration.totalRegistration)</Td>
+					<tr>
+					#end
+					#end
+
+				</table>
+				<br><br>
+				<h3>Fire Starter Order History</h3>
+				<table cellpadding="8" cellspacing="0" width="100%" style="background: #5b7886;">
+					<tr style="color: #fff;">
+						<Td>Order#</Td>
+						<Td>Order Date</Td>
+						<Td>Status</Td>
+						<Td>Total</Td>
+					</tr>
+					#foreach($order in $orders)
+					<tr>
+						<Td style="background: #fff;" nowrap><a href="/dotCMS/productHistoryDetail?inode=$order.inode">$!order.inode</a></Td>
+						<Td style="background: #fff;" nowrap>$UtilMethods.htmlDateToHTMLTime($!order.datePosted)</Td>
+						<Td style="background: #fff;" nowrap>$statuses.get($webevents.valueOfStatus($!order.orderStatus))</Td>
+						<Td style="background: #fff;" nowrap>$ $webapi.toPriceFormat($!order.orderTotal)</Td>
+					<tr>
+					#end
+
+				</table>
+				<br>
+				<!--<input type="button" name="btn-update-registration" id="btn-update-registration" onclick="back('save')" value="Save">&nbsp; -->
+				<div class="curveLink" style="margin-left: 360px;"><span><button name="btn-back" id="btn-back" onclick="back('back')" class="clearInputStyles">Back</button></span></div>
+
+		</td>
+	</tr>
+	<tr>
+		<td align=center><br>
+		if you have a questions or concern about these orders and </td>
+	</tr>
+	<tr>
+		<td align=center>registrations please contact us at 1-800-STUDERGROUP or email us (<a href="mailto:help@studergroup.com">help@studergroup.com</a>)
+		</td>
+	</tr>
+</table><br /><br />

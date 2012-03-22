@@ -1,0 +1,202 @@
+
+<script language="javascript" src="/html/js/states_and_countries.js">
+</script>
+
+<script language="javascript">
+
+function doSubmit()
+{
+	//var returnValue = validateForm();
+	//if(returnValue)
+	//{
+		accountForm = document.getElementById("fm");
+		accountForm.submit();
+	//}
+}
+
+function validateForm()
+{
+	var message = "";
+	var returnValue = true;
+	var fm = document.getElementById("fm");
+	if(fm.firstName.value == "")
+	{
+		message += "- The field First Name is Mandatory \n";
+		returnValue = false;
+	}
+	if(fm.lastName.value == "")
+	{
+		message += "- The field Last Name is Mandatory \n";
+		returnValue = false;
+	}
+	if(fm.email.value == "")
+	{
+		message += "- The field Email is Mandatory \n";
+		returnValue = false;
+	}
+	if(!returnValue)
+	{
+		message = "Please correct the following errors:\n\n" + message;
+		alert(message);
+	}
+	return returnValue;
+}
+
+</script>
+
+#set($session = $request.getSession())
+#set($createAccountForm = $session.getParameter("createAccountForm"))
+
+#parse('/static/messages.html')
+
+
+
+<div class="request_info">
+	<form id="fm" action="/dotCMS/createAccount" method="post">
+		<input type="hidden" name="dispatch" value="quickCreate">
+		<input type="hidden" name="userName" value="$!myAccountForm.userName">
+	    <input type="hidden" name="company" value="none">
+	    <input type="hidden" name="url" value="none">
+    	<!--  application Body Start -->
+
+		<div style="clear:both;"></div>
+
+		<div class="top_wrapper">
+		<div class="personal_info">
+		<p>Personal Information</p>
+
+
+		<label for="email">eMail: *</label>
+		<input class="text" type="text" name="email" value="$!createAccountForm.email" style="width:228px;" maxlength="40">
+		<div style="clear:both;"></div>
+
+
+	    <label for="prefix">Prefix:</label>
+			<select name="prefix">
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Mr."))
+					#set($selected = "selected")
+				#end
+				<option $selected>Mr.</option>
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Miss"))
+					#set($selected = "selected")
+				#end
+				<option $selected>Miss</option>
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Mrs."))
+					#set($selected = "selected")
+				#end
+				<option $selected>Mrs.</option>
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Ms."))
+					#set($selected = "selected")
+				#end
+				<option $selected>Ms.</option>
+				#set($selected = "")
+				#if($!createAccountForm.prefix.equals("Dr."))
+					#set($selected = "selected")
+				#end
+				<option $selected>Dr.</option>
+			</select>
+			<div style="clear:both;"></div>
+
+
+		<label for="firstName">First Name: *</label>
+		<input class="text" type="text" name="firstName" value="$!createAccountForm.firstName" maxlength="30" style="width:110px;"/>
+		<div style="clear:both;"></div>
+
+
+		<label for="middleName">MI:</label>
+		<input class="text" type="text" name="middleName" size="5" maxlength="2" value="$!createAccountForm.middleName" style="width:15px;" />
+		<div style="clear:both;"></div>
+
+		<label for="lastName">Last Name: *</label>
+		<input class="text" type="text" name="lastName" value="$!createAccountForm.lastName" maxlength="50" style="width:110px;" />
+		<div style="clear:both;"></div>
+
+
+		<label for="title">Title:</label>
+		<input class="text" type="text" name="title" value="$!createAccountForm.title" maxlength="30" style="width:228px;" />
+		<div style="clear:both;"></div>
+
+
+		<label for="school">School:</label>
+		<input class="text" type="text" name="school" value="$!createAccountForm.school" style="width:228px;" maxlength="40" />
+		<div style="clear:both;"></div>
+
+
+		<label for="graduation_year">Graduation Year:</label>
+		<input class="text" type="text" name="graduation_year" value="$!createAccountForm.graduation_year" maxlength="4" style="width:60px;" />
+		<div style="clear:both;"></div>
+
+		<span class="mRed">Mandatory Fields *</span>
+		<div style="clear:both;"></div>
+
+		</div>
+
+
+
+		<div class="mailing">
+		<p>Mailing Address</p>
+
+		<label for="address1">Street 1:</label>
+		<input class="text" type="text" name="address1" value="$!createAccountForm.address1" maxlength="60" style="width:249px;" />
+		<div style="clear:both;"></div>
+
+		<label for="address2">Street 2:</label>
+		<input class="text" type="text" name="address2" value="$!createAccountForm.address2" maxlength="60" style="width:249px;" />
+		<div style="clear:both;"></div>
+
+		<label for="city">City:</label>
+		<input class="text" type="text" name="city" value="$!createAccountForm.city"  maxlength="60" style="width:152px;"/>
+		<div style="clear:both;"></div>
+
+		<label for="state">State:</label>
+
+			<script language="javascritp">
+				writeStatesSelect("state","$!createAccountForm.state");
+			</script>
+        <div style="clear:both;"></div>
+
+		<label for="zip">Zip:</label>
+		<input class="text" size="10" type="text" name="zip" value="$!createAccountForm.zip" maxlength="10" style="width:70px;" />
+		<div style="clear:both;"></div>
+
+		<label for="phone">Phone:</label>
+		<input class="text" type="text" name="phone" value="$!createAccountForm.phone" maxlength="15" style="width:152px;"/>
+
+		<div style="clear:both;"></div>
+		</div>
+
+		</div><!--end of top wrapper -->
+
+		<div style="clear:both;"></div>
+
+
+        <div class="categories">
+		##$webapi.isCreateFormEmpty($!createAccountForm,$response)
+		##<label for="categories">Categories: (check all that apply)</label>
+		## 	$categories.getCategoriesByEntityName("userCategories","UserProxy", $!createAccountForm.userCategories ,true,true,5,false)
+		##</div>
+
+		<div style="clear:both;"></div>
+
+		<input type="checkbox" name="mail" value="1" id="mail" style="border:0px;">
+		<label for="mail">I want to subscribe to the mailing list</label>
+
+		<div style="clear:both;"></div>
+
+		<p>Questions or Comments</p>
+		<textarea name="comments" id="commentsIdt" cols="85" rows="8">$!createAccountForm.comments</textarea>
+
+
+		<div style="clear:both;"></div>
+
+	   <a href="javascript:doSubmit(); return false;" id="submit_info">Submit Information</a>
+       <div style="clear:both;"><br/></div>
+
+
+	</form>
+
+</div>

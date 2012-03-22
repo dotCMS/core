@@ -1,0 +1,30 @@
+#set($isCopyingHost = false)
+#set($tagStorageFromURL = "")
+
+#if($request.getAttribute("CURRENT_URL").contains("copy_tag_storage"))
+	#set($isCopyingHost = true)
+	#set($tempURL = $request.getAttribute("CURRENT_URL"))
+	#set($beginning = $math.add($tempURL.indexOf("copy_tag_storage"), 19))
+	#set($tagStorageFromURL = $tempURL.substring($beginning,$math.add($beginning, 36)))
+#end
+
+<select id="tagStorage_dropDown" name="tagStorage_dropDown" dojoType="dijit.form.FilteringSelect" autocomplete="true" onchange="updateHiddenFields();" #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled="disabled" #end>
+
+<option value="SYSTEM_HOST" #if($tagStorage.equals("SYSTEM_HOST")) selected="selected" #end>All Hosts</option>
+
+#foreach($c in $dotcontent.pull('+structureName:Host +live:true +deleted:false', 0, 'host.hostName asc'))
+<option value="$c.identifier" #if($c.identifier.equals($tagStorage) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier))) selected="selected" #end>$c.hostName</option>
+#end
+</select>
+
+<script type="text/javascript">
+
+dojo.addOnLoad(updateHiddenFields);
+
+function updateHiddenFields() {
+   
+var txtIndexObj = dojo.byId('tagStorage');
+txtIndexObj.value = dijit.byId('tagStorage_dropDown').get('value');
+}
+
+</script>

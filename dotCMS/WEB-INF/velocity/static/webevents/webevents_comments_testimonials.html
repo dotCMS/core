@@ -1,0 +1,8 @@
+#set ($inode = $request.getParameter("inode") )
+#set ($event = $webevents.getWebEvent($inode))
+
+<h2>$event.title</h2>
+
+<div class="content">
+$!event.comments
+</div>

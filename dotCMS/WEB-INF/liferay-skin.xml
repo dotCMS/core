@@ -1,0 +1,1255 @@
+<?xml version="1.0"?>
+<!DOCTYPE skins>
+
+<skins>
+	<global
+		font-family="Verdana, Arial"
+	/>
+	<skin id="01" name="Classic">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#6699CC"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#B6CBEB"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#EEEEEE"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="02" name="Copper">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#775325"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#B89257"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#CCCC99"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="03" name="Earth">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#666666"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#CBB99C"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#EEEEEE"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="04" name="Moment">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#3F476C"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#CCCC99"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#EEEEEE"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="06" name="Dusk">
+		<image-id>01</image-id>
+		<alpha
+			href="#CCCC99"
+			href-hover="#CCCC99"
+
+			background="#000099"
+			foreground="#CCCC99"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#99CCFF"
+			href-hover="#99CCFF"
+
+			background="#336699"
+			foreground="#99CCFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#99CC99"
+			href-hover="#99CC99"
+
+			background="#000033"
+			foreground="#CCCCCC"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#99CC99"
+			href-hover="#99CC99"
+
+			background="#006699"
+			foreground="#999999"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="07" name="Violet">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#B78DB4"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#E1C3DE"
+			foreground="#6B2E67"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FAECF8"
+			foreground="#B66CB1"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="08" name="Ocean">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#77B8D4"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#D1E5ED"
+			foreground="#1F7EA7"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#F0F7F9"
+			foreground="#3899C3"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="09" name="Freedom">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#C6383F"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#C6D6EB"
+			href-hover="#C6D6EB"
+
+			background="#2C3470"
+			foreground="#C6D6EB"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#336699"
+			href-hover="#336699"
+
+			background="#FFFFFF"
+			foreground="#000099"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#336699"
+			href-hover="#336699"
+
+			background="#FFFFFF"
+			foreground="#000099"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="10" name="Hacker">
+		<image-id>01</image-id>
+		<alpha
+			href="#00CC00"
+			href-hover="#00CC00"
+
+			background="#000000"
+			foreground="#00CC00"
+
+			neg-alert="#00CC00"
+			pos-alert="#00CC00"
+		/>
+		<beta
+			href="#00CC00"
+			href-hover="#00CC00"
+
+			background="#000000"
+			foreground="#00CC00"
+
+			neg-alert="#00CC00"
+			pos-alert="#00CC00"
+		/>
+		<gamma
+			href="#00CC00"
+			href-hover="#00CC00"
+
+			background="#000000"
+			foreground="#00CC00"
+
+			neg-alert="#00CC00"
+			pos-alert="#00CC00"
+		/>
+		<bg
+			href="#00CC00"
+			href-hover="#00CC00"
+
+			background="#000000"
+			foreground="#00CC00"
+
+			neg-alert="#00CC00"
+			pos-alert="#00CC00"
+		/>
+	</skin>
+	<skin id="11" name="Liferay">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFDC0A"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#FFDC0A"
+			href-hover="#FFDC0A"
+
+			background="#000000"
+			foreground="#FFDC0A"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#FFDC0A"
+			href-hover="#FFDC0A"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="14" name="Rushmore">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#A4A88A"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#EAEED8"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#E5EDED"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="15" name="Plaza">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#336699"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#CCCCCC"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#cccc99"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="16" name="Forest">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#2D4526"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#979EA3"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#D9E5DB"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="17" name="Elephants">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#708994"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#F6E8F6"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#D6C8D6"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="18" name="Design">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#CC5F0F"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#C7BC99"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#7EA0A5"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="19" name="Barney">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#A16AB3"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#BBB9C7"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#ECF3F5"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="20" name="Pink">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#F198A3"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FAC8CD"
+			foreground="#D25B69"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FDE8EB"
+			foreground="#E17784"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="21" name="Burgundy">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#620E0E"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#D6A3A3"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FAFCCD"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="22" name="Lantern">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#4C696C"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#718B7A"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#CEDEDF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="23" name="Swamp">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFFFFF"
+			href-hover="#FFFFFF"
+
+			background="#B9B720"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#B0C8AC"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#cccc99"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="24" name="Pumpkin">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFCF75"
+			href-hover="#FFCF75"
+
+			background="#FF8000"
+			foreground="#FFCF75"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#AAF200"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFCF75"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#AAF200"
+			href-hover="#AAF200"
+
+			background="#000000"
+			foreground="#AAF200"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="25" name="Sand">
+		<image-id>01</image-id>
+		<alpha
+			href="#FFEBCD"
+			href-hover="#FFEBCD"
+
+			background="#191970"
+			foreground="#FFEBCD"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#FFEBCD"
+			href-hover="#FFEBCD"
+
+			background="#4682B4"
+			foreground="#FFEBCD"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFEBCD"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="26" name="Trinity">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#999999"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#ECECEC"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="444444"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="27" name="Mahogany">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="670001"
+			foreground="FFCC33"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="CC9933"
+			foreground="330000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="E6CC99"
+			foreground="330000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="28" name="Cool">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#4682B4"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#D6EBFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#E4E4E4"
+			foreground="#444444"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="29" name="Lime">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#8FAC71"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#C3DFA8"
+			foreground="#517A30"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#E7F6DA"
+			foreground="#7DA65C"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="30" name="Orange">
+		<image-id>01</image-id>
+		<alpha
+			href="#000000"
+			href-hover="#000000"
+
+			background="#F3BD4D"
+			foreground="#FFFFFF"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#000000"
+			href-hover="#000000"
+
+			background="#F6E8A9"
+			foreground="#C66F01"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FDFAE8"
+			foreground="#DC881E"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+
+			background="#FFFFFF"
+			foreground="#000000"
+
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+	<skin id="31" name="Jason">
+		<image-id>01</image-id>
+		<alpha
+			href="#0A00A1"
+			href-hover="#0A00A1"
+			
+			background="#3F833E" 
+			foreground="#FFFFFF"
+			
+			neg-alert="#00135A"
+			pos-alert="#00135A"
+		/>
+		<beta
+			href="#0A00A1"
+			href-hover="#0A00A1"
+			
+			background="#FFF3B8" 
+			foreground="#050052"
+			
+			neg-alert="#00135A"
+			pos-alert="#00135A"
+		/>
+		<gamma
+			href="#0A00A1"
+			href-hover="#0A00A1"
+			
+			background="#FFFFE7" 
+			foreground="#001CA5"
+			
+			neg-alert="#00135A"
+			pos-alert="#00135A"
+		/>
+		<bg
+			href="#0A00A1"
+			href-hover="#0A00A1"
+			
+			background="#FFFFFF" 
+			foreground="#000000"
+			
+			neg-alert="#00135A"
+			pos-alert="#00135A"
+		/>
+	</skin>
+	<skin id="32" name="Terrace">
+		<image-id>01</image-id>
+		<alpha
+			href="#666433"
+			href-hover="#666433"
+			
+			background="#CCCC9A" 
+			foreground="#666433"
+			
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<beta
+			href="#330000"
+			href-hover="#330000"
+			
+			background="#DFD6C7" 
+			foreground="#330000"
+			
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<gamma
+			href="#000000"
+			href-hover="#000000"
+			
+			background="#FFFFFF" 
+			foreground="#000000"
+			
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+		<bg
+			href="#000000"
+			href-hover="#000000"
+			
+			background="#FFFFFF" 
+			foreground="#000000"
+			
+			neg-alert="#FF0000"
+			pos-alert="#007F00"
+		/>
+	</skin>
+</skins>

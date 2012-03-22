@@ -1,0 +1,37 @@
+<%
+if(com.dotmarketing.util.InodeUtils.isSet(inodeObject.getInode())){%>
+	<% request.setAttribute("files", com.dotmarketing.portlets.files.factories.FileFactory.getChildrenFilesByOrder(inodeObject));%>
+	<script>
+	    function uploadFile(x){
+	        window.location = "<%= CTX_PATH %>/ext/files/upload_file?parent=<%=inodeObject.getInode()%>&inode=" + x + "&referer=<%= java.net.URLEncoder.encode(referer) %>";
+	    }
+	    function deleteFile(x){
+	        if(confirm("Are you sure you would like to delete this file?")){
+	        	window.location="<%= CTX_PATH %>/ext/files/upload_file?cmd=<%= Constants.DELETE %>&parent=<%=inodeObject.getInode()%>&inode=" + x + "&referer=<%= java.net.URLEncoder.encode(referer) %>";
+	        }
+	    }
+	</script>
+	
+	<table cellspacing="0" cellpadding="2" align="left">
+		<%if(((java.util.List) request.getAttribute("files")).size() >= 1){%>
+		<tr>
+			<% com.dotmarketing.portlets.files.model.File f = (com.dotmarketing.portlets.files.model.File) ((java.util.List) request.getAttribute("files")).get(0); %>
+			<TD align=center nowrap width="<%= f.getWidth() %>">
+				<font class="gamma" size="2">
+				<img src="/portal/uploads/<%=inodeObject.getInode()%>/<%=f.getInode()%>.<%=com.dotmarketing.util.UtilMethods.getFileExtension(f.getFileName())%>?time=<%= System.currentTimeMillis() %>">
+				<a class="bg" href="javascript: uploadFile('<%=f.getInode()%>');">change</a> |
+				<a class="bg" href="javascript: deleteFile('<%=f.getInode()%>');">del</a></font> 
+			</TD>				
+		</tr>
+		<%}%>
+		<%if(((java.util.List) request.getAttribute("files")).size() == 0){%>
+		<tr>
+			<td align="left">
+			<font class="gamma" size="2">
+			<a href="javascript:uploadFile('');">Click here to upload</a>
+			</font>
+			</td>
+		</tr>
+		<%}%>
+	</TABLE>
+<%}%>

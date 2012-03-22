@@ -1,0 +1,2743 @@
+<?xml version="1.0"?>
+
+<portlet-app>
+	<!--portlet>
+		<portlet-name>1</portlet-name>
+		<display-name>Mail</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/mail/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/mail/view_folder</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>html-format</name>
+				<value>true</value>
+			</preference>
+			<preference>
+				<name>forward-address</name>
+			</preference>
+			<preference>
+				<name>signature</name>
+			</preference>
+			<preference>
+				<name>vacation-message</name>
+			</preference>
+			<preference>
+				<name>col-order</name>
+				<value>fsdz</value>
+			</preference>
+			<preference>
+				<name>order-by-col</name>
+				<value>d</value>
+			</preference>
+			<preference>
+				<name>order-by-type</name>
+				<value>desc</value>
+			</preference>
+			<preference>
+				<name>messages-per-portlet</name>
+				<value>5</value>
+			</preference>
+			<preference>
+				<name>messages-per-page</name>
+				<value>25</value>
+			</preference>
+			<preference>
+				<name>message-headers</name>
+				<value>1</value>
+			</preference>
+			<preference>
+				<name>message-recipients-limit</name>
+				<value>10</value>
+			</preference>
+			<preference>
+				<name>include-original</name>
+				<value>true</value>
+			</preference>
+			<preference>
+				<name>original-text-indicator</name>
+				<value>0</value>
+			</preference>
+			<preference>
+				<name>reply-to-address</name>
+			</preference>
+			<preference>
+				<name>new-mail-notification</name>
+				<value>2</value>
+			</preference>
+			<preference>
+				<name>folder-names</name>
+			</preference>
+			<preference>
+				<name>blocked</name>
+			</preference>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<portlet>
+		<portlet-name>2</portlet-name>
+		<display-name>My Account</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/my_account/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>
+	<!--portlet>
+		<portlet-name>3</portlet-name>
+		<display-name>Search</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/search/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>4</portlet-name>
+		<display-name>Weather</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/weather/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/weather/view</value>
+		</init-param>
+		<expiration-cache>300</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>zips</name>
+				<value>90210</value>
+				<value>Chicago</value>
+				<value>Frankfurt/Main</value>
+				<value>Rome, Italy</value>
+				<value>Beijing</value>
+			</preference>
+			<preference>
+				<name>fahrenheit</name>
+				<value>true</value>
+			</preference>
+			<preferences-validator>com.liferay.portlet.weather.WeatherPreferencesValidator</preferences-validator>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>5</portlet-name>
+		<display-name>News</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/news/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/news/view</value>
+		</init-param>
+		<expiration-cache>300</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>sel-feeds</name>
+				<value>c=Top%20stories</value>
+				<value>c=International%20relations%20news</value>
+			</preference>
+			<preference>
+				<name>articles-per-news</name>
+				<value>4</value>
+			</preference>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!-- portlet>
+		<portlet-name>8</portlet-name>
+		<display-name>Calendar</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/calendar/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>event-type</name>
+				<value></value>
+			</preference>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<portlet>
+		<portlet-name>9</portlet-name>
+		<display-name>Admin</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/admin/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	<!--portlet>
+		<portlet-name>10</portlet-name>
+		<display-name>Address Book</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/address_book/view_all</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>11</portlet-name>
+		<display-name>Directory</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/directory/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>12</portlet-name>
+		<display-name>Stocks</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/stocks/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/stocks/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>symbols</name>
+				<value>MOT</value>
+				<value>NOK</value>
+				<value>SBUX</value>
+				<value>YHOO</value>
+			</preference>
+			<preferences-validator>com.liferay.portlet.stocks.StocksPreferencesValidator</preferences-validator>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>13</portlet-name>
+		<display-name>Calculator</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/calculator/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>14</portlet-name>
+		<display-name>Games</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/games/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>15</portlet-name>
+		<display-name>Journal</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/journal/view_articles</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>16</portlet-name>
+		<display-name>Currency Converter</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/currency_converter/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/currency_converter/view</value>
+		</init-param>
+		<expiration-cache>300</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>symbols</name>
+				<value>GBP</value>
+				<value>CNY</value>
+				<value>EUR</value>
+				<value>JPY</value>
+				<value>USD</value>
+			</preference>
+			<preferences-validator>com.liferay.portlet.currencyconverter.CurrencyPreferencesValidator</preferences-validator>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>17</portlet-name>
+		<display-name>CSZ Search</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/csz_search/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>18</portlet-name>
+		<display-name>Maps</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/maps/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>19</portlet-name>
+		<display-name>Message Boards</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/message_boards/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/message_boards/view_topics</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>messages-per-page</name>
+				<value>25</value>
+			</preference>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>20</portlet-name>
+		<display-name>Document Library</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/document_library/view_repositories</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>22</portlet-name>
+		<display-name>Instant Messenger</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/instant_messenger/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>23</portlet-name>
+		<display-name>Dictionary</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/dictionary/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<!--portlet>
+		<portlet-name>24</portlet-name>
+		<display-name>SMS</display-name>
+		<portlet-class>com.liferay.portlet.sms.SMSPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/sms/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet-->
+	<portlet>
+		<portlet-name>25</portlet-name>
+		<display-name>Polls</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/polls/view_questions</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>
+	<!-- portlet>
+		<portlet-name>26</portlet-name>
+		<display-name>Translator</display-name>
+		<portlet-class>com.liferay.portlet.translator.TranslatorPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/translator/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>27</portlet-name>
+		<display-name>Unit Converter</display-name>
+		<portlet-class>com.liferay.portlet.unitconverter.ConverterPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/unit_converter/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>28</portlet-name>
+		<display-name>Bookmarks</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/bookmarks/view_bookmarks</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>30</portlet-name>
+		<display-name>Network</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/network/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>31</portlet-name>
+		<display-name>Image Gallery</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/image_gallery/view_gallery</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>33</portlet-name>
+		<display-name>Blogs</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/blogs/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>34</portlet-name>
+		<display-name>Shopping</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>help-action</name>
+			<value>/shopping/help</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/shopping/browse_categories</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>help</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>order-by-col</name>
+				<value>n</value>
+			</preference>
+			<preference>
+				<name>order-by-type</name>
+				<value>asc</value>
+			</preference>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>35</portlet-name>
+		<display-name>Google</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/google/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/google/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>safe-search</name>
+				<value>false</value>
+			</preference>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>36</portlet-name>
+		<display-name>Wiki</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/wiki/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>37</portlet-name>
+		<display-name>Words</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/words/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>38</portlet-name>
+		<display-name>JCVS</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/jcvs/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>39</portlet-name>
+		<display-name>RSS</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/rss/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/rss/view</value>
+		</init-param>
+		<expiration-cache>300</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>urls</name>
+				<value>http://partners.userland.com/nytRss/technology.xml</value>
+				<value>http://rss.news.yahoo.com/rss/tech</value>
+			</preference>
+			<preference>
+				<name>items-per-channel</name>
+				<value>4</value>
+			</preference>
+			<preferences-validator>com.liferay.portlet.rss.RSSPreferencesValidator</preferences-validator>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>40</portlet-name>
+		<display-name>Project</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/project/view_projects</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>41</portlet-name>
+		<display-name>Tasks</display-name>
+		<portlet-class>com.liferay.portlet.tasks.TasksPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/tasks/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>42</portlet-name>
+		<display-name>Meeting Rooms</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/meeting_rooms/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>43</portlet-name>
+		<display-name>Skills</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/skills/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>47</portlet-name>
+		<display-name>Hello World</display-name>
+		<portlet-class>com.liferay.portlet.helloworld.HelloWorldPortlet</portlet-class>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<portlet-info>
+			<title>Hello World</title>
+			<short-title>Hello World</short-title>
+			<keywords>Hello World</keywords>
+		</portlet-info>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>48</portlet-name>
+		<display-name>IFrame</display-name>
+		<portlet-class>com.liferay.portlet.IFramePortlet</portlet-class>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>src</name>
+				<value>http://www.gfa.org</value>
+			</preference>
+			<preference>
+				<name>auth</name>
+				<value>false</value>
+			</preference>
+			<preference>
+				<name>auth-type</name>
+				<value>basic</value>
+			</preference>
+			<preference>
+				<name>form-method</name>
+				<value>post</value>
+			</preference>
+			<preference>
+				<name>user-name</name>
+				<value></value>
+			</preference>
+			<preference>
+				<name>password</name>
+				<value></value>
+			</preference>
+			<preference>
+				<name>hidden-variables</name>
+				<value>var1=hello;var2=world</value>
+			</preference>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>49</portlet-name>
+		<display-name>Chemistry</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/chemistry/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>50</portlet-name>
+		<display-name>Hello Velocity</display-name>
+		<portlet-class>com.liferay.portlet.VelocityPortlet</portlet-class>
+		<init-param>
+			<name>view-template</name>
+			<value>/portlet/hello_velocity/view.vm</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<portlet-info>
+			<title>Hello Velocity</title>
+			<short-title>Hello Velocity</short-title>
+			<keywords>Hello Velocity</keywords>
+		</portlet-info>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>52</portlet-name>
+		<display-name>Chat</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/chat/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>53</portlet-name>
+		<display-name>Company News</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/journal/view_articles</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>54</portlet-name>
+		<display-name>Wiki Display 1</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/wiki_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>55</portlet-name>
+		<display-name>Wiki Display 2</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/wiki_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>56</portlet-name>
+		<display-name>Wiki Display 3</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/wiki_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>57</portlet-name>
+		<display-name>Wiki Display 4</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/wiki_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>58</portlet-name>
+		<display-name>Wiki Display 5</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/wiki_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<portlet>
+		<portlet-name>59</portlet-name>
+		<display-name>Polls Display 1</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/polls_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>
+	<portlet>
+		<portlet-name>60</portlet-name>
+		<display-name>Polls Display 2</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/polls_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>
+	<portlet>
+		<portlet-name>61</portlet-name>
+		<display-name>Polls Display 3</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/polls_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>
+	<portlet>
+		<portlet-name>62</portlet-name>
+		<display-name>Polls Display 4</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/polls_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>
+	<portlet>
+		<portlet-name>63</portlet-name>
+		<display-name>Polls Display 5</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/polls_display/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Guest</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>
+	<!-- portlet>
+		<portlet-name>64</portlet-name>
+		<display-name>Recent Documents</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/recent_documents/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>65</portlet-name>
+		<display-name>Analog Clock</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/analog_clock/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>66</portlet-name>
+		<display-name>Web Proxy</display-name>
+		<portlet-class>com.liferay.portlet.httpbridge.HttpBridgePortlet</portlet-class>
+		<init-param>
+			<name>edit-jsp</name>
+			<value>/portlet/httpbridge/edit.jsp</value>
+		</init-param>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/httpbridge/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>src</name>
+				<value>http://www.google.com</value>
+			</preference>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>67</portlet-name>
+		<display-name>Amazon Rankings</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/amazon_rankings/edit</value>
+		</init-param>
+		<init-param>
+			<name>view-action</name>
+			<value>/amazon_rankings/view</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>isbns</name>
+				<value>0066620996</value>
+				<value>0131412752</value>
+				<value>0201633612</value>
+				<value>0310205719</value>
+				<value>0310241448</value>
+			</preference>
+			<preferences-validator>com.liferay.portlet.amazonrankings.AmazonRankingsPreferencesValidator</preferences-validator>
+		</portlet-preferences>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>68</portlet-name>
+		<display-name>WSRP Proxy</display-name>
+		<portlet-class>com.liferay.portlet.wsrp.WSRPProxyPortlet</portlet-class>
+		<init-param>
+			<name>edit-action</name>
+			<value>/wsrp/edit</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+			<portlet-mode>edit</portlet-mode>
+			<portlet-mode>help</portlet-mode>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<portlet-preferences>
+			<preference>
+				<name>wsrp-service-url</name>
+				<value>http://portalstandards.oracle.com/wsrp/jaxrpc</value>
+			</preference>			
+			<preference>
+				<name>markup-endpoint</name>
+				<value>WSRPBaseService</value>
+			</preference>
+			<preference>
+				<name>service-description-endpoint</name>
+				<value>WSRPServiceDescriptionService</value>
+			</preference>
+			<preference>
+				<name>registration-endpoint</name>
+				<value>WSRPRegistrationService</value>
+			</preference>
+			<preference>
+				<name>portlet-management-endpoint</name>
+				<value>WSRPPortletManagementService</value>
+			</preference>
+			<preference>
+				<name>portlet-handle</name>
+				<value>E:1:default</value>
+			</preference>
+		</portlet-preferences>
+	</portlet -->
+	<!-- portlet>
+		<portlet-name>69</portlet-name>
+		<display-name>Hello Laszlo</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/hello_laszlo/view.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Power User</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet -->
+
+	<portlet>
+		<portlet-name>EXT_3</portlet-name>
+		<display-name>File Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/files/view_files</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_4</portlet-name>
+		<display-name>Category Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/categories/view_categories</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_5</portlet-name>
+		<display-name>Wysiwyg</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/wysiwyg/view_wysiwyg</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_6</portlet-name>
+		<display-name>Entity</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/entities/view_entities</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_8</portlet-name>
+		<display-name>Folder Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/folders/view_folders</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_BROWSER</portlet-name>
+		<display-name>CMS Browser</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/browser/view_browser</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_11</portlet-name>
+		<display-name>Contents Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/contentlet/view_contentlets</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+
+	<portlet>
+		<portlet-name>EXT_12</portlet-name>
+		<display-name>Container Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/containers/view_containers</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+			<role-name>CMS Power User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_13</portlet-name>
+		<display-name>Templates Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/templates/view_templates</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+			<role-name>CMS Power User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_15</portlet-name>
+		<display-name>HTML Pages Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/htmlpages/view_htmlpages</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_16</portlet-name>
+		<display-name>Mailing List Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/mailinglists/view_mailinglists</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Mailing Lists Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Mailing List Editor</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User Manager Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+
+	<portlet>
+		<portlet-name>EXT_17</portlet-name>
+		<display-name>Director</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/director/view_director</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+
+	<portlet>
+		<portlet-name>EXT_18</portlet-name>
+		<display-name>Links Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/links/view_links</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+
+
+	<portlet>
+		<portlet-name>EXT_19</portlet-name>
+		<display-name>Campaign Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/campaigns/view_campaigns</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Campaign Manager Admin</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Campaign Manager Viewer</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Campaign Manager Editor</role-name>
+		</security-role-ref>
+	</portlet>
+
+
+	<portlet>
+		<portlet-name>EXT_21</portlet-name>
+		<display-name>Workflow Tasks</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/workflows/view_workflow_tasks</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_HTMLPAGE_VIEWS</portlet-name>
+		<display-name>HTML Pages Statistics</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/htmlpageviews/view_htmlpage_views</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_USER_CLICKS</portlet-name>
+		<display-name>User Click Reporting</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/userclicks/view_user_clicks</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_USER_COMMENTS</portlet-name>
+		<display-name>User Comments</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/usercomments/view_user_comments</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_VIRTUAL_LINKS</portlet-name>
+		<display-name>Virtual Links</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/virtuallinks/view_virtuallinks</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_LANG</portlet-name>
+		<display-name>Languages Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/languages_manager/view_languages_manager</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_EVENTS</portlet-name>
+		<display-name>Events</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/events/view_events</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_STRUCTURE</portlet-name>
+		<display-name>Structures</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/structure/view_structure</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Form Editor</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_FORM_HANDLER</portlet-name>
+		<display-name>Form Handler</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/formhandler/view_form</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Form Editor</role-name>
+		</security-role-ref>
+	</portlet>
+
+
+	<portlet>
+		<portlet-name>EXT_ORG</portlet-name>
+		<display-name>Organization Admin</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/organization/view_organizations</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_USERMANAGER</portlet-name>
+		<display-name>User Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/usermanager/view_usermanagerlist</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Mailing Lists Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User Manager Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User Manager Editor</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_USER_ADMIN</portlet-name>
+		<display-name>User Admin</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/useradmin/view_users</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_ROLE_ADMIN</portlet-name>
+		<display-name>Roles Admin</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/roleadmin/view_roles</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>User</role-name>
+		</security-role-ref>
+	</portlet>	
+	
+	<portlet>
+		<portlet-name>EXT_WEBFORMS</portlet-name>
+		<display-name>Web Forms</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<!--init-param>
+			<name>view-action</name>
+			<value>/ext/webforms/view_webforms</value>
+		</init-param-->
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_FACILITY</portlet-name>
+		<display-name>Facility Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/facilities/view_facilities</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Events Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_EVENTSAPPROVAL</portlet-name>
+		<display-name>Events Approval</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/eventsapproval/view_events</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Events Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<!--
+	<portlet>
+		<portlet-name>EXT_USER</portlet-name>
+		<display-name>User Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/user/saveUserCategories</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	-->
+	
+	<portlet>
+		<portlet-name>EXT_USER_ACCOUNT_NOTES</portlet-name>
+		<display-name>User Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/user/saveUserComments</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_CMS_MAINTENANCE</portlet-name>
+		<display-name>CMS Maintenance</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/cmsmaintenance/view_cms_maintenance</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_PRODUCT</portlet-name>
+		<display-name>Products Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/product/view_product</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_ECO_ORDER</portlet-name>
+		<display-name>Order Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/order_manager/view_orders</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_EVE_REG</portlet-name>
+		<display-name>Web Event Registrations</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/event_registration/view_registrations</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_COMMUNICATIONS_MANAGER</portlet-name>
+		<display-name>Communication Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/communications/view_communications</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>Campaign Manager Admin</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Campaign Manager Editor</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_DISCOUNTCODE</portlet-name>
+		<display-name>Discount Code</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/discountcode/view_discountcode</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_CONTENTRATINGS</portlet-name>
+		<display-name>Content Ratings</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/contentratings/view_contentratings</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_USERFILTER</portlet-name>
+		<display-name>User Filter Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/userfilter/edit_userfilter</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>User Manager Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>User Manager Editor</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_SCHEDULER</portlet-name>
+		<display-name>Scheduler</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/scheduler/view_schedulers</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_REPORTMANAGER</portlet-name>
+		<display-name>Report Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/report/view_reports</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Report Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Report Editor</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>Report Viewer</role-name>
+		</security-role-ref>
+	</portlet>
+
+	<portlet>
+		<portlet-name>EXT_CALENDAR</portlet-name>
+		<display-name>Calendar of Events</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/calendar/view_calendar</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_HOSTADMIN</portlet-name>
+		<display-name>Host Admin</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/hostadmin/view_hosts</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	
+	<!-- JSP PORTLETS -->
+	<portlet>
+		<portlet-name>EXT_LUCENE_TOOL</portlet-name>
+		<display-name>Lucene Test Tool</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+				<name>view-jsp</name>
+				<value>/jsp/lucene/lucene_search.jsp</value>
+		</init-param>
+		<init-param>
+				<name>useWEBINFDIR</name>
+				<value>true</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_LICENSE_MANAGER</portlet-name>
+		<display-name>License Manager</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+				<name>view-jsp</name>
+				<value>/jsp/license/license.jsp</value>
+		</init-param>
+		<init-param>
+				<name>useWEBINFDIR</name>
+				<value>true</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+	
+	<portlet>
+		<portlet-name>EXT_SITESEARCH</portlet-name>
+		<display-name>Schedule Site Search</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+				<name>view-jsp</name>
+				<value>/jsp/sitesearch/site_search.jsp</value>
+		</init-param>
+		<init-param>
+				<name>useWEBINFDIR</name>
+				<value>true</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>	
+	
+	<portlet>
+		<portlet-name>EXT_DASHBOARD</portlet-name>
+		<display-name>Dashboard</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+				<name>view-action</name>
+				<value>/ext/dashboard/view_dashboard</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>	
+
+
+	<portlet>
+		<portlet-name>WORKFLOW_SCHEMES</portlet-name>
+		<display-name>Workflow Schemes</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+				<name>view-jsp</name>
+				<value>/portlet/ext/workflows/schemes/workflow_main.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+	
+	</portlet>	
+	
+	<portlet>
+		<portlet-name>EXT_TAG_MANAGER</portlet-name>
+		<display-name>Tag Manager</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+				<name>view-jsp</name>
+				<value>/jsp/tag_manager/tag_manager.jsp</value>
+		</init-param>
+		<init-param>
+				<name>useWEBINFDIR</name>
+				<value>true</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
+
+
+
+	<custom-window-state>
+		<window-state>exclusive</window-state>
+	</custom-window-state>
+	<custom-window-state>
+		<window-state>pop_up</window-state>
+	</custom-window-state>
+	<user-attribute>
+		<name>user.bdate</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.gender</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.employer</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.department</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.jobtitle</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.name.prefix</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.name.given</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.name.family</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.name.middle</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.name.suffix</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.name.nickName</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.postal.name</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.postal.street</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.postal.city</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.postal.stateprov</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.postal.postalcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.postal.country</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.postal.organization</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.telephone.intcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.telephone.loccode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.telephone.number</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.telephone.ext</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.telephone.comment</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.fax.intcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.fax.loccode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.fax.number</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.fax.ext</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.fax.comment</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.mobile.intcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.mobile.loccode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.mobile.number</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.mobile.ext</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.mobile.comment</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.pager.intcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.pager.loccode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.pager.number</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.pager.ext</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.telecom.pager.comment</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.online.email</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.home-info.online.uri</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.postal.name</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.postal.street</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.postal.city</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.postal.stateprov</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.postal.postalcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.postal.country</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.postal.organization</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.telephone.intcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.telephone.loccode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.telephone.number</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.telephone.ext</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.telephone.comment</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.fax.intcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.fax.loccode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.fax.number</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.fax.ext</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.fax.comment</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.mobile.intcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.mobile.loccode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.mobile.number</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.mobile.ext</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.mobile.comment</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.pager.intcode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.pager.loccode</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.pager.number</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.pager.ext</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.telecom.pager.comment</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.online.email</name>
+	</user-attribute>
+	<user-attribute>
+		<name>user.business-info.online.uri</name>
+	</user-attribute>
+</portlet-app>

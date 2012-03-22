@@ -1,0 +1,49 @@
+#set ($categoryName = $category)
+
+
+#set ($eventList = $eventsapi.getUpcomingEventsList($categoryName, $amount)) 
+
+#foreach($event in $eventList)
+	#set ($file = $eventsapi.getEventImage($event))
+	
+	#if($event.isFeatured())
+	<div class="corners">
+		<div class="top">
+			<div class="right">&nbsp;</div>
+			<div class="left">&nbsp;</div>&nbsp;
+		</div>
+		<div class="middle">
+		<div class="clear">&nbsp;</div>
+		<div class="content listing">
+		
+			#if($InodeUtils.isSet($file.getInode()))
+				<img src=" /global/images/roundtn.gif" width="98" height="98" class="listImg" alt="" style="background: url(/thumbnail?inode=$file.getInode()&w=98&h=98) bottom left no-repeat;"/>
+			#end
+			
+			<h1>$event.getTitle()</h1>
+			<p class="schedule">$webapi.dateToLongPrettyHTMLDate($event.getStartDate())</p>
+			<p>$webapi.prettyShortenString($event.getDescription(), "255")</p>
+			<div style="text-align: right;">
+	   			<a href="/calendar/detail_view.${webapi.getPageFileExtension()}?event=$event.getInode()">
+	     			<img src="/global/images/readmore.gif" width="84" height="33" alt="" border="0" />
+	   			</a>
+			</div> 
+			<br>
+		</div>
+		<div class="clear" style="height: 1px;">&nbsp;</div>
+		</div>
+		<div class="bottom">
+			<div class="right">&nbsp;</div>
+			<div class="left">&nbsp;</div>&nbsp;
+		</div>
+		</div>
+	#else
+	
+		<h2><a href="/calendar/detail_view.${webapi.getPageFileExtension()}?event=$event.getInode()">$event.getTitle()</a> - $webapi.dateToLongPrettyHTMLDate($event.getStartDate())</h2>
+		<br>
+		$webapi.prettyShortenString($event.getDescription(), "255")
+		<br>
+			
+	#end
+	
+#end

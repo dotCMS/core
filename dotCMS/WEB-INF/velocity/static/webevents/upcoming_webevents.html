@@ -1,0 +1,47 @@
+#if ($webinar)
+	#set($events = $webevents.getUpcomingWebEventsOrderByTitle(false))
+#else
+	#set($events = $webevents.getUpcomingWebEventsOrderByTitle(true))
+#end
+
+				#foreach($event in $events)
+					#set($eventImage = ${webapi.getLiveFileAsset($event.eventImage1)})
+					#set($eventLocations = $webevents.getUpcomingWebEventLocationsPerEvent($event))
+
+
+					<div class="item">
+					#editEvent($event.inode)
+					<h3><a href="/conferences_events/detail.${webapi.getPageFileExtension()}?inode=${event.inode}&pageTitle=$event.title&crumbTitle=$event.title">$!event.title</a></h3>
+
+					#if ($InodeUtils.isSet($eventImage.inode))
+						<a href="/conferences_events/detail.${webapi.getPageFileExtension()}?inode=${event.inode}&pageTitle=$event.title&crumbTitle=$event.title"><img src="/thumbnail?inode=${eventImage.inode}&w=${eventImage.width}&h=${eventImage.height}" style="float: right; padding-left: 10px;" /></a>
+					#end
+
+					$!event.summary<br><br>
+					#if ($event.isInstitute())
+					<strong>Locations and Dates:</strong><br>
+					#else
+					<strong>Dates:</strong><br>
+					#end
+					<ul>
+					#foreach($location in $eventLocations)
+						<li>
+							#if (!$location.isFull())
+							<a href="/conferences_events/detail.${webapi.getPageFileExtension()}?inode=${event.inode}&pageTitle=$event.title&crumbTitle=$event.title">
+							<!--<a href="/dotCMS/eventRegistration?eventInode=$event.inode&eventLocationInode=$location.inode">-->
+							$!location.toShortString()</a>
+							#else
+								$!location.toShortString()
+								<br><font color="red">Session is FULL! Call 850-934-1099 to be notified if openings occur.</font>
+							#end
+						</li>
+					#end
+					#if($eventLocations.size() == 0)
+						<li>No Locations Found</li>
+					#end
+					</ul>
+					</div>
+					
+					<hr/>
+				#end
+

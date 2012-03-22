@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.2//EN" "http://jakarta.apache.org/struts/dtds/struts-config_1_2.dtd">
+<struts-config>
+	<form-beans>
+		<!-- BEGIN FORM-BEANS -->
+		<!-- END FORM-BEANS -->
+	</form-beans>
+	
+	<action-mappings>
+		<!-- BEGIN ACTIONS -->
+		<!-- END ACTIONS -->
+	</action-mappings>
+	<!-- BEGIN PLUG-INS -->
+    <!-- END PLUG-INS -->
+</struts-config>

@@ -1,0 +1,474 @@
+####Creates the Horizontal Menu based on the path
+
+#macro(fixBreaks $stringToFix)
+	${UtilMethods.fixBreaks($stringToFix)}
+#end
+
+
+##DEPRECATED - OLD CALENDAR - WE CANT REMOVE UNTIL EVERYONE STOPS USING THIS CALENDAR
+###Calendar Macros
+#macro(getCalendar)
+	$velutil.mergeTemplate('static/events/events_calendar_monthly_view.vtl')
+#end
+
+##DEPRECATED - OLD CALENDAR - WE CANT REMOVE UNTIL EVERYONE STOPS USING THIS CALENDAR
+#macro(getEventDetail)
+	$velutil.mergeTemplate('static/events/events_calendar_detail_view.vtl')
+#end
+
+##DEPRECATED - OLD CALENDAR - WE CANT REMOVE UNTIL EVERYONE STOPS USING THIS CALENDAR
+#macro(getCalendarList)
+	$velutil.mergeTemplate('static/events/events_calendar_list_view.vtl')
+#end
+
+##Get the event List by Category name
+##DEPRECATED - OLD CALENDAR - WE CANT REMOVE UNTIL EVERYONE STOPS USING THIS CALENDAR
+#macro(getEvents $categoryName $amount)
+	#set ($eventList = $eventsapi.getUpcomingEventsList($categoryName, $amount)) 
+	<ul>
+	#foreach($event in $eventList)
+		<li>$event.getTitle()</li>
+	#end
+	</ul>
+#end
+
+##DEPRECATED - OLD CALENDAR - WE CANT REMOVE UNTIL EVERYONE STOPS USING THIS CALENDAR
+#macro(getEventsWithURL $categoryName $URL $amount)
+	#set ($eventList = $eventsapi.getUpcomingEventsList($categoryName, $amount)) 
+	<ul>
+	#foreach($event in $eventList)
+		<li><a href="$URL$event.getInode()"> $event.getTitle()</a></li>
+	#end
+	</ul>
+#end
+
+##DEPRECATED - OLD CALENDAR - WE CANT REMOVE UNTIL EVERYONE STOPS USING THIS CALENDAR
+#macro(getFeaturedEvents $categoryName)
+	$velutil.mergeTemplate('/static/events/featured_events.html')
+#end
+
+##DEPRECATED - OLD CALENDAR - WE CANT REMOVE UNTIL EVERYONE STOPS USING THIS CALENDAR
+#macro(getAllFeaturedEvents)
+	#set ($categoryName = "")
+	$velutil.mergeTemplate('/static/events/featured_events.html')
+#end
+
+#macro( monthsStringValues $stringFieldName $currVal )
+	<select name="$stringFieldName" id="$stringFieldName">
+		<option value="January" #if($currVal == "January") selected #end>January</option>
+		<option value="February" #if($currVal == "February") selected #end>February</option>
+		<option value="March" #if($currVal == "March") selected #end>March</option>
+		<option value="April" #if($currVal == "April") selected #end>April</option>
+		<option value="May" #if($currVal == "May") selected #end>May</option>
+		<option value="June" #if($currVal == "June") selected #end>June</option>
+		<option value="July" #if($currVal == "July") selected #end>July</option>
+		<option value="August" #if($currVal == "August") selected #end>August</option>
+		<option value="September" #if($currVal == "September") selected #end>September</option>
+		<option value="October" #if($currVal == "October") selected #end>October</option>
+		<option value="November" #if($currVal == "November") selected #end>November</option>
+		<option value="December" #if($currVal == "December") selected #end>December</option>
+	</select>
+#end
+
+#macro( monthsIntValues $stringFieldName $currVal )
+	<select name="$stringFieldName" id="$stringFieldName">
+		<option value="1" #if($currVal == "1") selected #end>January</option>
+		<option value="2" #if($currVal == "2") selected #end>February</option>
+		<option value="3" #if($currVal == "3") selected #end>March</option>
+		<option value="4" #if($currVal == "4") selected #end>April</option>
+		<option value="5" #if($currVal == "5") selected #end>May</option>
+		<option value="6" #if($currVal == "6") selected #end>June</option>
+		<option value="7" #if($currVal == "7") selected #end>July</option>
+		<option value="8" #if($currVal == "8") selected #end>August</option>
+		<option value="9" #if($currVal == "9") selected #end>September</option>
+		<option value="10" #if($currVal == "10") selected #end>October</option>
+		<option value="11" #if($currVal == "11") selected #end>November</option>
+		<option value="12" #if($currVal == "12") selected #end>December</option>
+	</select>
+#end
+
+##Contents macros
+#macro( getContentDetail $inode )
+	#getContentIdentifier($inode)
+	#getContentByIdentifier($content_id false)
+#end
+
+#macro( getContentDetailByIdentifier $id )
+	#getContentMapDetailByIdentifier($id false)
+#end
+
+#macro(getContentIdentifier $inode)
+	#set($content_id = "")
+	#set($content_id = $inode.identifier)
+
+	## only hit the db if we need it
+	## (we need to start saving the identifier right on the web asset)
+   
+	#if(!$InodeUtils.isSet($content_id))
+   		#set($content_id = $webapi.getIdentifierInode("$inode"))
+	#end
+#end
+
+##ContentObject macros
+#macro( getContentMapDetail $inode )
+	
+    #getContentIdentifier($inode)
+	#if($InodeUtils.isSet($content_id))
+	    #getContentByIdentifier($content_id true)
+	#end
+#end
+
+#macro(getContent $inode)
+    #getContentIdentifier($inode)
+	#getContentMapDetailByIdentifier($content_id)
+#end
+
+#macro( getContentByIdentifier $id $map)
+   #set($content = "")
+   #set($lang = 1)
+   #if ($request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+	   #set($lang = $request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+   #end
+   #if($EDIT_MODE || $PREVIEW_MODE)
+		#if($map)
+			#set($content_path="working/${id}_${lang}.contentMap")
+		#else
+			#set($content_path="working/${id}_${lang}.content")
+		#end
+   #else
+		#if($map)
+			#set($content_path="live/${id}_${lang}.contentMap")
+		#else
+			#set($content_path="live/${id}_${lang}.content")
+		#end
+   #end
+   #set($conExists = $velutil.doesVelocityResourceExist($content_path))
+   #if($conExists) 
+   		#set($CONTENT_INODE = '')
+   		$velutil.mergeTemplate($content_path)
+   		#if($map)
+			#set($content = $context.get("dotcms_content_${id}"))
+   		#end   
+   #elseif($conExists == false && !$InodeUtils.isSet($content.inode) && $languagewebapi.canDefaultContentToDefaultLanguage())
+	   	#set($lang = $languagewebapi.getDefaultLanguage().getId())
+	   	#if($EDIT_MODE || $PREVIEW_MODE)
+			#if($map)
+				#set($content_path="working/${id}_${lang}.contentMap")
+			#else
+				#set($content_path="working/${id}_${lang}.content")
+			#end
+	   	#else
+			#if($map)
+				#set($content_path="live/${id}_${lang}.contentMap")
+			#else
+				#set($content_path="live/${id}_${lang}.content")
+			#end
+	   	#end
+	   	$velutil.mergeTemplate($content_path)
+	   	#if($map)
+			#set($content = $context.get("dotcms_content_${id}"))
+   		#end
+   #end
+    
+	#set($_noContentletMap = "")
+#end
+
+#macro( getContentMapDetailByIdentifier $id )
+	#if($UtilMethods.isSet($_noContentletMap))
+		#getContentByIdentifier($id false)
+    #else
+	    #getContentByIdentifier($id true)
+    #end    
+	#set($_noContentletMap = "")
+#end
+
+
+##dot parse
+#macro(dotParse $_dotParsePath)
+  #if ($UtilMethods.isSet($list))
+    #if (!$UtilMethods.isSet($_dotParseListHeap))
+      #set ($_dotParseListHeap = $contents.getEmptyList())
+    #end
+    
+    #set ($_dotParseDummyVariable = $_dotParseListHeap.add($list))
+  #end
+
+  #if ($UtilMethods.isSet($content))
+    #if (!$UtilMethods.isSet($_dotParseContentHeap))
+      #set ($_dotParseContentHeap = $contents.getEmptyList())
+    #end
+    
+    #set ($_dotParseDummyVariable = $_dotParseContentHeap.add($content))
+  #end
+
+  #if ($velutil.isVelocityFile($_dotParsePath))
+    #if ($_dotParsePath.length() > 3 && $_dotParsePath.startsWith("//"))
+      ##finds first / after //
+  	  #set($_dotParseIndex1 = $_dotParsePath.indexOf("/",2))
+  	  ##if index1 exists
+  	  #if ($_dotParseIndex1 > -1)
+  		##get the host from the path
+  		#set($_dotParsePathHost = $_dotParsePath.substring(2,$_dotParseIndex1))
+  		##get the file path from the path
+  		#set($_dotParsePath = $_dotParsePath.substring($_dotParseIndex1,$_dotParsePath.length()))
+  	  #end
+	  #if ($UtilMethods.isSet($_dotParsePathHost))
+		  ##we found a host, we search the host by hostname
+		  #set ($_dotParseHost = $webapi.resolveHostName($_dotParsePathHost))
+		  #if ($_dotParseHost && $UtilMethods.isSet($_dotParseHost.identifier))
+			#set($_dotParseHostId = $_dotParseHost.identifier)
+		  #end
+	  #end
+    #end
+
+    #if (!$UtilMethods.isSet($dontShowIcon) || !$dontShowIcon)
+      #if($EDIT_MODE)
+	      #if(!$_dotParseHostId)
+	      	#set($_dotParseHostId = '')
+	      #end
+        #set($_dotParseInode = ${webapi.getAssetInode($_dotParsePath, $_dotParseHostId)})
+        #if($InodeUtils.isSet($_dotParseInode)&& ${webapi.doesUserHasPermissionOverFile($_dotParseInode, 2)})
+          <div  class="dot_parseIcon"> <a href="javascript:parent.editFile('${_dotParseInode}'); " title="$_dotParsePath"><span class="editIcon"></span></a></div>
+          #set ($_dotParseInode = '')
+        #end
+      #end
+    #end
+
+    #if($UtilMethods.isSet($_dotParseHostId))
+  	  #set($_dotParseRealPath = $webapi.getAssetPath($_dotParsePath, $_dotParseHostId))
+  	  #set ($_dotParseHostId = '')
+    #else
+  	  #set($_dotParseRealPath = $webapi.getAssetPath($_dotParsePath))
+    #end
+
+    #if($UtilMethods.isSet($_dotParseRealPath))
+      $velutil.mergeTemplate($_dotParseRealPath)
+    #else
+      #if($EDIT_MODE)
+        <p><b>The velocity file you want to  ${esc.h}dotParse ($_dotParsePath) doesn't exist, please change the path and try again.</b></p>
+      #end
+    #end
+  
+    #set ($_dotParsePath = '')
+    #set ($_dotParseRealPath = '')
+  #else
+	#if($EDIT_MODE)
+	       <p><b>${esc.h}dotParse only parses the following file types: .vtl, .vm and .html </b></p>
+	#end
+  #end
+
+  #if ($UtilMethods.isSet($_dotParseListHeap) && (0 < $_dotParseListHeap.size()))
+    #set ($list = $_dotParseListHeap.remove($math.sub($_dotParseListHeap.size(), 1)))
+  #end
+
+  #if ($UtilMethods.isSet($_dotParseContentHeap) && (0 < $_dotParseContentHeap.size()))
+    #set ($content = $_dotParseContentHeap.remove($math.sub($_dotParseContentHeap.size(), 1)))
+  #end
+#end
+
+##parse
+#macro( parseContainer $containerIdentifier )
+   #if($EDIT_MODE || $PREVIEW_MODE)
+		$velutil.mergeTemplate("/working/${containerIdentifier}.container")
+   #else
+		$velutil.mergeTemplate("/live/${containerIdentifier}.container")
+   #end
+#end
+
+#macro(editContentlet $CONTENT_INODE)
+	## No container inode is passed because a contentlet is edited no added to the container
+	#set($_containerInode = "")
+	#if($EDIT_MODE)
+		#set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
+		#if($_hasPermission)
+			<a href="javascript:parent.editContentlet('$_containerInode', '$CONTENT_INODE'); " class="dotEditListBox">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
+		#end
+	#end
+#end
+
+#macro(addContentlet $STRUCTURE_INODE $CONTENT_NAME)
+	#if($EDIT_MODE)
+	    <a href="javascript:parent.addContentletChapter('$STRUCTURE_INODE'); "><img src="/portal/images/icons/page.gif" alt="" width="15" height="15" border="0">$!{CONTENT_NAME}</a>
+	#end
+#end
+
+#macro(editEvent $EVENT_INODE)
+	#if($EDIT_MODE)
+		<a href="javascript:parent.editEvent('$EVENT_INODE'); "><img src="/portal/images/preview/btn_edit_active.gif" alt="" width="15" height="15" border="0"></a>
+	#end
+#end
+
+#macro(menuItems $startLevel $depth)         	 
+	#set ($hasItems = $nav.menuItemsByDepth($startLevel, $depth, $request))
+#end
+
+### STUDER GROUP's Product. This is used by FMI as well. We can't delete until we have a new Ecommerce module.
+#macro (getProduct $inode)
+	#if ($webapi.isSet($inode))
+		#set ($product = $productwebapi.getProduct($webapi.trim($inode)))
+		
+		#set ($title = $product.title)
+		#set ($shortDescription = $product.shortDescription)
+		#set ($longDescription = $product.longDescription)
+		#set ($reqShipping = $product.reqShipping)
+		#set ($featured = $product.featured)
+		#set ($formats = $product.getFormats())
+		#set ($productType = $product.getProductType())
+		#set ($sortOrder = $product.sortOrder)
+		#set ($relatedProducts = $product.getRelatedProducts())
+		#set ($productCategories = $product.getProductCategories())
+		#set ($isOnlyOnPartners = $product.isOnlyOnPartners())
+		#set ($comments = $product.comments)
+		#set ($smallImageInode = $product.getSmallImageInode())
+		#set ($mediumImageInode = $product.getMediumImageInode())
+		#set ($largeImageInode = $product.getLargeImageInode())
+		#set ($hasBulkPricing = $product.hasBulkPricing())
+		#set ($showOnWeb = $product.showOnWeb)
+	#end
+#end
+
+### STUDER GROUP's Product. This is used by FMI as well. We can't delete until we have a new Ecommerce module.
+#macro (getEvent $inode)
+	#if ($webapi.isSet($inode))
+		#set ($webevent = $webevents.getWebEvent($webapi.trim($inode)))
+		
+		#set ($comments = $webevent.comments)
+		#set ($description = $webevent.description)
+		#set ($eventImage1 = $webevent.eventImage1)
+		#set ($eventImage2 = $webevent.eventImage2)
+		#set ($eventImage3 = $webevent.eventImage3)
+		#set ($eventImage4 = $webevent.eventImage4)
+		#set ($isPartnersOnly = $webevent.isPartnersOnly())
+		#set ($isShowOnWeb = $webevent.isShowOnWeb())
+		#set ($sortOrder = $webevent.sortOrder)
+		#set ($subtitle = $webevent.subtitle)
+		#set ($summary = $webevent.summary)
+		#set ($termsConditions = $webevent.termsConditions)
+		#set ($title = $webevent.title)
+		#set ($isInstitute = $webevent.isInstitute())
+	#end
+#end
+
+#macro (pullRSSFeed $url)
+
+   #if(!$UtilMethods.isSet($rssFilter))
+      #set($rssFilter = [''])
+   #end
+   
+   #if(!$UtilMethods.isSet($rssTotal))
+      #set($rssTotal = -1)
+   #end
+   
+   #if(!$UtilMethods.isSet($ingesterName))
+      #set($ingesterName = 'RSSIngester')
+   #end
+   
+   #if(!$UtilMethods.isSet($rssUserAgent))
+      #set($rssUserAgent = '')
+   #end
+	
+   #set($rssFile = $rssapi.getFile($url,$ingesterName,$rssUserAgent))
+
+   $velutil.mergeTemplate($rssFile) 
+
+   #set($list = $rssapi.filterAndTop($list,$rssFilter,$rssTotal))
+
+#end
+
+#macro (getResultsFromXMLFeed)
+   
+   #if(!$UtilMethods.isSet($rssFilter))
+      #set($rssFilter = [''])
+   #end
+   
+   #set($rssTotal = $limit)
+   #if(!$UtilMethods.isSet($rssTotal))
+      #set($rssTotal = -1)
+   #end
+   
+   #if($parameters)
+      #if($url.indexOf('?') == -1)
+         #set($url = "${url}?${parameters}")
+      #else
+         #set($url = "${url}&${parameters}")
+      #end
+   #end
+
+   #if(!$UtilMethods.isSet($ingesterName))
+      #set($ingesterName = 'RSSIngester')
+   #end
+   
+   #if(!$UtilMethods.isSet($rssUserAgent))
+         #set($rssUserAgent = '')
+   #end
+   
+   #set($rssFile = $rssapi.getFile($url,$ingesterName,$rssUserAgent))
+
+   $velutil.mergeTemplate($rssFile)
+
+   #set($list = $rssapi.filterAndTop($list,$rssFilter,$rssTotal))
+   #if($orderBy)
+      #set($list = $sorter.sort($list,$orderBy))
+   #end
+   
+#end
+
+#macro (getNumViews $identifier)
+	#set ($numViews = 0)
+	
+	#set ($clickstreamNumViews = $session.getAttribute('clickstreamNumViews'))
+	#if (!$UtilMethods.isSet($clickstreamNumViews))
+		#set ($clickstreamNumViews = $contents.getEmptyMap())
+	#else
+		#foreach ($key in $clickstreamNumViews.keySet())
+			#if ($key == $identifier)
+				#set ($numViews = $clickstreamNumViews.get($identifier))
+			#end
+		#end
+	#end
+	
+	#if ($numViews == 0)
+		#getSQLResults("select count(clickstream_request.associated_identifier) as num_views from clickstream_request where associated_identifier = '$identifier'")
+		#set ($numViews = $math.toInteger($results.get(0).num_views))
+	#end
+	#if (!$EDIT_MODE)
+		#set ($numViews = $math.add($numViews, 1))
+	#end
+	
+	#set ($_dotDummyValue = $clickstreamNumViews.put($identifier, $numViews))
+	#set ($_dotDummyValue = $session.setAttribute('clickstreamNumViews', $clickstreamNumViews))
+	$numViews
+#end
+
+#macro (getMostViewed $structureName)
+	#set ($list = $contents.getEmptyList())
+	
+	#if ($UtilMethods.isSet($structureName))
+		#if (!$UtilMethods.isSet($mostViewedTrailingDate))
+			#set ($mostViewedTrailingDate = 'desc')
+		#end
+		
+		#if (!$UtilMethods.isSet($mostViewedLimit))
+			#set ($mostViewedLimit = 20)
+		#end
+		
+		#set ($structure = $structures.findStructureByName($structureName))
+		
+		#set ($query = "select associated_identifier as identifier from (select count(clickstream_request.associated_identifier) as num_views, clickstream_request.associated_identifier")
+		#set ($query = "${query} from contentlet, inode, clickstream_request where contentlet.structure_inode='${structure.inode}' and contentlet.live=1 and contentlet.deleted=0 and")
+		#set ($query = "${query} contentlet.inode=inode.inode and contentlet.identifier=clickstream_request.associated_identifier group by clickstream_request.associated_identifier)")
+		#set ($query = "${query} as identifier_num_views order by num_views ${mostViewedTrailingDate}")
+		#getSQLResults($query)
+		
+		#if ($UtilMethods.isSet($results))
+			#if ($mostViewedLimit < $results.size())
+				#set ($results = $results.subList(0, $mostViewedLimit))
+			#end
+			
+			#foreach ($identifier in $results)
+				#getContentMapDetailByIdentifier($identifier.identifier)
+				$!list.add(${math.sub($velocityCount,1)}, $content)
+			#end
+		#end
+	#end
+#end

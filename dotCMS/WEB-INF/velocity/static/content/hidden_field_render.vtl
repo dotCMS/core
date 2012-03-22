@@ -1,0 +1,18 @@
+#if($field.fieldType == 'category')
+	<input type="hidden" name="$fieldAux.velocityVarName" id="$fieldAux.velocityVarName" value=""><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+#elseif($field.fieldType == 'checkbox')
+	#set($valuesSplit = $fieldAux.values.split("\n"))
+	#foreach($value in $valuesSplit)
+		#set($labelValue = $value.split('\|'))
+		#if($listTool.size($value.split("|")) > 1)
+			#set($value = $listTool.get($labelValue, 1).trim())
+		#else
+			#set($value = $listTool.get($labelValue, 0).trim())
+		#end
+		<input type="hidden" name="$fieldAux.velocityVarName" id="$fieldAux.velocityVarName" value="$value">
+	#end
+#else
+	<input type="hidden" name="$fieldAux.velocityVarName" id="$fieldAux.velocityVarName" value="$!fieldDefaultValue"><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+#end
+
+<span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>

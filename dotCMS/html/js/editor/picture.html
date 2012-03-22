@@ -1,0 +1,179 @@
+<html>
+<head>
+	<title>Picture</title>
+	<script language="JavaScript">
+		function insertPicture() {
+			opener.insertHTML(
+				"<img " +
+					"align=\"" + document.fm.align[document.fm.align.selectedIndex].value + "\" " +
+					((document.fm.alt.value) ? "alt=\"" + document.fm.alt.value + "\" " : "") +
+					((document.fm.border.value) ? "border=\"" + document.fm.border.value + "\" " : "") +
+					((document.fm.height.value) ? "height=\"" + document.fm.height.value + "\" " : "") +
+					((document.fm.hspace.value) ? "hspace=\"" + document.fm.width.value + "\" " : "") +
+					((document.fm.src.value) ? "src=\"" + document.fm.src.value + "\" " : "") +
+					((document.fm.vspace.value) ? "vspace=\"" + document.fm.width.value + "\" " : "") +
+					((document.fm.width.value) ? "width=\"" + document.fm.width.value + "\" " : "") +
+				">");
+
+			window.close();
+		}
+	</script>
+</head>
+
+<body bgcolor="Silver" leftmargin="0" marginheight="0" marginwidth="0" rightmargin="0" topmargin="0">
+
+<table border="0" cellpadding="10" cellspacing="0" width="100%">
+
+<form name="fm">
+
+<tr>
+	<td>
+		<fieldset>
+			<legend><font face="MS Sans Serif" size="1">Picture Information</font></legend>
+
+			<table border="0" cellpadding="8" cellspacing="0">
+			<tr>
+				<td>
+					<table border="0" cellpadding="0" cellspacing="0">
+					<tr>
+						<td>
+							<font face="MS Sans Serif" size="1">URL:</font>
+						</td>
+						<td>
+							&nbsp;
+						</td>
+						<td>
+							<input name="src" size="40" type="text">
+						</td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<table border="0" cellpadding="0" cellspacing="0">
+					<tr>
+						<td>
+							<font face="MS Sans Serif" size="1">Alt Text:</font>
+						</td>
+						<td>
+							&nbsp;
+						</td>
+						<td>
+							<input name="alt" size="20" type="text">
+						</td>
+						<td width="10">
+							&nbsp;
+						</td>
+						<td>
+							<font face="MS Sans Serif" size="1">Align:</font>
+						</td>
+						<td>
+							&nbsp;
+						</td>
+						<td>
+							<select name="align">
+								<option value="left">Left</option>
+								<option value="right">Right</option>
+								<option value="top">Top</option>
+								<option value="texttop">Text Top</option>
+								<option value="middle">Middle</option>
+								<option value="absmiddle">Abs Middle</option>
+								<option value="baseline">Baseline</option>
+								<option value="bottom">Bottom</option>
+								<option value="absbottom">Abs Bottom</option>
+							</select>
+						</td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<table border="0" cellpadding="0" cellspacing="0">
+					<tr>
+						<td valign="top">
+							<font face="MS Sans Serif" size="1">Border:</font>
+						</td>
+						<td>
+							&nbsp;
+						</td>
+						<td>
+							<input name="border" size="2" type="text" value="0">
+						</td>
+						<td width="10">
+							&nbsp;
+						</td>
+						<td valign="top">
+							<font face="MS Sans Serif" size="1">Height:</font>
+						</td>
+						<td>
+							&nbsp;
+						</td>
+						<td>
+							<input name="height" size="2" type="text">
+						</td>
+						<td width="10">
+							&nbsp;
+						</td>
+						<td valign="top">
+							<font face="MS Sans Serif" size="1">Width:</font>
+						</td>
+						<td>
+							&nbsp;
+						</td>
+						<td>
+							<input name="width" size="2" type="text">
+						</td>
+						<td width="10">
+							&nbsp;
+						</td>
+						<td valign="top">
+							<font face="MS Sans Serif" size="1">Hspace:</font>
+						</td>
+						<td>
+							&nbsp;
+						</td>
+						<td>
+							<input name="hspace" size="2" type="text" value="0">
+						</td>
+						<td width="10">
+							&nbsp;
+						</td>
+						<td valign="top">
+							<font face="MS Sans Serif" size="1">Vspace:</font>
+						</td>
+						<td>
+							&nbsp;
+						</td>
+						<td>
+							<input name="vspace" size="2" type="text" value="0">
+						</td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+			</table>
+		</fieldset>
+
+		<table border="0" cellpadding="8" cellspacing="0" width="100%">
+		<tr>
+			<td>
+				<font face="Verdana, Tahoma, Arial" size="1">Upload your images to the Image Gallery and reference them by URL here.</font>
+			</td>
+			<td align="right" nowrap>
+				<input type="button" value="Insert" onClick="insertPicture();">
+				<input type="button" value="Cancel" onClick="self.close();">
+			</td>
+		</tr>
+		</table>
+	</td>
+</tr>
+
+</form>
+
+</table>
+
+</body>
+
+</html>

@@ -1,0 +1,1604 @@
+<?xml version="1.0"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 1.1//EN" "http://jakarta.apache.org/struts/dtds/tiles-config_1_1.dtd">
+
+<tiles-definitions>
+
+	<!-- Common -->
+
+	<definition name="portal" path="/portal/layout_portal.jsp">
+		<put name="in_frame" value="false" />
+		<put name="br_num" value="0" />
+		<put name="alpha_title" value="" />
+		<put name="beta_title" value="" />
+		<put name="portlet_sub_nav" value="" />
+		<put name="portlet_id" value="" />
+		<put name="content" value="" />
+	</definition>
+
+	<!--Blank-->
+	<definition name="blank" path="/portal/blank.jsp">
+		<put name="content" value="" />
+	</definition>
+
+	<definition name="portal.about" extends="blank">
+		<put name="alpha_title" value="about" />
+		<put name="content" value="/portal/about.jsp" />
+	</definition>
+
+	<definition name="portal.add_page" extends="portal">
+		<put name="alpha_title" value="add-page" />
+		<put name="content" value="/portal/add_page.jsp" />
+	</definition>
+
+	<definition name="portal.change_colors" extends="portal">
+		<put name="alpha_title" value="change-colors" />
+		<put name="beta_title" value="sub_nav.jsp" />
+		<put name="content" value="/portal/change_colors.jsp" />
+	</definition>
+
+	<definition name="portal.change_password" extends="portal">
+		<put name="alpha_title" value="change-password" />
+		<put name="content" value="/portal/change_password.jsp" />
+	</definition>
+
+	<definition name="portal.customize_colors_options"
+		extends="portal">
+		<put name="in_frame" value="true" />
+		<put name="br_num" value="1" />
+		<put name="alpha_title" value="customize-colors" />
+		<put name="beta_title" value="sub_nav.jsp" />
+		<put name="content"
+			value="/portal/customize_colors_options.jsp" />
+	</definition>
+
+	<definition name="portal.disclaimer" extends="portal">
+		<put name="alpha_title" value="disclaimer" />
+		<put name="content" value="/portal/disclaimer.jsp" />
+	</definition>
+
+	<definition name="portal.error" extends="portal">
+		<put name="alpha_title" value="error" />
+		<put name="content" value="/portal/error.jsp" />
+	</definition>
+
+	<definition name="portal.faq" extends="portal">
+		<put name="alpha_title" value="faq" />
+		<put name="content" value="/portal/faq.jsp" />
+	</definition>
+
+	<definition name="portal.j_login_error" extends="portal">
+		<put name="alpha_title" value="sign-in" />
+		<put name="beta_title" value="sign-in" />
+		<put name="content" value="/portal/j_login_error.jsp" />
+	</definition>
+
+	<definition name="portal.layout" extends="portal">
+		<put name="content" value="/portal/layout.jsp" />
+	</definition>
+
+	<definition name="portal.login" extends="blank">
+		<put name="content" value="/portal/login.jsp" />
+	</definition>
+
+	<definition name="portal.personalize" extends="portal">
+		<put name="alpha_title" value="personalize-pages" />
+		<put name="beta_title" value="sub_nav.jsp" />
+		<put name="content" value="/portal/personalize.jsp" />
+	</definition>
+
+	<definition name="portal.portlet_access_denied" extends="portal">
+		<put name="content" value="/portal/portlet_access_denied.jsp" />
+	</definition>
+
+	<definition name="portal.portlet_inactive" extends="portal">
+		<put name="content" value="/portal/portlet_inactive.jsp" />
+	</definition>
+
+	<definition name="portal.portlet_not_supported" extends="portal">
+		<put name="content" value="/portal/portlet_not_supported.jsp" />
+	</definition>
+
+	<definition name="portal.terms_of_use" extends="portal">
+		<put name="alpha_title" value="terms-of-use" />
+		<put name="content" value="/portal/terms_of_use.jsp" />
+	</definition>
+
+	<definition name="portal.test" extends="portal">
+		<put name="alpha_title" value="test" />
+		<put name="content" value="/portal/test.jsp" />
+	</definition>
+
+
+	<!-- Admin -->
+
+	<definition name="portlet.admin" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/admin/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.change_company_logo"
+		extends="portlet.admin">
+		<put name="content"
+			value="/portlet/admin/change_company_logo.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.change_user_portrait"
+		extends="portlet.admin">
+		<put name="content"
+			value="/portlet/admin/change_user_portrait.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.default_email_notification"
+		extends="portlet.admin">
+		<put name="content"
+			value="/portlet/admin/default_email_notification.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.default_groups_and_roles"
+		extends="portlet.admin">
+		<put name="content"
+			value="/portlet/admin/default_groups_and_roles.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_company"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/view.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_group_pages"
+		extends="portlet.admin">
+		<put name="content" value="/portal/personalize.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_group_pages_priority"
+		extends="portlet.admin">
+		<put name="content"
+			value="/portlet/admin/edit_group_pages_priority.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_group_roles"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/edit_group_roles.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_group_users"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/edit_group_users.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_portlet"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/edit_portlet.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_role_groups"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/edit_role_groups.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_role_users"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/edit_role_users.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_user_address"
+		extends="portlet.admin">
+		<put name="content"
+			value="/portlet/admin/edit_user_address.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_user_groups"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/edit_user_groups.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_user_profile"
+		extends="portlet.admin">
+		<put name="content"
+			value="/portlet/admin/edit_user_profile.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.edit_user_roles"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/edit_user_roles.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.error" extends="portlet.admin">
+		<put name="content" value="/portlet/admin/error.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.list_groups"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/list_groups.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.list_portlets"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/list_portlets.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.list_roles"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/list_roles.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.list_session_details"
+		extends="portlet.admin">
+		<put name="content"
+			value="/portlet/admin/list_session_details.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.list_sessions"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/list_sessions.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.list_users"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/list_users.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.mail_host_names"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/mail_host_names.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.notify_new_users"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/notify_new_users.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.reserved_users"
+		extends="portlet.admin">
+		<put name="content" value="/portlet/admin/reserved_users.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.server" extends="portlet.admin">
+		<put name="content" value="/portlet/admin/server.jsp" />
+	</definition>
+
+	<definition name="portlet.admin.view" extends="portal">
+		<put name="content" value="/portlet/admin/view.jsp" />
+	</definition>
+
+
+	<!-- My Account -->
+
+	<definition name="portlet.my_account" extends="portal">
+		<put name="portlet_id" value="2" />
+		<put name="beta_title" value="none" />
+	</definition>
+
+	<definition name="portlet.my_account.change_portrait"
+		extends="portal">
+		<put name="content"
+			value="/portlet/my_account/change_portrait.jsp" />
+	</definition>
+
+	<definition name="portlet.my_account.create_account"
+		extends="portal">
+		<put name="content"
+			value="/portlet/my_account/create_account.jsp" />
+	</definition>
+
+	<definition name="portlet.my_account.edit_address"
+		extends="portal">
+		<put name="content"
+			value="/portlet/my_account/edit_address.jsp" />
+	</definition>
+
+	<definition name="portlet.my_account.edit_profile"
+		extends="portal">
+		<put name="content"
+			value="/portlet/my_account/edit_profile.jsp" />
+	</definition>
+
+	<definition name="portlet.my_account.error" extends="portal">
+		<put name="content" value="/portlet/my_account/error.jsp" />
+	</definition>
+
+	<definition name="portlet.my_account.view" extends="blank">
+		<put name="content" value="/portal/login.jsp" />
+	</definition>
+
+
+
+
+
+
+
+	<!-- Jobs -->
+	<definition name="portlet.ext.jobs.view" extends="portal">
+		<put name="content" value="/portlet/ext/jobs/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.jobs" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/jobs/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.jobs.view_jobs"
+		extends="portlet.ext.jobs">
+		<put name="content" value="/portlet/ext/jobs/view_jobs.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.jobs.edit_job"
+		extends="portlet.ext.jobs">
+		<put name="content" value="/portlet/ext/jobs/edit_job.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.jobs.view_resumes"
+		extends="portlet.ext.jobs">
+		<put name="content" value="/portlet/ext/jobs/view_resumes.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.jobs.edit_resume"
+		extends="portlet.ext.jobs">
+		<put name="content" value="/portlet/ext/jobs/edit_resume.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.jobs.view_searchfirms"
+		extends="portlet.ext.jobs">
+		<put name="content"
+			value="/portlet/ext/jobs/view_searchfirms.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.jobs.edit_searchfirm"
+		extends="portlet.ext.jobs">
+		<put name="content"
+			value="/portlet/ext/jobs/edit_searchfirm.jsp" />
+	</definition>
+	<!-- Jobs -->
+
+	<!-- File Management -->
+	<definition name="portlet.ext.files.view" extends="portal">
+		<put name="content" value="/portlet/ext/files/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.files" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/files/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.files.edit_file"
+		extends="portlet.ext.files">
+		<put name="content"
+			value="/portlet/ext/files/edit_file.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.files.window_close"
+		extends="portlet.ext.files">
+		<put name="content" value="/portlet/ext/files/window_close.jsp" />
+	</definition>
+	
+	<definition name="portlet.ext.files.view_files"
+		extends="portlet.ext.files">
+		<put name="content" value="/portlet/ext/files/view_files.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.files.edit_file_popup"
+		extends="portlet.ext.files">
+		<put name="content" value="/portlet/ext/files/edit_file.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.files.publish_files"
+		extends="portlet.ext.files">
+		<put name="content"
+			value="/portlet/ext/files/publish_files.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.files.upload_multiple"
+		extends="portlet.ext.files">
+		<put name="content"
+			value="/portlet/ext/files/upload_multiple.jsp" />
+	</definition>
+
+	<!-- File Management -->
+
+
+	<!-- Category Admin -->
+	<definition name="portlet.ext.categories.view" extends="portal">
+		<put name="content" value="/portlet/ext/categories/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.categories" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/categories/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.categories.view_categories"
+		extends="portlet.ext.categories">
+		<put name="content"
+			value="/portlet/ext/categories/view_categories.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.categories.view_category"
+		extends="portlet.ext.categories">
+		<put name="content"
+			value="/portlet/ext/categories/view_category.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.categories.edit_category"
+		extends="portlet.ext.categories">
+		<put name="content"
+			value="/portlet/ext/categories/edit_category.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.categories.view_category"
+		extends="portlet.ext.categories">
+		<put name="content"
+			value="/portlet/ext/categories/view_category.jsp" />
+	</definition>
+	<!-- Category Admin -->
+
+	<!-- Entities -->
+	<definition name="portlet.ext.entities.view" extends="portal">
+		<put name="content" value="/portlet/ext/entities/view.jsp" />
+	</definition>
+	<definition name="portlet.ext.entities.edit_entity"
+		extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/entities/sub_nav.jsp" />
+		<put name="content"
+			value="/portlet/ext/entities/edit_entity.jsp" />
+	</definition>
+	<definition name="portlet.ext.entities.view_entities"
+		extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/entities/sub_nav.jsp" />
+		<put name="content"
+			value="/portlet/ext/entities/view_entities.jsp" />
+	</definition>
+	<!-- /Entities -->
+
+	<!-- CMS Browser -->
+
+	<definition name="portlet.ext.browser.view_browser"
+		extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/browser/sub_nav.jsp" />
+		<put name="content"
+			value="/portlet/ext/browser/view_browser.jsp" />
+	</definition>
+
+	<!-- /CMS Browser -->
+
+	<!-- Folders -->
+
+	<definition name="portlet.ext.folders" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/folders/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.folders.edit_folder"
+		extends="portlet.ext.folders">
+		<put name="content"
+			value="/portlet/ext/folders/edit_folder.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.folders.edit_host"
+		extends="portlet.ext.folders">
+		<put name="content" value="/portlet/ext/folders/edit_host.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.folders.publish_folder"
+		extends="portlet.ext.folders">
+		<put name="content"
+			value="/portlet/ext/folders/publish_folder.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.folders.order_menu"
+		extends="portlet.ext.folders">
+		<put name="content" value="/portlet/ext/folders/order_menu.jsp" />
+	</definition>
+
+	<!-- Folders -->
+
+	<!-- File Upload Management -->
+	<definition name="portlet.ext.fileupload" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/fileupload/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.fileupload.upload_file"
+		extends="portlet.ext.fileupload">
+		<put name="content"
+			value="/portlet/ext/fileupload/file_upload.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.fileupload.window_close"
+		extends="portlet.ext.fileupload">
+		<put name="content"
+			value="/portlet/ext/fileupload/window_close.jsp" />
+	</definition>
+	<!-- File Upload Management -->
+
+	<!-- Contentlet -->
+
+	<definition name="portlet.ext.contentlet.view" extends="portal">
+		<put name="content" value="/portlet/ext/contentlet/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.contentlet" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/contentlet/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.contentlet.edit_contentlet"
+		extends="portlet.ext.contentlet">
+		<put name="content"
+			value="/portlet/ext/contentlet/edit_contentlet.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.contentlet.view_contentlets"
+		extends="portlet.ext.contentlet">
+		<put name="content"
+			value="/portlet/ext/contentlet/view_contentlets.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.contentlet.view_contentlets_popup"
+		extends="portal">
+		<put name="content"
+			value="/portlet/ext/contentlet/view_contentlets_popup.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.contentlet.publish_contentlets"
+		extends="portlet.ext.contentlet">
+		<put name="content"
+			value="/portlet/ext/contentlet/publish_contentlets.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.contentlet.add_variables"
+		extends="portlet.ext.contentlet">
+		<put name="content"
+			value="/portlet/ext/contentlet/add_variables.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.contentlet.import_contentlets"
+		extends="portlet.ext.contentlet">
+		<put name="content"
+			value="/portlet/ext/contentlet/import_contentlets.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.contentlet.import_contentlets_preview"
+		extends="portlet.ext.contentlet">
+		<put name="content"
+			value="/portlet/ext/contentlet/import_contentlets_preview.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.contentlet.import_contentlets_results"
+		extends="portlet.ext.contentlet">
+		<put name="content"
+			value="/portlet/ext/contentlet/import_contentlets_results.jsp" />
+	</definition>
+	<definition name="portlet.ext.contentlet.order_contentlets"
+		extends="portlet.ext.contentlet">
+		<put name="content"
+			value="/portlet/ext/contentlet/order_contentlets.jsp" />
+	</definition>
+	<!-- Contentlet -->
+
+	<!-- container -->
+	<definition name="portlet.ext.containers.view" extends="portal">
+		<put name="content" value="/portlet/ext/containers/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.containers" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/containers/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.containers.view_containers"
+		extends="portlet.ext.containers">
+		<put name="content"
+			value="/portlet/ext/containers/view_containers.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.containers.view_containers_popup"
+		extends="portlet.ext.containers">
+		<put name="content"
+			value="/portlet/ext/containers/view_containers_popup.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.containers.edit_container"
+		extends="portlet.ext.containers">
+		<put name="content"
+			value="/portlet/ext/containers/edit_container.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.containers.publish_containers"
+		extends="portlet.ext.containers">
+		<put name="content"
+			value="/portlet/ext/containers/publish_containers.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.containers.add_variables"
+		extends="portlet.ext.containers">
+		<put name="content"
+			value="/portlet/ext/containers/add_variables.jsp" />
+	</definition>
+
+	<!-- Layout -->
+
+	<!-- Template -->
+
+	<definition name="portlet.ext.templates.view" extends="portal">
+		<put name="content" value="/portlet/ext/templates/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.templates" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/templates/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.templates.view_templates"
+		extends="portlet.ext.templates">
+		<put name="content"
+			value="/portlet/ext/templates/view_templates.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.templates.preview_template"
+		extends="portlet.ext.templates">
+		<put name="content"
+			value="/portlet/ext/templates/preview_template.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.templates.edit_template"
+		extends="portlet.ext.templates">
+		<put name="content"
+			value="/portlet/ext/templates/edit_templates.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.templates.publish_templates"
+		extends="portlet.ext.templates">
+		<put name="content"
+			value="/portlet/ext/templates/publish_templates.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.templates.container_selector"
+		extends="portlet.ext.templates">
+		<put name="content"
+			value="/portlet/ext/templates/container_selector.jsp" />
+	</definition>
+
+	<!-- /Template -->
+
+
+
+	<!-- HTMLPage -->
+	<definition name="portlet.ext.htmlpages.view" extends="portal">
+		<put name="content" value="/portlet/ext/htmlpages/view.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpages" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/htmlpages/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpages.view_htmlpages"
+		extends="portlet.ext.htmlpages">
+		<put name="content"
+			value="/portlet/ext/htmlpages/view_htmlpages.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpages.edit_htmlpage"
+		extends="portlet.ext.htmlpages">
+		<put name="content"
+			value="/portlet/ext/htmlpages/edit_htmlpages.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpages.preview_htmlpage"
+		extends="portlet.ext.htmlpages">
+		<put name="content"
+			value="/portlet/ext/htmlpages/preview_htmlpage.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpages.publish_htmlpages"
+		extends="portlet.ext.htmlpages">
+		<put name="content"
+			value="/portlet/ext/htmlpages/publish_htmlpages.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpages.extranet.send_to_friend"
+		extends="portlet.ext.htmlpages">
+		<put name="content"
+			value="/portlet/ext/htmlpages/send_to_friend.jsp" />
+	</definition>
+	<definition
+		name="portlet.ext.htmlpages.extranet.send_to_friend_thanks"
+		extends="portlet.ext.htmlpages">
+		<put name="content"
+			value="/portlet/ext/htmlpages/send_to_friend_thanks.jsp" />
+	</definition>
+	<!-- HTMLPage -->
+
+	<!-- VirtualLink -->
+	<definition name="portlet.ext.virtuallinks.view" extends="portal">
+		<put name="content" value="/portlet/ext/virtuallinks/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.virtuallinks" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/virtuallinks/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.virtuallinks.view_virtuallinks"
+		extends="portlet.ext.virtuallinks">
+		<put name="content"
+			value="/portlet/ext/virtuallinks/view_virtuallinks.jsp" />
+	</definition>
+	<definition name="portlet.ext.virtuallinks.edit_virtuallink"
+		extends="portlet.ext.virtuallinks">
+		<put name="content"
+			value="/portlet/ext/virtuallinks/edit_virtuallink.jsp" />
+	</definition>
+	<!-- VirtualLink -->
+
+
+
+
+
+
+
+	<!-- languages manager -->
+
+
+	<definition name="portlet.ext.languages_manager.view"
+		extends="portal">
+		<put name="content"
+			value="/portlet/ext/languagesmanager/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.languages_manager" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/languagesmanager/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.languages_manager.view_languages"
+		extends="portlet.ext.languages_manager">
+		<put name="content"
+			value="/portlet/ext/languagesmanager/view_languages.jsp" />
+	</definition>
+
+
+	<definition name="portlet.ext.languages_manager.edit_language_keys"
+		extends="portlet.ext.languages_manager">
+		<put name="content"
+			value="/portlet/ext/languagesmanager/edit_language_keys.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.languages_manager.edit_language"
+		extends="portlet.ext.languages_manager">
+		<put name="content"
+			value="/portlet/ext/languagesmanager/edit_language.jsp" />
+	</definition>
+
+	<!-- languages manager-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<!-- HTMLPageViews -->
+	<definition name="portlet.ext.htmlpageviews.view"
+		extends="portal">
+		<put name="content" value="/portlet/ext/htmlpageviews/view.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpageviews" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/htmlpageviews/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpageviews.view_htmlpage_views"
+		extends="portlet.ext.htmlpageviews">
+		<put name="content"
+			value="/portlet/ext/htmlpageviews/view_htmlpage_views.jsp" />
+	</definition>
+	<definition name="portlet.ext.htmlpageviews.html_page_report"
+		extends="blank">
+		<put name="content"
+			value="/portlet/ext/htmlpageviews/view_report_csv.jsp" />
+	</definition>
+
+	<!-- HTMLPageViews -->
+
+
+
+
+	<!-- UserClicks -->
+	<definition name="portlet.ext.userclicks.view" extends="portal">
+		<put name="content" value="/portlet/ext/userclicks/view.jsp" />
+	</definition>
+	<definition name="portlet.ext.userclicks" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/userclicks/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.userclicks.view_user_clicks"
+		extends="portlet.ext.userclicks">
+		<put name="content"
+			value="/portlet/ext/userclicks/view_user_clicks.jsp" />
+	</definition>
+	<definition name="portlet.ext.userclicks.detail_user_clicks"
+		extends="portlet.ext.userclicks">
+		<put name="content"
+			value="/portlet/ext/userclicks/detail_user_clicks.jsp" />
+	</definition>
+	<!-- UserClicks -->
+
+	<!-- UserComments -->
+	<definition name="portlet.ext.usercomments.view" extends="portal">
+		<put name="content" value="/portlet/ext/usercomments/view.jsp" />
+	</definition>
+	<definition name="portlet.ext.usercomments" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/usercomments/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.usercomments.view_user_comments"
+		extends="portlet.ext.usercomments">
+		<put name="content"
+			value="/portlet/ext/usercomments/view_user_comments.jsp" />
+	</definition>
+	<definition name="portlet.ext.usercomments.view_user_comment"
+		extends="portlet.ext.usercomments">
+		<put name="content"
+			value="/portlet/ext/usercomments/view_user_comment.jsp" />
+	</definition>
+	<!-- UserComments -->
+
+	<!-- MailingList -->
+	<definition name="portlet.ext.mailinglists" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/mailinglists/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.mailinglists.error"
+		extends="portlet.ext.mailinglists">
+		<put name="content" value="/portlet/ext/mailinglists/error.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.mailinglists.view" extends="portal">
+		<put name="content" value="/portlet/ext/mailinglists/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.mailinglists.view_mailinglists"
+		extends="portlet.ext.mailinglists">
+		<put name="content"
+			value="/portlet/ext/mailinglists/view_mailinglists.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.mailinglists.edit_mailinglist"
+		extends="portlet.ext.mailinglists">
+		<put name="content"
+			value="/portlet/ext/mailinglists/edit_mailinglist.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.mailinglists.extranet.subscribe"
+		extends="blank">
+		<put name="content"
+			value="/portlet/ext/mailinglists/subscribe.jsp" />
+	</definition>
+
+	<definition
+		name="portlet.ext.mailinglists.extranet.subscribe_thanks"
+		extends="blank">
+		<put name="content"
+			value="/portlet/ext/mailinglists/subscribe_thanks.jsp" />
+	</definition>
+
+	<!-- /MailingList -->
+
+
+	<!-- Director -->
+	<definition name="portlet.ext.director" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/director/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.director.unlock_contentlet"
+		extends="portlet.ext.director">
+		<put name="content"
+			value="/portlet/ext/director/unlock_contentlet.jsp" />
+	</definition>
+	<definition name="portlet.ext.director.unlock_htmlpage"
+		extends="portlet.ext.director">
+		<put name="content"
+			value="/portlet/ext/director/unlock_htmlpage.jsp" />
+	</definition>
+	<definition name="portlet.ext.director.unlock_container"
+		extends="portlet.ext.director">
+		<put name="content"
+			value="/portlet/ext/director/unlock_container.jsp" />
+	</definition>
+	<definition name="portlet.ext.director.unlock_template"
+		extends="portlet.ext.director">
+		<put name="content"
+			value="/portlet/ext/director/unlock_template.jsp" />
+	</definition>
+	<definition name="portlet.ext.director.unlock_link"
+		extends="portlet.ext.director">
+		<put name="content"
+			value="/portlet/ext/director/unlock_link.jsp" />
+	</definition>
+	<definition name="portlet.ext.director.unlock_popup_link"
+		extends="portlet.ext.director">
+		<put name="content"
+			value="/portlet/ext/director/unlock_link.jsp" />
+	</definition>
+	<definition name="portlet.ext.director.unlock_file"
+		extends="portlet.ext.director">
+		<put name="content"
+			value="/portlet/ext/director/unlock_file.jsp" />
+	</definition>
+
+	<!-- Link -->
+	<definition name="portlet.ext.links.view" extends="portal">
+		<put name="content" value="/portlet/ext/links/view.jsp" />
+	</definition>
+	<definition name="portlet.ext.links" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/links/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.links.view_links"
+		extends="portlet.ext.links">
+		<put name="content" value="/portlet/ext/links/view_links.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.links.edit_link"
+		extends="portlet.ext.links">
+		<put name="content" value="/portlet/ext/links/edit_link.jsp" />
+	</definition>
+	<definition name="portlet.ext.links.edit_link_popup"
+		extends="portlet.ext.links">
+		<put name="content" value="/portlet/ext/links/edit_link.jsp" />
+	</definition>
+	<definition name="portlet.ext.links.link_select_popup"
+		extends="portlet.ext.links">
+		<put name="content"
+			value="/portlet/ext/links/link_select_popup.jsp" />
+	</definition>
+	<!-- Link -->
+
+	<!-- WorkflowTask -->
+	<definition name="portlet.ext.workflows.view" extends="portal">
+		<put name="content" value="/portlet/ext/workflows/view.jsp" />
+	</definition>
+	<definition name="portlet.ext.workflows" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/workflows/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.workflows.view_workflow_tasks"
+		extends="portlet.ext.workflows">
+		<put name="content"
+			value="/portlet/ext/workflows/view_workflow_tasks.jsp" />
+	</definition>
+	<definition name="portlet.ext.workflows.view_workflow_task"
+		extends="portlet.ext.workflows">
+		<put name="content"
+			value="/portlet/ext/workflows/view_workflow_task.jsp" />
+	</definition>
+	<definition name="portlet.ext.workflows.edit_workflow_task"
+		extends="portlet.ext.workflows">
+		<put name="content"
+			value="/portlet/ext/workflows/edit_workflow_task.jsp" />
+	</definition>
+	<!-- WorkflowTask -->
+
+	<!-- Campaigns -->
+	<definition name="portlet.ext.campaigns.view" extends="portal">
+		<put name="content" value="/portlet/ext/campaigns/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.campaigns" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/campaigns/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.campaigns.view_campaigns"
+		extends="portlet.ext.campaigns">
+		<put name="content"
+			value="/portlet/ext/campaigns/view_campaigns.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.campaigns.edit_campaign"
+		extends="portlet.ext.campaigns">
+		<put name="content"
+			value="/portlet/ext/campaigns/edit_campaign.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.campaigns.edit_pending_campaign"
+		extends="portlet.ext.campaigns">
+		<put name="content"
+			value="/portlet/ext/campaigns/edit_pending_campaign.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.campaigns.view_report"
+		extends="portlet.ext.campaigns">
+		<put name="content"
+			value="/portlet/ext/campaigns/view_report.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.campaigns.view_report_detailed"
+		extends="portlet.ext.campaigns">
+		<put name="content"
+			value="/portlet/ext/campaigns/view_report_detailed.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.campaigns.view_report_csv"
+		extends="blank">
+		<put name="content"
+			value="/portlet/ext/campaigns/view_report_csv.jsp" />
+	</definition>
+
+	<!-- /Campaigns -->
+
+	<!-- Events Admin -->
+	<definition name="portlet.ext.events.view" extends="portal">
+		<put name="content" value="/portlet/ext/events/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.events" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/events/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.events.view_events"
+		extends="portlet.ext.events">
+		<put name="content" value="/portlet/ext/events/view_events.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.events.edit_event"
+		extends="portlet.ext.events">
+		<put name="content" value="/portlet/ext/events/edit_event.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.events.edit_recurance"
+		extends="portlet.ext.events">
+		<put name="content"
+			value="/portlet/ext/events/edit_recurance.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.events.view_event_registrations"
+		extends="portlet.ext.events">
+		<put name="content"
+			value="/portlet/ext/events/view_event_registrations.jsp" />
+	</definition>
+	<!-- Events Admin -->
+
+	<!-- Events Approval -->
+	<definition name="portlet.ext.eventsapproval.view"
+		extends="portal">
+		<put name="content"
+			value="/portlet/ext/eventsapproval/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.eventsapproval" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/eventsapproval/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.eventsapproval.view_events"
+		extends="portlet.ext.eventsapproval">
+		<put name="content"
+			value="/portlet/ext/eventsapproval/view_events.jsp" />
+	</definition>
+	<!-- Events Approval -->
+
+	<!-- Facilities Admin -->
+	<definition name="portlet.ext.facilities.view" extends="portal">
+		<put name="content" value="/portlet/ext/facilities/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.facilities" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/facilities/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.facilities.view_facilities"
+		extends="portlet.ext.facilities">
+		<put name="content"
+			value="/portlet/ext/facilities/view_facilities.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.facilities.edit_facility"
+		extends="portlet.ext.facilities">
+		<put name="content"
+			value="/portlet/ext/facilities/edit_facility.jsp" />
+	</definition>
+	<!-- Facilities Admin -->
+
+	<!--  CMS Maintenance -->
+	<definition name="portlet.ext.cmsmaintenance.view"
+		extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/cmsmaintenance/sub_nav.jsp" />
+		<put name="content"
+			value="/portlet/ext/cmsmaintenance/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.cmsmaintenance.view_cms_maintenance"
+		extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/cmsmaintenance/sub_nav.jsp" />
+		<put name="content"
+			value="/portlet/ext/cmsmaintenance/view_cms_maintenance.jsp" />
+	</definition>
+	<!--  CMS Maintenance -->
+
+	<!--  Portlet Structure  -->
+	<definition name="portlet.ext.structure.view" extends="portal">
+		<put name="content" value="/portlet/ext/structure/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.structure" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/structure/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.structure.view_structure"
+		extends="portlet.ext.structure">
+		<put name="content"
+			value="/portlet/ext/structure/view_structure.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.structure.edit_structure"
+		extends="portlet.ext.structure">
+		<put name="content"
+			value="/portlet/ext/structure/edit_structure.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.structure.edit_field"
+		extends="portlet.ext.structure">
+		<put name="content"
+			value="/portlet/ext/structure/edit_field.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.structure.view_relationships"
+		extends="portlet.ext.structure">
+		<put name="content"
+			value="/portlet/ext/structure/view_relationships.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.structure.edit_relationship"
+		extends="portlet.ext.structure">
+		<put name="content"
+			value="/portlet/ext/structure/edit_relationship.jsp" />
+	</definition>
+	<!-- END Portlet Structure -->
+
+    <!--  Portlet Form Handler  -->
+	<definition name="portlet.ext.formhandler.view" extends="portal">
+		<put name="content" value="/portlet/ext/formhandler/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.formhandler" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/formhandler/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.formhandler.view_form"
+		extends="portlet.ext.formhandler">
+		<put name="content"
+			value="/portlet/ext/formhandler/view_form.jsp" />
+	</definition>
+	<!-- END Form Handler -->
+	
+	<!-- Organization Manager-->
+	<definition name="portlet.ext.organization" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/organization/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.organization.view" extends="portal">
+		<put name="content" value="/portlet/ext/organization/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.organization.view_organizations"
+		extends="portlet.ext.organization">
+		<put name="content"
+			value="/portlet/ext/organization/view_organizations.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.organization.edit_organization"
+		extends="portlet.ext.organization">
+		<put name="content"
+			value="/portlet/ext/organization/edit_organization.jsp" />
+	</definition>
+	<!-- End Organization Manager-->
+
+
+	<!-- User Manager Manager -->
+	<definition name="portlet.ext.usermanager.view" extends="portal">
+		<put name="content" value="/portlet/ext/usermanager/view.jsp" />
+	</definition>
+	<definition name="portlet.ext.usermanager" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/usermanager/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.usermanager.view_usermanagerlist"
+		extends="portlet.ext.usermanager">
+		<put name="content"
+			value="/portlet/ext/usermanager/view_usermanagerlist.jsp" />
+	</definition>
+	<definition name="portlet.ext.usermanager.edit_usermanager"
+		extends="portlet.ext.usermanager">
+		<put name="content"
+			value="/portlet/ext/usermanager/edit_usermanager.jsp" />
+	</definition>
+	<definition name="portlet.ext.usermanager.register_user"
+		extends="portlet.ext.usermanager">
+		<put name="content"
+			value="/portlet/ext/usermanager/register_user.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.usermanager.load_users"
+		extends="portlet.ext.usermanager">
+		<put name="content"
+			value="/portlet/ext/usermanager/load_users.jsp" />
+	</definition>
+	<definition name="portlet.ext.usermanager.edit_usermanagerfields"
+		extends="portlet.ext.usermanager">
+		<put name="content"
+			value="/portlet/ext/usermanager/edit_usermanagerfields.jsp" />
+	</definition>
+
+	<!-- End User Manager Manager -->
+	
+	<!-- User Admin  -->
+	
+	<definition name="portlet.ext.useradmin.view_users" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/ext/useradmin/sub_nav.jsp" />
+		<put name="content" value="/portlet/ext/useradmin/view_users.jsp" />
+	</definition>
+
+	<!-- END User Admin -->
+	
+	<!-- User Admin  -->
+	
+	<definition name="portlet.ext.roleadmin.view_roles" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/ext/roleadmin/sub_nav.jsp" />
+		<put name="content" value="/portlet/ext/roleadmin/view_roles.jsp" />
+	</definition>
+
+	<!-- END User Admin -->
+
+	<!-- Begin User Filter Manager -->
+	<definition name="portlet.ext.userfilter" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/ext/userfilter/sub_nav.jsp" />
+	</definition>
+	<definition name="portlet.ext.userfilter.edit_userfilter"
+		extends="portlet.ext.userfilter">
+		<put name="content"
+			value="/portlet/ext/userfilter/edit_userfilter.jsp" />
+	</definition>
+
+	<!-- End User Filter Manager -->
+
+
+	<!-- Web Forms Reports -->
+	<definition name="portlet.ext.webforms.view" extends="portal">
+		<put name="content" value="/portlet/ext/webforms/view.jsp" />
+	</definition>
+	<!-- Web Forms Reports -->
+
+	<!-- Product -->
+	<definition name="portlet.ext.product" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/product/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.product.view_product"
+		extends="portlet.ext.product">
+		<put name="content"
+			value="/portlet/ext/product/view_product.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.product.edit_product"
+		extends="portlet.ext.product">
+		<put name="content"
+			value="/portlet/ext/product/edit_product.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.product.edit_format"
+		extends="portlet.ext.product">
+		<put name="content"
+			value="/portlet/ext/product/edit_format.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.product.edit_price"
+		extends="portlet.ext.product">
+		<put name="content" value="/portlet/ext/product/edit_price.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.product.related_product"
+		extends="portlet.ext.product">
+		<put name="content"
+			value="/portlet/ext/product/related_product.jsp" />
+	</definition>
+	<!-- Product -->
+
+	<!-- Order Manager -->
+	<definition name="portlet.ext.order_manager.view"
+		extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/order_manager/sub_nav.jsp" />
+		<put name="content" value="/portlet/ext/order_manager/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/order_manager/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.view_orders"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/view_orders.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.edit_registration"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/edit_order.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.view_products"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/view_products.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.view_cart"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/view_shoppingCart.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.view_users"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/view_users.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.view_checkOut"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/view_checkOut.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.view_invoice"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/invoice.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.view_invoiceemail"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/invoice_email.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.order_manager.edit_order"
+		extends="portlet.ext.order_manager">
+		<put name="content"
+			value="/portlet/ext/order_manager/edit_order.jsp" />
+	</definition>
+	<!-- Order Manager -->
+
+	<!-- Communications -->
+	<definition name="portlet.ext.communications.view"
+		extends="portal">
+		<put name="content"
+			value="/portlet/ext/communications/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.communications" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/communications/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.communications.view_communications"
+		extends="portlet.ext.communications">
+		<put name="content"
+			value="/portlet/ext/communications/view_communications.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.communications.edit_communication"
+		extends="portlet.ext.communications">
+		<put name="content"
+			value="/portlet/ext/communications/edit_communication.jsp" />
+	</definition>
+	<!-- /Communications -->
+
+	<!-- Discount Code -->
+	<definition name="portlet.ext.discountcode.view" extends="portal">
+		<put name="content"
+			value="/portlet/ext/discountcode/view_discountcode.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.discountcode" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/discountcode/sub_nav.jsp" />
+		<put name="content"
+			value="/portlet/ext/discountcode/view_discountcode.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.discountcode.view_discountcode"
+		extends="portlet.ext.discountcode">
+		<put name="content"
+			value="/portlet/ext/discountcode/view_discountcode.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.discountcode.edit_discountcode"
+		extends="portlet.ext.discountcode">
+		<put name="content"
+			value="/portlet/ext/discountcode/edit_discountcode.jsp" />
+	</definition>
+	<!-- Discount Code -->
+
+	<!-- Content Ratings -->
+	<definition name="portlet.ext.contentratings.view"
+		extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/contentratings/sub_nav.jsp" />
+		<put name="content"
+			value="/portlet/ext/contentratings/view.jsp" />
+	</definition>
+	<!-- Content Ratings -->
+
+	<!-- Schedulers -->
+	<definition name="portlet.ext.scheduler.view" extends="portal">
+		<put name="content" value="/portlet/ext/scheduler/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.scheduler" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/scheduler/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.scheduler.view_schedulers"
+		extends="portlet.ext.scheduler">
+		<put name="content"
+			value="/portlet/ext/scheduler/view_schedulers.jsp" />
+	</definition>
+	<definition name="portlet.ext.scheduler.edit_scheduler"
+		extends="portlet.ext.scheduler">
+		<put name="content"
+			value="/portlet/ext/scheduler/edit_scheduler.jsp" />
+	</definition>
+	<!-- Schedulers -->
+
+	<!-- reports -->
+	<definition name="portlet.ext.report.view" extends="portal">
+		<put name="content" value="/portlet/ext/report/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.report" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/report/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.report.view_reports"
+		extends="portlet.ext.report">
+		<put name="content"
+			value="/portlet/ext/report/view_reports.jsp" />
+	</definition>
+	<definition name="portlet.ext.report.edit_report"
+		extends="portlet.ext.report">
+		<put name="content" value="/portlet/ext/report/edit_report.jsp" />
+	</definition>
+	<definition name="portlet.ext.report.run_report"
+		extends="portlet.ext.report">
+		<put name="content" value="/portlet/ext/report/run_reports.jsp" />
+	</definition>
+	<definition name="portlet.ext.report.get_parameters"
+		extends="portlet.ext.report">
+		<put name="content"
+			value="/portlet/ext/report/get_parameters.jsp" />
+	</definition>
+	<!-- reports -->
+
+	<!-- calendar -->
+	<definition name="portlet.ext.calendar.view" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/ext/calendar/sub_nav.jsp" />
+		<put name="content" value="/portlet/ext/calendar/view.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.calendar" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/calendar/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.calendar.view_calendar"
+		extends="portlet.ext.calendar">
+		<put name="content"
+			value="/portlet/ext/calendar/view_calendar.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.calendar.edit_event"
+		extends="portlet.ext.calendar">
+		<put name="content"
+			value="/portlet/ext/calendar/edit_event.jsp" />
+	</definition>
+
+	<!-- calendar -->
+
+	<!-- product -->
+	<definition name="portlet.ext.merchant.product" extends="portal">
+		<put name="portlet_sub_nav"
+			value="/portlet/ext/merchant/product/sub_nav.jsp" />
+	</definition>
+
+	<!-- calendar -->
+	
+	<!-- Polls -->
+
+	<definition name="portlet.polls.edit_question" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/polls/sub_nav.jsp" />
+		<put name="content" value="/portlet/polls/edit_question.jsp" />
+	</definition>
+
+	<definition name="portlet.polls.error" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/polls/sub_nav.jsp" />
+		<put name="content" value="/portlet/polls/error.jsp" />
+	</definition>
+
+	<definition name="portlet.polls.view" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/polls/sub_nav.jsp" />
+		<put name="content" value="/portlet/polls/view.jsp" />
+	</definition>
+
+	<definition name="portlet.polls.view_question" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/polls/sub_nav.jsp" />
+		<put name="content" value="/portlet/polls/view_question.jsp" />
+	</definition>
+
+	<definition name="portlet.polls.view_questions" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/polls/sub_nav.jsp" />
+		<put name="content" value="/portlet/polls/view_questions.jsp" />
+	</definition>
+
+	<definition name="portlet.polls.view_results" extends="portal">
+		<put name="portlet_sub_nav" value="/portlet/polls/sub_nav.jsp" />
+		<put name="content" value="/portlet/polls/view_results.jsp" />
+	</definition>
+
+	<!-- Polls Display -->
+
+	<definition name="portlet.polls_display.setup" extends="portal">
+		<put name="content" value="/portlet/polls_display/setup.jsp" />
+	</definition>
+
+	<definition name="portlet.polls_display.view" extends="portal">
+		<put name="content" value="/portlet/polls_display/view.jsp" />
+	</definition>
+	
+	<!-- Host Admin -->
+	
+	<definition name="portlet.ext.hostadmin" extends="portal">
+		<put name="portlet_sub_nav"	value="/portlet/ext/hostadmin/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.hostadmin.view_hosts"	extends="portlet.ext.hostadmin">
+		<put name="content"	value="/portlet/ext/hostadmin/view_hosts.jsp" />
+	</definition>
+	
+	<!-- Dashboard -->
+	
+	<definition name="portlet.ext.dashboard" extends="portal">
+		<put name="portlet_sub_nav"	value="/portlet/ext/dashboard/sub_nav.jsp" />
+	</definition>
+	
+	<definition name="portlet.ext.dashboard.view_dashboard"	extends="portlet.ext.dashboard">
+		<put name="content"	value="/portlet/ext/dashboard/view_dashboard.jsp" />
+	</definition>
+	
+    <definition name="portlet.ext.dashboard.view_host_report" extends="portlet.ext.dashboard">
+		<put name="content"	value="/portlet/ext/dashboard/view_host_report.jsp" />
+	</definition>
+	
+	<definition name="portlet.ext.dashboard.view_workstream" extends="portlet.ext.dashboard">
+		<put name="content"	value="/portlet/ext/dashboard/view_workstream.jsp" />
+	</definition>
+
+
+	<!--DOTMARKETING TILE DEFINITIONS -->
+</tiles-definitions>

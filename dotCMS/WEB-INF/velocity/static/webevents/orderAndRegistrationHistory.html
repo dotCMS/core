@@ -1,0 +1,75 @@
+#parse('static/messages.html')
+#set ($registrations = $webevents.getWebEventRegistrationByUser($user.userId))
+#set( $statuses = $webevents.getRegistrationStatus())
+
+<script language=javascript>
+
+function save(){
+	window.location.href=top.location.href;
+	
+}
+
+function back(){
+	window.location.href="/dotCMS/myAccount";
+	
+}
+</script>
+<table cellpadding="0" cellspacing="0" border="0">
+	<tr>
+		<td align="right" height="22"><a href="/dotCMS/myAccount"
+			onMouseover="document.image1.src='/global/images/my_account.gif'"
+			onMouseout="document.image1.src='/global/images/my_account_gr.gif'">
+		<img src="/global/images/my_account.gif" name="image1"
+			border="0" style="float:right;"> </a> <img
+			src="/global/images/registration_history.gif" border="0"
+			style="float:right; margin-right:1px;"></td>
+	</tr>
+		<tr>
+			<td valign="top" align="left">
+		<fieldset><legend><b>Order and Registration History</b></legend>
+		<table border="0" cellpadding="4" cellspacing="1" width="100%">
+			<tr class="beta">
+				<td align=left>You can View and edit your Event Registrations and/or Fire Starter Orders</td>
+			</tr>
+		</table>
+		<br>
+		<fieldset style="background:gray;"><b>Event / Institutes Registration History</b></fieldset>
+				<table border="1" cellpadding="4" cellspacing="1" width="100%">
+					<tr class="beta">
+						<Td><b>Order#</b></Td>
+						<Td><b>Event</b></Td>
+						<Td><b>Order Date</b></Td>
+						<Td><b>Status</b></Td>
+						<Td><b>Total</b></Td>
+					</tr>
+					#foreach($registration in $registrations)
+					  #set ($event = $webevents.getWebEvent($registration.eventInode) )
+					<tr>
+						<Td><b><a href="/dotCMS/registrationHistoryDetail?inode=$registration.inode">$registration.inode</a></b></Td>
+						<Td><b><a href="/dotCMS/registrationHistoryDetail?inode=$registration.inode">$event.title</a></b></Td>
+						<Td><b>$UtilMethods.htmlDateToHTMLTime($registration.datePosted)</b></Td>
+						<Td><b>$statuses.get($webevents.valueOfStatus($registration.registrationStatus))</b></Td>
+						<Td><b>$ $webapi.toPriceFormat($registration.totalRegistration)</b></Td>
+					<tr>
+					#end
+					
+				</table>
+				<br><br>
+				<table border="0" cellpadding="4" cellspacing="1" width="100%">
+				<tr><td align=center>
+				<input type=button value="Save" onclick="save()" name="btn_save" id="btn_save">&nbsp;&nbsp;
+				<input type=button value="Back" onclick="" name="btn_back" id="btn_back">
+				</td></tr>
+				</table>
+				</fieldset>
+		</td>
+	</tr>
+	<tr>
+		<td align=center><br>
+		if you have a questions or concern about these orders and </td>
+	</tr>
+	<tr>
+		<td align=center>registrations please contact us at 1-800-STUDERGROUP or email us (<a href="mailto:help@studergroup.com">help@studergroup.com</a>)
+		</td>
+	</tr>
+</table>

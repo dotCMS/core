@@ -1,0 +1,3 @@
+<project name="Hello World plugin" default="build">	
+	<import file="../common.xml"/>	
+</project>

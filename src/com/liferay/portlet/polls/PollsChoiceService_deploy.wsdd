@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portlet_Polls_PollsChoiceService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.polls.portlet.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="PollsChoiceManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portlet_Polls_PollsChoiceService"/>
+		<parameter name="className" value="com.liferay.portlet.polls.ejb.PollsChoiceManagerSoap"/>
+		<parameter name="wsdlPortType" value="PollsChoiceManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="urn:ejb.polls.portlet.liferay.com" name="getChoices" qname="operNS:getChoices" returnQName="getChoicesReturn" returnType="rtns:ArrayOf_tns2_PollsChoiceModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="questionId" type="tns:string"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="getChoices"/>
+		<typeMapping xmlns:ns="http://ejb.polls.portlet.liferay.com" qname="ns:PollsChoicePK" type="java:com.liferay.portlet.polls.ejb.PollsChoicePK" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.polls.portlet.liferay.com" qname="ns:PollsChoiceModel" type="java:com.liferay.portlet.polls.model.PollsChoiceModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.polls.portlet.liferay.com" qname="ns:ArrayOf_tns2_PollsChoiceModel" type="java:com.liferay.portlet.polls.model.PollsChoiceModel[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

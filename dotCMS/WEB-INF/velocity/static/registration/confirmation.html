@@ -1,0 +1,303 @@
+#set($currentOrganization = $request.getParameter("currentOrganization"))
+<script language="javascript">
+	
+function submitForm()
+{
+	var form = document.getElementById("dotRegistrationForm");
+	var message = "";
+	var validate = true;
+	try
+	{
+		if (form.ceoName.value == "")
+		{
+			message += "The CEO name is mandatory";
+			validate = false;
+		}
+	}
+	catch(e)
+	{}
+	if (!validate)
+	{
+		alert(message);
+		return validate;
+	}
+	form.submit();
+}
+
+//Inicio funciones manejo de layers
+styleReference = "style.";
+visibleLayer = "inline";
+browser = "Explorer";
+
+function printpage() 
+{
+	window.print();  
+}
+
+function referenceLayer(layerName) 
+{ 
+	//if (navegador=="Netscape") 
+	//	return "document.layers['"+layerName+"']."; 
+	//else 
+	//	return "document.all['"+layerName+"']."; 
+		
+	return "document.getElementById('" + layerName + "').";
+}
+
+function hideLayer(layerName)
+{ 
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"'); 
+}
+
+function showLayer(layerName) 
+{ 
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"'); 
+} 
+   
+function change(layer)
+{
+	if (eval("document.all['" + layer + "'].style.display == 'none'"))
+	{
+		showLayer(layer);
+	}
+	else
+	{
+		hideLayer(layer);
+	}
+}
+
+function goBack()
+{
+	var form = document.getElementById("dotRegistrationForm");
+	form.dispatch.value = "unspecified";
+	form.submit();
+}
+</script>
+<form action="/dotCMS/addRegistration" method="post" name="dotRegistrationForm" id="dotRegistrationForm">
+<input type="hidden" name="referrer" value="$!{dotRegistrationForm.referrer}">
+<input type="hidden" name="from" value="$!{dotRegistrationForm.from}">
+<input type="hidden" name="dispatch" value="finish">
+#parse('static/messages.html')
+#if ($!{dotRegistrationForm.from} == "webEventRegistration")
+Click Proceed to Payment to confirm this is the user you'd like to tie this registration to.
+<br>If this is not your user, please click on <a href="/dotCMS/logout">Logout</a> and login again with your user.
+<br>You can update your user and organization information by clicking on <a href="/dotCMS/myAccount">My Profile</a>.
+#end
+<BR>
+<table width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr>
+	<td align="center">
+	<table cellspacing="0" cellpadding="0" border="0">
+		<tr align="center">
+		<!--#if ($!{dotRegistrationForm.from} == "webEventRegistration")
+		<td><div class="curveLink"><span><button onClick="goBack();" class="clearInputStyles">Back</button></span></div></td>
+		#end-->
+		#if(!($request.getAttribute("notNew") && $request.getAttribute("notNew") == true))
+		<td colspan='2'>
+		<div class="curveLink"><span><a href="/dotCMS/myAccount">Make Changes</a></span></div>
+		</td>
+		<td>
+			&nbsp;&nbsp;
+			&nbsp;&nbsp;
+		</td>
+		<td>
+			<div class="curveLink"><span><button onClick="printpage();" class="clearInputStyles">Print</button></span></div>
+		</td>
+		<td>
+			&nbsp;&nbsp;
+			&nbsp;&nbsp;
+		</td>
+		#end
+
+	#if ($!{dotRegistrationForm.from} == "webEventRegistration")
+		<td><div class="curveLink"><span><button onClick="submitForm();" class="clearInputStyles">Proceed to Payment</button></span></div></td>
+	#else
+		<td><div class="curveLink"><span><button onClick="submitForm();" class="clearInputStyles">Next</button></span></div></td>
+	#end
+		</tr>
+	</table>
+	<div class="item"></div>
+	</td>
+</tr>
+<tr>
+	<td>
+	#if ($!{dotRegistrationForm.from} == "webEventRegistration")	
+	<h3 style="margin-left: 170px;">Institute/Webinar Registration Information</h3>
+	<table style="margin-left: 170px;">
+		<tr>
+		<td>
+			<input type="hidden" name="organizationInodeAux" value="$!{dotRegistrationForm.organizationInodeAux}">
+		<td>
+		</tr>
+	    <tr>
+			<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;How did you hear about this seminar?</b></td>
+	    	<td>
+ 	    	    $categories.getSimpleComboByEntityName("howDidYouHear","How Did You Hear",${dotRegistrationForm.howDidYouHear})
+	    	</td>
+	    </tr>
+	    <tr>
+			<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;What is your CEO´s name?</b></td>
+	    	<td><input tabindex="28"  name="ceoName" type="text" class="text" value="$!{dotRegistrationForm.ceoName}"></td>
+	    </tr>
+	</table>
+	<div class="item"></div>
+	#end
+	</td>
+</tr>
+<tr valign="top">
+	<td>
+	<!-- User Information -->
+	<h3 style="margin-left: 170px;">User Information</h3>
+	<table style="margin-left: 170px;">
+	<tr>
+		<td><!-- User ID--></td>
+		<td><input type="hidden" name="userID" value="$!{dotRegistrationForm.userID}"></td>
+	</tr>
+	<tr>
+		<td><!-- Ext User Inode--></td>
+		<td><input type="hidden" name="extUserInode" value="$!{dotRegistrationForm.extUserInode}"></td>
+	</tr>
+	<tr>
+		<td><!-- User Proxy Inode--></td>
+		<td><input type="hidden" name="userProxyInode" value="$!{dotRegistrationForm.userProxyInode}"></td>
+	</tr>
+	<tr>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><b>Email:</b></td>
+		<td>$!{dotRegistrationForm.emailAddress}</td>
+	</tr>
+	<tr>
+		<td><b>Password:</b></td>
+		<td>********</td>
+	</tr>
+	#if ($dotRegistrationForm.prefix != "")
+	<tr>
+		<td><b>Prefix:</b></td>
+		#set ($prefix = "")
+		#if ($!{dotRegistrationForm.prefix} == "mr")
+			#set ($prefix = "Mr.")
+		#elseif ($!{dotRegistrationForm.prefix} == "mrs")
+			#set ($prefix = "Mrs.")
+		#elseif ($!{dotRegistrationForm.prefix} == "miss")
+			#set ($prefix = "Ms.")
+		#elseif ($!{dotRegistrationForm.prefix} == "dr")
+			#set ($prefix = "Dr.")
+		#end
+		<td>$!{prefix}</td>
+	</tr>
+	#end
+	<tr>
+		<td><b>First Name:</b></td>
+		<td>$!{dotRegistrationForm.firstName}</td>
+	</tr>
+	<tr>
+		<td><b>Last Name:</b></td>
+		<td>$!{dotRegistrationForm.lastName}</td>
+	</tr>
+	#if ($dotRegistrationForm.suffix != "")
+	<tr>
+		<td><b>Suffix:</b></td>
+		<td>$!{dotRegistrationForm.suffix}</td>
+	</tr>
+	#end
+	#if ($dotRegistrationForm.title != "")
+	<tr>	
+		<td><b>Title:</b></td>
+		<td>$!{dotRegistrationForm.title}</td>
+	</tr>
+	#end
+	</table>
+	
+	<div class="item"></div>
+	
+	<!-- END USER INFORMATION -->
+	#if(!($request.getAttribute("notNew") && $request.getAttribute("notNew") == true))
+	<!-- Mailing Address -->
+	<h3 style="margin-left: 170px;">My $!{dotRegistrationForm.description} Address</h3>
+	<table style="margin-left: 170px;">
+	<tr>
+		<td><!-- Organization Inode--></td>
+		<td><input type="hidden" name="addressID" value="$!{dotRegistrationForm.addressID}"></td>
+	</tr>
+	<tr>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><b>Street1:</b></td>
+		<td>$!{dotRegistrationForm.street1}</td>
+	</tr>
+	<tr>
+		<td><b>Street 2:</b></td>
+		<td>$!{dotRegistrationForm.street2}</td>
+	</tr>
+	<tr>
+		<td><b>City:</b></td>
+		<td>$!{dotRegistrationForm.city}</td>
+	</tr>
+	<tr>
+		<td><b>State:</b></td>
+		<td>$!{dotRegistrationForm.state}</td>
+	</tr>
+	<tr>
+		<td><b>Country:</b></td>
+		<td>$!{dotRegistrationForm.country}</td>
+	</tr>
+	<tr>
+		<td><b>Zip:</b></td>
+		<td>$!{dotRegistrationForm.zip}</td>
+	</tr>
+	<tr>	
+		<td><b>Phone:</b></td>
+		<td>$!{dotRegistrationForm.phone}</td>
+	</tr>
+	<tr>	
+		<td><b>Fax:</b></td>
+		<td>$!{dotRegistrationForm.fax}</td>
+	</tr>
+	</table>
+	<div class="item"></div>
+	<!-- END Mailing Aaddres -->
+<div class="item"></div>
+<!-- END Organization Information -->
+<!-- My Profile And Preferences -->
+#if($categories.hasCategoriesByEntityNameTextMode($!{dotRegistrationForm.userProxyInode}))
+<h3 style="margin-left: 170px;">My Profile and Preferences</h3>
+<table style="margin-left: 170px;">		
+	<tr>			
+		<td>
+		<div id="preferences">$categories.getCategoriesByEntityNameTextMode("category","Preferences","$!{dotRegistrationForm.userProxyInode}",true,true,-1,true)
+		</div>
+		</td>
+	</tr>
+</table>
+<div class="item"></div>
+#end
+#end
+<!-- END My Profile And Preferences -->	
+
+<!-- Web Event Registration Fields -->
+<!--	#if ($!{dotRegistrationForm.from} == "webEventRegistration")
+	<input type="hidden" name="howDidYouHear" value="${dotRegistrationForm.howDidYouHear}">
+	<input type="hidden" name="ceoName" value="$!{dotRegistrationForm.ceoName}" >	
+	<table style="margin-left: 170px;">		
+		<tr>
+			<td><b>How did you hear about this seminar?</b></td>
+			<td>$categories.getSimpleCategoriesByEntityName("howDidYouHear","How Did You Hear",${dotRegistrationForm.howDidYouHear})</td>
+		</tr>
+		<tr>
+			<td><b>What is your CEO´s name?</b></td>
+			<td>$!{dotRegistrationForm.ceoName}</td>
+		</tr>
+	</table>
+	<div class="item"></div>
+	#end-->
+<!-- END Web Event Registration Fields -->	
+
+	</td>
+</tr>
+</table>
+</form>

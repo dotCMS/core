@@ -1,0 +1,12 @@
+#set($valuesSplit = $fieldAux.values.split("\n"))
+#foreach($value in $valuesSplit)
+	#set($labelValue = $value.split('\|'))
+	#set($label = $listTool.get($labelValue, 0).trim())
+	#if($listTool.size($value.split("|")) > 1)
+		#set($value = $listTool.get($labelValue, 1).trim())
+	#else
+		#set($value = $listTool.get($labelValue, 0).trim())
+	#end
+   	<input type="checkbox" dojoType="dijit.form.CheckBox" name="$fieldAux.velocityVarName" id="${fieldAux.velocityVarName}${value.replaceAll(' ', '')}" value="$value" #if($listTool.contains($fieldDefaultValue, $value))checked="checked"#end /><label for="${fieldAux.velocityVarName}${value.replaceAll(' ', '')}">$!label</label>
+#end
+<span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>

@@ -1,0 +1,144 @@
+<eviction wakeUpInterval="500">
+
+<!--  THIS FILE IS NO LONGER USED, UNLESS YOU EXPLICITLY USE THE DOTJBOSSCACHELOADER -->
+<!--  THIS FILE IS NO LONGER USED, UNLESS YOU EXPLICITLY USE THE DOTJBOSSCACHELOADER -->
+<!--  THIS FILE IS NO LONGER USED, UNLESS YOU EXPLICITLY USE THE DOTJBOSSCACHELOADER -->
+
+	<default algorithmClass="com.dotmarketing.cache.DotLFUAlgorithm"
+		eventQueueSize="200000">
+		<property name="maxNodes" value="5000" />
+		<property name="minTimeToLive" value="-1" />
+	</default>
+	
+	<region name="DOTCMSLAYOUTCACHE">
+		<property name="maxNodes" value="100" />
+	</region>
+	
+	<region name="FIELDSCACHE">
+	<property name="maxNodes" value="5000" />
+	</region>
+	
+	<region name="USERPROXYCACHE">
+		<property name="maxNodes" value="100" />
+	</region>
+	
+	<region name="DOTCMSROLECACHE">
+		<property name="maxNodes" value="500" />
+	</region>
+	
+	<region name="PLUGINCACHE">
+		<property name="maxNodes" value="100" />
+	</region>
+	
+	<region name="DOTCMSROLEKEYCACHE">
+		<property name="maxNodes" value="500" />
+	</region>
+	
+	<region name="FOLDERCACHE">
+		<property name="maxNodes" value="500" />
+	</region>
+	
+	<region name="PORTLETPOOL">
+		<property name="maxNodes" value="100" />
+	</region>
+	
+	<region name="DOTCMSUSERROLECACHE">
+		<property name="maxNodes" value="500" />
+	</region>
+	
+	<region name="HOSTALIASGROUP">
+		<property name="maxNodes" value="100" />
+	</region>
+	
+	<region name="PORTLETPREFERENCESPOOL">
+		<property name="maxNodes" value="100" />
+	</region>
+	
+	<region name="VIRTUALLINKSCACHE">
+		<property name="maxNodes" value="10000" />
+	</region>
+	
+	<region name="ADMINCONFIGPOOL">
+		<property name="maxNodes" value="100" />
+	</region>
+	
+	<region name="RELEASEPOOL">
+		<property name="maxNodes" value="2" />
+	</region>
+	
+	<region name="USEREMAILDOTCMSCACHE">
+		<property name="maxNodes" value="500" />
+	</region>
+	 
+	<region name="LANGUAGECACHEIMPL">
+		<property name="maxNodes" value="5" />
+	</region>
+	
+	<region name="COMPANYPOOL">
+		<property name="maxNodes" value="5" />
+	</region>
+	
+	<region name="STRUCTURECACHE">
+		<property name="maxNodes" value="100" />
+	</region>
+	
+	<region name="VELOCITYCACHE">
+		<property name="maxNodes" value="15000" />
+	</region>
+
+	<region name="VELOCITYCODECACHE">
+		<property name="maxNodes" value="15000" />
+	</region>
+
+	<!-- Contentlet cache -->
+	<region name="CONTENTLETCACHE">
+		<property name="maxNodes" value="5000" />
+	</region>
+
+	<!-- IdentifierCache cache -->
+	<region name="IDENTIFIERCACHE">
+		<property name="maxNodes" value="15000" />
+	</region>
+
+	<!-- PermissionsCache cache -->
+	<region name="PERMISSIONCACHE">
+		<property name="maxNodes" value="10000" />
+	</region>
+
+	<!-- Category caches -->
+	<region name="CATEGORYCACHE">
+		<property name="maxNodes" value="500" />
+	</region>
+
+	<region name="CATEGORYBYCACHE">
+		<property name="maxNodes" value="500" />
+	</region>
+
+	<region name="CATEGORYCHILDRENCACHE">
+		<property name="maxNodes" value="2000" />
+	</region>
+
+	<region name="CATEGORYPARENTSCACHE">
+		<property name="maxNodes" value="2000" />
+	</region>
+
+	<!-- File cache -->
+	<region name="FILECACHE">
+		<property name="maxNodes" value="5000" />
+	</region>
+
+	<!-- User cache -->
+	<region name="USERDOTCMSCACHE">
+		<property name="maxNodes" value="500" />
+	</region>
+
+	<!-- Host cache -->
+	<region name="HOSTCACHE">
+		<property name="maxNodes" value="10" />
+	</region>
+	
+	<!-- Velocity Block cache -->
+	<region name="BLOCKDIRECTIVECACHE">
+		<property name="maxNodes" value="2000" />
+	</region>
+</eviction>

@@ -1,0 +1,179 @@
+<script language="javascript">
+function opencenter(inode)
+{
+	var width = 600;
+	var height= 600;
+	var left = Math.floor( (screen.width - width) / 2);
+	var top = Math.floor( (screen.height - height) / 2);
+	var parameter = "scrollbars=yes,resizable=yes,status=yes,toolbar=no,width=" + width + ",height=" + height+ ",top=" + top + ",left="+ left;
+
+	url = "/application/products/popup.${webapi.getPageFileExtension()}?inode=" + inode;
+	window.open(url,"largeProduct",parameter,false);
+}
+</script>
+
+
+<form action="/dotCMS/viewCart" method="post" autocomplete="off">
+#set($session = $request.getSession())
+#set($shoppingCart = $session.getAttribute("shoppingCart"))
+#set($orderForm = $session.getAttribute("shoppingCartOrderForm"))
+#if ($shoppingCart)
+	#set($holders = $shoppingCart.holders)
+#end
+#if ($shoppingCart)
+	#set($discountCodes = $shoppingCart.discountCodes)
+#end
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+	<tr>
+		<td><b>Thank you for your order # $!orderForm.inode</b></td>
+	</tr>
+	<tr>
+		<td>
+		Here is a summary of your order. An email will be sent to this email address: $webapi.getUserEmail() with the order information. You will be able to view the status and order history on "Your Profile" information.<br>
+		You will also get an email with tracking information once the order is been shipped and you will also receive an invoice following your order from the Finance department.
+		</td>
+	</tr>
+	<tr>
+		<td>&nbsp;</td>
+	</tr>
+	<tr>
+		<td>
+		<b>Your order will be shipped to
+		#if ($!orderForm.paymentType == "ch")
+			(upon receipt of payment)
+		#end
+		:
+		</b>
+		</td>
+	</tr>
+	<tr>
+	<td>
+		<table  width="100%" border="0" cellspacing="0" cellpadding="0">
+			<tr><td>$webapi.getUserFullName()</td></tr>
+			#if(!($!orderForm.shippingLabel == ""))
+				<tr><td>$!orderForm.shippingLabel</td></tr>
+			#end
+			<tr><td>$!orderForm.shippingAddress1</td></tr>
+			#if(!($!orderForm.shippingAddress2 == ""))
+				<tr><td>$!orderForm.shippingAddress2</td></tr>
+			#end
+			#if ($!orderForm.shippingState == "otherCountry")
+				<tr><td>$!orderForm.shippingCity, $!orderForm.shippingStateOtherCountryText $!orderForm.shippingZip</td></tr>
+			#else
+				<tr><td>$!orderForm.shippingCity, $!orderForm.shippingState $!orderForm.shippingZip</td></tr>
+			#end
+			<tr><td>$!orderForm.shippingCountry</td></tr>
+		</table>
+	</td>
+	</tr>
+	<tr><td>&nbsp;</td></tr>
+	<tr>
+		<td><b>Items Ordered:</b></td>
+	</tr>
+	<tr>
+	<td>
+	
+	<table width="100%" border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td><b></b></td>
+			<td><b>Item Description</b></td>
+			<td><b>Qty</b></td>
+			<td><b>Price Each</b></td>
+			<td><b>Amount</b></td>
+		</tr>
+		<tr>
+			<td height="1" style="border-bottom: dashed 1px silver;" colspan="5" class="clear">&nbsp;</span></td>
+		</tr>
+		#foreach($holder in ${holders})
+			#set($format = $holder.format)
+			#set($product = $format.product)
+		<tr>
+			<td><img src="/thumbnail?inode=$!{product.smallImageInode}&w=50&h=50" onclick="opencenter('$!{product.largeImageInode}')" style="padding: 10px;"></td>
+			<td>$product.title <br> $format.formatName</td>
+			<td>$holder.quantity</td>
+			<td>
+				#if($webapi.isPartner() == true)
+					#set($priceAmount = ${format.getQuantityPrice($holder.quantity,$discountCodes).partnerPriceWithDiscount})
+				#else
+					#set($priceAmount = ${format.getQuantityPrice($holder.quantity,$discountCodes).retailPriceWithDiscount})
+				#end
+				#set($lineTotal = $math.mul($priceAmount,$holder.quantity))
+				$ $!webapi.toPriceFormat($priceAmount)
+			</td>
+			<td>$ $!webapi.toPriceFormat($lineTotal)</td>
+		</tr>
+		<tr>
+			<td height="1" style="border-bottom: dashed 1px silver;" colspan="5" class="clear">&nbsp;</span></td>
+		</tr>
+
+		#end
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td>Sub-Total:</td>
+			<td>$ $!webapi.toPriceFormat($orderForm.orderSubTotal)</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td nowrap>Shipping and Handling:</td>
+			<td>$ $!webapi.toPriceFormat($orderForm.orderShipping)</td>
+		</tr>
+		#if($!orderForm.shippingState == 'FL')
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td>Tax (6.5%) FL:</td>
+			<td>$ $!webapi.toPriceFormat($orderForm.orderTax)</td>
+		</tr>
+		#end
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+			<td>Total:</td>
+			<td>$ $!webapi.toPriceFormat($orderForm.orderTotal)</td>
+		</tr>
+	</table>
+	<!-- END ITEMS -->
+	</td>
+	</tr>
+	<tr><td>&nbsp;</td></tr>
+	#if ($!orderForm.paymentType == "cc")
+	<tr>
+		<td>
+		Your Credit Card ending  $!webapi.toCCFormat($!orderForm.cardNumber) was succesfully charged for $ $!webapi.toPriceFormat($!orderForm.orderTotal)
+		</td>
+	</tr>
+	#elseif($!orderForm.paymentType == "ch")
+	<tr>
+		<td>
+		<table width="100%">
+			<tr><td class="mRed">Products are shipped upon receipt of payment.</td></tr>
+			<tr>
+			<td><p>Please print this page and place it with the check in a stamped envelope.</p></td>
+			</tr>
+			<tr><td>Total: $ $!webapi.toPriceFormat($!orderForm.orderTotal)</td></tr>
+			<!--<tr><td>Bank Name: ____________________________________________</td></tr>
+			<tr><td>Check Number: ____________________________________________</td></tr>-->
+		</td>
+	</tr>
+	#elseif($!orderForm.paymentType == "po")
+	<tr>
+		<td>
+		</td>
+	</tr>
+	#end
+	<tr><td>&nbsp;</td></tr>
+	<tr>
+		<td>Thank you for your order. We appreciate your business and look forward to serving you in the future.</td>
+	</tr>
+</table>
+		</td>
+	</tr>
+</table>
+</form>
+#set($clear = $shoppingCart.clear())

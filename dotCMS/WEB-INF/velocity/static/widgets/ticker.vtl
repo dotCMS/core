@@ -1,0 +1,46 @@
+	#set ($count = 0)
+
+	<div id="ticker">
+	<div id="ticker-feed"></a></div>
+	<div id="ticker-content" onmouseover="pauseTicker()" onmouseout="unpauseTicker()"><a href="#" id="ticker-link"></a></div>
+	</div>
+
+	<script type="text/javascript" src="/html/js/ticker.js">
+	</script>
+
+	<script type="text/javascript">
+	#foreach ($contentTicker in $list)
+
+	//ticker values for inode = $content.inode $render.eval($content.NewsHeadline) $tickerTitle
+	#set($title = $webapi.evaluateVelocity($tickerTitle))
+	document.write('$content.inode ' + ' $tickerTitle ' + ' $title<br/>');
+	titles[$count] = "$UtilMethods.escapeHTMLSpecialChars($render.eval($title))";
+	links[$count] = "$UtilMethods.escapeHTMLSpecialChars($render.eval($tickerLink))";
+
+	#set($count = $count + 1)
+
+	#end
+
+	#if ($fadeInLenth) 
+	var fadeInLenth = ${fadeInLenth};
+	#end
+
+	#if ($fadeOutLenth) 
+	var fadeOutLenth = ${fadeOutLenth};
+	#end
+
+	#if ($displayLength) 
+	var displayLength = ${displayLength};
+	#end
+
+	#if ($fgcolor) 
+	var fgcolor = "${fgcolor}";
+	#end
+
+	#if ($bgcolor) 
+	var bgcolor = "${bgcolor}";
+	#end
+
+	startTicker();
+
+	</script>

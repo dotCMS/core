@@ -1,0 +1,13 @@
+<select dojoType="dijit.form.MultiSelect" id="$fieldAux.velocityVarName" name="$fieldAux.velocityVarName" class="multiSelectField" multiple="multiple">
+	#set($valuesSplit = $fieldAux.values.split("\n"))	
+	#foreach($value in $valuesSplit)
+		#set($labelValue = $value.split('\|'))
+		#set($label = $listTool.get($labelValue, 0).trim())
+		#if($listTool.size($value.split("|")) > 1)
+			#set($value = $listTool.get($labelValue, 1).trim())
+		#else
+			#set($value = $listTool.get($labelValue, 0).trim())
+		#end
+    	<option id="${fieldAux.velocityVarName}$value" value="$value" class="optionSelectField" #if($listTool.contains($fieldDefaultValue, $value))selected="selected"#end >$!label </option>
+	#end
+</select><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>

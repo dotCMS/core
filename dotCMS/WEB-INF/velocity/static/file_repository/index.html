@@ -1,0 +1,93 @@
+#set($hasParent = false)
+#if($fileRepository_showFolder != $fileRepository_rootFolder)
+  #set($hasParent = true)
+  #set($fileRepository_upFolder = ${UtilMethods.getParentFolder($fileRepository_showFolder, $host).getPath()})
+#else
+  #if(!$fileRepository_showFolder.endsWith("/"))
+    #set ($fileRepository_showFolder = ${fileRepository_showFolder} + "/" )
+  #end
+#end
+
+#if(!$UtilMethods.isSet($doNotIncludeStyles) || $doNotIncludeStyles == false)
+<style type="text/css">
+    .fileRepositoryTable {
+          background-color: #ededed;
+    }
+
+    .fileRepositoryTable tr {
+          background-color: #FFFFFF;
+    }
+    .fileRepositoryTable td {
+          padding:4px;
+    }
+    .fileRepositoryTable img {
+          border: 0;
+    }
+    .fileRepositoryTable imgColumn {
+          width:22;
+    }
+    .fileRepositoryTable nameColumn {
+    }
+    .fileRepositoryTable sizeColumn {
+          width:66;
+    }
+    .fileRepositoryTable dateColumn {
+          width:100;
+    }
+</style>
+#end
+
+
+<table border="0" cellpadding="3"  cellspacing="1" width="90%" class="fileRepositoryTable" summary="$!tableSummary" >
+<thead>
+<tr>
+    <th class="imgColumn" align="right">
+        #if($hasParent)
+            <a href="?folderPath=$fileRepository_upFolder"><img  align="absbottom" src="/html/images/icons/arrow-curve-090.png" border="0" alt="up a folder"></a>
+        #end
+    </th>
+    <th class="nameColumn">&nbsp;<strong>Name</strong></th>
+    <th class="sizeColumn">&nbsp;<strong>Size</strong></th>
+    <th class="dateColumn">&nbsp;<strong>Date</strong></th>
+
+</tr>
+</thead>
+<tbody>
+#set($even = false)
+
+#foreach($folder in $fileRepository_foldersList)
+<tr class="#if($even)even#{else}odd#end" >
+    <td align="center" valign="top"><a href="?folderPath=${folder.getPath()}"><img src="/html/images/icons/folder-horizontal.png" alt="folder"></a></td>
+
+    <td><a href="?folderPath=${folder.getPath()}">$folder.name</a>
+        <div style="padding-left:10px;">
+            $!folder.title
+        </div>
+    </td>
+    <td>&nbsp;</td>
+    <td valign="top">$UtilMethods.dateToHTMLDate($folder.getiDate(),'MMM dd, yyyy')</td>
+
+</tr>
+	#set($even = !$even)
+#end
+
+
+#foreach($file in $fileRepository_filesList)
+<tr class="#if($even)even#{else}odd#end">
+    <td align="center" valign="top"><a href="$fileRepository_showFolder$file.fileName"><img src="/icon?i=${file.getExtension()}" width="16" height="16" alt="${file.getExtension()} file"></a></td>
+    <td valign="top">
+        <a href="$fileRepository_showFolder$file.fileName">$file.fileName</a>
+        <div style="padding-left:10px;">
+            $!file.friendlyName
+        </div>
+
+
+    </td>
+    <td valign="top">$math.add($math.ceil($math.div(${file.size}, 1024)), 1) kb</td>
+    <td valign="top">$UtilMethods.dateToHTMLDate($file.publishDate,'MMM d, yyyy')</td>
+</tr>
+	#set($even = !$even)
+
+#end
+</tbody>
+</table>

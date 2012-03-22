@@ -1,0 +1,42 @@
+#set($event = $webevents.getWebEvent($request.getParameter("inode")))
+#set($eventImage1 = ${webapi.getLiveFileAsset($event.eventImage2)})
+#set($eventImage2 = ${webapi.getLiveFileAsset($event.eventImage3)})
+#set($eventImage3 = ${webapi.getLiveFileAsset($event.eventImage4)})
+#set($eventFiles = $webevents.getWebEventFiles($event))
+
+					<h2>$!event.title</h2>
+
+					#if ($InodeUtils.isSet($eventImage1.inode) || $InodeUtils.isSet($eventImage2.inode) || $InodeUtils.isSet($eventImage2.inode))
+					<div style="float: right; padding-left: 10px;">
+						#if ($InodeUtils.isSet($eventImage1.inode))
+							<img src="/thumbnail?inode=${eventImage1.inode}&w=${eventImage1.width}&h=${eventImage1.height}" style="padding-bottom: 10px;"><br>
+						#end
+						#if ($InodeUtils.isSet($eventImage2.inode))
+							<img src="/thumbnail?inode=${eventImage2.inode}&w=${eventImage2.width}&h=${eventImage2.height}" style="padding-bottom: 10px;"><br>
+						#end
+						#if ($InodeUtils.isSet($eventImage3.inode))
+							<img src="/thumbnail?inode=${eventImage3.inode}&w=${eventImage3.width}&h=${eventImage3.height}" style="padding-bottom: 10px;">
+						#end
+					</div>
+					#end
+
+					<div class="content">
+
+					$!event.description<br /><br />
+
+					$!event.termsConditions<br /><br />
+
+					#if ($event.isInstitute()) 
+						#if ($eventFiles.size() >0)
+						<BR><B>Download these files:</B>
+						<ul>
+							#foreach ($map in $eventFiles)
+							<li>
+								<a href="$map.get("filepath")">$map.get("filename")</a>
+							</li>
+							#end
+						</ul>
+						#end
+					#end
+					</div>
+

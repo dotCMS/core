@@ -1,0 +1,33 @@
+<div id="$mailingListsId" style="$!mailingListsCSSStyle" class="$!mailingListsCSSClass">
+	<form action="/dotCMS/subscribe" method="post" id="mailingListsSubscribeForm">
+		<input type="hidden" name="dispatch" value="subscribe">
+		<input type="hidden" name="referrer" value="$mailingListsReferrer">
+
+	#set($doNotSendList = $mailinglist.getUnsubscribersMailingList())
+	#set($allPublicMailingLists = $mailinglist.getAllPublicLists())
+	#set($userMailingLists = $mailinglist.getMailingListsBySubscriber($user))
+
+		<input type="hidden" name="ui" value="$userIdEncrypted">
+		$glossary.get('info_mailing_lists_per_user')$user.emailAddress
+		<br />
+		$glossary.get('check_uncheck_mailing_lists')
+		<ul>
+	#foreach($mailingList in $allPublicMailingLists)
+		#if ($mailingList.inode != $doNotSendList.inode)
+			#set ($mailingListChecked = $userMailingLists.contains($mailingList))
+			<li><input type="checkbox" value="$mailingList.inode" id="ml$mailingList.inode" name="mailingListsInodes" #if($mailingListChecked == 'true')checked#end><label for="ml$mailingList.inode">$mailingList.title</label></li>
+		#end
+	#end
+
+	#set($userIsAddedToDoNotSendList = 'false')
+	#foreach($mailingList in $userMailingLists)
+		#if ($mailingList.inode == $doNotSendList.inode)
+			#set($userIsAddedToDoNotSendList = 'true')
+		#end
+	#end
+
+			<li><input type="checkbox" value="$doNotSendList.inode" id="doNotSend" name="mailingListsInodes" #if($userIsAddedToDoNotSendList == 'true')checked#end><label for="doNotSend">$text.get('mailing_list_never_send_me_email_again')</label></li>
+		</ul>
+		<input type="submit" value="submit"/>
+	</form>
+</div>

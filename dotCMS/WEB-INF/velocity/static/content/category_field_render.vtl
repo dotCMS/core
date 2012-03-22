@@ -1,0 +1,31 @@
+<script type="text/javascript">
+  dojo.require("dijit.layout.ContentPane");
+</script>
+<style type="text/css">
+  .boxer {
+      position: relative;
+    width:180px;
+    background-color: white;
+    border: 2px solid black;
+    padding: 8px;
+    margin: 4px;
+  }
+</style>
+
+
+#set($categ = $categories.getChildrenCategories("${fieldAux.values.trim()}"))
+<input type="hidden" name="${fieldAux.velocityVarName}Names" id="${fieldAux.velocityVarName}Names" value=""/>
+<input type="hidden" name="${fieldAux.velocityVarName}" id="${fieldAux.velocityVarName}" value=""/>
+
+<select dojoType="dijit.form.FilteringSelect"  multiple="true" name="select${fieldAux.velocityVarName}Inode" id="select${fieldAux.velocityVarName}Inode" autocomplete="false"  invalidMessage="Invalid category name"  onChange='updateCategoriesList("${fieldAux.velocityVarName}" , "${fieldAux.velocityVarName}Names", "select${fieldAux.velocityVarName}Inode")'>   
+<option value=""></option>
+	#foreach($cate in $categ)
+		<option value="$cate.categoryName,$cate.inode" >$cate.categoryName</option>
+	#end    
+</select>
+<button dojoType="dijit.form.Button" onClick='clearCategoriesList("${fieldAux.velocityVarName}" , "${fieldAux.velocityVarName}Names")' iconClass="plusIcon"> Clear</button>
+<span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+<br/>
+<div dojoType="dijit.layout.ContentPane" name="${fieldAux.velocityVarName}categoriesbox" id="${fieldAux.velocityVarName}categoriesbox" class="boxer" hasShadow="true">
+ <div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist"> No categories selected</div>
+</div>

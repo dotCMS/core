@@ -1,0 +1,29 @@
+<dl class="formFieldSet" id="${fieldAux.velocityVarName}FieldSet">                
+	<dt>
+		<b>${fieldAux.getFieldName()}</b>
+	</dt>
+	<dd>
+		#set($cats = $categories.getCategoriesListByEntityName($structureName))
+		#if($cats.size()>0) 
+			#foreach($categ in $cats) 
+				#set($children = $categories.getActiveChildrenCategories($categ))
+				#if($children.size() > 0 )
+					<div class="fieldWrapper">
+						<div class="fieldLabel">${categ.getCategoryName()}:</div>
+						<div class="fieldValue">
+							<select dojoType="dijit.form.FilteringSelect" id="categories" name="categories" class="selectField" size='9' multiple="multiple">
+						   	#foreach($child in $children)
+								<option value="$child.inode" class="optionSelectField" #if($listTool.contains($fieldDefaultValue, $child.inode))selected="selected"#end >$!child.categoryName</option>
+						   	#end
+							</select>
+						</div>
+						<div style="clear: both;"></div>
+					</div>
+				#end			
+			#end
+			<span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+		#else
+	   		$text.get('org.dotcms.frontend.content.submission.no.associated.category')
+		#end
+	</dd>
+</dl>

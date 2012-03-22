@@ -1,0 +1,32 @@
+<script type="text/javascript" src="/html/macros/dotradio/flashobject.js"></script>
+   
+#if(!$UtilMethods.isSet($mp3PlayersNum))
+	#set($mp3PlayersNum= 1)
+#else 
+	#set($mp3PlayersNum= $mp3PlayersNum+1)
+#end
+		
+<div id="flashcontent${mp3PlayersNum}">
+  This text is replaced by the Flash movie.
+</div>
+
+#if($path.endsWith('.mp3'))
+	#set($mp3path = "song_url=${path}")
+#else
+	#set($mp3path = "playlist_url=${path}")
+#end
+
+<script type="text/javascript">
+	#if($format=="slim")
+		var fo = new FlashObject("/html/macros/dotradio/xspf_player_slim.swf?$mp3path", "mp3Player${mp3PlayersNum}", "$width", "$height", "7", "#ffffff");
+	#else
+		var fo = new FlashObject("/html/macros/dotradio/xspf_player.swf?$mp3path", "mp3Player${mp3PlayersNum}", "$width", "$height", "7", "#ffffff");
+
+	#end
+	
+	fo.addParam("quality", "high");
+	fo.addParam("wmode", "transparent");
+	fo.write("flashcontent${mp3PlayersNum}");
+</script>
+
+

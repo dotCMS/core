@@ -1,0 +1,90 @@
+.dijitContentPane{overflow:hidden;}
+
+.dijitTabListContainer-top{
+	top: 3px !important;
+}
+
+
+#rolesTreeScrollWrapper, #usersGridWrapper, #roleLayoutsGridWrapper{
+
+}
+
+#loadingRolesWrapper {
+	text-align: center;
+}
+
+#roleTabsContainer {
+	margin:0px;
+
+}
+
+.title {
+	font-weight: bolder;
+	float: left;
+}
+
+.label {
+	text-align: left;
+	width: 40px;
+	float: left;
+	padding-right: 5px;
+}
+
+#usersGridWrapper {
+	visibility: hidden;
+}
+
+#usersGridWrapper table {
+	margin: 0;
+}
+
+#roleUsersButtons {
+	padding-top: 20px;
+}
+
+#loadingRoleLayoutsWrapper {
+	
+}
+
+#roleLayoutsGridWrapper table {
+	margin: 0;
+}
+
+#roleLayoutsGridWrapper {
+	height:350px; 
+	visibility: hidden;
+}
+
+#portletsList {
+	margin: 10px 0 0 0;
+	border-bottom: 1px solid #CCCCCC;
+}	
+
+#portletsList li {
+	padding: 2px 5px;
+	border-top: 1px solid #CCCCCC;
+}
+
+.removePorletButton {
+	text-align: right;
+}
+
+dd.wide {
+	margin-left: 0;
+}
+
+#loadingRoleLayoutsWrapper {
+	text-align: center;
+}
+
+#rolePermissionsAccordion .dijitLayoutContainer {
+	background: none;
+	padding: 0;
+}
+
+#addLayoutErrorMessagesList {
+	color: red;
+}
+#addRoleDialog {
+	width: 400px;
+}

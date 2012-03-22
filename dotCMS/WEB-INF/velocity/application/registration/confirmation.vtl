@@ -1,0 +1,287 @@
+<style>
+@import url(/global/css/form.css);
+
+/* put in width of widest label */
+fieldset label,
+.fieldset .label{
+	width: 150px;
+}
+fieldset fieldset,
+fieldset .buttonGroup,
+.fieldset .buttonGroup{
+	padding-left: 150px;
+}
+fieldset fieldset legend{
+	margin-left: -150px;
+}
+</style>
+#set($currentOrganization = $request.getParameter("currentOrganization"))
+<script languaje="javascript">
+	
+function submitForm()
+{
+	var form = document.getElementById("dotRegistrationForm");
+	var message = "";
+	var validate = true;
+	try
+	{
+		if (form.ceoName.value == "")
+		{
+			message += "The CEO name is mandatory";
+			validate = false;
+		}
+	}
+	catch(e)
+	{}
+	if (!validate)
+	{
+		alert(message);
+		return validate;
+	}
+	form.submit();
+}
+
+//Inicio funciones manejo de layers
+styleReference = "style.";
+visibleLayer = "inline";
+browser = "Explorer";
+
+function printpage() 
+{
+	window.print();  
+}
+
+function referenceLayer(layerName) 
+{ 
+	//if (navegador=="Netscape") 
+	//	return "document.layers['"+layerName+"']."; 
+	//else 
+	//	return "document.all['"+layerName+"']."; 
+		
+	return "document.getElementById('" + layerName + "').";
+}
+
+function hideLayer(layerName)
+{ 
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"'); 
+}
+
+function showLayer(layerName) 
+{ 
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"'); 
+} 
+   
+function change(layer)
+{
+	if (eval("document.all['" + layer + "'].style.display == 'none'"))
+	{
+		showLayer(layer);
+	}
+	else
+	{
+		hideLayer(layer);
+	}
+}
+
+function goBack()
+{
+	var form = document.getElementById("dotRegistrationForm");
+	form.dispatch.value = "unspecified";
+	form.submit();
+}
+</script>
+<form action="/dotCMS/addRegistration" method="post" name="dotRegistrationForm" id="dotRegistrationForm">
+<input type="hidden" name="referrer" value="$!{dotRegistrationForm.referrer}">
+<input type="hidden" name="from" value="$!{dotRegistrationForm.from}">
+<input type="hidden" name="dispatch" value="finish">
+#dotParse('/application/messages.vtl')
+#if ($!{dotRegistrationForm.from} == "webEventRegistration")
+	<p>Click Proceed to Payment to confirm this is the user you'd like to tie this registration to.
+	<br>If this is not your user, please click on <a href="/dotCMS/logout">Logout</a> and login again with your user.
+	<br>You can update your user and organization information by clicking on <a href="/dotCMS/myAccount">My Account</a>.</p>
+#end
+<BR>
+
+
+
+#if ($!{dotRegistrationForm.from} == "webEventRegistration")	
+<fieldset>
+	<legend>How did you hear about this conference?</legend>
+	<input type="hidden" name="organizationInodeAux" value="$!{dotRegistrationForm.organizationInodeAux}">
+
+			<label class="required" for="howDidYouHear">How did you hear?</label>
+	    	$categories.getSimpleComboByEntityName("howDidYouHear","How Did You Hear",${dotRegistrationForm.howDidYouHear})<br />
+	    	          
+                           <!-- 
+			<label class="required" for="ceoName">What is your CEO?s name?</label>			
+			<input tabindex="28"  name="ceoName" id="ceoName" type="text" class="text" value="$!{dotRegistrationForm.ceoName}"><br />
+                            -->
+</fieldset>
+#end
+
+	<!-- User Information -->
+<div class="fieldset">
+	<div class="legend">User Information</div><br />
+	<!-- User ID-->
+	<input type="hidden" name="userID" value="$!{dotRegistrationForm.userID}">
+	<!-- Ext User Inode-->
+	<input type="hidden" name="extUserInode" value="$!{dotRegistrationForm.extUserInode}">
+	<!-- User Proxy Inode-->
+	<input type="hidden" name="userProxyInode" value="$!{dotRegistrationForm.userProxyInode}">
+	
+	<span class="label">Email:</span>
+	<span class="input">$!{dotRegistrationForm.emailAddress}</span><br />
+
+	<span class="label">Password:</span>
+	<span class="input">********</span><br />
+
+	#if ($dotRegistrationForm.prefix != "")
+		<span class="label">Prefix:</span>
+		#set ($prefix = "")
+		#if ($!{dotRegistrationForm.prefix} == "mr")
+			#set ($prefix = "Mr.")
+		#elseif ($!{dotRegistrationForm.prefix} == "mrs")
+			#set ($prefix = "Mrs.")
+		#elseif ($!{dotRegistrationForm.prefix} == "miss")
+			#set ($prefix = "Ms.")
+		#elseif ($!{dotRegistrationForm.prefix} == "dr")
+			#set ($prefix = "Dr.")
+		#end
+		<span class="input">$!{prefix}</span><br />
+	#end
+
+	<span class="label">First Name:</span>
+	<span class="input">$!{dotRegistrationForm.firstName}</span><br />
+
+	<span class="label">Last Name:</span>
+	<span class="input">$!{dotRegistrationForm.lastName}</span><br />
+
+	#if ($dotRegistrationForm.suffix != "")	
+		<span class="label">Suffix:</span>
+		<span class="input">$!{dotRegistrationForm.suffix}</span><br />
+	#end
+	#if ($dotRegistrationForm.title != "")
+		<span class="label">Title:</span>
+		<span class="input">$!{dotRegistrationForm.title}</span><br />
+	#end
+
+</div>
+	
+	
+	<!-- Organization Information 
+<div class="fieldset">
+   	<div class="legend">Organization Information</div><br />
+	<form action="/dotCMS/addFacility" method="post" name="dotRegistrationForm" id="dotRegistrationForm">
+		<input type="hidden" name="organizationInode" value="$!{dotRegistrationForm.organizationInode}">
+
+	#if (${dotRegistrationForm.noOrganization})
+		<span class="label">Organization Name:</span>
+		<span class="input">Don?t belong to an Organization</span><br />
+	#else
+		<span class="label">Organization Name:</span>
+		<span class="input">$!{dotRegistrationForm.organizationTitle}</span><br />
+		
+		#if (${dotRegistrationForm.organizationStreet1}!="")
+			<span class="label">Street 1:</span>
+			<span class="input">$!{dotRegistrationForm.organizationStreet1}</span><br />
+		#end
+		#if (${dotRegistrationForm.organizationStreet2}!="")
+			<span class="label">Street 2:</span>
+			<span class="input">$!{dotRegistrationForm.organizationStreet2}</span><br />
+		#end
+		#if (${dotRegistrationForm.organizationCity}!="")
+			<span class="label">City:</span>
+			<span class="input">$!{dotRegistrationForm.organizationCity}</span><br />
+		#end
+		#if (${dotRegistrationForm.organizationState}!="")
+			<span class="label">State:</span>
+			<span class="input">$!{dotRegistrationForm.organizationState}</span><br />
+		#end
+		#if (${dotRegistrationForm.organizationZip}!="")
+			<span class="label">Zip:</span>
+			<span class="input">$!{dotRegistrationForm.organizationZip}</span><br />
+		#end
+		#if (${dotRegistrationForm.organizationPhone}!="")
+			<span class="label">Phone:</span>
+			<span class="input">$!{dotRegistrationForm.organizationPhone}</span><br />
+		#end
+		#if (${dotRegistrationForm.organizationFax}!="")
+			<span class="label">Fax:</span>
+			<span class="input">$!{dotRegistrationForm.organizationFax}</span><br />
+		#end
+		
+	#end
+
+	</form>	
+</div>
+
+-->
+
+	<!-- END USER INFORMATION -->
+	#if(!($request.getAttribute("notNew") && $request.getAttribute("notNew") == true))
+	<!-- Mailing Address -->
+<div class="fieldset">
+	<div class="legend">My $!{dotRegistrationForm.description} Address</div><br />
+	<!-- Organization Inode-->
+	<input type="hidden" name="addressID" value="$!{dotRegistrationForm.addressID}">
+
+	<span class="label">Street1:</span>
+	<span class="input">$!{dotRegistrationForm.street1}</span><br />
+
+	<span class="label">Street 2:</span>
+	<span class="input">$!{dotRegistrationForm.street2}</span><br />
+
+	<span class="label">City:</span>
+	<span class="input">$!{dotRegistrationForm.city}</span><br />
+
+	<span class="label">State:</span>
+	<span class="input">$!{dotRegistrationForm.state}</span><br />
+
+	<span class="label">Country:</span>
+	<span class="input">$!{dotRegistrationForm.country}</span><br />
+
+	<span class="label">Zip:</span>
+	<span class="input">$!{dotRegistrationForm.zip}</span><br />
+
+	<span class="label">Phone:</span>
+	<span class="input">$!{dotRegistrationForm.phone}</span><br />
+
+	<span class="label">Fax:</span>
+	<span class="input">$!{dotRegistrationForm.fax}</span><br />
+	
+</div>
+	<!-- END Mailing Aaddres -->
+
+
+
+<!-- END Organization Information -->
+<!-- My Profile And Preferences -->
+
+#if($categories.hasCategoriesByEntityNameTextMode($!{dotRegistrationForm.userProxyInode}))
+<div class="fieldset">
+	<div class="legend">My Profile and Preferences</div><br />
+	
+	$categories.getCategoriesByEntityNameTextMode("category","Preferences","$!{dotRegistrationForm.userProxyInode}",true,true,-1,true)
+
+</div>
+#end
+#end
+<!-- END My Profile And Preferences -->	
+
+<div class="buttonGroup" style="text-align:center;">
+	#if(!($request.getAttribute("notNew") && $request.getAttribute("notNew") == true))
+		<a href="/dotCMS/myAccount" class="button">Make Changes</a>
+		<a href="javascript:printpage();" class="button">Print</a>
+	#end
+
+	#if ($!{dotRegistrationForm.from} == "webEventRegistration")
+		<a href="javascript:submitForm();" class="activeButton">Proceed to Payment</a>
+	#else
+		<a href="javascript:submitForm();" class="activeButton">Next</a>
+	#end
+</div>
+
+<br/><br/>
+
+
+</form>

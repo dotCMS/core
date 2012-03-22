@@ -1,0 +1,113 @@
+#set($calendarmap = $webapi.getCalendarMap($request.getParameter("year"), $request.getParameter("month")))
+#set($calendardata = $calendarmap.get("data"))
+#set($from = $!request.getParameter('from'))
+#if(!$from)
+	#set($from = $webapi.todayDateString())
+#end
+#set($to = $!request.getParameter('to'))
+#if(!$to)
+	#set($to = $webapi.todayDateString())
+#end
+#set($events = $webapi.getEventsInCalendarByRange($from, $to, $request.getParameterValues("calendarTypes"), $request.getParameterValues("eventTypes"), $request.getParameter("keyword")))
+#set($parentCategories= $categories.getCategoriesListByEntityName('Event'))
+
+
+
+#set($month = $calendarmap.get("month"))
+#set($year= $calendarmap.get("year"))
+#set($totalDays= $calendarmap.get("totalDays"))
+#set($selectedWeek= $request.getParameter("week"))
+
+
+
+
+
+<script language="javascript">
+
+	
+	#foreach($parent in $parentCategories)
+		function selectAll${parent.inode}(){
+			var checkme = document.getElementById("all${parent.inode}").checked;
+			#set($children = $categories.getChildrenCategories($parent))
+			#foreach($child in $children)
+				document.getElementById("cat${child.inode}").checked=checkme;
+			#end
+			}
+	#end
+		
+
+
+</script>
+
+
+			<h2>Filters</h2>
+			
+		<!-- BEGIN CALENDARS CATEGORIES -->
+
+			#foreach($parent in $parentCategories)
+				<b>$parent.categoryName</b><br/>
+					<input type="checkbox" name="all${parent.inode}" id="all${parent.inode}" onClick="selectAll${parent.inode}()"/>	<label for="all${parent.inode}">All</label><br/>
+
+				#set($children = $categories.getChildrenCategories($parent))
+				#foreach($child in $children)
+					<input type="checkbox" name="cat" value="$child.inode" id="cat${child.inode}"/>	<label for="cat${child.inode}">$child.categoryName</label><br/>
+				#end
+			#end
+
+
+		<!-- END CALENDARS CATEGORIES -->
+
+
+			<h2>Events Search</h2>
+
+			<label for="to">Keyword:</label> <input type="text" name="keyword" id="keyword" value="$!request.getParameter('keyword')" onkeyup="enableSearch();">
+<br />
+			<label for="from">From Date:</label><input type="text" name="from" id="from" value="$!from" READONLY>
+			<img align="absmiddle" border="0" hspace="0" id="_EXT_MAILINGLISTBUILDER_calendar_input_0_button" src="/calendar/calendar.gif" vspace="0" onClick="_EXT_MAILINGLISTBUILDER_calendarOnClick_0();">		
+
+			<label for="to">To Date:</label><br />
+			<input type="text" name="to" id="to" value="$!to" READONLY>
+			<img align="absmiddle" border="0" hspace="0" id="_EXT_MAILINGLISTBUILDER_calendar_input_1_button" src="/calendar/calendar.gif" vspace="0" onClick="_EXT_MAILINGLISTBUILDER_calendarOnClick_1();">
+
+
+
+
+
+	<!-- BEGIN EVENT LISTING -->
+	<input type="hidden" name="event" id="event" value="">
+
+			<h2>Events Results</h2>	
+	#if ($events.size() >0) 
+		
+						#foreach ($evt in $events)
+							#if ($evt.title != 'School Closed')
+
+									<h3><a href="javascript:submitEventDetail('$evt.inode');">$evt.title</a></h3>
+									$webapi.dateToHTMLDateTimeRange($evt.startDate, $evt.endDate)
+									$UtilMethods.shortenString($evt.description, 100)
+									
+									#if($PREVIEW_MODE)
+										<br /><a href="javascript:editEvent('$evt.inode')"><img src="/portal/images/icons/edit.gif" alt="Edit Event" border="0" valign="absmiddle"></a>
+									#end
+
+							#end
+						#end
+
+	#else
+
+					<p>
+					There are not Events with the specified filters,
+					please change the filters and repeat the search
+					</p>
+
+	#end
+	<!-- END EVENT LISTING --><br />
+
+
+
+</form>
+<script language="javascript">
+	drawDate();
+	//drawCalendarCategories();
+	//drawEventCategories();
+</script>

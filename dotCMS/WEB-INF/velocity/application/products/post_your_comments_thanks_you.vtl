@@ -1,0 +1,18 @@
+#set($product = $productwebapi.getProduct($request.getParameter("inode")))
+#set($userName = 'customer')
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+	<tr>
+		<td width="70%" valign="top">
+			#if ($webapi.userFullName && $webapi.userFullName != "")
+				#set($userName = $webapi.userFullName)
+			#end
+			Dear $!userName,<p>
+
+			Thank you for sharing your feedback with us. We value you input and are committed to provided the highest level of service.<p>
+
+			Yours in Service, <br>
+			Fire Starter Publishing Team 
+		</td>
+	</tr>
+</table>

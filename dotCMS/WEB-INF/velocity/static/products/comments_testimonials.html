@@ -1,0 +1,6 @@
+#set ($inode = $request.getParameter("inode") )
+#set ($product = $productwebapi.getProduct($inode))
+
+<h2>Product: $product.title</h2>
+<br>
+$!product.comments

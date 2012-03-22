@@ -1,0 +1,47 @@
+#if ($errors.exist())
+<div id="errorMessages">
+	<ul>
+    #foreach ($e in ${errors.all} )
+        <li>$e</li>
+    #end
+    </ul>
+</div>
+#end
+
+#if ($messages.exist())
+<div id="messagesMessages">
+	<ul>
+    #foreach ($e in ${messages.all} )
+        <li>$e</li>
+    #end
+    </ul>
+</div>
+#end
+
+#if ($UtilMethods.isSet($strutsutil.getErrors($request)))
+	#set ($struts_errors = $strutsutil.getErrors($request).get())
+#end
+
+#if ($UtilMethods.isSet($strutsutil.getMessages($request)))
+	#set ($struts_messages = $strutsutil.getMessages($request).get())
+#end
+
+#if ($UtilMethods.isSet($struts_errors))
+<div id="errorMessages">
+	<ul>
+    #foreach ($e in $struts_errors)
+        <li>$glossary.get($e.key)</li>
+    #end
+    </ul>
+</div>
+#end
+
+#if ($UtilMethods.isSet($struts_messages))
+<div id="messagesMessages">
+	<ul>
+    #foreach ($e in $struts_messages)
+        <li>$glossary.get($e.key)</li>
+    #end
+    </ul>
+</div>
+#end

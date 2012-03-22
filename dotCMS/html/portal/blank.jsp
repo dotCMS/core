@@ -1,0 +1,2 @@
+<%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
+<tiles:useAttribute id="tilesContent" name="content" classname="java.lang.String" /><jsp:include page='<%= "/html" + pageContext.getAttribute("tilesContent") %>' />

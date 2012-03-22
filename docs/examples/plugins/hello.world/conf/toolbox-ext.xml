@@ -1,0 +1,5 @@
+<tool>
+		<key>helloWorld</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.plugins.hello.world.HelloViewTool</class>
+	</tool>

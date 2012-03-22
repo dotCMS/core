@@ -1,0 +1,43 @@
+#set($registration=$webevents.getRegistration($request.getParameter("registrationInode")))
+#set($event=$webevents.getWebEvent($registration.eventInode))
+#set($location=$webevents.getWebEventLocation($registration.eventLocationInode))
+#set($attendees=$webevents.getRegistrationAttendees($registration))
+#foreach ($attendee in $attendees)
+	#set($firstName = $attendee.firstName)
+	#set($lastName = $attendee.lastName)
+#end
+<script type="text/javascript">
+<!--
+
+//-->
+</script>
+
+<style>
+td{
+padding:5px 20px;
+}
+.border{
+background:black;
+}
+.border td{
+background:#FFF;
+}
+.font{
+font-size:20px;
+font-weight:bold;
+}
+</style>
+
+<table width="90%" border="1">
+  <tr>
+    <td><p>
+      <img src="http://www.studergroup.com/global/images/genesys_banner.gif"></p>
+      <p align="center"><strong>Thank you $!firstName $!lastName for participating in the $!event.title.</strong></p>
+      <p align="center">The Studer Group strives to provide high quality education to healthcare organizations.</p>
+      <p align="center">Thank you for your interest in this event, we look forward to having you join us again.</p>
+      </td>
+  </tr>
+</table>
+
+</td></tr></table>			
+

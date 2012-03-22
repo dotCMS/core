@@ -1,0 +1,3 @@
+<!-- Use this file to add portlets and extend the portlet file -->
+<portlet id="EXT_HELLO_WORLD" struts-path="hello_velocity" narrow="true" />
+<portlet id="EXT_STRUTS_HELLO_WORLD" struts-path="ext/strutshello" narrow="true" />

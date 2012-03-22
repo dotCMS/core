@@ -1,0 +1,59 @@
+
+<%@ page language="java" import="java.util.*" %>
+<%@ page import="com.dotmarketing.portlets.kco.factories.KCOAssetFactory" %>
+<%@ page import="com.dotmarketing.portlets.kco.model.KCOAsset" %>
+<%@ page import="com.dotmarketing.db.HibernateUtil" %>
+<%@ page import="com.liferay.util.lucene.KeywordsUtil" %>
+<%@ page import="com.dotmarketing.portlets.categories.model.Category" %>
+<%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
+<%@ page import="com.dotmarketing.beans.Host" %>
+<%@ page import="com.dotmarketing.util.*" %>
+
+<%
+String path = request.getContextPath();
+String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+path+"/";
+%>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <base href="<%=basePath%>">
+    
+    <title>My JSP 'test.jsp' starting page</title>
+    
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
+    <meta http-equiv="description" content="This is my page">
+    
+    <!--
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    -->
+    
+  </head>
+  
+  <body>
+    Updating folders ... <br>
+<%
+   	HibernateUtil dh = new HibernateUtil (Folder.class);
+
+	dh.startTransaction();
+	
+	dh.setSQLQuery("select {folder.*} from folder, inode folder_1_ where folder.inode = folder_1_.inode");
+	Iterator folders = (Iterator) dh.list().iterator();
+	while (folders.hasNext()) {
+		Folder folder = (Folder)folders.next();
+		Host parentHost = APILocator.getHostAPI().findParentHost(folder);
+				if (InodeUtils.isSet(folder.getInode()) && InodeUtils.isSet(parentHost.getInode()))
+			parentHost.addChild(folder);
+	}
+	
+	dh.commitTransaction();
+	
+%>
+	Done!!!
+
+  </body>
+</html>
+

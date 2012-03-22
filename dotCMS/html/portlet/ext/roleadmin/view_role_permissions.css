@@ -1,0 +1,107 @@
+#rolePermissionsAccordion .dijitAccordionContainer-child{overflow-y:hidden !important;}
+
+.permissionLabelTable, .permissionTable  {
+	width: 100%;
+}
+
+.permissionTableWrapper {
+	padding: 0 0 0 3px;
+}
+
+.permissionLabelsWrapper {
+	padding: 15px 15px 10px 9px;	
+}
+
+.permissionTable, .permissionLabelTable, .permissionTableTitle  {
+	margin: 0;padding:0;
+}
+.dmundra .dijitAccordionTitle{height:23px;padding:3px;}
+.permissionTable tr {
+	padding: 5px 0;
+}
+
+.permissionTable td {
+ 	width: 12%;
+ 	text-align: center;
+}
+
+.permissionTable td.permissionType {
+ 	width: 28%;
+ 	text-align: right;
+	padding: 3px 35px 3px 0; 	
+}
+
+.permissionTableTitle {
+	width: 100%;
+	margin: 0;
+}
+
+.permissionTableTitle td.folderName {
+	vertical-align: middle;
+	width:28%;
+	text-align: left;
+}
+
+.permissionTableTitle td.folderName img {
+	vertical-align: middle;
+}
+
+.permissionTableTitle td{
+	text-align: center;
+	width: 12%;
+	font-size:11px;
+	line-height:22px;
+}
+
+#rolePermissionsHostSelector, #addHostFolderTitle {
+	float: left;
+}
+
+#addHostFolderTitle {
+	padding-top: 3px;
+}
+
+#rolePermissionsHostSelectorWrapper {
+	float:right;
+	margin-top:-49px;
+	padding:10px 15px 15px 0;
+	vertical-align:middle;
+}
+
+.hostSelectorButton {
+	margin: 0;
+}
+
+.hostFolderAccordionPermissionsTitle {
+	vertical-align: middle;
+}
+
+.hostFolderAccordionPermissionsTitle img {
+	vertical-align: middle;
+}
+
+.permissionsActions{
+	border:1px solid #ddd;
+	background:#f1f1f1;
+	padding:5px 8px;
+	width:550px;
+	text-align:center;
+	margin:20px auto 0 auto;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+}
+
+.permissionsActions a{margin-right:20px;}
+
+#loadingPermissionsAccordion {
+	padding-top: 25px;
+	text-align: center;
+}
+
+#permissionsTab {
+	margin-bottom: 5px;
+}		
+#rolePermissionsMsg {
+	color: #E84048;
+	text-align: center;
+}

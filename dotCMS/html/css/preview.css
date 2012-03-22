@@ -1,0 +1,149 @@
+/*
+ * IMPORTANT NOTE!
+ *
+ * This file gets injected in the client html page code while on edit mode, so no conflicting css rule must be placed in this file and all rules should be based on specific  
+ * css classes to be used in edit mode.
+ *  
+ * Naming of the classes should be carefully selected so they don't conflict with client code, a convention of prefixing 'dot' to the name
+ * of the class should be followed.
+ *
+ * Also no generic css browser selector javascript code should NOT be used to determine the browser and then generate generic (based on the browser) css classes.
+ *
+ */
+.dotClear { clear: both;height: 0px;font-size: 0;line-height: 0; }
+
+/* START CONTAINER CONTROLS */
+.dotContainer{position: relative; border-top:1px solid #dce3ed; border-bottom:1px solid #dce3ed; padding-top:20px; _padding-top:40px;}
+
+.dotContainerControls{background-image: url(/html/images/preview/bg_containerControl.gif);background-repeat: repeat-x;position: absolute;top: 0;height: 24px;width: 100%;z-index:301;margin-bottom:15px;border-bottom: 1px solid #9bb3cd;}
+
+.dotContainerControlsAnchor{float:right;}
+.dotContainerControlsAnchor a{display:inline-block; height:24px; padding: 3px 5px 0 28px; font-weight:bolder; font-size:12px; text-decoration:none; text-align:left; color:#777; font-family:Arial, Helvetica, sanserif; background:url(/html/images/preview/containerControl.gif) no-repeat -4px center;}
+.dotContainerNotesAnchor{float:right;}
+
+.dotAddContent{float:right;}
+.dotAddContent a{display:block;height:24px;width:90px;padding: 3px 0 0 30px;font-weight:bolder;font-size:12px;text-decoration:none;text-align:left;color:#777;font-family:Arial, Helvetica, sanserif;background-image:url(/html/images/preview/containerControl.gif);background-repeat:no-repeat;}
+.dotAddContent a:hover{color:#6986ba;}
+
+.dotControls{position:absolute;background:#fbfbff;border-top: 1px solid #dbe4ed;border-right: 1px solid #9ab2ce;border-bottom: 1px solid #9ab2ce;border-left: 1px solid #dbe4ed;z-index: 400}
+.dotControlsClose a, .dotNewContent a, .dotReuseContent a, .dotAddWidget a, .dotAddForm a, .dotNewContentDisabled, .dotReuseContentDisabled, .dotAddWidgetDisabled, .dotAddFormDisabled{display:block;width:90px;line-height:25px;padding:0 0 3px 27px;text-align:left;text-decoration:none;font-family:Verdana, Arial, Helvetica, sanserif;font-size:9px;color:#666;background-repeat:no-repeat;}
+.dotControlsClose a:hover, .dotNewContent a:hover, .dotReuseContent a:hover, .dotAddWidget a:hover, .dotAddForm a:hover{color:#666;background-color:#eee;}
+
+.dotNewContent a{background:url(/html/images/icons/card-plus.png) no-repeat 5px center;}
+.dotNewContentDisabled{background:url(/html/images/icons/card-plus-off.png) no-repeat 5px center;}
+
+.dotReuseContent a{background:url(/html/images/icons/card-search.png) no-repeat 5px 5px;}
+.dotReuseContentDisabled{background:url(/html/images/icons/cards-plus-off.png) no-repeat 5px 5px;}
+
+.dotAddWidget a{background:url(/html/images/icons/gear-plus.png) no-repeat 5px 5px;}
+.dotAddWidgetDisabled{background:url(/html/images/icons/gear-plus-off.png) no-repeat 5px 5px;}
+
+.dotAddForm a{background:url(/html/images/icons/ui-scroll-pane-form-plus.png) no-repeat 5px 5px;border-top: 1px solid #fff;border-bottom: 1px solid #ddd;}
+.dotAddFormDisabled{background:url(/html/images/icons/ui-scroll-pane-form-off.png) no-repeat 5px 5px;border-top: 1px solid #fff;border-bottom: 1px solid #ddd;}
+
+.dotControlsClose a{background:url(/html/images/icons/cross-small.png) no-repeat 5px 5px;border-top: 1px solid #fff;}
+/* END CONTAINER CONTROLS */
+
+/* START CONTENTLET CONTROLS */
+.dotContentlet{position: relative;width: 100%;padding-top:20px;margin-top:25px;clear: both;background:url(/html/images/preview/contentletBG.gif) right;border-top: solid 1px #9ab2cf;border-bottom: solid 1px #9ab2cf;}
+.dotContentletControls{position:absolute;top:-12px;width:100%;}
+
+.dotContentletEdit{float:left;margin-left: 4px;}
+.dotContentletEdit a, .dotContentletEdit span{font-size: 9px;font-family: Verdana,Arial,Helvetica,sanserif;text-decoration:none;color:#666;border:1px solid #9ab2cf;background-color:#fff;display:block;padding: 5px 5px 5px 25px;}
+.dotContentletEdit a:hover{color:#5981B1;border:1px solid #5981B1;background-color: #D7E6FE;}
+
+.dotContentletInlineEditSpan{
+	display: inline !important;
+	float: none !important;
+	
+}
+
+.dotContentletInlineEdit{
+	display:none;
+	-moz-box-shadow: 5px 5px 3px #888;
+	-webkit-box-shadow: 5px 5px 3px #888;
+	box-shadow: 5px 5px 3px #888;
+}
+.dotContentletInlineEdit span{height:17px;width:24px;border:1px solid #9ab2cf;background-color:#fff;display:block;padding: 5px 5px 5px 25px;float:left;cursor:hand;}
+
+.dotInlineSave{background-image: url(/html/images/icons/disk.png); height:18px;width:24px;border:1px solid #9ab2cf; background-repeat: no-repeat; background-position: center 5px;}
+.dotInlineSave:hover{color:#5981B1;border:1px solid #5981B1;background-color: #D7E6FE;cursor:pointer;}
+
+.dotInlineRefresh{background-image: url(/html/images/icons/arrow-circle-double.png); height:18px;width:24px;border:1px solid #9ab2cf; background-repeat: no-repeat; background-position: center 5px;}
+.dotInlineRefresh:hover{color:#5981B1;border:1px solid #5981B1;background-color: #D7E6FE;cursor:pointer;}
+
+
+.dotEditContent{background: #fff url(/html/images/icons/pencil.png) 5px center no-repeat;}
+.dotEditContentDisabled{background:url(/html/images/icons/pencil_disabled.png) 5px center no-repeat;}
+
+.dotEditWidget{background: #fff url(/html/images/icons/gear.png) 5px center no-repeat;}
+.dotEditWidgetDisabled{background:url(/html/images/icons/gear_disabled.png) 5px center no-repeat;}
+
+.dotMoveContent{float:right;margin:2px 4px 0 0;}
+.dotMoveContent a,.moveContent span{height:16px;width:16px;display:block;float:left;cursor:hand;}
+
+a.dotMoveContentUp{background-image: url(/html/images/preview/arrow_up_sprite.png); background-repeat: no-repeat; background-position: center 0px;}
+a:hover.dotMoveContentUp{background-position: center -16px;}
+.dotMoveContentUpDisabled{background-image: url(/html/images/preview/arrow_up_sprite.png); background-repeat: no-repeat; background-position: center -32px;}
+
+a.dotMoveContentDown{background-image: url(/html/images/preview/arrow_down_sprite.png); background-repeat: no-repeat; background-position: center 0px;}
+a:hover.dotMoveContentDown{background-position: center -16px;}
+.dotMoveContentDownDisabled{background-image: url(/html/images/preview/arrow_down_sprite.png); background-repeat: no-repeat; background-position: center -32px;}
+
+a.dotRemoveContent{background-image: url(/html/images/preview/remove_sprite.png); background-repeat: no-repeat; background-position: center 0px;}
+a:hover.dotRemoveContent{background-position: center -16px;}
+.dotRemoveContentDisabled{background-image: url(/html/images/preview/remove_sprite.png); background-repeat: no-repeat; background-position: center -32px;}
+/* END CONTENTLET CONTROLS */
+
+
+a.dotEditListBox{display:block !important;float:right;border:1px solid #9ab2cf !important;background-color:#fff !important;padding:5px 5px 5px 25px !important;font-family:Verdana, Arial, Helvetica, sanserif;text-decoration:none;color:#666 !important;font-weight:normal !important;font-size:9px !important; text-transform:none !important;background: #fff url(/html/images/icons/pencil.png) 5px center no-repeat !important;}
+a.dotEditListBox:hover{color:#5981B1 !important;border:1px solid #5981B1 !important;background-color: #D7E6FE !important;}
+
+/* START NOTE BOX */
+.dotNoteBox{position:absolute;z-index:301;text-align:left;width:275px;border:solid 1px #ccc;background:#f7fbfc;font-family: Verdana, Arial, Helvetica, sans-serif;}
+.dotNoteBoxBar{color:#5886b8;font-weight:bold;font-size:12px;background-image: url(/html/images/preview/bg_containerControl.gif);background-repeat: repeat-x;}
+.dotContainerInfo{padding: 10px;font-size:11px;}
+.dotNoteTextarea{margin-top: 10px;clear: both;height: 150px;width: 250px;font-family:Verdana, Arial, Helvetica, sans-serif;font-size: 12px;}
+.dotNoteBoxButtons{padding: 5px 0 15px 0;font-size:11px;text-align:center;}
+.dotNoteBoxButtons a{text-decoration:none;color:#767676;}
+.dotNoteBoxButtons a:hover{color:#6986ba;background-color:#DDEAFE;}
+.dotNoteClose, .dotNoteEdit{border: 1px solid #9ab2cf;background-color:#fff;font-size:10px;}
+.dotNoteClose{padding: 3px 10px 3px 22px;background-image:url(/html/images/preview/bg_noteClose.gif);background-repeat:no-repeat;background-position:center left;}
+.dotNoteEdit{padding: 3px 15px 3px 22px;margin-left:5px;background-image:url(/html/images/preview/bg_noteEdit.png);background-repeat:no-repeat;background-position:center left;}
+/* END NOTE BOX */
+
+/* START REORDER MENU */
+.dotMenuReorder{position: absolute;margin: -10px 0 0 5px;_width:125px;z-index:400}
+.dotMenuReorder a{
+	height:18px;display:block;padding-left:40px;padding-right:10px;
+	border: 1px solid #99b3ce;background-color:#fff;background-image:url(/html/images/preview/reorder_menu.gif);background-repeat:no-repeat;background-position:left;
+	line-height:18px;font-family:Verdana, Arial, Helvetica, sanserif;text-decoration:none;color:#666;font-weight:normal;font-size:9px;text-transform:none;
+}
+.dotMenuReorder a:hover{color:#666;background-color:#DDEAFE;}
+/* END REORDER MENU */
+
+.dot_parseIcon{position:absolute;right:10px;top:10px;z-index:999;}
+.editIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -200px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+
+#dotAddWidget{height: 470px;width:800px;font-size: 12px;font-family:Verdana, Arial, Helvetica, sanserif;font-size:11px;text-align:left;-moz-box-shadow:0px 0px 10px #999;-webkit-box-shadow:0px 0px 10px #999;}
+#dotAddWidget img{border:0;}
+#dotAddWidget a{text-decoration:none;}
+.dotLightboxSelect{width:225px;height:310px;padding:5px;}
+.dotLightboxListBox{width:500px;height:300px;font-size:100%;overflow:auto;padding:5px;border:1px solid #b8b8b8;margin:10px 0 0 0;}
+.dotLearnMore{display:block;background:url(/html/images/icons/question-balloon.png) no-repeat 0 2px;font-size:11px;padding-left:20px;margin-top:8px;}
+.dotAddPopUp td, .dotLightboxListBox td{padding:3px;}
+#editModeWidgetPopupTableRight{width:100%;padding-top:3px;margin:0;font-size: 12px;}
+
+/* START Form PopUp */
+#dotAddForm{height:470px;width:800px;font-size: 12px;font-family:Verdana, Arial, Helvetica, sanserif;font-size:11px;text-align:left;-moz-box-shadow:0px 0px 10px #999;-webkit-box-shadow:0px 0px 10px #999;}
+#dotAddForm img{border:0;}
+#dotAddForm a{text-decoration:none;}
+#dotAddForm table{width:100%;}
+.dotAddPopUp{margin-left:10px;font-size:12px;}
+.dotPopUpText{padding:5px 0;font-size:11px;}
+.dotFormListBox{width:750px;height:325px;overflow:auto;padding:5px;border:1px solid #ddd;}
+.dotFormListBox table{width:100%;padding:0;margin:0;}
+.dotFormListBox td{padding:3px;border-bottom:1px dotted #ddd;}
+.dotPopupButtons{padding:10px;text-align:center;}
+
+/* END Form PopUp */

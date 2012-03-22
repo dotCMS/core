@@ -1,0 +1,71 @@
+<html>
+<head>
+<title>CMIS JavaScript Client / Example</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"></meta>
+<link rel="stylesheet" type="text/css" href="main.css"></link>
+</head>
+
+<body>
+	<!-- poor mans client side include for header layout -->
+    <script src="header.js"></script>
+
+	<!-- cmis client include -->
+    <script src="cmisclient.js"></script>
+
+<script>
+function traverse (cmisclient, folder) {
+	var tree=document.getElementById("tree");
+	for (var a in folder.entries) {
+		var entry=folder.entries[a];
+		var newdiv = document.createElement("div");
+		newdiv.innerHTML = entry.title.text + (entry["children"]?(":" + entry["children"]):"");
+		tree.appendChild(newdiv);
+		if (entry.children) {
+			var childfolder=cmisclient.getFolder(entry["children"]);
+			traverse(cmisclient, childfolder);
+		}
+	}
+}
+
+function start() {
+	/* get url from form */
+	var cmisurl=document.getElementById("url").value; 
+
+	/* instantiate cmisclient */
+	var cmisclient= new CMISClient(cmisurl);
+
+	if (cmisclient.connected) {
+		/* get root folder */
+		var rootfolder=cmisclient.getFolder("/");
+
+		/* start traversal */
+		traverse(cmisclient, rootfolder);
+	} else {
+		alert ("Could not connect to the repository at: "+cmisurl+" ("+ cmisclient.lastHttpStatus +")");
+	}
+}
+</script>
+<style>
+</style>
+    <div class="content">
+        <h1>CMIS JavaScript Client Traversal Example</h1>
+		<h2>Setup Instructions</h2>
+		<p>To make this work the CMISClient.js needs to be located / accessible on the same server
+			as the CMIS service document due to XSS limitations of the browser.
+		</p>
+        <form method="GET" action="getRepositoryInfo.xml" target="result">
+            <table class="formtable">
+            <tr>
+                <td>Service document / Connection URL</td>
+                <td><input class="text" type="text" value="/chemistry/repository" name="url" id="url"></td>
+            </tr><tr><td>&nbsp;</td><td>
+            <input type="button" value="Start Traversal" onClick="start()"><br></td></tr></table>
+        </form>
+		<div id="tree">
+			
+		</div>
+		<!-- poor mans client side include for footer layout -->
+        <script src="footer.js"></script>
+    </div>
+</body>
+</html>

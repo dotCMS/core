@@ -1,0 +1,173 @@
+#set($calendarmap = $eventsapi.getCalendarMap($request.getParameter("year"), $request.getParameter("month")))
+#set($calendardata = $calendarmap.get("data"))
+#set($eventscalendar = $eventsapi.getEventsInCalendar($request.getParameter("year"), $request.getParameter("month")))
+#set($cats = $eventsapi.getEventsCategories())
+#set($month = $calendarmap.get("month"))
+#set($year= $calendarmap.get("year"))
+#set($selectedWeek= $request.getParameter("week"))
+<!--
+ ------------    CALENDAR TOP START    ------------ 
+-->
+<script>
+
+	function doListView(day){
+		var ele = document.getElementById("cat0Select");
+		var i = 0;
+		var params = "";
+		while (ele != null) {
+			var cat = ele[ele.selectedIndex].value;
+			params += '&category'+i+'Id=' + cat;
+			i++;
+			ele = document.getElementById("cat"+i+"Select");
+		}
+		if (day != null)
+			params += '&day=' + day;
+		window.location = 'list_view.${webapi.getPageFileExtension()}?month=$!month&year=$!year#if($selectedWeek)&week=$selectedWeek#end'+params;
+	}
+	
+	function doChangeCategory(){
+		var ele = document.getElementById("cat0Select");
+		var i = 0;
+		var params = "";
+		while (ele != null) {
+			var cat = ele[ele.selectedIndex].value;
+			params += '&category'+i+'Id=' + cat;
+			i++;
+			ele = document.getElementById("cat"+i+"Select");
+		}
+		window.location = '?month=$!month&year=$!year#if($selectedWeek)&week=$selectedWeek#end'+params;
+	}
+
+	function doChangeDate(month, year){
+		var ele = document.getElementById("cat0Select");
+		var i = 0;
+		var params = "";
+		while (ele != null) {
+			var cat = ele[ele.selectedIndex].value;
+			params += '&category'+i+'Id=' + cat;
+			i++;
+			ele = document.getElementById("cat"+i+"Select");
+		}
+		window.location = '?month='+month+'&year='+year+params;
+	}
+	
+	function doWeekView(weeknum){
+		var ele = document.getElementById("cat0Select");
+		var i = 0;
+		var params = "";
+		while (ele != null) {
+			var cat = ele[ele.selectedIndex].value;
+			params += '&category'+i+'Id=' + cat;
+			i++;
+			ele = document.getElementById("cat"+i+"Select");
+		}
+		window.location = '?month=$!month&year=$!year&week='+weeknum+params;
+	}
+</script>
+<style TYPE="text/css" MEDIA="all">
+	@import url(/global/css/calendarStyles.css);
+</style>
+
+<table cellspacing="0" cellpadding="0" id="calendarTable">
+	<tr>
+		<td>
+		<div id="viewBtn"><a href="#" onclick="doListView()" class="readMore"><img src="/portal/images/calendar/btn_listView.gif" width="85" height="19" border="0" /></a></div>
+		<div id="calSearch">
+		<table cellpadding="7" cellspacing="0" align=center height="40">
+			<tr>
+				<td><strong>Search:</strong></td>
+				#foreach ($categoriesList in $cats)
+					#set ($idx = $velocityCount - 1)
+				    <td><select id="cat${idx}Select" name="cat${idx}Select" onchange="doChangeCategory()">
+					<option value="">All</option>
+					#foreach ($category in $categoriesList)
+					<option value="$category.inode"
+						#if ($request.getParameter("category${idx}Id"))
+							#if($request.getParameter("category${idx}Id")==$category.inode)
+						selected
+							#end
+						#end
+					>$category.categoryName</option>
+					#end
+				</select></td>
+				#end
+			</tr>
+		</table>
+		<table cellpadding="0" cellspacing="0" id="calMonth">
+			<tr>
+				#set($nextMonth = $calendarmap.get("nextMonth"))
+				#set($nextYear = $calendarmap.get("year"))
+				#if ($nextMonth == "0")
+					#set($nextYear = $calendarmap.get("nextYear"))
+				#end              
+				#set($prevMonth = $calendarmap.get("prevMonth"))
+				#set($prevYear = $calendarmap.get("year"))
+				#if($prevMonth == "11")
+					#set($prevYear = $calendarmap.get("prevYear"))
+				#end
+				<td width="50%" align=right><a onclick="doChangeDate($prevMonth, $prevYear)" href="#" class="nextArrow"><img src="/portal/images/calendar/arrow_left.gif" width="17" height="14" alt="" border="0" /></a></td>
+				<td nowrap class="month" align="center" width="200"><a onclick="doChangeDate($month, $year)" href="#" class="month">$!calendarmap.get("monthStr") $!calendarmap.get("year")</a></td>
+				<td width="50%"><a onclick="doChangeDate($nextMonth, $nextYear)" href="#" class="nextArrow"><img src="/portal/images/calendar/arrow_right.gif" width="17" height="14" alt="" border="0" /></a></td>
+			</tr>
+		</table>
+		</div>
+		</td>
+	</tr>
+
+	<!--
+ ------------    CALENDAR BODY START    ------------ 
+-->
+
+	<tr>
+		<td>
+
+		<table cellpadding="0" cellspacing="3" align=center id="calBody">
+			<tr>
+				<td id="weekView"></td>
+				<td class="day" align=center>Sunday</td>
+				<td class="day" align=center>Monday</td>
+				<td class="day" align=center>Tuesday</td>
+				<td class="day" align=center>Wednesday</td>
+				<td class="day" align=center>Thursday</td>
+				<td class="day" align=center>Friday</td>
+				<td class="day" align=center>Saturday</td>
+			</tr>
+			#set($weeknum = 0)
+			#foreach( $week in $calendardata )
+				#if (!$selectedWeek || $webapi.parseInt($selectedWeek) == $weeknum)
+			<tr height="90">
+				<td id="weekView" valign=top>
+				<div><a onclick="doWeekView($weeknum)" href="#" class="month"><img src="/portal/images/calendar/btn_weekView.gif"
+					width="14" height="65" alt="" border="0" /></a></div>
+				</td>
+					#set($daynum = 0)
+					#foreach( $day in $week )
+						#if ($day == "")
+						<td valign=top class="noDay">&nbsp;</td>
+						#else
+						<td valign=top #foreach( $event in $eventscalendar.get($weeknum).get($daynum))#if($webapi.trimToUpper($event.title) == "SCHOOL CLOSED")class="dayOff"#end#end><a href="#" onclick="doListView($day)" class="date">$day</a>
+							#foreach( $event in $eventscalendar.get($weeknum).get($daynum))
+								 #if($webapi.trimToUpper($event.title) == "SCHOOL CLOSED")
+								<p><strong>$event.title</strong></p>
+								 #else
+								<p><a href="detail_view.${webapi.getPageFileExtension()}?event=$event.inode"><strong>$event.title</strong></a></p>
+								#end
+							#end
+						</td>
+						#end
+						#set($daynum = $daynum + 1)
+					#end
+			</tr>
+				#end
+			#set($weeknum = $weeknum + 1)
+			#end
+		</table>
+		</td>
+	</tr>
+	<tr>
+		<td align=right><a href="#top" class="readMore"><img
+			src="/portal/images/calendar/btn_back_top.gif" width="85" height="19"
+			border="0" /></a></td>
+	</tr>
+</table>
+<!-- END OF CALENDAR -->

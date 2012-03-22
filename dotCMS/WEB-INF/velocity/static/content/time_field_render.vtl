@@ -1,0 +1,37 @@
+<div id="${fieldAux.velocityVarName}TimeFieldWrapper" class="dateFieldWrapper">
+	<select dojoType="dijit.form.FilteringSelect" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" class="timeField">
+	#foreach($hour24 in [0..23] )
+		#if($hour24 > 12)
+    		#set($hour = $math.sub($hour24,12))
+        #else
+        	#set($hour = $hour24)  
+        #end
+		#if($hour < 10)
+        	#set($hour = "0$hour")  
+		#end
+        #if($hour24 == 0)
+        	#set($hour = 12)
+        #end
+	    #foreach($minRed in [0..11])
+			#set($min = $math.mul($minRed, 5))
+			#if($min < 10)
+    	    	#set($min = "0$min")  
+			#end
+			#set($hour24Str = $hour24)
+			#if($hour24 < 10)
+    	    	#set($hour24Str = "0$hour24")  
+			#end
+			#set($dateHours = $date.format("H", $fieldDefaultValue))
+			#set($dateMin = $math.mul($math.round($math.div($date.format("mm", $fieldDefaultValue), 5)), 5))
+			#if($dateMin < 10)
+				#set($dateMin ="0$dateMin")
+			#end
+			#if("${dateHours}:${dateMin}" == "${hour24}:${min}")
+				<option selected value="${hour24Str}:${min}:00">${hour}:${min} #if($hour24 > 11)PM#{else}AM#{end}</option>
+			#else
+				<option value="${hour24Str}:${min}:00">${hour}:${min} #if($hour24 > 11)PM#{else}AM#{end}</option>
+			#end
+		#end
+	#end
+	</select><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+</div>

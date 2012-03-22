@@ -1,0 +1,69 @@
+#if ($errors.exist())
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+	<tr>
+		<td align="left"><span class="mRed"><b>The following fields must be completed in order for your request to be submitted:</b></span></td>
+	</tr>
+    #foreach ($e in $errors.all )
+    <tr>
+        <td align="left">
+        <li>
+        <font color="#FF0000"><span class="mRed">$e</span>
+        </font>
+        </td>
+    </tr>
+    #end
+	<tr><td><br></td></tr>
+</table>
+#end
+#if ($messages.exist())
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+    #foreach ($e in $messages.all )
+    <tr>
+        <td align="left">
+        <font color="#FF0000">
+          <span class="mRed">$e</span>
+          </font>
+        </td>
+    </tr>
+    #end
+	<tr><td><br></td></tr>
+</table>
+#end
+
+#if ($UtilMethods.isSet($strutsutil.getErrors($request)))
+	#set ($struts_errors = $strutsutil.getErrors($request).get())
+#end
+
+#if ($UtilMethods.isSet($strutsutil.getMessages($request)))
+	#set ($struts_messages = $strutsutil.getMessages($request).get())
+#end
+
+#if ($UtilMethods.isSet($struts_errors))
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+    #foreach ($e in $struts_errors)
+    <tr>
+        <td align="left">
+        <font color="#FF0000">
+          <span class="mRed">$glossary.get($e.key)</span>
+          </font>
+        </td>
+    </tr>
+    #end
+	<tr><td><br></td></tr>
+</table>
+#end
+
+#if ($UtilMethods.isSet($struts_messages))
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+    #foreach ($e in $struts_messages)
+    <tr>
+        <td align="left">
+        <li>
+        <font color="#FF0000"><span class="mRed">$glossary.get($e.key)</span>
+        </font>
+        </td>
+    </tr>
+    #end
+	<tr><td><br></td></tr>
+</table>
+#end

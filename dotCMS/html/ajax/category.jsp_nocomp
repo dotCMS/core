@@ -1,0 +1,20 @@
+<%response.setContentType("text/xml");%><%
+  response.setHeader("Cache-Control", "no-cache");
+	response.setDateHeader("Expires", 0);
+	response.setHeader("Pragma", "No-cache");
+String cats = request.getParameter("cats");
+String key = request.getParameter("key");
+if(cats ==null || key == null){
+	return;
+}
+java.util.List list = com.brainade.cms.editshelfarticle.factories.ShelfArticleFactory.getShelfArticleCategories(request.getParameter("cats"), request.getParameter("key"));
+java.util.Iterator it = list.iterator();%><categories>
+	<%while(it.hasNext()){
+		com.dotmarketing.portlets.categories.model.Category cat = (com.dotmarketing.portlets.categories.model.Category) it.next();%>
+		<category>
+			<name><%=com.dotmarketing.util.XMLUtils.xmlEscape(cat.getCategoryName())%></name>
+			<key><%=com.dotmarketing.util.XMLUtils.xmlEscape(com.dotmarketing.util.UtilMethods.webifyString(cat.getKey()))%></key>
+			<inode><%=cat.getInode()%></inode>
+		</category>
+	<%}%>
+</categories>

@@ -1,0 +1,19 @@
+#set ($eventList = $eventsapi.getUpcomingFeaturedEventsList($categoryName, 0)) 
+
+#foreach($event in $eventList)
+	#set ($file = $eventsapi.getEventImage($event))
+	
+	#if($InodeUtils.isSet($file.getInode()))
+		<img src=" /global/images/roundtn_150.gif" width="150" height="150" class="listImg" alt="" style="background: url(/thumbnail?inode=$file.getInode()&w=150&h=150) bottom left no-repeat;"/>
+	#end
+			
+	<h1>$event.getTitle()</h1>
+	<p class="schedule">$webapi.dateToLongPrettyHTMLDate($event.getStartDate())</p>
+	<div style="text-align: right;">
+		<a href="/calendar/detail_view.${webapi.getPageFileExtension()}?event=$event.getInode()">
+			<img src="/global/images/readmore.gif" width="84" height="33" alt="" border="0" />
+		</a>
+	</div> 
+	<br>
+	
+#end

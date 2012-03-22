@@ -1,0 +1,4 @@
+### This file should include client specific macros
+## Don't ever delete or modify the following comments it will break the plugin system
+## BEGIN PLUGINS
+## END PLUGINS

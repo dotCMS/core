@@ -1,0 +1,5 @@
+#set( $foo = "Velocity" )
+
+Hello $foo
+
+<p>The current date is $date.getDate()</p> 

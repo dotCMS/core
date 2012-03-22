@@ -1,0 +1,139 @@
+.monthName{margin:0 10px;font-size:138.5%;color:#46a0ed;font-weight:bold;}
+
+/* WEEK VIEW STYLES */
+.weeklyCalendarBody {}
+.weeklyCalendarBody td {min-height:400px;height:auto;height:400px;vertical-align: top;padding: 0px;white-space: normal;}
+.weeklyViewControls {text-align: left;	}
+
+
+/* DAY VIEW STYLES */
+#dailyEvents{padding:5px 3px;}
+#dailyEvents h3, #ongoingEvents h3{background:#ececec;color:#555;padding:3px 10px;border:1px solid #d0d0d0;margin:0;}
+#dailyEvents ul,#ongoingEvents ul{margin:0;padding:0;}
+#dailyEvents ul li,#ongoingEvents ul li{padding:10px;margin:0;border-left:1px solid #d0d0d0;border-right:1px solid #d0d0d0;border-bottom:1px solid #d0d0d0;}
+
+
+/* MONTH VIEW STYLES */
+.calendarBody td {min-height:100px;height:auto;height:100px;vertical-align: top;padding:0;}
+.emptyDay {background-color: #EAEAEA;}
+.selectedDay {background-color: #feffc9;}
+.weekendDay{background-color: #F2F2F2;}
+
+.dayNumberSection {font-size: 11px;}
+
+.dayNumber {text-align:right;font-weight:bold;cursor: pointer;cursor: hand;font-size: 12px;padding:3px 3px 0 0;}
+.monthDay img {vertical-align: middle;}
+.monthDay a {text-decoration: none;color: black;}
+.monthDay a:hover {text-decoration: underline;}
+
+.allDayEvents{background-color:#CDEAFD;margin-bottom:3px;-moz-border-radius: 5px;-webkit-border-radius: 5px;}
+.dayEventsSection span{font-weight:bold;text-transform:uppercase;font-size:77%;}
+
+
+/* NAV MENU STYLES */
+.navDay{text-align: center;height: 19px;width: 22px;}
+.navDay a,.navLastDay a {color: black;}
+.navLastDay{text-align: center;height: 19px;width: 22px;}
+.navSelectedDay, .navSelectedDay a {color: black;background-color: #CDEAFD;}
+
+
+.previousPageLink {float: left;}
+.nextPageLink {float: right;}
+.ongoingEventsWrapper {width: 250px;float: left;text-align: left;}
+
+
+.eventDetail {width: 500px;}
+.eventDetail .closeButton {float: right;margin-bottom: -10px;}
+.eventDetail img {border: 0;}	
+.viewDetailLink {font-weight: bolder;}
+#eventDetailTitle{font-weight:bold;font-size:1.2em;padding-bottom:5px;width:459;overflow:hidden};
+#eventDetailDate{padding-left:10px;}
+#eventDetailTags{padding-left:10px;}
+#eventDetailCategories{padding-left:10px;}
+.calLabel{display:inline-block;width:90px;font-weight:bold;}
+.removeFilter, .closeFilter{display:block;background:transparent url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;height:16px;width:20px;cursor:pointer;}
+.closeFilter{float:right;}
+.removeFilter{float:left;margin-top:3px;}
+.filtersBox {position:absolute;z-index:700;background: white;width: 400px;-moz-border-radius: 5px;-webkit-border-radius: 5px;border: 1px solid #d0d0d0;}
+#categoriesFilterBox, #tagsFilterBox{padding:10px 5px;}
+
+
+.navCalendar{width:240px;margin:0 auto;position:absolute;top:42px;}
+.calendarFiltersBox {
+	margin: 20px 5px 0 15px;
+	line-height: 20px;
+	text-align: left;
+}
+
+
+.tagFilterLink,
+.categoryFilterLink  {
+	padding-top: 5px;
+}
+
+.tagFilterLink a,
+.tagFilterLink a:hover,
+.categoryFilterLink a,
+.categoryFilterLink a:hover {
+	font-weight: normal;
+	color: black;
+}
+
+.tagFilterLink a:hover,
+.categoryFilterLink a:hover {
+	text-decoration: underline;
+}
+
+
+.statusLegend {
+ 	text-align: left;
+ 	padding-left: 23px;
+ 	padding-top: 15px;
+ 	vertical-align: middle;
+}
+	
+.statusLegend img {
+ 	vertical-align: middle;
+}
+	
+.calendarActions
+{
+ 	text-align: right;
+ 	padding-right: 15px;
+ 	padding-top: 15px;
+}
+
+#addEvent
+{
+ 	float: left;
+ 	padding-left: 50px;
+}
+	
+#navMonthYearName{
+	cursor: pointer;
+	cursor: hand;
+	height: 20px;
+}
+
+.whenListView{
+
+	padding-left: 22px;
+}
+
+.ratingListView{
+	padding-left: 22px;
+}
+	
+.tagsListView{
+	padding-left: 22px;
+}
+
+a.category_higlighted {
+	font-weight: bolder;
+}
+
+a.tag_higlighted {
+	font-weight: bolder;
+}
+
+	

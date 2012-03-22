@@ -1,0 +1,12 @@
+<% response.setContentType("text/xml"); %>
+<%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
+<%@ page import="com.dotmarketing.util.MP3Utils" %>
+<%@ page import="java.util.Iterator" %>
+<xmlPath>
+<% 
+	Iterator stationIter = MP3Utils.retrieveStations().iterator();
+	while(stationIter.hasNext()){
+		Folder curstation = (Folder) stationIter.next();
+		
+%><myPath albumName="<%= curstation.getTitle() %>" xmlFile="/html/mp3/playlist_inc.jsp?station=<%= curstation.getInode() %>"/>
+<% } %></xmlPath>

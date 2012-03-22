@@ -1,0 +1,53 @@
+#set($registration=$webevents.getRegistration($request.getParameter("registrationInode")))
+#set($event=$webevents.getWebEvent($registration.eventInode))
+#set($location=$webevents.getWebEventLocation($registration.eventLocationInode))
+#set($attendees=$webevents.getRegistrationAttendees($registration))
+#set($company=$webevents.getContactOrganizationTitle($registration))
+#foreach ($attendee in $attendees)
+	#set($firstName = $attendee.firstName)
+	#set($lastName = $attendee.lastName)
+	#set($email = $attendee.email)
+#end
+
+<script type="text/javascript">
+<!--
+
+//-->
+</script>
+
+<style>
+td{
+padding:5px 20px;
+}
+.border{
+background:black;
+}
+.border td{
+background:#FFF;
+}
+.font{
+font-size:20px;
+font-weight:bold;
+}
+</style>
+
+<table width="90%" border="1">
+  <tr>
+    <td><p>
+      <img src="http://www.studergroup.com/global/images/genesys_banner.gif"></p>
+      <p align="center"><strong>Thank you $!firstName $!lastName  for registering for $!event.title.
+      <BR>Please keep this link as you can access the webinar as often as you need through $!webevents.dateToPrettyHTMLDate($!location.endDate).</strong></p>
+      <p align="center"><strong>Dates available:</strong> $!location.toString()</p>
+      <p align="center"><strong>PDF:</strong> A pdf of the webinar presentation can be downloaded from the below. Please feel free to print for your attendees.</p>
+      <p align="center"><strong>Webinar Link:</strong> <a href="${webevents.getHotelLinkURL($location.hotelLink)}/tokenPasser.jsp?email=$!email&company=$!company&fname=$!firstName&lname=$!lastName">$webevents.getHotelLinkURL($location.hotelLink)</a></p>
+      <p align="center"><strong>Please note: You will need to access the link <br>using
+       the same email address used in your registration.</strong></p>
+      <!-- <p align="center">If you have any inquiries regarding this webinar please email: <a href="mailto:leaders@studergroup.com?subject=$!event.title">leaders@studergroup.com</a></p> -->
+<p align="center">For technical assistance please call Talkpoint at 800 773 3371.</p>
+      </td>
+
+  </tr>
+</table>
+
+</td></tr></table>
+

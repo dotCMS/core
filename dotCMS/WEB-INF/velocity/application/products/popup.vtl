@@ -1,0 +1,15 @@
+<script language="javascript">
+function closeWindow()
+{
+	window.close();
+}
+</script>
+<style>
+@import url(/global/css/form.css);
+</style>
+
+<div style="text-align:center">
+   <br/>
+   <img src="/resize_image?inode=$!{request.getParameter('inode')}&w=400" onclick="closeWindow();">
+   <br/><br/><a href="javascript:closeWindow();" style="color:#B52E00; font-weight:bold;">Close Window</a><br/>
+</div>

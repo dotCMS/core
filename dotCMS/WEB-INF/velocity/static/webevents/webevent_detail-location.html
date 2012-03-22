@@ -1,0 +1,59 @@
+#if (!$event)
+	#set($event = $webevents.getWebEvent($request.getParameter("inode")))
+#end
+#set($eventLocations = $webevents.getUpcomingWebEventLocationsPerEvent($event))
+			
+			<h2>Comments &amp; Testimonials</h2>
+			<div class="item">
+				<div class="curveLink"><span><a href="/dotCMS/webEventComments?inode=$event.inode">Comments &amp; Testimonials</a></span></div>
+				<div class="curveLink"><span><a href="/conferences_webinar/post_comments.${webapi.getPageFileExtension()}?inode=$event.inode">Post Your Comments</a></span></div>
+				
+			</div>
+			
+			#if ($event.isInstitute())
+			<h2>Locations</h2>
+			#else
+			<h2>Dates</h2>
+			#end
+
+			#foreach ($location in $eventLocations)
+				<div class="item">
+				<h3>
+				$!location.toShortString()
+				#if ($location.isFull())
+				<BR><font color="red">Session is FULL!<br>Call 850-934-1099 to be notified if openings occur.</font>
+				#else
+				#if ($location.isAlmostAtCapacity())
+				<BR><font color="red"> Almost at Capacity</font>
+				#end
+				#end
+				<div class="curve">
+					<div class="curveTop">
+						<span class="left">&nbsp;</span><span class="right">&nbsp;</span>&nbsp;
+					</div>
+					<div class="middle" style="padding: 10px 16px;">
+						<div class="clear">&nbsp;</div>
+						#set($price = $webevents.getEventLocationPrice($location))
+						<strong>Tuition: $ $!webapi.toPriceFormat($price)</strong><br />
+						#if (!$location.isFull())
+							<div class="curveLink"><span><a href="/dotCMS/eventRegistration?eventInode=$event.inode&eventLocationInode=$location.inode">Register</a></span></div>
+						#end
+							#if($event.isInstitute())
+								#if($location.hotelLink && $InodeUtils.isSet($location.hotelLink))
+								<div class="curveLink"><span><a href="$webevents.getHotelLinkURL($location.hotelLink)">Hotel Information</a></span></div>
+								#end
+							#end
+						</div>
+
+						<div class="clear">&nbsp;</div>
+					</div>
+					<div class="curveBottom">
+						<span class="left">&nbsp;</span><span class="right">&nbsp;</span>&nbsp;
+					</div>
+				</div>
+			#end
+			#if ($eventLocations.size() == 0)
+
+				No Locations Found
+
+			#end

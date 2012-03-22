@@ -1,0 +1,104 @@
+
+<%@ page language="java" %>
+<%@ page import="java.util.*" %>
+<%@ page import="com.dotmarketing.portlets.templates.model.Template" %>
+<%@ page import="com.dotmarketing.factories.HostFactory" %>
+<%@ page import="com.dotmarketing.beans.Host" %>
+<%@ page import="com.dotmarketing.factories.InodeFactory" %>
+<%@ page import="com.dotmarketing.portlets.folders.factories.FolderFactory" %>
+<%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
+<%@ page import="com.dotmarketing.portlets.containers.model.Container" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
+<%@ page import="com.dotmarketing.factories.HostFactory" %>
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+
+    <title>Assign host task</title>
+
+  </head>
+
+  <body>
+  	<SCRIPT language="javascript">
+  	</SCRIPT>
+
+<%
+	Host defaulthost = HostFactory.getDefaultHost ();
+
+  	int templatesCount = 0;
+  	int templatesCustom = 0;
+  	int templatesDefault = 0;
+	List<Template> templates  = (List<Template>)InodeFactory.getInodesOfClass(Template.class);
+  	for (Template temp : templates) {
+  		Host host = HostFactory.getParentHost(temp);
+  		if (!InodeUtils.isSet(host.getInode())) {
+  		    Folder parentFolder = (Folder) InodeFactory.getParentOfClass(temp, Folder.class);
+  		    if (!InodeUtils.isSet(parentFolder.getInode())) {
+		  		defaulthost.addChild (temp);
+		  		templatesCustom++;
+  		    } else {
+  		        Host newHost = HostFactory.getParentHost(parentFolder);
+  		      	newHost.addChild (temp);
+	  		    templatesDefault++;
+  		    }
+  		  templatesCount++;
+  		}
+  	}
+
+  	int containersCount = 0;
+  	int containersCustom = 0;
+  	int containersDefault = 0;
+	List<Container> containers  = (List<Container>)InodeFactory.getInodesOfClass(Container.class);
+  	for (Container cont : containers) {
+  		Host host = HostFactory.getParentHost(cont);
+  		if (!InodeUtils.isSet(host.getInode())) {
+  		    Folder parentFolder = (Folder) InodeFactory.getParentOfClass(cont, Folder.class);
+  		    if (!InodeUtils.isSet(parentFolder.getInode())) {
+		  		defaulthost.addChild (cont);
+		  		containersCustom++;
+  		    } else {
+  		        Host newHost = HostFactory.getParentHost (parentFolder);
+  		      	newHost.addChild (cont);
+  		      containersDefault++;
+  		    }
+  		  containersCount++;
+  		}
+  	}
+
+  	int contentletsCount = 0;
+  	int contentletsCustom = 0;
+  	int contentletsDefault = 0;
+	List<Contentlet> contentlets  = (List<Contentlet>)InodeFactory.getInodesOfClass(Contentlet.class);
+  	for (Contentlet cont : contentlets) {
+  		Host host = HostFactory.getParentHost(cont);
+  		if (!InodeUtils.isSet(host.getInode())) {
+  		    Folder parentFolder = (Folder) InodeFactory.getParentOfClass(cont, Folder.class);
+  		    if (!InodeUtils.isSet(parentFolder.getInode())) {
+		  		defaulthost.addChild (cont);
+		  		contentletsCustom++;
+  		    } else {
+  		        Host newHost = HostFactory.getParentHost (parentFolder);
+  		      	newHost.addChild (cont);
+  		      	contentletsDefault++;
+  		    }
+  		  contentletsCount++;
+  		}
+  	}
+%>
+	Templates updated: <%= templatesCount %><br>
+	Templates updated with the default host: <%= templatesDefault %><br>
+	Templates updated with using the parent folder host: <%= templatesCustom %><br>
+	<br>
+	Containers updated: <%= containersCount %><br>
+	Containers updated with the default host: <%= containersDefault %><br>
+	Containers updated with using the parent folder host: <%= containersCustom %><br>
+	<br>
+	Contentlets updated: <%= contentletsCount %><br>
+	Contentlets updated with the default host: <%= contentletsDefault %><br>
+	Contentlets updated with using the parent folder host: <%= contentletsCustom %><br>
+	
+
+  </body>
+</html>

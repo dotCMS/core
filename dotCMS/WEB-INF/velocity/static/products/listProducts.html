@@ -1,0 +1,175 @@
+#set($productsForm = $productwebapi.loadTypeProducts($productsForm,$request))
+#set($productsForm = $productwebapi.loadProductByCategory($productsForm,$request))
+#set($redirect = $request.getSession().removeAttribute("REDIRECT_AFTER_LOGIN"))
+<script language="javascript">
+function opencenter(inode)
+{
+	var width = 600;
+	var height= 600;
+	var left = Math.floor( (screen.width - width) / 2);
+	var top = Math.floor( (screen.height - height) / 2);
+	var parameter = "scrollbars=yes,resizable=yes,status=yes,toolbar=no,width=" + width + ",height=" + height+ ",top=" + top + ",left="+ left;
+
+	url = "/application/products/popup.${webapi.getPageFileExtension()}?inode=" + inode;
+	window.open(url,"largeProduct",parameter,false);
+}
+
+function next()
+{
+	var form = document.getElementById("listProducts");
+	var page = form.page.value;
+	page = parseInt(page) + 1;
+	form.page.value = page;
+	submit();
+}
+
+function back()
+{
+	var form = document.getElementById("listProducts");
+	var page = form.page.value;
+	page = parseInt(page) - 1;
+	form.page.value = page;
+	submit();
+}
+
+function typeProduct(inode,catName)
+{
+	var form = document.getElementById("listProducts");
+	form.page.value = 0;
+	form.categoryInode.value = inode;
+	form.categoryName.value = catName;
+	submit();
+}
+
+function submit()
+{
+	var form = document.getElementById("listProducts");
+	//form.pageSize.value = "5";
+	form.submit();
+}
+
+function detail(inode)
+{
+	var form = document.getElementById("listProducts");
+	form.inode.value = inode;
+	form.action = "/dotCMS/detailProduct";
+	submit();
+}
+
+function bulkDetail(inode)
+{
+	var form = document.getElementById("listProducts");
+	form.inode.value = inode;
+	form.bulk.value = true;
+	form.action = "/dotCMS/detailProduct";
+	submit();
+}
+
+function addToCart(inode)
+{
+	alert("inode is " + inode);
+	var form = document.getElementById("listProducts");
+	var referrer = document.location.href;
+	var quantity = 1;
+
+	var action = "/dotCMS/addToCart?referrer=" + referrer;
+	action += "&shoppingCartFormatInode=" + inode;
+	action += "&shoppingCartFormatQuantity=" + quantity;
+	alert("about to redirect to " + action);
+	top.location.href = action;
+}
+</script>
+
+<form action="/dotCMS/listProducts" id="listProducts" method="get">
+<table align="center">
+	<tr>
+		<td>#parse('static/messages.html')</td>
+	</tr>
+</table>
+<input type="hidden" name="categoryInode" value="$!{productsForm.categoryInode}">
+<input type="hidden" name="categoryName" value="$!{productsForm.categoryName}">
+<input type="hidden" name="orderBy" value="$!{productsForm.orderBy}">
+<input type="hidden" name="page" value="$!{productsForm.page}">
+<input type="hidden" name="pageSize" value="$!{productsForm.pageSize}">
+<input type="hidden" name="direction" value="$!{productsForm.direction}">
+<input type="hidden" name="filter" value="$!{productsForm.filter}">
+<input type="hidden" name="inode" value="">
+<input type="hidden" name="bulk" value="false">
+
+	<!-- LIST PRODUCTS -->
+
+
+		#foreach($product in ${productsForm.listProducts})
+
+			<div class="item">
+			#if($product.isOnlyOnPartners())
+				<img src="/global/images/key_icon.gif" style="float: left; margin-right: 5px;" />
+			#end
+			#if (${product.smallImageInode} && $InodeUtils.isSet(${product.smallImageInode}))
+					<a href="javascript:detail($product.inode);"><img src="/thumbnail?inode=$!{product.smallImageInode}&w=100&h=100" border="0" style="margin-left: 8px; float: right;"></a>
+			#end
+
+
+				<h3><a href="javascript:detail($product.inode);">$product.title</a></h3>
+				$product.shortDescription
+
+				#if( $product.hasBulkPricing())
+				<a href="javascript:bulkDetail($product.inode);">(Bulk Pricing available)</a>
+				#end
+
+			#set($software = $product.productType.categoryName.equals("Software"))
+			#set($formats = $product.formats)
+			#if($formats.size() == 1)
+				#set($format = $formats.get(0))
+				<table width="100%" cellpadding="3" style="clear: both">
+					<tr>
+					#if($webapi.isPartner() == true)
+						#set($priceAmount = $!{format.getQuantityPrice(1).partnerPrice})
+					#else
+						#set($priceAmount = $!{format.getQuantityPrice(1).retailPrice})
+					#end
+					#set($pnzero = !$webapi.equalsNumbers($priceAmount,0))
+					#if(!$software || $pnzero)
+					<td>Price: $ $!webapi.toPriceFormat($priceAmount) #if($webapi.isPartner() == true && ($!{format.getQuantityPrice(1).partnerPrice} != $!{format.getQuantityPrice(1).retailPrice}) )<img src="/global/images/key_small.gif" class="smallKey"/>#end</td>
+					#if((!$product.isOnlyOnPartners()) || ($webapi.isPartner()))
+					<td class="addToCart">
+						<div class="curveLink" style="float: right;"><span><input type="button" onClick="addToCart($format.inode);" value="Add to Cart" class="clearInputStyles"></span></div>
+					</td>
+					#end
+					#else
+					<td>Email <a href='mailto:info@firestarterpublishing.com'>info@firestarterpublishing.com</a> or <br> call 866-354-3473 for more information</td>
+					<td>&nbsp;</td>
+					#end
+				</tr>
+				</table>
+			#else
+				<table width="100%" cellpadding="3" style="clear: both;">
+				#foreach($format in $formats)
+				<tr>
+					#if($webapi.isPartner() == true)
+						#set($priceAmount = $!{format.getQuantityPrice(1).partnerPrice})
+					#else
+						#set($priceAmount = $!{format.getQuantityPrice(1).retailPrice})
+					#end
+					#set($pnzero = !$webapi.equalsNumbers($priceAmount,0))
+					<td>$!{format.formatName}</td>
+					#if(!$software || $pnzero)
+					<td>Price: $ $!webapi.toPriceFormat($priceAmount) #if($webapi.isPartner() == true && ($!{format.getQuantityPrice(1).partnerPrice} != $!{format.getQuantityPrice(1).retailPrice}) )<img src="/global/images/key_small.gif" class="smallKey"/>#end</td>
+					#if((!$product.isOnlyOnPartners()) || ($webapi.isPartner()))
+					<td class="addToCart">
+						<div class="curveLink" style="float: right;"><span><input type="button" onClick="addToCart($format.inode);" value="Add to Cart" class="clearInputStyles"/></span></div>
+					</td>
+					#end
+					#else
+					<td>Email <a href='mailto:info@firestarterpublishing.com'>info@firestarterpublishing.com</a> or <br> call 866-354-3473 for more information</td>
+					<td>&nbsp;</td>
+					#end
+				</tr>
+				#end
+				</table>
+			#end
+		</div>
+
+		#end
+
+</form>

@@ -1,0 +1,61 @@
+#set($banners = $bannersapi.getBannerList($VTLSERVLET_URI,$placement, $host))
+#foreach ($banner in $banners)
+  <BR>
+  #set ($bannerFile = "banners/${banner.getInode()}.banner")
+  #parse($bannerFile)
+  #if ($InodeUtils.isSet($banner.getInode()))
+  	$bannersapi.updateViews($banner)
+  #end
+<table border="0" cellspacing="0" cellpadding="0">
+    <tr>
+        <td bgcolor="#CCCCCC" rowspan=3><img src="/portal/images/shim.gif" width="1" height="1" alt="" border="0"></td>
+        <td bgcolor="#CCCCCC"><img src="/portal/images/shim.gif" width="163" height="1" alt="" border="0"></td>
+        <td bgcolor="#CCCCCC" rowspan=3><img src="/portal/images/shim.gif" width="1" height="1" alt="" border="0"></td>
+    </tr>
+    <tr><td class='${pageChannel}AdBar' align="center">$!{BannerTitle}</td></tr>
+    <tr>
+        <td>
+            <table width="140" border="0" cellspacing="0" cellpadding="0" align="center">
+               	#set($linkTo = "")
+                #if ($webapi.isSet($BannerBody)) 
+                		#set($linkTo = "/sponsorships/sponsor_detail.vsp?inode=${BannerInode}")
+                		#set($linkTo = "/dotCMS/redirectBanners?redir=$webapi.encodeURL($linkTo)&inode=${BannerInode}")
+                #else
+	                #if ($BannerLink != "")
+						#if($BannerLink.trim().startsWith("http"))
+							#set($linkTo = "${BannerLink}")							
+						#else
+	                		#set($linkTo = "http://${BannerLink}")
+						#end
+                		#set($linkTo = "/dotCMS/redirectBanners?redir=$webapi.encodeURL($linkTo)&inode=${BannerInode}")
+	                #end
+	            #end
+                <tr><td><img src="/portal/images/shim.gif" width="1" height="20" alt="" border="0"></td></tr>
+                #if ($BannerImageURI != "")
+                <tr><td align=center>
+                    #if ($webapi.isSet($linkTo))
+                    <a href="${linkTo}">
+                    #end
+                    <img src="${BannerImageURI}" alt="${BannerImageTitle}" width="${BannerImageWidth}" height="${BannerImageHeight}" border="0"></a>
+                </td></tr>
+                <tr><td><img src="/portal/images/shim.gif" width="1" height="10" alt="" border="0"></td></tr>
+                #end
+                <tr><td>${BannerCaption}</td></tr>
+
+                <tr><td><img src="/portal/images/shim.gif" width="1" height="6" alt="" border="0"></td></tr>
+                <tr><td align=right>
+                #if ($webapi.isSet($linkTo))
+                <a href="${linkTo}">Click here for more info.</a>
+                #end
+                </td></tr>
+                <tr><td><img src="/portal/images/shim.gif" width="1" height="10" alt="" border="0"></td></tr>
+            </table>
+        </td>
+    </tr>
+    <tr><td bgcolor="#CCCCCC" colspan=4><img src="/portal/images/shim.gif" width="1" height="1" alt="" border="0"></td></tr>
+</table>
+#end
+<br><img src="/portal
+
+
+/images/shim.gif" width="1" height="10" alt="" border="0"><br> 

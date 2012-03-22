@@ -1,0 +1,131 @@
+/* default styles for Forms */
+
+/* General Layout
+------------------------------------------------- */
+.submitContent {
+	margin: 0;
+	padding: 0;
+	position: relative;
+}
+.submitContent .group:after {
+	margin: 0 0 1.75em 0;
+	padding: 0;
+	content: "."; 
+    display: block; 
+    height: 0; 
+    clear: both; 
+    visibility: hidden;
+}
+.submitContent dt.formFieldLabel {
+	margin: 0;
+	padding: 0;
+	float: left;
+	display: block;
+	width: 37%;
+}
+.submitContent dt.formFieldLabel label {
+	margin: 0;
+	padding: 0;
+	float: right; 
+}
+.submitContent dd.formFieldInput {
+	margin: 0;
+	padding: 0;
+	float: right;
+	display: block;
+	width:60%;
+}
+.submitContent dd.formFieldInput label {
+	margin: 0;
+	padding: 0;
+	float: none;
+	display: inline;
+}
+.submitButton {
+	margin: 0;
+	padding: 0;
+	width:100%;
+	text-align: center;
+	clear:both;
+}
+.submitContent .formDivider{
+	font-weight:bold;
+	border-bottom:1px solid #ddd;
+	padding: 3px;
+	margin-bottom:15px;
+}
+/* Tab Styles
+------------------------------------------------- */
+.submitContent .tabSet {
+	margin: 0 0 15px 0;
+	padding: 0;
+	border-bottom:1px solid #ddd; 
+	float:left; 
+	width:100%;
+}
+.submitContent .tabSet ul {
+	margin:0;
+	padding:0.75em 0;
+}
+.submitContent .tabSet ul li.alpha, 
+.submitContent .tabSet ul li.beta {
+	margin:0 0 0 0;
+	padding: 0 1.5em 0 0;
+	display: inline;
+	list-style-type: none;
+	background: url(../../images/icons/arrow-000-medium.png) right no-repeat;
+}
+.submitContent .tabSet ul li.alpha {
+	color:#333;
+}
+.submitContent .tabSet ul li.beta {
+	color:#ccc;
+}
+.submitContent .tabSet ul li.beta.last, 
+.submitContent .tabSet ul li.alpha.last {
+	background-image: none;
+}
+
+#categoriesbox {
+	border:none;	
+	border-bottom: 1px solid #efefef;
+	padding-bottom: 1.0em;
+}
+
+/* Patch IE Browsers
+------------------------------------------------- */
+* html .group { /* IE6 */
+	height: 1%;
+	padding-bottom: 1.75em;
+}
+*:first-child+html .group { /* IE7 */
+	min-height: 1px;
+	padding-bottom: 1.75em;
+}
+
+/* Marked for deletion
+------------------------------------------------- 
+.submitContent dd.formFieldInput input {
+	margin: 0;
+	padding: 0;
+}
+.submitContent .tabSet a:link, 
+.submitContent .tabSet a:visited {
+	margin: 0;
+	padding: 0 1.25em 0.75em 1.25em;
+	display: block;
+	float:left;
+	font-size: 105%;
+	text-decoration: none;
+	border-top:1px solid #ddd;
+	border-left:1px solid #ddd;
+	border-right:1px solid #ddd;
+	background: #82c7ea;
+	color:#fff;
+}
+.submitContent .tabSet a:hover {
+	background: #143d55;
+	color: #fff;
+	text-decoration: none;
+}
+*/

@@ -1,0 +1,50 @@
+<script language="javascript">
+
+function typeProduct(inode)
+{
+	//var form = document.getElementById("listProducts");
+	//form.page.value = 0;
+	//form.categoryInode.value = inode;
+	//submit();
+	window.location.href = "/dotCMS/listProducts?categoryInode=" + inode;
+}
+
+</script>
+
+<h2>Browse by</h2>
+<div class="item">
+<ul class="storeMenu">
+#if(${productsForm} && !$InodeUtils.isSet($!{productsForm.categoryInode}))
+	#set($class = "selected")
+#else
+	#set($class = " ")
+#end
+
+#set($productsForm = $productwebapi.loadTypeProducts($productsForm,$request))
+
+
+#foreach($typeProduct in ${productsForm.listTypeProducts})
+	#if($!{productsForm.categoryInode} == $InodeUtils.isSet(${typeProduct.inode}))
+		#set($class = "selected")
+		<li class="${class}"><B><a href="javascript:typeProduct(${typeProduct.inode},'${typeProduct.categoryName}');" >${typeProduct.categoryName}</a></B></li>
+	#else
+		#set($class = " ")
+		<li><a href="javascript:typeProduct(${typeProduct.inode},'${typeProduct.categoryName}');" >${typeProduct.categoryName}</a></li>
+	#end
+#end
+</ul>
+
+
+<table>
+<tr>
+<td>
+<div class="curveLink"><span><a href="/dotCMS/viewCart">My Cart</a></span></div>
+</td>
+<td>&nbsp;&nbsp;</td>
+<td>
+<div class="curveLink"><span><a href="/dotCMS/checkOutCart">Check Out</a></span></div>
+</td>
+</tr>
+</table>
+
+</div>

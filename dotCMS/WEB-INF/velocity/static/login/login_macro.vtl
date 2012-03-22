@@ -1,0 +1,60 @@
+#if($UtilMethods.isSet($_loginMacroCSS))
+	<link rel="stylesheet" href="$_loginMacroCSS" type="text/css" media="screen" />
+#else
+	<link rel="stylesheet" href="/html/macros/login/login.css" type="text/css" media="screen" />
+#end
+
+#if($UtilMethods.isSet($cmsuser))
+     $cmsuser.doLoginMacro($request, $response)
+#else
+	Please enable the cmsUuser API in your toolbox.xml
+#end
+
+
+
+#set($session = $request.getSession())
+#set($user = $session.getAttribute("cms.user"))
+
+#if($UtilMethods.isSet($user))
+	#set($_redirectPage = $request.session.getAttribute("REDIRECT_AFTER_LOGIN"))
+	#if($_redirectPage)
+		$response.sendRedirect($_redirectPage)
+		#stop
+	#end
+	<div id="macro-login-logged-in-box">
+		#set($macroLoginList = ["${user.fullName}", "${VTLSERVLET_URI}"])
+		<div id="macro-login-logged-in-message">$glossary.get('dotcms_macro_login_welcome', $macroLoginList)</div>
+	</div>
+#else
+	<div id="macro-login-box">
+		<form action="${VTLSERVLET_URI}" method="post" id="_loginForm">
+			<input type="hidden" name="_loginAction" value="login" />
+			<div id="macro-login-message">$glossary.get("$!{_loginMessage}")</div>
+			<div class="macro-login-box-row">
+		          <label for="macro-login-user-name">$glossary.get("dotcms_macro_login_login")</label>
+		          <input type="text" name="_loginUserName" id="macro-login-user-name" tabindex="1"  value="$!{request.getParameter('_loginUserName')}" />
+			</div>
+			<div class="macro-login-box-row">
+		 		<label for="macro-login-password">$glossary.get("dotcms_macro_login_password")</label>
+		        <input type="password" name="_loginPassword" value="" id="macro-login-password" class="text" tabindex="2" />
+			</div>
+			<div class="macro-login-box-row-center">
+				<input type="checkbox" value="true" name="_loginRememberMe" id="macro-login-remember-me" tabindex="3" />
+				<label for="macro-login-remember-me" style="display: inline">$glossary.get("dotcms_macro_login_rememberMe")</label>
+			</div>
+			<div class="macro-login-box-row-center">
+				 	<input type="submit" name="_loginButton" value="$glossary.get("dotcms_macro_login_button")" id="macro-login-button" tabindex="4"/>    
+			</div>
+			<div id="macro-login-forgot-password">
+			#if($glossary.get("dotcms.macro.login.forgot.password.link") != "dotcms.macro.login.forgot.password.link" && $glossary.get("dotcms.macro.login.forgot.password.link")!="")
+					<a href="$glossary.get("dotcms.macro.login.forgot.password.link")">$glossary.get("dotcms_macro_login_forgot_password_message")</a>
+					#if($loginFormShowRegistrationLink)|#end
+
+			#end
+			#if($loginFormShowRegistrationLink)
+				<a href="/dotCMS/addRegistration">$loginFormRegistrationLinkText</a>
+			#end
+			</div>
+		</form>
+	</div>
+#end

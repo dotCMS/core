@@ -1,0 +1,11 @@
+#*
+<textarea dojoType="dijit.form.Textarea" cols="30" rows="12" name="${fieldAux.velocityVarName}" id="tags" class="tagField" onKeyUp="suggestTagsForSearch(this, '${fieldAux.velocityVarName}TagSuggestion');">$fieldDefaultValue</textarea><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+*#
+
+<textarea dojoType="dijit.form.Textarea" name="${fieldAux.velocityVarName}" id="tags" class="tagField" onKeyUp="suggestTagsForSearch(this, '${fieldAux.velocityVarName}TagSuggestion');">$fieldDefaultValue</textarea><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+
+<div class="tagSuggestionsWrapper" id="${fieldAux.velocityVarName}TagSuggestionsWrapper">
+	<div id="${fieldAux.velocityVarName}TagSuggestion" class="tagSuggestions" style="display: none;"></div>
+</div>
+
+<input type="hidden" name="currentHostIdForTagSuggestion" id="currentHostIdForTagSuggestion" value="${host.identifier}">

@@ -1,0 +1,86 @@
+<div class="buttonGroup" style="text-align: right; margin-top: -35px;">
+	<a href="/dotCMS/registrationHistory" class="button">Registration and Order History</a>
+	<a href="/dotCMS/myAccount" class="button">My Account</a>
+</div>
+
+#parse('static/messages.html')
+#set ($registrations = $webevents.getWebEventRegistrationByUser($user.userId))
+#set ($orders = $productwebapi.getProductOrdersByUser($user.userId))
+#set( $statuses = $webevents.getRegistrationStatus())
+
+<script language=javascript>
+
+function save(){
+	window.location.href=top.location.href;
+
+}
+
+function back(){
+	window.location.href="/dotCMS/myAccount";
+
+}
+</script>
+
+<style>
+	@import url(/global/css/form.css);
+</style>
+
+
+
+<h2>Event / Institutes Registration History</h2>
+<table border="0" cellspacing="0" width="100%">
+	<tr>
+		<th>Order#</th>
+		<th>Event</th>
+		<th>Order Date</th>
+		<th>Status</th>
+		<th>Total</th>
+	</tr>
+	
+#if ($registrations.size() == 0)
+	<tr>
+		<td colspan="5" class="empty"> There are no Event / Institutes Registrations with this account.</td>
+	</tr>
+#else
+	
+	#foreach($registration in $registrations)
+	  #set ($event = $webevents.getWebEvent($registration.eventInode) )
+	  #if ($registration.registrationStatus != 6)
+		<tr>
+			<td nowrap><a href="/dotCMS/registrationHistoryDetail?inode=$registration.inode">$!registration.inode</a></td>
+			<td><a href="/dotCMS/registrationHistoryDetail?inode=$registration.inode">$!event.title</a></td>
+			<td nowrap>$UtilMethods.htmlDateToHTMLTime($!registration.datePosted)</td>
+			<td nowrap>$statuses.get($webevents.valueOfStatus($!registration.registrationStatus))</td>
+			<td nowrap>$ $webapi.toPriceFormat($!registration.totalRegistration)</td>
+		<tr>
+		#end
+	#end
+
+#end
+
+</table>
+<br><br>
+
+<h2>Order History</h2>
+<table border="0" cellspacing="0" width="100%">
+	<tr>
+		<th>Order#</th>
+		<th>Order Date</th>
+		<th>Status</th>
+		<th>Total</th>
+	</tr>
+	#foreach($order in $orders)
+	<tr>
+		<td nowrap><a href="/dotCMS/productHistoryDetail?inode=$order.inode">$!order.inode</a></td>
+		<td nowrap>$UtilMethods.htmlDateToHTMLTime($!order.datePosted)</td>
+		<td nowrap>$statuses.get($webevents.valueOfStatus($!order.orderStatus))</td>
+		<td nowrap>$ $webapi.toPriceFormat($!order.orderTotal)</td>
+	<tr>
+	#end
+
+</table>
+<br>
+
+<div class="buttonGroup" style="text-align: center;">
+	<a href="javascript:back('back')" class="button">Back</a>
+</div>

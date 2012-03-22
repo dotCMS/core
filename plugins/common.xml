@@ -1,0 +1,114 @@
+<project name="Plugin Builder" default="build">
+
+	<basename file="${basedir}" property="plugin.name" />
+	<property name="lib.app" value="${basedir}/../../dotCMS/WEB-INF/lib" />
+	<property name="lib.server" value="${basedir}/../../tomcat/lib" />
+	<property name="bin.server" value="${basedir}/../../tomcat/bin" />
+	<property name="classes.app" value="${basedir}/../../build/classes" />
+	<property name="src.dir" value="src" />
+	<property name="conf.dir" value="conf" />
+	<property name="build.dir" value="build" />
+	<property name="build.conf" value="${build.dir}/conf" />
+	<property name="build.classes" value="${build.dir}/classes" />
+	<property name="src.jsp" value="${build.dir}/src_jsp" />
+	<property name="jsp.dir" value="jsp" />
+	<property name="tinymce.dir" value="tiny_mce" />
+	<property name="dotcms.dir" value="dotcms" />
+	<property name="classpath.dir" value="classpath" />
+	<property name="manifest.file" value="MANIFEST.MF" />
+
+	<property name="jar.file" value="${build.dir}/jar/plugin-${plugin.name}.jar" />
+
+
+	<path id="files-classpath">
+		<fileset dir="${lib.app}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${lib.server}">
+                        <include name="**/*.jar" />
+                </fileset>
+		<pathelement path="${build.classes}" />
+		<pathelement path="../../build/classes" />
+	</path>
+
+
+	<target name="build" depends="compile,jar" />
+	<target name="compile">
+
+		<echo>Building at: ${plugin.name} at ${basedir}</echo>
+		<mkdir dir="${build.classes}" />
+		<mkdir dir="${src.dir}" />
+		<!-- 
+		CREATE THE LIB DIRECTORIES IF IT DOESN'T EXIST. 
+		THIS PREVENTS THE javac TASK FROM FAILING
+		-->
+		<mkdir dir="lib" />
+		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+			<classpath refid="files-classpath" />
+		</javac>
+		<!-- copying other resource within src folder in the classpath -->
+		<copy todir="${build.classes}">
+			<fileset dir="${src.dir}">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="jar" depends="compile,doif">
+		<mkdir dir="${build.dir}/jar" />
+
+		<!-- 
+		CREATE DIRECTORIES THAT DON'T EXIST. 
+		THIS PREVENTS THE jar TASK FROM FAILING
+		-->
+		<mkdir dir="${build.classes}" />
+		<mkdir dir="${conf.dir}" />
+		<mkdir dir="${build.conf}" />
+		<mkdir dir="static_files" />
+		<mkdir dir="static_velocity" />
+		<mkdir dir="lib" />
+		<mkdir dir="${jsp.dir}" />
+		<mkdir dir="${tinymce.dir}" />
+		<mkdir dir="${dotcms.dir}" />
+		
+
+		<jar jarfile="${jar.file}" manifest="${manifest.file}">
+			<fileset dir="${build.classes}" />
+			<zipfileset dir="${conf.dir}" prefix="conf" />
+			<zipfileset dir="${build.conf}" prefix="conf" />
+			<zipfileset dir="static_files" prefix="static_files" excludes="**/thumb.db" />
+			<zipfileset dir="static_velocity" prefix="static_velocity" />
+			<zipfileset dir="lib" prefix="lib" />
+			<zipfileset dir="${jsp.dir}" prefix="jsp" />
+			<zipfileset dir="${tinymce.dir}" prefix="tiny_mce" />
+			<zipfileset dir="${dotcms.dir}" prefix="dotcms" excludes="**/thumb.db" />
+		</jar>
+		
+	    
+
+
+		
+	</target>
+	
+	<target name="doif" depends="checkFileExists, if_target"/>
+	<target name="checkFileExists">
+	    <condition property="p">
+	       <available file="${classpath.dir}" />
+	    </condition>
+	</target>
+	<target name="if_target" if="p">
+	    <jar destfile="${lib.app}/plugin-${plugin.name}-classpath.jar" basedir="${classpath.dir}"/>
+	</target>
+
+
+
+	<target name="clean">
+		<delete dir="${build.dir}" />
+	</target>
+	
+
+
+
+</project>

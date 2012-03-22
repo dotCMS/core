@@ -1,0 +1,64 @@
+#set($event = $webevents.getWebEvent($request.getParameter("inode")))
+#set($eventImage = ${webapi.getLiveFileAsset($event.eventImage1)})
+
+<script type="text/javascript">
+<!--
+	function checkForm () {
+		var comments = document.getElementById("commentsIdt");
+		if (comments.value == "") {
+			alert ("Comments are required.");
+			return false;
+		}
+		var email = document.getElementById("email");
+		if (email.value == "") {
+			alert ("Email address are required.");
+			return false;
+		} else {
+			if(email.value.indexOf("@") == -1) {
+				alert ("Invalid email address format.");
+				return false;
+			}
+		}
+		document.getElementById("commentsForm").submit();
+	}
+//-->
+</script>
+
+<h2>$!event.title</h2>
+
+#if ($InodeUtils.isSet($eventImage.inode))
+	<img src="/thumbnail?inode=${eventImage.inode}&w=${eventImage.width}&h=${eventImage.height}" style="float: left; padding-right: 10px; padding-bottom: 10px;">
+#end
+
+#if ($event.summary)
+	$!event.summary<br />
+#end
+
+<br/><br/>
+
+<form name="commentsForm" id="commentsForm" method="post" action="/dotCMS/sendEmail" autocomplete="off">
+<fieldset><legend>Post Comments</legend>
+
+
+		<input type="hidden" name="liferayGroup" id="liferayGroup" value="Events Administrators">
+		<input type="hidden" name="from" id="from" value="webmasters@fminet.com">
+		<input type="hidden" name="order" id="order" value="event,event_link,email,commentsIdt">
+		<input type="hidden" name="to" id="to" value="webmasters@fminet.com">
+		<input type="hidden" name="subject" id="subject" value="Comments Posted for the Event: $!event.title">
+
+		<input type="hidden" name="event_link" id="event_link" value="http://${host.getHostname()}/conferences_events/detail.${webapi.getPageFileExtension()}?inode=${event.inode}">
+		<input type="hidden" name="event" id="event" value="$!event.summary">
+		<input type="hidden" name="return" id="return" value="/conferences_events/post_comments_thank_you.${webapi.getPageFileExtension()}?inode=${event.inode}">
+		
+		<label for="commentsIdt">Your Comments:</label>
+		<textarea name="comments" id="commentsIdt" rows="7" cols="40"></textarea><br /><br />
+
+	    <label for="email">Your Email: </label>
+        <input type="text" size="40" name="email" id="email" value="#if($user)${user.emailAddress}#end"><br /><br />
+         
+		<div style="clear:both;">  
+		<br/><a href="#"  onclick="return checkForm()" class="button">Send Comments</a> <br /><br />
+        </div> 
+</fieldset>
+</form>
+

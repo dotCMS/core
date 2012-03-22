@@ -1,0 +1,86 @@
+#set($calendarmap = $eventsapi.getCalendarMap($request.getParameter("year"), $request.getParameter("month")))
+#set($calendardata = $calendarmap.get("data"))
+#set($eventscalendar = $eventsapi.getEventsInCalendar($request.getParameter("year"), $request.getParameter("month")))
+#set($cats = $eventsapi.getEventsCategories())
+#set($month = $calendarmap.get("month"))
+#set($year= $calendarmap.get("year"))
+#set($selectedWeek= $request.getParameter("week"))
+#set($currentEvent= $request.getParameter("category0Id"))
+<script>
+
+	function doChangeCategory(){
+		var ele = document.getElementById("cat0Select");
+		var i = 0;
+		var params = "";
+		while (ele != null) {
+			var cat = ele[ele.selectedIndex].value;
+			params += '&category'+i+'Id=' + cat;
+			i++;
+			ele = document.getElementById("cat"+i+"Select");
+		}
+		window.location = '?month=$!month&year=$!year#if($selectedWeek)&week=$selectedWeek#end'+params;
+	}
+
+
+</script>
+<html>
+<head>
+	<title>Untitled</title>
+</head>
+<style>
+	@import url(/global/css/calendar.css);
+</style>
+<body>
+<!-- BEGIN CATEGORY OPTION  -->
+
+#set ($cats2 = $eventsapi.getEventsCategoriesList($currentEvent))
+#set ($idx = $velocityCount - 1)
+<select id="cat${idx}Select" name="cat${idx}Select" onchange="doChangeCategory()">
+<option value="0">All</option>
+$cats2
+</select>
+<h1>$eventsapi.getMonthName($month) $year</h1>
+
+<!-- END CATEGORY OPTION  -->
+<!-- BEGING CALENDAR -->
+<ul class="monthTabs">
+	$eventsapi.getMonthsMenu($month,$year)
+</ul>
+<div class="clear">&nbsp;</div>
+<table cellspacing="1">
+<tr>
+	<th>SUN</th>
+	<th>MON</th>
+	<th>TUE</th>
+	<th>WED</th>
+	<th>THU</th>
+	<th>FRI</th>
+	<th>SAT</th>
+</tr>
+#set($weeknum = 0)
+	#foreach( $week in $calendardata )
+		#if (!$selectedWeek || $webapi.parseInt($selectedWeek) == $weeknum)
+<tr>
+	#set($daynum = 0)
+		#foreach( $day in $week )
+			#if ($day == "")
+			  <td valign=top class="noDay">&nbsp;</td>
+			#else
+				<td valign=top>
+				<div class="date">$day</div>
+				#foreach( $event in $eventscalendar.get($weeknum).get($daynum))
+						<div class="eventTitle"><a href="detail_view.${webapi.getPageFileExtension()}?event=$event.inode">$event.title</a></div>
+				#end
+				</td>
+			#end
+			#set($daynum = $daynum + 1)
+		#end
+</tr>
+	#end
+#set($weeknum = $weeknum + 1)
+#end
+</table>
+<!-- END CALENDAR-->
+ 
+</body>
+</html>

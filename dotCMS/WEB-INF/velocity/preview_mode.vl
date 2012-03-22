@@ -1,0 +1,100 @@
+#set($dojoPath = $webapi.getConfigVar('path.to.dojo'))
+#set($_baseURI = $request.getAttribute("javax.servlet.forward.request_uri"))
+#if(!$_baseURI) 
+	#set($_baseURI = $request.getRequestURI())
+#end
+#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.clickstream.uri.override")))
+	#set($_baseURI =	$request.getAttribute("com.dotmarketing.clickstream.uri.override"))
+#end
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+		<title>dotCMS Site Editor | url: ${_baseURI}</title>
+		<style type="text/css">
+			@import "/html/common/css.jsp"; 
+	        @import "${dojoPath}/dijit/themes/dmundra/dmundra.css";
+	        @import "${dojoPath}/dijit/themes/dmundra/Grid.css";
+	       	@import "/html/css/preview.css"; 
+	    </style>		
+	   	<script type="text/javascript">
+	       	djConfig={
+	               parseOnLoad: true,
+	               isDebug: false,
+	               modulePaths: { dotcms: "/html/js/dotcms", dwr: '/dwr' }
+	       };
+	   	</script>
+		<script type="text/javascript" src="${dojoPath}/dojo/dojo.js"></script>
+		<script type="text/javascript" src="${dojoPath}/dojo/dot-dojo.js"></script>
+		<script type="text/javascript">
+			dojo.global.controlsHTML = '';
+			try {
+				if(window.parent.frameMenu) {
+					if(dojo.isIE >= 7) {
+						setTimeout("window.top.location=\"${_baseURI}?$!{queryString}\"",10);
+					}else{
+						window.top.location="${_baseURI}?$!{queryString}";
+					}
+				}
+			} catch (e) {
+				if(dojo.isIE >= 7) {
+						setTimeout("window.top.location=\"${_baseURI}?$!{queryString}\"",10);
+					}else{
+						window.top.location="${_baseURI}?$!{queryString}";
+					}
+			}
+			function resetFrameWidth() {
+				var windowDim = dijit.getViewport();
+				var menuFrameDim = dojo.marginBox('frameMenu');
+				if(dojo.isIE >= 8) {
+					windowDim.h = windowDim.h - 4;
+					windowDim.w = windowDim.w - 0;
+				}
+				dojo.style('frameMain', { width: ((windowDim.w) - menuFrameDim.w) + "px", height: windowDim.h + "px" });
+				dojo.style('frameMenu', { height: (windowDim.h -1) + "px" });
+			}
+			dojo.connect(window, 'onresize', this, resetFrameWidth);
+		</script>		
+	</head>
+	<body style="border:0;margin:0;padding:0;">
+		<div id="controlsdiv" style="position:absolute; top:0; left:0; padding:0; margin:0; border:0; width:0;height: 0;z-index: 0;"></div>
+		<table style="border:0;padding:0;width:100%" width="100%" cellspacing="0" cellpadding="0" border="0">
+			<tr>
+				<td>
+					<iframe id="frameMenu" name="frameMenu" style="width:210px;border:0;margin:0;" width="210" marginheight="0" marginwidth="0" frameborder="0" scrolling="no" src="${_baseURI}?leftMenu=true&livePage=$livePage&language=$language&host_id=${host.identifier}"></iframe>
+				</td>
+				<td>
+					<iframe id="frameMain" name="frameMain" style="border:0;margin:0;" marginheight="0" marginwidth="0" scrolling="auto" frameborder="0" src="${_baseURI}?mainFrame=true&livePage=$livePage&language=$language&host_id=${host.identifier}&$!{queryString}"></iframe>
+				</td>
+			</tr>
+		</table>
+		<div style="display:none;" class="dotClear">
+			#parse ("static/preview_mode/preview_mode_controls.vl")
+			#parse("static/preview_mode/widget_selector.vtl")
+			#parse("static/preview_mode/form_selector.vtl")
+		</div>
+	</body>
+	<script type="text/javascript">
+		    var mainIframe=document.getElementById('frameMain').contentWindow;
+			dojo.connect(mainIframe, 'onscroll', function(){ 
+			dojo.query(".dotControls").forEach(function(node, index, arr){
+            if(dojo.style(node, 'display') != "none") {
+            //need to get the inode from the id property of the node. Starts from element 8 of the string, control-(inode)
+            var inode = node.id.substr(8);
+            var sender = window.frames[1].document.getElementById("controlAnchor"+inode);
+            var senderCoords = dojo.coords (sender);	
+			var posh = senderCoords.y + senderCoords.h;
+		    dojo.style(node, {top: posh+'px' });
+			}});
+			dojo.query(".dotNoteBox").forEach(function(node, index, arr){
+            if(dojo.style(node, 'display') != "none") {
+            //need to get the inode from the id property of the node. Starts from element 14 of the string, control-notes-(inode)
+            var inode = node.id.substr(14);
+            var sender = window.frames[1].document.getElementById("containerNotes"+inode);
+            var senderCoords = dojo.coords (sender);	
+			var posh = senderCoords.y + senderCoords.h;
+		    dojo.style(node, {top: posh+'px' });
+			}});});
+		resetFrameWidth();
+	</script>
+</html>

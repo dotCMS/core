@@ -1,0 +1,60 @@
+#set($product = $productwebapi.getProduct($request.getParameter("inode")))
+
+<script type="text/javascript">
+<!--
+	function checkForm () {
+		var comments = document.getElementById("commentsIdt");
+		if (comments.value == "") {
+			alert ("Comments are required.");
+			return false;
+		}
+		var email = document.getElementById("email");
+		if (email.value == "") {
+			alert ("Email address are required.");
+			return false;
+		} else {
+			if(email.value.indexOf("@") == -1) {
+				alert ("Invalid email address format.");
+				return false;
+			}
+		}
+		return true;
+	}
+//-->
+</script>
+
+<h2>$!product.title</h2></td>
+
+					#if ($InodeUtils.isSet($product.smallImageInode))
+						<img src="/thumbnail?inode=${product.smallImageInode}&w=100&h=100" style="float: right;">
+					#end
+
+
+						#if ($webapi.castToInt($product.description) > 0)
+							$!product.description<br>
+						#end
+						<br>
+
+				<form name="commentsForm" method="post" action="/dotCMS/sendEmail" onsubmit="return checkForm()" autocomplete="off">
+				<input type="hidden" name="liferayGroup" id="liferayGroup" value="Ecommerce Administrators">
+						<input type="hidden" name="from" id="from" value="admin@studergroup.com">
+						<input type="hidden" name="order" id="order" value="product,product_link,email,commentsIdt">
+						<input type="hidden" name="to" id="to" value="ecommercecomments@studergroup.com">
+						<input type="hidden" name="subject" id="subject" value="Comments Posted for the Product: $!product.title">
+
+						<input type="hidden" name="product_link" id="product_link" value="http://${host.getHostname()}/dotCMS/detailProduct?inode=${product.inode}">
+						<input type="hidden" name="product" id="product" value="$!product.title">
+						<input type="hidden" name="return" id="return" value="/store/post_your_comments_thanks_you.${webapi.getPageFileExtension()}?inode=${product.inode}">
+
+					<b><img src="/html/images/icons/required.gif" width="9" height="9">Your Comments:</b><br />
+
+						<textarea name="commentsIdt" id="commentsIdt" rows="7" cols="48"></textarea><br /><br />
+
+					<b><img src="/html/images/icons/required.gif" width="9" height="9">Your Email:</b><br />
+
+						<input type="text" size="63" name="email" id="email" value="#if($user)${user.emailAddress}#end"><br /><br />
+						<div class="curveLink"><span><button type="submit" class="clearInputStyles">Send Comments</button></span></div>
+
+				</form>
+				<br /><br />""  
+"" 

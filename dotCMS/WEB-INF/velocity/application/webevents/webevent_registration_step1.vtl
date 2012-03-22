@@ -1,0 +1,178 @@
+#set($event=$webevents.getWebEvent($webEventRegistrationForm.eventInode))
+#set($location=$webevents.getWebEventLocation($webEventRegistrationForm.eventLocationInode))
+#set($attendees=$webEventRegistrationForm.eventAttendees)
+
+<script language="javascript">
+	function saveAttendee() {
+		var form = document.getElementById("attendeeForm");
+		form.dispatch.value="saveAttendee";
+		#if ($request.getParameter("dispatch") == "editAttendee")
+		form.isnew.value="false";
+		#end
+		form.submit ();
+	}
+	function deleteAttendee(firstName, lastName,emailAddress) {
+		var form = document.getElementById("attendeeForm");
+		form.dispatch.value="deleteAttendee";
+		form.currentAttendeeEmail.value=emailAddress;
+		form.currentAttendeeFirstName.value=firstName;
+		form.currentAttendeeLastName.value=lastName;
+		form.submit ();
+	}
+	function editAttendee(firstName, lastName, emailAddress) {
+		var form = document.getElementById("attendeeForm");
+		form.dispatch.value="editAttendee";
+		form.currentAttendeeEmail.value=emailAddress;
+		form.currentAttendeeFirstName.value=firstName;
+		form.currentAttendeeLastName.value=lastName;
+		form.submit ();
+	}
+	function toStep2() {
+		var form = document.getElementById("attendeeForm");
+		//form.action = "https://${SERVER_NAME}/dotCMS/eventRegistration";
+		form.action = "http://${SERVER_NAME}/dotCMS/eventRegistration";
+		form.dispatch.value="toStep2";
+		form.submit ();
+	}
+
+	function addMySelf()
+	{
+		var form = document.getElementById("attendeeForm");
+		form.currentAttendeeFirstName.value = "$!{user.firstName}";
+		form.currentAttendeeLastName.value = "$!{user.lastName}";
+		form.currentAttendeeBadgeName.value = "$!{user.fullName}";
+		form.currentAttendeeEmail.value = "$!{user.emailAddress}";
+		form.currentAttendeeTitle.value = "$!webapi.userTitle";
+		form.submit();
+	}
+</script>
+
+		#dotParse('/application/messages.vtl')
+		
+		
+		<h2>Your Registrations:</h2>
+		
+		<p><b><a href="/conferences_events/detail.${webapi.getPageFileExtension()}?inode=$event.inode&pageTitle=$event.title&crumbTitle=$event.title">$!event.title</a></b><br/>
+		  $!location.toString()</p>
+		
+		
+					
+			#if(${attendees.size()} ==0)
+						<h3>No Attendees Registered</h3>
+						<br/><div class="buttonGroup">
+						<a href="javascript:addMySelf();" class="activeButton">Add Myself Now</a>
+						</div>
+						<div style="clear:both;"><br/><br/></div> 
+			#else
+			
+				
+			<h2>Attendee List</h2>
+				
+			#end
+			
+			<table cellpadding="0" cellspacing="0" border="0" width="100%">
+			#foreach ($attendee in $attendees)
+			 <tr><td widt="33%"> 
+			  <strong>Name:</strong> $attendee.firstName $attendee.lastName &nbsp;
+			  </td>
+			  <td>
+			  <strong>Badge Name:</strong> #if($attendee.badgeName != "")$attendee.badgeName #else No Badge Name #end<BR>
+			 </td>
+			 
+			 <td> 
+			<a href="javascript:deleteAttendee('$webapi.javaScriptify($attendee.firstName)','$webapi.javaScriptify($attendee.lastName)','$attendee.email');" class="button" style="padding:4px 6px;">Delete</a>	
+			</td>
+			<td>
+			<a href="javascript:editAttendee('$webapi.javaScriptify($attendee.firstName)','$webapi.javaScriptify($attendee.lastName)','$attendee.email');" class="button" style="padding:4px 6px;">Change</a>		
+		    </td>
+			</tr>
+			#end
+			</table> 
+		<br/><br/>
+		
+		
+		<style>
+			@import url(/global/css/form.css);
+			
+			/* put in width of widest label */
+			fieldset label{
+			width: 110px;
+			}
+			fieldset fieldset,
+			fieldset .buttonGroup{
+			padding-left: 110px;
+			}
+			fieldset fieldset legend{
+			margin-left: -110px;
+			}
+		
+		</style>
+		
+		
+		<form name="attendeeForm" action="/dotCMS/eventRegistration" id="attendeeForm" autocomplete="off">
+		<fieldset>
+		<legend>Adding Attendees</legend>
+		<input type="hidden" name="dispatch" value="saveAttendee">
+		<input type="hidden" name="isnew" value="true">
+			<h3>
+				#if ($request.getParameter("dispatch") == "editAttendee")
+					<p>Edit Attendee</p>
+					<input type="hidden" name="currentAttendeeLastEmail" value="$webEventRegistrationForm.currentAttendeeEmail">
+					<input type="hidden" name="currentAttendeeLastFirstName" value="$webEventRegistrationForm.currentAttendeeFirstName">
+					<input type="hidden" name="currentAttendeeLastLastName" value="$webEventRegistrationForm.currentAttendeeLastName">
+					<p>
+				#else
+				#end
+			</h3>
+			<p>
+			Here you can register one or more attendees for this event. For each attendee, fill in their information below and hit "Submit" to save it.  <br />
+			#if(${attendees.size()} ==0)<b>Note:</b> You can click on <a href="javascript:addMySelf();">Add Myself Now</a> to automatically populate the fields with your information. #end
+			</p>
+	
+			
+			    <label for="currentAttendeeFirstName" class="required">First Name: <a href="#required">*</a></label>
+				<input type="text" name="currentAttendeeFirstName" value="$webEventRegistrationForm.currentAttendeeFirstName"/>
+				<br/>
+				
+						
+			    <label for="currentAttendeeLastName" class="required">Last Name: <a href="#required">*</a></label>
+				<input type="text" name="currentAttendeeLastName" value="$webEventRegistrationForm.currentAttendeeLastName"/>
+				<br/>
+			
+			
+			    <label for="currentAttendeeBadgeName">Preferred Badge Name: </label>
+				<input type="text" name="currentAttendeeBadgeName" value="$webEventRegistrationForm.currentAttendeeBadgeName"/>
+				<br/>
+			
+			
+				<label for="currentAttendeeEmail" class="required">Email address: <a href="#required">*</a></label>
+				<input type="text" name="currentAttendeeEmail" value="$webEventRegistrationForm.currentAttendeeEmail"/>
+				<br/>
+		
+			
+				<label for="currentAttendeeTitle" class="required">Title for Badge: <a href="#required">*</a></label>
+				<input type="text" name="currentAttendeeTitle" value="$webEventRegistrationForm.currentAttendeeTitle"/>
+				<br/>
+				
+			<div class="buttonGroup">	
+				#if ($request.getParameter("dispatch") == "editAttendee")
+				<div style="clear:both;">
+				  <a href="javascript:saveAttendee();" class="activeButton">Submit Change</a> <br/><br/>
+				</div>  
+				#else
+				 <div style="clear:both; ">
+				     <a  href="javascript:saveAttendee();" class="button" >Submit Attendee</a> 
+			    #if ($attendees.size() > 0)
+				    &nbsp; &nbsp; <a  href="javascript:toStep2();" class="activeButton">Proceed To Checkout</a> <br/><br/>	
+                #else
+				
+			#end
+			 </div>
+	  #end
+	  </div>
+ 
+        </fielset>
+		</form>
+		<br/>
+		<div class="key"><a name="required" id="required">* Required Fields</a></div>
+	

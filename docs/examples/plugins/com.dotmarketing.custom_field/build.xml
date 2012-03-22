@@ -1,0 +1,3 @@
+<project name="Custom Field Plugin" default="build">	
+	<import file="../common.xml"/>	
+</project>

@@ -1,0 +1,188 @@
+
+.clear { clear:both; }
+
+
+#main {
+	width:900px;
+	margin:auto;
+}
+
+#title {
+	font:21pt Arial,sans-serif;
+	color:#888;
+	font-weight:bold;
+}
+
+
+.imageToolButtonBar {
+	background:url(/html/images/skin/portalTab_bg.gif);
+	height:29px;
+	border:1px solid silver;
+	
+	padding:4px 15px 2px 15px;
+}
+
+
+#exif { clear:both; height:2em; }
+
+
+#toolBar{
+	width:100%
+	border:0px solid silver;
+	padding:0px;
+
+}
+#imageToolIframe{
+height:700px;	
+}
+#showScaleSlider{
+	margin-top:10px;
+	width:300px; 
+	height:20px;
+}
+#imageViewPort{
+	overflow:auto;
+	border:1px solid silver;
+	height:500px;
+	width:898px;
+	vertical-align:middle;
+	padding:0px;
+	margin:0px;
+ 	text-align:center;
+ 	background-color:#eeeeee;
+}
+
+/* style the image */
+#me {
+
+}
+#cropDim{
+	display:none;
+}
+/* part of the widget: drag handle styles */
+.imageDragger {
+	/* required: */
+	position:absolute;
+	/* optional: */
+	cursor:move;
+	z-index:999;
+	background:#fff;
+	border:2px dotted #000;
+	min-width:50px;
+	min-height:50px;
+
+}
+
+#cropSizeBox{
+	float:left;
+	border:1px solid silver;
+	opacity: 1;
+	min-width:46px;
+	height:20px;
+	color:black;
+	white-space:nowrap;
+}
+
+.displayImageDim{
+	width:50px;
+	height:20px;
+	background:#eeeeee;
+	overflow:hidden;
+	float:left;
+}
+
+.baseImageDim{
+	width:50px;
+	height:20px;
+	overflow:hidden;
+	float:left;
+}
+
+#buttonControl{
+	width:920px;
+	padding:10px;
+	border:1px solid silver;
+}
+#doCropButton{
+	display:none;
+}
+#controlTable{
+	width:100%;
+}
+#viewingUrlDiv{
+	padding:10px;
+	text-align:center;
+}
+#viewingUrl{
+	border:1px solid silver;padding:3px;width:600px;
+}
+
+#filtersUndoDiv{
+	display:none;
+	text-align:left;
+}
+#filterListTd{
+	vertical-align:top;	
+	padding:0px;
+}
+#filterListDiv{
+	width:100px;
+}
+/*
+.filterListItem{
+This is defined on the JSP
+}
+*/
+/*
+.loader{
+This is defined on the JSP
+}
+*/
+#controlTable td{
+	border:1px solid silver;
+	padding:3px;	
+	text-align:center;
+	white-space: nowrap;
+}
+#showScaleSlider td{
+	border:0px solid silver;
+	padding:0px;	
+}
+
+#hsbDialog{
+	width:400px;
+	height:300px;	
+}
+
+#hsbTable{
+	border:1px solid silver;	
+	width:90%
+}
+#hsbTable td{
+	padding:4px;
+	border:1px solid silver;
+	height:20px;
+	vertical-align: top;
+}
+#hsbTable .colorSlider td{
+	padding:0px;
+	border:0px solid silver;
+}
+
+.colorSlider{
+	width:200px;	
+}
+
+.thumbnailDiv{
+	cursor:pointer;
+	padding:3px 15px 3px 15px;
+	border:silver 2px dotted;
+	
+}
+.thumbnailDivHover{
+	cursor:pointer;
+	padding:3px 15px 3px 15px;
+	border:blue 2px dotted;
+	
+}
+

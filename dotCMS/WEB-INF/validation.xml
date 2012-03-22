@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE form-validation PUBLIC
+          "-//Apache Software Foundation//DTD Commons Validator Rules Configuration 1.1.3//EN"
+          "http://jakarta.apache.org/commons/dtds/validator_1_1_3.dtd">
+<form-validation>
+	<formset>
+
+
+		<!-- ================= Category Form ===================== -->
+		<form name="CategoryForm">
+			<field property="categoryName" depends="required">
+				<arg0 key="prompt.categoryName" />
+			</field>
+		</form>
+
+		<!-- ================= Banner Form ===================== -->
+		<form name="BannerForm">
+			<field property="title" depends="required">
+				<arg0 key="prompt.bannerTitle" />
+			</field>
+			<field property="webStartDate" depends="required">
+				<arg0 key="prompt.startDateTime" />
+			</field>
+
+			<field property="webEndDate" depends="required">
+				<arg0 key="prompt.endDateTime" />
+			</field>
+		</form>
+
+		<!-- ================= Entity Form ===================== -->
+		<form name="EntityForm">
+			<field property="entityName" depends="required">
+				<arg0 key="prompt.entityName" />
+			</field>
+		</form>
+
+		<!-- ================= Folder Form ===================== -->
+		<form name="FolderForm">
+			<field property="title" depends="required">
+				<arg0 key="prompt.menuTitle" />
+			</field>
+			<field property="name" depends="required,mask">
+			    <msg name="mask" key="prompt.folderName.mask"/>
+				<arg0 key="prompt.folderName" />
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^[a-z0-9A-Z\_]*$</var-value>
+			    </var>
+			</field>
+		</form>
+
+		<!-- ================= File Form ===================== -->
+		<form name="FileForm">
+			<field property="title" depends="required,mask">
+			    <msg name="mask" key="prompt.fileTitle.mask"/>
+				<arg0 key="prompt.fileTitle" />
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^([^\074^\076])*$</var-value>
+			    </var>
+			</field>
+		</form>
+
+		<!-- ================= Container Form ===================== -->
+		<form name="ContainerForm">
+			<field property="title" depends="required,mask">
+			    <msg name="mask" key="prompt.containerTitle.mask"/>
+				<arg0 key="prompt.containerTitle" />
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^([^\074^\076])*$</var-value>
+			    </var>
+			</field>
+			<field property="code" depends="required">
+				<arg0 key="prompt.containerCode" />
+			</field>
+			<field property="hostId" depends="validwhen">
+				<arg0 key="prompt.host"/>
+		        <var>
+		          <var-name>test</var-name>
+		          <var-value>(*this* > 0)</var-value>
+		        </var>				    
+			</field>
+		</form>
+
+
+		<!-- ================= Contentlet Form ===================== -->
+		<form name="ContentletForm">
+			<field property="title" depends="required,mask">
+			    <msg name="mask" key="prompt.contentletTitle.mask"/>
+				<arg0 key="prompt.contentletTitle" />
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^([^\074^\076])*$</var-value>
+			    </var>
+			</field>
+			<field property="parent" depends="required" >
+				<arg0 key="prompt.parentFolder" />
+			</field>
+			<field property="hostId" depends="validwhen">
+				<arg0 key="prompt.host"/>
+		        <var>
+		          <var-name>test</var-name>
+		          <var-value>(*this* > 0)</var-value>
+		        </var>				    
+			</field>
+		</form>
+
+		<!-- ================= Link Form ===================== -->
+		<form name="LinkForm">
+			<field property="title" depends="required,mask">
+			    <msg name="mask" key="prompt.linkTitle.mask"/>
+				<arg0 key="prompt.linkTitle" />
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^([^\074^\076])*$</var-value>
+			    </var>
+			</field>
+		</form>
+
+
+		<!-- ================= Template Form ===================== -->
+		<form name="TemplateForm">
+			<field property="title" depends="required,mask">
+			    <msg name="mask" key="prompt.templateTitle.mask"/>
+				<arg0 key="prompt.templateTitle" />
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^([^\074^\076])*$</var-value>
+			    </var>
+			</field>
+			<field property="hostId" depends="validwhen">
+				<arg0 key="prompt.host"/>
+		        <var>
+		          <var-name>test</var-name>
+		          <var-value>(*this* > 0)</var-value>
+		        </var>				    
+			</field>
+		</form>
+
+		<!-- ================= HTML Page Form ===================== -->
+		<form name="HTMLPageForm">
+			<field property="title" depends="required,mask">
+			    <msg name="mask" key="prompt.htmlpageTitle.mask"/>
+				<arg0 key="prompt.htmlpageTitle" />
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^([^\074^\076])*$</var-value>
+			    </var>
+			</field>
+		</form>
+
+		<!-- ================= Workflow Task Form ===================== -->
+		<form name="WorkflowTaskForm">
+			<field property="title" depends="required">
+				<arg0 key="prompt.workflowTask.title" />
+			</field>
+			<field property="description" depends="required">
+				<arg0 key="prompt.workflowTask.description" />
+			</field>
+	    </form>
+
+		<!-- ================= CampaignForm ===================== -->
+		<form name="CampaignForm">
+			<field property="title" depends="required">
+				<arg0 key="prompt.campaignTitle" />
+			</field>
+			<!-- <field property="fromName" depends="required">
+				<arg0 key="prompt.campaignFromName" />
+			</field>
+			<field property="subject" depends="required">
+				<arg0 key="prompt.campaignSubject" />
+			</field> -->
+			<!--field property="mailingList" depends="required">
+				<arg0 key="prompt.mailingList" />
+			</field-->
+			<field property="communicationInode" depends="required">
+				<arg0 key="prompt.communicationList" />
+			</field>
+		</form>
+
+		<!-- ================= MailingListForm ===================== -->
+		<form name="MailingListForm">
+			<field property="title" depends="required">
+				<arg0 key="prompt.mailingListTitle" />
+			</field>
+		</form>
+
+		<!-- ================= VirtualLinkForm ===================== -->
+		<form name="VirtualLinkForm">
+			<field property="title" depends="required">
+				<arg0 key="prompt.virtualLinkTitle" />
+			</field>
+			<field property="url" depends="required">
+				<arg0 key="prompt.virtualLinkURL" />
+			</field>
+			<field property="uri" depends="required">
+				<arg0 key="prompt.virtualLinkURI" />
+			</field>
+		</form>
+
+		<!-- ================= LanguageManagerForm ===================== -->
+		<form name="LanguageManagerForm">
+			<field property="languageCode" depends="required">
+				<arg0 key="prompt.languageCode" />
+			</field>
+			<field property="countryCode" depends="required">
+				<arg0 key="prompt.countryCode" />
+			</field>
+			<field property="language" depends="required">
+				<arg0 key="prompt.language" />
+			</field>
+			<field property="country" depends="required">
+				<arg0 key="prompt.country" />
+			</field>
+		</form>
+
+
+
+
+
+		<!-- ================= myAccountUserForm ===================== -->
+		<form name="myAccountForm">
+			<field property="userName" depends="required, email">
+				<arg0 key="prompt.email" />
+			</field>
+			<field property="password1" depends="required,minlength,maxlength">
+				<arg0 key="prompt.password" />
+				<arg1 key="${var:minlength}" name="minlength" resource="false" />
+				<arg2 key="${var:maxlength}" name="maxlength" resource="false" />
+				<var>
+					<var-name>maxlength</var-name>
+					<var-value>30</var-value>
+				</var>
+
+				<var>
+					<var-name>minlength</var-name>
+					<var-value>4</var-value>
+				</var>
+			</field>
+			<field property="password2" depends="required,minlength,maxlength">
+				<arg0 key="prompt.password" />
+				<arg1 key="${var:minlength}" name="minlength" resource="false" />
+				<arg2 key="${var:maxlength}" name="maxlength" resource="false" />
+				<var>
+					<var-name>maxlength</var-name>
+					<var-value>30</var-value>
+				</var>
+
+				<var>
+					<var-name>minlength</var-name>
+					<var-value>4</var-value>
+				</var>
+			</field>
+			<field property="firstName" depends="required">
+				<arg0 key="prompt.firstName" />
+			</field>
+			<field property="lastName" depends="required">
+				<arg0 key="prompt.lastName" />
+			</field>
+			<field property="company" depends="required">
+				<arg0 key="prompt.company" />
+			</field>
+			<field property="url" depends="required">
+				<arg0 key="prompt.url" />
+			</field>
+
+		</form>
+
+
+
+
+
+		<!-- ================= addressForm ===================== -->
+		<form name="addressForm">
+			<field property="description" depends="required">
+				<arg0 key="prompt.addressTitle" />
+			</field>
+			<field property="address1" depends="required">
+				<arg0 key="prompt.address1" />
+			</field>
+			<field property="city" depends="required">
+				<arg0 key="prompt.city" />
+			</field>
+			<field property="country" depends="required">
+				<arg0 key="prompt.country" />
+			</field>
+			<field property="zip" depends="required">
+				<arg0 key="prompt.zip" />
+			</field>
+			<field property="phone" depends="required">
+				<arg0 key="prompt.phone" />
+			</field>
+
+		</form>
+
+		<!-- ================= createAccountForm ===================== -->
+		<form name="createAccountForm">
+			<field property="email" depends="required,email">
+				<arg0 key="prompt.email" />
+			</field>
+			<field property="password" depends="required,minlength,maxlength">
+				<arg0 key="prompt.password" />
+				<arg1 key="${var:minlength}" name="minlength" resource="false" />
+				<arg2 key="${var:maxlength}" name="maxlength" resource="false" />
+				<var>
+					<var-name>maxlength</var-name>
+					<var-value>30</var-value>
+				</var>
+
+				<var>
+					<var-name>minlength</var-name>
+					<var-value>4</var-value>
+				</var>
+			</field>
+			<field property="password2" depends="required,minlength,maxlength">
+				<arg0 key="prompt.password2" />
+				<arg1 key="${var:minlength}" name="minlength" resource="false" />
+				<arg2 key="${var:maxlength}" name="maxlength" resource="false" />
+				<var>
+					<var-name>maxlength</var-name>
+					<var-value>30</var-value>
+				</var>
+
+				<var>
+					<var-name>minlength</var-name>
+					<var-value>4</var-value>
+				</var>
+			</field>
+
+
+			<field property="firstName" depends="required">
+				<arg0 key="prompt.firstName" />
+			</field>
+
+			<field property="lastName" depends="required">
+				<arg0 key="prompt.lastName" />
+			</field>
+			<field property="company" depends="required">
+				<arg0 key="prompt.company" />
+			</field>
+			<field property="url" depends="required">
+				<arg0 key="prompt.url" />
+			</field>
+		</form>
+
+
+
+		<!-- ================= checkoutForm ===================== -->
+		<form name="checkoutForm">
+
+
+			<field property="billingDescription" depends="required">
+				<arg0 key="prompt.billingAddressTitle" />
+			</field>
+			<field property="billingAddress1" depends="required">
+				<arg0 key="prompt.mailingAddress1" />
+			</field>
+			<field property="billingCity" depends="required">
+				<arg0 key="prompt.billingCity" />
+			</field>
+			<field property="billingCountry" depends="required">
+				<arg0 key="prompt.billingCountry" />
+			</field>
+			<field property="billingZip" depends="required">
+				<arg0 key="prompt.billingZip" />
+			</field>
+			<field property="billingPhone" depends="required">
+				<arg0 key="prompt.billingPhone" />
+			</field>
+
+
+
+
+
+			<field property="nameOnCard" depends="required">
+				<arg0 key="prompt.nameOnCard" />
+			</field>
+			<field property="ccType" depends="required">
+				<arg0 key="prompt.creditCardType" />
+			</field>
+			<field property="decryptedCcNumber" depends="required,creditCard">
+				<arg0 key="prompt.creditCardNumber" />
+			</field>
+			<field property="cvv2Code" depends="required,minlength,maxlength">
+				<arg0 key="prompt.cvv2Code" />
+				<arg1 key="${var:minlength}" name="minlength" resource="false" />
+				<arg2 key="${var:maxlength}" name="maxlength" resource="false" />
+				<var>
+					<var-name>maxlength</var-name>
+					<var-value>3</var-value>
+				</var>
+
+				<var>
+					<var-name>minlength</var-name>
+					<var-value>3</var-value>
+				</var>
+			</field>
+
+
+
+		</form>
+
+		<!-- ================= Event Form ===================== -->
+		<form name="EventForm">
+			<field property="title" depends="required">
+				<arg0 key="prompt.title" />
+			</field>
+		</form>
+
+
+
+		<!-- ================= FieldForm ===================== -->
+		<form name="DotFieldForm">
+			<field property="fieldName" depends="required">
+				<arg0 key="message.field.fieldName" />
+			</field>
+			<field property="fieldType" depends="required">
+				<arg0 key="message.field.fieldType" />
+			</field>
+		</form>
+
+		<!-- ================= StructureForm ===================== -->
+		<form name="StructureForm">
+			<field property="name" depends="required">
+				<arg0 key="message.structure.name" />
+			</field>
+			<field property="detailPage" depends="validwhen">
+				<arg0 key="structure.required.detailpage.when.urlmap"/>
+		        <var>
+		          <var-name>test</var-name>
+		          <var-value>((urlMapPattern == null) or (*this* != null))</var-value>
+		        </var>				    
+			</field>
+		</form>
+
+
+
+
+		<form name="RelationshipForm">
+		    <field property="parentStructureInode" depends="required">
+				<arg0 key="message.relationship.parentstructureinode" />
+			</field>
+			<field property="childStructureInode" depends="required">
+				<arg0 key="message.relationship.childstructureinode" />
+			</field>
+			<field property="parentRelationName" depends="required">
+				<arg0 key="message.relationship.parentrelationname" />
+			</field>
+			<field property="childRelationName" depends="required">
+				<arg0 key="message.relationship.childrelationname" />
+			</field>
+		</form>
+
+		<!-- ================= WebEventForm ===================== -->
+		<form name="WebEventForm">
+			<field property="title" depends="required">
+				<arg0 key="message.webevent.title" />
+			</field>
+			<field property="description" depends="required">
+				<arg0 key="message.webevent.description" />
+			</field>
+		</form>
+		
+		<!-- ================= WebEventLocationForm ===================== -->
+		<form name="WebEventLocationForm">
+			<field property="strStartDate" depends="required">
+				<arg0 key="message.webeventlocation.startdate" />
+			</field>
+			<field property="strEndDate" depends="required">
+				<arg0 key="message.webeventlocation.enddate" />
+			</field>
+			<field property="partnerPrice" depends="required,mask">
+				<arg0 key="message.webeventlocation.partnerPrice" />
+			    <msg name="mask" key="message.webeventlocation.partnerPrice.mask"/>
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^[0-9\,\.]*$</var-value>
+			    </var>
+			</field>
+			<field property="nonPartnerPrice" depends="required,mask">
+				<arg0 key="message.webeventlocation.nonPartnerPrice" />
+			    <msg name="mask" key="message.webeventlocation.nonPartnerPrice.mask"/>
+			    <var>
+			        <var-name>mask</var-name>
+			        <var-value>^[0-9\,\.]*$</var-value>
+			    </var>
+			</field>
+		</form>
+		
+		<!--  ==========================ReportForm=================================== -->
+		<form name="ReportForm">
+			<field property="reportName" depends="required">
+				<arg0 key="message.report.form.name.mask" />
+			</field>
+			<field property="reportDescription" depends="required">
+				<arg0 key="message.report.form.description.mask" />				
+			</field>
+			<field property="selectedDataSource" depends="required">
+				<arg0 key="message.report.form.ds.mask" />				
+			</field>
+		</form>
+		
+	</formset>
+
+</form-validation>

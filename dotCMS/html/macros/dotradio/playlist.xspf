@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist version="0" xmlns = "http://xspf.org/ns/0/">
+  <trackList>
+   <track>
+    <location>crazy.mp3</location>
+    <annotation>Crazy : Gnarles Barkley</annotation>
+   </track>
+  </trackList>
+</playlist>

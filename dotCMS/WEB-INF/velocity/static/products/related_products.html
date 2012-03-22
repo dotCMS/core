@@ -1,0 +1,18 @@
+	#set($inode = $request.getParameter("inode"))
+	#if (!$inode) 
+	    #set($inode = "")
+	#end
+
+	#set ($productsList = $productwebapi.getRelatedProduct($inode,$quantity))
+	#foreach($product in $productsList)
+	    #if (${product.smallImageInode} && $InodeUtils.isSet(${product.smallImageInode}))
+		<img src="/thumbnail?inode=$!{product.smallImageInode}&w=150&h=150&r=213&g=213&b=213"> 
+		<BR> 
+		#end
+		#if ($inStore)
+		<a href="/dotCMS/detailProduct?inode=$product.inode">$product.title</a> 
+		#else
+		<a target="_new" href="http://${FSP_SERVER_NAME}/dotCMS/detailProduct?inode=$product.inode">$product.title</a> 
+		#end
+		<BR>
+	#end

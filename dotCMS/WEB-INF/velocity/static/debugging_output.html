@@ -1,0 +1,102 @@
+
+<p>
+<p>
+
+<table bgcolor="#dddddd" width="400" align="center" style="width:400px;">
+<tr>
+<td colspan=2>
+<B>Personalization:</b>
+</td>
+</tr>
+#foreach ($key in ${pbean.categoriesOfInterest})
+
+
+    <tr bgcolor="#ffffff">
+        <td>
+            Category
+        </td>
+        <td>
+            $webapi.getCategoryByInode("$key").categoryName
+		</td>
+    </tr>
+
+#end
+
+</table>
+
+<p>
+<p>
+
+<table bgcolor="#dddddd" width="400" align="center" style="width:400px;">
+<tr>
+<td colspan=2>
+<B>request:</b>
+</td>
+</tr>
+#foreach ($key in ${request.attributeNames})
+
+
+    <tr bgcolor="#ffffff">
+        <td>
+            $key
+        <td>
+            ${request.getAttribute("$key")}
+
+    </tr>
+
+#end
+
+</table>
+
+
+<p>
+<p>
+
+
+<table bgcolor="#dddddd" width="400" align="center" style="width:400px;">
+<tr>
+<td colspan=2>
+<B>session:</b>
+</td>
+</tr>
+#foreach ($key in ${session.attributeNames})
+
+
+    <tr bgcolor="#ffffff">
+        <td>
+            $key
+        <td>
+            ${session.getAttribute("$key")}
+    </tr>
+
+#end
+
+</table>
+
+<p>
+<p>
+
+
+<table bgcolor="#dddddd" width="400" align="center" style="width:400px;">
+<tr>
+<td colspan=2>
+<B>Cookie:</b>
+</td>
+</tr>
+#foreach ($key in ${request.cookies})
+
+
+    <tr bgcolor="#ffffff">
+        <td>
+            $key.name
+        <td>
+            $key.value
+        <td>
+            $key.maxAge
+
+    </tr>
+
+#end
+
+</table>
+
