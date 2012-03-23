@@ -5,7 +5,7 @@ bin/*.sh
 *.log
 .classpath
 .settings/*
-.project/*
+.project
 
 # Instance Files     #
 ######################
@@ -20,3 +20,6 @@ ehthumbs.db
 Icon?
 Thumbs.db
 
+# Build #
+######################
+dotCMS/WEB-INF/classes/
