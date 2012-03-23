@@ -1,0 +1,22 @@
+# config/log files   #
+######################
+tomcat/conf
+bin/*.sh
+*.log
+.classpath
+.settings/*
+.project/*
+
+# Instance Files     #
+######################
+dotCMS/dotSecure
+dotCMS/assets
+
+
+# OS generated files #
+######################
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+
