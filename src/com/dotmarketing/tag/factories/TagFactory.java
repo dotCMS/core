@@ -585,7 +585,7 @@ public class TagFactory {
         			newTag = tag;
         			globalTagExists = true;
         		}
-        		if(tag.getHostId().equals(hostId)){
+        		if(tag.getHostId()!=null && tag.getHostId().equals(hostId)){
         			newTag = tag;
             		tagExists = true;
         		}
@@ -670,7 +670,7 @@ public class TagFactory {
 	 * @return boolean
 	 */
     public static boolean isGlobalTag(Tag tag) {
-    	if(tag.getHostId().equals(Host.SYSTEM_HOST))
+    	if(tag.getHostId()!=null && tag.getHostId().equals(Host.SYSTEM_HOST))
     		return true;
     	else
     		return false;
