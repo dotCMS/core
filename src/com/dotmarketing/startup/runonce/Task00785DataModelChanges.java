@@ -976,35 +976,41 @@ public class Task00785DataModelChanges implements StartupTask  {
 	}
 	private List<String> newTriggersForMySql(){
 		List<String> triggers = new ArrayList<String>();
-		String parentPathCheckWhenUpdate = "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n" +
-										   "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n" +
-										   "on identifier\n" +
-										   "FOR EACH ROW\n" +
-										   "BEGIN\n" +
-										   "DECLARE idCount INT;\n" +
-										   "IF(NEW.parent_path<>'/' OR NEW.parent_path<>'/System folder') THEN\n" +
-										   "select count(id)into idCount from identifier where asset_type='folder' and concat(concat(parent_path,asset_name),'/')= NEW.parent_path and host_inode = NEW.host_inode and id<>NEW.id;\n" +
-										   "END IF;\n" +
-										   "IF(idCount = 0) THEN\n" +
-										   " delete from Cannot_update_for_this_path_does_not_exist_for_the_given_host;\n" +
-										   "END IF;\n" +
-										   "END\n" +
-										   "#\n";
+		String parentPathCheckWhenUpdate =  "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n"+
+                            		        "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n"+
+                            		        "on identifier\n"+
+                            		        "FOR EACH ROW\n"+
+                            		        "BEGIN\n"+
+                            		        "DECLARE idCount INT;\n"+
+                            		        "DECLARE canUpdate boolean default false;\n"+
+                            		        " IF @disable_trigger IS NULL THEN\n"+
+                            		        "   select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n"+
+                            		        "   IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n"+
+                            		        "     SET canUpdate := TRUE;\n"+
+                            		        "   END IF;\n"+
+                            		        "   IF(canUpdate = FALSE) THEN\n"+
+                            		        "     delete from Cannot_update_for_this_path_does_not_exist_for_the_given_host;\n"+
+                            		        "   END IF;\n"+
+                            		        " END IF;\n"+
+                            		        "END\n"+
+                            		        "#\n";
 
-		String parentPathCheckWhenInsert = "DROP TRIGGER IF EXISTS check_parent_path_when_insert;\n" +
-										   "CREATE TRIGGER check_parent_path_when_insert  BEFORE INSERT\n" +
-										   "on identifier\n" +
-										   "FOR EACH ROW\n" +
-										   "BEGIN\n" +
-										   "DECLARE idCount INT;\n" +
-										   "IF(NEW.parent_path<>'/' OR NEW.parent_path<>'/System folder') THEN\n" +
-			                               "select count(id)into idCount from identifier where asset_type='folder' and concat(concat(parent_path,asset_name),'/')= NEW.parent_path and host_inode = NEW.host_inode and id<>NEW.id;\n" +
-										   "END IF;\n" +
-								           "IF(idCount = 0) THEN\n" +
-										   " delete from Cannot_insert_for_this_path_does_not_exist_for_the_given_host;\n" +
-										   "END IF;\n" +
-										   "END\n" +
-										   "#\n";
+		String parentPathCheckWhenInsert =  "DROP TRIGGER IF EXISTS check_parent_path_when_insert;\n"+
+                            		        "CREATE TRIGGER check_parent_path_when_insert  BEFORE INSERT\n"+
+                            		        "on identifier\n"+
+                            		        "FOR EACH ROW\n"+
+                            		        "BEGIN\n"+
+                            		        "DECLARE idCount INT;\n"+
+                            		        "DECLARE canInsert boolean default false;\n"+
+                            		        " select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n"+
+                            		        " IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n"+
+                            		        "   SET canInsert := TRUE;\n"+
+                            		        " END IF;\n"+
+                            		        " IF(canInsert = FALSE) THEN\n"+
+                            		        "  delete from Cannot_insert_for_this_path_does_not_exist_for_the_given_host;\n"+
+                            		        " END IF;\n"+
+                            		        "END\n"+
+                            		        "#\n";
 
 		String checkVersions = "DROP PROCEDURE IF EXISTS checkVersions;\n" +
 							   "CREATE PROCEDURE checkVersions(IN ident varchar(36),IN tableName VARCHAR(20),OUT versionsCount INT)\n" +

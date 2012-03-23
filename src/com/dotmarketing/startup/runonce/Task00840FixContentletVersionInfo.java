@@ -14,7 +14,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
-import com.dotmarketing.startup.AbstractJDBCStartupTask.PrimaryKey;
 
 /**
  * http://jira.dotmarketing.net/browse/DOTCMS-7291 Move
@@ -217,6 +216,35 @@ public class Task00840FixContentletVersionInfo implements StartupTask {
         dc.executeStatement("ALTER TABLE contentlet_version_info add constraint contentlet_version_info_pkey PRIMARY KEY (identifier,lang)");
     }
     
+    void dropContLangVersionInfoFK(String t) throws Exception {
+        DotConnect dc=new DotConnect();
+        Connection conn=DbConnectionFactory.getConnection();
+        DatabaseMetaData dbmd=conn.getMetaData();
+        String schema=null;
+        if(DbConnectionFactory.isOracle()){
+            t = t.toUpperCase();
+            schema=dbmd.getUserName();
+        }
+        ResultSet rs=dbmd.getImportedKeys(conn.getCatalog(), schema, t);
+        while (rs.next()) {
+            String FK_NAME=rs.getString("FK_NAME");
+            if(DbConnectionFactory.isMySql()) 
+                dc.executeStatement("ALTER TABLE "+t+" DROP FOREIGN KEY "+FK_NAME);
+            else
+                dc.executeStatement("ALTER TABLE "+t+" DROP CONSTRAINT "+FK_NAME);
+        }
+    }
+    
+    void addForeignKeysExtraMySQL() throws Exception {
+        DotConnect dc=new DotConnect();
+        dc.executeStatement(
+           "alter table container_version_info  add constraint fk_con_ver_info_ident " +
+           "  foreign key (identifier) references identifier(id)");
+        dc.executeStatement(
+           "alter table contentlet_version_info add constraint FK_con_ver_lockedby    " +
+           "  foreign key (locked_by) references user_(userid)");
+    }
+    
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
@@ -225,16 +253,66 @@ public class Task00840FixContentletVersionInfo implements StartupTask {
         }
         try {
             addFields();
+            dropContLangVersionInfoFK("contentlet_lang_version_info");
+            if(DbConnectionFactory.isMySql())
+                dropContLangVersionInfoFK("contentlet_version_info");
             dropVersionInfoPK();
             migrateData();
             dropTable();
             removeOldRecords();
             fixNotNull();
             addForeignKeys();
+            if(DbConnectionFactory.isMySql())
+                addForeignKeysExtraMySQL();
             addPrimaryKey();
+            
+            if(DbConnectionFactory.isMsSql())
+                fixMySQLIdentifierTriggers();
         } catch (Exception ex) {
             throw new DotRuntimeException(ex.getMessage(), ex);
         }
+    }
+    
+    void fixMySQLIdentifierTriggers() throws SQLException {
+        String parentPathCheckWhenUpdate =  "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n"+
+                "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n"+
+                "on identifier\n"+
+                "FOR EACH ROW\n"+
+                "BEGIN\n"+
+                "DECLARE idCount INT;\n"+
+                "DECLARE canUpdate boolean default false;\n"+
+                " IF @disable_trigger IS NULL THEN\n"+
+                "   select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n"+
+                "   IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n"+
+                "     SET canUpdate := TRUE;\n"+
+                "   END IF;\n"+
+                "   IF(canUpdate = FALSE) THEN\n"+
+                "     delete from Cannot_update_for_this_path_does_not_exist_for_the_given_host;\n"+
+                "   END IF;\n"+
+                " END IF;\n"+
+                "END\n"+
+                "#\n";
+
+        String parentPathCheckWhenInsert =  "DROP TRIGGER IF EXISTS check_parent_path_when_insert;\n"+
+                "CREATE TRIGGER check_parent_path_when_insert  BEFORE INSERT\n"+
+                "on identifier\n"+
+                "FOR EACH ROW\n"+
+                "BEGIN\n"+
+                "DECLARE idCount INT;\n"+
+                "DECLARE canInsert boolean default false;\n"+
+                " select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n"+
+                " IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n"+
+                "   SET canInsert := TRUE;\n"+
+                " END IF;\n"+
+                " IF(canInsert = FALSE) THEN\n"+
+                "  delete from Cannot_insert_for_this_path_does_not_exist_for_the_given_host;\n"+
+                " END IF;\n"+
+                "END\n"+
+                "#\n";
+        
+        DotConnect dc=new DotConnect();
+        dc.executeStatement(parentPathCheckWhenUpdate);
+        dc.executeStatement(parentPathCheckWhenInsert);
     }
     
 }

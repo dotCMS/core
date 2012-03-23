@@ -44,7 +44,11 @@ public class ConfigUtils {
 	public static String getBackupPath() {
 		return getDynamicContentPath() + File.separator + "backup";
 	}
-
+	
+	public static String getBundlePath() {
+		return getDynamicContentPath() + File.separator + "bundles";
+	}
+	
 	public static String getServerId(){
 		String serverId;
 		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
