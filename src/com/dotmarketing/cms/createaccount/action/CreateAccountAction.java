@@ -18,6 +18,7 @@ import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.createaccount.struts.CreateAccountForm;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -41,6 +42,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -106,7 +109,7 @@ public class CreateAccountAction extends DispatchAction {
 
 			//Login the user
 			LoginForm loginForm = new LoginForm();
-			loginForm.setUserName(form.getUserName().toLowerCase());
+			loginForm.setUserName(form.getEmailAddress().toLowerCase());
 			loginForm.setPassword(form.getPassword1());
 
 			LoginAction la = new LoginAction();
@@ -139,13 +142,20 @@ public class CreateAccountAction extends DispatchAction {
 	private void createAccount(CreateAccountForm form, HttpServletRequest request, HttpServletResponse response) throws NoSuchUserException, DotDataException, DotSecurityException {
 
 		CreateAccountForm createAccountForm = (CreateAccountForm) form;
-		User user = APILocator.getUserAPI().loadByUserByEmail(form.getEmail(), APILocator.getUserAPI().getSystemUser(), false);   
+		User user = new User();
+		UserAPI uAPI = APILocator.getUserAPI();
+		try {
+			user = uAPI.createUser(null, form.getEmailAddress());
+			//user = APILocator.getUserAPI().loadByUserByEmail(form.getEmailAddress(), APILocator.getUserAPI().getSystemUser(), false);
+		} catch (Exception e1) {			
+			Logger.warn(this, e1.toString());
+		}   
 		User defaultUser = APILocator.getUserAPI().getDefaultUser();
 		Date today = new Date();
 
 		//### CREATE USER ###
 		Company company = PublicCompanyFactory.getDefaultCompany();
-		user.setEmailAddress(createAccountForm.getUserName().trim().toLowerCase());
+		user.setEmailAddress(createAccountForm.getEmailAddress().trim().toLowerCase());
 		user.setFirstName(createAccountForm.getFirstName() == null ? "" : form.getFirstName());
 		user.setLastName(createAccountForm.getLastName() == null ? "" : form.getLastName());
 		user.setNickName("");
@@ -314,7 +324,7 @@ public class CreateAccountAction extends DispatchAction {
 		}
 
 		try {
-			LoginFactory.doLogin(form.getUserName(), form.getPassword1(), true, request, response);
+			LoginFactory.doLogin(form.getEmailAddress(), form.getPassword1(), true, request, response);
 		} catch (Exception e) {
 		}
 	}
@@ -324,9 +334,9 @@ public class CreateAccountAction extends DispatchAction {
 	{
 		User user = null;
 		CreateAccountForm createAccountForm = (CreateAccountForm) form;
-		if(UtilMethods.isSet(createAccountForm.getUserName()))
+		if(UtilMethods.isSet(createAccountForm.getEmailAddress()))
 		{
-			user = APILocator.getUserAPI().loadByUserByEmail(createAccountForm.getEmail(), APILocator.getUserAPI().getSystemUser(), false); 
+			user = APILocator.getUserAPI().loadByUserByEmail(createAccountForm.getEmailAddress(), APILocator.getUserAPI().getSystemUser(), false); 
 		}else{
 			user = (User)request.getSession().getAttribute(WebKeys.CMS_USER);
 		}	
@@ -334,8 +344,8 @@ public class CreateAccountAction extends DispatchAction {
 		if(user != null)
 		{
 			//### LOAD USER ###        
-			createAccountForm.setUserName(user.getEmailAddress());
-			createAccountForm.setEmail(user.getEmailAddress());
+			//createAccountForm.setUserName(user.getEmailAddress());
+			createAccountForm.setEmailAddress(user.getEmailAddress());
 			createAccountForm.setFirstName(user.getFirstName() == null ? "" : user.getFirstName());
 			createAccountForm.setLastName(user.getLastName() == null ? "" : user.getLastName());
 			createAccountForm.setComments(user.getComments());                            
@@ -402,7 +412,7 @@ public class CreateAccountAction extends DispatchAction {
 
 	}
 
-	public void sendEmail(CreateAccountForm form, HttpServletRequest request) 
+	public void sendEmail(CreateAccountForm form, HttpServletRequest request) throws NoSuchUserException, DotDataException, DotSecurityException, LanguageException
 	{	            
 		Mailer mailer = new Mailer();        
 
@@ -412,7 +422,7 @@ public class CreateAccountAction extends DispatchAction {
 		body.append("<table border=\"1\">");
 		body.append("<tr><td align=\"center\"><b>FIELD</b></td><td align=\"center\"><b>VALUE</b></td></tr>");
 		//email
-		String email = (UtilMethods.isSet(form.getUserName()) ? form.getUserName() : "&nbsp;");        
+		String email = (UtilMethods.isSet(form.getEmailAddress()) ? form.getEmailAddress() : "&nbsp;");        
 		body.append("<tr><td valign=\"top\"><b>Email Address:</b></td><td>" + email + "</td></tr>");
 		//first name
 		String firstName = (UtilMethods.isSet(form.getFirstName()) ? form.getFirstName() : "&nbsp;");
@@ -436,14 +446,16 @@ public class CreateAccountAction extends DispatchAction {
 		String emailBody = body.toString();
 		//### END CREATE MAIL ###
 		Company company = PublicCompanyFactory.getDefaultCompany();
+		User user = APILocator.getUserAPI().loadByUserByEmail(form.getEmailAddress(), APILocator.getUserAPI().getSystemUser(), false);
 
-		String toEmail = request.getParameter("toEmail");
+		String toEmail = request.getParameter("emailAddress");
 		String subject = request.getParameter("subject");
 		String fromName = request.getParameter("fromName");
 		String fromEmail = request.getParameter("fromEmail");
+		subject = LanguageUtil.get(user, "verification-email-account-created");
 
 		toEmail = (UtilMethods.isSet(toEmail) ? toEmail : Config.getStringProperty("CREATE_ACCOUNT_MAIL_ADDRESS"));
-		subject = (UtilMethods.isSet(subject) ? subject : Config.getStringProperty("CREATE_ACCOUNT_MAIL_SUBJECT"));
+		subject = (UtilMethods.isSet(subject) ? subject : Config.getStringProperty("CREATE_ACCOUNT_MAIL_SUBJECT"));		
 		fromName = (UtilMethods.isSet(fromName) ? fromName : Config.getStringProperty("CREATE_ACCOUNT_MAIL_NAME"));
 		fromEmail = (UtilMethods.isSet(fromEmail) ? fromEmail : Config.getStringProperty("CREATE_ACCOUNT_MAIL_RETURN_ADDRESS"));        
 		fromName = (UtilMethods.isSet(fromName) ? fromName : company.getName());

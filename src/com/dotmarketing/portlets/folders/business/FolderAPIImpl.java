@@ -110,7 +110,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				HibernateUtil.startTransaction();
 			}
 
-			renamed = renameAndUpdateChildrenParentPath(folder, newName, user, respectFrontEndPermissions, 0);
+			renamed = renameAndUpdateChildrenParentPath(folder, newName, user, respectFrontEndPermissions);
 
 		} catch (Exception e) {
 
@@ -129,62 +129,78 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 
-	private Boolean renameAndUpdateChildrenParentPath(Folder folder, String newName, User user, boolean respectFrontEndPermissions, int level) throws DotDataException, DotSecurityException {
+	private Boolean renameAndUpdateChildrenParentPath(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
 		Boolean renamed = false;
 
+		List<Identifier> identifierList = new ArrayList<Identifier>();
+
+
+		Identifier idFolder = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+
+		renamed = updateChildrenParentPath(identifierList, idFolder.getParentPath()+newName+"/", folder, user, respectFrontEndPermissions);
+
+		renamed = renamed & ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
+
+		for (Identifier identifier : identifierList) {
+			APILocator.getIdentifierAPI().save(identifier);
+		}
+
+		return renamed;
+	}
+
+	private Boolean updateChildrenParentPath(List<Identifier> identifierList, String folderPath, Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		List<Folder> folderChildren = findSubFolders(folder, user, respectFrontEndPermissions);
 
-		// recursivily update parent path
+		// recursively update parent path
 		for (Folder childFolder : folderChildren) {
 			// sub deletes use system user - if a user has rights to parent
 			// permission (checked above) they can delete to children
-			renameAndUpdateChildrenParentPath(childFolder, newName, user, respectFrontEndPermissions, level++);
+			updateChildrenParentPath(identifierList, folderPath+childFolder.getName()+"/", childFolder, user, respectFrontEndPermissions);
+
+			Identifier id = APILocator.getIdentifierAPI().find(childFolder.getIdentifier());
+			id.setParentPath(folderPath);
+			identifierList.add(id);
 		}
 
 
-		Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
 		ContentletAPI capi = APILocator.getContentletAPI();
+
 
 		List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
 		List<HTMLPage> htmlPages = getHTMLPages(folder, user, respectFrontEndPermissions);
 		List<File> files = getFiles(folder, user, respectFrontEndPermissions);
 		List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
 
-		if(level==0) { // if level 0 of recursion then rename the folder prior to update the children
-			renamed = ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
-		}
-
 		/************ conList *****************/
 		for (Contentlet c : conList) {
 			Identifier iden = APILocator.getIdentifierAPI().find(c.getIdentifier());
-			iden.setParentPath(folderIdent.getPath());
-			APILocator.getIdentifierAPI().save(iden);
+			iden.setParentPath(folderPath);
+			identifierList.add(iden);
 		}
 
 		/************ htmlPages *****************/
 		for (HTMLPage page : htmlPages) {
 			Identifier iden = APILocator.getIdentifierAPI().find(page.getIdentifier());
-			String newPath = folderIdent.getParentPath() + newName + "/";
-			iden.setParentPath(newPath);
-			APILocator.getIdentifierAPI().save(iden);
+			iden.setParentPath(folderPath);
+			identifierList.add(iden);
 		}
 
 		/************ Files *****************/
 		for (File file : files) {
 			Identifier iden = APILocator.getIdentifierAPI().find(file.getIdentifier());
-			iden.setParentPath(folderIdent.getPath());
-			APILocator.getIdentifierAPI().save(iden);
+			iden.setParentPath(folderPath);
+			identifierList.add(iden);
 		}
 
 		/************ Links *****************/
 		for (Link linker : links) {
 			Identifier iden = APILocator.getIdentifierAPI().find(linker.getIdentifier());
-			iden.setParentPath(folderIdent.getPath());
-			APILocator.getIdentifierAPI().save(iden);
+			iden.setParentPath(folderPath);
+			identifierList.add(iden);
 		}
 
-		return renamed;
+		return true;
 	}
 
 
@@ -192,7 +208,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotDataException, DotSecurityException {
 		Identifier id = APILocator.getIdentifierAPI().find(asset.getIdentifier());
 		if(id==null) return null;
-		if(id.getParentPath().equals("/") || id.getParentPath().equals("/System folder"))
+		if(id.getParentPath()==null || id.getParentPath().equals("/") || id.getParentPath().equals("/System folder"))
 			return null;
 		Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontEndPermissions);
 		Folder f = ffac.findFolderByPath(id.getParentPath(), host);
