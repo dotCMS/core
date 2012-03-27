@@ -488,7 +488,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .welcome_wrapper a:hover {text-decoration: underline;}
 
 /* ====================== BROWSER, HMTL, LINKS, FILES, TEMPLATES, CONTAINERS  (all POP UPs) ================= */
-div.contextPopupMenuBox,.contextMenuBox {z-index:10000; 0px;width: 170px;display: block;border-top: 1px solid #437AAD;border-bottom: 1px solid #437AAD;padding: 0px 0px 0px 0px;}
+div.contextPopupMenuBox,.contextMenuBox {z-index:10000;width: 190px;display: block;border-top: 1px solid #437AAD;border-bottom: 1px solid #437AAD;padding: 0px 0px 0px 0px;}
 div.contextPopupMenuBox a{line-height:18px;padding:3px 0;height:21px;vertical-align:middle;}
 div.contextPopupMenuBox span{margin:0 8px 0 8px;}
 

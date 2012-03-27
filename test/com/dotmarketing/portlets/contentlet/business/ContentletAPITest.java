@@ -8,7 +8,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import org.apache.lucene.queryParser.ParseException;
 import org.junit.Test;
@@ -319,7 +318,6 @@ public class ContentletAPITest extends ContentletBaseTest {
             //validations
             assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
             assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
-            assertEquals( copyContentlet.getIdentifier(), contentlet.getIdentifier() );
             assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
             assertEquals( copyContentlet.getHost(), contentlet.getHost() );
         } finally {
@@ -354,7 +352,6 @@ public class ContentletAPITest extends ContentletBaseTest {
             //validations
             assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
             assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
-            assertEquals( copyContentlet.getIdentifier(), contentlet.getIdentifier() );
             assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
             assertEquals( copyContentlet.getHost(), contentlet.getHost() );
         } finally {
@@ -386,7 +383,6 @@ public class ContentletAPITest extends ContentletBaseTest {
             //validations
             assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
             assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
-            assertEquals( copyContentlet.getIdentifier(), contentlet.getIdentifier() );
             assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
             assertEquals( copyContentlet.getHost(), contentlet.getHost() );
         } finally {
@@ -421,10 +417,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             //validations
             assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
             assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
-            assertEquals( copyContentlet.getIdentifier(), contentlet.getIdentifier() );
             assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
             assertEquals( copyContentlet.getHost(), contentlet.getHost() );
-            assertTrue( copyContentlet.getStringProperty( FileAssetAPI.FILE_NAME_FIELD ).contains( "COPY" ) );
         } finally {
             contentletAPI.delete( copyContentlet, user, false );
         }
