@@ -266,7 +266,7 @@ public class Task00840FixContentletVersionInfo implements StartupTask {
                 addForeignKeysExtraMySQL();
             addPrimaryKey();
             
-            if(DbConnectionFactory.isMsSql())
+            if(DbConnectionFactory.isMySql())
                 fixMySQLIdentifierTriggers();
         } catch (Exception ex) {
             throw new DotRuntimeException(ex.getMessage(), ex);
