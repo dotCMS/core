@@ -1,3 +1,0 @@
-some text
-
-more text
