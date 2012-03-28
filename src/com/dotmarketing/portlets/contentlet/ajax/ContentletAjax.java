@@ -1242,8 +1242,6 @@ public class ContentletAjax {
                     
                     Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
                     if(contentlet!=null) {
-                        CacheLocator.getContentletCache().remove(contentlet.getInode());
-                        CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
                         callbackData.remove("contentletIdentifier");
                         callbackData.remove("contentletInode");
                         callbackData.remove("contentletLocked");
