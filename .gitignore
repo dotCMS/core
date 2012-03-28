@@ -6,6 +6,7 @@ bin/*.sh
 .classpath
 .settings/*
 .project
+tomcat/work
 
 # Instance Files     #
 ######################
@@ -23,3 +24,4 @@ Thumbs.db
 # Build #
 ######################
 dotCMS/WEB-INF/classes/
+build/
