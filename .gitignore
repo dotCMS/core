@@ -6,11 +6,15 @@ bin/*.sh
 .classpath
 .settings/*
 .project
+tomcat/work
+tomcat/logs
 
 # Instance Files     #
 ######################
 dotCMS/dotSecure
+dotCMS/dotsecure
 dotCMS/assets
+sql/cms
 
 
 # OS generated files #
@@ -23,3 +27,7 @@ Thumbs.db
 # Build #
 ######################
 dotCMS/WEB-INF/classes/
+build/
+dotCMS/WEB-INF/generated_web.xml
+dotCMS/WEB-INF/lib/dotcms_?.*.jar
+dotCMS/WEB-INF/lib/plugin-*.jar

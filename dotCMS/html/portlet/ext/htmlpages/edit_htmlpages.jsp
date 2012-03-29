@@ -31,7 +31,7 @@ if(UtilMethods.isSet(htmlpage.getIdentifier())) {
     htmlTemplate = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(htmlpage);
     Identifier imageIdentifier = APILocator.getIdentifierAPI().find(htmlTemplate.getImage());
 
-    if(fileAsContent = imageIdentifier.getAssetType().equals("contentlet")) {
+    if(imageIdentifier != null && imageIdentifier.getAssetType() != null && (fileAsContent = imageIdentifier.getAssetType().equals("contentlet"))) {
     	templateImgPreviewContent = TemplateFactory.getImageContentlet(htmlTemplate);
 	} else {
 		templateImgPreviewFile = TemplateFactory.getImageFile(htmlTemplate);
