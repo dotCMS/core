@@ -30,7 +30,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -2536,14 +2535,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	private void reindexContentlets(List<Contentlet> contentToIndexAfterCommit,String cmd){
-	    ESIndexAPI indexAPI = new ESIndexAPI();
+
 		for (Contentlet con : contentToIndexAfterCommit) {
 			try {
 				Identifier ident=APILocator.getIdentifierAPI().find(con);
 				if(ident!=null && UtilMethods.isSet(ident.getId()))
-				    indexAPI.addContentToIndex(con);
+				    APILocator.getContentletIndexAPI().addContentToIndex(con);
 				else
-				    indexAPI.removeContentFromIndex(con);
+					APILocator.getContentletIndexAPI().removeContentFromIndex(con);
 			} catch (DotDataException e) {
 				Logger.error(this, e.getMessage(),e);
 			}
