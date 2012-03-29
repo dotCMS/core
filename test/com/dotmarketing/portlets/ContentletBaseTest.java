@@ -53,7 +53,6 @@ public class ContentletBaseTest extends TestBase {
     protected static ContentletAPI contentletAPI;
     protected static Host defaultHost;
     protected static Folder testFolder;
-    //protected static Host testHost;
     protected static ContentletFactory contentletFactory;
     private static RoleAPI roleAPI;
     private static PermissionAPI permissionAPI;
@@ -99,14 +98,6 @@ public class ContentletBaseTest extends TestBase {
         folderAPI = APILocator.getFolderAPI();
 
         defaultHost = hostAPI.findDefaultHost( user, false );
-        //Create a new test host
-        /*testHost = new Host();
-        testHost.setHostname( "dotcms_junit_test_host" );
-        testHost.setModDate( new Date() );
-        testHost.setModUser( user.getUserId() );
-        testHost.setOwner( user.getUserId() );
-        testHost.setProperty( "theme", "default" );
-        testHost = hostAPI.save( testHost, user, false );*/
 
         structures = new ArrayList<Structure>();
         permissions = new ArrayList<Permission>();
