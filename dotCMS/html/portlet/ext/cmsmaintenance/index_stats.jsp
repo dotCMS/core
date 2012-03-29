@@ -178,8 +178,10 @@ Map<String,ClusterIndexHealth> map = new ESIndexAPI().getClusterHealth();
 			<%boolean building =newIdx.contains(x);%>
 			<%if(building)continue; %>
 			<%ClusterIndexHealth health = map.get(x); %>
-			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" targetNodeIds="<%=x%>Row">
-                 <div dojoType="dijit.MenuItem" onClick="updateReplicas('<%=x %>',<%=health.getNumberOfReplicas()%>);" class="showPointer">
+			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
+			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
+                 
+                <div dojoType="dijit.MenuItem" onClick="updateReplicas('<%=x %>',<%=health.getNumberOfReplicas()%>);" class="showPointer">
                     <span class="fixIcon"></span>
                     <%= LanguageUtil.get(pageContext,"Update-Replicas-Index") %>
                 </div>
