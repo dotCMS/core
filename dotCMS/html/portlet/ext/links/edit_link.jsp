@@ -19,7 +19,7 @@
 		link = (Link)LinkFactory.getLinkFromInode(request.getAttribute("inode").toString(),user.getUserId());
 		Identifier identifier = APILocator.getIdentifierAPI().find(link);
 %>
-		
+
 			selectLink('<%=link.getInode()%>','<%=link.getWorkingURL()%>','<%=link.getTitle()%>','<%=link.getTarget()%>','<%=identifier.getInode()%>');
 		</script>
 <%
@@ -66,7 +66,7 @@
 		}
 	}
 
-	
+
 	Role[] roles = (Role[])com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
 	Folder folder = null;
 	if(UtilMethods.isSet(contentLink.getParent()))
@@ -74,11 +74,11 @@
 
 
     String pageWidth = request.getParameter("page_width");
-    
+
 	//This variable controls the name of the struts action used when the form is submitted
-	//the normal action is /ext/contentlet/edit_link but that can be changed 
-	String formAction = request.getParameter("struts_action") == null?"/ext/links/edit_link":request.getParameter("struts_action"); 
-	
+	//the normal action is /ext/contentlet/edit_link but that can be changed
+	String formAction = request.getParameter("struts_action") == null?"/ext/links/edit_link":request.getParameter("struts_action");
+
 	//The host of the file
 	Host host = link != null?APILocator.getHostAPI().findParentHost(link, APILocator.getUserAPI().getSystemUser(), false):null;
 	String hostId = null;
@@ -98,9 +98,9 @@
 
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
 	dojo.require('dotcms.dijit.form.FileSelector');
-	
+
 	function selectLink(inode,url,title,target,identifier) {
-	
+
 		if (isInodeSet(inode)) {
 		<% if (UtilMethods.isSet(request.getParameter("wysiwyg"))) { %>
 			var param = new Object();
@@ -140,7 +140,7 @@
 			}
 			if(document.getElementById("codeLinkType").checked)
 				form.protocal.value = "";
-				
+
 			if (!isInodeSet(form.parent.value)) {
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.links.alert.select.parent.folder")) %>');
 				return false;
@@ -175,8 +175,8 @@
 			<% if (pageWidth != null) { %>
 				page_width = '&page_width=<%= pageWidth %>';
 			<% } %>
-			self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" 
-value="edit" /><portlet:param name="popup" value="1" /><portlet:param name="browse" value="1" /><portlet:param name="wysiwyg" 
+			self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd"
+value="edit" /><portlet:param name="popup" value="1" /><portlet:param name="browse" value="1" /><portlet:param name="wysiwyg"
 value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg") : "" %>' /></portlet:actionURL>&inode=' + + document.getElementById('existinglink').value + '&child=true' + page_width;
 		}
 	}
@@ -204,7 +204,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		}
 
 	}
-	
+
     function deleteVersion(objId){
         if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.links.confirm.delete.version")) %>')){
 			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /></portlet:actionURL>&cmd=deleteversion&inode=' + objId + '&referer=' + referer;
@@ -256,28 +256,28 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 
 <!-- START TABS -->
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-	
+
 <!-- START Link Properties -->
 	<div id="fileBasicTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="showEditButtonsRow()">
-				
+
 		<dl>
-		
+
 		<input name="referer" type="hidden" value="<%=referer%>">
-		
+
 		<input name="<%= Constants.CMD %>" type="hidden" value="add">
 		<input type="hidden" name="userId" value="<%= user.getUserId() %>">
-		
+
 		<%if(identifier!=null){%>
 			<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
 			<dd><%= identifier.getId() %></dd>
 		<%}%>
-		
+
 			<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
 			<dd>
 				<input type="text" dojoType="dijit.form.TextBox" style="width:250px;" name="title" id="titleField" value="<%= UtilMethods.isSet(linkForm.getTitle()) ? linkForm.getTitle() : "" %>" />
 				<html:hidden  property="friendlyName" styleId="friendlyNameField"/>
 			</dd>
-		
+
 			<dt><%= LanguageUtil.get(pageContext, "Folder") %>:</dt>
 			<dd>
 				<% if(!InodeUtils.isSet(contentLink.getParent())) { %>
@@ -287,21 +287,21 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 					<html:hidden styleClass="form-text" property="parent" styleId="parent" />
 				<% } %>
 			</dd>
-			
+
 			<dt><%= LanguageUtil.get(pageContext, "Type") %>:</dt>
 			<dd>
 				<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.INTERNAL.toString())?"checked":"" %> id="internalLinkType" name="linkType" value="<%= LinkType.INTERNAL.toString() %>" onclick="hideShowOptions()">
 				<label for="internalLinkType"><%= LanguageUtil.get(pageContext, "Internal-Link") %></label>
-				
+
 				<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.EXTERNAL.toString())?"checked":"" %> id="externalLinkType" name="linkType" value="<%= LinkType.EXTERNAL.toString() %>" onclick="hideShowOptions()">
 				<label for="externalLinkType"><%= LanguageUtil.get(pageContext, "External-Link") %></label>
-				
+
 				<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.CODE.toString())?"checked":"" %> id="codeLinkType" name="linkType" value="<%= LinkType.CODE.toString() %>" onclick="hideShowOptions()">
 				<label for="codeLinkType"><%= LanguageUtil.get(pageContext, "Code-Link") %></label>
 			</dd>
 		</dl>
 
-		<!-- If External Link -->	
+		<!-- If External Link -->
 		<dl id="externalURL" style="display:<% if(contentLink.getLinkType() != Link.LinkType.EXTERNAL.toString()) { %>none;<% } %>">
 			<dt>&nbsp;</dt>
 			<dd>
@@ -317,12 +317,12 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		</dl>
 		<!-- /If External Link -->
 
-		<!-- If Internal Link -->						
+		<!-- If Internal Link -->
 		<dl id="internalURL" style="display:<% if(contentLink.getLinkType() != Link.LinkType.INTERNAL.toString()) { %>none;<% } %>">
-			<dt>&nbsp;</dt>	
+			<dt>&nbsp;</dt>
 			<dd>
-				<input type="text" name="internalLinkIdentifier" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="list"  
-					value="<%= linkForm.getInternalLinkIdentifier() %>" showThumbnail="false" />			
+				<input type="text" name="internalLinkIdentifier" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="list"
+					value="<%= linkForm.getInternalLinkIdentifier() %>" showThumbnail="false" />
 			</dd>
 		</dl>
 		<!-- /If Internal Link -->
@@ -343,7 +343,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 						</tr>
 					</table>
 				<!-- /Resize TextArea -->
-			</dt>	
+			</dt>
 			<dd>
 				<%--html:textarea onkeydown="return catchTab(this,event)" style="width:450px; height:150px; font-size: 12px" property="linkCode" styleId="linkCode"></html:textarea--%>
 				<textarea dojoType="dijit.form.Textarea" style="width:250px; min-height:150px; font-size:12px" name="linkCode" id="linkCode"><%= UtilMethods.isSet(linkForm.getLinkCode()) ? linkForm.getLinkCode() : "" %></textarea>
@@ -370,7 +370,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		<dl>
 			<dt><%= LanguageUtil.get(pageContext, "sort-order") %>:</dt>
 			<dd><input type="text" dojoType="dijit.form.TextBox" name="sortOrder" style="width:50px;" id="sortOrder" size="3" value="<%= linkForm.getSortOrder() %>" /></dd>
-			
+
 			<dt><%= LanguageUtil.get(pageContext, "Show-on-Menu") %>:</dt>
 			<dd>
 				<!--<html:checkbox styleClass="form-text" property="showOnMenu" />-->
@@ -391,13 +391,13 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 			request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentLink);
 			request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, folder);
 		%>
-		<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>	
+		<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
 	</div>
 <%
 	}
 %>
 <!-- /Permissions Tab  -->
-		
+
 <!-- START Versions Tab -->
 	<%if(contentLink != null && InodeUtils.isSet(contentLink.getInode())){ %>
 		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="showEditButtonsRow()">
@@ -409,12 +409,12 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 </div>
 <!-- END TABS -->
 
-<div class="clear"></div>							
+<div class="clear"></div>
 
 <!-- Button Row --->
 <div class="buttonRow" id="editLinkButtonRow">
-	<% 
-		if(!InodeUtils.isSet(link.getInode())) { 
+	<%
+		if(!InodeUtils.isSet(link.getInode()) && folder!=null) {
          	canUserWriteToLink = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
        	}
 	%>
@@ -448,13 +448,13 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
 		</button>
 	<% } %>
-	
+
 	<% if (InodeUtils.isSet(contentLink.getInode()) && contentLink.isDeleted())  { %>
 		<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>
 		</button>
 	<% } %>
-	
+
 	<button dojoType="dijit.form.Button" onClick="cancelEdit()"  iconClass="cancelIcon" type="button">
 		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 	</button>
@@ -466,7 +466,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 </liferay:box>
 <script language=javascript>
 	dojo.addOnLoad(//DOTCMS-5038
-		 function(){			
+		 function(){
 			self.focus();
 			if(dijit.byId("titleField").isFocusable()){
 				dijit.byId("titleField").focus();

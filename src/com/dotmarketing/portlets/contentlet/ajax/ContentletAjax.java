@@ -35,6 +35,7 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -899,6 +900,12 @@ public class ContentletAjax {
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
 
+	    try {
+            HibernateUtil.startTransaction();
+        } catch (DotHibernateException e1) {
+            Logger.warn(this, e1.getMessage(),e1);
+        }
+	    
 		int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
 		String newInode = "";
 
@@ -1103,6 +1110,10 @@ public class ContentletAjax {
 					}
 				}
 			}
+			
+			// everything Ok? then commit 
+			HibernateUtil.commitTransaction();
+			
 		}
 		catch (DotContentletValidationException ve) {
 
@@ -1209,17 +1220,12 @@ public class ContentletAjax {
 		}
 		catch(DotLockException dse){
 			String errorString = LanguageUtil.get(user,"message.content.locked");
-
-
-
-
 			saveContentErrors.add(errorString);
 
 		}
 		catch(DotSecurityException dse){
 			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");
 			saveContentErrors.add(errorString);
-
 		}
 
 		catch (Exception e) {
@@ -1227,12 +1233,26 @@ public class ContentletAjax {
 			callbackData.put("saveContentErrors", saveContentErrors);
 			callbackData.put("referer", referer);
 			return callbackData;
-
-
 		}
 
 		finally{
-			if(!isAutoSave
+		    if(saveContentErrors.size()>0) {
+                try {
+                    HibernateUtil.rollbackTransaction();
+                    
+                    Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+                    if(contentlet!=null) {
+                        callbackData.remove("contentletIdentifier");
+                        callbackData.remove("contentletInode");
+                        callbackData.remove("contentletLocked");
+                        newInode=null;
+                    }
+                } catch (DotHibernateException e) {
+                    Logger.warn(this, e.getMessage(),e);
+                }
+            }
+		    
+		    if(!isAutoSave
 					&&(saveContentErrors != null
 							&& saveContentErrors.size() > 0)){
 				callbackData.put("saveContentErrors", saveContentErrors);
