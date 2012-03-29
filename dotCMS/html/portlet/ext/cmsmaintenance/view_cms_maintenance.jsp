@@ -417,7 +417,7 @@ function refreshCache(){
 	var x = dijit.byId("cacheStatsCp");
 	var y =Math.floor(Math.random()*1123213213);
 
-	<%if(CacheLocator.getCacheAdministrator() instanceof DotGuavaCacheAdministratorImpl){%>
+	<%if(CacheLocator.getCacheAdministrator().getImplementationClass().equals(DotGuavaCacheAdministratorImpl.class)){%>
 		if(dijit.byId("showSize").checked){
 			x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats_guava.jsp?showSize=true&r=" + y  );
 			

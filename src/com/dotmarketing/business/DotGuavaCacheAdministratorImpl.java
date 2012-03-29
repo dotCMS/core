@@ -780,5 +780,8 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	}
 
-
+    @Override
+    public Class getImplementationClass() {
+        return DotGuavaCacheAdministratorImpl.class;
+    }
 }
