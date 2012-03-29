@@ -3,6 +3,9 @@
  */
 package com.dotmarketing.business;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jgroups.JChannel;
@@ -92,4 +95,14 @@ public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+    @Override
+    public List<Map<String, Object>> getCacheStatsList() {
+        return new ArrayList<Map<String, Object>>();
+    }
+
+    @Override
+    public Class getImplementationClass() {
+        return DotJBCacheAdministratorLegacyImpl.class;
+    }
 }
