@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth"%>
 <%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
 <%@page import="org.elasticsearch.action.admin.indices.status.IndexStatus"%>
@@ -19,7 +20,7 @@
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
-ESIndexAPI idxApi = new ESIndexAPI();
+ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 ContentletAPI capi = APILocator.getContentletAPI();
 
 try {

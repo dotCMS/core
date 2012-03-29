@@ -127,7 +127,7 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
-    private static final ESIndexAPI indexAPI = new ESIndexAPI();
+    private static final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private ESContentFactoryImpl conFac;
@@ -1365,8 +1365,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // we lock the table dist_reindex_journal until we
             ReindexThread.getInstance().lockCluster();
-            ESIndexAPI iAPI = new ESIndexAPI();
-            if(iAPI.isInFullReindex()){
+           
+            if(indexAPI.isInFullReindex()){
             	try{
             		ReindexThread.getInstance().unlockCluster();
             		HibernateUtil.commitTransaction();

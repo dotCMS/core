@@ -1,3 +1,6 @@
+<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotcms.content.elasticsearch.business.ESContentletIndexAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
@@ -26,7 +29,7 @@ String referer = java.net.URLEncoder.encode(com.dotmarketing.util.PortletURLUtil
 
 CmsMaintenanceForm CMF = (com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm) request.getAttribute("CmsMaintenanceForm");
 session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, true); 
-ESIndexAPI idxApi = new ESIndexAPI();
+ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 List<Structure> structs = StructureFactory.getStructures();
 %>
 <script type='text/javascript' src='/dwr/interface/CMSMaintenanceAjax.js'></script>
