@@ -32,6 +32,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -49,9 +50,9 @@ import com.sun.image.codec.jpeg.JPEGEncodeParam;
 /**
  * This servlet resize an image proportionally without placing that image into a
  * box background. The image generated is with the .png extension
- * 
+ *
  * @author Oswaldo
- * 
+ *
  */
 public class ResizeImageServlet extends HttpServlet {
     private static final FileAPI fileAPI = APILocator.getFileAPI();
@@ -70,14 +71,14 @@ public class ResizeImageServlet extends HttpServlet {
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         long time = System.currentTimeMillis();
-      
+
 		User user = null;
 		try {
 			user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 		} catch (Exception nsue) {
 			Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
 		}
-		
+
 		boolean liveMode = ((request.getSession().getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) == null));
         String id = request.getParameter("id");
         if(!UtilMethods.isSet(id)){
@@ -89,12 +90,12 @@ public class ResizeImageServlet extends HttpServlet {
         File file = null;
         //Contentlet contentlet = null;
 
-        
+
         String inode = null;
-        
-        
+
+
         if(UtilMethods.isSet(url)) {
-            //If path is the dotasset portlet 
+            //If path is the dotasset portlet
             if(url.startsWith("/dotAsset")) {
         		StringTokenizer _st = new StringTokenizer(url, "/");
         		String _fileName = null;
@@ -102,7 +103,7 @@ public class ResizeImageServlet extends HttpServlet {
         			_fileName = _st.nextToken();
         		}
                 id = UtilMethods.getFileName(_fileName); // Sets the identifier
-            } else { 
+            } else {
         		//If it's a regular path
             	Host currentHost;
 				try {
@@ -113,12 +114,12 @@ public class ResizeImageServlet extends HttpServlet {
 				} catch (Exception e) {
 					Logger.error(ResizeImageServlet.class, e.getMessage(), e);
 					throw new ServletException(e.getMessage(), e);
-				} 
+				}
 
-            	
-            }            	
+
+            }
         }
-        
+
         // if we have an id
         if( UtilMethods.isSet(id) ) {
 
@@ -126,8 +127,13 @@ public class ResizeImageServlet extends HttpServlet {
         		identifier = APILocator.getIdentifierAPI().loadFromCache(id);
 	        	if(identifier != null && (InodeUtils.isSet(identifier.getInode()))) {
 	        		//it's an identifier
-					String path = (liveMode) ? LiveCache.getPathFromCache(identifier.getURI(), identifier.getHostId())
+	        		String path = null;
+	        		try {
+	        			path = (liveMode) ? LiveCache.getPathFromCache(identifier.getURI(), identifier.getHostId())
 							: WorkingCache.getPathFromCache(identifier.getURI(), identifier.getHostId());
+	        		} catch(DotContentletStateException e) {
+	        			path = WorkingCache.getPathFromCache(identifier.getURI(), identifier.getHostId());
+	        		}
             		inode = UtilMethods.getFileName(path);
 	        	} else {
 	        		//it might be an inode
@@ -137,7 +143,7 @@ public class ResizeImageServlet extends HttpServlet {
 	                	identifier = APILocator.getIdentifierAPI().find(file.getIdentifier());
 	                }
 	                else{
-	                	//Finally it's not a file and we did the first round trip to database 
+	                	//Finally it's not a file and we did the first round trip to database
 	                	//then we do the second round trip to database to find the identifier,
 	                	//but after this the next hit will find it cached.
 	                	identifier = APILocator.getIdentifierAPI().find(id);
@@ -148,12 +154,12 @@ public class ResizeImageServlet extends HttpServlet {
 	                }
 	        	}
 			} catch (Exception e) {
-				
+				System.out.println(e);
 			}
 
         }
-        
-        
+
+
         if (!InodeUtils.isSet(inode)) {
             response.sendError(404);
             return;
@@ -166,7 +172,7 @@ public class ResizeImageServlet extends HttpServlet {
         	 * can get inheritable permissions on it
         	 * without having to hit cache or db
         	 */
-        	
+
             file = new com.dotmarketing.portlets.files.model.File();
             if(identifier!=null && UtilMethods.isSet(identifier.getInode())){
             	file.setIdentifier(identifier.getInode());
@@ -177,7 +183,7 @@ public class ResizeImageServlet extends HttpServlet {
             		identifier.setId(file.getIdentifier());
 				} catch (Exception e) {
 					Logger.error(ResizeImageServlet.class,e.getMessage(),e);
-				} 
+				}
 
             }
 
@@ -224,7 +230,13 @@ public class ResizeImageServlet extends HttpServlet {
             	int imgLength = 0;
             	String ext = "";
             	if(id!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
-            		Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
+            		Contentlet cont = null;
+            		try {
+            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
+            		}
+            		catch(DotContentletStateException e) {
+            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
+            		}
             		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
             		isSet = InodeUtils.isSet(cont.getInode());
             		fileName = fa.getFileName();
@@ -285,7 +297,7 @@ public class ResizeImageServlet extends HttpServlet {
                             // determine thumbnail size from WIDTH and HEIGHT
                             imageWidth = imgWidth == 0?width:imgWidth;
                             imageHeight = imgLength == 0?height:imgLength;
-                            
+
                             // JIRA: http://jira.dotmarketing.net/browse/DOTCMS-1340
                             height = (int) Math.ceil((imageHeight * width)/imageWidth);
 
@@ -351,12 +363,12 @@ public class ResizeImageServlet extends HttpServlet {
                     String thumbnailFilePath = "";
                     if(!isCont){
                 		// creates the path with id{1} + id{2}
-                      
-                        thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator 
+
+                        thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator
                         		+thumbExtension + "." + suffix;
                     }else{
-                       
-                        thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator + inodeOrId  + java.io.File.separator + "fileAsset"  + java.io.File.separator 
+
+                        thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator + inodeOrId  + java.io.File.separator + "fileAsset"  + java.io.File.separator
                                 +thumbExtension + "." + suffix;
                     }
 
@@ -364,7 +376,7 @@ public class ResizeImageServlet extends HttpServlet {
 
                     java.io.File thumbFile = null;
                     synchronized (inode.intern()) {
-						
+
                         thumbFile = new java.io.File(thumbnailFilePath);
                         Logger.debug(this, "Checking resized image for " + thumbnailFilePath);
                         if (!thumbFile.exists() || (request.getParameter("nocache") != null)) {
@@ -386,11 +398,11 @@ public class ResizeImageServlet extends HttpServlet {
                     	return;
                     }
                     Logger.debug(this, "Streaming the image");
-                    
-                    
-                    
+
+
+
                     //  -------- HTTP HEADER/ MODIFIED SINCE CODE -----------//
-                    
+
                     long _lastModified = thumbFile.lastModified();
                     long _fileLength = thumbFile.length();
 					String _eTag = "dot:" + inode + "-" + _lastModified/1000 + "-" + _fileLength;
@@ -401,7 +413,7 @@ public class ResizeImageServlet extends HttpServlet {
                      * If the etag matches then the file is the same
                      *
                     */
-                    
+
                     if(ifNoneMatch != null){
                         if(_eTag.equals(ifNoneMatch) || ifNoneMatch.equals("*")){
                             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
@@ -415,7 +427,7 @@ public class ResizeImageServlet extends HttpServlet {
 					    	java.text.SimpleDateFormat httpDate = new java.text.SimpleDateFormat(Constants.RFC2822_FORMAT, Locale.US);
 					    	httpDate.setTimeZone(TimeZone.getDefault());
 					        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
-					        
+
 					        if(_lastModified <= ifModifiedSinceDate.getTime()){
 
 					            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
@@ -426,7 +438,7 @@ public class ResizeImageServlet extends HttpServlet {
 					    catch(Exception e){}
 					}
 
-                    response.setHeader("Content-Length", String.valueOf(_fileLength));                   
+                    response.setHeader("Content-Length", String.valueOf(_fileLength));
                     response.setHeader("Last-Modified", df.format(_lastModified));
                     response.setHeader("ETag", "\"" + _eTag +"\"");
                     // Set the expiration time
@@ -435,11 +447,11 @@ public class ResizeImageServlet extends HttpServlet {
                     response.setHeader("Expires", df.format(expiration.getTime()));
                     response.setHeader("Cache-Control", "max-age=31104000");
                     // END Set the expiration time
-                    
+
                     //  -------- /HTTP HEADER/ MODIFIED SINCE CODE -----------//
-                    
-                    
-                    
+
+
+
                     // set the content type and get the output stream
                     response.setContentType(this.getServletContext().getMimeType(thumbnailFilePath));
                     Logger.debug(this, "Image mime type " + this.getServletContext().getMimeType(thumbnailFilePath));
@@ -452,7 +464,7 @@ public class ResizeImageServlet extends HttpServlet {
                     while ((i = bis.read(buf)) != -1) {
                         os.write(buf, 0, i);
                     }
-                    
+
                     os.flush();
                     os.close();
                     bis.close();
