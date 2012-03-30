@@ -420,7 +420,7 @@ function refreshCache(){
 	var x = dijit.byId("cacheStatsCp");
 	var y =Math.floor(Math.random()*1123213213);
 
-	<%if(CacheLocator.getCacheAdministrator() instanceof DotGuavaCacheAdministratorImpl){%>
+	<%if(CacheLocator.getCacheAdministrator().getImplementationClass().equals(DotGuavaCacheAdministratorImpl.class)){%>
 		if(dijit.byId("showSize").checked){
 			x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats_guava.jsp?showSize=true&r=" + y  );
 			
@@ -748,6 +748,13 @@ function updateReplicas(indexName,currentNum){
 
 }
 
+function dohighlight(id) {
+	dojo.addClass(id,"highlight");
+}
+
+function undohighlight(id) {
+    dojo.removeClass(id,"highlight");
+}
 
 
 </script>
@@ -756,6 +763,11 @@ function updateReplicas(indexName,currentNum){
 #idxReplicasDialog{
 	width:300px,height:150px;
 }
+.highlight td {
+    background: #94BBFF;
+    color: white !important;
+}
+
 
 </style>
 <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
