@@ -495,6 +495,10 @@ public class ContentletBaseTest extends TestBase {
         //Save the multi tree
         MultiTreeFactory.saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), contentlet.getIdentifier() ) );
 
+        //Make it working and live
+        APILocator.getVersionableAPI().setWorking( htmlPage );
+        APILocator.getVersionableAPI().setLive( htmlPage );
+
         //Adding it to the test collection
         htmlPages.add( htmlPage );
     }

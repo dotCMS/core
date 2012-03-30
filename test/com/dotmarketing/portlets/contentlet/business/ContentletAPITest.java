@@ -1,14 +1,23 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.business.DotMappingException;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
 import org.apache.lucene.queryParser.ParseException;
 import org.junit.Test;
 
@@ -504,6 +513,118 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#publishRelatedHtmlPages(com.dotmarketing.portlets.contentlet.model.Contentlet)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotCacheException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void publishRelatedHtmlPages () throws DotDataException, DotSecurityException, DotCacheException {
+
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
+
+        //Making it live
+        APILocator.getVersionableAPI().setLive( contentlet );
+
+        //Publish html pages for this contentlet
+        contentletAPI.publishRelatedHtmlPages( contentlet );
+
+        //TODO: How to validate this???, good question, basically checking that the html page is not in cache basically the method publishRelatedHtmlPages(...) will just remove the htmlPage from cache
+
+        //Get the contentlet Identifier to gather the related pages
+        Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
+        //Get the identifier's number of the related pages
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getInode() );
+        for ( MultiTree multitree : multiTrees ) {
+            //Get the Identifiers of the related pages
+            Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
+            //Get the pages
+            HTMLPage htmlPage = ( HTMLPage ) APILocator.getVersionableAPI().findLiveVersion( htmlPageIdentifier, APILocator.getUserAPI().getSystemUser(), false );
+
+            //OK..., lets try to find this page in the cache...
+            HTMLPage foundPage = ( HTMLPage ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + htmlPage.getIdentifier(), "HTMLPageCache" );
+
+            //Validations
+            assertTrue( foundPage == null || ( foundPage.getInode() == null || foundPage.getInode().equals( "" ) ) );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#cleanField(com.dotmarketing.portlets.structure.model.Structure, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void cleanField () throws DotDataException, DotSecurityException {
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        //Getting a know field for this structure
+        //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
+        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
+
+        //Search the contentlet for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+
+        //Getting the current value for this field
+        Object value = contentletAPI.getFieldValue( contentletList.iterator().next(), foundWysiwygField );
+
+        //Validations
+        assertNotNull( value );
+        assertTrue( !( ( String ) value ).isEmpty() );
+
+        //Set to the default value
+        contentletAPI.cleanField( structure, foundWysiwygField, user, false );
+
+        //Search for the value again
+        Object newValue = contentletAPI.getFieldValue( contentletList.iterator().next(), foundWysiwygField );
+
+        //Validations
+        assertNotSame( value, newValue );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#cleanHostField(com.dotmarketing.portlets.structure.model.Structure, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotMappingException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void cleanHostField () throws DotDataException, DotSecurityException, DotMappingException {
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        //Search the contentlet for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+
+        //Check the current identifies
+        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( contentletList.iterator().next() );
+
+        //Cleaning the host field for the identifier
+        contentletAPI.cleanHostField( structure, user, false );
+
+        //Now get again the identifier to see if the change was made
+        Identifier changedContentletIdentifier = APILocator.getIdentifierAPI().find( contentletList.iterator().next() );
+
+        //Validations
+        assertNotNull( changedContentletIdentifier );
+        assertNotSame( contentletIdentifier, changedContentletIdentifier );
+        assertNotSame( contentletIdentifier.getHostId(), changedContentletIdentifier.getHostId() );
     }
 
 }
