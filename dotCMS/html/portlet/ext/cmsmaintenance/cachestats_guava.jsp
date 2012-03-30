@@ -58,7 +58,7 @@ MemoryMeter meter = new MemoryMeter();
                 	<th><%= LanguageUtil.get(pageContext,"Size") %> / <%= LanguageUtil.get(pageContext,"Avg") %></th>
                 <%} %>
         </thead>
-        <% List<Map<String, Object>> stats = ((DotGuavaCacheAdministratorImpl) CacheLocator.getCacheAdministrator()).getCacheStatsList();
+        <% List<Map<String, Object>> stats = CacheLocator.getCacheAdministrator().getCacheStatsList();
         
         List<Map<String, Object>> liveWorking = new ArrayList<Map<String, Object>>();
 

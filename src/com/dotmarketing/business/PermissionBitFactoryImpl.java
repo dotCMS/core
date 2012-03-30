@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -30,7 +35,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.business.FileAPI;
@@ -724,8 +728,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The structure inode
 	 */
 	private final String selectChildrenContentByStructureSQL =
-			"select distinct identifier.id from contentlet, inode, identifier where " +
-			"contentlet.inode = inode.inode and identifier.id = contentlet.identifier and contentlet.structure_inode = ?";
+			" select distinct contentlet.identifier as id from contentlet " +
+			" where contentlet.structure_inode = ?";
 
 	/*
 	 * To remove all permissions of content under a given parent folder
@@ -789,13 +793,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String deleteContentReferencesByStructureSQL =
 		"delete from permission_reference where exists (" +
-		" select identifier.id from contentlet, inode, identifier " +
-		" where contentlet.inode = inode.inode " +
-		" and identifier.id = contentlet.identifier " +
-		" and contentlet.structure_inode = ? " +
-		" and permission_reference.asset_id = identifier.id " +
+		" select contentlet.identifier from contentlet " +
+		" where contentlet.structure_inode = ? " +
+		" and permission_reference.asset_id = contentlet.identifier " +
 		" and permission_reference.permission_type = 'com.dotmarketing.portlets.contentlet.model.Contentlet' " +
-		" group by identifier.id)";
+		" group by contentlet.identifier)";
 
 	/*
 	 * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
@@ -3301,31 +3303,35 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
-		DotConnect dc = new DotConnect();
+	    ContentletAPI contAPI = APILocator.getContentletAPI();
+	    ContentletIndexAPI indexAPI=new ESContentletIndexAPI();
+	    
+	    DotConnect dc = new DotConnect();
 		dc.setSQL(deleteContentReferencesByStructureSQL);
 		dc.addParam(structure.getPermissionId());
 		dc.loadResult();
 
-		dc.setSQL(selectChildrenContentByStructureSQL);
-		dc.addParam(structure.getPermissionId());
-		ArrayList<Map<String, Object>> contentList = dc.loadResults();
-		UserAPI userAPI = APILocator.getUserAPI();
-		for (Map<String, Object> contentId : contentList) {
-			ContentletAPI contentAPI = APILocator.getContentletAPI();
-			Contentlet permissionable;
+		final int limit=500;
+		int offset=0;
+		List<Contentlet> contentlets;
+		do {
+			String query="structurename:"+structure.getName();
 			try {
-				permissionable = contentAPI.findContentletByIdentifier((String) contentId.get("id"), false, 0, userAPI.getSystemUser(), false);
-			} catch (DotContentletStateException e) {
-				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			} catch (DotSecurityException e) {
-				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
+			    contentlets=contAPI.search(query, limit, offset, "identifier", APILocator.getUserAPI().getSystemUser(), false);
+            } catch (DotSecurityException e) {
+                throw new RuntimeException(e);
+            }
+			
+			BulkRequestBuilder bulk=new ESClient().getClient().prepareBulk();
+			for(Contentlet cont : contentlets) {
+			    permissionCache.remove(cont.getPermissionId());
+			    indexAPI.addContentToIndex(cont, false, true, true, bulk);
 			}
-			permissionCache.remove(permissionable.getPermissionId());
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			contAPI.refresh((Contentlet)permissionable);
-		}
+			if(bulk.numberOfActions()>0)
+			    bulk.execute().actionGet();
+			
+			offset=offset+limit;
+		} while(contentlets.size()>0);
 	}
 
 	@Override

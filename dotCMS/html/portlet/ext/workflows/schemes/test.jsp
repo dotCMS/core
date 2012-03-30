@@ -11,7 +11,7 @@
                 <th>Disk</th>
                 <th>Is Resident</th>
         </thead>
-        <% List<Map<String, Object>> stats = ((DotJBCacheAdministratorImpl)CacheLocator.getCacheAdministrator()).getCacheStatsList();
+        <% List<Map<String, Object>> stats = CacheLocator.getCacheAdministrator().getCacheStatsList();
         
        	List<Map<String, Object>> liveWorking = new ArrayList<Map<String, Object>>();
         
