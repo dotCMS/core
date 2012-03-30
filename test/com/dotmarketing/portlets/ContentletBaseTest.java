@@ -30,6 +30,8 @@ import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.links.business.MenuLinkAPI;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -63,6 +65,7 @@ public class ContentletBaseTest extends TestBase {
     private static TemplateAPI templateAPI;
     private static HTMLPageAPI htmlPageAPI;
     private static FolderAPI folderAPI;
+    private static MenuLinkAPI menuLinkAPI;
 
     protected static User user;
     protected static List<Contentlet> contentlets;
@@ -71,6 +74,7 @@ public class ContentletBaseTest extends TestBase {
     protected static Collection<Structure> structures;
     protected static Collection<Template> templates;
     protected static Collection<Permission> permissions;
+    protected static Collection<Link> links;
     protected static int FIELDS_SIZE = 14;
 
     private static String wysiwygValue = "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. " +
@@ -96,6 +100,7 @@ public class ContentletBaseTest extends TestBase {
         templateAPI = APILocator.getTemplateAPI();
         htmlPageAPI = APILocator.getHTMLPageAPI();
         folderAPI = APILocator.getFolderAPI();
+        menuLinkAPI = APILocator.getMenuLinkAPI();
 
         defaultHost = hostAPI.findDefaultHost( user, false );
 
@@ -105,6 +110,7 @@ public class ContentletBaseTest extends TestBase {
         containers = new ArrayList<Container>();
         templates = new ArrayList<Template>();
         htmlPages = new ArrayList<HTMLPage>();
+        links = new ArrayList<Link>();
 
         //*******************************************************************************
         //Create the new folder
@@ -158,6 +164,9 @@ public class ContentletBaseTest extends TestBase {
             }
         }
         addContentlet( testStructure2, language );
+
+        //Finally creates and add links
+        addMenuLink();
     }
 
     @AfterClass
@@ -196,6 +205,11 @@ public class ContentletBaseTest extends TestBase {
                 contentletAPI.delete( contentlet, user, false );
             }
             StructureFactory.deleteStructure( structure );
+        }
+
+        //Delete the menu links
+        for ( Link link : links ) {
+            menuLinkAPI.delete( link, user, false );
         }
 
         //Delete the folder
@@ -501,6 +515,40 @@ public class ContentletBaseTest extends TestBase {
 
         //Adding it to the test collection
         htmlPages.add( htmlPage );
+    }
+
+    /**
+     * Creates and add an Link to a collection for a later use in the tests
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private static void addMenuLink () throws DotSecurityException, DotDataException {
+
+        //Creating the menu link
+        Link menuLink = new Link();
+        menuLink.setModUser( user.getUserId() );
+        menuLink.setOwner( user.getUserId() );
+        menuLink.setProtocal( "https://" );
+        menuLink.setShowOnMenu( true );
+        menuLink.setSortOrder( 2 );
+        menuLink.setTarget( "_blank" );
+        menuLink.setTitle( "JUnit MenuLink Test" );
+        menuLink.setType( "links" );
+        menuLink.setUrl( "www.dotcms.org" );
+        menuLink.setFriendlyName( "JUnit Test Menu Link" );
+        menuLink.setIDate( new Date() );
+        menuLink.setInternalLinkIdentifier( "" );
+        menuLink.setLinkCode( "" );
+        menuLink.setLinkType( Link.LinkType.EXTERNAL.toString() );
+        menuLink.setModDate( new Date() );
+
+        //Saving it and adding it permissions
+        menuLinkAPI.save( menuLink, testFolder, user, false );
+        permissionAPI.copyPermissions( testFolder, menuLink );
+
+        //Adding it to the test collection
+        links.add( menuLink );
     }
 
 }

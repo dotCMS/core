@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -22,7 +23,9 @@ import org.apache.lucene.queryParser.ParseException;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -625,6 +628,112 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull( changedContentletIdentifier );
         assertNotSame( contentletIdentifier, changedContentletIdentifier );
         assertNotSame( contentletIdentifier.getHostId(), changedContentletIdentifier.getHostId() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#getNextReview(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void getNextReview () throws DotSecurityException, DotDataException {
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        //Search the contentlet for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+
+        //Getting the next review date
+        Date nextReview = contentletAPI.getNextReview( contentletList.iterator().next(), user, false );
+
+        //Validations
+        assertNotNull( nextReview );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#getContentletReferences(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void getContentletReferences () throws DotSecurityException, DotDataException {
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        //Search the contentlet for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+
+        //Retrieve all the references for this Contentlet.
+        List<Map<String, Object>> references = contentletAPI.getContentletReferences( contentletList.iterator().next(), user, false );
+
+        //Validations
+        assertNotNull( references );
+        assertTrue( !references.isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#getFieldValue(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Field)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void getFieldValue () throws DotSecurityException, DotDataException {
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        //Getting a know field for this structure
+        //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
+        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
+
+        //Search the contentlet for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+
+        //Getting the current value for this field
+        Object value = contentletAPI.getFieldValue( contentletList.iterator().next(), foundWysiwygField );
+
+        //Validations
+        assertNotNull( value );
+        assertTrue( !( ( String ) value ).isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#addLinkToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, String, String, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void addLinkToContentlet () throws DotSecurityException, DotDataException {
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+        Contentlet contentlet = contentletList.iterator().next();
+
+        //Add to this contentlet a link
+        contentletAPI.addLinkToContentlet( contentlet, "", "Test Link", user, false);
+
+        //Verify if the link was associated
+        List<Link> relatedLinks = contentletAPI.getRelatedLinks( contentlet, user, false );
+
+        //Validations
+        assertNotNull( relatedLinks );
+        assertFalse( relatedLinks.isEmpty() );
     }
 
 }
