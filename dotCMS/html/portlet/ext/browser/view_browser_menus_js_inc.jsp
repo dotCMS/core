@@ -545,12 +545,7 @@
     				strHTML += '<span class="pagePropIcon"></span>';
            			strHTML += actionLabel;
 				strHTML += '</a>';
-			}
-
-			strHTML += '<a href="javascript: requestHTMLPageChange(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="workflowIcon"></span>';
-	   		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Request-a-Change")) %>';
-			strHTML += '</a>';
+			}			
 		}
 
         if (!archived) {
