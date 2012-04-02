@@ -127,12 +127,6 @@
         document.getElementById('submitParent').submit();
     }
 
-    function addTask(){
-        document.getElementById('htmlPage').value='$htmlPageInode';
-        document.getElementById('cmd').value="addWorkflow";
-        document.getElementById('submitParent').submit();
-    }
-
     function publishAll(){
         if(confirm("$languagewebapi.getFromUserLanguage("message.confirm.modes.publish.page")")){
             document.getElementById('htmlPage').value='$htmlPageInode';
@@ -271,11 +265,6 @@
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
 			
-            <hr/>
-            
-            <a href="javascript: addTask();">
-	           <span class="newTaskIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-a-Task")
-	        </a>
         </div>
         
     </div>
@@ -323,9 +312,6 @@
 			
             <hr/>
             
-            <a href="javascript: addTask();">
-	           <span class="newTaskIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-a-Task")
-	        </a>
         </div>
     </div>
 <!-- /Preview Mode -->
@@ -358,9 +344,6 @@
 			
             <hr/>
             
-            <a href="javascript: addTask();">
-	           <span class="newTaskIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-a-Task")
-	        </a>
         </div>
     </div>
 <!-- /Live Mode -->
