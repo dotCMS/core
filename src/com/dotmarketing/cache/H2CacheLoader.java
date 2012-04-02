@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,12 +37,14 @@ import org.jboss.cache.RegionManager;
 import org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
 import org.jboss.cache.loader.CacheLoader;
 
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.ResourceWrapper;
+import com.liferay.util.FileUtil;
 
 public class H2CacheLoader implements CacheLoader{
 
@@ -71,6 +74,9 @@ public class H2CacheLoader implements CacheLoader{
 		if(instance ==null){
 			synchronized (H2CacheLoader.class.getCanonicalName()) {
 				if(instance== null){
+					if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", true)) 
+						new H2CacheLoader().moveh2dbDir();
+					
 					new H2CacheLoader().create();
 				}
 			}
@@ -203,6 +209,15 @@ public class H2CacheLoader implements CacheLoader{
 		}
 	}
 	
+	private class deleteTrashDir extends Thread {	
+		
+		@Override
+		public void run() {
+			File trashDir = new File(ConfigUtils.getDynamicContentPath() + File.separator + "trash");
+			FileUtil.deltree(trashDir, false);
+		}
+	}
+	
 	private synchronized void addDbsInited(){
 		dbsInitialized++;
 	}
@@ -221,6 +236,19 @@ public class H2CacheLoader implements CacheLoader{
 				Logger.debug(this, "Cannot sleep : ", e);
 			}
 		}
+	}
+	
+	public void moveh2dbDir() throws Exception {
+		File h2dbDir=new File(ConfigUtils.getDynamicContentPath() + File.separator + "h2db");
+		File trashDir = new File(ConfigUtils.getDynamicContentPath() + File.separator + "trash" + File.separator + "h2db"+ESIndexAPI.timestampFormatter.format(new Date()));
+		
+		//move the dotsecure/h2db dir to dotsecure/trash/h2db{timestamp} 
+		//FileUtil.move(h2dbDir, trashDir);
+		FileUtil.copyDirectory(h2dbDir, trashDir);
+		FileUtil.deltree(h2dbDir, false);
+	
+		//fire a separate thread that deletes the contents of the dotsecure/trash directory. 
+		new deleteTrashDir().start();
 	}
 
 	public void destroy() {
