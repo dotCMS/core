@@ -134,6 +134,12 @@ public class ResizeImageServlet extends HttpServlet {
 	        		} catch(DotContentletStateException e) {
 	        			path = WorkingCache.getPathFromCache(identifier.getURI(), identifier.getHostId());
 	        		}
+
+	        		if(path==null) {
+            			Logger.debug(this.getClass(), "Can't find path with URI " + identifier.getURI());
+            			return;
+            		}
+
             		inode = UtilMethods.getFileName(path);
 	        	} else {
 	        		//it might be an inode
@@ -237,6 +243,12 @@ public class ResizeImageServlet extends HttpServlet {
             		catch(DotContentletStateException e) {
             			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
             		}
+
+            		if(cont==null) {
+            			Logger.debug(this.getClass(), "Can't find content with id " + id);
+            			return;
+            		}
+
             		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
             		isSet = InodeUtils.isSet(cont.getInode());
             		fileName = fa.getFileName();
