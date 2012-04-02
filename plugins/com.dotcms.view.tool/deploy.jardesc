@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <jardesc>
-    <jar path="dotCMS_2.0/dotCMS/felix/load/michele.view.tool-1.0.0.jar"/>
-    <options buildIfNeeded="true" compress="true" descriptionLocation="/MicheleViewTool/deploy.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <jar path="dotCMS/dotCMS/felix/load/michele.view.tool-1.0.0.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/OsgiViewTool/deploy.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>
-    <manifest generateManifest="false" manifestLocation="/MicheleViewTool/META-INF/MANIFEST.MF" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+    <manifest generateManifest="false" manifestLocation="/OsgiViewTool/META-INF/MANIFEST.MF" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
         <sealing sealJar="false">
             <packagesToSeal/>
             <packagesToUnSeal/>
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="false" exportJavaFiles="false" exportOutputFolder="true">
-        <javaElement handleIdentifier="=MicheleViewTool/src"/>
-        <folder path="/MicheleViewTool/META-INF"/>
+        <javaElement handleIdentifier="=OsgiViewTool/src"/>
     </selectedElements>
 </jardesc>

@@ -1,7 +1,9 @@
 Manifest-Version: 1.0
-Bundle-Name: Michele View Tool
+Bundle-Name: Osgi View Tool
 Bundle-Activator: org.apache.velocity.tools.Activator
-Bundle-SymbolicName: MicheleViewTool
+Bundle-SymbolicName: Osgi View Tool
 Bundle-Version: 1.0.0
 Bundle-RequiredExecutionEnvironment: OSGi/Minimum-1.0
-Import-Package: org.apache.velocity.tools.view,org.apache.velocity.tools.view.tools,com.dotmarketing.osgi
+Import-Package: com.dotmarketing.osgi,
+ org.apache.velocity.tools,
+ org.apache.velocity.tools.view.tools
