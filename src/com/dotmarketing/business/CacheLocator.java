@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jgroups.JChannel;
@@ -72,6 +74,8 @@ public class CacheLocator extends Locator<CacheIndex>{
         public void removeLocalOnly(String key, String group) { dotcache.removeLocalOnly(key, group); }
         public void shutdown() { dotcache.shutdown(); }
         public JChannel getJGroupsChannel() { return dotcache.getJGroupsChannel(); }
+        public List<Map<String, Object>> getCacheStatsList() { return dotcache.getCacheStatsList(); }
+        public Class getImplementationClass() { return dotcache.getClass(); }
         public void put(final String key, final Object content, final String group) {
             try {
                 HibernateUtil.addCommitListener(new Runnable() {
@@ -97,7 +101,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 			return;
 		
 		String clazz = Config.getStringProperty("cache.locator.class", DotGuavaCacheAdministratorImpl.class.getCanonicalName());
-		
+		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
 		try{
 			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
 			

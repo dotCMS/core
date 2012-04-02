@@ -211,6 +211,10 @@ public class EditHTMLPageAction extends DotPortletAction implements
 					//Obtain the URL for the preview page
 					// pasing null referer to force http://jira.dotmarketing.net/browse/DOTCMS-5971
 					referer = getPreviewPageURL(req, null);
+					
+					HTMLPage htmlpage=(HTMLPage) req.getAttribute(WebKeys.HTMLPAGE_EDIT);
+					if(htmlpage.isLocked())
+					    APILocator.getVersionableAPI().setLocked(htmlpage, false, user);
 
 					_sendToReferral(req, res, referer);
 				}

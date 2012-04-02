@@ -56,8 +56,7 @@ import com.liferay.util.servlet.SessionMessages;
  *         Maglio";
  */
 
-public class EditLinkAction extends DotPortletAction implements
-DotPortletActionInterface {
+public class EditLinkAction extends DotPortletAction implements DotPortletActionInterface {
 
 	public void processAction(ActionMapping mapping, ActionForm form,
 			PortletConfig config, ActionRequest req, ActionResponse res)
@@ -151,6 +150,10 @@ DotPortletActionInterface {
 						Logger.debug(this, "Calling Publish method");
 						_publishWebAsset(req, res, config, form, user, WebKeys.LINK_FORM_EDIT);
 					}
+					
+					Link link=(Link) req.getAttribute(WebKeys.LINK_EDIT);
+					if(link.isLocked())
+					    APILocator.getVersionableAPI().setLocked(link, false, user);
 					
 					_sendToReferral(req, res, referer);
 				}
