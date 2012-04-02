@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -67,6 +68,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -992,7 +994,22 @@ public class ContentletAjax {
 							.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
 							+ File.separator + user.getUserId() + File.separator + elementName
 							+ File.separator + binaryFileValue);
-					elementValue = binaryFile;
+					try {
+					    // https://github.com/dotCMS/dotCMS/issues/35
+					    // making a copy just in case the transaction fails so
+					    // we can have the file for possible next attempts
+                        File acopyFolder=new File(Config.CONTEXT
+                                .getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+                                + File.separator + user.getUserId() + File.separator + elementName
+                                + File.separator + UUIDGenerator.generateUuid());
+                        if(!acopyFolder.exists())
+                            acopyFolder.mkdir();
+                        File acopy=new File(acopyFolder, binaryFileValue);
+                        FileUtils.copyFile(binaryFile, acopy);
+                        elementValue = acopy;
+                    } catch (IOException e) {
+                        throw new SystemException(e);
+                    }
 				}else{
 					elementValue = null;
 				}

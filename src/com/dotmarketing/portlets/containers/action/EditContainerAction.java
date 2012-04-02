@@ -161,7 +161,11 @@ public class EditContainerAction extends DotPortletAction implements
 							return;
 						}
 					}
-
+					
+					Container cont=(Container)req.getAttribute(WebKeys.CONTAINER_EDIT);
+					if(cont.isLocked())
+					    APILocator.getVersionableAPI().setLocked(cont, false, user);
+					
 					try{
 
 
