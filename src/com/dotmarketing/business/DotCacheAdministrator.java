@@ -3,6 +3,8 @@
  */
 package com.dotmarketing.business;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jgroups.JChannel;
@@ -81,4 +83,8 @@ public interface DotCacheAdministrator  {
 	public void shutdown();
 	
 	public JChannel getJGroupsChannel();
+	
+	public List<Map<String, Object>> getCacheStatsList();
+	
+	public Class getImplementationClass();
 }
