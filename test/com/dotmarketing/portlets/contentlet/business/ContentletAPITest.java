@@ -18,8 +18,11 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import org.apache.lucene.queryParser.ParseException;
 import org.junit.Test;
@@ -1237,6 +1240,131 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertFalse( isDeleted );
         } finally {
             contentletAPI.unarchive( contentlet, user, false );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#deleteAllVersionsandBackup(java.util.List, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void deleteAllVersionsandBackup () throws DotSecurityException, DotDataException {
+
+        //First lets create a test structure
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+
+        //Now a new contentlet
+        Contentlet newContentlet = createContentlet( testStructure, null, false );
+
+        //Now test this delete
+        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        testContentlets.add( newContentlet );
+        contentletAPI.deleteAllVersionsandBackup( testContentlets, user, false );
+
+        //Try to find the deleted Contentlet
+        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+
+        //Validations
+        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#delete(java.util.List, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void deleteCollection () throws DotSecurityException, DotDataException {
+
+        //First lets create a test structure
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+
+        //Now a new contentlet
+        Contentlet newContentlet = createContentlet( testStructure, null, false );
+
+        //Now test this delete
+        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        testContentlets.add( newContentlet );
+        contentletAPI.delete( testContentlets, user, false );
+
+        //Try to find the deleted Contentlet
+        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+
+        //Validations
+        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#delete(java.util.List, com.liferay.portal.model.User, boolean, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void deleteCollectionAllVersions () throws DotSecurityException, DotDataException {
+
+        //First lets create a test structure
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+
+        //Now a new contentlet
+        Contentlet newContentlet = createContentlet( testStructure, null, false );
+
+        //Now test this delete
+        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        testContentlets.add( newContentlet );
+        contentletAPI.delete( testContentlets, user, false, true );
+
+        //Try to find the deleted Contentlet
+        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+
+        //Validations
+        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#deleteRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void deleteRelatedContent () throws DotSecurityException, DotDataException {
+
+        //First lets create a test structure
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+
+        //Now a new contentlet
+        Contentlet newContentlet = createContentlet( testStructure, null, false );
+
+        //Get the relationships for this contentlet
+        List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure( newContentlet.getStructure() );
+        for ( Relationship relationship : relationships ) {
+
+            //Now test this delete
+            contentletAPI.deleteRelatedContent( newContentlet, relationship, user, false );
+
+            //Try to find the deleted Contentlet
+            Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+
+            //Validations
+            assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+
+            //Try to find the structure
+            Structure foundStructure = StructureFactory.getStructureByInode( testStructure.getInode() );
+
+            //Validations
+            assertTrue( foundStructure == null || foundStructure.getInode() == null || foundStructure.getInode().isEmpty() );
         }
     }
 
