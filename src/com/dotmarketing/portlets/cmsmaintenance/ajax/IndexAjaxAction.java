@@ -21,9 +21,9 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -129,8 +129,8 @@ public class IndexAjaxAction extends AjaxAction {
                     public void run() {
                         try {
                             if(clear)
-                                ESUtils.clearIndex(index);
-                            ESUtils.restoreIndex(file, index);
+                            	new ESIndexAPI().clearIndex(index);
+                            new ESIndexAPI().restoreIndex(file, index);
                             Logger.info(this, "finished restoring index "+index);
                         }
                         catch(Exception ex) {
@@ -164,7 +164,7 @@ public class IndexAjaxAction extends AjaxAction {
 			}
 		}
 		
-		File f = ESUtils.backupIndex(indexName);
+		File f = new ESIndexAPI().backupIndex(indexName);
 		
 		OutputStream out = response.getOutputStream();
 		InputStream in = new FileInputStream(f);
@@ -195,9 +195,9 @@ public class IndexAjaxAction extends AjaxAction {
 		boolean live = map.get("live") != null;
 		String indexName = map.get("indexName");
 		if(indexName == null)
-		    indexName=ESIndexAPI.timestampFormatter.format(new Date());
+		    indexName=ESContentletIndexAPI.timestampFormatter.format(new Date());
 		indexName = (live) ? "live_" + indexName : "working_" + indexName; 
-		ESUtils.createIndex(indexName, shards);
+		new ESContentletIndexAPI().createContentIndex(indexName, shards);
 
 	}
 	
@@ -206,7 +206,7 @@ public class IndexAjaxAction extends AjaxAction {
 		String indexName = map.get("indexName");
 		if(indexName == null)return;
 
-		new ESUtils().clearIndex(indexName);
+		new ESIndexAPI().clearIndex(indexName);
 		
 		
 	}
@@ -216,7 +216,7 @@ public class IndexAjaxAction extends AjaxAction {
 		String indexName = map.get("indexName");
 		if(indexName == null)return;
 
-		new ESIndexAPI().activateIndex(indexName);
+		new ESContentletIndexAPI().activateIndex(indexName);
 
 	}
 	public void deactivateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
@@ -224,7 +224,7 @@ public class IndexAjaxAction extends AjaxAction {
 		String indexName = map.get("indexName");
 		if(indexName == null)return;
 
-		new ESIndexAPI().deactivateIndex(indexName);
+		new ESContentletIndexAPI().deactivateIndex(indexName);
 
 	}
 	

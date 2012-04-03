@@ -1,7 +1,9 @@
 
 package com.dotmarketing.business;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.cmis.CMISAPI;
@@ -258,6 +260,10 @@ public class APILocator extends Locator<APIIndex>{
 	    return (IndiciesAPI) getInstance(APIIndex.INDICIES_API);
 	}
 	
+	public static ContentletIndexAPI getContentletIndexAPI() {
+	    return (ContentletIndexAPI) getInstance(APIIndex.CONTENLET_INDEX_API);
+	}
+	
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -330,7 +336,8 @@ enum APIIndex
 	FILEASSET_API,
 	WORKFLOW_API,
 	TAG_API,
-	INDICIES_API;
+	INDICIES_API,
+	CONTENLET_INDEX_API;
 
 	Object create() {
 		switch(this) {
@@ -372,6 +379,7 @@ enum APIIndex
 		case WORKFLOW_API : return new WorkflowAPIImpl(); 
 		case TAG_API: return new TagAPIImpl();
 		case INDICIES_API: return new IndiciesAPIImpl();
+		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
