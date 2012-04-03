@@ -1,11 +1,15 @@
 package com.dotmarketing.sitesearch.business;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.List;
 
 import org.elasticsearch.ElasticSearchException;
+import org.quartz.SchedulerException;
 
+import com.dotcms.publishing.SiteSearchConfig;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.quartz.ScheduledTask;
 
 
 public interface SiteSearchAPI {
@@ -21,4 +25,14 @@ public interface SiteSearchAPI {
 
 	boolean createSiteSearchIndex(String indexName, int shards) throws ElasticSearchException, IOException; 
 
+	
+	List<ScheduledTask> getTasks() throws SchedulerException;
+
+	void deleteTask(String taskName) throws SchedulerException;
+
+	void scheduleTask(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException;
+	
+	
+	
+	
 }

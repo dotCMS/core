@@ -3,18 +3,28 @@ package com.dotcms.content.elasticsearch.business;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.publishing.SiteSearchConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.quartz.CronScheduledTask;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.sitesearch.business.DotSearchResults;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.sitesearch.job.SiteSearchJobProxy;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
@@ -101,6 +111,57 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		return true;
 	}
 	
+	@Override
+	public List<ScheduledTask> getTasks() throws SchedulerException{
+
+		List<ScheduledTask> tasks = QuartzUtils.getScheduledTasks(ES_SITE_SEARCH_NAME);
+		return tasks;
+
+		
+	}
+	
+	@Override
+	public void scheduleTask(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException{
+		String name = config.getJobId();
+		String cronString = config.getCronExpression();
+		boolean runNow = config.runOnce();
+		
+
+	    //Create new task with updated cron expression and properties
+		if(runNow){
+			if (!QuartzUtils.isJobSequentiallyScheduled("site-search-execute-once", "site-search-execute-once-group")) {
+				config.put("squentiallyScheduled", true);
+				SimpleScheduledTask scheduledTask = new SimpleScheduledTask("site-search-execute-once", ES_SITE_SEARCH_NAME, "Site Search ",SiteSearchJobProxy.class.getCanonicalName(), false,
+						"site-search-execute-once-trigger", "site-search-execute-once-trigger-group", new Date(), null,
+						SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT, 5, true, config, 0, 0);
+				try{
+				   QuartzUtils.scheduleTask(scheduledTask);
+				}catch(Exception e){
+					QuartzUtils.removeJob("site-search-execute-once", ES_SITE_SEARCH_NAME);	
+				}
+			}else{
+
+			}
+		}
+		else{
+			ScheduledTask	task = new CronScheduledTask(name, ES_SITE_SEARCH_NAME,"Site Search ", SiteSearchJobProxy.class.getCanonicalName(),new Date(),null, 5,config,cronString);
+			
+			QuartzUtils.scheduleTask(task);
+		}
+		
+	}
+	
+	@Override
+	public void deleteTask(String taskName) throws SchedulerException{
+		List<ScheduledTask> tasks = getTasks();
+		for(ScheduledTask t: tasks){
+			if(t.getJobName().equals(taskName))
+			//Pause and remove any current jobs in the group
+			QuartzUtils.pauseJob(t.getJobName(), ES_SITE_SEARCH_NAME);
+			QuartzUtils.removeTaskRuntimeValues(t.getJobName(), ES_SITE_SEARCH_NAME);
+			QuartzUtils.removeJob(t.getJobName(), ES_SITE_SEARCH_NAME);	
+		}	
+	}
 	
 	
 	

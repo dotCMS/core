@@ -180,25 +180,7 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 	
 	
-	public void createSiteSearchIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
-		
-		Map<String, String> map = getURIParams();
-		int shards = 0;
-		
-		try{
-			shards = Integer.parseInt(map.get("shards"));
 
-		}
-		catch(Exception e){
-			
-		}
-		
-
-		boolean live = map.get("live") != null;
-		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format(new Date());
-		APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, shards);
-
-	}
 	
 	
 	

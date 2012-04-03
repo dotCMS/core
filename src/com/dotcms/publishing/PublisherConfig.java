@@ -2,6 +2,7 @@ package com.dotcms.publishing;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,16 @@ public class PublisherConfig implements Map<String, Object> {
 		THREADS, ID, TIMESTAMP
 	};
 
+	
+	public void PublisherConfig(Map<String, Object> map){
+		params = map;
+	}
+	
+	
+	
+	
+	
+	
 	Map<String, Object> params;
 
 	@SuppressWarnings("unchecked")
@@ -155,7 +166,7 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	public PublisherConfig() {
-
+		params = new HashMap<String, Object>();
 		setId(UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_'));
 
 		Date startDate = new java.util.Date();
