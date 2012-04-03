@@ -13,11 +13,14 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
@@ -436,15 +439,34 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	throws WebAssetException, Exception {
 
 		try {
+		    boolean isAdmin = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
+		    
+		    com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
+	        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+	        HttpSession session = httpReq.getSession();
+		    
 			UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
 
 			String parent = ParamUtil.getString(req, "parent");
 
 			//parent folder
 			Folder folder = (Folder) APILocator.getFolderAPI().find(parent, user, false);
+			
+			String hostId=folder.getHostId();
+			boolean isRootHost=APILocator.getFolderAPI().findSystemFolder().equals(folder);
+			if(isRootHost)
+			    hostId=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
+			Host host=APILocator.getHostAPI().find(hostId, user, false);
+			
 			//check permissions
-			_checkUserPermissions(folder, user, PERMISSION_CAN_ADD_CHILDREN);
+			if(isRootHost) {
+			    if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user))
+			        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+			}
+			else {
+			    _checkUserPermissions(folder, user, PERMISSION_CAN_ADD_CHILDREN);
+			}
 
 			String fileNamesStr = ParamUtil.getString(req, "fileNames");
 			if(!UtilMethods.isSet(fileNamesStr))
@@ -466,7 +488,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
 				Contentlet contentlet = new Contentlet();
 				contentlet.setStructureInode(selectedStructureInode);
-				contentlet.setHost(APILocator.getHostAPI().findParentHost(folder, user, false).getIdentifier());
+				contentlet.setHost(hostId);
 				contentlet.setFolder(folder.getInode());
 				String fileName = fileNamesArray[k];
 				String title = getFriendlyName(fileName);
@@ -483,7 +505,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				if (fileName.length()>0) {
 
 					//checks if another identifier with the same name exists in the same folder
-					if ((APILocator.getFileAPI().fileNameExists(folder,fileName))) {
+					if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "")) {
 						existingFileNames.add(fileName);
 					}
 					else {
@@ -496,6 +518,10 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 						try {
 							contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
 							if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
+							    if(isRootHost && !APILocator.getPermissionAPI().doesUserHaveInheriablePermissions(
+							             host,  com.dotmarketing.portlets.files.model.File.class.getCanonicalName(), 
+							             PermissionAPI.PERMISSION_PUBLISH, user) && !isAdmin)
+							        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 								APILocator.getVersionableAPI().setLive(contentlet);
 							}
 							HibernateUtil.commitTransaction();
