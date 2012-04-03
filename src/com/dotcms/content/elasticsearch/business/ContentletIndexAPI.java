@@ -3,9 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Map;
 
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import com.dotmarketing.exception.DotDataException;
@@ -14,7 +12,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 public interface ContentletIndexAPI {
     public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");
-
+    public static final String ES_WORKING_INDEX_NAME = "working";
+    public static final String ES_LIVE_INDEX_NAME = "live";
 	public void getRidOfOldIndex() throws DotDataException;
 
 	/**
@@ -84,12 +83,7 @@ public interface ContentletIndexAPI {
 
 	public void deactivateIndex(String indexName) throws DotDataException, IOException;
 
-	/**
-	 * returns all indicies and status
-	 * 
-	 * @return
-	 */
-	public Map<String, IndexStatus> getIndicesAndStatus();
+
 
 	public List<String> getCurrentIndex() throws DotDataException;
 

@@ -5,6 +5,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESSiteSearchAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.cmis.CMISAPI;
@@ -61,7 +62,6 @@ import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.sitesearch.business.SiteSearchAPIImpl;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Logger;
@@ -376,7 +376,7 @@ enum APIIndex
 		case MENULINK_API: return new MenuLinkAPIImpl();
 		case VIRTUALLINK_API: return new VirtualLinkAPIImpl();
 		case DASHBOARD_API: return new DashboardAPIImpl();
-		case SITESEARCH_API: return new SiteSearchAPIImpl();
+		case SITESEARCH_API: return new ESSiteSearchAPI();
 		case FILEASSET_API: return new FileAssetAPIImpl();
 		case VERSIONABLE_API: return new VersionableAPIImpl();
 		case WORKFLOW_API : return new WorkflowAPIImpl(); 
@@ -384,6 +384,7 @@ enum APIIndex
 		case INDICIES_API: return new IndiciesAPIImpl();
 		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
 		case ES_INDEX_API: return new ESIndexAPI();
+		
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

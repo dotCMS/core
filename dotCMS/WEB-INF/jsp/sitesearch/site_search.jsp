@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@ include file="/html/common/init.jsp"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
@@ -472,6 +474,368 @@ function resetSiteSearch(){
 }
 
 
+
+
+function deleteIndex(indexName, live){
+	
+	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-this-index")%>")){
+		return;
+		
+	}
+
+	var xhrArgs = {
+	
+		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/deleteIndex/indexName/" + indexName,
+
+		handleAs: "text",
+		handle : function(dataOrError, ioArgs) {
+			if (dojo.isString(dataOrError)) {
+				if (dataOrError.indexOf("FAILURE") == 0) {
+					showDotCMSSystemMessage(dataOrError, true);
+				} else {
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Deleted")%>", true);
+					refreshIndexStats();
+				}
+			} else {
+				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+			}
+		}
+	};
+	dojo.xhrPost(xhrArgs);
+
+}
+
+function deleteIndexCallback(data){
+
+	refreshIndexStats();
+}
+
+
+function refreshIndexStats(){
+	var x = dijit.byId("indexStatsCp");
+	var y =Math.floor(Math.random()*1123213213);
+
+	x.attr( "href","/html/portlet/ext/sitesearch/site_search_index_stats.jsp?r=" + y  );
+
+
+
+}
+
+function doDownloadIndex(indexName){
+	
+
+	window.location="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/downloadIndex/indexName/" + indexName;
+	
+}
+
+function doFullReindex(){
+	
+	
+	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	if(!number){
+		return;
+	}
+	
+	var shards = parseInt(number);
+	if(shards <1){
+		return;	
+	}
+	dojo.byId("numberOfShards").value = shards;
+	
+	dijit.byId('idxReindexButton').setDisabled(true);
+	dijit.byId('idxShrinkBtn').setDisabled(true);
+	submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
+	return false;
+	
+}
+
+function doClearIndex(indexName){
+	
+	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index")%>")){
+		return;
+		
+	}
+
+	var xhrArgs = {
+	
+		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/clearIndex/indexName/" + indexName,
+
+		handleAs: "text",
+		handle : function(dataOrError, ioArgs) {
+			if (dojo.isString(dataOrError)) {
+				if (dataOrError.indexOf("FAILURE") == 0) {
+					showDotCMSSystemMessage(dataOrError, true);
+				} else {
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Cleared")%>", true);
+					refreshIndexStats();
+				}
+			} else {
+				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+			}
+		}
+	};
+	dojo.xhrPost(xhrArgs);
+
+}
+function doActivateIndex(indexName){
+	
+	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index")%>")){
+		return;
+		
+	}
+
+	var xhrArgs = {
+	
+		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/activateIndex/indexName/" + indexName,
+
+		handleAs: "text",
+		handle : function(dataOrError, ioArgs) {
+			if (dojo.isString(dataOrError)) {
+				if (dataOrError.indexOf("FAILURE") == 0) {
+					showDotCMSSystemMessage(dataOrError, true);
+				} else {
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Activated")%>", true);
+					refreshIndexStats();
+				}
+			} else {
+				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+			}
+		}
+	};
+	dojo.xhrPost(xhrArgs);
+}
+function doDeactivateIndex(indexName){
+	
+	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index")%>")){
+		return;
+		
+	}
+
+	var xhrArgs = {
+	
+		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/deactivateIndex/indexName/" + indexName,
+
+		handleAs: "text",
+		handle : function(dataOrError, ioArgs) {
+			if (dojo.isString(dataOrError)) {
+				if (dataOrError.indexOf("FAILURE") == 0) {
+					showDotCMSSystemMessage(dataOrError, true);
+				} else {
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Deactivated")%>", true);
+					refreshIndexStats();
+				}
+			} else {
+				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+			}
+		}
+	};
+	dojo.xhrPost(xhrArgs);
+
+}
+
+function hideRestoreIndex() {
+    dijit.byId("restoreIndexDialog").hide();
+}
+
+function showRestoreIndexDialog(indexName) {
+	dojo.byId("indexToRestore").value=indexName;
+	var dialog=dijit.byId("restoreIndexDialog");
+	dialog.set('title','Restore index '+indexName);
+	dojo.byId("uploadFileName").innerHTML='';
+	dijit.byId('uploadSubmit').set('disabled',false);
+	dojo.query('#uploadProgress').style({display:"none"});
+	connectUploadEvents();
+	dojo.byId("uploadWarningLive").style.display="none";
+	dojo.byId("uploadWarningWorking").style.display="none";
+	dialog.show();
+}
+
+function doRestoreIndex() {
+	if(dojo.byId("uploadFileName").innerHTML=='') {
+		showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "No-File-Selected")%>");
+	}
+	else {
+		dijit.byId('uploadSubmit').set('disabled',true);
+	    dojo.query('#uploadProgress').style({display:"block"});
+	    dijit.byId("restoreIndexUploader").submit();
+	}
+}
+
+function restoreUploadCompleted() {
+	hideRestoreIndex();
+}
+
+dojo.ready(function() {
+	dojo.require("dojox.form.Uploader");
+    dojo.require("dojox.embed.Flash");
+    if(dojox.embed.Flash.available){
+      dojo.require("dojox.form.uploader.plugins.Flash");
+    }else{
+      dojo.require("dojox.form.uploader.plugins.IFrame");
+    }
+});
+
+function connectUploadEvents() {
+	var uploader=dijit.byId("restoreIndexUploader");
+	dojo.connect(uploader, "onChange", function(dataArray){
+		 dojo.forEach(dataArray, function(data){
+			    dojo.byId("uploadFileName").innerHTML=data.name;
+			    var uploadName=data.name;
+			    var indexName=dojo.byId("indexToRestore").value;
+			    
+			    if(indexName.indexOf("working")==0 && uploadName.indexOf("working")!=0)
+			    	dojo.byId("uploadWarningWorking").style.display="block";
+			    else
+			    	dojo.byId("uploadWarningWorking").style.display="none";
+			    
+			    if(indexName.indexOf("live")==0 && uploadName.indexOf("live")!=0)
+			    	dojo.byId("uploadWarningLive").style.display="block";
+                else
+                	dojo.byId("uploadWarningLive").style.display="none";
+		 });
+	});
+	dojo.connect(uploader, "onComplete", function(dataArray) {
+           hideRestoreIndex();
+           showDotCMSSystemMessage("Upload Complete. Index Restores in background");
+    });
+}
+
+function doCreateSiteSearch() {
+	
+	
+	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	if(!number){
+		return;
+	}
+	
+	var shards = parseInt(number);
+	if(shards <1){
+		return;	
+	
+	}
+	
+	var xhrArgs = {
+       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createSiteSearchIndex/shards/" + shards ,
+       handleAs: "text",
+       handle : function(dataOrError, ioArgs) {
+           if (dojo.isString(dataOrError)) {
+               if (dataOrError.indexOf("FAILURE") == 0) {
+                   showDotCMSSystemMessage(dataOrError, true);
+               } else {
+                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Created")%>", true);
+                   refreshIndexStats();
+
+               }
+           } else {
+               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+           }
+       }
+    };
+    dojo.xhrPost(xhrArgs);
+}
+
+function doCreateLive() {
+	
+	
+	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	if(!number){
+		return;
+	}
+	
+	var shards = parseInt(number);
+	if(shards <1){
+		return;	
+	}
+	
+	
+	
+	var xhrArgs = {
+       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/" + shards,
+       handleAs: "text",
+       handle : function(dataOrError, ioArgs) {
+           if (dojo.isString(dataOrError)) {
+               if (dataOrError.indexOf("FAILURE") == 0) {
+                   showDotCMSSystemMessage(dataOrError, true);
+               } else {
+                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Created")%>", true);
+                   refreshIndexStats();
+               }
+           } else {
+               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+           }
+       }
+    };
+    dojo.xhrPost(xhrArgs);
+}
+
+function updateReplicas(indexName,currentNum){
+
+	var number=prompt("<%=LanguageUtil.get(pageContext, "Update-Replicas-Index")%> for index:\n\n" + indexName, currentNum);
+	
+	if(!number){
+		return;
+	}
+	
+	
+	var replicas = parseInt(number);
+	if(currentNum != replicas){
+		
+		var xhrArgs = {
+				
+				url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/updateReplicas/indexName/" + indexName + "/replicas/" + replicas,
+			
+				handleAs: "text",
+				handle : function(dataOrError, ioArgs) {
+					if (dojo.isString(dataOrError)) {
+						if (dataOrError.indexOf("FAILURE") == 0) {
+							showDotCMSSystemMessage(dataOrError, true);
+						} else {
+							showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Replicas-Updated")%>", true);
+							refreshIndexStats();
+						}
+					} else {
+						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+					}
+				}
+			};
+			dojo.xhrPost(xhrArgs);
+		
+	}
+
+
+
+
+}
+
+function dohighlight(id) {
+	dojo.addClass(id,"highlight");
+}
+
+function undohighlight(id) {
+    dojo.removeClass(id,"highlight");
+}
+
+
+dojo.addOnLoad (function(){
+
+	
+		var tab =dijit.byId("mainTabContainer");
+	   	dojo.connect(tab, 'selectChild',
+		 function (evt) {
+		 	selectedTab = tab.selectedChildWidget;
+		 	
+			  	if(selectedTab.id =="indexTabCp"){
+			  		refreshIndexStats();
+			  	}
+		  	
+		});
+	
+});	
+
+
+
+
+
 </script>
 <style type="text/css">
 .listingTable {
@@ -481,165 +845,166 @@ function resetSiteSearch(){
 }
 </style>
 <div class="portlet-wrapper">
-<div style="min-height: 400px;" id="borderContainer" class="shadowBox headerBox">
-<div style="padding: 7px;">
-<div>
-<h3><%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SITESEARCH") %></h3>
-</div>
-<br clear="all">
-</div>
-
-<form name="sitesearch" id="sitesearch" action="<%= submitURL %>"
-	method="post">
-<dl>
-	<dt><span class="required"></span><strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %>:
-	</strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span
-		dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint"
-		class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
-	</dt>
-<dd>
-<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-<div class="selectHostIcon"></div>
-<select id="hostSelector" name=hostSelector" dojoType="dijit.form.FilteringSelect" 
-	store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
-	invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>" <%=indexAll?"disabled":"" %>>>
-</select>
-<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addNewHost()" <%=indexAll?"disabled":"" %>><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
-</dd>
-	
-	<table class="listingTable" id="hostTable">
-		<tr>
-		    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
-			<th nowrap><%= LanguageUtil.get(pageContext, "Host") %></th>
-		</tr>
-
-  <% 
-  if(!indexAll){
-    for (int k=0;k<selectedHosts.size();k++) {
-    	
-    	Host host = selectedHosts.get(k);
-    	
-    	boolean checked =  false;
-    	
-    	if(!host.isSystemHost()){
-   
-    String str_style = "";
-      if ((k%2)==0) {
-        str_style = "class=\"alternate_1\"";
-        }
-        else
-        {
-        str_style = "class=\"alternate_2\"";
-        }
-   %>
-		<tr id="<%=host.getIdentifier()%>" <%=str_style %>>
-		    <td nowrap>
-		       	<a href="javascript:deleteHost('<%=host.getIdentifier()%>');"><span class="deleteIcon"></span></a>
-		    </td>
-			<td nowrap><%= host.getHostname() %></td>
-			<td nowrap="nowrap" style="overflow:hidden; display:none; "> <input type="hidden"
-				name="indexhost" id="indexhost<%= host.getIdentifier() %>"
-				value="<%= host.getIdentifier() %>" /></td>
-
-		</tr>
-		<%} %>
-		<%}
-        } %>
-		<% if (indexAll || selectedHosts.size()==0) { %>
-		<tr id= "nohosts">
-			<td colspan="2">
-			<div class="noResultsMessage"><%= indexAll?LanguageUtil.get(pageContext, "all-hosts-selected"):LanguageUtil.get(pageContext, "no-hosts-selected") %></div>
-			</td>
-		</tr>
-		<% } %>
-	</table>
-	<br />
-	<dd>
-<strong><%= LanguageUtil.get(pageContext, "index-all-hosts") %>
-	: </strong>
-<input name="indexAll" id="indexAll"
-		dojoType="dijit.form.CheckBox" type="checkbox" value="true"
-		<%=!indexAll?"":"checked"%> onclick="indexAll(this.checked)" />
-	</dd>
-	<dd>
-	<dt><strong><%= LanguageUtil.get(pageContext, "use-port") %>
-	: </strong> <a href="javascript: ;" id="portHintHook">?</a> <span
-		dojoType="dijit.Tooltip" connectId="portHintHook" id="portHint"
-		class="fieldHint"><%=LanguageUtil.get(pageContext, "port-hint") %></span>
-	</dt>
-	<dd><input name="port" id="port" type="text"
-		dojoType='dijit.form.NumberTextBox' constraints="{pattern: '###'}" style='width: 60px'
-		" value="<%=port %>" size="10" maxlength="5"/></dd>
-	<dt><strong><%= LanguageUtil.get(pageContext, "cron-expression") %>
-	: </strong> <a href="javascript: ;" id="cronHintHook">?</a> <span
-		dojoType="dijit.Tooltip" connectId="cronHintHook" id="cronHint"
-		class="fieldHint"><%=LanguageUtil.get(pageContext, "cron-hint") %></span>
-	</dt>
-	<dd><input name="cronExpression" id="cronExpression" type="text"
-		dojoType='dijit.form.TextBox' style='width: 200px'
-		" value="<%=showBlankCronExp?"":cronExpression %>" size="10" />
-		<p></p>
-		 <div style="width: 350px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
-			<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
-			<span style="font-size: 88%;">
-			<p></p>
-	        <p><b><%= LanguageUtil.get(pageContext, "cron-once-an-hour") %>:</b> 0 0/60 * * * ?</p> 	
-	        <p><b><%= LanguageUtil.get(pageContext, "cron-twice-a-day") %>:</b> 0 0 10-11 ? * *</p> 	
-	        <p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p> 
-			</span>
+	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
+		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SITESEARCH") %>">
+			<form name="sitesearch" id="sitesearch" action="<%= submitURL %>"
+				method="post">
+			<dl>
+				<dt><span class="required"></span><strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %>:
+				</strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span
+					dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint"
+					class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
+				</dt>
+			<dd>
+			<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
+			<div class="selectHostIcon"></div>
+			<select id="hostSelector" name=hostSelector" dojoType="dijit.form.FilteringSelect" 
+				store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
+				invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>" <%=indexAll?"disabled":"" %>>>
+			</select>
+			<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addNewHost()" <%=indexAll?"disabled":"" %>><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
+			</dd>
+				
+				<table class="listingTable" id="hostTable">
+					<tr>
+					    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
+						<th nowrap><%= LanguageUtil.get(pageContext, "Host") %></th>
+					</tr>
+			
+			  <% 
+			  if(!indexAll){
+			    for (int k=0;k<selectedHosts.size();k++) {
+			    	
+			    	Host host = selectedHosts.get(k);
+			    	
+			    	boolean checked =  false;
+			    	
+			    	if(!host.isSystemHost()){
+			   
+			    String str_style = "";
+			      if ((k%2)==0) {
+			        str_style = "class=\"alternate_1\"";
+			        }
+			        else
+			        {
+			        str_style = "class=\"alternate_2\"";
+			        }
+			   %>
+					<tr id="<%=host.getIdentifier()%>" <%=str_style %>>
+					    <td nowrap>
+					       	<a href="javascript:deleteHost('<%=host.getIdentifier()%>');"><span class="deleteIcon"></span></a>
+					    </td>
+						<td nowrap><%= host.getHostname() %></td>
+						<td nowrap="nowrap" style="overflow:hidden; display:none; "> <input type="hidden"
+							name="indexhost" id="indexhost<%= host.getIdentifier() %>"
+							value="<%= host.getIdentifier() %>" /></td>
+			
+					</tr>
+					<%} %>
+					<%}
+			        } %>
+					<% if (indexAll || selectedHosts.size()==0) { %>
+					<tr id= "nohosts">
+						<td colspan="2">
+						<div class="noResultsMessage"><%= indexAll?LanguageUtil.get(pageContext, "all-hosts-selected"):LanguageUtil.get(pageContext, "no-hosts-selected") %></div>
+						</td>
+					</tr>
+					<% } %>
+				</table>
+				<br />
+				<dd>
+			<strong><%= LanguageUtil.get(pageContext, "index-all-hosts") %>
+				: </strong>
+			<input name="indexAll" id="indexAll"
+					dojoType="dijit.form.CheckBox" type="checkbox" value="true"
+					<%=!indexAll?"":"checked"%> onclick="indexAll(this.checked)" />
+				</dd>
+				<dd>
+				<dt><strong><%= LanguageUtil.get(pageContext, "use-port") %>
+				: </strong> <a href="javascript: ;" id="portHintHook">?</a> <span
+					dojoType="dijit.Tooltip" connectId="portHintHook" id="portHint"
+					class="fieldHint"><%=LanguageUtil.get(pageContext, "port-hint") %></span>
+				</dt>
+				<dd><input name="port" id="port" type="text"
+					dojoType='dijit.form.NumberTextBox' constraints="{pattern: '###'}" style='width: 60px'
+					" value="<%=port %>" size="10" maxlength="5"/></dd>
+				<dt><strong><%= LanguageUtil.get(pageContext, "cron-expression") %>
+				: </strong> <a href="javascript: ;" id="cronHintHook">?</a> <span
+					dojoType="dijit.Tooltip" connectId="cronHintHook" id="cronHint"
+					class="fieldHint"><%=LanguageUtil.get(pageContext, "cron-hint") %></span>
+				</dt>
+				<dd><input name="cronExpression" id="cronExpression" type="text"
+					dojoType='dijit.form.TextBox' style='width: 200px'
+					" value="<%=showBlankCronExp?"":cronExpression %>" size="10" />
+					<p></p>
+					 <div style="width: 350px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
+						<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
+						<span style="font-size: 88%;">
+						<p></p>
+				        <p><b><%= LanguageUtil.get(pageContext, "cron-once-an-hour") %>:</b> 0 0/60 * * * ?</p> 	
+				        <p><b><%= LanguageUtil.get(pageContext, "cron-twice-a-day") %>:</b> 0 0 10-11 ? * *</p> 	
+				        <p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p> 
+						</span>
+					</div>
+					
+				 
+				</dd>
+				 
+			
+				<dt><strong><%= LanguageUtil.get(pageContext, "paths-to-ignore") %>
+				: </strong> <a href="javascript: ;" id="pathsHintHook">?</a> <span
+					dojoType="dijit.Tooltip" connectId="pathsHintHook" id="pathsHint"
+					class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
+				</dt>
+				<dd><input name="pathsToIgnore" id="pathsToIgnore" type="text"
+					dojoType='dijit.form.TextBox' style='width: 400px'
+					" value="<%=pathsToIgnore %>" size="200" /></dd>
+				<dt><strong><%= LanguageUtil.get(pageContext, "ignore-extensions") %>
+				: </strong> <a href="javascript: ;" id="extHintHook">?</a> <span
+					dojoType="dijit.Tooltip" connectId="extHintHook" id="extHint"
+					class="fieldHint"><%=LanguageUtil.get(pageContext, "ext-hint") %></span>
+				</dt>
+				<dd><input name="extToIgnore" id="extToIgnore" type="text"
+					dojoType='dijit.form.TextBox' style='width: 400px'
+					" value="<%=extToIgnore %>" size="200" /></dd>
+				<dt><strong><%= LanguageUtil.get(pageContext, "follow-query-string") %>
+				: </strong> <a href="javascript: ;" id="queryStrHintHook">?</a> <span
+					dojoType="dijit.Tooltip" connectId="queryStrHintHook"
+					id="queryStrHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "query-string-hint") %></span>
+				</dt>
+				<dd><input name="followQueryString" id="followQueryString"
+					dojoType="dijit.form.CheckBox" type="checkbox" value="true"
+					<%=!followQueryString?"":"checked"%> /></dd>
+			
+				<dt></dt>
+				<dd>
+				
+				<input type="hidden" name="saveAndExecute" id="saveAndExecute" value="false" />
+				<input type="hidden" name="resetSiteSearch" id="resetSiteSearch" value="false" />
+			
+				<button dojoType="dijit.form.Button"
+					id="saveButton" onClick="submitfm(document.getElementById('sitesearch'))"
+					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+				</button>
+				<button dojoType="dijit.form.Button"
+					id="saveAndExecuteButton" onClick="saveAndExecute();"
+					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-and-execute")) %>
+				</button>
+			    <button dojoType="dijit.form.Button"
+					id="resetSitesearchButton" onClick="resetSiteSearch();"
+					iconClass="deleteIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset-sitesearch")) %>
+				</button>
+				</dd>
+			
+			</dl>
+			</form>
 		</div>
-		
-	 
-	</dd>
-	 
-
-	<dt><strong><%= LanguageUtil.get(pageContext, "paths-to-ignore") %>
-	: </strong> <a href="javascript: ;" id="pathsHintHook">?</a> <span
-		dojoType="dijit.Tooltip" connectId="pathsHintHook" id="pathsHint"
-		class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
-	</dt>
-	<dd><input name="pathsToIgnore" id="pathsToIgnore" type="text"
-		dojoType='dijit.form.TextBox' style='width: 400px'
-		" value="<%=pathsToIgnore %>" size="200" /></dd>
-	<dt><strong><%= LanguageUtil.get(pageContext, "ignore-extensions") %>
-	: </strong> <a href="javascript: ;" id="extHintHook">?</a> <span
-		dojoType="dijit.Tooltip" connectId="extHintHook" id="extHint"
-		class="fieldHint"><%=LanguageUtil.get(pageContext, "ext-hint") %></span>
-	</dt>
-	<dd><input name="extToIgnore" id="extToIgnore" type="text"
-		dojoType='dijit.form.TextBox' style='width: 400px'
-		" value="<%=extToIgnore %>" size="200" /></dd>
-	<dt><strong><%= LanguageUtil.get(pageContext, "follow-query-string") %>
-	: </strong> <a href="javascript: ;" id="queryStrHintHook">?</a> <span
-		dojoType="dijit.Tooltip" connectId="queryStrHintHook"
-		id="queryStrHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "query-string-hint") %></span>
-	</dt>
-	<dd><input name="followQueryString" id="followQueryString"
-		dojoType="dijit.form.CheckBox" type="checkbox" value="true"
-		<%=!followQueryString?"":"checked"%> /></dd>
-
-	<dt></dt>
-	<dd>
+		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "index-information") %>">
+			<div dojoType="dijit.layout.ContentPane" id="indexStatsCp" style="height:600px"></div>
+		</div>
+	</div>
 	
-	<input type="hidden" name="saveAndExecute" id="saveAndExecute" value="false" />
-	<input type="hidden" name="resetSiteSearch" id="resetSiteSearch" value="false" />
 
-	<button dojoType="dijit.form.Button"
-		id="saveButton" onClick="submitfm(document.getElementById('sitesearch'))"
-		iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-	</button>
-	<button dojoType="dijit.form.Button"
-		id="saveAndExecuteButton" onClick="saveAndExecute();"
-		iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-and-execute")) %>
-	</button>
-    <button dojoType="dijit.form.Button"
-		id="resetSitesearchButton" onClick="resetSiteSearch();"
-		iconClass="deleteIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset-sitesearch")) %>
-	</button>
-	</dd>
-
-</dl>
-</form>
-</div>
+		
 </div>
 

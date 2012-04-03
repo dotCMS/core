@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
+<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -22,9 +24,10 @@
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
-ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-ContentletAPI capi = APILocator.getContentletAPI();
+SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 ESIndexAPI esapi = APILocator.getESIndexAPI();
+IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
 	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
@@ -46,13 +49,10 @@ try {
 
 
 
-List<String> currentIdx =idxApi.getCurrentIndex();
-List<String> newIdx =idxApi.getNewIndex();
-
-List<String> indices=idxApi.listDotCMSIndices();
+List<String> indices=ssapi.listIndices();
 Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
 
-SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
+SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
 Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
@@ -103,13 +103,8 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<div dojoType="dijit.form.DropDownButton">
 				<span><%= LanguageUtil.get(pageContext,"Add-Index") %></span>
 					<div dojoType="dijit.Menu">
-					
-					 	<div dojoType="dijit.MenuItem" onClick="doCreateWorking();">
-		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"Create-Working-Index") %>
-		                </div>
-		                <div dojoType="dijit.MenuItem" onClick="doCreateLive();" >
-		                    <span class="addIcon"></span>
-		                    <%= LanguageUtil.get(pageContext,"Create-Live-Index") %>
+					 	<div dojoType="dijit.MenuItem" onClick="doCreateSiteSearch();">
+		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
 		                </div>
 		           </div>
 			</div>
@@ -121,7 +116,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		</div>
 
 
-		<table class="listingTable">
+		<table class="listingTable" style="width:98%">
 			<thead>
 				<tr>
 					<th style="text-align: center">Status</th>
@@ -138,8 +133,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 				<%ClusterIndexHealth health = map.get(x); %>
 				<%IndexStatus status = indexInfo.get(x); %>
 
-				<%boolean active =currentIdx.contains(x);%>
-				<%boolean building =newIdx.contains(x);%>
+				<%boolean active =x.equals(info.site_search);%>
 				<%	Date d = null;
 					String myDate = null;
 					try{
@@ -153,13 +147,11 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					}%>
 
 
-				<tr class="<%=(active) ? "trIdxActive" : (building) ? "trIdxBuilding" : "trIdxNothing" %>" id="<%=x%>Row">
+				<tr class="<%=(active) ? "trIdxActive"  : "trIdxNothing" %>" id="<%=x%>Row">
 					<td  align="center" class="showPointer" >
 						<%if(active){ %>
 							<%= LanguageUtil.get(pageContext,"active") %>
-						<%}else if(building){ %>
-							<%= LanguageUtil.get(pageContext,"Building") %>
-						<%} %>
+						<%}%>
 					</td>
 					<td  class="showPointer" ><%=x %></td>
 					<td><%=UtilMethods.webifyString(myDate) %></td>
@@ -186,9 +178,8 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<%---   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
-			<%boolean active =currentIdx.contains(x);%>
-			<%boolean building =newIdx.contains(x);%>
-			<%if(building)continue; %>
+			<%boolean active =x.equals(info.site_search);%>
+
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
 			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
@@ -223,7 +214,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			 		<%= LanguageUtil.get(pageContext,"Clear-Index") %>
 			 	</div>
 			 	<%if(!active){%>
-				 	<div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', <%=(currentIdx.contains(x)) %>)" class="showPointer">
+				 	<div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', false)" class="showPointer">
 				 		<span class="deleteIcon"></span>
 				 		<%= LanguageUtil.get(pageContext,"Delete-Index") %>
 				 	</div>
@@ -278,25 +269,3 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreIndex();</script>
            </button>
 		</div>
-
-
-		<%--
-		<%if(indices != null && indices.size() >0 ){ %>
-				<div class="buttonRow" style="text-align: left">
-
-
-				<%=LanguageUtil.get(pageContext, "Execute") %> :
-				<select name="performAction" id="performAction" dojoType="dijit.form.FilteringSelect">
-					<option value=""><%=LanguageUtil.get(pageContext, "Delete-Index") %></option>
-
-
-
-				</select>
-
-				<button dojoType="dijit.form.Button" onClick="excuteWorkflowAction()">
-					<%=LanguageUtil.get(pageContext, "Perform-Workflow") %>
-				</button>
-
-				</div>
-			<%} %>
-		--%>

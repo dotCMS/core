@@ -61,7 +61,14 @@ public class ESIndexAPI {
 	private  ESClient esclient = new ESClient();
 	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
 	
-
+    /**
+     * returns all indicies and status
+     * @return
+     */
+    public Map<String,IndexStatus> getIndicesAndStatus() {
+        Client client=new ESClient().getClient();
+        return client.admin().indices().status(new IndicesStatusRequest()).actionGet().getIndices();
+    }
 
 	/**
 	 * Writes an index to a backup file
@@ -470,6 +477,5 @@ public class ESIndexAPI {
 			usrb.setSettings(newSettings);
 			usrb.execute().actionGet(); 
 		}
-      
     }
 }
