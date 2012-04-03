@@ -36,7 +36,7 @@ public class OsgiFelixListener implements ServletContextListener {
      */
     public void contextInitialized(ServletContextEvent context) {
     	
-    	String felixDir = context.getServletContext().getRealPath("/felix");
+    	String felixDir = context.getServletContext().getRealPath("/WEB-INF/felix");
     	    	
     	String url = felixDir + "/config/config.properties";
     	
@@ -99,8 +99,6 @@ public class OsgiFelixListener implements ServletContextListener {
         
         configProps.put("felix.fileinstall.dir", autoLoadDir);
         
-        System.out.println(configProps);
-
         try
         {
             // (8) Create an instance and initialize the framework.
