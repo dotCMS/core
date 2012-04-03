@@ -1050,7 +1050,8 @@ public class ContentletAjax {
 
 		contentletFormData.put("recurrenceDaysOfWeek", recurrenceDaysOfWeek);
 
-		if(contentletFormData.get("recurrenceOccurs").toString().equals("annually")){
+		if(contentletFormData.get("recurrenceOccurs")!=null && 
+		        contentletFormData.get("recurrenceOccurs").toString().equals("annually")){
 
 			if(Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString()) &&
 					!UtilMethods.isSet((String)contentletFormData.get("specificDayOfMonthRecY")) &&
