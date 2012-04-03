@@ -72,12 +72,28 @@ public class WebAssetMapComparator implements Comparator<Map<String, Object>> {
        		} else if (orderField.equals("modDate")) {
        			return orderDirection * ((Date)c1).compareTo((Date)c2);
        		} else if (orderField.equals("sortOrder")) {
-       			int c1int = (int)((Integer)c1);
-       			int c2int = (int)((Integer)c2);
-       			c1int = (c1int == 0 ? Integer.MAX_VALUE : c1int);
-       			c2int = (c2int == 0 ? Integer.MAX_VALUE : c2int);
-       			int result = (c1int) > (c2int)? 1 : (c1int) < (c2int)? -1 : 0 ;
-       			return orderDirection * result;
+                int result = 0;
+                long c1long = 0;
+                long c2long = 0;
+                if(c1 instanceof Long){
+                    c1long = (long)((Long)c1);                     
+                    c1long = (c1long == 0 ? Integer.MAX_VALUE : c1long);
+                }else if(c1 instanceof Integer){
+                    c1long = (int)((Integer)c1);                     
+                    c1long = (c1long == 0 ? Integer.MAX_VALUE : c1long);
+                }
+                if(c2 instanceof Long){                     
+                    c2long = (long)((Long)c2);                     
+                    c2long = (c2long == 0 ? Integer.MAX_VALUE : c2long);
+                }else if(c2 instanceof Integer){                     
+                    c2long = (int)((Integer)c2);                     
+                    c2long = (c2long == 0 ? Integer.MAX_VALUE : c2long);
+                }
+                result = (c1long) > (c2long)? 1 : (c1long) < (c2long)? -1 : 0 ;
+                return orderDirection * result;
+					
+	
+
        		}
        	}
         return 0;
