@@ -1,6 +1,5 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth"%>
 <%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
 <%@page import="org.elasticsearch.action.admin.indices.status.IndexStatus"%>
@@ -22,7 +21,7 @@
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
-ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
+ESIndexAPI idxApi = new ESIndexAPI();
 ContentletAPI capi = APILocator.getContentletAPI();
 
 try {
