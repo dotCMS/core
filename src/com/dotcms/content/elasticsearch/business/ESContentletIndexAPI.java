@@ -15,7 +15,6 @@ import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
-import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
@@ -42,8 +41,7 @@ import com.dotmarketing.util.UtilMethods;
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private static final ESIndexAPI iapi  = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-    public static final String ES_WORKING_INDEX_NAME = "working";
-    public static final String ES_LIVE_INDEX_NAME = "live";
+
     public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");
 
 	public synchronized void getRidOfOldIndex() throws DotDataException {
@@ -91,7 +89,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	public synchronized boolean createContentIndex(String indexName) throws ElasticSearchException, IOException {
 		return createContentIndex(indexName, 0);
 	}
-	
+	@Override
 	public synchronized boolean createContentIndex(String indexName, int shards) throws ElasticSearchException, IOException {
 
 		CreateIndexResponse cir = iapi.createIndex(indexName, null, shards);
@@ -469,7 +467,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
      */
     public List<String> listDotCMSIndices() {
         Client client=new ESClient().getClient();
-        Map<String,IndexStatus> indices=getIndicesAndStatus();
+        Map<String,IndexStatus> indices=APILocator.getESIndexAPI().getIndicesAndStatus();
         List<String> indexNames=new ArrayList<String>();
 
         for(String idx : indices.keySet())
@@ -496,6 +494,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
         newinfo.live=info.live;
         newinfo.reindex_working=info.reindex_working;
         newinfo.reindex_live=info.reindex_live;
+        newinfo.site_search=info.site_search;
         if(indexName.startsWith(ES_WORKING_INDEX_NAME)) {
             newinfo.working=indexName;
         }
@@ -512,6 +511,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
         newinfo.live=info.live;
         newinfo.reindex_working=info.reindex_working;
         newinfo.reindex_live=info.reindex_live;
+        newinfo.site_search=info.site_search;
         if(indexName.equals(info.working)) {
             newinfo.working=null;
         }
@@ -529,14 +529,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
         APILocator.getIndiciesAPI().point(newinfo);
     }
 
-    /**
-     * returns all indicies and status
-     * @return
-     */
-    public Map<String,IndexStatus> getIndicesAndStatus() {
-        Client client=new ESClient().getClient();
-        return client.admin().indices().status(new IndicesStatusRequest()).actionGet().getIndices();
-    }
     
 
     public synchronized List<String> getCurrentIndex() throws DotDataException {
