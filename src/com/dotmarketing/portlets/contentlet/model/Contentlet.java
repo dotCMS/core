@@ -241,10 +241,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	
 	public String getStringProperty(String fieldVarName) throws DotRuntimeException {
 		try{
-			if(map.get(fieldVarName) instanceof Long )
-				return map.get(fieldVarName).toString();
+			if(get(fieldVarName) instanceof Long )
+				return get(fieldVarName).toString();
 			
-			return (String)map.get(fieldVarName);
+			return (String)get(fieldVarName);
 		}catch (Exception e) {			
 			 throw new DotRuntimeException(e.getMessage(), e);			 
 		}
