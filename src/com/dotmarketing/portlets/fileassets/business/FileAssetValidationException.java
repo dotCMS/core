@@ -14,5 +14,10 @@ public class FileAssetValidationException extends DotContentletValidationExcepti
 		super(x);
 		// TODO Auto-generated constructor stub
 	}
+	
+	public FileAssetValidationException(String x, Exception cause) {
+        super(x,cause);
+        // TODO Auto-generated constructor stub
+    }
 
 }
