@@ -1024,4 +1024,220 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
     }
 
+    /**
+     * Testing {@link ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void deleteForAllVersions () throws DotSecurityException, DotDataException {
+
+        //First lets create a test structure
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+
+        //Now a new contentlet
+        Contentlet newContentlet = createContentlet( testStructure, null, false );
+
+        //Now we need to delete it
+        contentletAPI.delete( newContentlet, user, false, true );
+
+        //Try to find the deleted Contentlet
+        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+
+        //Validations
+        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#publish(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void publish () throws DotDataException, DotSecurityException {
+
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
+
+        //Publish the test contentlet
+        contentletAPI.publish( contentlet, user, false );
+
+        //Verify if it was published
+        Boolean isLive = APILocator.getVersionableAPI().isLive( contentlet );
+
+        //Validations
+        assertNotNull( isLive );
+        assertTrue( isLive );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#publish(java.util.List, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void publishCollection () throws DotDataException, DotSecurityException {
+
+        //Publish all the test contentlets
+        contentletAPI.publish( contentlets, user, false );
+
+        for ( Contentlet contentlet : contentlets ) {
+
+            //Verify if it was published
+            Boolean isLive = APILocator.getVersionableAPI().isLive( contentlet );
+
+            //Validations
+            assertNotNull( isLive );
+            assertTrue( isLive );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#unpublish(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void unpublish () throws DotDataException, DotSecurityException {
+
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
+
+        //Unpublish the test contentlet
+        contentletAPI.unpublish( contentlet, user, false );
+
+        //Verify if it was unpublished
+        Boolean isLive = APILocator.getVersionableAPI().isLive( contentlet );
+
+        //Validations
+        assertNotNull( isLive );
+        assertFalse( isLive );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#unpublish(java.util.List, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void unpublishCollection () throws DotDataException, DotSecurityException {
+
+        //Unpublish all the test contentlets
+        contentletAPI.unpublish( contentlets, user, false );
+
+        for ( Contentlet contentlet : contentlets ) {
+
+            //Verify if it was unpublished
+            Boolean isLive = APILocator.getVersionableAPI().isLive( contentlet );
+
+            //Validations
+            assertNotNull( isLive );
+            assertFalse( isLive );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#archive(java.util.List, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void archiveCollection () throws DotDataException, DotSecurityException {
+
+        try {
+            //Archive this given contentlet collection (means it will be mark them as deleted)
+            contentletAPI.archive( contentlets, user, false );
+
+            for ( Contentlet contentlet : contentlets ) {
+
+                //Verify if it was deleted
+                Boolean isDeleted = APILocator.getVersionableAPI().isDeleted( contentlet );
+
+                //Validations
+                assertNotNull( isDeleted );
+                assertTrue( isDeleted );
+            }
+        } finally {
+            contentletAPI.unarchive( contentlets, user, false );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#unarchive(java.util.List, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void unarchiveCollection () throws DotDataException, DotSecurityException {
+
+        //First lets archive this given contentlet collection (means it will be mark them as deleted)
+        contentletAPI.archive( contentlets, user, false );
+
+        //Now lets test the unarchive
+        contentletAPI.unarchive( contentlets, user, false );
+
+        for ( Contentlet contentlet : contentlets ) {
+
+            //Verify if it continues as deleted
+            Boolean isDeleted = APILocator.getVersionableAPI().isDeleted( contentlet );
+
+            //Validations
+            assertNotNull( isDeleted );
+            assertFalse( isDeleted );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#unarchive(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void unarchive () throws DotDataException, DotSecurityException {
+
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
+
+        try {
+            //First lets archive this given contentlet (means it will be mark it as deleted)
+            contentletAPI.archive( contentlet, user, false );
+
+            //Now lets test the unarchive
+            contentletAPI.archive( contentlet, user, false );
+
+            //Verify if it continues as deleted
+            Boolean isDeleted = APILocator.getVersionableAPI().isDeleted( contentlet );
+
+            //Validations
+            assertNotNull( isDeleted );
+            assertFalse( isDeleted );
+        } finally {
+            contentletAPI.unarchive( contentlet, user, false );
+        }
+    }
+
 }
