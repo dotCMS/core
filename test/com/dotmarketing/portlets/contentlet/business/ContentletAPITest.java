@@ -24,10 +24,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import org.apache.lucene.queryParser.ParseException;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -883,7 +880,8 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * Testing {@link ContentletAPI#getAllRelationships(com.dotmarketing.portlets.contentlet.model.Contentlet)}
      *
-     * @throws Exception
+     * @throws DotSecurityException
+     * @throws DotDataException
      * @see ContentletAPI
      * @see Contentlet
      */
@@ -896,7 +894,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Find all the relationships for this contentlet
         ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( contentlet.getInode(), user, false );
 
-        //Validation
+        //Validations
         assertNotNull( contentletRelationships );
         assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
     }
@@ -904,7 +902,8 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * Testing {@link ContentletAPI#getAllRelationships(com.dotmarketing.portlets.contentlet.model.Contentlet)}
      *
-     * @throws Exception
+     * @throws DotSecurityException
+     * @throws DotDataException
      * @see ContentletAPI
      * @see Contentlet
      */
@@ -917,9 +916,112 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Find all the relationships for this contentlet
         ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( contentlet );
 
-        //Validation
+        //Validations
         assertNotNull( contentletRelationships );
         assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#getAllLanguages(com.dotmarketing.portlets.contentlet.model.Contentlet, Boolean, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void getAllLanguages () throws DotSecurityException, DotDataException {
+
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
+
+        //Get all the contentles siblings for this contentlet (contentlet for all the languages)
+        List<Contentlet> forAllLanguages = contentletAPI.getAllLanguages( contentlet, true, user, false );
+
+        //Validations
+        assertNotNull( forAllLanguages );
+        assertTrue( !forAllLanguages.isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#isContentEqual(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void isContentEqual () throws DotDataException, DotSecurityException {
+
+        Iterator<Contentlet> contentletIterator = contentlets.iterator();
+
+        //Getting test contentlets
+        Contentlet contentlet1 = contentletIterator.next();
+        Contentlet contentlet2 = contentletIterator.next();
+
+        //Compare if the contentlets are equal
+        Boolean areEqual = contentletAPI.isContentEqual( contentlet1, contentlet2, user, false );
+
+        //Validations
+        assertNotNull( areEqual );
+        assertFalse( areEqual );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#archive(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void archive () throws DotDataException, DotSecurityException {
+
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
+
+        try {
+            //Archive this given contentlet (means it will be mark it as deleted)
+            contentletAPI.archive( contentlet, user, false );
+
+            //Verify if it was deleted
+            Boolean isDeleted = APILocator.getVersionableAPI().isDeleted( contentlet );
+
+            //Validations
+            assertNotNull( isDeleted );
+            assertTrue( isDeleted );
+        } finally {
+            contentletAPI.unarchive( contentlet, user, false );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void delete () throws DotSecurityException, DotDataException {
+
+        //First lets create a test structure
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+
+        //Now a new contentlet
+        Contentlet newContentlet = createContentlet( testStructure, null, false );
+
+        //Now we need to delete it
+        contentletAPI.delete( newContentlet, user, false );
+
+        //Try to find the deleted Contentlet
+        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+
+        //Validations
+        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
     }
 
 }

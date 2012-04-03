@@ -144,11 +144,14 @@ public class ContentletBaseTest extends TestBase {
 
         //*******************************************************************************
         //Creating tests structures
-
-        addStructure( "JUnit Test Structure_0", "junit_test_structure_0" );
-        addStructure( "JUnit Test Structure_1", "junit_test_structure_1" );
-        addStructure( "JUnit Test Structure_2", "junit_test_structure_2" );
-        addStructure( "JUnit Test Structure_3", "junit_test_structure_3" );
+        Structure newStructure = createStructure( "JUnit Test Structure_0", "junit_test_structure_0" );
+        structures.add( newStructure );
+        newStructure = createStructure( "JUnit Test Structure_1", "junit_test_structure_1" );
+        structures.add( newStructure );
+        newStructure = createStructure( "JUnit Test Structure_2", "junit_test_structure_2" );
+        structures.add( newStructure );
+        newStructure = createStructure( "JUnit Test Structure_3", "junit_test_structure_3" );
+        structures.add( newStructure );
 
         //Adding the fields to the structures
         for ( Structure structure : structures ) {
@@ -162,7 +165,8 @@ public class ContentletBaseTest extends TestBase {
         Structure testStructure2 = structureIterator.next();
 
         //NO set the language
-        addContentlet( testStructure1, null );
+        Contentlet newContentlet = createContentlet( testStructure1, null, true );
+        contentlets.add( newContentlet );
 
         //Set the language to default value
         Language language = languageAPI.getDefaultLanguage();
@@ -173,7 +177,8 @@ public class ContentletBaseTest extends TestBase {
                 break;
             }
         }
-        addContentlet( testStructure2, language );
+        newContentlet = createContentlet( testStructure2, language, true );
+        contentlets.add( newContentlet );
     }
 
     @AfterClass
@@ -226,7 +231,7 @@ public class ContentletBaseTest extends TestBase {
     }
 
     /**
-     * Creates and add an structure to a collection for a later use in the tests
+     * Creates an Structure object for a later use in the tests
      *
      * @param name
      * @param structureVelocityVarName
@@ -235,7 +240,7 @@ public class ContentletBaseTest extends TestBase {
      * @throws com.dotmarketing.exception.DotSecurityException
      *
      */
-    private static void addStructure ( String name, String structureVelocityVarName ) throws DotDataException, DotSecurityException {
+    protected static Structure createStructure ( String name, String structureVelocityVarName ) throws DotDataException, DotSecurityException {
 
         //Create the structure
         Structure testStructure = new Structure();
@@ -268,8 +273,7 @@ public class ContentletBaseTest extends TestBase {
         permissions.add( permissionEdit );
         permissions.add( permissionWrite );
 
-        //Finally add it to the test collection
-        structures.add( testStructure );
+        return testStructure;
     }
 
     /**
@@ -279,7 +283,7 @@ public class ContentletBaseTest extends TestBase {
      * @throws com.dotmarketing.exception.DotHibernateException
      *
      */
-    private static void addFields ( Structure jUnitTestStructure ) throws DotHibernateException {
+    protected static void addFields ( Structure jUnitTestStructure ) throws DotHibernateException {
 
         //Create the fields
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, jUnitTestStructure, false, true, false, 1, false, false, false );
@@ -326,7 +330,7 @@ public class ContentletBaseTest extends TestBase {
     }
 
     /**
-     * Creates and add a Contentlet to a collection for a later use in the tests
+     * Creates a Contentlet object for a later use in the tests
      *
      * @param structure
      * @param language
@@ -334,7 +338,7 @@ public class ContentletBaseTest extends TestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private static void addContentlet ( Structure structure, Language language ) throws DotDataException, DotSecurityException {
+    protected static Contentlet createContentlet ( Structure structure, Language language, Boolean createWithContainer ) throws DotDataException, DotSecurityException {
 
         //Create the new Contentlet
         Contentlet contentlet = new Contentlet();
@@ -382,11 +386,12 @@ public class ContentletBaseTest extends TestBase {
         //Save the contentlet
         contentlet = contentletAPI.checkin( contentlet, categories, structurePermissions, user, true );
 
-        //Create a container
-        addContainer( contentlet );
+        if ( createWithContainer ) {
+            //Create a container
+            addContainer( contentlet );
+        }
 
-        //Adding it to the test collection
-        contentlets.add( contentlet );
+        return contentlet;
     }
 
     /**
