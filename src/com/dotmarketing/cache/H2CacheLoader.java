@@ -76,7 +76,7 @@ public class H2CacheLoader implements CacheLoader{
 				if(instance== null){
 					if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", true) && Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE", true)) 
 						new H2CacheLoader().moveh2dbDir();
-					
+										
 					new H2CacheLoader().create();
 				}
 			}
