@@ -13,10 +13,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import org.apache.lucene.queryParser.ParseException;
@@ -697,7 +699,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
         Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
 
-        //Search the contentlet for this structure
+        //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
 
         //Getting the current value for this field
@@ -711,29 +713,213 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * Testing {@link ContentletAPI#addLinkToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, String, String, com.liferay.portal.model.User, boolean)}
      *
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @throws Exception
      * @see ContentletAPI
      * @see Contentlet
      */
     @Test
-    public void addLinkToContentlet () throws DotSecurityException, DotDataException {
+    public void addLinkToContentlet () throws Exception {
 
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
+        Link menuLink = null;
+        try {
+            //Getting a known structure
+            Structure structure = structures.iterator().next();
 
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-        Contentlet contentlet = contentletList.iterator().next();
+            //Create a menu link
+            menuLink = createMenuLink();
 
-        //Add to this contentlet a link
-        contentletAPI.addLinkToContentlet( contentlet, "", "Test Link", user, false);
+            //Search the contentlets for this structure
+            List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+            Contentlet contentlet = contentletList.iterator().next();
 
-        //Verify if the link was associated
-        List<Link> relatedLinks = contentletAPI.getRelatedLinks( contentlet, user, false );
+            //Add to this contentlet a link
+            contentletAPI.addLinkToContentlet( contentlet, menuLink.getInode(), "child", user, false );
 
-        //Validations
-        assertNotNull( relatedLinks );
-        assertFalse( relatedLinks.isEmpty() );
+            //Verify if the link was associated
+            List<Link> relatedLinks = contentletAPI.getRelatedLinks( contentlet, user, false );
+
+            //Validations
+            assertNotNull( relatedLinks );
+            assertFalse( relatedLinks.isEmpty() );
+        } finally {
+            menuLinkAPI.delete( menuLink, user, false );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#addFileToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, String, String, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws Exception
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void addFileToContentlet () throws Exception {
+
+        List<File> finalFiles = null;
+        try {
+            //Getting a known structure
+            Structure structure = structures.iterator().next();
+
+            //Search the contentlets for this structure
+            List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+            Contentlet contentlet = contentletList.iterator().next();
+
+            //Creating the test file
+            File testFile = createFile( "test.txt" );
+
+            //Gettting the related files to this contentlet
+            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );
+            if ( files == null ) {
+                files = new ArrayList<File>();
+            }
+            int initialSize = files.size();
+
+            //Adding the file to the contentlet
+            contentletAPI.addFileToContentlet( contentlet, testFile.getInode(), "testFileRelationName", user, false );
+
+            //Gettting the related files to this contentlet
+            finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );
+
+            //Validations
+            assertNotNull( finalFiles );
+            assertTrue( !finalFiles.isEmpty() );
+            assertNotSame( initialSize, finalFiles.size() );
+        } finally {
+            if ( finalFiles != null ) {
+                for ( File file : finalFiles ) {
+                    fileAPI.delete( file, user, false );
+                }
+            }
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#addImageToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, String, String, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws Exception
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void addImageToContentlet () throws Exception {
+
+        List<File> finalFiles = null;
+        try {
+            //Getting a known structure
+            Structure structure = structures.iterator().next();
+
+            //Search the contentlets for this structure
+            List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+            Contentlet contentlet = contentletList.iterator().next();
+
+            //Creating the test file
+            File testFile = createFile( "test.gif" );
+
+            //Gettting the related files to this contentlet
+            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );
+            if ( files == null ) {
+                files = new ArrayList<File>();
+            }
+            int initialSize = files.size();
+
+            //Adding the file to the contentlet
+            contentletAPI.addImageToContentlet( contentlet, testFile.getInode(), "testFileImageRelationName", user, false );
+
+            //Gettting the related files to this contentlet
+            finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );
+
+            //Validations
+            assertNotNull( finalFiles );
+            assertTrue( !finalFiles.isEmpty() );
+            assertNotSame( initialSize, finalFiles.size() );
+        } finally {
+            if ( finalFiles != null ) {
+                for ( File file : finalFiles ) {
+                    fileAPI.delete( file, user, false );
+                }
+            }
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#findPageContentlets(String, String, String, boolean, long, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws Exception
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void findPageContentlets () throws DotDataException, DotSecurityException {
+
+        //Iterate throw the test contentles
+        for ( Contentlet contentlet : contentlets ) {
+
+            //Get the identifier for this contentlet
+            Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
+
+            //Search for related html pages and containers
+            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getInode() );
+            if ( multiTrees != null && !multiTrees.isEmpty() ) {
+
+                for ( MultiTree multiTree : multiTrees ) {
+
+                    //Getting the identifiers
+                    Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multiTree.getParent1() );
+                    Identifier containerPageIdentifier = APILocator.getIdentifierAPI().find( multiTree.getParent2() );
+
+                    //Find the related contentlets, at this point should return something....
+                    List<Contentlet> pageContentlets = contentletAPI.findPageContentlets( htmlPageIdentifier.getInode(), containerPageIdentifier.getInode(), null, true, -1, user, false );
+
+                    //Validations
+                    assertTrue( pageContentlets != null && !pageContentlets.isEmpty() );
+                }
+
+                break;
+            }
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#getAllRelationships(com.dotmarketing.portlets.contentlet.model.Contentlet)}
+     *
+     * @throws Exception
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void getAllRelationships () throws DotSecurityException, DotDataException {
+
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
+
+        //Find all the relationships for this contentlet
+        ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( contentlet.getInode(), user, false );
+
+        //Validation
+        assertNotNull( contentletRelationships );
+        assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#getAllRelationships(com.dotmarketing.portlets.contentlet.model.Contentlet)}
+     *
+     * @throws Exception
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void getAllRelationshipsByContentlet () throws DotSecurityException, DotDataException {
+
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
+
+        //Find all the relationships for this contentlet
+        ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( contentlet );
+
+        //Validation
+        assertNotNull( contentletRelationships );
+        assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
     }
 
 }

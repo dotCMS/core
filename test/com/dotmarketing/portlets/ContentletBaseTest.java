@@ -24,6 +24,8 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.files.business.FileAPI;
+import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
@@ -38,11 +40,16 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.*;
 
 /**
@@ -56,6 +63,8 @@ public class ContentletBaseTest extends TestBase {
     protected static Host defaultHost;
     protected static Folder testFolder;
     protected static ContentletFactory contentletFactory;
+    protected static MenuLinkAPI menuLinkAPI;
+    protected static FileAPI fileAPI;
     private static RoleAPI roleAPI;
     private static PermissionAPI permissionAPI;
     private static LanguageAPI languageAPI;
@@ -65,7 +74,6 @@ public class ContentletBaseTest extends TestBase {
     private static TemplateAPI templateAPI;
     private static HTMLPageAPI htmlPageAPI;
     private static FolderAPI folderAPI;
-    private static MenuLinkAPI menuLinkAPI;
 
     protected static User user;
     protected static List<Contentlet> contentlets;
@@ -74,7 +82,7 @@ public class ContentletBaseTest extends TestBase {
     protected static Collection<Structure> structures;
     protected static Collection<Template> templates;
     protected static Collection<Permission> permissions;
-    protected static Collection<Link> links;
+    protected static Collection<Identifier> identifiers;
     protected static int FIELDS_SIZE = 14;
 
     private static String wysiwygValue = "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. " +
@@ -101,6 +109,7 @@ public class ContentletBaseTest extends TestBase {
         htmlPageAPI = APILocator.getHTMLPageAPI();
         folderAPI = APILocator.getFolderAPI();
         menuLinkAPI = APILocator.getMenuLinkAPI();
+        fileAPI = APILocator.getFileAPI();
 
         defaultHost = hostAPI.findDefaultHost( user, false );
 
@@ -110,7 +119,7 @@ public class ContentletBaseTest extends TestBase {
         containers = new ArrayList<Container>();
         templates = new ArrayList<Template>();
         htmlPages = new ArrayList<HTMLPage>();
-        links = new ArrayList<Link>();
+        identifiers = new ArrayList<Identifier>();
 
         //*******************************************************************************
         //Create the new folder
@@ -118,15 +127,16 @@ public class ContentletBaseTest extends TestBase {
 
         testFolder.setFilesMasks( "" );
         testFolder.setIDate( new Date() );
-        testFolder.setName( "dotcms_junit_test_folder" );
+        testFolder.setName( "dotcms_junit_test_folder_" + String.valueOf( new Date().getTime() ) );
         testFolder.setOwner( user.getUserId() );
         testFolder.setShowOnMenu( false );
         testFolder.setSortOrder( 0 );
-        testFolder.setTitle( "dotcms_junit_test_folder" );
+        testFolder.setTitle( "dotcms_junit_test_folder_" + String.valueOf( new Date().getTime() ) );
         testFolder.setType( "folder" );
         testFolder.setHostId( defaultHost.getIdentifier() );
         //Creates and set an identifier
         Identifier identifier = APILocator.getIdentifierAPI().createNew( testFolder, defaultHost );
+        identifiers.add( identifier );
         testFolder.setIdentifier( identifier.getId() );
 
         //Saving the folder
@@ -164,9 +174,6 @@ public class ContentletBaseTest extends TestBase {
             }
         }
         addContentlet( testStructure2, language );
-
-        //Finally creates and add links
-        addMenuLink();
     }
 
     @AfterClass
@@ -207,13 +214,15 @@ public class ContentletBaseTest extends TestBase {
             StructureFactory.deleteStructure( structure );
         }
 
-        //Delete the menu links
-        for ( Link link : links ) {
-            menuLinkAPI.delete( link, user, false );
+        //Delete the identifiers
+        for ( Identifier identifier : identifiers ) {
+            APILocator.getIdentifierAPI().delete( identifier );
         }
 
+        //hostAPI.delete( defaultHost, user, false );
+
         //Delete the folder
-        folderAPI.delete( testFolder, user, false );
+        //folderAPI.delete( testFolder, user, false );
     }
 
     /**
@@ -329,6 +338,7 @@ public class ContentletBaseTest extends TestBase {
 
         //Create the new Contentlet
         Contentlet contentlet = new Contentlet();
+        contentlet.setReviewInterval( "1m" );
         contentlet.setStructureInode( structure.getInode() );
         contentlet.setHost( defaultHost.getIdentifier() );
         if ( UtilMethods.isSet( language ) ) {
@@ -518,18 +528,18 @@ public class ContentletBaseTest extends TestBase {
     }
 
     /**
-     * Creates and add an Link to a collection for a later use in the tests
+     * Creates a Link object for a later use in the tests
      *
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    private static void addMenuLink () throws DotSecurityException, DotDataException {
+    protected static Link createMenuLink () throws DotSecurityException, DotDataException {
 
         //Creating the menu link
         Link menuLink = new Link();
         menuLink.setModUser( user.getUserId() );
         menuLink.setOwner( user.getUserId() );
-        menuLink.setProtocal( "https://" );
+        menuLink.setProtocal( "" );
         menuLink.setShowOnMenu( true );
         menuLink.setSortOrder( 2 );
         menuLink.setTarget( "_blank" );
@@ -547,8 +557,97 @@ public class ContentletBaseTest extends TestBase {
         menuLinkAPI.save( menuLink, testFolder, user, false );
         permissionAPI.copyPermissions( testFolder, menuLink );
 
-        //Adding it to the test collection
-        links.add( menuLink );
+        //Make it working and live
+        APILocator.getVersionableAPI().setWorking( menuLink );
+        APILocator.getVersionableAPI().setLive( menuLink );
+
+        return menuLink;
+    }
+
+    /**
+     * Creates a File object for a later use in the tests
+     *
+     * @param fileName
+     * @return savedFile
+     * @throws Exception
+     * @see File
+     */
+    protected static File createFile ( String fileName ) throws Exception {
+
+        String testFilesPath = ".." + java.io.File.separator +
+                "test" + java.io.File.separator +
+                "com" + java.io.File.separator +
+                "dotmarketing" + java.io.File.separator +
+                "portlets" + java.io.File.separator +
+                "contentlet" + java.io.File.separator +
+                "business" + java.io.File.separator +
+                "test_files" + java.io.File.separator;
+
+        String copyTestFilesPath = ".." + java.io.File.separator +
+                "test" + java.io.File.separator +
+                "com" + java.io.File.separator +
+                "dotmarketing" + java.io.File.separator +
+                "portlets" + java.io.File.separator +
+                "contentlet" + java.io.File.separator +
+                "business" + java.io.File.separator +
+                "test_files" + java.io.File.separator +
+                "copy" + java.io.File.separator;
+
+        //Reading the file
+        String testFilePath = Config.CONTEXT.getRealPath( testFilesPath + fileName );
+        java.io.File tempTestFile = new java.io.File( testFilePath );
+        if ( !tempTestFile.exists() ) {
+            String message = "File does not exist: '" + testFilePath + "'";
+            throw new Exception( message );
+        }
+
+        //Copying the file
+        String copyTestFilePath = Config.CONTEXT.getRealPath( copyTestFilesPath + fileName );
+        java.io.File copyTempTestFile = new java.io.File( copyTestFilePath );
+        if ( !copyTempTestFile.exists() ) {
+            if ( !copyTempTestFile.createNewFile() ) {
+                String message = "Cannot create copy of the test file: '" + copyTestFilePath + "'";
+                throw new Exception( message );
+            }
+        }
+
+        InputStream in = new FileInputStream( tempTestFile );
+        OutputStream out = new FileOutputStream( copyTestFilePath );
+
+        byte[] buf = new byte[1024];
+        int len;
+        while ( 0 < ( len = in.read( buf ) ) ) {
+            out.write( buf, 0, len );
+        }
+
+        //Creating a test file
+        File testFile = new File();
+        testFile.setAuthor( user.getUserId() );
+        testFile.setFileName( "junit_test_file.txt" );
+        testFile.setFriendlyName( "JUnit Test File Friendly Name" );
+        testFile.setIDate( new Date() );
+        testFile.setMaxSize( 1024 );
+        testFile.setMimeType( "text/plain" );
+        testFile.setModDate( new Date() );
+        testFile.setModUser( user.getUserId() );
+        testFile.setOwner( user.getUserId() );
+        testFile.setPublishDate( new Date() );
+        testFile.setShowOnMenu( true );
+        testFile.setSize( ( int ) tempTestFile.length() );
+        testFile.setSortOrder( 2 );
+        testFile.setTitle( "JUnit Test File" );
+        testFile.setType( "file_asset" );
+
+        //Storing the file
+        File savedFile = fileAPI.saveFile( testFile, copyTempTestFile, testFolder, user, false );
+        //Adding permissions
+        permissionAPI.copyPermissions( testFolder, savedFile );
+
+        if ( copyTempTestFile.exists() ) {
+            copyTempTestFile.delete();
+        }
+
+        return savedFile;
     }
 
 }
