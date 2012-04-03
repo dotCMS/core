@@ -724,7 +724,7 @@ public class ContentletAjax {
 			searchResult.put("working", working.toString());
 			Boolean live=con.isLive();
 			searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
-			
+
 			searchResult.put("live", live.toString());
 			Boolean isdeleted=con.isArchived();
 			searchResult.put("deleted", isdeleted.toString());
@@ -905,7 +905,7 @@ public class ContentletAjax {
         } catch (DotHibernateException e1) {
             Logger.warn(this, e1.getMessage(),e1);
         }
-	    
+
 		int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
 		String newInode = "";
 
@@ -1033,6 +1033,36 @@ public class ContentletAjax {
 
 		contentletFormData.put("recurrenceDaysOfWeek", recurrenceDaysOfWeek);
 
+		if(contentletFormData.get("recurrenceOccurs").toString().equals("annually")){
+
+			if(Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString()) &&
+					!UtilMethods.isSet((String)contentletFormData.get("specificDayOfMonthRecY")) &&
+					!UtilMethods.isSet((String)contentletFormData.get("specificMonthOfYearRecY"))){
+				String errorString = LanguageUtil.get(user,"message.event.recurrence.invalid.date");
+				saveContentErrors.add(errorString);
+			}
+
+			if(Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString()) &&
+					UtilMethods.isSet((String)contentletFormData.get("specificDayOfMonthRecY"))
+					&& UtilMethods.isSet((String)contentletFormData.get("specificMonthOfYearRecY"))){
+				try{
+					Long.valueOf((String)contentletFormData.get("specificDayOfMonthRecY"));
+					contentletFormData.put("recurrenceDayOfMonth", (String)contentletFormData.get("specificDayOfMonthRecY"));
+				}catch (Exception e) {
+					String errorString = LanguageUtil.get(user,"message.event.recurrence.invalid.dayofmonth");
+					saveContentErrors.add(errorString);
+				}
+				try{
+					Long.valueOf((String)contentletFormData.get("specificMonthOfYearRecY"));
+					contentletFormData.put("recurrenceMonthOfYear", (String)contentletFormData.get("specificMonthOfYearRecY"));
+				}catch (Exception e) {
+					String errorString = LanguageUtil.get(user,"message.event.recurrence.invalid.monthofyear");
+					saveContentErrors.add(errorString);
+				}
+			}else{
+				contentletFormData.put("recurrenceDayOfMonth", "0");
+			}
+		}
 
 		try {
 
@@ -1110,10 +1140,10 @@ public class ContentletAjax {
 					}
 				}
 			}
-			
-			// everything Ok? then commit 
+
+			// everything Ok? then commit
 			HibernateUtil.commitTransaction();
-			
+
 		}
 		catch (DotContentletValidationException ve) {
 
@@ -1239,7 +1269,7 @@ public class ContentletAjax {
 		    if(saveContentErrors.size()>0) {
                 try {
                     HibernateUtil.rollbackTransaction();
-                    
+
                     Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
                     if(contentlet!=null) {
                         callbackData.remove("contentletIdentifier");
@@ -1251,7 +1281,7 @@ public class ContentletAjax {
                     Logger.warn(this, e.getMessage(),e);
                 }
             }
-		    
+
 		    if(!isAutoSave
 					&&(saveContentErrors != null
 							&& saveContentErrors.size() > 0)){
