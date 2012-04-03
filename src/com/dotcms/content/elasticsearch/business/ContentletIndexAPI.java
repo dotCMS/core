@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 public interface ContentletIndexAPI {
+    public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");
 
 	public void getRidOfOldIndex() throws DotDataException;
 
