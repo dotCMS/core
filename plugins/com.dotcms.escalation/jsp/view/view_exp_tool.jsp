@@ -77,7 +77,7 @@ function refreshTaskList(urlParams){
 </script>
 
 <%
-Role Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey("Manut_");
+Role Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(APILocator.getPluginAPI().loadProperty("com.dotcms.escalation", "escalation.job.java.roleToEscale"));
 List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutentor); 
 %>
 
