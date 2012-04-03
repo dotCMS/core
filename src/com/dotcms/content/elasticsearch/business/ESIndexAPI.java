@@ -63,7 +63,6 @@ public class ESIndexAPI {
 	
 
 
-
 	/**
 	 * Writes an index to a backup file
 	 * @param index
