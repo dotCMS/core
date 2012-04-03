@@ -1,18 +1,9 @@
 package com.dotmarketing.sitesearch.business;
 
-import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
-
-import org.apache.nutch.searcher.Hit;
-import org.apache.nutch.searcher.HitDetails;
-import org.apache.nutch.searcher.Hits;
-import org.apache.nutch.searcher.NutchBean;
-import org.apache.nutch.searcher.Query;
-import org.apache.nutch.searcher.Summary;
-
+import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
-import com.google.common.base.Function;
-import com.google.common.collect.MapMaker;
 
 
 /**
@@ -22,17 +13,32 @@ import com.google.common.collect.MapMaker;
  */
 public class SiteSearchAPIImpl implements SiteSearchAPI{
 	
-	private static final int defaultNumRows = 10;
-	private static final String defaultDedupField = "site";
-	private static final String defaultRespType = "xml";
-	private static final ConcurrentMap<String,NutchBeanProxy> nutchBeans = new MapMaker().makeComputingMap(
-	  new Function<String,NutchBeanProxy>() {
-          public NutchBeanProxy apply(String hostId) {
-            return new NutchBeanProxy(hostId);
-          }
-      });
+	private ESIndexAPI esapi = APILocator.getESIndexAPI();
 
+	
+	public void createSiteSearchIndex(String indexName) throws DotIndexException{
+		
+		
 
+		try {
+			esapi.createIndex(indexName);
+		} catch (Exception e) {
+			Logger.error(SiteSearchAPIImpl.class,e.getMessage(),e);
+			throw new DotIndexException(e.getMessage());
+		} 
+		
+		
+		
+		return;
+		
+	}
+	
+	
+	
+	
+	
+	
+	
 	public DotSearchResults search(String query, String sort, int start, int rows, String lang, String hostId) {
 		
         DotHits hits = null;
@@ -43,7 +49,6 @@ public class SiteSearchAPIImpl implements SiteSearchAPI{
 			return null;
 		}
 		DotSearchResults results = new DotSearchResults();
-		results.setResponseType(defaultRespType);
 		results.setQuery(query);
 		results.setLang(lang);
 		results.setSort(sort);
@@ -71,39 +76,7 @@ public class SiteSearchAPIImpl implements SiteSearchAPI{
 	 * @throws Exception
 	 */
 	private DotHits getHits(String query, String sort, int start, int rows, String lang, String hostId) throws Exception{
+		return null;
 
-		DotHits dotHits = new DotHits();
-		rows = rows == 0 ? defaultNumRows : rows;
-		NutchBeanProxy nutchBeanProxy = nutchBeans.get(hostId);
-		NutchBean nutchBean = nutchBeanProxy.getNutchBean();
-		if(nutchBean!=null){
-			Query queryObj = Query.parse(query,lang,nutchBeanProxy.getConf());
-			try{
-				Hits hits;
-				try {
-					queryObj.getParams().initFrom(start + rows, rows,
-							defaultDedupField, sort, false);
-					hits = nutchBean.search(queryObj);
-				} catch (IOException e) {
-					hits = new Hits(0, new Hit[0]);
-				}
-				int end = (int) Math.min(hits.getLength(), start + rows);
-				int length = end - start;
-				int realEnd = (int) Math.min(hits.getLength(), start + rows);
-				Hit[] show = hits.getHits(start, realEnd - start);
-				HitDetails[] details = nutchBean.getDetails(show);
-				Summary[] summaries = nutchBean.getSummary(details, queryObj);	
-				dotHits.setTotalHits(hits.getTotal());
-				dotHits.setLength(length);
-				dotHits.setSummary(summaries);
-				dotHits.setDetails(details);
-				dotHits.setHits(show);
-			}finally{
-				nutchBeanProxy.refresh();
-			}
-		}else{
-			nutchBeans.remove(hostId);
-		}
-		return dotHits;
 	}
 }
