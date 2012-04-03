@@ -1,0 +1,70 @@
+{
+"mappings" : { 
+      "dot_site_search" : { 
+         "properties" : { 
+            "content" : { 
+               "type": "multi_field", 
+               "fields" : { 
+                  "untouched": { 
+                     "type": "string", 
+                     "index": "not_analyzed" 
+                  }, 
+                  "content": { 
+                     "type": "string", 
+                     "analyzer": "standard_content" 
+                  }, 
+                  "ngram" : { 
+                     "search_analyzer": "standard_content", 
+                     "index_analyzer": "partial_content", 
+                     "type": "string" 
+                  } 
+               } 
+            },
+            "host" : { "type": "string", "index" : "not_analyzed"},
+            "contentLength" : { "type": "long"},
+            "uri" : { "type": "string", "index" : "not_analyzed"},
+            "url" : { "type": "string", "index" : "not_analyzed"},
+            "mimeType" : { "type": "string", "index" : "not_analyzed"},
+            "title" : { "type": "string", "index" : "not_analyzed"},
+            "description" : { "type": "string", "index" : "not_analyzed"},
+            "modified" : { "type": "date"},
+            "keywords" : { "type": "string", "index" : "not_analyzed"},
+            "language" : { "type": "integer"},
+            "author" : { "type": "string", "index" : "not_analyzed"}
+         } 
+      } 
+   }, 
+   "settings" : { 
+      "analysis" : { 
+         "filter" : { 
+            "content_ngrams" : { 
+               "side" : "front", 
+               "max_gram" : 10, 
+               "min_gram" : 1, 
+               "type" : "edgeNGram" 
+            } 
+         }, 
+         "analyzer" : { 
+            "standard_content" : { 
+               "filter" : [ 
+                  "standard", 
+                  "lowercase", 
+                  "asciifolding" 
+               ], 
+               "type" : "custom", 
+               "tokenizer" : "standard" 
+            }, 
+            "partial_content" : { 
+               "filter" : [ 
+                  "standard", 
+                  "lowercase", 
+                  "asciifolding", 
+                  "content_ngrams" 
+               ], 
+               "type" : "custom", 
+               "tokenizer" : "standard" 
+            } 
+         } 
+      } 
+   } 
+}
