@@ -1,8 +1,11 @@
 Manifest-Version: 1.0
 Bundle-Name: Osgi Actionlet
-Bundle-Activator: org.apache.velocity.tools.Activator
+Bundle-Activator: com.dotmarketing.osgi.actionlet.Activator
 Bundle-SymbolicName: Osgi Actionlet
 Bundle-Version: 1.0.0
 Bundle-RequiredExecutionEnvironment: OSGi/Minimum-1.0
-Import-Package: com.dotmarketing.portlets.workflows.actionlet,com.dotmarketing.portlets.workflows.model,com.dotmarketing.portlets.workflows.business,com.dotmarketing.osgi
-Provide-Package: org.apache.velocity.tools
+Import-Package: com.dotmarketing.osgi,
+ com.dotmarketing.portlets.workflows.actionlet,
+ com.dotmarketing.portlets.workflows.business,
+ com.dotmarketing.portlets.workflows.model
+Provide-Package: com.dotmarketing.osgi.actionlet

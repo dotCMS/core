@@ -19,28 +19,21 @@ public class HostActivator implements BundleActivator {
 		return instance;
 	}
 	
-    public void start(BundleContext context)
-    {
+    public void start(BundleContext context) {
         m_context = context;
-        System.out.println("Activate: " + context);
     }
 
-    public void stop(BundleContext context)
-    {
+    public void stop(BundleContext context) {
         m_context = null;
-        System.out.println("De-Activate: " + context);
     }
     
     public BundleContext getBundleContext() {
     	return m_context;
     }
     
-    public Bundle[] getBundles()
-    {
+    public Bundle[] getBundles() {
         if (m_context != null)
-        {
             return m_context.getBundles();
-        }
         return null;
     }
 }
