@@ -32,7 +32,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 String submitURL = com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"EXT_SITESEARCH");
 List<Host> selectedHosts = new ArrayList<Host>();
 String error = "";
-String cronExpression = "";
+String CRON_EXPRESSION = "";
 String pathsToIgnore  = "";
 String pathsToFollow  = "";
 
@@ -45,14 +45,12 @@ boolean success = false;
 String successMsg = LanguageUtil.get(pageContext, "schedule-site-search-success") ;
 String[] indexHosts;
 
+String QUARTZ_JOB_NAME =  "SiteSearch_" + APILocator.getContentletIndexAPI().timestampFormatter.format(new Date());
 
 
-
-cronExpression = !UtilMethods.isSet(request.getParameter("cronExpression"))?"":request.getParameter("cronExpression");
-port = !UtilMethods.isSet(request.getParameter("port"))?"":request.getParameter("port");
-pathsToIgnore  = !UtilMethods.isSet(request.getParameter("pathsToIgnore"))?"":request.getParameter("pathsToIgnore");
-extToIgnore    = !UtilMethods.isSet(request.getParameter("extToIgnore"))?"":request.getParameter("extToIgnore");
-followQueryString = !UtilMethods.isSet(request.getParameter("followQueryString"))?false:Boolean.valueOf((String)request.getParameter("followQueryString"));
+CRON_EXPRESSION = UtilMethods.webifyString(request.getParameter("CRON_EXPRESSION"));
+pathsToIgnore  = UtilMethods.webifyString(request.getParameter("pathsToIgnore"));
+extToIgnore    = UtilMethods.webifyString(request.getParameter("extToIgnore"));
 indexAll = !UtilMethods.isSet(request.getParameter("indexAll"))?false:Boolean.valueOf((String)request.getParameter("indexAll"));
 indexHosts = request.getParameterValues("indexhost");
 
@@ -513,6 +511,7 @@ function scheduleJob() {
 			
 			timeout : 30000,
 			handle : function(dataOrError, ioArgs) {
+				alert(dataOrError);
 				if (dojo.isString(dataOrError) && dataOrError) {
 					
 					if (dataOrError.indexOf("FAILURE") == 0) {
@@ -613,26 +612,31 @@ dojo.addOnLoad (function(){
 </style>
 <div class="portlet-wrapper">
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
-		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SITESEARCH") %>">
-			<h2><%= LanguageUtil.get(pageContext, "Current-Jobs") %></h2>
-				<table class="listingTable" id="hostTable">
-					<tr>
-					    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "") %></span></th>
-						<th nowrap><%= LanguageUtil.get(pageContext, "Jobs") %></th>
-					</tr>
-					<%for(ScheduledTask task : ssapi.getTasks()){ %>
-					<tr>
-					    <td nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
-						<td nowrap><%=task.getJobName() %></th>
-					</tr>
-					<%} %>
-				</table>
-			
-			
-			<hr>
-			<h2><%= LanguageUtil.get(pageContext, "Schedule-New-Job") %></h2>
+		<div id="TabZero" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Current-Jobs") %>">
+			<table class="listingTable" style="width:99%">
+				<tr>
+				    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "") %></span></th>
+					<th nowrap><%= LanguageUtil.get(pageContext, "Jobs") %></th>
+				</tr>
+				<%for(ScheduledTask task : ssapi.getTasks()){ %>
+				<tr>
+				    <td nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
+					<td nowrap><%=task.getJobName() %></th>
+				</tr>
+				<%} %>
+			</table>
+		</div>
+		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Schedule-New-Job") %>">
 			<form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
+			
 			<dl>
+				<dt><strong><%= LanguageUtil.get(pageContext, "job-name") %></strong>
+				: 
+				</dt>
+				<dd><input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text"
+					dojoType='dijit.form.TextBox' style='width: 400px' 
+					" value="<%=QUARTZ_JOB_NAME %>" size="200" /></dd>
+				<dd>
 				<dt><span class="required"></span><strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %>:
 				</strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span
 					dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint"
@@ -716,13 +720,11 @@ dojo.addOnLoad (function(){
 				</dd>
 				
 				<dt><strong><%= LanguageUtil.get(pageContext, "cron-expression") %>
-				: </strong> <a href="javascript: ;" id="cronHintHook">?</a> <span
-					dojoType="dijit.Tooltip" connectId="cronHintHook" id="cronHint"
-					class="fieldHint"><%=LanguageUtil.get(pageContext, "cron-hint") %></span>
+				: </strong> <a href="javascript: ;" id="cronHintHook">?</a>
 				</dt>
-				<dd><input name="cronExpression" id="cronExpression" type="text"
+				<dd><input name="CRON_EXPRESSION" id="cronExpression" type="text"
 					dojoType='dijit.form.TextBox' style='width: 200px'
-					" value="<%=showBlankCronExp?"":cronExpression %>" size="10" />
+					" value="<%=showBlankCronExp?"":CRON_EXPRESSION %>" size="10" />
 					<p></p>
 					 <div style="width: 350px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
 						<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
@@ -733,8 +735,6 @@ dojo.addOnLoad (function(){
 				        <p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p> 
 						</span>
 					</div>
-					
-				 
 				</dd>
 				 
 			
@@ -763,11 +763,11 @@ dojo.addOnLoad (function(){
 			
 				<button dojoType="dijit.form.Button"
 					id="saveButton" onClick="scheduleJob()"
-					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Schedule")) %>
 				</button>
 				<button dojoType="dijit.form.Button"
 					id="saveAndExecuteButton" onClick="scheduleJob();"
-					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-and-execute")) %>
+					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
 				</button>
 				</dd>
 			

@@ -77,7 +77,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		} catch (Exception e) {
 			Logger.error(IndexAjaxAction.class, "Trying to run method:" + cmd);
 			Logger.error(IndexAjaxAction.class, e.getMessage(), e.getCause());
-			return;
+			writeError(response, e.getMessage());
 		}
 
 	}
@@ -104,17 +104,24 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	
 	public void scheduleJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 		
-		Map<String, String> map = getURIParams();
-		int shards = 0;
+		Map<String, String[]> map = request.getParameterMap();
 		
 		SiteSearchConfig config = new SiteSearchConfig();
-		config.putAll(map);
+		for(String key : map.keySet()){
+			if(((String[]) map.get(key)).length ==1){
+				config.put(key,((String[]) map.get(key))[0]);
+			}
+			else{
+				config.put(key,map.get(key));
+			}
+		}
 
 		try {
 			APILocator.getSiteSearchAPI().scheduleTask(config);
 		} catch (Exception e) {
 			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
-			throw new DotIndexException(e.getMessage());
+			writeError(response, e.getMessage());
+			
 		} 
 
 		

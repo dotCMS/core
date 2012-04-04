@@ -8,7 +8,8 @@ public class SiteSearchConfig extends PublisherConfig {
 
 	}
 	private enum MyConfig {
-		CRON_EXPRESSION, QUARTZ_JOB_ID, RUN_ONCE,INDEX_NAME; 
+		CRON_EXPRESSION, QUARTZ_JOB_NAME, RUN_NOW,INDEX_NAME; 
+
 	};
 
 	
@@ -23,21 +24,21 @@ public class SiteSearchConfig extends PublisherConfig {
 		
 	}
 	
-	public String getJobId(){
-		return (String) this.get(MyConfig.QUARTZ_JOB_ID.toString());
+	public String getJobName(){
+		return (String) this.get(MyConfig.QUARTZ_JOB_NAME.toString());
 		
 	}
 	
 	public void setJobId(String id){
-		this.put(MyConfig.QUARTZ_JOB_ID.toString(), id);
+		this.put(MyConfig.QUARTZ_JOB_NAME.toString(), id);
 		
 	}
-	public boolean runOnce(){
-		return this.get(MyConfig.RUN_ONCE.toString()) !=null && (Boolean)this.get(MyConfig.RUN_ONCE.toString());
+	public boolean runNow(){
+		return this.get(MyConfig.RUN_NOW.toString()) !=null && (Boolean)this.get(MyConfig.RUN_NOW.toString());
 		
 	}
-	public void setRunOnce(boolean once){
-		this.put(MyConfig.QUARTZ_JOB_ID.toString(), once);
+	public void setRunNow(boolean once){
+		this.put(MyConfig.RUN_NOW.toString(), once);
 		
 	}
 	
