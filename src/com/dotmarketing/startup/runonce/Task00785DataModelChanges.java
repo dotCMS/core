@@ -13,6 +13,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
@@ -93,26 +94,6 @@ public class Task00785DataModelChanges implements StartupTask  {
 		String deleteTemplate = "DELETE from template where inode in(select inode from inode where type='template' and (identifier not in(select inode from identifier) or identifier is null))";
 		String deleteHTMLPage = "DELETE from htmlpage where inode in(select inode from inode where type='htmlpage' and (identifier not in(select inode from identifier) or identifier is null))";
 		String deleteLinks = "DELETE from links where inode in(select inode from inode where type='links' and (identifier not in(select inode from identifier) or identifier is null))";
-		
-		// http://jira.dotmarketing.net/browse/DOTCMS-7387
-		// we need to delete permissions on inodes we will delete
-		String deletePermRefInodesToDelete=
-		        "delete from permission_reference\n"+
-		                "       where exists \n"+
-		                "       (select * from inode where (permission_reference.asset_id=inode.inode OR permission_reference.reference_id=inode.inode) AND\n"+
-		                "         ((identifier not in(select inode from identifier)) \n"+
-		                "         OR (type = 'identifier' and inode not in (SELECT inode FROM identifier))\n"+
-		                "         OR (type in('htmlpage','links','contentlet','containers','template','file_asset') and identifier is null))\n"+
-		                "       )";
-		String deletePermInodesToDelete=
-        		"delete from permission\n"+
-        		"       where exists \n"+
-        		"       (select * from inode where permission.inode_id=inode.inode AND\n"+
-        		"         ((identifier not in(select inode from identifier)) \n"+
-        		"         OR (type = 'identifier' and inode not in (SELECT inode FROM identifier))\n"+
-        		"         OR (type in('htmlpage','links','contentlet','containers','template','file_asset') and identifier is null))\n"+
-        		"       )";
-		
 		String deleteInodes = "DELETE from inode where (identifier not in(select inode from identifier)) OR (type = 'identifier' and inode not in (SELECT inode FROM identifier))" +
 		                      "OR (type in('htmlpage','links','contentlet','containers','template','file_asset') and identifier is null)";
 		String deleteTree = "DELETE from tree where parent in(select inode from inode where (identifier not in(select inode from identifier)) OR (type = 'identifier' and inode not in (SELECT inode FROM identifier)) " +
@@ -126,8 +107,6 @@ public class Task00785DataModelChanges implements StartupTask  {
 		    dc.executeStatement(deleteTemplate);
 		    dc.executeStatement(deleteHTMLPage);
 		    dc.executeStatement(deleteLinks);
-		    dc.executeStatement(deletePermRefInodesToDelete);
-		    dc.executeStatement(deletePermInodesToDelete);
 		    dc.executeStatement(deleteInodes);
 		    dc.executeStatement(deleteTree);
 		    dc.executeStatement(deleteTree1);
@@ -696,7 +675,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		String parentPathCheckTrigger = " CREATE OR REPLACE PACKAGE check_parent_path_pkg as \n" +
                                         "   type ridArray is table of rowid index by binary_integer; \n"+
                                         "   newRows ridArray; \n" +
-                                        "   empty   ridArray; \n" +
+                                        "   empty   ridArray; \n" + 
                                         " END; \n" +
                                         "/\n"+
 				                        "CREATE OR REPLACE TRIGGER identifier_parent_path_check\n " +
@@ -976,41 +955,35 @@ public class Task00785DataModelChanges implements StartupTask  {
 	}
 	private List<String> newTriggersForMySql(){
 		List<String> triggers = new ArrayList<String>();
-		String parentPathCheckWhenUpdate =  "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n"+
-                            		        "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n"+
-                            		        "on identifier\n"+
-                            		        "FOR EACH ROW\n"+
-                            		        "BEGIN\n"+
-                            		        "DECLARE idCount INT;\n"+
-                            		        "DECLARE canUpdate boolean default false;\n"+
-                            		        " IF @disable_trigger IS NULL THEN\n"+
-                            		        "   select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n"+
-                            		        "   IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n"+
-                            		        "     SET canUpdate := TRUE;\n"+
-                            		        "   END IF;\n"+
-                            		        "   IF(canUpdate = FALSE) THEN\n"+
-                            		        "     delete from Cannot_update_for_this_path_does_not_exist_for_the_given_host;\n"+
-                            		        "   END IF;\n"+
-                            		        " END IF;\n"+
-                            		        "END\n"+
-                            		        "#\n";
+		String parentPathCheckWhenUpdate = "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n" +
+										   "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n" +
+										   "on identifier\n" +
+										   "FOR EACH ROW\n" +
+										   "BEGIN\n" +
+										   "DECLARE idCount INT;\n" +
+										   "IF(NEW.parent_path<>'/' OR NEW.parent_path<>'/System folder') THEN\n" +
+										   "select count(id)into idCount from identifier where asset_type='folder' and concat(concat(parent_path,asset_name),'/')= NEW.parent_path and host_inode = NEW.host_inode and id<>NEW.id;\n" +
+										   "END IF;\n" +
+										   "IF(idCount = 0) THEN\n" +
+										   "UPDATE identifier set parent_path=NEW.parent_path where inode=NEW.id;\n" +
+										   "END IF;\n" +
+										   "END\n" +
+										   "#\n";
 
-		String parentPathCheckWhenInsert =  "DROP TRIGGER IF EXISTS check_parent_path_when_insert;\n"+
-                            		        "CREATE TRIGGER check_parent_path_when_insert  BEFORE INSERT\n"+
-                            		        "on identifier\n"+
-                            		        "FOR EACH ROW\n"+
-                            		        "BEGIN\n"+
-                            		        "DECLARE idCount INT;\n"+
-                            		        "DECLARE canInsert boolean default false;\n"+
-                            		        " select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n"+
-                            		        " IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n"+
-                            		        "   SET canInsert := TRUE;\n"+
-                            		        " END IF;\n"+
-                            		        " IF(canInsert = FALSE) THEN\n"+
-                            		        "  delete from Cannot_insert_for_this_path_does_not_exist_for_the_given_host;\n"+
-                            		        " END IF;\n"+
-                            		        "END\n"+
-                            		        "#\n";
+		String parentPathCheckWhenInsert = "DROP TRIGGER IF EXISTS check_parent_path_when_insert;\n" +
+										   "CREATE TRIGGER check_parent_path_when_insert  BEFORE INSERT\n" +
+										   "on identifier\n" +
+										   "FOR EACH ROW\n" +
+										   "BEGIN\n" +
+										   "DECLARE idCount INT;\n" +
+										   "IF(NEW.parent_path<>'/' OR NEW.parent_path<>'/System folder') THEN\n" +
+			                               "select count(id)into idCount from identifier where asset_type='folder' and concat(concat(parent_path,asset_name),'/')= NEW.parent_path and host_inode = NEW.host_inode and id<>NEW.id;\n" +
+										   "END IF;\n" +
+								           "IF(idCount = 0) THEN\n" +
+										   "UPDATE identifier set parent_path=NEW.parent_path where inode=NEW.id;\n" +
+										   "END IF;\n" +
+										   "END\n" +
+										   "#\n";
 
 		String checkVersions = "DROP PROCEDURE IF EXISTS checkVersions;\n" +
 							   "CREATE PROCEDURE checkVersions(IN ident varchar(36),IN tableName VARCHAR(20),OUT versionsCount INT)\n" +
@@ -1134,7 +1107,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 										 	  	"select count(*) into pathCount from identifier where host_inode = OLD.id;\n" +
 										 	  "END IF;\n" +
 										 	  "IF(pathCount > 0) THEN\n" +
-										 	  	" delete from Cannot_delete_as_this_path_has_children;\n" +
+										 	  	"delete from identifier where inode=OLD.id;\n" +
 										 	  "END IF;\n" +
 									  "END\n" +
 									  "#\n";
@@ -1201,8 +1174,6 @@ public class Task00785DataModelChanges implements StartupTask  {
 	private void folderTableChanges() throws SQLException, DotDataException{
 		DotConnect dc = new DotConnect();
 		String addIdentifierToFolder = "ALTER TABLE Folder add identifier varchar(36)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-		    addIdentifierToFolder=addIdentifierToFolder.replaceAll("varchar\\(", "varchar2\\(");
 		String addFK = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id)";
 		String dropHostColumn = "ALTER TABLE Folder drop column host_inode";
 		String folderQuery = "Select * from folder where host_inode in(Select distinct host_inode from identifier) order by host_inode, path";
@@ -1275,7 +1246,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		DotConnect dc = new DotConnect();
-
+		
 		//HibernateUtil.startTransaction();
 		try {
 		    DbConnectionFactory.getConnection().setAutoCommit(true);
@@ -1314,13 +1285,12 @@ public class Task00785DataModelChanges implements StartupTask  {
    		  				  	"ALTER TABLE identifier ADD CONSTRAINT identifier_pkey PRIMARY KEY(id);" +
    		  				  	"CREATE INDEX idx_identifier ON identifier(id);";
 	    }else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
-		    addConstraint = "ALTER TABLE identifier add id varchar2(36);" +
-	   		  				"UPDATE identifier set id = cast(inode as varchar2(36));" +
+		    addConstraint = "ALTER TABLE identifier add id varchar(36);" +
+	   		  				"UPDATE identifier set id = cast(inode as varchar(36));" +
 	   		  				"ALTER TABLE identifier drop column inode;" +
 	   		  			    "ALTER TABLE identifier MODIFY (id NOT NULL);" +
 	   		  				"ALTER TABLE identifier ADD CONSTRAINT identifier_pkey PRIMARY KEY(id);" +
 	   		  				"ALTER TABLE identifier DROP UNIQUE (uri,host_inode);";
-		    addIdentifierColumn=addIdentifierColumn.replaceAll("varchar\\(", "varchar2\\(");
 		}else{
 		   addConstraint = "ALTER TABLE identifier add id varchar(36);" +
 				   		   "UPDATE identifier set id = cast(inode as varchar(36));" +
@@ -1341,9 +1311,6 @@ public class Task00785DataModelChanges implements StartupTask  {
 					     "ALTER TABLE identifier add parent_path varchar(255);" +
 					     "ALTER TABLE identifier add asset_name varchar(255);" +
 					     "ALTER TABLE identifier add asset_type varchar(64);";
-
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-		    addConstraint=addConstraint.replaceAll("varchar\\(", "varchar2\\(");
 
 		String dropUriColumn = "ALTER TABLE Identifier DROP COLUMN URI";
 
@@ -1467,10 +1434,10 @@ public class Task00785DataModelChanges implements StartupTask  {
 		   dc.loadResult();
 		}
 		contentletChanges();
-
+		
 		if(DbConnectionFactory.isMsSql())
 		    dropUniqueURIHOSTI();
-
+		
 		folderTableChanges();
 		dc.executeStatement(dropUriColumn);
 		dc.executeStatement(addUniqueKey);
@@ -1492,7 +1459,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 	 MaintenanceUtil.flushCache();
 	 MaintenanceUtil.deleteStaticFileStore();
   }
-
+  
 	protected void dropUniqueURIHOSTI() {
 	    try {
     	    Connection conn = DbConnectionFactory.getConnection();

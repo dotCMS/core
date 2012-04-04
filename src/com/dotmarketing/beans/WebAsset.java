@@ -55,7 +55,7 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 	 * @throws DotStateException 
 	 */
 	public boolean isDeleted() throws DotStateException, DotDataException, DotSecurityException {
-		return APILocator.getVersionableAPI().isDeleted(this);
+		return APILocator.getVersionableAPI().isDeleted(this.identifier);
 	}
 	
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
@@ -81,7 +81,7 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 	 * @throws DotStateException 
 	 */
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-        return APILocator.getVersionableAPI().isLocked(this);
+        return APILocator.getVersionableAPI().isLocked(getIdentifier());
     }
 
 	/**

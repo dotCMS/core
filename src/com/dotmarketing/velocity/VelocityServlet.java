@@ -119,7 +119,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	public static final String VELOCITY_CONTEXT = "velocityContext";
 
-	
+
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL) && LicenseUtil.getLevel() < 299) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
@@ -470,14 +470,14 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 
 		Writer out = (buildCache) ? new StringWriter(4096) : new VelocityFilterWriter(response.getWriter());
-		
+
 		//get the context from the requst if possible
 		Context context = VelocityUtil.getWebContext(request, response);
-		
+
 		request.setAttribute("velocityContext", context);
 		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + idInode);
 
-		
+
 
 		try {
 
@@ -961,7 +961,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 	}
 
-	
+
 
 
 

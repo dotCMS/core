@@ -17,27 +17,21 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
     public IndiciesInfo loadIndicies() throws DotDataException {
         IndiciesInfo info=cache.get();
         if(info==null) {
-        	//build it once
-        	synchronized (this.getClass()) {
-        		if(cache.get() == null){
-		            info=new IndiciesInfo();
-		            DotConnect dc = new DotConnect();
-		            dc.setSQL("SELECT index_name,index_type FROM indicies");
-		            List<Map<String,Object>> results=dc.loadResults();
-		            for(Map<String,Object> rr : results) {
-		                String name=(String)rr.get("index_name");
-		                String type=(String)rr.get("index_type");
-		                if(type.equalsIgnoreCase(IndexTypes.WORKING.toString()))
-		                    info.working=name;
-		                else if(type.equalsIgnoreCase(IndexTypes.LIVE.toString()))
-		                    info.live=name;
-		                else if(type.equalsIgnoreCase(IndexTypes.REINDEX_LIVE.toString()))
-		                    info.reindex_live=name;
-		                else if(type.equalsIgnoreCase(IndexTypes.REINDEX_WORKING.toString()))
-		                    info.reindex_working=name;
-		            }
-	            	cache.put(info);
-				}
+            info=new IndiciesInfo();
+            DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT index_name,index_type FROM indicies");
+            List<Map<String,Object>> results=dc.loadResults();
+            for(Map<String,Object> rr : results) {
+                String name=(String)rr.get("index_name");
+                String type=(String)rr.get("index_type");
+                if(type.equalsIgnoreCase(IndexTypes.WORKING.toString()))
+                    info.working=name;
+                else if(type.equalsIgnoreCase(IndexTypes.LIVE.toString()))
+                    info.live=name;
+                else if(type.equalsIgnoreCase(IndexTypes.REINDEX_LIVE.toString()))
+                    info.reindex_live=name;
+                else if(type.equalsIgnoreCase(IndexTypes.REINDEX_WORKING.toString()))
+                    info.reindex_working=name;
             }
         }
         return info;

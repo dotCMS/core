@@ -576,7 +576,7 @@ public class EditFileAction extends DotPortletAction implements DotPortletAction
 			File workingFile = null;
 			workingFile = APILocator.getFileAPI().saveFile(file, uploadedFile, folder, user, false);
 			APILocator.getVersionableAPI().setWorking(file);
-			APILocator.getVersionableAPI().setLocked(file, false, user);
+			APILocator.getVersionableAPI().setLocked(file.getIdentifier(), false, user);
 			if(uploadedFile != null && uploadedFile.exists() &&tmpFile){
 				uploadedFile.delete();
 			}

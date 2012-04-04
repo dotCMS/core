@@ -228,20 +228,20 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		if (isNew) {
 			// creates new identifier for this webasset and persists it
 			Identifier newIdentifier = com.dotmarketing.business.APILocator.getIdentifierAPI().createNew(newHTMLPage, destination);
-			
+
 			newHTMLPage.setIdentifier(newIdentifier.getInode());
-			
+
 			// persists the webasset
 			save(newHTMLPage);
 		} else {
 			saveHTMLPage(newHTMLPage, destinationTemplate, destination, user, respectFrontendRoles);
 		}
-		
+
 		if(source.isLive()){
 			APILocator.getVersionableAPI().setWorking(newHTMLPage);
 			APILocator.getVersionableAPI().setLive(newHTMLPage);
 		}
-		    
+
 
 		//Saving the new content mapping
 		if (copyMode != HTMLPageAPI.CopyMode.BLANK_HTMLPAGE) {
@@ -613,7 +613,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			Cookie idCookie = CookieUtil.createCookie();
 			responseProxy.addCookie(idCookie);
 		}
-		
+
 		requestProxy.put("host", host);
 		requestProxy.put("host_id", host.getIdentifier());
 		requestProxy.put("uri", uri);
@@ -795,7 +795,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			throws DotSecurityException, DotDataException {
 		return FactoryLocator.getHTMLPageFactory().findHtmlPages(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
-	
+
 	public boolean movePage(HTMLPage page, Folder parent, User user,boolean respectFrontendRoles) throws DotStateException,
 			DotDataException, DotSecurityException {
 

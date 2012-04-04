@@ -6,13 +6,13 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 
 import org.directwebremoting.WebContext;
 import org.directwebremoting.WebContextFactory;
 
-import com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -309,6 +309,10 @@ public class CategoryAjax {
 	private Integer saveOrUpdateCategory(Boolean save, String inode, String name, String var, String key, String keywords, String sort, boolean merge)
 			throws Exception {
 
+		name = name.replaceAll("\'|\"", "");
+		var = var.replaceAll("\'|\"", "");
+		key = key.replaceAll("\'|\"", "");
+
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -338,7 +342,7 @@ public class CategoryAjax {
 							cat = new Category();
 							cat.setKey(key);
 						}
-
+	
 						cat.setCategoryName(name);
 						setVelocityVarName(cat, var, name);
 						cat.setSortOrder(sort);
@@ -530,22 +534,76 @@ public class CategoryAjax {
 	}
 
 	private void saveOrUpdateCat(String contextInode, BufferedReader br, Boolean merge) throws IOException, Exception {
-		CsvReader csvreader = new CsvReader(br);
-		csvreader.setSafetySwitch(false);
-		csvreader.readHeaders();
-		String[] csvLine;
+		String str;
+		while ((str = br.readLine()) != null) {
+				String name, variable, key, sort;
+				name = variable = key = sort = "";
+				try {
 
-		while (csvreader.readRecord()) {
-			csvLine = csvreader.getValues();
-			try {
-				saveOrUpdateCategory(true, contextInode, csvLine[0], csvLine[2], csvLine[1], null, csvLine[3], merge);
+					// get the string surrounded by single quotes
+					Pattern p = Pattern.compile("\'([^\']*)\'");
+   					Matcher m = p.matcher(str);
+					Boolean nameWithCommas = false;
 
-			} catch(Exception e) {
-				Logger.error(this, "Error trying to save/update the categories csv row: name=" +csvLine[0]+ ", variable=" + csvLine[2] + ", key=" + csvLine[1] + ", sort=" + csvLine[3] , e);
-			}
+					while (m.find()) {
+						name = m.group(1);
+						if(name!=null && !name.equals("")) {
+							nameWithCommas = true;
+							break;
+						}
+					}
+
+					// if no string surrounded by single quotes, try to get string surrounded by double quotes
+					if(!nameWithCommas) {
+						p = Pattern.compile("\"([^\"]*)\"");
+						m = p.matcher(str);
+						nameWithCommas = false;
+
+						while (m.find()) {
+							name = m.group(1);
+							if(name!=null && !name.equals("")) {
+								nameWithCommas = true;
+								break;
+							}
+						}
+
+					}
+
+
+					if(nameWithCommas) {
+						str = str.replaceAll(name, "");
+					}
+
+			    	String[] tokens = str.split(",");
+			    	if(!nameWithCommas) {
+			    		name = UtilMethods.isSet(tokens[0])?tokens[0]:"";
+			    	}
+
+			    	try {
+			    		key = UtilMethods.isSet(tokens[1])?tokens[1]:"";
+			    		variable = UtilMethods.isSet(tokens[2])?tokens[2]:"";
+			    		sort = UtilMethods.isSet(tokens[3])?tokens[3]:"";
+			    	} catch(ArrayIndexOutOfBoundsException ae) {
+			    		Logger.info(this, ae.getMessage());
+			    	}
+
+			    	name = name.replace("'", "").replace("\"", "");
+			    	variable = variable.replace("'", "").replace("\"", "");
+			    	key = key.replace("'", "").replace("\"", "");
+			    	sort = sort.replace("'", "").replace("\"", "");
+
+					if(!name.toLowerCase().equals("name") && !variable.toLowerCase().equals("variable") && !key.toLowerCase().equals("key") && !sort.toLowerCase().equals("sort")){
+						name = name.replaceAll("\'", "");
+						variable = variable.replaceAll("\'", "");
+						key = key.replaceAll("\'", "");
+						sort = sort.replaceAll("\'", "");
+						saveOrUpdateCategory(true, contextInode, name, variable, key, null, sort, merge);
+					}
+				} catch(Exception e) {
+					Logger.error(this, "Error trying to save/update the categories csv row: name=" +name+ ", variable=" + variable + ", key=" + key + ", sort=" + sort , e);
+				}
 		}
 
-		csvreader.close();
 		br.close();
 	}
 

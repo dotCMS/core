@@ -723,23 +723,15 @@ public class CMSMaintenanceFactory {
 		dc.setSQL(countSQL);
 		List<Map<String, String>> result = dc.loadResults();
 		int before = Integer.parseInt(result.get(0).get("count"));
-		String versionInfoTable = asset.equals("containers") || asset.equals("links") ? asset.substring(0, asset.length()-1) + "_version_info" : asset + "_version_info";
-		versionInfoTable = asset.equals("file_asset") ? "fileasset_version_info" : versionInfoTable;
 
-		StringBuffer getInodesSQL = new StringBuffer("select inode from inode where inode in (select inode from ").append(asset).append(" a where  ");
-		getInodesSQL.append("a.mod_date < ? and a.inode not in (select working_inode from ").append(versionInfoTable).append(") ");
-		getInodesSQL.append(" and a.inode not in (select live_inode from ").append(versionInfoTable).append(" )) ");
-
+		StringBuffer getInodesSQL = new StringBuffer("select inode from inode where inode in (select inode from "+ asset +" where  mod_date < ? and (live = " + DbConnectionFactory.getDBFalse() + " and working = " + DbConnectionFactory.getDBFalse() + "))");
 		dc.setSQL(getInodesSQL.toString());
 		dc.addParam(date);
 		List<Map<String, Object>> results = dc.loadResults();
 		int lenght = results.size();
 		boolean first = true;
 
-		StringBuffer deleteContentletSQL = new StringBuffer("delete from ").append(asset).append(" a where  ");
-		deleteContentletSQL.append("a.mod_date < ? and a.inode not in (select working_inode from ").append(versionInfoTable).append(") ");
-		deleteContentletSQL.append(" and a.inode not in (select live_inode from ").append(versionInfoTable).append(" ) ");
-
+		StringBuffer deleteContentletSQL = new StringBuffer("delete from "+ asset +" where mod_date < ? and (live = " + DbConnectionFactory.getDBFalse() + " and working = " + DbConnectionFactory.getDBFalse() + ")");
 		dc.setSQL(deleteContentletSQL.toString());
 		dc.addParam(date);
 		dc.loadResult();
@@ -815,8 +807,7 @@ public class CMSMaintenanceFactory {
 		DotConnect dc = new DotConnect();
 
 		//List<com.dotmarketing.portlets.files.model.File> fileList = (List<com.dotmarketing.portlets.files.model.File>)InodeFactory.getInodesOfClassByCondition(com.dotmarketing.portlets.files.model.File.class, condition);
-		StringBuffer getInodesSQL = new StringBuffer("select inode from inode where inode in (select inode from file_asset where mod_date < ? ");
-		getInodesSQL.append(" and inode not in (select working_inode from fileasset_version_info) and inode not in (select live_inode from fileasset_version_info)) ");
+		StringBuffer getInodesSQL = new StringBuffer("select inode from inode where inode in (select inode from file_asset where mod_date < ? and (live = " + DbConnectionFactory.getDBFalse() + " and working = " + DbConnectionFactory.getDBFalse() + "))");
 		dc.setSQL(getInodesSQL.toString());
 		dc.addParam(date);
 		List<Map<String, String>> results = dc.loadResults();

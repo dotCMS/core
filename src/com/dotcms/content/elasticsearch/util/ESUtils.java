@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
@@ -19,20 +20,20 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
-import org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -42,6 +43,9 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.FileUtil;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ESUtils {
 	private static final String MAPPING_MARKER = "mapping=";
@@ -265,42 +269,12 @@ public class ESUtils {
     	}
 	}
 		
-	
-	public static void  createIndex(String indexName, int shards) throws DotStateException, IOException{
-
-		if(indexExists(indexName)){
-			throw new DotStateException("Index" + indexName + " already exists");
-		}
-        final IndicesAdminClient iac = esclient.getClient().admin().indices();
-        
-	    CreateIndexResponse res = iapi.createNewIndex(iac, indexName, shards);
-        
-    	int i = 0 ;
-    	while(!  res.acknowledged() ){
-    		try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				//Logger.error(ESUtils.class,e.getMessage(),e);
-			}
-    		if(i++ > 60){
-    			throw new IOException("ES timed out creating a new index:" + indexName);
-    		}
-    	}
-	}
-	
-	
-	
 	public static void clearIndex(String indexName) throws DotStateException, IOException{
 		if(indexName == null || !indexExists(indexName)){
 			throw new DotStateException("Index" + indexName + " does not exist");
 		}
-		Map<String, ClusterIndexHealth> map = iapi.getClusterHealth();
-		ClusterIndexHealth cih = map.get(indexName);
-		int shards = cih.getNumberOfShards();
-		int replicas = cih.getNumberOfReplicas();
-		
 		iapi.delete(indexName);
-		createIndex(indexName, shards);
+		createIndex(indexName);
 	}
 	
 	public static void moveIndexToLocalNode(String index) throws IOException {

@@ -1185,7 +1185,5 @@ public interface ContentletAPIPostHook {
 	 */
 	
 	public void findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
-
-    public void loadField(String inode, Field field, Object value);
 	
 }

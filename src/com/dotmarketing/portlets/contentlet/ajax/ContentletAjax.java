@@ -35,7 +35,6 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -67,7 +66,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
@@ -89,7 +87,7 @@ public class ContentletAjax {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
-	private FormAPI formAPI = APILocator.getFormAPI();
+	private FormAPI formAPI = APILocator.getFormAPI(); 
 
 	public List<Map<String, String>> getContentletData(String inode) {
 
@@ -100,7 +98,7 @@ public class ContentletAjax {
 			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 			Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
-			List<Contentlet> contentletList = conAPI.getAllLanguages(firstContentlet, firstContentlet.isLive(), currentUser, true);
+			List<Contentlet> contentletList = conAPI.getAllLanguages(firstContentlet, firstContentlet.isLive(), currentUser, true); 
 			Structure targetStructure = firstContentlet.getStructure();
 			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
 
@@ -174,7 +172,7 @@ public class ContentletAjax {
 	/**
 	 * This method is used by the backend to pull the content from the lucene
 	 * index and also checks the user permissions to see the content
-	 *
+	 * 
 	 * @param structureInode
 	 *            Inode of the structure content to be listed
 	 * @param fields
@@ -186,7 +184,7 @@ public class ContentletAjax {
 	 * @param showDeleted
 	 *            If true show the deleted elements only
 	 * @param filterSystemHost
-	 *            If true filter elements of system host
+	 *            If true filter elements of system host            
 	 * @param page
 	 *            The page number to show (starting with 1)
 	 *            If page is 0, this will return all possible contentlets
@@ -196,9 +194,9 @@ public class ContentletAjax {
 	 * @return The list of contents that match the parameters at the position 0
 	 *         the result included a hashmap with some useful information like
 	 *         the total number of results, ...
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
+	 * @throws DotSecurityException 
+	 * @throws DotDataException 
+	 * @throws DotStateException 
 	 */
 	public List searchContentlet(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, int perPage, String orderBy) throws DotStateException, DotDataException, DotSecurityException {
 
@@ -222,7 +220,7 @@ public class ContentletAjax {
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	    return searchContentlets(structureInode, fields, categories, showDeleted, filterSystemHost, page, orderBy, modDateFrom, modDateTo, true);
 	}
-
+	
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo, boolean saveLastSearch) throws DotStateException, DotDataException, DotSecurityException {
 	    HttpSession sess = null;
         if(saveLastSearch)
@@ -241,7 +239,7 @@ public class ContentletAjax {
 
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
-
+	
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterLocked, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
@@ -263,9 +261,9 @@ public class ContentletAjax {
 
 	/**
 	 * This method is used by the backend to pull from lucene index the form widgets
-	 * if the widget doesn't exist then is created and also checks the user
+	 * if the widget doesn't exist then is created and also checks the user 
 	 * permissions to see the content
-	 *
+	 * 
 	 * @param structureInode
 	 *            Inode of the structure content to be listed
 	 * @param fields
@@ -285,15 +283,15 @@ public class ContentletAjax {
 	 * @return The list of contents that match the parameters at the position 0
 	 *         the result included a hashmap with some useful information like
 	 *         the total number of results, ...
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws ParseException
-	 * @throws DotSecurityException
-	 * @throws IllegalArgumentException
-	 * @throws DotContentletStateException
-	 * @throws DotContentletValidationException
-	 * @throws ParseException
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotDataException 
+	 * @throws ParseException 
+	 * @throws DotSecurityException 
+	 * @throws IllegalArgumentException 
+	 * @throws DotContentletStateException 
+	 * @throws DotContentletValidationException 
+	 * @throws ParseException 
 	 */
 	public Map<String, Object> searchFormWidget(String formStructureInode) throws DotDataException, DotSecurityException, ParseException {
 		FormAJAXProxy fp = new FormAJAXProxy();
@@ -303,7 +301,7 @@ public class ContentletAjax {
 	/**
 	 * This method is used by the backend to pull the content from the lucene
 	 * index and also checks the user permissions to see the content
-	 *
+	 * 
 	 * @param structureInode
 	 *            Inode of the structure content to be listed
 	 * @param fields
@@ -315,7 +313,7 @@ public class ContentletAjax {
 	 * @param showDeleted
 	 *            If true show the deleted elements only
 	 * @param filterSystemHost
-	 *            If true filter elements of system host
+	 *            If true filter elements of system host   
 	 * @param page
 	 *            The page number to show (starting with 1)
 	 *            If page is 0, this will return all posible contentlets
@@ -330,16 +328,16 @@ public class ContentletAjax {
 	 * @return The list of contents that match the parameters at the position 0
 	 *         the result included a hashmap with some useful information like
 	 *         the total number of results, ...
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
+	 * @throws DotSecurityException 
+	 * @throws DotDataException 
+	 * @throws DotStateException 
 	 */
 	@SuppressWarnings("unchecked")
 	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterLocked, int page, String orderBy,int perPage, User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		
 
-
-
-
+		
+		
 		if(perPage < 1){
 			perPage = Config.getIntProperty("PER_PAGE");
 		}
@@ -357,12 +355,12 @@ public class ContentletAjax {
 			sess.setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
 
 		Structure st = StructureCache.getStructureByInode(structureInode);
-
-
+		
+		
 		WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
-
-
-
+		
+		
+		
 		lastSearchMap.put("structure", st);
 		luceneQuery.append("+structureName:" + st.getVelocityVarName() + " ");
 		Map<String, String> fieldsSearch = new HashMap<String, String>();
@@ -373,7 +371,7 @@ public class ContentletAjax {
 		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
 
 		boolean hasHostFolderField = false;
-
+		
 		for( Field f : targetFields ) {
 			fieldContentletNames.put(f.getFieldContentlet(), f.getFieldType());
 			if(f.getFieldType().toString().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
@@ -448,7 +446,7 @@ public class ContentletAjax {
 							fieldVelName = fieldName;
 						}
 						Field thisField = null;
-
+						
 						for (Field fd : fieldsl) {
 							if (fd.getVelocityVarName().equals(fieldVelName) || fd.getFieldContentlet().equals(fieldVelName)) {
 								fieldbcontentname=fd.getFieldContentlet();
@@ -463,10 +461,10 @@ public class ContentletAjax {
 						if(!fieldName.equals("languageId") && fieldbcontentname.startsWith("text") ){
 							wildCard = ( fieldContentletNames.containsKey(fieldName) && fieldContentletNames.get(fieldName).equals(Field.FieldType.SELECT.toString()) ) ? " " : "*";
 						}
-
+						
 						if( fieldbcontentname.startsWith("text") ){
 
-
+							
 							if(thisField.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
 								fieldValue = fieldValue.trim();
 								boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
@@ -474,7 +472,7 @@ public class ContentletAjax {
 									fieldValue = fieldValue.replaceFirst("\"", "");
 									fieldValue = fieldValue.substring(0, fieldValue.length()-1);
 								}
-
+								
 
 								try{
 									String[] splitter = fieldValue.split(":");
@@ -482,24 +480,24 @@ public class ContentletAjax {
 									for(int x=0;x< splitter.length-1;x++){
 										metakey+= splitter[x];
 									}
-
-
-
+									
+									
+									
 									metakey = VelocityUtil.convertToVelocityVariable(metakey);
 									String metaVal = splitter[splitter.length-1];
 									fieldValue = metakey + ":" + metaVal;
 									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName +  "." +  fieldValue.toString().replaceAll("\"", "\\\"") + " ");
-
+									
 
 								}
 								catch(Exception e){
-
+									
 								}
-
-
-
-
-
+								
+								
+								
+	
+							
 							}else if( FieldFactory.isTagField(fieldbcontentname,st)== false){
 //								String quotes = fieldValue.contains(" ") ? "\"" : "";
 								fieldValue = fieldValue.trim();
@@ -534,11 +532,11 @@ public class ContentletAjax {
 				}
 			}
 		}
-
+		
 		if(UtilMethods.isSet(categoriesvalues)){
 			luceneQuery.append("+(" + categoriesvalues + ") " );
 		}
-
+		
 		lastSearchMap.put("fieldsSearch", fieldsSearch);
 
 		//for (String cat : categories) {
@@ -553,15 +551,15 @@ public class ContentletAjax {
 		lastSearchMap.put("showDeleted", showDeleted);
 		lastSearchMap.put("filterSystemHost", filterSystemHost);
 		lastSearchMap.put("filterLocked", filterLocked);
-
+		
 
 		if(!showDeleted)
 			luceneQuery.append("+deleted:false ");
 		else
 			luceneQuery.append("+deleted:true ");
 		lastSearchMap.put("page", page);
-
-
+		
+		
 		if(filterLocked)
 			luceneQuery.append("+locked:true ");
 
@@ -587,10 +585,10 @@ public class ContentletAjax {
 		//Executing the query
 		long before = System.currentTimeMillis();
 		PaginatedArrayList <Contentlet> hits = new PaginatedArrayList <Contentlet>();
-		long totalHits=0;
+		long totalHits=0;		
 		try{
 			hits = (PaginatedArrayList<Contentlet>) conAPI.search(luceneQuery.toString(), perPage + 1, offset, orderBy, currentUser, false);
-			totalHits = hits.getTotalResults();
+			totalHits = hits.getTotalResults();			
 		}catch (Exception pe) {
 			Logger.error(ContentletAjax.class, "Unable to execute Lucene Query", pe);
 		}
@@ -624,10 +622,10 @@ public class ContentletAjax {
 			headers.add(fieldMap);
 		}
 		results.add(headers);
-
+		
 		// we add the total hists for the query
 		results.add(totalHits);
-
+		
 		//Adding the query results
 		Contentlet con;
 		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
@@ -641,8 +639,8 @@ public class ContentletAjax {
 					fieldValue =(con.getMap().get(fieldContentlet)).toString();
 				}
 				Field field = (Field) fieldsMapping.get(fieldContentlet);
-				if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
-						UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
+				if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) || 
+						UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) || 
 						UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 					try {
 						Date date = DateUtil.convertDate(fieldValue, new String[] { "yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy" });
@@ -658,15 +656,15 @@ public class ContentletAjax {
 					}
 				}else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) || field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())) {
 					if (UtilMethods.isSet(fieldValue))
-						fieldValue = fieldValue.replaceAll("# #",",").replaceAll("#","");
-				}
+						fieldValue = fieldValue.replaceAll("# #",",").replaceAll("#","");                                
+				} 
 				searchResult.put(fieldContentlet, fieldValue);
 			}
 			searchResult.put("inode", con.getInode());
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
 			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
-
+			
 			searchResult.put("modDate", fieldValue);
 			String user = "";
 			User contentEditor = null;
@@ -723,8 +721,6 @@ public class ContentletAjax {
 			Boolean working=con.isWorking();
 			searchResult.put("working", working.toString());
 			Boolean live=con.isLive();
-			searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
-			
 			searchResult.put("live", live.toString());
 			Boolean isdeleted=con.isArchived();
 			searchResult.put("deleted", isdeleted.toString());
@@ -798,7 +794,7 @@ public class ContentletAjax {
 
 		for (LanguageKey prop : props) {
 			if (prop.getKey().toLowerCase().startsWith(valueToComplete)) {
-				term = new String[] { prop.getKey(),
+				term = new String[] { prop.getKey(), 
 						(70 < prop.getValue().length() ? prop.getValue().substring(0, 69) : prop.getValue())};
 				list.add(term);
 			}
@@ -825,7 +821,7 @@ public class ContentletAjax {
 
 	/**
 	 * Publishes or unpublishes contentlets from a given list of identifiers.  You can have to publish within
-	 * a specific language or all languages.  Set the languageId = 0 for all languages.
+	 * a specific language or all languages.  Set the languageId = 0 for all languages. 
 	 * @param identifiersList
 	 * @param isPublish whether it should publish or unpublish the contentlets
 	 * @param languageId if set to 0 will publish for all languages
@@ -867,9 +863,9 @@ public class ContentletAjax {
 						}
 					}
 					if(languageId == 0){//DOTCMS-5182
-						cont = conAPI.findContentletByIdentifier(id, false, langAPI.getDefaultLanguage().getId(), currentUser, false);
+						cont = conAPI.findContentletByIdentifier(id, false, langAPI.getDefaultLanguage().getId(), currentUser, false);						
 					}else{
-						cont = conAPI.findContentletByIdentifier(id, false, languageId, currentUser, false);
+						cont = conAPI.findContentletByIdentifier(id, false, languageId, currentUser, false);						
 					}
 					rows.add(cont.getMap());
 				}
@@ -888,55 +884,48 @@ public class ContentletAjax {
 	}
 
 	/**
-	 *
+	 * 
 	 * @param
 	 * @param
 	 * @param
 	 * @return
-	 * @throws SystemException
-	 * @throws PortalException
-	 * @throws LanguageException
+	 * @throws SystemException 
+	 * @throws PortalException 
+	 * @throws LanguageException 
 	 */
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
-	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
+	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {	
 
-	    try {
-            HibernateUtil.startTransaction();
-        } catch (DotHibernateException e1) {
-            Logger.warn(this, e1.getMessage(),e1);
-        }
-	    
-		int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
+		int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories	
 		String newInode = "";
 
 		String referer = "";
 		String language = "";
-		String strutsAction = "";
-		String recurrenceDaysOfWeek="";
+		String strutsAction = "";		
 
-		Map<String,Object> contentletFormData = new HashMap<String,Object>();
+		Map<String,Object> contentletFormData = new HashMap<String,Object>();		
 		Map<String,Object> callbackData = new HashMap<String,Object>();
 		List<String> saveContentErrors = new ArrayList<String>();
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req); 
 
 		// get the struts_action from the form data
 		for (Iterator iterator = formData.iterator(); iterator.hasNext();) {
-			String element = (String) iterator.next();
+			String element = (String) iterator.next();		
 			if(element!=null) {
-    			String elementName = element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
-
+    			String elementName = element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));		
+    
     			if (elementName.startsWith("_EXT") && elementName.endsWith("cmd")) {
     				strutsAction = elementName.substring(0, elementName.indexOf("cmd"));
     				break;
     			}
 			}
-		}
+		}		
 
 		// Storing form data into map.
 		for (Iterator iterator = formData.iterator(); iterator.hasNext();) {
-			String element = (String) iterator.next();
+			String element = (String) iterator.next();			
 
 			if (!com.dotmarketing.util.UtilMethods.isSet(element))
 				continue;
@@ -950,7 +939,7 @@ public class ContentletAjax {
 						+ strutsAction.length());
 
 			// Placed increments as Map holds unique keys.
-			if(elementName.equals("read")
+			if(elementName.equals("read") 
 					||elementName.equals("write")
 					||elementName.equals("publish")){
 
@@ -964,7 +953,7 @@ public class ContentletAjax {
 			}
 
 			if(!UtilMethods.isSet(elementName))
-				continue;
+				continue;			
 
 			if(!UtilMethods.isSet(elementValue))
 				elementValue="";
@@ -974,16 +963,12 @@ public class ContentletAjax {
 
 			if(elementName.equals("languageId"))
 				language = (String) elementValue;
-
-			if ( elementName.equals("recurrenceDaysOfWeek")) {
-				recurrenceDaysOfWeek= recurrenceDaysOfWeek + elementValue+ ",";
-			}
 			//http://jira.dotmarketing.net/browse/DOTCMS-3232
 			if(elementName.equalsIgnoreCase("hostId")){
-				callbackData.put("hostOrFolder",true);
+				callbackData.put("hostOrFolder",true);		
 			}
 			//http://jira.dotmarketing.net/browse/DOTCMS-3463
-			if(elementName.startsWith("binary")){
+			if(elementName.startsWith("binary")){ 
 				String binaryFileValue = (String) elementValue;
 				File binaryFile = null;
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
@@ -1001,25 +986,25 @@ public class ContentletAjax {
 						((Boolean)req.getSession().getAttribute("populateAccept")).booleanValue():false;
 						if(populate && elementValue!=null){
 							String siblingData = req.getSession().getAttribute(elementName+"-sibling")!=null?
-									(String)req.getSession().getAttribute(elementName+"-sibling"):null;
+									(String)req.getSession().getAttribute(elementName+"-sibling"):null;	
 									try{
 										if(UtilMethods.isSet(siblingData)){
-											String[] sessData = siblingData.split(",");
+											String[] sessData = siblingData.split(","); 
 											if(sessData.length>0){
-												File binFile = conAPI.getBinaryFile(sessData[0].trim(), sessData[1].trim(), user);
+												File binFile = conAPI.getBinaryFile(sessData[0].trim(), sessData[1].trim(), user);		
 												if(binFile != null) {
 													String fieldValue = binFile.getName();
 													File destFile = new java.io.File(Config.CONTEXT
-															.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
-															+ java.io.File.separator + user.getUserId()
+															.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH) 
+															+ java.io.File.separator + user.getUserId() 
 															+ java.io.File.separator + fieldValue);
-
+													
 														if(!destFile.exists()){
 															destFile.createNewFile();
 														}
 														FileUtils.copyFile(binFile, destFile);
 														elementValue = destFile;
-
+													
 												}
 											}
 										}
@@ -1028,12 +1013,12 @@ public class ContentletAjax {
 						}
 
 			}
-			contentletFormData.put(elementName, elementValue);
-		}
+			contentletFormData.put(elementName, elementValue);			
+		}		
 
-		contentletFormData.put("recurrenceDaysOfWeek", recurrenceDaysOfWeek);
-
-
+		
+		
+		
 		try {
 
 
@@ -1045,26 +1030,26 @@ public class ContentletAjax {
 				callbackData.put("contentletLocked", contentlet.isLocked());
 
 			}
-
-
+			
+			
 			if(publish && contentlet!=null){
 				ContentletAPI capi = APILocator.getContentletAPI();
 				capi.publish(contentlet, user, true);
 				capi.unlock(contentlet, user, true);
 				callbackData.put("contentletLocked", contentlet.isLocked());
 			}
-
-
-
+			
+			
+			
 			if (contentlet!=null && contentlet.getStructure().getVelocityVarName().equalsIgnoreCase("host")) {
-				String copyOptionsStr = (String)contentletFormData.get("copyOptions");
+				String copyOptionsStr = (String)contentletFormData.get("copyOptions"); 
 				CopyHostContentUtil copyHostContentUtil = new CopyHostContentUtil();
-				if (UtilMethods.isSet(copyOptionsStr)) {
+				if (UtilMethods.isSet(copyOptionsStr)) {		
 					copyHostContentUtil.checkHostCopy(contentlet, user, copyOptionsStr);
 				}
-
+				
 			}
-
+			
 			String urlMap = null;
 			if(contentlet!=null)
 			    urlMap=contentlet.getStructure().getUrlMapPattern();
@@ -1078,7 +1063,7 @@ public class ContentletAjax {
 						for (String frag : urlFrags) {
 							if(UtilMethods.isSet(frag)){
 								if(frag.startsWith("{")){
-									vars.put(frag.substring(frag.indexOf("{")+1, frag.indexOf("}")), index);
+									vars.put(frag.substring(frag.indexOf("{")+1, frag.indexOf("}")), index);	
 								}
 							}
 							index++;
@@ -1104,19 +1089,15 @@ public class ContentletAjax {
 									refererPattern.append("/");
 									referer = refererPattern.toString();
 								}
-
+								
 							}
 						}
-					}
+					}	
 				}
 			}
-			
-			// everything Ok? then commit 
-			HibernateUtil.commitTransaction();
-			
-		}
+		}		
 		catch (DotContentletValidationException ve) {
-
+			
 			if(ve instanceof FileAssetValidationException){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
 				for (Field field : reqs) {
@@ -1186,20 +1167,20 @@ public class ContentletAjax {
 						}
 
 						sb.append(errorMessage + ":<br>");
-						Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);
+						Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);			
 
 						for(Entry<Relationship,List<Contentlet>> relationship : relationshipContentlets.entrySet())
-						{
+						{			
 							sb.append(relationship.getKey().getRelationTypeValue() + ", ");
-						}
-						sb.append("<br>");
+						}					
+						sb.append("<br>");			
 					}
 					sb.append("<br>");
 
 					//need to update message to support multiple relationship validation errors
 					String errorString = LanguageUtil.get(user,"message.relationship.required_ext");
 					errorString = errorString.replace("{0}", sb.toString());
-					saveContentErrors.add(errorString);
+					saveContentErrors.add(errorString);				
 				}
 
 				if(ve.hasUniqueErrors()){
@@ -1212,57 +1193,55 @@ public class ContentletAjax {
 				}
 
 				if(ve.getMessage().contains("The content form submission data id different from the content which is trying to be edited")){
-					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");
+					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");			
 					saveContentErrors.add(errorString);
 				}
 			}
 
 		}
-		catch(DotLockException dse){
-			String errorString = LanguageUtil.get(user,"message.content.locked");
+		catch(DotLockException dse){			
+			String errorString = LanguageUtil.get(user,"message.content.locked");		
+			
+			
+			
+			
 			saveContentErrors.add(errorString);
 
 		}
-		catch(DotSecurityException dse){
-			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");
+		catch(DotSecurityException dse){			
+			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");			
 			saveContentErrors.add(errorString);
+
 		}
 
-		catch (Exception e) {
+		catch (Exception e) {			
 			saveContentErrors.add(e.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
-			callbackData.put("referer", referer);
+			callbackData.put("referer", referer);	
 			return callbackData;
+
+	
 		}
 
-		finally{
-		    if(saveContentErrors.size()>0) {
-                try {
-                    HibernateUtil.rollbackTransaction();
-                    
-                    Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-                    if(contentlet!=null) {
-                        callbackData.remove("contentletIdentifier");
-                        callbackData.remove("contentletInode");
-                        callbackData.remove("contentletLocked");
-                        newInode=null;
-                    }
-                } catch (DotHibernateException e) {
-                    Logger.warn(this, e.getMessage(),e);
-                }
-            }
-		    
-		    if(!isAutoSave
-					&&(saveContentErrors != null
+		finally{			
+			if(!isAutoSave
+					&&(saveContentErrors != null 
 							&& saveContentErrors.size() > 0)){
 				callbackData.put("saveContentErrors", saveContentErrors);
 				SessionMessages.clear(req.getSession());
-
-			}
+					
+			}				
 		}
 
-		if(!isAutoSave
-				&&(saveContentErrors == null
+		
+
+		
+		
+		
+		
+
+		if(!isAutoSave  
+				&&(saveContentErrors == null 
 						|| saveContentErrors.size() == 0)){
 
 			Logger.debug(this, "AFTER PUBLISH LANGUAGE=" + language);
@@ -1270,7 +1249,7 @@ public class ContentletAjax {
 			if (UtilMethods.isSet(language) && referer.indexOf("language") > -1) {
 				Logger.debug(this, "Replacing referer language=" + referer);
 				referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
-				Logger.debug(this, "Referer after being replaced=" + referer);
+				Logger.debug(this, "Referer after being replaced=" + referer);				
 			}
 		}
 		if(!isAutoSave){
@@ -1278,38 +1257,38 @@ public class ContentletAjax {
 				Logger.error(this, "Timed Out waiting for index to return");
 			}
 		}
-		callbackData.put("referer", referer);
-		return callbackData;
+		callbackData.put("referer", referer);			
+		return callbackData;		
 	}
 
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
-	public String cancelContentEdit(String workingContentletInode,String currentContentletInode,String referer,String language){
+	public String cancelContentEdit(String workingContentletInode,String currentContentletInode,String referer,String language){		
 
 		try{
 			HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
 			User user = com.liferay.portal.util.PortalUtil.getUser(req);
-			//contentletWebAPI.cancelContentEdit(workingContentletInode,currentContentletInode,user);
+			//contentletWebAPI.cancelContentEdit(workingContentletInode,currentContentletInode,user);		
 		}
 		catch(Exception ae){
 			Logger.debug(this, "Error trying to cancelContentEdit");
 		}
 
-		referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
+		referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);		
 		return referer;
 	}
-
-
+	
+	
 	public Map<String,Object> saveContentProperties(String inode, List<String> formData, boolean isAutoSave,boolean isCheckin,boolean isPublish) throws PortalException, SystemException, DotDataException, DotSecurityException{
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req); 
 		Contentlet cont  = conAPI.find(inode, user, false);
-		Map<String,Object> contentletFormData = new HashMap<String,Object>();
+		Map<String,Object> contentletFormData = new HashMap<String,Object>();	
 		Map<String,Object> callbackData = new HashMap<String,Object>();
 		List<String> saveContentErrors = new ArrayList<String>();
 		callbackData.put("contentletInode",inode);
 		// Storing form data into map.
 		for (Iterator iterator = formData.iterator(); iterator.hasNext();) {
-			String element = (String) iterator.next();
+			String element = (String) iterator.next();			
 
 			if (!com.dotmarketing.util.UtilMethods.isSet(element))
 				continue;
@@ -1318,16 +1297,16 @@ public class ContentletAjax {
 			Object elementValue = element.substring(element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR) + WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR.length());
 
 			if(!UtilMethods.isSet(elementName))
-				continue;
+				continue;			
 
 			if(!UtilMethods.isSet(elementValue))
 				elementValue="";
-
+			
 			if(elementValue.toString().trim().equals("<p><br></p>"))
 				elementValue="";
 
-			contentletFormData.put(elementName, elementValue);
-		}
+			contentletFormData.put(elementName, elementValue);			
+		}	
 
 		Structure structure = null;
 		if(!contentletFormData.isEmpty()){
@@ -1341,7 +1320,7 @@ public class ContentletAjax {
 			}
 		}
 		try{
-			HibernateUtil.startTransaction();
+			HibernateUtil.startTransaction();	
 			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
 			List<Relationship> rels = RelationshipFactory
 			.getAllRelationshipsByStructure(structure);
@@ -1360,13 +1339,13 @@ public class ContentletAjax {
 
 			conAPI.validateContentlet(cont, contentRelationships, APILocator.getCategoryAPI().getParents(cont, user, false));
 			if(isPublish){//DOTCMS-5514
-				conAPI.checkin(cont, contentRelationships,
+				conAPI.checkin(cont, contentRelationships, 
 						APILocator.getCategoryAPI().getParents(cont, user, false),
 						APILocator.getPermissionAPI().getPermissions(cont, false, true), user, false);
 				APILocator.getVersionableAPI().setLive(cont);
 			}else{
 				//cont.setLive(false);
-				conAPI.saveDraft(cont, contentRelationships,
+				conAPI.saveDraft(cont, contentRelationships, 
 					APILocator.getCategoryAPI().getParents(cont, user, false),
 					APILocator.getPermissionAPI().getPermissions(cont, false, true), user, false);
 			}
@@ -1421,20 +1400,20 @@ public class ContentletAjax {
 						}
 
 						sb.append(errorMessage + ":<br>");
-						Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);
+						Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);			
 
 						for(Entry<Relationship,List<Contentlet>> relationship : relationshipContentlets.entrySet())
-						{
+						{			
 							sb.append(relationship.getKey().getRelationTypeValue() + ", ");
-						}
-						sb.append("<br>");
+						}					
+						sb.append("<br>");			
 					}
 					sb.append("<br>");
 
 					//need to update message to support multiple relationship validation errors
 					String errorString = LanguageUtil.get(user,"message.relationship.required_ext");
 					errorString = errorString.replace("{0}", sb.toString());
-					saveContentErrors.add(errorString);
+					saveContentErrors.add(errorString);				
 				}
 
 				if(ve.hasUniqueErrors()){
@@ -1447,48 +1426,48 @@ public class ContentletAjax {
 				}
 
 				if(ve.getMessage().contains("The content form submission data id different from the content which is trying to be edited")){
-					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");
+					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");			
 					saveContentErrors.add(errorString);
 				}
 
 			}
 
-			catch(DotSecurityException dse){
-				String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");
+			catch(DotSecurityException dse){			
+				String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");			
 				saveContentErrors.add(errorString);
 
 			}
 
-			catch (Exception e) {
-				String errorString = LanguageUtil.get(user,"message.contentlet.save.error");
-
-
-
-
-				saveContentErrors.add(errorString + "<div style='color:silver;width:300px'>" + e.getMessage() + "</div>");
+			catch (Exception e) {			
+				String errorString = LanguageUtil.get(user,"message.contentlet.save.error");			
+				
+				
+		
+				
+				saveContentErrors.add(errorString + "<div style='color:silver;width:300px'>" + e.getMessage() + "</div>");		
 				SessionMessages.clear(req.getSession());
 
 			}
 
-			finally{
+			finally{			
 				if(!isAutoSave
-						&&(saveContentErrors != null
+						&&(saveContentErrors != null 
 								&& saveContentErrors.size() > 0)){
 					callbackData.put("saveContentErrors", saveContentErrors);
-					SessionMessages.clear(req.getSession());
+					SessionMessages.clear(req.getSession());	
 					HibernateUtil.rollbackTransaction();
 				}else{
 					HibernateUtil.commitTransaction();
-					callbackData.put("saveContentSuccess",LanguageUtil.get(user,"message.contentlet.save"));
+					callbackData.put("saveContentSuccess",LanguageUtil.get(user,"message.contentlet.save"));	
 				}
 			}
 
+		
 
-
-		return callbackData;
+		return callbackData;		
 
 	}
-
+	
 	public void removeSiblingBinaryFromSession(String fieldContentlet){
 		//http://jira.dotmarketing.net/browse/DOTCMS-5802
 		if(UtilMethods.isSet(fieldContentlet)){
@@ -1496,42 +1475,42 @@ public class ContentletAjax {
 			req.getSession().removeAttribute(fieldContentlet+"-sibling");
 		}
 	}
-
+	
 	public String unrelateContent(String contentletIdentifier,  String identifierToUnrelate, String relationshipInode){
-
+		
 		// User info
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User currentUser = null;
 		try {
-			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);			
 		} catch (Exception e) {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
-
+		
 		Contentlet currentContentlet;
 		Contentlet contentletToUnrelate;
 		Relationship relationship;
 		List<Contentlet> conList = new ArrayList<Contentlet>();
 		String resultStr = "Content Unrelated";
-		try {
+		try {			
 			currentContentlet = conAPI.find(contentletIdentifier, currentUser, false);
 			contentletToUnrelate = conAPI.find(identifierToUnrelate, currentUser, false);
-
+			
 			relationship = CacheLocator.getRelationshipCache().getRelationshipByInode(relationshipInode);
 			if(relationship == null)
-				relationship = RelationshipFactory.getRelationshipByInode(relationshipInode);
-
+				relationship = RelationshipFactory.getRelationshipByInode(relationshipInode);			
+			
 			conList.add(contentletToUnrelate);
 			RelationshipFactory.deleteRelationships(currentContentlet, relationship, conList);
-
+			
 			//if contentletToUnrelate is related as new content, there exists the below relation which also needs to be deleted.
 			conList.clear();
 			conList.add(currentContentlet);
 			RelationshipFactory.deleteRelationships(contentletToUnrelate, relationship, conList);
-
+			
 			conAPI.refresh(currentContentlet);
 			conAPI.refresh(contentletToUnrelate);
-
+			
 			resultStr = LanguageUtil.get(currentUser,"Content-Unrelated");
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage());
@@ -1541,52 +1520,52 @@ public class ContentletAjax {
 			Logger.error(this, e.getMessage());
 		} catch (LanguageException e) {
 			Logger.error(this, e.getMessage());
-		}
+		}		
 		return resultStr;
-	}
-
-
+	}	
+	
+	
 	public Map<String, String> lockContent(String contentletInode) throws DotContentletStateException, DotDataException, DotSecurityException, LanguageException{
 		// User info
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User currentUser = null;
 		try {
-			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);			
 		} catch (Exception e) {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 		Contentlet c = conAPI.find(contentletInode, currentUser, false);
-
-
+		
+		
 		Map<String, String> ret = new HashMap<String, String>();
 		ret.put("lockedIdent", contentletInode );
 		try{
 			conAPI.lock(c, currentUser, false);
-
-			ret.put("lockedOn", UtilMethods.capitalize(DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(c), currentUser.getLocale()) ));
+			
+			ret.put("lockedOn", UtilMethods.capitalize(DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(c.getIdentifier()), currentUser.getLocale()) ));
 			ret.put("lockedBy", currentUser.getFullName() );
 
-		}
+		} 
 		catch(Exception ex){
 			ret.put("Error", LanguageUtil.get(currentUser, "message.cannot.lock.content") );
-
+			
 		}
+		
+		
 
 
-
-
-
+		
 		return ret;
 	}
-
-
+	
+	
 
 	public Map<String, String> unlockContent(String contentletInode) throws DotContentletStateException, DotDataException, DotSecurityException, LanguageException{
 		// User info
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User currentUser = null;
 		try {
-			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);			
 		} catch (Exception e) {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
@@ -1596,7 +1575,7 @@ public class ContentletAjax {
 		ret.put("lockedIdent", contentletInode );
 		return ret;
 	}
-
+	
 
 }
 

@@ -30,7 +30,6 @@ import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
@@ -43,6 +42,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TrackbackFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.files.business.FileFactory;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -1011,6 +1011,7 @@ public class WebAPI implements ViewTool {
 	}
 
 	public boolean doesUserHasPermissionOverFile (String fileInode, int permission) throws DotDataException {
+		File fileAsset = (File) InodeFactory.getInode(fileInode, File.class);
 		HttpSession session = request.getSession();
 		boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
 		boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
@@ -1018,48 +1019,7 @@ public class WebAPI implements ViewTool {
 		if(EDIT_MODE){
 			u = backEndUser;
 		}
-		Permissionable fileAsset = null;
-		Identifier ident = getIdentifierByInode(fileInode);
-		if(ident.getAssetType().equals("contentlet")){
-			try {
-				fileAsset = APILocator.getContentletAPI().find(fileInode, u, false);
-			} catch (DotSecurityException e) {
-				Logger.error(this, e.getMessage());
-				return false;
-			}
-		}else{
-			try {
-				fileAsset = APILocator.getFileAPI().find(fileInode, u, false);
-			} catch (DotStateException e) {
-				Logger.error(this, e.getMessage());
-				return false;
-			} catch (DotSecurityException e) {
-				Logger.error(this, e.getMessage());
-				return false;
-			}
-		}
 		return perAPI.doesUserHavePermission(fileAsset, permission, u, false);
 	}
-	
-	
-	
-	
-	public Host resolveHostName(String hostName){
-		
-		try{
-			return APILocator.getHostAPI().resolveHostName(hostName, user, true);
-		}
-		catch(Exception e){
-			Logger.warn(this.getClass(), e.getMessage());
-		}
-		return null;
-		
-		
-		
-	}
-	
-	
-	
-	
-	
+
 }

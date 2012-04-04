@@ -35,6 +35,7 @@ import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 
 /**
@@ -58,7 +59,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	
 	protected void unLockAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
 		// unlocks current working asseted 
-		APILocator.getVersionableAPI().setLocked(currWebAsset, false, null);
+		APILocator.getVersionableAPI().setLocked(currWebAsset.getIdentifier(), false, null);
 	}
 	
 	protected void createAsset(WebAsset webasset, String userId) throws DotDataException, DotSecurityException {
@@ -278,9 +279,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			else if(currWebAsset instanceof HTMLPage)
 			{
 				PageServices.unpublishPageFile((HTMLPage)currWebAsset);
-				if(RefreshMenus.shouldRefreshMenus((HTMLPage)currWebAsset)){
-					RefreshMenus.deleteMenu(currWebAsset);
-				}
+				RefreshMenus.deleteMenu(currWebAsset);
 				
 				CacheLocator.getHTMLPageCache().remove((HTMLPage)currWebAsset);
 			}
@@ -299,9 +298,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			{
 
 				APILocator.getFileAPI().invalidateCache((File)currWebAsset);
-				if(RefreshMenus.shouldRefreshMenus((File)currWebAsset)){
-					RefreshMenus.deleteMenu(currWebAsset);
-				}
+				RefreshMenus.deleteMenu(currWebAsset);
 			}
 			APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
 			for(Versionable webAsset : webAssetList)

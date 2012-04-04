@@ -46,8 +46,6 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 	private void containerTableChanges() throws DotDataException, SQLException {
 		DotConnect dc = new DotConnect();
 		String addStructure = "ALTER TABLE containers add structure_inode varchar(36)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-		    addStructure=addStructure.replaceAll("varchar\\(", "varchar2\\(");
 		String addFK = "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode)";
 		String containerQuery = "Select * from tree where child in(Select inode from inode where type='containers') and " 
 					 + "parent in(select inode from structure)";
@@ -69,8 +67,6 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 	private void htmlpageTableChanges() throws SQLException, DotDataException {
 		DotConnect dc = new DotConnect();
 		String addtemplate = "ALTER TABLE htmlpage add template_id varchar(36)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-		    addtemplate=addtemplate.replaceAll("varchar\\(", "varchar2\\(");
 		String addFK = "ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id)";
 		String htmlQuery = "Select * from tree where child in(Select inode from inode where type='htmlpage') and " 
 					 + "parent in(select identifier from template)";
@@ -130,8 +126,8 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 							   "BEFORE INSERT OR UPDATE ON structure\n" +
 							   "FOR EACH ROW\n" +
 							   "DECLARE\n" +
-							   		"folderInode varchar2(36);\n" +
-							   		"hostInode varchar2(36);\n" +
+							   		"folderInode varchar(36);\n" +
+							   		"hostInode varchar(36);\n" +
 							   	"BEGIN\n" +
 							   		"IF (:NEW.host <> 'SYSTEM_HOST' AND :NEW.folder <> 'SYSTEM_FOLDER') THEN\n" +
 							   			"select host_inode, folder.inode INTO hostInode, folderInode from folder,identifier where folder.identifier = identifier.id and folder.inode = :NEW.folder;\n" +

@@ -574,8 +574,6 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 
         try {
 			APILocator.getVersionableAPI().setWorking(newFile);
-			if (file.isLive()) 
-				APILocator.getVersionableAPI().setLive(newFile);
 		} catch (DotStateException e) {
 			Logger.error(this, e.getMessage());
 		} catch (DotSecurityException e) {

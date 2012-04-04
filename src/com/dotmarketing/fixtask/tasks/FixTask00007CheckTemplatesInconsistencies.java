@@ -40,8 +40,8 @@ public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 	    List <Map <String,Object>> returnValue = new ArrayList <Map <String,Object>>();
 		int counter = 0;
 
-		final String fix2TemplatesQuery = "select c.* from template c, inode i where i.inode = c.inode and c.identifier = ? order by mod_date desc";
-		final String fix3TemplatesQuery = "update template_version_info set working_inode = ? where identifier = ?";
+		final String fix2TemplatesQuery = "select c.* from template c, inode i where i.inode = c.inode and c.identifier = ? order by live desc, mod_date desc";
+		final String fix3TemplatesQuery = "update template set working = ? where inode = ?";
 
 		if (!FixAssetsProcessStatus.getRunning()) {
 			FixAssetsProcessStatus.startProgress();
@@ -54,9 +54,10 @@ public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 						+ "inode i, " + "template c "
 						+ "where ident.id = c.identifier and "
 						+ "ident.id not in (select ident.id "
-						+ "from identifier ident, " + "inode i, " + "template c, " + "template_version_info tvi "
+						+ "from identifier ident, " + "inode i, " + "template c "
 						+ "where c.identifier = ident.id and "
-						+ "i.inode = c.inode and " + "tvi.working_inode = c.inode) and "	
+						+ "i.inode = c.inode and " + "c.working = "
+						+ DbConnectionFactory.getDBTrue() + ") and "
 						+ "i.type = 'template' and " + "i.inode = c.inode";
 
 				Logger.debug(CMSMaintenanceFactory.class,
@@ -75,7 +76,7 @@ public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 				String identifierInode;
 				List<HashMap<String, String>> versions;
 				HashMap<String, String> version;
-				//String versionWorking;
+				String versionWorking;
 				String DbConnFalseBoolean = DbConnectionFactory.getDBFalse()
 						.trim().toLowerCase();
 
@@ -108,16 +109,19 @@ public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 
 					if (0 < versions.size()) {
 						version = versions.get(0);
-						//versionWorking = version.get("working").trim().toLowerCase();
+						versionWorking = version.get("working").trim()
+								.toLowerCase();
 
 						inode = version.get("inode");
 						Logger.debug(CMSMaintenanceFactory.class,
 								"Non Working Template inode : " + inode);
 						Logger.debug(CMSMaintenanceFactory.class,
 								"Running query: " + fix3TemplatesQuery);
-						db.setSQL(fix3TemplatesQuery);						
+						db.setSQL(fix3TemplatesQuery);
+						if(DbConnectionFactory.getDBType()==DbConnectionFactory.POSTGRESQL)
+							 db.addParam(true);
+						else db.addParam(DbConnectionFactory.getDBTrue().replaceAll("'", ""));
 						db.addParam(inode);
-						db.addParam(identifierInode);
 						db.getResult();
 
 						FixAssetsProcessStatus.addAError();
@@ -186,9 +190,10 @@ public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 				+ "inode i, " + "template c "
 				+ "where ident.id = c.identifier and "
 				+ "ident.id not in (select ident.id " + "from identifier ident, "
-				+ "inode i, " + "template c, " + "template_version_info tvi "
+				+ "inode i, " + "template c "
 				+ "where c.identifier = ident.id and "
-				+ "i.inode = c.inode and " + "tvi.working_inode = c.inode) and "
+				+ "i.inode = c.inode and " + "c.working = "
+				+ DbConnectionFactory.getDBTrue() + ") and "
 				+ "i.type = 'template' and " + "i.inode = c.inode";
 
 		db.setSQL(query);

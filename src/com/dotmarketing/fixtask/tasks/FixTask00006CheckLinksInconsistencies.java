@@ -40,8 +40,8 @@ public class FixTask00006CheckLinksInconsistencies  implements FixTask {
 		 List <Map <String,Object>> returnValue = new ArrayList <Map <String,Object>>();
 		int counter = 0;
 
-		final String fix2LinksQuery = "select c.* from links c, inode i where i.inode = c.inode and c.identifier = ? order by mod_date desc";
-		final String fix3LinksQuery = "update link_version_info set working_inode = ? where identifier = ?";
+		final String fix2LinksQuery = "select c.* from links c, inode i where i.inode = c.inode and c.identifier = ? order by live desc, mod_date desc";
+		final String fix3LinksQuery = "update links set working = ? where inode = ?";
 
 		if (!FixAssetsProcessStatus.getRunning()) {
 			FixAssetsProcessStatus.startProgress();
@@ -54,9 +54,10 @@ public class FixTask00006CheckLinksInconsistencies  implements FixTask {
 						+ "inode i, " + "links c "
 						+ "where ident.id = c.identifier and "
 						+ "ident.id not in (select ident.id "
-						+ "from identifier ident, " + "inode i, " + "links c, " + "link_version_info lvi "
+						+ "from identifier ident, " + "inode i, " + "links c "
 						+ "where c.identifier = ident.id and "
-						+ "i.inode = c.inode and " + "lvi.working_inode = c.inode) and "						
+						+ "i.inode = c.inode and " + "c.working = "
+						+ DbConnectionFactory.getDBTrue() + ") and "
 						+ "i.type = 'links' and " + "i.inode = c.inode";
 				Logger.debug(CMSMaintenanceFactory.class,
 						"Running query for links: " + query);
@@ -77,7 +78,7 @@ public class FixTask00006CheckLinksInconsistencies  implements FixTask {
 				String identifierInode;
 				List<HashMap<String, String>> versions;
 				HashMap<String, String> version;
-				//String versionWorking;
+				String versionWorking;
 				String DbConnFalseBoolean = DbConnectionFactory.getDBFalse()
 						.trim().toLowerCase();
 
@@ -109,16 +110,19 @@ public class FixTask00006CheckLinksInconsistencies  implements FixTask {
 
 					if (0 < versions.size()) {
 						version = versions.get(0);
-						//versionWorking = version.get("working").trim().toLowerCase();
+						versionWorking = version.get("working").trim()
+								.toLowerCase();
 
 						inode = version.get("inode");
 						Logger.debug(CMSMaintenanceFactory.class,
 								"Non Working Link inode : " + inode);
 						Logger.debug(CMSMaintenanceFactory.class,
 								"Running query: " + fix3LinksQuery);
-						db.setSQL(fix3LinksQuery);						
+						db.setSQL(fix3LinksQuery);
+						if(DbConnectionFactory.getDBType()==DbConnectionFactory.POSTGRESQL)
+							 db.addParam(true);
+						else db.addParam(DbConnectionFactory.getDBTrue().replaceAll("'", ""));
 						db.addParam(inode);
-						db.addParam(identifierInode);
 						db.getResult();
 
 						FixAssetsProcessStatus.addAError();
@@ -187,9 +191,10 @@ public class FixTask00006CheckLinksInconsistencies  implements FixTask {
 				+ "inode i, " + "links c "
 				+ "where ident.id = c.identifier and "
 				+ "ident.id not in (select ident.id " + "from identifier ident, "
-				+ "inode i, " + "links c, " + "link_version_info lvi "
+				+ "inode i, " + "links c "
 				+ "where c.identifier = ident.id and "
-				+ "i.inode = c.inode and " + "lvi.working_inode = c.inode) and "
+				+ "i.inode = c.inode and " + "c.working = "
+				+ DbConnectionFactory.getDBTrue() + ") and "
 				+ "i.type = 'links' and " + "i.inode = c.inode";
 		db.setSQL(query);
 		List<HashMap<String, String>> linkIds =null; 

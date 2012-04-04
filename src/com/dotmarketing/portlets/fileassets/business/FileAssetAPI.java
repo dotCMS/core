@@ -27,6 +27,7 @@ public interface FileAssetAPI {
 	public static final String SHOW_ON_MENU = "showOnMenu";
 	public static final String META_DATA_FIELD = "metaData";
 	public static final String CONTENT_FIELD = "content";
+	public static final String URI_FIELD = "fileURI";
 	public static final String TITLE_FIELD_NAME = "Title";
 	public static final String FILE_NAME_FIELD_NAME = "File Name";
 	public static final String DESCRIPTION_NAME = "Description";
@@ -70,7 +71,7 @@ public interface FileAssetAPI {
 	 * @param binFile
 	 * @return
 	 */
-	public Map<String, String> getMetaDataMap(Contentlet con, File binFile);
+	public Map<String, String> getMetaDataMap(File binFile);
 	
 	/**
 	 * 

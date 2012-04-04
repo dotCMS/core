@@ -145,25 +145,11 @@ public class BinaryExporterServlet extends HttpServlet {
 		
 		Map<String, String[]> params = new HashMap<String, String[]>();
 		params.putAll(req.getParameterMap());
-
-		
-		
-		// only set uri params if they are not set in the query string - meaning
-		// the query string will override the uri params.
-		Map<String, String[]> uriParams = getURIParams(req); 
-		for(String x: uriParams.keySet()){
-			if(!params.containsKey(x)){
-				params.put(x, uriParams.get(x));
-			}
-		}
-		
-		
 		params = sortByKey(params);
-		
 		
 		String assetInode = null;
 		String assetIdentifier = null;
-		boolean byInode = params.containsKey("byInode") ;
+		boolean byInode = (req.getParameter("byInode") != null);
 		if (byInode){
 			assetInode = uuid;
 		}
@@ -525,28 +511,5 @@ public class BinaryExporterServlet extends HttpServlet {
 	}
 	@SuppressWarnings("deprecation")
 	private Map cacheMisses = new LRUMap(1000);
-	
-	private Map<String,String[]> getURIParams(HttpServletRequest request){
-		String url = request.getRequestURI().toString();
-		url = (url.startsWith("/")) ? url.substring(1, url.length()) : url;
-		String p[] = url.split("/");
-		Map<String, String[]> map = new HashMap<String, String[]>();
-		
-		String key =null;
-		for(String x : p){
-			if(key ==null){
-				key = x;
-			}
-			else{
-				map.put(key, new String[]{x});
-				key = null;
-			}
-		}
-		
-		return map;
-		
-	}
-	
-	
 	
 }

@@ -7,6 +7,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -35,9 +36,6 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		    DbConnectionFactory.getConnection().setAutoCommit(true);  
 			DotConnect dc = new DotConnect();
 			String addDefaultFileType = "alter table folder add default_file_type varchar(36)";
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-			    addDefaultFileType=addDefaultFileType.replaceAll("varchar\\(", "varchar2\\(");
-			
 			String addFK = "alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode)";
 			String updateFolders = "update folder set default_file_type = ?";
 			dc.executeStatement(addDefaultFileType);

@@ -20,9 +20,10 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -204,23 +205,12 @@ public class TemplateAjax {
 			Logger.error(this, e.getMessage());
 		}
 		if(template!=null){
-			Identifier imageIdentifier = APILocator.getIdentifierAPI().find(template.getImage());
-			if(imageIdentifier.getAssetType().equals("contentlet")) {
-				Contentlet imageContentlet = TemplateFactory.getImageContentlet(template);
-				if(imageContentlet!=null){
-					toReturn.put("inode", imageContentlet.getInode());
-					toReturn.put("name", imageContentlet.getTitle());
-					toReturn.put("identifier", imageContentlet.getIdentifier());
-					toReturn.put("extension", com.dotmarketing.util.UtilMethods.getFileExtension(imageContentlet.getTitle()));
-				}
-			} else {
-				File imgFile = TemplateFactory.getImageFile(template);
-				if(imgFile!=null){
-					toReturn.put("inode", imgFile.getInode());
-					toReturn.put("name", imgFile.getFileName());
-					toReturn.put("identifier", imgFile.getIdentifier());
-					toReturn.put("extension", com.dotmarketing.util.UtilMethods.getFileExtension(imgFile.getFileName()));
-				}
+			File imgFile = TemplateFactory.getImageFile(template);
+			if(imgFile!=null){
+				toReturn.put("inode", imgFile.getInode());
+				toReturn.put("name", imgFile.getFileName());
+				toReturn.put("identifier", imgFile.getIdentifier());
+				toReturn.put("extension", com.dotmarketing.util.UtilMethods.getFileExtension(imgFile.getFileName()));
 			}
 		}
 		return toReturn;

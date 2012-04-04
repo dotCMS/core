@@ -15,8 +15,6 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 
-import net.sf.hibernate.HibernateException;
-
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
@@ -31,9 +29,11 @@ import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionCache;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
@@ -46,6 +46,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -55,7 +56,6 @@ import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.AssetsComparator;
 import com.dotmarketing.util.InodeUtils;
@@ -90,7 +90,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
 		HibernateUtil.delete(f);
 		fc.removeFolder(f, id);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
 	}
 
 	/*
@@ -579,6 +578,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		List htmlPages = getChildrenClass(folder, HTMLPage.class);
 		List files = getChildrenClass(folder, File.class);
 		List links = getChildrenClass(folder, Link.class);
+		List<FileAsset> fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
 		List<Contentlet> contentlets = APILocator.getContentletAPI().findContentletsByFolder(folder, systemUser, false);
 
 		Identifier folderId = identAPI.find(folder.getIdentifier());
@@ -600,19 +600,18 @@ public class FolderFactoryImpl extends FolderFactory {
 			}
 		}
 
+		for(FileAsset fa : fileAssets){
+			APILocator.getFileAssetAPI().moveFile(fa, folder, systemUser, false);
+		}
+
 		for(Contentlet cont : contentlets){
-		    if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-		        APILocator.getFileAssetAPI().moveFile(cont, folder, systemUser, false);
-		    }
-		    else {
-    			boolean isLive = cont.isLive();
-    			cont.setFolder(folder.getInode());
-    			cont.setInode(null);
-    			Contentlet newCont = APILocator.getContentletAPI().checkin(cont, systemUser, false);
-    			if(isLive){
-    				APILocator.getContentletAPI().publish(newCont, systemUser, false);
-    			}
-		    }
+			boolean isLive = cont.isLive();
+			cont.setFolder(folder.getInode());
+			cont.setInode(null);
+			Contentlet newCont = APILocator.getContentletAPI().checkin(cont, systemUser, false);
+			if(isLive){
+				APILocator.getContentletAPI().publish(newCont, systemUser, false);
+			}
 		}
 
 		for(Folder subFolder : subFolders){
@@ -620,9 +619,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		}
 
 		CacheLocator.getIdentifierCache().clearCache();
-
-		if(folder.isShowOnMenu())
-			RefreshMenus.deleteMenu(folder);
 
 		return true;
 	}
@@ -876,7 +872,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	protected boolean renameFolder(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		// checking if already exists
-		Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
+		Identifier ident = APILocator.getIdentifierAPI().find(folder);
 		String newPath=ident.getParentPath()+newName;
 		Host host = APILocator.getHostAPI().find(folder.getHostId(),user,respectFrontEndPermissions);
 		Folder nFolder=findFolderByPath(newPath, host);
@@ -886,8 +882,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		// renaming folder
 
 		// first we remove from cache with current name and path
-		CacheLocator.getFolderCache().removeFolder(folder, ident);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
+		/*CacheLocator.getFolderCache().removeFolder(folder, ident);
 
 		// get a fresh copy of the object passed to make sure hibernate works ok
 
@@ -898,13 +893,8 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		APILocator.getIdentifierAPI().save(ident);
 		APILocator.getFolderAPI().save(ff, user, respectFrontEndPermissions);
-
-		try {
-			HibernateUtil.getSession().evict(ff);
-		} catch (HibernateException e) {
-			throw new DotDataException(e.getMessage());
-		}
-
+		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(ff);
+		*/
 		return true;
 	}
 

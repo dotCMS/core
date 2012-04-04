@@ -2085,22 +2085,5 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-
-    public Object loadField(String inode, Field field) throws DotDataException {
-        for(ContentletAPIPreHook pre : preHooks){
-            boolean preResult = pre.loadField(inode,field);
-            if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-            }
-        }
-        
-        Object value=conAPI.loadField(inode, field);
-        
-        for(ContentletAPIPostHook post : postHooks){
-            post.loadField(inode,field,value);
-        }
-        return value;
-    }
 	
 }

@@ -3,36 +3,15 @@ package com.dotmarketing.portlets.contentlet.model;
 import java.io.Serializable;
 import java.util.Date;
 
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.beans.VersionInfo;
+import com.liferay.portal.model.User;
 
 public class ContentletVersionInfo implements Serializable {
-    private static final long serialVersionUID = 8952464908349482530L;
     private String identifier;
     private boolean deleted;
     private String lockedBy;
     private Date lockedOn;
-    private long lang;
-    private String workingInode;
-    private String liveInode;
     
-    public long getLang() {
-        return lang;
-    }
-    public void setLang(long lang) {
-        this.lang = lang;
-    }
-    public String getWorkingInode() {
-        return workingInode;
-    }
-    public void setWorkingInode(String workingInode) {
-        this.workingInode = workingInode;
-    }
-    public String getLiveInode() {
-        return liveInode;
-    }
-    public void setLiveInode(String liveInode) {
-        this.liveInode = liveInode;
-    }
     public String getLockedBy() {
         return lockedBy;
     }
@@ -67,21 +46,5 @@ public class ContentletVersionInfo implements Serializable {
     public void unLock() {
         lockedBy=null;
         lockedOn=new Date();
-    }
-    @Override
-    public boolean equals(Object obj) {
-        if(obj instanceof ContentletVersionInfo) {
-            ContentletVersionInfo vinfo=(ContentletVersionInfo)obj;
-            return UtilMethods.isSet(this.identifier) && UtilMethods.isSet(vinfo.getIdentifier())
-                    && this.identifier.equals(vinfo.getIdentifier()) && lang==vinfo.getLang();
-        }
-        else
-            return false;
-    }
-    
-    @Override
-    public int hashCode() {
-        int langx=(int)lang;
-        return identifier.hashCode()+17*(langx+1);
     }
 }

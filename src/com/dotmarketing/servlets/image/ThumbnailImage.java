@@ -65,7 +65,7 @@ public class ThumbnailImage extends HttpServlet {
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         long time = System.currentTimeMillis();
-
+        
         HttpSession session = request.getSession(false);
 		User user = null;
 		try {
@@ -105,17 +105,17 @@ public class ThumbnailImage extends HttpServlet {
             String url = request.getParameter("url");
             if(url == null || !UtilMethods.isSet(url))
                 url = request.getParameter("path");
-
-            //If path is the dotasset portlet
+            	
+            //If path is the dotasset portlet 
             if(url != null && url.startsWith("/dotAsset")) {
-
+            	
         		StringTokenizer _st = new StringTokenizer(url, "/");
         		String _fileName = null;
         		while(_st.hasMoreElements()){
         			_fileName = _st.nextToken();
         		}
                 inode = UtilMethods.getFileName(_fileName); // Sets the identifier
-
+                
     			try{
     				ident = APILocator.getIdentifierAPI().find(inode);
     				String path = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId());
@@ -123,8 +123,8 @@ public class ThumbnailImage extends HttpServlet {
     			}catch(Exception ex){
     				Logger.debug(ResizeImageServlet.class, "Identifier not found going to try as a File Asset");
     			}
-
-            } else if(url != null){
+            
+            } else if(url != null){ 
         		//If it's a regular path
             	Host currentHost;
 				try {
@@ -147,16 +147,16 @@ public class ThumbnailImage extends HttpServlet {
 					path = LiveCache.getPathFromCache(url, currentHost);
 				} catch (Exception e) {
 					Logger.error(this,e.getMessage(), e);
-				}
+				} 
             	inode = UtilMethods.getFileName(path);
             }
 
         }
-
+        
         try {
             if (!InodeUtils.isSet(inode)) {
                 response.sendError(404);
-
+                
                 try {
 					HibernateUtil.closeSession();
 				} catch (DotHibernateException e) {
@@ -168,7 +168,7 @@ public class ThumbnailImage extends HttpServlet {
         } catch (NumberFormatException e) {
             Logger.error(this, "service: invalid inode (" + inode + ") or identifier("+ identifier +") given to the service.");
             response.sendError(404);
-
+            
             try {
 				HibernateUtil.closeSession();
 			} catch (DotHibernateException e1) {
@@ -188,7 +188,7 @@ public class ThumbnailImage extends HttpServlet {
             com.dotmarketing.portlets.files.model.File fProxy = new com.dotmarketing.portlets.files.model.File();
             if(ident != null && UtilMethods.isSet(ident.getInode())){//DOTCMS-4969
             	fProxy.setIdentifier(ident.getInode());
-            	if(InodeUtils.isSet(inode))//DOTCMS-5265
+            	if(InodeUtils.isSet(inode))//DOTCMS-5265 
            		 fProxy.setInode(inode);
             }else{
             	fProxy.setInode(inode);
@@ -209,7 +209,7 @@ public class ThumbnailImage extends HttpServlet {
 			response.sendError(500,e1.getMessage());
 			return;
 		}
-
+		
 
 
         String h = request.getParameter("h");
@@ -229,7 +229,7 @@ public class ThumbnailImage extends HttpServlet {
         } catch (Exception e) {
             Logger.debug(ThumbnailImage.class, "Error with RGB number");
         }
-
+        
         if ((rInt < 0) || (255 < rInt))
         	rInt = Config.getIntProperty("DEFAULT_BG_R_COLOR");
         if ((gInt < 0) || (255 < gInt))
@@ -246,7 +246,7 @@ public class ThumbnailImage extends HttpServlet {
 
             if( inode != null && inode.length() > 0 && InodeUtils.isSet(inode) )
             {
-
+            	
             	boolean isSet = false;
             	boolean isCont = false;
             	String fileName = "";
@@ -256,7 +256,7 @@ public class ThumbnailImage extends HttpServlet {
             	    id = APILocator.getIdentifierAPI().find(identifier);
             	String contAssetPath = "";
             	if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-            		Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(identifier, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+            		Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(identifier, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
             		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
             		isSet = InodeUtils.isSet(cont.getInode());
             		fileName = fa.getFileName();
@@ -292,46 +292,38 @@ public class ThumbnailImage extends HttpServlet {
             		}
                 	if(!isCont){
                 		// creates the path with id{1} + id{2}
-                		workingFileInodePath = workingFileInodePath.substring(0, 1) + java.io.File.separator + workingFileInodePath.substring(1, 2);
-                		thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator
+                		workingFileInodePath = workingFileInodePath.substring(0, 1) + java.io.File.separator + workingFileInodePath.substring(1, 2);                        
+                        thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator 
                                 + generatedKey + "-" +  inode+ "." + suffix;
-                	}else{
-                    	workingFileInodePath = workingFileInodePath.substring(0, 1) + java.io.File.separator + workingFileInodePath.substring(1, 2);
-                    	thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator + inodeOrId  + java.io.File.separator + "fileAsset"  + java.io.File.separator
+                    }else{
+                    	workingFileInodePath = workingFileInodePath.substring(0, 1) + java.io.File.separator + workingFileInodePath.substring(1, 2);                        
+                        thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator + inodeOrId  + java.io.File.separator + "fileAsset"  + java.io.File.separator 
                                 + generatedKey + "-" +  inode+ "." + suffix;
-                	}
-
-
-                	String realPathAux= "";
-                	if(isCont){
-                		realPathAux = contAssetPath;
-                	}else{
-                		realPathAux = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator;
-                	}
-
-                	if(!ident.getParentPath().contains("template")) {
-                		thumbnailFilePath = realPathAux + fileName;
-                	}
-                    java.io.File thumbFile = new java.io.File(thumbnailFilePath);
-
-                    if(!thumbFile.exists()) {
-                    	thumbnailFilePath = realPathAux + inode+ "." + suffix;
-                    	thumbFile = new java.io.File(thumbnailFilePath);
                     }
+
+
+
+                    java.io.File thumbFile = new java.io.File(thumbnailFilePath);
                     Color bgColor = new Color(rInt, gInt, bInt);
 
                     synchronized (inode.intern()) {
-
+                    
 	                    if (!thumbFile.exists() || (request.getParameter("nocache") != null)) {
-	                        com.dotmarketing.util.ImageResizeUtils.generateThumbnail(realPathAux, fileName, suffix, generatedKey, width, height, bgColor);
+	                    	String realPathAux= "";
+	                    	if(isCont){
+	                    		realPathAux = contAssetPath;
+	                    	}else{
+	                    		realPathAux = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator;
+	                    	}
+	                        com.dotmarketing.util.ImageResizeUtils.generateThumbnail(realPathAux, inode, suffix, generatedKey, width, height, bgColor);
 	                        thumbFile = new java.io.File(thumbnailFilePath);
 	                    }
 
                     }
-
-
+                    
+                    
                     //  -------- HTTP HEADER/ MODIFIED SINCE CODE -----------//
-
+                    
                     long _lastModified = thumbFile.lastModified();
                     long _fileLength = thumbFile.length();
 					String _eTag = "dot:" + inode + "-" + _lastModified/1000 + "-" + _fileLength;
@@ -342,7 +334,7 @@ public class ThumbnailImage extends HttpServlet {
                      * If the etag matches then the file is the same
                      *
                     */
-
+                    
                     if(ifNoneMatch != null){
                         if(_eTag.equals(ifNoneMatch) || ifNoneMatch.equals("*")){
                             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
@@ -356,7 +348,7 @@ public class ThumbnailImage extends HttpServlet {
 					    	java.text.SimpleDateFormat httpDate = new java.text.SimpleDateFormat(RFC2822_FORMAT, Locale.US);
 					    	httpDate.setTimeZone(TimeZone.getDefault());
 					        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
-
+					        
 					        if(_lastModified <= ifModifiedSinceDate.getTime()){
 
 					            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
@@ -367,7 +359,7 @@ public class ThumbnailImage extends HttpServlet {
 					    catch(Exception e){}
 					}
 
-                    response.setHeader("Content-Length", String.valueOf(_fileLength));
+                    response.setHeader("Content-Length", String.valueOf(_fileLength));                   
                     response.setHeader("Last-Modified", df.format(_lastModified));
                     response.setHeader("ETag", "\"" + _eTag +"\"");
                     // Set the expiration time
@@ -376,12 +368,12 @@ public class ThumbnailImage extends HttpServlet {
                     response.setHeader("Expires", df.format(expiration.getTime()));
                     response.setHeader("Cache-Control", "max-age=31104000");
                     // END Set the expiration time
-
+                    
                     //  -------- /HTTP HEADER/ MODIFIED SINCE CODE -----------//
-
-
-
-
+                    
+                    
+                    
+                    
                     // set the content type and get the output stream
                     response.setContentType("image/png");
 
@@ -417,7 +409,7 @@ public class ThumbnailImage extends HttpServlet {
         } catch (Exception e) {
             Logger.error(ThumbnailImage.class, "Error creating thumbnail from servlet: " + e.getMessage(),e);
         }
-
+        
         try {
 			HibernateUtil.closeSession();
 		} catch (DotHibernateException e) {

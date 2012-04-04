@@ -9,9 +9,6 @@ public class DotMappingException extends Exception {
 	public DotMappingException(String message){
 		this.message = message;
 	}
-	public DotMappingException(String message, Throwable cause){
-	    super(message,cause);
-	}
 	@Override
 	public String getLocalizedMessage() {
 		// TODO Auto-generated method stub

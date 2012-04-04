@@ -481,7 +481,7 @@ public class MaintenanceUtil {
 		}
 		DotConnect dc = new DotConnect();
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE COLUMNS text[1-25] ON THE CONTENTLET TABLE");
-		int count = 1;		
+		int count = 1;
 		StringBuilder SQL = new StringBuilder("UPDATE contentlet SET ");
 		while(count<26){
 			if(count>1){
@@ -495,7 +495,7 @@ public class MaintenanceUtil {
 			count++;
 		}
 
-		dc.setSQL(SQL.toString() + " WHERE contentlet.inode = (SELECT working_inode FROM contentlet_version_info cvi WHERE (cvi.working_inode = contentlet.inode OR cvi.live_inode =contentlet.inode)) ");
+		dc.setSQL(SQL.toString() + " WHERE working = " + DbConnectionFactory.getDBTrue() + " OR live = " + DbConnectionFactory.getDBTrue());
 		count = 1;
 		while(count<26){
 			dc.addParam(textToSearchFor);
@@ -524,7 +524,7 @@ public class MaintenanceUtil {
 			count++;
 		}
 
-		dc.setSQL(SQL.toString() + "WHERE contentlet.inode = (SELECT working_inode FROM contentlet_version_info cvi WHERE (cvi.working_inode = contentlet.inode OR cvi.live_inode =contentlet.inode)) ");
+		dc.setSQL(SQL.toString() + " WHERE working = " + DbConnectionFactory.getDBTrue() + " OR live = " + DbConnectionFactory.getDBTrue());
 		count = 1;
 		while(count<26){
 			dc.addParam(textToSearchFor);
@@ -539,9 +539,9 @@ public class MaintenanceUtil {
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE COLUMNS code, pre_loop, and post_loop ON THE containers TABLE");
 		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-			dc.setSQL("UPDATE containers SET code=replace(cast(code as varchar(max)),?,?),pre_loop=replace(cast(pre_loop as varchar(max)),?,?),post_loop=replace(cast(post_loop as varchar(max)),?,?) WHERE containers.inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = containers.inode OR cvi.live_inode =containers.inode)) ");
+			dc.setSQL("UPDATE containers SET code=replace(cast(code as varchar(max)),?,?),pre_loop=replace(cast(pre_loop as varchar(max)),?,?),post_loop=replace(cast(post_loop as varchar(max)),?,?) WHERE working = " + DbConnectionFactory.getDBTrue() + " OR live = " + DbConnectionFactory.getDBTrue());
 		}else{
-			dc.setSQL("UPDATE containers SET code=replace(code,?,?),pre_loop=replace(pre_loop,?,?),post_loop=replace(post_loop,?,?) WHERE containers.inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = containers.inode OR cvi.live_inode =containers.inode)) ");
+			dc.setSQL("UPDATE containers SET code=replace(code,?,?),pre_loop=replace(pre_loop,?,?),post_loop=replace(post_loop,?,?) WHERE working = " + DbConnectionFactory.getDBTrue() + " OR live = " + DbConnectionFactory.getDBTrue());
 		}
 		dc.addParam(textToSearchFor);
 		dc.addParam(textToReplaceWith);
@@ -557,9 +557,9 @@ public class MaintenanceUtil {
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE body COLUMN ON THE template TABLE");
 		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-			dc.setSQL("UPDATE template SET body=replace(cast(body as varchar(max)),?,?) WHERE template.inode = (SELECT working_inode FROM template_version_info tvi WHERE (tvi.working_inode = template.inode OR tvi.live_inode = template.inode)) ");
+			dc.setSQL("UPDATE template SET body=replace(cast(body as varchar(max)),?,?) WHERE working = " + DbConnectionFactory.getDBTrue() + " OR live = " + DbConnectionFactory.getDBTrue());
 		}else{
-			dc.setSQL("UPDATE template SET body=replace(body,?,?) WHERE template.inode = (SELECT working_inode FROM template_version_info tvi WHERE (tvi.working_inode = template.inode OR tvi.live_inode = template.inode)) ");
+			dc.setSQL("UPDATE template SET body=replace(body,?,?) WHERE working = " + DbConnectionFactory.getDBTrue() + " OR live = " + DbConnectionFactory.getDBTrue());
 		}
 		dc.addParam(textToSearchFor);
 		dc.addParam(textToReplaceWith);
@@ -585,9 +585,9 @@ public class MaintenanceUtil {
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE url COLUMN ON THE links TABLE");
 		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-			dc.setSQL("UPDATE links SET url=replace(cast(url as varchar(max)),?,?) WHERE links.inode = (SELECT working_inode FROM link_version_info lvi WHERE (lvi.working_inode = links.inode OR lvi.live_inode = links.inode)) ");
+			dc.setSQL("UPDATE links SET url=replace(cast(url as varchar(max)),?,?) WHERE working=" + DbConnectionFactory.getDBTrue() + " OR live=" + DbConnectionFactory.getDBTrue());
 		}else{
-			dc.setSQL("UPDATE links SET url=replace(url,?,?) WHERE links.inode = (SELECT working_inode FROM link_version_info lvi WHERE (lvi.working_inode = links.inode OR lvi.live_inode = links.inode)) ");
+			dc.setSQL("UPDATE links SET url=replace(url,?,?) WHERE working=" + DbConnectionFactory.getDBTrue() + " OR live=" + DbConnectionFactory.getDBTrue());
 		}
 		dc.addParam(textToSearchFor);
 		dc.addParam(textToReplaceWith);
@@ -632,7 +632,7 @@ public class MaintenanceUtil {
 		Logger.info(MaintenanceUtil.class, "Starting Search and Replace");
 		boolean hasErrors = false;
 		DotConnect dc = new DotConnect();
-		dc.setSQL("SELECT inode,file_name FROM file_asset fa, fileasset_version_info fvi WHERE mime_type LIKE '"+ mimeTypesOfFile +"%' AND (fa.inode = fvi.working_inode OR fa.inode = fvi.live_inode)");
+		dc.setSQL("SELECT inode,file_name FROM file_asset WHERE mime_type LIKE '"+ mimeTypesOfFile +"%' AND (working=" + DbConnectionFactory.getDBTrue() + " OR live=" + DbConnectionFactory.getDBTrue() + ")");
 		List<Map<String,Object>> results = new ArrayList<Map<String,Object>>();
 		try {
 			results = dc.loadResults();

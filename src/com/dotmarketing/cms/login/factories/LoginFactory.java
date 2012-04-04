@@ -79,16 +79,6 @@ public class LoginFactory {
         	boolean match = false;
         	Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
         	
-        	if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-				if(userName.equalsIgnoreCase(APILocator.getUserAPI().getSystemUser().getEmailAddress())){
-					return false;
-				}
-			} else {
-				if(userName.equalsIgnoreCase(APILocator.getUserAPI().getSystemUser().getUserId())){
-					return false;
-				}
-			}
-        	
         	if ((PRE_AUTHENTICATOR != null) &&
         		(0 < PRE_AUTHENTICATOR.length()) &&
         		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"))) {

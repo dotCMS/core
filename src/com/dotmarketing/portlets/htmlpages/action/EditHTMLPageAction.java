@@ -18,6 +18,8 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierCache;
+import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -30,6 +32,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -717,10 +720,13 @@ public class EditHTMLPageAction extends DotPortletAction implements
 		HibernateUtil.flush();
 		HibernateUtil.getSession().refresh(workingAsset);
 
-		if(RefreshMenus.shouldRefreshMenus(workingAsset)){
+		// Refreshing the menues
+		if (previousShowMenu != workingAsset.isShowOnMenu()) {
+			// existing folder with different show on menu ... need to
+			// regenerate menu
+			// RefreshMenus.deleteMenus();
 			RefreshMenus.deleteMenu(workingAsset);
 		}
-		
 
 		// Setting the new working page to publish tasks
 		req.setAttribute(WebKeys.HTMLPAGE_FORM_EDIT, workingAsset);

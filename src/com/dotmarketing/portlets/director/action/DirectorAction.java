@@ -47,7 +47,6 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -229,71 +228,36 @@ public class DirectorAction extends DotPortletAction {
 			if (cmd!=null && cmd.equals("editFile")) {
 
 				Logger.debug(DirectorAction.class, "Director :: editFile");
-				
-				String fileAssetInode = "";
-				
-				if(UtilMethods.isSet(req.getParameter("file")))
-					fileAssetInode = req.getParameter("file");
-				else
-					return;
-				
-				Identifier identifier = APILocator.getIdentifierAPI().findFromInode(fileAssetInode);
-				
-				if(identifier.getAssetType().equals("contentlet")){
-					try {
-						Contentlet cont = APILocator.getContentletAPI().find(fileAssetInode, user, false);
-						
-						
-						java.util.Map params = new java.util.HashMap();
-						params.put("struts_action",new String[] {"/ext/contentlet/edit_contentlet"});
-						params.put("cmd",new String[] { "edit" });
-						params.put("inode",new String[] { cont.getInode() + "" });
-						params.put("referer",new String[] { referer });
-						
-						String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
-						
-						_sendToReferral(req, res, af);
-					} catch (DotSecurityException e) {
-						Logger.error(this, e.getMessage());
-						return;
-					}
-				}else{
-					try {
-						//gets the current working asset
-						WebAsset workingFile = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
 
-						if ("unlockFile".equals(subcmd)) {
-							WebAssetFactory.unLockAsset(workingFile);
-						}
+				File file = (File) InodeFactory.getInode(req.getParameter("file"), File.class);
 
-						if (workingFile.isLocked() && !workingFile.getModUser().equals(user.getUserId())) {
-							req.setAttribute(WebKeys.FILE_EDIT, workingFile);
-							setForward(req,"portlet.ext.director.unlock_file");
-							return;
-						}
-						else if (workingFile.isLocked()) {
-							//it's locked by the same user
-							WebAssetFactory.unLockAsset(workingFile);
-						}
+				Identifier identifier = APILocator.getIdentifierAPI().find(file);
+				//gets the current working asset
+				WebAsset workingFile = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
 
-						java.util.Map params = new java.util.HashMap();
-						params.put("struts_action",new String[] {"/ext/files/edit_file"});
-						params.put("cmd",new String[] { "edit" });
-						params.put("inode",new String[] { workingFile.getInode() + "" });
-						params.put("referer",new String[] { referer });
-						
-						String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
-						
-						_sendToReferral(req, res, af);
-					} catch (DotStateException e) {
-						Logger.error(this, e.getMessage());
-						return;
-					} catch (DotSecurityException e) {
-						Logger.error(this, e.getMessage());
-						return;
-					}
+				if ("unlockFile".equals(subcmd)) {
+					WebAssetFactory.unLockAsset(workingFile);
 				}
-				
+
+				if (workingFile.isLocked() && !workingFile.getModUser().equals(user.getUserId())) {
+					req.setAttribute(WebKeys.FILE_EDIT, workingFile);
+					setForward(req,"portlet.ext.director.unlock_file");
+					return;
+				}
+				else if (workingFile.isLocked()) {
+					//it's locked by the same user
+					WebAssetFactory.unLockAsset(workingFile);
+				}
+
+				java.util.Map params = new java.util.HashMap();
+				params.put("struts_action",new String[] {"/ext/files/edit_file"});
+				params.put("cmd",new String[] { "edit" });
+				params.put("inode",new String[] { workingFile.getInode() + "" });
+				params.put("referer",new String[] { referer });
+
+				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
+
+				_sendToReferral(req, res, af);
 				return;
 			}
 

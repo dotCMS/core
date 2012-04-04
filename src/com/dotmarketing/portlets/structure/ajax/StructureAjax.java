@@ -40,7 +40,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -163,12 +162,9 @@ public class StructureAjax {
 		return searchableFields;
 	}
 
-	public Map<String,Object> getKeyStructureFields (String structureInode) {
-		Map<String,Object> result = new HashMap<String, Object>();
-		boolean allowImport = true;
-		
-		Structure struct = StructureCache.getStructureByInode(structureInode);
-		List<Field> fields = struct.getFields();
+	public List<Map> getKeyStructureFields (String structureInode) {
+		Structure st = StructureFactory.getStructureByInode(structureInode);
+		List<Field> fields = st.getFields();
 		ArrayList<Map> searchableFields = new ArrayList<Map> ();
 		for (Field field : fields) {
 			if (!field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) &&
@@ -185,19 +181,7 @@ public class StructureAjax {
 			}
 		}
 
-		try {
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(struct);
-			if(scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())){
-				allowImport = false;
-			}
-		} catch (DotDataException e) {
-			Logger.error(this, e.getMessage());
-		}
-
-		result.put("keyStructureFields",searchableFields);
-		result.put("allowImport", allowImport);
-
-		return result;
+		return searchableFields;
 	}
 
 	public List<Map> getStructureCategories (String structureInode) throws DotDataException, DotSecurityException, PortalException, SystemException {

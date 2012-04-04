@@ -240,18 +240,4 @@ public interface HostAPI {
 	 * @param host
 	 */
 	public List<Host> retrieveHostsPerTagStorage (String tagStorageId, User user);
-	
-	
-	/**
-	 * This method takes a server name (from a web request) and maps it to a host.
-	 * It is designed to do a lightweight cache lookup to get the mapping from server name -> host
-	 * and to prevent unnecessary lucene lookups
-	 * @param serverName
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
 }

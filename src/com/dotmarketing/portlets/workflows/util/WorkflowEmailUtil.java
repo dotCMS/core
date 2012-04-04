@@ -47,8 +47,8 @@ public class WorkflowEmailUtil {
 	 */
 
 	public static void sendWorkflowEmail(WorkflowProcessor processor, String[] email, String subject, String emailText, Boolean isHTML) {
-		
-			
+
+
 		try {
 			if (isHTML == null) {
 				isHTML = false;
@@ -85,7 +85,7 @@ public class WorkflowEmailUtil {
 			ctx.put("workflowLink", link);
 
 
-			
+
 
 			if (!UtilMethods.isSet(emailText)) {
 				emailText = VelocityUtil.mergeTemplate("static/workflow/workflow_email_template.html", ctx);
@@ -157,7 +157,7 @@ public class WorkflowEmailUtil {
 			} catch (Exception e) {
 
 			}
-			
+
 			String[] to = (String[]) recipients.toArray(new String[recipients.size()]);
 			// send'em workflows
 

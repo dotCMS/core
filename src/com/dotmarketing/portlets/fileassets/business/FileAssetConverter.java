@@ -163,22 +163,22 @@ public class FileAssetConverter {
 								contentlet.setSortOrder(file.getSortOrder());
 								contentlet = APILocator.getContentletAPI().checkin(contentlet, APILocator.getUserAPI().getSystemUser(), false);
 							}
-							APILocator.getVersionableAPI().setDeleted(contentlet, file.isArchived());
-							APILocator.getVersionableAPI().setLocked(contentlet, file.isLocked(), APILocator.getUserAPI().getSystemUser());
+							APILocator.getVersionableAPI().setDeleted(contentlet.getIdentifier(), file.isArchived());
+							APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(), file.isLocked(), APILocator.getUserAPI().getSystemUser());
 							if(file.isWorking() && !file.isLive()){
 								APILocator.getVersionableAPI().setWorking(contentlet);
 							}else if(file.isLive()){
 								APILocator.getVersionableAPI().setLive(contentlet);
 							}
-							APILocator.getVersionableAPI().setDeleted(contentlet, file.isArchived());
-							APILocator.getVersionableAPI().setLocked(contentlet, file.isLocked(), APILocator.getUserAPI().getSystemUser());
+							APILocator.getVersionableAPI().setDeleted(contentlet.getIdentifier(), file.isArchived());
+							APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(), file.isLocked(), APILocator.getUserAPI().getSystemUser());
 							if(file.isWorking() && !file.isLive()){
 								APILocator.getVersionableAPI().setWorking(contentlet);
 							}else if(file.isLive()){
 								APILocator.getVersionableAPI().setLive(contentlet);
 							}
 							APILocator.getPermissionAPI().copyPermissions(file, contentlet);
-							APILocator.getVersionableAPI().setDeleted(file, true);
+							APILocator.getVersionableAPI().setDeleted(file.getIdentifier(), true);
 							HibernateUtil.commitTransaction();
 							succeeded.add(file.getInode());
 						}catch(Exception e){

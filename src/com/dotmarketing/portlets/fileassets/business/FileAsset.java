@@ -109,7 +109,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	public boolean isShowOnMenu() {
 		String isShowOnMenu = super.getStringProperty("showOnMenu");//DOTCMS-6968
-		if(UtilMethods.isSet(isShowOnMenu) && isShowOnMenu.contains("true")){
+		if(isShowOnMenu.contains("true")){
 			return true;
 		}else{
 			return false;
@@ -117,7 +117,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public void setShowOnMenu(boolean showOnMenu) {
-		super.setStringProperty("showOnMenu", Boolean.toString(showOnMenu));
+		super.setBoolProperty("showOnMenu", showOnMenu);
 
 	}
 
@@ -163,7 +163,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 * @throws DotStateException 
 	 */
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-       return APILocator.getVersionableAPI().isLocked(this);
+       return APILocator.getVersionableAPI().isLocked(getIdentifier());
    }
 
 	
@@ -214,10 +214,8 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return map;
 	 }
 
-	public String getURI() throws DotDataException {
-		return UtilMethods.isSet(getIdentifier()) ?
-		        APILocator.getIdentifierAPI().find(getIdentifier()).getURI()
-		       : "";
+	public String getURI() {
+		return getStringProperty(FileAssetAPI.URI_FIELD);
 		
 	}
 

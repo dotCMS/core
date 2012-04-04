@@ -3,6 +3,7 @@ package com.dotmarketing.business;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.portlets.contentlet.model.ContentletLangVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 
 public abstract class IdentifierCache implements Cachable {
@@ -29,11 +30,17 @@ public abstract class IdentifierCache implements Cachable {
     
     abstract protected void removeVersionInfoFromCache(String identifier);
     
-    abstract protected ContentletVersionInfo getContentVersionInfo(String identifier, long lang);
+    abstract protected ContentletVersionInfo getContentVersionInfo(String identifier);
+    
+    abstract protected ContentletLangVersionInfo getContentLangVersionInfo(String identifier, long lang);
     
     abstract protected void addContentletVersionInfoToCache(ContentletVersionInfo contV);
     
-    abstract protected void removeContentletVersionInfoToCache(String identifier, long lang);
+    abstract protected void addContentletLangVersionInfoToCache(ContentletLangVersionInfo contL);
+    
+    abstract protected void removeContentletVersionInfoToCache(String identifier);
+    
+    abstract protected void removeContentletLangVersionInfoToCache(String identifier, long lang);
 
 	abstract public void clearCache();
 

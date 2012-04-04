@@ -205,7 +205,7 @@ public class DotConnect {
 	
 	}
     
-    public boolean executeStatement(String sql) throws SQLException{
+    public boolean executeStatement(String sql) throws SQLException {
     	Connection conn = DbConnectionFactory.getConnection();
     	Statement stmt = conn.createStatement();
     	Logger.info(this, "Executing " + sql);
@@ -482,11 +482,7 @@ public class DotConnect {
         String starter = SQL.substring(0, 10);
         PreparedStatement statement = null;
         boolean cachePreparedStatement=Config.getBooleanProperty("CACHE_PREPARED_STATEMENTS", false);
-	    boolean logSQL = "true".equals(System.getProperty("hibernate.show_sql"));
-	    if(logSQL){
-	    	
-	    	Logger.info(this.getClass(), SQL + " params:" + paramList);
-	    }
+	     
         try {
 	        conn.clearWarnings();
 	        long before = System.nanoTime();

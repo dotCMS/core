@@ -21,7 +21,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.factories.InodeFactory;
@@ -53,7 +52,7 @@ import com.liferay.util.servlet.SessionMessages;
  */
 public class EditContainerAction extends DotPortletAction implements
 		DotPortletActionInterface {
-
+	
 	protected HostAPI hostAPI = APILocator.getHostAPI();
 	protected PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
@@ -145,8 +144,8 @@ public class EditContainerAction extends DotPortletAction implements
 
 					Logger.debug(this, "Calling Save Method");
 					_saveWebAsset(req, res, config, form, user);
-
-
+					
+					
 					String subcmd = req.getParameter("subcmd");
 
 					if ((subcmd != null)
@@ -161,10 +160,10 @@ public class EditContainerAction extends DotPortletAction implements
 							return;
 						}
 					}
-
+					
 					try{
-
-
+					
+					
 					    _sendToReferral(req, res, referer);
 					return;
 					}
@@ -174,7 +173,7 @@ public class EditContainerAction extends DotPortletAction implements
                         String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, WindowState.MAXIMIZED.toString(), params);
                         _sendToReferral(req, res, directorURL);
                         return;
-
+			         
 					}
 				}
 
@@ -186,7 +185,7 @@ public class EditContainerAction extends DotPortletAction implements
 		/*
 		 * If we are deleteing the container, run the delete action and return
 		 * to the list
-		 *
+		 * 
 		 */
 		else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
 			try {
@@ -200,9 +199,9 @@ public class EditContainerAction extends DotPortletAction implements
 			}
 			_sendToReferral(req, res, referer);
 		}
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_DELETE))
-		{
-			try
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_DELETE)) 
+		{	
+			try 
 			{
 				Logger.debug(this,"Calling Full Delete Method");
 				WebAsset webAsset = (WebAsset) req.getAttribute(WebKeys.CONTAINER_EDIT);
@@ -212,20 +211,20 @@ public class EditContainerAction extends DotPortletAction implements
 					SessionMessages.add(httpReq, "error", "message." + webAsset.getType() + ".full_delete.error");
 				}
 			}
-			catch(Exception ae)
+			catch(Exception ae) 
 			{
 				_handleException(ae, req);
 				return;
 			}
 			_sendToReferral(req, res, referer);
 		}
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_DELETE_LIST))
-		{
-			try
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_DELETE_LIST)) 
+		{	
+			try 
 			{
 				Logger.debug(this,"Calling Full Delete Method");
-				String [] inodes = req.getParameterValues("publishInode");
-				boolean returnValue = true;
+				String [] inodes = req.getParameterValues("publishInode");			
+				boolean returnValue = true;				
 				for(String inode  : inodes)
 				{
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Container.class);
@@ -240,7 +239,7 @@ public class EditContainerAction extends DotPortletAction implements
 					SessionMessages.add(httpReq,"error","message.containers.full_delete.error");
 				}
 			}
-			catch(Exception ae)
+			catch(Exception ae) 
 			{
 				_handleException(ae, req);
 				return;
@@ -250,7 +249,7 @@ public class EditContainerAction extends DotPortletAction implements
 		/*
 		 * If we are undeleting the container, run the undelete action and
 		 * return to the list
-		 *
+		 * 
 		 */
 		else if ((cmd != null)
 				&& cmd.equals(com.dotmarketing.util.Constants.UNDELETE)) {
@@ -389,14 +388,14 @@ public class EditContainerAction extends DotPortletAction implements
 	}
 
 	// /// ************** ALL METHODS HERE *************************** ////////
-
+	
 	private void _setupEditContainerPage(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form,
 			User user) throws Exception {
 
 		//Getting the host that can be assigned to the container
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		Container container = (Container) req.getAttribute(WebKeys.CONTAINER_EDIT);
-
+		
         Host host = hostAPI.findParentHost(container, user, false);
 
 		List<Host> hosts = APILocator.getHostAPI().findAll(user, false);
@@ -409,15 +408,15 @@ public class EditContainerAction extends DotPortletAction implements
 	}
 
 
-
-
+	
+	
     /**
-     * Method called to load the edit attributes in the request
+     * Method called to load the edit attributes in the request 
      */
 	@SuppressWarnings("unchecked")
 	public void _editWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
-
+		
 		// calls edit method from super class that returns parent folder
 		super._editWebAsset(req, res, config, form, user, WebKeys.CONTAINER_EDIT);
 
@@ -426,7 +425,7 @@ public class EditContainerAction extends DotPortletAction implements
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 		HttpSession session = httpReq.getSession();
-
+		
 		//Setting the default host = the selected crumbtrail host if it is a new container
         String hostId= (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
         if(!hostId.equals("allHosts") && cf.getHostId() == null) {
@@ -442,7 +441,7 @@ public class EditContainerAction extends DotPortletAction implements
         if (UtilMethods.isSet(container.getLuceneQuery())) {
             cf.setDynamic(true);
         }
-
+        
 		// Getting container structure
 		if (!InodeUtils.isSet(cf.getStructureInode())) {
 			Structure currentStructure;
@@ -455,19 +454,19 @@ public class EditContainerAction extends DotPortletAction implements
 			}
 			cf.setStructureInode(currentStructure.getInode());
 		}
-
+		
         //gets the container host
         Host host = hostAPI.findParentHost(container, user, false);
         if(host!= null)
         	cf.setHostId(host.getIdentifier());
-
+        
 		//Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, container);
 
 	}
 
     /**
-     * Method called to save container in the system
+     * Method called to save container in the system 
      */
 	public void _saveWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
@@ -485,7 +484,7 @@ public class EditContainerAction extends DotPortletAction implements
 
 		// gets the new information for the container from the request object
 		Container container = (Container) req.getAttribute(WebKeys.CONTAINER_FORM_EDIT);
-
+		
 		// gets the current container being edited from the request object
 		Container currentContainer = (Container) req.getAttribute(WebKeys.CONTAINER_EDIT);
 
@@ -500,8 +499,7 @@ public class EditContainerAction extends DotPortletAction implements
 			_checkWritePermissions(currentContainer, user, httpReq);
 		} else {
 			//If the asset is new checking that the user has permission to add children to the parent host
-			if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)
-					|| !permissionAPI.doesUserHavePermissions(PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
+			if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)) {
 				SessionMessages.add(httpReq, "message", "message.insufficient.permissions.to.save");
 				throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 			}
@@ -512,7 +510,7 @@ public class EditContainerAction extends DotPortletAction implements
 
 		// gets user id from request for mod user
 		String userId = user.getUserId();
-
+		
 		// Associating the current structure
 		Structure currentStructure = null;
 		if (!InodeUtils.isSet(fm.getStructureInode())) {
@@ -522,7 +520,7 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 		container.setStructureInode(currentStructure.getInode());
 		//container.addParent(currentStructure);
-
+		
 
 		// it saves or updates the asset
 		if (InodeUtils.isSet(currentContainer.getInode())) {
@@ -550,7 +548,7 @@ public class EditContainerAction extends DotPortletAction implements
 		//Saving the host of the container
 		identifier.setHostId(host.getIdentifier());
 		APILocator.getIdentifierAPI().save(identifier);
-
+        
 		SessionMessages.add(httpReq, "message", "message.containers.save");
 		// saves to working folder under velocity
 		ContainerServices.invalidate(container, true);
@@ -558,12 +556,6 @@ public class EditContainerAction extends DotPortletAction implements
 		// copies the information back into the form bean
 		BeanUtils.copyProperties(form, req
 				.getAttribute(WebKeys.CONTAINER_FORM_EDIT));
-
-		APILocator.getVersionableAPI().setWorking(container);
-
-
-
-
 		HibernateUtil.flush();
 	}
 

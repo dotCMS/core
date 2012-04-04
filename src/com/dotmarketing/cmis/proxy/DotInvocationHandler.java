@@ -9,7 +9,8 @@ import java.util.StringTokenizer;
 import javax.servlet.http.Cookie;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.GUIDGenerator;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 //http://jira.dotmarketing.net/browse/DOTCMS-3392
@@ -118,10 +119,20 @@ public class DotInvocationHandler implements InvocationHandler{
 	}
 	
 	public Cookie[] getCookies(){
+		GUIDGenerator guidGenerator = null;
+
+		if (guidGenerator == null) {
+						try {
+							guidGenerator = new GUIDGenerator();
+						} catch (Exception e) {
+
+							Logger.error(this, e.getMessage(), e);
+						}
+					}
 		
-		Cookie dmidCookie = new Cookie("starter.dotcms.org",UUIDGenerator.generateUuid());
-		Cookie jsessionIdCookie = new Cookie("starter.dotcms.org",UUIDGenerator.generateUuid());
-		Cookie login = new Cookie("starter.dotcms.org",UUIDGenerator.generateUuid());
+		Cookie dmidCookie = new Cookie("starter.dotcms.org",guidGenerator.getUUID());
+		Cookie jsessionIdCookie = new Cookie("starter.dotcms.org",guidGenerator.getUUID());
+		Cookie login = new Cookie("starter.dotcms.org",guidGenerator.getUUID());
 		Cookie[] cookies = {dmidCookie,jsessionIdCookie,login};
 		return cookies;
 	}

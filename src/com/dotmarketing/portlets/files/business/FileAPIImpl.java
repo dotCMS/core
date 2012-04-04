@@ -312,16 +312,9 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			filename = filename.toLowerCase();
 		}
 
-		String mimeType = null;
-		
-		try {
-		    mimeType = Config.CONTEXT.getMimeType(filename);
-		    if(!UtilMethods.isSet(mimeType))
-		        mimeType = com.dotmarketing.portlets.files.model.File.UNKNOWN_MIME_TYPE;
-		}
-		catch(Exception ex) {
-		    mimeType = com.dotmarketing.portlets.files.model.File.UNKNOWN_MIME_TYPE;
-		    Logger.warn(this,"Error looking for mimetype on file: "+filename,ex);
+		String mimeType = Config.CONTEXT.getMimeType(filename);
+		if (!UtilMethods.isSet(mimeType)) {
+			mimeType = com.dotmarketing.portlets.files.model.File.UNKNOWN_MIME_TYPE;
 		}
 
 		return mimeType;
