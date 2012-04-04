@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>  
 <head> 
-<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="//www.dotcms.org/global/favicon.ico" type="image/x-icon">
 
 	<title>dotCMS Style Guide</title>
 	<style media="all" type="text/css">

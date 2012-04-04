@@ -15,16 +15,16 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
 
 /**
- *
- * This is just a wrapper class over a contentlet, it just offers nice methods to access host content specific fields like the host name but
+ * 
+ * This is just a wrapper class over a contentlet, it just offers nice methods to access host content specific fields like the host name but 
  * it underneath is just a piece of content
- *
+ * 
  * @author David H Torres
  */
 public class Host extends Contentlet implements Permissionable {
 
 	/**
-     *
+     * 
      */
 	private static final long serialVersionUID = 1L;
 
@@ -50,9 +50,9 @@ public class Host extends Contentlet implements Permissionable {
 	public static final String SYSTEM_HOST_KEY = "isSystemHost";
 
 	public static final String HOST_THUMB_KEY = "hostThumbnail";
-
+	
 	public static final String SYSTEM_HOST = "SYSTEM_HOST";
-
+	
 	public static final String TAG_STORAGE = "tagStorage";
 
 	@Override
@@ -102,12 +102,7 @@ public class Host extends Contentlet implements Permissionable {
 	}
 
 	public boolean isSystemHost() {
-		Object isSystemHost = map.get(SYSTEM_HOST_KEY);
-		if(isSystemHost!=null) {
-			return (Boolean) isSystemHost;
-		} else {
-			return false;
-		}
+		return (Boolean) map.get(SYSTEM_HOST_KEY);
 	}
 
 	public void setSystemHost(boolean isSystemHost) {
@@ -124,7 +119,7 @@ public class Host extends Contentlet implements Permissionable {
 		// Legacy property referenced as 'hostname' while really is 'hostName'
 		hostMap.put("hostname", hostMap.get("hostName"));
 		hostMap.put("type", "host");
-
+		
 		return hostMap;
 	}
 
@@ -153,7 +148,7 @@ public class Host extends Contentlet implements Permissionable {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
-
+	
 	public String getTagStorage() {
 		return (String) map.get(TAG_STORAGE);
 	}

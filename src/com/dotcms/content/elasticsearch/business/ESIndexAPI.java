@@ -10,30 +10,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
-import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequestBuilder;
+import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import com.dotcms.content.business.DotMappingException;
@@ -57,12 +51,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 
 public class ESIndexAPI {
-
+	
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
     public static final String ES_WORKING_INDEX_NAME = "working";
     public static final String ES_LIVE_INDEX_NAME = "live";
     public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");
-
+	
 	public synchronized void getRidOfOldIndex() throws DotDataException {
 	    IndiciesInfo idxs=APILocator.getIndiciesAPI().loadIndicies();
 	    if(idxs.working!=null)
@@ -74,61 +68,28 @@ public class ESIndexAPI {
 	    if(idxs.reindex_live!=null)
 	        delete(idxs.reindex_live);
 	}
-
+	
 	/**
 	 * Tells if at least we have a "working_XXXXXX" index
 	 * @return
-	 * @throws DotDataException
+	 * @throws DotDataException 
 	 */
 	public synchronized boolean indexReady() throws DotDataException {
 	   IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 	   return info.working!=null && info.live!=null;
 	}
-
 	
 	public synchronized CreateIndexResponse createNewIndex(IndicesAdminClient iac, String indexName) throws ElasticSearchException, IOException {
-	
-		return createNewIndex(iac, indexName, 0);
-		
-	}
-	
-	public synchronized CreateIndexResponse createNewIndex(IndicesAdminClient iac, String indexName, int shards) throws ElasticSearchException, IOException {
-		
-
 		ClassLoader classLoader = null;
 		URL url = null;
 		classLoader = Thread.currentThread().getContextClassLoader();
 		url = classLoader.getResource("esmapping.json");
-		
-		
-		if(shards <1){
-			try{
-				shards = Integer.parseInt(System.getProperty("es.index.number_of_shards"));
-			}catch(Exception e){}
-		}
-		if(shards <1){
-			try{
-				shards = Config.getIntProperty("es.index.number_of_shards");
-			}catch(Exception e){}
-		}
-		
-		if(shards <0){
-			shards=1;
-		}
-		
-		
-		
-		
-		
-		
-		
         // create actual index
-		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName)
+		return iac.prepareCreate(indexName)
 	    	.addMapping("content", new String(FileUtil.getBytes(new File(url.getPath()))))
 	        .setSettings(
 	          jsonBuilder().startObject()
                .startObject("index")
-               	.field("number_of_shards",shards+"")
                 .startObject("analysis")
                  .startObject("analyzer")
                   .startObject("default")
@@ -137,70 +98,65 @@ public class ESIndexAPI {
                  .endObject()
                 .endObject()
                .endObject()
-              .endObject().string());
-		
-		
-
-		
-		
-		return cirb.execute().actionGet();
+              .endObject().string())
+        .execute().actionGet();
 	}
 
 	/**
-	 * Creates new indexes /working_TIMESTAMP (aliases working_read, working_write and workinglive)
+	 * Creates new indexes /working_TIMESTAMP (aliases working_read, working_write and workinglive) 
 	 * and /live_TIMESTAMP with (aliases live_read, live_write, workinglive)
-	 *
+	 * 
 	 * @return the timestamp string used as suffix for indices
 	 * @throws ElasticSearchException if Murphy comes arround
-	 * @throws DotDataException
+	 * @throws DotDataException 
 	 */
 	public synchronized String initIndex() throws ElasticSearchException, DotDataException {
 	    if(indexReady()) return "";
 		try {
-		    final String timeStamp=timestampFormatter.format(new Date());
-
+		    final String timeStamp=timestampFormatter.format(new Date()); 
+		    
 		    final String workingIndex=ES_WORKING_INDEX_NAME+"_"+timeStamp;
 		    final String liveIndex=ES_LIVE_INDEX_NAME+ "_" + timeStamp;
-
+		    
             final IndicesAdminClient iac = new ESClient().getClient().admin().indices();
-
+            
             createNewIndex(iac, workingIndex);
             createNewIndex(iac, liveIndex);
-
+            
             IndiciesInfo info=new IndiciesInfo();
             info.working=workingIndex;
             info.live=liveIndex;
             APILocator.getIndiciesAPI().point(info);
-
+            
             return timeStamp;
 		} catch (Exception e) {
 			throw new ElasticSearchException(e.getMessage(), e);
 		}
 
 	}
-
+	
 	/**
 	 * creates new working and live indexes with reading aliases pointing to old index
 	 * and write aliases pointing to both old and new indexes
 	 * @return the timestamp string used as suffix for indices
-	 * @throws DotDataException
-	 * @throws ElasticSearchException
+	 * @throws DotDataException 
+	 * @throws ElasticSearchException 
 	 */
 	public synchronized String setUpFullReindex() throws ElasticSearchException, DotDataException {
 	    if(indexReady()) {
     	    try {
-
-                final String timeStamp=timestampFormatter.format(new Date());
-
+    	    	
+                final String timeStamp=timestampFormatter.format(new Date()); 
+                
                 // index names for new index
                 final String workingIndex=ES_WORKING_INDEX_NAME + "_" + timeStamp;
                 final String liveIndex=ES_LIVE_INDEX_NAME + "_" + timeStamp;
-
+                
                 final IndicesAdminClient iac = new ESClient().getClient().admin().indices();
-
+                
                 createNewIndex(iac, workingIndex);
                 createNewIndex(iac, liveIndex);
-
+                
                 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
                 IndiciesInfo newinfo=new IndiciesInfo();
                 newinfo.working=info.working;
@@ -208,10 +164,10 @@ public class ESIndexAPI {
                 newinfo.reindex_working=workingIndex;
                 newinfo.reindex_live=liveIndex;
                 APILocator.getIndiciesAPI().point(newinfo);
-
+                
                 ESUtils.moveIndexToLocalNode(workingIndex);
                 ESUtils.moveIndexToLocalNode(liveIndex);
-
+                
                 return timeStamp;
             } catch (Exception e) {
                 throw new ElasticSearchException(e.getMessage(), e);
@@ -220,12 +176,12 @@ public class ESIndexAPI {
 	    else
 	        return initIndex();
 	}
-
+	
 	public boolean isInFullReindex() throws DotDataException {
 	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 	    return info.reindex_working!=null && info.reindex_live!=null;
 	}
-
+	
 	/**
 	 * This will drop old index and will point read aliases to new index.
 	 * This method should be called after call to {@link #setUpFullReindex()}
@@ -234,34 +190,34 @@ public class ESIndexAPI {
 	public synchronized void fullReindexSwitchover() {
     	try {
     	    if(!isInFullReindex()) return;
-
+            
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-
+            
             Logger.info(this, "Executing switchover from old index ["
                    +info.working+","+info.live+"] and new index ["
                    +info.reindex_working+","+info.reindex_live+"]");
-
+            
             final String oldw=info.working;
             final String oldl=info.live;
-
+            
             IndiciesInfo newinfo=new IndiciesInfo();
             newinfo.working=info.reindex_working;
             newinfo.live=info.reindex_live;
             APILocator.getIndiciesAPI().point(newinfo);
-
+            
             ESUtils.moveIndexBackToCluster(newinfo.working);
             ESUtils.moveIndexBackToCluster(newinfo.live);
-
+            
             ArrayList<String> list=new ArrayList<String>();
             list.add(newinfo.working);
             list.add(newinfo.live);
             optimize(list);
-
+            
 	    } catch (Exception e) {
             throw new ElasticSearchException(e.getMessage(), e);
         }
 	}
-
+	
 	public boolean delete(String indexName) {
 		try {
 			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
@@ -288,33 +244,33 @@ public class ESIndexAPI {
 			throw new ElasticSearchException(e.getMessage());
 		}
 	}
-
+	
 	public void addContentToIndex(final Contentlet content) throws DotHibernateException {
 	    addContentToIndex(content, true);
 	}
-
+	
 	public void addContentToIndex(final Contentlet content, final boolean deps) throws DotHibernateException {
 	    addContentToIndex(content,deps,false);
 	}
-
+	
 	public void addContentToIndex(final Contentlet content, final boolean deps, boolean indexBeforeCommit) throws DotHibernateException {
 	    addContentToIndex(content,deps,indexBeforeCommit,false);
 	}
-
+	
 	public void addContentToIndex(final Contentlet content, final boolean deps, boolean indexBeforeCommit, final boolean reindexOnly) throws DotHibernateException {
 	    addContentToIndex(content,deps,indexBeforeCommit,reindexOnly,null);
 	}
-
+	
 	public void addContentToIndex(final Contentlet content, final boolean deps, boolean indexBeforeCommit, final boolean reindexOnly, final BulkRequestBuilder bulk) throws DotHibernateException {
 
 	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;
-
+	    
 	    Runnable indexAction=new Runnable() {
             public void run() {
                 try {
                     Client client=new ESClient().getClient();
                     BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
-
+                    
                     // http://jira.dotmarketing.net/browse/DOTCMS-6886
                     // check for related content to reindex
                     List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
@@ -323,16 +279,16 @@ public class ESIndexAPI {
                         contentToIndex.addAll(loadDeps(content));
                     
                     indexContentletList(req, contentToIndex,reindexOnly);
-
+                    
                     if(bulk==null && req.numberOfActions()>0)
                         req.execute().actionGet();
-
+                    
                 } catch (Exception e) {
                     Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
                 }
             }
         };
-
+	    
 	    if(bulk!=null || indexBeforeCommit) {
 	        indexAction.run();
 	    }
@@ -342,14 +298,13 @@ public class ESIndexAPI {
             HibernateUtil.addCommitListener(indexAction);
 	    }
 	}
-
+	
 	private void indexContentletList(BulkRequestBuilder req, List<Contentlet> contentToIndex, boolean reindexOnly) throws DotStateException, DotDataException, DotSecurityException, DotMappingException {
-
 		for(Contentlet con : contentToIndex) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
             String mapping=null;
-
+            
             if(con.isWorking()) {
                 mapping=mappingAPI.toJson(con);
                 if(!reindexOnly)
@@ -359,7 +314,7 @@ public class ESIndexAPI {
                     req.add(new IndexRequest(info.reindex_working, "content", id)
                                 .source(mapping));
             }
-
+            
             if(con.isLive()) {
                 if(mapping==null)
                     mapping=mappingAPI.toJson(con);
@@ -372,19 +327,19 @@ public class ESIndexAPI {
             }
         }
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	private List<Contentlet> loadDeps(Contentlet content) throws DotDataException, DotSecurityException {
 	    List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
 	    List<String> depsIdentifiers=mappingAPI.dependenciesLeftToReindex(content);
         for(String ident : depsIdentifiers) {
             // get working and live version for all languages based on the identifier
-            String sql = "select distinct inode from contentlet join contentlet_version_info " +
+            String sql = "select distinct inode from contentlet join contentlet_lang_version_info " +
                     " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
             DotConnect dc = new DotConnect();
             dc.setSQL(sql);
             dc.addParam(ident);
-            List<Map<String,String>> ret = dc.loadResults();
+            List<Map<String,String>> ret = dc.loadResults(); 
             for(Map<String,String> m : ret) {
                 String inode=m.get("inode");
                 Contentlet con=APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false);
@@ -393,15 +348,15 @@ public class ESIndexAPI {
         }
         return contentToIndex;
 	}
-
+	
 	public void removeContentFromIndex(final Contentlet content) throws DotHibernateException {
 	    removeContentFromIndex(content, false);
 	}
-
+	
 	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException {
-
+	    
 	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;
-
+	    
 	    // add a commit listener to index the contentlet if the entire
         // transaction finish clean
         HibernateUtil.addCommitListener(new Runnable() {
@@ -411,38 +366,38 @@ public class ESIndexAPI {
             	    Client client=new ESClient().getClient();
             	    BulkRequestBuilder bulk=client.prepareBulk();
             	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-
+            	    
             	    bulk.add(client.prepareDelete(info.live, "content", id));
             	    if(info.reindex_live!=null)
             	        bulk.add(client.prepareDelete(info.reindex_live, "content", id));
-
+    	        
         	        if(!onlyLive) {
-
+        	            
         	            // here we search for relationship fields pointing to this
-        	            // content to be deleted. Those contentlets are reindexed
+        	            // content to be deleted. Those contentlets are reindexed 
         	            // to avoid left those fields making noise in the index
         	            List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(content.getStructure());
         	            for(Relationship rel : relationships) {
         	                String q = "";
         	                boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
-
+        	                
         	                if(isSameStructRelationship)
-        	                    q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + content.getIdentifier() + " " +
+        	                    q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + content.getIdentifier() + " " + 
         	                        rel.getRelationTypeValue() + "-child:" + content.getIdentifier() + ") ";
         	                else
         	                    q = "+type:content +" + rel.getRelationTypeValue() + ":" + content.getIdentifier();
-
+        	                
         	                List<Contentlet> related = APILocator.getContentletAPI().search(q, -1, 0, null, APILocator.getUserAPI().getSystemUser(), false);
         	                indexContentletList(bulk, related, false);
         	            }
-
+        	            
         	            bulk.add(client.prepareDelete(info.working, "content", id));
         	            if(info.reindex_working!=null)
         	                bulk.add(client.prepareDelete(info.reindex_working, "content", id));
         	        }
-
+                    
                     bulk.execute().actionGet();
-
+                    
         	    }
         	    catch(Exception ex) {
         	        throw new ElasticSearchException(ex.getMessage(),ex);
@@ -450,15 +405,15 @@ public class ESIndexAPI {
             }
         });
 	}
-
+	
 	public void removeContentFromLiveIndex(final Contentlet content) throws DotHibernateException {
         removeContentFromIndex(content, true);
     }
-
+	
 	public void removeContentFromIndexByStructureInode(String structureInode) throws DotDataException {
 	    String structureName=StructureCache.getStructureByInode(structureInode).getVelocityVarName();
 	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-
+	    
 	    // collecting indexes
 	    List<String> idxs=new ArrayList<String>();
 	    idxs.add(info.working);
@@ -469,7 +424,7 @@ public class ESIndexAPI {
 	        idxs.add(info.reindex_live);
 	    String[] idxsArr=new String[idxs.size()];
 	    idxsArr=idxs.toArray(idxsArr);
-
+	    
 	    // deleting those with the specified structure inode
 	    new ESClient().getClient().prepareDeleteByQuery()
               .setIndices(idxsArr)
@@ -480,52 +435,52 @@ public class ESIndexAPI {
     public void fullReindexAbort() {
         try {
             if(!isInFullReindex()) return;
-
+            
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-
+            
             final String rew=info.reindex_working;
             final String rel=info.reindex_live;
-
+            
             IndiciesInfo newinfo=new IndiciesInfo();
             newinfo.working=info.working;
             newinfo.live=info.live;
             APILocator.getIndiciesAPI().point(newinfo);
-
+            
             ESUtils.moveIndexBackToCluster(rew);
             ESUtils.moveIndexBackToCluster(rel);
-
+            
         } catch (Exception e) {
             throw new ElasticSearchException(e.getMessage(), e);
         }
     }
-
+    
     public boolean isDotCMSIndexName(String indexName) {
         return indexName.startsWith(ES_WORKING_INDEX_NAME+"_") || indexName.startsWith(ES_LIVE_INDEX_NAME+"_");
     }
-
+    
     /**
      * Returns a list of dotcms working and live indices.
      * @return
      */
     public List<String> listDotCMSIndices() {
         Client client=new ESClient().getClient();
-        Map<String,IndexStatus> indices=getIndicesAndStatus();
+        Map<String,IndexStatus> indices=getIndicesAndStatus();        
         List<String> indexNames=new ArrayList<String>();
-
+        
         for(String idx : indices.keySet())
             if(isDotCMSIndexName(idx))
                 indexNames.add(idx);
-
+        
         List<String> existingIndex=new ArrayList<String>();
         for(String idx : indexNames)
             if(client.admin().indices().exists(new IndicesExistsRequest(idx)).actionGet().exists())
                 existingIndex.add(idx);
         indexNames=existingIndex;
-
+    
         List<String> indexes = new ArrayList<String>();
         indexes.addAll(indexNames);
         Collections.sort(indexes, new IndexSortByDate());
-
+        
         return indexes;
     }
 
@@ -545,7 +500,7 @@ public class ESIndexAPI {
         APILocator.getIndiciesAPI().point(newinfo);
     }
 
-    public void deactivateIndex(String indexName) throws DotDataException, IOException {
+    public void deactivateIndex(String indexName) throws DotDataException, IOException { 
         IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
         IndiciesInfo newinfo=new IndiciesInfo();
         newinfo.working=info.working;
@@ -568,7 +523,7 @@ public class ESIndexAPI {
         }
         APILocator.getIndiciesAPI().point(newinfo);
     }
-
+    
     /**
      * returns all indicies and status
      * @return
@@ -578,21 +533,6 @@ public class ESIndexAPI {
         return client.admin().indices().status(new IndicesStatusRequest()).actionGet().getIndices();
     }
     
-    /**
-     * returns cluster health
-     * @return
-     */
-    public Map<String,ClusterIndexHealth> getClusterHealth() {
-        AdminClient client=new ESClient().getClient().admin();
-        
-        ClusterHealthRequest req = new ClusterHealthRequest();
-        ActionFuture<ClusterHealthResponse> chr = client.cluster().health(req);
-        
-        ClusterHealthResponse res  = chr.actionGet();
-        Map<String,ClusterIndexHealth> map  = res.getIndices();
-        
-        return map;
-    }
     public synchronized List<String> getCurrentIndex() throws DotDataException {
         List<String> newIdx = new ArrayList<String>();
         IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
@@ -600,7 +540,7 @@ public class ESIndexAPI {
         newIdx.add(info.live);
         return newIdx;
     }
-
+    
     public synchronized List<String> getNewIndex() throws DotDataException {
         List<String> newIdx = new ArrayList<String>();
         IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
@@ -610,7 +550,7 @@ public class ESIndexAPI {
             newIdx.add(info.reindex_live);
         return newIdx;
     }
-
+    
     private class IndexSortByDate implements Comparator<String> {
         public int compare(String o1, String o2) {
             if(o1 == null || o2==null ){
@@ -627,33 +567,4 @@ public class ESIndexAPI {
             return two.compareTo(one);
         }
     }
-    
-    
-    public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
-       
-		Map<String,ClusterIndexHealth> idxs = new ESIndexAPI().getClusterHealth();
-		ClusterIndexHealth health = idxs.get( indexName);
-		if(health ==null){
-			return;
-		}
-		int curReplicas = health.getNumberOfReplicas();
-
-		if(curReplicas != replicas){
-			
-			
-			Map newSettings = new HashMap();
-	        newSettings.put("index.number_of_replicas", replicas+"");
-			
-			
-			UpdateSettingsRequestBuilder usrb = new ESClient().getClient().admin().indices().prepareUpdateSettings(indexName);
-			usrb.setSettings(newSettings);
-			usrb.execute().actionGet(); 
-		}
-      
-    }
-
-    
-    
-    
-    
 }

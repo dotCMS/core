@@ -37,7 +37,7 @@ public class VelocityUtil {
 
 	private static VelocityEngine ve = null;
 	private static String dotResourceLoaderClassName = null;
-	
+
 	private synchronized static void init(){
 		if(ve != null)
 			return;
@@ -50,7 +50,7 @@ public class VelocityUtil {
 			Logger.error(VelocityUtil.class,e.getMessage(),e);
 		}
 	}
-	
+
 	public static VelocityEngine getEngine(){
 		if(ve == null){
 			init();
@@ -85,7 +85,7 @@ public class VelocityUtil {
 		}
 		return dotResourceLoaderClassName;
 	}
-	
+
 	public String parseVelocity(String velocityCode, Context ctx){
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter stringWriter = new StringWriter();
@@ -95,19 +95,19 @@ public class VelocityUtil {
 		Logger.error(this,e.getMessage(),e);
 		}
 		return stringWriter.toString(); 
-		
+
 	}
 
 	public static String convertToVelocityVariable(String variable) {
 		return convertToVelocityVariable(variable, false);
 	}
-	
+
 	public static String convertToVelocityVariable(String variable, boolean firstLetterUppercase){
-		
+
 		Boolean upperCase = firstLetterUppercase;
 		String velocityvar = "";
 		String re = "[^a-zA-Z0-9]+";
-		
+
 		for(int i=0;i < variable.length() ; i++){
 			Character c = variable.charAt(i);
 			if(upperCase){
@@ -126,12 +126,12 @@ public class VelocityUtil {
 		}
 		velocityvar = velocityvar.replaceAll(re, "");
 		return velocityvar; 
-		
+
 	}
-	
-	
+
+
 	public static Boolean isNotAllowedVelocityVariableName(String variable){
-		
+
 
 		String [] notallwdvelvars={"inode","type", "modDate", "owner", "ownerCanRead", "ownerCanWrite", "ownerCanPublish",
 				"modUser", "working", "live", "deleted", "locked","structureInode", "languageId", "permissions",
@@ -141,7 +141,7 @@ public class VelocityUtil {
 			 if(variable.equalsIgnoreCase(notallowed)){
 				 found=true;
 			 }
-			
+
 		}
 		return found;
 	}
@@ -154,7 +154,7 @@ public class VelocityUtil {
 
 	public static Context getBasicContext() {
 		Context context = new VelocityContext();
-		
+
 		context.put("UtilMethods", new UtilMethods());
 		context.put("PortletURLUtil", new PortletURLUtil());
 		context.put("quote", "\"");
@@ -165,8 +165,8 @@ public class VelocityUtil {
 		context.put("InodeUtils", new InodeUtils());
 		return context;
 	}
-	
-	
+
+
 	/**
 	 * Gets creates Velocity context will all the toolbox, user, host, language and request stuff
 	 * inside the map
@@ -177,19 +177,19 @@ public class VelocityUtil {
 	public static ChainedContext getWebContext(HttpServletRequest request, HttpServletResponse response) {
 		return getWebContext(getBasicContext(), request, response);
 	}
-	
-	
+
+
 	public static ChainedContext getWebContext(Context ctx, HttpServletRequest request, HttpServletResponse response) {
 		if(ctx ==null){
 			ctx = getBasicContext();
 		}	
-		
-		
 
-		
+
+
+
 		// http://jira.dotmarketing.net/browse/DOTCMS-2917
 
-		
+
 
 		//get the context from the request if possible
 		ChainedContext context = null;
@@ -199,8 +199,8 @@ public class VelocityUtil {
 			RequestWrapper rw = new RequestWrapper(request);
 			context = new ChainedContext(ctx, getEngine(), rw, response, Config.CONTEXT);
 		}
-		
-		
+
+
 
 
 		context.put("context", context);
@@ -216,7 +216,7 @@ public class VelocityUtil {
 		context.put("languages", getLanguages());
 		context.put("language", (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
 
-		
+
 		try {
 			Host host;
 			host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
@@ -224,7 +224,7 @@ public class VelocityUtil {
 		} catch (Exception e) {
 			Logger.error(VelocityUtil.class,e.getMessage(),e);
 		}
-		
+
 		context.put("pdfExport", false);
 		com.liferay.portal.model.User user = null;
 
@@ -248,15 +248,15 @@ public class VelocityUtil {
 		template.merge(ctx, sw);
 
 		return sw.toString();
-		
+
 	}
-	
+
 	public static String eval(String velocity, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter sw = new StringWriter();
 		ve.evaluate( ctx, sw, "velocity eval", velocity );
 		return sw.toString();
-		
+
 	}
 	private static ToolboxManager toolboxManager=null;
 	private static ToolboxManager getToolboxManager(){
@@ -270,9 +270,9 @@ public class VelocityUtil {
 		}
 		return toolboxManager;
 	}
-	
+
 	private static List<Language> languages =null;
-	
+
 	private static List<Language> getLanguages(){
 		if(languages ==null){
 			synchronized (VelocityUtil.class) {
@@ -282,11 +282,11 @@ public class VelocityUtil {
 			}
 		}
 		return languages;
-		
-	}
-	
 
-	
+	}
+
+
+
 	public static void makeBackendContext(Context context, HTMLPage htmlPage, String cmsTemplateInode, String idURI, HttpServletRequest request,
 			boolean ADMIN_MODE, boolean EDIT_MODE, boolean PREVIEW_MODE, Host host) throws DotDataException {
 		context.put("context", context);
@@ -438,10 +438,10 @@ public class VelocityUtil {
 
 	}
 
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 }

@@ -1,4 +1,3 @@
-<%@page import="com.dotmarketing.util.UtilHTML"%>
 <%@ include file="/html/portlet/ext/files/init.jsp" %>
 
 <%@ page import="com.dotmarketing.util.Config" %>
@@ -212,7 +211,7 @@ function togglePublish(){
 			<%= LanguageUtil.get(pageContext, "Title") %></a>
 		</th>
 				
-		<th nowrap style="width:35px;" align=""><%= LanguageUtil.get(pageContext, "Status") %></th>
+		<th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "Status") %></th>
 		
 		<th nowrap width="30%">
 			<a href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
@@ -284,16 +283,10 @@ function togglePublish(){
 		</td>
 		
 		<td id="td<%=k%>">
-			<span class="uknIcon <%=UtilMethods.getFileExtension(file.getFileName())%>Icon"></span>
-			
+			<span class="uknIcon <%=file.getExtension()%>Icon"></span>
 			<%=file.getFileName()%>
 		</td>
-		<td nowrap="true">
-		
-			<%=UtilHTML.getStatusIcons(file) %>
-
-
-		</td>
+		<td><%= com.dotmarketing.util.UtilHTML.getStatusIcons(file,COMMON_IMG,true) %></td>
 		<td><%=file.getTitle()==null?"":file.getTitle()%></td>
 		<td nowrap><%=pathToMe%></td>
 		<td nowrap>

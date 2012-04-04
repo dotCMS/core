@@ -2,13 +2,13 @@ package com.dotmarketing.startup.runonce;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.MaintenanceUtil;
@@ -16,8 +16,6 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 
 public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask implements StartupTask  {
-
-
 
 	public Task00769UpdateTagDataModel() {
 		setRebuildForeignKeys(false);
@@ -33,8 +31,8 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 	private String query2 = "ALTER TABLE tag_inode add tag_id varchar(100);";
 	private String query3 = "ALTER TABLE tag ADD host_id varchar(255);";
 	private String query4 = "UPDATE tag set host_id = '"+Host.SYSTEM_HOST+"' ;";
-	private String query5 = "DELETE FROM tag_inode where not exists (select * from tag where tag.tagname=tag_inode.tagname);" ;
-	private String query6 ="DELETE FROM tag where not exists (select * from tag_inode where tag_inode.tagname=tag.tagname);";
+	private String query5 = "DELETE FROM tag_inode where tagname not in (select tagname from tag);" ;
+	private String query6 ="DELETE FROM tag where tagname not in (select tagname from tag_inode);";
 	private String queryPRE8MSSQL = "alter table tag alter column tag_id varchar(100) not null;";
 	private String query8 = "alter table tag add constraint tag_pkey primary key (tag_id);";
 	private String query8MySQL ="ALTER TABLE tag ADD PRIMARY KEY (tag_id);";
@@ -51,44 +49,16 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 	@SuppressWarnings("unchecked")
 	private String getUpdateTagsId() {
 
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder("");
 
 		try {
 			DotConnect dc = new DotConnect();
-			DbConnectionFactory.getConnection().setAutoCommit(true);
-			
-			String replaceStr;
-			if(DbConnectionFactory.isOracle()) {
-			    replaceStr="translate(translate(translate(tagname,CHR(10),' '),CHR(13),' '),CHR(09),' ')";
+			dc.executeStatement("UPDATE tag set tagname = replace(tagname,'\\\\r',' ')");
+			try {
+			dc.executeStatement("UPDATE tag_inode set tagname = replace(tagname,'\\\\r',' ')");
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			else if(DbConnectionFactory.isMsSql()) {
-			    replaceStr="replace(replace(replace(tagname,CHAR(09),' '),CHAR(10),' '),CHAR(13),' ')";
-			}
-			else {
-			    replaceStr="replace(replace(replace(tagname,'\\n',' '),'\\r',' '),'\\t',' ')";
-			}
-			
-			Set<String> replacedNames = new HashSet<String>();
-			dc.setSQL("SELECT tagname, "+replaceStr+" AS replaced FROM tag");
-			List<HashMap<String,String>> results=dc.loadResults();
-			for(HashMap<String,String> names : results) {
-			    String tag=names.get("tagname");
-			    String replaced=names.get("replaced");
-			    if(replacedNames.contains(replaced)) {
-			        // we need to avoid dupes
-			        dc.setSQL("DELETE FROM tag WHERE tagname=?");
-			        dc.addParam(tag);
-			        dc.loadResult();
-			    }
-			    else {
-			        replacedNames.add(replaced);
-			    }
-			}
-			
-			
-			dc.executeStatement("UPDATE tag set tagname = " + replaceStr);
-			dc.executeStatement("UPDATE tag_inode set tagname = " + replaceStr);
-			
 			//update tag and tag_inode ids
 			dc.setSQL(pullTagNames);
 			List<HashMap<String,String>> tagNames = dc.loadResults();
@@ -105,18 +75,16 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 
 					if(DbConnectionFactory.isPostgres()) {
 						sb.append("UPDATE tag set tag_id = '").append(uuid).append("' where tagname = E'").append(tag).append("'; ");
-						//sb.append("UPDATE tag_inode set tag_id = '").append(uuid).append("' where tagname in(select tagname from tag where tagname = E'").append(tag).append("'); ");
-						sb.append("UPDATE tag_inode set tag_id = '").append(uuid).append("' where tagname = E'").append(tag).append("' and exists (select tagname from tag where tagname = E'").append(tag).append("'); ");
+						sb.append("UPDATE tag_inode set tag_id = '").append(uuid).append("' where tagname in(select tagname from tag where tagname = E'").append(tag).append("'); ");
 					} else {
 						sb.append("UPDATE tag set tag_id = '").append(uuid).append("' where tagname = '").append(tag).append("'; ");
-						//sb.append("UPDATE tag_inode set tag_id = '").append(uuid).append("' where tagname in(select tagname from tag where tagname = '").append(tag).append("'); ");
-						sb.append("UPDATE tag_inode set tag_id = '").append(uuid).append("' where tagname = '").append(tag).append("' and exists (select tagname from tag where tagname = '").append(tag).append("'); ");
+						sb.append("UPDATE tag_inode set tag_id = '").append(uuid).append("' where tagname in(select tagname from tag where tagname = '").append(tag).append("'); ");
 					}
 				}
 			}
 
 		} catch(Exception e) {
-			e.printStackTrace();
+		    throw new RuntimeException(e);
 		}
 
 		return sb.toString();
@@ -142,7 +110,7 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 						sb.append(" values('").append(UUIDGenerator.generateUuid()).append("', ");
 						sb.append(" '").append(layout.get("id")).append("', ");
 						sb.append(" UPPER('").append("EXT_TAG_MANAGER").append("'), ");
-						sb.append(" '").append(10).append("') ; ");
+						sb.append(" '").append(11).append("') ; ");
 					}
 				}
 				MaintenanceUtil.flushCache();
@@ -160,6 +128,12 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 
 
 	private String getSQLs() {
+	    try {
+            HibernateUtil.startTransaction();
+        } catch (DotHibernateException e2) {
+            throw new RuntimeException(e2);
+        }
+	    
 		StringBuilder sb = new StringBuilder();
 		sb.append(query1);
 		sb.append(query2);
@@ -186,7 +160,18 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 		sb.append(query11);
 		sb.append(query12);
 		sb.append(getInsertLayouts());
-
+		
+		try {
+		    // we  need to commit to release locks in
+		    // the threadlocal connection
+            HibernateUtil.commitTransaction();
+        } catch (DotHibernateException e) {
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {}
+            throw new RuntimeException(e);
+        }
+		
 		return sb.toString();
 	}
 

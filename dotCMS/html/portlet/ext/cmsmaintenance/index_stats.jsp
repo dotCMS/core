@@ -26,6 +26,7 @@ ContentletAPI capi = APILocator.getContentletAPI();
 
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
+
 	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
 		throw new DotSecurityException("Invalid user accessing index_stats.jsp - is user '" + user + "' logged in?");
 	}
@@ -54,89 +55,133 @@ Map<String, IndexStatus> indexInfo = idxApi.getIndicesAndStatus();
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
 
 
-Map<String,ClusterIndexHealth> map = new ESIndexAPI().getClusterHealth();
+
+
 
 
 %>
 
 <script language="Javascript">
-	dojo.require("dijit.DropDownMenu");
 	dojo.addOnLoad (function(){
 		checkReindexation();
-	});
+	});	
 </script>
 
 <style>
-	.trIdxBuilding{
-	background:#F8ECE0;
-	}
-	.trIdxActive{
-	background:#D8F6CE;
-	}
-	.trIdxNothing td{
-	color:#aaaaaa;
-	
-	}
-	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
-	 #restoreIndexUploader {
-	   width:200px !important;
-	 }
-	 #uploadProgress {
-	   float: right;
-	   display: none;
-	 }
+.trIdxBuilding{
+background:#F8ECE0;
+}
+.trIdxActive{
+background:#D8F6CE;
+}
+.trIdxNothing td{
+color:#aaaaaa;
+
+}
+
 </style>
 
 
 
 
-
-
-
-
-
-
-
-		<div class="buttonRow" style="text-align: right;padding:20px;">
-
-			<div dojoType="dijit.form.DropDownButton">
-				<span><%= LanguageUtil.get(pageContext,"Add-Index") %></span>
-					<div dojoType="dijit.Menu">
-					
-					 	<div dojoType="dijit.MenuItem" onClick="doCreateWorking();">
-		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"Create-Working-Index") %>
-		                </div>
-		                <div dojoType="dijit.MenuItem" onClick="doCreateLive();" >
-		                    <span class="addIcon"></span>
-		                    <%= LanguageUtil.get(pageContext,"Create-Live-Index") %>
-		                </div>
-		           </div>
-			</div>
-		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="reloadIcon">
-               <%= LanguageUtil.get(pageContext,"Refresh") %>
-            </button>
+	<div style="height:20px">&nbsp;</div>
 		
-		
+		<div class="indexActionsDiv" <%=(idxApi.isInFullReindex()) ? "style='display:none'" : "" %>>
+			<table class="listingTable">
+				<tr>
+					<th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
+				</tr>
+				<tr>
+					<td colspan="2" align="center">
+						<div id="currentIndexDirDiv"></div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<div id="lastIndexationDiv"></div>
+			
+							<%= LanguageUtil.get(pageContext,"Reindex") %>:
+							<select id="structure" dojoType="dijit.form.ComboBox" style="width:250px;" autocomplete="true" name="structure" onchange="indexStructureChanged();">
+								<option><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
+								<%
+
+									for(Structure structure : structs){%>
+									<option><%=structure.getVelocityVarName()%></option>
+								<%}%>
+							</select>
+			
+					</td>
+					<td style="text-align:center;white-space:nowrap;" width="350">
+			            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="reindexIcon" onClick="doFullReindex()">
+			                <%= LanguageUtil.get(pageContext,"Reindex-Structure(s)") %>
+			            </button>
+			            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton">
+			                <%= LanguageUtil.get(pageContext,"Delete-Reindex-Structure") %>
+			            </button>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<%= LanguageUtil.get(pageContext,"Optimize-Index") %> (<%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> )
+					</td>
+					<td align="center">
+			        	<button dojoType="dijit.form.Button"  iconClass="shrinkIcon" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
+			            	<%= LanguageUtil.get(pageContext,"Optimize-Index") %>
+						</button>
+			    	 </td>
+				</tr>
+			</table>
 		</div>
-
+		
+		<!-- START Re-Index Progress Display -->		
+		<div id="reindexationInProgressDiv"  <%=(idxApi.isInFullReindex()) ? "" : "style='display:none'" %>>
+			<table class="listingTable">
+				<tr>
+					<th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
+				</tr>
+				<tr>
+					<td colspan="2" align="center">
+						<div>
+							<%= LanguageUtil.get(pageContext,"A-reindexation-process-is-in-progress") %>
+						</div>
+						<div id="indexationStartTimeDiv"></div>
+						<div id="newIndexDirPathDiv"></div>
+						<div style="width:200px" maximum="200" id="reindexProgressBar" progress="0" dojoType="dijit.ProgressBar"></div>
+						<div id="indexationProgressDiv"></div>
+					</div>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2" align="center">
+						<button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexing();">
+			                <%= LanguageUtil.get(pageContext,"Stop-Reindexation") %>
+			            </button>					
+					</td>
+				</tr>				
+			</table>
+		</div>
+		
+		
+		
+		
+		
+		<div style="height:20px">&nbsp;</div>
+		
 
 		<table class="listingTable">
 			<thead>
 				<tr>
-					<th style="text-align: center">Status</th>
+					<th>Status</th>
 					<th>Index Name</th>
 					<th>Created</th>
-					<th style="text-align: center">Count</th>
-					<th style="text-align: center">Shards</th>
-					<th style="text-align: center">Replicas</th>
-					<th style="text-align: center">Size</th>
-					<th style="text-align: center">Health</th>
+					<th>Count</th>
+					<th>Shards</th>
+					<th>Size</th>
+
 				</tr>
 			</thead>
 			<%for(String x : indices){%>
-				<%ClusterIndexHealth health = map.get(x); %>
 				<%IndexStatus status = indexInfo.get(x); %>
-
 				<%boolean active =currentIdx.contains(x);%>
 				<%boolean building =newIdx.contains(x);%>
 				<%	Date d = null;
@@ -144,16 +189,16 @@ Map<String,ClusterIndexHealth> map = new ESIndexAPI().getClusterHealth();
 					try{
 						 myDate = x.split("_")[1];
 						d = dater.parse(myDate);
-
+						
 						myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
 						}
 						catch(Exception e){
-
+						
 					}%>
-
+				
 
 				<tr class="<%=(active) ? "trIdxActive" : (building) ? "trIdxBuilding" : "trIdxNothing" %>" id="<%=x%>Row">
-					<td  align="center" class="showPointer" >
+					<td  class="showPointer" >
 						<%if(active){ %>
 							<%= LanguageUtil.get(pageContext,"active") %>
 						<%}else if(building){ %>
@@ -162,42 +207,38 @@ Map<String,ClusterIndexHealth> map = new ESIndexAPI().getClusterHealth();
 					</td>
 					<td  class="showPointer" ><%=x %></td>
 					<td><%=UtilMethods.webifyString(myDate) %></td>
-
-					<td align="center">
-						<%=(status !=null && status.getDocs() != null) ? status.getDocs().numDocs(): "n/a"%>
+				
+					<td>
+					
+						<%=status.getDocs().getNumDocs()%>
 					</td>
-					<td align="center"><%=(status !=null) ? status.getShards().size() : "n/a"%></td>
-					<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
-					<td align="center"><%=(status !=null) ? status.getStoreSize(): "n/a"%></td>
-					<td align="center"><div  style='background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
+					<td><%=status.getShards().size() %></td>
+					<td><%=status.getStoreSize()%></td>
+
 				</tr>
 			<%} %>
 			<tr>
 				<td colspan="15" align="center" style="padding:20px;"><a href="#" onclick="refreshIndexStats()"><%= LanguageUtil.get(pageContext,"refresh") %></a></td>
 			</tr>
-
+			
 		</table>
-
-
-
-
-
+		
+		
+		
+		
+		
 		<%---   RIGHT CLICK MENUS --%>
-
-		<%for(String x : indices){%>
-			<%boolean active =currentIdx.contains(x);%>
-			<%boolean building =newIdx.contains(x);%>
-			<%if(building)continue; %>
-			<%ClusterIndexHealth health = map.get(x); %>
-			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
-			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
-                 
-                <div dojoType="dijit.MenuItem" onClick="updateReplicas('<%=x %>',<%=health.getNumberOfReplicas()%>);" class="showPointer">
-                    <span class="fixIcon"></span>
-                    <%= LanguageUtil.get(pageContext,"Update-Replicas-Index") %>
+		
+		<%for(String x : indices){%>	
+			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" targetNodeIds="<%=x%>Row">
+			 	<div dojoType="dijit.MenuItem" onClick="doCreateWorking();" class="showPointer">
+                    <span class="addIcon"></span>
+                    <%= LanguageUtil.get(pageContext,"Create-Working-Index") %>
                 </div>
-                
-                
+                <div dojoType="dijit.MenuItem" onClick="doCreateLive();" class="showPointer">
+                    <span class="addIcon"></span>
+                    <%= LanguageUtil.get(pageContext,"Create-Live-Index") %>
+                </div>
 			 	<div dojoType="dijit.MenuItem" onClick="showRestoreIndexDialog('<%=x %>');" class="showPointer">
 			 		<span class="uploadIcon"></span>
 			 		<%= LanguageUtil.get(pageContext,"Restore-Index") %>
@@ -206,96 +247,87 @@ Map<String,ClusterIndexHealth> map = new ESIndexAPI().getClusterHealth();
 			 		<span class="downloadIcon"></span>
 			 		<%= LanguageUtil.get(pageContext,"Download-Index") %>
 			 	</div>
-			 	<%if(!active){%>
 			 	<div dojoType="dijit.MenuItem" onClick="doActivateIndex('<%=x %>');" class="showPointer">
 			 		<span class="publishIcon"></span>
 			 		<%= LanguageUtil.get(pageContext,"Activate-Index") %>
 			 	</div>
-			 	<%}else{ %>
 			 	<div dojoType="dijit.MenuItem" onClick="doDeactivateIndex('<%=x %>');" class="showPointer">
 			 		<span class="unpublishIcon"></span>
 			 		<%= LanguageUtil.get(pageContext,"Deactivate-Index") %>
 			 	</div>
-			 	<%} %>
 			 	<div dojoType="dijit.MenuItem" onClick="doClearIndex('<%=x %>');" class="showPointer">
 			 		<span class="shrinkIcon"></span>
 			 		<%= LanguageUtil.get(pageContext,"Clear-Index") %>
 			 	</div>
-			 	<%if(!active){%>
-				 	<div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', <%=(currentIdx.contains(x)) %>)" class="showPointer">
-				 		<span class="deleteIcon"></span>
-				 		<%= LanguageUtil.get(pageContext,"Delete-Index") %>
-				 	</div>
-			 	<%} %>
+			 	<div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', <%=(currentIdx.contains(x)) %>)" class="showPointer">
+			 		<span class="deleteIcon"></span>
+			 		<%= LanguageUtil.get(pageContext,"Delete-Index") %>
+			 	</div>
 			</div>
 		<%} %>
-
-
-
-
+		
+		
+		<style type="text/css">
+		  #restoreIndexUploader {
+		    width:200px !important;
+		  }
+		  #uploadProgress {
+		    float: right;
+		    display: none;
+		  }
+        </style>
+		
 		<div data-dojo-type="dijit.Dialog" style="width:400px;" id="restoreIndexDialog">
 		    <img id="uploadProgress" src="/html/images/icons/round-progress-bar.gif"/>
 		    <span id="uploadFileName"></span>
-			<form method="post"
-			      action="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/restoreIndex"
-			      id="restoreIndexForm"
+			<form method="post" 
+			      action="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/restoreIndex" 
+			      id="restoreIndexForm" 
 			      enctype="multipart/form-data">
-
+			   
 			   <input type="hidden" id="indexToRestore" name="indexToRestore" value=""/>
-
-			   <input name="uploadedfile" multiple="false"
+			   
+			   <input name="uploadedfile" multiple="false" 
 			          type="file" data-dojo-type="dojox.form.Uploader"
 			          label="Select File" id="restoreIndexUploader"
 			          showProgress="true"
 			          onComplete="restoreUploadCompleted()"/>
-
-			   <span id="uploadWarningWorking">
-			      <span class="exclamation"></span>
-			      <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Working-Index-Data") %>
-			   </span>
-
-			   <span id="uploadWarningLive">
-			      <span class="exclamation"></span>
-			      <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Live-Index-Data") %>
-			   </span>
-
-			   <br/>
-
+			          
 			   <input type="checkbox" name="clearBeforeRestore"/><%= LanguageUtil.get(pageContext,"Clear-Existing-Data") %>
 		   </form>
 		   <br/>
-
+		   
 		   <button id="uploadSubmit" data-dojo-type="dijit.form.Button" type="button">
 		      <span class="uploadIcon"></span>
 		      <%= LanguageUtil.get(pageContext,"Upload-File") %>
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndex();</script>
            </button>
-
+           
 		   <button data-dojo-type="dijit.form.Button" type="button">
 		      <span class="deleteIcon"></span>
 		      <%= LanguageUtil.get(pageContext,"Close") %>
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreIndex();</script>
            </button>
 		</div>
-
-
-		<%--
+		
+		
+		<%-- 
 		<%if(indices != null && indices.size() >0 ){ %>
 				<div class="buttonRow" style="text-align: left">
-
-
-				<%=LanguageUtil.get(pageContext, "Execute") %> :
+			
+			
+				<%=LanguageUtil.get(pageContext, "Execute") %> : 
 				<select name="performAction" id="performAction" dojoType="dijit.form.FilteringSelect">
 					<option value=""><%=LanguageUtil.get(pageContext, "Delete-Index") %></option>
-
-
-
+				
+				
+				
 				</select>
-
+	
 				<button dojoType="dijit.form.Button" onClick="excuteWorkflowAction()">
 					<%=LanguageUtil.get(pageContext, "Perform-Workflow") %>
 				</button>
-
+		
 				</div>
 			<%} %>
 		--%>

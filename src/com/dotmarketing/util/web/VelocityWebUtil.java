@@ -13,10 +13,10 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
 public class VelocityWebUtil {
-	
+
 	public static Context getVelocityContext(HttpServletRequest request, HttpServletResponse response) throws PortalException, SystemException, DotDataException, DotSecurityException{
 		Context context = VelocityUtil.getWebContext(request, response); 
 		return context;
 	}
-	
+
 }

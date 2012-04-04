@@ -232,11 +232,7 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 	 * @see com.bradmcevoy.http.PutableResource#createNew(java.lang.String, java.io.InputStream, java.lang.Long, java.lang.String)
 	 */
 	public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException, DotRuntimeException {
-		if(newName.startsWith("."))
-		    // http://jira.dotmarketing.net/browse/DOTCMS-7285
-		    return null;
-	    
-	    if(!path.endsWith("/")){
+		if(!path.endsWith("/")){
 			path = path + "/";
 		}
 		if(!dotDavHelper.isTempResource(newName)){

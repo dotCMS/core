@@ -22,8 +22,6 @@ public class Task00800CreateTemplateContainers implements StartupTask{
 		 					 "(id varchar(36) NOT NULL  primary key," +
 		 					 "template_id varchar(36) NOT NULL," +
 		 					 "container_id varchar(36) NOT NULL)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-		    createTable=createTable.replaceAll("varchar\\(", "varchar2\\(");
 		
 		String createIndex = "create index idx_template_id on template_containers(template_id)";
 		

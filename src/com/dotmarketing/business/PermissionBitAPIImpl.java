@@ -42,9 +42,9 @@ import com.liferay.portal.util.PortalUtil;
 
 /**
  * PermissionAPI is an API intended to be a helper class for class to get Permissions.  Classes within the dotCMS
- * should use this API for permissions.  The PermissionAPI will goto the PermissionCache for you so you can use the PermissionAPI
+ * should use this API for permissions.  The PermissionAPI will goto the PermissionCache for you so you can use the PermissionAPI 
  * trusting that you will not be continually hitting the database.
- *
+ *   
  * @author David Torres (2009)
  */
 public class PermissionBitAPIImpl implements PermissionAPI {
@@ -56,7 +56,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	}
 
 	/**
-	 * Builds a PermissionAPI initialized with its dependent objects.
+	 * Builds a PermissionAPI initialized with its dependent objects. 
 	 * @return PermissionFactory service reference
 	 */
 	public PermissionBitAPIImpl(PermissionFactory serviceRef) {
@@ -73,7 +73,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	}
 
 	/**
-	 * Sets a Permission Factory for this API
+	 * Sets a Permission Factory for this API 
 	 * @param PermissionFactory service reference
 	 * @return Nothing
 	 */
@@ -82,25 +82,25 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	}
 
 	/**
-	 *
+	 * 
 	 * @param permissions
 	 * @param permissionTypeToLoadFor
-	 * @return List of type Role for a particular permission.  ie.. All roles with read permission from the collection of permissions passed in
+	 * @return List of type Role for a particular permission.  ie.. All roles with read permission from the collection of permissions passed in  
 	 */
 	private List<Role> loadRolesForPermission(List<Permission> permissions, int permissionTypeToLoadFor) throws NoSuchRoleException {
 		ArrayList<Role> roles = new ArrayList<Role>();
 		for (Permission permission : permissions) {
 			if(permission.matchesPermission(permissionTypeToLoadFor))	{
-				try {
+				try { 
 					Role r = APILocator.getRoleAPI().loadRoleById(permission.getRoleId());
 					if(r != null){
 						roles.add(r);
 					}else{
-						//Preventing failures on deleted roles
+						//Preventing failures on deleted roles	
 						Logger.warn(this, "An orphan permission object found, the referenced role does not exist in the system");
 					}
 				} catch (DotDataException e) {
-					//Preventing failures on deleted roles
+					//Preventing failures on deleted roles	
 					Logger.warn(this, "An orphan permission object found, the referenced role does not exist in the system", e);
 				}
 			}
@@ -109,7 +109,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	}
 
 	/**
-	 *
+	 * 
 	 * @param permissions
 	 * @param permissionTypeToLoadFor
 	 * @return List of type Role for a particular permission.  ie.. All roles with read permission from the collection of permissions passed in
@@ -160,7 +160,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	}
 
 	public boolean doesRoleHavePermission(Permissionable permissionable, int permissionType, Role role) throws DotDataException {
-
+		
 		// if we have bad data
 		if (permissionable != null && (!InodeUtils.isSet(permissionable.getPermissionId())) || (role == null)) {
 			return false;
@@ -187,7 +187,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				} else if (!group.isRequiresAll() && hasPermissionOverPermissionable) {
 					hasPermissionForGroup = true;
 					break;
-				}
+				} 
 			}
 			if(!hasPermissionForGroup)
 				return false;
@@ -204,8 +204,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return false;
 	}
 
-
-
+	
+	
 	public List<Permission> getInheritablePermissionsRecurse(Permissionable permissionable) throws DotDataException {
 		List<Permission> fPerms = getInheritablePermissions(permissionable, false);
 		Permissionable parent = permissionable.getParentPermissionable();
@@ -213,16 +213,16 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			fPerms.addAll(getInheritablePermissions(parent, false));
 			parent = parent.getParentPermissionable();
 		}
-
+		
 		return fPerms;
-
-
+		
+		
 	}
-
-
-
-
-
+	
+	
+	
+	
+	
 
 	public boolean doesUserHaveInheriablePermissions(Permissionable parentPermissionable, String type, int requiredPermissions, User user) throws DotDataException {
 
@@ -230,14 +230,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		String asset = null;
 		boolean haveType=false;
 		for(Permission p : fPerms){
-
-			// stop recursing if we have already found permissions
+			
+			// stop recursing if we have already found permissions 
 			// for the type of asset and the user did not have them.
 			if(haveType && !asset.equals(p.getInode())){
 				return false;
 			}
-
-
+			
+			
 			if(type.equals(p.getType())){
 				if(p.getPermission() == requiredPermissions){
 					if(com.dotmarketing.business.APILocator.getRoleAPI().
@@ -252,10 +252,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		return false;
 	}
-
-
-
-
+	
+	
+	
+	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermission(com.dotmarketing.beans.Inode, int, com.liferay.portal.model.User)
 	 */
@@ -277,14 +277,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 			return false;
 		}
-
+		
 		if(user!=null && user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
 			return true;
 		}
-
+		        
 		// http://jira.dotmarketing.net/browse/DOTCMS-6943
 		// everybody should be able to use file structures
-        if (permissionable instanceof Structure
+        if (permissionable instanceof Structure 
                 && (permissionType==PERMISSION_WRITE || permissionType==PERMISSION_PUBLISH)
                 && ((Structure)permissionable).getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET)
             return true;
@@ -301,14 +301,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
-
+		}	
+		
 		if(user != null && APILocator.getRoleAPI().doesUserHaveRole(user, adminRole))
 			return true;
-
+		
 		List<RelatedPermissionableGroup> permissionDependencies = permissionable.permissionDependencies(permissionType);
 
-
+		
 		List<Permission> perms =  getPermissions(permissionable, true);
 
 		for(Permission p : perms){
@@ -319,20 +319,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 						return true;
 						//if logged in site user has permission
 					}else if(user != null && p.getRoleId().equals(frontEndUserRole.getId())){
-						return true;
+						return true;   
 					}
 				}
 				// if owner and owner has required permission return true
 				try {
-					if(p.getRoleId().equals(cmsOwnerRole.getId()) && user != null &&
-							permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&
+					if(p.getRoleId().equals(cmsOwnerRole.getId()) && user != null && 
+							permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) && 
 							checkRelatedPermissions(permissionDependencies, user)){
 						return true;
 					}
 				} catch (DotDataException e1) {
 					Logger.error(this, e1.getMessage(), e1);
 					throw new DotRuntimeException(e1.getMessage(), e1);
-				}
+				}	
 			}
 		}
 
@@ -348,7 +348,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
+		}	
 		List<String> userRoleIds= new ArrayList<String>();
 		for (Role role : roles) {
 			try{
@@ -365,14 +365,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		return doRolesHavePermission(userRoleIds,getPermissions(permissionable, true),permissionType);
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#removePermissionsOnInode(com.dotmarketing.beans.Inode)
 	 */
 	public void removePermissions(Permissionable permissionable) throws DotDataException {
 
 		permissionFactory.removePermissions(permissionable);
-
+		
 	}
 
 	//This method can be used later
@@ -384,7 +384,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
+		}	
 
 
 		Permission cmsAnonymousPermission = new Permission();
@@ -402,27 +402,27 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			//Default hosts permissions
 			Permission p = new Permission(Host.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
-
+			
 			//Default sub-folders permissions
 			p = new Permission(Folder.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
-
+			
 			//Default files permissions
 			p = new Permission(File.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
-
+			
 			//Default links permissions
 			p = new Permission(Link.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
-
+			
 			//Default pages permissions
 			p = new Permission(HTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
-
+			
 			//Default content permissions
 			p = new Permission(Contentlet.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
-
+				
 		}
 	}
 
@@ -430,14 +430,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#setDefaultCMSAdminPermissions(com.dotmarketing.beans.Inode)
 	 */
-	public void setDefaultCMSAdminPermissions (Permissionable permissionable) throws DotDataException {
+	public void setDefaultCMSAdminPermissions (Permissionable permissionable) throws DotDataException {	
 		Role cmsAdminRole;
 		try {
 			cmsAdminRole = APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
+		}	
 
 
 		Permission cmsAdminPermission = new Permission();
@@ -458,7 +458,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @see com.dotmarketing.business.PermissionAPI#copyPermissions(com.dotmarketing.beans.Inode, com.dotmarketing.beans.Inode)
 	 */
 	public void copyPermissions(Permissionable from, Permissionable to) throws DotDataException {
-
+		
 		permissionFactory.removePermissions(to);
 
 		List<Permission> fromPerms = getPermissions(from, true, true);
@@ -473,11 +473,11 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				throw e;
 			}
 		}
-
+		
 	}
 
 	/**
-	 * This method uses the permission cache to return a permission.
+	 * This method uses the permission cache to return a permission.  
 	 * @param id of permission to find
 	 * @return  Permission
 	 */
@@ -492,31 +492,31 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	public List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions) throws DotDataException {
 		return permissionFactory.getPermissions(permissionable, bitPermissions);
-	}
+	}	
 
 	public List<Permission> getPermissions(Permissionable permissionable,
 			boolean bitPermissions, boolean onlyIndividualPermissions) throws DotDataException {
 		return permissionFactory.getPermissions(permissionable, bitPermissions, onlyIndividualPermissions);
-	}
+	}	
 
 
 	public List<Permission> getPermissions(Permissionable permissionable,
 			boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
 		return permissionFactory.getPermissions(permissionable, bitPermissions, onlyIndividualPermissions, forceLoadFromDB);
-	}
-
+	}	
+	
 	/**
 	 * @param Permission to save
 	 * Saves passed in permission
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
 	 */
 	public void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user))
 			throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
-
+		
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-
+		
 		Role role = roleAPI.loadRoleById(permission.getRoleId());
 		if(!role.isEditPermissions())
 			throw new DotSecurityException("Role id " + role.getId() + " is locked for editing permissions");
@@ -530,15 +530,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					if(permRole.isLocked()) {
 						Permission lockedPerm = new Permission(permissionable.getPermissionId(), currentPerm.getRoleId(), currentPerm.getPermission());
 						permissionFactory.savePermission(lockedPerm, permissionable);
-					}
+					}	
 				}
-
+				
 			}
-
+			
 			Permission p = permissionFactory.savePermission(permission, permissionable);
 			if(p != null)
 				permission.setId(p.getId());
-
+			
 		} catch (DataAccessException e) {
 			Logger.error(getClass(), "save failed on daving the permission: " + permission.toString(), e);
 			throw e;
@@ -546,36 +546,36 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	}
 
-	public void assignPermissions(List<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles)
+	public void assignPermissions(List<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles) 
 		throws DotDataException, DotSecurityException {
-
+		
 		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user))
 			throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
-
+		
 		if(permissions == null || permissions.size() == 0) {
 			throw new DotDataException("This method is not intented to remove all permissionable permissions, instead use deletePermissions");
 		}
-
+		
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		List<Permission> currentPermissions = permissionFactory.getPermissions(permissionable, true);
 		List<String> rolesIncluded = new ArrayList<String>();
 		List<Permission> includingLockedRolePermissions = new ArrayList<Permission>();
-
+		
 		for(Permission current : currentPermissions) {
 			Role role = roleAPI.loadRoleById(current.getRoleId());
 			if(!role.isEditPermissions()) {
 				Permission perm = new Permission(permissionable.getPermissionId(), current.getRoleId(), current.getPermission());
 				includingLockedRolePermissions.add(perm);
 				rolesIncluded.add(role.getId());
-			}
+			}	
 		}
-
+		
 		for(Permission p : permissions) {
 			Role role = roleAPI.loadRoleById(p.getRoleId());
 			if(!role.isEditPermissions()) {
 				continue;
-			}
+			}	
 			if(!p.getInode().equals(permissionable.getPermissionId()))
 				throw new DotDataException("Can't assign permissions to a diferent permissionable");
 			rolesIncluded.add(role.getId());
@@ -588,18 +588,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				current.setInode(permissionable.getPermissionId());
 				includingLockedRolePermissions.add(current);
 				rolesIncluded.add(role.getId());
-			}
+			}	
 		}
-
-
+		
+		
 		permissionFactory.assignPermissions(includingLockedRolePermissions, permissionable);
-
+		
 		AdminLogger.log(PermissionBitAPIImpl.class, "assisgnPermissions", "Assigning permissions to :"+permissionable.getPermissionId(),user);
 	}
-
+	
 	public Set<User> getReadUsers(Permissionable permissionable) throws DotDataException {
 		Set<Role> roles = getReadRoles(permissionable);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<User>(); 
 		for (Role role : roles) {
 			try {
 				users.addAll(APILocator.getRoleAPI().findUsersForRole(role));
@@ -613,7 +613,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		return users;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#getReadRoles(com.dotmarketing.beans.Inode)
 	 */
@@ -648,7 +648,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	public Set<User> getWriteUsers(Permissionable permissionable) throws DotDataException {
 		Set<Role> roles = getWriteRoles(permissionable);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<User>(); 
 		for (Role role : roles) {
 			try {
 				List<User> roleUsers = APILocator.getRoleAPI().findUsersForRole(role);
@@ -664,7 +664,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		return users;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#getWriteRoles(com.dotmarketing.beans.Inode)
 	 */
@@ -680,9 +680,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		writePermissions.addAll(roles);
 		return writePermissions;
 	}
-
+	
 	public Set<Role> getRolesWithPermission(Permissionable permissionable, int permission) throws DotDataException {
-
+		
 		Set<Role> roles = new HashSet<Role>();
 		List<Permission> permissions = getPermissions(permissionable);
 		try{
@@ -691,12 +691,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			Logger.error(this, "Error loading roles: ", nsre);
 		}
 		return roles;
-
+		
 	}
-
+	
 	public Set<User> getUsersWithPermission(Permissionable permissionable, int permission) throws DotDataException {
 		Set<Role> roles = getRolesWithPermission(permissionable, permission);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<User>(); 
 		for (Role role : roles) {
 			try {
 				users.addAll(APILocator.getRoleAPI().findUsersForRole(role));
@@ -708,9 +708,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				Logger.error(PermissionBitAPIImpl.class,e.getMessage(),e);
 			}
 		}
-		return users;
-	}
-
+		return users;	
+	}	
+	
 
 
 	/* (non-Javadoc)
@@ -813,20 +813,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					throw new DotDataException(e.getMessage(), e);
 				}
 
-			}
+			} 
 		}
 
 
 		return new ArrayList<Integer>(permissions);
 	}
-
+	
 	public List<Integer> getPermissionIdsFromUser(Permissionable permissionable, User user) throws DotDataException {
-
+		
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-
+		
 		List<Role> userRoles = roleAPI.loadRolesForUser(user.getUserId());
 		return getPermissionIdsFromRoles(permissionable, userRoles.toArray(new Role[0]), user);
-
+		
 	}
 
 	/* (non-Javadoc)
@@ -967,7 +967,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		return userList;
-
+		
 	}
 
 	/* (non-Javadoc)
@@ -997,20 +997,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	}
 
 	public <P extends Permissionable> List<P> filterCollection(List<P> inputList, int requiredTypePermission,boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
-
+		
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-
+		
 		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))
 			return inputList;
-
+		
 		List<P> permissionables = new ArrayList<P>(inputList);
 		if(permissionables.isEmpty()){
 			return permissionables;
 		}
-
+		
 		Permissionable permissionable;
 		int i = 0;
-
+		
 		while (i < permissionables.size()) {
 			permissionable = permissionables.get(i);
 			if(!doesUserHavePermission(permissionable, requiredTypePermission, user, respectFrontendRoles)){
@@ -1019,22 +1019,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				++i;
 			}
 		}
-
+		
 		return permissionables;
 	}
-
+	
 	public <P extends Permissionable> List<P> filterCollectionByDBPermissionReference(List<P> inputList, int requiredTypePermission,boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
-
+		
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-
+		
 		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))
 			return inputList;
-
+		
 		List<P> permissionables = new ArrayList<P>(inputList);
 		if(permissionables.isEmpty()){
 			return permissionables;
 		}
-
+		
 		return permissionFactory.filterCollectionByDBPermissionReference(permissionables, requiredTypePermission, respectFrontendRoles, user);
 	}
 
@@ -1053,7 +1053,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public void updateOwner(Permissionable asset, String ownerId) throws DotDataException {
 		permissionFactory.updateOwner(asset, ownerId);
 	}
-
+	
 	public int maskOfAllPermissions () {
 		return permissionFactory.maskOfAllPermissions();
 	}
@@ -1072,9 +1072,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(!parent.isParentPermissionable())
 			return;
 		permissionFactory.resetPermissionsUnder(parent);
-
+		
 	}
-
+	
 	public List<Permission> getInheritablePermissions(Permissionable permissionable) throws DotDataException {
 		if(!permissionable.isParentPermissionable())
 			return null;
@@ -1093,30 +1093,30 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	public void resetPermissionReferences(Permissionable perm) throws DotDataException {
 		permissionFactory.resetPermissionReferences(perm);
-
+		
 	}
 
 	public void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
 		permissionFactory.resetChildrenPermissionReferences(structure);
 	}
-
+	
 	public void resetAllPermissionReferences() throws DotDataException {
 		permissionFactory.resetAllPermissionReferences();
-
+		
 	}
-
+	
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermissions(com.dotmarketing.beans.Inode, String, com.liferay.portal.model.User)
 	 */
 	public boolean doesUserHavePermissions(Permissionable permissionable, String requiredPermissions, User user) throws DotDataException{
 		return doesUserHavePermissions(permissionable, requiredPermissions, user, true);
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermissions(com.dotmarketing.beans.Inode, String, com.liferay.portal.model.User, boolean)
 	 */
     public boolean doesUserHavePermissions(Permissionable permissionable, String requiredPermissions, User user, boolean respectFrontendRoles) throws DotDataException{
-
+		
 		// if we have bad data
 		if ((permissionable == null) || (!InodeUtils.isSet(permissionable.getPermissionId()))) {
 			if(permissionable != null){
@@ -1125,7 +1125,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 			return false;
 		}
-
+		
 		if(user == null){
 			return false;
 		}
@@ -1146,18 +1146,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
-
+		}	
+		
 		if(user != null && APILocator.getRoleAPI().doesUserHaveRole(user, adminRole))
 			return true;
-
+		
 		List<Role> roles;
 		try {
 			roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
+		}	
 		List<String> userRoleIds= new ArrayList<String>();
 		for (Role role : roles) {
 			try{
@@ -1171,7 +1171,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				Logger.error(this, "Roleid should be a long : ",e);
 			}
 		}
-
+		
 		boolean isHost = false;
 		boolean isFolder = false;
 		Host host = null;
@@ -1183,9 +1183,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			isFolder = true;
 			folder = (Folder)permissionable;
 		}
-
-
-
+		
+		
+		
 		List<String> permissionIdsStr = new ArrayList<String>();
 		String[] permissionIdArr = requiredPermissions.split(",");
 		if(permissionIdArr.length>0){
@@ -1198,7 +1198,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(!permissionIdsStr.isEmpty()){
 			List<Integer> permisssionIds = getPermissionIdsFromUser(permissionable, user);
 			List<Permission> permissions = getPermissions(permissionable, true);
-
+			
 			boolean isInheriting = true;
 			for(Permission p : permissions){
 			    if(p.isIndividualPermission()){
@@ -1206,15 +1206,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			    	break;
 			    }
 			}
-
+			
 			if(permissionable.isParentPermissionable()){
 				permissions.addAll(getInheritablePermissions(permissionable, true));
 			}
-
+	
 			for(Role r : roles){
 				permissions.addAll(getPermissionsByRole(r, true, true));
 			}
-
+			
 			if(!permisssionIds.isEmpty()){
 				for(String permissionId : permissionIdsStr){
 					String[] perId = permissionId.split(":");
@@ -1232,90 +1232,70 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 								try {
 									if(respectFrontendRoles){
 										// if we are anonymous
-										if(p.getRoleId().equals(anonRole.getId()) && p.getType().equals(perType)
-												&& p.matchesPermission(requiredPermissionId)
-												&& (isInheriting  || (isHost && p.getInode().equals(host.getIdentifier())) ||
+										if(p.getRoleId().equals(anonRole.getId()) && p.getType().equals(perType) 
+												&& p.matchesPermission(requiredPermissionId) 
+												&& (isInheriting  || (isHost && p.getInode().equals(host.getIdentifier())) || 
 												   (isFolder && p.getInode().equals(folder.getInode())))){
 											perCount++;
 											break;
 											//if logged in site user has permission
-										}else if(user != null && p.getRoleId().equals(frontEndUserRole.getId())
-												&& p.getType().equals(perType)
+										}else if(user != null && p.getRoleId().equals(frontEndUserRole.getId()) 
+												&& p.getType().equals(perType) 
 												&& p.matchesPermission(requiredPermissionId)
-												&& (isInheriting || (isHost && p.getInode().equals(host.getIdentifier())) ||
+												&& (isInheriting || (isHost && p.getInode().equals(host.getIdentifier())) || 
 														   (isFolder && p.getInode().equals(folder.getInode())))){
 											perCount++;
 											break;
 										}
 									}
 
-									if(p.getRoleId().equals(cmsOwnerRole.getId()) &&
-											permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&
-											checkRelatedPermissions(permissionDependencies, user)
-											&& p.getType().equals(perType)
+									if(p.getRoleId().equals(cmsOwnerRole.getId()) &&  
+											permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) && 
+											checkRelatedPermissions(permissionDependencies, user) 
+											&& p.getType().equals(perType) 
 											&& p.matchesPermission(requiredPermissionId)
-											&& (isInheriting  || (isHost && p.getInode().equals(host.getIdentifier())) ||
+											&& (isInheriting  || (isHost && p.getInode().equals(host.getIdentifier())) || 
 													   (isFolder && p.getInode().equals(folder.getInode())))){
 										perCount++;
 										break;
-									}else if(p.getType().equals(perType) && p.matchesPermission(requiredPermissionId)
+									}else if(p.getType().equals(perType) && p.matchesPermission(requiredPermissionId) 
 											&& userRoleIds.contains(p.getRoleId())
-											&& (isInheriting || (isHost && p.getInode().equals(host.getIdentifier())) ||
+											&& (isInheriting || (isHost && p.getInode().equals(host.getIdentifier())) || 
 													   (isFolder && p.getInode().equals(folder.getInode())))){
 										perCount++;
 										break;
 									}
-
+									
 								} catch (DotDataException e1) {
 									Logger.error(this, e1.getMessage(), e1);
 									throw new DotRuntimeException(e1.getMessage(), e1);
-								}
-
+								}	
+								
 							}
 						}
 
 					}
 
-				}
+				}		
 			}
 		}
 		if(perCount==permissionIdsStr.size()){
 			return true;
-		}
+		}			
 		return false;
 	}
-
-    public boolean doesUserHavePermissions(PermissionableType permType, int permissionType, User user) throws DotDataException {
-    	if(user==null) return false;
-
-    	if(APILocator.getUserAPI().isCMSAdmin(user)) return true;
-
-    	Boolean hasPerm = false;
-    	RoleAPI roleAPI = APILocator.getRoleAPI();
-		List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(user.getUserId(), false);
-		for(com.dotmarketing.business.Role r : roles) {
-			List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(r, false);
-			for (Permission p : perms) {
-				if(p.getType().equals(permType.getCanonicalName())) {
-					hasPerm = hasPerm | p.getPermission()>=permissionType;
-				}
-			}
-		}
-
-		return hasPerm;
-    }
-
+    
     public void permissionIndividually(Permissionable parent, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
     	List<Permission> perList = new ArrayList<Permission>();
     	List<Permission> newSetOfPermissions = new ArrayList<Permission>();
     	HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-
+		
 		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user))
 			throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
-
+		
     	if(parent.isParentPermissionable()){
-
+    		
     		String type = permissionable.getPermissionType();
     		perList.addAll(permissionFactory.getInheritablePermissions(parent));
     		perList.addAll(permissionFactory.getPermissions(parent,true));
@@ -1324,22 +1304,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				type = Host.class.getCanonicalName();
 			}
     		for(Permission p : perList){
-
+    			
     			if(type.equals(Folder.class.getCanonicalName())){
-    				if(p.getType().equals(Template.class.getCanonicalName())
+    				if(p.getType().equals(Template.class.getCanonicalName()) 
     						|| p.getType().equals(Container.class.getCanonicalName())
     						|| p.getType().equals(Category.class.getCanonicalName())
     						|| p.getType().equals(Host.class.getCanonicalName())){
     					continue;
     				}
     			}
-
+    			
     			if(type.equals(Host.class.getCanonicalName())){
     				if(p.getType().equals(Category.class.getCanonicalName())){
     					continue;
     				}
     			}
-
+    			
     			if(type.equals(p.getType()) || p.isIndividualPermission()){
     				Permission dupe = null;
     				List<Permission> dupes = new ArrayList<Permission>();
@@ -1354,23 +1334,23 @@ public class PermissionBitAPIImpl implements PermissionAPI {
     				if(dupe==null){
     					newSetOfPermissions.removeAll(dupes);
     					if(p.isIndividualPermission()){
-    	    				newSetOfPermissions.add(new Permission(p.getType(), permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));
+    	    				newSetOfPermissions.add(new Permission(p.getType(), permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));  
     	    				continue;
     					}else{
     						newSetOfPermissions.add(new Permission(permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));
     					}
     				}
     				if(!p.isIndividualPermission()){
-    				   newSetOfPermissions.add(new Permission(p.getType(), permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));
+    				   newSetOfPermissions.add(new Permission(p.getType(), permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));   
     				}
     			}else{
     				newSetOfPermissions.add(new Permission(p.getType(), permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));
     			}
     		}
-
-
+    		
+    		
     	    if(!newSetOfPermissions.isEmpty()){
-    	    	permissionFactory.assignPermissions(newSetOfPermissions,permissionable);
+    	    	permissionFactory.assignPermissions(newSetOfPermissions,permissionable);	
     	    }
     	}
     }
@@ -1398,9 +1378,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 						Host host = APILocator.getHostAPI().find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
 						if(host != null) {
 							parentPermissionable = host;
-						}
+						}		
 					}
-    			}
+    			}	
     		}
 		}
 		return parentPermissionable;

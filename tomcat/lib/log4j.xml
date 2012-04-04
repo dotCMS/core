@@ -140,10 +140,15 @@
 		<appender-ref ref="ASYNC-SITESEARCH" />
 	</logger>
 	
-	<logger name="com.dotmarketing.util.AdminLogger	" additivity="false">
+	<logger name="com.dotmarketing.util.AdminLogger" additivity="false">
 		<level value="info"/>
 		<appender-ref ref="ASYNC-ADMINAUDIT" />
 	</logger>	
+	
+	<logger name="com.dotmarketing.osgi.AbstractViewToolActivator" additivity="false">
+		<level value="debug"/>
+		<appender-ref ref="CONSOLE" />
+	</logger>
 	
     <root>
             <priority value="info"/>

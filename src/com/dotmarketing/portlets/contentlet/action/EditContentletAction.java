@@ -46,7 +46,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -983,7 +983,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		{
 			Contentlet sibbling=conAPI.find(sib, user,false);
 			conAPI.unlock(sibbling, user, false);
-			if(populateaccept){
+			if(populateaccept == true){
 				contentlet = sibbling;
 				contentlet.setInode("");
 				//http://jira.dotmarketing.net/browse/DOTCMS-5802
@@ -991,7 +991,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				List<Field> list = (List<Field>) FieldsCache.getFieldsByStructureInode(structure.getInode());
 				for (Field field : list) {
 					if(field.getFieldContentlet().startsWith("binary")){
-						httpReq.getSession().setAttribute(field.getFieldContentlet() + "-sibling", sib+","+field.getVelocityVarName());
+						httpReq.getSession().setAttribute(field.getFieldContentlet() + "-sibling", contentlet.getInode()+","+field.getVelocityVarName());
 					}
 				}
 			}
@@ -1013,28 +1013,26 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentlet.setModDate(cal.getTime());
 		}
 
-		if(UtilMethods.isSet(sib)) {
-		    req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
+		if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && workingContentlet.isLocked()){
+			
+			String lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet.getIdentifier());
+			if(user.getUserId().equals(lockedUserId)){
+				req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
+			}else{
+				req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
+			}
+		}else{
+			req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
 		}
-		else {
-    		if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && workingContentlet.isLocked()){
-    			
-    			String lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
-    			if(user.getUserId().equals(lockedUserId)){
-    				req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
-    			}else{
-    				req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
-    			}
-    		}else{
-    			req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
-    		}
-    
-    		if (contentlet.isArchived()) {
-    			Company comp = PublicCompanyFactory.getDefaultCompany();
-    			String message = LanguageUtil.get(comp.getCompanyId(), user.getLocale(), "message.contentlet.edit.deleted");
-    			SessionMessages.add(req, "custommessage", message);
-    		}
+		
+	
+
+		if (contentlet.isArchived()) {
+			Company comp = PublicCompanyFactory.getDefaultCompany();
+			String message = LanguageUtil.get(comp.getCompanyId(), user.getLocale(), "message.contentlet.edit.deleted");
+			SessionMessages.add(req, "custommessage", message);
 		}
+
 		//	http://jira.dotmarketing.net/browse/DOTCMS-1073	
 		//  retrieve file names while edit
 		/*Logger.debug(this,"EditContentletAAction : retrieving binary field values.");
@@ -1559,11 +1557,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 
 			if (cmd != null && cmd.equals(Constants.EDIT)) {
-			    String sib= req.getParameter("sibbling");
-			    Boolean populateaccept = Boolean.valueOf(req.getParameter("populateaccept"));
-			    if(UtilMethods.isSet(sib) && populateaccept)
-			        contentlet.setInode(sib);
-			    
 				//Setting categories in the contentlet form
 				List<String> categoriesArr = new ArrayList<String> ();
 				List<Category> cats = catAPI.getParents(contentlet, user, false);
@@ -1574,8 +1567,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				contentletForm.setCategories(categoriesArr.toArray(new String[0]));
 
-				if(UtilMethods.isSet(sib) && populateaccept)
-                    contentlet.setInode("");
 			}
 
 			if(cmd != null && (cmd.equals(Constants.ADD)))
@@ -1880,7 +1871,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String [] inodes = req.getParameterValues("publishInode");
 
 			if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-				inodes = getSelectedInodes(req,user);
+				inodes = getSelectedInodes(req);
 			}
 
 
@@ -1997,7 +1988,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String [] inodes = req.getParameterValues("publishInode");
 
 			if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-				inodes = getSelectedInodes(req,user);
+				inodes = getSelectedInodes(req);
 			}
 
 
@@ -2119,7 +2110,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String [] inodes = req.getParameterValues("publishInode");
 
 			if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-				inodes = getSelectedInodes(req,user);
+				inodes = getSelectedInodes(req);
 			}
 
 
@@ -2246,7 +2237,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String [] inodes = req.getParameterValues("publishInode");
 
 			if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-				inodes = getSelectedInodes(req,user);
+				inodes = getSelectedInodes(req);
 			}
 
 
@@ -2353,7 +2344,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String [] inodes = req.getParameterValues("publishInode");
 
 			if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-				inodes = getSelectedInodes(req,user);
+				inodes = getSelectedInodes(req);
 			}
 
 
@@ -2467,7 +2458,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		String [] inodes = req.getParameterValues("publishInode");
 
 		if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-			inodes = getSelectedInodes(req,user);
+			inodes = getSelectedInodes(req);
 		}
 
 
@@ -2647,31 +2638,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	/* http://jira.dotmarketing.net/browse/DOTCMS-5986*/
-	private String[] getSelectedInodes(ActionRequest req, User user){
-	    String[] allInodes = new String[0];
-        String[] uncheckedInodes = new String[0];
-        String[] result;
-        ArrayList<String> resultInodes = new ArrayList<String>();
-	    
-	    if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-	        String luceneQuery=req.getParameter("luceneQuery");
-	        try {
-                List<ContentletSearch> list=conAPI.searchIndex(luceneQuery, -1, -1, null, user, false);
-                allInodes=new String[list.size()];
-                int idx=0;
-                for(ContentletSearch cs : list)
-                    allInodes[idx++]=cs.getInode();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } 
-	    }
-		
+	private String[] getSelectedInodes(ActionRequest req){
+				
+		String allSearchedContentInodes = req.getParameter("allSearchedContentsInodes");
 		String allUncheckedContentInodes = req.getParameter("allUncheckedContentsInodes");
-		 
+		String[] allInodes = new String[0];
+		String[] uncheckedInodes = new String[0];
+		String[] result;
+		ArrayList<String> resultInodes = new ArrayList<String>(); 
+		
+		if(!allSearchedContentInodes.equals(""))
+			allInodes = allSearchedContentInodes.split(",");
 		
 		if(!allUncheckedContentInodes.equals(""))
 			uncheckedInodes = allUncheckedContentInodes.split(",");		
 		
+		int count = 0;
 		for (String str:allInodes) {
 			boolean found = false;
 			for (String str1:uncheckedInodes) {
@@ -2683,8 +2665,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 		
 		result = new String[resultInodes.size()];
-		result = resultInodes.toArray(result);
-		
+		count = 0;
+		for(String inode:resultInodes){
+			result[count++] = inode;
+		}
 		return result;
 	}
 	
@@ -2698,7 +2682,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String [] inodes = req.getParameterValues("publishInode");
 
 			if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-				inodes = getSelectedInodes(req,user);
+				inodes = getSelectedInodes(req);
 			}
 
 

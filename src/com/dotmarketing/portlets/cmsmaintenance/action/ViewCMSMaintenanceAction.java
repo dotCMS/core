@@ -36,7 +36,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
@@ -65,7 +64,6 @@ import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
-import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
@@ -172,13 +170,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				if(!InodeUtils.isSet(structure.getInode()))
 				{
 					try{
-						int shards = Config.getIntProperty("es.index.number_of_shards", 2);
-						try{
-							shards = Integer.parseInt(req.getParameter("shards"));
-						}catch(Exception e){
-							
-						}
-						System.setProperty("es.index.number_of_shards", String.valueOf(shards));
 						Logger.info(this, "Running Contentlet Reindex");
 						HibernateUtil.startTransaction();
 						conAPI.reindex();
@@ -619,10 +610,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     	_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
                     }
                     else if(TagInode.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
-                    }
-                    else if(Tag.class.equals(clazz)){
-                    	_dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
+                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tagName");
                     }
                     else if(CalendarReminder.class.equals(clazz)){
                     	_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
@@ -886,14 +874,13 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			File file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
 			WorkflowImportExportUtil.getInstance().exportWorkflows(file);
 			
-			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 			file = new File(backupTempFilePath + "/index_working.json");
-			ESUtils.backupIndex(info.working, file);
+			ESUtils.backupIndex("working_read", file);
 			 
 			
 			file = new File(backupTempFilePath + "/index_live.json");
-			ESUtils.backupIndex(info.live, file);
+			ESUtils.backupIndex("live_read", file);
 
 
 			

@@ -737,7 +737,7 @@ public class EmailFactory {
 				try {
 					if(f.exists()) {
 						String filesFolder = getMapValue("formFolder", parameters) instanceof String?(String)getMapValue("formFolder", parameters):null;
-						
+
 						String fileLink = saveFormFile(formId, formType, fileName, f, host, filesFolder);
 						filesLinks.append(filesLinks.toString().equals("")? "http://" + host.getHostname() + fileLink : ",http://" + host.getHostname() + fileLink);
 					}
@@ -796,7 +796,7 @@ public class EmailFactory {
 		return formBean;
 	}
 
-	
+
 
 	private static String getFormFileFolderPath (String formType, String formInode) {
 		String path = Config.getStringProperty("SAVED_UPLOAD_FILES_PATH")
@@ -825,7 +825,7 @@ public class EmailFactory {
 			fileName = UtilMethods.getFileName(baseFilename) + "-" + c + "." + UtilMethods.getFileExtension(baseFilename);
 			c++;
 		}
-		
+
 		Contentlet cont = new Contentlet();
 		cont.setStructureInode(folder.getDefaultFileType());
 		cont.setStringProperty(FileAssetAPI.TITLE_FIELD, UtilMethods.getFileName(fileName));
@@ -960,7 +960,7 @@ public class EmailFactory {
 			catch(Exception ex)
 			{}
 			return ((Object[]) map.get(key))[0];
-			
+
 		} catch (Exception e) {
 			try {
 				return (Object) map.get(key);

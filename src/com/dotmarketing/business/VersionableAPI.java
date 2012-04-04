@@ -7,7 +7,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.ContentletLangVersionInfo;
 import com.liferay.portal.model.User;
 
 public interface VersionableAPI {
@@ -248,71 +248,71 @@ public interface VersionableAPI {
 	public void setWorking(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
-	 * Tells if the versionable is locked
+	 * Tells if the versionable with the specified identifier is locked
 	 * 
-	 * @param ver
+	 * @param identifier identifier inode of the versionable
 	 * @return true if it is locked, false if not
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public boolean isLocked(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	public boolean isLocked(String identifier) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Returns the userId of the owner of the asset's lock
 	 * 
-	 * @param ver
+	 * @param identifier
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public String getLockedBy(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	public String getLockedBy(String identifier) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Returns the date when the asset were locked
 	 * 
-	 * @param ver
+	 * @param identifier
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public Date getLockedOn(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	public Date getLockedOn(String identifier) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
-	 * Allows to change locked status for the versionable 
+	 * Allows to change locked status for the versionable with the specified identifier
 	 * 
-	 * @param ver
+	 * @param identifier identifier inode of the versionable
 	 * @param locked status to be set
 	 * @param user lock owner
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public void setLocked(Versionable ver, boolean locked, User user) throws DotDataException, DotStateException,DotSecurityException;
+	public void setLocked(String identifier, boolean locked, User user) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
-	 * Tells if the versionable is deleted
+	 * Tells if the versionable with the specified identifier is deleted
 	 * 
-	 * @param ver
+	 * @param identifier
 	 * @return true if it is deleted, false if not
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public boolean isDeleted(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	public boolean isDeleted(String identifier) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
-	 * Allows to delete (when true) of undelete (when false) a versionable 
+	 * Allows to delete (when true) of undelete (when false) a versionable with the specified ID
 	 * 
-	 * @param ver
+	 * @param identifier
 	 * @param deleted true to delete, false to undelete
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public void setDeleted(Versionable ver, boolean deleted) throws DotDataException, DotStateException,DotSecurityException;
+	public void setDeleted(String identifier, boolean deleted) throws DotDataException, DotStateException,DotSecurityException;
 	
 	
 	/**
@@ -323,8 +323,8 @@ public interface VersionableAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException;
-	
+	public ContentletLangVersionInfo getContentletLangVersionInfo(String identifier, long lang) throws DotDataException,
+	DotStateException;
 	/**
 	 * Will return the @VersionInfo holder for the given identifier
 	 * @param identifier
@@ -337,7 +337,4 @@ public interface VersionableAPI {
 	public void deleteVersionInfo(String identifier) throws DotDataException;
 	
 	public void deleteContentletVersionInfo(String identifier, long lang) throws DotDataException;
-	
-	public boolean hasLiveVersion(Versionable identifier)  throws DotDataException, DotStateException;
-	
 }

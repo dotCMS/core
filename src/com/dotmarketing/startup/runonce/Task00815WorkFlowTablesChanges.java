@@ -26,8 +26,8 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 						"ALTER TABLE workflow_task change inode id varchar(36);";
 		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
 			dropInode = "ALTER TABLE workflow_task DROP CONSTRAINT fk441116055fb51eb;" +
-			            "ALTER TABLE workflow_task add id varchar2(36);" +
-			            "UPDATE workflow_task set id = cast(inode as varchar2(36));" +
+			            "ALTER TABLE workflow_task add id varchar(36);" +
+			            "UPDATE workflow_task set id = cast(inode as varchar(36));" +
 			            "ALTER TABLE workflow_task drop column inode;" +
 			            "ALTER TABLE workflow_task MODIFY (id NOT NULL);" +
 			            "ALTER TABLE workflow_task ADD CONSTRAINT workflow_task_pkey PRIMARY KEY(id);"; 
@@ -52,8 +52,6 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		 					"(id varchar(36) NOT NULL  primary key," +
 		 					"workflowtask_id varchar(36) NOT NULL," +
 		 					"file_inode varchar(36) NOT NULL);";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-		    createTable=createTable.replaceAll("varchar\\(", "varchar2\\(");
         
 		String addFKs = "alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);"
 			          + "alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);";
@@ -89,8 +87,8 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 						"ALTER TABLE workflow_comment change inode id varchar(36);";
 		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
 			dropInode = "ALTER TABLE workflow_comment DROP CONSTRAINT fk94993ddf5fb51eb;" +
-			            "ALTER TABLE workflow_comment add id varchar2(36);" +
-			            "UPDATE workflow_comment set id = cast(inode as varchar2(36));" +
+			            "ALTER TABLE workflow_comment add id varchar(36);" +
+			            "UPDATE workflow_comment set id = cast(inode as varchar(36));" +
 			            "ALTER TABLE workflow_comment drop column inode;" +
 			            "ALTER TABLE workflow_comment MODIFY (id NOT NULL);" +
 			            "ALTER TABLE workflow_comment ADD CONSTRAINT workflow_comment_pkey PRIMARY KEY(id);"; 
@@ -113,8 +111,6 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		}
 		String addWorkFlowCommentFK = "alter table workflow_comment add workflowtask_id varchar(36);" + 
 									  "alter table workflow_comment add constraint wf_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-		    addWorkFlowCommentFK=addWorkFlowCommentFK.replaceAll("varchar\\(", "varchar2\\(");
 		
 		String workflowtask_workflowcomment_relations = "Select child,parent from tree where parent in(select id from workflow_task) and child in(select id from workflow_comment)";
 		
@@ -144,8 +140,8 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 						"ALTER TABLE workflow_history change inode id varchar(36);";
 		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
 			dropInode = "ALTER TABLE workflow_history DROP CONSTRAINT fk933334145fb51eb;" +
-			            "ALTER TABLE workflow_history add id varchar2(36);" +
-			            "UPDATE workflow_history set id = cast(inode as varchar2(36));" +
+			            "ALTER TABLE workflow_history add id varchar(36);" +
+			            "UPDATE workflow_history set id = cast(inode as varchar(36));" +
 			            "ALTER TABLE workflow_history drop column inode;" +
 			            "ALTER TABLE workflow_history MODIFY (id NOT NULL);" +
 			            "ALTER TABLE workflow_history ADD CONSTRAINT workflow_history_pkey PRIMARY KEY(id);"; 
@@ -168,8 +164,6 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		}
 		String addWorkFlowHistoryFK = "alter table workflow_history add workflowtask_id varchar(36);" + 
         							  "alter table workflow_history add constraint wf_id_history_FK foreign key (workflowtask_id) references workflow_task(id)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
-		    addWorkFlowHistoryFK=addWorkFlowHistoryFK.replaceAll("varchar\\(", "varchar2\\(");
 		
 		String workflowtask_workflowhistory_relations = "Select child,parent from tree where parent in(select id from workflow_task) and child in(select id from workflow_history)";
 		

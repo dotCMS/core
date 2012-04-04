@@ -5,7 +5,7 @@
 <html>  
 <head> 
 <meta name="verify-v1" content="Luvx8voB5MjHhuEXDSRYodL2Dpzl506jetnN+a3kPw4=" >
-<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="//www.dotcms.org/global/favicon.ico" type="image/x-icon">
 <link rel="alternate" type="application/rss+xml" title="dotcms.org RSS" href="http://www.dotcms.org/company/press_release_rss.dot" />
 
 	<title>dotCMS Code Style Guide</title>

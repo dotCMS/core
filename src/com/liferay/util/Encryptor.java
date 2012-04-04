@@ -36,6 +36,8 @@ import javax.crypto.KeyGenerator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import sun.misc.BASE64Encoder;
+
 import com.dotmarketing.util.Logger;
 
 /**
@@ -153,7 +155,7 @@ public class Encryptor {
 
 		byte raw[] = mDigest.digest();
 
-		return Base64.encode(raw);
+		return (new BASE64Encoder()).encode(raw);
 	}
 
 	public static String encrypt(Key key, String plainText)

@@ -312,7 +312,6 @@
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
 <input type="hidden" name="fullCommand" id="fullCommand" value="">
-<input type="hidden" name="luceneQuery" id="luceneQuery" value="">
 <input type="hidden" name="structureInode" id="structureInode" value="">
 <input type="hidden" name="fieldsValues" id="fieldsValues" value="">
 <input type="hidden" name="categoriesValues" id="categoriesValues" value="">

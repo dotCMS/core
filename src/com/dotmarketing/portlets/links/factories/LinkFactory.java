@@ -366,8 +366,6 @@ public class LinkFactory {
         newLink.setIdentifier(newIdent.getId());
 
         APILocator.getVersionableAPI().setWorking(newLink);
-        if (currentLink.isLive()) 
-			APILocator.getVersionableAPI().setLive(newLink);
         
 		//Copy permissions
         permissionAPI.copyPermissions(currentLink, newLink);

@@ -250,7 +250,7 @@ hostId = request.getParameter("host_id");
 				<span class="pageIcon"></span>
 				<%=htmlpage.getTitle() %>
 			</td>
-			<td  nowrap="true"><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage) %></td>
+			<td nowrap><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage,COMMON_IMG,true) %></td>
 			<td nowrap><%=htmlpage.getPageUrl() %></td>
             <td nowrap><%=pathToMe %></td>
             <td nowrap><%=modDateFormat.format(htmlpage.getModDate()) %></td>

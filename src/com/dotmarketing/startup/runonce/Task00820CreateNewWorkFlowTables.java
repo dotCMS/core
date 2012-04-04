@@ -84,9 +84,9 @@ public class Task00820CreateNewWorkFlowTables implements StartupTask {
             dc.executeStatement("alter table workflow_task add constraint FK_workflow_step foreign key (status) references workflow_step(id)");
             dc.executeStatement("alter table workflow_scheme add constraint FK_wf_scheme_action foreign key (entry_action_id) references workflow_action(id)");
 
-    		dc.executeStatement("ALTER TABLE workflow_history add  workflow_action_id varchar2(36)");
+    		dc.executeStatement("ALTER TABLE workflow_history add  workflow_action_id varchar(36)");
     		dc.executeStatement("create index wf_histroy_action_idx on workflow_history(workflow_action_id)");
-    		dc.executeStatement("ALTER TABLE workflow_history add  workflow_step_id varchar2(36)");
+    		dc.executeStatement("ALTER TABLE workflow_history add  workflow_step_id varchar(36)");
     		dc.executeStatement("create index wf_histroy_step_idx on workflow_history(workflow_step_id)");
 
 
@@ -164,15 +164,8 @@ public class Task00820CreateNewWorkFlowTables implements StartupTask {
             dc.executeStatement("delete from workflowtask_files");
             dc.executeStatement("delete from workflow_task");
             dc.executeStatement("alter table workflow_task add constraint FK_workflow_task_asset foreign key (webasset) references identifier(id)");
-            
-            dc.executeStatement("drop index workflow_task.idx_workflow_3");
-            dc.executeStatement("drop index workflow_task.idx_workflow_1");
             dc.executeStatement("ALTER TABLE workflow_task ALTER COLUMN status varchar(36)");
             dc.executeStatement("ALTER TABLE workflow_task ALTER COLUMN assigned_to varchar(36)");
-            dc.executeStatement("create index idx_workflow_1 on workflow_task (assigned_to)");
-            dc.executeStatement("create index idx_workflow_3 on workflow_task (status)");
-            
-            
             dc.executeStatement("alter table workflow_task add constraint FK_workflow_assign foreign key (assigned_to) references cms_role(id)");
             dc.executeStatement("alter table workflow_task add constraint FK_workflow_step foreign key (status) references workflow_step(id)");
             dc.executeStatement("alter table workflow_scheme add constraint FK_wf_scheme_action foreign key (entry_action_id) references workflow_action(id)");

@@ -26,8 +26,6 @@ import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
@@ -170,14 +168,9 @@ public class ContentMap {
 					String p = WorkingCache.getPathFromCache(i.getURI(), InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
 					p = p.substring(5, p.lastIndexOf("."));
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
-						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf("/")), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), false);
+						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf("\\")), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), false);
 						if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-						    FileAssetMap fam=new FileAssetMap();
-                            FileAsset fa=APILocator.getFileAssetAPI().fromContentlet(fileAsset);
-                            fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
-                            BeanUtils.copyProperties(fam, fa);
-                            return fam;
-						    //return new ContentMap(fileAsset, user, EDIT_OR_PREVIEW_MODE,host,context);
+							return new ContentMap(fileAsset, user, EDIT_OR_PREVIEW_MODE,host,context);
 						}
 					}else{
 						file = fileAPI.find(p,user,true);
@@ -187,14 +180,9 @@ public class ContentMap {
 					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
 					p = p.substring(5, p.lastIndexOf("."));
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
-						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf("/")), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), false);
+						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf("\\")), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), false);
 						if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-							FileAssetMap fam=new FileAssetMap();
-							FileAsset fa=APILocator.getFileAssetAPI().fromContentlet(fileAsset);
-							fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
-							BeanUtils.copyProperties(fam, fa);
-							return fam;
-						    //return new ContentMap(fileAsset, user, EDIT_OR_PREVIEW_MODE,host,context);
+							return new ContentMap(fileAsset, user, EDIT_OR_PREVIEW_MODE,host,context);
 						}
 					}else{
 						file = fileAPI.find(p,user,true);
@@ -208,18 +196,8 @@ public class ContentMap {
 					return null;
 				}
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-			    if(content.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET && f.getVelocityVarName().equalsIgnoreCase("fileasset")) {
-			        // http://jira.dotmarketing.net/browse/DOTCMS-7406
-			        FileAssetMap fam=new FileAssetMap();
-			        FileAsset fa=APILocator.getFileAssetAPI().fromContentlet(content);
-			        fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
-                    BeanUtils.copyProperties(fam, fa);
-                    return fam;
-			    }
-			    else {
-    				BinaryMap bm = new BinaryMap(content,f);
-    				return bm;
-			    }
+				BinaryMap bm = new BinaryMap(content,f);
+				return bm;
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.TAG.toString())){
 				return new TagList((String)conAPI.getFieldValue(content, f));
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
@@ -242,18 +220,11 @@ public class ContentMap {
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
 				return new CheckboxMap(f, content);
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-			    final String jsonData=(String)conAPI.getFieldValue(content, f);
-				Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(jsonData);
-				Map<String,Object> retMap = new java.util.HashMap<String,Object>() {
-				    @Override
-				    public String toString() {
-				        return jsonData;
-				    }
-				};
+				Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)conAPI.getFieldValue(content, f));
+				Map<String,Object> retMap = new java.util.HashMap<String,Object>();
 				for(String key :keyValueMap.keySet()){
 					retMap.put(key.replaceAll("\\W",""), keyValueMap.get(key));
 				}
-				retMap.put("keys", retMap.keySet());
 				return retMap;
 			}
 			

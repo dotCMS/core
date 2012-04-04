@@ -118,7 +118,7 @@
 		wfActions = new ArrayList();
 	}
 	
-    boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
+
 
 %>
 	
@@ -376,12 +376,12 @@
 				<td><%=(wfTask == null || wfTask.isNew()) ? LanguageUtil.get(pageContext, "Nobody") : APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()).getName() %></td>
 			</tr>
 		
-			<tr id="contentLockedInfo" <%=(!isLocked) ? "style='height:0px;'" : "" %>>
-				<%if(contentlet != null && InodeUtils.isSet(contentlet.getInode()) && isLocked){ %>
+			<tr id="contentLockedInfo" <%=(!contentlet.isLocked()) ? "style='height:0px;'" : "" %>>
+				<%if(contentlet != null && InodeUtils.isSet(contentlet.getInode()) && contentlet.isLocked()){ %>
 					<th><%= LanguageUtil.get(pageContext, "Locked") %>:</th>
 					<td id="lockedTextInfoDiv">
-						<%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
-						<span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
+						<%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet.getIdentifier()), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
+						<span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet.getIdentifier()), user.getLocale())) %>)</span>
 					</td>
 				<%} %>
 			</tr>

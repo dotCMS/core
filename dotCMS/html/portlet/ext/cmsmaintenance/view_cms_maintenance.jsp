@@ -1,5 +1,3 @@
-<%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
-<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
 <%@page import="java.lang.management.RuntimeMXBean"%>
 <%@page import="java.lang.management.ManagementFactory"%>
@@ -26,11 +24,14 @@ String referer = java.net.URLEncoder.encode(com.dotmarketing.util.PortletURLUtil
 
 CmsMaintenanceForm CMF = (com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm) request.getAttribute("CmsMaintenanceForm");
 session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, true); 
-ESIndexAPI idxApi = new ESIndexAPI();
-List<Structure> structs = StructureFactory.getStructures();
+
 %>
 <script type='text/javascript' src='/dwr/interface/CMSMaintenanceAjax.js'></script>
-
+<script type="text/javascript">
+<liferay:include page="/html/js/calendar/calendar_js_box_ext.jsp" flush="true">
+  <liferay:param name="calendar_num" value="1" />
+</liferay:include>
+</script> 
 <script language="Javascript">
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
 
@@ -51,7 +52,6 @@ function submitform(cacheName)
 	form.submit();
 }
 
-var stillInReindexation = false;
 function checkReindexationCallback (response) {
 	var inFullReindexation = response['inFullReindexation'];
 	var contentCountToIndex = response['contentCountToIndex'];
@@ -61,10 +61,14 @@ function checkReindexationCallback (response) {
 	var lastIndexationStartTime = ' ';
 	var lastIndexationEndTime = ' ';
 
+	var currentIndexDirDiv = document.getElementById("currentIndexDirDiv");
+	if(currentIndexDirDiv != undefined){
+		currentIndexDirDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"Current-index-directory") %>: " + currentIndexPath;
+	}
 	var reindexationInProgressDiv = document.getElementById("reindexationInProgressDiv");
 	if (inFullReindexation) {
 		if(!isIndexTabShownOnReindexing){
-			dijit.byId('mainTabContainer').selectChild('indexTabCp');
+			dijit.byId('mainTabContainer').selectChild('indexStatsCp');
 			isIndexTabShownOnReindexing = true;
 		}
 		dojo.query(".indexActionsDiv").style("display","none");
@@ -72,7 +76,9 @@ function checkReindexationCallback (response) {
 
 		reindexationInProgressDiv.style.display = "";
 		
-
+		var newIndexDirPathDiv = document.getElementById("newIndexDirPathDiv"); 
+		newIndexDirPathDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"New-index-directory-path") %>: <b>" + newIndexPath + "</b>";
+		
 		var bar = dijit.byId("reindexProgressBar");
 		if(bar != undefined){
 		    dijit.byId("reindexProgressBar").update({
@@ -80,17 +86,12 @@ function checkReindexationCallback (response) {
 		      progress: lastIndexationProgress
 		    });
 		}
-		stillInReindexation = true;
+		
 		var indexationProgressDiv = document.getElementById("indexationProgressDiv"); 
 		indexationProgressDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"Reindex-Progress") %>: " + lastIndexationProgress + " / " + contentCountToIndex + " ";
 	} else {
 		dojo.query(".indexActionsDiv").style("display","");
 		reindexationInProgressDiv.style.display = "none";
-		if(stillInReindexation){
-			stillInReindexation = false;
-			refreshIndexStats();
-			
-		}
 	}
 	setTimeout("checkReindexation()", 5000);
 }
@@ -366,21 +367,19 @@ function validateDate(date){
   if(date == null || date.value==''){
   	return false;
   }
-
   var dateStr = date.value;
-  var datearr = dateStr.split("/"); 
   
-  var month= datearr[0];
+  var month= dateStr.substring(0,2);
   if(parseInt(month) > 12){
   	return false;
   }
   
-  var day= datearr[1];
+  var day= dateStr.substring(3,5);
   if(parseInt(day) > 31){
   	return false;
   }
   
-  var year= datearr[2];
+  var year= dateStr.substring(6,10);
   if(parseInt(year) > 9999 || parseInt(year) < 1900  ){
   	return false;
   }
@@ -388,6 +387,16 @@ function validateDate(date){
   return true;
 }
 
+function <portlet:namespace />setCalendarDate_0(year, month, day) {
+	   date = document.getElementById("removeassetsdate");
+	   var monthStr = ''+month;
+	   var dayStr = ''+day;
+	   if(month < 10)
+	       monthStr = '0'+month;
+       if(day < 10)
+	       dayStr = '0'+day;
+	   date.value=monthStr+"/"+dayStr+"/"+year;
+	}
 
 function indexStructureChanged(){
 	if(dojo.byId('structure') ==undefined || dijit.byId('cleanReindexButton') == undefined){
@@ -468,20 +477,7 @@ function doDownloadIndex(indexName){
 
 function doFullReindex(){
 	
-	
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-	
-	var shards = parseInt(number);
-	if(shards <1){
-		return;	
-	}
-	dojo.byId("numberOfShards").value = shards;
-	
 	dijit.byId('idxReindexButton').setDisabled(true);
-	dijit.byId('idxShrinkBtn').setDisabled(true);
 	submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
 	return false;
 	
@@ -580,11 +576,9 @@ function showRestoreIndexDialog(indexName) {
 	var dialog=dijit.byId("restoreIndexDialog");
 	dialog.set('title','Restore index '+indexName);
 	dojo.byId("uploadFileName").innerHTML='';
-	dijit.byId('uploadSubmit').set('disabled',false);
+	dijit.byId('uploadSubmit').disabled=false;
 	dojo.query('#uploadProgress').style({display:"none"});
 	connectUploadEvents();
-	dojo.byId("uploadWarningLive").style.display="none";
-	dojo.byId("uploadWarningWorking").style.display="none";
 	dialog.show();
 }
 
@@ -593,7 +587,7 @@ function doRestoreIndex() {
 		showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "No-File-Selected")%>");
 	}
 	else {
-		dijit.byId('uploadSubmit').set('disabled',true);
+		dojo.byId('uploadSubmit').disabled=true;
 	    dojo.query('#uploadProgress').style({display:"block"});
 	    dijit.byId("restoreIndexUploader").submit();
 	}
@@ -618,18 +612,6 @@ function connectUploadEvents() {
 	dojo.connect(uploader, "onChange", function(dataArray){
 		 dojo.forEach(dataArray, function(data){
 			    dojo.byId("uploadFileName").innerHTML=data.name;
-			    var uploadName=data.name;
-			    var indexName=dojo.byId("indexToRestore").value;
-			    
-			    if(indexName.indexOf("working")==0 && uploadName.indexOf("working")!=0)
-			    	dojo.byId("uploadWarningWorking").style.display="block";
-			    else
-			    	dojo.byId("uploadWarningWorking").style.display="none";
-			    
-			    if(indexName.indexOf("live")==0 && uploadName.indexOf("live")!=0)
-			    	dojo.byId("uploadWarningLive").style.display="block";
-                else
-                	dojo.byId("uploadWarningLive").style.display="none";
 		 });
 	});
 	dojo.connect(uploader, "onComplete", function(dataArray) {
@@ -639,21 +621,8 @@ function connectUploadEvents() {
 }
 
 function doCreateWorking() {
-	
-	
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-	
-	var shards = parseInt(number);
-	if(shards <1){
-		return;	
-	
-	}
-	
 	var xhrArgs = {
-       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/" + shards,
+       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex",
        handleAs: "text",
        handle : function(dataOrError, ioArgs) {
            if (dojo.isString(dataOrError)) {
@@ -662,7 +631,6 @@ function doCreateWorking() {
                } else {
                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Created")%>", true);
                    refreshIndexStats();
-
                }
            } else {
                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
@@ -673,22 +641,8 @@ function doCreateWorking() {
 }
 
 function doCreateLive() {
-	
-	
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-	
-	var shards = parseInt(number);
-	if(shards <1){
-		return;	
-	}
-	
-	
-	
 	var xhrArgs = {
-       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/" + shards,
+       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on",
        handleAs: "text",
        handle : function(dataOrError, ioArgs) {
            if (dojo.isString(dataOrError)) {
@@ -706,74 +660,16 @@ function doCreateLive() {
     dojo.xhrPost(xhrArgs);
 }
 
-function updateReplicas(indexName,currentNum){
-
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Update-Replicas-Index")%> for index:\n\n" + indexName, currentNum);
-	
-	if(!number){
-		return;
-	}
-	
-	
-	var replicas = parseInt(number);
-	if(currentNum != replicas){
-		
-		var xhrArgs = {
-				
-				url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/updateReplicas/indexName/" + indexName + "/replicas/" + replicas,
-			
-				handleAs: "text",
-				handle : function(dataOrError, ioArgs) {
-					if (dojo.isString(dataOrError)) {
-						if (dataOrError.indexOf("FAILURE") == 0) {
-							showDotCMSSystemMessage(dataOrError, true);
-						} else {
-							showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Replicas-Updated")%>", true);
-							refreshIndexStats();
-						}
-					} else {
-						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-					}
-				}
-			};
-			dojo.xhrPost(xhrArgs);
-		
-	}
-
-
-
-
-}
-
-function dohighlight(id) {
-	dojo.addClass(id,"highlight");
-}
-
-function undohighlight(id) {
-    dojo.removeClass(id,"highlight");
-}
-
-
 </script>
 
-<style>
-#idxReplicasDialog{
-	width:300px,height:150px;
-}
-.highlight td {
-    background: #94BBFF;
-    color: white !important;
-}
 
-
-</style>
 <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
 <input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>"> 
 <input type="hidden" name="referer" value="<%=referer%>"> 
 <input type="hidden" name="cacheName" id="cacheName">
 <input type="hidden" name="dataOnly" id="dataOnly">
 <input type="hidden" name="cmd" value="">
-<input type="hidden" name="shards" id="numberOfShards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
+
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
 	<!-- START Cache TAB -->
@@ -871,84 +767,8 @@ function undohighlight(id) {
 	</div>
 	
 	<!-- START Index TAB -->
-	<div dojoType="dojox.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Index") %>" >	
+	<div dojoType="dojox.layout.ContentPane" id="indexStatsCp"  title="<%= LanguageUtil.get(pageContext, "Index") %>" >	
 		
-		<div class="indexActionsDiv" <%=(idxApi.isInFullReindex()) ? "style='display:none'" : "" %>>
-			<table class="listingTable">
-				<tr>
-					<th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
-				</tr>
-				<tr>
-					<td colspan="2" align="center">
-						<div id="currentIndexDirDiv"></div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<div id="lastIndexationDiv"></div>
-
-							<%= LanguageUtil.get(pageContext,"Reindex") %>:
-							<select id="structure" dojoType="dijit.form.ComboBox" style="width:250px;" autocomplete="true" name="structure" onchange="indexStructureChanged();">
-								<option><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
-								<%
-
-									for(Structure structure : structs){%>
-									<option><%=structure.getVelocityVarName()%></option>
-								<%}%>
-							</select>
-
-					</td>
-					<td style="text-align:center;white-space:nowrap;" width="350">
-			            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="reindexIcon" onClick="doFullReindex()">
-			                <%= LanguageUtil.get(pageContext,"Reindex") %>
-			            </button>
-			            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton" disabled="disabled">
-			                <%= LanguageUtil.get(pageContext,"Delete-Reindex-Structure") %>
-			            </button>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<%= LanguageUtil.get(pageContext,"Optimize-Index") %> (<%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> )
-					</td>
-					<td align="center">
-			        	<button dojoType="dijit.form.Button" id="idxShrinkBtn" iconClass="shrinkIcon" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
-			            	<%= LanguageUtil.get(pageContext,"Optimize-Index") %>
-						</button>
-			    	 </td>
-				</tr>
-			</table>
-		</div>
-
-		<!-- START Re-Index Progress Display -->
-		<div id="reindexationInProgressDiv"  <%=(idxApi.isInFullReindex()) ? "" : "style='display:none'" %>>
-			<table class="listingTable">
-				<tr>
-					<th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
-				</tr>
-				<tr>
-					<td colspan="2" align="center">
-						<div>
-							<%= LanguageUtil.get(pageContext,"A-reindexation-process-is-in-progress") %>
-						</div>
-						<div id="indexationStartTimeDiv"></div>
-						<div id="newIndexDirPathDiv"></div>
-						<div style="width:200px" maximum="200" id="reindexProgressBar" progress="0" dojoType="dijit.ProgressBar"></div>
-						<div id="indexationProgressDiv"></div>
-					</div>
-					</td>
-				</tr>
-				<tr>
-					<td colspan="2" align="center">
-						<button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexing();">
-			                <%= LanguageUtil.get(pageContext,"Stop-Reindexation") %>
-			            </button>
-					</td>
-				</tr>
-			</table>
-		</div>
-
-		<div id="indexStatsCp"  dojoType="dijit.layout.ContentPane"></div>  
 		
 		
 	</div>			
@@ -1053,7 +873,8 @@ function undohighlight(id) {
 					<dl>
 						<dt><%= LanguageUtil.get(pageContext,"Remove-assets-older-than") %>:</dt>
 						<dd>
-							<input type="text" name="removeassetsdate" id="removeassetsdate" constraints="{datePattern:'MM/dd/yyyy'}" invalidMessage="Invalid date."  data-dojo-type="dijit.form.DateTextBox" maxlength="10" size="8"> 							 
+							<input type="text" name="removeassetsdate" id="removeassetsdate" maxlength="10" size="8"> 
+							<span class="calMonthIcon" id="<portlet:namespace />calendar_input_0_button" onClick="<portlet:namespace />calendarOnClick_0();"></span> (mm/dd/yyyy)
 						</dd>
 						<dd style="color:#ff0000;"><%= LanguageUtil.get(pageContext,"It's-recommended-to-have-a-fresh") %></dd>
 					</dl>
@@ -1164,7 +985,6 @@ function undohighlight(id) {
 </html:form>
 
 <script language="Javascript">
-dojo.require("dijit.form.DateTextBox");
 	dojo.addOnLoad (function(){
 		
 		checkReindexation();
@@ -1176,7 +996,7 @@ dojo.require("dijit.form.DateTextBox");
 			 function (evt) {
 			 	selectedTab = tab.selectedChildWidget;
 			 	
-				  	if(selectedTab.id =="indexTabCp"){
+				  	if(selectedTab.id =="indexStatsCp"){
 				  		refreshIndexStats();
 				  	}
 			  	

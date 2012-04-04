@@ -4,13 +4,14 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Date;
 
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.beans.VersionInfo;
+import com.liferay.portal.model.User;
 
 public class ContentletVersionInfo implements Serializable {
-    private static final long serialVersionUID = 8952464908349482530L;
     private String identifier;
     private boolean deleted;
     private String lockedBy;
+
     private Timestamp lockedOn;
     private long lang;
     private String workingInode;
@@ -34,6 +35,7 @@ public class ContentletVersionInfo implements Serializable {
     public void setLiveInode(String liveInode) {
         this.liveInode = liveInode;
     }
+
     public String getLockedBy() {
         return lockedBy;
     }
@@ -69,6 +71,7 @@ public class ContentletVersionInfo implements Serializable {
         lockedBy=null;
         lockedOn=new Timestamp(System.currentTimeMillis());
     }
+
     @Override
     public boolean equals(Object obj) {
         if(obj instanceof ContentletVersionInfo) {

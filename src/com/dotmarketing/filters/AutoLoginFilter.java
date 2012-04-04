@@ -57,8 +57,8 @@ public class AutoLoginFilter implements Filter {
 	            Logger.debug(AutoLoginFilter.class, "Doing AutoLogin for " + encryptedId);
 	            LoginFactory.doCookieLogin(encryptedId, request, response);
 	        }
+	        chain.doFilter(req, response);
 	    }
-        chain.doFilter(req, response);
     }
     public void init(FilterConfig config) throws ServletException {
     }

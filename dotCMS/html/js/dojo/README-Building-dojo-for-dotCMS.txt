@@ -1,8 +1,5 @@
 Building dojo for the dotCMS
 
-To get the dojo source we keep a copy in https://svn.dotcms.org/thirdparty/dojo.  Any changes to themes will be lost if this 
-repository is not updated with the latest themes before building. Check out and verify. 
-
 1) 	make sure you have dojo's source code tree (it will have a ./util folder in it).  Place the dojo
 	source dir into ./dotCMS/html/js/dojo/src/, e.g. ./dotCMS/html/js/dojo/src/dojo-release-1.4.1-src
 

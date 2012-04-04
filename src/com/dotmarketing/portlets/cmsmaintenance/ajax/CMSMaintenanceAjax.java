@@ -46,16 +46,11 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
-import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
-import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
-import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Config;
@@ -408,22 +403,7 @@ public class CMSMaintenanceAjax {
 	                    	_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
 	                    }
 	                    else if(TagInode.class.equals(clazz)){
-	                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
-	                    }
-	                    else if(FileAssetVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {fileasset_version_info.*} from fileasset_version_info fileasset_version_info, identifier where identifier.id = fileasset_version_info.identifier order by fileasset_version_info.identifier ");
-	                    }
-	                    else if(TemplateVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
-	                    }
-	                    else if(ContainerVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
-	                    }
-	                    else if(HTMLPageVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {htmlpage_version_info.*} from htmlpage_version_info htmlpage_version_info, identifier where identifier.id = htmlpage_version_info.identifier order by htmlpage_version_info.identifier ");
-	                    }
-	                    else if(LinkVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");
+	                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tagName");
 	                    }
 	                    else if(CalendarReminder.class.equals(clazz)){
 	                    	_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");

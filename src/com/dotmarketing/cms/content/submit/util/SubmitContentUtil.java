@@ -156,7 +156,7 @@ public class SubmitContentUtil {
 		Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host,user,false);
 		if(!UtilMethods.isSet(folder.getInode())){
 			User systemUser = APILocator.getUserAPI().getSystemUser();
-			folder = APILocator.getFolderAPI().createFolders(folderPath, host,APILocator.getUserAPI().getSystemUser(),false);
+			folder = APILocator.getFolderAPI().createFolders(folderPath, host,user,false);
 		}
 
 		byte[] bytes = FileUtil.getBytes(uploadedFile);
@@ -185,11 +185,8 @@ public class SubmitContentUtil {
 			cont.setFolder(folder.getInode());
 			cont.setHost(host.getIdentifier());
 			cont.setBinary(FileAssetAPI.BINARY_FIELD, uploadedFile);
-			if(StructureCache.getStructureByInode(cont.getStructureInode()).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET)
-				cont.setStringProperty("fileName", title);
 			cont = APILocator.getContentletAPI().checkin(cont, user,false);
-			if(APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user))
-				APILocator.getVersionableAPI().setLive(cont);
+			APILocator.getVersionableAPI().setLive(cont);
 			return APILocator.getFileAssetAPI().fromContentlet(cont);
 
 		}

@@ -140,13 +140,6 @@ public class UtilMethods {
 
         return strBuff.toString();
     }
-    
-    public static final String join(List<String> strList, String separator) {
-        StringBuilder strBuff = new StringBuilder();
-        for (String str : strList) 
-            strBuff.append(str).append(separator);
-        return strBuff.toString();
-    }
 
     public static final String getCookieValue(javax.servlet.http.Cookie[] cookies, String cookieName) {
         if (cookies != null) {
@@ -276,13 +269,14 @@ public class UtilMethods {
         if (x == null) {
             return false;
         }
-        x = x.trim();
-        if(x.length() ==4 && x.toLowerCase().equals("null")){
-        	return false;
+
+        x = x.toLowerCase();
+
+        if (x.indexOf("null") > -1) {
+            x = x.replaceAll("null", "");
         }
-        
-        return (x.length() > 0);
-        
+
+        return (x.trim().length() > 0);
     }
 
     public static final boolean isSet(java.util.Date x) {
@@ -1549,10 +1543,8 @@ public class UtilMethods {
 		valueSt = valueSt.replaceAll(">", "&gt;");
 		valueSt = valueSt.replaceAll("_DOTCMS_GT_","&gt;");
 		
-        // inverted exclamation mark 
-		if(valueSt.indexOf("\\u") > -1){
-			valueSt = escapeUnicodeCharsForHTML(valueSt);
-		}
+        // inverted exclamation mark �
+        valueSt = escapeUnicodeCharsForHTML(valueSt);
 
         return valueSt;
     }

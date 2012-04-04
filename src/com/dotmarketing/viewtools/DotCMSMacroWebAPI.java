@@ -543,14 +543,13 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @param folderPath String with the path with the files to show.
 	 * @param host Host where the folder path belongs.
 	 * @return List of the hashmap with the files to show in the media gallery. Each hashmap can contain these keys: 'movie' (null if there is no movie file) or 'photo' (The photo file. If there is a movie file, this will be the photo associated to the movie).
-	 * @throws DotDataException 
 	 */
-	public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, Host host) throws DotDataException {
+	public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, Host host) {
 		return getMediaGalleryFolderFiles(folderPath, host.getIdentifier());
 	}
 	
 	
-	public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, String hostId) throws DotDataException {
+	public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, String hostId) {
         folderPath = (folderPath == null) ? "" : folderPath;
         folderPath = folderPath.trim().endsWith("/") ? folderPath.trim() : folderPath.trim() + "/";
         Folder folder = new Folder();
@@ -614,10 +613,9 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @param folderPath String with the path with the files to show.
 	 * @param host long with the hostId of the host where the folder path belongs.
 	 * @return List of the hashmap with the files to show in the media gallery. Each hashmap can contain these keys: 'movie' (null if there is no movie file) or 'photo' (The photo file. If there is a movie file, this will be the photo associated to the movie).
-	 * @throws DotDataException 
 	 */
 	@Deprecated
-    public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, long hostId) throws DotDataException {
+    public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, long hostId) {
         return getMediaGalleryFolderFiles(folderPath, String.valueOf(hostId));
     }
 }

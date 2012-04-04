@@ -404,7 +404,7 @@ public class BrowserAjax {
     		boolean contentEditable = false;
     		if(contentlet != null){
     			if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, usr) && contentlet.isLocked()){    			
-    				String lockedUserId = APILocator.getVersionableAPI().getLockedBy(contentlet);
+    				String lockedUserId = APILocator.getVersionableAPI().getLockedBy(contentlet.getIdentifier());
     				if(usr.getUserId().equals(lockedUserId)){
     					contentEditable = true;
     				}else{

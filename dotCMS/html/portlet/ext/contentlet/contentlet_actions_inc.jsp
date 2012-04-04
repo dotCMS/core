@@ -11,7 +11,7 @@ if(user == null){
 boolean isUserCMSAdmin = APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
 boolean isHost = ("Host".equals(structure.getVelocityVarName()));
 
-boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
+
 
 WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
 WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet); 
@@ -48,7 +48,7 @@ catch(Exception e){
 
 
 
-<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
+<%if(contentlet.isLocked() && (contentEditable || isUserCMSAdmin)) {%>
 
 		<%if(contentEditable){ %>
 		    <a onClick="unlockContent('<%=contentlet.getInode() %>');" id="unlockContentButton">
@@ -67,7 +67,7 @@ catch(Exception e){
 
 
 
-<%if ((InodeUtils.isSet(contentlet.getInode())) && (canUserWriteToContentlet) && (!contentlet.isArchived()) && isContLocked && contentEditable) { %> 
+<%if ((InodeUtils.isSet(contentlet.getInode())) && (canUserWriteToContentlet) && (!contentlet.isArchived()) && contentlet.isLocked() && contentEditable) { %> 
 	<%if (!InodeUtils.isSet(contentlet.getInode()) || contentlet.isLive() || contentlet.isWorking()) { %> 
 		<%if (contentlet.isLive() && !contentlet.isWorking()) {%>
 			<a onClick="selectVersion('<%=contentlet.getInode()%>');">
@@ -95,7 +95,7 @@ catch(Exception e){
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
 		</a>
 	<%} %>
-<%}else if(!isContLocked) {%>
+<%}else if(!contentlet.isLocked()) {%>
 
 
 	<%if(!scheme.isMandatory() || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
@@ -113,7 +113,7 @@ catch(Exception e){
 
 <%if(!scheme.isMandatory()){ %>
 	<%
-	boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);
+	boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && contentlet.isLocked() && contentEditable && !contentlet.isArchived():canUserPublishContentlet);
 	if (canPublish) {
 		String savePublishButtonTitle = UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Publish"));
 		if(isHost){

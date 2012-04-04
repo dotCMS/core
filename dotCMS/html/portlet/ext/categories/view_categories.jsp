@@ -90,7 +90,12 @@ td {font-size: 100%;}
 
 	// format the name column of the grid to be an <a> element
 	var formatHref = function(value, index) {
-		return "<a href=\"javascript:drillDown("+index+")\" >"+value+"</a>";
+		var inode = grid.store.getValue(grid.getItem(index), 'inode');
+		var name = grid.store.getValue(grid.getItem(index), 'category_name');
+		var velVar = grid.store.getValue(grid.getItem(index), 'category_velocity_var_name');
+		var key = grid.store.getValue(grid.getItem(index), 'category_key');
+		var keywords = grid.store.getValue(grid.getItem(index), 'keywords');
+		return "<a href=\"javascript:drillDown('"+inode+"', '"+name+"', '"+velVar+"', '"+key+"', '"+keywords+"')\" >"+value+"</a>";
 	};
 
 	var sortCat = function() {
@@ -442,14 +447,7 @@ td {font-size: 100%;}
 	}
 
 	// drill down of a category, load the children, properties
-	function drillDown(index) {
-
-		var inode = grid.store.getValue(grid.getItem(index), 'inode');
-		var name = grid.store.getValue(grid.getItem(index), 'category_name');
-		var velVar = grid.store.getValue(grid.getItem(index), 'category_velocity_var_name');
-		var key = grid.store.getValue(grid.getItem(index), 'category_key');
-		var keywords = grid.store.getValue(grid.getItem(index), 'keywords');
-
+	function drillDown(inode, name, velVar, key, keywords) {
 		prepareCrumbs(inode, name);
 		dojo.byId("propertiesNA").style.display = "none";
 		dojo.byId("propertiesDiv").style.display = "block";
@@ -614,7 +612,7 @@ td {font-size: 100%;}
 		}
 
 		CategoryAjax.importCategories(currentInodeOrIdentifier, filter, file, exportType, function(result) {
-
+			
 			if(result==0) {
 				dojo.byId("warningDiv").innerHTML = '<br><br>';
 			}  else if (result==1) {

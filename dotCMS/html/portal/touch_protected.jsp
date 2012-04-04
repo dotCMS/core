@@ -25,7 +25,7 @@ if(!validate){
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <html>
 	<head>
-		<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+		<link rel="shortcut icon" href="//www.dotcms.org/global/favicon.ico" type="image/x-icon">
 		<meta content="no-cache" http-equiv="Cache-Control">
 		<meta content="no-cache" http-equiv="Pragma">
 		<meta content="0" http-equiv="Expires">

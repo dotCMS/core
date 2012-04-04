@@ -90,7 +90,7 @@
 
 <html>
 <head>
-	<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+	<link rel="shortcut icon" href="//www.dotcms.org/global/favicon.ico" type="image/x-icon">
 	<title>dotCMS: 403 Forbidden</title>
 
 	<style type="text/css">

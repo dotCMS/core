@@ -40,7 +40,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.ContentletLangVersionInfo;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.JBossRulesUtils;
@@ -278,7 +278,8 @@ public class CMSFilter implements Filter {
          */
         boolean hostlive;
         try {
-            hostlive = APILocator.getVersionableAPI().hasLiveVersion(host);
+        	ContentletLangVersionInfo cinfo = APILocator.getVersionableAPI().getContentletLangVersionInfo(host.getIdentifier(), host.getLanguageId());
+            hostlive = UtilMethods.isSet(cinfo.getLiveInode());
         } catch (Exception e1) {
             throw new ServletException(e1);
         }
@@ -441,9 +442,12 @@ public class CMSFilter implements Filter {
             			}else{
             				langId = Long.parseLong(langIdReq);
             			}
+
+                		
+
                 		
                 		try{
-                			ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
+                			ContentletLangVersionInfo cinfo = APILocator.getVersionableAPI().getContentletLangVersionInfo(ident.getId(), langId);
                 			Contentlet proxy  = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
                 			canRead = UtilMethods.isSet(proxy.getInode());
                 		}catch(Exception e){

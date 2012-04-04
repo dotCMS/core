@@ -81,12 +81,7 @@ public class FileAjax {
 		WebContext ctx = WebContextFactory.get();
 		AjaxFileUploadListener.FileUploadStats fileUploadStats = 
 			(AjaxFileUploadListener.FileUploadStats) ctx.getSession().getAttribute("FILE_UPLOAD_STATS_" + fieldName);
-		Map<String, Object> result = new HashMap<String, Object>();
 		if (fileUploadStats != null) {
-			if(fileUploadStats.getCurrentStatus().equalsIgnoreCase("error")){
-				result.put("error", "Sorry! We Could not process this uploaded file.");
-				return result;
-			}
 			long bytesProcessed = fileUploadStats.getBytesRead();
 			long sizeTotal = fileUploadStats.getTotalSize();
 			long percentComplete = (long) Math
@@ -94,14 +89,13 @@ public class FileAjax {
 			long timeInSeconds = fileUploadStats.getElapsedTimeInSeconds();
 			double uploadRate = bytesProcessed / (timeInSeconds + 0.00001);
 			double estimatedRuntime = sizeTotal / (uploadRate + 0.00001);
-			
+			Map<String, Object> result = new HashMap<String, Object>();
 			result.put("bytesProcessed", bytesProcessed);
 			result.put("sizeTotal", sizeTotal);
 			result.put("percentComplete", percentComplete);
 			result.put("timeInSeconds", timeInSeconds);
 			result.put("uploadRate", uploadRate);
 			result.put("estimatedRuntime", estimatedRuntime);
-			result.put("error", null);			
 			return result;
 		}
 		return null;

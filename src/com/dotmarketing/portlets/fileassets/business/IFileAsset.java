@@ -89,7 +89,7 @@ public interface IFileAsset {
 	
 	public String getType();
 	
-	public String getURI() throws DotDataException;
+	public String getURI();
 	
 	public String getExtension();
 

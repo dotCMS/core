@@ -1,0 +1,141 @@
+<html>
+<head>
+<title>Charting Theme Tester</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+	@import "../../../dojo/resources/dojo.css";
+	@import "../../../dijit/tests/css/dijitTests.css";
+	#chartContainer {
+		position: relative;
+		height: 520px;
+	}
+	#bars, #lines, #area, #bubbles {
+		position: absolute;
+		top:0;
+		width: 400px;
+		height: 260px;
+	}
+	#lines, #area { left: 400px; }
+	#bubbles, #area { top: 260px; }
+</style>
+<!--
+The next line should include Microsoft's Silverligth.js, if you plan to use the silverlight backend
+<script type="text/javascript" src="Silverlight.js"></script>
+-->
+<script type="text/javascript" src="../../../dojo/dojo.js" djConfig="isDebug: true"></script>
+<script type="text/javascript">
+	dojo.require("dojox.charting.Chart2D");
+
+	var themes = [
+		"GreySkies",
+		"Harmony",
+		"Distinctive",
+		"Adobebricks",
+		"Algae",
+		"Bahamation",
+		"BlueDusk",
+		"CubanShirts",
+		"Desert",
+		"Dollar",
+		"Grasshopper",
+		"Grasslands",
+		"IndigoNation",
+		"Ireland",
+		"MiamiNice",
+		"Midwest",
+		"Minty",
+		"PurpleRain",
+		"RoyalPurples",
+		"SageToLime",
+		"Shrooms",
+		"Tufte",
+		"WatersEdge",
+		"Wetland",
+		"PlotKit.blue",
+		"PlotKit.cyan",
+		"PlotKit.green",
+		"PlotKit.orange",
+		"PlotKit.purple",
+		"PlotKit.red"
+	];
+
+	//	require all the themes.
+	dojo.forEach(themes, function(item){
+		dojo.require("dojox.charting.themes."+item);
+	});
+	var charts = { bars: null, area: null, lines: null, bubbles: null }, current=dojox.charting.themes[themes[0]];
+
+	function update(){
+		//	change the theme based on the select change.
+		var select = dojo.byId("themeChooser");
+		var theme = dojo.getObject("dojox.charting.themes."+select.options[select.selectedIndex].value);
+		if(theme){
+			current = theme;
+			for(var chart in charts){
+				charts[chart].setTheme(current);
+				charts[chart].render();
+			}
+		}		
+	}
+
+	function init(){
+		charts.bars = new dojox.charting.Chart2D("bars");
+		charts.bars.setTheme(current);
+		charts.bars.addAxis("x", {fixLower: "minor", fixUpper: "minor", natural: true});
+		charts.bars.addAxis("y", {vertical: true, fixLower: "major", fixUpper: "major", includeZero: true});
+		charts.bars.addPlot("default", {type: "ClusteredColumns", gap: 10});
+		charts.bars.addSeries("Series A", [2, 1, 0.5, -1, -2] );
+		charts.bars.addSeries("Series B", [-2, -1, -0.5, 1, 2] );
+		charts.bars.addSeries("Series C", [1, 0.5, -1, -2, -3] );
+		charts.bars.addSeries("Series D", [0.7, 1.5, -1.2, -1.25, 3] );
+		charts.bars.render();
+
+		charts.lines = new dojox.charting.Chart2D("lines");
+		charts.lines.setTheme(current);
+		charts.lines.addPlot("default", {type: "Default", lines: true, markers: true, tension:"X"});
+		charts.lines.addAxis("x", {min: 0, max: 6, majorTick: {stroke: "black", length: 3}, minorTick: {stroke: "gray", length: 3}});
+		charts.lines.addAxis("y", {vertical: true, min: 0, max: 10, majorTick: {stroke: "black", length: 3}, minorTick: {stroke: "gray", length: 3}});
+		charts.lines.addSeries("Series A", [{x: 0.5, y: 5}, {x: 1.5, y: 1.5}, {x: 2, y: 9}, {x: 5, y: 0.3}]);
+		charts.lines.addSeries("Series B", [{x: 0.3, y: 8}, {x: 4, y: 6}, {x: 5.5, y: 2}]);
+		charts.lines.render();
+
+		charts.bubbles = new dojox.charting.Chart2D("bubbles");
+		charts.bubbles.setTheme(current);
+		charts.bubbles.addPlot("default", {type: "Bubble", shadows: {dx: 2, dy: 2, dw: 2}});
+		charts.bubbles.addAxis("x", {min: 0, max: 6, majorTick: {stroke: "black", length: 3}, minorTick: {stroke: "gray", length: 3}});
+		charts.bubbles.addAxis("y", {vertical: true, min: 0, max: 10, majorTick: {stroke: "black", length: 3}, minorTick: {stroke: "gray", length: 3}});
+		charts.bubbles.addSeries("Series A", [{x: 0.5, y: 5, size: 1.4}, {x: 1.5, y: 1.5, size:4.5}, {x: 2, y: 9, size:1.5}, {x: 5, y: 0.3, size:0.8}]);
+		charts.bubbles.addSeries("Series B", [{x: 0.3, y: 8, size: 2.5}, {x: 4, y: 6, size:1.1}, {x: 5.5, y: 2, size: 3.2}]);
+		charts.bubbles.render();
+		
+		charts.area = new dojox.charting.Chart2D("area");
+		charts.area.setTheme(current);
+		charts.area.addAxis("x", {fixLower: "major", fixUpper: "major"});
+		charts.area.addAxis("y", {vertical: true, fixLower: "major", fixUpper: "major", min: 0});
+		charts.area.addPlot("default", {type: "StackedAreas", tension:"X"});
+		charts.area.addSeries("Series A", [-2, 1.1, 1.2, 1.3, 1.4, 1.5, -1.6]);
+		charts.area.addSeries("Series B", [1, 1.6, 1.3, 1.4, 1.1, 1.5, 1.1]);
+		charts.area.addSeries("Series C", [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6]);
+		charts.area.render();
+
+		var s=dojo.byId("themeChooser");
+		dojo.forEach(themes, function(item){
+			s.options[s.options.length] = new Option(item, item);
+		});
+		dojo.connect(s, "onchange", update);
+	}
+	dojo.addOnLoad(init);
+</script>
+</head>
+<body>
+	<h1>DojoX Charting Theme Tester</h1>
+	<p>Choose a theme from the list below; the charts will be rendered using it.</p>
+	<p>Available themes: <select id="themeChooser"></select></p>
+	<div id="chartContainer">
+		<div id="bars"></div>
+		<div id="area"></div>
+		<div id="lines"></div>
+		<div id="bubbles"></div>
+	</div>
+</body>
+</html>

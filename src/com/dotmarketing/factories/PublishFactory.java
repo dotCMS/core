@@ -139,9 +139,7 @@ public class PublishFactory {
 			LiveCache.addToLiveAssetToCache((WebAsset) webAsset);
 			WorkingCache.removeAssetFromCache((WebAsset)webAsset);
 			WorkingCache.addToWorkingAssetToCache((WebAsset) webAsset);
-			if(RefreshMenus.shouldRefreshMenus((com.dotmarketing.portlets.files.model.File)webAsset)){
-				com.dotmarketing.menubuilders.RefreshMenus.deleteMenu((WebAsset)webAsset);
-			}
+			com.dotmarketing.menubuilders.RefreshMenus.deleteMenu((WebAsset)webAsset);
 
 		}
 
@@ -206,14 +204,8 @@ public class PublishFactory {
 			PageServices.invalidate((HTMLPage)webAsset);
 
             //Refreshing the menues
-			
-			
-			if(RefreshMenus.shouldRefreshMenus((HTMLPage)webAsset)){
-				Folder folder = (Folder) APILocator.getFolderAPI().findParentFolder((Treeable)webAsset,user,false);
-				if(folder != null){
-					RefreshMenus.deleteMenu(folder);
-				}
-			}
+			Folder folder = (Folder) APILocator.getFolderAPI().findParentFolder((Treeable)webAsset,user,false);
+            RefreshMenus.deleteMenu(folder);
             CacheLocator.getHTMLPageCache().remove((HTMLPage) webAsset);
 
 		}

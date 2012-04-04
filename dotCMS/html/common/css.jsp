@@ -39,19 +39,6 @@
 	files.add("/html/css/dot_admin.css");
 	files.add("/html/js/calendar/calendar-blue.css");
 
-	/** 
-	* Looks for plugins backend css to add
-	**/
-	String pluginsCSSPath = Config.getStringProperty("BACKEND_PLUGINS_CSS_PATHS");
-	if(UtilMethods.isSet(pluginsCSSPath)){
-		if(pluginsCSSPath.indexOf(",") != -1){
-			for(String pluginCssPath : pluginsCSSPath.split(",")){
-				files.add(pluginCssPath.trim());
-			}
-		}else{
-			files.add(pluginsCSSPath.trim());
-		}
-	}
 	
 	StringBuilder buff = new StringBuilder();
 	for(String x : files){

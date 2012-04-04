@@ -181,20 +181,6 @@
 		</jar>
 	</target>
 
-    <target name="jar-with-tests" depends="compile, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
-		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
-		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
-		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
-		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" />
-		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
-		<copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
-
-		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" >
-			<exclude name="com/dotmarketing/plugin/ant/**"/>
-			<exclude name="com/dotmarketing/plugin/util/**"/>
-		</jar>
-	</target>
-
 	<target name="jar-anttasks" depends="compile-anttasks" description="Generates dotcms-ant.jar in the 'lib' directory.">
 		<jar jarfile="${build.lib}/dotcms_ant.jar" basedir="${build.ant}"/>
 	</target>
@@ -223,15 +209,6 @@
 
 
 	<target name="deploy-core" depends="jsp,jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
-		<delete>
-			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
-		</delete>
-		<copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
-        <!-- Freetts -->
-		<delete dir="${build.classes}" />
-	</target>
-
-    <target name="deploy-core-with-tests" depends="jsp,jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -523,32 +500,32 @@
 </taskdef>
 	
 
-	<!-- Main test target, this tasks will run all the unit tests of the application -->
-	<target name="test-dotcms" depends="deploy-tests, set-properties, create-db">
+	<!-- Main test target, cactus runservertests task is used to perform the test -->	
+	<target name="test-dotcms" depends="set-properties, create-db">
 		<runservertests
 		    testurl="http://localhost:${server.port}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
-		    testtarget="test-all-junits"/>
+		    testtarget="check-homepage"/>
 		<antcall target="restore-files"/>
 		<antcall target="drop-db"/>
 	</target>	
 	
-	<!-- Hit the tests servlet to run all the unit tests of the application -->
-	<target name="test-all-junits" depends="">
+	<!-- Hit the homepage of dotCMS and check the response code -->	
+	<target name="check-homepage" depends="">
 		<condition property="get.ok">  
-		<http url="http://localhost:${server.port}/servlet/test" errorsbeginat="400">
+		<http url="http://localhost:${server.port}" errorsbeginat="400">  
 		</http>  
 		</condition>  
-		<fail unless="get.ok" message="One or more tests failed!!!" />
+		<fail unless="get.ok" message="http status 400 or above" /> 
 		<echo message="dotCMS successfully tested"/>
 	</target>	
 		
 	<target name="tomcat-start" >
 		<java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
 	        <jvmarg value="-Dcatalina.home=tomcat"/>
-			<jvmarg value="-Xms1G"/>
-			<jvmarg value="-XX:MaxPermSize=512m"/>
+			<jvmarg value="-Xms768M"/>
+			<jvmarg value="-Xmx768M"/>
 			<arg value="start"/>
 			<classpath>
 	          <fileset dir="tomcat">
@@ -731,8 +708,6 @@
 <target name="build" depends="build-core,build-plugins" description="build the dotCMS core and plugins" />
 
 <target name="deploy" depends="build, deploy-core, deploy-plugins" description="builds and deploys core and plugins" />
-
-<target name="deploy-tests" depends="build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
 <target name="deploy-dev" depends="deploy-plugins"/>
 

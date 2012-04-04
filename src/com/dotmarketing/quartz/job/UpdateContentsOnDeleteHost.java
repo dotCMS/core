@@ -38,13 +38,17 @@ public class UpdateContentsOnDeleteHost extends DotStatefulJob {
 		JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
 		Host host = (Host) dataMap.get("host");
 
-        try {
-            DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT contentlet.inode "
-                    + "FROM contentlet join inode on (inode.inode=contentlet.inode) "
-                    + " join identifier on (identifier.id = contentlet.identifier) "
-                    + " join contentlet_version_info cl on (cl.working_inode=contentlet.inode) "
-                    + "WHERE identifier.host_inode='" + host.getIdentifier());
+		try {
+			DotConnect dc = new DotConnect();
+			dc.setSQL("SELECT contentlet.inode " +
+					  "FROM identifier, " +
+						   "inode, " +
+						   "contentlet, " +
+						   "contentlet_lang_version_info cl  " +
+					  "WHERE identifier.host_inode='" + host.getIdentifier() + "' AND " +
+					  		"identifier.id = contentlet.identifier AND " +
+					  		"inode.inode=contentlet.inode AND " +
+					  		"cl.working_inode= contentlet.inode ");
 			List<Map<String, String>> inodes = dc.getResults();
 			boolean hostIsRequided;
 			User systemUser = userAPI.getSystemUser();

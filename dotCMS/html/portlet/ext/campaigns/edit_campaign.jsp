@@ -1165,10 +1165,41 @@
 		
 		<dt><input dojoType="dijit.form.RadioButton" type="radio" name="every" id="everyDates" value="isDate" <%= com.dotmarketing.util.UtilMethods.isSet(form.getEvery()) && form.getEvery().equals("isDate") ? "checked" : "" %> ></dt>
 		<dd>
-			<input type="text"  dojoType="dijit.form.DateTextBox" id="everyDate" name="everyDate" value="<%= form.getEveryDateYear() + "-" + (form.getEveryDateMonth()-1 < 9 ? "0" : "") + (form.getEveryDateMonth()) + "-" + (form.getEveryDateDay() < 10 ? "0" : "") + form.getEveryDateDay() %>" style="visibility:visible" onchange="setCalendarEveryDate();" />
-			<input type="hidden" name="everyDateMonth" id="everyDateMonth" value="<%= form.getEveryDateMonth()-1 %>" />
-			<input type="hidden" name="everyDateDay" id="everyDateDay" value="<%= form.getEveryDateDay() %>" />
-			<input type="hidden" name="everyDateYear" id="everyDateYear" value="<%= form.getEveryDateYear() %>" />
+<select dojoType="dijit.form.FilteringSelect"  style="width:10em" name="everyDateMonth" id="everyDateMonth" onChange="updateDateOnly('everyDate');" style="visibility:visible">
+				<option value="*">-</option>
+				<%
+				for (int i = 0; i < months.length; i++) {
+				%>
+					<option <%= (form.getEveryDateMonth()-1) == monthIds[i] ? "selected" : "" %> value="<%= monthIds[i] %>"><%= months[i] %></option>
+				<% } %>
+			</select>
+
+			<select dojoType="dijit.form.FilteringSelect"  style="width:6em" name="everyDateDay" id="everyDateDay" onChange="updateDateOnly('everyDate');" style="visibility:visible">
+				<option value="*">-</option>
+				<%
+				for (int i = 1; i <= 31; i++) {
+				%>
+					<option <%= form.getEveryDateDay() == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+				<% } %>
+			</select>
+
+			<select dojoType="dijit.form.FilteringSelect"  style="width:7em" name="everyDateYear" id="everyDateYear" onChange="updateDateOnly('everyDate');" style="visibility:visible">
+				<option value="*">-</option>
+				<%
+				int currentYear = GregorianCalendar.getInstance().get(Calendar.YEAR);
+				//int previous = 100;
+				for (int i = currentYear; i <= currentYear + 10; i++) {
+				%>
+					<option <%= form.getEveryDateYear() == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+				<% } %>
+			</select>
+			
+			<span class="calMonthIcon" id="<portlet:namespace />calendar_input_2_button" onClick="<portlet:namespace />calendarOnClick_2();"></span>
+			
+			<input type="hidden" name="everyDate" value="" id="everyDate">
+			<script language="javascript">
+				updateDateOnly('everyDate');
+			</script>
 		</dd>
 		
 		<dt>
@@ -1256,7 +1287,7 @@
 <!-- END Buttons -->
 
 <script>
-dojo.require("dijit.form.DateTextBox");
+	
 	// DOTCMS - 3897
 	dojo.addOnLoad(
 			

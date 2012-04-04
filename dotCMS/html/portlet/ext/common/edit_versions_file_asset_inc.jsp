@@ -64,8 +64,9 @@
 		String title = ver.getTitle();
 		String modUser = ver.getModUser();
 		Date modDate = ver.getModDate();
-		String statusIcon = com.dotmarketing.util.UtilHTML.getVersionStatusIcons(ver);
-
+		String statusIcon = com.dotmarketing.util.UtilHTML.getStatusIcons(live,working,ver.isArchived(),ver.isLocked(),COMMON_IMG, false);
+		
+		
 		String str_style = "";
 		if ((kmod % 2) == 0) {
 			str_style = "class='alternate_1'";
@@ -77,17 +78,8 @@
 		
 %>
 	<tr  <%=str_style%>>
-		<td nowrap="true">
-			<%= statusIcon %>
-			<%if(i==1){ %>
-				<%if(ver.isArchived()){ %>
-					<span class='archivedIcon'></span>
-				<%} %>
-	
-				<%if(ver.isLocked()){ %>
-					<span class='lockIcon'></span>
-				<%} %>
-			<%} %>
+		<td nowrap="nowrap" width="50">
+				<%= statusIcon %>
 		</td>
 		<td nowrap="nowrap">
 		<% if (!working) {  %>
