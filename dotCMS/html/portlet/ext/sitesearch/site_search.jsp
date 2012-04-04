@@ -1,3 +1,4 @@
+<%@page import="java.net.URLEncoder"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ include file="/html/common/init.jsp"%>
@@ -279,13 +280,14 @@ function deleteIndexCallback(data){
 function refreshIndexStats(){
 	var x = dijit.byId("indexStatsCp");
 	var y =Math.floor(Math.random()*1123213213);
-
 	x.attr( "href","/html/portlet/ext/sitesearch/site_search_index_stats.jsp?r=" + y  );
-
-
-
 }
 
+function refreshJobStats(){
+	var x = dijit.byId("jobStatsCp");
+	var y =Math.floor(Math.random()*1123213213);
+	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_stats.jsp?r=" + y  );
+}
 function doDownloadIndex(indexName){
 	
 
@@ -565,13 +567,32 @@ function updateReplicas(indexName,currentNum){
 				}
 			};
 			dojo.xhrPost(xhrArgs);
-		
 	}
-
-
-
-
 }
+
+function deleteJob(taskName){
+	var xhrArgs = {
+		       url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/deleteJob/taskName/" + taskName ,
+		       handleAs: "text",
+		       handle : function(dataOrError, ioArgs) {
+		           if (dojo.isString(dataOrError)) {
+		               if (dataOrError.indexOf("FAILURE") == 0) {
+		                   showDotCMSSystemMessage(dataOrError, true);
+		               } else {
+		                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Task-Deleted")%>", true);
+		                   refreshIndexStats();
+
+		               }
+		           } else {
+		               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+		           }
+		       }
+		    };
+		    dojo.xhrPost(xhrArgs);
+	
+}
+
+
 
 function dohighlight(id) {
 	dojo.addClass(id,"highlight");
@@ -583,17 +604,16 @@ function undohighlight(id) {
 
 
 dojo.addOnLoad (function(){
-
-	
 		var tab =dijit.byId("mainTabContainer");
 	   	dojo.connect(tab, 'selectChild',
 		 function (evt) {
 		 	selectedTab = tab.selectedChildWidget;
-		 	
 			  	if(selectedTab.id =="indexTabCp"){
 			  		refreshIndexStats();
 			  	}
-		  	
+			  	if(selectedTab.id =="jobTabCp"){
+			  		refreshJobStats();
+			  	}
 		});
 	
 });	
@@ -612,20 +632,6 @@ dojo.addOnLoad (function(){
 </style>
 <div class="portlet-wrapper">
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
-		<div id="TabZero" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Current-Jobs") %>">
-			<table class="listingTable" style="width:99%">
-				<tr>
-				    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "") %></span></th>
-					<th nowrap><%= LanguageUtil.get(pageContext, "Jobs") %></th>
-				</tr>
-				<%for(ScheduledTask task : ssapi.getTasks()){ %>
-				<tr>
-				    <td nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
-					<td nowrap><%=task.getJobName() %></th>
-				</tr>
-				<%} %>
-			</table>
-		</div>
 		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Schedule-New-Job") %>">
 			<form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
 			
@@ -774,6 +780,12 @@ dojo.addOnLoad (function(){
 			</dl>
 			</form>
 		</div>
+		
+		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Current-Jobs") %>">
+			<div dojoType="dijit.layout.ContentPane" id="jobStatsCp" style="height:600px"></div>
+		</div>
+		
+		
 		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Index") %>">
 			<div dojoType="dijit.layout.ContentPane" id="indexStatsCp" style="height:600px"></div>
 		</div>

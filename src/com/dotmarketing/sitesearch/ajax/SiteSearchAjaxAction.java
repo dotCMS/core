@@ -123,11 +123,17 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			writeError(response, e.getMessage());
 			
 		} 
-
-		
-		
+	}
+	public void deleteJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
+		try {
+			Map<String, String> map = getURIParams();
+			APILocator.getSiteSearchAPI().deleteTask(map.get("taskName"));
+		} catch (Exception e) {
+			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
+			writeError(response, e.getMessage());
+			
+		} 
 
 	}
-	
 	
 }

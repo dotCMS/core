@@ -123,6 +123,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	@Override
 	public void scheduleTask(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException{
 		String name = config.getJobName();
+		name.replace('"', '\'');
+		name.replace("'", "");
 		String cronString = config.getCronExpression();
 		boolean runNow = config.runNow();
 		
@@ -135,7 +137,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 						"site-search-execute-once-trigger", "site-search-execute-once-trigger-group", new Date(), null,
 						SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT, 5, true, config, 0, 0);
 				try{
-				   QuartzUtils.scheduleTask(scheduledTask);
+				   //QuartzUtils.scheduleTask(scheduledTask);
 				}catch(Exception e){
 					QuartzUtils.removeJob("site-search-execute-once", ES_SITE_SEARCH_NAME);	
 				}
@@ -144,8 +146,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 			}
 		}
 		else{
-			ScheduledTask	task = new CronScheduledTask(name, ES_SITE_SEARCH_NAME,"Site Search ", SiteSearchJobProxy.class.getCanonicalName(),new Date(),null, 5,config,cronString);
-			
+			ScheduledTask	task = new CronScheduledTask(name, ES_SITE_SEARCH_NAME,"Site Search ", SiteSearchJobProxy.class.getCanonicalName(),new Date(),null, 1,config,cronString);
 			QuartzUtils.scheduleTask(task);
 		}
 		
