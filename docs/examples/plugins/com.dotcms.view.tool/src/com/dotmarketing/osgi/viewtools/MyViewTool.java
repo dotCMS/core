@@ -1,10 +1,8 @@
-package org.apache.velocity.tools;
-
-import java.util.Random;
+package com.dotmarketing.osgi.viewtools;
 
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-public class MicheleViewTool implements ViewTool {
+public class MyViewTool implements ViewTool {
 
 	@Override
 	public void init(Object initData) {

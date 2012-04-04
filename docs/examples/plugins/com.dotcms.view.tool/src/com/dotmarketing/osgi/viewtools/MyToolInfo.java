@@ -1,8 +1,8 @@
-package org.apache.velocity.tools;
+package com.dotmarketing.osgi.viewtools;
 
 import org.apache.velocity.tools.view.ToolInfo;
 
-public class MicheleToolInfo implements ToolInfo {
+public class MyToolInfo implements ToolInfo {
 
 	@Override
 	public String getKey() {
@@ -11,12 +11,12 @@ public class MicheleToolInfo implements ToolInfo {
 
 	@Override
 	public String getClassname() {
-		return MicheleViewTool.class.getName();
+		return MyViewTool.class.getName();
 	}
 
 	@Override
 	public Object getInstance(Object initData) {
-		MicheleViewTool viewTool = new MicheleViewTool();
+		MyViewTool viewTool = new MyViewTool();
 		viewTool.init(initData);
 		return viewTool;
 	}
