@@ -221,6 +221,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("identifier", ident.getId());
             m.put("conHost", ident.getHostId());
             m.put("conFolder", con.getFolder());
+            m.put("parentPath", ident.getParentPath());
 
             Map<String,String> mlowered=new HashMap<String,String>();
             for(Entry<String,String> entry : m.entrySet()){
