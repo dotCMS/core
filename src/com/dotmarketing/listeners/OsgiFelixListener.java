@@ -16,22 +16,16 @@ import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
 import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 public class OsgiFelixListener implements ServletContextListener {
 
     private Framework m_fwk;
-
-    /**
-     * Default constructor. 
-     */
-    public OsgiFelixListener() {
-    }
     
 	private Properties loadConfig() {
 		Properties properties = new Properties();
@@ -41,6 +35,7 @@ public class OsgiFelixListener implements ServletContextListener {
 			if (key == null) continue;
 			if (key.startsWith("felix.")) {
 				properties.put(key.substring(6), Config.getStringProperty(key));
+				Logger.info(this, "Loading property  "+key.substring(6)+"="+Config.getStringProperty(key));
 			}
 		}
 		return properties;
@@ -55,10 +50,13 @@ public class OsgiFelixListener implements ServletContextListener {
     	Properties configProps = loadConfig();
     	    	
     	String felixDir = context.getServletContext().getRealPath("/WEB-INF/felix");
-    	    	    	
+    	Logger.info(this, "Felix dir: "+felixDir);
     	String bundleDir = felixDir + "/bundle";
     	String cacheDir = felixDir + "/felix-cache";
     	String autoLoadDir = felixDir + "/load";
+    	
+    	// we need gosh to not expecting stdin to work
+    	configProps.setProperty("gosh.args", "--noi");
     	
     	// (2) Load system properties.
         Main.loadSystemProperties();
@@ -76,30 +74,6 @@ public class OsgiFelixListener implements ServletContextListener {
             configProps.setProperty(Constants.FRAMEWORK_STORAGE, cacheDir);
         }
         
-        String value = configProps.getProperty("felix.org.osgi.framework.system.packages.extra");
-        if ( value != null )
-        	configProps.setProperty("org.osgi.framework.system.packages.extra", value);
-
-        // (7) Add a shutdown hook to clean stop the framework.
-        String enableHook = configProps.getProperty(Main.SHUTDOWN_HOOK_PROP);
-        if ((enableHook == null) || !enableHook.equalsIgnoreCase("false"))
-        {
-            Runtime.getRuntime().addShutdownHook(new Thread("Felix Shutdown Hook") {
-                public void run()
-                {
-                    try {
-                        if (m_fwk != null) {
-                            m_fwk.stop();
-                            m_fwk.waitForStop(0);
-                        }
-                    }
-                    catch (Exception ex) {
-                        System.err.println("Error stopping framework: " + ex);
-                    }
-                }
-            });
-        }
-
         // Create host activator;
         List<BundleActivator> list = new ArrayList<BundleActivator>();
         list.add(HostActivator.instance());
@@ -113,19 +87,19 @@ public class OsgiFelixListener implements ServletContextListener {
             FrameworkFactory factory = getFrameworkFactory();
             m_fwk = factory.newFramework(configProps);
             m_fwk.init();
-
+            
             // (9) Use the system bundle context to process the auto-deploy
             // and auto-install/auto-start properties.
-            AutoProcessor.process(configProps, m_fwk.getBundleContext());
+            AutoProcessor.process(configProps, m_fwk.getBundleContext());            
             
             // (10) Start the framework.
             m_fwk.start();
+            Logger.info(this, "osgi felix framework started");
         }
         catch (Exception ex)
         {
-            System.err.println("Could not create framework: " + ex);
-            ex.printStackTrace();
-            System.exit(0);
+            Logger.error(this, "Could not create framework: " + ex);
+            throw new RuntimeException(ex);
         }
     }
     
@@ -139,6 +113,7 @@ public class OsgiFelixListener implements ServletContextListener {
                     s = s.trim();
                     // Try to load first non-empty, non-commented line.
                     if ((s.length() > 0) && (s.charAt(0) != '#')) {
+                        Logger.info(OsgiFelixListener.class, "Loading Factory "+s);
                         return (FrameworkFactory) Class.forName(s).newInstance();
                     }
                 }
@@ -160,10 +135,8 @@ public class OsgiFelixListener implements ServletContextListener {
 			m_fwk.stop();
 	        // (11) Wait for framework to stop to exit the VM.
 	        m_fwk.waitForStop(0);
-		} catch (BundleException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			Logger.warn(this, "exception while stopping felix!",e);
 		}
     }
 	
