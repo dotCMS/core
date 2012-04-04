@@ -45,6 +45,7 @@ import com.dotmarketing.startup.runonce.Task00820CreateNewWorkFlowTables;
 import com.dotmarketing.startup.runonce.Task00825UpdateLoadRecordsToIndex;
 import com.dotmarketing.startup.runonce.Task00835CreateIndiciesTables;
 import com.dotmarketing.startup.runonce.Task00840FixContentletVersionInfo;
+import com.dotmarketing.startup.runonce.Task00845ChangeLockedOnToTimeStamp;
 
 
 public class TaskLocatorUtil {
@@ -66,7 +67,7 @@ public class TaskLocatorUtil {
 		ret.add(FixTask00030DeleteOrphanedAssets.class);
 		ret.add(FixTask00040CheckFileAssetsMimeType.class);
 		ret.add(FixTask00050FixInodesWithoutContentlets.class);
-		
+
 		return ret;
 	}
 
@@ -92,6 +93,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00825UpdateLoadRecordsToIndex.class);
 		ret.add(Task00835CreateIndiciesTables.class);
 		ret.add(Task00840FixContentletVersionInfo.class);
+		ret.add(Task00845ChangeLockedOnToTimeStamp.class);
 		return ret;
 	}
 
