@@ -36,9 +36,10 @@ public class OsgiFelixListener implements ServletContextListener {
      */
     public void contextInitialized(ServletContextEvent context) {
     	
+    	String confDir = context.getServletContext().getRealPath("/WEB-INF");
     	String felixDir = context.getServletContext().getRealPath("/WEB-INF/felix");
     	    	
-    	String url = felixDir + "/config/config.properties";
+    	String url = confDir + "/felix.properties";
     	
     	System.setProperty("felix.config.properties", "file://" + url);
     	
