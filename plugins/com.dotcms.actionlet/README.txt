@@ -23,8 +23,8 @@ In this list there must be the packages that you are using inside
 the ViewTool plugin and that are exported by the dotCMS runtime.
 
 In this example you will find the package:
-- org.apache.velocity.tools.view for interface ToolInfo
-- org.apache.velocity.tools.view.tools for interface ViewTool
+- com.dotmarketing.osgi.actionlet.view for interface ToolInfo
+- com.dotmarketing.osgi.actionlet.view.tools for interface ViewTool
 - com.dotmarketing.osgi for the AbstractViewToolActivator
 
 Beware!!!

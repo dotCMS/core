@@ -10,6 +10,8 @@ import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 
+import com.dotmarketing.util.Logger;
+
 public class AbstractViewToolActivator implements BundleActivator, ServiceListener {
 	
 	private PrimitiveToolboxManager tm;
@@ -60,11 +62,13 @@ public class AbstractViewToolActivator implements BundleActivator, ServiceListen
 		
 	private void register() {
 		tm.addTool(info);
-		System.out.println("Added View Tool: " + info.getKey());
+	    System.out.println("Added View Tool: " + info.getKey());
 	}
 	
 	private void unregister() {
-		tm.removeTool(info);
+		if ( tm != null ) {
+			tm.removeTool(info);
+		}
 		System.out.println("Removed View Tool: " + info.getKey());
 	}
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <jardesc>
-    <jar path="dotCMS/dotCMS/felix/load/michele.actionlet-1.0.0.jar"/>
+    <jar path="dotCMS/dotCMS/WEB-INF/felix/load/michele.actionlet-1.0.0.jar"/>
     <options buildIfNeeded="true" compress="true" descriptionLocation="/OsgiActionlet/deploy.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>
