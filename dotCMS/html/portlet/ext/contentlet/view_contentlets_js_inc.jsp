@@ -219,7 +219,6 @@
                 var working = data["working"] == "true"?true:false;
                 var deleted = data["deleted"] == "true"?true:false;
                 var locked = data["locked"] == "true"?true:false;
-                var hasLive = data["hasLive"] == "true"?true:false;
                 var liveSt = live?"1":"0";
                 var workingSt = working?"1":"0";
                 var permissions = data["permissions"];
@@ -236,7 +235,7 @@
             var ref = "<a onMouseOver=\"style.cursor='pointer'\" href=\"javascript: " + editRef + "\">";
                 //ref = ref + '<span class="editIcon"></span>';
                 ref = ref + "</a>";
-                ref = ref + data["statusIcons"] ;
+                ref = ref + getStatusIcons (live, working, deleted, locked, false) ;
                 
                 eval("cbContentInodeList[i] = '" + inode + "';++i;");
                 
@@ -1745,8 +1744,26 @@
                 return hasPermission;
         }
         
+        function getStatusIcons (live, working, deleted, locked, showWorking) {
+        var strHTML = new String();
+
+       
+        if (live) {
+            strHTML = strHTML + '<span class="liveIcon"></span>';
+        } else if (deleted) {
+            strHTML = strHTML + '<span class="archivedIcon"></span>';
+        } else if (working) {
+            strHTML = strHTML + '<span class="workingIcon"></span>';
+        }
+        if (locked) {
+            strHTML = strHTML + '<span class="lockIcon"></span>';
+        } else {
+            strHTML = strHTML + '<span class="shimIcon"></span>';
+        }
 
 
+        return strHTML;
+        }
 
         function showMatchingResults (num,begin,end,totalPages) {
                         
@@ -1802,8 +1819,6 @@
 
         function fillQuery (counters) {
                         var queryRaw = counters["luceneQueryRaw"];
-                        var queryfield=document.getElementById("luceneQuery");
-                        queryfield.value=queryRaw;
                         var queryFrontend = counters["luceneQueryFrontend"];
                         var sortBy = counters["sortByUF"];
                         var div = document.getElementById("queryResults")

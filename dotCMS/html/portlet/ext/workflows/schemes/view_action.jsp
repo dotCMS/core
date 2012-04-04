@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
+
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@page import="java.util.Set"%>
 <%@page import="com.liferay.portal.model.User"%>
@@ -7,6 +7,7 @@
 <%@page import="com.dotmarketing.business.PermissionSummary"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet" %>
 <%@page
 	import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>

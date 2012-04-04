@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
+<%@page import="com.dotmarketing.osgi.actionlet.WorkFlowActionlet"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@page import="java.util.Set"%>
 <%@page import="com.liferay.portal.model.User"%>

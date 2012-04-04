@@ -97,7 +97,7 @@ function cancelUnlock(){
 	
 	User systemUser = APILocator.getUserAPI().getSystemUser();
 	boolean isUserCMSAdmin = APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
-	String lockedUserId = APILocator.getVersionableAPI().getLockedBy(contentlet);
+	String lockedUserId = APILocator.getVersionableAPI().getLockedBy(contentlet.getIdentifier());
 %>
 
 <div class="shadowBox headerBox" style="width:600px;margin:auto;padding:10px 20px;margin-bottom:20px;">

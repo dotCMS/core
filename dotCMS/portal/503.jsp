@@ -93,7 +93,7 @@
 
 <html>
 <head>
-	<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+	<link rel="shortcut icon" href="//www.dotcms.org/global/favicon.ico" type="image/x-icon">
     <script>
         function showError(){
             var ele = document.getElementById("error");

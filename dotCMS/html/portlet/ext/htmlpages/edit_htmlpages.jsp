@@ -1,6 +1,5 @@
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotmarketing.portlets.templates.factories.TemplateFactory" %>
-<%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
 <%@ page import="com.dotmarketing.business.APILocator"%>
 <%@ page import="com.dotmarketing.beans.Identifier"%>
 <%@ page import="com.dotmarketing.business.PermissionAPI"%>
@@ -22,20 +21,11 @@ if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
 
 Identifier identifier=null;
 Template htmlTemplate=null;
-File templateImgPreviewFile = null;
-Contentlet templateImgPreviewContent = null;
-Boolean fileAsContent = false;
-
+File templateImgPreview = null;
 if(UtilMethods.isSet(htmlpage.getIdentifier())) {
     identifier = APILocator.getIdentifierAPI().find(htmlpage.getIdentifier());
     htmlTemplate = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(htmlpage);
-    Identifier imageIdentifier = APILocator.getIdentifierAPI().find(htmlTemplate.getImage());
-
-    if(imageIdentifier != null && imageIdentifier.getAssetType() != null && (fileAsContent = imageIdentifier.getAssetType().equals("contentlet"))) {
-    	templateImgPreviewContent = TemplateFactory.getImageContentlet(htmlTemplate);
-	} else {
-		templateImgPreviewFile = TemplateFactory.getImageFile(htmlTemplate);
-	}
+    templateImgPreview = TemplateFactory.getImageFile(htmlTemplate);
 }
 
 
@@ -219,12 +209,9 @@ if( !InodeUtils.isSet(htmlpage.getInode()) && folder != null && InodeUtils.isSet
 		        })
 		        </script>
 			</dd>
-				<%
-				 if(!fileAsContent && templateImgPreviewFile!=null && InodeUtils.isSet(templateImgPreviewFile.getInode())){%>
-					<dd><img src="/thumbnail?id=<%=templateImgPreviewFile.getIdentifier() %>&w=250&h=250" id="templateImage" border="0" style="border:1px solid #B6CBEB;"></dd>
-				<%} else if(fileAsContent && templateImgPreviewContent!=null && InodeUtils.isSet(templateImgPreviewContent.getInode())) {%>
-					<dd><img src="/thumbnail?id=<%=templateImgPreviewContent.getIdentifier() %>&w=250&h=250" id="templateImage" border="0" style="border:1px solid #B6CBEB;"></dd>
-				<%} else {} %>
+				<%if(templateImgPreview!=null && InodeUtils.isSet(templateImgPreview.getInode())){%>
+					<dd><img src="/thumbnail?id=<%=templateImgPreview.getIdentifier() %>&w=250&h=250" id="templateImage" border="0" style="border:1px solid #B6CBEB;"></dd>
+				<%}%>
 		</dl>
 	</div>
 <!-- /Basic Properties -->

@@ -1,4 +1,3 @@
-<%@page import="com.dotmarketing.util.UtilHTML"%>
 <%@ include file="/html/portlet/ext/containers/init.jsp" %>
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
@@ -164,9 +163,10 @@ function submitfm() {
 
 						%>
 						<tr>
-							<td <%=str_style%> nowrap="true">
-								<%=UtilHTML.getStatusIcons(container) %>
-			
+							<td <%=str_style%> width="50">
+								<font class="gamma" size="2">
+								<%= com.dotmarketing.util.UtilHTML.getStatusIcons(container,COMMON_IMG,false) %>
+								</font>
 							</td>
 							<td <%=str_style%> > <!-- //jira-2143 <script type="text/javascript">
 							var title<%=inode%>  = "<%= escapedContainerTitle %>";

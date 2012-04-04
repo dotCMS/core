@@ -35,8 +35,6 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
-
 <%
     Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 
@@ -230,7 +228,12 @@
 	            </td>
 			</tr>
         </table>
+
+		<div id="acheck<%=field.getVelocityVarName()%>"  >
+		</div>
+
     </div>
+    
     <script type="text/javascript">
         dojo.addOnLoad(function () {
         <% if(!wysiwygDisabled) {%>
@@ -329,11 +332,6 @@
     //BINARY kind of field rendering  http://jira.dotmarketing.net/browse/DOTCMS-1073
     } else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
         String fileName = "";
-        String sib= request.getParameter("sibbling");
-        String binInode=inode;
-        if(!UtilMethods.isSet(inode) && UtilMethods.isSet(sib)) {
-            binInode=sib;
-        }
  %>
 
      <!--  display -->
@@ -349,7 +347,7 @@
                 <!--  If you are not enterprise -->
                 <%if(("100".equals(System.getProperty("dotcms_level")))){ %>
                     <div style="position:relative;width:<%=showDim+40 %>px;">
-                        <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
+                        <img src="/contentAsset/image/<%=inode %>/<%=field.getVelocityVarName() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
                                 class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
                                 onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
                                 onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
@@ -358,7 +356,7 @@
 
                     <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:760px;height:500px;display:none;"">
                         <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
-                            <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=1" />
+                            <img src="/contentAsset/image/<%=inode %>/<%=field.getVelocityVarName() %>/?byInode=1" />
                         </div>
                         <div class="callOutBox">
                             <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
@@ -371,7 +369,7 @@
                 <%}else{ %>
                         <div dojoType="dotcms.dijit.image.ImageEditor"
                             editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
-                            inode="<%= binInode%>"
+                            inode="<%= inode%>"
                             fieldName="<%=field.getVelocityVarName()%>"
                             binaryFieldId="<%=field.getFieldContentlet()%>"
                             fieldContentletId="<%=field.getFieldContentlet()%>"
@@ -379,14 +377,13 @@
                             class="thumbnailDiv<%=field.getVelocityVarName()%>"
                         >
                     </div>
-
                 <%} %>
 
 
 
             <%}else{%>
                 <div id="<%=field.getVelocityVarName()%>ThumbnailSliderWrapper">
-                    <a class="bg" href="javascript: serveFile('','<%=binInode%>','<%=field.getVelocityVarName()%>');"
+                    <a class="bg" href="javascript: serveFile('','<%=inode%>','<%=field.getVelocityVarName()%>');"
                         id="<%=field.getVelocityVarName()%>BinaryFile"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download"))%></a>
                     <br/>
                 </div>
@@ -397,7 +394,7 @@
             }%>
             <% com.dotmarketing.portlets.contentlet.model.Contentlet contentlet = (com.dotmarketing.portlets.contentlet.model.Contentlet) request.getAttribute("contentlet"); %>
             <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
-                onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" dojoType="dotcms.dijit.form.FileAjaxUploader">
+                onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= contentlet.getInode()%>')" dojoType="dotcms.dijit.form.FileAjaxUploader">
             </div>
 
 
@@ -434,8 +431,8 @@
 
 							<a href="<%=resourceLink %>" target="_new"><%=identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)%></a>
 								<% if (mimeType.indexOf("text")!=-1 || mimeType.indexOf("xml")!=-1) { %>
-									<% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
-											<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText('<%= binInode%>')" type="button">
+									<% if (InodeUtils.isSet(inode) && canUserWriteToContentlet) { %>
+											<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText('<%= contentlet.getInode()%>')" type="button">
 												<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-text")) %>
 											</button>
 									<% } %>
@@ -704,13 +701,30 @@
 							<div id="previewCats<%=counter%>" class="catPreview" style="margin-top: 10px;  margin-left: 2px; border: 0;  max-width: 600px; border: 0.5px solid #B3B3B3; overflow:hidden; height:1%">
 							</div>
 							<script type="text/javascript">
+
+
+
+
 								function init<%=counter%>() {
+									<% if(UtilMethods.isSet(categoriesList)) {
+										 for (Category cat: categoriesList) {
+											 boolean add = catAPI.isParent(cat, category, user);
+
+											 if(add) {
+											 %>
+												addCat<%=counter%>("<%= cat.getInode() %>", "<%= cat.getCategoryName() %>");
+											<%}
+									 	}
+									}
+									%>
+									currentInodeOrIdentifier<%=counter%> = '<%= category.getInode() %>';
 									baseCat<%=counter%> = currentInodeOrIdentifier<%=counter%>;
 									dojo.byId("a_null<%=counter%>").id = "a_" + baseCat<%=counter%>;
 									dojo.connect(dijit.byId('categoriesDialog<%=counter%>'), "hide", function(evt) {
 										dojo.byId("catFilter<%=counter%>").blur();
 										dojo.window.scrollIntoView('link<%=counter%>');
 									});
+
 								}
 
 								function showCatDialog<%=counter%>() {
@@ -720,21 +734,8 @@
 								}
 
 								dojo.addOnLoad(function() {
-									 currentInodeOrIdentifier<%=counter%> = '<%= category.getInode() %>';
 									 init<%=counter%>();
-									 initDialog<%=counter%>();
 									 showCatDialog<%=counter%>();
-									 <% if(UtilMethods.isSet(categoriesList)) {
-	                                        for (Category cat: categoriesList) {
-	                                            boolean add = catAPI.isParent(cat, category, user);
-
-	                                            if(add) {
-	                                            %>
-	                                               addSelectedCat<%=counter%>("<%= cat.getInode() %>", "<%= cat.getCategoryName() %>");
-	                                           <%}
-	                                        }
-	                                      }
-	                                 %>
 									 dijit.byId('categoriesDialog<%=counter%>').hide();
 								});
 
@@ -807,51 +808,34 @@
 	  <button dojoType="dijit.form.Button" id="<%=field.getFieldContentlet()%>_addbutton" onClick="addKVPair('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');" iconClass="plusIcon" <%=field.isReadOnly()?"disabled":""%> type="button"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add")) %></button>
   </div>
   <div id="mainHolder" style="margin:0 20px 0 0;">
-
-  <%
-  String licenseMessage = LanguageUtil.get(pageContext, "Go-Enterprise-To-Access") + "!" ;
-  String licenseURL = "http://www.dotcms.com/buy-now";
-  List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
-  for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
-      List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-      if (portletIdsForLicenseManager.contains("EXT_LICENSE_MANAGER")) {
-          licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=EXT_LICENSE_MANAGER&p_p_action=0";
-          break;
-      }
-  }
-
-  if(!field.getVelocityVarName().equals("metaData") || LicenseUtil.getLevel()>199) {  %>
-	  <table class="listingTable" id="<%=field.getFieldContentlet()%>_kvtable">
-	   <%if(keyValueMap!=null && !keyValueMap.isEmpty()){
-	      int k = 0;
-		   for(String key : keyValueMap.keySet()){
-			   if(key.equals("content")){
-			   continue;
-			   }
-		     String str_style = "";
-	         if ((k%2)==0) {
-	           str_style = "class=\"dojoDndItem alternate_1\"";
-	         }else{
-	           str_style = "class=\"dojoDndItem alternate_2\"";
-	         }
-	         %>
-	        <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%=key%>" />
-			<input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= UtilMethods.escapeHTMLSpecialChars((String)keyValueMap.get(key)) %>" />
-	        <tr id="<%=field.getFieldContentlet()+"_"+key%>" <%=str_style %>>
-			    <td style="width:20px">
-			    <%if(!field.isReadOnly()){ %>
-			       	<a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=key%>');"><span class="deleteIcon"></span></a>
-			     <%} %>
-			    </td>
-				<td><span><%= key %></span></td>
-				<td><span><%=  UtilMethods.escapeHTMLSpecialChars((String)keyValueMap.get(key)) %></span></td>
-			</tr>
-	      <%k++;}
-	   }%>
-	   </table>
-   <%} else  {%>
-    <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
-   <%} %>
+  <table class="listingTable" id="<%=field.getFieldContentlet()%>_kvtable">
+   <%if(keyValueMap!=null && !keyValueMap.isEmpty()){
+      int k = 0;
+	   for(String key : keyValueMap.keySet()){
+		   if(key.equals("content")){
+		   continue;
+		   }
+	     String str_style = "";
+         if ((k%2)==0) {
+           str_style = "class=\"dojoDndItem alternate_1\"";
+         }else{
+           str_style = "class=\"dojoDndItem alternate_2\"";
+         }
+         %>
+        <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%=key%>" />
+		<input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= UtilMethods.escapeHTMLSpecialChars((String)keyValueMap.get(key)) %>" />
+        <tr id="<%=field.getFieldContentlet()+"_"+key%>" <%=str_style %>>
+		    <td style="width:20px">
+		    <%if(!field.isReadOnly()){ %>
+		       	<a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=key%>');"><span class="deleteIcon"></span></a>
+		     <%} %>
+		    </td>
+			<td><span><%= key %></span></td>
+			<td><span><%=  UtilMethods.escapeHTMLSpecialChars((String)keyValueMap.get(key)) %></span></td>
+		</tr>
+      <%k++;}
+   }%>
+   </table>
    </div>
    <%if(!field.isReadOnly()){ %>
 	  <script>

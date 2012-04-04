@@ -126,9 +126,9 @@ THIS FILE AND ITS INCLUDES
 		}
 
 	</script>
-	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
+
 	<style>
-		.imageBG{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:top center;background-size:100% auto;height:75px;position:absolute;top:0;left:0;width:100%;z-index:-2;}
+		.imageBG{background-color:<%= company.getSize() %>;background-image:url(<%= company.getHomeURL() %>);background-repeat:no-repeat;background-position:top center;background-size:100% auto;height:75px;position:absolute;top:0;left:0;width:100%;z-index:-2;}
 	</style>
 
 	

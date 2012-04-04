@@ -302,7 +302,7 @@ function processDelete(inode, referer) {
 					<%=container.getTitle()%>
 				</a>
 			</td>
-			<td nowrap><%= com.dotmarketing.util.UtilHTML.getStatusIcons(container) %></td>
+			<td nowrap><%= com.dotmarketing.util.UtilHTML.getStatusIcons(container,COMMON_IMG,true,pageContext) %></td>
 			<td><%=container.getFriendlyName()%></td>
 			<td nowrap>
 				<%=modDateFormat.format(container.getModDate())%>

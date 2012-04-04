@@ -5,8 +5,8 @@
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@include file="/html/portlet/ext/categories/init.jsp"%>
 
-<%
-	String dojoPath = Config.getStringProperty("path.to.dojo");
+<%  
+	String dojoPath = Config.getStringProperty("path.to.dojo"); 
 	String counter = (String) request.getAttribute("counter");
 %>
 
@@ -15,10 +15,10 @@
 @import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
 @import "<%=dojoPath%>/dojox/grid/resources/blankGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
 
-/*Grid need a explicit width/height by default*/
+/*Grid need a explicit width/height by default*/ 
 #addedGrid<%=counter%> { width: 43em; height:
     20em; }
-
+    
 #container<%=counter%> {
 	margin: 0px;
 	padding: 0px;
@@ -57,11 +57,11 @@
 	dojo.require('dijit.layout.ContentPane');
 	dojo.require("dojo.data.ItemFileWriteStore");
 	dojo.require("dojox.data.QueryReadStore");
-
+	
 	var grid<%=counter%>;
 	var myStore<%=counter%>;
-	var currentInodeOrIdentifier<%=counter%>;  // inode of the category
-	var currentCatName<%=counter%>;  // inode of the category
+	var currentInodeOrIdentifier<%=counter%>;  // inode of the category 
+	var currentCatName<%=counter%>;  // inode of the category 
 	var lastTabSelected<%=counter%>;
 	var addedGrid<%=counter%>;
 	var addedStore<%=counter%>;
@@ -69,29 +69,29 @@
 	var inodesArray<%=counter%> = [];
 	var deleteStore<%=counter%> = true;
 	var baseCat<%=counter%> = null;
-
+	
 	/*  ADDED CATEGORIES GRID FUNCTIONS */
-
+	
 	function createAddedStore<%=counter%>() {
 		var data =  { identifier: 'id',
 				   label: 'name',
 				   items: [
 				 ]};
-
+		
 		 addedStore<%=counter%> = new dojo.data.ItemFileWriteStore({
 	         data: data
 	     });
-
+		 
 	}
-
+	
 	function createAddedGrid<%=counter%>() {
-
-		var deleteFormatter = function(value, index) {
+		
+		var deleteFormatter = function(value, index) { 
 			var inode = addedGrid<%=counter%>.store.getValue(addedGrid<%=counter%>.getItem(index), 'id');
 			return "<a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross-small.png' /></a>";
 		}
-
-		var addedlayout = [
+		
+		var addedlayout = [ 
 		{
 			field : 'id',
 			name : 'id',
@@ -103,14 +103,14 @@
 			name : ' ',
 			width: '20px',
 			formatter: deleteFormatter
-		},
+		}, 
 		{
 			field : 'name',
 			name : '<%= LanguageUtil.get(pageContext, "Added") %>',
 			width: 'auto'
 		}
 		];
-
+	
 		addedGrid<%=counter%> = new dojox.grid.DataGrid({
 			jsId : "addedGrid<%=counter%>",
 	        store: addedStore<%=counter%>,
@@ -121,23 +121,17 @@
 			escapeHTMLInData : false,
 	        structure: addedlayout
 	    }, dojo.byId('addedHolder<%=counter%>'));
-
-		dojo.addClass(dojo.byId('addedHolder<%=counter%>'), "blank");
-
+		
+		dojo.addClass(dojo.byId('addedHolder<%=counter%>'), "blank");	
+		
 	}
 	
-	function addSelectedCat<%=counter%>(inode,name) {
+	function addCat<%=counter%>(inode, name) {
 		addedStore<%=counter%>.newItem({id : inode, name: name});
-        addedGrid<%=counter%>.render();
-        addPreview<%=counter%>(name, inode);
+		addedGrid<%=counter%>.render();
+		addPreview<%=counter%>(name, inode);
 	}
-
-	function addCat<%=counter%>(index) {
-		var inode = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'inode');
-		var name = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_name');
-		addSelectedCat<%=counter%>(inode,name);
-	}
-
+	
 	function delCat<%=counter%>(inode) {
 		addedStore<%=counter%>.fetch({query: {id:inode}, onComplete:function(items) {
 			 addedStore<%=counter%>.deleteItem(items[0]);
@@ -146,7 +140,7 @@
 			 dojo.destroy(dojo.byId("preview"+inode));
 		}});
 	}
-
+	
 	function delAll<%=counter%>() {
 		addedStore<%=counter%>.fetch({onComplete:function(items) {
 			for (var i = 0; i < items.length; i++){
@@ -155,40 +149,46 @@
 			addedStore<%=counter%>.save();
 		}});
 	}
-
+	
 	function fixAddedGrid<%=counter%>() {
 		addedGrid<%=counter%>.destroy(true);
 		createAddedGrid<%=counter%>();
 		addedGrid<%=counter%>.startup();
 	}
-
+	
 	var onSave = function() {
-
+		
 	};
-
+	
 	/*  CATEGORIES GRID FUNCTIONS */
-
-	var addFormatter<%=counter%> = function(value, index) {
-
-		return "<a href=\"javascript:addCat<%=counter%>("+index+");\"><img src='/html/images/icons/plus-small.png' /></a>";
+	
+	var addFormatter<%=counter%> = function(value, index) { 
+		var inode = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'inode');
+		var name = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_name');
+		return "<a href=\"javascript:addCat<%=counter%>('"+inode+"','"+name+"');\"><img src='/html/images/icons/plus-small.png' /></a>";
 	};
 
-
+	
 	/* format the name column of the grid to be an <a> element */
 	var formatHref<%=counter%> = function(value, index) {
-		return "<a href=\"javascript:drillDown<%=counter%>("+index+")\" >"+value+"</a>";
+		var inode = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'inode');
+		var name = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_name');
+		var velVar = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_velocity_var_name');
+		var key = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_key');
+		var keywords = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'keywords');
+		return "<a href=\"javascript:drillDown<%=counter%>('"+inode+"', '"+name+"', '"+velVar+"', '"+key+"', '"+keywords+"')\" >"+value+"</a>";
 	};
-
+	
 	function createStore<%=counter%>(params) {
 		if(params==null) params = '';
-
+		
 		myStore<%=counter%> = new dojox.data.QueryReadStore({
 			url : '/categoriesServlet'+params
 		});
 	}
-
+	
 	function createGrid<%=counter%>() {
-			var layout = [
+			var layout = [ 
 			{
 				field : 'add',
 				name : ' ',
@@ -210,7 +210,7 @@
 				width : '25%'
 			}
 			];
-
+			
 			grid<%=counter%> = new dojox.grid.EnhancedGrid({
 				rowsPerPage : 10,
 				jsId : "grid<%=counter%>",
@@ -233,55 +233,53 @@
 						maxPageStep : 7,
 						position : "bottom"
 					}
-				}
+				} 
 			}, dojo.byId('catHolder<%=counter%>'));
-
-			dojo.addClass(dojo.byId('catHolder<%=counter%>'), "tundra");
+			
+			dojo.addClass(dojo.byId('catHolder<%=counter%>'), "tundra");	
 	};
-
-	function initDialog<%=counter%>() {
-
+	
+	dojo.addOnLoad(function() {
+		
 <%-- 		dijit.byId("catFilter<%=counter%>").focus();  --%>
-
+		
 		createStore<%=counter%>();
 		createGrid<%=counter%>();
 		grid<%=counter%>.startup();
-
+		
 		createAddedStore<%=counter%>();
 		createAddedGrid<%=counter%>();
 		addedGrid<%=counter%>.startup();
 		doSearch<%=counter%>();
-
-	}
-
+		
+	});
+	
 	/* search handling */
 	function doSearch<%=counter%>() {
-
-		if(currentInodeOrIdentifier<%=counter%>) {
-			var params = dojo.byId("catFilter<%=counter%>").value;
-			params = "?inode="+currentInodeOrIdentifier<%=counter%>+"&q="+params;
-		    
-			grid<%=counter%>.destroy(true);
-			createStore<%=counter%>(params);
-			createGrid<%=counter%>();
-			grid<%=counter%>.startup();
-		}
-
+		
+		var params = dojo.byId("catFilter<%=counter%>").value;
+		params = "?inode="+currentInodeOrIdentifier<%=counter%>+"&q="+params;
+		
+		grid<%=counter%>.destroy(true);
+		createStore<%=counter%>(params);
+		createGrid<%=counter%>();
+		grid<%=counter%>.startup();
+		
 <%-- 		dijit.byId('catFilter<%=counter%>').focus(); --%>
-
-
+		
+		
     };
-
+	
 	/* clear the search field */
 	function clearCatFilter<%=counter%>() {
 		dijit.byId('catFilter<%=counter%>').attr('value', '');
 		doSearch<%=counter%>();
 	}
-
+	
 	function manageBreadCrumbs<%=counter%>(inode, name) {
 		dojo.place("<a style=\"font-size: 12px\" id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs<%=counter%>('"+inode+"', '"+name+"');  \">"+name+" &#62; </a>", "nav<%=counter%>", "last");
 	}
-
+	
 	function prepareCrumbs<%=counter%>(inode, name) {
 
 		currentInodeOrIdentifier<%=counter%>=inode;
@@ -292,43 +290,37 @@
 					destroy = true;
 					return;
 				}
-				if(destroy) {
+				if(destroy) { 
 					console.log("destroy: " + node);
 					dojo.destroy(node);
 				}
-			}) ;
-
+			}) ;	
+		
 		dijit.byId('catFilter<%=counter%>').attr('value', '');
 		doSearch<%=counter%>();
 	}
-
+	
 	/* drill down of a category, load the children, properties */
-	function drillDown<%=counter%>(index) {
-		var inode = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'inode');
-		var name = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_name');
-		var velVar = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_velocity_var_name');
-		var key = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_key');
-		var keywords = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'keywords');
-
+	function drillDown<%=counter%>(inode, name, velVar, key, keywords) {
 		manageBreadCrumbs<%=counter%>(inode, name);
 		currentCatName<%=counter%> = name;
 		currentInodeOrIdentifier<%=counter%> = inode;
 		dijit.byId('catFilter<%=counter%>').attr('value', '');
 		doSearch<%=counter%>();
 	}
-
+	
 	function alterFocus<%=counter%>(toBlur, toFocus) {
-
+			
 		 	if(dijit.byId("categoriesDialog<%=counter%>").open) {
 				toBlur.blur();
 				toFocus.focus();
 		 	}
 	}
-
+	
 	function addPreview<%=counter%>(catName, inode) {
 		dojo.place("<li id='preview"+inode+"'  ><a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross-small.png' /></a>"+catName+"</li>", "previewCats<%=counter%>", "last");
 	}
-
+ 
 </script>
 <div id="categoriesDialog<%=counter%>" dojoType="dijit.Dialog" style="display:none;width:630px;height:440px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "categories") %>" >
@@ -337,15 +329,15 @@
 				<a id="a_null<%=counter%>" style="font-size: 12px" onfocus="this.blur(); "  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %> &#62; </a>
 			</ul>
 		</div>
-		<div style="margin-top: 10px">
+		<div style="margin-top: 10px"> 
 				<input name="catFilter" id="catFilter<%=counter%>" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>" style="width: 138px; height: 15px" />
 				<button dojoType="dijit.form.Button" onclick="doSearch<%=counter%>();" type="button" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
 				<button dojoType="dijit.form.Button" onclick="clearCatFilter<%=counter%>()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Clear") %></button>
-				<div id="all<%=counter%>" style="margin-top: 10px; margin-left: 50px; ">
+				<div id="all<%=counter%>" style="margin-top: 10px; margin-left: 50px; "> 
 				<a href="javascript:delAll<%=counter%>()" style="font-size:11px">Delete All</a>
+		</div>	
 		</div>
-		</div>
-
+		
 		<div id="container<%=counter%>" style="height: 340px;  overflow: auto;">
 
 			<div id="scroll<%=counter%>" style="height: 300px; margin-top: 0px">

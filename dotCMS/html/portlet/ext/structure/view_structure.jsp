@@ -262,16 +262,7 @@ dojo.addOnLoad(function() {
 
 			<tr id="tr<%=structure.getInode()%>" class="alternate_1" onclick="editStructure('<%=structure.getInode()%>');">
 				<td>
-					<% if(structure.isWidget()){ %>
-						<span class="gearIcon"></span>
-					<% }else if(structure.isForm()){ %>
-						<span class="formIcon"></span>
-					<% }else if(structure.isFileAsset()){ %>
-						<span class="fileIcon"></span>
-					<% }else{ %>
-						<span class="contentIcon"></span>
-					<% } %>
-					
+					<span class="structureIcon"></span>
 					<%=structure.getName()%>
 				</td>
 				<td><%=structure.getVelocityVarName() %></td>

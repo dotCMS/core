@@ -59,16 +59,9 @@
 	}
 
 	function fillFields (data) {
-		if(data["allowImport"] == false){
-			document.getElementById('importDetails').hide();
-			document.getElementById('cantImportMessage').show();
-			return;
-		}
-		document.getElementById('cantImportMessage').hide();
-		document.getElementById('importDetails').show();
-		currentStructureFields = data["keyStructureFields"];
+		currentStructureFields = data;
 		dwr.util.removeAllRows("import_fields_table");
-		dwr.util.addRows("import_fields_table", currentStructureFields, [fieldCheckbox], { escapeHtml: false });
+		dwr.util.addRows("import_fields_table", data, [fieldCheckbox], { escapeHtml: false });
 		dojo.parser.parse('import_fields_table');
 	}
 
@@ -228,8 +221,7 @@
 			%>
 			                </select>
 			            </dd>
-			    	</dl>
-			        <dl id="importDetails">
+			            
 			            
 			            <dt><%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %>:</dt>
 			            <dd>
@@ -276,9 +268,6 @@
 			                </button>
 			            </dd>    
 		       		</dl>
-			        <dl id="cantImportMessage">
-			        	<div class="warningText"><%= LanguageUtil.get(pageContext, "import-not-allowed-structure-has-madatory-scheme-no-default-action")%></div>
-		       		</dl>			        
 					</div>		       	
 		    	</fieldset>
 			</html:form>
@@ -287,7 +276,6 @@
 </liferay:box>
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
-		document.getElementById('cantImportMessage').hide();
 		var structure = dijit.byId("structuresSelect").attr('value');
 		if ((structure != null) && (structure != '')) {
 			structureChanged(structure);

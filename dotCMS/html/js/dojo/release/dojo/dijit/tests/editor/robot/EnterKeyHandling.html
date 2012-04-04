@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+		"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<title>doh.robot Editor/EnterKeyHandling Plugin Test</title>
+
+		<style>
+			@import "../../../../util/doh/robot/robot.css";
+		</style>
+
+		<!-- required: dojo.js -->
+		<script type="text/javascript" src="../../../../dojo/dojo.js"
+			djConfig="isDebug: true, parseOnLoad: true"></script>
+
+		<!-- functions to help test -->
+		<script type="text/javascript" src="../../helpers.js"></script>
+
+		<script type="text/javascript">
+			dojo.require("dijit.dijit"); // optimize: load dijit layer
+			dojo.require("dijit.robotx");
+
+			function dom2string(root){
+				// summary:
+				//		Simple dump of the HTML inside an editor, skipping
+				//		attributes altogether.   Similar to `dijit._editor.getNodeHtml`
+				//		(maybe want to switch to using that).
+				var out = [];
+
+				function recurse(children){
+					var i=0, node;
+					while(node = children[i++]){
+						switch(node.nodeType){
+						case 1:	// normal node
+							if(node.childNodes.length){
+								out.push("<" + node.tagName.toLowerCase() + ">");
+								recurse(node.childNodes);
+								out.push("</" + node.tagName.toLowerCase() + ">");
+							}else{
+								out.push("<" + node.tagName.toLowerCase() + "/>");
+							}
+							break;
+						case 3:	// text
+							var text = dojo.trim(node.textContent || node.data).
+										replace('\u00a0', "&nbsp;");
+							if(text){
+								out.push(text);
+							}
+							break;
+						}
+					}
+				}
+
+				recurse(root.childNodes);
+				return out.join("");
+			}
+
+			dojo.addOnLoad(function(){
+				doh.robot.initRobot('../EnterKeyHandling.html');
+
+				// Tests for BR mode
+				if(dojo.isIE){
+					doh.register("blockNodeForEnter=BR / IE tests", [
+						{
+							name: "initial input",
+							timeout: 4000,
+							runTest: function(){
+								// The initial input was <p>para 1<br>line 2</p>  <p>para 2<br>line 2</p>,
+								// but the pre-filter should internally convert it to have a <p> for each line
+								// of text.
+								doh.is('<p>para 1</p><p>line 2</p><p>&nbsp;</p><p>para 2</p><p>line 2</p>',
+										dom2string(dijit.byId("br").editNode),
+										"innerHTML of editor (should have converted each line of text to a separate <p>)");
+
+								// getValue() should call the post-filter which recombines the separate <p> nodes into bigger
+								// paragraphs.
+								doh.is('<p>para 1<br />line 2</p><p>para 2<br />line 2</p>',
+										dijit.byId("br").attr('value'),
+										"attr('value')");
+
+								// Make sure that the post-filter didn't corrupt the data inside the editor
+								doh.is('<p>para 1</p><p>line 2</p><p>&nbsp;</p><p>para 2</p><p>line 2</p>',
+										dom2string(dijit.byId("br").editNode),
+										'innerHTML of editor DOM after getValue() call');
+
+								// Make sure that the margin:0 style was applied to the <p> nodes
+								var sampleP = dijit.byId("br").editNode.childNodes[0];
+								doh.is('P', sampleP.tagName, "found a P node");
+								doh.is(0, dojo.style(sampleP, "margin-top"));
+								doh.is(0, dojo.style(sampleP, "margin-bottom"));
+							}
+						},
+
+						/*******
+						Not currently working, see #9462
+						{
+							name: "text nodes at top level",
+							timeout: 4000,
+							runTest: function(){
+
+								var br = dijit.byId("br");
+
+								br.attr("value", "ab345<br>ab345<br>ab345<br>ab345<br>");
+
+								// Pre-filter should internally convert it to have a <p> for each line
+								// of text.
+								doh.is('<p>ab345</p><p>ab345</p><p>ab345</p><p>ab345</p>',
+										dom2string(dijit.byId("br").editNode),
+										"innerHTML of editor (should have converted each line of text to a separate <p>)");
+								// getValue() should call the post-filter which recombines the separate <p> nodes into bigger
+								// paragraphs.
+								doh.is('<p>ab345<br/>ab345<br/>ab345<br/>ab345</p>',
+										dijit.byId("br").attr('value'),
+										"attr('value')");
+							}
+						},
+						********/
+
+
+						{
+							name: "type in some text",
+							timeout: 10000,
+							runTest: function(){
+								var d = new doh.Deferred();
+
+								var br = dijit.byId("br");
+								br.attr("value", "");
+								br.focus();
+
+								// tab to the MenuBar... then focus should automatically shift to "File" menu,
+								for(var i=0; i<4; i++){
+									doh.robot.typeKeys("ab345", 500);
+									i<3 && doh.robot.keyPress(dojo.keys.ENTER, 100, {});
+								}
+
+								doh.robot.sequence(d.getTestCallback(function(){
+									doh.is('<p>ab345</p><p>ab345</p><p>ab345</p><p>ab345</p>',
+											dom2string(br.editNode),
+											"innerHTML of editor (should have converted each line of text to a separate <p>)");
+
+									// attr('value') should call the post-filter which recombines the separate <p> nodes into bigger
+									// paragraphs.
+									doh.is('<p>ab345<br />ab345<br />ab345<br />ab345</p>',
+											br.attr('value'),
+											"attr('value')");
+								}), 500);
+
+								return d;
+							}
+						}
+					]);
+				}
+
+				doh.run();
+			});
+		</script>
+	</head>
+</html>

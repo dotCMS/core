@@ -161,7 +161,7 @@
 		        <%}%>
 		        <%if (contentlet.isLocked()) {
 		        
-		  		  	User u = APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false); %>
+		  		  	User u = APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet.getIdentifier()), APILocator.getUserAPI().getSystemUser(), false); %>
 		        	<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
 		   		<%} %>
 				

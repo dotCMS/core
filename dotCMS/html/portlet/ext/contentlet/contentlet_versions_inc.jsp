@@ -1,5 +1,3 @@
-<%@page import="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@ include file="/html/common/init.jsp" %>
 <%@page import="java.util.*" %>
 <%@page import="com.dotmarketing.beans.*" %>
@@ -23,6 +21,7 @@
 	Identifier ident = APILocator.getIdentifierAPI().find(id);
 	boolean isImage = UtilMethods.isImage(ident.getAssetName());
 	List<Contentlet> versions = APILocator.getContentletAPI().findAllVersions(ident, user, false);
+	
 	boolean canEdit  = false;
 
 	if(versions.size() > 0){
@@ -42,7 +41,6 @@
 	<tr>
 		<th width="5%" nowrap><%= LanguageUtil.get(pageContext, "Status") %></th>
 		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "Action") %></th>
-		<th width="1%" nowrap>&nbsp;</th>
 		<th width="45%"><%= LanguageUtil.get(pageContext, "Title") %></th>
 		<th width="20%"><%= LanguageUtil.get(pageContext, "Author") %></th>
 		<%if(isImage){ %>
@@ -52,16 +50,14 @@
 		<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Inode") %></th>
 	</tr>
 <%
-    Iterator<Contentlet> versionsIt = versions.iterator();
+	Iterator<Contentlet> versionsIt = versions.iterator();
 	int kmod = 0;
 	boolean isAlreadyLocked = false;
 	while (versionsIt.hasNext()) {
 		Contentlet ver = versionsIt.next();
 		Contentlet c = (Contentlet) ver;
-		ContentletVersionInfo verinfo=APILocator.getVersionableAPI().getContentletVersionInfo(id, c.getLanguageId());
-		Language langV=APILocator.getLanguageAPI().getLanguage(c.getLanguageId());
-		boolean working = c.getInode().equals(verinfo.getWorkingInode());
-		boolean live = c.getInode().equals(verinfo.getLiveInode());
+		boolean working = ver.isWorking();
+		boolean live = ver.isLive();
 		String vinode = ver.getInode();
 		String title = ver.getTitle();
 		String modUser = ver.getModUser();
@@ -75,6 +71,7 @@
 			str_style = "class='alternate_2'";
 		}
 		kmod++;
+		
 %>
 	<tr  <%=str_style%>>
 		<td nowrap="nowrap" width="50" align="center">
@@ -97,7 +94,6 @@
 			<%= LanguageUtil.get(pageContext, "Working-Version") %>
 		<% } %>
 		</td>
-		<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/></td>
 		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
 <% 
 	String modUserName = "";

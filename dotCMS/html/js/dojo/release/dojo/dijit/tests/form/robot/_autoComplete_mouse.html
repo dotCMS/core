@@ -1,0 +1,252 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+		"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<title>doh.robot ComboBox/FilteringSelect Mouse Tests</title>
+
+	<style>
+		@import "../../../../util/doh/robot/robot.css";
+	</style>
+
+	<!-- required: dojo.js -->
+	<script type="text/javascript" src="../../../../dojo/dojo.js"
+		djConfig="isDebug: true, parseOnLoad: true"></script>
+	<script type="text/javascript" src="../../helpers.js"></script>
+
+	<script type="text/javascript">
+		dojo.require("dijit.dijit"); // optimize: load dijit layer
+		dojo.require("dijit.robotx");
+
+		// TODO: provide URL toggle for FilteringSelect
+		var testWidget = "dijit.form.ComboBox";
+		var qstr = window.location.search.substr(1);
+		if(qstr.length){
+		        var qparts = qstr.split("&");
+		        for(var x=0; x<qparts.length; x++){
+		                var tp = qparts[x].split("=");
+		                if(tp[0] == "testWidget"){
+		                        testWidget = tp[1];
+		                }
+		        }
+		}
+		isComboBox = testWidget=="dijit.form.ComboBox";
+		dojo.addOnLoad(function(){
+
+			doh.robot.initRobot('../_autoComplete.html?testWidget='+testWidget);
+
+			// Wait for data stores to finish loading before starting tests
+			doh.register("wait for data store load",
+				dojo.map(["store", "store2", "stateStore", "dijitStore"], function(name){
+					return {
+							name: "wait for " + name,
+							timeout: 5000,
+							runTest: function(){
+								var d = new doh.Deferred();
+								dojo.global[name].fetch({
+									onComplete: function(){
+										d.callback(true);
+									},
+									onError: function(e){
+										d.errback(e);
+									}
+								});
+								return d;
+							}
+						};
+				})
+			 );
+
+
+			doh.register("drop down navigation / mouse", [
+				{
+					timeout:6000,
+					name:"open drop down",
+					runTest:function(){
+						var d = new doh.Deferred();
+
+						var combo = dijit.byId("setvaluetest");
+
+						// Open drop down
+						doh.robot.mouseMoveAt(combo.downArrowNode, 500);
+						doh.robot.mouseClick({left:true}, 500);
+
+						doh.robot.sequence(d.getTestCallback(function(){
+							var list = dojo.byId("setvaluetest_popup"),
+								entries = dojo.query("li", list).filter(isVisible);
+							doh.t(isVisible(list), "list is visible");
+							doh.is(31, entries.length, "30 elements plus next button");
+						}), 3000);
+
+						return d;
+					}
+				},
+
+				{
+					timeout:6000,
+					name:"next page",
+					runTest:function(){
+						var d = new doh.Deferred();
+
+						var list = dojo.byId("setvaluetest_popup"),
+							moreEntriesButton = dojo.query(":last-child", list)[0];
+
+						doh.t(isVisible(list), "list is still visible");
+						doh.t(moreEntriesButton, "found more entries button");
+
+						doh.robot.mouseMoveAt(moreEntriesButton, 500);
+						doh.robot.mouseClick({left:true}, 500);
+
+						doh.robot.sequence(d.getTestCallback(function(){
+							var list = dojo.byId("setvaluetest_popup"),
+								entries = dojo.query("li", list).filter(isVisible);
+								doh.is("Minnesota (MN)", innerText(entries[1]));
+						}), 3000);
+
+						return d;
+					}
+				},
+
+				{
+					timeout:6000,
+					name:"last page",
+					runTest:function(){
+						var d = new doh.Deferred();
+
+						var moreEntriesButton = dojo.query(":last-child", dojo.byId("setvaluetest_popup"))[0];
+
+						doh.robot.mouseMoveAt(moreEntriesButton, 500);
+						doh.robot.mouseClick({left:true}, 500);
+
+						doh.robot.sequence(d.getTestCallback(function(){
+							var list = dojo.byId("setvaluetest_popup"),
+								entries = dojo.query("li", list).filter(isVisible);
+								doh.is(2, entries.length, "previous choices + wyoming");
+								doh.is("Wyoming (WY)", innerText(entries[1]));
+						}), 3000);
+
+						return d;
+					}
+				},
+
+				{
+					timeout:6000,
+					name:"previous page",
+					runTest:function(){
+						var d = new doh.Deferred();
+
+						var previousEntriesButton = dojo.query(":first-child", dojo.byId("setvaluetest_popup"))[0];
+
+						doh.robot.mouseMoveAt(previousEntriesButton, 500);
+						doh.robot.mouseClick({left:true}, 500);
+
+						doh.robot.sequence(d.getTestCallback(function(){
+							var list = dojo.byId("setvaluetest_popup"),
+								entries = dojo.query("li", list);
+								doh.is(32, entries.length, "30 states, plus next and previous button");
+								doh.is("Minnesota (MN)", innerText(entries[1]));
+								doh.is("Wisconsin (WI)", innerText(entries[30]));
+						}), 3000);
+
+						return d;
+					}
+				},
+
+				{
+					timeout:6000,
+					name:"select value",
+					runTest:function(){
+						var d = new doh.Deferred();
+
+						var list = dojo.byId("setvaluetest_popup"),
+							entries = dojo.query("li", list),
+							nj = entries[8];
+
+						doh.robot.mouseMoveAt(nj, 500);
+						doh.robot.mouseClick({left:true}, 500);
+
+						doh.robot.sequence(d.getTestCallback(function(){
+							doh.is(isComboBox ? "New Jersey (NJ)" : "NJ", dijit.byId("setvaluetest").attr('value'),
+								"selected New Jersey from drop down");
+							var count = dijit.byId("setvaluetest").labelFuncCounts['NJ'];
+							doh.is(4, count, "custom labelFunc was called " + count + " times (expected 4)");
+						}), 3000);
+
+						return d;
+					}
+				},
+
+				{
+					timeout:6000,
+					name:"blur value",
+					runTest:function(){
+						var d = new doh.Deferred();
+
+						var combo = dijit.byId("setvaluetest");
+						// focus combo
+						doh.robot.mouseMoveAt(combo.focusNode, 500);
+						doh.robot.mouseClick({left:true}, 500);
+						// blur
+						doh.robot.mouseMoveAt(combo.focusNode, 500, 500, 0, -10);
+						doh.robot.mouseClick({left:true}, 500);
+
+						doh.robot.sequence(d.getTestCallback(function(){
+							doh.is(isComboBox ? "New Jersey (NJ)" : "NJ", dijit.byId("setvaluetest").attr('value'),
+								"New Jersey still set after blur");
+							var count = dijit.byId("setvaluetest").labelFuncCounts['NJ'];
+							doh.is(4, count, "custom labelFunc was called " + count + " times (expected 4, unchanged after blur)");
+						}), 3000);
+
+						return d;
+					}
+				}
+			]);
+
+
+			// disabled tests+standard tests
+			doh.register("disabled", [
+				{
+					timeout:6000,
+					name: "focus by mouse",
+					runTest:function(){
+						var d = new doh.Deferred(),
+							combo = dijit.byId("combo3");
+
+						doh.robot.mouseMoveAt(combo.focusNode, 500);
+						doh.robot.mouseClick({left:true}, 500);
+
+						doh.robot.sequence(d.getTestCallback(function(){
+							// TODO: uncomment when #8595 is fixed
+							//doh.isNot(combo, dijit.getEnclosingWidget(dojo.global.dijit._curFocus), "click doesn't focus disabled combo");
+						}), 3000);
+
+						return d;
+					}
+				},
+				{
+					timeout:6000,
+					name:"dropdown button",
+					runTest:function(){
+						var d = new doh.Deferred(),
+							combo = dijit.byId("combo3");
+
+						// Press Arrow Button
+						doh.robot.mouseMoveAt(combo.downArrowNode, 500);
+						doh.robot.mouseClick({left:true}, 500);
+
+						// Assert that nothing happened
+						doh.robot.sequence(d.getTestCallback(function(){
+							doh.f(combo._popupWidget, "User was able to open the menu on a disabled ComboBox!");
+
+							// Testcase for #8923, uncomment when that bug is fixed
+							//doh.isNot(combo, dijit.getEnclosingWidget(dojo.global.dijit._curFocus), "button-click doesn't focus disabled combo");
+						}), 3000);
+						return d;
+					}
+				}
+			]);
+
+			doh.run();
+		});
+	</script>
+</head>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+		"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<title>Editor Test</title>
+
+	<style type="text/css">
+		@import "../../../dojo/resources/dojo.css";
+		@import "css/dijitTests.css";
+	</style>
+
+	<!-- required: a default dijit theme: -->
+	<link id="themeStyles" rel="stylesheet" href="../../../dijit/themes/tundra/tundra.css">
+
+	<!-- required: dojo.js -->
+	<script type="text/javascript" src="../../../dojo/dojo.js"
+		djConfig="parseOnLoad: true, isDebug: true"></script>
+
+	<!-- not needed, for testing alternate themes -->
+	<script type="text/javascript" src="_testCommon.js"></script>
+
+
+	<script type="text/javascript">
+		dojo.require("dijit.dijit"); // optimize: load dijit layer
+		dojo.require("dijit.Editor");
+		dojo.require("dijit._editor.plugins.AlwaysShowToolbar");
+		dojo.require("dijit._editor.plugins.FontChoice");  // 'fontName','fontSize','formatBlock'
+		dojo.require("dijit._editor.plugins.TextColor");
+		dojo.require("dijit._editor.plugins.LinkDialog");
+		dojo.require("dojo.parser");	// scan page for widgets and instantiate them
+
+		// Make editor indent work for paragraphs in addition to lists
+		var oldQCE = dijit._editor.RichText.prototype.queryCommandEnabled;
+		dijit._editor.RichText.prototype.queryCommandEnabled = function(command){
+			return command == 'indent' || command == 'outdent' || oldQCE.call(this, command);
+		};
+	</script>
+</head>
+
+<body class="tundra">
+	<h1>Test file for Editor EnterKeyHandling plugin</h1>
+
+	<h2>blockNodeforEnter='BR'</h2>
+	<div dojoType="dijit.Editor" id="br"
+			plugins="[{name:'dijit._editor.plugins.EnterKeyHandling', blockNodeForEnter:'BR'}]"
+		><p>para 1<br>line 2</p>
+		<p>para 2<br>line 2</p>
+ 	</div>
+
+ 	<h2>blockNodeforEnter='DIV'</h2>
+	<div dojoType="dijit.Editor" id="div"
+			plugins="[{name:'dijit._editor.plugins.EnterKeyHandling', blockNodeForEnter:'DIV'}]"
+		><p>para 1<br>line 2</p>
+		<p>para 2<br>line 2</p>
+ 	</div>
+
+ 	<h2>blockNodeforEnter='P'</h2>
+	<div dojoType="dijit.Editor" id="p"
+			plugins="[{name:'dijit._editor.plugins.EnterKeyHandling', blockNodeForEnter:'P'}]"
+		><p>para 1<br>line 2</p>
+		<p>para 2<br>line 2</p>
+ 	</div>
+
+</body>
+</html>
