@@ -419,7 +419,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		String lockedUserId =  null;
 		try{
 			canLock = APILocator.getContentletAPI().canLock(contentlet, user);
-			lockedUserId =  APILocator.getVersionableAPI().getLockedBy(contentlet.getIdentifier());
+			lockedUserId =  APILocator.getVersionableAPI().getLockedBy(contentlet);
 		}
 		catch(Exception e){
 			
