@@ -25,12 +25,14 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 public class IndexAjaxAction extends AjaxAction {
@@ -270,6 +272,29 @@ public class IndexAjaxAction extends AjaxAction {
 
 	}
 	
+	
+	public void writeError(HttpServletResponse response, String error) throws IOException {
+		String ret = null;
+
+		try {
+			ret = LanguageUtil.get(getUser(), error);
+		} catch (Exception e) {
+
+		}
+		if (ret == null) {
+			try {
+				ret = LanguageUtil.get(PublicCompanyFactory.getDefaultCompanyId(), PublicCompanyFactory.getDefaultCompany().getLocale(),
+						error);
+			} catch (Exception e) {
+
+			}
+		}
+		if (ret == null) {
+			ret = error;
+		}
+
+		response.getWriter().println("FAILURE: " + ret);
+	}
 
 	
 	

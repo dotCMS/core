@@ -122,9 +122,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	
 	@Override
 	public void scheduleTask(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException{
-		String name = config.getJobId();
+		String name = config.getJobName();
 		String cronString = config.getCronExpression();
-		boolean runNow = config.runOnce();
+		boolean runNow = config.runNow();
 		
 
 	    //Create new task with updated cron expression and properties
