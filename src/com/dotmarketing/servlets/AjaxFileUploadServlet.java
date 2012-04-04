@@ -74,15 +74,13 @@ public class AjaxFileUploadServlet extends HttpServlet {
 	
 	private void doFileUpload(HttpSession session, HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
-		String fieldName =null;
-		AjaxFileUploadListener listener = null;
 		try {
 			
 			String fileName = "";
 
-			listener = new AjaxFileUploadListener(request.getContentLength());
+			AjaxFileUploadListener listener = new AjaxFileUploadListener(request.getContentLength());
 			FileItemFactory factory = new MonitoredDiskFileItemFactory(listener);
-			fieldName = request.getParameter("fieldName");
+			String fieldName = request.getParameter("fieldName");
 			Enumeration params = request.getParameterNames(); 
 			session.setAttribute("FILE_UPLOAD_STATS_" + fieldName, listener.getFileUploadStats());
 			ServletFileUpload upload = new ServletFileUpload(factory);
@@ -134,8 +132,6 @@ public class AjaxFileUploadServlet extends HttpServlet {
 				sendCompleteResponse(response, "Could not process uploaded file. Please see log for details.");
 			}
 		} catch (Exception e) {
-			listener.error("error");
-			session.setAttribute("FILE_UPLOAD_STATS_" + fieldName, listener.getFileUploadStats());
 			sendCompleteResponse(response, e.getMessage());
 			e.printStackTrace();
 		}

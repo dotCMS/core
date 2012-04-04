@@ -74,5 +74,13 @@
         <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="content-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('content', '${id}')" ${contentEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
         <td>NA</td>
     </tr>
-
+     <tr>
+        <th class="permissionType">${categoriesWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="categories-view-permission-${id}" onclick="viewPermissionChanged('categories', '${id}')" ${categoriesViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="categories-edit-permission-${id}" onclick="editPermissionChanged('categories', '${id}')" ${categoriesEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="categories-publish-permission-${id}" onclick="publishPermissionChanged('categories', '${id}')" ${categoriesPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="categories-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('categories', '${id}')" ${categoriesEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
 </table>

@@ -42,8 +42,8 @@ public class FixTask00005CheckHTMLPagesInconsistencies  implements FixTask {
 
 		int counter = 0;
 
-		final String fix2HtmlPageQuery = "select c.* from htmlpage c, inode i where i.inode = c.inode and c.identifier = ? order by mod_date desc";
-		final String fix3HtmlPageQuery = "update htmlpage_version_info set working_inode = ? where identifier = ?";
+		final String fix2HtmlPageQuery = "select c.* from htmlpage c, inode i where i.inode = c.inode and c.identifier = ? order by live desc, mod_date desc";
+		final String fix3HtmlPageQuery = "update htmlpage set working = ? where inode = ?";
 
 		if (!FixAssetsProcessStatus.getRunning()) {
 			FixAssetsProcessStatus.startProgress();
@@ -56,9 +56,10 @@ public class FixTask00005CheckHTMLPagesInconsistencies  implements FixTask {
 						+ "inode i, " + "htmlpage c "
 						+ "where ident.id = c.identifier and "
 						+ "ident.id not in (select ident.id "
-						+ "from identifier ident, " + "inode i, " + "htmlpage c, " + "htmlpage_version_info hvi "
+						+ "from identifier ident, " + "inode i, " + "htmlpage c "
 						+ "where c.identifier = ident.id and "
-						+ "i.inode = c.inode and " + "hvi.working_inode = c.inode) and "	
+						+ "i.inode = c.inode and " + "c.working = "
+						+ DbConnectionFactory.getDBTrue() + ") and "
 						+ "i.type = 'htmlpage' and " + "i.inode = c.inode";
 
 				Logger.debug(CMSMaintenanceFactory.class,
@@ -77,7 +78,7 @@ public class FixTask00005CheckHTMLPagesInconsistencies  implements FixTask {
 				String identifierInode;
 				List<HashMap<String, String>> versions;
 				HashMap<String, String> version;
-				//String versionWorking;
+				String versionWorking;
 				String DbConnFalseBoolean = DbConnectionFactory.getDBFalse()
 						.trim().toLowerCase();
 
@@ -108,7 +109,8 @@ public class FixTask00005CheckHTMLPagesInconsistencies  implements FixTask {
 					
 					if (0 < versions.size()) {
 						version = versions.get(0);
-						//versionWorking = version.get("working").trim().toLowerCase();
+						versionWorking = version.get("working").trim()
+								.toLowerCase();
 
 						// Logger.info("Step 5 versionWorking: " +
 						// versionWorking);
@@ -118,9 +120,11 @@ public class FixTask00005CheckHTMLPagesInconsistencies  implements FixTask {
 								"Non Working HTML page inode : " + inode);
 						Logger.debug(CMSMaintenanceFactory.class,
 								"Running query: " + fix3HtmlPageQuery);
-						db.setSQL(fix3HtmlPageQuery);						
+						db.setSQL(fix3HtmlPageQuery);
+						if(DbConnectionFactory.getDBType()==DbConnectionFactory.POSTGRESQL)
+							 db.addParam(true);
+						else db.addParam(DbConnectionFactory.getDBTrue().replaceAll("'", ""));
 						db.addParam(inode);
-						db.addParam(identifierInode);
 						db.getResult();
 
 						FixAssetsProcessStatus.addAError();
@@ -189,9 +193,10 @@ public class FixTask00005CheckHTMLPagesInconsistencies  implements FixTask {
 				+ "inode i, " + "htmlpage c "
 				+ "where ident.id = c.identifier and "
 				+ "ident.id not in (select ident.id " + "from identifier ident, "
-				+ "inode i, " + "htmlpage c, " + "htmlpage_version_info hvi "
+				+ "inode i, " + "htmlpage c "
 				+ "where c.identifier = ident.id and "
-				+ "i.inode = c.inode and " + "hvi.working_inode = c.inode) and "
+				+ "i.inode = c.inode and " + "c.working = "
+				+ DbConnectionFactory.getDBTrue() + ") and "
 				+ "i.type = 'htmlpage' and " + "i.inode = c.inode";
 		db.setSQL(query);
 		List<HashMap<String, String>> htmlpageIds =null;

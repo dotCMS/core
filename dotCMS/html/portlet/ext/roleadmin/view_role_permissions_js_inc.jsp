@@ -47,21 +47,21 @@
 	var permissionsOnChildrenMsg1 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children1")) %>';
 	var permissionsOnChildrenMsg2 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children2")) %>';
 	var categoriesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Category")) %>';
-
+	
 	<%if(UtilMethods.isSet(request.getAttribute("ViewingUserRole"))){%>
 		var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "this-pageContext")) %>';
 	<%}else{%>
 		var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name")) %>';
 	<%}%>
-
+	
 	//Global vars
-	var viewPermission = <%= PermissionAPI.PERMISSION_READ %>;
-	var editPermission = <%= PermissionAPI.PERMISSION_WRITE %>;
-	var publishPermission = <%= PermissionAPI.PERMISSION_PUBLISH %>;
-	var editPermissionsPermission = <%= PermissionAPI.PERMISSION_EDIT_PERMISSIONS %>;
-	var createVirtualLinksPermission = <%= PermissionAPI.PERMISSION_CREATE_VIRTUAL_LINKS %>;
-	var addChildrenPermission = <%= PermissionAPI.PERMISSION_CAN_ADD_CHILDREN %>;
-
+	var viewPermission = <%= PermissionAPI.PERMISSION_READ %>; 
+	var editPermission = <%= PermissionAPI.PERMISSION_WRITE %>; 
+	var publishPermission = <%= PermissionAPI.PERMISSION_PUBLISH %>; 
+	var editPermissionsPermission = <%= PermissionAPI.PERMISSION_EDIT_PERMISSIONS %>; 
+	var createVirtualLinksPermission = <%= PermissionAPI.PERMISSION_CREATE_VIRTUAL_LINKS %>; 
+	var addChildrenPermission = <%= PermissionAPI.PERMISSION_CAN_ADD_CHILDREN %>; 
+		
 	var hostClassName = '<%= Host.class.getCanonicalName() %>'
 	var folderClassName = '<%= Folder.class.getCanonicalName() %>'
 	var containerClassName = '<%= Container.class.getCanonicalName() %>'
@@ -73,14 +73,14 @@
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
 	var systemHostId = '<%= APILocator.getHostAPI().findSystemHost().getIdentifier() %>';
 	var categoryClassName = '<%= Category.class.getCanonicalName() %>';
-
+    
 	var currentListOfHostFolders = new Array();
 	var permissionsData;
 	var rolePermissionsEditable = true;
 	var currentPermissionsRole = null;
 	var cascadingChanges = false;
 	var cascadingChangesInProgress=false;
-
+	
 	function checkCurrentCascadeTasks () {
 		RoleAjax.getCurrentCascadePermissionsJobs(checkCurrentCascadeTasksCallback);
 	}
@@ -111,7 +111,7 @@
 			setTimeout('checkCurrentCascadeTasks()', 10000);
 		}
 	}
-
+	
 	function loadPermissionsForRole(roleId){
 
 		checkCurrentCascadeTasks();
@@ -123,14 +123,14 @@
 			}, this);
 			dijit.registry.remove('permissionsAccordionContainer');
 		}
-
+		
 		dojo.style("rolePermissionsWrapper", {
 			display: ""
 		});
 		var container = new dijit.layout.AccordionContainer({
             	style: "height: 400px"
         	}, "permissionsAccordionContainer");
-
+		
 		dojo.style("rolePermissionsWrapper", {
 			display: "none"
 		});
@@ -149,7 +149,7 @@
 		currentPermissionsRole = role;
 		RoleAjax.getRolePermissions(norm(currentPermissionsRole.id), dojo.hitch(this, loadPermissionsForRoleCallback, norm(currentPermissionsRole.id)));
 	}
-
+	
 	// http://jira.dotmarketing.net/browse/DOTCMS-6213
 	// dijit tooltips added to the DOM tree are started correctly
 	// but then they don't work. Creating them here outside works.
@@ -158,13 +158,13 @@
 	    new dijit.Tooltip({
            connectId: "cascadePermissionsHintHook-"+item.id,
            label: item.cascadePermissionsHint
-        });
+        });	    
         new dijit.Tooltip({
            connectId: "inheritPermissionsHintHook-"+item.id,
            label: permissionBreakInheritanceWarnIcon
         });
 	}
-
+	
 	function loadPermissionsForRoleCallback(roleId, data) {
 
 		if(norm(currentPermissionsRole.editPermissions) == false) {
@@ -176,36 +176,35 @@
 			dojo.byId('rolePermissionsMsg').innerHTML = '';
 			dojo.style('rolePermissionsHostSelectorWrapper', { display: '' });
 		}
-
+	
 		permissionsData = data;
 		currentListOfHostFolders = new Array();
 		var systemHost = getSystemHost(data);
 
-		//Generating the system host accordion entry
-		var item = { id: systemHost.identifier, imgSrc: '/html/images/icons/folder-open-globe.png',
+		//Generating the system host accordion entry		
+		var item = { id: systemHost.identifier, imgSrc: '/html/images/icons/folder-open-globe.png', 
 					fullPath: '<%=LanguageUtil.get(pageContext, "All-Hosts") %>', permissionToEditPermissions: systemHost.permissionToEditPermissions,
 					type: 'host', cascadePermissionsHint:cascadePermissionsHint };
 
 		addTemplatePermissionOptions(item, systemHost.permissions);
-
+		
 		var titleSystemTemplateString = dojo._getText('/html/portlet/ext/roleadmin/system_host_accordion_title.html');
 		var titleTemplateString = dojo._getText('/html/portlet/ext/roleadmin/host_folder_accordion_title.html');
 		var contentTemplateString = dojo._getText('/html/portlet/ext/roleadmin/host_folder_accordion_entry.html');
-		var contentSystemTemplateString = dojo._getText('/html/portlet/ext/roleadmin/system_host_folder_accordion_entry.html');
 
         var title = dojo.string.substitute(titleSystemTemplateString, item);
-        var content = dojo.string.substitute(contentSystemTemplateString, item);
+        var content = dojo.string.substitute(contentTemplateString, item);
         var contentDom = dojo._toDom(content);
 		contentPaneToPermissionsAccordion(item.id, title, contentDom);
 		currentListOfHostFolders.push(item);
 		createHints(item);
-
+		
 		//Iterating over the other assets in the list to render their accordion panes
 		dojo.forEach(data, function (asset) {
 
 			var systemHost = getSystemHost(data);
 			if(asset.type == 'host' && asset.identifier == systemHost.identifier) return;
-
+			
 			var icon, path;
 			if(asset.type == 'host') {
 				icon = '/html/images/icons/globe-medium.png';
@@ -216,14 +215,14 @@
 				icon = '/html/images/icons/folder-horizontal.png';
 				path = asset.fullPath;
 				id = asset.inode;
-			}
-
-			var item = { id: id, imgSrc: icon, fullPath: path,
-					permissionToEditPermissions: asset.permissionToEditPermissions,
+			} 
+				
+			var item = { id: id, imgSrc: icon, fullPath: path, 
+					permissionToEditPermissions: asset.permissionToEditPermissions, 
 					type: asset.type };
-
+	
 			addTemplatePermissionOptions(item, asset.permissions);
-
+			
 	        var title = dojo.string.substitute(titleTemplateString, item);
     	    var content = dojo.string.substitute(contentTemplateString, item);
         	var contentDom = dojo._toDom(content);
@@ -239,7 +238,7 @@
 		dojo.style("loadingPermissionsAccordion", {
 			display: "none"
 		});
-
+		
 		var container = dijit.byId('permissionsAccordionContainer');
 		container.startup();
 
@@ -251,7 +250,7 @@
 		}
 		container.resize({ h: myHeight })
 		container._verticalSpace = 375;
-
+		
 	}
 
 	function createAndUnregisterDijitslist(id){
@@ -265,6 +264,7 @@
 			'publish-permission-' + id,
 			'edit-permissions-permission-' + id,
 			'virtual-links-permission-' + id,
+
 			'permissionsAccordionPane-' + id,
 
 			'hosts-view-permission-' + id,
@@ -339,7 +339,7 @@
 			'structures-publish-permission-' + id,
 			'structures-edit-permissions-permission-' + id,
 			'structures-virtual-links-permission-' + id,
-
+			
 			'content-view-permission-' + id,
 			'content-add-children-permission-' + id,
 			'content-edit-permission-' + id,
@@ -356,18 +356,18 @@
 			'categories-edit-permission-' + id,
 			'categories-publish-permission-' + id,
 			'categories-edit-permissions-permission-' + id,
-			'categories-virtual-links-permission-' + id,
-
+			'categories-virtual-links-permission-' + id,			
+			
 			'cascadeChangesCheckbox-' + id,
 			'applyChangesButton-' + id
 		];
-
+		
 		unregisterDijits(toRemove);
-
+		
 	}
-
+	
 	function contentPaneToPermissionsAccordion (id, title, content) {
-
+		
 		createAndUnregisterDijitslist(id);
 		var container = dijit.byId('permissionsAccordionContainer');
 		var contentPane = new dijit.layout.ContentPane({
@@ -375,7 +375,7 @@
             content: content,
 			id: 'permissionsAccordionPane-' + norm(id)
         })
-
+		
         container.addChild(contentPane);
 	}
 
@@ -393,8 +393,8 @@
 			alert(selectedHostFolderAlreadyInlistMsg);
 			return;
 		}
-
-
+		
+				
 		if(item.type == 'host') {
 			item.imgSrc = "/html/images/icons/globe-green.png";
 		} else {
@@ -404,7 +404,7 @@
 		addEmptyTemplatePermissionOptions(item);
 
 		item.cascadePermissionsHint = cascadePermissionsHint;
-
+		
 		var titleTemplateString = dojo._getText('/html/portlet/ext/roleadmin/host_folder_accordion_title.html');
         titleTemplateString = dojo.string.substitute(titleTemplateString, item);
 
@@ -412,7 +412,7 @@
         templateString = dojo.string.substitute(templateString, item);
         var domObj = dojo._toDom(templateString);
         createAndUnregisterDijitslist(item.id);
-		var container = dijit.byId('permissionsAccordionContainer');
+		var container = dijit.byId('permissionsAccordionContainer');        
         container.addChild(new dijit.layout.ContentPane({
             title: titleTemplateString,
             content: domObj,
@@ -420,16 +420,16 @@
         }));
 
 		dojo.parser.parse(dojo.byId('hostFolderAccordionPermissionsTitleWrapper-' + item.id));
-
+		
 		RoleAjax.isPermissionableInheriting(value, function(data){
 			if(data.isInheriting){
-				dojo.byId('inheritPermissionsHintHook-' + item.id).style.display = "";
+				dojo.byId('inheritPermissionsHintHook-' + item.id).style.display = "";				
 			 }
 		});
 
 		currentListOfHostFolders.push(item);
 		createHints(item);
-
+		
 		var myHeight = 375;
 		for(var i = 0; i < currentListOfHostFolders.length; i++) {
 			var id = currentListOfHostFolders[i].id;
@@ -440,11 +440,11 @@
 		container._verticalSpace = 375;
 
 		container.selectChild(dijit.byId('permissionsAccordionPane-' + norm(item.id)));
-
+		
 	}
 
 	function applyPermissionChanges (id) {
-
+		
 		// check if there is changes
         if(dijit.byId('cascadeChangesCheckbox-' + id).attr('value') == false) {
             if(!thereIsPermissionCheckChanges(id)) {
@@ -452,7 +452,7 @@
                 return;
             }
         }
-
+        
 		RoleAjax.isPermissionableInheriting(id, function(data){
 			if(!data.isInheriting || (data.isInheriting && confirm(permissionBreakInheritance))){
 				var systemHost = getSystemHost(permissionsData);
@@ -469,7 +469,7 @@
 				var categoriesPermissions = retrievePermissionChecks(id, 'categories');
 				var cascadeChanges = dijit.byId('cascadeChangesCheckbox-' + id).attr('value') == 'on';
 			       checkCurrentCascadeTasks();
-
+			       
 				if(cascadingChangesInProgress){
 					if(!confirm(cascadePermissionsTasksRunningConfirm)){
 						return;
@@ -477,11 +477,11 @@
 					}
 				if(cascadeChanges && !confirm(cascadePermissionsConfirm))
 					return;
-
+			
 				var permissionsRoleId = norm(currentPermissionsRole.id);
-
-				var permissionsToSave = { individual: individualPermissions,
-						hosts: hostsPermissions,
+				
+				var permissionsToSave = { individual: individualPermissions, 
+						hosts: hostsPermissions, 
 						folders: foldersPermissions,
 						containers: containersPermissions,
 						templates: templatesPermissions,
@@ -489,23 +489,23 @@
 						files: filesPermissions,
 						links: linksPermissions,
 						structures: structuresPermissions,
-						content: contentPermissions,
+						content: contentPermissions, 
 						categories: categoriesPermissions};
-
+					
 				var callbackOptions = {
 					callback: dojo.hitch(this, applyPermissionChangesCallback, permissionsRoleId, id, permissionsToSave, cascadeChanges),
 					exceptionHandler: applyPermissionChangesFail
 				}
-
+			
 				dijit.byId('savingPermissionsDialog').show();
-
+			
 				cascadingChanges = cascadeChanges;
 				RoleAjax.saveRolePermission(permissionsRoleId, id, permissionsToSave, cascadeChanges, callbackOptions);
 				dijit.byId('cascadeChangesCheckbox-' + id).attr('value', false);
 			}
 		});
 	}
-
+	
 	function applyPermissionChangesCallback(permissionsRoleId, id, permissionsToSave, cascadeChanges) {
 		if(cascadeChanges) {
 			cascadingChanges = false;
@@ -520,7 +520,7 @@
 		dijit.byId('savingPermissionsDialog').hide();
 		showDotCMSSystemMessage(permissionsSavedMsg);
 	}
-
+	
 	function applyPermissionChangesFail(message, ex){
 		dijit.byId('savingPermissionsDialog').hide();
 		cascadingChanges = false;
@@ -530,15 +530,15 @@
 			alert(unexpectedErrorOcurredMsg + ":" + message);
 		}
 	}
-
-
+	
+	
 	function retrievePermissionChecks(id, type) {
-
+		
 		var permission = 0;
-
+		
 		var prefix = '';
 		if(type) prefix = type + "-";
-
+		
 		if(dijit.byId(prefix + 'view-permission-' + id) && dijit.byId(prefix + 'view-permission-' + id).attr('value') == 'on')
 			permission = permission | viewPermission;
 		if(dijit.byId(prefix + 'add-children-permission-' + id) && dijit.byId(prefix + 'add-children-permission-' + id).attr('value') == 'on')
@@ -551,90 +551,90 @@
 			permission = permission | editPermissionsPermission;
 		if(dijit.byId(prefix + 'virtual-links-permission-' + id) && dijit.byId(prefix + 'virtual-links-permission-' + id).attr('value') == 'on')
 			permission = permission | createVirtualLinksPermission;
-
+		
 		return permission;
-
+		
 	}
 
 	function thereIsPermissionCheckChanges(id) {
-        var changes=false;
-        var item;
-
+        var changes=false;       
+        var item;       
+        
         dojo.forEach(currentListOfHostFolders, function(itemvar) {
             if(itemvar.id==id)
                 item=itemvar;
             });
-
+        
         // check individual permission changes
-        if(dijit.byId('view-permission-' + id) &&
-                ((dijit.byId('view-permission-' + id).attr('value') == 'on' && item.viewPermissionChecked=="") ||
+        if(dijit.byId('view-permission-' + id) && 
+                ((dijit.byId('view-permission-' + id).attr('value') == 'on' && item.viewPermissionChecked=="") || 
                  (dijit.byId('view-permission-' + id).attr('value') == false && item.viewPermissionChecked!="")))
             return true;
-        if(dijit.byId('add-children-permission-' + id) &&
-                ((dijit.byId('add-children-permission-' + id).attr('value') == 'on' && item.addChildrenPermissionChecked=="") ||
+        if(dijit.byId('add-children-permission-' + id) && 
+                ((dijit.byId('add-children-permission-' + id).attr('value') == 'on' && item.addChildrenPermissionChecked=="") || 
                  (dijit.byId('add-children-permission-' + id).attr('value') == false && item.addChildrenPermissionChecked!="")))
             return true;
-        if(dijit.byId('edit-permission-' + id) &&
-                ((dijit.byId('edit-permission-' + id).attr('value') == 'on' && item.editPermissionChecked=="") ||
+        if(dijit.byId('edit-permission-' + id) && 
+                ((dijit.byId('edit-permission-' + id).attr('value') == 'on' && item.editPermissionChecked=="") || 
                  (dijit.byId('edit-permission-' + id).attr('value') == false && item.editPermissionChecked!="")))
             return true;
-        if(dijit.byId('edit-permission-' + id) &&
-                ((dijit.byId('edit-permission-' + id).attr('value') == 'on' && item.editPermissionChecked=="") ||
+        if(dijit.byId('edit-permission-' + id) && 
+                ((dijit.byId('edit-permission-' + id).attr('value') == 'on' && item.editPermissionChecked=="") || 
                  (dijit.byId('edit-permission-' + id).attr('value') == false && item.editPermissionChecked!="")))
             return true;
-        if(dijit.byId('publish-permission-' + id) &&
-                ((dijit.byId('publish-permission-' + id).attr('value') == 'on' && item.publishPermissionChecked=="") ||
+        if(dijit.byId('publish-permission-' + id) && 
+                ((dijit.byId('publish-permission-' + id).attr('value') == 'on' && item.publishPermissionChecked=="") || 
                  (dijit.byId('publish-permission-' + id).attr('value') == false && item.publishPermissionChecked!="")))
             return true;
-        if(dijit.byId('edit-permissions-permission-' + id) &&
-                ((dijit.byId('edit-permissions-permission-' + id).attr('value') == 'on' && item.editPermissionsPermissionChecked=="") ||
+        if(dijit.byId('edit-permissions-permission-' + id) && 
+                ((dijit.byId('edit-permissions-permission-' + id).attr('value') == 'on' && item.editPermissionsPermissionChecked=="") || 
                  (dijit.byId('edit-permissions-permission-' + id).attr('value') == false && item.editPermissionsPermissionChecked!="")))
             return true;
-        if(dijit.byId('virtual-links-permission-' + id) &&
-                ((dijit.byId('virtual-links-permission-' + id).attr('value') == 'on' && item.virtualLinksPermissionChecked=="") ||
+        if(dijit.byId('virtual-links-permission-' + id) && 
+                ((dijit.byId('virtual-links-permission-' + id).attr('value') == 'on' && item.virtualLinksPermissionChecked=="") || 
                  (dijit.byId('virtual-links-permission-' + id).attr('value') == false && item.virtualLinksPermissionChecked!="")))
             return true;
 
-        var changedType=function(item,type) {
-            if(dijit.byId(type+'-view-permission-' + id) &&
-                    ((dijit.byId(type+'-view-permission-' + id).attr('value') == 'on' && item[type+'ViewPermissionChecked']=="") ||
+        var changedType=function(item,type) {            
+            if(dijit.byId(type+'-view-permission-' + id) && 
+                    ((dijit.byId(type+'-view-permission-' + id).attr('value') == 'on' && item[type+'ViewPermissionChecked']=="") || 
                      (dijit.byId(type+'-view-permission-' + id).attr('value') == false && item[type+'ViewPermissionChecked']!="")))
                 return true;
-            if(dijit.byId(type+'-add-children-permission-' + id) &&
-                    ((dijit.byId(type+'-add-children-permission-' + id).attr('value') == 'on' && item[type+'AddChildrenPermissionChecked']=="") ||
+            if(dijit.byId(type+'-add-children-permission-' + id) && 
+                    ((dijit.byId(type+'-add-children-permission-' + id).attr('value') == 'on' && item[type+'AddChildrenPermissionChecked']=="") || 
                      (dijit.byId(type+'-add-children-permission-' + id).attr('value') == false && item[type+'AddChildrenPermissionChecked']!="")))
                 return true;
-            if(dijit.byId(type+'-edit-permission-' + id) &&
-                    ((dijit.byId(type+'-edit-permission-' + id).attr('value') == 'on' && item[type+'EditPermissionChecked']=="") ||
+            if(dijit.byId(type+'-edit-permission-' + id) && 
+                    ((dijit.byId(type+'-edit-permission-' + id).attr('value') == 'on' && item[type+'EditPermissionChecked']=="") || 
                      (dijit.byId(type+'-edit-permission-' + id).attr('value') == false && item[type+'EditPermissionChecked']!="")))
                 return true;
-            if(dijit.byId(type+'-edit-permission-' + id) &&
-                    ((dijit.byId(type+'-edit-permission-' + id).attr('value') == 'on' && item[type+'EditPermissionChecked']=="") ||
+            if(dijit.byId(type+'-edit-permission-' + id) && 
+                    ((dijit.byId(type+'-edit-permission-' + id).attr('value') == 'on' && item[type+'EditPermissionChecked']=="") || 
                      (dijit.byId(type+'-edit-permission-' + id).attr('value') == false && item[type+'EditPermissionChecked']!="")))
                 return true;
-            if(dijit.byId(type+'-publish-permission-' + id) &&
-                    ((dijit.byId(type+'-publish-permission-' + id).attr('value') == 'on' && item[type+'PublishPermissionChecked']=="") ||
+            if(dijit.byId(type+'-publish-permission-' + id) && 
+                    ((dijit.byId(type+'-publish-permission-' + id).attr('value') == 'on' && item[type+'PublishPermissionChecked']=="") || 
                      (dijit.byId(type+'-publish-permission-' + id).attr('value') == false && item[type+'PublishPermissionChecked']!="")))
                 return true;
-            if(dijit.byId(type+'-edit-permissions-permission-' + id) &&
-                    ((dijit.byId(type+'-edit-permissions-permission-' + id).attr('value') == 'on' && item[type+'EditPermissionsPermissionChecked']=="") ||
+            if(dijit.byId(type+'-edit-permissions-permission-' + id) && 
+                    ((dijit.byId(type+'-edit-permissions-permission-' + id).attr('value') == 'on' && item[type+'EditPermissionsPermissionChecked']=="") || 
                      (dijit.byId(type+'-edit-permissions-permission-' + id).attr('value') == false && item[type+'EditPermissionsPermissionChecked']!="")))
                 return true;
-            if(dijit.byId(type+'-virtual-links-permission-' + id) &&
-                    ((dijit.byId(type+'-virtual-links-permission-' + id).attr('value') == 'on' && item[type+'VirtualLinksPermissionChecked']=="") ||
+            if(dijit.byId(type+'-virtual-links-permission-' + id) && 
+                    ((dijit.byId(type+'-virtual-links-permission-' + id).attr('value') == 'on' && item[type+'VirtualLinksPermissionChecked']=="") || 
                      (dijit.byId(type+'-virtual-links-permission-' + id).attr('value') == false && item[type+'VirtualLinksPermissionChecked']!="")))
                 return true;
         }
-
+        
         types=['hosts','folders','containers','templates','pages','files','links','structures','content','categories'];
 
-        for(var i=0;i<types.length;i++)
+        for(var i=0;i<types.length;i++)       
             if(changedType(item,types[i]))
                 return true;
-
+        
         return false;
     }
-
+	
 	function viewPermissionChanged (type, id) {
 
 		var checkboxes = getPermissionCheckboxDijits(type, id);
@@ -645,13 +645,13 @@
 			if(checkboxes.publishPermissionCheckbox) checkboxes.publishPermissionCheckbox.attr('value', false);
 			if(checkboxes.editPermissionsPermissionCheckbox) checkboxes.editPermissionsPermissionCheckbox.attr('value', false);
 		}
-
+		
 	}
-
+	
 	function addChildrenPermissionChanged (type, id) {
-
+		
 		var checkboxes = getPermissionCheckboxDijits(type, id);
-
+		
 		if(checkboxes.addChildrenPermissionCheckbox.attr('value') == 'on') {
 			if(checkboxes.viewPermissionCheckbox) checkboxes.viewPermissionCheckbox.attr('value', 'on');
 		}
@@ -661,11 +661,11 @@
 			if(checkboxes.editPermissionsPermissionCheckbox) checkboxes.editPermissionsPermissionCheckbox.attr('value', false);
 		}
 	}
-
+	
 	function editPermissionChanged (type, id) {
-
+		
 		var checkboxes = getPermissionCheckboxDijits(type, id);
-
+		
 		if(checkboxes.editPermissionCheckbox.attr('value') == 'on') {
 			if(checkboxes.viewPermissionCheckbox) checkboxes.viewPermissionCheckbox.attr('value', 'on');
 			if(checkboxes.addChildrenPermissionCheckbox) checkboxes.addChildrenPermissionCheckbox.attr('value', 'on');
@@ -673,13 +673,13 @@
 			if(checkboxes.publishPermissionCheckbox) checkboxes.publishPermissionCheckbox.attr('value', false);
 			if(checkboxes.editPermissionsPermissionCheckbox) checkboxes.editPermissionsPermissionCheckbox.attr('value', false);
 		}
-
+		
 	}
-
+	
 	function publishPermissionChanged (type, id) {
-
+		
 		var checkboxes = getPermissionCheckboxDijits(type, id);
-
+		
 		if(checkboxes.publishPermissionCheckbox.attr('value') == 'on') {
 			if(checkboxes.viewPermissionCheckbox) checkboxes.viewPermissionCheckbox.attr('value', 'on');
 			if(checkboxes.addChildrenPermissionCheckbox) checkboxes.addChildrenPermissionCheckbox.attr('value', 'on');
@@ -688,11 +688,11 @@
 			if(checkboxes.editPermissionsPermissionCheckbox) checkboxes.editPermissionsPermissionCheckbox.attr('value', false);
 		}
 	}
-
+	
 	function editPermissionsPermissionChanged (type, id) {
-
+		
 		var checkboxes = getPermissionCheckboxDijits(type, id);
-
+		
 		if(checkboxes.editPermissionsPermissionCheckbox.attr('value') == 'on') {
 			if(checkboxes.viewPermissionCheckbox) checkboxes.viewPermissionCheckbox.attr('value', 'on');
 			if(checkboxes.addChildrenPermissionCheckbox) checkboxes.addChildrenPermissionCheckbox.attr('value', 'on');
@@ -701,11 +701,11 @@
 		}
 
 	}
-
+	
 	function virtualLinksPermissionChanged (type, id) {
-
+		
 	}
-
+	
 	//Permissions tab utility functions
 	function getPermissionCheckboxDijits (type, id) {
 		var prefix = type?type + "-":"";
@@ -715,7 +715,7 @@
 		var publishPermissionCheckbox = dijit.byId(prefix + 'publish-permission-' + id);
 		var editPermissionsPermissionCheckbox = dijit.byId(prefix + 'edit-permissions-permission-' + id);
 		var virtualLinksPermissionCheckbox = dijit.byId(prefix + 'virtual-links-permissions-permission-' + id);
-		return {
+		return { 
 			viewPermissionCheckbox: viewPermissionCheckbox,
 			addChildrenPermissionCheckbox: addChildrenPermissionCheckbox,
 			editPermissionCheckbox: editPermissionCheckbox,
@@ -725,8 +725,8 @@
 		};
 
 	}
-
-
+	
+	
 	function addTemplatePermissionOptions(item, permissions){
 		fillTemplatePermissionOptions(item, permissions);
 		fillTemplatePermissionOptions(item, permissions, hostClassName, 'hosts');
@@ -760,7 +760,7 @@
 			}else{
 				item.structuresPermissionsEntryStyle = 'display: none';
 			}
-
+			
 		}
 		if(!rolePermissionsEditable || !item.permissionToEditPermissions) {
 			item.disabledPermissions = 'disabled="disabled"'
@@ -785,7 +785,7 @@
 		item.categoriesWillInherit = categoriesWillInheritMsg;
 
 	}
-
+	
 	function addEmptyTemplatePermissionOptions(item) {
 		fillEmptyTemplatePermissionOptions(item);
 		fillEmptyTemplatePermissionOptions(item, 'hosts');
@@ -798,7 +798,7 @@
 		fillEmptyTemplatePermissionOptions(item, 'structures');
 		fillEmptyTemplatePermissionOptions(item, 'content');
 		fillEmptyTemplatePermissionOptions(item, 'categories');
-
+		
 		if(item.type == 'host') {
 			if(item.id == systemHostId) {
 				item.hostsPermissionsEntryStyle = '';
@@ -838,11 +838,11 @@
 		item.name=nameMsg;
 		item.categoriesWillInherit = categoriesWillInheritMsg;
 	}
-
+		
 	function fillTemplatePermissionOptions (item, permissions, permissionType, assetType) {
-
+		
 		if(!permissionType) permissionType = 'individual'
-
+		
 		prefix = "view";
 		if(assetType) prefix = assetType + "View";
 		if(hasPermissionSet(permissions, permissionType, viewPermission)) {
@@ -850,7 +850,7 @@
 		} else {
 			item[prefix + "PermissionChecked"] = ''
 		}
-
+		
 		prefix = "addChildren";
 		if(assetType) prefix = assetType + "AddChildren";
 		if(hasPermissionSet(permissions, permissionType, addChildrenPermission)) {
@@ -858,7 +858,7 @@
 		} else {
 			item[prefix + "PermissionChecked"] = ''
 		}
-
+		
 		prefix = "edit";
 		if(assetType) prefix = assetType + "Edit";
 		if(hasPermissionSet(permissions, permissionType, editPermission)) {
@@ -890,19 +890,19 @@
 		} else {
 			item[prefix + "PermissionChecked"] = ''
 		}
-
+		
 	}
-
+	
 	function fillEmptyTemplatePermissionOptions (item, assetType) {
-
+		
 		prefix = "view";
 		if(assetType) prefix = assetType + "View";
 		item[prefix + "PermissionChecked"] = ''
-
+		
 		prefix = "addChildren";
 		if(assetType) prefix = assetType + "AddChildren";
 		item[prefix + "PermissionChecked"] = ''
-
+		
 		prefix = "edit";
 		if(assetType) prefix = assetType + "Edit";
 		item[prefix + "PermissionChecked"] = ''
@@ -918,19 +918,19 @@
 		prefix = "virtualLinks";
 		if(assetType) prefix = assetType + "VirtualLinks";
 		item[prefix + "PermissionChecked"] = ''
-
+		
 	}
-
+	
 	function hasPermissionSet(list, type, permission) {
 		for (var i = 0; i < list.length; i++) {
 			var perm = list[i];
 			if((perm.permission & permission) == permission && perm.type == type) {
 				return true;
 			}
-		}
+		}			
 		return false;
 	}
-
+	
 	function getSystemHost(list) {
 		for(var i = 0; i < list.length; i++) {
 			if(list[i].identifier == systemHostId)
@@ -938,25 +938,25 @@
 		}
 	}
 
-
-
+	
+	
 	function findHostFolder(id, list) {
 		for (var i = 0; i < list.length; i++) {
 			var id1 = norm(list[i].id);
 			var id2 = norm(id);
-			if (id1 == id2)
+			if (id1 == id2) 
 				return list[i];
 		}
 		return null;
 	}
-
-	//Removes registered dijits
+	
+	//Removes registered dijits	
 	function unregisterDijits(list) {
 		dojo.forEach(list, function (id) {
 			if(dijit.byId(id))
 				dijit.byId(id).destroy();
 		});
-
+		
 	}
 
 	function isRemovingAllPermissions(permissionSet) {
@@ -973,6 +973,6 @@
 	        element.removeChild(element.firstChild); // remove all existing content
 	    element.appendChild(document.createTextNode(text));
 	}
-
+	
 </script>
-
+	

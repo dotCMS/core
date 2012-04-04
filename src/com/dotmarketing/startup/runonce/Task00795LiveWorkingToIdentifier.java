@@ -65,6 +65,11 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         "   locked_by varchar(36),\n"+
         "   locked_on date,\n"+
         "   deleted bool not null,\n"+
+        "   primary key (identifier)\n"+
+        ")");
+        dc.executeStatement(
+        "create table contentlet_lang_version_info (\n"+
+        "   identifier char(36) not null,\n"+
         "   lang int8 not null,\n"+
         "   working_inode char(36) not null,\n"+
         "   live_inode char(36),\n"+
@@ -123,16 +128,24 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
     }
     protected void createNewTablesForOracle() throws DotDataException,SQLException{
     	DotConnect dc = new DotConnect();
-        
-        dc.executeStatement("create table contentlet_version_info (\n"
-                + "    identifier varchar2(36) not null,\n"
-                + "    deleted number(1,0) not null,\n"
-                + "    locked_by varchar2(100),\n" 
-                + "    locked_on date,\n"
-                + "    lang number(19,0) not null,\n"
-                + "    working_inode varchar2(36) not null,\n"
-                + "    live_inode varchar2(36),\n"
-                + "    primary key (identifier, lang)\n" + ")");
+
+    	dc.executeStatement(
+    			"create table contentlet_version_info (\n" +
+    			"    identifier varchar2(36) not null,\n" +
+    			"    deleted number(1,0) not null,\n" +
+    			"    locked_by varchar2(100),\n" +
+    			"    locked_on date,\n" +
+    			"    primary key (identifier)\n" +
+    			")");
+
+    	dc.executeStatement(
+    			"create table contentlet_lang_version_info (\n" +
+    			"     identifier varchar2(36) not null,\n" +
+    			"     lang number(19,0) not null,\n" +
+    		    "	  working_inode varchar2(36) not null,\n" +
+    			"	  live_inode varchar2(36),\n" +
+    		    "	  primary key (identifier, lang)\n" +
+    			")");
 
     	dc.executeStatement(
     			"create table container_version_info (\n" +
@@ -190,18 +203,22 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
     			")");
     }
     protected void createNewTablesForSQLServer() throws DotDataException, SQLException {
-        DotConnect dc = new DotConnect();
-        
-        dc.executeStatement("create table contentlet_version_info (\n"
-                            + "identifier varchar(36) not null,\n"
-                            + "deleted tinyint not null,\n"
-                            + "locked_by varchar(100) null,\n"
-                            + "locked_on datetime null,\n"
-                            + "lang numeric(19,0) not null,\n"
-                            + "working_inode varchar(36) not null,\n"
-                            + "live_inode varchar(36) null,\n"
-                            + "primary key (identifier, lang)\n" 
-                            + ")");
+    	DotConnect dc = new DotConnect();
+    	dc.executeStatement("create table contentlet_version_info (\n" +
+    			            "identifier varchar(36) not null,\n" +
+    			            "deleted tinyint not null,\n" +
+    			            "locked_by varchar(100) null,\n"+
+    			            "locked_on datetime null,\n"+
+    			            "primary key (identifier)\n"+
+    						")");
+
+    	dc.executeStatement("create table contentlet_lang_version_info (\n" +
+    			   			"identifier varchar(36) not null,\n" +
+    			   			"lang numeric(19,0) not null,\n" +
+    			   			"working_inode varchar(36) not null,\n" +
+    			   			"live_inode varchar(36) null,\n" +
+    			   			"primary key (identifier, lang)\n" +
+    						")");
 
     	dc.executeStatement("create table container_version_info (\n" +
     			   			"identifier varchar(36) not null,\n" +
@@ -257,57 +274,58 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
     protected void addNewForeignKeys() throws DotDataException, SQLException {
         DotConnect dc = new DotConnect();
         dc.executeStatement(
-          "alter table contentlet_version_info add constraint fk_con_ver_info_ident         foreign key (identifier) references identifier(id) on delete cascade");
+          "alter table contentlet_version_info add constraint fk_con_ver_info_ident foreign key (identifier) references identifier(id) on delete cascade");
         dc.executeStatement(
-          "alter table container_version_info  add constraint fk_container_ver_info_ident   foreign key (identifier) references identifier(id)");
+          "alter table container_version_info  add constraint fk_container_ver_info_ident  foreign key (identifier) references identifier(id)");
         dc.executeStatement(
-          "alter table template_version_info   add constraint fk_template_ver_info_ident    foreign key (identifier) references identifier(id)");
+          "alter table template_version_info   add constraint fk_template_ver_info_ident   foreign key (identifier) references identifier(id)");
         dc.executeStatement(
-          "alter table htmlpage_version_info   add constraint fk_htmlpage_ver_info_ident    foreign key (identifier) references identifier(id)");
+          "alter table htmlpage_version_info   add constraint fk_htmlpage_ver_info_ident   foreign key (identifier) references identifier(id)");
         dc.executeStatement(
-          "alter table fileasset_version_info  add constraint fk_fileasset_ver_info_ident   foreign key (identifier) references identifier(id)");
+          "alter table fileasset_version_info  add constraint fk_fileasset_ver_info_ident  foreign key (identifier) references identifier(id)");
         dc.executeStatement(
-          "alter table link_version_info       add constraint fk_link_ver_info_ident        foreign key (identifier) references identifier(id)");
+          "alter table link_version_info       add constraint fk_link_ver_info_ident       foreign key (identifier) references identifier(id)");
         dc.executeStatement(
-          "alter table container_version_info  add constraint fk_contain_ver_info_working   foreign key (working_inode) references containers(inode)");
+          "alter table container_version_info  add constraint fk_contain_ver_info_working  foreign key (working_inode) references containers(inode)");
         dc.executeStatement(
-          "alter table template_version_info   add constraint fk_temp_ver_info_working      foreign key (working_inode) references template(inode)");
+          "alter table template_version_info   add constraint fk_temp_ver_info_working   foreign key (working_inode) references template(inode)");
         dc.executeStatement(
-          "alter table htmlpage_version_info   add constraint fk_htmlpage_ver_info_working  foreign key (working_inode) references htmlpage(inode)");
+          "alter table htmlpage_version_info   add constraint fk_htmlpage_ver_info_working   foreign key (working_inode) references htmlpage(inode)");
         dc.executeStatement(
-          "alter table fileasset_version_info  add constraint fk_fileasset_ver_info_working foreign key (working_inode) references file_asset(inode)");
+          "alter table fileasset_version_info  add constraint fk_fileasset_ver_info_working  foreign key (working_inode) references file_asset(inode)");
         dc.executeStatement(
-          "alter table link_version_info       add constraint fk_link_version_info_working  foreign key (working_inode) references links(inode)");
+          "alter table link_version_info       add constraint fk_link_version_info_working       foreign key (working_inode) references links(inode)");
         dc.executeStatement(
-          "alter table contentlet_version_info add constraint fk_cont_version_info_working  foreign key (working_inode) references contentlet(inode)");
+          "alter table container_version_info  add constraint fk_container_ver_info_live  foreign key (live_inode) references containers(inode)");
         dc.executeStatement(
-          "alter table container_version_info  add constraint fk_container_ver_info_live    foreign key (live_inode) references containers(inode)");
+          "alter table template_version_info   add constraint fk_template_ver_info_live   foreign key (live_inode) references template(inode)");
         dc.executeStatement(
-          "alter table template_version_info   add constraint fk_template_ver_info_live     foreign key (live_inode) references template(inode)");
+          "alter table htmlpage_version_info   add constraint fk_htmlpage_ver_info_live   foreign key (live_inode) references htmlpage(inode)");
         dc.executeStatement(
-          "alter table htmlpage_version_info   add constraint fk_htmlpage_ver_info_live     foreign key (live_inode) references htmlpage(inode)");
+          "alter table fileasset_version_info  add constraint fk_fileasset_ver_info_live  foreign key (live_inode) references file_asset(inode)");
         dc.executeStatement(
-          "alter table fileasset_version_info  add constraint fk_fileasset_ver_info_live    foreign key (live_inode) references file_asset(inode)");
+          "alter table link_version_info       add constraint fk_link_version_info_live       foreign key (live_inode) references links(inode)");
         dc.executeStatement(
-          "alter table link_version_info       add constraint fk_link_version_info_live     foreign key (live_inode) references links(inode)");
+          "alter table contentlet_lang_version_info add constraint fk3e700e699f88aca9 foreign key (identifier) references contentlet_version_info(identifier)");
         dc.executeStatement(
-          "alter table contentlet_version_info add constraint fk_cont_version_info_live     foreign key (live_inode) references contentlet(inode)");
+          "alter table contentlet_lang_version_info add constraint fk_con_lang_ver_info_ident foreign key (identifier) references identifier(id)");
         dc.executeStatement(
-          "alter table contentlet_version_info add constraint fk_cont_ver_info_lang         foreign key (lang) references language(id)");
+          "alter table contentlet_lang_version_info add constraint fk_con_lang_ver_info_lang foreign key (lang) references language(id)");
         dc.executeStatement(
-          "alter table contentlet              add constraint fk_contentlet_lang            foreign key (language_id) references language(id)");
+          "alter table contentlet add constraint fk_contentlet_lang foreign key (language_id) references language(id)");
+
         dc.executeStatement(
-          "alter table contentlet_version_info add constraint FK_con_ver_lockedby           foreign key (locked_by) references user_(userid)");
+          "alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid)");
         dc.executeStatement(
-          "alter table container_version_info  add constraint FK_tainer_ver_info_lockedby   foreign key (locked_by) references user_(userid)");
+          "alter table container_version_info  add constraint FK_tainer_ver_info_lockedby  foreign key (locked_by) references user_(userid)");
         dc.executeStatement(
-          "alter table template_version_info   add constraint FK_temp_ver_info_lockedby     foreign key (locked_by) references user_(userid)");
+          "alter table template_version_info   add constraint FK_temp_ver_info_lockedby   foreign key (locked_by) references user_(userid)");
         dc.executeStatement(
-          "alter table htmlpage_version_info   add constraint FK_page_ver_info_lockedby     foreign key (locked_by) references user_(userid)");
+          "alter table htmlpage_version_info   add constraint FK_page_ver_info_lockedby   foreign key (locked_by) references user_(userid)");
         dc.executeStatement(
-          "alter table fileasset_version_info  add constraint FK_fil_ver_info_lockedby      foreign key (locked_by) references user_(userid)");
+          "alter table fileasset_version_info  add constraint FK_fil_ver_info_lockedby  foreign key (locked_by) references user_(userid)");
         dc.executeStatement(
-          "alter table link_version_info       add constraint FK_link_ver_info_lockedby     foreign key (locked_by) references user_(userid)");
+          "alter table link_version_info       add constraint FK_link_ver_info_lockedby       foreign key (locked_by) references user_(userid)");
     }
 
     protected void associateWorking(String table) throws DotDataException, SQLException {
@@ -509,6 +527,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
 
             List<Map<String,Object>> results=dc.loadObjectResults();
             notDone=results.size()>0;
+            Set<String> identifiers = new HashSet<String>();
 
             for(Map<String,Object> rr : results) {
                 String identifier=(String)rr.get("identifier");
@@ -534,29 +553,38 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                 java.util.Date mod_date=(java.util.Date)rr.get("mod_date");
                 String insert="";
 
-            	insert="insert into contentlet_version_info(identifier,locked_on,locked_by,deleted,lang,working_inode"+(live?",live_inode":"")+") values " +
-                                                         "(?,?,?,?,?,?"+(live?",?":"")+")";
+                if(!identifiers.contains(identifier)) {
+                	insert="insert into contentlet_version_info(identifier,locked_on,locked_by,deleted) values " +
+                                                             "(?,?,?,?)";
+	                dc.setSQL(insert);
+	                dc.addParam(identifier.trim());
+	                if(locked) {
+	                    dc.addParam(mod_date);
+	                    dc.addParam(mod_user);
+	                }
+	                else {
+	                    dc.addParam(new java.util.Date());
+	                    dc.addObject(null);
+	                }
+	                dc.addParam(deleted);
+	                try {
+	                	dc.loadResult();
+	                	identifiers.add(identifier);
+	                } catch (DotDataException e) {
+	                	e.printStackTrace();
+	                }
+                }
+
+                insert="insert into contentlet_lang_version_info(identifier,lang,working_inode"+(live?",live_inode":"")+") " +
+                		       " values(?,?,?"+(live?",?":"")+")";
                 dc.setSQL(insert);
                 dc.addParam(identifier.trim());
-                if(locked) {
-                    dc.addParam(mod_date);
-                    dc.addParam(mod_user);
-                }
-                else {
-                    dc.addParam(new java.util.Date());
-                    dc.addObject(null);
-                }
-                dc.addParam(deleted);
                 dc.addParam(rr.get("language_id"));
                 dc.addParam(inode);
+
                 if(live)
                     dc.addParam(inode);
-                
-                try {
-                	dc.loadResult();
-                } catch (DotDataException e) {
-                	e.printStackTrace();
-                }
+                dc.loadResult();
             }
         } while(notDone);
 
@@ -596,7 +624,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                 String identifier=(String)rr.get("identifier");
                 String inode=(String)rr.get("inode");
 
-                dc.setSQL("update contentlet_version_info set live_inode=? where identifier=? and lang=?");
+                dc.setSQL("update contentlet_lang_version_info set live_inode=? where identifier=? and lang=?");
                 dc.addParam(inode);
                 dc.addParam(identifier);
                 dc.addParam(rr.get("language_id"));

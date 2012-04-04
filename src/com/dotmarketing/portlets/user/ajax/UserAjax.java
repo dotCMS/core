@@ -12,7 +12,6 @@ import org.apache.velocity.tools.generic.SortTool;
 import org.directwebremoting.WebContext;
 import org.directwebremoting.WebContextFactory;
 
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
@@ -30,10 +29,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.files.model.File;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -49,11 +44,11 @@ import com.liferay.util.Encryptor;
 import edu.emory.mathcs.backport.java.util.Collections;
 
 public class UserAjax {
-
+	
 	// Constants for internal use only
 	private static final String USER_TYPE_VALUE = "user";
 	private static final String ROLE_TYPE_VALUE = "role";
-
+	
 	public Map<String, Object> getUserById(String userId) throws DotDataException {
 
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
@@ -62,11 +57,11 @@ public class UserAjax {
 		HttpServletRequest request = ctx.getHttpServletRequest();
 
 		UserAPI uAPI = APILocator.getUserAPI();
-
+		
 		User user = null;
 		try {
 			user = uAPI.loadUserById(userId,uWebAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
-
+		
 			Map<String, Object> aRecord = user.toMap();
 			aRecord.put("id", user.getUserId());
 			aRecord.put("type", USER_TYPE_VALUE);
@@ -74,10 +69,10 @@ public class UserAjax {
 			aRecord.put("firstName", user.getFirstName());
 			aRecord.put("lastName", user.getLastName());
 			aRecord.put("emailaddress", user.getEmailAddress());
-
+			
 			UserProxy up = uProxyWebAPI.getUserProxy(user, uWebAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
 			aRecord.putAll(up.getMap());
-
+			
 			return aRecord;
 
 		} catch (Exception e) {
@@ -85,14 +80,14 @@ public class UserAjax {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
-
+	
 	public String addUser (String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
-
+		
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserAPI uAPI = APILocator.getUserAPI();
-
+		
 		User user = uAPI.createUser(userId, email);
 		user.setFirstName(firstName);
 		user.setLastName(lastName);
@@ -100,12 +95,12 @@ public class UserAjax {
 		uAPI.save(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 
 		return user.getUserId();
-
+	
 	}
-
-	public String updateUser (String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
+	
+	public String updateUser (String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException, 
 		DotDataException, DotSecurityException {
-
+		
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -114,7 +109,7 @@ public class UserAjax {
 		UserProxyAPI upAPI = APILocator.getUserProxyAPI();
 		User userToSave;
 		User loggedInUser = uWebAPI.getLoggedInUser(request);
-
+		
 		try {
 			userToSave = (User)uAPI.loadUserById(userId,uAPI.getSystemUser(),false).clone();
 			userToSave.setModified(false);
@@ -128,24 +123,24 @@ public class UserAjax {
 		if(password != null) {
 			userToSave.setPassword(Encryptor.digest(password));
 		}
-
+		
 		if(userToSave.getUserId().equalsIgnoreCase(loggedInUser.getUserId())){
-			uAPI.save(userToSave, uAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
+			uAPI.save(userToSave, uAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));			
 		}else if(perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,uAPI.getSystemUser(), false), PermissionAPI.PERMISSION_EDIT,loggedInUser, false)){
 			uAPI.save(userToSave, loggedInUser, !uWebAPI.isLoggedToBackend(request));
 		}else{
 			throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
-		}
+		}		
 		return userToSave.getUserId();
 
 	}
-
-	public boolean deleteUser (String userId) throws DotHibernateException {
+	
+	public boolean deleteUser (String userId) throws DotHibernateException { 
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserAPI uAPI = APILocator.getUserAPI();
-
+		
 		User user;
 		try {
 			HibernateUtil.startTransaction();
@@ -158,10 +153,10 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			return false;
 		}
-
+		
 		return true;
 	}
-
+	
 	public List<Map<String, Object>> getUserRoles (String userId) throws DotDataException {
 		List<Map<String, Object>> roleMaps = new ArrayList<Map<String,Object>>();
 		if(UtilMethods.isSet(userId)){
@@ -173,33 +168,7 @@ public class UserAjax {
 		}
 		return roleMaps;
 	}
-
-	public Map<String, Boolean> getUserRolesValues (String userId, String hostIdentifier) throws DotDataException {
-		Map<String, Boolean> userPerms = new HashMap<String,Boolean>();
-		if(UtilMethods.isSet(userId)){
-			RoleAPI roleAPI = APILocator.getRoleAPI();
-			List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(userId, false);
-			for(com.dotmarketing.business.Role r : roles) {
-				List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(r, false);
-				for (Permission p : perms) {
-					String permType = p.getType();
-					permType = permType.equals(Folder.class.getCanonicalName())?"folderModifiable":
-						 permType.equals(Template.class.getCanonicalName())?"templateModifiable":
-						 permType.equals(Container.class.getCanonicalName())?"containerModifiable":
-						 permType.equals(File.class.getCanonicalName())?"fileModifiable":"";
-
-					Boolean hasPerm = userPerms.get(permType)!=null?userPerms.get(permType):false;
-
-					 if(UtilMethods.isSet(permType) && p.getInode().equals(hostIdentifier)) {
-						 userPerms.put(permType, hasPerm | (p.getPermission()==PermissionAPI.PERMISSION_EDIT ||
-								 p.getPermission()==PermissionAPI.PERMISSION_PUBLISH));
-					 }
-				}
-			}
-		}
-		return userPerms;
-	}
-
+	
 	public void updateUserRoles (String userId, List<String> roleIds) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		WebContext ctx = WebContextFactory.get();
@@ -209,40 +178,40 @@ public class UserAjax {
 		UserAPI uAPI = APILocator.getUserAPI();
 
 		List<com.dotmarketing.business.Role> userRoles = roleAPI.loadRolesForUser(userId);
-
+		
 		User user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
-
+		
 		//Remove all roles not assigned
 		for(com.dotmarketing.business.Role r : userRoles) {
 			if(!roleIds.contains(r.getId())) {
 				if(r.isEditUsers())
 					roleAPI.removeRoleFromUser(r, user);
-			}
+			} 
 		}
-
+		
 		for(com.dotmarketing.business.Role r : roleAPI.loadRolesForUser(userId)) {
 			if(roleIds.contains(r.getId())) {
 				roleIds.remove(r.getId());
-			}
+			} 
 		}
-
+		
 		//Adding missing roles
 		for(String roleId : roleIds) {
 			com.dotmarketing.business.Role r = roleAPI.loadRoleById(roleId);
 			if(r.isEditUsers())
 				roleAPI.addRoleToUser(r, user);
 		}
-
-
+		
+		
 	}
-
+	
 	public List<Map<String, String>> loadUserAddresses(String userId) throws DotDataException {
-
+		
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-
+		
 		User user = null;
 		List<Address> userAddresses = new ArrayList<Address>();
 		try {
@@ -266,15 +235,15 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-
+		
 		List<Map<String, String>> addressesToReturn = new ArrayList<Map<String,String>>();
 		for(Address add : userAddresses) {
 			addressesToReturn.add(add.toMap());
 		}
 		return addressesToReturn;
 	}
-
-	public Map<String, String> addNewUserAddress(String userId, String addressDescription, String street1, String street2, String city, String state,
+	
+	public Map<String, String> addNewUserAddress(String userId, String addressDescription, String street1, String street2, String city, String state, 
 			String zip, String country, String phone, String fax, String cell) throws DotDataException {
 
 		UserAPI uAPI = APILocator.getUserAPI();
@@ -301,7 +270,7 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-
+		
 		Address ad = new Address();
 		ad.setDescription(addressDescription);
 		ad.setStreet1(street1);
@@ -313,7 +282,7 @@ public class UserAjax {
 		ad.setPhone(phone);
 		ad.setFax(fax);
 		ad.setCell(cell);
-
+		
 		try {
 			uAPI.saveAddress(user, ad, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 		} catch (DotDataException e) {
@@ -331,12 +300,12 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-
+		
 		return ad.toMap();
-
+		
 	}
 
-	public Map<String, String> saveUserAddress(String userId, String addressId, String addressDescription, String street1, String street2, String city, String state,
+	public Map<String, String> saveUserAddress(String userId, String addressId, String addressDescription, String street1, String street2, String city, String state, 
 			String zip, String country, String phone, String fax, String cell) throws DotDataException {
 
 		UserAPI uAPI = APILocator.getUserAPI();
@@ -363,7 +332,7 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-
+		
 		Address ad = new Address();
 		ad.setAddressId(addressId);
 		ad.setDescription(addressDescription);
@@ -376,7 +345,7 @@ public class UserAjax {
 		ad.setPhone(phone);
 		ad.setFax(fax);
 		ad.setCell(cell);
-
+		
 		try {
 			uAPI.saveAddress(user, ad, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 		} catch (DotRuntimeException e) {
@@ -392,11 +361,11 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-
+		
 		return ad.toMap();
-
+		
 	}
-
+	
 	public String deleteAddress(String userId, String addressId) throws DotDataException {
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
@@ -420,13 +389,13 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-
+		
 		return addressId;
 	}
-
-	public void saveUserAddittionalInfo(String userId, boolean active, String prefix, String suffix, String title, String company, String website, String[] additionalVars)
+	
+	public void saveUserAddittionalInfo(String userId, boolean active, String prefix, String suffix, String title, String company, String website, String[] additionalVars) 
 	 	throws DotDataException {
-
+		
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		UserAPI uAPI = APILocator.getUserAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -434,16 +403,16 @@ public class UserAjax {
 		try {
 
 			User user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
-
+	
 			UserProxyAPI uProxyAPI = APILocator.getUserProxyAPI();
 			User u = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 			UserProxy up = uProxyAPI.getUserProxy(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-
+			
 
 			if(!active && u.getUserId().equals(uWebAPI.getLoggedInUser(request).getUserId())){
 				throw new DotRuntimeException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"deactivate-your-own-user-error"));
 			}
-
+			
 			u.setActive(active);
 			up.setPrefix(prefix);
 			up.setSuffix(suffix);
@@ -453,10 +422,10 @@ public class UserAjax {
 			for(int i = 1; i <= additionalVars.length; i++) {
 				up.setVar(i, additionalVars[i - 1]);
 			}
-
+			
 			uAPI.save(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 			uProxyAPI.saveUserProxy(up, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-
+			
 		} catch (DotRuntimeException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
@@ -471,10 +440,10 @@ public class UserAjax {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
-
+	
 	private void setActive(boolean active) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	public Map<String, Object> getRoleById(String roleId) throws SystemException {
@@ -496,7 +465,7 @@ public class UserAjax {
 		aRecord.put("emailaddress", "");
 		return aRecord;
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> getUsersAndRolesList(String assetInode, String permission, Map<String, String> params) throws SystemException {
 
@@ -511,12 +480,12 @@ public class UserAjax {
 		String query = "";
 		if(params.containsKey("query"))
 			query = (String) params.get("query");
-
+		
 		boolean hideSystemRoles =false;
 		if(params.get("hideSystemRoles")!=null){
 			hideSystemRoles = params.get("hideSystemRoles").equals("true")?true:false;
 		}
-
+		
 		Map<String, Object> results;
 
 		if ( (InodeUtils.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
@@ -524,11 +493,11 @@ public class UserAjax {
 		} else {
 			results = processUserAndRoleList(query, start, limit, hideSystemRoles);
 		}
-
+		
 		return results;
 	}
-
-
+	
+	
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> getRolesList(String assetInode, String permission, Map<String, String> params) throws SystemException {
 
@@ -543,12 +512,12 @@ public class UserAjax {
 		String query = "";
 		if(params.containsKey("query"))
 			query = (String) params.get("query");
-
+		
 		boolean hideSystemRoles =false;
 		if(params.get("hideSystemRoles")!=null){
 			hideSystemRoles = params.get("hideSystemRoles").equals("true")?true:false;
 		}
-
+		
 		Map<String, Object> results;
 
 		if ( (InodeUtils.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
@@ -556,12 +525,12 @@ public class UserAjax {
 		} else {
 			results = processRoleList(query, start, limit, hideSystemRoles);
 		}
-
-
+		
+		
 		return results;
 	}
-
-
+	
+	
 
 	public Map<String, Object> getUsersList(String assetInode, String permission, Map<String, String> params) throws SystemException {
 
@@ -576,7 +545,7 @@ public class UserAjax {
 		String query = "";
 		if(params.containsKey("query"))
 			query = (String) params.get("query");
-
+		
 		Map<String, Object> results;
 
 		if ( (InodeUtils.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
@@ -584,7 +553,7 @@ public class UserAjax {
 		} else {
 			results = processUserList(query, start, limit);
 		}
-
+		
 		return results;
 	}
 
@@ -601,7 +570,7 @@ public class UserAjax {
 		String query = "";
 		if(params.containsKey("query"))
 			query = (String) params.get("query");
-
+		
 		Map<String, Object> results;
 
 		if ( (UtilMethods.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
@@ -609,20 +578,20 @@ public class UserAjax {
 		} else {
 			results = processUserList(query, start, limit);
 		}
-
+		
 		return (List) results.get("data");
 	}
-
-	private Map<String, Object> processRoleListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit,
+	
+	private Map<String, Object> processRoleListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit, 
 			boolean hideSystemRoles) {
-
+		
 		Map<String, Object> results;
 
 		try {
 			int permissionType = Integer.parseInt(permission);
 			String inode = assetInode;
 			results = new RolesListTemplate(inode, permissionType, query, start, limit, hideSystemRoles) {
-
+				
 				PermissionAPI perAPI = APILocator.getPermissionAPI();
 
 				@Override
@@ -640,9 +609,9 @@ public class UserAjax {
 						public int compare(Role o1, Role o2) {
 							return o1.getName().compareTo(o2.getName());
 						}
-
+						
 					});
-
+						
 					return roles;
 				}
 
@@ -653,19 +622,19 @@ public class UserAjax {
     		Logger.warn(UserAjax.class, String.format("::getUsersAndRolesList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
     		results = new HashMap<String,Object>(0);
 		}
-
+		
 		return results;
-
+		
 	}
-
+	
 private Map<String, Object> processRoleList(String query, int start, int limit, boolean hideSystemRoles) {
-
-		Map<String, Object> results = new RolesListTemplate("", 0, query, start, limit, hideSystemRoles)
+		
+		Map<String, Object> results = new RolesListTemplate("", 0, query, start, limit, hideSystemRoles) 
 		{
-
+			
 			RoleAPI roleAPI = APILocator.getRoleAPI();
 
-
+			
 			@Override
 			public int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException, SystemException {
 				List<Role> roleList;
@@ -682,7 +651,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 				}
 				return roleList.size();
 			}
-
+			
 
 			@Override
 			public List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException, SystemException {
@@ -703,25 +672,25 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 		}
 		.perform();
-
+		
 		return results;
-
+		
 	}
-
-
-
-
-
-	private Map<String, Object> processUserAndRoleListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit,
+	
+	
+	
+	
+	
+	private Map<String, Object> processUserAndRoleListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit, 
 			boolean hideSystemRoles) {
-
+		
 		Map<String, Object> results;
 
 		try {
 			int permissionType = Integer.parseInt(permission);
 			String inode = assetInode;
 			results = new UsersAndRolesListTemplate(inode, permissionType, query, start, limit, hideSystemRoles) {
-
+				
 				PermissionAPI perAPI = APILocator.getPermissionAPI();
 
 				@Override
@@ -739,9 +708,9 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 						public int compare(Role o1, Role o2) {
 							return o1.getName().compareTo(o2.getName());
 						}
-
+						
 					});
-
+						
 					return roles;
 				}
 
@@ -760,19 +729,19 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
     		Logger.warn(UserAjax.class, String.format("::getUsersAndRolesList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
     		results = new HashMap<String,Object>(0);
 		}
-
+		
 		return results;
-
+		
 	}
 
 	private Map<String, Object> processUserAndRoleList(String query, int start, int limit, boolean hideSystemRoles) {
-
-		Map<String, Object> results = new UsersAndRolesListTemplate("", 0, query, start, limit, hideSystemRoles)
+		
+		Map<String, Object> results = new UsersAndRolesListTemplate("", 0, query, start, limit, hideSystemRoles) 
 		{
-
+			
 			RoleAPI roleAPI = APILocator.getRoleAPI();
 			UserAPI userAPI = APILocator.getUserAPI();
-
+			
 			@Override
 			public int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException, SystemException {
 				List<Role> roleList;
@@ -828,9 +797,9 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			}
 		}
 		.perform();
-
+		
 		return results;
-
+		
 	}
 
 	private Map<String, Object> processUserListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit) {
@@ -841,14 +810,14 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			int permissionType = Integer.parseInt(permission);
 			String inode = assetInode;
 			results = new UsersListTemplate(inode, permissionType, query, start, limit) {
-
+				
 				PermissionAPI perAPI = APILocator.getPermissionAPI();
-
+	
 				@Override
 				public int getUserCount() {
 					return perAPI.getUserCount(inode, permissionType, filter);
 				}
-
+	
 				@Override
 				public List<User> getUsers() {
 					return perAPI.getUsers(inode, permissionType, filter, start, limit);
@@ -859,16 +828,16 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			Logger.warn(UserAjax.class, String.format("::getUsersList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
 			results = new HashMap<String,Object>(0);
 		}
-
+		
 		return results;
 	}
 
 	private Map<String, Object> processUserList(String query, int start, int limit) {
 
-		Map<String, Object> results = new UsersListTemplate("", 0, query, start, limit)
+		Map<String, Object> results = new UsersListTemplate("", 0, query, start, limit) 
 		{
 				UserAPI userAPI = APILocator.getUserAPI();
-
+	
 				@Override
 				public int getUserCount() {
 					try {
@@ -878,7 +847,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 						return 0;
 					}
 				}
-
+	
 				@Override
 				public List<User> getUsers() {
 					try {
@@ -890,11 +859,11 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 				}
 		}
 		.perform();
-
+		
 		return results;
 	}
-
-
+	
+	
 	public boolean hasUserRoles(String userId, String[] roles) {
 		User user;
 		try {
@@ -914,34 +883,34 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		}
 		return false;
 	}
-
+	
 	public List<Map<String, Object>> getUserCategories(String userId) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserProxyAPI userProxyAPI = APILocator.getUserProxyAPI();
-
+		
 		CategoryAPI catAPI = APILocator.getCategoryAPI();
 		UserProxy uProxy = userProxyAPI.getUserProxy(userId, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
 		List<Category> children = catAPI.getChildren(uProxy, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
-
+		
 		List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
 		for(Category child: children) {
 			toReturn.add(child.getMap());
 		}
-
+		
 		return toReturn;
 	}
 
-	public void updateUserCategories(String userId, String[] categories) throws PortalException, SystemException, DotSecurityException, DotDataException {
+	public void updateUserCategories(String userId, String[] categories) throws PortalException, SystemException, DotSecurityException, DotDataException { 
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserProxyAPI userProxyAPI = APILocator.getUserProxyAPI();
-
+		
 		User user = uWebAPI.getLoggedInUser(request);
 		boolean respectFrontend = uWebAPI.isLoggedToBackend(request);
-
+		
 		CategoryAPI catAPI = APILocator.getCategoryAPI();
 		UserProxy userProxy = userProxyAPI.getUserProxy(userId, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
 
@@ -958,29 +927,29 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			if(InodeUtils.isSet(category.getInode()))
 			{
 				catAPI.addChild(userProxy, category, user, respectFrontend);
-			}
+			}					
 		}
 		HibernateUtil.commitTransaction();
 	}
-
+	
 	public void updateUserLocale(String userId, String timeZoneId, String languageId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserAPI userAPI = APILocator.getUserAPI();
-
+		
 		User user = uWebAPI.getLoggedInUser(request);
 		boolean respectFrontend = uWebAPI.isLoggedToBackend(request);
-
+		
 		User toUpdate = userAPI.loadUserById(userId, user, respectFrontend);
 		toUpdate.setTimeZoneId(timeZoneId);
 		toUpdate.setLanguageId(languageId);
 		userAPI.save(toUpdate, user, respectFrontend);
-
+		
 	}
-
+	
 	public void disableUserClicktracking(String userId, boolean disabled) throws PortalException, SystemException, DotSecurityException, DotDataException {
-
+		
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -994,11 +963,11 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		toUpdate.setNoclicktracking(disabled);
 		userProxyAPI.saveUserProxy(toUpdate, user, respectFrontEndRoles);
 		HibernateUtil.commitTransaction();
-
+		
 	}
 
-
-	// Helper classes. They implement the template method design pattern.
+	
+	// Helper classes. They implement the template method design pattern. 
 	@SuppressWarnings("unused")
 	private abstract class UsersAndRolesListTemplate {
 
@@ -1008,12 +977,12 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		protected int start;
 		protected int limit;
 		protected boolean hideSystemRoles;
-
+		
 		public abstract int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException, SystemException;
 		public abstract List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException, SystemException;
 		public abstract int getUserCount();
 		public abstract List<User> getUsers(int start, int limit);
-
+		
 		public UsersAndRolesListTemplate(String inode, int permissionType, String filter, int start, int limit, boolean hideSystemRoles) {
 			this.inode = inode;
 			this.permissionType = permissionType;
@@ -1024,10 +993,10 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		}
 
 		public Map<String, Object> perform() {
-
+			
 			ArrayList<Map<String, String>> list = null;						// Keeps a list of roles and/or users
-			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
-			int totalItemCount = 0;											// Keeps the grand total of items
+			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side) 
+			int totalItemCount = 0;											// Keeps the grand total of items 
 																			// (No. of roles + No. of users)
 			List<Role> roles = null;
 			List<User> users = new ArrayList<User>();
@@ -1046,7 +1015,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			// Step 2. Retrieve users by matching name for the remaining of page, if needed.
 
 				if( realRoleCount < limit || limit < 0 ) {
-
+		
 					// Since one page should be filled in with up to "limit" number of items, fill the remaining of page with users
 					int realStart = start - totalItemCount < 0 ? 0 : start - totalItemCount;
 					int realLimit = limit - realRoleCount < 0 ? -1 : limit - realRoleCount;
@@ -1055,11 +1024,11 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 				}
 
 				totalItemCount += getUserCount();
-
-				// Step 3. Get the CMS Admins
+				
+				// Step 3. Get the CMS Admins				
 				if(realRoleCount != 0 && (realRoleCount < limit || limit < 0))
 				{
-					Role CMSAdministratorRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();
+					Role CMSAdministratorRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();				
 					List<User> CMSAdministrators = com.dotmarketing.business.APILocator.getRoleAPI().findUsersForRole(CMSAdministratorRole.getId());
 					String localFilter = filter.toLowerCase();
 					for(User administrator : CMSAdministrators)
@@ -1071,38 +1040,38 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 								users.add(administrator);
 							}
 						}
-					}
+					}				
 				}
-
+				
 				try
 				{
 					SortTool sortTool = new SortTool();
 					users = (List<User>) sortTool.sort(users.toArray(),"firstName");
-
+					
 				}
 				catch(Exception ex)
 				{
 					Logger.info(UserAjax.class,"couldn't sort the users by first name" + ex.getMessage());
 				}
-
+				
 				try
 				{
 					SortTool sortTool = new SortTool();
 					roles = (List<Role>) sortTool.sort(roles.toArray(),"name");
-
+					
 				}
 				catch(Exception ex)
 				{
 					Logger.info(UserAjax.class,"couldn't sort the roles by name" + ex.getMessage());
 				}
-
+			
 				//Step 4. Assemble all of this information into an appropriate container to the view
 				if( roles != null || users != null ) {
-
+		
 					int pageSize = realRoleCount + realUserCount;
 					list = new ArrayList<Map<String, String>>(pageSize);
-
-					if( roles != null ) {
+					
+					if( roles != null ) {		
 						for(Role aRole : roles) {
 							Map<String, String> aRecord = new HashMap<String, String>();
 							aRecord.put("id", aRole.getId());
@@ -1112,14 +1081,14 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 							list.add(aRecord);
 						}
 					}
-
+		
 					if( users != null ) {
 						for( User aUser : users ) {
 							Map<String, String> aRecord = new HashMap<String, String>();
 							String fullName = aUser.getFullName();
 							fullName = (UtilMethods.isSet(fullName) ? fullName : " ");
 							String emailAddress = aUser.getEmailAddress();
-							emailAddress = (UtilMethods.isSet(emailAddress) ? emailAddress : " ");
+							emailAddress = (UtilMethods.isSet(emailAddress) ? emailAddress : " ");							
 							aRecord.put("id", aUser.getUserId());
 							aRecord.put("type", USER_TYPE_VALUE);
 							aRecord.put("name", fullName);
@@ -1127,23 +1096,23 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 							list.add(aRecord);
 						}
 					}
-
+		
 				}
 				// No roles nor users retrieved. So create an empty list.
 				else {
 					list = new ArrayList<Map<String, String>>(0);
 				} //end if
-
+				
 				Collections.sort(list, new Comparator <Map<String, String>>(){
 
 					public int compare(Map<String, String> record1,
 							Map<String, String> record2) {
-
+						
 						return record1.get("name").compareTo(record2.get("name"));
 					}
 
-
-
+					
+					
 				});
 			}
 			catch(Exception ex) {
@@ -1157,9 +1126,9 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			return results;
 
 		}
-
+		
 	}
-	// Helper classes. They implement the template method design pattern.
+	// Helper classes. They implement the template method design pattern. 
 	@SuppressWarnings("unused")
 	private abstract class RolesListTemplate {
 
@@ -1169,11 +1138,11 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		protected int start;
 		protected int limit;
 		protected boolean hideSystemRoles;
-
+		
 		public abstract int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException, SystemException;
 		public abstract List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException, SystemException;
 
-
+		
 		public RolesListTemplate(String inode, int permissionType, String filter, int start, int limit, boolean hideSystemRoles) {
 			this.inode = inode;
 			this.permissionType = permissionType;
@@ -1184,10 +1153,10 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		}
 
 		public Map<String, Object> perform() {
-
+			
 			ArrayList<Map<String, String>> list = null;						// Keeps a list of roles and/or users
-			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
-			int totalItemCount = 0;											// Keeps the grand total of items
+			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side) 
+			int totalItemCount = 0;											// Keeps the grand total of items 
 																			// (No. of roles + No. of users)
 			List<Role> roles = null;
 
@@ -1206,18 +1175,18 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			// Step 2. Retrieve users by matching name for the remaining of page, if needed.
 
 				if( realRoleCount < limit || limit < 0 ) {
-
+		
 					// Since one page should be filled in with up to "limit" number of items, fill the remaining of page with users
 					int realStart = start - totalItemCount < 0 ? 0 : start - totalItemCount;
 					int realLimit = limit - realRoleCount < 0 ? -1 : limit - realRoleCount;
 
 				}
 
-
-				// Step 3. Get the CMS Admins
+				
+				// Step 3. Get the CMS Admins				
 				if(realRoleCount != 0 && (realRoleCount < limit || limit < 0))
 				{
-					Role CMSAdministratorRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();
+					Role CMSAdministratorRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();				
 					List<User> CMSAdministrators = com.dotmarketing.business.APILocator.getRoleAPI().findUsersForRole(CMSAdministratorRole.getId());
 					String localFilter = filter.toLowerCase();
 					for(User administrator : CMSAdministrators)
@@ -1226,38 +1195,38 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 						{
 
 						}
-					}
+					}				
 				}
-
+				
 				try
 				{
 					SortTool sortTool = new SortTool();
 
-
+					
 				}
 				catch(Exception ex)
 				{
 					Logger.info(UserAjax.class,"couldn't sort the users by first name" + ex.getMessage());
 				}
-
+				
 				try
 				{
 					SortTool sortTool = new SortTool();
 					roles = (List<Role>) sortTool.sort(roles.toArray(),"name");
-
+					
 				}
 				catch(Exception ex)
 				{
 					Logger.info(UserAjax.class,"couldn't sort the roles by name" + ex.getMessage());
 				}
-
+			
 				//Step 4. Assemble all of this information into an appropriate container to the view
 				if( roles != null  ) {
-
+		
 					int pageSize = realRoleCount ;
 					list = new ArrayList<Map<String, String>>(pageSize);
-
-					if( roles != null ) {
+					
+					if( roles != null ) {		
 						for(Role aRole : roles) {
 							Map<String, String> aRecord = new HashMap<String, String>();
 							aRecord.put("id", aRole.getId());
@@ -1267,24 +1236,24 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 							list.add(aRecord);
 						}
 					}
-
-
+		
+		
 				}
 				// No roles nor users retrieved. So create an empty list.
 				else {
 					list = new ArrayList<Map<String, String>>(0);
 				} //end if
-
+				
 				Collections.sort(list, new Comparator <Map<String, String>>(){
 
 					public int compare(Map<String, String> record1,
 							Map<String, String> record2) {
-
+						
 						return record1.get("name").compareTo(record2.get("name"));
 					}
 
-
-
+					
+					
 				});
 			}
 			catch(Exception ex) {
@@ -1298,8 +1267,8 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			return results;
 		}
 	}
-
-
+	
+	
 	private abstract class UsersListTemplate {
 
 		protected String inode;
@@ -1307,10 +1276,10 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		protected String filter;
 		protected int start;
 		protected int limit;
-
+		
 		public abstract int getUserCount();
 		public abstract List<User> getUsers();
-
+		
 		public UsersListTemplate(String inode, int permissionType, String filter, int start, int limit) {
 			this.inode = inode;
 			this.permissionType = permissionType;
@@ -1320,10 +1289,10 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		}
 
 		public Map<String, Object> perform() {
-
+			
 			ArrayList<Map<String, String>> list = null;						// Keeps a list of users
-			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
-			int totalItemCount = 0;											// Keeps the grand total of items
+			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side) 
+			int totalItemCount = 0;											// Keeps the grand total of items 
 																			// (No. of users)
 			List<User> users = null;
 			int realUserCount = 0;
@@ -1339,10 +1308,10 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 			// Step 2. Assemble all of this information into an appropriate container to the view
 				if( users != null ) {
-
+		
 					int pageSize = realUserCount;
 					list = new ArrayList<Map<String, String>>(pageSize);
-
+					
 					for( User aUser : users ) {
 						Map<String, String> aRecord = new HashMap<String, String>();
 						String fullName = aUser.getFullName();
@@ -1370,9 +1339,9 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			results.put("total", totalItemCount);
 
 			return results;
-
+			
 		}
-
+		
 	}
 
 }

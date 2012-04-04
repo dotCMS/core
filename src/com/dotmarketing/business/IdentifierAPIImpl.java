@@ -77,25 +77,20 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public Identifier loadFromCache(Host host, String uri) throws DotDataException, DotStateException {
 		return ifac.loadByURIFromCache(host, uri);
 	}
-
+	
 	public Identifier loadFromCache(Versionable version) throws DotDataException, DotStateException {
 		return ifac.loadFromCache(version);
 	}
-
+	
 	public Identifier loadFromCache(String id) throws DotDataException, DotStateException {
 		return ifac.loadFromCache(id);
 	}
-
-	public Identifier loadFromDb(String id) throws DotDataException, DotStateException {
-		return ifac.loadFromDb(id);
-	}
-
 	public Identifier save(Identifier id) throws DotDataException, DotStateException {
 		Identifier ident = ifac.saveIdentifier(id);
 		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(id.getId());
 		return ident;
 	}
-
+	
 	public void delete(Identifier id) throws DotDataException, DotStateException {
 		if(id==null || !UtilMethods.isSet(id.getId())){
 			throw new DotStateException ("you cannot delete a null identifier");

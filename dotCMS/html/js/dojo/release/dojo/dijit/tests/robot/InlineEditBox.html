@@ -1,0 +1,288 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+		"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<title>doh.robot InlineEditBox Test</title>
+
+		<style>
+			@import "../../../util/doh/robot/robot.css";
+		</style>
+
+		<!-- required: dojo.js -->
+		<script type="text/javascript" src="../../../dojo/dojo.js"
+			djConfig="isDebug: true"></script>
+
+		<!-- functions to help test -->
+		<script type="text/javascript" src="../helpers.js"></script>
+
+		<script type="text/javascript">
+			dojo.require("dijit.dijit"); // optimize: load dijit layer
+			dojo.require("dojo.date.locale");
+			dojo.require("dijit.robotx");
+
+			dojo.addOnLoad(function(){
+				doh.robot.initRobot('../test_InlineEditBox.html');
+
+				function moveAndClick(node) {
+					doh.robot.mouseMoveAt(node, 500, 500);
+					doh.robot.mouseClick({left: true}, 500);
+				}
+				function cancel(deferred, widget){
+					moveAndClick(function(){
+						try{
+							var buttons = dojo.query(".cancelButton", widget.domNode.parentNode);
+							var cancelButton = dojo.query("BUTTON", buttons[buttons.length-1])[0];
+							return cancelButton;
+						}catch(e){ deferred.errback(e); }
+					});
+					doh.robot.sequence(function(){}, 1000); // slow down to allow widget to exit edit mode
+				}
+				function testOK(deferred, delay){
+					doh.robot.sequence(dojo.hitch(deferred, "callback", true), delay? delay : 1);
+				}
+
+				doh.register("dijit.InlineEditBox autosave tests", [
+					{
+						name: "CurrencyTextBox invalid value: blur",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("dollar_as");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.typeKeys("dollar", 1000, 1200); // invalid
+							moveAndClick("predefined");
+							doh.robot.sequence(d.getTestCallback(function(){
+								var currencyTextBox = inlineBox.wrapperWidget.editWidget;
+								doh.is('dollar', currencyTextBox.attr("displayedValue"), "displayedValue");
+								doh.f(currencyTextBox.isValid(), "!isValid");
+								inlineBox.cancel(false);
+								doh.is('', inlineBox.attr("value"), "value");
+							}), 1000);
+							return d;
+						}
+					},
+					{
+						name: "CurrencyTextBox invalid value: ENTER",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("dollar_as");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.typeKeys("dollar", 1000, 1200); // invalid
+							doh.robot.keyPress(dojo.keys.ENTER, 500, {});
+							doh.robot.sequence(d.getTestErrback(function(){
+								var currencyTextBox = inlineBox.wrapperWidget.editWidget;
+								doh.is('dollar', currencyTextBox.attr("displayedValue"), "displayedValue");
+								doh.f(currencyTextBox.isValid(), "!isValid");
+							}), 1000);
+							doh.robot.keyPress(dojo.keys.ESCAPE, 500, {});
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.is('', inlineBox.attr("value"), "value");
+							}), 1000);
+							return d;
+						}
+					},
+					{
+						name: "CurrencyTextBox valid value: blur",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("dollar_as");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.typeKeys("123", 1000, 600);
+							moveAndClick("predefined");
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.is("$123.00", inlineBox.attr("value"), "value");
+							}), 1000);
+							return d;
+						}
+					},
+					{
+						name: "CurrencyTextBox valid value: ENTER",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("dollar_as");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.typeKeys("234", 1000, 600);
+							doh.robot.keyPress(dojo.keys.ENTER, 500, {});
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.is('$234.00', inlineBox.attr("value"), "value");
+							}), 1000);
+							return d;
+						}
+					},
+					{
+						name: "CurrencyTextBox valid value: ESCAPE",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("dollar_as");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.typeKeys("345", 1000, 600);
+							doh.robot.keyPress(dojo.keys.ESCAPE, 500, {});
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.is("$234.00", inlineBox.attr("value"), "value");
+							}), 1000);
+							return d;
+						}
+					},
+					{
+						name: "CurrencyTextBox valid value: TAB",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("dollar_as");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.typeKeys("456", 1000, 600);
+							doh.robot.keyPress(dojo.keys.TAB, 500, {});
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.is('$456.00', inlineBox.attr("value"), "value");
+							}), 1000);
+							return d;
+						}
+					},
+					{
+						name: "Focus test",
+						timeout: 15000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("editable");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.typeKeys("editable", 1000, 1600);
+							doh.robot.keyPress(dojo.keys.TAB, 500, {});
+							doh.robot.keyPress(dojo.keys.TAB, 1500, {}); // wait more than 1 second to TAB
+							doh.robot.keyPress(dojo.keys.ENTER, 500, {});
+							doh.robot.typeKeys("567", 500, 600);
+							doh.robot.keyPress(dojo.keys.ENTER, 500, {});
+							doh.robot.keyPress(dojo.keys.TAB, 500, {shift:true}); // do this fast
+							doh.robot.keyPress(dojo.keys.TAB, 500, {shift:true}); // do this fast
+							doh.robot.keyPress(dojo.keys.ENTER, 500, {}); // quickly back to editable
+							doh.robot.keyPress(dojo.keys.RIGHT_ARROW, 500, {});
+							doh.robot.typeKeys(" again", 1000, 1200);
+							doh.robot.keyPress(dojo.keys.TAB, 500, {});
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.is('$567.00', dijit.byId("dollar_as").attr("value"), "value");
+								doh.is('editable again', inlineBox.attr("value"), "value");
+							}), 1000);
+							return d;
+						}
+					},
+					{
+						name: "Textarea test",
+						timeout: 15000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("textarea");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.typeKeys("line 1", 1000, 1200);
+							doh.robot.keyPress(dojo.keys.ENTER, 500, {});
+							doh.robot.typeKeys("line 2", 500, 1200);
+							moveAndClick("predefined");
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.is('line 1\\nline 2', inlineBox.attr("value").replace(/\n/g, "\\n"), "textarea programmatic value was " + inlineBox.attr("value").replace(/\n/g, "\\n"));
+								doh.is('line 1<br>line 2', inlineBox.domNode.innerHTML.toLowerCase(), "textarea rendered value was " + inlineBox.domNode.innerHTML);
+							}), 1000);
+							return d;
+						}
+					}
+				]);
+
+				// Testing that the initial display value of the InlineEditBox gets sent to the editor.
+				// For example, in this markup:
+				//		<span dojoType="dijit.InlineEditBox" ...>01/05/2007</span>
+				// When the editor is clicked the calendar should open to that date.
+				doh.register("dijit.InlineEditBox preDefinedValue tests", [
+					{
+						name: "CurrencyTextBox preDefinedValue",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("dollar");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.sequence(d.getTestErrback(function(){
+								doh.is('$2,000', inlineBox.attr("value"), "value");
+								var currencyTextBox = inlineBox.wrapperWidget.editWidget;
+								doh.is('2000.00', currencyTextBox.attr("displayedValue"), "displayedValue");
+							}), 1000);
+							cancel(d, inlineBox);
+							testOK(d);
+							return d;
+						}
+					},
+					{
+						name: "NumberSpinner preDefinedValue",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("quantity");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.sequence(d.getTestErrback(function(){
+								doh.is(3, inlineBox.attr("value"));
+								var numberSpinner = inlineBox.wrapperWidget.editWidget;
+								doh.is(3, numberSpinner.attr("value"));
+							}), 1000);
+							cancel(d, inlineBox);
+							testOK(d);
+							return d;
+						}
+					},
+					{
+						name: "ComboBox preDefinedValue",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("item");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.sequence(d.getTestErrback(function(){
+								doh.is("refrigerators", dojo.trim(inlineBox.attr("value")));
+								var comboBox = inlineBox.wrapperWidget.editWidget;
+								doh.is("refrigerators", comboBox.attr("value"));
+							}), 1000);
+							cancel(d, inlineBox);
+							testOK(d);
+							return d;
+						}
+					},
+					{
+						name: "DateTextBox preDefinedValue",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("purchase");
+							moveAndClick(inlineBox.domNode);
+							var preDate = dojo.date.locale.parse("01/05/2007", {datePattern: 'MM/dd/yyyy', selector:'date'});
+							doh.robot.sequence(d.getTestErrback(function(){
+								doh.is("01/05/2007", inlineBox.attr("value"));
+								var dateTextBox = inlineBox.wrapperWidget.editWidget;
+								doh.is(preDate.toString(), dateTextBox.attr("value").toString());
+							}), 1000);
+							cancel(d, inlineBox);
+							testOK(d);
+							return d;
+						}
+					},
+					{
+						name: "FilteringSelect preDefinedValue",
+						timeout: 10000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("state");
+							moveAndClick(inlineBox.domNode);
+							doh.robot.sequence(d.getTestErrback(function(){
+								doh.is("Pennsylvania", dojo.trim(inlineBox.attr("value")));
+								var filteringSelect = inlineBox.wrapperWidget.editWidget;
+								doh.is("PA", filteringSelect.attr("value"));
+							}), 1000);
+							cancel(d, inlineBox);
+							testOK(d);
+							return d;
+						}
+					}
+				]);
+
+				doh.run();
+			});
+		</script>
+	</head>
+</html>

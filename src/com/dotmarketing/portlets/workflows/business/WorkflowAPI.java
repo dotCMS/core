@@ -27,7 +27,7 @@ public interface WorkflowAPI {
 
 	
 
-	
+	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
 	
 	
 	public java.util.List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;

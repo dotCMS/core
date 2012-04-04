@@ -10,10 +10,6 @@ import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginCache;
 import com.dotmarketing.plugin.business.PluginCacheImpl;
@@ -61,7 +57,7 @@ import com.dotmarketing.velocity.DotResourceCache;
 
 public class CacheLocator extends Locator<CacheIndex>{
 	
-    private static class CommitListenerCacheWrapper implements DotCacheAdministrator {
+	    private static class CommitListenerCacheWrapper implements DotCacheAdministrator {
         DotCacheAdministrator dotcache;
         public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) { this.dotcache=dotcache; }
         public Set<String> getKeys(String group) { return dotcache.getKeys(group); }
@@ -89,6 +85,7 @@ public class CacheLocator extends Locator<CacheIndex>{
         }
     }
     
+
 	private static CacheLocator instance;
 	private static DotCacheAdministrator adminCache;
 	
@@ -103,8 +100,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 		String clazz = Config.getStringProperty("cache.locator.class", DotGuavaCacheAdministratorImpl.class.getCanonicalName());
 		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
 		try{
-			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
-			
+			adminCache = (DotCacheAdministrator) Class.forName(clazz).newInstance();
 		}
 		catch(Exception e){
 			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz);

@@ -12,32 +12,24 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.FixAudit;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.business.FolderFactory;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class FixTask00021CheckOrphanedAssets implements FixTask {
 	
 	private List <Map<String, String>> modifiedData= new  ArrayList <Map<String, String>>();
-	private FolderFactory ffac = FactoryLocator.getFolderFactory();
 
 
 	@SuppressWarnings({ "unchecked", "deprecation" })
@@ -50,25 +42,24 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 		String hostId = "";
 		Folder folder = null;
 		FolderAPI folderAPI = APILocator.getFolderAPI();*/
-		//String identifier = null;
 		if (!FixAssetsProcessStatus.getRunning()) {
 			FixAssetsProcessStatus.startProgress();
 			FixAssetsProcessStatus.setDescription("task 21: CheckOrphanedAssets");
 			HibernateUtil.startTransaction();
-			int total=0;			
+			int total=0;
 		     try {
-				User user = APILocator.getUserAPI().getSystemUser();
+				//User user = APILocator.getUserAPI().getSystemUser();
 				/*String query = "SELECT * FROM inode WHERE (type='file_asset' or type='htmlpage') " +
 				   			   "and inode NOT IN (SELECT child FROM tree WHERE parent in (SELECT inode from folder))";*/
 			    String hostQuery = "select distinct host_inode from identifier";
 			    dc.setSQL(hostQuery);
 			    List<HashMap<String, String>> hosts = dc.getResults();
-			    for(HashMap<String, String> host1 : hosts){
-				   String hostInode = host1.get("host_inode");
+			    for(HashMap<String, String> host : hosts){
+				   String hostInode = host.get("host_inode");
 				   if(UtilMethods.isSet(hostInode)){
 					   String query = " SELECT * FROM identifier WHERE (asset_type='file_asset' or asset_type='htmlpage') " + 
 					   			      " and host_inode = ? " +
-					   			      " and id NOT IN (SELECT identifier FROM folder where host_inode = ?) ";
+					   			      " and parent_path NOT IN (SELECT path FROM folder where host_inode = ?) ";
 
 					   dc.setSQL(query);
 					   dc.addParam(hostInode);
@@ -79,8 +70,8 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 					   for(HashMap<String, String> asset:assetIds){
 						   String identifier = asset.get("id");
 						   if(APILocator.getIdentifierAPI().isIdentifier(identifier)){
-							   deleteOrphanedAsset(asset.get("asset_type"),asset.get("id"),dc);							  
-							   FixAssetsProcessStatus.addAError();
+							   deleteOrphanedAsset(asset.get("asset_type"),asset.get("id"),dc);	
+							   
 							   CacheLocator.getFileCache().clearCache();
 							   CacheLocator.getHTMLPageCache().clearCache();
 							   CacheLocator.getIdentifierCache().clearCache();
@@ -88,7 +79,6 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 					   }
 				   }
 			    }
-			    getModifiedData();
 			    FixAudit Audit = new FixAudit();
 				Audit.setTableName("identifier");
 				Audit.setDatetime(new Date());
@@ -105,12 +95,10 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 							//Identifier ident = (Identifier) InodeFactory.getInode(identifier, Identifier.class);
 						Identifier ident = APILocator.getIdentifierAPI().find(identifier);
 							hostId = ident.getHostId();
-							String path = ident.getParentPath();
 							if(hostId == null){
 								host = APILocator.getHostAPI().findDefaultHost(user,false);
 								hostId = host.getInode();
 							}
-							
 							String uri = ident.getURI();
 							if(UtilMethods.isSet(uri)){
 								int index = uri.lastIndexOf("/");
@@ -118,9 +106,9 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 								if (-1 < index);
 									uri = uri.substring(0, index);
 							}
-							folder = folderAPI.findFolderByPath(path, hostId, user, false);
+							folder = FolderFactory.getFolderByPath(uri, hostId);
 							HibernateUtil.startTransaction();
-							if(folderAPI.exists(folder.getInode())){
+							if(folderAPI.doesFolderExist(folder.getPath(),hostId)){
 						      dc.setSQL("Insert into tree(child,parent,relation_type,tree_order) values(?,?,?,?)");
 							  dc.addParam(asset.get("inode"));
 							  dc.addParam(folder.getInode());
@@ -183,11 +171,7 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 		
 		String deleteHTMLPages = "DELETE FROM htmlpage WHERE identifier = ?";
 		
-		String deleteHTMLPagesVersionInfo = "DELETE FROM htmlpage_version_info WHERE identifier = ?";
-		
 		String deleteFileAssets = "DELETE FROM file_asset WHERE identifier = ?";
-		
-		String deleteFileAssetsVersionInfo = "DELETE FROM fileasset_version_info WHERE identifier = ?";
 		
 		String InodesToDelete = "SELECT * FROM inode WHERE inode IN (select inode from htmlpage where identifier = ? ) " +
 								"OR inode IN (select inode from file_asset where identifier = ?)";
@@ -224,9 +208,6 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 			    }
 			    if(assetList.size()>0){
 			      //DELETE Orphaned File Assets	
-			      dc.setSQL(deleteFileAssetsVersionInfo);	
-				  dc.addParam(identifier);
-				  dc.loadResult();
 			      dc.setSQL(deleteFileAssets);	
 			      dc.addParam(identifier);
 			      dc.loadResult();
@@ -247,19 +228,16 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 				 dc.addParam(identifier);
 				 modifiedData = dc.loadResults();
 				 //DELETE Orphaned HTMLPage Assets
-				 dc.setSQL(deleteHTMLPagesVersionInfo);	
-			     dc.addParam(identifier);
-			     dc.loadResult();
 				 dc.setSQL(deleteHTMLPages);	
-			     dc.addParam(identifier);
-			     dc.loadResult();
-			     dc.setSQL(deleteIdentifier);
-			     dc.addParam(identifier);
-			     dc.loadResult();
-			     dc.setSQL(deleteInodes);
-			     dc.addParam(identifier);
-			     dc.addParam(identifier);
-			     dc.loadResult();
+			      dc.addParam(identifier);
+			      dc.loadResult();
+			      dc.setSQL(deleteIdentifier);
+			      dc.addParam(identifier);
+			      dc.loadResult();
+			      dc.setSQL(deleteInodes);
+			      dc.addParam(identifier);
+			      dc.addParam(identifier);
+			      dc.loadResult();
 			 }		
 		} catch (Exception e) {
 			throw new DotRuntimeException("Unable to delete Orphaned Asset",e);
@@ -282,7 +260,7 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 				if(UtilMethods.isSet(hostInode)){
 					String query = " SELECT * FROM identifier WHERE (asset_type='file_asset' or asset_type='htmlpage') " + 
 					   			   " and host_inode = ? " +
-					   			   " and id NOT IN (SELECT identifier FROM folder where host_inode = ?) ";
+					   			   " and parent_path NOT IN (SELECT path FROM folder where host_inode = ?) ";
 
 					dc.setSQL(query);
 					dc.addParam(hostInode);

@@ -254,7 +254,7 @@ function togglePublish(){
 						<%=link.getTitle()%>
 					</a>
 				</td>
-				<td nowrap="true"><%= com.dotmarketing.util.UtilHTML.getStatusIcons(link) %></td>
+				<td><%= com.dotmarketing.util.UtilHTML.getStatusIcons(link,COMMON_IMG,false) %></td>
 				<td nowrap>
 					<% if ((link.getLinkType() == null) || (!link.getLinkType().equals(Link.LinkType.CODE.toString()))) { %>
 						<a  href="<%=link.getWorkingURL()%>" target="_blank" ><% if(link.getWorkingURL()!=null){ %><% if(link.getWorkingURL().length() > 45){ %><%= link.getWorkingURL().substring(0,45) + "..." %><% }else{ %><%= link.getWorkingURL() %><% } %><% } %></a>

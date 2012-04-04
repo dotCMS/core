@@ -81,8 +81,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
 							conditionBuffer.append(" asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
-						}else if(entry.getKey().equalsIgnoreCase("identifier")){
-							conditionBuffer.append(" asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
 						}else{
 							conditionBuffer.append(" lower(asset." + entry.getKey()+ ") like ? ");
 							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
@@ -93,8 +91,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}else{
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
-						}else if(entry.getKey().equalsIgnoreCase("identifier")){
 							conditionBuffer.append(" OR asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
 						}else{
 							conditionBuffer.append(" OR lower(asset." + entry.getKey()+ ") like ? ");

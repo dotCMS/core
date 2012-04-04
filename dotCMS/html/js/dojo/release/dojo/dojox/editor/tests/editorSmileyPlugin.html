@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+		"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<title>Editor Smiley Test</title>
+
+	<style type="text/css">
+		@import "../../../dojo/resources/dojo.css";
+		@import "../../../dijit/tests/css/dijitTests.css";
+		@import "../../../dijit/themes/tundra/tundra.css";
+		@import "../plugins/resources/css/Smiley.css";
+	</style>
+
+	<script type="text/javascript" src="../../../dojo/dojo.js" djConfig="parseOnLoad: true, isDebug: true"></script>
+
+	<script type="text/javascript">
+		dojo.require("dijit.Editor");
+		dojo.require("dojo.parser");
+		dojo.require("dojox.editor.plugins.Smiley");
+	</script>
+</head>
+<body class="tundra">
+	<br>
+	<h1 class="testTitle">Editor + Smiley Plugin</h1>
+
+
+	<div dojoType="dijit.Editor" id="editor1" extraPlugins="['smiley']">
+		This instance is created from a div with an extra plugin, 'smiley' plugin loaded.
+		<div>
+			<center>Smiley Plugin is not ready :-(</center>
+		</div>
+	</div>
+</body>
+</html>

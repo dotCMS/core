@@ -303,8 +303,7 @@ public class HTMLPageFactory {
 		LiveCache.addToLiveAssetToCache(newHTMLPage);
 		
 		APILocator.getVersionableAPI().setWorking(newHTMLPage);
-		if (currentHTMLPage.isLive()) 
-			APILocator.getVersionableAPI().setLive(newHTMLPage);
+
 		//Copy permissions
 		permissionAPI.copyPermissions(currentHTMLPage, newHTMLPage);
 		

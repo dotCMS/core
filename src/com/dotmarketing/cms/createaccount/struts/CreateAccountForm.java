@@ -25,7 +25,7 @@ public class CreateAccountForm extends ActionForm implements Serializable {
 
     private String userName;
     private String password1;
-    private String verifyPassword;
+    private String password2;
     private String firstName;
     private String lastName;
     private String prefix;
@@ -74,8 +74,10 @@ public class CreateAccountForm extends ActionForm implements Serializable {
 	private String phone;
 	private String fax;
 	private String cell;
-	private String emailAddress;
-   
+	private String email;
+    public String getEmail() {
+		return email;
+	}
     private String[]  categories;
 
 
@@ -97,35 +99,9 @@ public class CreateAccountForm extends ActionForm implements Serializable {
 
 
 
-	
-
-
-
-	public String getVerifyPassword() {
-		return verifyPassword;
+	public void setEmail(String email) {
+		this.email = email;
 	}
-
-
-
-	public void setVerifyPassword(String verifyPassword) {
-		this.verifyPassword = verifyPassword;
-	}
-
-
-
-	public String getEmailAddress() {
-		return emailAddress;
-	}
-
-
-
-	public void setEmailAddress(String emailAddress) {
-		this.emailAddress = emailAddress;
-	}
-
-
-
-
 
 
 
@@ -212,7 +188,15 @@ public class CreateAccountForm extends ActionForm implements Serializable {
 
 
 
-    
+    public String getPassword2() {
+        return password2;
+    }
+
+
+
+    public void setPassword2(String password2) {
+        this.password2 = password2;
+    }
 
 
 
@@ -257,10 +241,10 @@ public class CreateAccountForm extends ActionForm implements Serializable {
 		if (!UtilMethods.isSet(password1) ){
 			errors.add(Globals.MESSAGES_KEY, new ActionMessage("message.contentlet.required","password"));
 		}
-		if(UtilMethods.isSet(password1) && !password1.equals(verifyPassword)){    		    		    		
+		if(!password1.equals(password2)){    		    		    		
 			errors.add(Globals.MESSAGES_KEY, new ActionMessage("error.passwordsDontMatch"));    		
 		}
-    	if (!UtilMethods.isSet(emailAddress)) 
+    	if (!UtilMethods.isSet(userName)) 
     	{
     		errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.required","eMail"));    		
     	}

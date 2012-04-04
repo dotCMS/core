@@ -22,7 +22,6 @@ Contentlet contentlet = APILocator.getContentletAPI().find(x, user, false);
 PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user);
 
-boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 
 String copyOptions = ((String) request.getParameter("copyOptions"))==null?"":(String) request.getParameter("copyOptions");
 
@@ -30,15 +29,13 @@ Structure structure = contentlet.getStructure();
 String userLocked =null;
 String lockedSince = null;
 boolean contentEditable = false;
-if (isLocked) {
-	String lockedUserId =  APILocator.getVersionableAPI().getLockedBy(contentlet);
+if (contentlet.isLocked()) {
+	String lockedUserId =  APILocator.getVersionableAPI().getLockedBy(contentlet.getIdentifier());
 	contentEditable = user.getUserId().equals(lockedUserId);
 	
 	userLocked = APILocator.getUserAPI().loadUserById(lockedUserId, APILocator.getUserAPI().getSystemUser(), true).getFullName();
-	lockedSince = UtilMethods.capitalize(DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale()));
+	lockedSince = UtilMethods.capitalize(DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet.getIdentifier()), user.getLocale()));
 }
-
-
 
 %>
 
@@ -55,7 +52,7 @@ if (isLocked) {
 
 
 
-	toggleLockedMessage(<%=isLocked%>, "<%=userLocked%>", "<%=lockedSince%>");
+	toggleLockedMessage(<%=contentlet.isLocked()%>, "<%=userLocked%>", "<%=lockedSince%>");
 
 	<%if(SessionMessages.contains(session, "message")){%>
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,  (String) SessionMessages.get(session, "message"))%>", false);

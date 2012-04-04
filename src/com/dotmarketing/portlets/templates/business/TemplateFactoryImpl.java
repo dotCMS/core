@@ -27,7 +27,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
-import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -95,13 +94,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	public void save(Template template) throws DotDataException {
-		if(!UtilMethods.isSet(template.getIdentifier())){
-			throw new DotStateException("Cannot save a tempalte without an Identifier");
-		}
 		HibernateUtil.save(template);
 		templateCache.add(template.getInode(), template);
-		TemplateServices.invalidate(template, true);
-
+		//WorkingCache.removeAssetFromCache(template);
+		//WorkingCache.addToWorkingAssetToCache(template);
+		//LiveCache.removeAssetFromCache(template);
+		//if (template.isLive()) {
+		//	LiveCache.addToLiveAssetToCache(template);
+		//}
 	}
 
 	public void deleteFromCache(Template template) throws DotDataException {

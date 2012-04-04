@@ -8,6 +8,7 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.WindowState;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -29,9 +30,9 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.templates.ajax.TemplateAjax;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -166,7 +167,7 @@ public class EditTemplateAction extends DotPortletAction implements
 						Logger.debug(this, "Calling Publish method");
 						_publishWebAsset(req, res, config, form, user,
 								WebKeys.TEMPLATE_FORM_EDIT);
-
+						//_publishHTMLPages(req, res, config, form);
 
 
 					if(!UtilMethods.isSet(referer)) {
@@ -448,16 +449,9 @@ public class EditTemplateAction extends DotPortletAction implements
 		//gets image file --- on the image field on the template we store the image's identifier
 		//Identifier imageIdentifier = (Identifier) InodeFactory.getInode(template.getImage(), Identifier.class);
 		File imageFile = new File();
-		Boolean fileAsContent = false;
-		Contentlet imageContentlet = new Contentlet();
-
 		if(InodeUtils.isSet(template.getImage())){
 			Identifier imageIdentifier = APILocator.getIdentifierAPI().find(template.getImage());
-			if(fileAsContent = imageIdentifier.getAssetType().equals("contentlet")) {
-				imageContentlet = APILocator.getContentletAPI().findContentletByIdentifier(imageIdentifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-			} else {
-				imageFile = (File) APILocator.getVersionableAPI().findWorkingVersion(imageIdentifier,APILocator.getUserAPI().getSystemUser(),false);
-			}
+		    imageFile = (File) APILocator.getVersionableAPI().findWorkingVersion(imageIdentifier,APILocator.getUserAPI().getSystemUser(),false);
 		}
 
 		TemplateForm cf = (TemplateForm) form;
@@ -479,7 +473,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		} else {
 			cf.setHostId(templateHost.getIdentifier());
 		}
-		cf.setImage(fileAsContent?imageContentlet.getIdentifier():imageFile.getIdentifier());
+		cf.setImage(imageFile.getIdentifier());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -491,15 +485,19 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		//gets TemplateForm struts bean
 		TemplateForm cf = (TemplateForm) form;
-		Template newTemplate = new Template();
+
 		//gets the new information for the container from the request object
+		req.setAttribute(WebKeys.TEMPLATE_FORM_EDIT, new Template());
+		BeanUtils.copyProperties(req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT),
+				form);
 
-		BeanUtils.copyProperties(newTemplate,form);
-		req.setAttribute(WebKeys.TEMPLATE_FORM_EDIT, newTemplate);
-
+		//gets the new information for the template from the request object
+		Template template = (Template) req
+		.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
 
 		//gets the current template being edited from the request object
-		Template currentTemplate = (Template) req.getAttribute(WebKeys.TEMPLATE_EDIT);
+		Template currentTemplate = (Template) req
+		.getAttribute(WebKeys.TEMPLATE_EDIT);
 
 		//Retrieves the host were the template will be assigned to
 		Host host = hostAPI.find(cf.getHostId(), user, false);
@@ -509,37 +507,72 @@ public class EditTemplateAction extends DotPortletAction implements
 		//Checking permissions
 		if (!isNew) {
 			_checkWritePermissions(currentTemplate, user, httpReq);
-			newTemplate.setIdentifier(currentTemplate.getIdentifier());
 		} else {
 			//If the asset is new checking that the user has permission to add children to the parent host
 			if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)) {
 				SessionMessages.add(httpReq, "message", "message.insufficient.permissions.to.save");
 				throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 			}
-
 		}
 
 		//gets user id from request for mod user
 		String userId = user.getUserId();
-		//gets file object for the thumbnail
-		if (InodeUtils.isSet(cf.getImage())) {
-			newTemplate.setImage(cf.getImage());
+
+		//it saves or updates the asset
+		if (!isNew) {
+			Identifier identifier = APILocator.getIdentifierAPI().find(currentTemplate);
+			//we need to replace older container parse syntax with updated syntax
+			updateParseContainerSyntax(template);
+			WebAssetFactory.createAsset(template, userId, identifier, false);
+			template = (Template) WebAssetFactory.saveAsset(template, identifier);
+		} else {
+			WebAssetFactory.createAsset(template, userId, host);
 		}
 
+		req.setAttribute(WebKeys.TEMPLATE_FORM_EDIT, template);
 
-		APILocator.getTemplateAPI().saveTemplate(newTemplate,host , user, false);
-		APILocator.getVersionableAPI().setLocked(newTemplate, false, user);
+		//gets file object for the thumbnail
+		if (InodeUtils.isSet(cf.getImage())) {
+			template.setImage(cf.getImage());
+		}
 
+		///parses the body tag to get all identifier ids and saves them as children
+		String containerTag = "#parseContainer('";
+		String body = template.getBody();
+		int idx1 = 0;
+		int idx2 = 0;
+		String containerId = "";
+		while ((idx2 = body.indexOf(containerTag, idx1)) != -1) {
+			idx1 = body.indexOf("')", idx2 + containerTag.length());
+			containerId = body
+			.substring(idx2 + containerTag.length(), idx1);
+
+			/*Identifier containerIdentifier = (Identifier) InodeFactory.getInode(
+					containerId.trim(), Identifier.class);*/
+			Identifier containerIdentifier = APILocator.getIdentifierAPI().find(containerId.trim());
+			if(InodeUtils.isSet(containerIdentifier.getInode())){
+				template.addChild(containerIdentifier);
+			} else {
+				Logger.warn(this,"ERROR In the template:"+template.getInode()+". The Container Id:"+containerId+" doesn't exist!!!");
+			}
+
+		}
+
+		Identifier identifier = APILocator.getIdentifierAPI().find(template);
+
+		//Saving the host of the template
+		identifier.setHostId(host.getIdentifier());
+		APILocator.getIdentifierAPI().save(identifier);
+
+		TemplateServices.invalidate(template, true);
 		SessionMessages.add(httpReq, "message", "message.template.save");
 
 		//copies the information back into the form bean
-		BeanUtils.copyProperties(form, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
-		BeanUtils.copyProperties(currentTemplate, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
-
-
-
-
-
+		BeanUtils.copyProperties(form, req
+				.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
+		BeanUtils.copyProperties(currentTemplate, req
+				.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
+		HibernateUtil.flush();
 	}
 
 	public void _copyWebAsset(ActionRequest req, ActionResponse res,
@@ -573,14 +606,14 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		Identifier id = (Identifier)APILocator.getIdentifierAPI().find(versionTemplate);
 
-		//Template workingTemplate = (Template)APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(),false);
+		Template workingTemplate = (Template)APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(),false);
 
 		//gets containers identifiers children from current template
 
-		APILocator.getVersionableAPI().setWorking(versionTemplate);
 
-		//Template newWorkingTemplate = (Template) super._getVersionBackWebAsset(req, res, config, form, user, Template.class, WebKeys.TEMPLATE_EDIT);
-		TemplateServices.invalidate(versionTemplate, true);
+
+		Template newWorkingTemplate = (Template) super._getVersionBackWebAsset(req, res, config, form, user, Template.class, WebKeys.TEMPLATE_EDIT);
+		TemplateServices.invalidate(newWorkingTemplate, true);
 	}
 
 	private void updateParseContainerSyntax(Template template){

@@ -1,7 +1,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="${id}" class="fileAjaxUploader">
 <div id="${name}" class="fajaxUpName"></div>
-	<iframe dojoAttachPoint="fileUploadIframe" name="${id}_target_upload" dojoAttachEvent="onload:_fileUploadStart" src="" style="display: none"></iframe>
+	<iframe dojoAttachPoint="fileUploadIframe" name="${id}_target_upload" dojoAttachEvent="onload:_fileUploadFinished" src="" style="display: none"></iframe>
 	<input name="${name}" dojoAttachPoint="fileNameField" type="hidden" value="${fileName}">
 	<div dojoAttachPoint="fileUploadForm" style="float:left">
 		<form enctype="multipart/form-data" method="post" action="/servlets/ajax_file_upload?fieldName=${name}" 

@@ -122,8 +122,6 @@ a.dotEditListBox:hover{color:#5981B1 !important;border:1px solid #5981B1 !import
 .dotMenuReorder a:hover{color:#666;background-color:#DDEAFE;}
 /* END REORDER MENU */
 
-.dot_parseIcon{position:absolute;right:10px;top:10px;z-index:999;}
-.editIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -200px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 #dotAddWidget{height: 470px;width:800px;font-size: 12px;font-family:Verdana, Arial, Helvetica, sanserif;font-size:11px;text-align:left;-moz-box-shadow:0px 0px 10px #999;-webkit-box-shadow:0px 0px 10px #999;}
 #dotAddWidget img{border:0;}

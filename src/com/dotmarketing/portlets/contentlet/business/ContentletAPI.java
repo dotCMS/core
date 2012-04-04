@@ -1379,10 +1379,4 @@ public interface ContentletAPI {
 	 */
 	
 	public Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
-
-	/**
-	 * Reads the field from storage. It is useful to implement lazy loading. 
-	 * 
-	 */
-    public Object loadField(String inode, Field f) throws DotDataException;
 }

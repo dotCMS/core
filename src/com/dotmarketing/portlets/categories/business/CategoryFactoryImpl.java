@@ -90,22 +90,16 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	@Override
 	protected Category findByKey(String key) throws DotDataException {
-		if(key==null){
-			throw new DotDataException("null key passed in");
-		}
-		Category cat = catCache.getByKey(key);
-		if(cat ==null){
-			HibernateUtil hu = new HibernateUtil(Category.class);
-			hu.setQuery("from " + Category.class.getName() + " as cat where lower(cat.key) = ? and category0__1_.type='category'");
-			hu.setParam(key.toLowerCase());
-			cat = (Category) hu.load();
-			if(cat != null)
-				try {
-					catCache.put(cat);
-				} catch (DotCacheException e) {
-					throw new DotDataException(e.getMessage(), e);
-				}
-		}
+		HibernateUtil hu = new HibernateUtil(Category.class);
+		hu.setQuery("from " + Category.class.getName() + " as cat where lower(cat.key) = ? and category0__1_.type='category'");
+		hu.setParam(key.toLowerCase());
+		Category cat = (Category) hu.load();
+		if(cat != null)
+			try {
+				catCache.put(cat);
+			} catch (DotCacheException e) {
+				throw new DotDataException(e.getMessage(), e);
+			}
 		return cat;
 	}
 

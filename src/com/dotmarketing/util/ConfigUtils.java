@@ -18,7 +18,7 @@ import com.dotcms.enterprise.ClusterThreadProxy;
  * 
  */
 public class ConfigUtils {
-	
+
 	public static String getDynamicContentPath() {
 		String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH");
 		if (UtilMethods.isSet(realPath)) {
@@ -44,11 +44,11 @@ public class ConfigUtils {
 	public static String getBackupPath() {
 		return getDynamicContentPath() + File.separator + "backup";
 	}
-	
+
 	public static String getBundlePath() {
 		return getDynamicContentPath() + File.separator + "bundles";
 	}
-	
+
 	public static String getServerId(){
 		String serverId;
 		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
@@ -59,7 +59,7 @@ public class ConfigUtils {
 		}
 		return serverId;
 	}
-	
+
 	private static String deduceHostName() {
 		String hostName=null;
 		try {
@@ -74,7 +74,7 @@ public class ConfigUtils {
 			Enumeration<NetworkInterface> en=null;
 			try {
 				en=NetworkInterface.getNetworkInterfaces();
-				
+
 			} catch (SocketException e) {
 				Logger.error(ConfigUtils.class, "Error getting interfaces: " + e.getMessage());
 			}
@@ -88,7 +88,7 @@ public class ConfigUtils {
 						 if (findServerId(interfaceName)) {
 							 hostName=interfaceName;
 						 }
-						
+
 					 }
 				}
 			}
@@ -100,7 +100,7 @@ public class ConfigUtils {
 		}
 		return hostName;
 	}
-	
+
 	private static boolean findServerId(String id) {
 		if (id!=null) {
 				for (String s: ClusterThreadProxy.getClusteredServerIds()) {
@@ -111,5 +111,5 @@ public class ConfigUtils {
 		}
 		return false;
 	}
-	
+
 }

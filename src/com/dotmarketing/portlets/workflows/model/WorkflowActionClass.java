@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -60,15 +61,14 @@ public class WorkflowActionClass implements Serializable{
 		return "WorkflowActionClass [id=" + id + ", actionId=" + actionId + ", name=" + name + ", order=" + order + ", clazz=" + clazz
 				+ "]";
 	}
-	public WorkFlowActionlet getActionlet(){
+
+	public WorkFlowActionlet getActionlet() {
 		try {
-			return (WorkFlowActionlet) Class.forName(clazz).newInstance();
+			return APILocator.getWorkflowAPI().newActionlet(clazz);
 		} catch (Exception e) {
 			Logger.error(WorkflowActionClass.class,e.getMessage(),e);
 			throw new WorkflowActionFailureException(e.getMessage());
 		} 
-
-		
 	}
 	@Override
 	public boolean equals(Object obj) {

@@ -2,12 +2,15 @@ package com.dotmarketing.factories;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.beanutils.PropertyUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -324,12 +327,12 @@ public class WebAssetFactory {
 		if (!currWebAsset.isLocked()) {
 			// sets lock true
 		    User proxyuser=new User(userId);
-			APILocator.getVersionableAPI().setLocked(currWebAsset, true, proxyuser);
+			APILocator.getVersionableAPI().setLocked(currWebAsset.getIdentifier(), true, proxyuser);
 			return true;
 		}
 		
 		// if it is locked then we compare lockedBy with userId from the user that wants to edit the asset
-		String currUserId=APILocator.getVersionableAPI().getLockedBy(currWebAsset);
+		String currUserId=APILocator.getVersionableAPI().getLockedBy(currWebAsset.getIdentifier());
 		
 		return currUserId.equals(userId);
 	}
@@ -343,9 +346,8 @@ public class WebAssetFactory {
 		if (!InodeUtils.isSet(working.getInode())) {
 			throw new Exception("Working copy not found!");
 		}
-		APILocator.getVersionableAPI().setWorking(versionWebAsset);
-		return versionWebAsset;
 		
+		return swapAssets(working, versionWebAsset);
 	}
 
 	/**
@@ -589,7 +591,7 @@ public class WebAssetFactory {
 			//Reset the mod date
 			workingwebasset.setModDate(new Date ());
 			// sets deleted to true
-	        APILocator.getVersionableAPI().setDeleted(workingwebasset, true);
+	        APILocator.getVersionableAPI().setDeleted(identifier.getId(), true);
 			// persists the webasset
 			HibernateUtil.saveOrUpdate(workingwebasset);
 
@@ -611,14 +613,15 @@ public class WebAssetFactory {
 
 	public static void unLockAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {		
 		// unlocks current asset
-		APILocator.getVersionableAPI().setLocked(currWebAsset, false, null);
+		APILocator.getVersionableAPI().setLocked(currWebAsset.getIdentifier(), false, null);
 	}
 
 	public static void unArchiveAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
 
 		RefreshMenus.deleteMenu(currWebAsset);
 		// gets the identifier for this asset
-		APILocator.getVersionableAPI().setDeleted(currWebAsset, false);
+		Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
+		APILocator.getVersionableAPI().setDeleted(identifier.getId(), false);
 	}
 
 	public static boolean unPublishAsset(WebAsset currWebAsset, String userId, Inode parent) throws DotStateException, DotDataException, DotSecurityException {
@@ -654,6 +657,8 @@ public class WebAssetFactory {
 		if (!workingwebasset.isLocked() || workingwebasset.getModUser().equals(userId)) {
 			try {
 				// gets the current working asset
+				
+				// gets the current working asset
 				livewebasset = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
 				
 		        APILocator.getVersionableAPI().removeLive(identifier.getId());
@@ -662,7 +667,7 @@ public class WebAssetFactory {
 				HibernateUtil.saveOrUpdate(livewebasset);
 
 				if ((livewebasset.getInode() != workingwebasset.getInode())) {
-			        APILocator.getVersionableAPI().setLocked(workingwebasset, false, null);				
+			        APILocator.getVersionableAPI().setLocked(identifier.getId(), false, null);				
 					// removes from folder or parent inode
 					if(parent != null)
 						parent.deleteChild(workingwebasset);
@@ -747,7 +752,6 @@ public class WebAssetFactory {
 	// This method don�t swap the multitree relationships and correctly set the
 	// working/live and parent folder
 	// relationships and properties
-	/*
 	@SuppressWarnings("deprecation")
 	private static WebAsset swapAssets(WebAsset workingAsset, WebAsset newAsset) throws Exception {
 		Folder parentFolder = null;
@@ -843,7 +847,6 @@ public class WebAssetFactory {
 		return workingAsset;
 
 	}
-*/
 
 	/**
 	 * This method save the new asset as the new working version and change the
@@ -871,15 +874,15 @@ public class WebAssetFactory {
 		if (!InodeUtils.isSet(currWebAsset.getInode())) {
 			currWebAsset = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(), false);
 			if(InodeUtils.isSet(currWebAsset.getInode()) && !currWebAsset.isWorking() && currWebAsset.isLive()){
-		        APILocator.getVersionableAPI().setWorking(newWebAsset);
+		        APILocator.getVersionableAPI().setWorking(currWebAsset);
 			}else if(!InodeUtils.isSet(currWebAsset.getInode()) || !currWebAsset.isLive()){
 				throw new Exception("Working copy not found!");
 			}
 		}
 
-		 APILocator.getVersionableAPI().setWorking(newWebAsset);
-		 
-		return newWebAsset;
+		WebAsset workingAsset = swapAssets(currWebAsset, newWebAsset);
+
+		return workingAsset;
 	}
 
 	public static List getAssetsPerConditionWithPermission(Host host, String condition, Class c,
@@ -2126,14 +2129,8 @@ public class WebAssetFactory {
 			}
 			elements = fileAPI.findFiles(user, includeArchived, params, hostId, null,null, parent, offset, limit, orderBy);
 		}else if (type.equals(AssetType.CONTAINER)){
-			if(APILocator.getIdentifierAPI().isIdentifier(query)){
-				params.put("identifier", query);
-			}
 			elements = containerAPI.findContainers(user, includeArchived, params, hostId, null, null, parent, offset, limit, orderBy);
 		}else if (type.equals(AssetType.TEMPLATE)){
-			if(APILocator.getIdentifierAPI().isIdentifier(query)){
-				params.put("identifier", query);
-			}
 			elements = templateAPI.findTemplates(user, includeArchived, params, hostId, null, null,  parent, offset, limit, orderBy);
 		}else if (type.equals(AssetType.LINK)){
 			elements = linksAPI.findLinks(user, includeArchived, params, hostId, null, null, parent, offset, limit, orderBy);

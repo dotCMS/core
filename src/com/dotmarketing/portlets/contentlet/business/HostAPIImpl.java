@@ -31,7 +31,6 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -273,16 +272,13 @@ public class HostAPIImpl implements HostAPI {
 		Host host  = hostCache.get(id);
 
 		if(host ==null){
-		    ContentletVersionInfo vinfo=APILocator.getVersionableAPI().getContentletVersionInfo(id, APILocator.getLanguageAPI().getDefaultLanguage().getId());
-		    if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
-		        String hostInode=vinfo.getWorkingInode();
-    			Contentlet cont= APILocator.getContentletAPI().find(hostInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-    			Structure st = StructureCache.getStructureByVelocityVarName("Host");
-    			if(cont.getStructureInode().equals(st.getInode())) {
-    			    host=new Host(cont);
-    			    hostCache.add(host);
-    			}
-		    }
+			String hostInode=APILocator.getVersionableAPI().getContentletLangVersionInfo(id, APILocator.getLanguageAPI().getDefaultLanguage().getId()).getWorkingInode();
+			if(!UtilMethods.isSet(hostInode)){
+				return null;
+			}
+			Contentlet cont= APILocator.getContentletAPI().find(hostInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
+			host=new Host(cont);
+			hostCache.add(host);
 		}
 
 		if(host != null){
@@ -324,8 +320,7 @@ public class HostAPIImpl implements HostAPI {
 	public List<Host> findAllFromDB(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		List<Host> hosts =new ArrayList<Host>();
 
-		String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
-				" where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode and clvi.lang = ? ";
+		String sql = "select  c.title, c.inode from contentlet_lang_version_info clvi, contentlet c, structure s  where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode and clvi.lang = ?";
 
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql);
@@ -669,8 +664,7 @@ public class HostAPIImpl implements HostAPI {
 
 
 		DotConnect dc = new DotConnect();
-		dc.setSQL("select working_inode from contentlet_version_info join contentlet on (contentlet.inode = contentlet_version_info.working_inode) " +
-				  " where " + isDefault.getFieldContentlet() +" = ? and structure_inode =?");
+		dc.setSQL("select working_inode from contentlet_lang_version_info,  contentlet where contentlet.inode = contentlet_lang_version_info.working_inode and " + isDefault.getFieldContentlet() +" = ? and structure_inode =?");
 		dc.addParam(true);
 		dc.addParam(st.getInode());
 

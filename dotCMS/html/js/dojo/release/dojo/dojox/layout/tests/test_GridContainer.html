@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+		<title>Demo GridContainer</title>
+
+		<style type="text/css" title="text/css">
+			@import "../../../dojo/resources/dojo.css";
+			@import "../../../dijit/themes/tundra/tundra.css";
+			
+			html, body{
+				margin:0;
+				padding:1%;
+			}
+			.dijitTitlePane .gripNode {
+			 	cursor: move;
+			}
+			
+			.dijitTitlePane .gripNode span {
+			 	cursor: pointer;
+			}
+			.cpane{
+				border:1px solid #666;
+				font:bold 12px Arial;
+				color:#666;
+				background:#FFF;
+				padding:10px;
+				margin:2px;
+			}
+			
+			#GC1{
+				height:300px;
+				margin:10px;
+				padding:2px;
+				border:1px solid #ededed;
+				overflow-x:hidden;
+				overflow-y:auto;
+			}
+			
+			#GC1 .gridContainerTable {
+				border-collapse:collapse;
+			}
+			
+			#GC1 .gridContainerZone {
+				border-collapse:collapse;
+				border : 1px solid #ededed;
+			}
+			#GC2 {
+				border:1px solid #333;
+			}
+		</style>
+		
+		<link rel="stylesheet" href="../resources/GridContainer.css">
+		<link rel="stylesheet" href="../resources/DndGridContainer.css">
+		
+		<script type="text/javascript" src="../../../dojo/dojo.js" djConfig="isDebug: true, parseOnLoad: true"></script>
+		<script type="text/javascript" src="../../../dijit/tests/_testCommon.js"></script>
+		<script type="text/javascript" src="../GridContainer.js"></script>
+		<script type="text/javascript">
+			dojo.require("dojo.parser");
+			dojo.require("dijit.TitlePane");
+			dojo.require("dijit.ColorPalette");
+			dojo.require("dijit.layout.ContentPane");
+			dojo.require("dojox.layout.GridContainer");
+			dojo.require("dijit.form.Button");
+			dojo.require("dijit.Calendar");
+			var GC1;
+			function setColumns(){
+				GC1 = dijit.byId("GC1");
+				var nb = dojo.byId("nbCol").value;
+				if(nb > 0){
+					GC1.setColumns(nb);
+				}
+			}
+		</script>
+
+	</head>
+
+	<body class="tundra">
+		
+		<h1 class="testTitle">Grid Container</h1>
+		
+		<h2>Grid Container (allowAutoScroll="true", hasResizableColumns="false")</h2>
+			
+			<h5>Add / remove dynamically columns :</h5>
+			<input value="5" name="col" id="nbCol"/>
+			<button id="bt2" dojoType="dijit.form.Button" onclick="setColumns();">set Number of Columns</button>
+		
+		<div>
+			<div id="GC1" dojoType="dojox.layout.GridContainer" 
+				nbZones="3"
+				opacity="0.7" 
+				allowAutoScroll="true" 
+				hasResizableColumns="false"
+				withHandles="true"
+				acceptTypes="dijit.layout.ContentPane, dijit.TitlePane, dijit.ColorPalette, dijit.Calendar">
+					<div dojoType="dijit.layout.ContentPane" class="cpane" label="Content Pane">Content Pane n°1 !</div>
+					<div dojoType="dijit.TitlePane" title="Ergo">
+						Non ergo erunt homines deliciis diffluentes audiendi, si quando de amicitia, quam nec usu nec ratione habent cognitam, disputabunt. Nam quis est, pro deorum fidem atque hominum! qui velit, ut neque diligat quemquam nec ipse ab ullo diligatur, circumfluere omnibus copiis atque in omnium rerum abundantia vivere? Haec enim est tyrannorum vita nimirum, in qua nulla fides, nulla caritas, nulla stabilis benevolentiae potest esse fiducia, omnia semper suspecta atque sollicita, nullus locus amicitiae.
+					</div>
+					<div dojoType="dijit.layout.ContentPane" class="cpane" label="Content Pane">Content Pane n°2 !</div>
+			  		<div dojoType="dijit.layout.ContentPane" title="Intellectum">
+			  			Intellectum est enim mihi quidem in multis, et maxime in me ipso, sed paulo ante in omnibus, cum M. Marcellum senatui reique publicae concessisti, commemoratis praesertim offensionibus, te auctoritatem huius ordinis dignitatemque rei publicae tuis vel doloribus vel suspicionibus anteferre. Ille quidem fructum omnis ante actae vitae hodierno die maximum cepit, cum summo consensu senatus, tum iudicio tuo gravissimo et maximo. Ex quo profecto intellegis quanta in dato beneficio sit laus, cum in accepto sit tanta gloria.
+			  		</div>
+			  		
+					<div dojoType="dijit.layout.ContentPane" class="cpane" label="Content Pane">Content Pane n°3 !</div>
+					<div dojoType="dijit.layout.ContentPane" class="cpane" label="Content Pane">Content Pane n°4 !</div>
+					<div dojoType="dijit.Calendar"></div>
+			</div>
+			<h2>
+		   		Grid Container (hasResizableColumns="true", withHandles="true", handleClasses="dijitTitlePaneTitle", isOffset="true")
+			</h2>
+			<ul>
+					<li>properties : <b>withHandles="true" and  handleClasses="dijitTitlePaneTitle"</b> enable
+				the DnD only on the dijitTitlePaneTitle.</li>
+					<li>the property : <b>acceptTypes="dijit.layout.ContentPane, dijit.TitlePane"</b> enables the Dnd for ContentPane
+					and TitlePane. You can not DnD for example the calendar or ColorPalette widgets.</li>
+					<li>the property : <b>isOffset="true"</b> places the mouse above where the user clicks. It's possible to choose teh offset : isOffset="true" and offsetDrag= '{x:0,y:0}'</li>
+			</ul>
+			<div id="GC2" dojoType="dojox.layout.GridContainer" 
+				nbZones="3"
+				opacity="0.7"
+				withHandles="true"
+				hasResizableColumns="true" 
+				handleClasses="dijitTitlePaneTitle"
+				acceptTypes="dijit.layout.ContentPane, dijit.TitlePane"
+				allowAutoScroll="false"
+				isOffset="true"
+				>
+				<div id="CP" dojoType="dijit.layout.ContentPane" class="cpane" label="Content Pane">Content Pane OK !</div>
+				<div dojoType="dijit.TitlePane" title="Ergo">
+					Non ergo erunt homines deliciis diffluentes audiendi, si quando de amicitia, quam nec usu nec ratione habent cognitam, disputabunt. Nam quis est, pro deorum fidem atque hominum! qui velit, ut neque diligat quemquam nec ipse ab ullo diligatur, circumfluere omnibus copiis atque in omnium rerum abundantia vivere? Haec enim est tyrannorum vita nimirum, in qua nulla fides, nulla caritas, nulla stabilis benevolentiae potest esse fiducia, omnia semper suspecta atque sollicita, nullus locus amicitiae.
+				</div>
+			  	<div dojoType="dijit.TitlePane" title="Intellectum">
+			  		Intellectum est enim mihi quidem in multis, et maxime in me ipso, sed paulo ante in omnibus, cum M. Marcellum senatui reique publicae concessisti, commemoratis praesertim offensionibus, te auctoritatem huius ordinis dignitatemque rei publicae tuis vel doloribus vel suspicionibus anteferre. Ille quidem fructum omnis ante actae vitae hodierno die maximum cepit, cum summo consensu senatus, tum iudicio tuo gravissimo et maximo. Ex quo profecto intellegis quanta in dato beneficio sit laus, cum in accepto sit tanta gloria.
+			  	</div>
+			  	<div dojoType="dijit.layout.ContentPane" title="Intellectum">
+			  		Intellectum est enim mihi quidem in multis, et maxime in me ipso, sed paulo ante in omnibus, cum M. Marcellum senatui reique publicae concessisti, commemoratis praesertim offensionibus, te auctoritatem huius ordinis dignitatemque rei publicae tuis vel doloribus vel suspicionibus anteferre. Ille quidem fructum omnis ante actae vitae hodierno die maximum cepit, cum summo consensu senatus, tum iudicio tuo gravissimo et maximo. Ex quo profecto intellegis quanta in dato beneficio sit laus, cum in accepto sit tanta gloria.
+			  	</div>
+				<div dojoType="dijit.TitlePane" title="External Title Pane (no specific purpose)">
+						Non ergo erunt homines deliciis diffluentes audiendi, si quando de amicitia, quam nec usu nec ratione habent cognitam, disputabunt. Nam quis est, pro deorum fidem atque hominum! qui velit, ut neque diligat quemquam nec ipse ab ullo diligatur, circumfluere omnibus copiis atque in omnium rerum abundantia vivere? Haec enim est tyrannorum vita nimirum, in qua nulla fides, nulla caritas, nulla stabilis benevolentiae potest esse fiducia, omnia semper suspecta atque sollicita, nullus locus amicitiae.
+				</div>
+			</div>
+		</div>
+		
+	</body>
+</html>

@@ -277,6 +277,30 @@ public abstract class ContentletFactory {
 	protected abstract List<Contentlet> findContentletsWithFieldValue(String structureInode, Field field) throws DotDataException;
 	
 	/**
+	 * Usually you would use the save method to alter the contentlet from the API but in the unlock case there
+	 * are concurrency issues where you can get 2 working contentlets in the DB until you checkin again.
+	 * This method will load the contentlet from the db and set the lock to true
+	 * @param contentletInode
+	 * @param User the user locking the content - mod user
+	 * @throws DotDataException
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
+	 */
+	protected abstract void lock(String contentletInode, User user) throws DotDataException, DotStateException, DotSecurityException;
+	
+	/**
+	 * Usually you would use the save method to alter the contentlet from the API but in the unlock case there
+	 * are concurrency issues where you can get 2 working contentlets in the DB until you checkin again.
+	 * This method will load the contentlet from the db and set the lock to false
+	 * @param User the user locking the content - mod user
+	 * @param contentletInode
+	 * @throws DotDataException
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
+	 */
+	protected abstract void unlock(String contentletInode, User user) throws DotDataException, DotStateException, DotSecurityException;
+	
+	/**
 	 * gets the number of contentlets in the system. This number includes all versions not distinct identifiers
 	 * @return
 	 * @throws DotDataException
@@ -311,13 +335,13 @@ public abstract class ContentletFactory {
 	
 	protected abstract void deleteVersion(Contentlet contentlet)throws DotDataException;
 	
+	protected abstract void unpublishAllVersions(Contentlet contentlet, User user) throws DotDataException, DotStateException, DotSecurityException;
+
 	/**
 	 * Will update contents that reference the given folder to point to it's parent folder, if it's a top folder it will set folder to be SYSTEM_FOLDER
 	 * @param folder
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException;
-
-    protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
+	protected abstract void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException;	
 }

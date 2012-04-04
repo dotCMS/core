@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+		"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<title>doh.robot Editor Miscellaneous Tests</title>
+
+		<style>
+			@import "../../../../util/doh/robot/robot.css";
+		</style>
+
+		<!-- required: dojo.js -->
+		<script type="text/javascript" src="../../../../dojo/dojo.js"
+			djConfig="isDebug: true, parseOnLoad: true"></script>
+
+		<!-- functions to help test -->
+		<script type="text/javascript" src="../../helpers.js"></script>
+
+		<script type="text/javascript">
+			dojo.require("dijit.dijit"); // optimize: load dijit layer
+			dojo.require("dijit.robotx");
+
+			dojo.addOnLoad(function(){
+				doh.robot.initRobot('../test_Editor.html');
+				var editor0;
+				var height;
+				var value;
+				doh.register("Miscellaneous_tests", [
+					{
+						name: "Test AutoExpanding Edtor",
+						timeout: 20000,
+						setUp: function(){
+							editor0 = dijit.byId("thud");
+							height = dojo.style(editor0.domNode, "height");
+							value = editor0.attr("value");
+						},
+						runTest: function(){
+							var d = new doh.Deferred();
+							try{
+								//Focus on the editor window
+								dijit.scrollIntoView(editor0.domNode);
+								doh.robot.mouseMoveAt(editor0.iframe, 500, null, 10, 10);
+								doh.robot.mouseClick({left:true}, 500);
+								doh.robot.keyPress(dojo.keys.ENTER, 500);
+								doh.robot.keyPress(dojo.keys.ENTER, 500);
+								doh.robot.keyPress(dojo.keys.ENTER, 500);
+								doh.robot.keyPress(dojo.keys.ENTER, 500);
+								doh.robot.keyPress(dojo.keys.ENTER, 500);
+								doh.robot.keyPress(dojo.keys.ENTER, 500);
+								doh.robot.keyPress(dojo.keys.ENTER, 500);
+								doh.robot.keyPress(dojo.keys.ENTER, 500);
+ 								doh.robot.sequence(d.getTestCallback(function(){
+									//Now check the state!
+									var newHeight = dojo.style(editor0.domNode, "height");
+									doh.assertTrue(height < newHeight);
+								}), 1000);
+							}catch(e){
+								d.errback(e);
+							}
+							return d;
+						},
+						tearDown: function(){
+							if(editor0){editor0.attr("value", value);}
+						}
+					}
+				]);
+				doh.run();
+			});
+		</script>
+	</head>
+</html>

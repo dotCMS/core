@@ -250,7 +250,7 @@ function processDelete(inode, referer) {
 					<span class="templateIcon"></span>
 					<a href="javascript:editTemplate('<%=inode%>');" ><%=template.getTitle()%></a>
 				</td>
-				<td nowrap><%= com.dotmarketing.util.UtilHTML.getStatusIcons(template) %></td>
+				<td nowrap><%= com.dotmarketing.util.UtilHTML.getStatusIcons(template,COMMON_IMG,true) %></td>
 				<td><%=template.getFriendlyName()%></td>
 				<td nowrap>
 					<%=modDateFormat.format(template.getModDate())%>

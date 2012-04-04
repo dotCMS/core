@@ -57,12 +57,13 @@ public class ContentReviewThread implements Runnable, Job {
             HibernateUtil.startTransaction();
             
             HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-            dh.setSQLQuery("select {contentlet.*} from contentlet join inode contentlet_1_ on (contentlet.inode = contentlet_1_.inode) " 
-            		+ " join structure on (contentlet.structure_inode = structure.inode) "
-            		+ " join contentlet_version_info on (contentlet_version_info.working_inode = contentlet.inode) "
-                    + " where ? >= contentlet.next_review and "
-                    + " contentlet.review_interval is not null and contentlet.review_interval <> '' and "
-                    + " structure.reviewer_role is not null and structure.reviewer_role <> '' ");
+            dh.setSQLQuery("select {contentlet.*} from contentlet, inode contentlet_1_, structure, contentlet_lang_version_info "
+                    + "where contentlet.inode = contentlet_1_.inode and " 
+                    + "? >= contentlet.next_review and "
+                    + "contentlet.review_interval is not null and contentlet.review_interval <> '' and "
+                    + "contentlet.structure_inode = structure.inode and "
+                    + "structure.reviewer_role is not null and structure.reviewer_role <> '' and " 
+                    + "contentlet_lang_version_info.working_inode = contentlet.inode ");
             dh.setParam(new Date());
             //dh.setParam(true);
             List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatContentlets = dh.list();

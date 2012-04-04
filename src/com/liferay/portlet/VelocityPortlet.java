@@ -119,7 +119,7 @@ public class VelocityPortlet extends GenericPortlet {
 //				Velocity.setExtendedProperties(props);
 //
 //				Velocity.init();
-			
+
 			//}
 		}
 		catch (Exception e) {
@@ -196,7 +196,7 @@ public class VelocityPortlet extends GenericPortlet {
 		RenderRequestImpl reqimp = (RenderRequestImpl) req;
 		RenderResponseImpl resimp = (RenderResponseImpl) res;
 		Context context = VelocityUtil.getWebContext(reqimp.getHttpServletRequest(), resimp.getHttpServletResponse());
-		
+
 		res.setContentType(req.getResponseContentType());
 
 		VelocityWriter velocityWriter = null;

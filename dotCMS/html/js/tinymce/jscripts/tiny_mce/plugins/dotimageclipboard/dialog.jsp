@@ -93,13 +93,13 @@ if(clipboard ==null){
 			String thumbUrl = url;
 
 			// if thumbnail is already in filter
-	   		if(thumbUrl.indexOf("filter/") > -1){
-	   			String beforeFilter = thumbUrl.substring(0, thumbUrl.indexOf("filter/"));
-	   			String afterFilter = thumbUrl.substring(thumbUrl.indexOf("filter/") + 7, thumbUrl.length());
-	   			String filter = afterFilter.substring(0,afterFilter.indexOf("/"));
-	   			afterFilter = afterFilter.substring(afterFilter.indexOf("/"),afterFilter.length());
+	   		if(thumbUrl.indexOf("filter=") > -1){
+	   			String beforeFilter = thumbUrl.substring(0, thumbUrl.indexOf("filter="));
+	   			String afterFilter = thumbUrl.substring(thumbUrl.indexOf("filter=") + 7, thumbUrl.length());
+	   			String filter = afterFilter.substring(0,afterFilter.indexOf("&"));
+	   			afterFilter = afterFilter.substring(afterFilter.indexOf("&"),afterFilter.length());
 
-	 			thumbUrl = beforeFilter + "filter/" + filter + ",Thumbnail" + afterFilter +"/thumbnail_w/150/thumbnail_h/150";       
+	 			thumbUrl = beforeFilter + "&filter=" + filter + ",Thumbnail&" + afterFilter +"&thumbnail_w=150&thumbnail_h=150";       
 			}
 			else{
 				if(thumbUrl.indexOf("?") <0){

@@ -222,7 +222,7 @@
 					            <span class="workingIcon"></span>
 					        <%}%>
 					        <%if (contentlet.isLocked()) {
-					  		  	User u = APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false); %>
+					  		  	User u = APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet.getIdentifier()), APILocator.getUserAPI().getSystemUser(), false); %>
 					        	<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
 					   		<%} %>
 						</div>
@@ -284,8 +284,8 @@
 				<b><%= LanguageUtil.get(pageContext, "Locked") %></b>: 
 				
 				
-				<%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
-				<span class="lockedAgo" style="display: inline">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
+				<%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet.getIdentifier()), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
+				<span class="lockedAgo" style="display: inline">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet.getIdentifier()), user.getLocale())) %>)</span>
 			
 			
 			</td>

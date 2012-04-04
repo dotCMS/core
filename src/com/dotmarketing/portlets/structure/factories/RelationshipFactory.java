@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -290,7 +291,7 @@ public class RelationshipFactory {
         	
             HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
 
-            String sql = "SELECT {contentlet.*} from contentlet contentlet, inode contentlet_1_, contentlet_version_info vi, tree tree1, tree tree2 "
+            String sql = "SELECT {contentlet.*} from contentlet contentlet, inode contentlet_1_, contentlet_lang_version_info vi, tree tree1, tree tree2 "
             		+ "where tree1.parent = ? and tree1.relation_type = ? and tree1.child = tree2.parent "
                     + "and tree2.child = contentlet.inode "
                     + "and contentlet.inode = contentlet_1_.inode and vi.identifier=contentlet.identifier "
@@ -364,7 +365,7 @@ public class RelationshipFactory {
                             "from contentlet "+
                             "join inode contentlet_1_ "+
                             "on (contentlet.inode = contentlet_1_.inode) "+
-                            "join contentlet_version_info vi "+
+                            "join contentlet_lang_version_info vi "+
                             "on (vi."+(live?"live":"working")+"_inode = contentlet.inode) "+
                             "join tree "+
                             "on (tree.parent=contentlet.identifier) "+  

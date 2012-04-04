@@ -513,7 +513,7 @@ public class ImportUtil {
 					//valueObj = UtilMethods.escapeUnicodeCharsForHTML(value);
 				}//http://jira.dotmarketing.net/browse/DOTCMS-3232
 				else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-					String identifier = APILocator.getIdentifierAPI().findFromInode(value).getInode();
+					String identifier = APILocator.getIdentifierAPI().find(value).getInode();
 					if(InodeUtils.isSet(identifier)){
 						valueObj = value;
 						headersIncludeHostField = true;
@@ -866,10 +866,11 @@ public class ImportUtil {
 					Field field = headers.get(column);
 					Object value = values.get(column);
 
-					if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484												
+					if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484
+
 						Host host = hostAPI.find(value.toString(), user, false);
 						Folder folder = new Folder();
-						if(!UtilMethods.isSet(host) || !InodeUtils.isSet(host.getInode())){
+						if(!InodeUtils.isSet(host.getInode())){
 							folder = folderAPI.find(value.toString(),user,false);
 						}
 						if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {

@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.templates.business;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -21,8 +20,8 @@ import com.dotmarketing.business.BaseWebAssetAPI;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -31,6 +30,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -213,13 +213,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 
 	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		Template oldTemplate = UtilMethods.isSet(template.getIdentifier())
-				?findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles)
-						:null;
+		Template currentTemplate = UtilMethods.isSet(template.getIdentifier())?findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles):null;
 
-
-		if ((oldTemplate != null) && InodeUtils.isSet(oldTemplate.getInode())) {
-			if (!permissionAPI.doesUserHavePermission(oldTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+		if ((currentTemplate != null) && InodeUtils.isSet(currentTemplate.getInode())) {
+			if (!permissionAPI.doesUserHavePermission(currentTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 				throw new DotSecurityException("You don't have permission to read the source file.");
 			}
 		}
@@ -228,37 +225,49 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throw new DotSecurityException("You don't have permission to wirte in the destination folder.");
 		}
 
-		if (!permissionAPI.doesUserHavePermissions(PermissionableType.TEMPLATES, PermissionAPI.PERMISSION_EDIT, user)) {
-			throw new DotSecurityException("You don't have permission to edit templates.");
-		}
-
+		//gets user id from request for mod user
+		String userId = user.getUserId();
 
 		//gets identifier from the current asset
 		Identifier identifier = null;
-		if (oldTemplate != null) {
-			templateFactory.deleteFromCache(oldTemplate);
-			identifier = identifierAPI.findFromInode(oldTemplate.getIdentifier());
+		if (currentTemplate != null) {
+			templateFactory.deleteFromCache(currentTemplate);
+			identifier = identifierAPI.findFromInode(currentTemplate.getIdentifier());
 		}
-		else{
-			identifier = APILocator.getIdentifierAPI().createNew(template, destination);
-			template.setIdentifier(identifier.getId());
-		}
-		template.setModDate(new Date());
-		template.setModUser(user.getUserId());
+
+		boolean isNew = false;
 
 		//we need to replace older container parse syntax with updated syntax
 		updateParseContainerSyntax(template);
-
 		//it saves or updates the asset
-		save(template);
-		APILocator.getVersionableAPI().setWorking(template);
+		if (identifier != null) {
+			createAsset(template, userId, identifier, false);
+			identifier = APILocator.getIdentifierAPI().createNew(template, destination);
+			template = (Template) saveAsset(template, identifier,user, false);
+		} else {
+			createAsset(template, userId);
+			isNew = true;
+		}
 
+		//gets file object for the thumbnail
+		File imageFile = (File) InodeFactory.getInode(template.getImage(), File.class);
+		Identifier imageIdentifier = APILocator.getIdentifierAPI().find(imageFile);
+		if (imageIdentifier!=null) {
+			template.setImage(imageIdentifier.getInode());
+		}
 
 		///parses the body tag to get all identifier ids and saves them as children
 		List<Container> containers = getContainersInTemplate(template, user, respectFrontendRoles);
 		associateContainers(containers, template);
 
+		if (isNew)
+			identifier = identifierAPI.findFromInode(template.getIdentifier());
 
+		//Saving the host of the template
+		identifier.setHostId(destination.getIdentifier());
+		APILocator.getIdentifierAPI().save(identifier);
+
+		HibernateUtil.flush();
 
 		return template;
 	}

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.servlet.jsp.PageContext;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -11,7 +13,6 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -22,10 +23,13 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 public class UtilHTML {
@@ -43,42 +47,109 @@ public class UtilHTML {
 		return buffy.toString();
 	}
 	
-	public static String getStatusIcons(Versionable v) throws DotStateException, DotDataException, DotSecurityException{
-		StringBuffer buf = new StringBuffer();
-		if(!v.isLive() && v.isWorking() && (!v.isArchived() && v.isWorking())){
-			buf.append("<span class='workingIcon'></span>");
-		}else{
-			buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
+	public static String getStatusIcons(WebAsset webasset, String COMMON_IMG, boolean showWorking) {
+		try {
+			return getStatusIcons(webasset.isLive(), webasset.isWorking(), webasset.isDeleted(), webasset.isLocked(),
+					COMMON_IMG, showWorking,null);
+		} catch (DotStateException e) {
+			Logger.error(UtilHTML.class, "getStatusIcons : "+e.getMessage());
+		} catch (DotDataException e) {
+			Logger.error(UtilHTML.class, "getStatusIcons : "+e.getMessage());
+		} catch (DotSecurityException e) {
+			Logger.error(UtilHTML.class, "getStatusIcons : "+e.getMessage());
 		}
-		if(v.isArchived()){
-			buf.append("<span class='archivedIcon'></span>");
-		}else if(APILocator.getVersionableAPI().hasLiveVersion(v)){
-			buf.append("<span class='liveIcon'></span>");
-		}else{
-			buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
-		}
-	
-		if(v.isLocked()){
-			buf.append("<span class='lockIcon'></span>");
-		}
-		return buf.toString();
-		
+		return getStatusIcons(false, false, false, false, COMMON_IMG, showWorking,null);
 	}
-	
-	public static String getVersionStatusIcons(Versionable v) throws DotStateException, DotDataException, DotSecurityException{
-		StringBuffer buf = new StringBuffer();
-		if(v.isWorking()){
-			buf.append("<span class='workingIcon'></span>");
+
+	public static String getStatusIcons(boolean live, boolean working, boolean deleted, boolean locked,
+			String COMMON_IMG, boolean showWorking) {
+		return getStatusIcons(live, working, deleted, locked, COMMON_IMG, showWorking, null);
+	}
+
+	public static String getStatusIcons(WebAsset webasset, String COMMON_IMG, boolean showWorking,PageContext pageContext) {
+		try{
+			return getStatusIcons(webasset.isLive(), webasset.isWorking(), webasset.isDeleted(), webasset.isLocked(),
+				COMMON_IMG, showWorking,pageContext);
+		} catch (DotStateException e) {
+			Logger.error(UtilHTML.class, "getStatusIcons : "+e.getMessage());
+		} catch (DotDataException e) {
+			Logger.error(UtilHTML.class, "getStatusIcons : "+e.getMessage());
+		} catch (DotSecurityException e) {
+			Logger.error(UtilHTML.class, "getStatusIcons : "+e.getMessage());
 		}
-		if(v.isLive()){
-			buf.append("<span class='liveIcon'></span>");
+			return getStatusIcons(false, false, false, false, COMMON_IMG, showWorking,null);
+	}
+
+	public static String getStatusIcons(boolean live, boolean working, boolean deleted, boolean locked,
+			String COMMON_IMG, boolean showWorking,PageContext pageContext) {
+		String strLive = "live";
+		String strDeleted = "deleted";
+		String strWorking = "working";
+		String strLocked = "locked";
+		if(pageContext != null){
+			try {
+				strLive = LanguageUtil.get(pageContext, "live");
+				strDeleted = LanguageUtil.get(pageContext, "deleted");
+				strWorking = LanguageUtil.get(pageContext, "working");
+				strLocked = LanguageUtil.get(pageContext, "locked");
+			} catch (LanguageException e) {
+				
+			}
+		}
+		
+		StringBuffer strHTML = new StringBuffer();
+		strHTML.append("<table style='margin-top:10px'><tr>");
+		strHTML.append("<td valign=middle width=16 style='border:0px;padding:0px;margin:0px;'>");
+
+		if (live) {
+			strHTML.append("<img src='/html/images/icons/status.png' width=16 height=16 alt="+strLive+" title='"+strLive+"'>");
+		} else if (deleted) {
+			strHTML.append("<img src='/html/images/icons/status-busy.png' width=16 height=16  alt="+strDeleted+" title='"+strDeleted+"'>");
+		} else if ((showWorking) && (working)) {
+			strHTML.append("<img src='/html/images/icons/status-away.png' width=16 height=16  alt="+strWorking+" title='"+strWorking+"'>");
+		} else if (working) {
+			strHTML.append("<img src='/html/images/icons/status-away.png' width=16 height=16  alt="+strWorking+" title='"+strWorking+"'>");
+		} else{
+			strHTML.append("<img src='/html/images/shim.gif' width=16>");
+		} 
+
+		strHTML.append("</td>");
+		strHTML.append("<td valign=middle width=16 style='border:0px;padding:0px;margin:0px;'>");
+		
+		if (locked) {
+			strHTML.append("<img src='/html/images/icons/lock.png' width=16 height=16 alt='"+strLocked+"' title='"+strLocked+"' />");
+		}
+		else{
+			strHTML.append("<img src='/html/images/shim.gif' height=16 width=16 />");
 		}
 
-		return buf.toString();
-		
-		
+
+		strHTML.append("</td></tr></table>");
+
+		return strHTML.toString();
 	}
 	
+	public static String getAssetIcon(WebAsset webasset) {
+		String imgSrc = "";
+
+		if (webasset instanceof Container) {
+			imgSrc = "/html/images/icons/layout-select-content.png";
+		} else if (webasset instanceof Template) {
+			imgSrc = "/html/images/icons/layout-header-3-mix.png";
+		} else if (webasset instanceof Link) {
+			imgSrc = "/html/images/icons/chain.png";
+		} else if (webasset instanceof File) {
+			imgSrc = "/icon?i=" + ((File) webasset).getFileName();
+		} else if (webasset instanceof HTMLPage) {
+			imgSrc = "/html/images/icons/blog-blue.png";
+		}
+
+		return "<img src=\"" + imgSrc + "\" width=16 height=16 />";
+	}
+
+	public static String getAssetIcon(Contentlet con){
+		return "<img src=\"/html/images/icons/document-text-image.png\" width=16 height=16 />";
+	}
 
 	public static String getSelectCategories(Inode parent, int level, Inode current, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
@@ -204,31 +275,6 @@ public class UtilHTML {
 		return strHTML.toString();
 	}
 
-	public static String getAssetIcon(WebAsset webasset) {
-		String imgSrc = "";
-
-		if (webasset instanceof Container) {
-			imgSrc = "/html/images/icons/layout-select-content.png";
-		} else if (webasset instanceof Template) {
-			imgSrc = "/html/images/icons/layout-header-3-mix.png";
-		} else if (webasset instanceof Link) {
-			imgSrc = "/html/images/icons/chain.png";
-		} else if (webasset instanceof File) {
-			imgSrc = "/icon?i=" + ((File) webasset).getFileName();
-		} else if (webasset instanceof com.dotmarketing.portlets.htmlpages.model.HTMLPage) {
-			imgSrc = "/html/images/icons/blog-blue.png";
-		}
-
-		return "<img src=\"" + imgSrc + "\" width=16 height=16 />";
-	}
-
-	public static String getAssetIcon(Contentlet con){
-		return "<img src=\"/html/images/icons/document-text-image.png\" width=16 height=16 />";
-	}
-	
-	
-	
-	
 	public static String getSelectCategoriesTextMode(Inode parent, int level, String currentCats,User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		
 		CategoryAPI catAPI = APILocator.getCategoryAPI();

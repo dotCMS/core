@@ -156,14 +156,9 @@ public class ClickstreamFactory {
 	 */
 	public static void flushClickStream(Clickstream stream) {
 		if(Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)){
-			
-			int minToLog = Config.getIntProperty("MIN_CLICKSTREAM_REQUESTS_TO_SAVE", 2);
-			
 			DatabaseClickstreamLogger dblogger = new DatabaseClickstreamLogger();
 			try {
-				if (stream != null 
-						&& stream.getClickstreamRequests() != null 
-						&& stream.getClickstreamRequests().size() >= minToLog) {
+				if (stream != null && stream.getClickstreamRequests() != null) {
 					dblogger.log(stream);
 				}
 			} catch (Exception e) {

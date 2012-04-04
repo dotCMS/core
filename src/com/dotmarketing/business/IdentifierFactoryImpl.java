@@ -30,9 +30,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
- *
+ * 
  * @author will
- *
+ * 
  */
 public class IdentifierFactoryImpl extends IdentifierFactory {
 
@@ -121,7 +121,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	/**
 	 * This method checks cache first, then db. If found in the database it will
 	 * stick the result in the cache.
-	 *
+	 * 
 	 * @param inode
 	 *            This takes an inode and finds the identifier for it.
 	 * @return the Identifier inode
@@ -139,12 +139,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		HostAPI hostAPI = APILocator.getHostAPI();
-
+		
 		String uuid=null;
 
 		Identifier identifier = new Identifier();
 		Identifier parentId=APILocator.getIdentifierAPI().find(folder);
-
+		
 		if(versionable instanceof Folder) {
 			identifier.setAssetType("folder");
 			identifier.setAssetName(((Folder) versionable).getName());
@@ -161,7 +161,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 						if(UtilMethods.isSet(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))//DOTCMS-7093
 							uri = cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
 					} catch (IOException e) {
-						// TODO
+						// TODO 
 					}
 				}
 				identifier.setAssetType("contentlet");
@@ -174,7 +174,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			}
 			identifier.setId(null);
 		}
-
+		
 		Host host;
 		try {
 			host = hostAPI.findParentHost(folder, systemUser, false);
@@ -184,14 +184,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		identifier.setHostId(host.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
-
+		
 		if(uuid!=null)
 			HibernateUtil.saveWithPrimaryKey(identifier, uuid);
 		else
 			saveIdentifier(identifier);
-
+		
 		versionable.setVersionId(identifier.getId());
-
+		
 		return identifier;
 	}
 
@@ -225,16 +225,16 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			}
 			identifier.setId(null);
 		}
-
+		
 		identifier.setHostId(host != null ? host.getIdentifier() : null);
-
+		
 		if(uuid!=null)
 			HibernateUtil.saveWithPrimaryKey(identifier, uuid);
 		else
 			saveIdentifier(identifier);
-
+		
 		versionable.setVersionId(identifier.getId());
-
+		
 		return identifier;
 	}
 
@@ -317,27 +317,27 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			db.addParam(ident.getInode());
 			db.addParam(ident.getInode());
 			db.loadResult();
-
+			
 			db.setSQL("select inode from "+ident.getAssetType()+" where inode=?");
 			db.addParam(ident.getInode());
 			List<Map<String,Object>> deleteme = db.loadResults();
-
+			
 			db.setSQL("delete from " + ident.getAssetType()+ " where identifier = ?");
 			db.addParam(ident.getId());
 			db.loadResult();
-
+			
 			StringWriter sw =  new StringWriter();
 			sw.append(" ( '03d3k' ");
 			for(Map<String,Object> m : deleteme){
 				sw.append(",'" + m.get("inode") + "' ");
 			}
 			sw.append("  ) ");
-
+			
 			db.setSQL("delete from inode where inode in " + sw.toString());
 			db.loadResult();
-
+			
 			ic.removeFromCacheByIdentifier(ident.getId());
-
+			
 			//HibernateUtil.delete(ident);
 		} catch (Exception e) {
 			Logger.error(IdentifierFactoryImpl.class, "deleteIdentifier failed:" + e, e);

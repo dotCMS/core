@@ -266,7 +266,6 @@ public class EditFolderAction extends DotPortletAction {
 		
 		HibernateUtil.startTransaction();
 		
-		
 		try {
 		
 			if (InodeUtils.isSet(f.getInode()) && !folderForm.getName().equals(f.getName())) {
@@ -310,10 +309,10 @@ public class EditFolderAction extends DotPortletAction {
 					// check if the new folder already exists
 					Identifier prevId = null;
 					if (parentFolder != null) {
-						String uri=APILocator.getIdentifierAPI().find(parentFolder).getPath()+ f.getName();
+						String uri=APILocator.getIdentifierAPI().find(parentFolder).getPath()+ f.getName() + "/";
 						prevId = APILocator.getIdentifierAPI().find(parentHost, uri);
 					} else {
-						String uri="/" + f.getName();
+						String uri="/" + f.getName()+ "/";
 						prevId = APILocator.getIdentifierAPI().find(parentHost, uri);
 					}
 				

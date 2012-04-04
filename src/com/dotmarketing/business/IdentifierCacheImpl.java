@@ -9,6 +9,7 @@ package com.dotmarketing.business;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.portlets.contentlet.model.ContentletLangVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -145,8 +146,14 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	}
 
     @Override
+    protected void addContentletLangVersionInfoToCache(ContentletLangVersionInfo contL) {
+        String key=contL.getIdentifier()+" - lang:"+contL.getLang();
+        cache.put(getVersionInfoGroup()+key, contL, getVersionInfoGroup());
+    }
+
+    @Override
     protected void addContentletVersionInfoToCache(ContentletVersionInfo contV) {
-        String key=contV.getIdentifier()+"-lang:"+contV.getLang();
+        String key=contV.getIdentifier();
         cache.put(getVersionInfoGroup()+key, contV, getVersionInfoGroup());
     }
 
@@ -157,11 +164,22 @@ public class IdentifierCacheImpl extends IdentifierCache {
     }
 
     @Override
-    protected ContentletVersionInfo getContentVersionInfo(String identifier, long lang) {
+    protected ContentletLangVersionInfo getContentLangVersionInfo(String identifier, long lang) {
+        ContentletLangVersionInfo contL=null;
+        try {
+            contL = (ContentletLangVersionInfo)cache.get(getVersionInfoGroup()+ identifier+" - lang:"+lang, getVersionInfoGroup());
+        }
+        catch(Exception ex) {
+            Logger.debug(this, identifier +" contenLangVersionInfo not found in cache");
+        }
+        return contL;
+    }
+
+    @Override
+    protected ContentletVersionInfo getContentVersionInfo(String identifier) {
         ContentletVersionInfo contV = null;
         try {
-            String key=contV.getIdentifier()+"-lang:"+contV.getLang();
-            contV = (ContentletVersionInfo)cache.get(getVersionInfoGroup()+key, getVersionInfoGroup());
+            contV = (ContentletVersionInfo)cache.get(getVersionInfoGroup()+identifier, getVersionInfoGroup());
         }
         catch(Exception ex) {
             Logger.debug(this, identifier +" contentVersionInfo not found in cache");
@@ -182,9 +200,13 @@ public class IdentifierCacheImpl extends IdentifierCache {
     }
 
     @Override
-    protected void removeContentletVersionInfoToCache(String identifier, long lang) {
-        String key=identifier+"-lang:"+lang;
-        cache.remove(getVersionInfoGroup()+key, getVersionInfoGroup());
+    protected void removeContentletLangVersionInfoToCache(String identifier, long lang) {
+        cache.remove(getVersionInfoGroup()+identifier+" - lang:"+lang, getVersionInfoGroup());
+    }
+
+    @Override
+    protected void removeContentletVersionInfoToCache(String identifier) {
+        cache.remove(getVersionInfoGroup()+identifier, getVersionInfoGroup());
     }
 
     @Override

@@ -2,7 +2,7 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter"%>
 <%@page
-	import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
+	import="com.dotmarketing.osgi.actionlet.WorkFlowActionlet"%>
 <%@page
 	import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@page import="java.util.Set"%>

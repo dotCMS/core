@@ -19,7 +19,6 @@ import com.dotcms.sync.Importable;
 import com.dotcms.sync.exception.DotDependencyException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
@@ -33,15 +32,12 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
@@ -74,7 +70,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String WORKFLOW_ACTION_KEY = "wfActionId";
     public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
     public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
-   protected Map<String, Object> map = new HashMap<String, Object>();
+   protected Map<String, Object> map = new HashMap<String, Object>(); 
    private boolean lowIndexPriority = false;
 
 
@@ -311,19 +307,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * The keys used in the map will be the velocity variables names
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
-		return new HashMap<String, Object>(map) {
-		    @Override
-		    public Object get(Object key) {
-		        Object value=super.get(key);
-		        String structureInode=(String)super.get(STRUCTURE_INODE_KEY);
-		        String inode=(String)super.get(INODE_KEY);
-		        if(UtilMethods.isSet(inode) && UtilMethods.isSet(structureInode) &&
-		           isMetadataFieldCached(structureInode, (String)key, value)) {
-		           value=lazyMetadataLoad(inode, structureInode); 
-		        }
-		        return value;
-		    }
-		};
+		return new HashMap<String, Object>(map);
 	}
 
 	/**
@@ -334,7 +318,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotStateException 
 	 */
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-		return InodeUtils.isSet(this.getIdentifier())?APILocator.getVersionableAPI().isDeleted(this):false;
+		return InodeUtils.isSet(this.getIdentifier())?APILocator.getVersionableAPI().isDeleted(this.getIdentifier()):false;
 	}
 
 	/**
@@ -356,7 +340,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotStateException 
 	 */
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-		return APILocator.getVersionableAPI().isLocked(this);
+		return APILocator.getVersionableAPI().isLocked(getIdentifier());
 	}
 
 	/**
@@ -553,7 +537,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	public Map<String, Object> getKeyValueProperty(String velocityVarName) {
-		return com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String) get(velocityVarName));
+		return com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String) map.get(velocityVarName));
 	}
 	
 	
@@ -567,44 +551,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			return false;
 	}
 	
-	private static Object lazyMetadataLoad(String inode, String structureInode) {
-         String cachedMetadata=CacheLocator.getContentletCache().getMetadata(inode);
-         if(cachedMetadata==null) {
-             // lazy load from db
-             try {
-                 Structure st=StructureCache.getStructureByInode(structureInode);
-                 Object fieldVal=APILocator.getContentletAPI().loadField(inode, st.getFieldVar(FileAssetAPI.META_DATA_FIELD));
-                 if(fieldVal!=null && UtilMethods.isSet(fieldVal.toString())) {
-                     String loadedMetadata=fieldVal.toString();
-                     CacheLocator.getContentletCache().addMetadata(inode, loadedMetadata);
-                     return loadedMetadata;
-                 }
-                 else
-                     return "";
-             } catch (DotDataException e) {
-                 Logger.error(Contentlet.class, "error lazy loading metadata field",e);
-                 return "";
-             }
-         }
-         else if(cachedMetadata.equals(ContentletCache.EMPTY_METADATA)) {
-             return "";
-         }
-         else {
-             // normal metadata from cache
-             return cachedMetadata;
-         }
-	}
-	
-	private static boolean isMetadataFieldCached(String structureInode, String fieldVelVarName, Object value) {
-	    if(fieldVelVarName instanceof String && fieldVelVarName.equals(FileAssetAPI.META_DATA_FIELD)) {
-    	    Structure st=StructureCache.getStructureByInode(structureInode);
-    	    Field f=st.getFieldVar(FileAssetAPI.META_DATA_FIELD);
-    	    return st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET && UtilMethods.isSet(f.getInode())
-    	            && value!=null && value.equals(ContentletCache.CACHED_METADATA);
-	    }
-	    return false;
-	}
-	
 	/**
 	 * Returns an object from the underlying contentlet Map
 	 * @param key
@@ -614,13 +560,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		if(map ==null || key ==null){
 			return null;
 		}
-		Object value=map.get(key);
-		
-		// http://jira.dotmarketing.net/browse/DOTCMS-7335
-		if(isMetadataFieldCached(getStructureInode(), key, value))
-		    return lazyMetadataLoad(getInode(),getStructureInode());
-		
-		return value;
+		return map.get(key);
 		
 	}
 

@@ -21,7 +21,7 @@ public class ESReindexationProcessStatus implements Serializable {
     public synchronized static int getContentCountToIndex() throws DotDataException {
         try {
             DotConnect dc=new DotConnect();
-            dc.setSQL("select count(*) as cc from contentlet_version_info");
+            dc.setSQL("select count(*) as cc from contentlet_lang_version_info");
             return Integer.parseInt(dc.loadObjectResults().get(0).get("cc").toString());
         }
         finally {
@@ -32,9 +32,7 @@ public class ESReindexationProcessStatus implements Serializable {
     public synchronized static int getLastIndexationProgress () throws DotDataException {
         try {
             long left = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
-            int x = (int) (getContentCountToIndex()-left);
-            
-            return (x<0) ? 0 : x;
+            return (int) (getContentCountToIndex()-left);
         }
         finally {
             HibernateUtil.closeSession();
@@ -55,15 +53,11 @@ public class ESReindexationProcessStatus implements Serializable {
     public synchronized static Map getProcessIndexationMap () throws DotDataException {
         try {
             Map<String, Object> theMap = new Hashtable<String, Object> ();
-
             theMap.put("inFullReindexation", inFullReindexation());
-            // no reason to hit db if not needed
-            if(inFullReindexation()){
-	            theMap.put("contentCountToIndex", getContentCountToIndex());
-	            theMap.put("lastIndexationProgress", getLastIndexationProgress());
-	            theMap.put("currentIndexPath", currentIndexPath());
-	            theMap.put("newIndexPath", getNewIndexPath());
-            }
+            theMap.put("contentCountToIndex", getContentCountToIndex());
+            theMap.put("lastIndexationProgress", getLastIndexationProgress());
+            theMap.put("currentIndexPath", currentIndexPath());
+            theMap.put("newIndexPath", getNewIndexPath());
             return theMap;
         }
         finally {

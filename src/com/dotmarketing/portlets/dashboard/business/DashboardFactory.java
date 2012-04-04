@@ -73,8 +73,8 @@ public abstract class DashboardFactory {
 	protected String getWorkstreamQuery(String hostId){  
 		return  " inode, asset_type, mod_user_id, host_id, mod_date,case when deleted = 1 then 'Deleted' else case when live_inode IS NOT NULL then 'Published' else 'Saved' end end as action, name from( "+ 
 		" select contentlet.inode as inode, 'contentlet' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date,lang_info.live_inode,lang_info.working_inode,info.deleted, coalesce(contentlet.title,contentlet.identifier) as name "+ 
-		" from contentlet_version_info info,contentlet join identifier identifier on identifier.id = contentlet.identifier where " +
-		" contentlet.identifier = info.identifier "+ 
+		" from contentlet_lang_version_info lang_info, contentlet_version_info info,contentlet join identifier identifier on identifier.id = contentlet.identifier where " +
+		" contentlet.identifier = info.identifier and contentlet.identifier = lang_info.identifier"+ 
 		" UNION ALL "+ 
 		" select htmlpage.inode as inode, 'htmlpage' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, page_info.live_inode, page_info.working_inode, page_info.deleted, " +
 		((DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)||(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)))?"identifier.parent_path || identifier.asset_name ":
@@ -119,7 +119,7 @@ public abstract class DashboardFactory {
 			+ "group by identifier.host_inode "
 			+ "UNION ALL  "
 			+ "select identifier.host_inode as host_inode,count(contentlet.inode) as count, 'contentlet' as asset_type " 
-			+ "from contentlet_version_info contentinfo,identifier "
+			+ "from contentlet_lang_version_info contentinfo,identifier "
 			+ "join contentlet on contentlet.identifier = identifier.id "
 			+ "where contentlet.identifier = contentinfo.identifier and identifier.host_inode = ? "
 			+ "and contentinfo.live_inode is not null "
@@ -132,13 +132,13 @@ public abstract class DashboardFactory {
 	
 	protected String getWorkstreamListQuery(){
 		return "select distinct {analytic_summary_workstream.*}, user_.firstname as username, contentlet.title as hostname " +
-		" from analytic_summary_workstream, user_ , contentlet,contentlet_version_info contentinfo " +
+		" from analytic_summary_workstream, user_ , contentlet,contentlet_lang_version_info contentinfo " +
 		" where user_.userid = analytic_summary_workstream.mod_user_id and contentlet.identifier = analytic_summary_workstream.host_id " +
 		" and contentlet.identifier = contentinfo.identifier and contentinfo.live_inode is not null and analytic_summary_workstream.name is not null ";
 	}
 	
 	protected String getWorkstreamCountQuery(){
-		return "select count(distinct analytic_summary_workstream.id) as summaryCount from analytic_summary_workstream, user_, contentlet,contentlet_version_info info where" +
+		return "select count(distinct analytic_summary_workstream.id) as summaryCount from analytic_summary_workstream, user_, contentlet,contentlet_lang_version_info info where" +
 		  " user_.userid = analytic_summary_workstream.mod_user_id and contentlet.identifier = analytic_summary_workstream.host_id " +
 		  " and contentlet.identifier = info.identifier and info.live_inode is not null and analytic_summary_workstream.name is not null "; 
 	}
@@ -151,7 +151,7 @@ public abstract class DashboardFactory {
 				"CASE WHEN contentinfo.live_inode is not null THEN 'Live' "+
                 " ELSE 'Stopped' "+
                 "END AS status "+
-				"from contentlet_version_info contentinfo,inode contentlet_1_ , contentlet "+
+				"from contentlet_lang_version_info contentinfo,inode contentlet_1_ , contentlet "+
 				"left join " +
 				"(" +
 				  "select sum(page_views) as page_views, host_id from analytic_summary join "+
@@ -169,7 +169,7 @@ public abstract class DashboardFactory {
 	protected StringBuffer getHostListCountQuery(boolean hasCategory, String selectedCategories,  String runDashboardFieldContentlet){
 		StringBuffer query = new StringBuffer();
 		query.append("select count(distinct contentlet.inode) as total " +
-				"from contentlet_version_info contentinfo,inode contentlet_1_ , contentlet "+
+				"from contentlet_lang_version_info contentinfo,inode contentlet_1_ , contentlet "+
 				(hasCategory?" join tree on tree.child = contentlet.inode and tree.parent in("+selectedCategories+") ":"") +
 				"join structure s on contentlet.structure_inode = s.inode " +
 				"where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and s.name ='Host' "+ 
@@ -179,7 +179,7 @@ public abstract class DashboardFactory {
 	}
 	
 	protected String getHostQueryForClickstream(String runDashboardFieldContentlet){
-		String query = " select contentlet.identifier as host_id from contentlet, structure s,contentlet_version_info info "+
+		String query = " select contentlet.identifier as host_id from contentlet, structure s,contentlet_lang_version_info info "+
 		" where contentlet.structure_inode = s.inode and s.name ='Host' and contentlet.identifier = info.identifier "+
 	    " and contentlet.title <> 'System Host' and info.working_inode = contentlet.inode " + (UtilMethods.isSet(runDashboardFieldContentlet)?" and contentlet."+runDashboardFieldContentlet+"= "+ DbConnectionFactory.getDBTrue()+"":"")+
 	    " group by contentlet.identifier "; 

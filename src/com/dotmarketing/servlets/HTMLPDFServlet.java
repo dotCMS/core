@@ -89,7 +89,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 	 */
 	private static final long serialVersionUID = 1L;
 	private PermissionAPI perAPI;
-	
+
 	private User user;
 	Map<String, String> map = new HashMap<String, String>();
 	private ServletContext context;
@@ -101,14 +101,14 @@ public class HTMLPDFServlet extends VelocityServlet {
 	protected void service(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 
-		
-		
-		
-		
-		
+
+
+
+
+
 		String fName = req.getParameter("fname");
 		resp.setContentType("application/pdf");
-		
+
 		if(UtilMethods.isSet(fName)){
 			if(!fName.toLowerCase().endsWith(".pdf")){
 				fName= fName + ".pdf";
@@ -117,22 +117,22 @@ public class HTMLPDFServlet extends VelocityServlet {
 		else{
 			fName = "document.pdf";
 		}
-		
+
 		BrowserSniffer bs = new BrowserSniffer(req.getHeader("User-Agent"));
-			
+
 		if(bs.isBot()){
 			resp.sendError(401, "No Bots Allowed");
 			return;
 		}
-		
-		
-		
+
+
+
 		resp.setHeader("Content-Disposition", "attachment; filename=" + fName);
 		HttpSession session = req.getSession();
 		String reqURI = req.getRequestURI();
 
 		Logger.debug(this, "Starting PDFServlet at URI " + reqURI);
-		
+
 		// Copied directly out of VelocityServlet
 		String language = String.valueOf(langAPI.getDefaultLanguage().getId());
 		// set default page language
@@ -175,13 +175,13 @@ public class HTMLPDFServlet extends VelocityServlet {
 		} catch (SystemException e2) {
 			Logger.debug(this, "SystemException: " + e2.getMessage(), e2);
 		}
-		
+
 		if(user != null){
 			Logger.debug(this, "The user is " + user.getUserId());
 		}else{
 			Logger.debug(this, "The user is null");
 		}
-		
+
 		boolean working = false;
 		boolean live = false;
 
@@ -193,7 +193,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 		}
 
 		Logger.debug(this, "The location is " + location);
-		
+
 		boolean PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
 		boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null));
 
@@ -617,7 +617,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 
 		return text;
 	}
-	
+
 	@Override
 	public void _setClientVariablesOnContext(HttpServletRequest request,
 			ChainedContext context) {
@@ -646,7 +646,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 		} catch (DotDataException e) {
 			Logger.error(HTMLPDFServlet.class, e.getMessage(), e);
 			throw new ServletException(e.getMessage(), e);
-			
+
 		} catch (DotSecurityException e) {
 			Logger.error(HTMLPDFServlet.class, e.getMessage(), e);
 			throw new ServletException(e.getMessage(), e);
@@ -677,7 +677,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 		}
 
 	}
-	
+
 	private static class DTDResolver implements EntityResolver {
 		public InputSource resolveEntity(String publicId, String systemId) {
 			String uri = null;

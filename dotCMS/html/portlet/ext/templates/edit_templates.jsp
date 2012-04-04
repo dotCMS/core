@@ -77,6 +77,8 @@
 
 %>
 
+<script type="text/javascript" src="/html/js/spellchecker/checkspeller.js"></script>
+
 <script language="Javascript">
 
 	dojo.require('dotcms.dijit.form.FileSelector');
@@ -132,7 +134,7 @@
 
 	function addFileCallback(file) {
 		if(file.extension == 'js') {
-			var html = '<script type="text/javascript" src="' + file.path + file.fileName + '" >' + '<' + '/script' + '>';
+			var html = '<script type="text/javascript" src="' + file.path + file.fileName + '" />';
 		} else if (file.extension == 'css') {
 			var html = '<link href="' + file.path + file.fileName + '" rel="stylesheet" type="text/css" />';
 		}

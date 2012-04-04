@@ -237,7 +237,7 @@ public class ContentletServices {
 				sb.append("#set( $" + field.getVelocityVarName() + "FileInode =$" + field.getVelocityVarName() + "Object.getInode() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileIdentifier =$" + field.getVelocityVarName() + "Object.getIdentifier() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileExtension =$" + field.getVelocityVarName() + "Object.getExtension() )\n");
-				sb.append("#set( $" + field.getVelocityVarName() + "FileURI =$filetool.getURI($" + field.getVelocityVarName() + "Object))\n");
+				sb.append("#set( $" + field.getVelocityVarName() + "ImageURI =$filetool.getURI($" + field.getVelocityVarName() + "Object))\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileTitle =$" + field.getVelocityVarName() + "Object.getTitle() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileFriendlyName =$UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getFriendlyName() ))\n");
 				

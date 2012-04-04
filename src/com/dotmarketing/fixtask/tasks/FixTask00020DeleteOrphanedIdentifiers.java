@@ -90,8 +90,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 			FixAssetsProcessStatus.startProgress();
 			FixAssetsProcessStatus.setDescription("task 20: DeleteOrphanedIdentifiers");
 			HibernateUtil.startTransaction();
-			int total=0;	
-			int error=0;
+			int total=0;
 		    try {
 				DotConnect dc = new DotConnect();
 				dc.setSQL(treesToDelete);
@@ -107,7 +106,6 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 					HibernateUtil.startTransaction();
 					dc.executeStatement(deleteTreesToDelete);
 					dc.executeStatement(deleteIdentifiersToDelete);
-					FixAssetsProcessStatus.setError(total);
 					/*if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
 						deleteInodesInMySQL(dc);
 					}else{

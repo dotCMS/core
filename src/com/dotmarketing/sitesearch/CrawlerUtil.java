@@ -145,7 +145,7 @@ public class CrawlerUtil {
 	
 
 	public String getPortNumber() {
-		if(portNumber==null || portNumber.trim().equals("80")){ 
+		if(portNumber!=null && portNumber.trim().equals("80")){
 			return null;
 		}else{
 			return portNumber.trim();

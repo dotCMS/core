@@ -110,7 +110,6 @@ public class ImportExportUtil {
     private List<File> workFlowCommentXML = new ArrayList<File>();
     private List<File> workFlowHistoryXML = new ArrayList<File>();
     private List<File> workFlowTaskFilesXML = new ArrayList<File>();
-    private List<File> tagFiles = new ArrayList<File>();
     private File workflowSchemaFile = null;
     
     public ImportExportUtil() {
@@ -300,12 +299,11 @@ public class ImportExportUtil {
             	workFlowHistoryXML.add(_importFile);
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles_")){
             	workFlowTaskFilesXML.add(_importFile);
-            }else if(_importFile.getName().contains("com.dotmarketing.tag.model.Tag_")){
-            	tagFiles.add(0,_importFile);
-	        }else if(_importFile.getName().contains("com.dotmarketing.tag.model.TagInode_")){
-	        	tagFiles.add(tagFiles.size(),_importFile);
             }else if(_importFile.getName().contains("WorkflowSchemeImportExportObject.json")){
             	workflowSchemaFile = _importFile;
+            	
+            	
+            	
             }else if(_importFile.getName().endsWith(".xml")){
                 try {
                     doXMLFileImport(_importFile, out);
@@ -792,19 +790,7 @@ public class ImportExportUtil {
             }
         }
         
-        for (File file : tagFiles) {
-            try{
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
-            }
-            try{
-                doXMLFileImport(file, out);
-            } catch (Exception e) {
-                Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
-            }
-        }
-        
+
         
         
         

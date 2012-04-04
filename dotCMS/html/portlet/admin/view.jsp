@@ -226,17 +226,11 @@ dt{font-size:12px;padding-top:12px;}
 			<dt><%= LanguageUtil.get(pageContext, "time-zone") %></dt>
 			<dd>
 			    <span id="userTimezoneWrapper">
-			    <select name="<%= renderResponse.getNamespace() + "company_tz_id" %>">
-			       <% String[] ids = TimeZone.getAvailableIDs();
-			          Arrays.sort(ids);
-			          for(String id : ids) { 
-			            TimeZone tmz=TimeZone.getTimeZone(id);%>
-			            <option value="<%= id %>" >			                
-			                (<%= tmz.getID() %>)
-			                <%= tmz.getDisplayName(locale) %>
-			            </option>
-			       <% }%>
-			    </select>
+				<liferay:input-time-zone
+					name="<%= renderResponse.getNamespace() + \"company_tz_id\" %>"
+					value="<%= company.getTimeZone().getID() %>"
+					locale="<%= locale.toString() %>"
+				/>
 				</span>
 			</dd>
 		</dl>

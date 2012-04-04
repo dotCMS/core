@@ -170,11 +170,7 @@
 				list = list + "," + mynode + " @ " + orders[i].value;
 			}
 		}
-		StructureAjax.reorderfields(structureInode, list, showReOrderAlert);
-	}
-	
-	function showReOrderAlert(data){
-		showDotCMSSystemMessage(data);
+		StructureAjax.reorderfields(structureInode, list, showAlert);
 	}
 
 	function cancel(event)

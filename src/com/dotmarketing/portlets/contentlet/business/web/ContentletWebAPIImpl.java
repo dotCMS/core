@@ -28,7 +28,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -106,10 +105,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		
 		Logger.debug(this, "############################# Contentlet");
 		
-		boolean autocommit=DbConnectionFactory.getConnection().getAutoCommit();
-		
-		if(autocommit)
-		    HibernateUtil.startTransaction();
+		HibernateUtil.startTransaction();
 		
 		try {
 			Logger.debug(this, "Calling Retrieve method");
@@ -117,7 +113,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			_retrieveWebAsset(contentletFormData, user);
 			
 		} catch (Exception ae) {
-			_handleException(ae,autocommit);
+			_handleException(ae);
 			throw new Exception(ae.getMessage());
 		}
 		
@@ -130,11 +126,15 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}catch (DotContentletValidationException ce) {
 				if(!isAutoSave)
 				SessionMessages.add(req, "message.contentlet.save.error");
+			
+				HibernateUtil.commitTransaction();
 				throw ce;
 			
 			}catch (Exception ce) {
 				if(!isAutoSave)
 				SessionMessages.add(req, "message.contentlet.save.error");
+				HibernateUtil.rollbackTransaction();
+				//HibernateUtil.commitTransaction();
 				throw ce;
 			}
 			
@@ -147,7 +147,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					Logger.debug(this, "I'm setting my contentlet parents");
 					_addToParents(contentletFormData, user, isAutoSave);
 				} catch (Exception ae) {
-					throw new Exception(ae.getMessage());
+						throw new Exception(ae.getMessage());
 				}
 			}
 			
@@ -160,14 +160,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		    //conAPI.unlock(cont, user, false);
 		} catch (Exception ae) {
 			cont = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-			//conAPI.refresh(cont);
-			_handleException(ae,autocommit);
+			conAPI.refresh(cont);
+			_handleException(ae);
 			throw ae;
 		}
 		
-		if(autocommit)
-		    HibernateUtil.commitTransaction();
-		
+		HibernateUtil.commitTransaction();
 		contentletFormData.put("cache_control", "0");
 
 		
@@ -717,7 +715,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}		
 	}
 
-	private void _handleException(Exception ae, boolean autocommit) {
+	private void _handleException(Exception ae) {
 		if(!(ae instanceof DotContentletValidationException)){
 			Logger.warn(this, ae.toString(), ae);
 		}else{
@@ -725,8 +723,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 		
 		try {
-		    if(autocommit)
-		        HibernateUtil.rollbackTransaction();
+			HibernateUtil.rollbackTransaction();
 		} catch (DotHibernateException e) {
 			Logger.error(this, e.getMessage());
 		}		

@@ -49,9 +49,11 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             this.baseFilterUrl+= "/" + this.fieldName;
         }
         if(this.inode != '0'){
-            this.baseFilterUrl+= "/byInode/1";
+            this.baseFilterUrl+= "?byInode=1";
         }
-
+        if(this.baseFilterUrl.indexOf("?") <0){
+            this.baseFilterUrl+="?";
+        }
         this.currentUrl = this.baseFilterUrl;
         console.log("baseFilterUrl: " + this.baseFilterUrl);
     },
@@ -124,34 +126,26 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     _getThumbRendition:function(thumbUrl){
 
         // if thumbnail is already in filter
-        if(thumbUrl.indexOf("filter/") > -1){
-            var beforeFilter = thumbUrl.substring(0, thumbUrl.indexOf("filter/"));
-            var afterFilter = thumbUrl.substring(thumbUrl.indexOf("filter/") + 7, thumbUrl.length);
-            var filter = afterFilter.substring(0,afterFilter.indexOf("/"));
-            var afterFilter = afterFilter.substring(afterFilter.indexOf("/"),afterFilter.length);
+        if(thumbUrl.indexOf("filter=") > -1){
+            var beforeFilter = thumbUrl.substring(0, thumbUrl.indexOf("filter="));
+            var afterFilter = thumbUrl.substring(thumbUrl.indexOf("filter=") + 7, thumbUrl.length);
+            var filter = afterFilter.substring(0,afterFilter.indexOf("&"));
+            var afterFilter = afterFilter.substring(afterFilter.indexOf("&"),afterFilter.length);
 
-            thumbUrl = beforeFilter + "filter/" + filter + ",Thumbnail/" + afterFilter +"/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/" + this.thumbnailHeight;
+            thumbUrl = beforeFilter + "&filter=" + filter + ",Thumbnail&" + afterFilter +"&thumbnail_w=" + this.thumbnailWidth+ "&thumbnail_h=" + this.thumbnailHeight;
         }
         else{
             if(thumbUrl.indexOf("?") <0){
-                //thumbUrl+="?";
+                thumbUrl+="?";
             }
-            thumbUrl+= "/filter/Thumbnail/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/"+ this.thumbnailHeight;
+            thumbUrl+= "&filter=Thumbnail&thumbnail_w=" + this.thumbnailWidth+ "&thumbnail_h="+ this.thumbnailHeight;
         }
 
 
-        return this.cleanUrl(thumbUrl + "/r/" + _rand());
+        return thumbUrl + "&r=" + _rand();
     },
 
-    cleanUrl: function(x){
-    	while(x.indexOf("//")>-1){
-    		x= x.replace("//","/");
-    	}
-    	return x;
-    	
-    	
-    	
-    },
+
 
 
     setThumbnail: function(){
@@ -394,12 +388,11 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
     addToClipboard : function(){
-        var fileUrl = this.cleanUrl(this.currentUrl);
+        var fileUrl =escape(this.currentUrl);
         var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?";
 
         url+="action=setClipboard&";
         url+="fileUrl=" + fileUrl+"&";
-        //alert(url);
         var target = this.iframe.dojo.byId('me');
         dojo.style(target, "opacity", 0);
         dojo.xhrGet({
@@ -455,8 +448,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             field=this.fieldContentletId;
         }
 
-        var url =   this.cleanUrl(this.currentUrl) ;
-        url = (url.indexOf("?")>-1) ? url + "&"  : url + "?";
+        var url =  this.currentUrl ;
         url += (field.length > 0) ? "&binaryFieldId=" +field : "";
         url += "&_imageToolSaveFile=true";
         console.log("this.ajaxUrl:" + this.ajaxUrl);
@@ -521,13 +513,13 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         if(this.saveAsFileName.toLowerCase().indexOf(".jpg") >-1){
             this.iframe.dijit.byId("jpeg").checked=true;
             this._removeFilter("Gif");
-            this._addFilter("Jpeg", "/jpeg_q/85");
+            this._addFilter("Jpeg", "jpeg_q=85");
             this._redrawImage();
         }
         else if(this.saveAsFileName.toLowerCase().indexOf(".gif") >-1){
             this.iframe.dijit.byId("jpeg").checked=false;
             this._removeFilter("Jpeg");
-            this._addFilter("Gif", "/gif/2");
+            this._addFilter("Gif", "gif=2");
             this._redrawImage();
         }
         else if(this.saveAsFileName.toLowerCase().indexOf(".png") >-1){
@@ -536,9 +528,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             //this._addFilter("Gif", "gif=2");
             this._redrawImage();
         }
-        var x = this.cleanUrl(this.currentUrl);
-        
-        var url = x + "?_imageToolSaveFile=true";
+        var x =escape(this.currentUrl);
+
+        var url = this.currentUrl + "&_imageToolSaveFile=true";
         console.log(url);
         //console.log(url);
         //console.log(url);
@@ -566,7 +558,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     doDownload: function(){
-        var x =this.cleanUrl(this.currentUrl);
+        var x =escape(this.currentUrl);
         var aj =this.iframe.dojo.byId("actionJackson");
         var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?";
         url = url + "r=" +_rand()+ "&action=download&fileUrl=" + x;
@@ -581,12 +573,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     showSaveAsDialog: function(ext){
         if(ext.indexOf("jpg") >-1){
             this._removeFilter("Gif");
-            this._addFilter("Jpeg", "/jpeg_q/85");
+            this._addFilter("Jpeg", "jpeg_q=85");
             this._redrawImage();
         }
         else if(ext.indexOf("gif") >-1){
             this._removeFilter("Jpeg");
-            this._addFilter("Gif", "/gif/2");
+            this._addFilter("Gif", "gif=2");
             this._redrawImage();
         }
         else if(ext.indexOf("png") >-1){
@@ -604,9 +596,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         }
 
 
-        var x = this.cleanUrl(this.currentUrl);
+        var x =escape(this.currentUrl);
 
-        var url = this.currentUrl + "?_imageToolSaveFile=true&r=" +_rand();
+        var url = this.currentUrl + "&_imageToolSaveFile=true&r=" +_rand();
 
 
         dojo.xhrGet({
@@ -669,7 +661,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.iframe.dojo.byId("saveAsFinalBtn").disabled = true;
 
 
-        var x =this.cleanUrl(this.currentUrl);
+        var x =escape(this.currentUrl);
         var aj =this.iframe.dojo.byId("actionJackson");
         var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?";
         url+=  "&fileName=" + fileName
@@ -844,10 +836,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
         var h = (y + pc.h > sh) ? sh - y-1: pc.h;
         var val ="";
-        val+="/crop_w/" + parseInt(w);
-        val+="/crop_h/" + parseInt(h) ;
-        val+="/crop_x/" + parseInt(x);
-        val+="/crop_y/"+ parseInt(y) ;
+        val+="crop_w=" + parseInt(w);
+        val+="&crop_h=" + parseInt(h) ;
+        val+="&crop_x=" + parseInt(x);
+        val+="&crop_y="+ parseInt(y) ;
 
 
         this._addFilter("Crop", val)
@@ -955,7 +947,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      * This function takes a width and handles all resizes
      */
     _doResize: function(width){
-        var args=  "/resize_w/" + (parseInt(width) +1 ) ;
+        var args=  "resize_w=" + (parseInt(width) +1 ) ;
         this._addFilter("Resize", args);
         this._redrawImage();
     },
@@ -996,7 +988,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var x = this.iframe.dijit.byId("rotate");
         if(x.isValid()){
 
-            this._addFilter("Rotate", "/rotate_a/" + x.value + ".0");
+            this._addFilter("Rotate", "rotate_a=" + x.value + ".0");
             this._redrawImage();
         }
         else{
@@ -1013,7 +1005,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var x = this.iframe.dijit.byId("flip");
 
         if(x.checked){
-            this._addFilter("Flip", "/flip_flip/1");
+            this._addFilter("Flip", "flip_flip=1");
         }
         else{
 
@@ -1026,7 +1018,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var x = this.iframe.dijit.byId("jpeg");
 
         if(x.checked){
-            this._addFilter("Jpeg", "/jpeg_q/85");
+            this._addFilter("Jpeg", "jpeg_q=85");
         }
         else{
             this._removeFilter("Jpeg");
@@ -1052,7 +1044,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var x = this.iframe.dijit.byId("grayscale");
 
         if(x.checked){
-            this._addFilter("Grayscale", "/grayscale/1");
+            this._addFilter("Grayscale", "grayscale=1");
         }
         else{
             this._removeFilter("Grayscale");
@@ -1073,7 +1065,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var hs = (h % 100 == 0) ? (h / 100) + ".00" : h/100 +"";
         var ss = (s % 100 == 0) ? (s / 100) + ".00" : s/100 +"";
         var bs = (b % 100 == 0) ? (b / 100) + ".00" : b/100 +"";
-        var args =  "/hsb_h/" + (hs) + "/hsb_s/" + (ss)  +"/hsb_b/" + (bs) ;
+        var args =  "hsb_h=" + (hs) + "&hsb_s=" + (ss)  +"&hsb_b=" + (bs) ;
         this._addFilter("Hsb",args);
         this._redrawImage();
     },
@@ -1151,7 +1143,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             newFilters.push(filter);
         }
         if(hasJpeg && filterName != "Jpeg"){
-            newFilters.push(["Jpeg", "/jpeg_q/75"]);
+            newFilters.push(["Jpeg", "jpeg_q=75"]);
         }
         this.filters = newFilters;
 
@@ -1288,7 +1280,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             if(i < this.filters.length -1){
                 f+= ",";
             }
-            args+= this.filters[i][1];
+            args+="&" + this.filters[i][1];
         }
 
         var img = new Image();
@@ -1314,9 +1306,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
         var url = this.baseFilterUrl;
         if(this.filters.length > 0){
-            //url+=(this.baseFilterUrl.indexOf("?")<0) ? "?":"&";
-        	//alert(f);
-            url+= "/filter/" + f + args;
+            url+=(this.baseFilterUrl.indexOf("?")<0) ? "?":"&";
+            url+= "filter=" + f + args;
         }
 
         img.src = url ;

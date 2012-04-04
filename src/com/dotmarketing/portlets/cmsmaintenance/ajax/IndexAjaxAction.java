@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -60,13 +61,17 @@ public class IndexAjaxAction extends AjaxAction {
 				String password = map.get("p");
 				LoginFactory.doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
-				if(user==null) {
-				    setUser(request);
-                    user = getUser();
-				}
-				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
 					response.sendError(401);
 					return;
+				}
+				else {
+				    setUser(request);
+				    user = getUser();
+				    if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+				        response.sendError(401);
+	                    return;
+				    }
 				}
 			}
 
@@ -167,7 +172,7 @@ public class IndexAjaxAction extends AjaxAction {
 		File f = ESUtils.backupIndex(indexName);
 		
 		OutputStream out = response.getOutputStream();
-		InputStream in = new FileInputStream(f);
+		InputStream in = new BufferedInputStream(new FileInputStream(f));
 		
 		response.setHeader("Content-Type", "application/zip");
 		response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");
@@ -179,25 +184,13 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 	
 	public void createIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		
 		Map<String, String> map = getURIParams();
-		int shards = 0;
-		
-		try{
-			shards = Integer.parseInt(map.get("shards"));
-
-		}
-		catch(Exception e){
-			
-		}
-		
-
 		boolean live = map.get("live") != null;
 		String indexName = map.get("indexName");
 		if(indexName == null)
 		    indexName=ESIndexAPI.timestampFormatter.format(new Date());
 		indexName = (live) ? "live_" + indexName : "working_" + indexName; 
-		ESUtils.createIndex(indexName, shards);
+		ESUtils.createIndex(indexName);
 
 	}
 	
@@ -235,15 +228,7 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 	
 	
-	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
-		Map<String, String> map = getURIParams();
-		String indexName = map.get("indexName");
-		int replicas = Integer.parseInt(map.get("replicas"));
-
-		
-		new ESIndexAPI().updateReplicas(indexName, replicas);
-
-	}
+	
 	
 
 	

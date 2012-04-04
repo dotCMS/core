@@ -25,7 +25,6 @@ public class FileUtil {
 		if(x==null){
 			return "ukn";
 		}
-		x = x.toLowerCase();
 		if (x.lastIndexOf(".") > -1) {
 			x = x.substring(x.lastIndexOf(".")+1, x.length());
 		}
@@ -37,7 +36,6 @@ public class FileUtil {
 
 					String[] files = new File(path).list(new PNGFileNameFilter());
 					for (String name : files) {
-						name =name.toLowerCase();
 						if (name.indexOf(".png") > -1)
 							extensions.add(name.replace(".png", ""));
 					}
