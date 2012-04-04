@@ -4,6 +4,8 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
+import com.dotmarketing.util.Logger;
+
 public class HostActivator implements BundleActivator {
 	
     private BundleContext m_context = null;
@@ -13,7 +15,7 @@ public class HostActivator implements BundleActivator {
 	private HostActivator() {
 	}
 
-	public static HostActivator instance() {
+	public synchronized static HostActivator instance() {
 		if ( instance == null )
 			instance = new HostActivator();
 		return instance;
