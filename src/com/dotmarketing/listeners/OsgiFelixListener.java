@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
@@ -20,6 +21,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 
 import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.util.Config;
 
 public class OsgiFelixListener implements ServletContextListener {
 
@@ -31,20 +33,29 @@ public class OsgiFelixListener implements ServletContextListener {
     public OsgiFelixListener() {
     }
     
+	private Properties loadConfig() {
+		Properties properties = new Properties();
+		Iterator<String> it = Config.getKeys();
+		while(it.hasNext()){
+			String key = it.next();
+			if (key == null) continue;
+			if (key.startsWith("felix.")) {
+				properties.put(key.substring(6), Config.getStringProperty(key));
+			}
+		}
+		return properties;
+	}
+
+    
 	/**
      * @see ServletContextListener#contextInitialized(ServletContextEvent)
      */
     public void contextInitialized(ServletContextEvent context) {
     	
-    	String confDir = context.getServletContext().getRealPath("/WEB-INF");
-    	String felixDir = context.getServletContext().getRealPath("/WEB-INF/felix");
+    	Properties configProps = loadConfig();
     	    	
-    	String url = confDir + "/felix.properties";
-    	
-    	System.setProperty("felix.config.properties", "file://" + url);
-    	
-    	System.out.println(System.getProperty("felix.config.properties"));
-    	
+    	String felixDir = context.getServletContext().getRealPath("/WEB-INF/felix");
+    	    	    	
     	String bundleDir = felixDir + "/bundle";
     	String cacheDir = felixDir + "/felix-cache";
     	String autoLoadDir = felixDir + "/load";
@@ -52,14 +63,6 @@ public class OsgiFelixListener implements ServletContextListener {
     	// (2) Load system properties.
         Main.loadSystemProperties();
         
-        // (3) Read configuration properties.
-        Properties configProps = Main.loadConfigProperties();
-        if (configProps == null)
-        {
-            System.err.println("No " + Main.CONFIG_PROPERTIES_FILE_VALUE + " found.");
-            configProps = new Properties();
-        }
-
         // (4) Copy framework properties from the system properties.
         Main.copySystemProperties(configProps);
             
@@ -72,6 +75,10 @@ public class OsgiFelixListener implements ServletContextListener {
         if (cacheDir != null) {
             configProps.setProperty(Constants.FRAMEWORK_STORAGE, cacheDir);
         }
+        
+        String value = configProps.getProperty("felix.org.osgi.framework.system.packages.extra");
+        if ( value != null )
+        	configProps.setProperty("org.osgi.framework.system.packages.extra", value);
 
         // (7) Add a shutdown hook to clean stop the framework.
         String enableHook = configProps.getProperty(Main.SHUTDOWN_HOOK_PROP);
