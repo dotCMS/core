@@ -546,7 +546,7 @@ public class WebAPI implements ViewTool {
 				}else if(user!=null){
 					localUser = user;
 				}
-				Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, false);
+				Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, true);
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					realPath = APILocator.getFileAssetAPI().getRealAssetPath(cont.getInode(), fileName, ext);
 				}

@@ -1,5 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
-
+// 1212
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,7 +67,7 @@ import com.liferay.portal.model.User;
 
 /**
  *
- * @author maria
+ * @author maria 2323
  */
 public class FolderFactoryImpl extends FolderFactory {
 	private int nodeId;
@@ -305,7 +305,11 @@ public class FolderFactoryImpl extends FolderFactory {
 			List<FileAsset> fileAssets = null;
 			try {
 				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
-				filesListSubChildren.addAll(fileAssets);
+				for(FileAsset fileAsset : fileAssets) {
+					if(fileAsset.isShowOnMenu()){
+						filesListSubChildren.add(fileAsset);
+					}					
+				}				
 			} catch (DotSecurityException e) {}
 
 			// gets all subitems

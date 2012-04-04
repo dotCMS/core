@@ -1,5 +1,11 @@
 package com.dotmarketing.business;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.jgroups.JChannel;
+
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotmarketing.cache.FolderCache;
@@ -51,6 +57,35 @@ import com.dotmarketing.velocity.DotResourceCache;
 
 public class CacheLocator extends Locator<CacheIndex>{
 	
+	    private static class CommitListenerCacheWrapper implements DotCacheAdministrator {
+        DotCacheAdministrator dotcache;
+        public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) { this.dotcache=dotcache; }
+        public Set<String> getKeys(String group) { return dotcache.getKeys(group); }
+        public void flushAll() { dotcache.flushAll(); }
+        public void flushGroup(String group) { dotcache.flushGroup(group); }
+        public void flushAlLocalOnlyl() { dotcache.flushAlLocalOnlyl(); }
+        public void flushGroupLocalOnly(String group) { dotcache.flushGroupLocalOnly(group); }
+        public Object get(String key, String group) throws DotCacheException { return dotcache.get(key, group); }
+        public void remove(String key, String group) { dotcache.remove(key,group); }
+        public void removeLocalOnly(String key, String group) { dotcache.removeLocalOnly(key, group); }
+        public void shutdown() { dotcache.shutdown(); }
+        public JChannel getJGroupsChannel() { return dotcache.getJGroupsChannel(); }
+        public List<Map<String, Object>> getCacheStatsList() { return dotcache.getCacheStatsList(); }
+        public Class getImplementationClass() { return dotcache.getClass(); }
+        public void put(final String key, final Object content, final String group) {
+            try {
+                HibernateUtil.addCommitListener(new Runnable() {
+                   public void run() {
+                       dotcache.put(key, content, group);
+                   } 
+                });
+            } catch (DotHibernateException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
+
 	private static CacheLocator instance;
 	private static DotCacheAdministrator adminCache;
 	
@@ -63,7 +98,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 			return;
 		
 		String clazz = Config.getStringProperty("cache.locator.class", DotGuavaCacheAdministratorImpl.class.getCanonicalName());
-		
+		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
 		try{
 			adminCache = (DotCacheAdministrator) Class.forName(clazz).newInstance();
 		}

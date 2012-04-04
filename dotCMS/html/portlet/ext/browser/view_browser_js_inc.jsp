@@ -1458,11 +1458,6 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /></portlet:actionURL>&cmd=edit&inode=' + objId + '&referer=' + referer;
 	}
 
-	function requestHTMLPageChange (objId, referer) {
-		var userId = '<%=user.getUserId()%>';
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="add" /></portlet:actionURL>&webasset=' + objId + '&userId=' + userId + '&referer=' + referer;
-	}
-
 	var publishHTMLPageInode;
 	var publishHTMLPageReferer;
 	function publishHTMLPageExceptionHandler(msg) {

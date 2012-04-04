@@ -29,6 +29,8 @@ import com.dotmarketing.startup.runonce.Task00815WorkFlowTablesChanges;
 import com.dotmarketing.startup.runonce.Task00820CreateNewWorkFlowTables;
 import com.dotmarketing.startup.runonce.Task00825UpdateLoadRecordsToIndex;
 import com.dotmarketing.startup.runonce.Task00835CreateIndiciesTables;
+import com.dotmarketing.startup.runonce.Task00840FixContentletVersionInfo;
+import com.dotmarketing.startup.runonce.Task00845ChangeLockedOnToTimeStamp;
 
 
 public class TaskLocatorUtil {
@@ -36,6 +38,21 @@ public class TaskLocatorUtil {
 	public static List<Class<?>> getFixTaskClasses() {
 		List<Class<?>> ret = new ArrayList<Class<?>>();
 
+		ret.add(FixTask00001CheckAssetsMissingIdentifiers.class);
+		ret.add(FixTask00003CheckContainersInconsistencies.class);
+		ret.add(FixTask00004CheckFileAssetsInconsistencies.class);
+		ret.add(FixTask00005CheckHTMLPagesInconsistencies.class);
+		ret.add(FixTask00006CheckLinksInconsistencies.class);
+		ret.add(FixTask00007CheckTemplatesInconsistencies.class);
+		ret.add(FixTask00008CheckTreeInconsistencies.class);
+		ret.add(FixTask00009CheckContentletsInexistentInodes.class);
+		ret.add(FixTask00011RenameHostInFieldVariableName.class);
+		ret.add(FixTask00012UpdateAssetsHosts.class);
+		ret.add(FixTask00020DeleteOrphanedIdentifiers.class);
+		ret.add(FixTask00021CheckOrphanedAssets.class);
+		ret.add(FixTask00030DeleteOrphanedAssets.class);
+		ret.add(FixTask00040CheckFileAssetsMimeType.class);
+		ret.add(FixTask00050FixInodesWithoutContentlets.class);
 		return ret;
 	}
 
@@ -60,6 +77,8 @@ public class TaskLocatorUtil {
 		ret.add(Task00820CreateNewWorkFlowTables.class);
 		ret.add(Task00825UpdateLoadRecordsToIndex.class);
 		ret.add(Task00835CreateIndiciesTables.class);
+		ret.add(Task00840FixContentletVersionInfo.class);
+		ret.add(Task00845ChangeLockedOnToTimeStamp.class);
 		return ret;
 	}
 

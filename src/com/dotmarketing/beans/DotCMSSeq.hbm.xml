@@ -1402,23 +1402,18 @@
 		<property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
 		<property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
 		<property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-		<property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+		<property column="locked_on"     name="lockedOn"                 type="date"    not-null="true"/>
   	</class>
 	<class name="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" table="contentlet_version_info">
-        <id column="identifier"    name="identifier"   length="36" type="string">
-        	<generator class="assigned"/>
-        </id>
-        <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
-        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
-    </class>
-	<class name="com.dotmarketing.portlets.contentlet.model.ContentletLangVersionInfo" table="contentlet_lang_version_info">
-		<composite-id>
+        <composite-id>
             <key-property name="identifier" type="string" column="identifier" length="36"/>
             <key-property name="lang" type="long" column="lang" />
         </composite-id>
-        <property column="working_inode" name="workingInode" length="36" type="string"  not-null="true" />
-        <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
+        <property column="working_inode" name="workingInode" length="36"  type="string"  not-null="true" />
+        <property column="live_inode"    name="liveInode"    length="36"  type="string"  not-null="false"/>
+        <property column="deleted"       name="deleted"                   type="boolean" not-null="true" />
+        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
+        <property column="locked_on"     name="lockedOn"                  type="java.sql.Timestamp"    not-null="false"/>
     </class>
 	<class name="com.dotmarketing.portlets.templates.model.TemplateVersionInfo" table="template_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">

@@ -15,11 +15,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
+
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
@@ -28,6 +33,8 @@ import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -154,6 +161,9 @@ public class ESUtils {
 
 		Client client = new ESClient().getClient();
 		
+		final Semaphore completedReqs=new Semaphore(0);
+        int totalReqs=0;
+		
 		try {
 			if (!indexExists) {
 				final IndicesAdminClient iac = new ESClient().getClient().admin().indices();
@@ -180,7 +190,7 @@ public class ESUtils {
     			String m=mapping.substring(MAPPING_MARKER.length());
 			    client.admin().indices().putMapping(
     			        new PutMappingRequest(index).type("content").source(m)
-    			).actionGet();
+    			).get();
 			}
 			
 			// reading content
@@ -208,8 +218,18 @@ public class ESUtils {
     					    }
     					}
     				    if(req.numberOfActions()>0) {
-    				        req.execute().actionGet();
-    				        //client.admin().indices().flush(new FlushRequest(index)).actionGet();
+    				        totalReqs++;
+    				        req.execute(new ActionListener<BulkResponse>() {
+                                @Override
+                                public void onFailure(Throwable ex) {
+                                    Logger.warn(ESUtils.class,"filed to add some content to the index",ex);
+                                    completedReqs.release();
+                                }
+                                @Override
+                                public void onResponse(BulkResponse arg0) {
+                                    completedReqs.release();
+                                }
+    				        });
     				    }
 				    }
 				    finally {
@@ -226,6 +246,12 @@ public class ESUtils {
 			if (br != null) {
 				br.close();
 			}
+			
+			try {
+                completedReqs.acquire(totalReqs);
+            } catch (InterruptedException e) {
+                Logger.warn(ESUtils.class, "got interrupted while waiting for docs to be indexed",e);
+            }
 			
 			// back to the original configuration for number_of_replicas
 			// also let it go other servers

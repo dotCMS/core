@@ -18,10 +18,25 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.*"%>
+<%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="java.util.List"%>
+<script src="/dwr/interface/UserAjax.js" type="text/javascript"></script>
 <script language="JavaScript"><!--
 
-  	// POPUPS
+	var userRoles;
+
+	dojo.addOnLoad(function() {
+		UserAjax.getUserRolesValues('<%=user.getUserId()%>', '<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>', getUserRolesValuesCallBack);
+	});
+
+
+	function getUserRolesValuesCallBack(response) {
+		userRoles = response;
+	}
+
+	// POPUPS
+
+
 	function showHostPopUp(host, cmsAdminUser, origReferer, e) {
 		var referer = encodeURIComponent(origReferer);
 		if($('context_menu_popup_'+objId) == null) {
@@ -31,48 +46,57 @@
 			var write = hasWritePermissions(host.permissions);
 			var publish = hasPublishPermissions(host.permissions);
 			var addChildren = hasAddChildrenPermissions(host.permissions);
-		
+
 			var strHTML = '';
-			
+
 			strHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox">';
-			
+
 			if (write) {
 				strHTML += '<a class="contextPopupMenu" href="javascript: editHost(\'' + objInode + '\',\''+referer+'\')">';
 		    		strHTML += '<span class="hostIcon"></span>';
     				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Host")) %>';
 				strHTML += '</a>';
 			}
-			
+
 			if (addChildren) {
 				var containerperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_12", user)%>;
 				var templateperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_13", user)%>;
-                
-				strHTML += '<a class="contextPopupMenu" href="javascript: addTopFolder(\'' + objId + '\',\''+referer+'\')">';
-				    strHTML += '<span class="folderAddIcon"></span>';
-		    		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Folder")) %>';
-				strHTML += '</a>';
 
-				if(containerperm){
+				var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
+
+				if(isAdminUser || userRoles.folderModifiable) {
+					strHTML += '<a class="contextPopupMenu" href="javascript: addTopFolder(\'' + objId + '\',\''+referer+'\')">';
+				  	  	strHTML += '<span class="folderAddIcon"></span>';
+		    			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Folder")) %>';
+					strHTML += '</a>';
+				}
+
+				if(containerperm && (isAdminUser || userRoles.containerModifiable)){
 					strHTML += '<a class="contextPopupMenu" href="javascript: addContainer(\''+referer+'\')">';
 				    	strHTML += '<span class="container"></span>';
 		    			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Container")) %>';
 					strHTML += '</a>';
 				}
-				if(templateperm){
+				if(templateperm && (isAdminUser || userRoles.templateModifiable)){
 					strHTML += '<a class="contextPopupMenu" href="javascript: addTemplate(\''+referer+'\')">';
 			    		strHTML += '<span class="templateIcon"></span>';
 	    				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
 					strHTML += '</a>'
 				}
-				
-				strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);">';
-			    strHTML += '<span class="fileNewIcon"></span>';
-			    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
-			    strHTML += '</a>';
-			
-					
+
+				if(isAdminUser || userRoles.fileModifiable) {
+					strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);">';
+					    strHTML += '<span class="fileNewIcon"></span>';
+					    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
+				    strHTML += '</a>';
+				    
+				    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);">';
+                    strHTML += '<span class="fileNewIcon"></span>';
+                    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
+                    strHTML += '</a>';
+				}
 			}
-			
+
 			strHTML += '<div class="pop_divider" ></div>';
 			strHTML += '<a class="contextPopupMenu" href="javascript: hidePopUp(\'context_menu_popup_'+objId+'\');">';
 			strHTML += '<span class="closeIcon"></span>';
@@ -83,16 +107,16 @@
 			if(!document.getElementById('context_menu_popup_'+host.identifier))
 				new Insertion.Bottom ('popups', strHTML);
 		}
-				
+
 		showPopUp('context_menu_popup_'+objId, e);
 	}
-	
+
 	function showFolderPopUp(folder, cmsAdminUser, origReferer, e) {
-	
+
 		var referer = encodeURIComponent(origReferer);
-	
+
 		var objId = folder.inode;
-		
+
 
 		if($('context_menu_popup_'+objId) == null) {
 			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox" style="display:none;"></div>';
@@ -104,7 +128,7 @@
 		var write = hasWritePermissions(folder.permissions);
 		var publish = hasPublishPermissions(folder.permissions);
 		var addChildren = hasAddChildrenPermissions(folder.permissions);
-	
+
 		var strHTML = '';
 
 		if (write) {
@@ -118,7 +142,7 @@
 		    	strHTML += '<span class="folderDeleteIcon"></span>';
         		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>';
 			strHTML += '</a>';
-            
+
 			strHTML += '<a class="contextPopupMenu" href="javascript: publishFolder(\'' + objId + '\', \'' + referer + '\');">';
 		    	strHTML += '<span class="folderGlobeIcon"></span>';
         		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publishall")) %>';
@@ -128,7 +152,7 @@
 		    	strHTML += '<span class="folderCopyIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
 			strHTML += '</a>';
-	
+
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 			    strHTML += '<span class="cutIcon"></span>';
 			    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
@@ -138,7 +162,7 @@
 			    strHTML += '<span class="pasteIcon"></span>';
 			    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Paste")) %>';
 			strHTML += '</a>';
-	
+
 			strHTML += '<div class="pop_divider" ></div>';
 
 		}
@@ -149,67 +173,67 @@
 			strHTML += '<span class="plusIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "New")) %>';
 			strHTML += '</a>'
-			
+
 			strHTML += '<div class="pop_divider"></div>';
 		}
-					
+
 		strHTML += '<a class="contextPopupMenu" href="javascript:hidePopUp(\'context_menu_popup_'+objId+'\');">';
 		strHTML += '<span class="closeIcon"></span>';
 		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</a>';
-	
-	
+
+
 		Element.update ('context_menu_popup_'+objId, strHTML);
-	
+
 		if($('context_child_menu_popup_'+objId) == null) {
 			var divHTML = '<div id="context_child_menu_popup_'+objId+'" class="contextPopupMenuBox" style="display:none;"></div>';
 			new Insertion.Bottom ('popups', divHTML);
 		}
-	
+
 		var strHTML = '';
-		
+
 		//"Add New" Sub Menu
-	
+
 		strHTML += '<a class="contextPopupMenu" href="javascript:addFolder(\'' + objId + '\',\''+referer+'\')">';
 		    strHTML += '<span class="folderAddIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
 		strHTML += '</a>'
-		
+
 	    strHTML += '<a class="contextPopupMenu" href="javascript:addHTMLPage(\'' + objId + '\',\'' + referer + '\');" >';
 		    strHTML += '<span class="newPageIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 		strHTML += '</a>';
-		
+
 	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);">';
 		    strHTML += '<span class="fileNewIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 		strHTML += '</a>';
-		
+
 	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);">';
 		    strHTML += '<span class="fileMultiIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
 		strHTML += '</a>';
-		
+
     	strHTML += '<a class="contextPopupMenu" href="javascript:addLink(\'' + objId + '\',\'' + referer + '\');">';
 		    strHTML += '<span class="linkAddIcon"></span>';
     		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Menu-Link")) %>';
 		strHTML += '</a>';
-		
+
 		strHTML += '<div class="pop_divider" ></div>';
-		
+
 		strHTML += '<a class="contextPopupMenu" href="javascript:hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %></a>';
 		strHTML += '</a>';
-		
-	
+
+
 		if($('contextChildMenu' + objId + 'REF') != null) {
 			var event = "Event.observe('contextChildMenu" + objId + "REF', 'mouseup', function (event){ showChildPopUp('context_child_menu_popup_" + objId + "','context_menu_popup_"+objId+"', event) });";
 			eval(event);
 		}
-			
+
 		Element.update ('context_child_menu_popup_'+objId, strHTML);
-			
+
 		if (isInodeSet(markedForCut) || isInodeSet(markedForCopy)) {
 			if($(objId + '-PasteREF') != null)
 				Element.show(objId + '-PasteREF');
@@ -217,23 +241,23 @@
 			if($(objId + '-PasteREF') != null)
 				Element.hide(objId + '-PasteREF');
 		}
-		
+
 		showPopUp('context_menu_popup_'+objId, e);
 	}
-	
+
 	// File Popup
-	function showFilePopUp(file, cmsAdminUser, origReferer, e) {		
+	function showFilePopUp(file, cmsAdminUser, origReferer, e) {
 		var workFlowAssign = false;
 		var fileWfActionAssign = file.wfActionAssign;
 		//var wfActions = file.wfActions;
-		if(fileWfActionAssign == ""){ 
+		if(fileWfActionAssign == ""){
 			fileWfActionAssign = null;
 		}
-		
+
 		var objId = file.inode;
 		var ident = file.identifier;
 		var referer = encodeURIComponent(origReferer);
-		
+
 		if($('context_menu_popup_'+objId) == null) {
 			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox"></div>';
 			new Insertion.Bottom ('popups', divHTML);
@@ -250,10 +274,10 @@
 		var publish = hasPublishPermissions(file.permissions);
 		var live = file.live;
 		var working = file.working;
-		var archived = file.deleted; 
+		var archived = file.deleted;
 		var locked = file.locked;
 		var ext = file.extension;
-		
+
 		var strHTML = '';
 		var contentletLanguageId = file.languageId;
 		contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(ident,objId,contentletLanguageId);
@@ -264,7 +288,7 @@
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
 		}
-    
+
 		if ((live || working) && write && !archived) {
 			if(file.isContent){
    				strHTML += '<a href="javascript: editFileAsset(\'' + objId + '\',\'' + file.fileAssetType + '\');" class="contextPopupMenu">';
@@ -278,20 +302,20 @@
 			    strHTML += '</a>';
    			}
 		}
-		
+
 
 		for (var i = 0; i < file.wfActionMapList.length; i++) {
-			var name = file.wfActionMapList[i].name; 
-			var id = file.wfActionMapList[i].id;	
-			var assignable = file.wfActionMapList[i].assignable;	
+			var name = file.wfActionMapList[i].name;
+			var id = file.wfActionMapList[i].id;
+			var assignable = file.wfActionMapList[i].assignable;
 
-			var commentable = file.wfActionMapList[i].commentable;  
+			var commentable = file.wfActionMapList[i].commentable;
 			console.log(name + ":"+ assignable + ":" + commentable);
-			var icon = file.wfActionMapList[i].icon; 
-			var requiresCheckout = file.wfActionMapList[i].requiresCheckout; 
-			var wfActionNameStr = file.wfActionMapList[i].wfActionNameStr; 
+			var icon = file.wfActionMapList[i].icon;
+			var requiresCheckout = file.wfActionMapList[i].requiresCheckout;
+			var wfActionNameStr = file.wfActionMapList[i].wfActionNameStr;
 			var isLocked = file.isLocked;
-			var contentEditable = file.contentEditable; 
+			var contentEditable = file.contentEditable;
 			if (!objId && requiresCheckout || (isLocked && contentEditable) && requiresCheckout) {
 				strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
     			strHTML += '<span class=\''+icon+'\'></span>';
@@ -302,10 +326,10 @@
 				strHTML += '<span class=\''+icon+'\'></span>';
     			strHTML += wfActionNameStr;
 				strHTML += '</a>';
-			}	
+			}
 		}
-		
-    
+
+
 		if (working && publish && !archived ) {
 			strHTML += '<a href="javascript: publishFile (\'' + objId + '\',\'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
     		if (live) {
@@ -324,7 +348,7 @@
 	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 			strHTML += '</a>';
 		}
-		
+
 		if (!live && working && publish ) {
 			if (!archived) {
 				strHTML += '<a href="javascript: archiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
@@ -339,14 +363,14 @@
 				strHTML += '</a>';
 			}
 		}
-		
+
 		if (locked && write) {
 			strHTML += '<a href="javascript: unlockFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 	    		strHTML += '<span class="keyIcon"></span>';
 	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 			strHTML += '</a>';
 		}
-		
+
 		if (write && !archived)  {
 
 			strHTML += '<div class="pop_divider" ></div>';
@@ -363,7 +387,7 @@
 
 		}
 
-		if (write && archived)  
+		if (write && archived)
 		{
 			strHTML += '<a href="javascript: deleteFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    	strHTML += '<span class="stopIcon"></span>';
@@ -372,20 +396,20 @@
 		}
 
 		strHTML += '<div class="pop_divider" ></div>';
-		
+
 		strHTML += '<a href="javascript:hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %></a>';
 		strHTML += '</a>';
 
 		Element.update(div, strHTML);
-				
+
 		showPopUp('context_menu_popup_'+objId, e);
 	}
-	
+
 	//Link popup
 	function showLinkPopUp(link, cmsAdminUser, origReferer, e) {
-	
+
 		var objId = link.inode;
 		var referer = encodeURIComponent(origReferer);
 
@@ -400,7 +424,7 @@
 		var publish = hasPublishPermissions(link.permissions);
 		var live = link.live;
 		var working = link.working;
-		var archived = link.deleted; 
+		var archived = link.deleted;
 		var locked = link.locked;
 
 		var strHTML = '';
@@ -454,11 +478,11 @@
 			strHTML += '</a>';
 		}
 
-		
+
 		if (write && !archived)  {
 
 			strHTML += '<div class="pop_divider" ></div>';
-			
+
 			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 	    		strHTML += '<span class="docCopyIcon"></span>';
 	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
@@ -471,7 +495,7 @@
 
 		}
 
-		if (write && archived)  
+		if (write && archived)
 		{
 			strHTML += '<a href="javascript: deleteLink(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    	strHTML += '<span class="stopIcon"></span>';
@@ -484,14 +508,14 @@
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</a>';
-		
+
 		Element.update(div, strHTML);
 
 		showPopUp('context_menu_popup_'+objId, e);
 	}
-	
+
 	function showHTMLPagePopUp(page, cmsAdminUser, origReferer, e) {
-	
+
 		var objId = page.inode;
 		var referer = encodeURIComponent(origReferer);
 
@@ -506,7 +530,7 @@
 		var publish = hasPublishPermissions(page.permissions);
 		var live = page.live;
 		var working = page.working;
-		var archived = page.deleted; 
+		var archived = page.deleted;
 		var locked = page.locked;
 
 		var strHTML = '';
@@ -519,19 +543,14 @@
 
 			if ((live || working) && read)  {
 				var actionLabel = write ? '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Edit")) %>' : '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>';
-		
+
 				strHTML += '<a href="javascript: editHTMLPage(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
     				strHTML += '<span class="pagePropIcon"></span>';
            			strHTML += actionLabel;
 				strHTML += '</a>';
-			}
-        
-			strHTML += '<a href="javascript: requestHTMLPageChange(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="workflowIcon"></span>';
-	   		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Request-a-Change")) %>';
-			strHTML += '</a>';
+			}			
 		}
-		
+
         if (!archived) {
 	      strHTML += '<a href="javascript: viewHTMLPageStatistics(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
 		      strHTML += '<span class="statisticsIcon"></span>';
@@ -551,14 +570,14 @@
 			}
 			strHTML += '</a>';
 		}
-		
+
 		if (live && publish) {
 			strHTML += '<a href="javascript: unpublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    	strHTML += '<span class="unpublishIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 			strHTML += '</a>';
 		}
-		
+
 		if (!live && working && publish) {
 			if (!archived) {
 				strHTML += '<a href="javascript: archiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
@@ -573,15 +592,15 @@
 				strHTML += '</a>';
 			}
 		}
-		
+
 		if (locked && write) {
 			strHTML += '<a href="javascript: unlockHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    	strHTML += '<span class="keyIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 			strHTML += '</a>';
 		}
-		
-		
+
+
 		if (write && !archived)  {
 			strHTML += '<div class="pop_divider" ></div>';
 
@@ -610,82 +629,82 @@
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</a>';
-			
+
 		Element.update(div, strHTML);
 
 		showPopUp('context_menu_popup_'+objId, e);
 	}
-	
+
 	//popups functions
 	var currentMenuId = "";
 	var currentChildMenuId = "";
-	document.oncontextmenu = nothing; 
-	
+	document.oncontextmenu = nothing;
+
 	function showPopUp(id, e) {
-     		
+
 		var mousePosX = Event.pointerX(e);
 		var mousePosY = Event.pointerY(e);
-		
+
 		hidePopUp(currentMenuId);
-	
+
 		currentMenuId = id;
-	
+
 		var popup = $(id);
-     	
+
 		var windowHeight = top.document.body.clientHeight;
-		
+
 		var popupHeight = Element.getHeight(popup);
-		
+
 		var noPx = document.childNodes ? 'px' : 0;
 		var myReference = popup;
-		if( myReference.style ) { 
-			myReference = popup.style; 
-		} 
-		
+		if( myReference.style ) {
+			myReference = popup.style;
+		}
+
 		myReference.left = ( mousePosX - 10 ) + noPx;
 
 	    if((mousePosY + popupHeight) >= windowHeight && windowHeight > popupHeight)
 			myReference.top = ( mousePosY - popupHeight ) + noPx;
 		else
 			myReference.top = ( mousePosY ) + noPx;
-		
+
      	showDebugMessage('showPopUp showing');
 		Element.show (id);
 	}
-	
+
 	function showChildPopUp(id,parentId,e) {
-	
+
 		var parentEl = $(parentId);
 
 		var mousePosX = Event.pointerX(e);
 		var mousePosY = Event.pointerY(e);
-		
+
 		currentChildMenuId = id;
-	
+
 		var popup = $(id);
-     	
+
 		var windowHeight = top.document.body.clientHeight;
-		
+
 		var popupHeight = Element.getHeight(popup);
-		
+
 		var noPx = document.childNodes ? 'px' : 0;
 		var myReference = popup;
-		if( myReference.style ) { 
-			myReference = popup.style; 
-		} 
-		
+		if( myReference.style ) {
+			myReference = popup.style;
+		}
+
 		myReference.left = ( mousePosX - 5 ) + noPx;
 
 	    if((mousePosY + popupHeight) >= windowHeight && windowHeight > popupHeight)
 			myReference.top = ( mousePosY - popupHeight ) + noPx;
 		else
 			myReference.top = ( mousePosY ) + noPx;
-		
+
      	showDebugMessage('showChildPopUp showing');
 		Element.show (id);
-		
+
 	}
-	
+
 	function hidePopUp(id) {
 		if ($(id) != null) {
 			if($(currentChildMenuId) != null && id == currentMenuId) {
@@ -696,7 +715,7 @@
 			currentMenuId = "";
 		}
 	}
-	
+
 
 	function getScrollX() {
 	  var scrOfX = 0, scrOfY = 0;
@@ -712,7 +731,7 @@
 	  }
 	  return scrOfX;
 	}
-	
+
 	function getScrollY() {
 	  var scrOfY = 0;
 	  if( typeof( window.pageYOffset ) == 'number' ) {
@@ -726,14 +745,14 @@
 	    scrOfY = top.document.documentElement.scrollTop;
 	  }
 	  return scrOfY;
-	}		
+	}
 
 	function renderAddNewDropDownButton(activeHost, selectedFolder, origReferer) {
 		if (dijit.byId('addNewButton')) {
 			dijit.byId('addNewButton').destroy();
 		}
-		
-		
+
+
 		if(selectedFolder===activeHost){
 			selectedFolder = "";
 		}
@@ -768,7 +787,7 @@
 					htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
 					htmlCode += '</div>';
 				}
-				
+
 				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + objId + '\',\'' + referer + '\',false)">';
 				htmlCode += '<span class="fileNewIcon"></span>&nbsp;';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
@@ -879,11 +898,11 @@
     	},
 
     	saveAssign : function(){
-    		
-    		
-    		var assignRole = (dijit.byId("taskAssignmentAux")) 
+
+
+    		var assignRole = (dijit.byId("taskAssignmentAux"))
 			? dijit.byId("taskAssignmentAux").getValue()
-				: (dojo.byId("taskAssignmentAux")) 
+				: (dojo.byId("taskAssignmentAux"))
 					? dojo.byId("taskAssignmentAux").value
 							: "";
 
@@ -891,10 +910,10 @@
 				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Assign-To-Required")%>");
 				return;
 			}
-	
-			var comments = (dijit.byId("taskCommentsAux")) 
+
+			var comments = (dijit.byId("taskCommentsAux"))
 				? dijit.byId("taskCommentsAux").getValue()
-					: (dojo.byId("taskCommentsAux")) 
+					: (dojo.byId("taskCommentsAux"))
 						? dojo.byId("taskCommentsAux").value
 								: "";
 
@@ -920,6 +939,6 @@
     var contentAdmin ;
 
 
-	
-	
+
+
 --></script>

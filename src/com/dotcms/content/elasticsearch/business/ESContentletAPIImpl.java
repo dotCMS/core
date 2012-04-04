@@ -222,7 +222,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
-
+        if(languageId<=0) {
+            languageId=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        }
+        
         try {
             Long languageIdLong = languageId <= 0?null:new Long(languageId);
             ContentletLangVersionInfo clvi = APILocator.getVersionableAPI().getContentletLangVersionInfo(identifier, languageIdLong);
@@ -2754,7 +2757,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean fileNameExists = false;
             try {
                 Host host = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
-                Folder folder = APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+                Folder folder = null;
+                if(UtilMethods.isSet(contentlet.getFolder()))
+                    folder=APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+                else
+                    folder=APILocator.getFolderAPI().findSystemFolder();
                 String fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD)!=null?contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName():"";
                 if(UtilMethods.isSet(contentlet.getStringProperty("fileName")))//DOTCMS-7093
                 	fileName = contentlet.getStringProperty("fileName");
@@ -2770,7 +2777,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (Exception e) {
             	if(e instanceof FileAssetValidationException)
             		throw (FileAssetValidationException)e ;
-                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD);
+                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD,e);
             }
             if(fileNameExists){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
@@ -3414,7 +3421,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         newContentlet.setInode("");
         newContentlet.setIdentifier("");
-        newContentlet.setHost(host != null?host.getIdentifier(): contentlet.getHost());
+        newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
         newContentlet.setFolder(folder != null?folder.getInode(): null);
         newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
         if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
@@ -3502,19 +3509,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
             host = new Host();
         Folder folder = folderAPI.findFolderByPath(contIdentifier.getParentPath(), host, user, false);
 
-        return copyContentlet(contentlet, host, folder, user, true, respectFrontendRoles);
+        return copyContentlet(contentlet, host, folder, user, needAppendCopy(contentlet,host,folder), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        return copyContentlet(contentlet, host, null, user, true, respectFrontendRoles);
+        return copyContentlet(contentlet, host, null, user, needAppendCopy(contentlet,host,null), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        return copyContentlet(contentlet, null, folder, user, true, respectFrontendRoles);
+        return copyContentlet(contentlet, null, folder, user, needAppendCopy(contentlet,null,folder), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         return copyContentlet(contentlet, null, folder, user, appendCopyToFileName, respectFrontendRoles);
+    }
+    
+    private boolean needAppendCopy(Contentlet contentlet, Host host, Folder folder) throws DotDataException {
+        if(host!=null && contentlet.getHost()!=null && !contentlet.getHost().equals(host.getIdentifier()))
+            // if different host we really don't need to 
+            return false;
+        
+        String sourcef=null;
+        if(UtilMethods.isSet(contentlet.getFolder()))
+            sourcef=contentlet.getFolder();
+        else
+            sourcef=APILocator.getFolderAPI().findSystemFolder().getInode();
+        
+        String destf=null;
+        if(UtilMethods.isSet(folder))
+            destf=folder.getInode();
+        else
+            destf=APILocator.getFolderAPI().findSystemFolder().getInode();
+        
+        return sourcef.equals(destf);
     }
 
     private boolean hasAHostField(String structureInode) {

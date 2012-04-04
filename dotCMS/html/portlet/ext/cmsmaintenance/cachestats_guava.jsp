@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.google.common.cache.Cache"%>
 <%@page import="org.github.jamm.MemoryMeter"%>
 <%@page import="com.dotmarketing.util.Config"%>
@@ -11,9 +13,22 @@
 <%@ include file="/html/common/init.jsp"%>
 <%@page import="java.util.List"%>
 <%
-boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-if(!ADMIN_MODE || user == null){
-	response.sendError(401);
+try {
+	user = com.liferay.portal.util.PortalUtil.getUser(request);
+	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+		throw new DotSecurityException("Invalid user accessing cachestats_guava.jsp - is user '" + user + "' logged in?");
+	}
+} catch (Exception e) {
+	Logger.error(this.getClass(), e.getMessage());
+	%>
+	
+		<div class="callOutBox2" style="text-align:center;margin:40px;padding:20px;">
+		<%= LanguageUtil.get(pageContext,"you-have-been-logged-off-because-you-signed-on-with-this-account-using-a-different-session") %><br>&nbsp;<br>
+		<a href="/admin"><%= LanguageUtil.get(pageContext,"Click-here-to-login-to-your-account") %></a>
+		</div>
+		
+	<% 
+	//response.sendError(403);
 	return;
 }
 boolean showSize = (request.getParameter("showSize") != null);
@@ -58,7 +73,7 @@ MemoryMeter meter = new MemoryMeter();
                 	<th><%= LanguageUtil.get(pageContext,"Size") %> / <%= LanguageUtil.get(pageContext,"Avg") %></th>
                 <%} %>
         </thead>
-        <% List<Map<String, Object>> stats = ((DotGuavaCacheAdministratorImpl) CacheLocator.getCacheAdministrator()).getCacheStatsList();
+        <% List<Map<String, Object>> stats = CacheLocator.getCacheAdministrator().getCacheStatsList();
         
         List<Map<String, Object>> liveWorking = new ArrayList<Map<String, Object>>();
 

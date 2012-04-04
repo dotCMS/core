@@ -31,7 +31,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	public void setMenuOrder(int sortOrder) {
 		setLongProperty(FileAssetAPI.SORT_ORDER, new Long(sortOrder));
-		
+
 	}
 
 	public int getMenuOrder() {
@@ -63,7 +63,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public long getFileSize() {
-		return (Long) getLongProperty(FileAssetAPI.SIZE_FIELD);
+		return getFileAsset().length();
 	}
 
 	public void setFileName(String name) {
@@ -142,14 +142,14 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
        return isDeleted();
 	}
-	
+
 
 	/**
 	 * Returns the live.
 	 * @return boolean
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 */
 	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
 	    return APILocator.getVersionableAPI().isLive(this);
@@ -158,24 +158,24 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	/**
 	 * Returns the locked.
 	 * @return boolean
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 */
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
        return APILocator.getVersionableAPI().isLocked(getIdentifier());
    }
 
-	
+
 	public String getType(){
 		return "file_asset";
 	}
-	
+
 	 public String getExtension(){
 		 return UtilMethods.getFileExtension(getFileName());
 
 	 }
-	 
+
 	 public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String,Object> map = super.getMap();
 		boolean live =  false;
@@ -210,18 +210,20 @@ public class FileAsset extends Contentlet implements IFileAsset {
 			map.put("modUserName", modUser.getFullName());
 		else
 			map.put("modUserName", "unknown");
-		
+
 		return map;
 	 }
 
-	public String getURI() {
-		return getStringProperty(FileAssetAPI.URI_FIELD);
-		
+	public String getURI() throws DotDataException {
+		return UtilMethods.isSet(getIdentifier()) ?
+		        APILocator.getIdentifierAPI().find(getIdentifier()).getURI()
+		       : "";
+
 	}
 
 	public Date getIDate() {
 		// TODO Auto-generated method stub
 		return getModDate();
 	}
-	
+
 }

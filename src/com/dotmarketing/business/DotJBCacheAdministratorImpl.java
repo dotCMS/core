@@ -594,5 +594,10 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 	public void setKeys(TreeSet<String> keys) {
 		this.keys = keys;
 	}
+
+    @Override
+    public Class getImplementationClass() {
+        return DotJBCacheAdministratorImpl.class;
+    }
 	
 }
