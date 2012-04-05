@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
@@ -47,14 +48,14 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
 		dh.setParam(vinfo.getWorkingInode());
 		Logger.debug(this.getClass(), "findWorkingVersion query: " + dh.getQuery());
-		
+
 		Versionable v =(Versionable) dh.load();
 		if(v.getVersionId() ==null){
 			throw new DotStateException("Invalid working version for identifier : " +id + " / working inode : " + vinfo.getWorkingInode());
 		}
 		return v;
-		
-		
+
+
 	}
 
 	@Override
@@ -204,7 +205,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ContentletVersionInfo cVer=new ContentletVersionInfo();
         cVer.setDeleted(false);
         cVer.setLockedBy(null);
-        cVer.setLockedOn(new Date());
+        cVer.setLockedOn(new Timestamp(System.currentTimeMillis()));
         cVer.setIdentifier(identifier.getId());
         cVer.setLang(lang);
         cVer.setWorkingInode(workingInode);

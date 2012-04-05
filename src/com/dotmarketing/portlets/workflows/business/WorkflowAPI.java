@@ -25,6 +25,7 @@ import com.liferay.portal.model.User;
 
 public interface WorkflowAPI {
 
+<<<<<<< HEAD
     public java.util.List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;
 
     public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
@@ -73,6 +74,69 @@ public interface WorkflowAPI {
      * @throws DotDataException
      */
     public List<WorkflowHistory> findWorkflowHistory(WorkflowTask task) throws DotDataException;
+=======
+	
+
+	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
+	
+	
+	public java.util.List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;
+
+	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
+
+	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Finds a workflow by id
+	 * 
+	 * @param id
+	 * @return
+	 * @throws DotDataException
+	 */
+	public WorkflowTask findTaskById(String id) throws DotDataException;
+
+	/**
+	 * Finds comments on a workflow item
+	 * 
+	 * @param task
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException;
+
+	/**
+	 * Saves comments on a workflow item
+	 * 
+	 * @param comment
+	 * @throws DotDataException
+	 */
+	public void saveComment(WorkflowComment comment) throws DotDataException;
+
+	/**
+	 * deletes a specific comment on a workflow item
+	 * 
+	 * @param comment
+	 * @throws DotDataException
+	 */
+	public void deleteComment(WorkflowComment comment) throws DotDataException;
+
+	/**
+	 * gets history of a particular workflow item
+	 * 
+	 * @param task
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<WorkflowHistory> findWorkflowHistory(WorkflowTask task) throws DotDataException;
+
+	/**
+	 * Saves a new history item for a workflow
+	 * 
+	 * @param history
+	 * @throws DotDataException
+	 */
+	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException;
+>>>>>>> master
 
     /**
      * Saves a new history item for a workflow

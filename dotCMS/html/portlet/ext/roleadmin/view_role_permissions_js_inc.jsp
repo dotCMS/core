@@ -265,6 +265,7 @@
 			'publish-permission-' + id,
 			'edit-permissions-permission-' + id,
 			'virtual-links-permission-' + id,
+			'permissionsAccordionPane-' + id,
 
 			'hosts-view-permission-' + id,
 			'hosts-add-children-permission-' + id,
@@ -274,6 +275,7 @@
 			'hosts-publish-permission-' + id,
 			'hosts-edit-permissions-permission-' + id,
 			'hosts-virtual-links-permission-' + id,
+			
 
 			'folders-view-permission-' + id,
 			'folders-add-children-permission-' + id,

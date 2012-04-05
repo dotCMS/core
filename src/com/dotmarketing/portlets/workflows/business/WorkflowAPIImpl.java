@@ -4,10 +4,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.BundleContext;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Permission;
@@ -21,6 +25,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
@@ -57,10 +62,18 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 
-public class WorkflowAPIImpl implements WorkflowAPI {
+public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
+	private List<Class> actionletClasses;
+	
+	private static Map<String, WorkFlowActionlet> actionletMap;
+
+	private WorkFlowFactory wfac = FactoryLocator.getWorkFlowFactory();
+
+<<<<<<< HEAD
     private final Class[] actionletClasses = { CommentOnWorkflowActionlet.class, NotifyUsersActionlet.class, ArchiveContentActionlet.class, DeleteContentActionlet.class,
 	    CheckinContentActionlet.class, CheckoutContentActionlet.class, UnpublishContentActionlet.class, PublishContentActionlet.class, NotifyAssigneeActionlet.class,
 	    UnarchiveContentActionlet.class, ResetTaskActionlet.class, MultipleApproverActionlet.class, TwitterActionlet.class };
@@ -83,6 +96,72 @@ public class WorkflowAPIImpl implements WorkflowAPI {
     public WorkflowTask findTaskById(String id) throws DotDataException {
 	return wfac.findWorkFlowTaskById(id);
     }
+=======
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public WorkflowAPIImpl() {
+		
+		actionletClasses = new ArrayList<Class>();
+		
+		// Add default actionlet classes
+		actionletClasses.addAll(Arrays.asList(new Class[] {
+			CommentOnWorkflowActionlet.class, 
+			NotifyUsersActionlet.class,
+			ArchiveContentActionlet.class,
+			DeleteContentActionlet.class,
+			CheckinContentActionlet.class,
+			CheckoutContentActionlet.class,
+			UnpublishContentActionlet.class,
+			PublishContentActionlet.class,
+			NotifyAssigneeActionlet.class,
+			UnarchiveContentActionlet.class,
+			ResetTaskActionlet.class,
+			MultipleApproverActionlet.class,
+			TwitterActionlet.class
+		}));
+		
+		refreshWorkFlowActionletMap();
+
+		// Register main service
+        BundleContext context = HostActivator.instance().getBundleContext();
+        Hashtable<String, String> props = new Hashtable<String, String>();
+        context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+	}
+	
+	public WorkFlowActionlet newActionlet(String className) throws DotDataException {
+		for ( Class<WorkFlowActionlet> z : actionletClasses ) {
+			if ( z.getName().equals(className.trim())) {
+				try {
+					return z.newInstance();
+				} catch (InstantiationException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
+	}
+	
+	public String addActionlet(Class workFlowActionletClass) {
+		actionletClasses.add(workFlowActionletClass);
+		refreshWorkFlowActionletMap();
+		return workFlowActionletClass.getCanonicalName();
+	}
+	
+	public void removeActionlet(String workFlowActionletName) {
+		WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
+		actionletClasses.remove(actionlet.getClass());
+		refreshWorkFlowActionletMap();
+	}
+
+	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException {
+		return wfac.searchTasks(searcher);
+	}
+
+	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
+		return wfac.findTaskByContentlet(contentlet);
+	}
+>>>>>>> master
 
     public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException {
 	return wfac.findSchemes(showArchived);
@@ -470,6 +549,7 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 			}
 		    }
 
+<<<<<<< HEAD
 		    Collections.sort(actionletList, new ActionletComparator());
 		    actionletMap = new LinkedHashMap<String, WorkFlowActionlet>();
 		    for (WorkFlowActionlet actionlet : actionletList) {
@@ -482,6 +562,39 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 			    Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 			}
 		    }
+=======
+	public WorkflowTask findWorkFlowTaskById(String id) throws DotDataException {
+		return wfac.findWorkFlowTaskById(id);
+	}
+
+	public List<File> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException {
+		return wfac.findWorkflowTaskFiles(task);
+	}
+
+	public void saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException {
+		wfac.saveWorkflowTask(task);
+		WorkflowHistory history = new WorkflowHistory();
+		history.setWorkflowtaskId(task.getId());
+		history.setActionId(processor.getAction().getId());
+		history.setCreationDate(new Date());
+		history.setMadeBy(processor.getUser().getUserId());
+		history.setStepId(processor.getNextStep().getId());
+		
+		String comment = (UtilMethods.isSet(processor.getWorkflowMessage()))? processor.getWorkflowMessage() : "";
+		
+		
+		try {
+			history.setChangeDescription(
+					LanguageUtil.format(processor.getUser().getLocale(), "workflow.history.description", new String[]{
+						processor.getUser().getFullName(), 
+						processor.getAction().getName(),
+						processor.getNextStep().getName(),
+						processor.getNextAssign().getName(),
+						comment}, false)
+					);
+		} catch (LanguageException e) {
+			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+>>>>>>> master
 		}
 	    }
 
@@ -612,6 +725,7 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 	    return processor;
 	}
 
+<<<<<<< HEAD
 	if (processor.getScheme() != null && processor.getScheme().isMandatory()) {
 	    if (!UtilMethods.isSet(processor.getAction())) {
 		throw new DotWorkflowException("A workflow action in workflow : " + processor.getScheme().getName() + " must be executed");
@@ -658,6 +772,68 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 		    }
 		}
 	    }
+=======
+	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {
+		return  wfac.findActionClasses(action);
+	}
+
+	private void refreshWorkFlowActionletMap() {
+		actionletMap = null;
+		if (actionletMap == null) {
+			synchronized (this.getClass()) {
+				if (actionletMap == null) {
+					
+					List<WorkFlowActionlet> actionletList = new ArrayList<WorkFlowActionlet>();
+					
+					// get the dotmarketing-config.properties actionlet classes
+					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES);
+
+					StringTokenizer st = new StringTokenizer(customActionlets, ",");
+					while (st.hasMoreTokens()) {
+						String clazz = st.nextToken();
+						try {
+							WorkFlowActionlet actionlet = (WorkFlowActionlet) Class.forName(clazz.trim()).newInstance();
+							actionletList.add(actionlet);
+						} catch (Exception e) {
+							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+						}
+					}
+
+					// get the included (shipped with) actionlet classes
+					for (Class<WorkFlowActionlet> z : actionletClasses) {
+						try {
+							actionletList.add(z.newInstance());
+						} catch (InstantiationException e) {
+							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+						} catch (IllegalAccessException e) {
+							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+						}
+					}
+					
+					Collections.sort(actionletList, new ActionletComparator());
+					actionletMap = new LinkedHashMap<String, WorkFlowActionlet>();
+					for(WorkFlowActionlet actionlet : actionletList){
+						
+						try {
+							actionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
+						} catch (InstantiationException e) {
+							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+						} catch (IllegalAccessException e) {
+							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+						}
+					}
+				}
+			}
+
+		}
+	}
+	
+	private Map<String, WorkFlowActionlet> getActionlets() throws DotRuntimeException {
+		return actionletMap;
+	}
+	
+	private class ActionletComparator implements Comparator<WorkFlowActionlet>{
+>>>>>>> master
 
 	    WorkflowTask task = processor.getTask();
 	    if (task != null) {
@@ -761,6 +937,7 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 	WorkflowStep entryStep = null;
 	List<WorkflowStep> wfSteps = findSteps(scheme);
 
+<<<<<<< HEAD
 	for (WorkflowStep wfStep : wfSteps) {
 	    if (!UtilMethods.isSet(entryStep))
 		entryStep = wfStep;
@@ -792,5 +969,78 @@ public class WorkflowAPIImpl implements WorkflowAPI {
     public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException {
 
 	return wfac.retrieveLastStepAction(taskId);
+=======
+		
+		if(processor.getWorkflowMessage() != null){
+			WorkflowComment comment = new WorkflowComment();
+			comment.setComment(processor.getWorkflowMessage());
+			comment.setWorkflowtaskId(task.getId());
+			saveComment(comment);
+		}
+		
+	}
+	
+	
+	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException{
+		
+		WorkflowProcessor processor =fireWorkflowPreCheckin(contentlet);
+		
+		fireWorkflowPostCheckin(processor);
+		return processor;
+		
+	}
+	
+	
+	
+	
+	
+	public int countTasks(WorkflowSearcher searcher)  throws DotDataException{
+		return wfac.countTasks(searcher);
+	}
+	
+	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass to) throws DotDataException{
+		wfac.copyWorkflowActionClassParameter(from, to);
+	}
+	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to) throws DotDataException{
+		wfac.copyWorkflowActionClass(from, to);
+	}
+	public void copyWorkflowAction(WorkflowAction from, WorkflowStep to) throws DotDataException{
+		wfac.copyWorkflowAction(from, to);
+	}
+	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException{
+		wfac.copyWorkflowStep(from, to);
+	}
+    public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException{
+    	return wfac.createDefaultScheme();
+    }
+    
+    public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException {
+    	
+		WorkflowScheme scheme = findSchemeForStruct(contentlet.getStructure());
+		WorkflowStep entryStep = null;
+		List<WorkflowStep> wfSteps = findSteps(scheme);
+		
+		for(WorkflowStep wfStep : wfSteps){
+			if(!UtilMethods.isSet(entryStep))
+				entryStep = wfStep;
+			if(wfStep.getMyOrder() < entryStep.getMyOrder())
+				entryStep = wfStep;
+		}
+		
+		WorkflowAction entryAction = null;
+		List<WorkflowAction> wfActions = findActions(entryStep, user);
+		
+		for(WorkflowAction wfAction : wfActions){
+			if(!UtilMethods.isSet(entryAction))
+				entryAction = wfAction;
+			if(wfAction.getOrder() < entryAction.getOrder())
+				entryAction = wfAction;
+		}
+		
+		if (!APILocator.getPermissionAPI().doesUserHavePermission(entryAction, PermissionAPI.PERMISSION_USE, user, true)) {
+			throw new DotSecurityException("User " + user + " cannot read action " + entryAction.getName());
+		}
+    	return entryAction;
+>>>>>>> master
     }
 }
