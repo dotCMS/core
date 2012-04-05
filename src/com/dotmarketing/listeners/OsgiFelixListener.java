@@ -1,6 +1,7 @@
 package com.dotmarketing.listeners;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
@@ -49,11 +50,11 @@ public class OsgiFelixListener implements ServletContextListener {
     	
     	Properties configProps = loadConfig();
     	    	
-    	String felixDir = context.getServletContext().getRealPath("/WEB-INF/felix");
+    	String felixDir = context.getServletContext().getRealPath(File.separator + "WEB-INF" + File.separator + "felix");
     	Logger.info(this, "Felix dir: "+felixDir);
-    	String bundleDir = felixDir + "/bundle";
-    	String cacheDir = felixDir + "/felix-cache";
-    	String autoLoadDir = felixDir + "/load";
+    	String bundleDir = felixDir + File.separator + "bundle";
+    	String cacheDir = felixDir + File.separator + "felix-cache";
+    	String autoLoadDir = felixDir + File.separator + "load";
     	
     	// we need gosh to not expecting stdin to work
     	configProps.setProperty("gosh.args", "--noi");
