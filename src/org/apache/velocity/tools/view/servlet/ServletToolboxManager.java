@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Iterator;
 import java.util.HashMap;
@@ -36,11 +37,15 @@ import org.apache.commons.digester.RuleSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.DataInfo;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.XMLToolboxManager;
 import org.apache.velocity.tools.view.context.ToolboxContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.servlet.ServletToolboxRuleSet;
+import org.osgi.framework.BundleContext;
+
+import com.dotmarketing.osgi.HostActivator;
 
 
 /**
@@ -131,6 +136,11 @@ public class ServletToolboxManager extends XMLToolboxManager
         sessionToolInfo = new ArrayList();
         requestToolInfo = new ArrayList();
         createSession = true;
+
+        // Register main service
+        BundleContext context = HostActivator.instance().getBundleContext();
+        Hashtable<String, String> props = new Hashtable<String, String>();
+        context.registerService(PrimitiveToolboxManager.class.getName(), this, props);
     }
 
 
@@ -390,6 +400,20 @@ public class ServletToolboxManager extends XMLToolboxManager
         return toolbox;
     }
 
+    public void removeTool(ToolInfo info) 
+    {
+    	ToolInfo toRemove = null;
+        Iterator i = requestToolInfo.iterator();
+        while(i.hasNext())
+        {
+            ToolInfo info_ = (ToolInfo)i.next();
+        	if ( compare(info, info_) ) {
+        		toRemove = info_;
+        	}
+        }
+        if ( toRemove != null )
+        	requestToolInfo.remove(toRemove);
+    }
 
     /**
      * Returns a mutex (lock object) unique to the specified session 
