@@ -9,6 +9,8 @@ import java.io.File;
  */
 public interface IBundler {
 	
+	public String getName();
+	
 	public void setConfig(PublisherConfig pc);
 	
 	/**
@@ -16,6 +18,6 @@ public interface IBundler {
 	 * @param bundleRoot
 	 * @return
 	 */
-	public long generate(File bundleRoot);
+	public void generate(File bundleRoot, BundlerStatus status) throws DotBundleException;
 	
 }

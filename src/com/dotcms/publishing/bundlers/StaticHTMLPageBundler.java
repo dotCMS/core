@@ -2,11 +2,18 @@ package com.dotcms.publishing.bundlers;
 
 import java.io.File;
 
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
 
 public class StaticHTMLPageBundler implements IBundler {
 
+	@Override
+	public String getName() {
+		return "Static HTML Page Bundler";
+	}
+	
 	@Override
 	public void setConfig(PublisherConfig pc) {
 		// TODO Auto-generated method stub
@@ -14,7 +21,7 @@ public class StaticHTMLPageBundler implements IBundler {
 	}
 
 	@Override
-	public long generate(File bundleRoot) {
+	public void generate(File bundleRoot, BundlerStatus status) throws DotBundleException{
 		
 		/** CODE FROM JSP
 		<%@page import="com.dotmarketing.beans.Identifier"%>
@@ -68,7 +75,6 @@ for(HTMLPage htmlPage : pages){
 %>
 		 */
 		
-		return 0;
 	}
 
 }
