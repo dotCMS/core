@@ -13,6 +13,7 @@
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/ACheckerDWR.js'></script>
 
 <script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
 <%if(Config.getBooleanProperty("ENABLE_GZIP",true)){ %>

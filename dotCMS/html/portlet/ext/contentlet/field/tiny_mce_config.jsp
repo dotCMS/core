@@ -1,7 +1,6 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
-
 <%
 	if (UtilMethods.isSet(Config.getStringProperty("TINY_MCE_CONFIG_LOCATION"))) {
 %>

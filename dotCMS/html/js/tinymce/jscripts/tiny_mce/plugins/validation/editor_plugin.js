@@ -52,7 +52,7 @@
 				else
 				    var language = navigator.browserLanguage;
 				var code = language.substring(0,2);
-				code = 'eng';
+				// code = 'eng';
 			    c = cm.createSplitButton( n , {
 			      title : 'validation.desc',
 				  image : t.url + '/img/check.png',
@@ -91,7 +91,7 @@
 						var testo = ed.getLang('validation.table_description', 0);
 						text += "<table border='1' class='listingTable'>";
 						text += "<tr> <th>Check ID </th>  "+ 
-							"<th>"+testo+"</th>"
+							"<th>"+testo+"</th>"+
 							"<th>"+ed.getLang('validation.table_rowcols', 0)+"</th>"+
 							"<th>"+ed.getLang('validation.table_errortype', 0)+"</th> </tr>";
 						

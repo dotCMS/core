@@ -1,0 +1,8 @@
+	<create creator="new" javascript="ACheckerDWR">
+		<param name="class" value="com.eng.achecker.tinymce.ACheckerDWR" />
+	</create>
+	<convert converter="bean" match="com.eng.achecker.ACheckerResponse"/>
+	<convert converter="bean" match="com.eng.achecker.AccessibilityResult"/>		
+	<convert converter="bean" match="com.eng.achecker.CheckBean"/>		
+	<convert converter="enum" match="com.eng.achecker.Confidence"/>		
+	<convert converter="bean" match="com.eng.achecker.model.GuideLineBean"/>		
