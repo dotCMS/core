@@ -25,11 +25,8 @@ import com.liferay.portal.model.User;
 
 public interface WorkflowAPI {
 
-	
-
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
-	
-	
+
 	public java.util.List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
@@ -134,7 +131,7 @@ public interface WorkflowAPI {
 	 * @param task
 	 * @throws DotDataException
 	 */
-	public void  saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException;
+	public void saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
@@ -166,11 +163,9 @@ public interface WorkflowAPI {
 
 	public WorkflowAction findAction(String id, User user) throws DotDataException, DotSecurityException;
 
-	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
-	DotSecurityException ;
-		
-	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
-			DotSecurityException;
+	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
+
+	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException, DotSecurityException;
 
 	public void saveSchemeForStruct(Structure struc, WorkflowScheme scheme) throws DotDataException;
 
@@ -198,37 +193,48 @@ public interface WorkflowAPI {
 
 	public void saveWorkflowActionClassParameters(List<WorkflowActionClassParameter> params) throws DotDataException;
 
-
 	/***
 	 * 
 	 * This method will take a WorkflowActionId (set in the contentlet map) and
-	 * fire that action using the mod_user on the contentlet 
+	 * fire that action using the mod_user on the contentlet
+	 * 
 	 * @param contentlet
 	 * @throws DotDataException
 	 */
-	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException;
-	public void fireWorkflowPostCheckin(WorkflowProcessor wflow) throws DotDataException,DotWorkflowException;
-	
-	
-	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException;
-	
-	
-	public int countTasks(WorkflowSearcher searcher)  throws DotDataException;
-	
+	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet) throws DotDataException, DotWorkflowException, DotContentletValidationException;
+
+	public void fireWorkflowPostCheckin(WorkflowProcessor wflow) throws DotDataException, DotWorkflowException;
+
+	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException, DotWorkflowException, DotContentletValidationException;
+
+	public int countTasks(WorkflowSearcher searcher) throws DotDataException;
+
 	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass to) throws DotDataException;
+
 	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to) throws DotDataException;
+
 	public void copyWorkflowAction(WorkflowAction from, WorkflowStep to) throws DotDataException;
+
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException;
-    public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException;
-    
+
+	public WorkflowScheme createDefaultScheme() throws DotDataException, DotSecurityException;
+
 	/**
-	 * This method will return the entry action of a scheme based on the content's structure.
+	 * This method will return the entry action of a scheme based on the
+	 * content's structure.
 	 * 
 	 * @param Contentlet
 	 * @param User
 	 * @return WorkflowAction
-	 * @throws DotDataException, DotSecurityException
+	 * @throws DotDataException
+	 *             , DotSecurityException
 	 */
-    
-    public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException;
+
+	public WorkflowAction findEntryAction(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
+
+	// christian escalation
+	public java.util.List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
+
+	public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException, DotSecurityException;
+	// christian escalation
 }

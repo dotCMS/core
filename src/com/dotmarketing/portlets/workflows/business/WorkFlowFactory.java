@@ -25,10 +25,12 @@ public interface WorkFlowFactory {
 
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException;
 
-	public WorkflowTask findTaskByContentlet(Contentlet contentlet ) throws DotDataException;
+	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
 	public WorkflowTask findWorkFlowTaskById(String id) throws DotDataException;
-	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher)  throws DotDataException;
+
+	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;
+
 	public WorkflowComment findWorkFlowCommentById(String id) throws DotDataException;
 
 	public WorkflowHistory findWorkFlowHistoryById(String id) throws DotDataException;
@@ -37,11 +39,12 @@ public interface WorkFlowFactory {
 
 	public List<File> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException;
 
-	public void attachFileToTask(WorkflowTask task,String fileInode)throws DotDataException;
+	public void attachFileToTask(WorkflowTask task, String fileInode) throws DotDataException;
 
-	public void removeAttachedFile(WorkflowTask task,String fileInode)throws DotDataException;
+	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException;
 
 	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException;
+
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
 
 	public void saveComment(WorkflowComment comment) throws DotDataException;
@@ -53,32 +56,62 @@ public interface WorkFlowFactory {
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
 	public WorkflowScheme findScheme(String id) throws DotDataException;
-    public WorkflowScheme findSchemeForStruct(String id)throws DotDataException;
-    public void deleteSchemeForStruct(String struc) throws DotDataException ;
-	public void saveSchemeForStruct(String struc, WorkflowScheme scheme) throws DotDataException ;
+
+	public WorkflowScheme findSchemeForStruct(String id) throws DotDataException;
+
+	public void deleteSchemeForStruct(String struc) throws DotDataException;
+
+	public void saveSchemeForStruct(String struc, WorkflowScheme scheme) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException;
-	public WorkflowScheme findDefaultScheme() throws DotDataException;
-	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
-	public void saveStep(WorkflowStep step) throws DotDataException ;
-    public List<WorkflowAction> findActions(WorkflowStep step) throws DotDataException;
 
-    public WorkflowAction findAction(String id) throws DotDataException;
-    public void saveAction(WorkflowAction action) throws DotDataException;
-    public WorkflowStep findStep(String id) throws DotDataException;
-    public void deleteAction(WorkflowAction action) throws DotDataException;
-	public void deleteStep(WorkflowStep step) throws DotDataException ;
+	public WorkflowScheme findDefaultScheme() throws DotDataException;
+
+	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
+
+	public void saveStep(WorkflowStep step) throws DotDataException;
+
+	public List<WorkflowAction> findActions(WorkflowStep step) throws DotDataException;
+
+	public WorkflowAction findAction(String id) throws DotDataException;
+
+	public void saveAction(WorkflowAction action) throws DotDataException;
+
+	public WorkflowStep findStep(String id) throws DotDataException;
+
+	public void deleteAction(WorkflowAction action) throws DotDataException;
+
+	public void deleteStep(WorkflowStep step) throws DotDataException;
+
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
-    public WorkflowActionClass findActionClass(String id) throws DotDataException;
-    public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException;
-    public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException;
-    public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws  DotDataException;
-    public void saveWorkflowActionClassParameter(WorkflowActionClassParameter param)throws DotDataException;
-    public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass)throws DotDataException;
-	public int countTasks(WorkflowSearcher searcher)  throws DotDataException;
+
+	public WorkflowActionClass findActionClass(String id) throws DotDataException;
+
+	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException;
+
+	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException;
+
+	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws DotDataException;
+
+	public void saveWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException;
+
+	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException;
+
+	public int countTasks(WorkflowSearcher searcher) throws DotDataException;
+
 	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass actionClass) throws DotDataException;
+
 	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction action) throws DotDataException;
+
 	public void copyWorkflowAction(WorkflowAction from, WorkflowStep step) throws DotDataException;
+
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme scheme) throws DotDataException;
-    public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException;
+
+	public WorkflowScheme createDefaultScheme() throws DotDataException, DotSecurityException;
+
+	// christian escalation
+	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
+
+	public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException;
+	// christian escalation
 }

@@ -50,6 +50,8 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -369,6 +371,7 @@ public class DotPortletAction extends PortletAction {
 
 			WebAsset webAsset = (WebAsset) req.getAttribute(formWebKey);
 			Logger.debug(this, "WEB ASSET " + webAsset.getType() + " TO PUBLISH=" + webAsset.getInode());
+			ActivityLogger.logInfo(this.getClass(), "Publish WebAsset action", "User " + user.getPrimaryKey() + " publishing" + webAsset.getType()+" named "+webAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 
 			// Checking permissions
 			_checkUserPermissions(webAsset, user, PERMISSION_PUBLISH);
