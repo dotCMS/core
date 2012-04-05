@@ -129,7 +129,16 @@ if(request.getParameter("in_frame")!=null){
 
 	                 <%if (!InodeUtils.isSet(file.getInode()) && UtilMethods.isSet(folder)) {
 		                   	if(!InodeUtils.isSet(file.getInode())) {
-			                 	canUserWriteToFile = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
+		                   	    boolean isRootHost=folderAPI.findSystemFolder().equals(folder);
+		                   	    if(isRootHost) {
+		                   	        String hostId=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		                   	        host=APILocator.getHostAPI().find(hostId, user, false);
+		                   	        canUserWriteToFile = hasAdminRole || perAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
+		                   	        canUserPublishFile = hasAdminRole || perAPI.doesUserHaveInheriablePermissions(host, file.getPermissionType(), PermissionAPI.PERMISSION_PUBLISH, user);
+		                   	    }
+		                   	    else {
+		                   	        canUserWriteToFile = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
+		                   	    }
 			                }
 	                    }
                      %>

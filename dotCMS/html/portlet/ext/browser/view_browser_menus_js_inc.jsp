@@ -89,9 +89,12 @@
 					    strHTML += '<span class="fileNewIcon"></span>';
 					    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 				    strHTML += '</a>';
+				    
+				    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);">';
+                    strHTML += '<span class="fileNewIcon"></span>';
+                    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
+                    strHTML += '</a>';
 				}
-
-
 			}
 
 			strHTML += '<div class="pop_divider" ></div>';

@@ -21,6 +21,7 @@ package org.apache.velocity.tools.view;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +30,10 @@ import org.apache.commons.digester.Digester;
 import org.apache.commons.digester.RuleSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.velocity.tools.view.ToolboxRuleSet;
 import org.apache.velocity.tools.view.context.ToolboxContext;
+import org.osgi.framework.BundleContext;
+
+import com.dotmarketing.osgi.HostActivator;
 
 
 /**
@@ -95,12 +98,39 @@ public class XMLToolboxManager implements ToolboxManager
         data = new HashMap();
     }
 
-
     // ------------------------------- ToolboxManager interface ------------
+    
+    protected boolean compare(ToolInfo info1, ToolInfo info2) {
+    	if ( info1 == null )
+    		return info2 == null;
+    	if ( info2 == null )
+    		return info1 == null;
+    	if ( info1.getKey() != null )
+    		if ( !info1.getKey().equals(info2.getKey()))
+    			return false;
+    	if (info1.getClassname() != null )
+    		return info1.getClassname().equals(info2.getClassname());
+    	return false;
+    }
 
+    public void removeTool(ToolInfo info) 
+    {
+    	ToolInfo toRemove = null;
+        Iterator i = toolinfo.iterator();
+        while(i.hasNext())
+        {
+            ToolInfo info_ = (ToolInfo)i.next();
+        	if ( compare(info, info_) ) {
+        		toRemove = info_;
+        	}
+        }
+        if ( toRemove != null )
+        	toolinfo.remove(toRemove);
+    }
 
     public void addTool(ToolInfo info)
     {
+    	System.out.println("Adding tool: " + info.getKey() + " - " + info.getClassname());
         if (validateToolInfo(info))
         {
             toolinfo.add(info);
