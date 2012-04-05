@@ -35,8 +35,11 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -653,6 +656,61 @@ public class ContentletBaseTest extends TestBase {
         }
 
         return savedFile;
+    }
+
+    /**
+     * Creates a Relationship object for a later use in the tests
+     *
+     * @param structure
+     * @param required
+     * @return
+     * @throws DotHibernateException
+     */
+    protected static Relationship createRelationShip ( Structure structure, boolean required ) throws DotHibernateException {
+
+        Relationship relationship = new Relationship();
+        //Set Parent Info
+        relationship.setParentStructureInode( structure.getInode() );
+        relationship.setParentRelationName( "parent" );
+        relationship.setParentRequired( required );
+        //Set Child Info
+        relationship.setChildStructureInode( structure.getInode() );
+        relationship.setChildRelationName( "child" );
+        relationship.setChildRequired( required );
+        //Set general info
+        relationship.setRelationTypeValue( "parent-child" );
+        relationship.setCardinality( 0 );
+
+        //Save it
+        RelationshipFactory.saveRelationship( relationship );
+
+        return relationship;
+    }
+
+    /**
+     * Creates a ContentletRelationships object for a later use in the tests
+     *
+     * @param relationship
+     * @param contentlet
+     * @param structure
+     * @return
+     */
+    protected static ContentletRelationships createContentletRelationships ( Relationship relationship, Contentlet contentlet, Structure structure, List<Contentlet> contentRelationships ) {
+
+        //Create the contentlet relationships
+        ContentletRelationships contentletRelationships = new ContentletRelationships( contentlet );
+
+        boolean hasParent = RelationshipFactory.isParentOfTheRelationship( relationship, structure );
+
+        //Adding the relationships records
+        ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords = contentletRelationships.new ContentletRelationshipRecords( relationship, hasParent );
+        contentletRelationshipRecords.setRecords( contentRelationships );
+
+        List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+        relationshipsRecords.add( contentletRelationshipRecords );
+        contentletRelationships.setRelationshipsRecords( relationshipsRecords );
+
+        return contentletRelationships;
     }
 
 }
