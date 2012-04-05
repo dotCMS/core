@@ -1,12 +1,12 @@
 package com.dotmarketing.osgi.viewtools;
 
-import org.apache.velocity.tools.view.ToolInfo;
+import org.apache.velocity.tools.view.servlet.ServletToolInfo;
 
-public class MyToolInfo implements ToolInfo {
+public class MyToolInfo extends ServletToolInfo {
 
 	@Override
 	public String getKey() {
-		return "michele";
+		return "osgitool";
 	}
 
 	@Override
@@ -18,7 +18,8 @@ public class MyToolInfo implements ToolInfo {
 	public Object getInstance(Object initData) {
 		MyViewTool viewTool = new MyViewTool();
 		viewTool.init(initData);
+		setScope("application");
 		return viewTool;
 	}
-
+	
 };

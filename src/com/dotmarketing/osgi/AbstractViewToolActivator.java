@@ -62,14 +62,14 @@ public class AbstractViewToolActivator implements BundleActivator, ServiceListen
 		
 	private void register() {
 		tm.addTool(info);
-	    System.out.println("Added View Tool: " + info.getKey());
+	    Logger.info(this,"Added View Tool: " + info.getKey());
 	}
 	
 	private void unregister() {
 		if ( tm != null ) {
 			tm.removeTool(info);
 		}
-		System.out.println("Removed View Tool: " + info.getKey());
+		Logger.info(this,"Removed View Tool: " + info.getKey());
 	}
 
 	public void serviceChanged(ServiceEvent serviceEvent) {
