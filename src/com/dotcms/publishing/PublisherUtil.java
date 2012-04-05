@@ -20,7 +20,7 @@ public class PublisherUtil {
 	 * write the bundle.xml file to it
 	 * @param config
 	 */
-	protected void initBundle(PublisherConfig config){
+	protected File initBundle(PublisherConfig config){
 		
 
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
@@ -29,11 +29,12 @@ public class PublisherUtil {
 		File dir = new File(bundlePath);
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		if(dir.exists() && xml.exists()){
-			return;
+			return dir;
 		}
 		dir.mkdirs();
 
 		objectToXML(config, xml);
+		return dir;
 
 	}
 	
