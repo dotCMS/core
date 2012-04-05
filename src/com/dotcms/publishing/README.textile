@@ -1,0 +1,78 @@
+h1. Site Search Implementation
+
+1. Publishing Framework
+dotCMS needs an extensible framework to be able to Publish Sites, Pages, Content, and other Objects to external systems.  Examples of different publishing activities can include:
+
+Publishing a site statically
+Publish/Index a site into a full-text index (site search)
+Publish content or a site to another server, via some mechanism
+Publish content into 3rd party systems or databases….
+
+For the site search impl, we can begin to lay the groundwork for future requirements like static publishing and the time machine concept.
+
+What we would like to see done is to create classes that take a PublisherConfig  - which is a Map/config file that specifies 1 or more “Publishers” which extend the “Publisher” class.  These Publishers take the PublisherConfig  and use a method called “process()” to do what needs to be done for the specific publisher.  There are a number of prebuilt values in the PublisherConfig but the class is just a java Map and custom configs can be created and custom values can be put if needed.  Currently, the PublisherConfig  has getters and setters for:
+
+
+Object|Getter Parameter|What?
+Host |hosts|The host to index
+List<Folder> 
+folders
+If null, do all pages/files
+List<Structure>
+structures
+If null, do all Structures with a URL Map
+List<String> 
+excludePaths   
+Takes priority. Can start or end with *
+List<String> 
+includePaths
+Is only used if exludePaths NOT set. Can start or end with *
+String
+indexName
+if not null, write the files/meta to this ES index
+File
+rootWriteDirectory
+if not null, where to write the static files
+int
+numOfThreads  
+0=same thread, >0 number of threads to fire
+Date
+startDate
+only include if mod_date > startDate
+Date
+endDate
+only include if mod_date < endDate
+User
+user
+null=CMS Anonymous
+long
+languageId
+defaults to default language
+boolean
+makeBundle
+Whether to make a bundle (more later)
+String
+luceneQuery
+A lucene query that can be used to publish a set of contents
+List<Publisher>
+Publishers
+A list of “Publisher” classes to be fired in a specific order
+String
+Id
+The id of the bundle, which will be used to specify where things are to be published
+
+
+
+2. The “Bundle” concept
+Static publishing and the Site Search both require a page hit/page render to get the HTML of a webpage.  Our idea is to create a static “bundle” on the filesystem that can be used and reused when a Publisher is fired.  This means that when the publishing framework fires, the required objects will be generated into the bundle – these objects can be static files like HTML pages, folders and files, or even representations of the objects as displayed in the db as .xml 
+
+
+
+
+
+3. Indexing
+Site Index Stored in ElasticSearch
+Create an ES index mapping file that can be used specifically for SiteSearch
+In the PublisherConfig
+
+
