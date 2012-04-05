@@ -10,11 +10,6 @@ public class PublishingAPIImpl implements PublisherAPI {
 	PublisherUtil util = new PublisherUtil();
 	public void publish(PublisherConfig config) throws DotPublishingException {
 		
-		
-		
-		
-		
-		
 		List<Publisher> pubs = new ArrayList<Publisher>();
 
 		util.initBundle(config);

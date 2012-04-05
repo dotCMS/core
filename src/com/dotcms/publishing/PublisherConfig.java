@@ -28,12 +28,8 @@ public class PublisherConfig implements Map<String, Object> {
 		params = map;
 	}
 	
-	
-	
-	
-	
-	
 	Map<String, Object> params;
+	private boolean liveOnly = true;
 
 	@SuppressWarnings("unchecked")
 	public List<Folder> getFolders() {
@@ -56,6 +52,17 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.MAKE_BUNDLE.name(), bundle);
 	}
 	
+	/**
+	 * Defaults to live. This handles most cause.  Is set to false bundlers should bundle both working and live
+	 * @return
+	 */
+	public boolean liveOnly(){
+		return liveOnly;
+	}
+	
+	public void setLiveOnly(boolean liveOnly){
+		this.liveOnly = liveOnly;
+	}
 	
 	public void setStructures(List<Structure> structures) {
 		params.put(Config.STRUCTURES.name(), structures);
