@@ -223,7 +223,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conFolder", con.getFolder());
             m.put("parentPath", ident.getParentPath());
             if(st.getType().equals(Structure.STRUCTURE_TYPE_FILEASSET)){
-            	m.put("uri", ident.getURI());	
+            	m.put("uri", ident.getURI() != null ? ident.getURI().replace(" ", "+"):"");	
             }
 
             Map<String,String> mlowered=new HashMap<String,String>();

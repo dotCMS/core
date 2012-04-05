@@ -2,11 +2,18 @@ package com.dotcms.publishing.bundlers;
 
 import java.io.File;
 
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
 
 public class StaticURLMapBundler implements IBundler {
 
+	@Override
+	public String getName() {
+		return "Static URL Map Bundler";
+	}
+	
 	@Override
 	public void setConfig(PublisherConfig pc) {
 		// TODO Auto-generated method stub
@@ -14,7 +21,7 @@ public class StaticURLMapBundler implements IBundler {
 	}
 
 	@Override
-	public long generate(File bundleRoot) {
+	public void generate(File bundleRoot,BundlerStatus status) throws DotBundleException{
 /**  CODE FROM JSP		
 		<%@page import="java.io.FileWriter"%>
 		<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
@@ -69,7 +76,6 @@ public class StaticURLMapBundler implements IBundler {
 
 **/
 		
-		return 0;
 	}
 
 }
