@@ -46,6 +46,7 @@ public class BundlerUtil {
 		XStream xstream = new XStream(new DomDriver());
 
 		try {
+			if(!f.exists())f.createNewFile();
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
 			xstream.toXML(obj, out);
 			out.close();

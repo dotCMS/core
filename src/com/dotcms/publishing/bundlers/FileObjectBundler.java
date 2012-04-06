@@ -102,7 +102,7 @@ public class FileObjectBundler implements IBundler {
 				try {
 					writeFileToDisk(bundleRoot, fileAsset);
 					status.addCount();
-				} catch (IOException e) {
+				} catch (Exception e) {
 					Logger.error(FileObjectBundler.class,e.getMessage() + " : Unable to write file",e);
 					status.addFailuer();
 				}
@@ -117,23 +117,26 @@ public class FileObjectBundler implements IBundler {
 		Host h = null;
 		try{
 			h = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
+
+			
+			String myFile = bundleRoot.getPath() + File.separator + h.getHostname() + fileAsset.getURI().replace("/", File.separator) + ".xml";
+			File f = new File(myFile);
+			if(f.exists() && f.lastModified() == fileAsset.getModDate().getTime()){
+				return;
+			}
+			String dir = myFile.substring(0, myFile.lastIndexOf("/"));
+			new File(dir).mkdirs();
+			
+			
+			
+			
+			BundlerUtil.objectToXML(fileAsset, f);
+			f.setLastModified(fileAsset.getModDate().getTime());
 		}
 		catch(Exception e){
 			throw new DotBundleException("cant get host for " + fileAsset + " reason " + e.getMessage());
 		}
 		
-		
-		
-		
-		
-		
-		String myFile = bundleRoot.getPath() + File.separator + h.getHostname() + fileAsset.getPath();
-		File f = new File(bundleRoot.getPath() + File.separator + h.getHostname() + fileAsset.getPath());
-		if(f.exists() && f.lastModified() == fileAsset.getModDate().getTime()){
-			return;
-		}
-		BundlerUtil.objectToXML(fileAsset, f);
-		f.setLastModified(fileAsset.getModDate().getTime());
 		
 	}
 	
