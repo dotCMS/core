@@ -268,6 +268,7 @@ public class MainServlet extends ActionServlet {
 
 			PortalInstances.init(_companyId);
 		}
+		
 	}
 
 	public void callParentService(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
