@@ -32,6 +32,9 @@ public class FileObjectBundler implements IBundler {
 	FileAssetAPI fAPI = null;
 	User systemUser = null;
 
+	public final static String  FILE_ASSET_EXTENSION = ".fileasset.xml" ;
+	
+	
 	@Override
 	public String getName() {
 		return "File Asset Bundler";
@@ -119,7 +122,7 @@ public class FileObjectBundler implements IBundler {
 			h = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
 
 			
-			String myFile = bundleRoot.getPath() + File.separator + h.getHostname() + fileAsset.getURI().replace("/", File.separator) + ".xml";
+			String myFile = bundleRoot.getPath() + File.separator + h.getHostname() + fileAsset.getURI().replace("/", File.separator) + FILE_ASSET_EXTENSION;
 			File f = new File(myFile);
 			if(f.exists() && f.lastModified() == fileAsset.getModDate().getTime()){
 				return;
