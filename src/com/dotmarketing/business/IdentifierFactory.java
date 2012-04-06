@@ -17,7 +17,14 @@ public abstract class IdentifierFactory {
 
 	abstract protected void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException;
 
-	
+	/**
+	 * Will look for all identifiers matting a URI pattern  
+	 * @param uri Can contain a * at the beginning or end
+	 * @param include Should find all that match pattern if true or all that do not match pattern if false
+	 * @return
+	 * @throws DotDataException
+	 */
+	abstract protected List<Identifier> findByURIPattern(String uri, boolean include, Host host) throws DotDataException;
 	
 	/**
 	 * looks in cache first, then in db.  It will load the cache for future use
