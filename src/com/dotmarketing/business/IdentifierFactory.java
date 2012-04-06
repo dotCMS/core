@@ -24,7 +24,7 @@ public abstract class IdentifierFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<Identifier> findByURIPattern(String uri, boolean include, Host host) throws DotDataException;
+	abstract protected List<Identifier> findByURIPattern(String assetType,String uri, boolean include, Host host) throws DotDataException;
 	
 	/**
 	 * looks in cache first, then in db.  It will load the cache for future use

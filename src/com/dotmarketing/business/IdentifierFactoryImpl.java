@@ -39,15 +39,16 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	IdentifierCache ic = CacheLocator.getIdentifierCache();
 
 	@Override
-	protected List<Identifier> findByURIPattern(String uri, boolean include,Host host)throws DotDataException {
+	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean include,Host host)throws DotDataException {
 		HibernateUtil dh = new HibernateUtil(Identifier.class);
 		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-			dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where concat(parent_path, asset_name) " + (include ? "":"NOT ") + "LIKE ?  and host_inode = ?");
+			dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where asset_type = ? and concat(parent_path, asset_name) " + (include ? "":"NOT ") + "LIKE ?  and host_inode = ?");
 		}else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
-			dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where (parent_path + asset_name) " + (include ? "":"NOT ") + "LIKE ?  and host_inode = ?");
+			dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where asset_type = ? and (parent_path + asset_name) " + (include ? "":"NOT ") + "LIKE ?  and host_inode = ?");
 		}else {
-			dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where (parent_path || asset_name) " + (include ? "":"NOT ") + "LIKE ?  and host_inode = ?");
+			dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where asset_type = ? and (parent_path || asset_name) " + (include ? "":"NOT ") + "LIKE ?  and host_inode = ?");
 		}
+		dh.setParam(assetType);
 		dh.setParam(uri.replace('*', '%'));
 		dh.setParam(host.getIdentifier());
 		return dh.list();
