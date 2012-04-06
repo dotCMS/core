@@ -1,7 +1,9 @@
 package com.dotcms.publishing.bundlers;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import com.dotcms.publishing.BundlerStatus;
@@ -15,7 +17,9 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -27,6 +31,7 @@ public class StaticHTMLPageBundler implements IBundler {
 	UserAPI uAPI = null;
 	FolderAPI fAPI = null;
 	IdentifierAPI iAPI = null;
+	HTMLPageAPI pAPI = null;
 	User systemUser = null;
 	
 	@Override
@@ -41,6 +46,7 @@ public class StaticHTMLPageBundler implements IBundler {
 		uAPI = APILocator.getUserAPI();
 		fAPI = APILocator.getFolderAPI();
 		iAPI = APILocator.getIdentifierAPI();
+		pAPI = APILocator.getHTMLPageAPI();
 		try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
@@ -77,10 +83,14 @@ public class StaticHTMLPageBundler implements IBundler {
 						}catch (NullPointerException e) {}
 					}
 				}
+				for (Identifier i : pageIdents) {
+					pAPI.getHTML(i.getURI(), h, liveMode, null, uAPI.getSystemUser());
+				}
 			}
 		}catch (DotDataException e) {
 			Logger.error(this, e.getMessage() + " : Unable to get Pages for Start HTML Bundler",e);
 		}
+		
 		/** CODE FROM JSP
 		<%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
@@ -132,6 +142,53 @@ for(HTMLPage htmlPage : pages){
 
 %>
 		 */
+		
+	}
+	
+private void writeFileToDisk(File bundleRoot, String html, String uri, Host h, boolean live) throws IOException, DotBundleException{
+		
+		
+		Host h = null;
+		try{
+			h = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
+
+			
+			FileAssetWrapper wrap = new FileAssetWrapper();
+			wrap.setAsset(fileAsset);
+			wrap.setInfo(APILocator.getVersionableAPI().getContentletVersionInfo(fileAsset.getIdentifier(), fileAsset.getLanguageId()));
+			wrap.setId(APILocator.getIdentifierAPI().find(fileAsset.getIdentifier()));
+			
+			
+			
+			
+			
+			String liveworking = (fileAsset.getInode().equals(wrap.getInfo().getLiveInode() )) ? "live" : "working";
+			String myFile = bundleRoot.getPath() + File.separator 
+					+liveworking + File.separator 
+					+ h.getHostname() 
+					+ fileAsset.getURI().replace("/", File.separator) + FILE_ASSET_EXTENSION;
+			File f = new File(myFile);
+			
+			// Should we write or is the file already there:
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(fileAsset.getModDate());
+			cal.set(Calendar.MILLISECOND, 0);
+			if(f.exists() && f.lastModified() == cal.getTimeInMillis()){
+				return;
+			}
+			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
+			new File(dir).mkdirs();
+			String x  = (String) fileAsset.get("metaData");
+			fileAsset.setMetaData(x);
+			BundlerUtil.objectToXML(wrap, f);
+			
+			// set the time of the file
+			f.setLastModified(cal.getTimeInMillis());
+		}
+		catch(Exception e){
+			throw new DotBundleException("cant get host for " + fileAsset + " reason " + e.getMessage());
+		}
+		
 		
 	}
 
