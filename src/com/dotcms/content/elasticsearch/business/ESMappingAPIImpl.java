@@ -222,7 +222,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conHost", ident.getHostId());
             m.put("conFolder", con.getFolder());
             m.put("parentPath", ident.getParentPath());
-            if(st.getType().equals(Structure.STRUCTURE_TYPE_FILEASSET)){
+            if(st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
             	m.put("uri", ident.getURI() != null ? ident.getURI().replace(" ", "+"):"");	
             }
 
