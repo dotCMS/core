@@ -149,6 +149,11 @@ public class FileObjectBundler implements IBundler {
 		
 	}
 
+	
+	
+	
+	
+	
 	private void writeFileToDisk(File bundleRoot, FileAsset fileAsset) throws IOException, DotBundleException{
 		
 		
@@ -157,25 +162,37 @@ public class FileObjectBundler implements IBundler {
 			h = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
 
 			
-			String myFile = bundleRoot.getPath() + File.separator + h.getHostname() + fileAsset.getURI().replace("/", File.separator) + FILE_ASSET_EXTENSION;
-			File f = new File(myFile);
-			if(f.exists() && f.lastModified() == fileAsset.getModDate().getTime()){
-				return;
-			}
-			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
-			new File(dir).mkdirs();
-			
-			
-			String x  = (String) fileAsset.get("metaData");
-			fileAsset.setMetaData(x);
-			
 			FileAssetWrapper wrap = new FileAssetWrapper();
 			wrap.setAsset(fileAsset);
 			wrap.setInfo(APILocator.getVersionableAPI().getContentletVersionInfo(fileAsset.getIdentifier(), fileAsset.getLanguageId()));
 			wrap.setId(APILocator.getIdentifierAPI().find(fileAsset.getIdentifier()));
 			
+			
+			
+			
+			
+			String liveworking = (fileAsset.getInode().equals(wrap.getInfo().getLiveInode() )) ? "live" : "working";
+			String myFile = bundleRoot.getPath() + File.separator 
+					+liveworking + File.separator 
+					+ h.getHostname() 
+					+ fileAsset.getURI().replace("/", File.separator) + FILE_ASSET_EXTENSION;
+			File f = new File(myFile);
+			
+			// Should we write or is the file already there:
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(fileAsset.getModDate());
+			cal.set(Calendar.MILLISECOND, 0);
+			if(f.exists() && f.lastModified() == cal.getTimeInMillis()){
+				return;
+			}
+			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
+			new File(dir).mkdirs();
+			String x  = (String) fileAsset.get("metaData");
+			fileAsset.setMetaData(x);
 			BundlerUtil.objectToXML(wrap, f);
-			f.setLastModified(fileAsset.getModDate().getTime());
+			
+			// set the time of the file
+			f.setLastModified(cal.getTimeInMillis());
 		}
 		catch(Exception e){
 			throw new DotBundleException("cant get host for " + fileAsset + " reason " + e.getMessage());

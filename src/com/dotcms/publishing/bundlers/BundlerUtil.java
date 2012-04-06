@@ -20,7 +20,7 @@ public class BundlerUtil {
 	 * write the bundle.xml file to it
 	 * @param config
 	 */
-	public static File initBundle(PublisherConfig config){
+	public static File getBundleRoot(PublisherConfig config){
 
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
 		

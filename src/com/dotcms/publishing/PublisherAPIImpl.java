@@ -15,20 +15,31 @@ public class PublisherAPIImpl implements PublisherAPI {
 		try {
 
 			List<Publisher> pubs = new ArrayList<Publisher>();
-
 			List<Class> bundlers = new ArrayList<Class>();
+			
+			
+			
+			
+			
+			
+			// init publishers
 			for (Class<Publisher> c : config.getPublishers()) {
 				Publisher p = c.newInstance();
-
+				config = p.init(config);
+				pubs.add(p);
+				// get bundlers
 				for (Class clazz : p.getBundlers()) {
 					if (!bundlers.contains(clazz)) {
 						bundlers.add(clazz);
 					}
 				}
 			}
+			
+			
+			
+			// run bundlers
 			config.put("bundlers", bundlers);
-			File bundleRoot = BundlerUtil.initBundle(config);
-
+			File bundleRoot = BundlerUtil.getBundleRoot(config);
 			for (Class<IBundler> c : bundlers) {
 				IBundler b = (IBundler) c.newInstance();
 				b.setConfig(config);
@@ -36,14 +47,8 @@ public class PublisherAPIImpl implements PublisherAPI {
 				b.generate(bundleRoot, bs);
 			}
 
-			for (Class<Publisher> c : config.getPublishers()) {
 
-				Publisher p = c.newInstance();
-
-				config = p.init(config);
-				pubs.add(p);
-			}
-
+			// run publishers
 			for (Publisher p : pubs) {
 				p.process();
 			}
