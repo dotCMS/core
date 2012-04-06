@@ -10,6 +10,8 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.cmis.CMISAPI;
 import com.dotcms.enterprise.cmis.CMISAPIImpl;
+import com.dotcms.publishing.PublisherAPI;
+import com.dotcms.publishing.PublishingAPIImpl;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -267,6 +269,9 @@ public class APILocator extends Locator<APIIndex>{
 	public static ESIndexAPI getESIndexAPI() {
 	    return (ESIndexAPI) getInstance(APIIndex.ES_INDEX_API);
 	}
+	public static PublisherAPI getPublisherAPI() {
+	    return (PublisherAPI) getInstance(APIIndex.PUBLISHER_API);
+	}
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -341,6 +346,7 @@ enum APIIndex
 	TAG_API,
 	INDICIES_API,
 	CONTENLET_INDEX_API,
+	PUBLISHER_API,
 	ES_INDEX_API;
 	Object create() {
 		switch(this) {
@@ -384,7 +390,7 @@ enum APIIndex
 		case INDICIES_API: return new IndiciesAPIImpl();
 		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
 		case ES_INDEX_API: return new ESIndexAPI();
-		
+		case PUBLISHER_API: return new PublishingAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

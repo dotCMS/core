@@ -230,6 +230,9 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	public String getId() {
+		if(params.get(Config.ID.name()) ==null){
+			return UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
+		}
 		return (String) params.get(Config.ID.name());
 	}
 
@@ -237,11 +240,12 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.ID.name(), id);
 	}
 
-	public List<Class<Publisher>> getPublishers() {
-		return (List<Class<Publisher>>) params.get(Config.PUBLISHER.name());
+	public List<Class> getPublishers() {
+		return (List<Class>) params.get(Config.PUBLISHER.name());
 	}
 
-	public void setPublishers(List<Class<Publisher>> publishers) {
+	public void setPublishers(List<Class> publishers) {
+		System.out.println(publishers);
 		params.put(Config.PUBLISHER.name(), publishers);
 	}
 

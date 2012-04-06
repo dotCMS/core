@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.publishing.bundlers.FileObjectBundler;
-import com.dotcms.publishing.bundlers.StaticHTMLPageBundler;
-import com.dotcms.publishing.bundlers.StaticURLMapBundler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -113,8 +111,8 @@ public class ESSiteSearchPublisher extends Publisher {
 		List<Class> list = new ArrayList<Class>();
 		
 		list.add(FileObjectBundler.class);
-		list.add(StaticHTMLPageBundler.class);
-		list.add(StaticURLMapBundler.class);
+		//list.add(StaticHTMLPageBundler.class);
+		//list.add(StaticURLMapBundler.class);
 		return list;
 	}
 	
