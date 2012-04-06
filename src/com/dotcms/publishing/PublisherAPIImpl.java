@@ -7,7 +7,7 @@ import java.util.List;
 import com.dotcms.publishing.bundlers.BundlerUtil;
 import com.dotmarketing.util.Logger;
 
-public class PublishingAPIImpl implements PublisherAPI {
+public class PublisherAPIImpl implements PublisherAPI {
 	
 	@Override
 	public void publish(PublisherConfig config) throws DotPublishingException {
@@ -48,7 +48,7 @@ public class PublishingAPIImpl implements PublisherAPI {
 				p.process();
 			}
 		} catch (Exception e) {
-			Logger.error(PublishingAPIImpl.class, e.getMessage());
+			Logger.error(PublisherAPIImpl.class, e.getMessage());
 			throw new DotPublishingException(e.getMessage());
 		}
 
