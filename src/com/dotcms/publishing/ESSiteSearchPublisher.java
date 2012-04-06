@@ -1,8 +1,10 @@
 package com.dotcms.publishing;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotcms.publishing.bundlers.BundlerUtil;
 import com.dotcms.publishing.bundlers.FileObjectBundler;
 
 public class ESSiteSearchPublisher extends Publisher {
@@ -17,7 +19,11 @@ public class ESSiteSearchPublisher extends Publisher {
 	
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException{
-	
+
+		if(!(config instanceof SiteSearchConfig)){
+			
+			//throw new DotPublishingException("Config if not a SiteSearchConfig");
+		}
 		this.config = super.init(config);
 		
 		
@@ -41,12 +47,15 @@ public class ESSiteSearchPublisher extends Publisher {
 	@Override
 	public PublisherConfig process() throws DotPublishingException {
 
+		File bundleRoot = BundlerUtil.getBundleRoot(config);
+		
+		
+		
+		
+		
+		
+		
 		return config;
-		
-		
-		
-		
-		
 	}
 
 
