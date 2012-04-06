@@ -1,7 +1,9 @@
 package com.dotcms.publishing.bundlers;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -57,7 +59,42 @@ public class BundlerUtil {
 		}catch (IOException e) {
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 		}	
-
 	}
+	
+	
+	/**
+	 * 
+	 * @param obj
+	 * @param f File to write to
+	 */
+	public static Object xmlToObject(File f){
+		XStream xstream = new XStream(new DomDriver());
+		
+
+		 BufferedInputStream input = null;
+		try {
+			input = new BufferedInputStream(new FileInputStream(f));
+			Object ret = xstream.fromXML(input);
+			return ret;
+		} catch (FileNotFoundException e) {
+			Logger.error(BundlerUtil.class,e.getMessage(),e);
+			return null;
+		}finally{
+			try {
+				input.close();
+			}
+			catch(Exception e){
+				
+			}
+		}
+		 
+		
+	}
+	
+	
+
+	
+	
+	
 	
 }

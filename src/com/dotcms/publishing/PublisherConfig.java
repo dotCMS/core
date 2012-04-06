@@ -20,7 +20,7 @@ public class PublisherConfig implements Map<String, Object> {
 	private enum Config {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
-		THREADS, ID, TIMESTAMP
+		THREADS, ID, TIMESTAMP, BUNDLERS;
 	};
 
 	
@@ -253,5 +253,14 @@ public class PublisherConfig implements Map<String, Object> {
 	public String toString() {
 		return "PublisherConfig [params=" + params + "]";
 	}
+	public void setBundlers(List<IBundler> bundlers) {
 
+		params.put(Config.BUNDLERS.name(), bundlers);
+	}
+	
+	
+	public List<IBundler> getBundlers() {
+
+		return (List<IBundler>) params.get(Config.BUNDLERS.name());
+	}
 }

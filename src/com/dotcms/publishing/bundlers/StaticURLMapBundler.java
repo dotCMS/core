@@ -1,6 +1,7 @@
 package com.dotcms.publishing.bundlers;
 
 import java.io.File;
+import java.io.FileFilter;
 
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
@@ -77,5 +78,10 @@ public class StaticURLMapBundler implements IBundler {
 **/
 		
 	}
-
+	@Override
+	public FileFilter getFileFilter(){
+		return null;
+		
+	}
+	
 }
