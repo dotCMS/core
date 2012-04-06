@@ -16,7 +16,7 @@ public interface IdentifierAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Identifier> findByURIPattern(String uri, boolean include, Host host) throws DotDataException;
+	public List<Identifier> findByURIPattern(String assetType,String uri, boolean include, Host host) throws DotDataException;
 	
 	/**
 	 * Will take a String from an inode id and return its identifier from cache or db. If cache miss

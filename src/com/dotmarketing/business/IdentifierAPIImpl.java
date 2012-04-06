@@ -26,8 +26,8 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 
 	@Override
-	public List<Identifier> findByURIPattern(String uri, boolean include, Host host) throws DotDataException {
-		return ifac.findByURIPattern(uri, include, host);
+	public List<Identifier> findByURIPattern(String assetType,String uri, boolean include, Host host) throws DotDataException {
+		return ifac.findByURIPattern(assetType,uri, include, host);
 	}
 	
 	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
