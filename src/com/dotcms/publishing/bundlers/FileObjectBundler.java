@@ -1,6 +1,7 @@
 package com.dotcms.publishing.bundlers;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -149,9 +150,7 @@ public class FileObjectBundler implements IBundler {
 		
 	}
 
-	
-	
-	
+
 	
 	
 	private void writeFileToDisk(File bundleRoot, FileAsset fileAsset) throws IOException, DotBundleException{
@@ -199,6 +198,26 @@ public class FileObjectBundler implements IBundler {
 		}
 		
 		
+	}
+	
+	@Override
+	public FileFilter getFileFilter(){
+		return new FileObjectBundlerFilter();
+		
+	}
+	
+	
+	
+	
+	
+	public class FileObjectBundlerFilter implements FileFilter{
+
+		@Override
+		public boolean accept(File pathname) {
+
+			return (pathname.isDirectory() || pathname.getName().endsWith(FILE_ASSET_EXTENSION));
+		}
+
 	}
 	
 }

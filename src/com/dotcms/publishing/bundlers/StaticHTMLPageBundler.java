@@ -1,6 +1,7 @@
 package com.dotcms.publishing.bundlers;
 
 import java.io.File;
+import java.io.FileFilter;
 
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
@@ -16,6 +17,12 @@ import com.liferay.portal.model.User;
 
 public class StaticHTMLPageBundler implements IBundler {
 
+	@Override
+	public FileFilter getFileFilter(){
+		return null;
+		
+	}
+	
 	private PublisherConfig config;
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
@@ -53,7 +60,7 @@ public class StaticHTMLPageBundler implements IBundler {
 //				folder.get
 //			}
 //		}
-		config.get
+		//config.get
 		/** CODE FROM JSP
 		<%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
@@ -107,5 +114,6 @@ for(HTMLPage htmlPage : pages){
 		 */
 		
 	}
+	
 
 }

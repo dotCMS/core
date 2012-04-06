@@ -1,6 +1,7 @@
 package com.dotcms.publishing;
 
 import java.io.File;
+import java.io.FileFilter;
 
 /**
  * The Purpose of the IGenerators is to provide a way to say how to write out the different parts and objects of the bundle
@@ -19,5 +20,7 @@ public interface IBundler {
 	 * @return
 	 */
 	public void generate(File bundleRoot, BundlerStatus status) throws DotBundleException;
+
+	public FileFilter getFileFilter();
 	
 }
