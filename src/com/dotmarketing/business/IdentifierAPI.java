@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
@@ -13,6 +14,21 @@ public interface IdentifierAPI {
 	 * Will look for all identifiers matting a URI pattern  
 	 * @param uri Can contain a * at the beginning or end
 	 * @param include Should find all that match pattern if true or all that do not match pattern if false
+	 * @param assetType
+	 * @param host
+	 * @param startDate use to search between dates
+	 * @param endDate
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<Identifier> findByURIPattern(String assetType,String uri, boolean include, Host host, Date startDate, Date endDate) throws DotDataException;
+	
+	/**
+	 * Will look for all identifiers matting a URI pattern  
+	 * @param uri Can contain a * at the beginning or end
+	 * @param include Should find all that match pattern if true or all that do not match pattern if false
+	 * @param assetType
+	 * @param host
 	 * @return
 	 * @throws DotDataException
 	 */
