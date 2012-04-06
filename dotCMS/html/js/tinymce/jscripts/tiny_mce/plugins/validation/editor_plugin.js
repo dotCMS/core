@@ -85,9 +85,9 @@
 					else {
 					  msgText += ed.getLang('validation.no_errors_found', 0);
 					}
-					text  += "<p style='color:red;'><strong>"+ed.getLang('validation.table_summary', 0)+"" + guideLineSel +" </strong> </p>";
 
 					if( response.errors.length > 0 ){
+						text  += "<p style='color:red;'><strong>"+ed.getLang('validation.table_summary', 0)+"" + guideLineSel +" </strong> </p>";
 						var testo = ed.getLang('validation.table_description', 0);
 						text += "<table border='1' class='listingTable'>";
 						text += "<tr> <th>Check ID </th>  "+ 
@@ -155,7 +155,9 @@
 							}; 
 						mi = menu.add(o);								 
 						menuArray[i] = mi;
-						if( guideLineSel == '' &&  response[i].defaultGuideLine ) 							
+						alert(guideLineSel);
+						alert(response[i].defaultGuideLine);
+						if( guideLineSel == '' && response[i].defaultGuideLine ) 							
 						{
 							toggleValidationItem(i);
 							t.selectedItem = mi;	

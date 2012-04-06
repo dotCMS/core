@@ -1,5 +1,6 @@
 package com.eng.achecker.dao;
 
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
+
+import com.eng.achecker.utility.Utility;
 
 
 /************************************************************************/
@@ -36,40 +39,8 @@ public class DAOImpl implements DAO {
 
 	private static final Log LOG = org.apache.commons.logging.LogFactory.getLog(DAOImpl.class);
 
-//	private Connection db;
-
-//	private String url;
-//
-//	private boolean opened;
-
 	public DAOImpl() {
-//		this.opened = false;
 	}
-
-//	private void ensureIsOpen() {
-//		if ( ! opened ) {
-//			try {
-//				Class.forName("com.mysql.jdbc.Driver").newInstance();
-//				url = "jdbc:mysql://localhost/achecker";
-//				db = DriverManager.getConnection(url, "root", "pippo80");
-//				opened = true;
-//			}
-//			catch (Throwable t) {
-//				t.printStackTrace();
-//			}
-//		}
-//	}
-//
-//	private void close() {
-//		if ( opened ) {
-//			opened = false;
-//			try {
-//				db.close();
-//			} catch (SQLException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//	}
 
 	/**
 	 * Execute SQL
@@ -82,7 +53,6 @@ public class DAOImpl implements DAO {
 	 * @throws SQLException 
 	 */
 	public List<Map<String, Object>> execute(String sql) throws SQLException {
-	//	ensureIsOpen();
 		Statement st = null;
 		try {
 			sql = sql.trim();
@@ -91,16 +61,12 @@ public class DAOImpl implements DAO {
 			ResultSet result = st.executeQuery(sql);
 			List<Map<String, Object>> list = getObjects( result );
 			st.close();
-			// ACheckerConnectionFactory.closeConnection();
-//			close();
 			return list;			
 		} catch (Exception e) {
 			LOG.error(e.getMessage() , e );
-//			close();
 			throw new SQLException(e);
 		}
 	}
-
 
 	private List<Map<String, Object>> getObjects( ResultSet result  ) throws SQLException{
 
@@ -117,8 +83,25 @@ public class DAOImpl implements DAO {
 
 				try {
 					name = result.getMetaData().getColumnName(i);
+					
+					// FIX to work with h2db
+					name = name.toLowerCase();
+					
 					value = result.getObject(i);
-					item.put(name, value);
+
+					if ( value instanceof Clob ) {
+						String content = Utility.getClobContent((Clob) value);
+						item.put(name, content);
+					}
+					else {
+						if ( value instanceof String ) {
+							String content = (String) value;
+							item.put(name, content);
+						}
+						else {
+							item.put(name, value);
+						}
+					}
 				}
 				catch (Exception t) {
 					//LOG.error(t.getMessage() , t );

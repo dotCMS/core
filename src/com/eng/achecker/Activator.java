@@ -21,7 +21,7 @@ public class Activator implements BundleActivator {
 			Hashtable<String, String> props = new Hashtable<String, String>();
 			context.registerService(AChecker.class.getName(), tm, props);
 
-			System.out.println("Added ACheckerImpl service");
+			// System.out.println("Added ACheckerImpl service");
 
 			String stringa = "<p>Michele</p>";
 			String guide = "BITV1,508,STANCA,WCAG1-A,WCAG1-AA,WCAG1-AAA,WCAG2-A,WCAG2-AA,WCAG2-AAA";
@@ -64,7 +64,7 @@ public class Activator implements BundleActivator {
 		
 		tm = null;
 		
-		System.out.println("Removed ACheckerImpl service");
+		// System.out.println("Removed ACheckerImpl service");
 
 	}
 	

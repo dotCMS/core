@@ -9,7 +9,7 @@ public class LanguageTextBean extends ReflectionBean {
 	private String language_code;
 	private String variable;
 	private String term;
-	private byte[] text;
+	private String text;
 	private String  context;
 	private String textString;
  
@@ -52,12 +52,12 @@ public class LanguageTextBean extends ReflectionBean {
 	}
 
 
-	public byte[] getText() {
+	public String getText() {
 		return text;
 	}
 
 
-	public void setText(byte[] text) {
+	public void setText(String text) {
 		this.text = text;
 	}
 

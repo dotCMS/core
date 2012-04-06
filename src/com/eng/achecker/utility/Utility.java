@@ -1,9 +1,13 @@
 package com.eng.achecker.utility;
 
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Clob;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -47,6 +51,24 @@ import com.eng.achecker.parsing.EmptyIterable;
 
 public class Utility {
 	
+	public static String getClobContent(Clob clob) {
+		if (clob == null)
+			return  null;
+		StringBuffer str = new StringBuffer();
+		String strng;
+		try {
+			BufferedReader bufferRead = new BufferedReader(clob.getCharacterStream());
+			while ((strng = bufferRead .readLine())!=null)
+				str.append(strng);
+			return str.toString();	
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public static int intval(String string) {
 		int value = 0;
 		int last = 0;
@@ -340,7 +362,7 @@ public class Utility {
 	 */
 	public static boolean getValidURI(String uri) {
 		try {
-			URI uuri = new URI(uri);
+			new URI(uri);
 			return true;
 		} catch (URISyntaxException e) {
 			e.printStackTrace();

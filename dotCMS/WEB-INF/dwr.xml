@@ -90,6 +90,17 @@
     </create>    
     <!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
+<!-- BEGIN PLUGIN:com.dotcms.achecker -->
+	<create creator="new" javascript="ACheckerDWR">
+		<param name="class" value="com.eng.achecker.tinymce.ACheckerDWR" />
+	</create>
+	<convert converter="bean" match="com.eng.achecker.ACheckerResponse"/>
+	<convert converter="bean" match="com.eng.achecker.AccessibilityResult"/>		
+	<convert converter="bean" match="com.eng.achecker.CheckBean"/>		
+	<convert converter="enum" match="com.eng.achecker.Confidence"/>		
+	<convert converter="bean" match="com.eng.achecker.model.GuideLineBean"/>		
+
+<!-- END PLUGIN:com.dotcms.achecker -->
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
 	<convert converter="bean" match="com.dotmarketing.cms.polls.ajax.PollsAjax$VoteAnswer"/>

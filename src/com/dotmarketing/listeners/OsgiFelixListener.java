@@ -22,6 +22,7 @@ import org.osgi.framework.launch.Framework;
 
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;
+import com.eng.achecker.test.TestAChecker;
 
 public class OsgiFelixListener implements ServletContextListener {
 
@@ -51,7 +52,7 @@ public class OsgiFelixListener implements ServletContextListener {
      * @see ServletContextListener#contextInitialized(ServletContextEvent)
      */
     public void contextInitialized(ServletContextEvent context) {
-    	
+    	    	
     	Properties configProps = loadConfig();
     	    	
     	String felixDir = context.getServletContext().getRealPath("/WEB-INF/felix");

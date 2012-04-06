@@ -136,12 +136,12 @@ public class ExpressionIterable implements Iterable<Object>, Iterator<Object> {
 					return value;
 				}
 				else {
-					throw new Exception("bad if/else expression");
+					throw new Exception("bad if/else expression: '" + statement + "' - '" + statement2 + "'");
 				}
 				
 			}
 			else {
-				throw new Exception("bad if/else expression");
+				throw new Exception("bad if/else expression: '" + statement + "'" + statement2 + "'");
 			}
 		}
 		else {
@@ -159,12 +159,13 @@ public class ExpressionIterable implements Iterable<Object>, Iterator<Object> {
 	 * @return
 	 */
 	private String normalizeExpression(String expression) {
-		expression = expression.replaceAll("\\r\\n", " ");
-		expression = expression.replaceAll("\\r", " ");
-		expression = expression.replaceAll("\\n", " ");
+		expression = expression.replaceAll("\\\\r\\n", " ");
+		expression = expression.replaceAll("\\\\r", " ");
+		expression = expression.replaceAll("\\\\n", " ");
 		expression = expression.replaceAll("::", "\\$\\$");
 		expression = expression.replaceAll("'", "\"");
 		expression = expression.replaceAll("<>", "!=");
+		expression = expression.replaceAll("\\\\\"", "\"");
 		expression = expression.trim();
 		return expression;
 	}

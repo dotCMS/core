@@ -3,10 +3,12 @@ package com.eng.achecker;
 
 import java.beans.IntrospectionException;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.Clob;
 import java.util.Map;
 
 import com.eng.achecker.model.ReflectionBean;
 import com.eng.achecker.utility.LanguageUtility;
+import com.eng.achecker.utility.Utility;
 
 public class CheckBean extends ReflectionBean {
 	

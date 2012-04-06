@@ -115,7 +115,7 @@ public class GuideLineBean extends ReflectionBean {
 
 	public void setSubset(String subset) {
 		this.subset = subset;
-	}	
+	}
 	
 	public boolean isDefaultGuideLine() {
 		return Constants.DEFAULT_GUIDELINE.equalsIgnoreCase(this.abbr);

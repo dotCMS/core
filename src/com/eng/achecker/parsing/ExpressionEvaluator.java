@@ -23,7 +23,6 @@ public class ExpressionEvaluator {
 		for (Method method : delegate.getClass().getMethods()) {
 			CommandAdapter adapter = new CommandAdapter(parser, delegate, method.getName());
 			parser.addFunction(prefix + method.getName(), adapter);
-			// System.out.println("Added method: " + prefix + method.getName());
 		}
 	}
 	
@@ -75,14 +74,6 @@ public class ExpressionEvaluator {
 		for ( Object r : e ) { result = r; }
 		return result;
 	}
-
-//	private String normalize(String expression) {
-//		expression = expression.trim();
-//		expression = expression.replaceAll("\t", " ");
-//		expression = expression.replaceAll("\r", " ");
-//		expression = expression.replaceAll("\n", " ");
-//		return expression.replaceAll("\\s+", " ");
-//	}
 
 	public void dumpVariables() {
 		System.out.println("--- Variables ----");

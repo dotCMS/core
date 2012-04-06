@@ -37,6 +37,10 @@ public class ConfigUtils {
 				+ File.separator + "dynamic";
 	}
 
+	public static String getACheckerPath() {
+		return getDynamicContentPath() + File.separator + "achecker";
+	}
+	
 	public static String getLucenePath() {
 		return getDynamicContentPath() + File.separator + "dotlucene";
 	}

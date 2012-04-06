@@ -82,23 +82,9 @@ public class CheckFuncUtility {
 		*/
 	}
 
-	/**
-	* Convert php code into script that is run by eval() from AccessibilityValidator.class.php
-	* @access  public
-	* @param   $code
-	* @return  true: correct syntax; 
-	*          false: wrong syntax
-	* @author  Cindy Qi Li
-	*/
-	public static String convertCode(String code) 
-	{
+	public static String convertCode(String code) {
 		return code;
-		/*
-		if (trim($code) == '')
-    		return 'return true;';
-    	else
-			return 'global $global_e, $global_content_dom, $header_array, $base_href, $global_check_id, $htmlValidator, $uri; $global_e = $e; $global_content_dom = $this->content_dom; $uri = $this->uri; $global_check_id=$check_id; ' . $code;
-		*/
 	}
+
 }
 

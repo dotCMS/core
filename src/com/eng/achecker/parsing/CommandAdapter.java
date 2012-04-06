@@ -30,11 +30,6 @@ public class CommandAdapter extends PostfixMathCommand {
 			if ( method.getName().equals(name) ) {
 				this.method = method;
 				numberOfParameters = this.method.getParameterTypes().length;
-//				if ( numberOfParameters == 1 ) {
-//					if ( this.method.getParameterTypes()[0].isAssignableFrom(List.class)) {
-//						numberOfParameters = -1;
-//					}
-//				}
 				return;
 			}
 		}
@@ -65,9 +60,6 @@ public class CommandAdapter extends PostfixMathCommand {
 			else {
 				if ( numberOfParameters == -1 ) {
 					int realSize = inStack.size();
-					
-					System.out.println("Method: " + this.method + ", params: " + realSize);
-					
 					List<Object> list = new ArrayList<Object>(realSize);
 					for ( int i = 0; i < realSize; i ++ )
 						list.add(inStack.pop());
@@ -77,11 +69,13 @@ public class CommandAdapter extends PostfixMathCommand {
 				}
 				else {
 					Object[] params = new Object[numberOfParameters];
-					for ( int i = 0; i < numberOfParameters; i ++ )
+					for ( int i = 0; i < numberOfParameters; i ++ ) {
 						params[numberOfParameters - i - 1] = inStack.pop();
+					}
 					Object ret = method.invoke(delegate, params);
-					if ( ret != null )
+					if ( ret != null ) {
 						inStack.push(ret);
+					}
 				}
 			}
 		}
