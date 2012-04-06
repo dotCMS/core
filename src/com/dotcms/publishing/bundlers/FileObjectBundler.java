@@ -131,8 +131,8 @@ public class FileObjectBundler implements IBundler {
 			new File(dir).mkdirs();
 			
 			
-			
-			
+			String x  = (String) fileAsset.get("metaData");
+			fileAsset.setMetaData(x);
 			BundlerUtil.objectToXML(fileAsset, f);
 			f.setLastModified(fileAsset.getModDate().getTime());
 		}
