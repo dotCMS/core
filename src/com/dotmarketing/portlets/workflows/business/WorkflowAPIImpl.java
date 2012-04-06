@@ -4,10 +4,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.BundleContext;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Permission;
@@ -21,6 +25,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
@@ -57,11 +62,24 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 
-public class WorkflowAPIImpl implements WorkflowAPI {
+public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
-	private final Class[] actionletClasses = { 
+	private List<Class> actionletClasses;
+	
+	private static Map<String, WorkFlowActionlet> actionletMap;
+
+	private WorkFlowFactory wfac = FactoryLocator.getWorkFlowFactory();
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public WorkflowAPIImpl() {
+		
+		actionletClasses = new ArrayList<Class>();
+		
+		// Add default actionlet classes
+		actionletClasses.addAll(Arrays.asList(new Class[] {
 			CommentOnWorkflowActionlet.class, 
 			NotifyUsersActionlet.class,
 			ArchiveContentActionlet.class,
@@ -75,16 +93,48 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 			ResetTaskActionlet.class,
 			MultipleApproverActionlet.class,
 			TwitterActionlet.class
-	};
-	private WorkFlowFactory wfac = FactoryLocator.getWorkFlowFactory();
+		}));
+		
+		refreshWorkFlowActionletMap();
+
+		// Register main service
+        BundleContext context = HostActivator.instance().getBundleContext();
+        Hashtable<String, String> props = new Hashtable<String, String>();
+        context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+	}
+	
+	public WorkFlowActionlet newActionlet(String className) throws DotDataException {
+		for ( Class<WorkFlowActionlet> z : actionletClasses ) {
+			if ( z.getName().equals(className.trim())) {
+				try {
+					return z.newInstance();
+				} catch (InstantiationException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
+	}
+	
+	public String addActionlet(Class workFlowActionletClass) {
+		actionletClasses.add(workFlowActionletClass);
+		refreshWorkFlowActionletMap();
+		return workFlowActionletClass.getCanonicalName();
+	}
+	
+	public void removeActionlet(String workFlowActionletName) {
+		WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
+		actionletClasses.remove(actionlet.getClass());
+		refreshWorkFlowActionletMap();
+	}
 
 	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException {
-
 		return wfac.searchTasks(searcher);
 	}
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
-
 		return wfac.findTaskByContentlet(contentlet);
 	}
 
@@ -320,7 +370,7 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 		
 		try {
 			history.setChangeDescription(
-					LanguageUtil.format(processor.getUser().getLocale(), "workflow.history.description.details", new String[]{
+					LanguageUtil.format(processor.getUser().getLocale(), "workflow.history.description", new String[]{
 						processor.getUser().getFullName(), 
 						processor.getAction().getName(),
 						processor.getNextStep().getName(),
@@ -492,16 +542,14 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {
 		return  wfac.findActionClasses(action);
-
 	}
 
-	private static Map<String, WorkFlowActionlet> actionletMap;
-
-	private Map<String, WorkFlowActionlet> getActionlets() throws DotRuntimeException {
-		actionletMap =null;
+	private void refreshWorkFlowActionletMap() {
+		actionletMap = null;
 		if (actionletMap == null) {
 			synchronized (this.getClass()) {
 				if (actionletMap == null) {
+					
 					List<WorkFlowActionlet> actionletList = new ArrayList<WorkFlowActionlet>();
 					
 					// get the dotmarketing-config.properties actionlet classes
@@ -517,6 +565,7 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 							Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 						}
 					}
+
 					// get the included (shipped with) actionlet classes
 					for (Class<WorkFlowActionlet> z : actionletClasses) {
 						try {
@@ -544,11 +593,10 @@ public class WorkflowAPIImpl implements WorkflowAPI {
 			}
 
 		}
-
-
-		
+	}
+	
+	private Map<String, WorkFlowActionlet> getActionlets() throws DotRuntimeException {
 		return actionletMap;
-
 	}
 	
 	private class ActionletComparator implements Comparator<WorkFlowActionlet>{
@@ -840,9 +888,6 @@ public class WorkflowAPIImpl implements WorkflowAPI {
     public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException {
     	
 		WorkflowScheme scheme = findSchemeForStruct(contentlet.getStructure());
-		if(UtilMethods.isSet(scheme.getEntryActionId())){
-			return findAction(scheme.getEntryActionId(), user);
-		}
 		WorkflowStep entryStep = null;
 		List<WorkflowStep> wfSteps = findSteps(scheme);
 		
