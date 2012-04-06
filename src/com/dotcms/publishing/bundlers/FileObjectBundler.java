@@ -127,7 +127,7 @@ public class FileObjectBundler implements IBundler {
 			if(f.exists() && f.lastModified() == fileAsset.getModDate().getTime()){
 				return;
 			}
-			String dir = myFile.substring(0, myFile.lastIndexOf("/"));
+			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
 			new File(dir).mkdirs();
 			
 			
