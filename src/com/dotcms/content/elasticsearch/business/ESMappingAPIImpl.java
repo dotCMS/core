@@ -335,10 +335,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         m.put("ownerCanPublish", Boolean.toString(ownerCanPub));
 	}
 
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-	private static final SimpleDateFormat datetimeFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-	private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
-	private static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
+	public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+	public static final SimpleDateFormat datetimeFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+	public static final SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
+	public static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
 	
 	@SuppressWarnings("unchecked")
 	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {

@@ -3,8 +3,10 @@ package com.dotcms.publishing.bundlers;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
@@ -76,6 +78,39 @@ public class FileObjectBundler implements IBundler {
 			}
 		}
 		
+		
+		if(config.getStartDate() != null){
+			Calendar cal = Calendar.getInstance();
+			cal.set(Calendar.YEAR, 2500);
+			String start = ESMappingAPIImpl.datetimeFormat.format(config.getStartDate());
+			String forever = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
+			bob.append(" +moddate:[" + start + " TO " + forever +"] ");
+		}
+		
+		if(config.getEndDate() != null){
+			Calendar cal = Calendar.getInstance();
+			cal.set(Calendar.YEAR, 1900);
+			
+			String end = ESMappingAPIImpl.datetimeFormat.format(config.getEndDate());
+			String longAgo = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
+			bob.append(" +moddate:[" + longAgo + " TO " + end +"] ");
+		}
+		
+		
+		
+		if(config.getHosts() != null && config.getHosts().size() > 0){
+			
+			for(Host h : config.getHosts()){
+				bob.append(" +conhost:" + h.getIdentifier() + " ");
+			}
+		}
+		
+		
+		
+		
+		
+		Logger.info(FileObjectBundler.class,bob.toString());
+		
 		try {
 			cs = conAPI.searchIndex(bob.toString() + "+live:true", 0, 0, "moddate", systemUser, true);
 			if(!config.liveOnly()){
@@ -133,7 +168,13 @@ public class FileObjectBundler implements IBundler {
 			
 			String x  = (String) fileAsset.get("metaData");
 			fileAsset.setMetaData(x);
-			BundlerUtil.objectToXML(fileAsset, f);
+			
+			FileAssetWrapper wrap = new FileAssetWrapper();
+			wrap.setAsset(fileAsset);
+			wrap.setInfo(APILocator.getVersionableAPI().getContentletVersionInfo(fileAsset.getIdentifier(), fileAsset.getLanguageId()));
+			wrap.setId(APILocator.getIdentifierAPI().find(fileAsset.getIdentifier()));
+			
+			BundlerUtil.objectToXML(wrap, f);
 			f.setLastModified(fileAsset.getModDate().getTime());
 		}
 		catch(Exception e){

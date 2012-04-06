@@ -11,7 +11,7 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.cmis.CMISAPI;
 import com.dotcms.enterprise.cmis.CMISAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
-import com.dotcms.publishing.PublishingAPIImpl;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -390,7 +390,7 @@ enum APIIndex
 		case INDICIES_API: return new IndiciesAPIImpl();
 		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
 		case ES_INDEX_API: return new ESIndexAPI();
-		case PUBLISHER_API: return new PublishingAPIImpl();
+		case PUBLISHER_API: return new PublisherAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
