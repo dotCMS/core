@@ -9,7 +9,7 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.publishing.PublisherUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -79,6 +79,7 @@ public class FileObjectBundler implements IBundler {
 				cs.addAll(conAPI.searchIndex(bob.toString() + "+working:true", 0, 0, "moddate", systemUser, true));
 			}
 		} catch (Exception e) {
+			
 			Logger.error(FileObjectBundler.class,e.getMessage(),e);
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + bob.toString(), e);
 		}
@@ -110,9 +111,30 @@ public class FileObjectBundler implements IBundler {
 		
 	}
 
-	private void writeFileToDisk(File bundleRoot, FileAsset fileAsset) throws IOException{
-		bundleRoot.getPath()bundleRoot + "";
+	private void writeFileToDisk(File bundleRoot, FileAsset fileAsset) throws IOException, DotBundleException{
+		
+		
+		Host h = null;
+		try{
+			h = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
+		}
+		catch(Exception e){
+			throw new DotBundleException("cant get host for " + fileAsset + " reason " + e.getMessage());
+		}
+		
+		
+		
+		
+		
+		
+		String myFile = bundleRoot.getPath() + File.separator + h.getHostname() + fileAsset.getPath();
+		File f = new File(bundleRoot.getPath() + File.separator + h.getHostname() + fileAsset.getPath());
+		if(f.exists() && f.lastModified() == fileAsset.getModDate().getTime()){
+			return;
+		}
 		BundlerUtil.objectToXML(fileAsset, f);
+		f.setLastModified(fileAsset.getModDate().getTime());
+		
 	}
 	
 }
