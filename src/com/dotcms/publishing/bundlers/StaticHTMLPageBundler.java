@@ -1,22 +1,16 @@
 package com.dotcms.publishing.bundlers;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -59,6 +53,7 @@ public class StaticHTMLPageBundler implements IBundler {
 //				folder.get
 //			}
 //		}
+		config.get
 		/** CODE FROM JSP
 		<%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
