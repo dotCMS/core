@@ -1,14 +1,33 @@
 package com.dotcms.publishing.bundlers;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 public class StaticHTMLPageBundler implements IBundler {
 
+	private PublisherConfig config;
+	ContentletAPI conAPI = null;
+	UserAPI uAPI = null;
+	FolderAPI fAPI = null;
+	User systemUser = null;
+	
 	@Override
 	public String getName() {
 		return "Static HTML Page Bundler";
@@ -16,13 +35,30 @@ public class StaticHTMLPageBundler implements IBundler {
 	
 	@Override
 	public void setConfig(PublisherConfig pc) {
-		// TODO Auto-generated method stub
-
+		config = pc;
+		conAPI = APILocator.getContentletAPI();
+		uAPI = APILocator.getUserAPI();
+		fAPI = APILocator.getFolderAPI();
+		try {
+			systemUser = uAPI.getSystemUser();
+		} catch (DotDataException e) {
+			Logger.fatal(this,e.getMessage(),e);
+		}
 	}
 
 	@Override
 	public void generate(File bundleRoot, BundlerStatus status) throws DotBundleException{
-		
+//		for(Host h : config.getHosts()){
+//			List<Folder> folders = null;
+//			try {
+//				folders = fAPI.findSubFoldersRecursively(h, uAPI.getSystemUser(), false);
+//			} catch (Exception e) {
+//				Logger.error(StaticHTMLPageBundler.class,e.getMessage() + " Unable to get folders for host " + h.getIdentifier(),e);
+//			}
+//			for (Folder folder : folders) {
+//				folder.get
+//			}
+//		}
 		/** CODE FROM JSP
 		<%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>

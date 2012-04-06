@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -23,6 +25,11 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		ifac = FactoryLocator.getIdentifierFactory();
 	}
 
+	@Override
+	public List<Identifier> findByURIPattern(String uri, boolean include, Host host) throws DotDataException {
+		return ifac.findByURIPattern(uri, include, host);
+	}
+	
 	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
 		Identifier ident = null;
 		ident = ifac.loadFromCache(inodeOrIdentifier);
