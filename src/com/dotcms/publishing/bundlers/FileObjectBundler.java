@@ -53,7 +53,7 @@ public class FileObjectBundler implements IBundler {
 	@Override
 	public void generate(File bundleRoot,BundlerStatus status) throws DotBundleException {
 		List<ContentletSearch> cs = new ArrayList<ContentletSearch>();
-		StringBuilder bob = new StringBuilder("+languageid:" + config.getLanguage() + "+structuretype:" + Structure.STRUCTURE_TYPE_FILEASSET + " ");
+		StringBuilder bob = new StringBuilder("+languageid:" + config.getLanguage() + " +structuretype:" + Structure.STRUCTURE_TYPE_FILEASSET + " ");
 		
 		if(config.getExcludePatterns() != null && config.getExcludePatterns().size()>0){
 			for (String p : config.getExcludePatterns()) {
