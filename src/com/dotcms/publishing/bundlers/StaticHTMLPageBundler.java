@@ -1,16 +1,22 @@
 package com.dotcms.publishing.bundlers;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -20,6 +26,7 @@ public class StaticHTMLPageBundler implements IBundler {
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
 	FolderAPI fAPI = null;
+	IdentifierAPI iAPI = null;
 	User systemUser = null;
 	
 	@Override
@@ -33,6 +40,7 @@ public class StaticHTMLPageBundler implements IBundler {
 		conAPI = APILocator.getContentletAPI();
 		uAPI = APILocator.getUserAPI();
 		fAPI = APILocator.getFolderAPI();
+		iAPI = APILocator.getIdentifierAPI();
 		try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
@@ -42,18 +50,37 @@ public class StaticHTMLPageBundler implements IBundler {
 
 	@Override
 	public void generate(File bundleRoot, BundlerStatus status) throws DotBundleException{
-//		for(Host h : config.getHosts()){
-//			List<Folder> folders = null;
-//			try {
-//				folders = fAPI.findSubFoldersRecursively(h, uAPI.getSystemUser(), false);
-//			} catch (Exception e) {
-//				Logger.error(StaticHTMLPageBundler.class,e.getMessage() + " Unable to get folders for host " + h.getIdentifier(),e);
-//			}
-//			for (Folder folder : folders) {
-//				folder.get
-//			}
-//		}
-		config.get
+		boolean include = true;
+		boolean hasPatterns = false;
+		List<String> patterns = null;
+		List<Identifier> pageIdents = new ArrayList<Identifier>();
+		if(config.getExcludePatterns()!=null && config.getExcludePatterns().size()>0){
+			hasPatterns = true;
+			include = false;
+			patterns = config.getExcludePatterns();
+		}else if(config.getIncludePatterns()!=null && config.getIncludePatterns().size()>0){
+			hasPatterns = true;
+			include = true;
+			patterns = config.getIncludePatterns();
+		}
+				
+		try{
+			for(Host h : config.getHosts()){
+				if(!hasPatterns){
+					try{
+						pageIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(), "/*", include, h, config.getStartDate(), config.getEndDate()));
+					}catch (NullPointerException e) {}
+				}else{
+					for(String pattern : patterns){
+						try{
+							pageIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(),pattern , include, h, config.getStartDate(), config.getEndDate()));
+						}catch (NullPointerException e) {}
+					}
+				}
+			}
+		}catch (DotDataException e) {
+			Logger.error(this, e.getMessage() + " : Unable to get Pages for Start HTML Bundler",e);
+		}
 		/** CODE FROM JSP
 		<%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
