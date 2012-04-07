@@ -1,4 +1,4 @@
-package com.dotcms.content.elasticsearch.business;
+package com.dotcms.publishing.sitesearch;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,11 +11,15 @@ import java.util.List;
 
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.Client;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.publishing.SiteSearchConfig;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.CronScheduledTask;
@@ -25,6 +29,7 @@ import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.sitesearch.business.DotSearchResults;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.job.SiteSearchJobProxy;
+import com.dotmarketing.util.Logger;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
@@ -163,6 +168,43 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 			QuartzUtils.removeJob(t.getJobName(), ES_SITE_SEARCH_NAME);	
 		}	
 	}
+	
+    
+    @Override
+    public void putToIndex(String idx, SiteSearchResult res){
+	   try{
+		   Client client=new ESClient().getClient();
+		   String json = new ESMappingAPIImpl().toJsonString(res.getMap());
+		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", res.getId())
+			        .setSource(json)
+			        .execute()
+			        .actionGet();
+		   
+		} catch (Exception e) {
+		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
+		}
+
+    }
+    
+    @Override
+    public void putToIndex(String idx, List<SiteSearchResult> res){
+	   try{
+		   /*
+		   Client client=new ESClient().getClient();
+		   String json = new ESMappingAPIImpl().toJsonString(res.getMap());
+		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", res.getId())
+			        .setSource(json)
+			        .execute()
+			        .actionGet();
+		   */
+		} catch (Exception e) {
+		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
+		}
+    }
+    
+    
+	
+	
 	
 	
 	

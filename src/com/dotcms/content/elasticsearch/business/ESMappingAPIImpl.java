@@ -16,6 +16,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -449,7 +451,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             }
         }
 	}
-
+	public String toJsonString(Map<String, Object> map) throws JsonGenerationException, JsonMappingException, IOException{
+		return mapper.writeValueAsString(map);
+	}
 	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {
 	    List<String> dependenciesToReindex = new ArrayList<String>();
 
@@ -575,5 +579,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 }
             }
         }
+
 	}
+	
+
 }
