@@ -1,9 +1,8 @@
 package com.dotcms.publishing.bundlers;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.FileFilter;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 import com.dotcms.publishing.BundlerStatus;
@@ -17,7 +16,6 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -84,7 +82,7 @@ public class StaticHTMLPageBundler implements IBundler {
 					}
 				}
 				for (Identifier i : pageIdents) {
-					pAPI.getHTML(i.getURI(), h, liveMode, null, uAPI.getSystemUser());
+					//pAPI.getHTML(i.getURI(), h, liveMode, null, uAPI.getSystemUser());
 				}
 			}
 		}catch (DotDataException e) {
@@ -144,7 +142,7 @@ for(HTMLPage htmlPage : pages){
 		 */
 		
 	}
-	
+	/*
 private void writeFileToDisk(File bundleRoot, String html, String uri, Host h, boolean live) throws IOException, DotBundleException{
 		
 		
@@ -191,5 +189,13 @@ private void writeFileToDisk(File bundleRoot, String html, String uri, Host h, b
 		
 		
 	}
+	*/
+
+	@Override
+	public FileFilter getFileFilter() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 
 }

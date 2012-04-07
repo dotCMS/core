@@ -15,7 +15,8 @@ import com.dotmarketing.quartz.ScheduledTask;
 
 public interface SiteSearchAPI {
     public static final String ES_SITE_SEARCH_NAME = "sitesearch";
-	
+    public static final String ES_SITE_SEARCH_MAPPING = "dot_site_search";
+    
 	public DotSearchResults search(String query, String sort, int start, int rows, String lang, String hostId);
 
 	List<String> listIndices();
@@ -36,6 +37,8 @@ public interface SiteSearchAPI {
 	void putToIndex(String idx, SiteSearchResult res);
 
 	void putToIndex(String idx, List<SiteSearchResult> res);
+
+	void deleteFromIndex(String idx, String docId);
 	
 	
 	
