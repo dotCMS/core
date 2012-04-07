@@ -6,9 +6,9 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 
-abstract class Publisher implements IPublisher {
+public abstract class Publisher implements IPublisher {
 
-	PublisherConfig config;
+	protected PublisherConfig config;
 
 	
 	/**

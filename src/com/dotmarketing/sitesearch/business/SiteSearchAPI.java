@@ -7,7 +7,8 @@ import java.util.List;
 import org.elasticsearch.ElasticSearchException;
 import org.quartz.SchedulerException;
 
-import com.dotcms.publishing.SiteSearchConfig;
+import com.dotcms.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.publishing.sitesearch.SiteSearchResult;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.ScheduledTask;
 
@@ -31,6 +32,10 @@ public interface SiteSearchAPI {
 	void deleteTask(String taskName) throws SchedulerException;
 
 	void scheduleTask(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException;
+
+	void putToIndex(String idx, SiteSearchResult res);
+
+	void putToIndex(String idx, List<SiteSearchResult> res);
 	
 	
 	

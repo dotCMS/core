@@ -38,6 +38,7 @@ import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.AdminClient;
@@ -478,4 +479,27 @@ public class ESIndexAPI {
 			usrb.execute().actionGet(); 
 		}
     }
+    
+    
+    
+    public void putToIndex(String idx, String json, String id){
+	   try{
+		   Client client=new ESClient().getClient();
+		   
+		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", id)
+			        .setSource(json)
+			        .execute()
+			        .actionGet();
+		   
+		} catch (Exception e) {
+		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
+		
+		
+		}
+
+    }
+    
+    
+    
+    
 }

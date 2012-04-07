@@ -1,4 +1,6 @@
-package com.dotcms.publishing;
+package com.dotcms.publishing.sitesearch;
+
+import com.dotcms.publishing.PublisherConfig;
 
 
 public class SiteSearchConfig extends PublisherConfig {
