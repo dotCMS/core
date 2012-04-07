@@ -27,91 +27,70 @@ import com.liferay.util.FileUtil;
 
 public class ESSiteSearchPublisher extends Publisher {
 
-	
-	public static final String SITE_SEARCH_INDEX = "SITE_SEARCH_INDEX"; 
-	
-	
-	
-	
-	
-	
-	@Override
-	public PublisherConfig init(PublisherConfig config) throws DotPublishingException{
+	public static final String SITE_SEARCH_INDEX = "SITE_SEARCH_INDEX";
 
-		if(!(config instanceof SiteSearchConfig)){
-			
-			//throw new DotPublishingException("Config if not a SiteSearchConfig");
-		}
+	@Override
+	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
 		this.config = super.init(config);
-		
-		
-		if(config.get(SITE_SEARCH_INDEX) ==null){
-			
-			
+		SiteSearchConfig myConf = (SiteSearchConfig) config;
+
+
+		// if we don't specify an index, use the current one
+		if (myConf.getIndexName() == null) {
+			try{
+				String index = APILocator.getIndiciesAPI().loadIndicies().site_search;
+				if(index != null){
+					myConf.setIndexName(index);
+					this.config = myConf;
+				}
+				else{
+					throw new DotPublishingException("Active Site Search Index:null");			
+				}
+			}
+			catch(Exception e){
+				throw new DotPublishingException("You must either specify a valid site search index in your PublishingConfig or have current active site search index.  Make sure you have a current active site search index by going to the site search admin portlet and creating one");
+			}
+
 		}
-		
-		
-		
-		
-		
-		
-		
+
 		return this.config;
-		
+
 	}
-	
-	
-	
+
 	@Override
 	public PublisherConfig process() throws DotPublishingException {
-		try{
+		try {
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
-			
+
 			for (IBundler b : config.getBundlers()) {
 
 				List<File> files = FileUtil.listFilesRecursively(bundleRoot, b.getFileFilter());
-				
-				
+
 				List<List<File>> listsOfFiles = Lists.partition(files, 10);
-				int numThreads= config.getAdditionalThreads()+1;
+				int numThreads = config.getAdditionalThreads() + 1;
 				ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 				for (final List<File> l : listsOfFiles) {
-				    Runnable worker=new Runnable() {
-
+					Runnable worker = new Runnable() {
 						@Override
 						public void run() {
 							processFiles(l);
-							
+
 						}
-
 					};
-					
-				    executor.execute(worker);
-							
+					executor.execute(worker);
 				}
-					
-					
-				
 				executor.shutdown();
-				
-
-				
 			}
 
-			
-			
-			
 			return config;
-		}
-		catch(Exception e){
+		} catch (Exception e) {
 			throw new DotPublishingException(e.getMessage());
-			
+
 		}
 	}
 
-	
 	private void processFiles(List<File> files) {
-		for (File f  : files) {
+		for (File f : files) {
 			try {
 				processFileObject(f);
 			} catch (IOException e) {
@@ -122,113 +101,86 @@ public class ESSiteSearchPublisher extends Publisher {
 
 	}
 
-	
-	private void processFileObject(File file) throws IOException{
-		if(file.isDirectory()) return;
-		Logger.info(this.getClass(), "processing: " + file.getAbsolutePath());
-		
-		
+	private void processFileObject(File file) throws IOException {
+		if (file.isDirectory()){
+			return;
+		}
+		//Logger.info(this.getClass(), "processing: " + file.getAbsolutePath());
+
 		FileAssetWrapper wrap = (FileAssetWrapper) BundlerUtil.xmlToObject(file);
-		if(wrap ==null) return;
+		if (wrap == null)
+			return;
 		// is the live guy
-		if(UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getAsset().getInode())){
-			try{
-				doIndexPut(wrap.getAsset());
+		if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getAsset().getInode())) {
+			try {
+				doPut(wrap.getAsset());
+			} catch (Exception e) {
+				Logger.error(this.getClass(), "site search indexPut failed: " + e.getMessage());
 			}
-			catch(Exception e){
-				Logger.error(this.getClass(), "site search indexPut failed: " +e.getMessage());
-			}
+		} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
+			doDelete(wrap.getAsset());
 		}
-		else if(!UtilMethods.isSet(wrap.getInfo().getLiveInode())){
-			String x = wrap.getId().getPath();
-			doIndexDelete(x);
-		}
-				
-				
-		
-		
-		
-		
+
 	}
-	
-	private void doIndexDelete(String url){
-		
-		
-		
-		
-		
+
+	private void doDelete(FileAsset asset) {
+		String url = asset.getHost() + asset.getPath() + asset.getFileName();
 		Logger.info(this.getClass(), "delete: " + url);
+		String md5 = DigestUtils.md5Hex(url);
+
+		APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), md5);
+		
+		
+
 	}
-	
-	private void doIndexPut(FileAsset asset) throws DotPublishingException{
-		try{
-		SiteSearchResult res = new SiteSearchResult();
-		res.setContentLength(asset.getFileSize());
-		res.setHost(asset.getHost());
-		
-		
-		Host h;
 
-		h = APILocator.getHostAPI().find(asset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
-		res.setUrl(h.getHostname() + res.getUri());
+	private void doPut(FileAsset asset) throws DotPublishingException {
+		try {
+			SiteSearchResult res = new SiteSearchResult();
+			res.setContentLength(asset.getFileSize());
+			res.setHost(asset.getHost());
 
-		
-		
-		
-		res.setUri(asset.getPath() + asset.getFileName());
-		res.setMimeType(APILocator.getFileAPI().getMimeType(asset.getFileName()));
-		res.setModified(asset.getModDate());
-		
+			Host h;
 
-		String id = DigestUtils.md5Hex(asset.getHost() + res.getUri());
-		res.setId(DigestUtils.md5Hex(asset.getHost() + res.getUri()));
+			h = APILocator.getHostAPI().find(asset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
+			res.setUri(asset.getPath() + asset.getFileName());
+			res.setUrl(h.getHostname() + res.getUri());
+			res.setFileName(asset.getFileName());
 
-		
-		String x = asset.getMetaData();
-		if(x != null){
-			
-			Map<String, Object> m = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(x);
-		  
-			
-			res.setAuthor((String) m.get("author"));
-			res.setDescription((String) m.get("description"));
-			res.setContent((String) m.get("content"));
-			
-			
-			
-		}
-		
+			res.setMimeType(APILocator.getFileAPI().getMimeType(asset.getFileName()));
+			res.setModified(asset.getModDate());
 
-		APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig)config).getIndexName(), res);
-		
-		Logger.info(this.getClass(), "adding: " + asset.getPath() + asset.getFileName());
-		}
-		catch(Exception e){
+			String md5 = DigestUtils.md5Hex(asset.getHost() + res.getUri());
+			res.setId(md5);
+
+			String x = asset.getMetaData();
+			if (x != null) {
+
+				Map<String, Object> m = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(x);
+
+				res.setAuthor((String) m.get("author"));
+				res.setDescription((String) m.get("description"));
+				res.setContent((String) m.get("content"));
+
+			}
+
+			APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
+
+			Logger.info(this.getClass(), "adding: " + asset.getPath() + asset.getFileName());
+		} catch (Exception e) {
 			throw new DotPublishingException(e.getMessage());
-			
+
 		}
 	}
-
 
 	@Override
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
-		
+
 		list.add(FileObjectBundler.class);
-		//list.add(StaticHTMLPageBundler.class);
-		//list.add(StaticURLMapBundler.class);
+		// list.add(StaticHTMLPageBundler.class);
+		// list.add(StaticURLMapBundler.class);
 		return list;
 	}
-	
-	
-	
-
-	
-	
-	
-	
-	
-	
-	
 
 }

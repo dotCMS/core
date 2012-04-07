@@ -12,6 +12,13 @@ public class SiteSearchResult {
 	public String getContent() {
 		return (String) map.get("content");
 	}
+	public String getFileName() {
+		return (String) map.get("fileName");
+	}
+	
+	public void setFileName(String fileName) {
+		map.put("fileName", fileName);
+	}
 
 	public void setContent(String content) {
 		map.put("content", content);

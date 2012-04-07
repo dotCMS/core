@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.quartz.SchedulerException;
@@ -175,7 +176,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	   try{
 		   Client client=new ESClient().getClient();
 		   String json = new ESMappingAPIImpl().toJsonString(res.getMap());
-		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", res.getId())
+		   IndexResponse response = client.prepareIndex(idx, ES_SITE_SEARCH_MAPPING, res.getId())
 			        .setSource(json)
 			        .execute()
 			        .actionGet();
@@ -202,8 +203,18 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		}
     }
     
+    @Override
+    public void deleteFromIndex(String idx,String docId){
+	   try{
+		   Client client=new ESClient().getClient();
+		   DeleteResponse response = client.prepareDelete(idx, ES_SITE_SEARCH_MAPPING, docId)
+			        .execute()
+			        .actionGet();
+		} catch (Exception e) {
+		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
+		}
+    }
     
-	
 	
 	
 	
