@@ -34,21 +34,19 @@ public class ESSiteSearchPublisher extends Publisher {
 		this.config = super.init(config);
 		SiteSearchConfig myConf = (SiteSearchConfig) config;
 
-
 		// if we don't specify an index, use the current one
 		if (myConf.getIndexName() == null) {
-			try{
+			try {
 				String index = APILocator.getIndiciesAPI().loadIndicies().site_search;
-				if(index != null){
+				if (index != null) {
 					myConf.setIndexName(index);
 					this.config = myConf;
+				} else {
+					throw new DotPublishingException("Active Site Search Index:null");
 				}
-				else{
-					throw new DotPublishingException("Active Site Search Index:null");			
-				}
-			}
-			catch(Exception e){
-				throw new DotPublishingException("You must either specify a valid site search index in your PublishingConfig or have current active site search index.  Make sure you have a current active site search index by going to the site search admin portlet and creating one");
+			} catch (Exception e) {
+				throw new DotPublishingException(
+						"You must either specify a valid site search index in your PublishingConfig or have current active site search index.  Make sure you have a current active site search index by going to the site search admin portlet and creating one");
 			}
 
 		}
@@ -61,26 +59,31 @@ public class ESSiteSearchPublisher extends Publisher {
 	public PublisherConfig process() throws DotPublishingException {
 		try {
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
-
-			for (IBundler b : config.getBundlers()) {
+			int numThreads = config.getAdditionalThreads() + 1;
+			ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+			for (final IBundler b : config.getBundlers()) {
 
 				List<File> files = FileUtil.listFilesRecursively(bundleRoot, b.getFileFilter());
-
 				List<List<File>> listsOfFiles = Lists.partition(files, 10);
-				int numThreads = config.getAdditionalThreads() + 1;
-				ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+
 				for (final List<File> l : listsOfFiles) {
+
 					Runnable worker = new Runnable() {
 						@Override
 						public void run() {
-							processFiles(l);
+							if (b instanceof FileObjectBundler) {
+								processFileObjects(l);
+							}
 
 						}
 					};
+
 					executor.execute(worker);
+
 				}
-				executor.shutdown();
+
 			}
+			executor.shutdown();
 
 			return config;
 		} catch (Exception e) {
@@ -89,7 +92,7 @@ public class ESSiteSearchPublisher extends Publisher {
 		}
 	}
 
-	private void processFiles(List<File> files) {
+	private void processFileObjects(List<File> files) {
 		for (File f : files) {
 			try {
 				processFileObject(f);
@@ -102,10 +105,11 @@ public class ESSiteSearchPublisher extends Publisher {
 	}
 
 	private void processFileObject(File file) throws IOException {
-		if (file.isDirectory()){
+		if (file.isDirectory()) {
 			return;
 		}
-		//Logger.info(this.getClass(), "processing: " + file.getAbsolutePath());
+		// Logger.info(this.getClass(), "processing: " +
+		// file.getAbsolutePath());
 
 		FileAssetWrapper wrap = (FileAssetWrapper) BundlerUtil.xmlToObject(file);
 		if (wrap == null)
@@ -129,8 +133,6 @@ public class ESSiteSearchPublisher extends Publisher {
 		String md5 = DigestUtils.md5Hex(url);
 
 		APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), md5);
-		
-		
 
 	}
 
