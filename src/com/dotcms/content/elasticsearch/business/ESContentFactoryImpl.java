@@ -630,9 +630,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<Map<String, String>> result = dc.loadResults();
         int before = Integer.parseInt(result.get(0).get("count"));
 
-        String deleteContentletSQL = "delete from contentlet where mod_date < ? and inode not in " +
-                                     " ((select working_inode from contentlet_version_info) " +
-                                     "  union (select live_inode from contentlet_version_info)) ";
+        String deleteContentletSQL = "delete from contentlet where identifier<>'SYSTEM_HOST' and mod_date < ? " +
+        "and not exists (select * from contentlet_version_info where working_inode=contentlet.inode or live_inode=contentlet.inode)";
         dc.setSQL(deleteContentletSQL);
         dc.addParam(date);
         dc.loadResult();
@@ -642,7 +641,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.setSQL(countSQL);
         result = dc.loadResults();
         int after = Integer.parseInt(result.get(0).get("count"));
-        return before - after;
+        
+        int deleted=before - after;
+        
+        if(deleted>0)
+            cc.clearCache();
+        
+        return deleted;
 	}
 
 	@Override
