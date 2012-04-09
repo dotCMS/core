@@ -406,12 +406,46 @@ public class ESIndexAPI {
 
         // create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(settings);
-		
 
-		
 		return cirb.execute().actionGet();
 		
 	}
+	
+	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticSearchException, IOException {
+		
+		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+		
+		if(shards <1){
+			try{
+				shards = Integer.parseInt(System.getProperty("es.index.number_of_shards"));
+			}catch(Exception e){}
+		}
+		if(shards <1){
+			try{
+				shards = Config.getIntProperty("es.index.number_of_shards");
+			}catch(Exception e){}
+		}
+		
+		if(shards <0){
+			shards=1;
+		}
+		
+		//default settings, if null
+		if(settings ==null){
+			settings = getDefaultIndexSettings(shards);
+		}
+		
+
+        // create actual index
+		iac.prepareCreate(indexName).setSettings(settings).addMapping(type, mapping).execute();
+
+		return null;
+		
+	}
+	
+	
+	
+	
 	/**
 	 * Returns the json (String) for
 	 * the defualt ES index settings 
