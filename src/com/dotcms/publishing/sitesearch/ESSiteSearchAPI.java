@@ -85,15 +85,25 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	
 	@Override
 	public synchronized boolean createSiteSearchIndex(String indexName, int shards) throws ElasticSearchException, IOException {
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		URL url = classLoader.getResource("es-sitesearch-settings.json");
+        // read settings and mappings
+		String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+		url = classLoader.getResource("es-sitesearch-mapping.json");
+		String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
 
-		CreateIndexResponse cir = iapi.createIndex(indexName, null, shards);
+			
+		
+		
+		
+		//create index
+		CreateIndexResponse cir = iapi.createIndex(indexName, settings, shards);
 		int i = 0;
 		while(!cir.acknowledged()){
 			
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -103,14 +113,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		}
 		
 		
-		ClassLoader classLoader = null;
-		URL url = null;
-		classLoader = Thread.currentThread().getContextClassLoader();
-		url = classLoader.getResource("es-sitesearch-mapping.json");
-        // create actual index
-		String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-			
-		mappingAPI.putMapping(indexName, "content", mapping);
+
+		//put mappings
+		mappingAPI.putMapping(indexName, ES_SITE_SEARCH_MAPPING, mapping);
 			
 		
 		

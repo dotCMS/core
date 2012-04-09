@@ -1,0 +1,33 @@
+{
+  "analysis": {
+    "filter": {
+      "content_ngrams": {
+        "side": "front",
+        "max_gram": 10,
+        "min_gram": 1,
+        "type": "edgeNGram"
+      }
+    },
+    "analyzer": {
+      "standard_content": {
+        "filter": [
+          "standard",
+          "lowercase",
+          "asciifolding"
+        ],
+        "type": "custom",
+        "tokenizer": "standard"
+      },
+      "partial_content": {
+        "filter": [
+          "standard",
+          "lowercase",
+          "asciifolding",
+          "content_ngrams"
+        ],
+        "type": "custom",
+        "tokenizer": "standard"
+      }
+    }
+  }
+}

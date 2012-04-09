@@ -20,7 +20,9 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -80,9 +82,30 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
     public  boolean putMapping(String indexName, String type, String mapping) throws ElasticSearchException, IOException{
     	
-    	new ESClient().getClient().admin().indices().prepareCreate(indexName).addMapping(type, mapping).execute();
+    	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+    	return lis.actionGet().acknowledged();
+    }
+    
+	/**
+	 * This method takes a mapping string, a type and puts it as the mapping
+	 * @param index
+	 * @param type
+	 * @param mapping
+	 * @return
+	 * @throws ElasticSearchException
+	 * @throws IOException
+	 */
+    public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticSearchException, IOException{
+    	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+    	return lis.actionGet().acknowledged();
+    }
+    
+    public  boolean setSettings(String indexName,   String settings) throws ElasticSearchException, IOException{
+    	new ESClient().getClient().admin().indices().prepareUpdateSettings().setSettings(settings).setIndices( indexName).execute().actionGet();
     	return true;
     }
+    
+    
     
     /**
      * Gets the mapping params for an index and type
