@@ -94,19 +94,19 @@ public class SubmitContentAction extends DispatchAction{
 		}
 		ActionForward af = new ActionForward(referrer);
 		af.setRedirect(true);
-		
+
 		int index = referrer.lastIndexOf('/');
 		String htmlServlet = null;
 		if (index < 0)
 			htmlServlet = referrer;
 		else
 			htmlServlet = referrer.substring(index + 1);
-		
+
 		if (htmlServlet.indexOf('.') < 0) {
 			//If is a servlet
 			referrer += "/";
 		}
-		
+
 		String params="";
 		HibernateUtil.startTransaction();
 
@@ -154,7 +154,7 @@ public class SubmitContentAction extends DispatchAction{
 			List<String[]> filevalues = new ArrayList<String[]>();
 			java.util.Enumeration<String> parameterNames = request.getParameterNames();
 			Map <String, String> parameters=  new HashMap <String, String> ();
-			String parameterName;	
+			String parameterName;
 			String emailvalues;
 			String []emailvaluessep;
 			List <String> emails= new ArrayList <String>();
@@ -175,12 +175,12 @@ public class SubmitContentAction extends DispatchAction{
 						if(RegEX.contains(emailvalues.trim(),"^[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*((\\.[A-Za-z]{2,}){1}$)"))
 							emails.add(emailvalues.trim());
 						else throw new Exception("The email provided by the Form is incorrect, please enter on the Form properties valid email address. ");
-				} 
-				
+				}
+
 				parameters.put("formTitle", st.getFieldVar("formTitle").getValues());
 				parameters.put("formEmail", emailvalues);
-				parameters.put("formReturnPage", st.getFieldVar("formReturnPage").getValues());	
-				
+				parameters.put("formReturnPage", st.getFieldVar("formReturnPage").getValues());
+
 
 			}
 
@@ -199,16 +199,16 @@ public class SubmitContentAction extends DispatchAction{
 				}else{
 					parameters.put(parameterName,fieldValues[0]);
 				}
-				
+
 				if(fieldType == null || (fieldType!=null && !fieldType.equals(Field.FieldType.IMAGE) && !fieldType.equals(Field.FieldType.FILE)&& !fieldType.equals(Field.FieldType.BINARY))){
 					parametersName.add(parameterName);
 					String[] vals = request.getParameterValues(parameterName);
 					values.add(vals);
-					if(!parameterName.equals("dispatch") && !parameterName.equals("captcha") && !parameterName.equals("options") && !parameterName.equals("structure") && !parameterName.equals("userId") && !parameterName.equals("referrer")){ 
-						if(!SubmitContentUtil.imageOrFileParam(st, parameterName)){
+					if(!parameterName.equals("dispatch") && !parameterName.equals("captcha") && !parameterName.equals("options") && !parameterName.equals("structure") && !parameterName.equals("userId") && !parameterName.equals("referrer")){
+						if(!SubmitContentUtil.imageOrFileParam(st, parameterName) && !UtilMethods.isImage(parameterName)){
 							for(String val : vals){
 								paramsBuff.append("&").append(parameterName).append("=").append(encoder.encode(val));
-							}						
+							}
 						}
 					}
 				}
@@ -216,19 +216,19 @@ public class SubmitContentAction extends DispatchAction{
 					parametersfileName.add(parameterName);
 					String[] vals = request.getParameterValues(parameterName);
 					filevalues.add(vals);
-				
-					if(!parameterName.equals("dispatch") && !parameterName.equals("captcha") && !parameterName.equals("options") && !parameterName.equals("structure") && !parameterName.equals("userId") && !parameterName.equals("referrer")){ 
+
+					if(!parameterName.equals("dispatch") && !parameterName.equals("captcha") && !parameterName.equals("options") && !parameterName.equals("structure") && !parameterName.equals("userId") && !parameterName.equals("referrer")){
 						if(!SubmitContentUtil.imageOrFileParam(st, parameterName)){
 							for(String val : vals){
 								paramsBuff.append("&").append(parameterName).append("=").append(encoder.encode(val));
-							}						
+							}
 						}
 					}
 				}
 			}
-			
+
 			params=paramsBuff.toString();
-		
+
 			/*
 			 * Checking for captcha
 			 */
@@ -245,7 +245,7 @@ public class SubmitContentAction extends DispatchAction{
 					return af;
 				}
 
-			} 
+			}
 
 			if(useAudioCaptcha){
 
@@ -257,10 +257,10 @@ public class SubmitContentAction extends DispatchAction{
 						af = new ActionForward(referrer);
 						af.setRedirect(true);
 					}
-					return af;					
+					return af;
 				}
 			}
-			
+
 			/**
 			 * Get Categories
 			 */
@@ -295,12 +295,12 @@ public class SubmitContentAction extends DispatchAction{
 						if(UtilMethods.isSet(c))
 							cats.add(c);
 					}
-						
+
 				}
 			}
 
 			List<Map<String,Object>> fileParameters = new ArrayList<Map<String,Object>>();
-			
+
 			DotContentletValidationException cve = new DotContentletValidationException("Contentlet's fields are not valid");
 			boolean hasError = false;
 
@@ -326,13 +326,13 @@ public class SubmitContentAction extends DispatchAction{
 							temp.put("title", title);
 							temp.put("file", uploadedFile);
 							temp.put("host", host);
-							fileParameters.add(temp);	
+							fileParameters.add(temp);
 						}else{
 							cve.addBadTypeField(f);
 							hasError = true;
 							continue;
-						}			
-					}	
+						}
+					}
 				}
 			}
 
@@ -361,7 +361,7 @@ public class SubmitContentAction extends DispatchAction{
 					}
 					fileParameters.add(binaryvalues);
 				}
-				
+
 			}
 			if(fileFields.size() > 0){
 
@@ -383,7 +383,7 @@ public class SubmitContentAction extends DispatchAction{
 					}
 				}
 			}
-			
+
 			if(hasError){
 				throw cve;
 			}
@@ -392,7 +392,7 @@ public class SubmitContentAction extends DispatchAction{
 			 * Save content
 			 */
 			Contentlet contentlet = SubmitContentUtil.createContent(st, cats, userId, parametersName, values, options, fileParameters, autoPublish, host, moderatorRole);
-		
+
 
 
 			message.add(Globals.MESSAGE_KEY, new ActionMessage("message.contentlet.save"));
@@ -411,7 +411,7 @@ public class SubmitContentAction extends DispatchAction{
 				}
 				parameters.put("returnUrl", af.getPath());
 				parameters.put("IP:", request.getRemoteAddr());
-				
+
 				String reverseName = null;
 				try{
 					reverseName = DNSUtil.reverseDns(request.getRemoteAddr());
@@ -422,10 +422,10 @@ public class SubmitContentAction extends DispatchAction{
 				catch(Throwable t){
 
 				}
-				
-				
-				
-				
+
+
+
+
 				try{
 					String referer = request.getHeader("Referer");
 					if(referer.indexOf("?") > -1){
@@ -434,17 +434,17 @@ public class SubmitContentAction extends DispatchAction{
 					parameters.put("referrer", referer);
 				}
 				catch(Exception e){
-					
-				}
-				
 
-				
+				}
+
+
+
 
 				Clickstream clickstream = (Clickstream) request.getSession().getAttribute("clickstream");
 				if(clickstream != null &&  UtilMethods.isSet(clickstream.getInitialReferrer())){
 					parameters.put("Initial Referer", clickstream.getInitialReferrer());
 				}
-				
+
 				parameters.remove("options");
 				parameters.remove("structure");
 				parameters.remove("dispatch");
@@ -458,7 +458,7 @@ public class SubmitContentAction extends DispatchAction{
 			HibernateUtil.rollbackTransaction();
 			Logger.debug(this, ve.getMessage());
 
-			if(ve.hasRequiredErrors()){ 
+			if(ve.hasRequiredErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
 				for (Field errorField : reqs) {
 					errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", errorField.getFieldName()));
@@ -575,6 +575,6 @@ public class SubmitContentAction extends DispatchAction{
 
 		return values;
 	}
-	
-	
+
+
 }
