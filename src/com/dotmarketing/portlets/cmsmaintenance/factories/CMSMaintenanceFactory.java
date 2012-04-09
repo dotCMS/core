@@ -324,6 +324,8 @@ public class CMSMaintenanceFactory {
 			}
 		}
 
+		HibernateUtil.getSession().clear();
+		
 		return deleteOldAssets(assetsOlderThan, "file_asset", 500);
 	}
 
