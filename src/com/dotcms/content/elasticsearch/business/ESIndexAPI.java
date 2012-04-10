@@ -13,6 +13,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +21,7 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.tools.zip.ZipEntry;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -402,14 +404,20 @@ public class ESIndexAPI {
 		if(settings ==null){
 			settings = getDefaultIndexSettings(shards);
 		}
-		
-
+		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
+		map.put("number_of_shards", shards);
+			
+	
         // create actual index
-		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(settings);
+		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
 
 		return cirb.execute().actionGet();
 		
 	}
+	
+	
+	
+	
 	
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticSearchException, IOException {
 		

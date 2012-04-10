@@ -1,5 +1,4 @@
 {
-   "mappings": {
     "dot_site_search": {
       "properties": {
         "content": {
@@ -63,5 +62,4 @@
         }
       }
     }
-  }
 }

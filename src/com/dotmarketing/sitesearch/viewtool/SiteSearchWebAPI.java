@@ -4,16 +4,18 @@ import java.io.IOException;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.publishing.sitesearch.DotSearchResults;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.sitesearch.business.DotSearchResults;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
@@ -24,10 +26,13 @@ public class SiteSearchWebAPI implements ViewTool {
 	private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 	private static UserAPI userAPI = APILocator.getUserAPI();
 	private static SiteSearchAPI siteSearchAPI = APILocator.getSiteSearchAPI();
-	
+	private HttpServletRequest request;
+	private HttpServletResponse response;
 
 	public void init(Object initData) {
-
+		ViewContext context = (ViewContext) initData;
+		this.request = context.getRequest();
+		this.response = context.getResponse();
 	}
 	
 	/**
@@ -81,10 +86,9 @@ public class SiteSearchWebAPI implements ViewTool {
 			lang = locale.getLanguage();	
 		}
 				
-		DotSearchResults dsr = siteSearchAPI.search(query, sort, start, rows, lang, host.getIdentifier());
+		DotSearchResults dsr = siteSearchAPI.search(query, sort, start, rows);
 
-		dsr.setHost(host);
-		dsr.setLang(lang);
+
 		return dsr;
 	}
 	
