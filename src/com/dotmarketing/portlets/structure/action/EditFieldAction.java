@@ -409,7 +409,7 @@ public class EditFieldAction extends DotPortletAction {
 			// saves this field
 			FieldFactory.saveField(field);
 			
-			ActivityLogger.logInfo(ActivityLogger.class, "Save Field", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
+			ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
 				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 
 			FieldsCache.removeFields(structure);
@@ -495,7 +495,7 @@ public class EditFieldAction extends DotPortletAction {
 			HibernateUtil.commitTransaction();
 			FieldsCache.removeFields(structure);
 			
-			ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
+			ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
 				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 			
 			StructureCache.removeStructure(structure);

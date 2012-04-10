@@ -481,6 +481,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		} else {
 			cf.setHostId(templateHost.getIdentifier());
 		}
+		ActivityLogger.logInfo(this.getClass(), "Edit Template action", "User " + user.getPrimaryKey() + " edit template " + cf.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 		cf.setImage(fileAsContent?imageContentlet.getIdentifier():imageFile.getIdentifier());
 	}
 
@@ -531,7 +532,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		APILocator.getTemplateAPI().saveTemplate(newTemplate,host , user, false);
 		
-		ActivityLogger.logInfo(this.getClass(), "Save Template action", "User " + user.getPrimaryKey() + " copying page" + newTemplate.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
+		ActivityLogger.logInfo(this.getClass(), "Save Template action", "User " + user.getPrimaryKey() + " saving template" + newTemplate.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 		
 		APILocator.getVersionableAPI().setLocked(newTemplate, false, user);
 

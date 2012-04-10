@@ -106,6 +106,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -319,8 +320,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			}
 
 			conFac.save(contentlet);
-			ActivityLogger.logInfo(this.getClass(), "Publish Content",
-					"User " + user.getFirstName() + " is publishing content " + contentlet.getTitle() , contentlet.getHost());
 			// Set contentlet to live and unlocked
 			APILocator.getVersionableAPI().setLive(contentlet);
 			// APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(),
@@ -1012,7 +1011,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				MultiTreeFactory.deleteMultiTree(mt);
 			}
 			ActivityLogger.logInfo(this.getClass(), "delete Contentlet ",
-					" user " + user.getFirstName() + " deleted content titled '" + con.getTitle() , con.getHost());
+					" user " + user.getFirstName() + " deleted content titled '" + con.getTitle() , APILocator.getHostAPI().find(con.getHost(), user, true).getHostname());
 		}
 
 		// jira.dotmarketing.net/browse/DOTCMS-1073
@@ -1268,8 +1267,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 			// sets deleted to true
 			APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
-			ActivityLogger.logInfo(this.getClass(), "archieve contentlet ", " User " + user.getFirstName() + " archieved content titled '" + workingContentlet.getTitle()
-					+ "' ", contentlet.getHost());
+			
 			// Updating lucene index
 			indexAPI.addContentToIndex(workingContentlet);
 			indexAPI.removeContentFromLiveIndex(liveContentlet);

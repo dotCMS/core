@@ -78,7 +78,9 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletURLUtil;
@@ -103,6 +105,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private FieldAPI fAPI;
 	private RelationshipAPI relAPI;
 	private HostWebAPI hostWebAPI;
+	
+	private String currentHost;
 
 	public EditContentletAction() {
 		catAPI = APILocator.getCategoryAPI();
@@ -136,7 +140,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		User user = _getUser(req);
 
-
+		// retrieve current host
+		currentHost = HostUtil.hostNameUtil(req, user);
 		//http://jira.dotmarketing.net/browse/DOTCMS-2273
 		//To transport PortletConfig, Layout objects using session.
 		//Needed for sendContentletPublishNotification of ContentletWebAPIImpl.java 		
@@ -397,6 +402,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				// calls the asset factory edit
 				try{
 					conAPI.unpublish(contentletToEdit, user, false);
+					ActivityLogger.logInfo(this.getClass(), "Unpublishing Contentlet "," User "+user.getFirstName()+" Unpublished content titled '"+contentletToEdit.getTitle()+"'", HostUtil.hostNameUtil(req, user));
 					SessionMessages.add(httpReq, "message", "message.contentlet.unpublished");
 				}catch(DotLockException dlock){
 					SessionMessages.add(httpReq, "error", "message.contentlet.cannot.be.unlocked");
@@ -1251,6 +1257,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			
 	        if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
 	            Logger.debug(this, "publishing after checkin");
+	            ActivityLogger.logInfo(this.getClass(), "Publishing Contentlet "," User "+user.getFirstName()+" published content titled '"+currentContentlet.getTitle(), HostUtil.hostNameUtil(req, user));
 	            APILocator.getVersionableAPI().setLive(currentContentlet);
 	        }
 
@@ -1935,6 +1942,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							try{
 								conAPI.unpublish(contentlet, user, false);
 								HibernateUtil.commitTransaction();
+								ActivityLogger.logInfo(this.getClass(), "Unublish contentlet action", " User " + user.getFirstName() + " Unpublished content titled '" + contentlet.getTitle()
+										+ "' ", currentHost);
 							}catch (DotContentletStateException e) {
 								stateError = true;
 							}catch(DotDataException de){
@@ -2054,6 +2063,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							HibernateUtil.startTransaction();
 							try{
 								conAPI.publish(contentlet, user, false);
+								ActivityLogger.logInfo(this.getClass(), "Publish contentlet action", " User " + user.getFirstName() + " Published content titled '" + contentlet.getTitle()
+										+ "' ", currentHost);
 								HibernateUtil.commitTransaction();
 							}catch (DotContentletStateException e) {
 								stateError = true;
@@ -2180,6 +2191,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							HibernateUtil.startTransaction();
 							try{
 								conAPI.archive(contentlet, user, false);
+								ActivityLogger.logInfo(this.getClass(), "Archieve contentlet action", " User " + user.getFirstName() + " Archieved content titled '" + contentlet.getTitle()
+										+ "' ", currentHost);
 								HibernateUtil.commitTransaction();
 							}catch (DotContentletStateException e) {
 								stateError = true;
@@ -2406,6 +2419,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							HibernateUtil.startTransaction();
 							try{
 								conAPI.unarchive(contentlet, user, false);
+								ActivityLogger.logInfo(this.getClass(), "Unarchieve contentlet action", " User " + user.getFirstName() + " Unarchieved content titled '" + contentlet.getTitle()
+										+ "' ", currentHost);
 								HibernateUtil.commitTransaction();
 							}catch (DotContentletStateException e) {
 								stateError = true;
