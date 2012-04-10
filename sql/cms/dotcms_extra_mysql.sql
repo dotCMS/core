@@ -572,9 +572,9 @@ create table indicies (
 );
 -- ****** Log Console Table *******
   CREATE TABLE log_mapper (
-    enabled   	 bigint(1,0) NOT null,
-    log_name 	 varchar(30 CHAR) NOT null,
-    description  varchar(50 CHAR) NOT null,
+    enabled   	 bigint(1,0) not null,
+    log_name 	 varchar(30) not null,
+    description  varchar(50) not null,
     primary key (log_name)
   );
   
