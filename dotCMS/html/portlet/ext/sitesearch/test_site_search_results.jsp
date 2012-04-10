@@ -34,7 +34,7 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 
 
-String testIndex = info.site_search;
+String testIndex = request.getParameter("testIndex");
 String testQuery = (request.getParameter("testQuery") != null) 
 		? request.getParameter("testQuery")
 				: "*";
@@ -47,9 +47,13 @@ String testSort = "score";
 
 
 
+
+
 DotSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
 
-
+String myError = (results.getError()!= null && results.getError().indexOf("nested:") > -1) 
+				? results.getError().substring(0, results.getError().indexOf("nested:"))  
+						: results.getError();
 
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
@@ -72,59 +76,11 @@ try {
 
 
 
-List<String> indices=ssapi.listIndices();
-Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
-
-SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
-
-
-Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
-
 
 %>
+	
 
 
-<style>
-	.trIdxBuilding{
-	background:#F8ECE0;
-	}
-	.trIdxActive{
-	background:#D8F6CE;
-	}
-	.trIdxNothing td{
-	color:#aaaaaa;
-	
-	}
-	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
-	 #restoreIndexUploader {
-	   width:200px !important;
-	 }
-	 #uploadProgress {
-	   float: right;
-	   display: none;
-	 }
-</style>
-
-	
-	<div name="testSiteForm" dojoType="dijit.form.Form" id="testSiteForm" action="/html/portlet/ext/sitesearch/test_site_search_results.jsp" method="POST">
-		<div class="buttonRow" style="padding:20px;">
-			<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
-					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "active") +") " : ""  %></option>
-					<%} %>
-			</select>
-		
-			
-			<input type="text"  dojoType="dijit.form.TextBox" style="width:300px;" name="testQuery" value="<%=UtilMethods.webifyString(testQuery) %>" id="testQuery">
-			<button dojoType="dijit.form.Button"
-				id="testIndexButton" onClick="doTestSearch();"
-				iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-			</button>
-		</div>
-	</div>
-	<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" style="height:700px;overflow: scroll;;">
-	
-	
 		<table class="listingTable" style="width:98%">
 			<thead>
 				<tr>
@@ -140,14 +96,51 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					
 				</tr>
 			</thead>
-			<tr>
-				<td colspan="100" align="center">
-					<div style="padding:20px;">
-						<%= LanguageUtil.get(pageContext,"No-Results-Found") %>
-					</div>
-				</td>
-			</tr>
-			</table>
-	
-	
-	</div>
+			
+			
+			<%if(results == null || results.getResults() ==null || results.getResults().size() ==0){ %>
+				
+				<%if(UtilMethods.isSet(results.getError()) && UtilMethods.isSet(results.getQuery())){ %>	
+					<tr>
+						<td colspan="100" align="center">
+							<div style="padding:20px;">
+								<b><%= LanguageUtil.get(pageContext,"Error") %>:</b><br>
+							<%=myError %>
+						</div>
+						</td>
+					</tr>
+				<%}else{ %>
+			
+					<tr>
+						<td colspan="100" align="center">
+							<div style="padding:20px;">
+								<%= LanguageUtil.get(pageContext,"No-Results-Found") %>
+							</div>
+						</td>
+					</tr>
+				<%} %>
+				
+				
+				
+			<%} %>
+			
+			<%for(SiteSearchResult ssr : results.getResults()){ %>
+				<tr>
+					<td><%=ssr.getScore() %></td>
+					<td><%=UtilMethods.webifyString(ssr.getTitle()) %></td>
+					<td><%=UtilMethods.webifyString(ssr.getAuthor()) %></td>
+					<td><%=ssr.getContentLength() %></td>
+					<td><%=UtilMethods.webifyString(ssr.getUrl()) %></td>
+					<td><%=UtilMethods.webifyString(ssr.getUri()) %></td>
+					
+					<td><%=UtilMethods.webifyString(ssr.getMimeType()) %></td>
+					<td><%=UtilMethods.webifyString(ssr.getFileName()) %></td>
+				</tr>
+			<%} %>
+			
+
+			
+			
+		</table>
+		
+		

@@ -2,11 +2,20 @@ package com.dotcms.publishing.bundlers;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileWriter;
+import java.util.List;
 
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 
 public class StaticURLMapBundler implements IBundler {
 
@@ -23,19 +32,7 @@ public class StaticURLMapBundler implements IBundler {
 
 	@Override
 	public void generate(File bundleRoot,BundlerStatus status) throws DotBundleException{
-/**  CODE FROM JSP		
-		<%@page import="java.io.FileWriter"%>
-		<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
-		<%@page import="com.dotmarketing.util.Config"%>
-		<%@page import="java.io.File"%>
-		<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-
-		<%@page import="com.liferay.portal.model.User"%>
-		<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-		<%@page import="java.util.List"%>
-		<%@page import="com.dotmarketing.business.APILocator"%>
-		<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-		<%
+		try{
 		//Get APIs
 
 		ContentletAPI capi = APILocator.getContentletAPI();
@@ -62,20 +59,14 @@ public class StaticURLMapBundler implements IBundler {
 			FileWriter fout = new FileWriter(filePath);
 			fout.write(pageString);
 			fout.close();
-						 
-			out.println("title:" + c.getTitle() + "<br>");
-			out.println("url:" + url + "<BR>");
-			out.println("struc:" + struc.getName() + "<BR>");
-			out.println("detailPageId:" + detailPageId + "<BR>");
-			out.println("hostId:" + hostId + "<BR>");
-			out.println("subfolder:" + subfolder + "<BR>");
-			out.println("filePath:" + filePath + "<BR>");
-			out.println("<BR> <br>");
+
 	
 		}
-		%>
-
-**/
+		
+		}
+		catch(Exception e){
+			
+		}
 		
 	}
 	@Override
