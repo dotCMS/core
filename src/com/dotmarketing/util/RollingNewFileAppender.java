@@ -39,13 +39,19 @@ public class RollingNewFileAppender extends RollingFileAppender {
 		}
 		map.put(hostName, rolling);
 	    }
-
+	    
 	    rolling.append(event);
 	}
 	else {
 	    super.subAppend(event);
 	}
 	
+    }
+    
+    private String cleanMessage(String message){
+    	
+    	return null;
+    	
     }
 
 }

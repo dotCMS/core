@@ -415,7 +415,7 @@ public class EditStructureAction extends DotPortletAction {
 			}
 			System.out.println("L'host settato all'interno dellastructure è: " + structure.getHost());
 			ActivityLogger.logInfo(ActivityLogger.class, "Save Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added structure "
-					+ structure.getName() + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+					+ structure.getName() + ".", HostUtil.hostNameUtil(req, _getUser(req)));
 
 			// Saving the structure in cache
 			StructureCache.removeStructure(structure);
@@ -573,7 +573,7 @@ public class EditStructureAction extends DotPortletAction {
 				StructureFactory.deleteStructure(structure);
 				
 				ActivityLogger.logInfo(ActivityLogger.class, "Delete Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted structure "
-						+ structure.getTitle() + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+						+ structure.getName() + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 
 				// Removing the structure from cache
 				FieldsCache.removeFields(structure);

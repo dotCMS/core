@@ -14,14 +14,14 @@ public class ActivityLogger {
 	public static synchronized void logInfo(Class cl, String action, String msg, String host) {
 
 		if(LogMapper.getInstance().isLogEnabled(filename)) {
-			Logger.info(ActivityLogger.class, cl.toString() + ":"+host+": " + action + " , " + msg);
+			Logger.info(ActivityLogger.class, cl.toString() + ": "+host+" : " + action + " , " + msg);
 		}
 
 	}
 
 	public static void logDebug(Class cl, String action, String msg, String host) {
 		if(LogMapper.getInstance().isLogEnabled(filename)) {
-			Logger.debug(ActivityLogger.class, cl.toString() + ":"+host+":" + action + " , " + msg);
+			Logger.debug(ActivityLogger.class, cl.toString() + ": "+host+" :" + action + " , " + msg);
 		}
 	}
 }
