@@ -22,12 +22,14 @@ public abstract class IdentifierFactory {
 	 * @param include Should find all that match pattern if true or all that do not match pattern if false
 	 * @param assetType
 	 * @param host
+	 * @param hasLive pull only if the identifier has a published version
+	 * @param pullDeleted
 	 * @param startDate use to search between dates
 	 * @param endDate
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<Identifier> findByURIPattern(String assetType,String uri, boolean include, Host host, Date startDate, Date endDate) throws DotDataException;
+	abstract protected List<Identifier> findByURIPattern(String assetType,String uri, boolean hasLive, boolean pullDeleted,boolean include, Host host, Date startDate, Date endDate) throws DotDataException;
 	
 	abstract protected void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException;
 
@@ -35,10 +37,14 @@ public abstract class IdentifierFactory {
 	 * Will look for all identifiers matting a URI pattern  
 	 * @param uri Can contain a * at the beginning or end
 	 * @param include Should find all that match pattern if true or all that do not match pattern if false
+	 * @param assetType
+	 * @param hasLive pull only if the identifier has a published version
+	 * @param pullDeleted
+	 * @param host
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<Identifier> findByURIPattern(String assetType,String uri, boolean include, Host host) throws DotDataException;
+	abstract protected List<Identifier> findByURIPattern(String assetType,String uri, boolean hasLive,boolean pullDeleted,boolean include, Host host) throws DotDataException;
 	
 	/**
 	 * looks in cache first, then in db.  It will load the cache for future use
