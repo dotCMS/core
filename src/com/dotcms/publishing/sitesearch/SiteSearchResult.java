@@ -99,6 +99,14 @@ public class SiteSearchResult {
 	}
 
 	public long getContentLength() {
+		
+		if(map.get("contentLength") ==null){
+			return 0;
+		}
+		if(map.get("contentLength") instanceof Integer){
+			return new Long((Integer) map.get("contentLength"));
+		}
+		
 		return (Long) map.get("contentLength");
 	}
 
@@ -113,5 +121,23 @@ public class SiteSearchResult {
 	public void setModified(Date modified) {
 		map.put("modified", modified);
 	}
-
+	
+	public float getScore(){
+		return (Float) map.get("score");
+		
+	}
+	public void setScore(float score){
+		map.put("score", score);
+		
+	}
+	
+	public SiteSearchResult(Map m){
+		this.map = m;
+		
+	}
+	
+	public SiteSearchResult(){
+		this.map = new HashMap<String, Object>();
+		
+	}
 }

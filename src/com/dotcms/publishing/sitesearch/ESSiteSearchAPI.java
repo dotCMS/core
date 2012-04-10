@@ -9,14 +9,22 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
@@ -27,7 +35,6 @@ import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.SimpleScheduledTask;
-import com.dotmarketing.sitesearch.business.DotSearchResults;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.job.SiteSearchJobProxy;
 import com.dotmarketing.util.Logger;
@@ -55,9 +62,98 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		return indices;
 	}
 	@Override
-	public DotSearchResults search(String query, String sort, int start, int rows, String lang, String hostId) {
+	public DotSearchResults search(String query, String sort, int start, int rows) throws ElasticSearchException{
+		DotSearchResults results = new DotSearchResults();
+		if(query ==null){
+			results.setError("null query");
+			return results;
+		}
 		
-		return null;
+		try{
+
+		
+			results =  search(APILocator.getIndiciesAPI().loadIndicies().site_search, query, null, start, rows);
+
+		
+		}
+		catch(Exception e){
+			results.setError(e.getMessage());
+
+			
+		}
+		
+		return results;
+		
+		
+		
+	}
+	
+	@Override
+	public DotSearchResults search(String indexName, String query, String sort, int offset, int limit) {
+		
+		
+
+		DotSearchResults results = new DotSearchResults();
+		results.setQuery(query);
+		
+	    Client client=new ESClient().getClient();
+	    SearchResponse resp = null;
+        try {
+    		if(indexName ==null){
+    			indexName = APILocator.getIndiciesAPI().loadIndicies().site_search;
+    		}
+        	if(!indexName.startsWith(ES_SITE_SEARCH_NAME)){
+        		throw new ElasticSearchException(indexName + " is not a sitesearch index");
+        		
+        	}
+        	
+        	
+        	
+            SearchRequestBuilder srb = client.prepareSearch()
+                 .setQuery(QueryBuilders.queryString(query))
+                 .setIndices(indexName);
+
+            if(limit>0)
+                srb.setSize(limit);
+            if(offset>0)
+                srb.setFrom(offset);
+
+
+            try{
+            	resp = srb.execute().actionGet();
+            }catch (SearchPhaseExecutionException e) {
+				if(e.getMessage().contains("-order_dotraw] in order to sort on")){
+					
+				}else{
+					throw e;
+				}
+			}
+            
+    	    SearchHits hits =  resp.getHits();
+    	    results.setTotalResults(hits.getTotalHits());
+    	    results.setMaxScore(hits.getMaxScore());
+
+    	    ObjectMapper mapper = new ObjectMapper();
+    	    for(SearchHit hit : hits.hits()){
+
+    	    		
+    				SiteSearchResult ssr = new SiteSearchResult(hit.getSource());
+    				ssr.setScore(hit.getScore());
+    				
+    				
+    				results.getResults().add(ssr);
+    		
+    	    }
+            
+            
+            
+        } catch (Exception e) {
+            Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
+            results.setError(e.getMessage());
+        }
+
+	    
+	    return results;
 	}
 	
 	
@@ -179,6 +275,23 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     @Override
     public void putToIndex(String idx, SiteSearchResult res){
 	   try{
+		   
+		   if(res.getTitle() ==null && res.getFileName() != null){
+			   res.setTitle(res.getFileName() );
+		   }
+		   
+		   if(res.getDescription() ==null && res.getContent() != null){
+			   
+			   //String x = res.getContent();
+			  // String noHTMLString = res.getContent().replaceAll("\\<.*?\\>", "");
+			   
+			   
+			   
+			   
+			   //res.setDescription(UtilMethods.prettyShortenString(noHTMLString, 500));
+		   }
+		   
+		   
 		   Client client=new ESClient().getClient();
 		   String json = new ESMappingAPIImpl().toJsonString(res.getMap());
 		   IndexResponse response = client.prepareIndex(idx, ES_SITE_SEARCH_MAPPING, res.getId())

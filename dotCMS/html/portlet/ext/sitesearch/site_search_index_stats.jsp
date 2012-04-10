@@ -30,7 +30,7 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
-	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_SITESEARCH", user)){
 		throw new DotSecurityException("Invalid user accessing index_stats.jsp - is user '" + user + "' logged in?");
 	}
 } catch (Exception e) {
@@ -100,14 +100,10 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 		<div class="buttonRow" style="text-align: right;padding:20px;">
 
-			<div dojoType="dijit.form.DropDownButton">
-				<span><%= LanguageUtil.get(pageContext,"Add-Index") %></span>
-					<div dojoType="dijit.Menu">
-					 	<div dojoType="dijit.MenuItem" onClick="doCreateSiteSearch();">
-		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
-		                </div>
-		           </div>
-			</div>
+		    <button dojoType="dijit.form.Button"  onClick="doCreateSiteSearch()" iconClass="addIcon">
+               <%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
+            </button>
+
 		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="reloadIcon">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>

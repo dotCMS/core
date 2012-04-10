@@ -288,6 +288,14 @@ function refreshJobStats(){
 	var y =Math.floor(Math.random()*1123213213);
 	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_stats.jsp?r=" + y  );
 }
+
+function refreshTestSearch(){
+	var x = dijit.byId("indexTestCp");
+	var y =Math.floor(Math.random()*1123213213);
+	x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?r=" + y  );
+}
+
+
 function doDownloadIndex(indexName){
 	
 
@@ -603,6 +611,16 @@ function undohighlight(id) {
 }
 
 
+function doTestSearch(){
+	var testIndex = dijit.byId("testIndex").getValue();
+	var testQuery = encodeURIComponent(dijit.byId("testQuery").getValue());
+	alert(testQuery);
+	var x = dijit.byId("indexTestCp");
+	var y =Math.floor(Math.random()*1123213213);
+	x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?testIndex="+ testIndex+ "&r=" + y + "&testQuery="+testQuery  );
+	
+}
+
 dojo.addOnLoad (function(){
 		var tab =dijit.byId("mainTabContainer");
 	   	dojo.connect(tab, 'selectChild',
@@ -614,7 +632,11 @@ dojo.addOnLoad (function(){
 			  	if(selectedTab.id =="jobTabCp"){
 			  		refreshJobStats();
 			  	}
+			  	if(selectedTab.id =="indexTestTabCp"){
+			  		refreshTestSearch();
+			  	}
 		});
+	  refreshTestSearch();
 	
 });	
 
@@ -786,9 +808,16 @@ dojo.addOnLoad (function(){
 		</div>
 		
 		
-		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Index") %>">
+		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Indices") %>">
 			<div dojoType="dijit.layout.ContentPane" id="indexStatsCp" style="height:600px"></div>
 		</div>
+		
+		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Test-Search") %>">
+			<div dojoType="dijit.layout.ContentPane" id="indexTestCp" style="height:800px"></div>
+		</div>
+		
+		
+		
 	</div>
 	
 
