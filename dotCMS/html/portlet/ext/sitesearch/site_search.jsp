@@ -69,7 +69,7 @@ List<String> indexes = ssapi.listIndices();
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.form.NumberTextBox");
 dojo.require('dotcms.dojo.data.HostReadStore');
-
+dojo.require("dijit.form.Form");
 function checkAll() {
 	var check = dijit.byId("checkAll").checked;
 	dojo.query('input[type=checkbox]', document).forEach(function(tag){
@@ -609,15 +609,36 @@ function dohighlight(id) {
 function undohighlight(id) {
     dojo.removeClass(id,"highlight");
 }
-
+dojo.require("dojo.parser");
 
 function doTestSearch(){
-	var testIndex = dijit.byId("testIndex").getValue();
-	var testQuery = encodeURIComponent(dijit.byId("testQuery").getValue());
-	alert(testQuery);
+
 	var x = dijit.byId("indexTestCp");
 	var y =Math.floor(Math.random()*1123213213);
-	x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?testIndex="+ testIndex+ "&r=" + y + "&testQuery="+testQuery  );
+
+	var xhrArgs = {
+	      form: dojo.byId("testSiteForm"),
+	      handleAs: "text",
+	      load: function(data){
+	    	  //alert(data);
+	    	  dojo.byId("siteSearchResults").innerHTML = data;
+	        //dojo.byId("response").innerHTML = "Form posted.";
+	      },
+	      error: function(error){
+	        // We'll 404 in the demo, but that's okay.  We don't have a 'postIt' service on the
+	        // docs server.
+	       dojo.byId("siteSearchResults").innerHTML = error;
+	        //dojo.byId("response").innerHTML = "Form posted.";
+	      }
+	    }
+
+
+	
+	    var deferred = dojo.xhrPost(xhrArgs);
+	
+	
+	
+	
 	
 }
 
@@ -809,11 +830,11 @@ dojo.addOnLoad (function(){
 		
 		
 		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Indices") %>">
-			<div dojoType="dijit.layout.ContentPane" id="indexStatsCp" style="height:600px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="height:600px"></div>
 		</div>
 		
 		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Test-Search") %>">
-			<div dojoType="dijit.layout.ContentPane" id="indexTestCp" style="height:800px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="indexTestCp" style="height:800px"></div>
 		</div>
 		
 		
