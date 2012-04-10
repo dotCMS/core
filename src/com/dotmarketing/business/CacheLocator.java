@@ -77,7 +77,7 @@ public class CacheLocator extends Locator<CacheIndex>{
         public List<Map<String, Object>> getCacheStatsList() { return dotcache.getCacheStatsList(); }
         public Class getImplementationClass() { return dotcache.getClass(); }
         public void put(final String key, final Object content, final String group) {
-            try {
+            /*try {
                 HibernateUtil.addCommitListener(new Runnable() {
                    public void run() {
                        dotcache.put(key, content, group);
@@ -85,7 +85,8 @@ public class CacheLocator extends Locator<CacheIndex>{
                 });
             } catch (DotHibernateException e) {
                 throw new RuntimeException(e);
-            }
+            }*/
+            dotcache.put(key, content, group);
         }
     }
     
