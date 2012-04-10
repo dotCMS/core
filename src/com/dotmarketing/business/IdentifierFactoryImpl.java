@@ -28,6 +28,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.hp.hpl.jena.vocabulary.DB;
 import com.liferay.portal.model.User;
 
 /**
@@ -40,16 +41,16 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	IdentifierCache ic = CacheLocator.getIdentifierCache();
 
 	@Override
-	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean include,Host host)throws DotDataException {
-		return findByURIPattern(assetType, uri, include, host, null, null);
+	protected List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean pullDeleted,boolean include,Host host)throws DotDataException {
+		return findByURIPattern(assetType, uri, hasLive, pullDeleted,include, host, null, null);
 	}
 	
 	@Override
-	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
+	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean pullDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
 		if(assetType.equals(new HTMLPage().getType())){
-			bob.append("join htmlpage_version_info vi on (i.id = vi.identifier) join htmlpage a on (vi.live_inode = a.inode) ");
+			bob.append("join " + assetType + "_version_info vi on (i.id = vi.identifier) join " + assetType + " a on (" + (hasLive ? "vi.live_inode":"vi.working_inode") + " = a.inode) ");
 		}
 		
 		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
@@ -61,10 +62,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		bob.append((include ? "":"NOT ") + "LIKE ? and host_inode = ? and asset_type = ? ");
 		if(startDate != null){
-			bob.append(" and a.mod_date >= ?");
+			bob.append(" and a.mod_date >= ? ");
 		}
 		if(endDate != null){
-			bob.append(" and a.mod_date <= ?");
+			bob.append(" and a.mod_date <= ? ");
+		}
+		if(!pullDeleted){
+			bob.append("vi.deleted=" + DbConnectionFactory.getDBFalse() + " ");
 		}
 		dc.setSQL(bob.toString());
 		dc.addParam(uri.replace("*", "%"));

@@ -27,13 +27,13 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 
 	@Override
-	public List<Identifier> findByURIPattern(String assetType,String uri, boolean include, Host host) throws DotDataException {
-		return ifac.findByURIPattern(assetType,uri, include, host);
+	public List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean pullDeleted,boolean include,Host host) throws DotDataException {
+		return ifac.findByURIPattern(assetType,uri,hasLive,pullDeleted,include, host);
 	}
 	
 	@Override
-	public List<Identifier> findByURIPattern(String assetType, String uri, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
-		return ifac.findByURIPattern(assetType, uri, include, host, startDate, endDate);
+	public List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean pullDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
+		return ifac.findByURIPattern(assetType, uri, hasLive,pullDeleted,include, host, startDate, endDate);
 	}
 	
 	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
