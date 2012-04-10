@@ -77,16 +77,18 @@ public class CacheLocator extends Locator<CacheIndex>{
         public List<Map<String, Object>> getCacheStatsList() { return dotcache.getCacheStatsList(); }
         public Class getImplementationClass() { return dotcache.getClass(); }
         public void put(final String key, final Object content, final String group) {
-            /*try {
-                HibernateUtil.addCommitListener(new Runnable() {
-                   public void run() {
-                       dotcache.put(key, content, group);
-                   } 
-                });
-            } catch (DotHibernateException e) {
-                throw new RuntimeException(e);
-            }*/
             dotcache.put(key, content, group);
+            try {
+                if(!HibernateUtil.getSession().connection().getAutoCommit()) {
+                    HibernateUtil.addRollbackListener(new Runnable() {
+                       public void run() {
+                           dotcache.remove(key, group);
+                       } 
+                    });
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
     
