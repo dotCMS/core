@@ -994,22 +994,25 @@ public class ContentletAjax {
 							.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
 							+ File.separator + user.getUserId() + File.separator + elementName
 							+ File.separator + binaryFileValue);
-					try {
-					    // https://github.com/dotCMS/dotCMS/issues/35
-					    // making a copy just in case the transaction fails so
-					    // we can have the file for possible next attempts
-                        File acopyFolder=new File(Config.CONTEXT
-                                .getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
-                                + File.separator + user.getUserId() + File.separator + elementName
-                                + File.separator + UUIDGenerator.generateUuid());
-                        if(!acopyFolder.exists())
-                            acopyFolder.mkdir();
-                        File acopy=new File(acopyFolder, binaryFileValue);
-                        FileUtils.copyFile(binaryFile, acopy);
-                        elementValue = acopy;
-                    } catch (IOException e) {
-                        throw new SystemException(e);
-                    }
+					if(binaryFile.exists()) {
+    					try {
+    					    // https://github.com/dotCMS/dotCMS/issues/35
+    					    // making a copy just in case the transaction fails so
+    					    // we can have the file for possible next attempts
+                            File acopyFolder=new File(Config.CONTEXT
+                                    .getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+                                    + File.separator + user.getUserId() + File.separator + elementName
+                                    + File.separator + UUIDGenerator.generateUuid());
+                            if(!acopyFolder.exists())
+                                acopyFolder.mkdir();
+                            File acopy=new File(acopyFolder, binaryFileValue);
+                            FileUtils.copyFile(binaryFile, acopy);
+                            elementValue = acopy;
+                        } catch (IOException e) {
+                            Logger.warn(this, "can't make a copy of the uploaded file");
+                            throw new SystemException(e);
+                        }
+					}
 				}else{
 					elementValue = null;
 				}
