@@ -372,7 +372,7 @@ public class BrowserAjax {
 			Logger.error(this, "Could not load files : ",e2);
 		} 
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-    	Contentlet contentlet = new Contentlet();    	
+    	Contentlet contentlet = null;    	
     	WorkflowStep wfStep = null;
     	WorkflowScheme wfScheme = null;
         for (Versionable file : files) {
@@ -389,7 +389,7 @@ public class BrowserAjax {
     		
     		contentlet=null;
     		if(file instanceof com.dotmarketing.portlets.fileassets.business.FileAsset)
-    		    contentlet = conAPI.find(file.getInode(),usr,false);
+    		    contentlet = (Contentlet)file;
     		try{
     			if(contentlet != null){
     				wfStep = APILocator.getWorkflowAPI().findStepByContentlet(contentlet); 
