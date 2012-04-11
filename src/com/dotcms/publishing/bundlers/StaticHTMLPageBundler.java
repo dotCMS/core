@@ -98,13 +98,7 @@ public class StaticHTMLPageBundler implements IBundler {
 					deletedIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(), "/*",config.liveOnly(),true,include, h, config.getStartDate(), config.getEndDate()));
 				}catch(NullPointerException e){}
 				for (Identifier i : pageIdents) {
-					String html = null;
 					if(!config.liveOnly()){
-						try{
-							html = pAPI.getHTML(i.getURI(), h,false , null, uAPI.getSystemUser());
-						}catch(Exception e){
-							Logger.error(this, e.getMessage() + " Unable to get page", e);
-						}
 						HTMLPageWrapper w = new HTMLPageWrapper();
 						try{
 							w.setIdentifier(i);
@@ -115,18 +109,12 @@ public class StaticHTMLPageBundler implements IBundler {
 							continue;
 						}
 						try{
-							writeFileToDisk(bundleRoot,w, html, i.getURI(), h, false);
+							writeFileToDisk(bundleRoot,w, i.getURI(), h, false);
 						}catch (IOException e) {
 							Logger.error(this, e.getMessage() + " : Unable to write HTML to bundle", e);
 						}
-						html=null;
 					}
 					
-					try{
-						html = pAPI.getHTML(i.getURI(), h,true , null, uAPI.getSystemUser());
-					}catch(Exception e){
-						Logger.error(this, e.getMessage() + " Unable to get page", e);
-					}
 					HTMLPageWrapper w = new HTMLPageWrapper();
 					try{
 						w.setIdentifier(i);
@@ -137,11 +125,10 @@ public class StaticHTMLPageBundler implements IBundler {
 						continue;
 					}
 					try{
-						writeFileToDisk(bundleRoot,w, html, i.getURI(), h, true);
+						writeFileToDisk(bundleRoot,w, i.getURI(), h, true);
 					}catch (IOException e) {
 						Logger.error(this, e.getMessage() + " : Unable to write HTML to bundle", e);
 					}
-					html=null;
 				}
 			}
 		}catch (DotDataException e) {
@@ -149,9 +136,9 @@ public class StaticHTMLPageBundler implements IBundler {
 		}
 	}
 	
-	private void writeFileToDisk(File bundleRoot, HTMLPageWrapper htmlPageWrapper, String html, String uri, Host h, boolean live) throws IOException, DotBundleException{
-		if(html == null || uri == null){
-			Logger.warn(this, "HTML or URI is not set for Bundler to write");
+	private void writeFileToDisk(File bundleRoot, HTMLPageWrapper htmlPageWrapper, String uri, Host h, boolean live) throws IOException, DotBundleException{
+		if(uri == null){
+			Logger.warn(this, "URI is not set for Bundler to write");
 			return;
 		}
 		try{
@@ -186,6 +173,12 @@ public class StaticHTMLPageBundler implements IBundler {
 					if(!sf.exists())sf.createNewFile();
 					FileWriter fstream = new FileWriter(sf);
 					BufferedWriter out = new BufferedWriter(fstream);
+					String html = new String();
+					try{
+						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser());
+					}catch(Exception e){
+						Logger.error(this, e.getMessage() + " Unable to get page", e);
+					}
 					out.write(html);
 					out.close();
 					sf.setLastModified(cal.getTimeInMillis());
