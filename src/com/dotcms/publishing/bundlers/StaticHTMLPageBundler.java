@@ -176,13 +176,13 @@ public class StaticHTMLPageBundler implements IBundler {
 			String dir = wrapperFile.substring(0, wrapperFile.lastIndexOf(File.separator));
 			new File(dir).mkdirs();
 			
-			if(wf.exists() && wf.lastModified() == cal.getTimeInMillis()){
+			if(!wf.exists() || wf.lastModified() != cal.getTimeInMillis()){
 				BundlerUtil.objectToXML(htmlPageWrapper, wf);
 				// set the time of the file
 				wf.setLastModified(cal.getTimeInMillis());
 			}
 			
-			if(sf.exists() && sf.lastModified() == cal.getTimeInMillis()){
+			if(!sf.exists() || sf.lastModified() != cal.getTimeInMillis()){
 				try {
 					if(!sf.exists())sf.createNewFile();
 					FileWriter fstream = new FileWriter(sf);
