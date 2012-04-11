@@ -155,7 +155,7 @@ public class URLMapBundler implements IBundler {
 			}
 		} catch (Exception e) {
 			
-			Logger.error(FileObjectBundler.class,e.getMessage(),e);
+			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + bob.toString(), e);
 		}
 		
@@ -169,7 +169,7 @@ public class URLMapBundler implements IBundler {
 			try {
 				cons = capi.findContentlets(inodes);
 			} catch (Exception e) {
-				Logger.error(FileObjectBundler.class,e.getMessage(),e);
+				Logger.error(this.getClass(),e.getMessage(),e);
 				throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to retrieve content", e);
 			}
 			
@@ -183,10 +183,6 @@ public class URLMapBundler implements IBundler {
 					
 				}
 			}
-			
-
-
-	
 		}
 		
 		}
@@ -201,11 +197,12 @@ public class URLMapBundler implements IBundler {
 			throw new DotBundleException("null contentlet passed in ");
 		}
 		Calendar cal = Calendar.getInstance();
-		File f = null;
+
 		BufferedWriter w = null;
+		URLMapWrapper wrap = new URLMapWrapper();
 		try{
 			Host h  = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), true);
-			
+			File f = null;
 			
 
 			String url = capi.getUrlMapForContentlet(contentlet,APILocator.getUserAPI().getSystemUser(), true );
@@ -216,32 +213,44 @@ public class URLMapBundler implements IBundler {
 			//url = FileUtil.sanitizeFileName(url);
 
 			ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+			
+			wrap.setInfo(info);
+			wrap.setContent(contentlet);
+			wrap.setId(APILocator.getIdentifierAPI().find(contentlet.getIdentifier()));
+			
+			
 			String liveworking = (contentlet.getInode().equals(info.getLiveInode() )) ? "live" : "working";
 
-			String myFile = bundleRoot.getPath() + File.separator 
+			String myFileUrl = bundleRoot.getPath() + File.separator 
 					+liveworking + File.separator 
 					+ h.getHostname() 
-					+ url.replace("/", File.separator) + FILE_ASSET_EXTENSION;
-			 f = new File(myFile);
+					+ url.replace("/", File.separator) ;
+			 f = new File(myFileUrl);
 			
 			// Should we write or is the file already there:
 			
 			cal.setTime(contentlet.getModDate());
 			cal.set(Calendar.MILLISECOND, 0);
-			if(f.exists() && f.lastModified() == cal.getTimeInMillis()){
-				return;
+			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
+				Structure struc = contentlet.getStructure();
+				String detailPageId = struc.getDetailPage();
+				HTMLPage htmlPage = APILocator.getHTMLPageAPI().loadLivePageById(detailPageId, APILocator.getUserAPI().getSystemUser(), false);
+				String pageString = APILocator.getHTMLPageAPI().getHTML(htmlPage, true, contentlet.getInode(), APILocator.getUserAPI().getSystemUser());
+				
+				String dir = myFileUrl.substring(0, myFileUrl.lastIndexOf(File.separator));
+				new File(dir).mkdirs();
+	
+				w = new BufferedWriter(new FileWriterWithEncoding(f, "UTF-8"));
+				w.write(pageString);
+				w.close();
+				f.setLastModified(cal.getTimeInMillis());
+				w=null;
 			}
-			
-			Structure struc = contentlet.getStructure();
-			String detailPageId = struc.getDetailPage();
-			HTMLPage htmlPage = APILocator.getHTMLPageAPI().loadLivePageById(detailPageId, APILocator.getUserAPI().getSystemUser(), false);
-			String pageString = APILocator.getHTMLPageAPI().getHTML(htmlPage, true, contentlet.getInode(), APILocator.getUserAPI().getSystemUser());
-			
-			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
-			new File(dir).mkdirs();
-
-			w = new BufferedWriter(new FileWriterWithEncoding(f, "UTF-8"));
-			w.write(pageString);
+			f = new File(f.getAbsolutePath() + FILE_ASSET_EXTENSION);
+			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
+				BundlerUtil.objectToXML(wrap, f);
+				f.setLastModified(cal.getTimeInMillis());
+			}
 			
 			// set the time of the file
 			
@@ -252,7 +261,6 @@ public class URLMapBundler implements IBundler {
 			if(w != null){
 				try{
 					w.close();
-					f.setLastModified(cal.getTimeInMillis());
 				}
 				catch(Exception ex){
 					

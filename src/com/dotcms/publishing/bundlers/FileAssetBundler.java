@@ -27,7 +27,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 
-public class FileObjectBundler implements IBundler {
+public class FileAssetBundler implements IBundler {
 
 	private PublisherConfig config;
 	ContentletAPI conAPI = null;
@@ -52,7 +52,7 @@ public class FileObjectBundler implements IBundler {
 		try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
-			Logger.fatal(FileObjectBundler.class,e.getMessage(),e);
+			Logger.fatal(FileAssetBundler.class,e.getMessage(),e);
 		}
 	}
 
@@ -110,7 +110,7 @@ public class FileObjectBundler implements IBundler {
 		
 		
 		
-		Logger.info(FileObjectBundler.class,bob.toString());
+		Logger.info(FileAssetBundler.class,bob.toString());
 		
 		try {
 			cs = conAPI.searchIndex(bob.toString() + "+live:true", 0, 0, "moddate", systemUser, true);
@@ -119,7 +119,7 @@ public class FileObjectBundler implements IBundler {
 			}
 		} catch (Exception e) {
 			
-			Logger.error(FileObjectBundler.class,e.getMessage(),e);
+			Logger.error(FileAssetBundler.class,e.getMessage(),e);
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + bob.toString(), e);
 		}
 		
@@ -134,7 +134,7 @@ public class FileObjectBundler implements IBundler {
 				List<Contentlet> cons = conAPI.findContentlets(inodes);
 				assets = fAPI.fromContentlets(cons);
 			} catch (Exception e) {
-				Logger.error(FileObjectBundler.class,e.getMessage(),e);
+				Logger.error(FileAssetBundler.class,e.getMessage(),e);
 				throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to retrieve content", e);
 			}
 			for (FileAsset fileAsset : assets) {
@@ -142,7 +142,7 @@ public class FileObjectBundler implements IBundler {
 					writeFileToDisk(bundleRoot, fileAsset);
 					status.addCount();
 				} catch (Exception e) {
-					Logger.error(FileObjectBundler.class,e.getMessage() + " : Unable to write file",e);
+					Logger.error(FileAssetBundler.class,e.getMessage() + " : Unable to write file",e);
 					status.addFailuer();
 				}
 			}

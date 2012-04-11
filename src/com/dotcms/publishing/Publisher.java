@@ -112,7 +112,7 @@ public abstract class Publisher implements IPublisher {
 	}
 	public String getUrlFromFilePath(File file) throws DotPublishingException{
 		
-		return getHostFromFilePath(file) + "/" + getUriFromFilePath(file);
+		return getHostFromFilePath(file).getHostname()  + getUriFromFilePath(file);
 		
 	}
 }
