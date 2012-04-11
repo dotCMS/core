@@ -303,7 +303,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 			   //res.setDescription(UtilMethods.prettyShortenString(noHTMLString, 500));
 		   }
 		   
-		   
+		   Logger.info(this.getClass(), "deleting from : " + idx  + " url:" + res.getId());
 		   Client client=new ESClient().getClient();
 		   String json = new ESMappingAPIImpl().toJsonString(res.getMap());
 		   IndexResponse response = client.prepareIndex(idx, ES_SITE_SEARCH_MAPPING, res.getId())
@@ -336,6 +336,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     @Override
     public void deleteFromIndex(String idx,String docId){
 	   try{
+		   
+		   Logger.info(this.getClass(), "deleting from : " + idx  + " url:" + docId);
 		   Client client=new ESClient().getClient();
 		   DeleteResponse response = client.prepareDelete(idx, ES_SITE_SEARCH_MAPPING, docId)
 			        .execute()

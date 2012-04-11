@@ -1,7 +1,6 @@
 package com.dotmarketing.sitesearch.viewtool;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,10 +14,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
 
 public class SiteSearchWebAPI implements ViewTool {
 
@@ -59,11 +56,19 @@ public class SiteSearchWebAPI implements ViewTool {
 	 * @throws IOException
 	 */
 
-	public DotSearchResults search(String query, String sort, int start, int rows, HttpServletRequest request)
+	public DotSearchResults search(String query, String sort, int start, int rows)
 			throws IOException {
-
+		DotSearchResults results= new DotSearchResults();
+		if(query ==null){
+			results.setError("No query passed in");
+			return results;
+			
+		}
 		Host host = null;
 
+		
+		
+		
 		try {
 			host = hostWebAPI.getCurrentHost(request);
 		} catch (Exception e) {
@@ -73,18 +78,19 @@ public class SiteSearchWebAPI implements ViewTool {
 				host = hostWebAPI.findDefaultHost(userAPI.getSystemUser(), false);
 			} catch (Exception e1) {
 				Logger.error(this, e1.getMessage(), e1);
-				throw new DotRuntimeException(e.getMessage(), e);
+				results.setError("no host:" + e.getMessage());
+				return results;
 			}
 		
 		}
-		
-
-		
-		Locale locale = (Locale)request.getSession().getAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY);
-		String lang = request.getLocale().getLanguage();
-		if(locale!=null){
-			lang = locale.getLanguage();	
+		if(query.indexOf("+host:") < 0){
+			query+= " +host:" + host.getIdentifier() ; 
 		}
+		if(query.indexOf("+language:") < 0){
+			query+= " +language:" + WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+		}
+		
+		
 				
 		DotSearchResults dsr = siteSearchAPI.search(query, sort, start, rows);
 

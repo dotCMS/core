@@ -26,6 +26,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class FileAssetBundler implements IBundler {
 
@@ -175,23 +176,33 @@ public class FileAssetBundler implements IBundler {
 					+liveworking + File.separator 
 					+ h.getHostname() 
 					+ fileAsset.getURI().replace("/", File.separator) + FILE_ASSET_EXTENSION;
-			File f = new File(myFile);
+
 			
 			// Should we write or is the file already there:
 			Calendar cal = Calendar.getInstance();
 			cal.setTime(fileAsset.getModDate());
 			cal.set(Calendar.MILLISECOND, 0);
-			if(f.exists() && f.lastModified() == cal.getTimeInMillis()){
-				return;
-			}
-			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
-			new File(dir).mkdirs();
-			String x  = (String) fileAsset.get("metaData");
-			fileAsset.setMetaData(x);
-			BundlerUtil.objectToXML(wrap, f);
 			
+			//only write if changed
+			File f = new File(myFile);
+			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
+				String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
+				new File(dir).mkdirs();
+				String x  = (String) fileAsset.get("metaData");
+				fileAsset.setMetaData(x);
+				BundlerUtil.objectToXML(wrap, f);
+				f.setLastModified(cal.getTimeInMillis());
+			}
+			
+			//only write if changed
+			f = new File(myFile.replaceAll(FILE_ASSET_EXTENSION,""));
+			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
+				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPath(fileAsset.getInode(), fileAsset.getFileName()));
+				FileUtil.copyFile(oldAsset, f);
+				f.setLastModified(cal.getTimeInMillis());
+			}
 			// set the time of the file
-			f.setLastModified(cal.getTimeInMillis());
+			
 		}
 		catch(Exception e){
 			throw new DotBundleException("cant get host for " + fileAsset + " reason " + e.getMessage());
