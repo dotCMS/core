@@ -15,7 +15,7 @@ Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 SiteSearchConfig pconf = new SiteSearchConfig();
 
 pconf.setIndexName("sitesearch_willtest");
-pconf.setId("this-is-my-bundle");
+pconf.setId("2012-04-11");
 
 pconf.setUser(APILocator.getUserAPI().getSystemUser());
 pconf.setHosts(Arrays.asList(host));

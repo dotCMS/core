@@ -15,9 +15,10 @@ import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.bundlers.BundlerUtil;
+import com.dotcms.publishing.bundlers.FileAssetBundler;
 import com.dotcms.publishing.bundlers.FileAssetWrapper;
-import com.dotcms.publishing.bundlers.FileObjectBundler;
 import com.dotcms.publishing.bundlers.URLMapBundler;
+import com.dotcms.publishing.bundlers.URLMapWrapper;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -80,7 +81,7 @@ public class ESSiteSearchPublisher extends Publisher {
 					Runnable worker = new Runnable() {
 						@Override
 						public void run() {
-							if (b instanceof FileObjectBundler) {
+							if (b instanceof FileAssetBundler) {
 								processFileObjects(list);
 							} else if (b instanceof URLMapBundler) {
 								processUrlMaps(list);
@@ -134,29 +135,59 @@ public class ESSiteSearchPublisher extends Publisher {
 
 	}
 
-	private void processUrlMap(File file) throws IOException, DotPublishingException {
+	private void processUrlMap(File file) throws DotPublishingException {
+		String docId=null;
+		try {
+		URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
+		if (wrap == null)
+			return;
+		
+		File htmlFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
+		String uri =getUriFromFilePath(htmlFile);
+		Host h = APILocator.getHostAPI().find(wrap.getContent().getHost(), APILocator.getUserAPI().getSystemUser(), true);
+		
+		docId=DigestUtils.md5Hex(h.getIdentifier()+ uri);
+		// is the live guy
+		if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getContent().getInode())) {
+			
+				
+				Map<String, String> map = new TikaUtils().getMetaDataMap(htmlFile, "text/html");
 
-		Map<String, String> map = new TikaUtils().getMetaDataMap(file, "text/html");
+				if (map != null) {
 
-		if (map != null) {
+					SiteSearchResult res = new SiteSearchResult(map);
 
-			SiteSearchResult res = new SiteSearchResult(map);
+					// map contains [fileSize, content, author, title, keywords,
+					// description, contentType, contentEncoding]
 
-			// map contains [fileSize, content, author, title, keywords,
-			// description, contentType, contentEncoding]
+					res.setContentLength(htmlFile.length());
+					res.setMimeType(map.get("contentType"));
+					res.setFileName(htmlFile.getName().replaceAll(".dotUrlMap", ""));
+					
 
-			res.setContentLength(file.length());
-			Host h = getHostFromFilePath(file);
+					res.setHost(h.getIdentifier());
 
-			res.setHost(h.getIdentifier());
+					res.setUri(getUriFromFilePath(htmlFile));
+					res.setUrl(getUrlFromFilePath(htmlFile));
 
-			res.setUri(getUriFromFilePath(file));
-			res.setUrl(getUrlFromFilePath(file));
+					res.setId(docId);
 
-			APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
+					APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
+				}
+				
+				
+				
 
-		} else if (file.getAbsolutePath().contains("DOTDELETE")) {
-			// doDelete(wrap.getAsset());
+		//if this is the deleted guy
+			
+		} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
+			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
+			
+			
+		}
+
+		} catch (Exception e) {
+			Logger.error(this.getClass(), "site search  failed: " + docId + " error" + e.getMessage());
 		}
 
 	}
@@ -167,74 +198,78 @@ public class ESSiteSearchPublisher extends Publisher {
 		// file.getAbsolutePath());
 
 		FileAssetWrapper wrap = (FileAssetWrapper) BundlerUtil.xmlToObject(file);
-		if (wrap == null)
+		if (wrap == null){
 			return;
+		}
+		FileAsset asset = wrap.getAsset();
 		// is the live guy
 		if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getAsset().getInode())) {
 			try {
-				doPut(wrap.getAsset());
+				try {
+					
+					SiteSearchResult res = new SiteSearchResult();
+					res.setContentLength(asset.getFileSize());
+					res.setHost(asset.getHost());
+
+					Host h;
+
+					h = APILocator.getHostAPI().find(asset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
+					res.setUri(asset.getPath() + asset.getFileName());
+					res.setUrl(h.getHostname() + res.getUri());
+					res.setFileName(asset.getFileName());
+
+					res.setMimeType(APILocator.getFileAPI().getMimeType(asset.getFileName()));
+					res.setModified(asset.getModDate());
+
+					String md5 = DigestUtils.md5Hex(asset.getHost() + res.getUri());
+					res.setId(md5);
+
+					String x = asset.getMetaData();
+					if (x != null) {
+
+						Map<String, Object> m = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(x);
+
+						res.setAuthor((String) m.get("author"));
+						res.setDescription((String) m.get("description"));
+						res.setContent((String) m.get("content"));
+
+					}
+
+					APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
+
+					Logger.info(this.getClass(), "adding: " + asset.getPath() + asset.getFileName());
+				} catch (Exception e) {
+					throw new DotPublishingException(e.getMessage());
+
+				}
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "site search indexPut failed: " + e.getMessage());
 			}
+			
+			
+			//if we need to delete
 		} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
-			doDelete(wrap.getAsset());
+			String url = asset.getHost() + asset.getPath() + asset.getFileName();
+			Logger.info(this.getClass(), "delete: " + url);
+			String md5 = DigestUtils.md5Hex(url);
+
+			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), md5);
 		}
 
 	}
 
-	private void doDelete(FileAsset asset) {
-		String url = asset.getHost() + asset.getPath() + asset.getFileName();
-		Logger.info(this.getClass(), "delete: " + url);
-		String md5 = DigestUtils.md5Hex(url);
 
-		APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), md5);
+	
+	
+	
+	
 
-	}
-
-	private void doPut(FileAsset asset) throws DotPublishingException {
-		try {
-			SiteSearchResult res = new SiteSearchResult();
-			res.setContentLength(asset.getFileSize());
-			res.setHost(asset.getHost());
-
-			Host h;
-
-			h = APILocator.getHostAPI().find(asset.getHost(), APILocator.getUserAPI().getSystemUser(), true);
-			res.setUri(asset.getPath() + asset.getFileName());
-			res.setUrl(h.getHostname() + res.getUri());
-			res.setFileName(asset.getFileName());
-
-			res.setMimeType(APILocator.getFileAPI().getMimeType(asset.getFileName()));
-			res.setModified(asset.getModDate());
-
-			String md5 = DigestUtils.md5Hex(asset.getHost() + res.getUri());
-			res.setId(md5);
-
-			String x = asset.getMetaData();
-			if (x != null) {
-
-				Map<String, Object> m = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(x);
-
-				res.setAuthor((String) m.get("author"));
-				res.setDescription((String) m.get("description"));
-				res.setContent((String) m.get("content"));
-
-			}
-
-			APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
-
-			Logger.info(this.getClass(), "adding: " + asset.getPath() + asset.getFileName());
-		} catch (Exception e) {
-			throw new DotPublishingException(e.getMessage());
-
-		}
-	}
 
 	@Override
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
 
-		// list.add(FileObjectBundler.class);
+		list.add(FileAssetBundler.class);
 		// list.add(StaticHTMLPageBundler.class);
 		list.add(URLMapBundler.class);
 		return list;

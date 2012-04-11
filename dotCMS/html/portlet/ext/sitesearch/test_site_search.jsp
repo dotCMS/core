@@ -37,7 +37,7 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 String testIndex = info.site_search;
 String testQuery = (request.getParameter("testQuery") != null) 
 		? request.getParameter("testQuery")
-				: "*";
+				: "";
 
 
 int testStart = 0;
