@@ -17,6 +17,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.bundlers.BundlerUtil;
 import com.dotcms.publishing.bundlers.FileAssetBundler;
 import com.dotcms.publishing.bundlers.FileAssetWrapper;
+import com.dotcms.publishing.bundlers.StaticHTMLPageBundler;
 import com.dotcms.publishing.bundlers.URLMapBundler;
 import com.dotcms.publishing.bundlers.URLMapWrapper;
 import com.dotcms.tika.TikaUtils;
@@ -269,9 +270,9 @@ public class ESSiteSearchPublisher extends Publisher {
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
 
-		list.add(FileAssetBundler.class);
-		// list.add(StaticHTMLPageBundler.class);
-		list.add(URLMapBundler.class);
+//		list.add(FileAssetBundler.class);
+		list.add(StaticHTMLPageBundler.class);
+//		list.add(URLMapBundler.class);
 		return list;
 	}
 
