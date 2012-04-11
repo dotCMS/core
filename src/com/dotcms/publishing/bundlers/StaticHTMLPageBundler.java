@@ -26,7 +26,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -41,7 +40,7 @@ public class StaticHTMLPageBundler implements IBundler {
 	VersionableAPI vAPI = null;
 	User systemUser = null;
 	
-	public final static String HTML_ASSET_EXTENSION = ".dothtml" ;
+	public final static String HTML_ASSET_EXTENSION = ".dothtml.xml" ;
 	
 	@Override
 	public String getName() {
@@ -165,7 +164,7 @@ public class StaticHTMLPageBundler implements IBundler {
 			String staticFile = bundleRoot.getPath() + File.separator 
 					+ (live ? "live" : "working") + File.separator 
 					+ h.getHostname() 
-					+ uri.replace("/", File.separator) + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+					+ uri.replace("/", File.separator);
 			File sf = new File(staticFile);
 			
 			// Should we write or is the file already there:
