@@ -17,6 +17,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.bundlers.BundlerUtil;
 import com.dotcms.publishing.bundlers.FileAssetBundler;
 import com.dotcms.publishing.bundlers.FileAssetWrapper;
+import com.dotcms.publishing.bundlers.HTMLPageWrapper;
 import com.dotcms.publishing.bundlers.StaticHTMLPageBundler;
 import com.dotcms.publishing.bundlers.URLMapBundler;
 import com.dotcms.publishing.bundlers.URLMapWrapper;
@@ -31,6 +32,7 @@ import com.liferay.util.FileUtil;
 
 public class ESSiteSearchPublisher extends Publisher {
 
+	
 	public static final String SITE_SEARCH_INDEX = "SITE_SEARCH_INDEX";
 
 	@Override
@@ -135,6 +137,24 @@ public class ESSiteSearchPublisher extends Publisher {
 		}
 
 	}
+	
+	private void processHTMLPages(List<File> files) {
+		for (File f : files) {
+			try {
+				if (!f.isDirectory()) {
+					processHTMLPage(f);
+				}
+
+			} catch (Exception e) {
+				Logger.info(this.getClass(), "failed: " + f + " : " + e.getMessage());
+
+			}
+		}
+
+	}
+	
+	
+	
 
 	private void processUrlMap(File file) throws DotPublishingException {
 		String docId=null;
@@ -193,6 +213,70 @@ public class ESSiteSearchPublisher extends Publisher {
 
 	}
 
+	
+
+	private void processHTMLPage(File file) throws DotPublishingException {
+		String docId=null;
+		try {
+		HTMLPageWrapper wrap = (HTMLPageWrapper) BundlerUtil.xmlToObject(file);
+		if (wrap == null)
+			return;
+		
+		File htmlFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
+		String uri =getUriFromFilePath(htmlFile);
+		Host h = APILocator.getHostAPI().find(wrap.getIdentifier().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
+		
+		docId=DigestUtils.md5Hex(h.getIdentifier()+ uri);
+		// is the live guy
+		if (UtilMethods.isSet(wrap.getVersionInfo().getLiveInode()) && wrap.getVersionInfo().getLiveInode().equals(wrap.getPage().getInode())) {
+			
+				
+				Map<String, String> map = new TikaUtils().getMetaDataMap(htmlFile, "text/html");
+
+				if (map != null) {
+
+					SiteSearchResult res = new SiteSearchResult(map);
+
+					// map contains [fileSize, content, author, title, keywords,
+					// description, contentType, contentEncoding]
+
+					res.setContentLength(htmlFile.length());
+					res.setMimeType(map.get("contentType"));
+					res.setFileName(htmlFile.getName().replaceAll(".dotUrlMap", ""));
+					
+
+					res.setHost(h.getIdentifier());
+
+					res.setUri(getUriFromFilePath(htmlFile));
+					res.setUrl(getUrlFromFilePath(htmlFile));
+
+					res.setId(docId);
+
+					APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
+				}
+				
+				
+				
+
+		//if this is the deleted guy
+			
+		} else if (!UtilMethods.isSet(wrap.getVersionInfo().getLiveInode())) {
+			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
+			
+			
+		}
+
+		} catch (Exception e) {
+			Logger.error(this.getClass(), "site search  failed: " + docId + " error" + e.getMessage());
+		}
+
+	}
+	
+	
+	
+	
+	
+	
 	private void processFileObject(File file) throws IOException {
 
 		// Logger.info(this.getClass(), "processing: " +
@@ -270,9 +354,9 @@ public class ESSiteSearchPublisher extends Publisher {
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
 
-//		list.add(FileAssetBundler.class);
+		list.add(FileAssetBundler.class);
 		list.add(StaticHTMLPageBundler.class);
-//		list.add(URLMapBundler.class);
+		list.add(URLMapBundler.class);
 		return list;
 	}
 
