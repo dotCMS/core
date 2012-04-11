@@ -247,8 +247,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conHost", ident.getHostId());
             m.put("conFolder", con.getFolder());
             m.put("parentPath", ident.getParentPath());
-            if(st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-            	m.put("uri", ident.getURI() != null ? ident.getURI().replace(" ", "+"):"");	
+            String uri = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
+            if(uri != null){
+            	m.put("uri",uri );	
             }
 
             Map<String,String> mlowered=new HashMap<String,String>();

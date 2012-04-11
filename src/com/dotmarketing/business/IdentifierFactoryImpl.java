@@ -28,7 +28,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.hp.hpl.jena.vocabulary.DB;
 import com.liferay.portal.model.User;
 
 /**

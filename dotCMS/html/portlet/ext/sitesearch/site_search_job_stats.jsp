@@ -35,10 +35,19 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 		<th nowrap><%= LanguageUtil.get(pageContext, "Cron") %></th>
 	</tr>
 	<%for(ScheduledTask task : ssapi.getTasks()){ %>
-	<tr>
-	    <td nowrap><span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span></td>
-		<td nowrap><%=task.getJobName() %></td>
-	<td nowrap><%=task.getProperties().get("CRON_EXPRESSION") %></td>
-	</tr>
+		<tr>
+		    <td nowrap><span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span></td>
+			<td nowrap><%=task.getJobName() %></td>
+		<td nowrap><%=task.getProperties().get("CRON_EXPRESSION") %></td>
+		</tr>
+	<%} %>
+	<%if(ssapi==null ||ssapi.getTasks() == null || ssapi.getTasks().size() ==0) {%>
+		<tr>
+			<td colspan="100" align="center">
+				<div style="padding:20px;">
+					<%= LanguageUtil.get(pageContext,"No-Results-Found") %>
+				</div>
+			</td>
+		</tr>
 	<%} %>
 </table>

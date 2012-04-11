@@ -675,7 +675,7 @@ dojo.addOnLoad (function(){
 </style>
 <div class="portlet-wrapper">
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
-		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Schedule-New-Job") %>">
+		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
 			<form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
 			
 			<dl>
@@ -824,7 +824,7 @@ dojo.addOnLoad (function(){
 			</form>
 		</div>
 		
-		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Current-Jobs") %>">
+		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>">
 			<div dojoType="dijit.layout.ContentPane" id="jobStatsCp" style="height:600px"></div>
 		</div>
 		
@@ -833,7 +833,7 @@ dojo.addOnLoad (function(){
 			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="height:600px"></div>
 		</div>
 		
-		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Test-Search") %>">
+		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Search") %>">
 			<div dojoType="dojox.layout.ContentPane" id="indexTestCp" style="height:800px"></div>
 		</div>
 		

@@ -119,24 +119,42 @@ try {
 						</td>
 					</tr>
 				<%} %>
-				
-				
-				
+			<%}else{ %>
+				<%for(SiteSearchResult ssr : results.getResults()){ %>
+					<tr>
+						<td><%=ssr.getScore() %></td>
+						<td><%=UtilMethods.webifyString(ssr.getTitle()) %></td>
+						<td><%=UtilMethods.webifyString(ssr.getAuthor()) %></td>
+						<td><%=ssr.getContentLength() %></td>
+						<td><%=UtilMethods.webifyString(ssr.getUrl()) %></td>
+						<td><%=UtilMethods.webifyString(ssr.getUri()) %></td>
+						
+						<td><%=UtilMethods.webifyString(ssr.getMimeType()) %></td>
+						<td><%=UtilMethods.webifyString(ssr.getFileName()) %></td>
+					</tr>
+				<%} %>
 			<%} %>
+					<tr>
+						<td colspan="100">
+							<div style="padding:20px;">
+								<%= LanguageUtil.get(pageContext,"Total") %>: <%=results.getTotalResults() %>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="100">
+							<div style="padding:20px;">
+								<%= LanguageUtil.get(pageContext,"Query") %>: <%=results.getQuery() %>
+							</div>
+						</td>
+					</tr>
+				
+				
+				
+				
 			
-			<%for(SiteSearchResult ssr : results.getResults()){ %>
-				<tr>
-					<td><%=ssr.getScore() %></td>
-					<td><%=UtilMethods.webifyString(ssr.getTitle()) %></td>
-					<td><%=UtilMethods.webifyString(ssr.getAuthor()) %></td>
-					<td><%=ssr.getContentLength() %></td>
-					<td><%=UtilMethods.webifyString(ssr.getUrl()) %></td>
-					<td><%=UtilMethods.webifyString(ssr.getUri()) %></td>
-					
-					<td><%=UtilMethods.webifyString(ssr.getMimeType()) %></td>
-					<td><%=UtilMethods.webifyString(ssr.getFileName()) %></td>
-				</tr>
-			<%} %>
+			
+
 			
 
 			

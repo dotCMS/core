@@ -52,8 +52,10 @@ public class StringUtils {
 
 	}
 
-	public boolean isJson(String jsonString) {
-
+	public static boolean isJson(String jsonString) {
+		if(jsonString.indexOf("{") <0 || jsonString.indexOf("}") <0){
+			return false;
+		}
 		try {
 			if (jsonString.startsWith("{"))
 				new JSONObject(jsonString);

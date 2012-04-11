@@ -273,7 +273,15 @@ public class ContentMap {
 			}
 			return ret;
 		} catch (Exception e) {
-			Logger.error(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(),e);
+			
+				try{
+					Logger.warn(ContentMap.class,"Unable to retrive Field:" + fieldVariableName+" for contentlet:" + this.content.getTitle() + " Reason:" + e.getMessage());
+				}
+				catch(Exception ex){
+					Logger.warn(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage());
+				}
+			
+			Logger.debug(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(), e);
 			return null;
 		}
 	}
