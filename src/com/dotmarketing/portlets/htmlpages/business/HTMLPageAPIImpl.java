@@ -715,23 +715,23 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 					.merge(context, out);
 
 		} catch (PortalException e1) {
-			e1.printStackTrace();
+			Logger.error(this, e1.getMessage(), e1);
 		} catch (SystemException e1) {
-			e1.printStackTrace();
+			Logger.error(this, e1.getMessage(), e1);
 		} catch (DotDataException e1) {
-			e1.printStackTrace();
+			Logger.error(this, e1.getMessage(), e1);
 		} catch (DotSecurityException e1) {
-			e1.printStackTrace();
+			Logger.error(this, e1.getMessage(), e1);
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		} catch (ResourceNotFoundException e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		} catch (ParseErrorException e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		} catch (MethodInvocationException e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		}
 
 		context = null;
