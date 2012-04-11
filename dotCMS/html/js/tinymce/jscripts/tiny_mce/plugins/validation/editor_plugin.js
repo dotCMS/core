@@ -119,7 +119,7 @@
 				} 
 				try{
 				    ACheckerDWR.validate( request ,createValidationResult );
-				}catch(e){
+				} catch(e){
 				    alert(e);
 				}
 			 }
@@ -155,8 +155,6 @@
 							}; 
 						mi = menu.add(o);								 
 						menuArray[i] = mi;
-						alert(guideLineSel);
-						alert(response[i].defaultGuideLine);
 						if( guideLineSel == '' && response[i].defaultGuideLine ) 							
 						{
 							toggleValidationItem(i);
