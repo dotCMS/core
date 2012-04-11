@@ -11,6 +11,7 @@ dojo.require("dojo.dnd.Source");
 dojo.require("dojox.layout.ContentPane");
 dojo.require("dijit.TooltipDialog");
 dojo.require("dojox.data.QueryReadStore");
+dojo.require("dojo.NodeList-manipulate");
 // refresh page when the hash has changed
 dojo.subscribe("/dojo/hashchange", this, function(hash){mainAdmin.refresh();});
 
@@ -646,7 +647,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 			dojo.create("td", { innerHTML: this.whoCanUse[i].name + what}, tr);
 
 		}
-		dojo.byId("whoCanUse").value = x;
+		dojo.query('#whoCanUse').val(x);
 		
 	},
 	doChange: function(){
