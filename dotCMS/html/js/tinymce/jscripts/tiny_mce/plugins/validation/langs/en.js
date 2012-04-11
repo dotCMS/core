@@ -6,8 +6,8 @@ tinyMCE.addI18n('en.validation',{
 	table_errortype : 'Error Type',
 	table_checkid : 'Check ID',
 	table_summary : 'Accessibility Review  - Guideline: ',
-	errors_found : 'Errors Found!:', 	
-	no_errors_found : 'No errors found!:',
-	validation_complete : 'Validation complete!:'
+	errors_found : ' Errors Found!', 	
+	no_errors_found : 'No errors found!',
+	validation_complete : 'Validation complete! '
 
 });

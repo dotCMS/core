@@ -6,8 +6,8 @@ tinyMCE.addI18n('en.validation',{
 	table_errortype : 'Errore',
 	table_checkid : 'ID Controllo',
 	table_summary : 'Revisione  - Linee Guida: ',
-	errors_found : 'Errori Trovati!:', 	
-	no_errors_found : 'Nessuno errore trovato!:',
-	validation_complete : 'Validazione completata!:'
+	errors_found : ' Errori Trovati!', 	
+	no_errors_found : 'Nessuno errore trovato!',
+	validation_complete : 'Validazione completata! '
 
 });
