@@ -67,7 +67,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			bob.append(" and a.mod_date <= ? ");
 		}
 		if(!pullDeleted){
-			bob.append("vi.deleted=" + DbConnectionFactory.getDBFalse() + " ");
+			bob.append(" and vi.deleted=" + DbConnectionFactory.getDBFalse() + " ");
 		}
 		dc.setSQL(bob.toString());
 		dc.addParam(uri.replace("*", "%"));
