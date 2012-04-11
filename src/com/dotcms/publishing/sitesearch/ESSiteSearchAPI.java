@@ -303,7 +303,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 			   //res.setDescription(UtilMethods.prettyShortenString(noHTMLString, 500));
 		   }
 		   
-		   Logger.info(this.getClass(), "deleting from : " + idx  + " url:" + res.getId());
+		   Logger.info(this.getClass(), "writing from : " + idx  + " url:" + res.getUrl());
 		   Client client=new ESClient().getClient();
 		   String json = new ESMappingAPIImpl().toJsonString(res.getMap());
 		   IndexResponse response = client.prepareIndex(idx, ES_SITE_SEARCH_MAPPING, res.getId())

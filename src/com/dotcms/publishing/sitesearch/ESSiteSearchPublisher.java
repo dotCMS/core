@@ -225,7 +225,7 @@ public class ESSiteSearchPublisher extends Publisher {
 		if (wrap == null)
 			return;
 		
-		File htmlFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
+		File htmlFile = new File(file.getAbsolutePath().replaceAll(StaticHTMLPageBundler.HTML_ASSET_EXTENSION, ""));
 		String uri =getUriFromFilePath(htmlFile);
 		Host h = APILocator.getHostAPI().find(wrap.getIdentifier().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
 		
