@@ -521,7 +521,7 @@
     <pathelement location="${lib.app}/lib/aspectjrt-1.5.3.jar"/>
   </classpath>
 </taskdef>
-	
+
 
 	<!-- Main test target, this tasks will run all the unit tests of the application -->
 	<target name="test-dotcms" depends="deploy-tests, set-properties, create-db">
@@ -723,16 +723,46 @@
 
 </target>
 
+    <target name="uncomment-test-servlet" description="By default we need ServletTestRunner to be commented in web.xml so deployments doesn't have /servlet/test as a public endpoint.">
+
+        <!--Comment-->
+        <replaceregexp flags="s" match="&lt;!-- TEST FRAMEWORK SERVLETS --&gt;"
+                       replace="&lt;!-- TEST FRAMEWORK SERVLETS ">
+            <fileset dir="dotCMS/WEB-INF/">
+                <include name="web.xml"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp flags="s" match="&lt;!-- END OF TEST FRAMEWORK SERVLETS --&gt;"
+                       replace="END OF TEST FRAMEWORK SERVLETS --&gt;">
+            <fileset dir="dotCMS/WEB-INF/">
+                <include name="web.xml"/>
+            </fileset>
+        </replaceregexp>
+
+        <!--Uncomment-->
+        <replaceregexp flags="s" match="&lt;!-- TEST FRAMEWORK SERVLETS"
+                       replace="&lt;!-- TEST FRAMEWORK SERVLETS --&gt;">
+            <fileset dir="dotCMS/WEB-INF/">
+                <include name="web.xml"/>
+            </fileset>
+        </replaceregexp>
+
+        <replaceregexp flags="s" match="END OF TEST FRAMEWORK SERVLETS --&gt;"
+                       replace="&lt;!-- END OF TEST FRAMEWORK SERVLETS --&gt;">
+            <fileset dir="dotCMS/WEB-INF/">
+                <include name="web.xml"/>
+            </fileset>
+        </replaceregexp>
+    </target>
 
 
-
-<!--Plugin tasks-->
+    <!--Plugin tasks-->
 
 <target name="build" depends="build-core,build-plugins" description="build the dotCMS core and plugins" />
 
 <target name="deploy" depends="build, deploy-core, deploy-plugins" description="builds and deploys core and plugins" />
 
-<target name="deploy-tests" depends="build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
+<target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
 <target name="deploy-dev" depends="deploy-plugins"/>
 

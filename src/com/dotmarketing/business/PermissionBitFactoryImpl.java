@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -2397,6 +2398,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 								((Contentlet)permissionable).getStructure().getVelocityVarName() != null &&
 								((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"))){
 					type = Host.class.getCanonicalName();
+				}else if(permissionable instanceof FileAsset ||
+				        (permissionable instanceof Contentlet &&
+				         ((Contentlet)permissionable).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET)){
+				    type = File.class.getCanonicalName();
 				}else if(permissionable instanceof Event){
 					type = Contentlet.class.getCanonicalName();
 				}else if(permissionable instanceof Identifier){
