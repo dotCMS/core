@@ -5,8 +5,6 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.Globals;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -85,5 +83,16 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 		httpRequest.setAttribute(WebKeys.LOCALE, locale);
 
 	}
+	
+	@Override
+	public Language getLanguage(HttpServletRequest req) {
+
+		checkSessionLocale(req);
+		return APILocator.getLanguageAPI().getLanguage((String) req.getAttribute((String) req.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)));
+
+	}
+	
+	
+	
 
 }

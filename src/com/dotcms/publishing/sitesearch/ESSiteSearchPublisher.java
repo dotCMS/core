@@ -237,7 +237,7 @@ public class ESSiteSearchPublisher extends Publisher {
 
 					APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
 
-					Logger.info(this.getClass(), "adding: " + asset.getPath() + asset.getFileName());
+					
 				} catch (Exception e) {
 					throw new DotPublishingException(e.getMessage());
 
@@ -250,7 +250,7 @@ public class ESSiteSearchPublisher extends Publisher {
 			//if we need to delete
 		} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
 			String url = asset.getHost() + asset.getPath() + asset.getFileName();
-			Logger.info(this.getClass(), "delete: " + url);
+			
 			String md5 = DigestUtils.md5Hex(url);
 
 			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), md5);

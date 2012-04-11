@@ -189,5 +189,7 @@ public interface FileAssetAPI {
 	 * @param inode
 	 * @return
 	 */
-	public String getRealAssetPath(String inode); 
+	public String getRealAssetPath(String inode);
+
+	String getRealAssetPath(String inode, String fileName); 
 }
