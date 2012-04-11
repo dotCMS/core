@@ -35,6 +35,14 @@ public class LanguageUtility {
 	public static String _AC(String name) {
 		return _AC(name, DEFAULT_LANGUAGE);
 	}
+	
+	private static String mapWebLanguages(String lang) {
+		if (lang == null)
+			return lang;
+		if ( lang.equals("en"))
+			return "eng";
+		return lang;
+	}
 
 	public static String _AC(String name, String lang) {
 
@@ -43,6 +51,8 @@ public class LanguageUtility {
 		
 		if ( lang == null )
 			lang = DEFAULT_LANGUAGE;
+		
+		lang = mapWebLanguages(lang);
 		
 		String result = stringCache.get(name + "-" + lang);
 		if ( result != null )
