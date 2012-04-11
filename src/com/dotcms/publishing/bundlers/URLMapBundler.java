@@ -38,7 +38,7 @@ public class URLMapBundler implements IBundler {
 	ContentletAPI capi = APILocator.getContentletAPI();
 
 
-	public final static String  FILE_ASSET_EXTENSION = ".dotUrlMap" ;
+	public final static String  FILE_ASSET_EXTENSION = ".dotUrlMap.xml" ;
 	
 	
 	@Override

@@ -36,7 +36,7 @@ public class FileAssetBundler implements IBundler {
 	FileAssetAPI fAPI = null;
 	User systemUser = null;
 
-	public final static String  FILE_ASSET_EXTENSION = ".fileasset.xml" ;
+	public final static String  FILE_ASSET_EXTENSION = ".fileAsset.xml" ;
 	
 	
 	@Override
@@ -183,11 +183,13 @@ public class FileAssetBundler implements IBundler {
 			cal.setTime(fileAsset.getModDate());
 			cal.set(Calendar.MILLISECOND, 0);
 			
+			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
+			new File(dir).mkdirs();
+			
+			
 			//only write if changed
 			File f = new File(myFile);
 			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
-				String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
-				new File(dir).mkdirs();
 				String x  = (String) fileAsset.get("metaData");
 				fileAsset.setMetaData(x);
 				BundlerUtil.objectToXML(wrap, f);
