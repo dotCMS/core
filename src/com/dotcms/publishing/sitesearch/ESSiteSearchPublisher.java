@@ -90,7 +90,10 @@ public class ESSiteSearchPublisher extends Publisher {
 								processUrlMaps(list);
 
 							}
+							else if (b instanceof StaticHTMLPageBundler) {
+								processHTMLPages(list);
 
+							}
 						}
 					};
 
