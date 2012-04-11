@@ -38,6 +38,7 @@ import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.job.SiteSearchJobProxy;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
@@ -90,10 +91,13 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	
 	@Override
 	public DotSearchResults search(String indexName, String query, String sort, int offset, int limit) {
-		
-		
-
 		DotSearchResults results = new DotSearchResults();
+		if(indexName ==null){
+			return results;
+		}
+		boolean isJson = StringUtils.isJson(query);
+
+
 		results.setQuery(query);
 		
 	    Client client=new ESClient().getClient();
@@ -109,15 +113,23 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         	
         	
         	
-            SearchRequestBuilder srb = client.prepareSearch()
-                 .setQuery(QueryBuilders.queryString(query))
-                 .setIndices(indexName);
+            SearchRequestBuilder srb = null;
 
-            if(limit>0)
-                srb.setSize(limit);
-            if(offset>0)
-                srb.setFrom(offset);
-
+            
+            if(!isJson){
+                srb = client.prepareSearch()
+                        .setQuery(QueryBuilders.queryString(query))
+                        .setIndices(indexName);
+	            if(limit>0)
+	                srb.setSize(limit);
+	            if(offset>0)
+	                srb.setFrom(offset);
+            }else{
+                srb = client.prepareSearch()
+                        .setIndices(indexName);
+            	srb.setSource(query);
+            	
+            }
 
             try{
             	resp = srb.execute().actionGet();
@@ -132,7 +144,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     	    SearchHits hits =  resp.getHits();
     	    results.setTotalResults(hits.getTotalHits());
     	    results.setMaxScore(hits.getMaxScore());
-
+    	    results.setQuery(srb.toString());
     	    ObjectMapper mapper = new ObjectMapper();
     	    for(SearchHit hit : hits.hits()){
 

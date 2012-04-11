@@ -3647,11 +3647,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     urlMapField = urlMapField.replaceFirst("\\}", "\\\\}");
                     result = result.replaceAll(urlMapField, urlMapFieldValue);
                 }
+            }else  if (UtilMethods.isSet(structure.getDetailPage())) {
+            	HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
+            	if(p != null && UtilMethods.isSet(p.getIdentifier())){
+            		result = p.getURI() + "?id=" + contentlet.getInode();
+            	}
+            	
+            	
             }
-
             Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, respectFrontendRoles);
             if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles) {
-                result = result + "?host_id=" + host.getIdentifier();
+            	
+            	if(result == null || result.indexOf("?") <0){
+            	
+            		result = result + "?host_id=" + host.getIdentifier();
+            	}
+            	else{
+            		result = result + "&host_id=" + host.getIdentifier();
+            	}
             }
         }
 

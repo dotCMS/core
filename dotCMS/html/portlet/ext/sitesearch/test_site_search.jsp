@@ -122,7 +122,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			</button>
 		</div>
 	</div>
-	<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" style="height:700px;overflow: scroll;;">
+	<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" style="height:700px;overflow: auto;;">
 	
 	
 		<table class="listingTable" style="width:98%">

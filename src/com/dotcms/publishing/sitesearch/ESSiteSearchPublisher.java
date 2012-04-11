@@ -17,6 +17,8 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.bundlers.BundlerUtil;
 import com.dotcms.publishing.bundlers.FileAssetWrapper;
 import com.dotcms.publishing.bundlers.FileObjectBundler;
+import com.dotcms.publishing.bundlers.URLMapBundler;
+import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -50,6 +52,13 @@ public class ESSiteSearchPublisher extends Publisher {
 			}
 
 		}
+		if (UtilMethods.isSet(myConf.getIndexName()) && !APILocator.getESIndexAPI().indexExists(myConf.getIndexName())) {
+			try {
+				APILocator.getSiteSearchAPI().createSiteSearchIndex(myConf.getIndexName(), 0);
+			} catch (Exception e) {
+				throw new DotPublishingException(e.getMessage());
+			}
+		}
 
 		return this.config;
 
@@ -66,13 +75,16 @@ public class ESSiteSearchPublisher extends Publisher {
 				List<File> files = FileUtil.listFilesRecursively(bundleRoot, b.getFileFilter());
 				List<List<File>> listsOfFiles = Lists.partition(files, 10);
 
-				for (final List<File> l : listsOfFiles) {
+				for (final List<File> list : listsOfFiles) {
 
 					Runnable worker = new Runnable() {
 						@Override
 						public void run() {
 							if (b instanceof FileObjectBundler) {
-								processFileObjects(l);
+								processFileObjects(list);
+							} else if (b instanceof URLMapBundler) {
+								processUrlMaps(list);
+
 							}
 
 						}
@@ -95,7 +107,10 @@ public class ESSiteSearchPublisher extends Publisher {
 	private void processFileObjects(List<File> files) {
 		for (File f : files) {
 			try {
-				processFileObject(f);
+				if (!f.isDirectory()) {
+					processFileObject(f);
+				}
+
 			} catch (IOException e) {
 				Logger.info(this.getClass(), "failed: " + f + " : " + e.getMessage());
 
@@ -104,10 +119,50 @@ public class ESSiteSearchPublisher extends Publisher {
 
 	}
 
-	private void processFileObject(File file) throws IOException {
-		if (file.isDirectory()) {
-			return;
+	private void processUrlMaps(List<File> files) {
+		for (File f : files) {
+			try {
+				if (!f.isDirectory()) {
+					processUrlMap(f);
+				}
+
+			} catch (Exception e) {
+				Logger.info(this.getClass(), "failed: " + f + " : " + e.getMessage());
+
+			}
 		}
+
+	}
+
+	private void processUrlMap(File file) throws IOException, DotPublishingException {
+
+		Map<String, String> map = new TikaUtils().getMetaDataMap(file, "text/html");
+
+		if (map != null) {
+
+			SiteSearchResult res = new SiteSearchResult(map);
+
+			// map contains [fileSize, content, author, title, keywords,
+			// description, contentType, contentEncoding]
+
+			res.setContentLength(file.length());
+			Host h = getHostFromFilePath(file);
+
+			res.setHost(h.getIdentifier());
+
+			res.setUri(getUriFromFilePath(file));
+			res.setUrl(getUrlFromFilePath(file));
+
+			APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
+
+		} else if (file.getAbsolutePath().contains("DOTDELETE")) {
+			// doDelete(wrap.getAsset());
+		}
+
+	}
+
+	private void processFileObject(File file) throws IOException {
+
 		// Logger.info(this.getClass(), "processing: " +
 		// file.getAbsolutePath());
 
@@ -179,9 +234,9 @@ public class ESSiteSearchPublisher extends Publisher {
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
 
-		list.add(FileObjectBundler.class);
+		// list.add(FileObjectBundler.class);
 		// list.add(StaticHTMLPageBundler.class);
-		// list.add(StaticURLMapBundler.class);
+		list.add(URLMapBundler.class);
 		return list;
 	}
 
