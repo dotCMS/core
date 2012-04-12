@@ -53,7 +53,20 @@ indexHosts = request.getParameterValues("indexhost");
 
 
 List<String> indexes = ssapi.listIndices();
+
+SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+SimpleDateFormat tdf = new SimpleDateFormat("HH:mm");
+
+Date startDate = new Date(0);
+Date endDate = new Date();
+String startDateStr = sdf.format(endDate);
+String endDateStr = sdf.format(new Date());
+String startTimeStr = tdf.format(startDate);
+String endTimeStr = tdf.format(endDate);
+boolean hasPath = false;
 %>
+
+
 <form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
 <table style="align:center;width:800px;" class="listingTable">
 
@@ -153,26 +166,44 @@ List<String> indexes = ssapi.listIndices();
 
 	<tr>
 		<td align="right" valign="top" nowrap="true">
-			<strong><%= LanguageUtil.get(pageContext, "Date-Range") %>: </strong> <a href="javascript: ;" id="pathsHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="pathsHintHook1" id="pathsHint1" class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
+			<strong><%= LanguageUtil.get(pageContext, "Date-Range") %>: </strong> <a href="javascript: ;" id="dateRangeHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="dateRangeHintHook1" class="fieldHint"><%=LanguageUtil.get(pageContext, "date-range-hint") %></span>
 		</td>
 		<td>
 			<div style="padding:0px;">
 				<input checked="false" type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true"><label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label> &nbsp; &nbsp; &nbsp; 
 			</div>
-			<br>
+			<div style="padding:4px;">
+				<div style="width:50px;float:left;display: block-inline">
+					<%= LanguageUtil.get(pageContext, "Start:") %>
+				</div>
+				<input type="text" name="startDateDate" value="<%=startDateStr %>" dojoType="dijit.form.DateTextBox">  
+				<input type="text" name="startDateTime" value="<%=startTimeStr %>" dojoType="dijit.form.TimeTextBox">
+			</div>
+			<div style="padding:4px;">
+				<div style="width:50px;float:left;display: block-inline">
+					<%= LanguageUtil.get(pageContext, "End:") %>
+				</div>
+				<input type="text" name="endDateDate" value="<%=endDateStr %>" dojoType="dijit.form.DateTextBox">  
+				<input type="text" name="endDateTime" value="<%=endTimeStr %>" dojoType="dijit.form.TimeTextBox">
+			</div>
 		</td>
 	</tr>
 		<tr>
 		<td align="right" valign="top" nowrap="true">
-			<strong><%= LanguageUtil.get(pageContext, "Paths") %>: </strong></span>
+			<strong><%= LanguageUtil.get(pageContext, "Paths") %>: </strong>
+			<a href="javascript: ;" id="pathsHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="pathsHintHook1" id="pathsHint1" class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
+			
+			
+			
 		</td>
 		<td>
 			<div style="padding:0px;">
-				<input checked="true" type="radio" dojoType="dijit.form.RadioButton" id="include" name="includeExclude" value="include"><label for="include">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Include")) %></label> &nbsp; &nbsp; &nbsp; 
-				<input type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude"><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
+				<input onclick="changeIncludeExclude()" checked="true" type="radio" dojoType="dijit.form.RadioButton" id="includeAll" name="includeExclude" value="all"><label for="includeAll">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All")) %></label> &nbsp; &nbsp; &nbsp; 
+				<input onclick="changeIncludeExclude()" type="radio" dojoType="dijit.form.RadioButton" id="include" name="includeExclude" value="include"><label for="include">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Include")) %></label> &nbsp; &nbsp; &nbsp; 
+				<input onclick="changeIncludeExclude()" type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude"><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
 			</div>
 			<br>
-			<textarea  name="paths" id="paths" type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'" value="" /></textarea>
+			<textarea  name="paths" id="paths" <%=(hasPath) ? "" : "disabled='true' " %> type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'" value="" /><%=(hasPath) ? "" : "/*" %></textarea>
 		</td>
 	</tr>
 	<tr>
