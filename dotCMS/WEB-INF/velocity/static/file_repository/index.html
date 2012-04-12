@@ -74,7 +74,7 @@
 
 #foreach($file in $fileRepository_filesList)
 <tr class="#if($even)even#{else}odd#end">
-    <td align="center" valign="top"><a href="$fileRepository_showFolder$file.fileName"><img src="/icon?i=${file.getExtension()}" width="16" height="16" alt="${file.getExtension()} file"></a></td>
+    <td align="center" valign="top"><a href="$fileRepository_showFolder$file.fileName"><img src="/icon?i=${file.extension}" width="16" height="16" alt="${file.getExtension()} file"></a></td>
     <td valign="top">
         <a href="$fileRepository_showFolder$file.fileName">$file.fileName</a>
         <div style="padding-left:10px;">
