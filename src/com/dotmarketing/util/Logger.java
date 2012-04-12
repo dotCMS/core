@@ -8,7 +8,15 @@ package com.dotmarketing.util;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.log4j.Level;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapter;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.velocity.VelocityServlet;
 
 
 /**
@@ -89,6 +97,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
+    	velocityLogError(cl);
         logger.error(message);
     }
 
@@ -98,6 +107,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
+    	velocityLogError(cl);
         logger.error(message, ex);
     }
 
@@ -106,6 +116,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
+    	velocityLogError(cl);
         logger.error(message);
     }
 
@@ -114,6 +125,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
+    	velocityLogError(cl);
         logger.error(message, ex);
     }
 
@@ -123,6 +135,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
+    	
         logger.fatal(message);
     }
 
@@ -225,4 +238,55 @@ public class Logger{
     	}
         return logger;
     }
+    
+    
+    
+    private static void velocityLogError(Class cl){
+    	if(VelocityServlet.velocityCtx.get() != null){
+    		Context ctx =  VelocityServlet.velocityCtx.get();
+    		InternalContextAdapter ica =  new InternalContextAdapterImpl(ctx);
+    		org.apache.log4j.Logger logger = map.get(VelocityServlet.class);
+    		logger.error("#--------------------------------------------------------------------------------------");
+    		logger.error("#");
+    		if(ica.getCurrentMacroName() != null){
+    			logger.error("# Velocity Error");
+    		}
+
+    		if(ctx.get("VTLSERVLET_URI") != null && ctx.get("host") != null ){
+    			logger.error("# on url      :" + ((Host) ctx.get("host")).getHostname()  + ctx.get("VTLSERVLET_URI") );
+    		}
+    		else if(ctx.get("VTLSERVLET_URI") != null ){
+    			logger.error("# on uri      :" + ctx.get("VTLSERVLET_URI") );
+    		}
+    		else if(ctx.get("host") != null){
+    			logger.error("# on host     :" + ((Host) ctx.get("host")).getHostname() );
+    		}
+    		if(ctx.get("request") != null){
+    			HttpServletRequest req  = (HttpServletRequest)ctx.get("request");
+    			if(req.getAttribute("javax.servlet.forward.request_uri") != null){
+    				logger.error("# on req      :" + req.getAttribute("javax.servlet.forward.request_uri") );
+    			}
+    			
+     		}
+    		if(ica.getCurrentMacroName() != null){
+    			logger.error("# with macro  :" + ica.getCurrentMacroName());
+    		}
+    		if(ica.getCurrentTemplateName() != null){
+    			logger.error("# on template :" + ica.getCurrentTemplateName());
+    		}
+    		logger.error("#    stack:");
+    		for(Object obj : ica.getTemplateNameStack()){
+    			if(obj != null && obj.toString().startsWith("/") ){
+    				logger.error("#    -- " + obj.toString());
+    			}
+    			else{
+    				logger.error("#    -- " + "/" + obj.toString());
+    			}
+    		}
+    		logger.error("#");
+    		logger.error("#--------------------------------------------------------------------------------------");
+    	}
+    	
+    }
+    
 }
