@@ -38,7 +38,9 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 		<tr>
 		    <td nowrap><span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span></td>
 			<td nowrap><%=task.getJobName() %></td>
-		<td nowrap><%=task.getProperties().get("CRON_EXPRESSION") %></td>
+			<td nowrap><%=task.getProperties().get("CRON_EXPRESSION") %></td>
+
+			<td nowrap><%=task.isSequentialScheduled() %></td>
 		</tr>
 	<%} %>
 	<%if(ssapi==null ||ssapi.getTasks() == null || ssapi.getTasks().size() ==0) {%>

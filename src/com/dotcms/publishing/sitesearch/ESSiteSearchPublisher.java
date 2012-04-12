@@ -10,11 +10,11 @@ import java.util.concurrent.Executors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.publishing.bundlers.BundlerUtil;
 import com.dotcms.publishing.bundlers.FileAssetBundler;
 import com.dotcms.publishing.bundlers.FileAssetWrapper;
 import com.dotcms.publishing.bundlers.HTMLPageWrapper;
@@ -81,6 +81,11 @@ public class ESSiteSearchPublisher extends Publisher {
 
 				for (final List<File> list : listsOfFiles) {
 
+					
+					
+					
+					
+					
 					Runnable worker = new Runnable() {
 						@Override
 						public void run() {
@@ -114,7 +119,7 @@ public class ESSiteSearchPublisher extends Publisher {
 	private void processFileObjects(List<File> files) {
 		for (File f : files) {
 			try {
-				if (!f.isDirectory()) {
+				if (shouldProcess(f)) {
 					processFileObject(f);
 				}
 
@@ -129,7 +134,7 @@ public class ESSiteSearchPublisher extends Publisher {
 	private void processUrlMaps(List<File> files) {
 		for (File f : files) {
 			try {
-				if (!f.isDirectory()) {
+				if (shouldProcess(f)) {
 					processUrlMap(f);
 				}
 
@@ -144,7 +149,7 @@ public class ESSiteSearchPublisher extends Publisher {
 	private void processHTMLPages(List<File> files) {
 		for (File f : files) {
 			try {
-				if (!f.isDirectory()) {
+				if (shouldProcess(f)) {
 					processHTMLPage(f);
 				}
 
@@ -348,7 +353,17 @@ public class ESSiteSearchPublisher extends Publisher {
 
 
 	
-	
+	private boolean shouldProcess(File f){
+		if(f.isDirectory()){
+			return false;
+		}else if(config.getStartDate() != null && f.lastModified() <  config.getStartDate().getTime()){	
+			return false;
+		
+		}else if(config.getEndDate() != null && f.lastModified() >  config.getEndDate().getTime()){	
+			return false;
+		}
+		return true;
+	}
 	
 	
 

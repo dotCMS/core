@@ -2,9 +2,9 @@ package com.dotcms.publishing;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-import com.dotcms.publishing.bundlers.BundlerUtil;
 import com.dotmarketing.util.Logger;
 
 public class PublisherAPIImpl implements PublisherAPI {
@@ -36,9 +36,35 @@ public class PublisherAPIImpl implements PublisherAPI {
 			}
 			
 			
+			if(config.isIncremental() ){
+				if(BundlerUtil.bundleExists(config)){
+					PublisherConfig p = BundlerUtil.readBundleXml(config);
+					if(p.getEndDate() != null){
+						config.setStartDate(p.getEndDate());
+						config.setEndDate(new Date());
+					}
+					else{
+						config.setStartDate(p.getEndDate());
+						config.setEndDate(new Date());	
+						
+					}
+				}
+				else{
+					config.setStartDate(new Date(0));
+					config.setEndDate(new Date());
+				}
+			}
+			
+			
+			
+			
+			
+			
+			
 			
 			// run bundlers
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
+			BundlerUtil.writeBundleXML(config);
 			for (Class<IBundler> c : bundlers) {
 				IBundler b = (IBundler) c.newInstance();
 				confBundlers.add(b);

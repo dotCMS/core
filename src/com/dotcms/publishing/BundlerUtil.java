@@ -1,4 +1,4 @@
-package com.dotcms.publishing.bundlers;
+package com.dotcms.publishing;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -8,8 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.publishing.PublisherUtil;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.thoughtworks.xstream.XStream;
@@ -18,6 +16,21 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 public class BundlerUtil {
 
 	/**
+	 * does bundle exist
+	 * @param config
+	 * @return
+	 */
+	public static boolean bundleExists(PublisherConfig config){
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+		
+		
+		return new File(bundlePath).exists();
+	}
+	
+	
+	
+	
+	/**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
 	 * @param config
@@ -25,18 +38,40 @@ public class BundlerUtil {
 	public static File getBundleRoot(PublisherConfig config){
 
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
-		
-		
 		File dir = new File(bundlePath);
-		File xml = new File(bundlePath + File.separator + "bundle.xml");
-		if(dir.exists() && xml.exists()){
-			return dir;
-		}
 		dir.mkdirs();
 
-		objectToXML(config, xml);
+
 		return dir;
 
+	}
+	
+	/**
+	 * write bundle down
+	 * @param config
+	 */
+	public static void writeBundleXML(PublisherConfig config){
+		getBundleRoot(config);
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+		File xml = new File(bundlePath + File.separator + "bundle.xml");
+		objectToXML(config, xml);
+
+	}
+	/**
+	 * 
+	 * @param config
+	 * @return
+	 */
+	public static PublisherConfig readBundleXml(PublisherConfig config){
+		getBundleRoot(config);
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+		File xml = new File(bundlePath + File.separator + "bundle.xml");
+		if(xml.exists()){
+			return (PublisherConfig) xmlToObject(xml);
+		}
+		else{
+			return null;
+		}
 	}
 	
 	/**
@@ -69,7 +104,6 @@ public class BundlerUtil {
 	 */
 	public static Object xmlToObject(File f){
 		XStream xstream = new XStream(new DomDriver());
-		
 
 		 BufferedInputStream input = null;
 		try {
@@ -87,8 +121,7 @@ public class BundlerUtil {
 				
 			}
 		}
-		 
-		
+
 	}
 	
 	

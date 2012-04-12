@@ -133,6 +133,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
             try{
             	resp = srb.execute().actionGet();
+            	results.setTook(resp.getTook().toString());
             }catch (SearchPhaseExecutionException e) {
 				if(e.getMessage().contains("-order_dotraw] in order to sort on")){
 					
@@ -156,7 +157,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     				results.getResults().add(ssr);
     		
     	    }
-            
+    	  
+
             
             
         } catch (Exception e) {
@@ -233,7 +235,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	@Override
 	public List<ScheduledTask> getTasks() throws SchedulerException{
 
-		List<ScheduledTask> tasks = QuartzUtils.getScheduledTasks(ES_SITE_SEARCH_NAME);
+		List<ScheduledTask> tasks = QuartzUtils.getStandardScheduledTasks(ES_SITE_SEARCH_NAME);
 		return tasks;
 
 		
@@ -266,6 +268,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		}
 		else{
 			ScheduledTask	task = new CronScheduledTask(name, ES_SITE_SEARCH_NAME,"Site Search ", SiteSearchJobProxy.class.getCanonicalName(),new Date(),null, 1,config,cronString);
+			task.setSequentialScheduled(true);
+			
 			QuartzUtils.scheduleTask(task);
 		}
 		

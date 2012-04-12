@@ -80,85 +80,81 @@ try {
 %>
 	
 
-
-		<table class="listingTable" style="width:98%">
-			<thead>
-				<tr>
-					<th>Score</th>
-					<th>Title</th>
-					<th>Author</th>
-					<th>ContentLength</th>
-					<th>Url</th>
-					<th>Uri</th>
-					
-					<th>MimeType</th>
-					<th>FileName</th>
-					
-				</tr>
-			</thead>
-			
-			
-			<%if(results == null || results.getResults() ==null || results.getResults().size() ==0){ %>
-				
-				<%if(UtilMethods.isSet(results.getError()) && UtilMethods.isSet(results.getQuery())){ %>	
-					<tr>
-						<td colspan="100" align="center">
-							<div style="padding:20px;">
-								<b><%= LanguageUtil.get(pageContext,"Error") %>:</b><br>
-							<%=myError %>
-						</div>
-						</td>
-					</tr>
-				<%}else{ %>
-			
-					<tr>
-						<td colspan="100" align="center">
-							<div style="padding:20px;">
-								<%= LanguageUtil.get(pageContext,"No-Results-Found") %>
-							</div>
-						</td>
-					</tr>
-				<%} %>
-			<%}else{ %>
-				<%for(SiteSearchResult ssr : results.getResults()){ %>
-					<tr>
-						<td><%=ssr.getScore() %></td>
-						<td><%=UtilMethods.webifyString(ssr.getTitle()) %></td>
-						<td><%=UtilMethods.webifyString(ssr.getAuthor()) %></td>
-						<td><%=ssr.getContentLength() %></td>
-						<td><%=UtilMethods.webifyString(ssr.getUrl()) %></td>
-						<td><%=UtilMethods.webifyString(ssr.getUri()) %></td>
-						
-						<td><%=UtilMethods.webifyString(ssr.getMimeType()) %></td>
-						<td><%=UtilMethods.webifyString(ssr.getFileName()) %></td>
-					</tr>
-				<%} %>
-			<%} %>
-					<tr>
-						<td colspan="100">
-							<div style="padding:20px;">
-								<%= LanguageUtil.get(pageContext,"Total") %>: <%=results.getTotalResults() %>
-							</div>
-						</td>
-					</tr>
-					<tr>
-						<td colspan="100">
-							<div style="padding:20px;">
-								<%= LanguageUtil.get(pageContext,"Query") %>: <%=results.getQuery() %>
-							</div>
-						</td>
-					</tr>
-				
-				
-				
-				
-			
-			
-
-			
-
-			
-			
-		</table>
+<table style="width:98%">
+	<tr>
+		<td>
+		<%if(results == null || results.getResults() ==null || results.getResults().size() >0){ %>
+			<div style="padding:10px;">
+				<b><%= LanguageUtil.get(pageContext,"Results") %></b>: <%= results.getResults().size()%> <%= LanguageUtil.get(pageContext,"of") %> <%=results.getTotalResults() %> <%= LanguageUtil.get(pageContext,"total") %>
+			</div>
+		<%} %>
 		
+		</td>
+		<td align="right">
+			<%if(UtilMethods.isSet(results.getQuery())){ %>
+				<div style="padding:10px;">
+					<b><%= LanguageUtil.get(pageContext,"Query") %></b>: <%=results.getQuery() %>
+				</div>
+			<%} %>
+		</td>
+	</tr>
+</table>
+
+
+<table class="listingTable" style="width:98%">
+	<thead>
+		<tr>
+			<th>Score</th>
+			<th>Title</th>
+			<th>Author</th>
+			<th>ContentLength</th>
+			<th>Url</th>
+			<th>Uri</th>
+			
+			<th>MimeType</th>
+			<th>FileName</th>
+			
+		</tr>
+	</thead>
+	
+	
+	<%if(results == null || results.getResults() ==null || results.getResults().size() ==0){ %>
+		
+		<%if(UtilMethods.isSet(results.getError()) && UtilMethods.isSet(results.getQuery())){ %>	
+			<tr>
+				<td colspan="100" align="center">
+					<div style="padding:20px;">
+						<b><%= LanguageUtil.get(pageContext,"Error") %>:</b><br>
+					<%=myError %>
+				</div>
+				</td>
+			</tr>
+		<%}else{ %>
+	
+			<tr>
+				<td colspan="100" align="center">
+					<div style="padding:20px;">
+						<%= LanguageUtil.get(pageContext,"No-Results-Found") %>
+					</div>
+				</td>
+			</tr>
+		<%} %>
+	<%}else{ %>
+		<%for(SiteSearchResult ssr : results.getResults()){ %>
+			<tr>
+				<td><%=ssr.getScore() %></td>
+				<td><%=UtilMethods.webifyString(ssr.getTitle()) %></td>
+				<td><%=UtilMethods.webifyString(ssr.getAuthor()) %></td>
+				<td><%=ssr.getContentLength() %></td>
+				<td><%=UtilMethods.webifyString(ssr.getUrl()) %></td>
+				<td><%=UtilMethods.webifyString(ssr.getUri()) %></td>
+				
+				<td><%=UtilMethods.webifyString(ssr.getMimeType()) %></td>
+				<td><%=UtilMethods.webifyString(ssr.getFileName()) %></td>
+			</tr>
+		<%} %>
+	<%} %>
+</table>
+<div style="text-align: center;padding:20px;"><%=UtilMethods.webifyString(results.getTook()) %></div>
+
 		
