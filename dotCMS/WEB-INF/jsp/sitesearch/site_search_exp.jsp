@@ -1,0 +1,1 @@
+<div class="callOutBox2" style="margin:10px">Because of version incompatibilities the Site Search has been removed in 2.0. The next release will restore a brand new and improved Site Search.</div>
