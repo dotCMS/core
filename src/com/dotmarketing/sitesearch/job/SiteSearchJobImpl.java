@@ -21,12 +21,16 @@ public class SiteSearchJobImpl {
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
 
 		JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
-		String pathsToIgnore  = dataMap.getString("pathsToIgnore");
-		String pathsToInclude  = dataMap.getString("pathsToInclude");
+		String pathsToIgnore  = dataMap.getString("includeExclude");
+
+		
+		
+		boolean include = ("include".equals(dataMap.getString("includeExclude")));
+		
 		String extToignore    = dataMap.getString("extToIgnore");
 		String writeToIndex    = dataMap.getString("writeToIndex");
-		boolean squentiallyScheduled = (Boolean)dataMap.get("squentiallyScheduled");
-		boolean runJobAfterSeq = (Boolean)dataMap.get("runJobAfterSeq");
+		boolean squentiallyScheduled = true;
+		boolean runJobAfterSeq = true;
 		List<String> indexHosts = (List<String>)dataMap.get("hosts");
 
 		

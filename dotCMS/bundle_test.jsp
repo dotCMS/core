@@ -33,7 +33,7 @@ List<Class> clazz = new ArrayList();
 clazz.add(ESSiteSearchPublisher.class);
 
 pconf.setPublishers(clazz);
-
+pconf.setIncremental(true);
 pconf.setLiveOnly(false);
 
 

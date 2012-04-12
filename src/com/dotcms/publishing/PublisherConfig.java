@@ -20,7 +20,7 @@ public class PublisherConfig implements Map<String, Object> {
 	private enum Config {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
-		THREADS, ID, TIMESTAMP, BUNDLERS;
+		THREADS, ID, TIMESTAMP, BUNDLERS,INCREMENTAL;
 	};
 
 	
@@ -141,6 +141,7 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	public Date getEndDate() {
+
 		return (Date) params.get(Config.END_DATE.name());
 	}
 
@@ -262,5 +263,17 @@ public class PublisherConfig implements Map<String, Object> {
 	public List<IBundler> getBundlers() {
 
 		return (List<IBundler>) params.get(Config.BUNDLERS.name());
+	}
+	public boolean isIncremental(){
+		return (params.get(Config.INCREMENTAL.name()) !=null);
+		
+	}
+	public void setIncremental(boolean inc){
+		if(inc){
+			params.put(Config.INCREMENTAL.name(), true);
+		}
+		else{
+			params.remove(Config.INCREMENTAL.name());
+		}
 	}
 }

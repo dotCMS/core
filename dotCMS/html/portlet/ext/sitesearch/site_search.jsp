@@ -29,37 +29,11 @@
 
 <%
 
-SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
-String submitURL = com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"EXT_SITESEARCH");
-List<Host> selectedHosts = new ArrayList<Host>();
-String error = "";
-String CRON_EXPRESSION = "";
-String pathsToIgnore  = "";
-String pathsToFollow  = "";
 
-String extToIgnore    = "";
-String port           = "";
-boolean followQueryString = false;
-boolean indexAll = false;
-boolean showBlankCronExp = false;
-boolean success = false;
 String successMsg = LanguageUtil.get(pageContext, "schedule-site-search-success") ;
-String[] indexHosts;
+String error = "";
 
-String QUARTZ_JOB_NAME =  "SiteSearch_" + APILocator.getContentletIndexAPI().timestampFormatter.format(new Date());
-
-
-CRON_EXPRESSION = UtilMethods.webifyString(request.getParameter("CRON_EXPRESSION"));
-pathsToIgnore  = UtilMethods.webifyString(request.getParameter("pathsToIgnore"));
-extToIgnore    = UtilMethods.webifyString(request.getParameter("extToIgnore"));
-indexAll = !UtilMethods.isSet(request.getParameter("indexAll"))?false:Boolean.valueOf((String)request.getParameter("indexAll"));
-indexHosts = request.getParameterValues("indexhost");
-
-
-List<String> indexes = ssapi.listIndices();
-
-
-
+boolean success = false;
 %>
 
 
@@ -277,23 +251,6 @@ function deleteIndexCallback(data){
 }
 
 
-function refreshIndexStats(){
-	var x = dijit.byId("indexStatsCp");
-	var y =Math.floor(Math.random()*1123213213);
-	x.attr( "href","/html/portlet/ext/sitesearch/site_search_index_stats.jsp?r=" + y  );
-}
-
-function refreshJobStats(){
-	var x = dijit.byId("jobStatsCp");
-	var y =Math.floor(Math.random()*1123213213);
-	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_stats.jsp?r=" + y  );
-}
-
-function refreshTestSearch(){
-	var x = dijit.byId("indexTestCp");
-	var y =Math.floor(Math.random()*1123213213);
-	x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?r=" + y  );
-}
 
 
 function doDownloadIndex(indexName){
@@ -580,23 +537,23 @@ function updateReplicas(indexName,currentNum){
 
 function deleteJob(taskName){
 	var xhrArgs = {
-		       url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/deleteJob/taskName/" + taskName ,
-		       handleAs: "text",
-		       handle : function(dataOrError, ioArgs) {
-		           if (dojo.isString(dataOrError)) {
-		               if (dataOrError.indexOf("FAILURE") == 0) {
-		                   showDotCMSSystemMessage(dataOrError, true);
-		               } else {
-		                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Task-Deleted")%>", true);
-		                   refreshIndexStats();
+       url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/deleteJob/taskName/" + taskName ,
+       handleAs: "text",
+       handle : function(dataOrError, ioArgs) {
+           if (dojo.isString(dataOrError)) {
+               if (dataOrError.indexOf("FAILURE") == 0) {
+                   showDotCMSSystemMessage(dataOrError, true);
+               } else {
+                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Task-Deleted")%>", true);
+                   refreshJobStats();
 
-		               }
-		           } else {
-		               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-		           }
-		       }
-		    };
-		    dojo.xhrPost(xhrArgs);
+               }
+           } else {
+               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+           }
+       }
+    };
+    dojo.xhrPost(xhrArgs);
 	
 }
 
@@ -609,7 +566,7 @@ function dohighlight(id) {
 function undohighlight(id) {
     dojo.removeClass(id,"highlight");
 }
-dojo.require("dojo.parser");
+
 
 function doTestSearch(){
 
@@ -631,21 +588,37 @@ function doTestSearch(){
 	        //dojo.byId("response").innerHTML = "Form posted.";
 	      }
 	    }
-
-
-	
 	    var deferred = dojo.xhrPost(xhrArgs);
-	
-	
-	
-	
-	
 }
 
+function refreshIndexStats(){
+	var x = dijit.byId("indexStatsCp");
+	var y =Math.floor(Math.random()*1123213213);
+	x.attr( "href","/html/portlet/ext/sitesearch/site_search_index_stats.jsp?r=" + y  );
+}
+
+function refreshJobStats(){
+	var x = dijit.byId("jobStatsCp");
+	var y =Math.floor(Math.random()*1123213213);
+	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_stats.jsp?r=" + y  );
+}
+
+function refreshTestSearch(){
+	var x = dijit.byId("indexTestCp");
+	var y =Math.floor(Math.random()*1123213213);
+	x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?r=" + y  );
+}
+function refreshJobSchedule(){
+	var x = dijit.byId("scheduleCp");
+	var y =Math.floor(Math.random()*1123213213);
+	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?r=" + y  );
+}
+
+
 dojo.addOnLoad (function(){
-		var tab =dijit.byId("mainTabContainer");
-	   	dojo.connect(tab, 'selectChild',
-		 function (evt) {
+	var tab =dijit.byId("mainTabContainer");
+   	dojo.connect(tab, 'selectChild',
+		function (evt) {
 		 	selectedTab = tab.selectedChildWidget;
 			  	if(selectedTab.id =="indexTabCp"){
 			  		refreshIndexStats();
@@ -656,8 +629,11 @@ dojo.addOnLoad (function(){
 			  	if(selectedTab.id =="indexTestTabCp"){
 			  		refreshTestSearch();
 			  	}
+			  	if(selectedTab.id =="scheduleTabCp"){
+			  		refreshJobSchedule();
+			  	}
 		});
-	  refreshTestSearch();
+   	refreshJobSchedule();
 	
 });	
 
@@ -673,168 +649,27 @@ dojo.addOnLoad (function(){
 	border-top: 1px solid #d0d0d0;
 }
 </style>
+
+<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
+
+
 <div class="portlet-wrapper">
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
-		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
-			<form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
-			
-			<dl>
-				<dt><strong><%= LanguageUtil.get(pageContext, "job-name") %></strong>
-				: 
-				</dt>
-				<dd><input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text"
-					dojoType='dijit.form.TextBox' style='width: 400px' 
-					" value="<%=QUARTZ_JOB_NAME %>" size="200" /></dd>
-				<dd>
-				<dt><span class="required"></span><strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %>:
-				</strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span
-					dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint"
-					class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
-				</dt>
-			<dd>
-			<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-			<div class="selectHostIcon"></div>
-			<select id="hostSelector" name=hostSelector" dojoType="dijit.form.FilteringSelect" 
-				store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
-				invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>" <%=indexAll?"disabled":"" %>>>
-			</select>
-			<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addNewHost()" <%=indexAll?"disabled":"" %>><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
-			</dd>
-				
-				<table class="listingTable" id="hostTable">
-					<tr>
-					    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
-						<th nowrap><%= LanguageUtil.get(pageContext, "Host") %></th>
-					</tr>
-			
-			  <% 
-			  if(!indexAll){
-			    for (int k=0;k<selectedHosts.size();k++) {
-			    	
-			    	Host host = selectedHosts.get(k);
-			    	
-			    	boolean checked =  false;
-			    	
-			    	if(!host.isSystemHost()){
-			   
-			    String str_style = "";
-			      if ((k%2)==0) {
-			        str_style = "class=\"alternate_1\"";
-			        }
-			        else
-			        {
-			        str_style = "class=\"alternate_2\"";
-			        }
-			   %>
-					<tr id="<%=host.getIdentifier()%>" <%=str_style %>>
-					    <td nowrap>
-					       	<a href="javascript:deleteHost('<%=host.getIdentifier()%>');"><span class="deleteIcon"></span></a>
-					    </td>
-						<td nowrap><%= host.getHostname() %></td>
-						<td nowrap="nowrap" style="overflow:hidden; display:none; "> <input type="hidden"
-							name="indexhost" id="indexhost<%= host.getIdentifier() %>"
-							value="<%= host.getIdentifier() %>" /></td>
-			
-					</tr>
-					<%} %>
-					<%}
-			        } %>
-					<% if (indexAll || selectedHosts.size()==0) { %>
-					<tr id= "nohosts">
-						<td colspan="2">
-						<div class="noResultsMessage"><%= indexAll?LanguageUtil.get(pageContext, "all-hosts-selected"):LanguageUtil.get(pageContext, "no-hosts-selected") %></div>
-						</td>
-					</tr>
-					<% } %>
-				</table>
-				<br />
-				<dd>
-			<strong><%= LanguageUtil.get(pageContext, "index-all-hosts") %>
-				: </strong>
-			<input name="indexAll" id="indexAll"
-					dojoType="dijit.form.CheckBox" type="checkbox" value="true"
-					<%=!indexAll?"":"checked"%> onclick="indexAll(this.checked)" />
-				</dd>
-				
-				<dt><strong><%= LanguageUtil.get(pageContext, "Index-Name") %>
-				: </strong>
-				</dt>
-				<dd>
-					<select id="indexName" name="indexName" dojoType="dijit.form.FilteringSelect">
-					<option value=""><%= LanguageUtil.get(pageContext, "New-Index") %></option>
-					<%for(String x : indexes){ %>
-						<option value="<%=x%>"><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "active") +") " : ""  %></option>
-					<%} %>
-					</select>
-				</dd>
-				
-				<dt><strong><%= LanguageUtil.get(pageContext, "cron-expression") %>
-				: </strong> <a href="javascript: ;" id="cronHintHook">?</a>
-				</dt>
-				<dd><input name="CRON_EXPRESSION" id="cronExpression" type="text"
-					dojoType='dijit.form.TextBox' style='width: 200px'
-					" value="<%=showBlankCronExp?"":CRON_EXPRESSION %>" size="10" />
-					<p></p>
-					 <div style="width: 350px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
-						<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
-						<span style="font-size: 88%;">
-						<p></p>
-				        <p><b><%= LanguageUtil.get(pageContext, "cron-once-an-hour") %>:</b> 0 0/60 * * * ?</p> 	
-				        <p><b><%= LanguageUtil.get(pageContext, "cron-twice-a-day") %>:</b> 0 0 10-11 ? * *</p> 	
-				        <p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p> 
-						</span>
-					</div>
-				</dd>
-				 
-			
-				<dt><strong><%= LanguageUtil.get(pageContext, "paths-to-ignore") %>
-				: </strong> <a href="javascript: ;" id="pathsHintHook">?</a> <span
-					dojoType="dijit.Tooltip" connectId="pathsHintHook" id="pathsHint"
-					class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
-				</dt>
-				<dd><input name="pathsToIgnore" id="pathsToIgnore" type="text"
-					dojoType='dijit.form.TextBox' style='width: 400px'
-					" value="<%=pathsToIgnore %>" size="200" /></dd>
-					
-				<dt><strong><%= LanguageUtil.get(pageContext, "paths-to-follow") %>
-				: </strong> <a href="javascript: ;" id="pathsHintHook1">?</a> <span
-					dojoType="dijit.Tooltip" connectId="pathsHintHook1" id="pathsHint1"
-					class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
-				</dt>
-				<dd><input name="pathsToIgnore" id="pathsToFollow" type="text"
-					dojoType='dijit.form.TextBox' style='width: 400px'
-					" value="<%=pathsToFollow %>" size="200" /></dd>
-				<dd>
-
-				
-				<input type="hidden" name="saveAndExecute" id="saveAndExecute" value="false" />
-				<input type="hidden" name="resetSiteSearch" id="resetSiteSearch" value="false" />
-			
-				<button dojoType="dijit.form.Button"
-					id="saveButton" onClick="scheduleJob()"
-					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Schedule")) %>
-				</button>
-				<button dojoType="dijit.form.Button"
-					id="saveAndExecuteButton" onClick="scheduleJob();"
-					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
-				</button>
-				</dd>
-			
-			</dl>
-			</form>
+		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
+			<div dojoType="dojox.layout.ContentPane" id="scheduleCp" style="min-height:700px"></div>
 		</div>
 		
 		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>">
-			<div dojoType="dijit.layout.ContentPane" id="jobStatsCp" style="height:600px"></div>
+			<div dojoType="dijit.layout.ContentPane" id="jobStatsCp" style="min-height:700px"></div>
 		</div>
 		
 		
 		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Indices") %>">
-			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="height:600px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="min-height:700px"></div>
 		</div>
 		
 		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Search") %>">
-			<div dojoType="dojox.layout.ContentPane" id="indexTestCp" style="height:800px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="indexTestCp" style="min-height:700px"></div>
 		</div>
 		
 		

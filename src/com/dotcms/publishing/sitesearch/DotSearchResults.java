@@ -13,9 +13,15 @@ public class DotSearchResults {
 	List<SiteSearchResult> results = new ArrayList<SiteSearchResult>();
 	String index;
 	String error=null;
+	String took;
 	
 	
-	
+	public String getTook() {
+		return took;
+	}
+	public void setTook(String took) {
+		this.took = took;
+	}
 	public String getError() {
 		return error;
 	}
