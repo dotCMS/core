@@ -5,6 +5,7 @@
  */
 package com.dotmarketing.util;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -253,40 +254,50 @@ public class Logger{
     		}
 
     		if(ctx.get("VTLSERVLET_URI") != null && ctx.get("host") != null ){
-    			logger.error("# on url      :" + ((Host) ctx.get("host")).getHostname()  + ctx.get("VTLSERVLET_URI") );
+    			logger.error("# on url      : " + ((Host) ctx.get("host")).getHostname()  + ctx.get("VTLSERVLET_URI") );
     		}
     		else if(ctx.get("VTLSERVLET_URI") != null ){
-    			logger.error("# on uri      :" + ctx.get("VTLSERVLET_URI") );
+    			logger.error("# on uri      : " + ctx.get("VTLSERVLET_URI") );
     		}
     		else if(ctx.get("host") != null){
-    			logger.error("# on host     :" + ((Host) ctx.get("host")).getHostname() );
+    			logger.error("# on host     : " + ((Host) ctx.get("host")).getHostname() );
     		}
     		if(ctx.get("request") != null){
     			HttpServletRequest req  = (HttpServletRequest)ctx.get("request");
     			if(req.getAttribute("javax.servlet.forward.request_uri") != null){
-    				logger.error("# on req      :" + req.getAttribute("javax.servlet.forward.request_uri") );
+    				logger.error("# on req      : " + req.getAttribute("javax.servlet.forward.request_uri") );
     			}
     			
      		}
     		if(ica.getCurrentMacroName() != null){
-    			logger.error("# with macro  :" + ica.getCurrentMacroName());
+    			logger.error("# with macro  : #" + ica.getCurrentMacroName());
     		}
     		if(ica.getCurrentTemplateName() != null){
-    			logger.error("# on template :" + ica.getCurrentTemplateName());
+    			logger.error("# on template : " + normalizeTemplate(ica.getCurrentTemplateName()));
     		}
     		logger.error("#    stack:");
     		for(Object obj : ica.getTemplateNameStack()){
-    			if(obj != null && obj.toString().startsWith("/") ){
-    				logger.error("#    -- " + obj.toString());
-    			}
-    			else{
-    				logger.error("#    -- " + "/" + obj.toString());
-    			}
+				logger.error("#    -- " + normalizeTemplate(obj));
     		}
     		logger.error("#");
     		logger.error("#--------------------------------------------------------------------------------------");
     	}
     	
     }
+    
+    
+    
+    private static String normalizeTemplate(Object t){
+    	if(t ==null){
+    		return null;
+    	}
+		String x = t.toString();
+		x = x.replace(File.separatorChar, '/');
+		x = (x.indexOf("assets") > -1) ? x.substring(x.lastIndexOf("assets"), x.length()) : x;
+		x = (x.startsWith("/")) ?  x : "/" + x;
+
+		return x;
+    }
+    
     
 }
