@@ -7,7 +7,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,22 +15,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.nutch.crawl.CrawlDb;
-import org.apache.nutch.crawl.Generator;
-import org.apache.nutch.crawl.Injector;
-import org.apache.nutch.crawl.LinkDb;
-import org.apache.nutch.fetcher.Fetcher;
-import org.apache.nutch.indexer.DeleteDuplicates;
-import org.apache.nutch.indexer.IndexMerger;
-import org.apache.nutch.indexer.Indexer;
-import org.apache.nutch.parse.ParseSegment;
-import org.apache.nutch.util.HadoopFSUtil;
-import org.apache.nutch.util.NutchConfiguration;
-import org.apache.nutch.util.NutchJob;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -39,8 +23,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.business.FileFactory;
-import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -58,7 +40,7 @@ public class CrawlerUtil {
 	
 	public static final String CRAWLER_PLUGINS_DIR = Config.CONTEXT.getRealPath("WEB-INF"+Path.SEPARATOR+"crawler_plugins"+Path.SEPARATOR+"plugins");
 	
-	private static final Configuration conf = NutchConfiguration.createCrawlConfiguration();
+//	private static final Configuration conf = NutchConfiguration.createCrawlConfiguration();
 	
 	private static final int threads = Config.getIntProperty("NUMBER_OF_THREADS",10);
 	
@@ -74,14 +56,14 @@ public class CrawlerUtil {
 	
 	private static final FileAPI fileAPI = APILocator.getFileAPI();
 	
-	static{
-		conf.set("plugin.folders", CRAWLER_PLUGINS_DIR);
-		conf.set("http.agent.name", Config.getStringProperty("SEARCH_AGENT_NAME"));
-		conf.set("http.agent.description", Config.getStringProperty("SEARCH_AGENT_DESC"));
-		conf.set("http.agent.url", Config.getStringProperty("SEARCH_AGENT_URL"));
-		conf.set("http.agent.email", Config.getStringProperty("SEARCH_AGENT_EMAIL"));
-
-	}
+//	static{
+//		conf.set("plugin.folders", CRAWLER_PLUGINS_DIR);
+//		conf.set("http.agent.name", Config.getStringProperty("SEARCH_AGENT_NAME"));
+//		conf.set("http.agent.description", Config.getStringProperty("SEARCH_AGENT_DESC"));
+//		conf.set("http.agent.url", Config.getStringProperty("SEARCH_AGENT_URL"));
+//		conf.set("http.agent.email", Config.getStringProperty("SEARCH_AGENT_EMAIL"));
+//
+//	}
 
 	private List<Host> hosts;
 	
@@ -178,183 +160,183 @@ public class CrawlerUtil {
 	 */
 	private void indexHost(final Host host) throws Exception {
 
-		synchronized(host){
-
-			if(host==null){
-				throw new IllegalArgumentException("Host cannot be null");
-			}
-			AdminLogger.log(CrawlerUtil.class, "indexHost", "Starting an Site Search index on host " + host.getHostname());
-		
-			//If search index folder under assets does not exist, then create it.
-			File searchIndexFolder = new File(fileAPI.getRealAssetPath()+Path.SEPARATOR+SEARCH_INDEX_DIR);
-			if(!searchIndexFolder.getAbsoluteFile().exists()){
-				FileUtils.forceMkdir(searchIndexFolder);
-			}
-			File hostIndexFolder = null;
-			//Use Host name as default folder name
-			String hostFolderName = host.getHostname();
-			
-			hostIndexFolder = new File(searchIndexFolder.getAbsolutePath()+Path.SEPARATOR+hostFolderName);
-			
-			if(!hostIndexFolder.getAbsoluteFile().exists()){
-			
-			try{
-			   FileUtils.forceMkdir(hostIndexFolder);
-			}catch(IOException e){
-				//If an exception occurs then use the Host identifier   
-				Logger.warn(this,"Creating host site search index folder using host identifier " + host.getIdentifier());
-				hostIndexFolder = new File(searchIndexFolder.getAbsolutePath()+Path.SEPARATOR+host.getIdentifier());
-				if(!hostIndexFolder.getAbsoluteFile().exists()){
-					FileUtils.forceMkdir(hostIndexFolder);
-				}
-			  }
-			}
-			
-			//Create index folder for host
-			File realIndexFolder = new File(hostIndexFolder.getAbsolutePath()+Path.SEPARATOR+host.getIdentifier());
-			if(!realIndexFolder.getAbsoluteFile().exists()){
-				try{
-					FileUtils.forceMkdir(realIndexFolder);
-				}catch(IOException e){
-					Logger.error(this,"Error creating folder for index of host = " + host.getHostname(),e);
-					throw new DotRuntimeException(e.getMessage(), e);
-
-				}
-			}
-			
-			//Create temp folders
-			File tempHostIndexFolder = new File(hostIndexFolder.getAbsolutePath()+Path.SEPARATOR+host.getIdentifier()+"_temp");
-			if(tempHostIndexFolder.getAbsoluteFile().exists()){
-				FileUtils.forceDelete(tempHostIndexFolder);
-			}
-			try{
-				FileUtils.forceMkdir(tempHostIndexFolder);
-			}catch(IOException e){
-				Logger.error(this,"Error creating temp folder for index of host = " + host.getHostname(),e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			}
-
-			
-			Path rootUrlDir = createSeedFolderFile(host,hostIndexFolder);
-
-			if(!followExternalLinks){
-				conf.set("db.ignore.external.links", "true");
-				
-			}
-			
-			if(!indexedHosts.isEmpty()){
-	    		final HostIndexBean bean = indexedHosts.get(host.getIdentifier());
-	    		if(bean!=null){
-	    			bean.setIndexing(true);
-	    		}
-	    	}else{
-	    		final HostIndexBean bean = getIndexedHostFromFS(host.getIdentifier());
-	    		if(bean!=null){
-	    			bean.setIndexing(true);
-	    			indexedHosts.putIfAbsent(host.getIdentifier(), bean);
-	    		}
-	    	}
-
-			createUrlCrawlFile(host,conf,hostIndexFolder.getAbsolutePath());
-			JobConf job = new NutchJob(conf);
-			Path dir = new Path(tempHostIndexFolder.getAbsolutePath()+Path.SEPARATOR+ "crawl-index");
-			String indexerName = "lucene";
-
-			try{
-				FileSystem fs = FileSystem.get(job);
-				
-				Logger.info(this,"site search crawl started in: " + dir);
-				Logger.info(this,"rootUrlDir = " + rootUrlDir);
-				Logger.info(this,"threads = " + threads);
-				Logger.info(this,"depth = " + depth);
-				Logger.info(this,"indexer=" + indexerName);
-				if (topN != Long.MAX_VALUE)
-				    Logger.info(this,"topN = " + topN);
-
-				Path crawlDb = new Path(dir + "/crawldb");
-				Path linkDb = new Path(dir + "/linkdb");
-				Path segments = new Path(dir + "/segments");
-				Path indexes = new Path(dir + "/indexes");
-				Path index = new Path(dir + "/index");
-
-				Path tmpDir = job.getLocalPath("crawl"+Path.SEPARATOR+getDate());
-				Logger.debug(this, "About to instaniate the Injector");
-				Injector injector = new Injector(conf);
-				Logger.debug(this, "About to instaniate the Generator");
-				Generator generator = new Generator(conf);
-				Logger.debug(this, "About to instaniate the Fetcher");
-				Fetcher fetcher = new Fetcher(conf);
-				Logger.debug(this, "About to instaniate the ParseSegment");
-				ParseSegment parseSegment = new ParseSegment(conf);
-				Logger.debug(this, "About to instaniate the CrawlDB");
-				CrawlDb crawlDbTool = new CrawlDb(conf);
-				Logger.debug(this, "About to instaniate the LinkDB");
-				LinkDb linkDbTool = new LinkDb(conf);
-				// initialize crawlDb
-				Logger.debug(this, "initializing the crawlDb");
-				injector.inject(crawlDb, rootUrlDir);
-				int i;
-				for (i = 0; i < depth; i++) {             // generate new segment
-					Path[] segs = generator.generate(crawlDb, segments, -1, topN, System
-							.currentTimeMillis());
-					if (segs == null) {
-						Logger.info(this,"Stopping at depth=" + i + " - no more URLs to fetch.");
-						break;
-					}
-					Logger.debug(this, "About to fetch into segment : " + segs[0].toUri().toString());
-					fetcher.fetch(segs[0], threads, org.apache.nutch.fetcher.Fetcher.isParsing(conf));  // fetch it
-					Logger.debug(this, "Done fetching into segment : " + segs[0].toUri().toString());
-					if (!Fetcher.isParsing(job)) {
-						parseSegment.parse(segs[0]);    // parse it, if needed
-					}
-					crawlDbTool.update(crawlDb, segs, true, true); // update crawldb
-				}
-				if (i > 0) {
-					linkDbTool.invert(linkDb, segments, true, true, false); // invert links
-
-					// index, dedup & merge
-					FileStatus[] fstats = fs.listStatus(segments, HadoopFSUtil.getPassDirectoriesFilter(fs));
-
-					DeleteDuplicates dedup = new DeleteDuplicates(conf);        
-					if(indexes != null) {
-						// Delete old indexes
-						if (fs.exists(indexes)) {
-							Logger.info(this,"Deleting old indexes: " + indexes);
-							fs.delete(indexes, true);
-						}
-
-						// Delete old index
-						if (fs.exists(index)) {
-							Logger.info(this,"Deleting old merged index: " + index);
-							fs.delete(index, true);
-						}
-					}
-
-					Indexer indexer = new Indexer(conf);
-					indexer.index(indexes, crawlDb, linkDb, 
-							Arrays.asList(HadoopFSUtil.getPaths(fstats)));
-
-					IndexMerger merger = new IndexMerger(conf);
-					if(indexes != null) {
-						dedup.dedup(new Path[] { indexes });
-						fstats = fs.listStatus(indexes, HadoopFSUtil.getPassDirectoriesFilter(fs));
-						Logger.debug(this, "Merging the index");
-						merger.merge(HadoopFSUtil.getPaths(fstats), index, tmpDir);
-					}
-
-				} else {
-					Logger.warn(this,"no URLs to fetch for host = " + host.getHostname());
-				}
-				Logger.info(this,"site search crawl finished: " + dir);
-			}catch(Exception e){
-				conf.set("urlfilter.regex.file", "crawl-urlfilter.txt");
-				Logger.error(this, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			}finally{
-				indexedHosts.replace(host.getIdentifier(), new HostIndexBean(realIndexFolder,false));
-			}
-			AdminLogger.log(CrawlerUtil.class, "indexHost", "Finished Site Search index on host " + host.getHostname());
-		}
+//		synchronized(host){
+//
+//			if(host==null){
+//				throw new IllegalArgumentException("Host cannot be null");
+//			}
+//			AdminLogger.log(CrawlerUtil.class, "indexHost", "Starting an Site Search index on host " + host.getHostname());
+//		
+//			//If search index folder under assets does not exist, then create it.
+//			File searchIndexFolder = new File(fileAPI.getRealAssetPath()+Path.SEPARATOR+SEARCH_INDEX_DIR);
+//			if(!searchIndexFolder.getAbsoluteFile().exists()){
+//				FileUtils.forceMkdir(searchIndexFolder);
+//			}
+//			File hostIndexFolder = null;
+//			//Use Host name as default folder name
+//			String hostFolderName = host.getHostname();
+//			
+//			hostIndexFolder = new File(searchIndexFolder.getAbsolutePath()+Path.SEPARATOR+hostFolderName);
+//			
+//			if(!hostIndexFolder.getAbsoluteFile().exists()){
+//			
+//			try{
+//			   FileUtils.forceMkdir(hostIndexFolder);
+//			}catch(IOException e){
+//				//If an exception occurs then use the Host identifier   
+//				Logger.warn(this,"Creating host site search index folder using host identifier " + host.getIdentifier());
+//				hostIndexFolder = new File(searchIndexFolder.getAbsolutePath()+Path.SEPARATOR+host.getIdentifier());
+//				if(!hostIndexFolder.getAbsoluteFile().exists()){
+//					FileUtils.forceMkdir(hostIndexFolder);
+//				}
+//			  }
+//			}
+//			
+//			//Create index folder for host
+//			File realIndexFolder = new File(hostIndexFolder.getAbsolutePath()+Path.SEPARATOR+host.getIdentifier());
+//			if(!realIndexFolder.getAbsoluteFile().exists()){
+//				try{
+//					FileUtils.forceMkdir(realIndexFolder);
+//				}catch(IOException e){
+//					Logger.error(this,"Error creating folder for index of host = " + host.getHostname(),e);
+//					throw new DotRuntimeException(e.getMessage(), e);
+//
+//				}
+//			}
+//			
+//			//Create temp folders
+//			File tempHostIndexFolder = new File(hostIndexFolder.getAbsolutePath()+Path.SEPARATOR+host.getIdentifier()+"_temp");
+//			if(tempHostIndexFolder.getAbsoluteFile().exists()){
+//				FileUtils.forceDelete(tempHostIndexFolder);
+//			}
+//			try{
+//				FileUtils.forceMkdir(tempHostIndexFolder);
+//			}catch(IOException e){
+//				Logger.error(this,"Error creating temp folder for index of host = " + host.getHostname(),e);
+//				throw new DotRuntimeException(e.getMessage(), e);
+//			}
+//
+//			
+//			Path rootUrlDir = createSeedFolderFile(host,hostIndexFolder);
+//
+//			if(!followExternalLinks){
+//				conf.set("db.ignore.external.links", "true");
+//				
+//			}
+//			
+//			if(!indexedHosts.isEmpty()){
+//	    		final HostIndexBean bean = indexedHosts.get(host.getIdentifier());
+//	    		if(bean!=null){
+//	    			bean.setIndexing(true);
+//	    		}
+//	    	}else{
+//	    		final HostIndexBean bean = getIndexedHostFromFS(host.getIdentifier());
+//	    		if(bean!=null){
+//	    			bean.setIndexing(true);
+//	    			indexedHosts.putIfAbsent(host.getIdentifier(), bean);
+//	    		}
+//	    	}
+//
+//			createUrlCrawlFile(host,conf,hostIndexFolder.getAbsolutePath());
+//			JobConf job = new NutchJob(conf);
+//			Path dir = new Path(tempHostIndexFolder.getAbsolutePath()+Path.SEPARATOR+ "crawl-index");
+//			String indexerName = "lucene";
+//
+//			try{
+//				FileSystem fs = FileSystem.get(job);
+//				
+//				Logger.info(this,"site search crawl started in: " + dir);
+//				Logger.info(this,"rootUrlDir = " + rootUrlDir);
+//				Logger.info(this,"threads = " + threads);
+//				Logger.info(this,"depth = " + depth);
+//				Logger.info(this,"indexer=" + indexerName);
+//				if (topN != Long.MAX_VALUE)
+//				    Logger.info(this,"topN = " + topN);
+//
+//				Path crawlDb = new Path(dir + "/crawldb");
+//				Path linkDb = new Path(dir + "/linkdb");
+//				Path segments = new Path(dir + "/segments");
+//				Path indexes = new Path(dir + "/indexes");
+//				Path index = new Path(dir + "/index");
+//
+//				Path tmpDir = job.getLocalPath("crawl"+Path.SEPARATOR+getDate());
+//				Logger.debug(this, "About to instaniate the Injector");
+//				Injector injector = new Injector(conf);
+//				Logger.debug(this, "About to instaniate the Generator");
+//				Generator generator = new Generator(conf);
+//				Logger.debug(this, "About to instaniate the Fetcher");
+//				Fetcher fetcher = new Fetcher(conf);
+//				Logger.debug(this, "About to instaniate the ParseSegment");
+//				ParseSegment parseSegment = new ParseSegment(conf);
+//				Logger.debug(this, "About to instaniate the CrawlDB");
+//				CrawlDb crawlDbTool = new CrawlDb(conf);
+//				Logger.debug(this, "About to instaniate the LinkDB");
+//				LinkDb linkDbTool = new LinkDb(conf);
+//				// initialize crawlDb
+//				Logger.debug(this, "initializing the crawlDb");
+//				injector.inject(crawlDb, rootUrlDir);
+//				int i;
+//				for (i = 0; i < depth; i++) {             // generate new segment
+//					Path[] segs = generator.generate(crawlDb, segments, -1, topN, System
+//							.currentTimeMillis());
+//					if (segs == null) {
+//						Logger.info(this,"Stopping at depth=" + i + " - no more URLs to fetch.");
+//						break;
+//					}
+//					Logger.debug(this, "About to fetch into segment : " + segs[0].toUri().toString());
+//					fetcher.fetch(segs[0], threads, org.apache.nutch.fetcher.Fetcher.isParsing(conf));  // fetch it
+//					Logger.debug(this, "Done fetching into segment : " + segs[0].toUri().toString());
+//					if (!Fetcher.isParsing(job)) {
+//						parseSegment.parse(segs[0]);    // parse it, if needed
+//					}
+//					crawlDbTool.update(crawlDb, segs, true, true); // update crawldb
+//				}
+//				if (i > 0) {
+//					linkDbTool.invert(linkDb, segments, true, true, false); // invert links
+//
+//					// index, dedup & merge
+//					FileStatus[] fstats = fs.listStatus(segments, HadoopFSUtil.getPassDirectoriesFilter(fs));
+//
+//					DeleteDuplicates dedup = new DeleteDuplicates(conf);        
+//					if(indexes != null) {
+//						// Delete old indexes
+//						if (fs.exists(indexes)) {
+//							Logger.info(this,"Deleting old indexes: " + indexes);
+//							fs.delete(indexes, true);
+//						}
+//
+//						// Delete old index
+//						if (fs.exists(index)) {
+//							Logger.info(this,"Deleting old merged index: " + index);
+//							fs.delete(index, true);
+//						}
+//					}
+//
+//					Indexer indexer = new Indexer(conf);
+//					indexer.index(indexes, crawlDb, linkDb, 
+//							Arrays.asList(HadoopFSUtil.getPaths(fstats)));
+//
+//					IndexMerger merger = new IndexMerger(conf);
+//					if(indexes != null) {
+//						dedup.dedup(new Path[] { indexes });
+//						fstats = fs.listStatus(indexes, HadoopFSUtil.getPassDirectoriesFilter(fs));
+//						Logger.debug(this, "Merging the index");
+//						merger.merge(HadoopFSUtil.getPaths(fstats), index, tmpDir);
+//					}
+//
+//				} else {
+//					Logger.warn(this,"no URLs to fetch for host = " + host.getHostname());
+//				}
+//				Logger.info(this,"site search crawl finished: " + dir);
+//			}catch(Exception e){
+//				conf.set("urlfilter.regex.file", "crawl-urlfilter.txt");
+//				Logger.error(this, e.getMessage(), e);
+//				throw new DotRuntimeException(e.getMessage(), e);
+//			}finally{
+//				indexedHosts.replace(host.getIdentifier(), new HostIndexBean(realIndexFolder,false));
+//			}
+//			AdminLogger.log(CrawlerUtil.class, "indexHost", "Finished Site Search index on host " + host.getHostname());
+//		}
 	}
 
 
