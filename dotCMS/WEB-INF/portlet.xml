@@ -2450,7 +2450,7 @@
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
 				<name>view-jsp</name>
-				<value>/jsp/sitesearch/site_search.jsp</value>
+				<value>/jsp/sitesearch/site_search_exp.jsp</value>
 		</init-param>
 		<init-param>
 				<name>useWEBINFDIR</name>
