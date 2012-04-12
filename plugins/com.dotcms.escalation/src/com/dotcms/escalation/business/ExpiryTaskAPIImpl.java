@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -40,7 +41,7 @@ public class ExpiryTaskAPIImpl extends ExpiryTaskAPI {
 			db.addParam(task.getId());
 
 			db.loadResult();
-			
+			HibernateUtil.commitTransaction();
 
 		} catch (final Exception e) {
 			Logger.debug(this.getClass(), e.getMessage(), e);

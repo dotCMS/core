@@ -37,6 +37,7 @@ dojo.require("dojox.layout.ContentPane");
 		PluginAPI pluginAPI = APILocator.getPluginAPI();
 	
 		WorkflowSearcher searcher = new WorkflowSearcher(request.getParameterMap(),  APILocator.getUserAPI().getSystemUser());
+		session.setAttribute(com.dotmarketing.util.WebKeys.WORKFLOW_SEARCHER, searcher);
 		WorkflowSearcher fakeSearcher =(WorkflowSearcher) BeanUtils.cloneBean(searcher) ; 
 		
 		%>
@@ -48,7 +49,7 @@ dojo.require("dojox.layout.ContentPane");
 				<th><input type="checkbox" dojoType="dijit.form.CheckBox"  id="checkAllCkBx" value="true" onClick="checkAll()" /></th>
 				<th nowrap="nowrap" width="22%" style="text-align:center;">User</th>
 				
-				<th nowrap="nowrap" width="18%" style="text-align:center;"><a href="javascript: doOrderBy('<%="title".equals(searcher.getOrderBy())?"status desc":"title"%>')">Title</th>
+				<th nowrap="nowrap" width="18%" style="text-align:center;"><a href="javascript: doOrderBy('<%="title".equals(searcher.getOrderBy())?"title desc":"title"%>')">Title</th>
 				<th nowrap="nowrap" width="10%" style="text-align:center;"><a href="javascript: doOrderBy('<%="status".equals(searcher.getOrderBy())?"status desc":"status"%>')">Status</th>
 				<th nowrap="nowrap" width="10%" style="text-align:center;"><a href="javascript: doOrderBy('<%="status".equals(searcher.getOrderBy())?"status desc":"status"%>')">Step</th>
 				<th nowrap="nowrap" width="15%" style="text-align:center;"><a href="javascript: doOrderBy('<%="mod_date".equals(searcher.getOrderBy())?"mod_date desc":"mod_date"%>')">Last Updated</th>
@@ -56,12 +57,11 @@ dojo.require("dojox.layout.ContentPane");
 			
 		<%
 		List<WorkflowTask> tasks = searcher.findAllTasks(searcher);
-		for(WorkflowTask task : tasks){ 
+		for(WorkflowTask task : tasks){  
 				
 			Role r = APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
 			
-			boolean justInManteinance = ((String)pluginAPI.loadProperty(pluginId, "escalation.job.java.roleToEscale")).equals(r.getRoleKey());
-			
+		
 			Contentlet contentlet = new Contentlet();
 			WorkflowStep step = APILocator.getWorkflowAPI().findStep(task.getStatus());
 				
@@ -73,8 +73,8 @@ dojo.require("dojox.layout.ContentPane");
 		%>
 			
 				<tr class="alternate_1">
-				
-					<td><input type="checkbox" dojoType="dijit.form.CheckBox"  <%if(justInManteinance){ %>disabled="true"<%} %> name="task" id="<%=task.getWebasset() %>" class="taskCheckBox" value="<%=task.getId() %>"  /></td>
+					
+					<td><input type="checkbox" dojoType="dijit.form.CheckBox"  <%if(((String)pluginAPI.loadProperty(pluginId, "escalation.job.java.roleToEscale")).equals(r.getRoleKey())){ %>disabled="true"<%} %> name="task" id="<%=task.getWebasset() %>" class="taskCheckBox" value="<%=task.getId() %>"  /></td>
 					<td onClick="editTask('<%=task.getId()%>')" nowrap="nowrap" align="left">
 						<strong><%="Role:"+APILocator.getRoleAPI().loadRoleById(task.getAssignedTo()).getName()%></strong>	
 					</td>
