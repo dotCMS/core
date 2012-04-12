@@ -153,7 +153,18 @@ List<String> indexes = ssapi.listIndices();
 
 	<tr>
 		<td align="right" valign="top" nowrap="true">
-			<strong><%= LanguageUtil.get(pageContext, "Paths") %>: </strong> <a href="javascript: ;" id="pathsHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="pathsHintHook1" id="pathsHint1" class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
+			<strong><%= LanguageUtil.get(pageContext, "Date-Range") %>: </strong> <a href="javascript: ;" id="pathsHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="pathsHintHook1" id="pathsHint1" class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
+		</td>
+		<td>
+			<div style="padding:0px;">
+				<input checked="false" type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true"><label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label> &nbsp; &nbsp; &nbsp; 
+			</div>
+			<br>
+		</td>
+	</tr>
+		<tr>
+		<td align="right" valign="top" nowrap="true">
+			<strong><%= LanguageUtil.get(pageContext, "Paths") %>: </strong></span>
 		</td>
 		<td>
 			<div style="padding:0px;">
