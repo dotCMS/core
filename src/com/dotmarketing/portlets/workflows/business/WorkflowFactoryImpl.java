@@ -658,6 +658,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	return (List<File>) hu.list();
     }
 
+
     private String getWorkflowSqlQuery(WorkflowSearcher searcher, boolean counting) throws DotDataException {
 
 	final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole());
@@ -1032,6 +1033,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
 	final StringWriter sw = new StringWriter();
 	sw.append("select {workflow_task.*}  from workflow_task   ");
+	
+    	
+    	if(searcher!=null){
+    		sw.append(" order by ");
+	    if (UtilMethods.isSet(searcher.getOrderBy())) {
+	    	sw.append(searcher.getOrderBy());
+	    } else {
+	    	sw.append("mod_date desc");
+	    }
+    	}
 	hu.setSQLQuery(sw.toString());
 	if (searcher!=null) {
 	    hu.setMaxResults(searcher.getCount());

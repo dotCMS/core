@@ -1,5 +1,7 @@
 package com.dotcms.escalation.business;
 
+import java.util.Date;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -22,7 +24,7 @@ public class ExpiryTaskAPIImpl extends ExpiryTaskAPI {
 
 	private static WorkflowAPI wAPI = APILocator.getWorkflowAPI();
 
-	protected static String UPDATE_USER_ASSIGNTO_TASK = "update workflow_task set assigned_to = ? where id = ?";
+	protected static String UPDATE_USER_ASSIGNTO_TASK = "update workflow_task set assigned_to = ? , mod_date = ? where id = ?";
 
 	@Override
 	public void escaleTask(String taskId, String roleId) throws Exception {
@@ -34,10 +36,11 @@ public class ExpiryTaskAPIImpl extends ExpiryTaskAPI {
 
 			db.setSQL(UPDATE_USER_ASSIGNTO_TASK);
 			db.addParam(roleId);
+			db.addParam(new Date());
 			db.addParam(task.getId());
 
 			db.loadResult();
-			System.out.println("QUERY ESCLATION ESEGUITA");
+			
 
 		} catch (final Exception e) {
 			Logger.debug(this.getClass(), e.getMessage(), e);

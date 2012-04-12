@@ -203,7 +203,7 @@ public class WorkflowSearcher {
     }
     
     public String getQueryStringBis() {
-	return  "&count="+ count + "&page=" + page;
+	return  "&orderBy=" + orderBy+"&count="+ count + "&page=" + page;
 
     }
     

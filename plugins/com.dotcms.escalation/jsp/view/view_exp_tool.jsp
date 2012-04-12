@@ -35,6 +35,33 @@ function checkAll(){
 	})
 }
 
+function doOrderBy (newOrder) {
+	
+	dojo.byId("orderBy").value= newOrder;
+	
+
+	var newURL = "";
+	if(lastUrlParams!=null){
+	
+	var x  = lastUrlParams.split("&");
+	
+	for(i =0;i<x.length;i++){
+		if(x[i].indexOf("orderBy")<0){
+			newURL+="&" + x[i];
+		}
+	
+	
+	}
+	}
+	
+	
+
+	newURL+="&orderBy=" +newOrder;
+
+	refreshTaskList(newURL);
+
+}
+
 
 function submitFrm() {
 	
@@ -51,13 +78,20 @@ function editTask(id){
 	window.location=url;
 }
 
+var lastUrlParams ;
+
 function refreshTaskList(urlParams){
+
+	
+	if(urlParams!=null){
+		
 	lastUrlParams = urlParams;
 	var r = Math.floor(Math.random() * 1000000000);
 	var url = "/html/portlet/ext/workflows/view_exp_tool_task_list.jsp?r=" + r + urlParams;
 	
+    } else {var url = "/html/portlet/ext/workflows/view_exp_tool_task_list.jsp";}
 
-var myCpP = dojo.byId("hangTaskListHere");
+	var myCpP = dojo.byId("hangTaskListHere");
 	
 	while (myCpP.hasChildNodes()) {
 		
@@ -107,7 +141,7 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 		<div style="margin-top:48px;">
 			<div  id="filterTasksFrm">
 				<input type="hidden" name="orderBy" id="orderBy" value="mod_date desc">
-
+				<input type="hidden" name="CMD" id="orderBy" value="runExc">
 
 				
 				<dl>
@@ -138,7 +172,7 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 					
 				</dl>
 				<div class="buttonRow">
-					<button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="submitFrm()"> 
+					<button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="submitFrm();refreshTaskList(null);"> 
 					<%= LanguageUtil.get(pageContext, "EXP_button_launch") %> </button>
 					<!-- <button dojoType="dijit.form.Button" name="resetButton"  iconClass="resetIcon" onclick="resetFilters()"></button>-->    
 				</div>
@@ -149,7 +183,7 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 <!-- END Left Column -->
 
 <!-- START Right Column -->
-	<div id="ciao" dojoType="dijit.layout.ContentPane" splitter="true" title="<%= LanguageUtil.get(pageContext, "EXP_ML") %>" region="center" style="margin-top:37px;">
+	<div  dojoType="dijit.layout.ContentPane" splitter="true" title="<%= LanguageUtil.get(pageContext, "EXP_ML") %>" region="center" style="margin-top:37px;">
 		<div id="hangTaskListHere">
 		
 		<%@ include file="/html/portlet/ext/workflows/view_exp_tool_task_list.jsp" %>
