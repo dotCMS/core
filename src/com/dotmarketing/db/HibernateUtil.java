@@ -57,6 +57,12 @@ public class HibernateUtil {
 	        return new ArrayList<Runnable>();
 	    }
 	};
+	
+	private static final ThreadLocal< List<Runnable> > rollbackListeners=new ThreadLocal<List<Runnable>>() {
+        protected java.util.List<Runnable> initialValue() {
+            return new ArrayList<Runnable>();
+        }
+    };
 
 	public HibernateUtil(Class c) {
 		setClass(c);
@@ -618,11 +624,23 @@ public class HibernateUtil {
 	        throw new DotHibernateException(ex.getMessage(),ex);
 	    }
 	}
+	
+	public static void addRollbackListener(Runnable listener) throws DotHibernateException{
+        try {
+            if(getSession().connection().getAutoCommit())
+                listener.run();
+            else
+                rollbackListeners.get().add(listener);
+        }
+        catch(Exception ex) {
+            throw new DotHibernateException(ex.getMessage(),ex);
+        }
+    }
 
-	static class CommitRunnables extends Thread {
+	static class RunnablesExecutor extends Thread {
 		private List<Runnable> runnables;
 		
-		public CommitRunnables(List<Runnable> runnables) {
+		public RunnablesExecutor(List<Runnable> runnables) {
 			this.runnables = runnables;
 		}
 		public void run(){
@@ -645,10 +663,12 @@ public class HibernateUtil {
 						Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
 						session.connection().commit();
 						session.connection().setAutoCommit(true);
-						List<Runnable> r = new ArrayList<Runnable>(commitListeners.get());
-						commitListeners.get().clear();
-						CommitRunnables t = new CommitRunnables(r);
-						t.run();
+						if(commitListeners.get().size()>0) {
+    						List<Runnable> r = new ArrayList<Runnable>(commitListeners.get());
+    						commitListeners.get().clear();
+    						RunnablesExecutor t = new RunnablesExecutor(r);
+    						t.run();
+						}
 					}
 					DbConnectionFactory.closeConnection();
 					session.close();
@@ -660,6 +680,7 @@ public class HibernateUtil {
 		}
 		finally {
 		    commitListeners.get().clear();
+		    rollbackListeners.get().clear();
 		}
 	}
 
@@ -724,7 +745,13 @@ public class HibernateUtil {
 			Logger.error(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------\n"+ ex);
 			// throw new DotRuntimeException(ex.toString());
 		}
-
+		
+		if(rollbackListeners.get().size()>0) {
+            List<Runnable> r = new ArrayList<Runnable>(rollbackListeners.get());
+            rollbackListeners.get().clear();
+            RunnablesExecutor t = new RunnablesExecutor(r);
+            t.run();
+        }
 	}
 	
     public static Savepoint setSavepoint() throws DotHibernateException {

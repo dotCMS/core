@@ -206,20 +206,9 @@ public class CMSMaintenanceAjax {
 	}
 
     public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException {
-//        if(!CMSMaintenanceFactory.findAssetsInconsistencies()) {
-    		try {
-    			Logger.debug(this, "Starting to fix assets before deleting older ones");
-			    CMSMaintenanceFactory.fixAssetsInconsistencies();
-			} catch (Exception e) {
-				Logger.error(this,"There was a problem fixing asset inconsistencies",e);
-			}
-			Logger.debug(this, "Done fixing assets about to start deleting older ones");
         	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
         	MaintenanceUtil.deleteAssetsWithNoInode();
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
-//        } else {
-//        	return -2;
-//        }
     }
 
     public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {
