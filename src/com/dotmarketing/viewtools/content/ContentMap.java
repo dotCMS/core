@@ -40,6 +40,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.velocity.VelocityServlet;
 import com.dotmarketing.viewtools.ContentsWebAPI;
 import com.liferay.portal.model.User;
 
@@ -267,21 +268,14 @@ public class ContentMap {
 				VelocityEngine ve = VelocityUtil.getEngine();
 				Template template = null;
 				StringWriter sw = new StringWriter();
+				VelocityServlet.velocityCtx.set(context);
 				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? "working/":"live/") + content.getInode() + "_" + f.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION"));
 				template.merge(context, sw);
 				ret = sw.toString();
 			}
 			return ret;
 		} catch (Exception e) {
-			
-				try{
-					Logger.warn(ContentMap.class,"Unable to retrive Field:" + fieldVariableName+" for contentlet:" + this.content.getTitle() + " Reason:" + e.getMessage());
-				}
-				catch(Exception ex){
-					Logger.warn(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage());
-				}
-			
-			Logger.debug(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(), e);
+			Logger.error(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(),e);
 			return null;
 		}
 	}
