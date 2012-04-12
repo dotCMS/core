@@ -558,7 +558,6 @@ function deleteJob(taskName){
 }
 
 
-
 function dohighlight(id) {
 	dojo.addClass(id,"highlight");
 }
@@ -590,6 +589,31 @@ function doTestSearch(){
 	    }
 	    var deferred = dojo.xhrPost(xhrArgs);
 }
+
+function changeIncludeExclude(){
+
+		dijit.byId("paths").setDisabled(dijit.byId("includeAll").checked);
+		if(!dijit.byId("includeAll").checked && dijit.byId("paths").getValue() =="/*"){
+			dijit.byId("paths").setValue("");
+			
+		}
+		else if(dijit.byId("includeAll").checked){
+				
+				dijit.byId("paths").setValue("/*");
+		
+		}
+			
+			
+			
+
+}
+
+
+
+
+
+
+
 
 function refreshIndexStats(){
 	var x = dijit.byId("indexStatsCp");
@@ -656,11 +680,11 @@ dojo.addOnLoad (function(){
 <div class="portlet-wrapper">
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
-			<div dojoType="dojox.layout.ContentPane" id="scheduleCp" style="min-height:700px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="scheduleCp" style="min-height:800px"></div>
 		</div>
 		
 		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>">
-			<div dojoType="dijit.layout.ContentPane" id="jobStatsCp" style="min-height:700px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp" style="min-height:700px"></div>
 		</div>
 		
 		
