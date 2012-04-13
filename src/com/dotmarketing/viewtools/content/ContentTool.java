@@ -131,7 +131,8 @@ public class ContentTool implements ViewTool {
 				return new ContentMap(l.get(0), user,EDIT_OR_PREVIEW_MODE,currentHost,context);
 			}
 		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
+			Logger.error(ContentTool.class,e.getMessage());
+			Logger.debug(ContentTool.class,e.getMessage(),e);
 			return null;
 		}
 	}
@@ -221,7 +222,8 @@ public class ContentTool implements ViewTool {
 				}
 			}
 		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
+			Logger.error(ContentTool.class,e.getMessage());
+			Logger.debug(ContentTool.class,e.getMessage(),e);
 		}
 		return ret;
 	}
