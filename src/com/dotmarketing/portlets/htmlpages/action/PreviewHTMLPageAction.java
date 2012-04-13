@@ -59,7 +59,7 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 
 			HTMLPage htmlPage = _previewHTMLPages(req, user);
 
-			ActivityLogger.logInfo(this.getClass(), "save HTMLpage action", "User " + user.getPrimaryKey() + " save page" + htmlPage.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
+			ActivityLogger.logInfo(this.getClass(), "save HTMLpage action", "User " + user.getPrimaryKey() + " save page " + htmlPage.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 
 			String previewPage = (String) req.getAttribute(WebKeys.HTMLPAGE_PREVIEW_PAGE);
 
