@@ -2504,6 +2504,21 @@
 	</portlet>	
 	
 	<portlet>
+		<portlet-name>OSGI_MANAGER</portlet-name>
+		<display-name>OSGI Manager</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+				<name>view-jsp</name>
+				<value>/portlet/ext/osgi/main.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+	
+	</portlet>
+	
+	<portlet>
 		<portlet-name>EXT_TAG_MANAGER</portlet-name>
 		<display-name>Tag Manager</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>

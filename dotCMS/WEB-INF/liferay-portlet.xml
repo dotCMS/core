@@ -125,6 +125,7 @@
 	<portlet id="EXT_SITESEARCH"  />
 	<portlet id="EXT_DASHBOARD" struts-path="ext/dashboard" />
 	<portlet id="WORKFLOW_SCHEMES"  />
+	<portlet id="OSGI_MANAGER"  />
 	<portlet id="EXT_TAG_MANAGER" struts-path="tag_manager" />
 	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
 </portlets>
