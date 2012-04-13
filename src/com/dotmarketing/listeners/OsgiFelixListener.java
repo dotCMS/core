@@ -26,7 +26,7 @@ import com.dotmarketing.util.Logger;
 
 public class OsgiFelixListener implements ServletContextListener {
 
-    private Framework m_fwk;
+    public static Framework m_fwk; 
     
 	private Properties loadConfig() {
 		Properties properties = new Properties();
