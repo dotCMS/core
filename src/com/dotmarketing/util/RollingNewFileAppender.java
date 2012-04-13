@@ -9,49 +9,47 @@ import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.spi.LoggingEvent;
 
 public class RollingNewFileAppender extends RollingFileAppender {
-    
-   private Map<String, RollingFileAppender> map;
-   
 
-    public RollingNewFileAppender() {
-	super();
-	map = new HashMap<String, RollingFileAppender>();
-    }
+	private Map<String, RollingFileAppender> map;
 
-    protected void subAppend(LoggingEvent event) {
-	String message = "" + event.getMessage();
-	String[] list = message.split(":");
-	if ( list.length > 2 ) {
-	    String hostName = list[1];
-	    System.out.println("host: "+hostName);
-	    RollingFileAppender rolling = map.get(hostName);
-	    if ( rolling == null ) {
-		try {
-		    
-		    String[] folderList = fileName.split("logs/");
-		    String newFileName = ((String)folderList[0]).concat("logs/"+hostName+"/").concat(folderList[1]);
-		    System.out.println("New filename: "+ newFileName);
-		    rolling = new RollingFileAppender(this.layout, newFileName, this.fileAppend);
-		} catch (IOException e) {
-		    e.printStackTrace();
-		    super.subAppend(event);
-		    return;
+	public RollingNewFileAppender() {
+		super();
+		map = new HashMap<String, RollingFileAppender>();
+	}
+
+	protected void subAppend(LoggingEvent event) {
+		String message = "" + event.getMessage();
+		String[] list = message.split(":");
+		if (list.length > 2) {
+			String hostName = list[1];
+
+			RollingFileAppender rolling = map.get(hostName);
+			if (rolling == null) {
+				try {
+
+					String[] folderList = fileName.split("logs/");
+					String newFileName = ((String) folderList[0]).concat("logs/" + hostName + "/").concat(folderList[1]);
+					System.out.println("New filename: " + newFileName);
+					rolling = new RollingFileAppender(this.layout, newFileName, this.fileAppend);
+				} catch (IOException e) {
+					e.printStackTrace();
+					super.subAppend(event);
+					return;
+				}
+				map.put(hostName, rolling);
+			}
+
+			rolling.append(event);
+		} else {
+			super.subAppend(event);
 		}
-		map.put(hostName, rolling);
-	    }
-	    
-	    rolling.append(event);
+
 	}
-	else {
-	    super.subAppend(event);
+
+	private String cleanMessage(String message) {
+
+		return null;
+
 	}
-	
-    }
-    
-    private String cleanMessage(String message){
-    	
-    	return null;
-    	
-    }
 
 }
