@@ -285,7 +285,7 @@ public class ESIndexAPI {
 	 * @return
 	 */
 	public  boolean indexExists(String indexName) {
-		return listIndices().contains(indexName);
+		return listIndices().contains(indexName.toLowerCase());
 	}
 	/**
 	 * Creates an index with default settings

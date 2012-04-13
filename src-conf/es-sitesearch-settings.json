@@ -13,7 +13,8 @@
         "filter": [
           "standard",
           "lowercase",
-          "asciifolding"
+          "asciifolding",
+         {"type":"stemmer", "name":"english"}
         ],
         "type": "custom",
         "tokenizer": "standard"

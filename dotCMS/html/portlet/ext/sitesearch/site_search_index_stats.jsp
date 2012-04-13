@@ -67,26 +67,6 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 	});
 </script>
 
-<style>
-	.trIdxBuilding{
-	background:#F8ECE0;
-	}
-	.trIdxActive{
-	background:#D8F6CE;
-	}
-	.trIdxNothing td{
-	color:#aaaaaa;
-	
-	}
-	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
-	 #restoreIndexUploader {
-	   width:200px !important;
-	 }
-	 #uploadProgress {
-	   float: right;
-	   display: none;
-	 }
-</style>
 
 
 
@@ -146,7 +126,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 				<tr class="<%=(active) ? "trIdxActive"  : "trIdxNothing" %>" id="<%=x%>Row">
 					<td  align="center" class="showPointer" >
 						<%if(active){ %>
-							<%= LanguageUtil.get(pageContext,"active") %>
+							<%= LanguageUtil.get(pageContext,"default") %>
 						<%}%>
 					</td>
 					<td  class="showPointer" ><%=x %></td>
@@ -197,12 +177,12 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			 	<%if(!active){%>
 			 	<div dojoType="dijit.MenuItem" onClick="doActivateIndex('<%=x %>');" class="showPointer">
 			 		<span class="publishIcon"></span>
-			 		<%= LanguageUtil.get(pageContext,"Activate-Index") %>
+			 		<%= LanguageUtil.get(pageContext,"Make-Default") %>
 			 	</div>
 			 	<%}else{ %>
 			 	<div dojoType="dijit.MenuItem" onClick="doDeactivateIndex('<%=x %>');" class="showPointer">
 			 		<span class="unpublishIcon"></span>
-			 		<%= LanguageUtil.get(pageContext,"Deactivate-Index") %>
+			 		<%= LanguageUtil.get(pageContext,"Remove-Default") %>
 			 	</div>
 			 	<%} %>
 			 	<div dojoType="dijit.MenuItem" onClick="doClearIndex('<%=x %>');" class="showPointer">

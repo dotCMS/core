@@ -171,18 +171,27 @@ public class StaticHTMLPageBundler implements IBundler {
 			
 			if(!sf.exists() || sf.lastModified() != cal.getTimeInMillis()){
 				try {
-					if(!sf.exists())sf.createNewFile();
-					FileWriter fstream = new FileWriter(sf);
-					BufferedWriter out = new BufferedWriter(fstream);
-					String html = new String();
+					
+					BufferedWriter out = null;
 					try{
+						if(!sf.exists())sf.createNewFile();
+						FileWriter fstream = new FileWriter(sf);
+						out = new BufferedWriter(fstream);
+						String html = new String();
 						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser());
+						out.write(html);
+						out.close();
+						sf.setLastModified(cal.getTimeInMillis());
 					}catch(Exception e){
-						Logger.error(this, e.getMessage() + " Unable to get page", e);
+						Logger.error(this, e.getMessage() + " Unable to get page : " + htmlPageWrapper.getIdentifier().getHostId() + htmlPageWrapper.getIdentifier().getURI());
 					}
-					out.write(html);
-					out.close();
-					sf.setLastModified(cal.getTimeInMillis());
+					finally{
+						if(out !=null){
+							out.close();
+						}
+					}
+					
+					
 				} catch (FileNotFoundException e) {
 					Logger.error(PublisherUtil.class,e.getMessage(),e);
 				}catch (IOException e) {

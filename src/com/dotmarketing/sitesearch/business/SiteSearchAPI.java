@@ -43,5 +43,7 @@ public interface SiteSearchAPI {
 	DotSearchResults search(String query, String sort, int start, int rows);
 	
 	DotSearchResults search(String indexName, String query, String sort, int start, int rows);
+
+	ScheduledTask getTask(String taskName) throws SchedulerException;
 	
 }
