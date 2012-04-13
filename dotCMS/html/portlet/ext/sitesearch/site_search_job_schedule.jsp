@@ -26,46 +26,69 @@
 <%@page import="java.util.List"%>
 <%
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
-String submitURL = "test";
-List<Host> selectedHosts = new ArrayList<Host>();
-String error = "";
-String CRON_EXPRESSION = "";
-String pathsToIgnore  = "";
-String pathsToFollow  = "";
-
-String extToIgnore    = "";
-String port           = "";
-boolean followQueryString = false;
-boolean indexAll = false;
-boolean showBlankCronExp = false;
-boolean success = false;
-String successMsg = LanguageUtil.get(pageContext, "schedule-site-search-success") ;
-String[] indexHosts;
-
-String QUARTZ_JOB_NAME =  "SiteSearchJob" ;
-
-
-CRON_EXPRESSION = UtilMethods.webifyString(request.getParameter("CRON_EXPRESSION"));
-pathsToIgnore  = UtilMethods.webifyString(request.getParameter("pathsToIgnore"));
-extToIgnore    = UtilMethods.webifyString(request.getParameter("extToIgnore"));
-indexAll = !UtilMethods.isSet(request.getParameter("indexAll"))?false:Boolean.valueOf((String)request.getParameter("indexAll"));
-indexHosts = request.getParameterValues("indexhost");
-
+Map<String, Object> props = new HashMap<String, Object>();
+if(request.getParameter("jobName") != null){
+	try{
+		props = ssapi.getTask(request.getParameter("jobName")).getProperties();
+	}
+	catch(Exception e){
+		
+	}
+}
 
 List<String> indexes = ssapi.listIndices();
 
 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-SimpleDateFormat tdf = new SimpleDateFormat("HH:mm");
+SimpleDateFormat tdf = new SimpleDateFormat("HH:mm:ss");
 
 Date startDate = new Date(0);
 Date endDate = new Date();
-String startDateStr = sdf.format(endDate);
-String endDateStr = sdf.format(new Date());
-String startTimeStr = tdf.format(startDate);
-String endTimeStr = tdf.format(endDate);
-boolean hasPath = false;
-%>
+String startDateDate = (props.get("startDateDate") != null) ? (String) props.get("startDateDate"): "" ;//sdf.format(startDate);
+String endDateDate = (props.get("endDateDate") != null) ? (String) props.get("endDateDate"): "" ;//ssdf.format(new Date());
+String startDateTime = (props.get("startDateTime") != null) ? (String) props.get("startDateTime"): "" ;//s"T" + tdf.format(startDate);
+String endDateTime = (props.get("endDateTime") != null) ? (String) props.get("endDateTime"): "" ;//s"T" + tdf.format(endDate);
 
+String QUARTZ_JOB_NAME =  UtilMethods.isSet((String) props.get("QUARTZ_JOB_NAME")) ? (String) props.get("QUARTZ_JOB_NAME"): "" ;
+String CRON_EXPRESSION = UtilMethods.webifyString((String) props.get("CRON_EXPRESSION"));
+
+
+
+
+
+String indexName = UtilMethods.webifyString((String) props.get("indexName"));
+boolean incremental = UtilMethods.isSet((String) props.get("incremental"));
+List<Host> selectedHosts = new ArrayList<Host>();
+boolean indexAll = UtilMethods.isSet((String) props.get("indexAll")) ? true : false;
+String[] indexHosts = null;
+Object obj = (props.get("indexhost") != null) ?props.get("indexhost") : new String[0];
+if(obj instanceof String){
+	indexHosts = new String[] {(String) obj};
+}
+else{
+	indexHosts = (String[]) obj;
+}
+
+
+for(String x : indexHosts){
+	try{
+		selectedHosts.add(APILocator.getHostAPI().find(x, user, true));
+	}
+	catch(Exception e){}
+}
+
+boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().site_search != null;
+
+
+
+
+String paths = UtilMethods.webifyString((String) props.get("paths"));
+String includeExclude = (String) props.get("includeExclude") ==null ? "all": (String) props.get("includeExclude");
+
+
+boolean hasPath = false;
+
+
+%>
 
 <form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
 <table style="align:center;width:800px;" class="listingTable">
@@ -75,18 +98,19 @@ boolean hasPath = false;
 			<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "name") %></strong>: 
 		</td>
 		<td>
-			<input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text" dojoType='dijit.form.ValidationTextBox' style='width: 400px' value="<%=QUARTZ_JOB_NAME %>" size="200" />
+			<input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text" dojoType='dijit.form.ValidationTextBox' regExp="[\w -]+" required="true" style='width: 400px' value="<%=QUARTZ_JOB_NAME %>" size="200" />
 		</td>
 	</tr>
+	
+	
+	
 	
 	<tr>
 		<td align="right" valign="top" nowrap="true">
 			<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %>:</strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
 		</td>
 		<td>
-	
-			<div class="selectHostIcon"></div>
-				<select id="hostSelector" name=hostSelector" dojoType="dijit.form.FilteringSelect"  store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname"  invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>" <%=indexAll?"disabled":"" %>>></select>
+			<select id="hostSelector" name="hostSelector" dojoType="dijit.form.FilteringSelect"  store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname"  invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>" <%=indexAll?"disabled=true":"" %> required="false"></select>
 				<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addNewHost()" <%=indexAll?"disabled":"" %>><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
 				<br />
 			
@@ -123,9 +147,11 @@ boolean hasPath = false;
 					<% } %>
 				</table>
 			<br />
-			<strong><%= LanguageUtil.get(pageContext, "index-all-hosts") %>: </strong><input name="indexAll" id="indexAll" dojoType="dijit.form.CheckBox" type="checkbox" value="true" <%=!indexAll?"":"checked"%> onclick="indexAll(this.checked)" />
+			<strong><%= LanguageUtil.get(pageContext, "index-all-hosts") %>: </strong><input name="indexAll" id="indexAll" dojoType="dijit.form.CheckBox" type="checkbox" value="true" <%=!indexAll?"":"checked='true'"%> onclick="indexAll(this.checked)" />
 		</td>
 	</tr>
+	
+	
 	
 	<tr>
 		<td align="right" valign="top" nowrap="true">
@@ -133,24 +159,26 @@ boolean hasPath = false;
 		</td>
 		<td>
 			<select id="indexName" name="indexName" dojoType="dijit.form.FilteringSelect">
-			<option value=""><%= LanguageUtil.get(pageContext, "New-Index") %></option>
+			<%if(hasDefaultIndex){ %><option value="DEFAULT" <%=("DEFAULT".equals(indexName)) ? "selected='true'":"" %>><%= LanguageUtil.get(pageContext, "Default") %></option><%} %>
+			<option value="NEWINDEX" <%=("NEWINDEX".equals(indexName)) ? "selected='true'": ""%>><%= LanguageUtil.get(pageContext, "New-Index-Create") %></option>
 				<%for(String x : indexes){ %>
-					<option value="<%=x%>"><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "active") +") " : ""  %></option>
+					<option value="<%=x%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 				<%} %>
 			</select>
 		</td>
 	</tr>
+	
+	
+	
+	
+	
 	
 	<tr>
 		<td align="right" valign="top" nowrap="true">
 			<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "cron-expression") %>: </strong> 
 		</td>
 		<td>
-			<input name="CRON_EXPRESSION" id="cronExpression" type="text" dojoType='dijit.form.TextBox' style='width: 200px'" value="<%=showBlankCronExp?"":CRON_EXPRESSION %>" size="10" />
-			
-			
-			
-			
+			<input name="CRON_EXPRESSION" id="cronExpression" type="text" dojoType='dijit.form.ValidationTextBox' required="true" style='width: 200px'" value="<%=CRON_EXPRESSION %>" size="10" />
 			 <div style="width: 350px; margin:20px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
 				<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
 				<span style="font-size: 88%;">
@@ -163,29 +191,34 @@ boolean hasPath = false;
 		</td>
 	</tr>
 	 
+	 
+	 
+	 
 
 	<tr>
 		<td align="right" valign="top" nowrap="true">
-			<strong><%= LanguageUtil.get(pageContext, "Date-Range") %>: </strong> <a href="javascript: ;" id="dateRangeHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="dateRangeHintHook1" class="fieldHint"><%=LanguageUtil.get(pageContext, "date-range-hint") %></span>
+			<strong><%= LanguageUtil.get(pageContext, "Include-Date-Range") %>: </strong> <a href="javascript: ;" id="dateRangeHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="dateRangeHintHook1" class="fieldHint"><%=LanguageUtil.get(pageContext, "date-range-hint") %></span>
 		</td>
 		<td>
-			<div style="padding:0px;">
-				<input checked="false" type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true"><label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label> &nbsp; &nbsp; &nbsp; 
+			<div style="padding:5px;">
+				<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>><label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label> &nbsp; &nbsp; &nbsp; 
 			</div>
+			<!--  
 			<div style="padding:4px;">
 				<div style="width:50px;float:left;display: block-inline">
 					<%= LanguageUtil.get(pageContext, "Start:") %>
 				</div>
-				<input type="text" name="startDateDate" value="<%=startDateStr %>" dojoType="dijit.form.DateTextBox">  
-				<input type="text" name="startDateTime" value="<%=startTimeStr %>" dojoType="dijit.form.TimeTextBox">
+				<input type="text" id="startDateDate" name="startDateDate" value="<%=startDateDate %>" dojoType="dijit.form.DateTextBox" disabled="<%=(incremental)%>">  
+				<input type="text" id="startDateTime" name="startDateTime" value="<%=startDateTime %>" dojoType="dijit.form.TimeTextBox" disabled="<%=(incremental)%>">
 			</div>
 			<div style="padding:4px;">
 				<div style="width:50px;float:left;display: block-inline">
 					<%= LanguageUtil.get(pageContext, "End:") %>
 				</div>
-				<input type="text" name="endDateDate" value="<%=endDateStr %>" dojoType="dijit.form.DateTextBox">  
-				<input type="text" name="endDateTime" value="<%=endTimeStr %>" dojoType="dijit.form.TimeTextBox">
+				<input type="text" id="endDateDate" name="endDateDate" value="<%=endDateDate %>" dojoType="dijit.form.DateTextBox" disabled="<%=(incremental)%>">  
+				<input type="text" id="endDateTime" name="endDateTime" value="<%=endDateTime %>" dojoType="dijit.form.TimeTextBox" disabled="<%=(incremental)%>">
 			</div>
+			-->
 		</td>
 	</tr>
 		<tr>
@@ -198,12 +231,12 @@ boolean hasPath = false;
 		</td>
 		<td>
 			<div style="padding:0px;">
-				<input onclick="changeIncludeExclude()" checked="true" type="radio" dojoType="dijit.form.RadioButton" id="includeAll" name="includeExclude" value="all"><label for="includeAll">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All")) %></label> &nbsp; &nbsp; &nbsp; 
-				<input onclick="changeIncludeExclude()" type="radio" dojoType="dijit.form.RadioButton" id="include" name="includeExclude" value="include"><label for="include">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Include")) %></label> &nbsp; &nbsp; &nbsp; 
-				<input onclick="changeIncludeExclude()" type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude"><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
+				<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="includeAll" name="includeExclude" value="all" <%="all".equals(includeExclude) ? "checked='true'" : ""%>     ><label for="includeAll">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All")) %></label> &nbsp; &nbsp; &nbsp; 
+				<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="include" name="includeExclude" value="include" <%="include".equals(includeExclude) ? "checked='true'" : ""%>><label for="include">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Include")) %></label> &nbsp; &nbsp; &nbsp; 
+				<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude" <%="exclude".equals(includeExclude) ? "checked='true'" : ""%>><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
 			</div>
 			<br>
-			<textarea  name="paths" id="paths" <%=(hasPath) ? "" : "disabled='true' " %> type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'" value="" /><%=(hasPath) ? "" : "/*" %></textarea>
+			<textarea  name="paths" id="paths" <%=("all".equals(includeExclude)) ? "disabled='true'" :"" %> type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'" value="" /><%=(UtilMethods.isSet(paths)) ? paths : "/*" %></textarea>
 		</td>
 	</tr>
 	<tr>

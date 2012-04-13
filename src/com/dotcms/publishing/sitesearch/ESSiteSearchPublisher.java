@@ -109,7 +109,17 @@ public class ESSiteSearchPublisher extends Publisher {
 			}
 			executor.shutdown();
 
+			
+			if(((SiteSearchConfig)config).switchIndexWhenDone()){
+				APILocator.getSiteSearchAPI().activateIndex(((SiteSearchConfig)config).getIndexName());
+				
+			}
+			
+			
+			
+			
 			return config;
+			
 		} catch (Exception e) {
 			throw new DotPublishingException(e.getMessage());
 

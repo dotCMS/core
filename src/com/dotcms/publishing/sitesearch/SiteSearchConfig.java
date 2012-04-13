@@ -1,5 +1,8 @@
 package com.dotcms.publishing.sitesearch;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.dotcms.publishing.PublisherConfig;
 
 
@@ -9,6 +12,18 @@ public class SiteSearchConfig extends PublisherConfig {
 		super();
 
 	}
+	boolean switchIndexWhenDone = false;
+	
+	public boolean switchIndexWhenDone(){
+		return switchIndexWhenDone;
+	}
+	
+	
+	public void setSwitchIndexWhenDone(boolean switchIndexWhenDone) {
+		this.switchIndexWhenDone = switchIndexWhenDone;
+	}
+
+
 	private enum MyConfig {
 		CRON_EXPRESSION, QUARTZ_JOB_NAME, RUN_NOW,INDEX_NAME; 
 
@@ -52,5 +67,15 @@ public class SiteSearchConfig extends PublisherConfig {
 	public void setIndexName(String name){
 		this.put(MyConfig.INDEX_NAME.toString(), name);
 		
+		
 	}
+	
+	@Override
+	public List<Class> getPublishers(){
+		List<Class> clazz = new ArrayList<Class>();
+		clazz.add(ESSiteSearchPublisher.class);
+		return clazz;
+	}
+	
+	
 }

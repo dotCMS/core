@@ -195,6 +195,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	
 	@Override
 	public synchronized boolean createSiteSearchIndex(String indexName, int shards) throws ElasticSearchException, IOException {
+		if(indexName==null){
+			return false;
+		}
+		indexName=indexName.toLowerCase();
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		URL url = classLoader.getResource("es-sitesearch-settings.json");
         // read settings and mappings
@@ -242,6 +246,20 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	}
 	
 	@Override
+	public ScheduledTask getTask(String taskName) throws SchedulerException{
+
+		List<ScheduledTask> tasks = getTasks();
+		
+		for(ScheduledTask x:tasks){
+			
+			if(x.getJobName()!=null && x.getJobName().equals(taskName)){
+				return x;
+			}
+		}
+		return null;
+	}
+	
+	@Override
 	public void scheduleTask(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException{
 		String name = config.getJobName();
 		name.replace('"', '\'');
@@ -277,14 +295,14 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	
 	@Override
 	public void deleteTask(String taskName) throws SchedulerException{
-		List<ScheduledTask> tasks = getTasks();
-		for(ScheduledTask t: tasks){
-			if(t.getJobName().equals(taskName))
-			//Pause and remove any current jobs in the group
-			QuartzUtils.pauseJob(t.getJobName(), ES_SITE_SEARCH_NAME);
-			QuartzUtils.removeTaskRuntimeValues(t.getJobName(), ES_SITE_SEARCH_NAME);
-			QuartzUtils.removeJob(t.getJobName(), ES_SITE_SEARCH_NAME);	
-		}	
+		
+		ScheduledTask t = getTask(taskName);
+
+		//Pause and remove any current jobs in the group
+		QuartzUtils.pauseJob(t.getJobName(), ES_SITE_SEARCH_NAME);
+		QuartzUtils.removeTaskRuntimeValues(t.getJobName(), ES_SITE_SEARCH_NAME);
+		QuartzUtils.removeJob(t.getJobName(), ES_SITE_SEARCH_NAME);	
+			
 	}
 	
     

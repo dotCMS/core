@@ -70,32 +70,32 @@ function addNewHost() {
 	   alert('<%= LanguageUtil.get(pageContext, "host-already-selected") %>');
 	}else{
 
-    var nohosts = document.getElementById("nohosts");
-	if(nohosts!=null){
-		table.deleteRow(1);
-    }
-
-
-	var newRow = table.insertRow(table.rows.length);
-	if((table.rows.length%2)==0){
-        newRow.className = "alternate_1";
-	}else{
-		newRow.className = "alternate_2";
-	}
-	newRow.id = hostId;
-	var cell0 = newRow.insertCell(0);
-	var cell1 = newRow.insertCell(1);
-	var anchor = document.createElement("a");
-	anchor.href= 'javascript:deleteHost('+'"'+ hostId +'"'+');';
-	anchor.innerHTML = '<span class="deleteIcon"></span>';
-	cell0.appendChild(anchor);
-	cell1.innerHTML = hostName;
-	var input = document.createElement("input");
-	input.type="hidden";
-	input.name="indexhost";
-	input.id="indexhost"+hostId;
-	input.value=hostId;
-	newRow.appendChild(input);
+	    var nohosts = document.getElementById("nohosts");
+		if(nohosts!=null){
+			table.deleteRow(1);
+	    }
+	
+	
+		var newRow = table.insertRow(table.rows.length);
+		if((table.rows.length%2)==0){
+	        newRow.className = "alternate_1";
+		}else{
+			newRow.className = "alternate_2";
+		}
+		newRow.id = hostId;
+		var cell0 = newRow.insertCell(0);
+		var cell1 = newRow.insertCell(1);
+		var anchor = document.createElement("a");
+		anchor.href= 'javascript:deleteHost('+'"'+ hostId +'"'+');';
+		anchor.innerHTML = '<span class="deleteIcon"></span>';
+		cell0.appendChild(anchor);
+		cell1.innerHTML = hostName;
+		var input = document.createElement("input");
+		input.type="hidden";
+		input.name="indexhost";
+		input.id="indexhost"+hostId;
+		input.value=hostId;
+		newRow.appendChild(input);
 	
 	}
 	
@@ -171,22 +171,7 @@ function cleanUpIndexAll(checked){
 	
 }
 
-<%if(UtilMethods.isSet(error)){ %>
-showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, error ) %>");
-<%}
-if(success){ %>
-showDotCMSSystemMessage("<%=successMsg %>");
-<%} %>
 
-function submitfm(form) {
-
-	var port = dijit.byId("port");
-	if(port.isValid()){
-	   submitForm(form);
-    }else{
-    	showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "invalid.port.number" ) %>");
-	}
-}
 
 function saveAndExecute(){
 
@@ -245,41 +230,21 @@ function deleteIndex(indexName, live){
 
 }
 
-function deleteIndexCallback(data){
 
-	refreshIndexStats();
-}
 
 
 
 
 function doDownloadIndex(indexName){
-	
-
 	window.location="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/downloadIndex/indexName/" + indexName;
-	
 }
 
-function doFullReindex(){
-	
-	
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-	
-	var shards = parseInt(number);
-	if(shards <1){
-		return;	
-	}
-	dojo.byId("numberOfShards").value = shards;
-	
-	dijit.byId('idxReindexButton').setDisabled(true);
-	dijit.byId('idxShrinkBtn').setDisabled(true);
-	submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
-	return false;
-	
-}
+
+
+
+
+
+
 
 function doClearIndex(indexName){
 	
@@ -307,11 +272,17 @@ function doClearIndex(indexName){
 		}
 	};
 	dojo.xhrPost(xhrArgs);
-
 }
+
+
+
+
+
+
+
 function doActivateIndex(indexName){
 	
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index")%>")){
+	if(!confirm("<%=LanguageUtil.get(pageContext, "Make-this-index-default")%>")){
 		return;
 		
 	}
@@ -326,7 +297,7 @@ function doActivateIndex(indexName){
 				if (dataOrError.indexOf("FAILURE") == 0) {
 					showDotCMSSystemMessage(dataOrError, true);
 				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Activated")%>", true);
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Made-Default")%>", true);
 					refreshIndexStats();
 				}
 			} else {
@@ -336,9 +307,19 @@ function doActivateIndex(indexName){
 	};
 	dojo.xhrPost(xhrArgs);
 }
+
+
+
+
+
+
+
+
+
+
 function doDeactivateIndex(indexName){
 	
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index")%>")){
+	if(!confirm("<%=LanguageUtil.get(pageContext, "Make-this-index-not-default")%>")){
 		return;
 		
 	}
@@ -433,8 +414,7 @@ function connectUploadEvents() {
 }
 
 function doCreateSiteSearch() {
-	
-	
+
 	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
@@ -466,11 +446,31 @@ function doCreateSiteSearch() {
     dojo.xhrPost(xhrArgs);
 }
 
+
+
+
+
+
+
+
+
 function scheduleJob() {
-	
-	
+
 	var myForm = dijit.byId("sitesearch");
 
+	
+	var hosts = dojo.query("[name$=\"indexhost\"]");
+	if(hosts ==undefined || hosts =="" && ! (dijit.byId("indexAll").checked)){
+		dijit.byId('hostSelector').focus();
+		
+		
+		
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "select-hosts-to-index")%>", true);
+		return;
+	}
+	
+	
+	
 	if (myForm.validate()) {
 		dojo.xhrPost({
 			form : "sitesearch",
@@ -478,38 +478,36 @@ function scheduleJob() {
 			
 			timeout : 30000,
 			handle : function(dataOrError, ioArgs) {
-				alert(dataOrError);
 				if (dojo.isString(dataOrError) && dataOrError) {
 					
 					if (dataOrError.indexOf("FAILURE") == 0) {
 
-						actionAdmin.saveError(dataOrError);
+						showDotCMSSystemMessage(dataOrError, true);
 					} else {
-					
-						actionAdmin.saveSuccess(dataOrError);
+						
 					}
 				} else {
 
-					actionAdmin.saveError("<%=LanguageUtil.get(pageContext, "Unable-to-save-action")%>");
-
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "message.Scheduler.saved")%>", false);
+					var tabs =dijit.byId("mainTabContainer");
+					var pane = dijit.byId("jobTabCp");
+					tabs.selectChild(pane);
+					refreshJobStats()
 				}
 			}
 		});
 
 	}
-	
 }
 
 
-function updateReplicas(indexName,currentNum){
 
+
+
+
+function updateReplicas(indexName,currentNum){
 	var number=prompt("<%=LanguageUtil.get(pageContext, "Update-Replicas-Index")%> for index:\n\n" + indexName, currentNum);
-	
-	if(!number){
-		return;
-	}
-	
-	
+	if(!number){return;}
 	var replicas = parseInt(number);
 	if(currentNum != replicas){
 		
@@ -535,7 +533,13 @@ function updateReplicas(indexName,currentNum){
 	}
 }
 
+
+
+
+
+
 function deleteJob(taskName){
+	if(confirm("<%=LanguageUtil.get(pageContext, "message.Scheduler.confirm.delete")%>")){
 	var xhrArgs = {
        url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/deleteJob/taskName/" + taskName ,
        handleAs: "text",
@@ -554,6 +558,7 @@ function deleteJob(taskName){
        }
     };
     dojo.xhrPost(xhrArgs);
+	}
 	
 }
 
@@ -602,15 +607,17 @@ function changeIncludeExclude(){
 				dijit.byId("paths").setValue("/*");
 		
 		}
-			
-			
-			
-
 }
 
 
+function changeIncremental(){
+		var disable = dijit.byId("incremental").getValue();
 
-
+		dijit.byId("startDateDate").setDisabled(disable);
+		dijit.byId("startDateTime").setDisabled(disable);
+		dijit.byId("endDateDate").setDisabled(disable);
+		dijit.byId("endDateTime").setDisabled(disable);
+}
 
 
 
@@ -638,6 +645,15 @@ function refreshJobSchedule(){
 	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?r=" + y  );
 }
 
+function refreshJobSchedulePane(jobName){
+	
+	var x = dijit.byId("scheduleCp");
+	var y =Math.floor(Math.random()*1123213213);
+	var tabs =dijit.byId("mainTabContainer");
+	var pane = dijit.byId("scheduleTabCp");
+	tabs.selectChild(pane);
+	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?jobName=" +jobName +"&r=" + y  );
+}
 
 dojo.addOnLoad (function(){
 	var tab =dijit.byId("mainTabContainer");
@@ -667,12 +683,31 @@ dojo.addOnLoad (function(){
 
 </script>
 <style type="text/css">
-.listingTable {
-	width: 42.5%;
-	font-size: 100%;
-	border-top: 1px solid #d0d0d0;
-}
+	.listingTable {
+		width: 42.5%;
+		font-size: 100%;
+		border-top: 1px solid #d0d0d0;
+	}
+	.trIdxBuilding{
+	background:#F8ECE0;
+	}
+	.trIdxActive{
+	background:#D8F6CE;
+	}
+	.trIdxNothing td{
+	color:#aaaaaa;
+	
+	}
+	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
+	 #restoreIndexUploader {
+	   width:200px !important;
+	 }
+	 #uploadProgress {
+	   float: right;
+	   display: none;
+	 }
 </style>
+
 
 <span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
 

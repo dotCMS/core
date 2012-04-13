@@ -232,7 +232,9 @@ public class PublisherConfig implements Map<String, Object> {
 
 	public String getId() {
 		if(params.get(Config.ID.name()) ==null){
-			return UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
+			String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
+			params.put(Config.ID.name(),x);
+
 		}
 		return (String) params.get(Config.ID.name());
 	}

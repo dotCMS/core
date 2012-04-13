@@ -9,9 +9,21 @@ import com.dotmarketing.util.Logger;
 
 public class PublisherAPIImpl implements PublisherAPI {
 	
+	
+	
 	@Override
-	public void publish(PublisherConfig config) throws DotPublishingException {
+	public PublishStatus publish(PublisherConfig config) throws DotPublishingException {
+	
+		return publish(config, new PublishStatus());
+	}
+		
+	@Override
+	public PublishStatus publish(PublisherConfig config, PublishStatus status) throws DotPublishingException {
 
+
+		
+		
+		Logger.info(this.getClass(), "PubAPI: Starting Publishing Task for Bundle: "+ config.getId());
 		try {
 
 			List<Publisher> pubs = new ArrayList<Publisher>();
@@ -63,6 +75,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 			
 			
 			// run bundlers
+			
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
 			BundlerUtil.writeBundleXML(config);
 			for (Class<IBundler> c : bundlers) {
@@ -70,20 +83,26 @@ public class PublisherAPIImpl implements PublisherAPI {
 				confBundlers.add(b);
 				b.setConfig(config);
 				BundlerStatus bs = new BundlerStatus();
+				status.addToBs(bs);
+				Logger.info(this.getClass(), "PubAPI: Running Bundler  : "+b.getName());
 				b.generate(bundleRoot, bs);
-				
+				Logger.info(this.getClass(), "PubAPI: Bundler Completed: "+b.getName());
 			}
 			config.setBundlers(confBundlers);
 
 			// run publishers
 			for (Publisher p : pubs) {
+				Logger.info(this.getClass(), "PubAPI: Running Publisher    : "+p.getClass().getName());
 				p.process();
+				Logger.info(this.getClass(), "PubAPI: Publisher Completed  : "+p.getClass().getName());
 			}
+			Logger.info(this.getClass(), "PubAPI: Completed Publishing Task for Bundle: "+ config.getId());
 		} catch (Exception e) {
 			Logger.error(PublisherAPIImpl.class, e.getMessage());
 			throw new DotPublishingException(e.getMessage());
 		}
 
+		return status;
 	}
 
 }
