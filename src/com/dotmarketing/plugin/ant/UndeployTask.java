@@ -1,5 +1,6 @@
 package com.dotmarketing.plugin.ant;
 
+import com.dotmarketing.plugin.util.PluginRoot;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -28,6 +29,7 @@ public class UndeployTask extends Task {
 		if (!logRoot.getAllAppenders().hasMoreElements()) {
 			logRoot.addAppender(new ConsoleAppender(   new PatternLayout("%m%n")));
 		}
+        new PluginRoot(root, plugins).undeploy();
 		new PluginFileMerger().undeploy(root, plugins);
 	}
 
