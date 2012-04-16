@@ -66,6 +66,26 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return getFileAsset().length();
 	}
 
+	public int getHeight() {
+		int height = 0;
+		try {
+			height = javax.imageio.ImageIO.read(getFileAsset()).getHeight();
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return height;
+	}
+
+	public int getWidth() {
+		int width = 0;
+		try {
+			width = javax.imageio.ImageIO.read(getFileAsset()).getWidth();
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return width;
+	}
+
 	public void setFileName(String name) {
 	    File ff=getFileAsset();
 	    ff.renameTo(new File(ff.getParent(),name));
