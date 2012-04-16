@@ -73,8 +73,9 @@ abstract class WorkflowSQL {
 	protected static String INSERT_ACTION_CLASS_PARAM= "insert into workflow_action_class_pars (id,workflow_action_class_id,key,value) values (?,?, ?, ?)";
 	protected static String UPDATE_ACTION_CLASS_PARAM= "update workflow_action_class_pars set workflow_action_class_id= ?, key=?, value=? where id =?";
 	protected static String DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS= "delete from workflow_action_class_pars where workflow_action_class_id =?";
-
-
-
-
+	// tweaks for MSSQL because of "key" field in workflow_action_class_pars
+	static {
+	    INSERT_ACTION_CLASS_PARAM=INSERT_ACTION_CLASS_PARAM.replace("key", "[key]");
+	    UPDATE_ACTION_CLASS_PARAM=UPDATE_ACTION_CLASS_PARAM.replace("key", "[key]");
+	}
 }
