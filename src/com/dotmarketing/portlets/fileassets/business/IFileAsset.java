@@ -34,7 +34,7 @@ public interface IFileAsset {
 	public String getModUser();
 
 	public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException;
-	
+
 	public void setModDate(java.util.Date modDate);
 
 	public void setModUser(String modUser);
@@ -78,7 +78,7 @@ public interface IFileAsset {
 	public Map<String, Object> getMap() throws DotRuntimeException, DotDataException, DotSecurityException;
 
 	public String getPermissionId();
-	
+
 	public Date getIDate();
 
 	public String getVersionType();
@@ -86,11 +86,15 @@ public interface IFileAsset {
 	public InputStream getFileInputStream() throws FileNotFoundException;
 
 	public File getFileAsset();
-	
+
 	public String getType();
-	
+
 	public String getURI() throws DotDataException;
-	
+
 	public String getExtension();
+
+	public int getHeight();
+
+	public int getWidth();
 
 }
