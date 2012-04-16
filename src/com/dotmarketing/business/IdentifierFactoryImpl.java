@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
@@ -86,6 +87,17 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		ic.addIdentifierToCache(identifier);
 		return identifier;
 	}
+	
+	protected List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException {
+	    if(!parent_path.endsWith("/"))
+	        parent_path=parent_path+"/";
+	    
+        HibernateUtil dh = new HibernateUtil(Identifier.class);
+        dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where parent_path=? and host_inode = ?");
+        dh.setParam(parent_path);
+        dh.setParam(hostId);
+        return (List<Identifier>) dh.list();
+    }
 
 	protected Identifier loadFromDb(String identifier) throws DotDataException, DotStateException {
 		if (identifier == null) {
@@ -322,6 +334,21 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			db.addParam(ident.getInode());
 			List<Map<String,Object>> deleteme = db.loadResults();
 
+			String versionInfoTable=UtilMethods.getVersionInfoTableName(ident.getAssetType());
+			if(versionInfoTable!=null) {
+			    db.setSQL("delete from "+versionInfoTable+" where identifier = ?");
+			    db.addParam(ident.getId());
+			    db.loadResult();
+			}
+			
+			db.setSQL("select id from workflow_task where webasset = ?");
+			db.addParam(ident.getId());
+			List<Map<String,Object>> tasksToDelete=db.loadResults();
+			for(Map<String,Object> task : tasksToDelete) {
+			    WorkflowTask wft = APILocator.getWorkflowAPI().findTaskById((String)task.get("id"));
+			    APILocator.getWorkflowAPI().deleteWorkflowTask(wft);
+			}
+			
 			db.setSQL("delete from " + ident.getAssetType()+ " where identifier = ?");
 			db.addParam(ident.getId());
 			db.loadResult();

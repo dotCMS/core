@@ -1,8 +1,11 @@
 package com.dotmarketing.business;
 
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 public interface IdentifierAPI {
@@ -129,7 +132,14 @@ public interface IdentifierAPI {
 	public void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException;
 
 
-
-
+	/**
+	 * Finds identifiers with the specified parent path and host id
+	 * 
+	 * @param hostId
+	 * @param parent_path
+	 * @return
+	 * @throws DotHibernateException
+	 */
+	public List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException;
 
 }
