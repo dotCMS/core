@@ -168,7 +168,7 @@ public class PluginRoot {
                 JarEntry entry = pluginJar.getJarEntry( rootFilePath );
                 copyContent( pluginJar.getInputStream( entry ), originalFile );
 
-                logger.debug( "Replaced/added back-up file: " + originalFile.getAbsolutePath() );
+                logger.debug( "Replaced/added file: " + originalFile.getAbsolutePath() );
             } catch ( IOException e ) {
                 logger.error( "Error replacing/adding back-up file: " + originalFile.getAbsolutePath(), e );
             }
