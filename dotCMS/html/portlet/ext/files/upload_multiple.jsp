@@ -83,6 +83,9 @@ if(request.getParameter("in_frame")!=null){
 			.dojoxUploaderSize{
 				width:50px;
 				text-align: left;
+				<% if(request.getHeader("User-Agent").contains("MSIE")){ %>
+					display:none; 
+				<% } %>				
 			}
     </style>
     <body>
@@ -124,7 +127,12 @@ if(request.getParameter("in_frame")!=null){
 							<input name="<portlet:namespace />uploadedFile" multiple="true" type="file" id="uploader"
    									dojoType="dojox.form.Uploader" label="<%= LanguageUtil.get(pageContext, "Select-file(s)-to-upload") %>" >
    						</div>
-				        <div id="files" dojoType="dojox.form.uploader.FileList" uploaderId="uploader" style="height:200px; border:1px solid silver; overflow-y: auto;"></div>
+				        <div id="files" dojoType="dojox.form.uploader.FileList" uploaderId="uploader" 
+				        style="height:200px; border:1px solid silver; overflow-y: auto;"
+				        	<% if(request.getHeader("User-Agent").contains("MSIE")){ %>
+				        		headerFilesize="" 
+				        	<% } %>				        
+				        ></div>
 	                   
 
 	                 <%if (!InodeUtils.isSet(file.getInode()) && UtilMethods.isSet(folder)) {
