@@ -124,6 +124,7 @@ public class FileAssetBundler implements IBundler {
 			Logger.error(FileAssetBundler.class,e.getMessage(),e);
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + bob.toString(), e);
 		}
+		status.setTotal(cs.size());
 		
 		List<List<ContentletSearch>> listsOfCS = Lists.partition(cs, 500);
 		for (List<ContentletSearch> l : listsOfCS) {
@@ -145,7 +146,7 @@ public class FileAssetBundler implements IBundler {
 					status.addCount();
 				} catch (Exception e) {
 					Logger.error(FileAssetBundler.class,e.getMessage() + " : Unable to write file",e);
-					status.addFailuer();
+					status.addFailure();
 				}
 			}
 		}

@@ -159,7 +159,7 @@ public class URLMapBundler implements IBundler {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + bob.toString(), e);
 		}
-		
+		status.setTotal(cs.size());
 		List<List<ContentletSearch>> listsOfCS = Lists.partition(cs, 500);
 		for (List<ContentletSearch> l : listsOfCS) {
 			List<String> inodes = new ArrayList<String>();
@@ -181,7 +181,7 @@ public class URLMapBundler implements IBundler {
 				}
 				catch(Exception e){
 					Logger.warn(this.getClass(), "Bundle Failed: " + e.getMessage());
-					
+					status.addFailure();
 				}
 			}
 		}

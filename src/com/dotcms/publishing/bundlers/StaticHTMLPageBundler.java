@@ -98,6 +98,8 @@ public class StaticHTMLPageBundler implements IBundler {
 				try{
 					deletedIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(), "/*",config.liveOnly(),true,include, h, config.getStartDate(), config.getEndDate()));
 				}catch(NullPointerException e){}
+				
+				status.setTotal(pageIdents.size());
 				for (Identifier i : pageIdents) {
 					if(!config.liveOnly()){
 						HTMLPageWrapper w = new HTMLPageWrapper();
@@ -127,8 +129,10 @@ public class StaticHTMLPageBundler implements IBundler {
 					}
 					try{
 						writeFileToDisk(bundleRoot,w, i.getURI(), h, true);
+						status.addCount();
 					}catch (IOException e) {
 						Logger.error(this, e.getMessage() + " : Unable to write HTML to bundle", e);
+						status.addFailure();
 					}
 				}
 			}

@@ -36,7 +36,7 @@ public class BundlerUtil {
 	 * @param config
 	 */
 	public static File getBundleRoot(PublisherConfig config){
-
+		
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
 		File dir = new File(bundlePath);
 		dir.mkdirs();
