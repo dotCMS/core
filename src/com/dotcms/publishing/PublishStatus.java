@@ -46,7 +46,31 @@ public class PublishStatus {
 		this.bundlerStatuses.add(bs);
 	}
 	
-	
-	
-	
+	public int getTotalBundleWork() {
+		int x=0;
+		for(BundlerStatus status:bundlerStatuses){
+			x+=status.getTotal();
+			
+		}
+
+		return x;
+	}
+	public int getCurrentBundleWork() {
+		int x=0;
+		for(BundlerStatus status:bundlerStatuses){
+			x+=status.getCount();
+			
+		}
+
+		return x;
+	}
+	public int getBundleErrors() {
+		int x=0;
+		for(BundlerStatus status:bundlerStatuses){
+			x+=status.getFailures();
+			
+		}
+
+		return x;
+	}
 }

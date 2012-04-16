@@ -76,7 +76,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 			
 			// run bundlers
 			
-			File bundleRoot = BundlerUtil.getBundleRoot(config);
+		File bundleRoot = BundlerUtil.getBundleRoot(config);
 			BundlerUtil.writeBundleXML(config);
 			for (Class<IBundler> c : bundlers) {
 				IBundler b = (IBundler) c.newInstance();
@@ -86,6 +86,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 				status.addToBs(bs);
 				Logger.info(this.getClass(), "PubAPI: Running Bundler  : "+b.getName());
 				b.generate(bundleRoot, bs);
+
 				Logger.info(this.getClass(), "PubAPI: Bundler Completed: "+b.getName());
 			}
 			config.setBundlers(confBundlers);

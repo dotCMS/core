@@ -13,6 +13,7 @@ import org.quartz.JobExecutionException;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.sitesearch.SiteSearchConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,7 +23,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class SiteSearchJobImpl {
-
+	private PublishStatus status = new PublishStatus();
+	public PublishStatus getStatus() {
+		return status;
+	}
+	public void setStatus(PublishStatus status) {
+		this.status = status;
+	}
 	@SuppressWarnings("unchecked")
 	public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticSearchException, IOException {
 
@@ -127,7 +134,7 @@ public class SiteSearchJobImpl {
 		}
 
 
-		APILocator.getPublisherAPI().publish(config);
+		APILocator.getPublisherAPI().publish(config,status);
 		
 		
 		

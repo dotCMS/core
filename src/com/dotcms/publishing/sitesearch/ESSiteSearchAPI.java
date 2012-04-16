@@ -368,6 +368,15 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
 		}
     }
+	@Override
+	public void pauseTask(String taskName) throws SchedulerException {
+		
+		ScheduledTask t = getTask(taskName);
+
+		QuartzUtils.pauseJob(t.getJobName(), ES_SITE_SEARCH_NAME);
+
+		
+	}
     
 	
 	

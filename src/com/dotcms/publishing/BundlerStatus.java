@@ -35,11 +35,17 @@ public class BundlerStatus {
 	public void addCount() {
 		count = count + 1;
 	}
-
+	/**
+	 * @param count
+	 *            the count to set
+	 */
+	public void addCount(int x) {
+		count = count + x;
+	}
 	/**
 	 * @return the failuers
 	 */
-	public long getFailuers() {
+	public long getFailures() {
 		return failures;
 	}
 
@@ -47,7 +53,7 @@ public class BundlerStatus {
 	 * @param failuers
 	 *            the failuers to set
 	 */
-	public void addFailuer() {
+	public void addFailure() {
 		failures = failures + 1;
 	}
 

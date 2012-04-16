@@ -168,7 +168,7 @@ public class IndexAjaxAction extends AjaxAction {
 		}
 		
 		File f = APILocator.getESIndexAPI().backupIndex(indexName);
-		
+		response.setContentLength((int) f.length());
 		OutputStream out = response.getOutputStream();
 		InputStream in = new FileInputStream(f);
 		
