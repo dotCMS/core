@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -129,7 +128,13 @@ public class WfActionAjax extends WfBaseAction {
 
 				Role test = resolveRole(perm);
 				Permission p = new Permission(newAction.getPermissionType(), newAction.getId(), test.getId(), PermissionAPI.PERMISSION_USE);
-				permissions.add(p);
+				
+				boolean exists=false;
+				for(Permission curr : permissions)
+				    exists=exists || curr.getRoleId().equals(p.getRoleId());
+				
+				if(!exists)
+				    permissions.add(p);
 			}
 			
 			wapi.saveAction(newAction, permissions);
