@@ -27,6 +27,7 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -455,6 +456,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			HibernateUtil.getSession().clear();
 			List<File> files = getFiles(folder, user, respectFrontEndPermissions);
 			for (File file : files) {
+			    HibernateUtil.getSession().clear();
 				APILocator.getFileAPI().delete((File) file, user, false);
 			}
 			/************ Structures *****************/
@@ -492,11 +494,12 @@ public class FolderAPIImpl implements FolderAPI  {
 			    APILocator.getIdentifierAPI().delete(orphan);
 			    HibernateUtil.getSession().clear();
 			    try {
-    			    Identifier ondb=(Identifier)HibernateUtil.load(Identifier.class, orphan.getId());
-    			    if(ondb!=null && UtilMethods.isSet(ondb.getId()))
-    			        HibernateUtil.delete(orphan);
+    			    DotConnect dc = new DotConnect();
+    			    dc.setSQL("delete from identifier where id=?");
+    			    dc.addParam(orphan.getId());
+    			    dc.loadResult();
 			    } catch(Exception ex) {
-			        // no worries here
+			        Logger.warn(this, "can't delete the orphan identifier",ex);
 			    }
 			    HibernateUtil.getSession().clear();
 			}
