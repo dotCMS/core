@@ -92,6 +92,7 @@ public class ResizeImageServlet extends HttpServlet {
 
 
         String inode = null;
+        Boolean fileAsContent = false;
 
 
         if(UtilMethods.isSet(url)) {
@@ -143,12 +144,16 @@ public class ResizeImageServlet extends HttpServlet {
             		inode = UtilMethods.getFileName(path);
 	        	} else {
 	        		//it might be an inode
-	                file = APILocator.getFileAPI().find(id, user, true);
-	                if(file != null || (InodeUtils.isSet(file.getInode()))) {
+	        		try {
+	        			file = APILocator.getFileAPI().find(id, user, true);
+	        		} catch(Exception e) {
+	        			Contentlet c = APILocator.getContentletAPI().find(id, user, true);
+	        			fileAsContent = UtilMethods.isSet(c);
+	        		}
+	                if(file != null && (InodeUtils.isSet(file.getInode()))) {
 	                	inode = file.getInode();
 	                	identifier = APILocator.getIdentifierAPI().find(file.getIdentifier());
-	                }
-	                else{
+	                } else{
 	                	//Finally it's not a file and we did the first round trip to database
 	                	//then we do the second round trip to database to find the identifier,
 	                	//but after this the next hit will find it cached.
@@ -166,7 +171,7 @@ public class ResizeImageServlet extends HttpServlet {
         }
 
 
-        if (!InodeUtils.isSet(inode)) {
+        if (!InodeUtils.isSet(inode) && !fileAsContent) {
             response.sendError(404);
             return;
         }
@@ -179,7 +184,7 @@ public class ResizeImageServlet extends HttpServlet {
         	 * without having to hit cache or db
         	 */
 
-            file = new com.dotmarketing.portlets.files.model.File();
+            file = null;
             if(identifier!=null && UtilMethods.isSet(identifier.getInode())){
             	file.setIdentifier(identifier.getInode());
             }
@@ -193,7 +198,7 @@ public class ResizeImageServlet extends HttpServlet {
 
             }
 
-            if (!permissionAPI.doesUserHavePermission(file, PERMISSION_READ, user, true)) {
+            if (file!=null && !permissionAPI.doesUserHavePermission(file, PERMISSION_READ, user, true)) {
             	if(user == null)
             		//Sending user to unauthorized the might send him to login
             		response.sendError(401, "The requested file is unauthorized");
@@ -224,7 +229,7 @@ public class ResizeImageServlet extends HttpServlet {
 
         try {
 
-            if (inode != null && inode.length() > 0 && InodeUtils.isSet(inode)) {
+            if (fileAsContent || inode != null && inode.length() > 0 && InodeUtils.isSet(inode)) {
 
             	boolean isSet = false;
             	boolean isCont = false;
@@ -235,18 +240,24 @@ public class ResizeImageServlet extends HttpServlet {
             	int imgWidth = 0;
             	int imgLength = 0;
             	String ext = "";
-            	if(id!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
+            	if(fileAsContent || id!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
             		Contentlet cont = null;
-            		try {
-            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
-            		}
-            		catch(DotContentletStateException e) {
-            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
-            		}
 
-            		if(cont==null) {
-            			Logger.debug(this.getClass(), "Can't find content with id " + id);
-            			return;
+            		if(fileAsContent) {
+            			cont = APILocator.getContentletAPI().find(id, user, true);
+            			inode = id;
+            		} else {
+	            		try {
+	            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
+	            		}
+	            		catch(DotContentletStateException e) {
+	            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
+	            		}
+
+	            		if(cont==null) {
+	            			Logger.debug(this.getClass(), "Can't find content with id " + id);
+	            			return;
+	            		}
             		}
 
             		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
@@ -362,7 +373,7 @@ public class ResizeImageServlet extends HttpServlet {
                     // creates the path where to save the working file based on
                     // the inode
                     String workingFileInodePath = String.valueOf(inode);
-                    if(id != null && identifier.getAssetType().equals("contentlet"))//DOTCMS-6531
+                    if(fileAsContent || id != null && identifier.getAssetType().equals("contentlet"))//DOTCMS-6531
                     	workingFileInodePath = String.valueOf(inodeOrId);
                     if (workingFileInodePath.length() == 1) {
                         workingFileInodePath = workingFileInodePath + "0";
@@ -378,10 +389,13 @@ public class ResizeImageServlet extends HttpServlet {
 
                         thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator
                         		+thumbExtension + "." + suffix;
-                    }else{
+                    }else if(fileAsContent){
 
                         thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator + inodeOrId  + java.io.File.separator + "fileAsset"  + java.io.File.separator
-                                +thumbExtension + "." + suffix;
+                                +fileName;
+                    } else {
+                    	 thumbnailFilePath = filePath + java.io.File.separator + workingFileInodePath + java.io.File.separator + inodeOrId  + java.io.File.separator + "fileAsset"  + java.io.File.separator
+                                 +thumbExtension + "." + suffix;
                     }
 
 
