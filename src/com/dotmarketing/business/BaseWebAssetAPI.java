@@ -340,14 +340,15 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 
 			//### Delete the Identifier ###
-			APILocator.getIdentifierAPI().delete(identifier);
+			if(identifier!=null && UtilMethods.isSet(identifier.getId()))
+			    APILocator.getIdentifierAPI().delete(identifier);
 			
 			//### Delete the Identifier ###
 			returnValue = true;
 		}
 		catch(Exception ex)
 		{
-			Logger.warn(BaseWebAssetAPI.class, ex.getMessage());
+			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
 			throw ex;
 		}
 		finally
