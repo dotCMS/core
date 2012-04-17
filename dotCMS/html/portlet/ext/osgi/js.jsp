@@ -79,8 +79,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 				}
 			}
 		};
+		dijit.byId('savingOSGIDialog').show();
 		dojo.xhrPut(xhrArgs);
-		mainAdmin.refresh();
+		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	},
 	deploy : function(){
 		var availBundles = dijit.byId('availBundlesCombo');
@@ -99,8 +100,47 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 				}
 			}
 		};
+		dijit.byId('savingOSGIDialog').show();
 		dojo.xhrPut(xhrArgs);
-		mainAdmin.refresh();
+		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+	},
+	start : function(bundleId){
+		var xhrArgs = {
+			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=start&bundleId=" + bundleId,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+					if (dataOrError.indexOf("FAILURE") == 0) {
+						// needs logging
+					} else {
+						// needs logging
+					}
+				} else {
+					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+				}
+			}
+		};
+		dijit.byId('savingOSGIDialog').show();
+		dojo.xhrPut(xhrArgs);
+		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+	},
+	stop : function(bundleId){
+		var xhrArgs = {
+			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=stop&bundleId=" + bundleId,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+					if (dataOrError.indexOf("FAILURE") == 0) {
+						// needs logging
+					} else {
+						// needs logging
+					}
+				} else {
+					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+				}
+			}
+		};
+		dijit.byId('savingOSGIDialog').show();
+		dojo.xhrPut(xhrArgs);
+		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	},
 	add : function(){
 		var fm = dojo.byId("addBundle")
@@ -108,7 +148,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 			// The form node, which contains the
 			// data. We also pull the URL and METHOD from it:
 			form: fm,
-			url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX",
+			url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=add",
 			method : "post",	
 			// The used data format:
 			handleAs: "json",
@@ -116,10 +156,13 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 			// Callback on successful call:
 			load: function(response, ioArgs) {
 				// return the response for succeeding callbacks
-				mainAdmin.refresh();
+				setTimeout(function() {mainAdmin.refresh();},7000);
 				return response;
 			}
 		});	
+		dijit.byId('uploadOSGIDialog').hide();
+		dijit.byId('savingOSGIDialog').show();
+		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	}
 });
 
