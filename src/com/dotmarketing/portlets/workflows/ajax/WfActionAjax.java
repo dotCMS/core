@@ -74,11 +74,6 @@ public class WfActionAjax extends WfBaseAction {
 	public void save(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		WorkflowAPI wapi = APILocator.getWorkflowAPI();
 
-		Map<String, Object> m = request.getParameterMap();
-		for (String x : m.keySet()) {
-			//System.out.println(x);
-		}
-
 		String actionName = request.getParameter("actionName");
 		String actionId = request.getParameter("actionId");
 		String whoCanUseTmp = request.getParameter("whoCanUse");
