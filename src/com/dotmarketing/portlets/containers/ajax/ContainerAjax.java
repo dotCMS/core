@@ -86,7 +86,11 @@ public class ContainerAjax {
 				} else {
 					contMap.put("fullTitle", contMap.get("title"));
 				}
-
+				
+				// BEGIN GRAZIANO issue-12-dnd-template
+				StringBuffer containerCode = new StringBuffer(cont.getCode());
+				contMap.put("code", containerCode.toString());
+				// END GRAZIANO issue-12-dnd-template
 				list.add(contMap);
 			}
 		}

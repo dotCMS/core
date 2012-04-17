@@ -147,6 +147,37 @@ public class EditTemplateAction extends DotPortletAction implements
 			}
 		}
 
+		// *********************** BEGIN GRAZIANO issue-12-dnd-template	
+		/*
+		 * We are drawing the Template. In this case we call the _editWebAsset method but in the Template model creation we add the drawed property.
+		 */
+		if ((cmd != null) && cmd.equals(Constants.DESIGN)) {
+			try {
+				Logger.debug(this, "Calling Design method");
+				_editWebAsset(req, res, config, form, user);
+
+			} catch (Exception ae) {
+				if ((referer != null) && (referer.length() != 0)) {
+					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+						//The web asset edit threw an exception because it's
+						// locked so it should redirect back with message
+						java.util.Map<String,String[]> params = new java.util.HashMap<String,String[]>();
+						params.put("struts_action",new String[] { "/ext/director/direct" });
+						params.put("cmd", new String[] { "editTemplate" });
+						params.put("template", new String[] { req.getParameter("inode") });
+						params.put("referer", new String[] { URLEncoder.encode(referer, "UTF-8") });
+
+						String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, WindowState.MAXIMIZED.toString(), params);
+
+						_sendToReferral(req, res, directorURL);
+						return;
+					}
+				}
+				_handleException(ae, req);
+			}
+		}		
+		// *********************** END GRAZIANO issue-12-dnd-template	
+		
 		/*
 		 * If we are updating the Template, copy the information
 		 * from the struts bean to the hbm inode and run the
@@ -403,8 +434,14 @@ public class EditTemplateAction extends DotPortletAction implements
 		HibernateUtil.commitTransaction();
 
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
-		setForward(req, "portlet.ext.templates.edit_template");
-
+		
+		// *********************** BEGIN GRAZIANO issue-12-dnd-template
+		// If we are into the design mode we are redirected at the new servlet
+		if((null!=cmd) && cmd.equals(Constants.DESIGN)){
+			setForward(req, "portlet.ext.templates.design_template");
+		}else
+			setForward(req, "portlet.ext.templates.edit_template");
+		// *********************** END GRAZIANO issue-12-dnd-template
 	}
 
 	///// ************** ALL METHODS HERE *************************** ////////
@@ -429,11 +466,11 @@ public class EditTemplateAction extends DotPortletAction implements
 
 	public void _editWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
-
+		String cmd = req.getParameter(Constants.CMD);
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-
+		
 		//calls edit method from super class that returns parent folder
 		super._editWebAsset(req, res, config, form, user,
 				WebKeys.TEMPLATE_EDIT);
@@ -441,6 +478,11 @@ public class EditTemplateAction extends DotPortletAction implements
 		//This can't be done on the WebAsset so it needs to be done here.
 		Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_EDIT);
 
+		// *********************** BEGIN GRAZIANO issue-12-dnd-template
+		if(cmd.equals(Constants.DESIGN))
+			template.setDrawed(true);
+		// *********************** END GRAZIANO issue-12-dnd-template
+		
 		if(InodeUtils.isSet(template.getInode())) {
 			_checkReadPermissions(template, user, httpReq);
 		}

@@ -286,6 +286,9 @@
 			<property column="footer" name="footer" type="string" length="123456789" />
 			<property column="image" name="image" length="36" type="string" />
 			<property column="identifier" length="36" name="identifier" type="string" />
+			<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
+			<property column="drawed" name="drawed" type="boolean" />
+			<!-- *********************** END GRAZIANO issue-12-dnd-template -->
 		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.htmlpages.model.HTMLPage" table="htmlpage">

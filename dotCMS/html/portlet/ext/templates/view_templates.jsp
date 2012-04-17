@@ -90,6 +90,13 @@ function addAsset(event) {
 	dojo.stopEvent(event);
 }
 
+// *********************** BEGIN GRAZIANO issue-12-dnd-template
+function designAsset(event) {	
+	window.location.href = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="design" /><portlet:param name="referer" value="<%=referer%>" /></portlet:actionURL>';
+	dojo.stopEvent(event);
+}
+//*********************** END GRAZIANO issue-12-dnd-template
+
 function checkAll() {
 	var check = dijit.byId("checkAll").checked;
 	dojo.query('input[type=checkbox]', document).forEach(function(tag){
@@ -178,6 +185,13 @@ function processDelete(inode, referer) {
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-template")) %>
 	    </button>
 		<% } %>
+		<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
+		<% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_DESIGN)) { %>
+		<button dojoType="dijit.form.Button" onClick="designAsset" iconClass="designTemplateIcon">
+	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "design-template")) %>
+	    </button>
+		<% } %>		
+		<!-- *********************** END GRAZIANO issue-12-dnd-template -->
 	</div>
 </div>
 

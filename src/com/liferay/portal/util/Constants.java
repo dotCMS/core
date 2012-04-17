@@ -44,7 +44,11 @@ public interface Constants {
 	public static final String DELETE = "delete";
 
 	public static final String EDIT = "edit";
-
+	
+	// *********************** BEGIN GRAZIANO issue-12-dnd-template	
+	public static final String DESIGN = "design";
+	// *********************** END GRAZIANO issue-12-dnd-template
+	
 	public static final String REJECT = "reject";
 
 	public static final String SAVE = "save";

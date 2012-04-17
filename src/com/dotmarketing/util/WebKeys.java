@@ -183,6 +183,9 @@ public final class WebKeys {
     public static final String TEMPLATE_SHOW_DELETED = "com.dotmarketing.template.show_deleted";
     public static final String TEMPLATE_HOST_CHANGED = "com.dotmarketing.template.host_changed";
     public static final String TEMPLATE_CAN_ADD = "com.dotmarketing.template.can.add.template";
+    // *********************** BEGIN GRAZIANO issue-12-dnd-template
+    public static final String TEMPLATE_CAN_DESIGN = "com.dotmarketing.template.can.design.template";
+    // *********************** END GRAZIANO issue-12-dnd-template
     public static final String TEMPLATE_HOSTS = "com.dotmarketing.template.hosts";
 
 
