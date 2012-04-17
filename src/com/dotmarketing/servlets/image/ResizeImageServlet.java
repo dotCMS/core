@@ -186,6 +186,7 @@ public class ResizeImageServlet extends HttpServlet {
 
             file = null;
             if(identifier!=null && UtilMethods.isSet(identifier.getInode())){
+            	file = new File();
             	file.setIdentifier(identifier.getInode());
             }
             else{
