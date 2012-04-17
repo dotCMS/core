@@ -2,6 +2,13 @@
 <%response.setContentType("text/JavaScript");%>
 dojo.require("dojo.hash");
 dojo.require("dojox.layout.ContentPane");
+dojo.require("dojo.data.ItemFileReadStore");
+dojo.require("dijit.form.ComboBox");
+dojo.require("dijit.form.FilteringSelect");
+dojo.require("dijit.form.Button");
+dojo.require("dojox.form.Uploader");
+dojo.require("dojox.embed.Flash");
+dojo.require("dojo.io.iframe");
 dojo.subscribe("/dojo/hashchange", this, function(hash){mainAdmin.refresh();});
 
 
@@ -56,11 +63,74 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		var href = this.baseJsp;
 		mainAdmin.show(href);
 	},
+	undeploy : function (jarName){
+		var xhrArgs = {
+			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=undeploy&jar=" + jarName,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+					if (dataOrError.indexOf("FAILURE") == 0) {
 
+						// needs logging
+					} else {
+						// needs logging
+					}
+				} else {
+					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+				}
+			}
+		};
+		dojo.xhrPut(xhrArgs);
+		mainAdmin.refresh();
+	},
+	deploy : function(){
+		var availBundles = dijit.byId('availBundlesCombo');
+		var jarName = availBundles.value;
+		var xhrArgs = {
+			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=deploy&jar=" + jarName,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+					if (dataOrError.indexOf("FAILURE") == 0) {
+						// needs logging
+					} else {
+						// needs logging
+					}
+				} else {
+					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+				}
+			}
+		};
+		dojo.xhrPut(xhrArgs);
+		mainAdmin.refresh();
+	},
+	add : function(){
+		var fm = dojo.byId("addBundle")
+		dojo.io.iframe.send({
+			// The form node, which contains the
+			// data. We also pull the URL and METHOD from it:
+			form: fm,
+			url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX",
+			method : "post",	
+			// The used data format:
+			handleAs: "json",
+			
+			// Callback on successful call:
+			load: function(response, ioArgs) {
+				// return the response for succeeding callbacks
+				mainAdmin.refresh();
+				return response;
+			}
+		});	
+	}
 });
 
 var mainAdmin = new dotcms.dijit.osgi.MainAdmin({});
 var bundles = new dotcms.dijit.osgi.Bundles({});
+
+
+var availBundles = new dojo.data.ItemFileReadStore({data:
+	<%@ include file="/html/portlet/ext/osgi/available_bundles_json.jsp" %>
+});
+
 
 dojo.ready(function() {
 	var myHash = decodeURIComponent(dojo.hash());
@@ -69,5 +139,9 @@ dojo.ready(function() {
 	}else{
 		bundles.show();
 	}
-
+    if(dojox.embed.Flash.available){
+      dojo.require("dojox.form.uploader.plugins.Flash");
+    }else{
+      dojo.require("dojox.form.uploader.plugins.IFrame");
+    }
 });
