@@ -42,7 +42,6 @@
         <action path="/logout"   type="com.dotmarketing.cms.login.action.LogoutAction" parameter="dispatch" >
 			<forward name="afterLogoutPage" path="/" redirect="true" />
         </action>
-
         
 		<!--
 			This is forgot password action by default resets the password
@@ -92,11 +91,9 @@
 			<forward name="myAccountPage" path="/dotCMS/myAccount" redirect="true"/>
         </action>
                 
-
         <action path="/subscribe" type="com.dotmarketing.cms.subscribe.action.MailingListsSubscribeAction"  name="mailingListsSubscribeForm" scope="request" validate="false"	parameter="dispatch" input="/application/myaccount/mailinglists_subscription.dot">
 			<forward name="subscribePage" path="/application/myaccount/mailinglists_subscription.dot" />
         </action>
-
 		<!-- Send Email -->
 		<action path="/submitWebForm" type="com.dotmarketing.cms.webforms.action.SubmitWebFormAction" parameter="dispatch" name="webForm">
 			<forward name="thankYouPage" path="/" />
@@ -120,8 +117,6 @@
         
         <action path="/webEventComments" forward="/conferences_events/comments_testimonials.dot">
 		</action>
-
-
         <!-- User Favorites -->
         <action path="/addFavorites"  type="com.dotmarketing.cms.myaccount.action.MyFavoritesAction" scope="request" parameter="dispatch">
 		</action>
@@ -136,7 +131,6 @@
 		</action>
         <!-- Count URL Clicks  -->
         
-
 		<action path="/sendVCalendarDetail" type="com.dotmarketing.portlets.events.action.SendVCalendarDetail" name="sendVCalendarDetail" scope="request" validate="false" parameter="dispatch">
 		</action>
 		<action path="/downloadVCalendar" type="com.dotmarketing.portlets.calendar.action.SendVCalendarDetail" name="sendVCalendarDetail" scope="request" validate="false" parameter="dispatch">
