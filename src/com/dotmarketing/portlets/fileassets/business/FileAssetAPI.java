@@ -39,41 +39,49 @@ public interface FileAssetAPI {
 	public static final String DEFAULT_FILE_ASSET_STRUCTURE_NAME = "File Asset";
 	public static final String DEFAULT_FILE_ASSET_STRUCTURE_DESCRIPTION = "Default structure for all uploaded files";
 	public static final String DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME = "FileAsset";
-	
+
 	public void createBaseFileAssetFields(Structure structure) throws DotDataException,DotStateException;
-	
+
     /**
-     * 
+     *
      * @param con
      * @return
      * @throws DotStateException
      */
 	public FileAsset fromContentlet(Contentlet con) throws DotStateException;
-	
+
 	/**
-	 * 
+	 *
 	 * @param cons
 	 * @return
 	 * @throws DotStateException
 	 */
 	public List<FileAsset> fromContentlets(List<Contentlet> cons) throws DotStateException;
-	
+
 	/**
-	 * 
+	 *
+	 * @param cons
+	 * @return
+	 * @throws DotStateException
+	 */
+	public List<IFileAsset> fromContentletsI(List<Contentlet> cons) throws DotStateException;
+
+	/**
+	 *
 	 * @param c
 	 * @return
 	 */
 	public boolean isFileAsset(Contentlet c);
-	
+
 	/**
 	 * Returns a map with the given binary file's meta data
 	 * @param binFile
 	 * @return
 	 */
 	public Map<String, String> getMetaDataMap(Contentlet con, File binFile);
-	
+
 	/**
-	 * 
+	 *
 	 * @param host
 	 * @param folder
 	 * @param fileName
@@ -81,9 +89,9 @@ public interface FileAssetAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	
+
 	/**
-	 * 
+	 *
 	 * @param host
 	 * @param folder
 	 * @param fileName
@@ -92,16 +100,16 @@ public interface FileAssetAPI {
 	 * @throws DotDataException
 	 */
 	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException;
-	
+
 	/**
-	 * 
+	 *
 	 * @param fa
 	 * @return
 	 */
 	public String getRelativeAssetPath(FileAsset fa);
-	
+
 	/**
-	 * 
+	 *
 	 * @param parentFolder
 	 * @param user
 	 * @param respectFrontendRoles
@@ -110,10 +118,10 @@ public interface FileAssetAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
-	
-	
+
+
 	/**
-	 * 
+	 *
 	 * @param parentHost
 	 * @param user
 	 * @param respectFrontendRoles
@@ -122,10 +130,10 @@ public interface FileAssetAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
-	
+
+
 	/**
-	 * 
+	 *
 	 * @param parentFolder
 	 * @param user
 	 * @param respectFrontendRoles
@@ -134,11 +142,11 @@ public interface FileAssetAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, String sortBy, boolean live, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
-	
-	
-	
+
+
+
 	/**
-	 * 
+	 *
 	 * @param parentFolder
 	 * @param user
 	 * @param respectFrontendRoles
@@ -147,9 +155,9 @@ public interface FileAssetAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, String sortBy, boolean live, boolean working, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
-	
+
 	/**
-	 * 
+	 *
 	 * @param fileAssetCont
 	 * @param newName
 	 * @param user
@@ -161,9 +169,9 @@ public interface FileAssetAPI {
 	 * @throws IOException
 	 */
 	public  boolean renameFile (Contentlet fileAssetCont, String newName, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException, IOException;
-	
+
 	/**
-	 * 
+	 *
 	 * @param fileAssetCont
 	 * @param parent
 	 * @param user
@@ -174,20 +182,20 @@ public interface FileAssetAPI {
 	 * @throws DotSecurityException
 	 */
 	public  boolean moveFile (Contentlet fileAssetCont, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException;
-	
+
     /**
-     * 
+     *
      * @param inode
      * @param fileName
      * @param ext
      * @return
      */
 	public String getRealAssetPath(String inode, String fileName, String ext);
-	
+
 	/**
-	 * 
+	 *
 	 * @param inode
 	 * @return
 	 */
-	public String getRealAssetPath(String inode); 
+	public String getRealAssetPath(String inode);
 }
