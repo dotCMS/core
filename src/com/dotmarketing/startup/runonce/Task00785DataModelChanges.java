@@ -1284,8 +1284,10 @@ public class Task00785DataModelChanges implements StartupTask  {
 		  if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))
 		     dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 
-		deleteOrphanedAssets();
+		
 		deleteIdentifiersFromInode();
+		deleteOrphanedAssets();
+		
 		String addConstraint = "";
 		String addIdentifierColumn = "alter table containers add identifier varchar(36);" +
 			             			 "alter table template add identifier varchar(36);" +
