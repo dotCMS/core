@@ -17,8 +17,8 @@ CREATE INDEX idx_permission_reference_4 ON permission_reference USING btree(asse
 CREATE INDEX idx_permission_reference_5 ON permission_reference USING btree(asset_id,reference_id,permission_type);
 CREATE INDEX idx_permission_reference_6 ON permission_reference USING btree(permission_type);
 
-CREATE UNIQUE INDEX idx_field_velocity_structure ON field (velocity_var_name,structure_inode); 
-  
+CREATE UNIQUE INDEX idx_field_velocity_structure ON field (velocity_var_name,structure_inode);
+
 
 alter table chain_state add constraint fk_state_chain foreign key (chain_id) references chain(id);
 alter table chain_state add constraint fk_state_code foreign key (link_code_id) references chain_link_code(id);
@@ -90,7 +90,7 @@ CREATE INDEX dist_reindex_index4 on dist_reindex_journal (ident_to_index,serveri
 CREATE INDEX dist_reindex_index on dist_reindex_journal (serverid,dist_action);
 CREATE INDEX dist_reindex_index5 ON dist_reindex_journal (priority, time_entered);
 CREATE INDEX dist_reindex_index6 ON dist_reindex_journal (priority);
-CREATE INDEX idx_identifier ON identifier USING btree (id); 
+CREATE INDEX idx_identifier ON identifier USING btree (id);
 
 CREATE TABLE quartz_log (id bigserial NOT NULL, JOB_NAME character varying(255) NOT NULL, serverid character varying(64), time_started timestamp without time zone NOT NULL, CONSTRAINT quartz_log_pkey PRIMARY KEY (id));
 
@@ -99,16 +99,16 @@ alter table cms_role add CONSTRAINT cms_role_name_db_fqn UNIQUE (db_fqn);
 alter table cms_role add constraint fkcms_role_parent foreign key (parent) references cms_role;
 
 alter table users_cms_roles add CONSTRAINT users_cms_roles_parent1 UNIQUE (role_id,user_id);
-alter table users_cms_roles add constraint fkusers_cms_roles1 foreign key (role_id) references cms_role; 
+alter table users_cms_roles add constraint fkusers_cms_roles1 foreign key (role_id) references cms_role;
 alter table users_cms_roles add constraint fkusers_cms_roles2 foreign key (user_id) references user_;
-		
+
 ALTER TABLE cms_layout add CONSTRAINT cms_layout_name_parent UNIQUE (layout_name);
 
 alter table portlet add CONSTRAINT portlet_role_key UNIQUE (portletid);
 alter table cms_layouts_portlets add CONSTRAINT cms_layouts_portlets_parent1 UNIQUE (layout_id,portlet_id);
 alter table cms_layouts_portlets add constraint fkcms_layouts_portlets foreign key (layout_id) references cms_layout;
 
-alter table layouts_cms_roles add constraint fklayouts_cms_roles1 foreign key (role_id) references cms_role; 
+alter table layouts_cms_roles add constraint fklayouts_cms_roles1 foreign key (role_id) references cms_role;
 alter table layouts_cms_roles add constraint fklayouts_cms_roles2 foreign key (layout_id) references cms_layout;
 alter table layouts_cms_roles add CONSTRAINT layouts_cms_roles_parent1 UNIQUE (role_id,layout_id);
 
@@ -122,7 +122,7 @@ ALTER TABLE links add constraint links_identifier_fk foreign key (identifier) re
 
 CREATE OR REPLACE FUNCTION "boolIntResult"("intParam" integer, "boolParam" boolean)
   RETURNS boolean AS
-$BODY$select case 
+$BODY$select case
 		WHEN $2 AND $1 != 0 then true
 		WHEN $2 != true AND $1 = 0 then true
 		ELSE false
@@ -131,26 +131,26 @@ $BODY$select case
 ;
 CREATE OR REPLACE FUNCTION "intBoolResult"("boolParam" boolean, "intParam" integer)
   RETURNS boolean AS
-$BODY$select case 
+$BODY$select case
 		WHEN $1 AND $2 != 0 then true
 		WHEN $1 != true AND $2 = 0 then true
 		ELSE false
 	END$BODY$
   LANGUAGE 'sql' VOLATILE
- ; 
+ ;
 CREATE OPERATOR =(
   PROCEDURE = "intBoolResult",
   LEFTARG = bool,
   RIGHTARG = int4);
-  
+
 CREATE OPERATOR =(
   PROCEDURE = "boolIntResult",
   LEFTARG = int4,
   RIGHTARG = bool);
-  
+
 CREATE OR REPLACE FUNCTION "boolBigIntResult"("intParam" bigint, "boolParam" boolean)
   RETURNS boolean AS
-$BODY$select case 
+$BODY$select case
 		WHEN $2 AND $1 != 0 then true
 		WHEN $2 != true AND $1 = 0 then true
 		ELSE false
@@ -159,7 +159,7 @@ $BODY$select case
 ;
 CREATE OR REPLACE FUNCTION "bigIntBoolResult"("boolParam" boolean, "intParam" bigint)
   RETURNS boolean AS
-$BODY$select case 
+$BODY$select case
 		WHEN $1 AND $2 != 0 then true
 		WHEN $1 != true AND $2 = 0 then true
 		ELSE false
@@ -176,12 +176,12 @@ CREATE OPERATOR =(
   PROCEDURE = "boolBigIntResult",
   LEFTARG = bigint,
   RIGHTARG = bool);
-  
+
 CREATE OR REPLACE FUNCTION identifier_host_inode_check() RETURNS trigger AS '
 DECLARE
 	inodeType varchar(100);
 BEGIN
-  IF (tg_op = ''INSERT'' OR tg_op = ''UPDATE'') AND substr(NEW.asset_type, 0, 8) <> ''content'' AND 
+  IF (tg_op = ''INSERT'' OR tg_op = ''UPDATE'') AND substr(NEW.asset_type, 0, 8) <> ''content'' AND
 		(NEW.host_inode IS NULL OR NEW.host_inode = '''') THEN
 		RAISE EXCEPTION ''Cannot insert/update a null or empty host inode for this kind of identifier'';
 		RETURN NULL;
@@ -193,14 +193,14 @@ BEGIN
 END
 ' LANGUAGE plpgsql;
 
-CREATE TRIGGER required_identifier_host_inode_trigger BEFORE INSERT OR UPDATE 
-    ON identifier FOR EACH ROW 
+CREATE TRIGGER required_identifier_host_inode_trigger BEFORE INSERT OR UPDATE
+    ON identifier FOR EACH ROW
     EXECUTE PROCEDURE identifier_host_inode_check ();
-	
+
 create table import_audit (
 	id bigint not null,
 	start_date timestamp,
-	userid varchar(255), 
+	userid varchar(255),
 	filename varchar(512),
 	status int,
 	last_inode varchar(100),
@@ -208,26 +208,26 @@ create table import_audit (
 	serverid varchar(255),
 	primary key (id)
 	);
-	
+
 alter table category alter column category_velocity_var_name set not null;
 
 alter table import_audit add column warnings text,
 	add column errors text,
 	add column results text,
 	add column messages text;
-	
+
 alter table structure alter host set default 'SYSTEM_HOST';
 alter table structure alter folder set default 'SYSTEM_FOLDER';
 alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
 alter table structure alter column velocity_var_name set not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
-	
+
 CREATE OR REPLACE FUNCTION structure_host_folder_check() RETURNS trigger AS '
 DECLARE
     folderInode varchar(100);
     hostInode varchar(100);
 BEGIN
-    IF ((tg_op = ''INSERT'' OR tg_op = ''UPDATE'') AND (NEW.host IS NOT NULL AND NEW.host <> '''' AND NEW.host <> ''SYSTEM_HOST'' 
+    IF ((tg_op = ''INSERT'' OR tg_op = ''UPDATE'') AND (NEW.host IS NOT NULL AND NEW.host <> '''' AND NEW.host <> ''SYSTEM_HOST''
           AND NEW.folder IS NOT NULL AND NEW.folder <> ''SYSTEM_FOLDER'' AND NEW.folder <> '''')) THEN
           select host_inode,folder.inode INTO hostInode,folderInode from folder,identifier where folder.identifier = identifier.id and folder.inode=NEW.folder;
 	  IF (FOUND AND NEW.host = hostInode) THEN
@@ -237,7 +237,7 @@ BEGIN
 		 RETURN NULL;
 	  END IF;
     ELSE
-        IF((tg_op = ''INSERT'' OR tg_op = ''UPDATE'') AND (NEW.host IS NULL OR NEW.host = '''' OR NEW.host= ''SYSTEM_HOST'' 
+        IF((tg_op = ''INSERT'' OR tg_op = ''UPDATE'') AND (NEW.host IS NULL OR NEW.host = '''' OR NEW.host= ''SYSTEM_HOST''
            OR NEW.folder IS NULL OR NEW.folder = '''' OR NEW.folder = ''SYSTEM_FOLDER'')) THEN
           IF(NEW.host = ''SYSTEM_HOST'' OR NEW.host IS NULL OR NEW.host = '''') THEN
              NEW.host = ''SYSTEM_HOST'';
@@ -253,68 +253,68 @@ BEGIN
 END
 ' LANGUAGE plpgsql;
 
-CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT OR UPDATE 
-    ON structure FOR EACH ROW 
+CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT OR UPDATE
+    ON structure FOR EACH ROW
     EXECUTE PROCEDURE structure_host_folder_check();
-    
+
 CREATE OR REPLACE FUNCTION load_records_to_index(server_id character varying, records_to_fetch int)
   RETURNS SETOF dist_reindex_journal AS'
 DECLARE
    dj dist_reindex_journal;
 BEGIN
-    
-    FOR dj IN SELECT * FROM dist_reindex_journal 
-       WHERE serverid IS NULL 
-       ORDER BY priority ASC 
+
+    FOR dj IN SELECT * FROM dist_reindex_journal
+       WHERE serverid IS NULL
+       ORDER BY priority ASC
        LIMIT records_to_fetch
-       FOR UPDATE 
+       FOR UPDATE
     LOOP
         UPDATE dist_reindex_journal SET serverid=server_id WHERE id=dj.id;
         RETURN NEXT dj;
     END LOOP;
-    
+
 END'
 LANGUAGE 'plpgsql';
 
 
- CREATE OR REPLACE FUNCTION file_versions_check() RETURNS trigger AS '   
-   DECLARE   
-	 versionsCount integer;     
-   BEGIN   
-	IF (tg_op = ''DELETE'') THEN      
-          select count(*) into versionsCount from file_asset where identifier = OLD.identifier;   
-          IF (versionsCount = 0)THEN           
+ CREATE OR REPLACE FUNCTION file_versions_check() RETURNS trigger AS '
+   DECLARE
+	 versionsCount integer;
+   BEGIN
+	IF (tg_op = ''DELETE'') THEN
+          select count(*) into versionsCount from file_asset where identifier = OLD.identifier;
+          IF (versionsCount = 0)THEN
              DELETE from identifier where id = OLD.identifier;
-          ELSE    
-             RETURN OLD;     
-          END IF;     
-       END IF;         
-    RETURN NULL;  
-  END   
-' LANGUAGE plpgsql;   
-CREATE TRIGGER file_versions_check_trigger AFTER DELETE    
-ON file_asset FOR EACH ROW    
-EXECUTE PROCEDURE file_versions_check();  
+          ELSE
+             RETURN OLD;
+          END IF;
+       END IF;
+    RETURN NULL;
+  END
+' LANGUAGE plpgsql;
+CREATE TRIGGER file_versions_check_trigger AFTER DELETE
+ON file_asset FOR EACH ROW
+EXECUTE PROCEDURE file_versions_check();
 
 
-CREATE OR REPLACE FUNCTION content_versions_check() RETURNS trigger AS '  
-   DECLARE  
-       versionsCount integer;   
-   BEGIN  
-       IF (tg_op = ''DELETE'') THEN  
-         select count(*) into versionsCount from contentlet where identifier = OLD.identifier;  
-         IF (versionsCount = 0)THEN    
+CREATE OR REPLACE FUNCTION content_versions_check() RETURNS trigger AS '
+   DECLARE
+       versionsCount integer;
+   BEGIN
+       IF (tg_op = ''DELETE'') THEN
+         select count(*) into versionsCount from contentlet where identifier = OLD.identifier;
+         IF (versionsCount = 0)THEN
 		DELETE from identifier where id = OLD.identifier;
-	   ELSE  
-	      RETURN OLD;  
-	   END IF;  
-	END IF;  
-   RETURN NULL;  
-   END  
-  ' LANGUAGE plpgsql;   
- CREATE TRIGGER content_versions_check_trigger AFTER DELETE   
- ON contentlet FOR EACH ROW   
- EXECUTE PROCEDURE content_versions_check(); 
+	   ELSE
+	      RETURN OLD;
+	   END IF;
+	END IF;
+   RETURN NULL;
+   END
+  ' LANGUAGE plpgsql;
+ CREATE TRIGGER content_versions_check_trigger AFTER DELETE
+ ON contentlet FOR EACH ROW
+ EXECUTE PROCEDURE content_versions_check();
 
 CREATE OR REPLACE FUNCTION link_versions_check() RETURNS trigger AS '
   DECLARE
@@ -322,7 +322,7 @@ CREATE OR REPLACE FUNCTION link_versions_check() RETURNS trigger AS '
   BEGIN
   IF (tg_op = ''DELETE'') THEN
     select count(*) into versionsCount from links where identifier = OLD.identifier;
-    IF (versionsCount = 0)THEN  
+    IF (versionsCount = 0)THEN
 	DELETE from identifier where id = OLD.identifier;
     ELSE
 	RETURN OLD;
@@ -331,8 +331,8 @@ CREATE OR REPLACE FUNCTION link_versions_check() RETURNS trigger AS '
 RETURN NULL;
 END
 ' LANGUAGE plpgsql;
-CREATE TRIGGER link_versions_check_trigger AFTER DELETE 
-ON links FOR EACH ROW 
+CREATE TRIGGER link_versions_check_trigger AFTER DELETE
+ON links FOR EACH ROW
 EXECUTE PROCEDURE link_versions_check();
 
 
@@ -342,7 +342,7 @@ CREATE OR REPLACE FUNCTION container_versions_check() RETURNS trigger AS '
   BEGIN
   IF (tg_op = ''DELETE'') THEN
     select count(*) into versionsCount from containers where identifier = OLD.identifier;
-    IF (versionsCount = 0)THEN  
+    IF (versionsCount = 0)THEN
 	DELETE from identifier where id = OLD.identifier;
     ELSE
 	RETURN OLD;
@@ -352,8 +352,8 @@ RETURN NULL;
 END
 ' LANGUAGE plpgsql;
 
-CREATE TRIGGER container_versions_check_trigger AFTER DELETE 
-ON containers FOR EACH ROW 
+CREATE TRIGGER container_versions_check_trigger AFTER DELETE
+ON containers FOR EACH ROW
 EXECUTE PROCEDURE container_versions_check();
 
 CREATE OR REPLACE FUNCTION template_versions_check() RETURNS trigger AS '
@@ -362,7 +362,7 @@ CREATE OR REPLACE FUNCTION template_versions_check() RETURNS trigger AS '
   BEGIN
   IF (tg_op = ''DELETE'') THEN
     select count(*) into versionsCount from template where identifier = OLD.identifier;
-    IF (versionsCount = 0)THEN  
+    IF (versionsCount = 0)THEN
 	DELETE from identifier where id = OLD.identifier;
     ELSE
 	RETURN OLD;
@@ -372,8 +372,8 @@ RETURN NULL;
 END
 ' LANGUAGE plpgsql;
 
-CREATE TRIGGER template_versions_check_trigger AFTER DELETE 
-ON template FOR EACH ROW 
+CREATE TRIGGER template_versions_check_trigger AFTER DELETE
+ON template FOR EACH ROW
 EXECUTE PROCEDURE template_versions_check();
 
 CREATE OR REPLACE FUNCTION htmlpage_versions_check() RETURNS trigger AS '
@@ -382,7 +382,7 @@ CREATE OR REPLACE FUNCTION htmlpage_versions_check() RETURNS trigger AS '
   BEGIN
   IF (tg_op = ''DELETE'') THEN
     select count(*) into versionsCount from htmlpage where identifier = OLD.identifier;
-    IF (versionsCount = 0)THEN  
+    IF (versionsCount = 0)THEN
 	DELETE from identifier where id = OLD.identifier;
     ELSE
 	RETURN OLD;
@@ -392,36 +392,36 @@ RETURN NULL;
 END
 ' LANGUAGE plpgsql;
 
-CREATE TRIGGER htmlpage_versions_check_trigger AFTER DELETE 
-ON htmlpage FOR EACH ROW 
+CREATE TRIGGER htmlpage_versions_check_trigger AFTER DELETE
+ON htmlpage FOR EACH ROW
 EXECUTE PROCEDURE htmlpage_versions_check();
 
 CREATE OR REPLACE FUNCTION identifier_parent_path_check() RETURNS trigger AS '
- DECLARE        
-    folderId varchar(100);   
-  BEGIN    
-     IF (tg_op = ''INSERT'' OR tg_op = ''UPDATE'') THEN  
-      IF(NEW.parent_path=''/'') OR (NEW.parent_path=''/System folder'') THEN   
+ DECLARE
+    folderId varchar(100);
+  BEGIN
+     IF (tg_op = ''INSERT'' OR tg_op = ''UPDATE'') THEN
+      IF(NEW.parent_path=''/'') OR (NEW.parent_path=''/System folder'') THEN
         RETURN NEW;
-     ELSE     
+     ELSE
       select id into folderId from identifier where asset_type=''folder'' and host_inode = NEW.host_inode and parent_path||asset_name||''/'' = NEW.parent_path and id <> NEW.id;
-      IF FOUND THEN          
-        RETURN NEW;       
-      ELSE          
-        RAISE EXCEPTION ''Cannot insert/update for this path does not exist for the given host'';         
-        RETURN NULL;       
-      END IF;   
-     END IF; 
-    END IF;   
-RETURN NULL;  
-END  
+      IF FOUND THEN
+        RETURN NEW;
+      ELSE
+        RAISE EXCEPTION ''Cannot insert/update for this path does not exist for the given host'';
+        RETURN NULL;
+      END IF;
+     END IF;
+    END IF;
+RETURN NULL;
+END
   ' LANGUAGE plpgsql;
 CREATE TRIGGER identifier_parent_path_trigger
-  BEFORE INSERT OR UPDATE 
+  BEFORE INSERT OR UPDATE
   ON identifier FOR EACH ROW
   EXECUTE PROCEDURE identifier_parent_path_check();
 
-CREATE OR REPLACE FUNCTION check_child_assets() RETURNS trigger AS ' 
+CREATE OR REPLACE FUNCTION check_child_assets() RETURNS trigger AS '
 DECLARE
    pathCount integer;
 BEGIN
@@ -438,7 +438,7 @@ BEGIN
 	ELSE
 	  RETURN OLD;
 	END IF;
-   END IF;  
+   END IF;
    RETURN NULL;
 END
 ' LANGUAGE plpgsql;
@@ -466,43 +466,43 @@ ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) ref
 
 CREATE OR REPLACE FUNCTION check_template_id()RETURNS trigger AS '
 DECLARE
-   templateId varchar(100);  
+   templateId varchar(100);
 BEGIN
-   IF (tg_op = ''INSERT'' OR tg_op = ''UPDATE'') THEN  
+   IF (tg_op = ''INSERT'' OR tg_op = ''UPDATE'') THEN
   	 select id into templateId from identifier where asset_type=''template'' and id = NEW.template_id;
   	 IF FOUND THEN
-          RETURN NEW;           
-	 ELSE    
+          RETURN NEW;
+	 ELSE
 	    RAISE EXCEPTION ''Template Id should be the identifier of a template'';
 	    RETURN NULL;
 	 END IF;
-   END IF; 
+   END IF;
    RETURN NULL;
 END
-' LANGUAGE plpgsql;    
-CREATE TRIGGER check_template_identifier    
-BEFORE INSERT OR UPDATE    
-ON htmlpage    
-FOR EACH ROW    
+' LANGUAGE plpgsql;
+CREATE TRIGGER check_template_identifier
+BEFORE INSERT OR UPDATE
+ON htmlpage
+FOR EACH ROW
 EXECUTE PROCEDURE check_template_id();
 
-CREATE OR REPLACE FUNCTION folder_identifier_check() RETURNS trigger AS '    
-DECLARE    
-   versionsCount integer;    
-BEGIN    
-   IF (tg_op = ''DELETE'') THEN    
-      select count(*) into versionsCount from folder where identifier = OLD.identifier;     
-	IF (versionsCount = 0)THEN      
-	  DELETE from identifier where id = OLD.identifier;    
-	ELSE    
-	  RETURN OLD;    
-	END IF;    
-   END IF;    
-   RETURN NULL;    
-END    
+CREATE OR REPLACE FUNCTION folder_identifier_check() RETURNS trigger AS '
+DECLARE
+   versionsCount integer;
+BEGIN
+   IF (tg_op = ''DELETE'') THEN
+      select count(*) into versionsCount from folder where identifier = OLD.identifier;
+	IF (versionsCount = 0)THEN
+	  DELETE from identifier where id = OLD.identifier;
+	ELSE
+	  RETURN OLD;
+	END IF;
+   END IF;
+   RETURN NULL;
+END
 ' LANGUAGE plpgsql;
-CREATE TRIGGER folder_identifier_check_trigger AFTER DELETE     
-ON folder FOR EACH ROW     
+CREATE TRIGGER folder_identifier_check_trigger AFTER DELETE
+ON folder FOR EACH ROW
 EXECUTE PROCEDURE folder_identifier_check();
 
 create index idx_template_id on template_containers(template_id);
@@ -529,8 +529,8 @@ RETURNS trigger AS '
 DECLARE
    old_parent_path varchar(100);
    old_path varchar(100);
-   new_path varchar(100);    
-   old_name varchar(100); 
+   new_path varchar(100);
+   old_name varchar(100);
    hostInode varchar(100);
 BEGIN
    IF (tg_op = ''UPDATE'') THEN
@@ -540,7 +540,7 @@ BEGIN
       UPDATE identifier SET asset_name = NEW.name where id = NEW.identifier;
       PERFORM renameFolderChildren(old_path,new_path,hostInode);
       RETURN NEW;
-   END IF; 
+   END IF;
 RETURN NULL;
 END
 'LANGUAGE plpgsql;
@@ -554,7 +554,7 @@ BEGIN
   IF(parent_path=''/System folder'') THEN
     RETURN ''/'';
   ELSE
-    RETURN parent_path || asset_name || ''/''; 
+    RETURN parent_path || asset_name || ''/'';
   END IF;
 END;'
 LANGUAGE plpgsql;
@@ -585,7 +585,7 @@ alter table contentlet_version_info add constraint fk_contentlet_version_info_la
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
 alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);
-alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
+--alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
 
 alter table workflow_comment add constraint workflowtask_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);
 alter table workflow_history add constraint workflowtask_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
@@ -608,7 +608,7 @@ create table workflow_step(
 	id varchar(36) primary key,
 	name varchar(255) not null,
 	scheme_id varchar(36) references workflow_scheme(id),
-	my_order int default 0, 
+	my_order int default 0,
 	resolved boolean default false
 );
 create index workflow_idx_step_scheme on workflow_step(scheme_id);
@@ -646,7 +646,7 @@ create table workflow_action_class_pars(
 	key varchar(255) not null,
 	value text
 );
-create index workflow_idx_action_class_param_action on 
+create index workflow_idx_action_class_param_action on
 	workflow_action_class_pars(workflow_action_class_id);
 
 
@@ -656,20 +656,20 @@ create table workflow_scheme_x_structure(
 	structure_id varchar(36) references structure(inode)
 );
 
-create unique index workflow_idx_scheme_structure_2 on 
+create unique index workflow_idx_scheme_structure_2 on
 	workflow_scheme_x_structure(structure_id);
-	 
 
-delete from workflow_history;  
-delete from workflow_comment;  
-delete from workflowtask_files;  
-delete from workflow_task; 
+
+delete from workflow_history;
+delete from workflow_comment;
+delete from workflowtask_files;
+delete from workflow_task;
 alter table workflow_task add constraint FK_workflow_task_asset foreign key (webasset) references identifier(id);
 alter table workflow_task add constraint FK_workflow_assign foreign key (assigned_to) references cms_role(id);
 alter table workflow_task add constraint FK_workflow_step foreign key (status) references workflow_step(id);
 
 
-        
+
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
 alter table container_version_info  add constraint FK_tainer_ver_info_lockedby  foreign key (locked_by) references user_(userid);
 alter table template_version_info   add constraint FK_temp_ver_info_lockedby   foreign key (locked_by) references user_(userid);
@@ -682,7 +682,7 @@ ALTER TABLE tag ALTER COLUMN host_id set default 'SYSTEM_HOST';
 alter table tag add constraint tag_tagname_host unique (tagname, host_id);
 alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) references tag (tag_id);
 
--- ****** Indicies Data Storage ******* 
+-- ****** Indicies Data Storage *******
 create table indicies (
   index_name varchar(30) primary key,
   index_type varchar(16) not null unique
