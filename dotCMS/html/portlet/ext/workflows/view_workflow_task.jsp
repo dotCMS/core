@@ -364,7 +364,7 @@
 					<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon">
 						<span><%= LanguageUtil.get(pageContext, "Add-a-Comment") %></span>
 						<div dojoType="dijit.TooltipDialog" id="dialog1" title="Login Form" execute="addComment();">
-							<textarea id="addCommentText" rows="4" cols="60"></textarea>
+							<textarea id="addCommentText" class="mceNoEditor" rows="4" cols="60"></textarea>
 							<div class="buttonRow">
                                 <button dojoType="dijit.form.Button" type="button" onClick="addComment();" iconClass="infoIcon">
 								    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
