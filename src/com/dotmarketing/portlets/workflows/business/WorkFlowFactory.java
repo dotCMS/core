@@ -6,7 +6,7 @@ import java.util.Map;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.liferay.portal.model.User;
 
 public interface WorkFlowFactory {
 
@@ -35,7 +36,9 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowHistory> findWorkflowHistory(WorkflowTask task) throws DotDataException;
 
-	public List<File> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException;
+	public List<IFileAsset> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException;
+
+	public List<Contentlet> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException;
 
 	public void attachFileToTask(WorkflowTask task,String fileInode)throws DotDataException;
 

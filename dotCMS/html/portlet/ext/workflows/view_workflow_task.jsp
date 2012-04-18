@@ -11,6 +11,7 @@
 <%@page import="com.dotmarketing.beans.Inode"%>
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
+<%@page import="com.dotmarketing.portlets.fileassets.business.IFileAsset"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
@@ -34,7 +35,7 @@
 <%@ page import="com.dotmarketing.util.Config" %>
 
 <%
-	
+
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
 	Contentlet contentlet 	= APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
 
@@ -44,25 +45,29 @@
 	WorkflowStep step 	= APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
 	WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(contentlet.getStructure());
 	List<WorkflowAction> actions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
-	List<WorkflowAction>  wfActionsAll= APILocator.getWorkflowAPI().findActions(step, user); 
-	
+	List<WorkflowAction>  wfActionsAll= APILocator.getWorkflowAPI().findActions(step, user);
+
 	boolean canEdit = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user);
-	
+
 	List<WorkflowComment> comments = APILocator.getWorkflowAPI().findWorkFlowComments(task);
 	List<WorkflowHistory> history = APILocator.getWorkflowAPI().findWorkflowHistory(task);
 	Collections.reverse(history);
-	List<File> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task);
+// 	List<File> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task);
+	List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task); // old files
+	List<IFileAsset> filesAsContent = APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, user); // new files
+
+	files.addAll(filesAsContent);
 
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action",new String[] {"/ext/workflows/edit_workflow_task"});
 	params.put("cmd",new String[] {"view"});
 	params.put("taskId",new String[] {String.valueOf(task.getInode())});
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
-	
+
 	List<User> users = APILocator.getUserAPI().findAllUsers();
 	PermissionAPI permAPI = APILocator.getPermissionAPI();
 	WebAsset asset = null;
-	request.setAttribute("contentletId", contentlet.getInode()); 
+	request.setAttribute("contentletId", contentlet.getInode());
 
 %>
 
@@ -91,7 +96,7 @@
 	function addComment () {
 		var comment = document.getElementById("addCommentText").value;
 		//document.getElementById("addCommentDiv").style.display = "none";
-		
+
 		document.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
 									<portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
 									<portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
@@ -127,7 +132,7 @@
 									<portlet:param name="cmd" value="assign_task" />
 									<portlet:param name="referer" value="<%= referer %>" />
 								</portlet:actionURL>&user_id=user-<%= user.getUserId() %>';
-	}	
+	}
 	function changeStatus (newStatus) {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-change-the-task-status")) %>')) {
 			document.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
@@ -150,8 +155,8 @@
 								<portlet:param name="referer" value="<%= referer %>" />
 							</portlet:actionURL>&file_inode='+fileInode;
 	}
-	
-	function setImage(inode,name) 
+
+	function setImage(inode,name)
 	{
 	   document.getElementById("attachedFileInode").value = inode;
 	   submitParent();
@@ -168,10 +173,10 @@
 
 	function cancel () {
 		document.location = "<portlet:actionURL windowState="<%=WindowState.MAXIMIZED.toString()%>">
-		<portlet:param name="struts_action" value="/ext/workflows/view_workflow_tasks" />	
+		<portlet:param name="struts_action" value="/ext/workflows/view_workflow_tasks" />
 	    </portlet:actionURL>";
 	}
-	
+
 	function doEdit(){
 		window.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
 		<%if(contentlet.getStructure().getName().equals("Event")){%>s
@@ -183,15 +188,22 @@
 		<portlet:param name="cmd" value="edit" />
 		<portlet:param name="referer" value="<%= referer %>" />
 		</portlet:actionURL>";
-		
-		
-		
+
+
+
 	}
-	
-	
-	
-	
-	
+
+
+	 function serveFile(doStuff,conInode,velVarNm){
+
+         if(doStuff != ''){
+         window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+         }else{
+         window.open('/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+         }
+     }
+
+
 </script>
 
 
@@ -207,7 +219,7 @@
 
 <!-- START Task Overview -->
 	<div class="yui-u first">
-        
+
 		<table class="listingTable">
 			<tr>
 				<th colspan="2" valign="bottom">
@@ -226,39 +238,39 @@
 					        	<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
 					   		<%} %>
 						</div>
-						
+
 						</div>
 						<div style="padding:5px;padding-left:10px;"><%=LanguageUtil.get(pageContext, "Step") %> : <span style="font-size:12pt;font-weight:normal"><%=step.getName()%></span></div>
 					</div>
 				</th>
 			</tr>
-			
+
 			<tr>
 				<td>
 					<strong><%= LanguageUtil.get(pageContext, "by") %>:</strong>
 					<% if(createdBy != null){%>
 						<%= createdBy.getName() %>
 					<% } else  { %>
-						<%= LanguageUtil.get(pageContext, "Nobody") %>	
+						<%= LanguageUtil.get(pageContext, "Nobody") %>
 					<% } %>
 				</td>
-				
+
 				<td>
 					<strong><%= LanguageUtil.get(pageContext, "Created-on") %>:</strong>
 					<%= UtilMethods.dateToHTMLDate(task.getCreationDate()) %>
-					<%= LanguageUtil.get(pageContext, "at") %> <%= UtilMethods.dateToHTMLTime(task.getCreationDate()) %> 
+					<%= LanguageUtil.get(pageContext, "at") %> <%= UtilMethods.dateToHTMLTime(task.getCreationDate()) %>
 				</td>
-				
+
 
 			</tr>
-			
+
 			<tr>
 				<td>
 					<strong><%= LanguageUtil.get(pageContext, "Assigned-To") %>:</strong>
 					<%= assignedTo.getName()%>
-					
+
 				</td>
-				
+
 				<td>
 					<strong><%= LanguageUtil.get(pageContext, "Updated") %>:</strong>
 					<%= DateUtil.prettyDateSince(task.getModDate(), user.getLocale()) %>
@@ -266,30 +278,30 @@
 
 			</tr>
 			<%String latestComment = (comments != null && comments.size()>0) ? comments.get(0).getComment() :task.getDescription();  %>
-			
-			
+
+
 			<%if(UtilMethods.isSet(latestComment)){ %>
 				<tr>
 					<td colspan="2">
 						<strong><%= LanguageUtil.get(pageContext, "Latest-Comment") %>:</strong>
 
 							<%=latestComment%>
-			
+
 					</td>
 				</tr>
 			<%} %>
 	<%if (contentlet.isLocked()) {%>
 		<tr>
 			<td colspan=2>
-				<b><%= LanguageUtil.get(pageContext, "Locked") %></b>: 
-				
-				
+				<b><%= LanguageUtil.get(pageContext, "Locked") %></b>:
+
+
 				<%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
 				<span class="lockedAgo" style="display: inline">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
-			
-			
+
+
 			</td>
-	
+
 		</tr>
 	<%} %>
 
@@ -314,11 +326,11 @@
 					<%} %>
 				<%} %>
 
-			
+
 				<%for(WorkflowAction a : actions){ %>
 					<%if(a.requiresCheckout())continue; %>
 					<div class="workflowActionLink" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable()%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>')">
-						
+
 							<span class="<%=a.getIcon()%>"></span>
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
 						<% hasAction = true; %>
@@ -326,7 +338,7 @@
 				<%}%>
 				<%if(!hasAction){ %>
 					<div class="workflowActionLink">
-						
+
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Actions")) %>
 					</div>
 				<%} %>
@@ -334,7 +346,7 @@
 			</div>
 		</div>
 	</div>
-<!-- END Actions -->	
+<!-- END Actions -->
 
 </div>
 <div style="margin:20px;">
@@ -342,19 +354,19 @@
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 		<div id="TabZero" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>">
 
-			
 
-			
-			
+
+
+
 				<jsp:include page="/html/portlet/ext/contentlet/view_contentlet_popup_inc.jsp"></jsp:include>
-			
-			
-			
-			
-			
-			
-		
-		
+
+
+
+
+
+
+
+
 		</div>
 	<!-- START Comments Tab -->
 		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Comments") %>">
@@ -375,17 +387,17 @@
 				<%}%>
 			</div>
 
-				
+
 				<table class="listingTable">
 
-				<%   
+				<%
 				    String str_style2="";
 					int y =0;
-					
+
 					Iterator<WorkflowComment> commentsIt = comments.iterator();
 					while (commentsIt.hasNext()) {
 						WorkflowComment comment = commentsIt.next();
-						
+
 						if(y%2==0){
 						  str_style2="class=\"alternate_1\"";
 						}
@@ -412,33 +424,33 @@
 						</td>
 					</tr>
 				<% } %>
-				
+
 				</table>
-				
+
 			<!-- END Comments -->
-			
+
 		</div>
 	<!-- END Description Tab -->
-	
+
 	<!-- START Files Tab -->
 		<div id="TabTwo" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Attached-Files") %>">
-			
+
 			<% if (!step.isResolved()) { %>
 				<div class="buttonRow" style="Text-align:right;">
-					<button dojoType="dijit.form.Button" onClick="attachFile();" iconClass="browseIcon"><%= LanguageUtil.get(pageContext, "Attach-File") %></button> 
+					<button dojoType="dijit.form.Button" onClick="attachFile();" iconClass="browseIcon"><%= LanguageUtil.get(pageContext, "Attach-File") %></button>
 				</div>
 			<% } else { %>
 				<div class="buttonRow" style="Text-align:right;">
 					<%= LanguageUtil.get(pageContext, "Attached-Files") %>
 				</div>
 			<% } %>
-			
+
 			<table class="listingTable">
-				<%   
+				<%
 					int x=0;
 					String str_style="";
-					
-					for (File file : files) {
+
+					for (IFileAsset file : files) {
 						if(x%2==0){
 						  str_style="class=\"alternate_1\"";
 						}
@@ -450,14 +462,14 @@
 					<tr <%=str_style %>>
 						<td>
 							<img border="0" src="/icon?i=<%= UtilMethods.encodeURIComponent(file.getFileName()) %>"> &nbsp;
-							<a href="#" onclick="javascript:window.open('<%= UtilMethods.encodeURIComponent("/dotAsset/" + file.getIdentifier()) %>','FileView','toolbar=no,menubar=no,toolbar=no,scrollbars=no,width=<%=file.getWidth() %>,height=<%=file.getHeight() %>');">
+							<a href="#" onclick="javascript: serveFile('','<%= file.getInode()%>','fileAsset');">
 								<%= file.getFileName() %>
-							</a> 
+							</a>
 						</td>
 						<td><a href="javascript:removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></a></td>
 					</tr>
-				<% } %> 
-				
+				<% } %>
+
 				<% if (files.size() == 0) { %>
 					<tr>
 						<td colspan="2">
@@ -468,18 +480,18 @@
 			</table>
 		</div>
 	<!-- END Files Tab -->
-	
 
-	
+
+
 	<!-- START History Tab -->
 		<div id="TabThree" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Change-History") %>">
 			<table class="listingTable">
-				<%  
+				<%
 				    int z=0;
 					String str_style3="";
-							
+
 					for (WorkflowHistory histItem : history) {
-					
+
 					  if(z%2==0){
 					    str_style3="class=\"alternate_1\"";
 			          }
@@ -495,7 +507,7 @@
 						</td>
 					</tr>
 				<% } %>
-				
+
 				<% if (history.size() == 0) { %>
 					<tr>
 						<td>
