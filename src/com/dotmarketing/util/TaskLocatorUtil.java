@@ -47,6 +47,7 @@ import com.dotmarketing.startup.runonce.Task00835CreateIndiciesTables;
 import com.dotmarketing.startup.runonce.Task00840FixContentletVersionInfo;
 import com.dotmarketing.startup.runonce.Task00845ChangeLockedOnToTimeStamp;
 import com.dotmarketing.startup.runonce.Task00850DropOldFilesConstraintInWorkflow;
+import com.dotmarketing.startup.runonce.Task00855FixRenameFolder;
 
 public class TaskLocatorUtil {
 
@@ -95,6 +96,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00840FixContentletVersionInfo.class);
 		ret.add(Task00845ChangeLockedOnToTimeStamp.class);
 		ret.add(Task00850DropOldFilesConstraintInWorkflow.class);
+		ret.add(Task00855FixRenameFolder.class);
 		return ret;
 	}
 
