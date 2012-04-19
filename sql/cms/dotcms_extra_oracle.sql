@@ -602,17 +602,12 @@ CREATE OR REPLACE PROCEDURE renameFolderChildren(oldPath IN varchar2,newPath IN 
   assetName varchar2(100);
 BEGIN
  UPDATE identifier SET  parent_path  = newPath where parent_path = oldPath and host_inode = hostInode;
- DECLARE CURSOR folder_data_cursor IS
-   select * from identifier where asset_type='folder' and parent_path = newPath and host_inode = hostInode;
-BEGIN
- FOR i in folder_data_cursor
+ FOR i in (select * from identifier where asset_type='folder' and parent_path = newPath and host_inode = hostInode)
   LOOP
-   EXIT WHEN folder_data_cursor%NOTFOUND;
    newFolderPath := newPath || i.asset_name || '/';
    oldFolderPath := oldPath || i.asset_name || '/';
    renameFolderChildren(oldFolderPath,newFolderPath,hostInode);
   END LOOP;
-END;
 END;
 /
 CREATE OR REPLACE TRIGGER rename_folder_assets_trigger
@@ -623,9 +618,11 @@ DECLARE
  newPath varchar2(100);
  hostInode varchar2(100);
 BEGIN
-  SELECT parent_path||asset_name||'/',parent_path ||:NEW.name||'/',host_inode INTO oldPath,newPath,hostInode from identifier where id = :NEW.identifier;
-  UPDATE identifier SET asset_name = :NEW.name where id = :NEW.identifier;
-  renameFolderChildren(oldPath,newPath,hostInode);
+	IF :NEW.name <> :OLD.name THEN
+      SELECT parent_path||asset_name||'/',parent_path ||:NEW.name||'/',host_inode INTO oldPath,newPath,hostInode from identifier where id = :NEW.identifier;
+      UPDATE identifier SET asset_name = :NEW.name where id = :NEW.identifier;
+      renameFolderChildren(oldPath,newPath,hostInode);
+    END IF;
 END;
 /
 CREATE OR REPLACE FUNCTION dotFolderPath(parent_path IN varchar2, asset_name IN varchar2) RETURN varchar2 IS
