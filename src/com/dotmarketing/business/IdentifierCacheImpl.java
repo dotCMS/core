@@ -6,6 +6,8 @@
  */
 package com.dotmarketing.business;
 
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -106,6 +108,17 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		cache.remove(getPrimaryGroup() + id.getId(),  getPrimaryGroup());
 		String key = id.getHostId() + "-" + id.getURI();
 		cache.remove(getPrimaryGroup() + key, getPrimaryGroup());
+		
+		if(id.getAssetType().equals("folder")) {
+		    try {
+		        List<Identifier> idents=APILocator.getIdentifierAPI().findByParentPath(id.getHostId(), id.getURI());
+		        for(Identifier ii : idents)
+		            removeFromCacheByIdentifier(ii);
+		    }
+		    catch(Exception ex) {
+		        Logger.warn(this, ex.getMessage(),ex);
+		    }
+		}
 	}
 	
 	protected void removeFromCacheByIdentifier(String ident) {
