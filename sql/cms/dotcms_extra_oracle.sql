@@ -246,28 +246,6 @@ BEGIN
   RETURN cursor_ret;
 END;
 /
-create or replace FUNCTION load_records_to_index(server_id VARCHAR2, records_to_fetch NUMBER)
-   RETURN types.ref_cursor IS
- cursor_ret types.ref_cursor;
- cursor dj_cursor is
-   SELECT * FROM dist_reindex_journal
-   WHERE serverid IS NULL
-   ORDER BY priority ASC
-   FOR UPDATE;
-   x number;
-BEGIN
-  x:=0;
-  FOR dj in dj_cursor
-  LOOP
-    UPDATE dist_reindex_journal SET serverid=server_id WHERE id=dj.id;
-    x:=x+1;
-    EXIT WHEN x>=records_to_fetch;
-  END LOOP;
-  OPEN cursor_ret FOR
-    select * from dist_reindex_journal where serverid=server_id;
-  RETURN cursor_ret;
-END;
-/
 CREATE OR REPLACE PACKAGE check_parent_path_pkg as
     type ridArray is table of rowid index by binary_integer;
     newRows ridArray;
@@ -624,17 +602,12 @@ CREATE OR REPLACE PROCEDURE renameFolderChildren(oldPath IN varchar2,newPath IN 
   assetName varchar2(100);
 BEGIN
  UPDATE identifier SET  parent_path  = newPath where parent_path = oldPath and host_inode = hostInode;
- DECLARE CURSOR folder_data_cursor IS
-   select * from identifier where asset_type='folder' and parent_path = newPath and host_inode = hostInode;
-BEGIN
- FOR i in folder_data_cursor
+ FOR i in (select * from identifier where asset_type='folder' and parent_path = newPath and host_inode = hostInode)
   LOOP
-   EXIT WHEN folder_data_cursor%NOTFOUND;
    newFolderPath := newPath || i.asset_name || '/';
    oldFolderPath := oldPath || i.asset_name || '/';
    renameFolderChildren(oldFolderPath,newFolderPath,hostInode);
   END LOOP;
-END;
 END;
 /
 CREATE OR REPLACE TRIGGER rename_folder_assets_trigger
@@ -645,9 +618,11 @@ DECLARE
  newPath varchar2(100);
  hostInode varchar2(100);
 BEGIN
-  SELECT parent_path||asset_name||'/',parent_path ||:NEW.name||'/',host_inode INTO oldPath,newPath,hostInode from identifier where id = :NEW.identifier;
-  UPDATE identifier SET asset_name = :NEW.name where id = :NEW.identifier;
-  renameFolderChildren(oldPath,newPath,hostInode);
+	IF :NEW.name <> :OLD.name THEN
+      SELECT parent_path||asset_name||'/',parent_path ||:NEW.name||'/',host_inode INTO oldPath,newPath,hostInode from identifier where id = :NEW.identifier;
+      UPDATE identifier SET asset_name = :NEW.name where id = :NEW.identifier;
+      renameFolderChildren(oldPath,newPath,hostInode);
+    END IF;
 END;
 /
 CREATE OR REPLACE FUNCTION dotFolderPath(parent_path IN varchar2, asset_name IN varchar2) RETURN varchar2 IS
