@@ -887,13 +887,13 @@ public class FolderFactoryImpl extends FolderFactory {
 		if(UtilMethods.isSet(nFolder.getInode()))
 			return false;
 
+		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
+		
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		ff.setName(newName);
 		ff.setTitle(newName);
 		
 		APILocator.getFolderAPI().save(ff, user, respectFrontEndPermissions);
-		
-        CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
 
 		try {
 			HibernateUtil.getSession().evict(ff);
