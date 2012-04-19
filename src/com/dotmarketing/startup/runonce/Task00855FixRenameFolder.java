@@ -9,7 +9,7 @@ public class Task00855FixRenameFolder extends AbstractJDBCStartupTask {
     
     @Override
     public boolean forceRun() {
-        return DbConnectionFactory.isOracle();
+        return true;
     }
     
     @Override
@@ -19,7 +19,27 @@ public class Task00855FixRenameFolder extends AbstractJDBCStartupTask {
     
     @Override
     public String getMySQLScript() {
-        return "";
+        return "DROP TRIGGER IF EXISTS rename_folder_assets_trigger;\n"+
+                "CREATE TRIGGER rename_folder_assets_trigger AFTER UPDATE\n"+
+                "on Folder\n"+
+                "FOR EACH ROW\n"+
+                "BEGIN\n"+
+                "DECLARE old_parent_path varchar(100);\n"+
+                "DECLARE old_path varchar(100);\n"+
+                "DECLARE new_path varchar(100);\n"+
+                "DECLARE old_name varchar(100);\n"+
+                "DECLARE hostInode varchar(100);\n"+
+                "IF @disable_trigger IS NULL AND NEW.name<>OLD.name THEN\n"+
+                "   select asset_name,parent_path,host_inode INTO old_name,old_parent_path,hostInode from identifier where id = NEW.identifier;\n"+
+                "   SELECT CONCAT(old_parent_path,old_name,'/')INTO old_path;\n"+
+                "   SELECT CONCAT(old_parent_path,NEW.name,'/')INTO new_path;\n"+
+                "   SET @disable_trigger = 1;\n"+
+                "   UPDATE identifier SET asset_name = NEW.name where id = NEW.identifier;\n"+
+                "   SET @disable_trigger = NULL;\n"+
+                "   CALL renameFolderChildren(old_path,new_path,hostInode);\n"+
+                "END IF;\n"+
+                "END\n"+
+                "#\n";
     }
     
     @Override
