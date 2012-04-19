@@ -185,6 +185,8 @@ public final class WebKeys {
     public static final String TEMPLATE_CAN_ADD = "com.dotmarketing.template.can.add.template";
     // *********************** BEGIN GRAZIANO issue-12-dnd-template
     public static final String TEMPLATE_CAN_DESIGN = "com.dotmarketing.template.can.design.template";
+    public static final String TEMPLATE_IS_DRAWED = "_drawed";
+    public static final String OVERRIDE_DRAWED_TEMPLATE_BODY = "_drawedOverride";
     // *********************** END GRAZIANO issue-12-dnd-template
     public static final String TEMPLATE_HOSTS = "com.dotmarketing.template.hosts";
 

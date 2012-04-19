@@ -56,7 +56,7 @@ h2 {
 	padding-left:0;
 }
 
-.removeContainerSpan {
+.removeDiv {
 	width: 140px;
 	text-align: left;
 	vertical-align: middle;
@@ -64,7 +64,7 @@ h2 {
 	margin: 2px;	
 }
 
-.removeContainerSpan a {
+.removeDiv a {
 	text-decoration: none;	
 	color: #315395;
 	font-family: Verdana,Geneva,Arial,sans-serif;
@@ -74,8 +74,6 @@ h2 {
 	line-height: 13px;
 	padding: 3px;
 }
-
-
 
 .addContainerSpan {
 	width: 140px;
@@ -112,6 +110,34 @@ h2 {
 	vertical-align: top;
 	margin-right: 3px;	
 }
+
+.cssIcon {
+	background: url(/html/images/icons/icon_css.png) no-repeat;
+	width:32px;
+	height:32px;
+	display:inline-block;
+	vertical-align: top;
+	margin: 3px;	
+}
+
+.jsIcon {
+	background: url(/html/images/icons/icon_js.png) no-repeat;
+	width:32px;
+	height:32px;
+	display:inline-block;
+	vertical-align: top;
+	margin: 3px;	
+}
+
+.cssIcon h3, .jsIcon h3 {
+	margin-left: 37px;
+	margin-top: 6px;
+	color: #d0d0d0;
+	font-weight: bold;
+	font-size: 14px;
+	font-family: Verdana,Geneva,sans-serif;
+	width: 500px;
+} 
 
 .mockContent {
 	color: #d0d0d0;
@@ -152,7 +178,7 @@ tr.spaceUnder > td
 	vertical-align: text-top;
 }
 
-.titleContainerSpan .removeContainerSpan {
+.titleContainerSpan .removeDiv {
 	float: left;
 	margin: 0pt;
 }
@@ -179,4 +205,52 @@ tr.spaceUnder > td
 .first .titleContainerSpan {
 	width: 80%;
 	padding-bottom: 1px;
+}
+
+#addFileToTemplate {
+	margin: 10px 10px 0pt 0pt;
+	float: right;
+	
+}
+
+#fileContainerDiv {
+	margin: 10px 10px 0pt 0pt;
+}
+
+.cssSpan {
+	border: 1px solid rgb(154, 179, 206);
+	background-color: white;
+	display: block;
+	width: auto;
+	margin-bottom: 7px;
+}
+
+.jsSpan {
+	border: 1px solid rgb(154, 179, 206);
+	background-color: white;
+	display: block;
+	width: auto;
+	margin-bottom: 7px;
+}
+
+.cssSpan .removeDiv, .jsSpan .removeDiv {
+	float: right;
+	margin-top: 7px;
+	text-align: right;
+}
+
+#fileContainerDiv .jsSpan, #fileContainerDiv .cssSpan {
+	margin-left: 10px;
+}	
+
+/* *********************************************************************************************************** */
+/* Container Selector */
+/* *********************************************************************************************************** */
+
+.alertContainerSelector {
+	color: red;
+	font-weight: bold;
+	margin: 5px 25px 15px;
+	padding: 10px;
+	width: 230px;
 }

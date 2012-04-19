@@ -248,31 +248,6 @@ description, distributable, and context-param elements.
     </servlet>
 
     <servlet>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fbottom_jsp</servlet-name>
-        <servlet-class>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fbottom_jsp</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fmenu_jsp</servlet-name>
-        <servlet-class>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fmenu_jsp</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplates_jsp</servlet-name>
-        <servlet-class>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplates_jsp</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fmain_jsp</servlet-name>
-        <servlet-class>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fmain_jsp</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design_005fintegrate.design_005ftemplates_jsp</servlet-name>
-        <servlet-class>org.apache.jsp.html.portlet.ext.templates.design_005fintegrate.design_005ftemplates_jsp</servlet-class>
-    </servlet>
-
-    <servlet>
         <servlet-name>org.apache.jsp.html.portlet.ext.contentlet.import_005fcontentlets_005fresults_jsp</servlet-name>
         <servlet-class>org.apache.jsp.html.portlet.ext.contentlet.import_005fcontentlets_005fresults_jsp</servlet-class>
     </servlet>
@@ -1930,31 +1905,6 @@ description, distributable, and context-param elements.
     <servlet-mapping>
         <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.design_005ftemplates_jsp</servlet-name>
         <url-pattern>/html/portlet/ext/templates/design/design_templates.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fbottom_jsp</servlet-name>
-        <url-pattern>/html/portlet/ext/templates/design/BCK_design_template_bottom.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fmenu_jsp</servlet-name>
-        <url-pattern>/html/portlet/ext/templates/design/BCK_design_template_menu.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplates_jsp</servlet-name>
-        <url-pattern>/html/portlet/ext/templates/design/BCK_design_templates.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design.BCK_005fdesign_005ftemplate_005fmain_jsp</servlet-name>
-        <url-pattern>/html/portlet/ext/templates/design/BCK_design_template_main.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>org.apache.jsp.html.portlet.ext.templates.design_005fintegrate.design_005ftemplates_jsp</servlet-name>
-        <url-pattern>/html/portlet/ext/templates/design_integrate/design_templates.jsp</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
