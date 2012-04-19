@@ -43,7 +43,9 @@ public class TemplateForm extends ValidatorForm {
     /** nullable persistent field */
     private String hostId;
     
-    
+    // BEGIN GRAZIANO issue-12-dnd-template
+    private String drawedBody;
+    // END GRAZIANO issue-12-dnd-template    
     
     private String owner;  // dotcms 472
     
@@ -158,7 +160,14 @@ public class TemplateForm extends ValidatorForm {
 		this.body = body;
 	}
 
-	
+	public String getDrawedBody() {
+		return drawedBody;
+	}
+
+	public void setDrawedBody(String drawedBody) {
+		this.drawedBody = drawedBody;
+	}
+
 
 
 	/**

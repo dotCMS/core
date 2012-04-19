@@ -288,6 +288,7 @@
 			<property column="identifier" length="36" name="identifier" type="string" />
 			<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
 			<property column="drawed" name="drawed" type="boolean" />
+			<property column="drawed_body" name="drawedBody" type="string" length="123456789" />
 			<!-- *********************** END GRAZIANO issue-12-dnd-template -->			
 		</joined-subclass>
 

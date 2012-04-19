@@ -33,8 +33,11 @@ public class Template extends WebAsset implements Serializable, Comparable {
     /** nullable persistent field */
 	private String image;
 	
-	//	*********************** GRAZIANO issue-12-dnd-template
+	//	*********************** BEGIN GRAZIANO issue-12-dnd-template
 	private boolean drawed;
+	
+	private String drawedBody;
+	//	*********************** END GRAZIANO issue-12-dnd-template
 
 	/** default constructor */
 	public Template() {
@@ -167,6 +170,14 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	 */
 	public void setDrawed(boolean drawed) {
 		this.drawed = drawed;
+	}
+		
+	public String getDrawedBody() {
+		return drawedBody;
+	}
+
+	public void setDrawedBody(String drawedBody) {
+		this.drawedBody = drawedBody;
 	}
 
 	public int compareTo(Object compObject){

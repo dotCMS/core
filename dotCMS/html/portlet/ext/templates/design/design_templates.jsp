@@ -10,8 +10,6 @@
 <%@ include file="/html/portlet/ext/templates/init.jsp" %>
 <%@page import="com.dotmarketing.portlets.containers.business.ContainerAPI"%>
 
-<script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
-
 <%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
 
 <style type="text/css">
@@ -21,6 +19,7 @@
 
 <%
  
+	boolean overrideBody = (Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY);
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
 	ContainerAPI containerAPI = APILocator.getContainerAPI();
 	HostAPI hostAPI = APILocator.getHostAPI();
@@ -32,6 +31,11 @@
 	else {
 		template = (com.dotmarketing.portlets.templates.model.Template) com.dotmarketing.factories.InodeFactory.getInode(request.getParameter("inode"),com.dotmarketing.portlets.templates.model.Template.class);
 	}
+	
+	StringBuffer drawedBodyTemplate = new StringBuffer();
+	if(overrideBody)
+		drawedBodyTemplate = new StringBuffer(template.getDrawedBody());
+	
 	//Permissions variables
 	boolean hasOwnerRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole().getId());
 	boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole().getId());
@@ -81,27 +85,25 @@
 	}	
 
 %>
-
+<script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
 <script language="Javascript">
 
 	dojo.require('dotcms.dijit.form.FileSelector');
-	dojo.require('dotcms.dojo.data.ContainerReadStore');
+	dojo.require('dotcms.dojo.data.ContainerReadStoreDrawedTemplate');
 	
 	var referer = '<%=referer%>';
 
 	function submitfm(form,subcmd) {
-		if(dijit.byId("toggleEditor").checked){
-		document.getElementById("bodyField").value=editor.getCode();
-		}
 		if (form.admin_l2) {
 			for (var i = 0; i < form.admin_l2.length; i++) {
 				form.admin_l2.options[i].selected = true;
 			}
 		}
-		form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
+		saveBody();
+		form.<portlet:namespace />cmd.value = '<%=Constants.ADD_DESIGN%>';
 		form.<portlet:namespace />subcmd.value = subcmd;
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
-		submitForm(form);		
+		submitForm(form);
 	}
 	
 	var copyAsset = false;
@@ -142,7 +144,7 @@
 		} else if (file.extension == 'css') {
 			var html = '<link href="' + file.path + file.fileName + '" rel="stylesheet" type="text/css" />';
 		}
-		insertAtCursor(html);
+		addFileToTemplate(html,file);
 	}
 
 	function selectTemplateVersion(objId,referer) {
@@ -176,7 +178,7 @@
 
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
-		drawDefault();
+		drawDefault(<%=overrideBody%>);
 	});
 </script>
 
@@ -227,11 +229,23 @@
 					<input type="text" name="image" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" mimeTypes="image" 
 						value="<%= UtilMethods.isSet(form.getImage())?form.getImage():"" %>" showThumbnail="true" />			
 				</dd>
+				<dd>
+	    			<html:textarea style="display: none" property="body" styleId="bodyField"></html:textarea>
+				</dd>
+				<dd>
+	    			<html:textarea style="display: none" property="drawedBody" styleId="drawedBodyField"></html:textarea>
+				</dd>									
 			</dl>	
 		</div>	
 	</div>
 	<div id="template" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="Design Template" >	
 		<div class="wrapperRight" style="position:relative;" id="containerBodyTemplate">
+			<div id="addFileToTemplate">
+				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
+				</button>			
+			</div>
+			<div class="clear"></div>
 			<div id="bodyTemplate"></div>
 		</div>
 	</div>
@@ -277,14 +291,14 @@
 				<dl>
 					<dt>Header:</dt>						
 					<dd>
-						<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="header" onclick="javascript: addHeader(this.checked)" checked="checked"/>
+						<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="_header" onclick="javascript: addHeader(this.checked)" checked="checked"/>
 					</dd>
 				</dl>	
 				<div class="clear"></div>
 			    <dl>
 					<dt>Footer:</dt>						
 					<dd>
-						<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footer" onclick="javascript: addFooter(this.checked)" checked="checked"/>
+						<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="_footer" onclick="javascript: addFooter(this.checked)" checked="checked"/>
 					</dd>	
 				</dl>
 			</div>
@@ -321,11 +335,7 @@
 		</div>	
 		<div class="clear"></div>
 		<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-		<div id="contentletActionsHanger">
-				<a onClick="printBody()">
-					<span class="saveIcon"></span>
-						Print body
-				</a>		
+		<div id="contentletActionsHanger">		
 			<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
 				<% if ( canUserWriteToTemplate ) { %>
 				<a onClick="submitfm(document.getElementById('fm'),'')">
@@ -371,10 +381,11 @@
 <div dojoAttachPoint="fileBrowser" jsId="fileSelector" onFileSelected="addFileCallback" fileExtensions="js,css" dojoType="dotcms.dijit.FileBrowserDialog">
 </div>
 
-<span dojoType="dotcms.dojo.data.ContainerReadStore" jsId="containerStore"></span>
+<span dojoType="dotcms.dojo.data.ContainerReadStoreDrawedTemplate" jsId="containerStore"></span>
 
 <div dojoType="dijit.Dialog" id="containerSelector" title="<%=LanguageUtil.get(pageContext, "select-a-container")%>">
-	<p>
+	<p class="alertContainerSelector"><%=LanguageUtil.get(pageContext, "only-containers-without-html-tag")%></p>
+	<p style="text-align: center">
 		<%=LanguageUtil.get(pageContext, "Container")%> 
   		<select id="containersList" name="containersList" dojoType="dijit.form.FilteringSelect" 
         	store="containerStore" searchDelay="300" pageSize="10" labelAttr="fullTitle" searchAttr="title" 

@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.struts.TemplateForm;
@@ -176,6 +177,57 @@ public class EditTemplateAction extends DotPortletAction implements
 				_handleException(ae, req);
 			}
 		}		
+
+		if ((cmd != null) && cmd.equals(Constants.ADD_DESIGN)) {
+			try {
+
+				if (Validator.validate(req, form, mapping)) {
+
+					Logger.debug(this, "Calling Save method");
+					_saveWebAsset(req, res, config, form, user);
+
+					String subcmd = req.getParameter("subcmd");
+
+					if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
+						Logger.debug(this, "Calling Publish method");
+						_publishWebAsset(req, res, config, form, user,
+								WebKeys.TEMPLATE_FORM_EDIT);
+
+
+
+					if(!UtilMethods.isSet(referer)) {
+						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+						params.put("struts_action",new String[] {"/ext/templates/view_templates"});
+						referer = PortletURLUtil.getActionURL(req,WindowState.MAXIMIZED.toString(),params);
+					}
+
+
+
+				}
+
+                    try{
+
+
+                        _sendToReferral(req, res, referer);
+                        return;
+                    }
+                    catch(Exception e){
+                        java.util.Map<String,String[]> params = new java.util.HashMap<String,String[]>();
+                        params.put("struts_action",new String[] { "/ext/templates/view_templates" });
+                        String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, WindowState.MAXIMIZED.toString(), params);
+                        _sendToReferral(req, res, directorURL);
+                        return;
+
+                    }
+
+
+				}
+			} catch (Exception ae) {
+				_handleException(ae, req);
+			}
+
+		}
+		
 		// *********************** END GRAZIANO issue-12-dnd-template	
 		
 		/*
@@ -437,7 +489,11 @@ public class EditTemplateAction extends DotPortletAction implements
 		
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
 		// If we are into the design mode we are redirected at the new servlet
-		if((null!=cmd) && cmd.equals(Constants.DESIGN)){
+		if(((null!=cmd) && cmd.equals(Constants.DESIGN))){
+			req.setAttribute(WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY, false);
+			setForward(req, "portlet.ext.templates.design_template");
+		}else if(((Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED))){
+			req.setAttribute(WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY, true);
 			setForward(req, "portlet.ext.templates.design_template");
 		}else
 			setForward(req, "portlet.ext.templates.edit_template");
@@ -522,11 +578,16 @@ public class EditTemplateAction extends DotPortletAction implements
 			cf.setHostId(templateHost.getIdentifier());
 		}
 		cf.setImage(fileAsContent?imageContentlet.getIdentifier():imageFile.getIdentifier());
+		
+		// *********************** BEGIN GRAZIANO issue-12-dnd-template
+		req.setAttribute(WebKeys.TEMPLATE_IS_DRAWED, template.isDrawed());
+		// *********************** END GRAZIANO issue-12-dnd-template
 	}
 
 	@SuppressWarnings("unchecked")
 	public void _saveWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
+		String cmd = req.getParameter(Constants.CMD);
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
@@ -542,7 +603,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		//gets the current template being edited from the request object
 		Template currentTemplate = (Template) req.getAttribute(WebKeys.TEMPLATE_EDIT);
-
+		
 		//Retrieves the host were the template will be assigned to
 		Host host = hostAPI.find(cf.getHostId(), user, false);
 
@@ -568,6 +629,19 @@ public class EditTemplateAction extends DotPortletAction implements
 			newTemplate.setImage(cf.getImage());
 		}
 
+		// *********************** BEGIN GRAZIANO issue-12-dnd-template
+		if(cmd.equals(Constants.ADD_DESIGN))
+			newTemplate.setDrawed(true);
+		
+		// create the body with all the main HTML tags
+		StringBuffer endBody = DesignTemplateUtil.getBody(newTemplate.getBody());
+		
+		// set the drawedBody for future edit
+		newTemplate.setDrawedBody(newTemplate.getBody());
+				
+		newTemplate.setBody(endBody.toString());
+		
+		// *********************** END GRAZIANO issue-12-dnd-template
 
 		APILocator.getTemplateAPI().saveTemplate(newTemplate,host , user, false);
 		APILocator.getVersionableAPI().setLocked(newTemplate, false, user);
@@ -577,8 +651,6 @@ public class EditTemplateAction extends DotPortletAction implements
 		//copies the information back into the form bean
 		BeanUtils.copyProperties(form, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
 		BeanUtils.copyProperties(currentTemplate, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
-
-
 
 
 

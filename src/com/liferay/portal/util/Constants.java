@@ -47,6 +47,8 @@ public interface Constants {
 	
 	// *********************** BEGIN GRAZIANO issue-12-dnd-template	
 	public static final String DESIGN = "design";
+	
+	public static final String ADD_DESIGN = "add_design";
 	// *********************** END GRAZIANO issue-12-dnd-template
 	
 	public static final String REJECT = "reject";
