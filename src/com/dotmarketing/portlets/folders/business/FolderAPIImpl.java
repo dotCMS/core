@@ -111,8 +111,8 @@ public class FolderAPIImpl implements FolderAPI  {
 				HibernateUtil.startTransaction();
 			}
 
-			renamed = renameAndUpdateChildrenParentPath(folder, newName, user, respectFrontEndPermissions);
-
+			return ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
+			
 		} catch (Exception e) {
 
 			if (localTransaction) {
@@ -124,85 +124,82 @@ public class FolderAPIImpl implements FolderAPI  {
 				HibernateUtil.commitTransaction();
 			}
 		}
-
-		return renamed;
-
 	}
 
 
-	private Boolean renameAndUpdateChildrenParentPath(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+//	private Boolean renameAndUpdateChildrenParentPath(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+//
+//		Boolean renamed = false;
 
-		Boolean renamed = false;
-
-		List<Identifier> identifierList = new ArrayList<Identifier>();
-
-
-		Identifier idFolder = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-
-		renamed = updateChildrenParentPath(identifierList, idFolder.getParentPath()+newName+"/", folder, user, respectFrontEndPermissions);
-
-		renamed = renamed & ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
-
-		for (Identifier identifier : identifierList) {
-			APILocator.getIdentifierAPI().save(identifier);
-		}
-
-		return renamed;
-	}
-
-	private Boolean updateChildrenParentPath(List<Identifier> identifierList, String folderPath, Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		List<Folder> folderChildren = findSubFolders(folder, user, respectFrontEndPermissions);
-
-		// recursively update parent path
-		for (Folder childFolder : folderChildren) {
-			// sub deletes use system user - if a user has rights to parent
-			// permission (checked above) they can delete to children
-			updateChildrenParentPath(identifierList, folderPath+childFolder.getName()+"/", childFolder, user, respectFrontEndPermissions);
-
-			Identifier id = APILocator.getIdentifierAPI().find(childFolder.getIdentifier());
-			id.setParentPath(folderPath);
-			identifierList.add(id);
-		}
+//		List<Identifier> identifierList = new ArrayList<Identifier>();
 
 
-		ContentletAPI capi = APILocator.getContentletAPI();
+//		Identifier idFolder = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 
+		//renamed = updateChildrenParentPath(identifierList, idFolder.getParentPath()+newName+"/", folder, user, respectFrontEndPermissions);
 
-		List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
-		List<HTMLPage> htmlPages = getHTMLPages(folder, user, respectFrontEndPermissions);
-		List<File> files = getFiles(folder, user, respectFrontEndPermissions);
-		List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
+//		renamed = renamed & 
 
-		/************ conList *****************/
-		for (Contentlet c : conList) {
-			Identifier iden = APILocator.getIdentifierAPI().find(c.getIdentifier());
-			iden.setParentPath(folderPath);
-			identifierList.add(iden);
-		}
+//		for (Identifier identifier : identifierList) {
+//			APILocator.getIdentifierAPI().save(identifier);
+//		}
+//
+//		return renamed;
+//	}
 
-		/************ htmlPages *****************/
-		for (HTMLPage page : htmlPages) {
-			Identifier iden = APILocator.getIdentifierAPI().find(page.getIdentifier());
-			iden.setParentPath(folderPath);
-			identifierList.add(iden);
-		}
-
-		/************ Files *****************/
-		for (File file : files) {
-			Identifier iden = APILocator.getIdentifierAPI().find(file.getIdentifier());
-			iden.setParentPath(folderPath);
-			identifierList.add(iden);
-		}
-
-		/************ Links *****************/
-		for (Link linker : links) {
-			Identifier iden = APILocator.getIdentifierAPI().find(linker.getIdentifier());
-			iden.setParentPath(folderPath);
-			identifierList.add(iden);
-		}
-
-		return true;
-	}
+//	private Boolean updateChildrenParentPath(List<Identifier> identifierList, String folderPath, Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+//		List<Folder> folderChildren = findSubFolders(folder, user, respectFrontEndPermissions);
+//
+//		// recursively update parent path
+//		for (Folder childFolder : folderChildren) {
+//			// sub deletes use system user - if a user has rights to parent
+//			// permission (checked above) they can delete to children
+//			updateChildrenParentPath(identifierList, folderPath+childFolder.getName()+"/", childFolder, user, respectFrontEndPermissions);
+//
+//			Identifier id = APILocator.getIdentifierAPI().find(childFolder.getIdentifier());
+//			id.setParentPath(folderPath);
+//			identifierList.add(id);
+//		}
+//
+//
+//		ContentletAPI capi = APILocator.getContentletAPI();
+//
+//
+//		List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
+//		List<HTMLPage> htmlPages = getHTMLPages(folder, user, respectFrontEndPermissions);
+//		List<File> files = getFiles(folder, user, respectFrontEndPermissions);
+//		List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
+//
+//		/************ conList *****************/
+//		for (Contentlet c : conList) {
+//			Identifier iden = APILocator.getIdentifierAPI().find(c.getIdentifier());
+//			iden.setParentPath(folderPath);
+//			identifierList.add(iden);
+//		}
+//
+//		/************ htmlPages *****************/
+//		for (HTMLPage page : htmlPages) {
+//			Identifier iden = APILocator.getIdentifierAPI().find(page.getIdentifier());
+//			iden.setParentPath(folderPath);
+//			identifierList.add(iden);
+//		}
+//
+//		/************ Files *****************/
+//		for (File file : files) {
+//			Identifier iden = APILocator.getIdentifierAPI().find(file.getIdentifier());
+//			iden.setParentPath(folderPath);
+//			identifierList.add(iden);
+//		}
+//
+//		/************ Links *****************/
+//		for (Link linker : links) {
+//			Identifier iden = APILocator.getIdentifierAPI().find(linker.getIdentifier());
+//			iden.setParentPath(folderPath);
+//			identifierList.add(iden);
+//		}
+//
+//		return true;
+//	}
 
 
 	public Folder findParentFolder(Treeable asset, User user, boolean respectFrontEndPermissions) throws DotIdentifierStateException,
