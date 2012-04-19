@@ -246,28 +246,6 @@ BEGIN
   RETURN cursor_ret;
 END;
 /
-create or replace FUNCTION load_records_to_index(server_id VARCHAR2, records_to_fetch NUMBER)
-   RETURN types.ref_cursor IS
- cursor_ret types.ref_cursor;
- cursor dj_cursor is
-   SELECT * FROM dist_reindex_journal
-   WHERE serverid IS NULL
-   ORDER BY priority ASC
-   FOR UPDATE;
-   x number;
-BEGIN
-  x:=0;
-  FOR dj in dj_cursor
-  LOOP
-    UPDATE dist_reindex_journal SET serverid=server_id WHERE id=dj.id;
-    x:=x+1;
-    EXIT WHEN x>=records_to_fetch;
-  END LOOP;
-  OPEN cursor_ret FOR
-    select * from dist_reindex_journal where serverid=server_id;
-  RETURN cursor_ret;
-END;
-/
 CREATE OR REPLACE PACKAGE check_parent_path_pkg as
     type ridArray is table of rowid index by binary_integer;
     newRows ridArray;
