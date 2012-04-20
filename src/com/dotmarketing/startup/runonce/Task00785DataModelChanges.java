@@ -1294,11 +1294,18 @@ public class Task00785DataModelChanges implements StartupTask  {
 			             		     "alter table htmlpage add identifier varchar(36);"+
 			             		     "alter table file_asset add identifier varchar(36);" +
 			             			 "alter table contentlet add identifier varchar(36);" +
-			             			 "alter table links add identifier varchar(36);";
-
+			             			 "alter table links add identifier varchar(36);";		
+		
 	    if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-		  addConstraint = "ALTER TABLE identifier change inode id varchar(36);" +
-						  "ALTER TABLE identifier drop index uri;";
+	        try {
+	            dc.executeStatement("alter table identifier drop foreign key host_inode_fk");
+	            dc.executeStatement("alter table identifier drop index host_inode_fk");
+	        }
+	        catch(Exception ex) {
+	            Logger.info(this, "no need to drop host_inode_fk");
+	        }
+	        addConstraint = "ALTER TABLE identifier change inode id varchar(36);" +
+						    "ALTER TABLE identifier drop index uri;";
 	    }else  if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 		    dc.setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS where table_name='identifier' and constraint_type<>'FOREIGN KEY'");
 		    List<Map<String, String>> results = dc.getResults();
@@ -1324,6 +1331,11 @@ public class Task00785DataModelChanges implements StartupTask  {
 	   		  				"ALTER TABLE identifier DROP UNIQUE (uri,host_inode);";
 		    addIdentifierColumn=addIdentifierColumn.replaceAll("varchar\\(", "varchar2\\(");
 		}else{
+		    try {
+                dc.executeStatement("alter table identifier drop constraint host_inode_fk");
+            } catch(Exception ex) {
+                Logger.info(this, "no need to drop host_inode_fk");
+            }
 		   addConstraint = "ALTER TABLE identifier add id varchar(36);" +
 				   		   "UPDATE identifier set id = cast(inode as varchar(36));" +
 				   		   "ALTER TABLE identifier drop column inode;" +
