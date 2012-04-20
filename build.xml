@@ -399,7 +399,7 @@
 
 		<antcall target="deploy-core" />
 
-		<copy todir="${distribution.output}">
+		<copy todir="${distribution.dotserver.output}">
 			<fileset dir=".">
 				<exclude name="**/.svn" />
 				<exclude name="tomcat/logs/**" />
@@ -417,8 +417,8 @@
 				<exclude name=".settings/**" />
 			</fileset>
 		</copy>
-		<mkdir dir="${distribution.output}/tomcat/logs" />
-		<mkdir dir="${distribution.output}/tomcat/temp" />
+		<mkdir dir="${distribution.dotserver.output}/tomcat/logs" />
+	  	<mkdir dir="${distribution.dotserver.output}/tomcat/temp" />
 
 		<antcall target="javadoc" />
 
