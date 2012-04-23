@@ -3,6 +3,7 @@ package com.dotmarketing.business;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +40,67 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	IdentifierCache ic = CacheLocator.getIdentifierCache();
 
+	@Override
+	protected List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean pullDeleted,boolean include,Host host)throws DotDataException {
+		return findByURIPattern(assetType, uri, hasLive, pullDeleted,include, host, null, null);
+	}
+	
+	@Override
+	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean pullDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
+		if(assetType.equals(new HTMLPage().getType())){
+			bob.append("join " + assetType + "_version_info vi on (i.id = vi.identifier) join " + assetType + " a on (" + (hasLive ? "vi.live_inode":"vi.working_inode") + " = a.inode) ");
+		}
+		
+		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+			bob.append("where concat(parent_path, asset_name) ");
+		}else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+			bob.append("where (parent_path + asset_name) ");
+		}else {
+			bob.append("where (parent_path || asset_name) ");
+		}
+		bob.append((include ? "":"NOT ") + "LIKE ? and host_inode = ? and asset_type = ? ");
+		if(startDate != null){
+			bob.append(" and a.mod_date >= ? ");
+		}
+		if(endDate != null){
+			bob.append(" and a.mod_date <= ? ");
+		}
+		if(!pullDeleted){
+			bob.append(" and vi.deleted=" + DbConnectionFactory.getDBFalse() + " ");
+		}
+		dc.setSQL(bob.toString());
+		dc.addParam(uri.replace("*", "%"));
+		dc.addParam(host.getIdentifier());
+		dc.addParam(assetType);
+		if(startDate != null){
+			dc.addParam(startDate);
+		}
+		if(endDate != null){
+			dc.addParam(endDate);
+		}
+		return convertDotConnectMapToPOJO(dc.loadResults());
+	}
+	
+	private List<Identifier> convertDotConnectMapToPOJO(List<Map<String,String>> results){
+		List<Identifier> ret = new ArrayList<Identifier>();
+		if(results == null || results.size()==0){
+			return ret;
+		}
+		
+		for (Map<String, String> map : results) {
+			Identifier i = new Identifier();
+			i.setAssetName(map.get("asset_name"));
+			i.setAssetType(map.get("asset_type"));
+			i.setHostId(map.get("host_inode"));
+			i.setId(map.get("id"));
+			i.setParentPath(map.get("parent_path"));
+			ret.add(i);
+		}
+		return ret;
+	}
+	
 	protected void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException {
 
 		Identifier identifier = find(webasset);

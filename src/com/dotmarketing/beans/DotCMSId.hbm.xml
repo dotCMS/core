@@ -1391,8 +1391,11 @@
         <property column="live_inode"    name="liveInode"    length="36"  type="string"  not-null="false"/>
         <property column="deleted"       name="deleted"                   type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                  type="java.sql.Timestamp"    not-null="false"/>
-    </class>
+
+
+       <property column="locked_on"     name="lockedOn"                  type="java.sql.Timestamp"    not-null="false"/>
+
+   </class>
     <class name="com.dotmarketing.portlets.templates.model.TemplateVersionInfo" table="template_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
             <generator class="assigned"/>
