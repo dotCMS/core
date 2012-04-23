@@ -1375,57 +1375,81 @@ public class Task00785DataModelChanges implements StartupTask  {
 		String identifier = "";
 		List<Map<String, String>> containerList = getAssetIdentifiers("containers");
 		for(Map<String,String> container:containerList){
-			inode = container.get("inode");
-			identifier = container.get("identifier");
-			dc.setSQL("Update containers set identifier = ? where inode=?");
-			dc.addParam(identifier);
-			dc.addParam(inode);
-			dc.loadResult();
+		    inode = container.get("inode");
+            identifier = container.get("identifier");
+			try {
+    			dc.setSQL("Update containers set identifier = ? where inode=?");
+    			dc.addParam(identifier);
+    			dc.addParam(inode);
+    			dc.loadResult();
+			} catch(Exception ex) {
+			    Logger.warn(this,"can't update identifier "+identifier+" on container "+inode+" maybe is orphan");
+			}
 	    }
 		List<Map<String, String>> templateList = getAssetIdentifiers("template");
 		for(Map<String,String> template:templateList){
 		   inode = template.get("inode");
 		   identifier = template.get("identifier");
-		   dc.setSQL("Update template set identifier = ? where inode=?");
-		   dc.addParam(identifier);
-		   dc.addParam(inode);
-		   dc.loadResult();
+		   try {
+    		   dc.setSQL("Update template set identifier = ? where inode=?");
+    		   dc.addParam(identifier);
+    		   dc.addParam(inode);
+    		   dc.loadResult();
+		   } catch(Exception ex) {
+		       Logger.warn(this,"can't update identifier "+identifier+" on template "+inode+" maybe is orphan");
+		   }
 	    }
 		List<Map<String,String>> htmlpageList = getAssetIdentifiers("htmlpage");
 		for(Map<String,String> htmlpage:htmlpageList){
 			inode = htmlpage.get("inode");
 			identifier = htmlpage.get("identifier");
-			dc.setSQL("Update htmlpage set identifier =? where inode=?");
-			dc.addParam(identifier);
-			dc.addObject(inode);
-			dc.loadResult();
+			try {
+    			dc.setSQL("Update htmlpage set identifier =? where inode=?");
+    			dc.addParam(identifier);
+    			dc.addObject(inode);
+    			dc.loadResult();
+			} catch(Exception ex) {
+			    Logger.warn(this,"can't update identifier "+identifier+" on htmlpage "+inode+" maybe is orphan");
+			}
 		}
 		List<Map<String,String>> file_assetList = getAssetIdentifiers("file_asset");
 		for(Map<String,String> file_asset:file_assetList){
 			inode = file_asset.get("inode");
 			identifier = file_asset.get("identifier");
-			dc.setSQL("Update file_asset set identifier =? where inode=?");
-			dc.addParam(identifier);
-			dc.addObject(inode);
-			dc.loadResult();
+			try {
+    			dc.setSQL("Update file_asset set identifier =? where inode=?");
+    			dc.addParam(identifier);
+    			dc.addObject(inode);
+    			dc.loadResult();
+			} catch(Exception ex) {
+			    Logger.warn(this,"can't update identifier "+identifier+" on file_asset "+inode+" maybe is orphan");
+			}
 		}
 		List<Map<String,String>> contentletList = getAssetIdentifiers("contentlet");
 		for(Map<String,String> contentlet:contentletList){
 			inode = contentlet.get("inode");
 			identifier = contentlet.get("identifier");
-			dc.setSQL("Update contentlet set identifier =? where inode=?");
-			dc.addParam(identifier);
-			dc.addObject(inode);
-			dc.loadResult();
+			try {
+    			dc.setSQL("Update contentlet set identifier =? where inode=?");
+    			dc.addParam(identifier);
+    			dc.addObject(inode);
+    			dc.loadResult();
+			} catch(Exception ex) {
+			    Logger.warn(this,"can't update identifier "+identifier+" on contentlet "+inode+" maybe is orphan");
+			}
 		}
 		List<Map<String,String>> linksList = getAssetIdentifiers("links");
 		for(Map<String,String> links:linksList){
 			inode = links.get("inode");
 			identifier = links.get("identifier");
-			dc.setSQL("Update links set identifier =? where inode=?");
-			dc.addParam(identifier);
-			dc.addObject(inode);
-			dc.loadResult();
+			try {
+    			dc.setSQL("Update links set identifier =? where inode=?");
+    			dc.addParam(identifier);
+    			dc.addObject(inode);
+    			dc.loadResult();
+			} catch(Exception ex) {
+			    Logger.warn(this,"can't update identifier "+identifier+" on link "+inode+" maybe is orphan");
+			}
 		}
 		List<String> constraintList = SQLUtil.tokenize(addConstraint);
 		for(String constraint : constraintList){
