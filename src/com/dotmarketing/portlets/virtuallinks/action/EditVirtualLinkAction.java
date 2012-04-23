@@ -184,7 +184,7 @@ public class EditVirtualLinkAction extends DotPortletAction {
         VirtualLink vl = null;
         try{
         	vl = VirtualLinkFactory.getVirtualLinkByURL(completeUrl);
-        	if(vl == null){
+        	if(vl == null || !UtilMethods.isSet(vl.getIdentifier())){
         		vl = new VirtualLink();
         		vl.setUrl(completeUrl);
         	}

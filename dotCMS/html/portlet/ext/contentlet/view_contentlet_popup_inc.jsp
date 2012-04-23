@@ -84,6 +84,7 @@ function setupTinyMce(){
 		}, function() {
 			tinyMCE.init({
 			mode : "textareas",
+			editor_deselector : "mceNoEditor",
 			theme : "advanced",
 			readonly:true,
 			plugins : "noneditable",

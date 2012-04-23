@@ -14,7 +14,7 @@ CREATE INDEX idx_permission_reference_4 ON permission_reference (asset_id,permis
 CREATE INDEX idx_permission_reference_5 ON permission_reference (asset_id,reference_id,permission_type);
 CREATE INDEX idx_permission_reference_6 ON permission_reference (permission_type);
 
-CREATE UNIQUE INDEX idx_field_velocity_structure ON field (velocity_var_name,structure_inode); 
+CREATE UNIQUE INDEX idx_field_velocity_structure ON field (velocity_var_name,structure_inode);
 
 alter table chain_state add constraint fk_state_chain foreign key (chain_id) references chain(id);
 alter table chain_state add constraint fk_state_code foreign key (link_code_id) references chain_link_code(id);
@@ -54,13 +54,13 @@ begin
 end;
 /
 
-CREATE TABLE dist_process ( ID INTEGER NOT NULL , OBJECT_TO_INDEX VARCHAR2(255), SERVERID VARCHAR2(64), JOURNAL_TYPE INTEGER, TIME_ENTERED TIMESTAMP, PRIMARY KEY (ID) VALIDATE ); 
+CREATE TABLE dist_process ( ID INTEGER NOT NULL , OBJECT_TO_INDEX VARCHAR2(255), SERVERID VARCHAR2(64), JOURNAL_TYPE INTEGER, TIME_ENTERED TIMESTAMP, PRIMARY KEY (ID) VALIDATE );
 CREATE SEQUENCE dist_process_id_seq START WITH 1 INCREMENT BY 1;
 create trigger dist_process_trg
-before insert on dist_process 
-for each row 
-when (new.id is null) 
-begin 
+before insert on dist_process
+for each row
+when (new.id is null)
+begin
 select dist_process_id_seq.nextval into :new.id from dual;
 end;
 /
@@ -68,17 +68,17 @@ end;
 CREATE INDEX dist_process_index on dist_process (object_to_index, serverid,journal_type);
 
 
-CREATE TABLE dist_reindex_journal ( 
-  ID INTEGER NOT NULL , 
+CREATE TABLE dist_reindex_journal (
+  ID INTEGER NOT NULL ,
   INODE_TO_INDEX varchar2(100),
-  IDENT_TO_INDEX varchar2(100), 
-  SERVERID VARCHAR2(64), 
-  priority INTEGER, 
-  TIME_ENTERED TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+  IDENT_TO_INDEX varchar2(100),
+  SERVERID VARCHAR2(64),
+  priority INTEGER,
+  TIME_ENTERED TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   index_val varchar2(325) ,
-  dist_action INTEGER DEFAULT 1 NOT NULL, 
+  dist_action INTEGER DEFAULT 1 NOT NULL,
   PRIMARY KEY (ID) VALIDATE);
-		
+
 CREATE INDEX dist_reindex_index1 on dist_reindex_journal (inode_to_index);
 CREATE INDEX dist_reindex_index2 on dist_reindex_journal (dist_action);
 CREATE INDEX dist_reindex_index3 on dist_reindex_journal (serverid);
@@ -88,7 +88,7 @@ CREATE INDEX dist_reindex_index5 ON dist_reindex_journal (priority, time_entered
 CREATE INDEX dist_reindex_index6 ON dist_reindex_journal (priority);
 
 CREATE SEQUENCE dist_reindex_id_seq START WITH 1 INCREMENT BY 1;
-		
+
 create trigger dist_reindex_journal_trg
 		before insert on dist_reindex_journal
 		for each row
@@ -97,9 +97,9 @@ create trigger dist_reindex_journal_trg
 		select dist_reindex_id_seq.nextval into :new.id from dual;
 		end;
 /
-		
 
-CREATE TABLE quartz_log ( ID INTEGER NOT NULL , JOB_NAME VARCHAR2(255), SERVERID VARCHAR2(64),  TIME_STARTED TIMESTAMP, PRIMARY KEY (ID) VALIDATE ); 
+
+CREATE TABLE quartz_log ( ID INTEGER NOT NULL , JOB_NAME VARCHAR2(255), SERVERID VARCHAR2(64),  TIME_STARTED TIMESTAMP, PRIMARY KEY (ID) VALIDATE );
 
 create table plugin_property (
    plugin_id varchar2(255) not null,
@@ -113,10 +113,10 @@ alter table plugin_property add constraint fk_plugin_plugin_property foreign key
 
 CREATE SEQUENCE quartz_log_id_seq START WITH 1 INCREMENT BY 1;
 create trigger quartz_log_trg
-before insert on quartz_log 
-for each row 
-when (new.id is null) 
-begin 
+before insert on quartz_log
+for each row
+when (new.id is null)
+begin
 select quartz_log_id_seq.nextval into :new.id from dual;
 end;
 /
@@ -147,8 +147,8 @@ alter table cms_layouts_portlets add constraint fkcms_layouts_portlets foreign k
 ALTER TABLE users_cms_roles ADD CONSTRAINT users_cms_roles1_unique UNIQUE (role_id, user_id);
 alter table users_cms_roles add constraint fkusers_cms_roles1 foreign key (role_id) references cms_role;
 alter table users_cms_roles add constraint fkusers_cms_roles2 foreign key (user_id) references user_;
-		
-ALTER TABLE layouts_cms_roles ADD CONSTRAINT layouts_cms_roles1_unique UNIQUE (role_id, layout_id);		
+
+ALTER TABLE layouts_cms_roles ADD CONSTRAINT layouts_cms_roles1_unique UNIQUE (role_id, layout_id);
 alter table layouts_cms_roles add constraint fklayouts_cms_roles1 foreign key (role_id) references cms_role;
 alter table layouts_cms_roles add constraint fklayouts_cms_roles2 foreign key (layout_id) references cms_layout;
 
@@ -159,13 +159,13 @@ ALTER TABLE file_asset add constraint file_identifier_fk foreign key (identifier
 ALTER TABLE contentlet add constraint content_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE links add constraint links_identifier_fk foreign key (identifier) references identifier(id);
 
-create table import_audit ( 
+create table import_audit (
 	id integer not null,
 	start_date timestamp,
-	userid varchar(255), 
-	filename varchar(512), 
+	userid varchar(255),
+	filename varchar(512),
 	status integer,
-	last_inode varchar(100), 
+	last_inode varchar(100),
 	records_to_import integer,
 	serverid varchar(255),
 	primary key (id)
@@ -177,7 +177,7 @@ alter table import_audit add( warnings nclob,
 	errors nclob,
 	results nclob,
 	messages nclob);
-	
+
 alter table structure modify host default 'SYSTEM_HOST';
 alter table structure modify folder default 'SYSTEM_FOLDER';
 alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
@@ -210,16 +210,16 @@ BEGIN
     END IF;
 END;
 /
-create or replace 
- PACKAGE types 
+create or replace
+ PACKAGE types
 AS
 TYPE ref_cursor IS REF CURSOR;
 END;
 /
 CREATE OR REPLACE TYPE reindex_record AS OBJECT (
-  ID INTEGER, 
+  ID INTEGER,
   INODE_TO_INDEX varchar2(36),
-  IDENT_TO_INDEX varchar2(36), 
+  IDENT_TO_INDEX varchar2(36),
   priority INTEGER,
   dist_action INTEGER
 );
@@ -228,7 +228,7 @@ CREATE OR REPLACE TYPE reindex_record_list IS TABLE OF reindex_record;
 /
 CREATE OR REPLACE FUNCTION load_records_to_index(server_id VARCHAR2, records_to_fetch NUMBER)
    RETURN types.ref_cursor IS
- cursor_ret types.ref_cursor; 
+ cursor_ret types.ref_cursor;
  data_ret reindex_record_list;
 BEGIN
   data_ret := reindex_record_list();
@@ -246,42 +246,20 @@ BEGIN
   RETURN cursor_ret;
 END;
 /
-create or replace FUNCTION load_records_to_index(server_id VARCHAR2, records_to_fetch NUMBER)
-   RETURN types.ref_cursor IS
- cursor_ret types.ref_cursor;
- cursor dj_cursor is
-   SELECT * FROM dist_reindex_journal
-   WHERE serverid IS NULL
-   ORDER BY priority ASC
-   FOR UPDATE;
-   x number;
-BEGIN
-  x:=0;
-  FOR dj in dj_cursor
-  LOOP
-    UPDATE dist_reindex_journal SET serverid=server_id WHERE id=dj.id;
-    x:=x+1;
-    EXIT WHEN x>=records_to_fetch;
-  END LOOP;
-  OPEN cursor_ret FOR
-    select * from dist_reindex_journal where serverid=server_id;
-  RETURN cursor_ret;
-END;
-/
 CREATE OR REPLACE PACKAGE check_parent_path_pkg as
     type ridArray is table of rowid index by binary_integer;
     newRows ridArray;
-    empty   ridArray; 
+    empty   ridArray;
 END;
 /
 CREATE OR REPLACE TRIGGER check_parent_path_bi
-BEFORE INSERT OR UPDATE ON identifier 
+BEFORE INSERT OR UPDATE ON identifier
 BEGIN
   check_parent_path_pkg.newRows := check_parent_path_pkg.empty;
 END;
 /
 CREATE OR REPLACE TRIGGER check_parent_path_aifer
-AFTER INSERT OR UPDATE ON identifier 
+AFTER INSERT OR UPDATE ON identifier
 FOR EACH ROW
 BEGIN
    check_parent_path_pkg.newRows(check_parent_path_pkg.newRows.count+1) := :new.rowid;
@@ -301,9 +279,9 @@ BEGIN
         return;
       ELSE
         select count(*) into rowcount from identifier where asset_type='folder' and host_inode = hostInode and parent_path||asset_name||'/' = parentPath and id <> assetIdentifier;
-        IF (rowcount = 0) THEN    
-           RAISE_APPLICATION_ERROR(-20000, 'Cannot insert/update for this path does not exist for the given host');      
-        END IF;   
+        IF (rowcount = 0) THEN
+           RAISE_APPLICATION_ERROR(-20000, 'Cannot insert/update for this path does not exist for the given host');
+        END IF;
       END IF;
 END LOOP;
 END;
@@ -323,8 +301,8 @@ END;
 CREATE OR REPLACE TRIGGER htmlpage_versions_bdfer
 BEFORE DELETE ON htmlpage
 FOR EACH ROW
-BEGIN      
-   htmlpage_pkg.oldvals(htmlpage_pkg.oldvals.count+1).identifier := :old.identifier;  
+BEGIN
+   htmlpage_pkg.oldvals(htmlpage_pkg.oldvals.count+1).identifier := :old.identifier;
 END;
 /
 CREATE OR REPLACE TRIGGER htmlpage_versions_trigger
@@ -332,12 +310,12 @@ AFTER DELETE ON htmlpage
 DECLARE
    versionsCount integer;
 BEGIN
-   for i in 1 .. htmlpage_pkg.oldvals.count LOOP 
+   for i in 1 .. htmlpage_pkg.oldvals.count LOOP
      select count(*) into versionsCount from htmlpage where identifier = htmlpage_pkg.oldvals(i).identifier;
-     IF (versionsCount = 0)THEN  
+     IF (versionsCount = 0)THEN
 	 DELETE from identifier where id = htmlpage_pkg.oldvals(i).identifier;
      END IF;
-   END LOOP; 
+   END LOOP;
 END;
 /
 CREATE OR REPLACE PACKAGE file_pkg as
@@ -356,20 +334,20 @@ CREATE OR REPLACE TRIGGER file_versions_bdfer
 BEFORE DELETE ON file_asset
 FOR EACH ROW
 BEGIN
-    file_pkg.oldvals(file_pkg.oldvals.count+1).identifier := :old.identifier;  
+    file_pkg.oldvals(file_pkg.oldvals.count+1).identifier := :old.identifier;
 END;
 /
-CREATE OR REPLACE TRIGGER  file_versions_trigger 
+CREATE OR REPLACE TRIGGER  file_versions_trigger
 AFTER DELETE ON file_asset
 DECLARE
    versionsCount integer;
 BEGIN
-   for i in 1 .. file_pkg.oldvals.count LOOP 
+   for i in 1 .. file_pkg.oldvals.count LOOP
     select count(*) into versionsCount from file_asset where identifier = file_pkg.oldvals(i).identifier;
-     IF (versionsCount = 0)THEN  
-	 DELETE from identifier where id = file_pkg.oldvals(i).identifier; 
+     IF (versionsCount = 0)THEN
+	 DELETE from identifier where id = file_pkg.oldvals(i).identifier;
      END IF;
-   END LOOP; 
+   END LOOP;
 END;
 /
 CREATE OR REPLACE PACKAGE content_pkg as
@@ -388,20 +366,20 @@ CREATE OR REPLACE TRIGGER  content_versions_bdfer
 BEFORE DELETE ON contentlet
 FOR EACH ROW
 BEGIN
-    content_pkg.oldvals(content_pkg.oldvals.count+1).identifier := :old.identifier;  
+    content_pkg.oldvals(content_pkg.oldvals.count+1).identifier := :old.identifier;
 END;
 /
-CREATE OR REPLACE TRIGGER  content_versions_trigger 
+CREATE OR REPLACE TRIGGER  content_versions_trigger
 AFTER DELETE ON contentlet
 DECLARE
    versionsCount integer;
 BEGIN
-   for i in 1 .. content_pkg.oldvals.count LOOP 
+   for i in 1 .. content_pkg.oldvals.count LOOP
      select count(*) into versionsCount from contentlet where identifier = content_pkg.oldvals(i).identifier;
-     IF (versionsCount = 0)THEN  
+     IF (versionsCount = 0)THEN
 	   DELETE from identifier where id = content_pkg.oldvals(i).identifier;
      END IF;
-   END LOOP; 
+   END LOOP;
 END;
 /
 CREATE OR REPLACE PACKAGE link_pkg as
@@ -420,20 +398,20 @@ CREATE OR REPLACE TRIGGER link_versions_bdfer
 BEFORE DELETE ON links
 FOR EACH ROW
 BEGIN
-    link_pkg.oldvals(link_pkg.oldvals.count+1).identifier := :old.identifier;  
+    link_pkg.oldvals(link_pkg.oldvals.count+1).identifier := :old.identifier;
 END;
 /
-CREATE OR REPLACE TRIGGER link_versions_trigger 
+CREATE OR REPLACE TRIGGER link_versions_trigger
 AFTER DELETE ON links
 DECLARE
    versionsCount integer;
 BEGIN
-   for i in 1 .. link_pkg.oldvals.count LOOP 
+   for i in 1 .. link_pkg.oldvals.count LOOP
       select count(*) into versionsCount from links where identifier = link_pkg.oldvals(i).identifier;
-      IF (versionsCount = 0)THEN  
+      IF (versionsCount = 0)THEN
 	  DELETE from identifier where id = link_pkg.oldvals(i).identifier;
       END IF;
-END LOOP; 
+END LOOP;
 END;
 /
 CREATE OR REPLACE PACKAGE container_pkg as
@@ -452,20 +430,20 @@ CREATE OR REPLACE TRIGGER container_versions_bdfer
 BEFORE DELETE ON containers
 FOR EACH ROW
 BEGIN
-     container_pkg.oldvals(container_pkg.oldvals.count+1).identifier := :old.identifier;  
+     container_pkg.oldvals(container_pkg.oldvals.count+1).identifier := :old.identifier;
 END;
 /
-CREATE OR REPLACE TRIGGER container_versions_trigger 
+CREATE OR REPLACE TRIGGER container_versions_trigger
 AFTER DELETE ON containers
 DECLARE
   versionsCount integer;
 BEGIN
-   for i in 1 .. container_pkg.oldvals.count LOOP 
+   for i in 1 .. container_pkg.oldvals.count LOOP
      select count(*) into versionsCount from containers where identifier = container_pkg.oldvals(i).identifier;
-     IF (versionsCount = 0)THEN  
+     IF (versionsCount = 0)THEN
 	  DELETE from identifier where id = container_pkg.oldvals(i).identifier;
      END IF;
-   END LOOP;    
+   END LOOP;
 END;
 /
 CREATE OR REPLACE PACKAGE template_pkg as
@@ -484,20 +462,20 @@ CREATE OR REPLACE TRIGGER template_versions_bdfer
 BEFORE DELETE ON template
 FOR EACH ROW
 BEGIN
-   template_pkg.oldvals(template_pkg.oldvals.count+1).identifier := :old.identifier;  
+   template_pkg.oldvals(template_pkg.oldvals.count+1).identifier := :old.identifier;
 END;
 /
-CREATE OR REPLACE TRIGGER template_versions_trigger 
+CREATE OR REPLACE TRIGGER template_versions_trigger
 AFTER DELETE ON template
 DECLARE
   versionsCount integer;
 BEGIN
   for i in 1 .. template_pkg.oldvals.count LOOP
     select count(*) into versionsCount from template where identifier = template_pkg.oldvals(i).identifier;
-    IF (versionsCount = 0)THEN  
-	DELETE from identifier where id = template_pkg.oldvals(i).identifier; 
+    IF (versionsCount = 0)THEN
+	DELETE from identifier where id = template_pkg.oldvals(i).identifier;
     END IF;
-  END LOOP; 
+  END LOOP;
 END;
 /
 
@@ -590,8 +568,8 @@ END;
 CREATE OR REPLACE TRIGGER check_child_assets_bdfer
 BEFORE DELETE ON identifier
 FOR EACH ROW
-Declare 
-  i    number default child_assets_pkg.oldvals.count+1; 
+Declare
+  i    number default child_assets_pkg.oldvals.count+1;
 BEGIN
   child_assets_pkg.oldvals(i).id := :old.id;
   child_assets_pkg.oldvals(i).asset_type := :old.asset_type;
@@ -622,32 +600,29 @@ CREATE OR REPLACE PROCEDURE renameFolderChildren(oldPath IN varchar2,newPath IN 
   newFolderPath varchar2(100);
   oldFolderPath varchar2(100);
   assetName varchar2(100);
-BEGIN 
- UPDATE identifier SET  parent_path  = newPath where parent_path = oldPath and host_inode = hostInode;
- DECLARE CURSOR folder_data_cursor IS
-   select * from identifier where asset_type='folder' and parent_path = newPath and host_inode = hostInode;
 BEGIN
- FOR i in folder_data_cursor
-  LOOP 
-   EXIT WHEN folder_data_cursor%NOTFOUND;
+ UPDATE identifier SET  parent_path  = newPath where parent_path = oldPath and host_inode = hostInode;
+ FOR i in (select * from identifier where asset_type='folder' and parent_path = newPath and host_inode = hostInode)
+  LOOP
    newFolderPath := newPath || i.asset_name || '/';
    oldFolderPath := oldPath || i.asset_name || '/';
    renameFolderChildren(oldFolderPath,newFolderPath,hostInode);
   END LOOP;
 END;
-END;
 /
-CREATE OR REPLACE TRIGGER rename_folder_assets_trigger 
+CREATE OR REPLACE TRIGGER rename_folder_assets_trigger
 AFTER UPDATE ON Folder
 FOR EACH ROW
 DECLARE
  oldPath varchar2(100);
- newPath varchar2(100); 
+ newPath varchar2(100);
  hostInode varchar2(100);
-BEGIN 
-  SELECT parent_path||asset_name||'/',parent_path ||:NEW.name||'/',host_inode INTO oldPath,newPath,hostInode from identifier where id = :NEW.identifier;
-  UPDATE identifier SET asset_name = :NEW.name where id = :NEW.identifier; 
-  renameFolderChildren(oldPath,newPath,hostInode);
+BEGIN
+	IF :NEW.name <> :OLD.name THEN
+      SELECT parent_path||asset_name||'/',parent_path ||:NEW.name||'/',host_inode INTO oldPath,newPath,hostInode from identifier where id = :NEW.identifier;
+      UPDATE identifier SET asset_name = :NEW.name where id = :NEW.identifier;
+      renameFolderChildren(oldPath,newPath,hostInode);
+    END IF;
 END;
 /
 CREATE OR REPLACE FUNCTION dotFolderPath(parent_path IN varchar2, asset_name IN varchar2) RETURN varchar2 IS
@@ -685,7 +660,7 @@ alter table contentlet_version_info add constraint fk_con_lang_ver_info_lang for
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
 alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);
-alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
+--alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
 alter table workflow_comment add constraint wf_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);
 alter table workflow_history add constraint wf_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
 
@@ -705,9 +680,9 @@ create table workflow_step(
 	id varchar2(36) primary key,
 	name varchar2(255) not null,
 	scheme_id varchar2(36) not null references workflow_scheme(id),
-	my_order number(10,0) default 0, 
+	my_order number(10,0) default 0,
 	resolved number(1,0) default 0
-	
+
 );
 create index wk_idx_step_scheme on workflow_step(scheme_id);
 
@@ -744,7 +719,7 @@ create table workflow_action_class_pars(
 	key varchar2(255) not null,
 	value nclob
 );
-create index wk_idx_actclassparamact on 
+create index wk_idx_actclassparamact on
 	workflow_action_class_pars(workflow_action_class_id);
 
 
@@ -754,15 +729,15 @@ create table workflow_scheme_x_structure(
 	structure_id varchar2(36) not null references structure(inode)
 );
 
-create unique index wk_idx_scheme_str_2 on 
+create unique index wk_idx_scheme_str_2 on
 	workflow_scheme_x_structure(structure_id);
 
- 
 
-delete from workflow_history;  
-delete from workflow_comment;  
-delete from workflowtask_files;  
-delete from workflow_task; 
+
+delete from workflow_history;
+delete from workflow_comment;
+delete from workflowtask_files;
+delete from workflow_task;
 alter table workflow_task add constraint FK_workflow_task_asset foreign key (webasset) references identifier(id);
 alter table workflow_task add constraint FK_workflow_assign foreign key (assigned_to) references cms_role(id);
 alter table workflow_task add constraint FK_workflow_step foreign key (status) references workflow_step(id);

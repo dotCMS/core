@@ -122,5 +122,7 @@ public abstract class IdentifierFactory {
 	abstract protected Identifier saveIdentifier(Identifier identifier)throws DotDataException;
 	
 	abstract protected void deleteIdentifier(Identifier ident) throws DotDataException;
+	
+	abstract protected List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException;
 
 }

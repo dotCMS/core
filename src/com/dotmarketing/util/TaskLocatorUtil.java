@@ -46,7 +46,8 @@ import com.dotmarketing.startup.runonce.Task00825UpdateLoadRecordsToIndex;
 import com.dotmarketing.startup.runonce.Task00835CreateIndiciesTables;
 import com.dotmarketing.startup.runonce.Task00840FixContentletVersionInfo;
 import com.dotmarketing.startup.runonce.Task00845ChangeLockedOnToTimeStamp;
-
+import com.dotmarketing.startup.runonce.Task00850DropOldFilesConstraintInWorkflow;
+import com.dotmarketing.startup.runonce.Task00855FixRenameFolder;
 
 public class TaskLocatorUtil {
 
@@ -76,7 +77,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00760AddContentletStructureInodeIndex.class);
 		ret.add(Task00765AddUserForeignKeys.class);
 		ret.add(Task00766AddFieldVariableTable.class);
-        ret.add(Task00767FieldVariableValueTypeChange.class);
+		ret.add(Task00767FieldVariableValueTypeChange.class);
 		ret.add(Task00768CreateTagStorageFieldOnHostStructure.class);
 		ret.add(Task00769UpdateTagDataModel.class);
 		ret.add(Task00775DropUnusedTables.class);
@@ -86,7 +87,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00790DataModelChangesForWebAssets.class);
 		ret.add(Task00795LiveWorkingToIdentifier.class);
 		ret.add(Task00800CreateTemplateContainers.class);
-        ret.add(Task00805AddRenameFolderProcedure.class);
+		ret.add(Task00805AddRenameFolderProcedure.class);
 		ret.add(Task00810FilesAsContentChanges.class);
 		ret.add(Task00815WorkFlowTablesChanges.class);
 		ret.add(Task00820CreateNewWorkFlowTables.class);
@@ -94,6 +95,8 @@ public class TaskLocatorUtil {
 		ret.add(Task00835CreateIndiciesTables.class);
 		ret.add(Task00840FixContentletVersionInfo.class);
 		ret.add(Task00845ChangeLockedOnToTimeStamp.class);
+		ret.add(Task00850DropOldFilesConstraintInWorkflow.class);
+		ret.add(Task00855FixRenameFolder.class);
 		return ret;
 	}
 

@@ -129,4 +129,8 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException {
 		ifac.updateIdentifierURI(webasset, folder);
 	}
+	
+	public List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException {
+	    return ifac.findByParentPath(hostId, parent_path);
+	}
 }
