@@ -6,10 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -358,27 +356,29 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                 notDone=true;
                 final String inode=rs.getString("inode");
                 final String identifier=rs.getString("identifier");
-                insertVersionInfo.setString(1, identifier);
-                insertVersionInfo.setString(2, inode);
-                boolean locked=rs.getBoolean("locked");
-                if(locked) {
-                    insertVersionInfo.setDate(3, rs.getDate("mod_date"));
-                    insertVersionInfo.setString(4, rs.getString("mod_user"));
+                if(UtilMethods.isSet(identifier)) {
+                    insertVersionInfo.setString(1, identifier);
+                    insertVersionInfo.setString(2, inode);
+                    boolean locked=rs.getBoolean("locked");
+                    if(locked) {
+                        insertVersionInfo.setDate(3, rs.getDate("mod_date"));
+                        insertVersionInfo.setString(4, rs.getString("mod_user"));
+                    }
+                    else {
+                        insertVersionInfo.setDate(3, new Date(System.currentTimeMillis()));
+                        insertVersionInfo.setNull(4, Types.VARCHAR);
+                    }
+    
+                    insertVersionInfo.setBoolean(5, rs.getBoolean("deleted"));
+    
+                    boolean live=rs.getBoolean("live");
+                    if(live)
+                        insertVersionInfo.setString(6, inode);
+                    else
+                        insertVersionInfo.setNull(6, Types.VARCHAR);
+    
+                    insertVersionInfo.executeUpdate();
                 }
-                else {
-                    insertVersionInfo.setDate(3, new Date(System.currentTimeMillis()));
-                    insertVersionInfo.setNull(4, Types.VARCHAR);
-                }
-
-                insertVersionInfo.setBoolean(5, rs.getBoolean("deleted"));
-
-                boolean live=rs.getBoolean("live");
-                if(live)
-                    insertVersionInfo.setString(6, inode);
-                else
-                    insertVersionInfo.setNull(6, Types.VARCHAR);
-
-                insertVersionInfo.executeUpdate();
             }
             rs.close();
             //insertVersionInfo.executeBatch();
@@ -399,11 +399,12 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         for(Map<String,Object> rr : results) {
             String identifier=(String)rr.get("identifier");
             String inode=(String)rr.get("inode");
-
-            dc.setSQL("update "+versionTable+" set live_inode=? where identifier=?");
-            dc.addParam(inode);
-            dc.addParam(identifier);
-            dc.loadResult();
+            if(UtilMethods.isSet(identifier)) {
+                dc.setSQL("update "+versionTable+" set live_inode=? where identifier=?");
+                dc.addParam(inode);
+                dc.addParam(identifier);
+                dc.loadResult();
+            }
         }
     }
 
@@ -513,49 +514,52 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             for(Map<String,Object> rr : results) {
                 String identifier=(String)rr.get("identifier");
                 String inode=(String)rr.get("inode");
-                boolean live = false;
-                boolean locked = false;
-                boolean deleted = false;
-
-                if(DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle()){
-                	if(Integer.parseInt(rr.get("live").toString())==1)
-                		live = true;
-                	if(Integer.parseInt(rr.get("locked").toString())==1)
-                		locked = true;
-                	if(Integer.parseInt(rr.get("deleted").toString())==1)
-                		deleted = true;
-                }else{
-                	live = (Boolean)rr.get("live");
-                    locked = (Boolean)rr.get("locked");
-                    deleted =(Boolean)rr.get("deleted");
-                }
-
-                String mod_user=(String)rr.get("mod_user");
-                java.util.Date mod_date=(java.util.Date)rr.get("mod_date");
-                String insert="";
-
-            	insert="insert into contentlet_version_info(identifier,locked_on,locked_by,deleted,lang,working_inode"+(live?",live_inode":"")+") values " +
-                                                         "(?,?,?,?,?,?"+(live?",?":"")+")";
-                dc.setSQL(insert);
-                dc.addParam(identifier.trim());
-                if(locked) {
-                    dc.addParam(mod_date);
-                    dc.addParam(mod_user);
-                }
-                else {
-                    dc.addParam(new java.util.Date());
-                    dc.addObject(null);
-                }
-                dc.addParam(deleted);
-                dc.addParam(rr.get("language_id"));
-                dc.addParam(inode);
-                if(live)
-                    dc.addParam(inode);
                 
-                try {
-                	dc.loadResult();
-                } catch (DotDataException e) {
-                	e.printStackTrace();
+                if(UtilMethods.isSet(identifier)) {
+                    boolean live = false;
+                    boolean locked = false;
+                    boolean deleted = false;
+    
+                    if(DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle()){
+                    	if(Integer.parseInt(rr.get("live").toString())==1)
+                    		live = true;
+                    	if(Integer.parseInt(rr.get("locked").toString())==1)
+                    		locked = true;
+                    	if(Integer.parseInt(rr.get("deleted").toString())==1)
+                    		deleted = true;
+                    }else{
+                    	live = (Boolean)rr.get("live");
+                        locked = (Boolean)rr.get("locked");
+                        deleted =(Boolean)rr.get("deleted");
+                    }
+    
+                    String mod_user=(String)rr.get("mod_user");
+                    java.util.Date mod_date=(java.util.Date)rr.get("mod_date");
+                    String insert="";
+    
+                	insert="insert into contentlet_version_info(identifier,locked_on,locked_by,deleted,lang,working_inode"+(live?",live_inode":"")+") values " +
+                                                             "(?,?,?,?,?,?"+(live?",?":"")+")";
+                    dc.setSQL(insert);
+                    dc.addParam(identifier.trim());
+                    if(locked) {
+                        dc.addParam(mod_date);
+                        dc.addParam(mod_user);
+                    }
+                    else {
+                        dc.addParam(new java.util.Date());
+                        dc.addObject(null);
+                    }
+                    dc.addParam(deleted);
+                    dc.addParam(rr.get("language_id"));
+                    dc.addParam(inode);
+                    if(live)
+                        dc.addParam(inode);
+                    
+                    try {
+                    	dc.loadResult();
+                    } catch (DotDataException e) {
+                    	e.printStackTrace();
+                    }
                 }
             }
         } while(notDone);
@@ -595,12 +599,13 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             for(Map<String,Object> rr : results) {
                 String identifier=(String)rr.get("identifier");
                 String inode=(String)rr.get("inode");
-
-                dc.setSQL("update contentlet_version_info set live_inode=? where identifier=? and lang=?");
-                dc.addParam(inode);
-                dc.addParam(identifier);
-                dc.addParam(rr.get("language_id"));
-                dc.loadResult();
+                if(UtilMethods.isSet(identifier)) {
+                    dc.setSQL("update contentlet_version_info set live_inode=? where identifier=? and lang=?");
+                    dc.addParam(inode);
+                    dc.addParam(identifier);
+                    dc.addParam(rr.get("language_id"));
+                    dc.loadResult();
+                }
             }
         } while(notDone);
     }
