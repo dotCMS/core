@@ -37,7 +37,6 @@
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
 		  testOnBorrow="true" validationQuery="SELECT 1 from DUAL"/>
 	
-	
 	<!-- MSSQL 
 	<Resource name="jdbc/dotCMSPool" auth="Container"
 		  type="javax.sql.DataSource" driverClassName="net.sourceforge.jtds.jdbc.Driver"

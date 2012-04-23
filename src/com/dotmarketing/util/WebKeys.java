@@ -183,13 +183,15 @@ public final class WebKeys {
     public static final String TEMPLATE_SHOW_DELETED = "com.dotmarketing.template.show_deleted";
     public static final String TEMPLATE_HOST_CHANGED = "com.dotmarketing.template.host_changed";
     public static final String TEMPLATE_CAN_ADD = "com.dotmarketing.template.can.add.template";
+    
     // *********************** BEGIN GRAZIANO issue-12-dnd-template
     public static final String TEMPLATE_CAN_DESIGN = "com.dotmarketing.template.can.design.template";
-    public static final String TEMPLATE_IS_DRAWED = "_drawed";
-    public static final String OVERRIDE_DRAWED_TEMPLATE_BODY = "_drawedOverride";
+    public static final String TEMPLATE_IS_DRAWED = "com.dotmarketing.template.can.design.template._drawed";
+    public static final String OVERRIDE_DRAWED_TEMPLATE_BODY = "com.dotmarketing.template.can.design.template._drawedOverride";
+    public static final String TEMPLATE_JAVASCRIPT_PARAMETERS = "com.dotmarketing.template.can.design.template._jsParameters";
     // *********************** END GRAZIANO issue-12-dnd-template
+    
     public static final String TEMPLATE_HOSTS = "com.dotmarketing.template.hosts";
-
 
     public static final String HTMLPAGE_EDIT = "com.dotmarketing.htmlpages.edit";
     public static final String HTMLPAGE_REFERER = "com.dotmarketing.htmlpages.referer";

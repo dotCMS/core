@@ -3,7 +3,7 @@ function drawDefault(overrideBody){
 	var mainTemplateDiv = document.getElementById("bodyTemplate");
 	var textareaDrawedBodyHidden = document.getElementById("drawedBodyField");
 	var textareaBodyHidden = document.getElementById("bodyField");
-	if(!overrideBody){		
+	if(!overrideBody){
 		//set the main div
 		var pageWidth = dijit.byId("pageWidth").attr("value");
 		var mainDiv = document.createElement("div");
@@ -36,7 +36,8 @@ function drawDefault(overrideBody){
 function addRow(tableID,prefixSelect,prefixDiv) { 
 	var table = document.getElementById(tableID);
 	var rowCount = table.rows.length;
-    var row = table.insertRow(rowCount);
+    var row = table.insertRow(rowCount);   
+    row.setAttribute("id","_selectRow"+rowCount);
     row.setAttribute("class","spaceUnder");
     var cell1 = row.insertCell(0);  
     var oImg = document.createElement("img");
@@ -44,25 +45,45 @@ function addRow(tableID,prefixSelect,prefixDiv) {
     oImg.setAttribute("alt", "delete");
     oImg.setAttribute("title", "delete row");
     oImg.style.cursor="pointer";
-    oImg.onclick = function(){deleteRow(tableID,prefixSelect+(rowCount),prefixDiv+(rowCount));};
+    oImg.onclick = function(){deleteRow(tableID,prefixSelect+(rowCount),prefixDiv+(rowCount),rowCount);};
     cell1.appendChild(oImg);
-
     var cell2 = row.insertCell(1);
-    var select = document.createElement("select");    
-    select.setAttribute("name", prefixSelect+(rowCount));
-    select.setAttribute("id", prefixSelect+(rowCount));
-    select.setAttribute("dojoType", "dijit.form.FilteringSelect"); 
-    createOption(select, "1", "1 Column (100)",true);
-    createOption(select, "yui-gc-template", "2 Column (66/33)",false);
-    createOption(select, "yui-gd-template", "2 Column (33/66)",false);
-    createOption(select, "yui-ge-template", "2 Column (75/25)",false);
-    createOption(select, "yui-gf-template", "2 Column (25/75)",false);            
-    createOption(select, "yui-gb-template", "3 Column (33/33/33)",false);
-    select.onchange=function(){addGrid(select.value, select.getAttribute("name"));};
-    cell2.appendChild(select);
-    dojo.parser.parse(cell2);
-    dojo.connect(dijit.byId(prefixSelect+(rowCount)), "onChange", this, function(e){addGrid(e, prefixDiv+(rowCount), rowCount);}); 
-    addGrid(1,prefixDiv+(rowCount),rowCount);
+    var select = document.createElement("select");   
+    try{	         
+	    select.setAttribute("name", prefixSelect+(rowCount));
+	    select.setAttribute("id", prefixSelect+(rowCount));
+	    select.setAttribute("dojoType", "dijit.form.FilteringSelect"); 
+	    createOption(select, "1", "1 Column (100)",true);
+	    createOption(select, "yui-gc-template", "2 Column (66/33)",false);
+	    createOption(select, "yui-gd-template", "2 Column (33/66)",false);
+	    createOption(select, "yui-ge-template", "2 Column (75/25)",false);
+	    createOption(select, "yui-gf-template", "2 Column (25/75)",false);            
+	    createOption(select, "yui-gb-template", "3 Column (33/33/33)",false);
+	    select.onchange=function(){addGrid(select.value, select.getAttribute("name"));};
+	    cell2.appendChild(select);
+	    dojo.parser.parse(cell2);
+	    dojo.connect(dijit.byId(prefixSelect+(rowCount)), "onChange", this, function(e){addGrid(e, prefixDiv+(rowCount), rowCount);}); 
+	    addGrid(1,prefixDiv+(rowCount),rowCount);
+    }catch(err){
+    	cell2.removeChild(select);
+    	rowCount-=1;
+	    cell2 = row.insertCell(1);
+	    select = document.createElement("select");    
+	    select.setAttribute("name", prefixSelect+(rowCount));
+	    select.setAttribute("id", prefixSelect+(rowCount));
+	    select.setAttribute("dojoType", "dijit.form.FilteringSelect"); 
+	    createOption(select, "1", "1 Column (100)",true);
+	    createOption(select, "yui-gc-template", "2 Column (66/33)",false);
+	    createOption(select, "yui-gd-template", "2 Column (33/66)",false);
+	    createOption(select, "yui-ge-template", "2 Column (75/25)",false);
+	    createOption(select, "yui-gf-template", "2 Column (25/75)",false);            
+	    createOption(select, "yui-gb-template", "3 Column (33/33/33)",false);
+	    select.onchange=function(){addGrid(select.value, select.getAttribute("name"));};
+	    cell2.appendChild(select);
+	    dojo.parser.parse(cell2);
+	    dojo.connect(dijit.byId(prefixSelect+(rowCount)), "onChange", this, function(e){addGrid(e, prefixDiv+(rowCount), rowCount);}); 
+	    addGrid(1,prefixDiv+(rowCount),rowCount);    	
+    }
 }
 
 function createOption(select, attribute_value, inner_html, selected){
@@ -76,23 +97,21 @@ function createOption(select, attribute_value, inner_html, selected){
     
 }
 
-function deleteRow(tableID, row, div) {		
+function deleteRow(tableID, row, div, rowCountId) {		
 	//delete the combo row
    	var table = document.getElementById(tableID);
    	var rowCount = table.rows.length;
    	for(var i=1; i<rowCount; i++){
    		var riga = table.rows[i];
    		if(null!=riga){
-   	        var select = riga.cells[1].childNodes[0];                
-   	        if(select.id=="widget_"+row){
-   	        	//destroy the dojo element
-   	        	var selectDijit = dijit.byId(row);
+   			if(riga.id=="_selectRow"+rowCountId){
+   				var selectDijit = dijit.byId(row);
    	        	if (selectDijit) {
    	        		selectDijit.destroy();
    	        	}
    	        	dojo.destroy(row);
-   	        	table.deleteRow(i);
-   	        }
+   				table.deleteRow(i);
+   			}
    		}
    	}   	
    	//remove the div into the body
@@ -187,18 +206,18 @@ function addGrid(gridId, yuiBId, rowCount){
 		yuiUFirst.setAttribute("class","yui-u-template first");
 		yuiUFirst.setAttribute("id",rowCount+"_yui-u-grid-1");
 		yuiUFirst.innerHTML=getAddContainer(rowCount+"_yui-u-grid-1")+"<h1>Body</h1>";
-		yuiUFirst.style.height="50%";
+//		yuiUFirst.style.height="50%";
 		yuiU2.setAttribute("class","yui-u-template");
 		yuiU2.setAttribute("id",rowCount+"_yui-u-grid-2");
 		yuiU2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-2")+"<h1>Body</h1>";
-		yuiU2.style.height="50%";
+//		yuiU2.style.height="50%";
 		gridDiv.appendChild(yuiUFirst);
 		gridDiv.appendChild(yuiU2);
 		if("yui-gb-template"==gridId){
 			yuiU3.setAttribute("class","yui-u-template");
 			yuiU3.setAttribute("id",rowCount+"_yui-u-grid-3");
 			yuiU3.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
-			yuiU3.style.height="50%";
+//			yuiU3.style.height="50%";
 			gridDiv.appendChild(yuiU3);
 		}		
 		yuiBDiv.appendChild(gridDiv);		
@@ -367,7 +386,7 @@ function addFileToTemplate(html, file){
 		var divHiddenSingleFile = document.createElement("div");
 		divHiddenSingleFile.setAttribute("id", "div_"+file.path+"_"+file.fileName);
 		divHiddenSingleFile.style.display="none";
-		divHiddenSingleFile.innerHTML=html;
+		divHiddenSingleFile.innerHTML='<!-- '+html+' -->';
 		divHiddenForFiles.appendChild(divHiddenSingleFile);
 		
 		//add at the first position into the bodyTemplate div
@@ -403,7 +422,7 @@ function printBody(){
 	alert(textareaBodyHidden.value);	
 }
 
-function saveBody(){
+function saveBody(){	
 	var textareaBodyHidden = document.getElementById("bodyField");
 	textareaBodyHidden.value=document.getElementById("bodyTemplate").innerHTML;	
 }
