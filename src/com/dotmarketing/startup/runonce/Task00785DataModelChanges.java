@@ -16,6 +16,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UUIDGenerator;
@@ -1286,7 +1287,8 @@ public class Task00785DataModelChanges implements StartupTask  {
 
 		
 		deleteIdentifiersFromInode();
-		deleteOrphanedAssets();
+		if(Config.getBooleanProperty("upgrade-cleanup-bad-data",true))
+		    deleteOrphanedAssets();
 		
 		String addConstraint = "";
 		String addIdentifierColumn = "alter table containers add identifier varchar(36);" +
