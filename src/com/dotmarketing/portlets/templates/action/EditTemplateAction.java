@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.DesignTemplateJSParameter;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -487,13 +488,20 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
 		
-		// *********************** BEGIN GRAZIANO issue-12-dnd-template
-		// If we are into the design mode we are redirected at the new servlet
+		
+		// *********************** BEGIN GRAZIANO issue-12-dnd-template		
+		boolean isDrawed = req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED)!=null?(Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED):false;
+		
+		// If we are into the design mode we are redirected at the new portlet action
 		if(((null!=cmd) && cmd.equals(Constants.DESIGN))){
 			req.setAttribute(WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY, false);
 			setForward(req, "portlet.ext.templates.design_template");
-		}else if(((Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED))){
+		}else if(isDrawed){
 			req.setAttribute(WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY, true);
+			// create the javascript parameters for left side (Page Width, Layout ecc..) of design template
+			Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_EDIT);
+			DesignTemplateJSParameter parameters = DesignTemplateUtil.getDesignParameters(template.getDrawedBody());
+			req.setAttribute(WebKeys.TEMPLATE_JAVASCRIPT_PARAMETERS, parameters);
 			setForward(req, "portlet.ext.templates.design_template");
 		}else
 			setForward(req, "portlet.ext.templates.edit_template");
@@ -630,17 +638,18 @@ public class EditTemplateAction extends DotPortletAction implements
 		}
 
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
-		if(cmd.equals(Constants.ADD_DESIGN))
+		if(cmd.equals(Constants.ADD_DESIGN)){
 			newTemplate.setDrawed(true);
-		
-		// create the body with all the main HTML tags
-		StringBuffer endBody = DesignTemplateUtil.getBody(newTemplate.getBody());
-		
-		// set the drawedBody for future edit
-		newTemplate.setDrawedBody(newTemplate.getBody());
-				
-		newTemplate.setBody(endBody.toString());
-		
+			
+			// create the body with all the main HTML tags
+			StringBuffer endBody = DesignTemplateUtil.getBody(newTemplate.getBody());
+			
+			// set the drawedBody for future edit
+			newTemplate.setDrawedBody(newTemplate.getBody());
+			
+			// set the real body
+			newTemplate.setBody(endBody.toString());			
+		}		
 		// *********************** END GRAZIANO issue-12-dnd-template
 
 		APILocator.getTemplateAPI().saveTemplate(newTemplate,host , user, false);
