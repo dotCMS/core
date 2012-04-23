@@ -176,7 +176,7 @@ function processDelete(inode, referer) {
 
 			<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
 	</div>
-	<div class="yui-u" style="text-align:right;">
+	<div class="yui-u" style="text-align:right; width: 33%">
 		<input  dojoType="dijit.form.CheckBox" type="checkbox" name="showDeleted" id="showDeleted" onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true" />
 		<label for="showDeleted" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
 

@@ -1,5 +1,10 @@
 
-function drawDefault(overrideBody){
+var addContainerMSG;
+var removeContainerMSG;
+
+function drawDefault(overrideBody, addContainer, removeContainer){
+	addContainerMSG = addContainer;
+	removeContainerMSG = removeContainer;
 	var mainTemplateDiv = document.getElementById("bodyTemplate");
 	var textareaDrawedBodyHidden = document.getElementById("drawedBodyField");
 	var textareaBodyHidden = document.getElementById("bodyField");
@@ -431,9 +436,9 @@ function getMockContent(){
 }
 
 function getAddContainer(idDiv){
-	return '<div class="addContainerSpan"><a href="javascript: showAddContainerDialog(\''+idDiv+'\');" title="Add Container"><span class="plusBlueIcon"></span>Add Container</a></div>';	
+	return '<div class="addContainerSpan"><a href="javascript: showAddContainerDialog(\''+idDiv+'\');" title="'+addContainerMSG+'"><span class="plusBlueIcon"></span>'+addContainerMSG+'</a></div>';	
 }
 
 function getRemoveContainer(idDiv, idContainer){
-	return '<div class="removeDiv"><a href="javascript: removeDrawedContainer(\''+idDiv+'\',\''+idContainer+'\');" title="Remove Container"><span class="minusIcon"></span>Remove Container</a></div>';	
+	return '<div class="removeDiv"><a href="javascript: removeDrawedContainer(\''+idDiv+'\',\''+idContainer+'\');" title="'+removeContainerMSG+'"><span class="minusIcon"></span>'+removeContainerMSG+'</a></div>';	
 }
