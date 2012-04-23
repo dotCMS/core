@@ -1350,12 +1350,25 @@ public class Task00785DataModelChanges implements StartupTask  {
 		addConstraint =  addConstraint+
 					     "ALTER TABLE Inode DROP COLUMN identifier;" +
 					     "ALTER TABLE structure add constraint fk_structure_host foreign key (host) references identifier(id);"+
+					     
+					     "delete from containers where identifier is null or identifier='';"+
 					     "ALTER TABLE containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);" +
+					     
+					     "delete from template where identifier is null or identifier='';"+
 					     "ALTER TABLE template add constraint template_identifier_fk foreign key (identifier) references identifier(id);" +
+					     
+					     "delete from htmlpage where identifier is null or identifier='';"+
 					     "ALTER TABLE htmlpage add constraint htmlpage_identifier_fk foreign key (identifier) references identifier(id);" +
+					     
+					     "delete from file_asset where identifier is null or identifier='';"+
 					     "ALTER TABLE file_asset add constraint file_identifier_fk foreign key (identifier) references identifier(id);" +
+					     
+					     "delete from contentlet where identifier is null or identifier='';"+
 					     "ALTER TABLE contentlet add constraint content_identifier_fk foreign key (identifier) references identifier(id);" +
+					     
+					     "delete from links where identifier is null or identifier='';"+
 					     "ALTER TABLE links add constraint links_identifier_fk foreign key (identifier) references identifier(id);" +
+					     
 					     "ALTER TABLE identifier add parent_path varchar(255);" +
 					     "ALTER TABLE identifier add asset_name varchar(255);" +
 					     "ALTER TABLE identifier add asset_type varchar(64);";
