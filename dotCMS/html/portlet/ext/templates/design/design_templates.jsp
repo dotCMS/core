@@ -139,7 +139,7 @@
 		var value = dijit.byId('containersList').attr('value');
 		var container = dijit.byId('containersList').attr('item');
 		
-		addDrawedContainer(idDiv,container,value,<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>);
+		addDrawedContainer(idDiv,container,value,'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>');
 	}
 
 	function addFile() {
@@ -152,7 +152,7 @@
 		} else if (file.extension == 'css') {
 			var html = '<link href="' + file.path + file.fileName + '" rel="stylesheet" type="text/css" />';
 		}
-		addFileToTemplate(html,file,<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "file-already-exists"))%>);
+		addFileToTemplate(html,file,'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "file-already-exists"))%>');
 	}
 
 	function selectTemplateVersion(objId,referer) {
@@ -186,7 +186,7 @@
 
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
-		drawDefault(<%=overrideBody%>);
+		drawDefault(<%=overrideBody%>,'<%= LanguageUtil.get(pageContext, "Add-Container") %>','<%= LanguageUtil.get(pageContext, "Remove-Container") %>');
 	});
 </script>
 
@@ -202,7 +202,7 @@
 	<input name="admin_l_list" type="hidden" value="">
 		
 <div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" style="height: 100%; min-height: 881px;" >
-	<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;height: 100%; min-height:851px;" title="Properties">
+	<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;height: 100%; min-height:851px;" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
 		<div class="wrapperRight" style="position:relative; height: 500px;">
 			<dl>
 				<%if(id!=null) {%>
@@ -246,7 +246,7 @@
 			</dl>	
 		</div>	
 	</div>
-	<div id="template" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="Design Template" >	
+	<div id="template" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="<%= LanguageUtil.get(pageContext, "draw-template") %>" >	
 		<div class="wrapperRight" style="position:relative;" id="containerBodyTemplate">
 			<div id="addFileToTemplate">
 				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
@@ -285,12 +285,12 @@
 					<dt><%=LanguageUtil.get(pageContext, "Layout") %>:</dt>						
 					<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
 							<option value="none" <%if(parameters.getLayout().equals("none")) { %>selected="selected"<%}%>></option>
-							<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) { %>selected="selected"<%}%>>160px on left</option>
-							<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) { %>selected="selected"<%}%>>180px on left</option>
-							<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) { %>selected="selected"<%}%>>300px on left</option>
-							<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) { %>selected="selected"<%}%>>180px on right</option>
-							<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) { %>selected="selected"<%}%>>240px on right</option>
-							<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) { %>selected="selected"<%}%>>300px on right</option>
+							<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-160-left") %></option>
+							<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-180-left") %></option>
+							<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-300-left") %></option>
+							<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-180-right") %></option>
+							<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-240-right") %></option>
+							<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-300-right") %></option>
 						</select>
 					</dd>
 				</dl>
@@ -333,12 +333,12 @@
 							        	<% } %></td>
 							        <td>
 										<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)">
-											<option value="1" selected="selected">1 Column (100)</option>
-											<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>>2 Column (66/33)</option>
-											<option value="yui-gd-template" <%if(sb.getValue().equals("yui-gd-template")) { %>selected="selected"<%}%>>2 Column (33/66)</option>
-											<option value="yui-ge-template" <%if(sb.getValue().equals("yui-ge-template")) { %>selected="selected"<%}%>>2 Column (75/25)</option>
-											<option value="yui-gf-template" <%if(sb.getValue().equals("yui-gf-template")) { %>selected="selected"<%}%>>2 Column (25/75)</option>
-											<option value="yui-gb-template" <%if(sb.getValue().equals("yui-gb-template")) { %>selected="selected"<%}%>>3 Column (33/33/33)</option>
+											<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+											<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
+											<option value="yui-gd-template" <%if(sb.getValue().equals("yui-gd-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
+											<option value="yui-ge-template" <%if(sb.getValue().equals("yui-ge-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
+											<option value="yui-gf-template" <%if(sb.getValue().equals("yui-gf-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
+											<option value="yui-gb-template" <%if(sb.getValue().equals("yui-gb-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
 										</select>				        			
 							        </td>
 								</tr>							
@@ -416,12 +416,12 @@
 					<dt><%=LanguageUtil.get(pageContext, "Layout") %>:</dt>						
 					<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
 							<option value="none" selected="selected"></option>
-							<option value="yui-t1-template">160px on left</option>
-							<option value="yui-t2-template">180px on left</option>
-							<option value="yui-t3-template">300px on left</option>
-							<option value="yui-t4-template">180px on right</option>
-							<option value="yui-t5-template">240px on right</option>
-							<option value="yui-t6-template">300px on right</option>
+							<option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-160-left") %></option>
+							<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-180-left") %></option>
+							<option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-300-left") %></option>
+							<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-180-right") %></option>
+							<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-240-right") %></option>
+							<option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-300-right") %></option>
 						</select>
 					</dd>
 				</dl>
@@ -456,12 +456,12 @@
 						        <td style="width: 16px;">&nbsp;&nbsp;</td>
 						        <td>
 									<select name="select_splitBody0" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody0',0)">
-										<option value="1" selected="selected">1 Column (100)</option>
-										<option value="yui-gc-template">2 Column (66/33)</option>
-										<option value="yui-gd-template">2 Column (33/66)</option>
-										<option value="yui-ge-template">2 Column (75/25)</option>
-										<option value="yui-gf-template">2 Column (25/75)</option>
-										<option value="yui-gb-template">3 Column (33/33/33)</option>
+										<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+										<option value="yui-gc-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
+										<option value="yui-gd-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
+										<option value="yui-ge-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
+										<option value="yui-gf-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
+										<option value="yui-gb-template"><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
 									</select>				        			
 						        </td>
 							</tr>	
