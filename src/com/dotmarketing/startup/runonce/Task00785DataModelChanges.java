@@ -27,7 +27,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 
 		private List<Map<String, String>> getAssetIdentifiers(String type){
 		   DotConnect dc = new DotConnect();
-		   dc.setSQL("select * from inode where type = ? ");
+		   dc.setSQL("select * from inode where type = ? where exists (select * from "+type+" a where a.inode=inode.inode)");
 		   dc.addParam(type);
 		   List<Map<String, String>> results=null;
 		   try {
