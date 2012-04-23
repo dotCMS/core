@@ -1304,8 +1304,10 @@ public class Task00785DataModelChanges implements StartupTask  {
 	        catch(Exception ex) {
 	            Logger.info(this, "no need to drop host_inode_fk");
 	        }
-	        addConstraint = "ALTER TABLE identifier change inode id varchar(36);" +
-						    "ALTER TABLE identifier drop index uri;";
+	        addConstraint = "alter table structure drop foreign key fk_structure_host;"+
+                    "ALTER TABLE identifier change inode id varchar(36);" +
+                    "ALTER TABLE structure ADD CONSTRAINT fk_structure_host FOREIGN KEY (host) REFERENCES identifier (id);"+
+                    "ALTER TABLE identifier drop index uri;";
 	    }else  if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 		    dc.setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS where table_name='identifier' and constraint_type<>'FOREIGN KEY'");
 		    List<Map<String, String>> results = dc.getResults();
