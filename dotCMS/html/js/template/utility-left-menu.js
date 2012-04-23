@@ -239,13 +239,13 @@ function removeGrid(yuiBId){
  * @param container
  * @param value
  */
-function addDrawedContainer(idDiv, container, value){
+function addDrawedContainer(idDiv, container, value, error_msg){
 		
 	var div_container = document.getElementById(idDiv.value+"_div_"+value);
 	var span_container = document.getElementById(idDiv.value+"_span_"+value);
 	
 	if(null!=div_container && null!=span_container){
-		alert("The container that you want to add already exist into this section.");
+		alert(error_msg);
 		return;
 	}
 	
@@ -261,7 +261,6 @@ function addDrawedContainer(idDiv, container, value){
 	//set the title for better recognize the container's div
 	containerDivHidden.setAttribute("title","container_"+value);
 	containerDivHidden.setAttribute("id", idDiv.value+"_div_"+value);
-//	containerDivHidden.innerHTML=container.code;
 	containerDivHidden.innerHTML='#parseContainer(\'' + value + '\')\n';
 	
 	var div = document.getElementById(idDiv.value);
@@ -344,11 +343,11 @@ function removeDrawedContainer(idDiv,idContainer){
  * 
  * @param html
  */
-function addFileToTemplate(html, file){
+function addFileToTemplate(html, file, error_msg){
 	
 	var spanFile = document.getElementById("span_"+file.path+"_"+file.fileName);	
 	if(null!=spanFile){ //this file already exists into the template
-		alert("The file that you want to add already exists into this template.");
+		alert(error_msg);
 		return;
 	}else{
 		//create the span

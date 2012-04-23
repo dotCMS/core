@@ -139,7 +139,7 @@
 		var value = dijit.byId('containersList').attr('value');
 		var container = dijit.byId('containersList').attr('item');
 		
-		addDrawedContainer(idDiv,container,value);
+		addDrawedContainer(idDiv,container,value,<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>);
 	}
 
 	function addFile() {
@@ -152,7 +152,7 @@
 		} else if (file.extension == 'css') {
 			var html = '<link href="' + file.path + file.fileName + '" rel="stylesheet" type="text/css" />';
 		}
-		addFileToTemplate(html,file);
+		addFileToTemplate(html,file,<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "file-already-exists"))%>);
 	}
 
 	function selectTemplateVersion(objId,referer) {
