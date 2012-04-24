@@ -27,7 +27,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 
 		private List<Map<String, String>> getAssetIdentifiers(String type){
 		   DotConnect dc = new DotConnect();
-		   dc.setSQL("select * from inode where type = ? and exists (select * from "+type+" a where a.inode=inode.inode)");
+		   dc.setSQL("select * from inode where type = ? and exists (select * from identifier where identifier.inode=inode.identifier)");
 		   dc.addParam(type);
 		   List<Map<String, String>> results=null;
 		   try {
@@ -43,12 +43,12 @@ public class Task00785DataModelChanges implements StartupTask  {
 		String dropFKs = "";
 		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
 
-			dropFKs = "ALTER TABLE tree DROP FOREIGN KEY FK36739EC4AB08AA;" +
+			dropFKs = "ALTER TABLE structure DROP FOREIGN KEY fk_structure_host;" + 
+			          "ALTER TABLE tree DROP FOREIGN KEY FK36739EC4AB08AA;" +
 			          "ALTER TABLE tree DROP FOREIGN KEY FK36739E5A3F51C;" +
 			          "ALTER TABLE permission DROP FOREIGN KEY permission_inode_fk;" +
 			          "ALTER TABLE permission_reference DROP FOREIGN KEY permission_asset_id_fk;" +
 			          "ALTER TABLE permission_reference DROP FOREIGN KEY permission_reference_id_fk;" +
-			          "ALTER TABLE structure DROP FOREIGN KEY fk_structure_host;" +
 			          "ALTER TABLE identifier DROP FOREIGN KEY fk9f88aca95fb51eb;";
 
 		}else{
@@ -74,68 +74,44 @@ public class Task00785DataModelChanges implements StartupTask  {
 						"alter table permission add constraint permission_inode_fk foreign key (inode_id) references inode(inode);" +
 						"alter table permission_reference add constraint permission_asset_id_fk foreign key (asset_id) references inode(inode);" +
 						"alter table permission_reference add constraint permission_reference_id_fk foreign key (reference_id) references inode(inode);";*/
-		try {
-			    List<String> queryList = SQLUtil.tokenize(dropFKs + deleteIdentifiers);
-				for (String query : queryList) {
-					dc.executeStatement(query);
-				}
-			//dc.executeStatement(addFKs);
-		} catch (SQLException e) {
-			Logger.error(this, e.getMessage());
-			e.printStackTrace();
+		List<String> queryList = SQLUtil.tokenize(dropFKs + deleteIdentifiers);
+        for (String query : queryList) {
+    		try {
+    		    dc.executeStatement(query);
+    		} catch (SQLException e) {
+    			Logger.error(this, e.getMessage());
+    		}
 		}
-
 	}
 	private void deleteOrphanedAssets(){
 		DotConnect dc = new DotConnect();
-		String deleteFileAsset = "DELETE from file_asset where inode in(select inode from inode where type='file_asset' and (identifier not in(select inode from identifier) or identifier is null))";
-		String deleteContentlet = "DELETE from contentlet where inode in(select inode from inode where type='contentlet' and (identifier not in(select inode from identifier) or identifier is null))";
-		String deleteContainers = "DELETE from containers where inode in(select inode from inode where type='containers' and (identifier not in(select inode from identifier) or identifier is null))";
-		String deleteTemplate = "DELETE from template where inode in(select inode from inode where type='template' and (identifier not in(select inode from identifier) or identifier is null))";
-		String deleteHTMLPage = "DELETE from htmlpage where inode in(select inode from inode where type='htmlpage' and (identifier not in(select inode from identifier) or identifier is null))";
-		String deleteLinks = "DELETE from links where inode in(select inode from inode where type='links' and (identifier not in(select inode from identifier) or identifier is null))";
-		
-		// http://jira.dotmarketing.net/browse/DOTCMS-7387
-		// we need to delete permissions on inodes we will delete
-		String deletePermRefInodesToDelete=
-		        "delete from permission_reference\n"+
-		                "       where exists \n"+
-		                "       (select * from inode where (permission_reference.asset_id=inode.inode OR permission_reference.reference_id=inode.inode) AND\n"+
-		                "         ((identifier not in(select inode from identifier)) \n"+
-		                "         OR (type = 'identifier' and inode not in (SELECT inode FROM identifier))\n"+
-		                "         OR (type in('htmlpage','links','contentlet','containers','template','file_asset') and identifier is null))\n"+
-		                "       )";
-		String deletePermInodesToDelete=
-        		"delete from permission\n"+
-        		"       where exists \n"+
-        		"       (select * from inode where permission.inode_id=inode.inode AND\n"+
-        		"         ((identifier not in(select inode from identifier)) \n"+
-        		"         OR (type = 'identifier' and inode not in (SELECT inode FROM identifier))\n"+
-        		"         OR (type in('htmlpage','links','contentlet','containers','template','file_asset') and identifier is null))\n"+
-        		"       )";
-		
-		String deleteInodes = "DELETE from inode where (identifier not in(select inode from identifier)) OR (type = 'identifier' and inode not in (SELECT inode FROM identifier))" +
-		                      "OR (type in('htmlpage','links','contentlet','containers','template','file_asset') and identifier is null)";
-		String deleteTree = "DELETE from tree where parent in(select inode from inode where (identifier not in(select inode from identifier)) OR (type = 'identifier' and inode not in (SELECT inode FROM identifier)) " +
-				            "OR (type in('htmlpage','links','contentlet','containers','template','file_asset') and identifier is null))";
-		String deleteTree1 = "DELETE from tree where child in(select inode from inode where (identifier not in(select inode from identifier)) OR (type = 'identifier' and inode not in (SELECT inode FROM identifier)) " +
-        					 "OR (type in('htmlpage','links','contentlet','containers','template','file_asset') and identifier is null))";
-	    try{
-		    dc.executeStatement(deleteFileAsset);
-		    dc.executeStatement(deleteContentlet);
-		    dc.executeStatement(deleteContainers);
-		    dc.executeStatement(deleteTemplate);
-		    dc.executeStatement(deleteHTMLPage);
-		    dc.executeStatement(deleteLinks);
-		    dc.executeStatement(deletePermRefInodesToDelete);
-		    dc.executeStatement(deletePermInodesToDelete);
-		    dc.executeStatement(deleteInodes);
-		    dc.executeStatement(deleteTree);
-		    dc.executeStatement(deleteTree1);
-	    }catch (SQLException e) {
-	    	Logger.error(this,e.getMessage());
-	    	e.printStackTrace();
-	    }
+		String script=
+    		"create table inodeskill (inode varchar(36) primary key);"+
+		    "delete from inodeskill;"+
+    		"insert into inodeskill"+
+    		    "(select inode from inode where type in('htmlpage','links','contentlet','containers','template','file_asset') " +
+    		    "and (identifier is null OR (identifier not in(select inode from identifier))));"+
+    		"delete from file_asset where inode in (select inode from inodeskill);"+
+    		"delete from contentlet where inode in (select inode from inodeskill);"+
+    		"delete from containers where inode in (select inode from inodeskill);"+
+    		"delete from template where inode in (select inode from inodeskill);"+
+    		"delete from htmlpage where inode in (select inode from inodeskill);"+
+    		"delete from links where inode in (select inode from inodeskill);"+
+    		"delete from permission_reference where asset_id in (select inode from inodeskill);"+
+    		"delete from permission_reference where reference_id in (select inode from inodeskill);"+
+    		"delete from permission where inode_id in (select inode from inodeskill);"+
+    		"delete from tree where parent in (select inode from inodeskill);"+
+    		"delete from tree where child in (select inode from inodeskill);"+
+    		"delete from inode where inode in (select inode from inodeskill);"+
+    		"drop table inodeskill;";
+		List<String> queryList = SQLUtil.tokenize(script);
+        for (String query : queryList) {
+            try {
+                dc.executeStatement(query);
+            } catch (SQLException e) {
+                Logger.error(this, e.getMessage());
+            }
+        }
 	}
 
 	public void dotPathFunction() throws SQLException {
@@ -1306,7 +1282,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 	        catch(Exception ex) {
 	            Logger.info(this, "no need to drop host_inode_fk");
 	        }
-	        addConstraint = "alter table structure drop foreign key fk_structure_host;"+
+	        addConstraint = 
                     "ALTER TABLE identifier change inode id varchar(36);" +
                     "ALTER TABLE identifier drop index uri;";
 	    }else  if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
@@ -1385,6 +1361,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 	    }
 		String inode = "";
 		String identifier = "";
+		Logger.info(this, "assigning identifier value to containers");
 		List<Map<String, String>> containerList = getAssetIdentifiers("containers");
 		for(Map<String,String> container:containerList){
 		    inode = container.get("inode");
@@ -1398,6 +1375,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			    Logger.warn(this,"can't update identifier "+identifier+" on container "+inode+" maybe is orphan");
 			}
 	    }
+		Logger.info(this, "assigning identifier value to templates");
 		List<Map<String, String>> templateList = getAssetIdentifiers("template");
 		for(Map<String,String> template:templateList){
 		   inode = template.get("inode");
@@ -1411,6 +1389,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		       Logger.warn(this,"can't update identifier "+identifier+" on template "+inode+" maybe is orphan");
 		   }
 	    }
+		Logger.info(this, "assigning identifier value to htmlpages");
 		List<Map<String,String>> htmlpageList = getAssetIdentifiers("htmlpage");
 		for(Map<String,String> htmlpage:htmlpageList){
 			inode = htmlpage.get("inode");
@@ -1424,6 +1403,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			    Logger.warn(this,"can't update identifier "+identifier+" on htmlpage "+inode+" maybe is orphan");
 			}
 		}
+		Logger.info(this, "assigning identifier value to file_assets");
 		List<Map<String,String>> file_assetList = getAssetIdentifiers("file_asset");
 		for(Map<String,String> file_asset:file_assetList){
 			inode = file_asset.get("inode");
@@ -1437,6 +1417,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			    Logger.warn(this,"can't update identifier "+identifier+" on file_asset "+inode+" maybe is orphan");
 			}
 		}
+		Logger.info(this, "assigning identifier value to contentlets");
 		List<Map<String,String>> contentletList = getAssetIdentifiers("contentlet");
 		for(Map<String,String> contentlet:contentletList){
 			inode = contentlet.get("inode");
@@ -1450,6 +1431,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			    Logger.warn(this,"can't update identifier "+identifier+" on contentlet "+inode+" maybe is orphan");
 			}
 		}
+		Logger.info(this, "assigning identifier value to links");
 		List<Map<String,String>> linksList = getAssetIdentifiers("links");
 		for(Map<String,String> links:linksList){
 			inode = links.get("inode");
