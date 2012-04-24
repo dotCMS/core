@@ -162,7 +162,7 @@ function processDelete(inode, referer) {
 
 <form id="fm" method="post" >
 <div class="yui-gc portlet-toolbar">
-	<div class="yui-u first">
+	<div class="yui-u first" style="width: 65%">
 			<input type="hidden" name="resetQuery" value="">
 			<input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
 			<input type="text" dojoType="dijit.form.TextBox" style="width:175px;" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
