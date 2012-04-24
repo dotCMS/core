@@ -178,16 +178,47 @@
 	function getContainerMockContent(title){
 		return "<h2>Container: "+title+"</h2><p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>";
 	}
-	
 </script>
 
-<script language="JavaScript" src="/html/js/cms_ui_utils.js"></script>
-<script language="JavaScript" src="/html/js/template/utility-left-menu.js"></script>
+<script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
+<script src="/html/js/template/utility-left-menu.js" type="text/javascript"></script>
+<script src="/html/js/template/utility-add-metadata.js" type="text/javascript"></script>
+<script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
 		drawDefault(<%=overrideBody%>,'<%= LanguageUtil.get(pageContext, "Add-Container") %>','<%= LanguageUtil.get(pageContext, "Remove-Container") %>');
+		setTimeout('codeMirrorArea()',1);
 	});
+	
+	var editor;
+	function codeMirrorArea(){
+		editor = CodeMirror.fromTextArea("headerField", {
+		    width: "95%",
+		    height:"100%",
+			parserfile: ["parsedummy.js","parsexml.js", "parsecss.js", "tokenizejavascript.js", "parsejavascript.js", "parsehtmlmixed.js"],
+			stylesheet: ["/html/js/codemirror/css/xmlcolors.css", "/html/js/codemirror/css/jscolors.css", "/html/js/codemirror/css/csscolors.css"],
+			path: "/html/js/codemirror/js/"
+		});
+	} 
+	
+	function codeMirrorColoration(){
+		dijit.byId("toggleEditor").disabled=true;
+		if (dijit.byId("toggleEditor").checked) {
+			codeMirrorArea();
+		} else {
+			var editorText = editor.getCode();
+			if (dojo.isIE) {
+    			var node = dojo.query('.CodeMirror-wrapping')[0];
+    			node.parentNode.removeChild(node);
+			} else {
+				dojo.query('.CodeMirror-wrapping')[0].remove();
+			}
+			dojo.query('#headerField').style({display:''})
+			dojo.query('#headerField')[0].value = editorText;
+		}
+		dijit.byId("toggleEditor").disabled=false;
+	}	
 </script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
@@ -251,7 +282,13 @@
 			<div id="addFileToTemplate">
 				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
-				</button>			
+				</button>
+				<button id="buttonOne" data-dojo-type="dijit.form.Button" type="button">
+					<%=LanguageUtil.get(pageContext, "add-meta-tag")%>
+				    <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
+        				dijit.byId("dialogOne").show();
+    				</script>
+				</button>							
 			</div>
 			<div class="clear"></div>
 			<div id="bodyTemplate"></div>
@@ -509,7 +546,7 @@
 					<span class="cancelIcon"></span>
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 				</a>			
-		</div>										
+		</div>												
 	</div>
 <%
 	}
@@ -542,6 +579,91 @@
 		<button dojoType="dijit.form.Button" onclick="addContainer()" type="button"><%=LanguageUtil.get(pageContext, "Add")%></button> 
 		<button dojoType="dijit.form.Button" onclick="dijit.byId('containerSelector').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
 	</div>
+</div>
+
+<div id="dialogOne" dojoType="dijit.Dialog" title="<%=LanguageUtil.get(pageContext, "add-meta-tag")%>" style="width: 800px; height: 600px; padding: 0pt;">
+    <div dojoType="dijit.layout.TabContainer" style="min-height: 500px; padding: 0pt;">
+        <div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "metadata-tab")%>" style="width: auto; padding: 0pt;">
+   			<p><%=LanguageUtil.get(pageContext, "metadata-tab-description")%></p>
+   			<dl>
+   				<dt><%=LanguageUtil.get(pageContext, "Choose-Attribute")%></dt>
+   				<dd>
+   					<select id="choose-attribute" dojoType="dijit.form.FilteringSelect" name="choose-attribute" onchange="javascript: showSelectedAttribute(this.value)">
+						<option value="-1" selected="selected"></option>
+						<option value="0"><%= LanguageUtil.get(pageContext, "Name-Attribute") %></option>
+						<option value="1"><%= LanguageUtil.get(pageContext, "Http-Equiv-Attribute") %></option>
+					</select>
+   				</dd>
+   				<div id="name-div" style="display: none;">
+	   				<dt><%=LanguageUtil.get(pageContext, "Name-Attribute")%></dt>
+	   				<dd>
+	   					<select id="name-attribute" dojoType="dijit.form.FilteringSelect" name="name-attribute">
+							<option value="none" selected="selected"></option>
+							<option value="<%= LanguageUtil.get(pageContext, "name-author") %>"><%= LanguageUtil.get(pageContext, "name-author") %></option>
+							<option value="<%= LanguageUtil.get(pageContext, "name-description") %>"><%= LanguageUtil.get(pageContext, "name-description") %></option>						
+							<option value="<%= LanguageUtil.get(pageContext, "name-keywords") %>"><%= LanguageUtil.get(pageContext, "name-keywords") %></option>
+							<option value="<%= LanguageUtil.get(pageContext, "name-generator") %>"><%= LanguageUtil.get(pageContext, "name-generator") %></option>
+							<option value="<%= LanguageUtil.get(pageContext, "name-revised") %>"><%= LanguageUtil.get(pageContext, "name-revised") %></option>
+						</select>
+					</dd>
+				</div>
+				<div id="http-equiv-div" style="display: none;">
+	   				<dt><%=LanguageUtil.get(pageContext, "Http-Equiv-Attribute")%></dt>
+	   				<dd>
+	   					<select id="http-equiv-attribute" dojoType="dijit.form.FilteringSelect" name="http-equiv-attribute">
+							<option value="none" selected="selected"></option>
+							<option value="<%= LanguageUtil.get(pageContext, "http-equiv-content-type") %>"><%= LanguageUtil.get(pageContext, "http-equiv-content-type") %></option>
+							<option value="<%= LanguageUtil.get(pageContext, "http-equiv-content-style-type") %>"><%= LanguageUtil.get(pageContext, "http-equiv-content-style-type") %></option>
+							<option value="<%= LanguageUtil.get(pageContext, "http-equiv-expires") %>"><%= LanguageUtil.get(pageContext, "http-equiv-expires") %></option>
+							<option value="<%= LanguageUtil.get(pageContext, "http-equiv-set-cookie") %>"><%= LanguageUtil.get(pageContext, "http-equiv-set-cookie") %></option>
+						</select>
+					</dd>
+				</div>				
+   				<dt><%=LanguageUtil.get(pageContext, "Content-Attribute")%></dt>
+   				<dd>
+   					<input type="text" dojoType="dijit.form.TextBox" style="width:300px" name="content-attribute" id="content-attribute" value="" />
+				</dd>   				   			
+   			</dl>
+   			<hr />
+			<div class="buttonRow">
+				<button dojoType="dijit.form.Button" onclick="addMetatag()" type="button" iconClass="plusIcon"><%=LanguageUtil.get(pageContext, "add-meta")%></button>
+			</div>
+			<hr />
+			<table class="listingTable" id="metadataTable">
+				<tr>
+					<th nowrap style="width:5%; text-align:center;">
+						<%= LanguageUtil.get(pageContext, "Action") %>
+					</th>				
+					<th nowrap style="width:10%;text-align:center;">
+						<%= LanguageUtil.get(pageContext, "Attribute") %>
+					</th>
+					<th nowrap style="width:15%;text-align:center;">
+						<%= LanguageUtil.get(pageContext, "Attribute-Value") %>
+					</th>					
+					<th nowrap style="width:20%;text-align:center;">
+						<%= LanguageUtil.get(pageContext, "Content") %>
+					</th>
+					<th nowrap style="width:50%;text-align:center;">
+						<%= LanguageUtil.get(pageContext, "Generated-HTML") %>
+					</th>					
+				</th>	
+			</table>
+			<div class="clear"></div>
+			<br />
+        </div>
+        <div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "header-code-tab")%>" style="width: auto;">
+			<div id="textEditorArea" style="border: 0px;  width: auto; height: 80%;">
+				<textarea onkeydown="return catchTab(this,event)" style="width: 95%; height: 100%; font-size: 12px" id="headerField"></textarea>
+			</div>
+			<br />
+		    <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="codeMirrorColoration();"  checked="checked"  />
+		    <label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label> 
+        </div>
+    </div>
+    <div class="buttonRow">
+		<button dojoType="dijit.form.Button" onclick="saveMetaAndHeaderCode()" type="button"><%=LanguageUtil.get(pageContext, "Add")%></button> 
+		<button dojoType="dijit.form.Button" onclick="dijit.byId('dialogOne').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
+	</div>    
 </div>
 
 

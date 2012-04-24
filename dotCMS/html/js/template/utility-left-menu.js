@@ -1,3 +1,9 @@
+/**
+ * This file contains all the Javascript function for drawing the template. 
+ * 
+ * @author Graziano Aliberti
+ * 
+ */
 
 var addContainerMSG;
 var removeContainerMSG;
