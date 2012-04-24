@@ -666,7 +666,7 @@ public class EditHTMLPageAction extends DotPortletAction implements DotPortletAc
 		String this_page = workingAsset.getURI(parentFolder);
 		req.setAttribute(WebKeys.HTMLPAGE_REFERER, this_page);
 		
-		ActivityLogger.logInfo(this.getClass(), "save HTMLpage action", "User " + user.getPrimaryKey() + " save page" + workingAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
+		ActivityLogger.logInfo(this.getClass(), "save HTMLpage action", "User " + user.getPrimaryKey() + " save page " + workingAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 
 	}
 

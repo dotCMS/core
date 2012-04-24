@@ -1,5 +1,7 @@
 This plugin allows you to add form tab "CMS admin" a backend portlet to manage system logging.
-Portlet needs a new table on db, within 3 fields: log_name, description and enabled flag.
+Portle display logs that system will manage anablign or disabling them.
+
+To do this CMS  needs a new table on db, within 3 fields: log_name, description and enabled flag.
 Sql will be something like :
 
 CREATE TABLE "U_DOTCMS20_CHRI"."LOG_MAPPER"
