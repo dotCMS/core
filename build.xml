@@ -399,15 +399,16 @@
 
 		<antcall target="deploy-core" />
 
-		<copy todir="${distribution.dotserver.output}">
+        <!--dotserver code (./dotserver)-->
+        <copy todir="${distribution.dotserver.output}">
 			<fileset dir=".">
 				<exclude name="**/.svn" />
 				<exclude name="tomcat/logs/**" />
 				<exclude name="dotCMS/WEB-INF/dotlucene/**" />
 				<exclude name="dotCMS/assets/**" />
 				<exclude name="dotCMS/dotsecure/**" />
-
-				<exclude name="dotCMS/html/js/dojo/src/**" />
+                <exclude name="bin/autoupdater/**" />
+                <exclude name="dotCMS/html/js/dojo/src/**" />
 				<exclude name="tomcat/temp/**" />
 				<exclude name="build/**" />
 				<exclude name="tomcat/work/**" />
@@ -419,6 +420,11 @@
 		</copy>
 		<mkdir dir="${distribution.dotserver.output}/tomcat/logs" />
 	  	<mkdir dir="${distribution.dotserver.output}/tomcat/temp" />
+
+        <!--autoupdater code (./autoupdater)-->
+        <copy todir="${distribution.autoupdater.output}">
+            <fileset dir="bin/autoupdater"/>
+        </copy>
 
 		<antcall target="javadoc" />
 
@@ -440,8 +446,8 @@
 					<exclude name="dotCMS/WEB-INF/dotlucene/**" />
 					<exclude name="dotCMS/assets/**" />
 					<exclude name="dotCMS/dotsecure/**" />
-
-					<exclude name="dotCMS/html/js/dojo/src/**" />
+                    <exclude name="bin/autoupdater/**" />
+                    <exclude name="dotCMS/html/js/dojo/src/**" />
 					<exclude name="tomcat/temp/**" />
 					<exclude name="build/**" />
 					<exclude name="tomcat/work/**" />
