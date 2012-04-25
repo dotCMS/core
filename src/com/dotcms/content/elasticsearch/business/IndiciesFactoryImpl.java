@@ -11,7 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 
 public class IndiciesFactoryImpl implements IndiciesFactory {
     
-    protected static enum IndexTypes {WORKING,LIVE,REINDEX_WORKING,REINDEX_LIVE};
+    protected static enum IndexTypes {WORKING,LIVE,REINDEX_WORKING,REINDEX_LIVE,SITE_SEARCH};
     protected static IndiciesCache cache=CacheLocator.getIndiciesCache();
     
     public IndiciesInfo loadIndicies() throws DotDataException {
@@ -35,6 +35,10 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
 		                    info.reindex_live=name;
 		                else if(type.equalsIgnoreCase(IndexTypes.REINDEX_WORKING.toString()))
 		                    info.reindex_working=name;
+		                else if(type.equalsIgnoreCase(IndexTypes.SITE_SEARCH.toString()))
+		                    info.site_search=name;
+		                
+		                
 		            }
 	            	cache.put(info);
 				}
@@ -80,6 +84,12 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
             dc.loadResult();
         }
         
+        if(info.site_search!=null) {
+            dc.setSQL(insertSQL);
+            dc.addParam(info.site_search);
+            dc.addParam(IndexTypes.SITE_SEARCH.toString().toLowerCase());
+            dc.loadResult();
+        }
         // we need to clear cache after commit. This way
         // is less error prone
         HibernateUtil.addCommitListener(new Runnable() {

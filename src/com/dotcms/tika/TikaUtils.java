@@ -25,17 +25,12 @@ import com.dotmarketing.util.UtilMethods;
 
 public class TikaUtils {
 
-	/**
-	 * This method takes a file and uses tika to parse the metadata from it. It
-	 * returns a Map of the metadata
-	 * 
-	 * @param binFile
-	 * @return
-	 */
-
-	public Map<String, String> getMetaDataMap(File binFile) {
+	
+	
+	public Map<String, String> getMetaDataMap(File binFile, String mimeType) {
 		Map<String, String> metaMap = new HashMap<String, String>();
-		Parser parser = getParser(binFile);
+		Parser parser = (mimeType ==null) ? getParser(binFile) : getParser(binFile, mimeType);
+
 		Metadata met = new Metadata();
 		// set -1 for no limit when parsing text content
 		ContentHandler handler = new BodyContentHandler(Config.getIntProperty("TIKA_PARSE_CHARACTER_LIMIT", -1));
@@ -71,6 +66,17 @@ public class TikaUtils {
 
 		return metaMap;
 	}
+	
+	/**
+	 * This method takes a file and uses tika to parse the metadata from it. It
+	 * returns a Map of the metadata
+	 * 
+	 * @param binFile
+	 * @return
+	 */
+	public Map<String, String> getMetaDataMap(File binFile) {
+		return getMetaDataMap(binFile, null);
+	}
 
 	/**
 	 * 
@@ -79,6 +85,11 @@ public class TikaUtils {
 	 */
 	private Parser getParser(File binFile) {
 		String mimeType = new MimetypesFileTypeMap().getContentType(binFile);
+		return getParser(binFile, mimeType);
+	}
+
+	
+	private Parser getParser(File binFile, String mimeType) {
 		String[] mimeTypes = Config.getStringArrayProperty("CONTENT_PARSERS_MIMETYPES");
 		String[] parsers = Config.getStringArrayProperty("CONTENT_PARSERS");
 		int index = Arrays.binarySearch(mimeTypes, mimeType);
@@ -95,7 +106,10 @@ public class TikaUtils {
 		}
 		return new AutoDetectParser();
 	}
-
+	
+	
+	
+	
 	/**
 	 * normalize metadata from various filetypes this method will return an
 	 * array of metadata keys that we can use to normalize the values in our

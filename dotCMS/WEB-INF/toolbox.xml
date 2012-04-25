@@ -366,7 +366,7 @@
 	</tool>
 	<tool>
 		<key>sitesearch</key>
-		<scope>application</scope>
+		<scope>request</scope>
 		<class>com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPI</class>
 	</tool>
 	<tool>
