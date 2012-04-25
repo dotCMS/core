@@ -264,4 +264,26 @@ public class UpdateUtil {
         formatter.printHelp( "autoUpdater <options>", "", options, txt );
     }
 
+    /**
+     * This method will delete a given folder, it will make it recursively removing from the children to the parent
+     *
+     * @param dir
+     * @return
+     */
+    public static boolean deleteDirectory ( File dir ) {
+
+        if ( dir.isDirectory() ) {
+            String[] children = dir.list();
+            for ( String child : children ) {
+                boolean success = deleteDirectory( new File( dir, child ) );
+                if ( !success ) {
+                    return false;
+                }
+            }
+        }
+
+        //The directory is now empty so delete it
+        return dir.delete();
+    }
+
 }
