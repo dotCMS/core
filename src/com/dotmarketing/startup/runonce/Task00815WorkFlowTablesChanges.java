@@ -23,6 +23,7 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		dropWorkFlowTaskIndexes();
 		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
 			dropInode = "ALTER TABLE workflow_task DROP FOREIGN KEY fk441116055fb51eb;" +
+		                " drop index fk441116055fb51eb on workflow_task;"+
 						"ALTER TABLE workflow_task change inode id varchar(36);";
 		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
 			dropInode = "ALTER TABLE workflow_task DROP CONSTRAINT fk441116055fb51eb;" +
@@ -64,7 +65,11 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		
 		List<String> dropInodeQueries = SQLUtil.tokenize(dropInode + createTable+addFKs);
 		for(String dropInodeQuery :dropInodeQueries){
-			dc.executeStatement(dropInodeQuery);
+		    try {
+		        dc.executeStatement(dropInodeQuery);
+		    } catch(Exception ex) {
+		        Logger.warn(this, ex.getMessage());
+		    }
 		}
 		addWorkFlowTaskIndexes();
 		dc.setSQL(workflowtask_fileasset_relations);
