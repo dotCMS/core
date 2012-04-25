@@ -502,7 +502,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                          + ") temp WHERE RowNumber > ? order by identifier asc, language_id asc, mod_date desc";
         }else{
             contentlets = "select identifier,inode,live,locked,mod_user,mod_date,deleted,language_id from contentlet "
-                       +  " where working="+DbConnectionFactory.getDBTrue()+" limit ? offset ? order by identifier asc, language_id asc, mod_date desc";
+                       +  " where working="+DbConnectionFactory.getDBTrue()+" order by identifier asc, language_id asc, mod_date desc limit ? offset ? ";
         }
         
         int offset=0;
