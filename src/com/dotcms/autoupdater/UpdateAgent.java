@@ -13,8 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.Manifest;
-import java.util.zip.ZipException;
 
 
 public class UpdateAgent {
@@ -25,7 +23,7 @@ public class UpdateAgent {
 
     String preProcessHome = "build_temp";
 
-    private static String MANIFEST_PROPERTY_AGENT_VERSION = "Agent-Version";
+    public static String MANIFEST_PROPERTY_AGENT_VERSION = "Agent-Version";
     private static String MANIFEST_PROPERTY_RELEASE_VERSION = "Release-Version";
 
     public static Logger logger;
@@ -33,7 +31,9 @@ public class UpdateAgent {
     public static String logFile;
 
     private String url;
-    private String home;
+    private String homeProjectPath;
+    public static String FOLDER_HOME_DOTSERVER = "dotserver";
+    public static String FOLDER_HOME_UPDATER = "autoupdater";
     private String version;
     private String minor;
     private String backupFile;
@@ -75,24 +75,26 @@ public class UpdateAgent {
         }
 
         try {
-            configureLogger( line );
 
-            if ( line.hasOption( UpdateOptions.HELP ) || args.length == 0 ) {
-                printHelp( options, MESSAGES_HELP_TEXT );
-                return;
-            }
-            allowTestingBuilds = Boolean.parseBoolean( line.getOptionValue( UpdateOptions.ALLOW_TESTING_BUILDS ) );
+            //Initializing properties
+            configureLogger( line );
 
             SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
 
+            if ( line.hasOption( UpdateOptions.HELP ) || args.length == 0 ) {
+                UpdateUtil.printHelp( options, MESSAGES_HELP_TEXT );
+                return;
+            }
+
+            allowTestingBuilds = Boolean.parseBoolean( line.getOptionValue( UpdateOptions.ALLOW_TESTING_BUILDS ) );
             proxy = line.getOptionValue( UpdateOptions.PROXY );
             proxyUser = line.getOptionValue( UpdateOptions.PROXY_USER );
             proxyPass = line.getOptionValue( UpdateOptions.PROXY_PASS );
             url = line.getOptionValue( UpdateOptions.URL, updateOptions.getDefault( "update.url", "" ) );
-            home = line.getOptionValue( UpdateOptions.HOME, System.getProperty( "user.dir" ) );
-            logger.info( Messages.getString( "UpdateAgent.text.dotcms.home" ) + home );
-            checkHome( home );
-            checkRequisites( home );
+            homeProjectPath = line.getOptionValue( UpdateOptions.HOME, System.getProperty( "user.dir" ) );
+            logger.info( Messages.getString( "UpdateAgent.text.dotcms.home" ) + getHomeProjectPath() );
+            checkHome( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
+            checkRequisites( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
             String newMinor = "";
             version = getVersion();
             minor = getMinor();
@@ -100,7 +102,7 @@ public class UpdateAgent {
             if ( !backupFile.endsWith( ".zip" ) ) {
                 backupFile += ".zip";
             }
-            String agentVersion = getManifestValue( MANIFEST_PROPERTY_AGENT_VERSION );
+            String agentVersion = UpdateUtil.getManifestValue( MANIFEST_PROPERTY_AGENT_VERSION );
             logger.debug( Messages.getString( "UpdateAgent.text.autoupdater.version" ) + agentVersion );
 
             File updateFile = null;
@@ -143,7 +145,7 @@ public class UpdateAgent {
                     }
 
                     String fileName = "update_" + newMinor + ".zip";
-                    updateFile = new File( home + File.separator + "updates" + File.separator + fileName );
+                    updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
                     if ( updateFile.exists() ) {
                         //check md5 of file
                         String MD5 = null;
@@ -199,7 +201,7 @@ public class UpdateAgent {
 
                 logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " file " + line.getOptionValue( UpdateOptions.FILE ) );
                 // Use user provided file
-                updateFile = new File( home + File.separator + "updates" + File.separator + line.getOptionValue( UpdateOptions.FILE ) );
+                updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + line.getOptionValue( UpdateOptions.FILE ) );
                 if ( !updateFile.exists() ) {
                     throw new UpdateException( Messages.getString( "UpdateAgent.error.file.not.found" ), UpdateException.ERROR );
                 }
@@ -262,7 +264,7 @@ public class UpdateAgent {
                         }
 
                         String fileName = "update_" + newMinor + ".zip";
-                        updateFile = new File( home + File.separator + "updates" + File.separator + fileName );
+                        updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
                         if ( updateFile.exists() ) {
                             //check md5 of file
                             String MD5 = null;
@@ -320,15 +322,15 @@ public class UpdateAgent {
             if ( updateFile != null && updateFile.exists() ) {
 
                 // Preprocess
-                preProcess( updateFile, home );
+                preProcess( updateFile );
 
                 // Ask for confirmation
                 UpdateUtil.confirm( line, MESSAGES_CONFIRM_TEXT );
 
                 // Extract files
-                processData( updateFile, home, backupFile, line.hasOption( UpdateOptions.DRY_RUN ) );
+                processData( updateFile, getHomeProjectPath(), backupFile, line.hasOption( UpdateOptions.DRY_RUN ) );
 
-                postProcess( home, line.hasOption( UpdateOptions.DRY_RUN ) );
+                postProcess( getHomeProjectPath(), line.hasOption( UpdateOptions.DRY_RUN ) );
                 throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.dotcms.updated" ) + version + " / " + newMinor, UpdateException.SUCCESS );
             }
 
@@ -365,13 +367,14 @@ public class UpdateAgent {
 
     }
 
-    private boolean processData ( File f, String home, String backupFile,
-                                  boolean dryrun ) throws IOException, UpdateException {
+    private boolean processData ( File f, String home, String backupFile, boolean dryrun ) throws IOException, UpdateException {
+
         FileUpdater fileUpdater = new FileUpdater( f, home, backupFile );
         return fileUpdater.doUpdate( dryrun );
     }
 
     private boolean postProcess ( String home, boolean dryrun ) {
+
         if ( dryrun ) {
             logger.info( Messages.getString( "UpdateAgent.text.dryrun" ) );
             return true;
@@ -385,57 +388,52 @@ public class UpdateAgent {
         }
     }
 
-    private boolean preProcess ( File updateFile, String home ) throws ZipException, IOException, UpdateException {
+    private boolean preProcess ( File updateFile ) throws IOException, UpdateException {
 
         logger.info( Messages.getString( "UpdateAgent.debug.start.validation" ) );
 
         //First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
-        File antLauncher = new File( home + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" ); //$NON-NLS-3$
+        File antLauncher = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" ); //$NON-NLS-3$
         if ( !antLauncher.exists() ) {
             logger.debug( Messages.getString( "UpdateAgent.debug.extracting.ant" ) );
-            UpdateUtil.unzipDirectory( updateFile, "bin/ant", home, false );
-
+            UpdateUtil.unzipDirectory( updateFile, "bin/ant", getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER, false );
         }
 
         // Find if we have a build.xml in the update. If we do, we use that one.
         // Otherwise we use the current one
-        File buildFile = new File( home + File.separator + "build_new.xml" );
-        boolean updateBuild = UpdateUtil.unzipFile( updateFile, "build.xml",
-                buildFile );
+        File buildFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
+        boolean updateBuild = UpdateUtil.unzipFile( updateFile, "autoupdater/build.xml", buildFile );
 
         // Create the temp file structrue
-        AntInvoker invoker = new AntInvoker( home );
-        boolean ret = false;
+        AntInvoker invoker = new AntInvoker( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER );
+        boolean ret;
         if ( updateBuild ) {
-            ret = invoker.runTask( "prepare-temp", "build_new.xml" );
-            if ( ret ) {
+            ret = invoker.runTask( "prepare.back-up", "build_new.xml" );
+            /*if ( ret ) {
                 // Copy the right buld.xml to the temp directory.
-                buildFile = new File( home + File.separator + preProcessHome
-                        + File.separator + "build.xml" );
+                buildFile = new File( getAutoUpdaterHomePath() + File.separator + preProcessHome + File.separator + "build.xml" );
                 UpdateUtil.unzipFile( updateFile, "build.xml", buildFile );
-            }
+            }*/
 
         } else {
-            ret = invoker.runTask( "prepare-temp", null );
+            ret = invoker.runTask( "prepare.back-up", null );
         }
 
         if ( !ret ) {
-            String error = Messages.getString( "UpdateAgent.error.ant.prepare.temp" );
+            String error = Messages.getString( "UpdateAgent.error.ant.prepare.back-up" );
             if ( !isDebug ) {
                 error += Messages.getString( "UpdateAgent.text.use.verbose", logFile );
             }
             throw new UpdateException( error, UpdateException.ERROR );
         }
 
-
-        FileUpdater fileUpdater = new FileUpdater( updateFile, home + File.separator + preProcessHome, null );
+        FileUpdater fileUpdater = new FileUpdater( updateFile, getHomeProjectPath() + File.separator + preProcessHome, null );
         fileUpdater.getDelList();
         fileUpdater.processData( false );
 
-
         // Execute the pre process.
         PostProcess pp = new PostProcess();
-        pp.setHome( home + File.separator + preProcessHome );
+        pp.setHome( getHomeProjectPath() + File.separator + preProcessHome );
 
         if ( !pp.postProcess( true ) ) {
             String error = Messages.getString( "UpdateAgent.error.plugin.incompatible" );
@@ -478,6 +476,11 @@ public class UpdateAgent {
 
     }
 
+    /**
+     * Will configure the logging for this tool
+     *
+     * @param line
+     */
     private void configureLogger ( CommandLine line ) {
 
         Logger logRoot = Logger.getRootLogger();
@@ -487,7 +490,7 @@ public class UpdateAgent {
         //	...gets errors on quiet
         //	...on normal it gets info from UpdateAgent only.
         ConsoleAppender app = new ConsoleAppender( new PatternLayout( "%m%n" ) );
-        FileAppender logApp = null;
+        FileAppender logApp;
         try {
             SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
             logFile = "update_" + sdf.format( new Date() ) + ".log";
@@ -521,7 +524,6 @@ public class UpdateAgent {
             }
         }
         logger = Logger.getLogger( UpdateAgent.class );
-
     }
 
     private File findJarFile () throws IOException, UpdateException {
@@ -532,24 +534,21 @@ public class UpdateAgent {
         };
         File libDir = null;
         for ( String libDirName : libDirs ) {
-            File f = new File( home + File.separator + libDirName );
+            File f = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER + File.separator + libDirName );
             if ( f.exists() && f.isDirectory() ) {
                 libDir = f;
                 break;
             }
         }
         if ( libDir == null ) {
-            throw new UpdateException(
-                    Messages.getString( "UpdateAgent.error.jar.not.found" ),
-                    UpdateException.ERROR );
+            throw new UpdateException( Messages.getString( "UpdateAgent.error.jar.not.found" ), UpdateException.ERROR );
         }
 
         File[] dotCMSjars = libDir.listFiles( new FileFilter() {
 
             public boolean accept ( File pathname ) {
                 String fileName = pathname.getName().toLowerCase();
-                if ( fileName.startsWith( "dotcms_" ) && fileName.endsWith( ".jar" )
-                        && ( !fileName.startsWith( "dotcms_ant" ) ) ) {
+                if ( fileName.startsWith( "dotcms_" ) && fileName.endsWith( ".jar" ) && ( !fileName.startsWith( "dotcms_ant" ) ) ) {
                     return true;
                 }
                 return false;
@@ -561,17 +560,14 @@ public class UpdateAgent {
             for ( File jar : dotCMSjars ) {
                 jars += " " + jar.getName();
             }
-            throw new UpdateException(
-                    Messages.getString( "UpdateAgent.error.multiple.jars" )
-                            + jars, UpdateException.ERROR );
+            throw new UpdateException( Messages.getString( "UpdateAgent.error.multiple.jars" ) + jars, UpdateException.ERROR );
 
         }
 
         if ( dotCMSjars.length < 1 ) {
-            throw new UpdateException(
-                    Messages.getString( "UpdateAgent.error.jar.not.found" ),
-                    UpdateException.ERROR );
+            throw new UpdateException( Messages.getString( "UpdateAgent.error.jar.not.found" ), UpdateException.ERROR );
         }
+
         return dotCMSjars[0];
     }
 
@@ -579,8 +575,7 @@ public class UpdateAgent {
     private Properties getJarProps () throws IOException, UpdateException {
 
         JarFile jar = new JarFile( findJarFile() );
-        JarEntry entry = jar
-                .getJarEntry( "com/liferay/portal/util/build.properties" );
+        JarEntry entry = jar.getJarEntry( "com/liferay/portal/util/build.properties" );
         Properties props = new Properties();
         InputStream in = jar.getInputStream( entry );
         props.load( in );
@@ -617,14 +612,6 @@ public class UpdateAgent {
         return true;
     }
 
-    private void printHelp ( Options options, String helpText ) {
-
-        HelpFormatter formatter = new HelpFormatter();
-        String txt = Messages.getString( "UpdateAgent.text.agent.version" ) + getManifestValue( MANIFEST_PROPERTY_AGENT_VERSION ) + "\n";
-        txt += helpText;
-        formatter.printHelp( "autoUpdater <options>", "", options, txt );
-    }
-
     /**
      * Returns the update file for the autoupdater client
      *
@@ -632,15 +619,15 @@ public class UpdateAgent {
      */
     private File downloadAgent () {
 
-        File updateFile = new File( home + File.separator + "bin" + File.separator + "autoupdater" + File.separator + "autoUpdater.new" );
+        File updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "autoUpdater.new" );
 
         try {
 
             updateFile.createNewFile();
 
             Map<String, String> map = new HashMap<String, String>();
-            map.put( "version", getManifestValue( MANIFEST_PROPERTY_RELEASE_VERSION ) );
-            map.put( "agent_version", getManifestValue( MANIFEST_PROPERTY_AGENT_VERSION ) );
+            map.put( "version", UpdateUtil.getManifestValue( MANIFEST_PROPERTY_RELEASE_VERSION ) );
+            map.put( "agent_version", UpdateUtil.getManifestValue( MANIFEST_PROPERTY_AGENT_VERSION ) );
 
             if ( allowTestingBuilds ) {
                 map.put( "allowTestingBuilds", "true" );
@@ -663,44 +650,6 @@ public class UpdateAgent {
 
         updateFile.delete();
         return null;
-    }
-
-    private String getManifestValue ( String property ) {
-
-        Class clazz = this.getClass();
-
-        String className = clazz.getSimpleName();
-        String classFileName = className + ".class";
-        String pathToThisClass = clazz.getResource( classFileName ).toString();
-
-        //TODO: Remove!!!, temporal change!!!
-        //TODO: Remove!!!, temporal change!!!
-        int mark = pathToThisClass.indexOf( "/com" );
-        //int mark = pathToThisClass.indexOf( "!" );
-        //TODO: Remove!!!, temporal change!!!
-        //TODO: Remove!!!, temporal change!!!
-
-        try {
-
-            //TODO: Remove!!!, temporal change!!!
-            //TODO: Remove!!!, temporal change!!!
-            String pathToManifest = pathToThisClass.toString().substring( 0, mark );
-            //String pathToManifest = pathToThisClass.toString().substring( 0, mark + 1 );
-            //TODO: Remove!!!, temporal change!!!
-            //TODO: Remove!!!, temporal change!!!
-
-            pathToManifest += "/META-INF/MANIFEST.MF";
-            Manifest manifest = new Manifest( new URL( pathToManifest ).openStream() );
-
-            return manifest.getMainAttributes().getValue( property );
-        } catch ( MalformedURLException e ) {
-            logger.error( Messages.getString( "UpdateAgent.error.get.autoupdater.jar.version" ) + e.getMessage() );
-            logger.debug( "MalformedURLException: ", e );
-        } catch ( IOException e ) {
-            logger.error( Messages.getString( "UpdateAgent.error.get.autoupdater.jar.version" ) + e.getMessage() );
-            logger.debug( "IOException: ", e );
-        }
-        return Messages.getString( "UpdateAgent.text.unknown" );
     }
 
     /**
@@ -974,6 +923,10 @@ public class UpdateAgent {
         }
 
         return statusCode;
+    }
+
+    public String getHomeProjectPath () {
+        return homeProjectPath;
     }
 
 }
