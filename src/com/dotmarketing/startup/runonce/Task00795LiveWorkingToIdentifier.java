@@ -331,7 +331,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         }else{
         	 selectContentlets = con.prepareStatement(
                      "select identifier,inode,live,locked,mod_date,mod_user,deleted from "+ table +
-                     " where working="+DbConnectionFactory.getDBTrue()+" limit ? offset ? order by identifier asc, mod_date desc");
+                     " where working="+DbConnectionFactory.getDBTrue()+" order by identifier asc, mod_date desc limit ? offset ? ");
         }
 
         PreparedStatement insertVersionInfo=con.prepareStatement(
