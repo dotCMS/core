@@ -19,10 +19,6 @@ public class UpdateAgent {
 
     private UpdateOptions updateOptions;
 
-    String[] homeCheckElements = { "build.xml", "dotCMS/WEB-INF/web.xml" };
-
-    String preProcessHome = "build_temp";
-
     public static String MANIFEST_PROPERTY_AGENT_VERSION = "Agent-Version";
     private static String MANIFEST_PROPERTY_RELEASE_VERSION = "Release-Version";
 
@@ -86,15 +82,20 @@ public class UpdateAgent {
                 return;
             }
 
+            //Command line parameters
             allowTestingBuilds = Boolean.parseBoolean( line.getOptionValue( UpdateOptions.ALLOW_TESTING_BUILDS ) );
             proxy = line.getOptionValue( UpdateOptions.PROXY );
             proxyUser = line.getOptionValue( UpdateOptions.PROXY_USER );
             proxyPass = line.getOptionValue( UpdateOptions.PROXY_PASS );
             url = line.getOptionValue( UpdateOptions.URL, updateOptions.getDefault( "update.url", "" ) );
             homeProjectPath = line.getOptionValue( UpdateOptions.HOME, System.getProperty( "user.dir" ) );
+
             logger.info( Messages.getString( "UpdateAgent.text.dotcms.home" ) + getHomeProjectPath() );
+
+            //Some validations...
             checkHome( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
             checkRequisites( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
+
             String newMinor = "";
             version = getVersion();
             minor = getMinor();
@@ -321,16 +322,19 @@ public class UpdateAgent {
             //Ok, now we have an update file to use...
             if ( updateFile != null && updateFile.exists() ) {
 
-                // Preprocess
-                preProcess( updateFile );
+                FileUpdater fileUpdater = new FileUpdater( updateFile, getHomeProjectPath(), null, line.hasOption( UpdateOptions.DRY_RUN ) );
+
+                // Pre-process the update, prepare everything and make back-ups
+                fileUpdater.preUpdate();
 
                 // Ask for confirmation
                 UpdateUtil.confirm( line, MESSAGES_CONFIRM_TEXT );
 
-                // Extract files
-                processData( updateFile, getHomeProjectPath(), backupFile, line.hasOption( UpdateOptions.DRY_RUN ) );
+                // Execute the update, unziping the download file on the .dotserver/ directory and aplying the required changes in there
+                fileUpdater.doUpdate();
 
-                postProcess( getHomeProjectPath(), line.hasOption( UpdateOptions.DRY_RUN ) );
+                //Clean up...
+                fileUpdater.postUpdate();
                 throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.dotcms.updated" ) + version + " / " + newMinor, UpdateException.SUCCESS );
             }
 
@@ -364,115 +368,6 @@ public class UpdateAgent {
 
             logger.info( " " );
         }
-
-    }
-
-    private boolean processData ( File f, String home, String backupFile, boolean dryrun ) throws IOException, UpdateException {
-
-        FileUpdater fileUpdater = new FileUpdater( f, home, backupFile );
-        return fileUpdater.doUpdate( dryrun );
-    }
-
-    private boolean postProcess ( String home, boolean dryrun ) {
-
-        if ( dryrun ) {
-            logger.info( Messages.getString( "UpdateAgent.text.dryrun" ) );
-            return true;
-        } else {
-            logger.info( Messages.getString( "UpdateAgent.debug.start.post.process" ) );
-            PostProcess pp = new PostProcess();
-            pp.setHome( home );
-            pp.postProcess( false );
-            logger.info( Messages.getString( "UpdateAgent.debug.end.post.process" ) );
-            return true;
-        }
-    }
-
-    private boolean preProcess ( File updateFile ) throws IOException, UpdateException {
-
-        logger.info( Messages.getString( "UpdateAgent.debug.start.validation" ) );
-
-        //First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
-        File antLauncher = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" ); //$NON-NLS-3$
-        if ( !antLauncher.exists() ) {
-            logger.debug( Messages.getString( "UpdateAgent.debug.extracting.ant" ) );
-            UpdateUtil.unzipDirectory( updateFile, "bin/ant", getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER, false );
-        }
-
-        // Find if we have a build.xml in the update. If we do, we use that one.
-        // Otherwise we use the current one
-        File buildFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
-        boolean updateBuild = UpdateUtil.unzipFile( updateFile, "autoupdater/build.xml", buildFile );
-
-        // Create the temp file structrue
-        AntInvoker invoker = new AntInvoker( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER );
-        boolean ret;
-        if ( updateBuild ) {
-            ret = invoker.runTask( "prepare.back-up", "build_new.xml" );
-            /*if ( ret ) {
-                // Copy the right buld.xml to the temp directory.
-                buildFile = new File( getAutoUpdaterHomePath() + File.separator + preProcessHome + File.separator + "build.xml" );
-                UpdateUtil.unzipFile( updateFile, "build.xml", buildFile );
-            }*/
-
-        } else {
-            ret = invoker.runTask( "prepare.back-up", null );
-        }
-
-        if ( !ret ) {
-            String error = Messages.getString( "UpdateAgent.error.ant.prepare.back-up" );
-            if ( !isDebug ) {
-                error += Messages.getString( "UpdateAgent.text.use.verbose", logFile );
-            }
-            throw new UpdateException( error, UpdateException.ERROR );
-        }
-
-        FileUpdater fileUpdater = new FileUpdater( updateFile, getHomeProjectPath() + File.separator + preProcessHome, null );
-        fileUpdater.getDelList();
-        fileUpdater.processData( false );
-
-        // Execute the pre process.
-        PostProcess pp = new PostProcess();
-        pp.setHome( getHomeProjectPath() + File.separator + preProcessHome );
-
-        if ( !pp.postProcess( true ) ) {
-            String error = Messages.getString( "UpdateAgent.error.plugin.incompatible" );
-            if ( !isDebug ) {
-                error += Messages.getString( "UpdateAgent.text.use.verbose", logFile );
-            }
-
-            // Try to clean up. Do throw anything if we fail
-            logger.debug( "Starting to try clean temp directory after failure" );
-            if ( updateBuild ) {
-                invoker.runTask( "clean-temp", "build_new.xml" );
-                buildFile.delete();
-            } else {
-                invoker.runTask( "clean-temp", null );
-            }
-            logger.debug( "Finished to try clean temp directory after failure" );
-
-
-            throw new UpdateException( error, UpdateException.ERROR );
-        }
-
-        // Clean up
-        if ( updateBuild ) {
-            ret = invoker.runTask( "clean-temp", "build_new.xml" );
-            buildFile.delete();
-
-        } else {
-            ret = invoker.runTask( "clean-temp", null );
-        }
-        if ( !ret ) {
-            String error = Messages.getString( "UpdateAgent.error.ant.clean.temp" );
-            if ( !isDebug ) {
-                error += Messages.getString( "UpdateAgent.text.use.verbose", logFile );
-            }
-            throw new UpdateException( error, UpdateException.ERROR );
-        }
-
-        logger.info( Messages.getString( "UpdateAgent.debug.end.validation" ) );
-        return true;
 
     }
 
@@ -594,12 +489,32 @@ public class UpdateAgent {
         return props.getProperty( "dotcms.release.build" );
     }
 
+    /**
+     * Will verify for some requires files on this update, specially the ant jars require then to run our ant tasks
+     *
+     * @param home
+     * @return
+     * @throws UpdateException
+     */
     private boolean checkRequisites ( String home ) throws UpdateException {
-        PostProcess pp = new PostProcess();
-        return pp.checkRequisites();
+
+        PostProcess postProcess = new PostProcess();
+        postProcess.setHome( home );
+
+        return postProcess.checkRequisites();
     }
 
+    /**
+     * This method will verify that we have a valid .dotserver/ structure and installation looking for a couple of files
+     * that if it is a valid installation should be there.
+     *
+     * @param home
+     * @return
+     * @throws UpdateException
+     */
     private boolean checkHome ( String home ) throws UpdateException {
+
+        String[] homeCheckElements = { "build.xml", "dotCMS/WEB-INF/web.xml" };
 
         File homeFolder;
         for ( String check : homeCheckElements ) {
@@ -817,6 +732,15 @@ public class UpdateAgent {
         return statusCode;
     }
 
+    /**
+     * This method will download an update file for dotcms, this will be after establishing a connection with the update servlet who is the one that will provide this update file
+     *
+     * @param outputFile
+     * @param method
+     * @return
+     * @throws URIException
+     * @throws MalformedURLException
+     */
     private int download ( File outputFile, PostMethod method ) throws URIException, MalformedURLException {
 
         int statusCode = 0;
