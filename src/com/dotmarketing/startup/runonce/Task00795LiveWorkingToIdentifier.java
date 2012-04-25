@@ -539,7 +539,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                     boolean locked = false;
                     boolean deleted = false;
     
-                    if(DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle()){
+                    if(DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle() || DbConnectionFactory.isMySql()){
                     	if(Integer.parseInt(rr.get("live").toString())==1)
                     		live = true;
                     	if(Integer.parseInt(rr.get("locked").toString())==1)
@@ -547,9 +547,9 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                     	if(Integer.parseInt(rr.get("deleted").toString())==1)
                     		deleted = true;
                     }else{
-                    	live = (Boolean)rr.get("live");
-                        locked = (Boolean)rr.get("locked");
-                        deleted =(Boolean)rr.get("deleted");
+                    	live = Boolean.parseBoolean(rr.get("live").toString());
+                        locked = Boolean.parseBoolean(rr.get("locked").toString());
+                        deleted = Boolean.parseBoolean(rr.get("deleted").toString());
                     }
     
                     String mod_user=(String)rr.get("mod_user");
