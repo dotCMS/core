@@ -313,22 +313,25 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         String versionTable=UtilMethods.getVersionInfoTableName(table);
         PreparedStatement selectContentlets = null;
         final int limit=1000;
+        
+        Logger.info(this, "creating (working) version info records for "+table+" on "+versionTable);
+        
         if(DbConnectionFactory.isOracle()){
         	  selectContentlets = con.prepareStatement(
         	          "select * from ( "+
         	          "   select identifier,inode,live,locked,mod_date,mod_user,deleted, row_number() over (order by inode) rn "+ 
         	          "   from "+table+" where working = 1 "+ 
-        	          ") where rn >= ? and rn < ? ");
+        	          ") where rn >= ? and rn < ? order by identifier asc, mod_date desc");
         }else if(DbConnectionFactory.isMsSql()){
         	 selectContentlets = con.prepareStatement(
         			 " SELECT TOP " + limit  + "  * FROM (SELECT identifier,inode,live,locked,mod_date,mod_user,deleted,ROW_NUMBER() "
 	    		   + " OVER (order by mod_date) AS RowNumber FROM "+ table +" where working = "+DbConnectionFactory.getDBTrue()+") temp "
-	    		   + " WHERE RowNumber > ? ");
+	    		   + " WHERE RowNumber > ? order by identifier asc, mod_date desc");
 
         }else{
         	 selectContentlets = con.prepareStatement(
                      "select identifier,inode,live,locked,mod_date,mod_user,deleted from "+ table +
-                     " where working="+DbConnectionFactory.getDBTrue()+" limit ? offset ?");
+                     " where working="+DbConnectionFactory.getDBTrue()+" limit ? offset ? order by identifier asc, mod_date desc");
         }
 
         PreparedStatement insertVersionInfo=con.prepareStatement(
@@ -338,6 +341,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
 
         int offset=0;
         boolean notDone=true;
+        String lastId="";
         do {
         	if(DbConnectionFactory.isMsSql()){
         		selectContentlets.setInt(1, offset);
@@ -356,7 +360,8 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                 notDone=true;
                 final String inode=rs.getString("inode");
                 final String identifier=rs.getString("identifier");
-                if(UtilMethods.isSet(identifier)) {
+                if(UtilMethods.isSet(identifier) && !identifier.equals(lastId)) {
+                    lastId=identifier;
                     insertVersionInfo.setString(1, identifier);
                     insertVersionInfo.setString(2, inode);
                     boolean locked=rs.getBoolean("locked");
@@ -391,15 +396,21 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
     protected void associateLiveNotWorking(String table) throws DotDataException {
         DotConnect dc = new DotConnect();
         String versionTable=UtilMethods.getVersionInfoTableName(table);
+        String lastId="";
+        
+        Logger.info(this, "creating (live not working) version info records for "+table+" on "+versionTable);
+        
         String contentlets=
-            "select identifier,inode from " + table +
-            " where working="+DbConnectionFactory.getDBFalse()+" and live="+DbConnectionFactory.getDBTrue();
+            "select identifier,inode, mod_date from " + table +
+            " where working="+DbConnectionFactory.getDBFalse()+" and live="+DbConnectionFactory.getDBTrue()+
+            " order by identifier asc, mod_date desc";
         dc.setSQL(contentlets);
         List<Map<String,Object>> results=dc.loadObjectResults();
         for(Map<String,Object> rr : results) {
             String identifier=(String)rr.get("identifier");
             String inode=(String)rr.get("inode");
-            if(UtilMethods.isSet(identifier)) {
+            if(UtilMethods.isSet(identifier) && !identifier.equals(lastId)) {
+                lastId=identifier;
                 dc.setSQL("update "+versionTable+" set live_inode=? where identifier=?");
                 dc.addParam(inode);
                 dc.addParam(identifier);
@@ -475,6 +486,8 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         DotConnect dc = new DotConnect();
         final int limit=1000;
         
+        Logger.info(this,"creating version_info records for contentlets");
+        
         // first working and (optionally) live
         String contentlets;
         if(DbConnectionFactory.isOracle()){
@@ -482,18 +495,20 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                   "select * from ( "+
                   "  select identifier,inode,live,locked,mod_user,mod_date,deleted,language_id,row_number() over (order by inode) rn "+ 
                   "  from contentlet where working = 1 "+ 
-                  ") where rn >= ? and rn < ? ";
+                  ") where rn >= ? and rn < ? order by identifier asc, language_id asc, mod_date desc";
         }else if(DbConnectionFactory.isMsSql()){
             contentlets =  " SELECT TOP "+ limit + " *  FROM (SELECT identifier,inode,live,locked,mod_user,mod_date,deleted,language_id,ROW_NUMBER() "
                          + " OVER (order by mod_date) AS RowNumber FROM contentlet where working="+DbConnectionFactory.getDBTrue()
-                         + ") temp WHERE RowNumber > ? ";
+                         + ") temp WHERE RowNumber > ? order by identifier asc, language_id asc, mod_date desc";
         }else{
             contentlets = "select identifier,inode,live,locked,mod_user,mod_date,deleted,language_id from contentlet "
-                       +  " where working="+DbConnectionFactory.getDBTrue()+" limit ? offset ?";
+                       +  " where working="+DbConnectionFactory.getDBTrue()+" limit ? offset ? order by identifier asc, language_id asc, mod_date desc";
         }
         
         int offset=0;
         boolean notDone;
+        String lastId="";
+        long lastLang=-1;
         do {
 
             dc.setSQL(contentlets);
@@ -514,8 +529,12 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             for(Map<String,Object> rr : results) {
                 String identifier=(String)rr.get("identifier");
                 String inode=(String)rr.get("inode");
+                long langId=Long.parseLong(rr.get("language_id").toString());
                 
-                if(UtilMethods.isSet(identifier)) {
+                if(UtilMethods.isSet(identifier) && !(langId==lastLang && identifier.equals(lastId)) ) {
+                    lastLang=langId;
+                    lastId=identifier;
+                    
                     boolean live = false;
                     boolean locked = false;
                     boolean deleted = false;
@@ -550,7 +569,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                         dc.addObject(null);
                     }
                     dc.addParam(deleted);
-                    dc.addParam(rr.get("language_id"));
+                    dc.addParam(langId);
                     dc.addParam(inode);
                     if(live)
                         dc.addParam(inode);
@@ -570,16 +589,18 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                   "select * from ( "+
                   "  select identifier,inode,language_id,row_number() over (order by inode) rn "+ 
                   "  from contentlet where working = 0 and live = 1 "+
-                  ") where rn >= ? and rn < ?";
+                  ") where rn >= ? and rn < ? order by identifier asc, language_id asc, mod_date desc";
         }else if(DbConnectionFactory.isMsSql()){
             contentlets =  " SELECT TOP " + limit + " * FROM (SELECT identifier,inode,language_id,ROW_NUMBER() "
                          + " OVER (order by mod_date) AS RowNumber FROM contentlet where working = "+DbConnectionFactory.getDBFalse()
-                         + " and live ="+ DbConnectionFactory.getDBTrue()+ ") temp WHERE RowNumber > ? ";
+                         + " and live ="+ DbConnectionFactory.getDBTrue()+ ") temp WHERE RowNumber > ? order by identifier asc, language_id asc, mod_date desc";
         }else{
             contentlets = "select identifier,inode,language_id from contentlet "
                         + " where working="+DbConnectionFactory.getDBFalse()+" and live="+DbConnectionFactory.getDBTrue()
-                        + " limit ? offset ?";
+                        + " limit ? offset ? order by identifier asc, language_id asc, mod_date desc";
         }
+        lastId="";
+        lastLang=-1;
         offset=0;
         do {
 
@@ -599,11 +620,15 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             for(Map<String,Object> rr : results) {
                 String identifier=(String)rr.get("identifier");
                 String inode=(String)rr.get("inode");
-                if(UtilMethods.isSet(identifier)) {
+                long langId=Long.parseLong(rr.get("language_id").toString());
+                if(UtilMethods.isSet(identifier) && !(langId==lastLang && identifier.equals(lastId))) {
+                    lastId=identifier;
+                    lastLang=langId;
+                    
                     dc.setSQL("update contentlet_version_info set live_inode=? where identifier=? and lang=?");
                     dc.addParam(inode);
                     dc.addParam(identifier);
-                    dc.addParam(rr.get("language_id"));
+                    dc.addParam(langId);
                     dc.loadResult();
                 }
             }
