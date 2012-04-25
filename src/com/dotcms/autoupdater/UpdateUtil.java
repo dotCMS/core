@@ -6,9 +6,12 @@ import org.apache.commons.cli.Options;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -16,6 +19,15 @@ import java.util.zip.ZipInputStream;
 
 public class UpdateUtil {
 
+    /**
+     * This method will unzip a given file name from a given zip file
+     *
+     * @param zipFile
+     * @param fileName
+     * @param destFile
+     * @return
+     * @throws IOException
+     */
     public static boolean unzipFile ( File zipFile, String fileName, File destFile ) throws IOException {
 
         ZipFile zip = new ZipFile( zipFile );
@@ -43,6 +55,16 @@ public class UpdateUtil {
         return true;
     }
 
+    /**
+     * This method will unzip a given zip file into a given direcoty
+     *
+     * @param zipFile
+     * @param directoryName
+     * @param home
+     * @param dryrun
+     * @return
+     * @throws IOException
+     */
     public static boolean unzipDirectory ( File zipFile, String directoryName, String home, boolean dryrun ) throws IOException {
 
         ActivityIndicator.startIndicator();
@@ -54,7 +76,7 @@ public class UpdateUtil {
         int BUFFER = 1024;
         while ( ( entry = zis.getNextEntry() ) != null ) {
             if ( !entry.isDirectory() ) {
-                if ( directoryName == null || entry.getName().startsWith( directoryName ) ) {
+                if ( directoryName == null || entry.getName().contains( directoryName ) ) {
 
                     UpdateAgent.logger.debug( Messages.getString( "FileUpdater.debug.extract.file" ) + entry );
 
@@ -62,12 +84,16 @@ public class UpdateUtil {
 
                         int count;
                         byte data[] = new byte[BUFFER];
-                        File destFile = new File( home + File.separator + entry.getName() );
+
+                        String entryName = entry.getName().replace( UpdateAgent.FOLDER_HOME_DOTSERVER + File.separator, "" );
+                        File destFile = new File( home + File.separator + entryName );
                         UpdateAgent.logger.debug( destFile.getAbsoluteFile() );
+
                         File parentFile = destFile.getParentFile();
                         if ( !parentFile.exists() ) {
                             parentFile.mkdirs();
                         }
+
                         FileOutputStream fos = new FileOutputStream( destFile );
                         dest = new BufferedOutputStream( fos, BUFFER );
                         while ( ( count = zis.read( data, 0, BUFFER ) ) != -1 ) {
@@ -153,7 +179,7 @@ public class UpdateUtil {
         return bigInt.toString( 16 );
     }
 
-    public static boolean confirmUI (String confirmText) {
+    public static boolean confirmUI ( String confirmText ) {
 
         boolean done = false;
         boolean ret = false;
@@ -195,6 +221,47 @@ public class UpdateUtil {
         if ( !doUpgrade ) {
             throw new UpdateException( Messages.getString( "UpdateAgent.cancel.user" ), UpdateException.CANCEL );
         }
+    }
+
+    /**
+     * Will return a property value of a given property for the autoupdater.jar MANIFEST.MF file
+     *
+     * @param property
+     * @return
+     */
+    public static String getManifestValue ( String property ) {
+
+        Class clazz = UpdateAgent.class;
+
+        String className = clazz.getSimpleName();
+        String classFileName = className + ".class";
+        String pathToThisClass = clazz.getResource( classFileName ).toString();
+
+        int mark = pathToThisClass.indexOf( "!" );
+
+        try {
+            String pathToManifest = pathToThisClass.substring( 0, mark + 1 );
+
+            pathToManifest += "/META-INF/MANIFEST.MF";
+            Manifest manifest = new Manifest( new URL( pathToManifest ).openStream() );
+
+            return manifest.getMainAttributes().getValue( property );
+        } catch ( MalformedURLException e ) {
+            UpdateAgent.logger.error( Messages.getString( "UpdateAgent.error.get.autoupdater.jar.version" ) + e.getMessage() );
+            UpdateAgent.logger.debug( "MalformedURLException: ", e );
+        } catch ( IOException e ) {
+            UpdateAgent.logger.error( Messages.getString( "UpdateAgent.error.get.autoupdater.jar.version" ) + e.getMessage() );
+            UpdateAgent.logger.debug( "IOException: ", e );
+        }
+        return Messages.getString( "UpdateAgent.text.unknown" );
+    }
+
+    public static void printHelp ( Options options, String helpText ) {
+
+        HelpFormatter formatter = new HelpFormatter();
+        String txt = Messages.getString( "UpdateAgent.text.agent.version" ) + getManifestValue( UpdateAgent.MANIFEST_PROPERTY_AGENT_VERSION ) + "\n";
+        txt += helpText;
+        formatter.printHelp( "autoUpdater <options>", "", options, txt );
     }
 
 }

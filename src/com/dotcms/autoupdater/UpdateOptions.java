@@ -53,14 +53,14 @@ public class UpdateOptions {
         Option passOption = new Option( UpdateOptions.PASSWORD, true, Messages.getString( "UpdateOptions.text.password" ) );
         Option fileOption = new Option( UpdateOptions.FILE, true, Messages.getString( "UpdateOptions.text.file" ) );
         Option backupOption = new Option( UpdateOptions.BACKUP, true, Messages.getString( "UpdateOptions.text.backup" ) );
-        Option urlOption = new Option( UpdateOptions.URL, true, Messages.getString( "UpdateOptions.text.url" ) + props.getProperty( "update.url", "" ) ); //$NON-NLS-2$
+        Option urlOption = new Option( UpdateOptions.URL, true, Messages.getString( "UpdateOptions.text.url" ) + props.getProperty( "update.url", "" ) );
         Option forceOption = new Option( UpdateOptions.FORCE, false, Messages.getString( "UpdateOptions.text.force" ) );
         Option noUpdaterOption = new Option( UpdateOptions.NO_UPDATE, false, Messages.getString( "UpdateOptions.text.no.autoupdater.updater" ) );
         Option dryrunOption = new Option( UpdateOptions.DRY_RUN, false, Messages.getString( "UpdateOptions.text.dryrun" ) );
         Option helpOption = new Option( UpdateOptions.HELP, false, Messages.getString( "UpdateOptions.text.help" ) );
         Option quietOption = new Option( UpdateOptions.QUIET, false, Messages.getString( "UpdateOptions.text.quiet" ) );
         Option verboseOption = new Option( UpdateOptions.VERBOSE, false, Messages.getString( "UpdateOptions.text.verbose" ) );
-        Option homeOption = new Option( UpdateOptions.HOME, true, Messages.getString( "UpdateOptions.text.home", System.getProperty( "user.dir" ) ) ); //$NON-NLS-2$
+        Option homeOption = new Option( UpdateOptions.HOME, true, Messages.getString( "UpdateOptions.text.home", System.getProperty( "user.dir" ) ) );
         Option logOption = new Option( UpdateOptions.LOG, true, "Name of the log file to be created. Defaults to: update_{timestamp}.log" );
         Option proxy = new Option( UpdateOptions.PROXY, true, Messages.getString( "UpdateOptions.text.proxy" ) );
         Option proxyUser = new Option( UpdateOptions.PROXY_USER, true, Messages.getString( "UpdateOptions.text.proxy.user" ) );
