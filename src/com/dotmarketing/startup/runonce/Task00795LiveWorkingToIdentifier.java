@@ -597,7 +597,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         }else{
             contentlets = "select identifier,inode,language_id from contentlet "
                         + " where working="+DbConnectionFactory.getDBFalse()+" and live="+DbConnectionFactory.getDBTrue()
-                        + " limit ? offset ? order by identifier asc, language_id asc, mod_date desc";
+                        + " order by identifier asc, language_id asc, mod_date desc limit ? offset ? ";
         }
         lastId="";
         lastLang=-1;
