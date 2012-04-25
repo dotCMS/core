@@ -33,6 +33,7 @@ public class PostProcess {
     }
 
     public boolean checkRequisites () throws UpdateException {
+
         AntInvoker invoker = new AntInvoker( home );
         return invoker.checkRequisites();
     }
