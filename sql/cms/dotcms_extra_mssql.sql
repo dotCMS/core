@@ -214,7 +214,7 @@ BEGIN
 fetch next from cur_Inserted into @newFolder,@newHost
 END;
 
-CREATE PROCEDURE load_records_to_index(@server_id VARCHAR, @records_to_fetch INT)
+CREATE PROCEDURE load_records_to_index(@server_id VARCHAR(100), @records_to_fetch INT)
 AS
 BEGIN
 WITH cte AS (
