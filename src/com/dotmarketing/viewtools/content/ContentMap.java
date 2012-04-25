@@ -126,7 +126,7 @@ public class ContentMap {
 				//http://jira.dotmarketing.net/browse/DOTCMS-6033	
 				}else if(fieldVariableName.contains("FileURI")){
 					f = retriveField(fieldVariableName.replaceAll("FileURI", ""));
-					if(f!=null && f.getFieldType().equals(Field.FieldType.FILE.toString()) 
+					if(f!=null && f.getFieldType()!= null && f.getFieldType().equals(Field.FieldType.FILE.toString()) 
 							|| f.getFieldType().equals(Field.FieldType.IMAGE.toString())){
 						String fid = (String)conAPI.getFieldValue(content, f);
 						if(!UtilMethods.isSet(fid)){
@@ -275,7 +275,8 @@ public class ContentMap {
 			}
 			return ret;
 		} catch (Exception e) {
-			Logger.error(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(),e);
+			Logger.error(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage());
+			Logger.debug(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(),e);
 			return null;
 		}
 	}

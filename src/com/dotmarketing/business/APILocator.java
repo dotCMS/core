@@ -1,11 +1,17 @@
 
 package com.dotmarketing.business;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.cmis.CMISAPI;
 import com.dotcms.enterprise.cmis.CMISAPIImpl;
+import com.dotcms.publishing.PublisherAPI;
+import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotcms.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -58,7 +64,6 @@ import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.sitesearch.business.SiteSearchAPIImpl;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Logger;
@@ -258,6 +263,15 @@ public class APILocator extends Locator<APIIndex>{
 	    return (IndiciesAPI) getInstance(APIIndex.INDICIES_API);
 	}
 	
+	public static ContentletIndexAPI getContentletIndexAPI() {
+	    return (ContentletIndexAPI) getInstance(APIIndex.CONTENLET_INDEX_API);
+	}
+	public static ESIndexAPI getESIndexAPI() {
+	    return (ESIndexAPI) getInstance(APIIndex.ES_INDEX_API);
+	}
+	public static PublisherAPI getPublisherAPI() {
+	    return (PublisherAPI) getInstance(APIIndex.PUBLISHER_API);
+	}
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -330,8 +344,10 @@ enum APIIndex
 	FILEASSET_API,
 	WORKFLOW_API,
 	TAG_API,
-	INDICIES_API;
-
+	INDICIES_API,
+	CONTENLET_INDEX_API,
+	PUBLISHER_API,
+	ES_INDEX_API;
 	Object create() {
 		switch(this) {
 		case PERMISSION_API: return new PermissionBitAPIImpl(FactoryLocator.getPermissionFactory());
@@ -366,12 +382,15 @@ enum APIIndex
 		case MENULINK_API: return new MenuLinkAPIImpl();
 		case VIRTUALLINK_API: return new VirtualLinkAPIImpl();
 		case DASHBOARD_API: return new DashboardAPIImpl();
-		case SITESEARCH_API: return new SiteSearchAPIImpl();
+		case SITESEARCH_API: return new ESSiteSearchAPI();
 		case FILEASSET_API: return new FileAssetAPIImpl();
 		case VERSIONABLE_API: return new VersionableAPIImpl();
 		case WORKFLOW_API : return new WorkflowAPIImpl(); 
 		case TAG_API: return new TagAPIImpl();
 		case INDICIES_API: return new IndiciesAPIImpl();
+		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
+		case ES_INDEX_API: return new ESIndexAPI();
+		case PUBLISHER_API: return new PublisherAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

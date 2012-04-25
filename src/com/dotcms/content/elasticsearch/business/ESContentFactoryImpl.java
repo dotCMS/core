@@ -1286,7 +1286,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
              String inode = ident.get("inode");
              cc.remove(inode);
              Contentlet content = find(inode);
-             new ESIndexAPI().addContentToIndex(content);
+             new ESContentletIndexAPI().addContentToIndex(content);
           }
         } catch (DotDataException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
@@ -1364,7 +1364,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
              String inode = ident.get("inode");
              cc.remove(inode);
              Contentlet content = find(inode);
-             new ESIndexAPI().addContentToIndex(content);
+             new ESContentletIndexAPI().addContentToIndex(content);
         }
 	}
 
