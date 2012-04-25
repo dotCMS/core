@@ -45,7 +45,6 @@
 	<property name="distribution.output" value="../dist" />
 	<property name="ant.build.javac.target" value="1.5"/>
 	<property name="war.name" value="dotcms"/>
-	<property name="build.temp" value="build_temp" />
 	<property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
 	<property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
 	<property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
@@ -906,32 +905,6 @@
 	</delete>
 </target>
 
-
-<target name="prepare-temp">
-	<delete dir="${build.temp}"/>
-	<mkdir dir="${build.temp}"/>
-	<copy todir="${build.temp}">
-		<fileset dir="." >
-			<include name="src-conf/"/>
-			<include name="dotCMS/WEB-INF/lib/"/>
-			<include name="tomcat/lib/"/>
-			<include name="plugins/" />
-			<include name="bin/" />
-
-			<include name="dotCMS/"/>
-			<exclude name="**/.svn"/>
-			<exclude name="dotCMS/assets/"/>
-			<exclude name="dotCMS/WEB-INF/backup/"/>
-			<exclude name="dotCMS/dotsecure/"/>
-		</fileset>
-	</copy>
-</target>
-
-
-<target name="clean-temp">
-	<delete dir="${build.temp}"/>
-</target>
-
 <target name="check-src-build" description="Checks to see if a build-core is possible. Fails if the src directory is missing or if the autoupdater is present. This prevents sourceless installs from running a clean" >
 	<available file="${src.dir}/com/dotmarketing" type="dir" property="src.dir.present" />
 	<fail message="Source directory not present. If trying to deploy plugins, please use bin/deploy-plugins.sh or bin/deploy-plugins.bat instead" unless="src.dir.present" />
@@ -983,7 +956,3 @@
 
 
 </project>
-
-
-
-
