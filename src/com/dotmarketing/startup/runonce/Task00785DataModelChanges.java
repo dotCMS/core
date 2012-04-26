@@ -1483,11 +1483,11 @@ public class Task00785DataModelChanges implements StartupTask  {
 			 assetType = "containers";
 			 parentPath = "/";
 			 assetName = ident+".containers";
-		   }else if(UtilMethods.getFileExtension(uri).equals("dot")){
+		   }else if(UtilMethods.getFileExtension(uri).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot"))){
 			 assetType = "htmlpage";
 			 parentPath = uri.substring(0, uri.lastIndexOf("/")+1);
 			 assetName = uri.substring(uri.lastIndexOf("/")+1);
-		   }else if(UtilMethods.getFileExtension(uri)!="" && !UtilMethods.getFileExtension(uri).equals("dot")){
+		   }else if(UtilMethods.getFileExtension(uri)!="" && !UtilMethods.getFileExtension(uri).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot"))){
 			 assetType="file_asset";
 			 parentPath = uri.substring(0, uri.lastIndexOf("/")+1);
 			 assetName = uri.substring(uri.lastIndexOf("/")+1);
