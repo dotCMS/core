@@ -60,6 +60,13 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 			catch(Exception e){}
 		}%>
 		<tr style="cursor:pointer;" class="trIdxNothing">
+		
+			<td>
+				<%=ssapi.getTaskProgress(task.getJobName()) %>
+			
+			</td>
+		
+		
 		    <td nowrap valign="top"><span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span></td>
 			<td nowrap valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
 			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>

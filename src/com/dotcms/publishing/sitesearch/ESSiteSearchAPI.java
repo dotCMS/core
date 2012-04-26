@@ -39,6 +39,7 @@ import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.job.SiteSearchJobProxy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.ThreadUtils;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
@@ -341,18 +342,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     
     @Override
     public void putToIndex(String idx, List<SiteSearchResult> res){
-	   try{
-		   /*
-		   Client client=new ESClient().getClient();
-		   String json = new ESMappingAPIImpl().toJsonString(res.getMap());
-		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", res.getId())
-			        .setSource(json)
-			        .execute()
-			        .actionGet();
-		   */
-		} catch (Exception e) {
-		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
-		}
+	 for(SiteSearchResult r : res){
+		 putToIndex(idx, r);
+	 }
+    	
     }
     
     @Override
@@ -378,6 +371,28 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		
 	}
     
+	@Override
+	public int getTaskProgress(String taskName) throws SchedulerException{
+		
+
+		ScheduledTask t = getTask(taskName);
+		Trigger t = QuartzUtils.getTrigger(triggerName, triggerGroup)
+		
+		
+		
+		t.getTriggerGroup()
+		
+		
+		
+		
+		
+		
+		return 0;
+		
+	}
+	
+	
+	
 	
 	
 	

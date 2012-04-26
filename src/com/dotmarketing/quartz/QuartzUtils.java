@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,12 +29,7 @@ import org.quartz.Trigger;
  */
 public class QuartzUtils {
 	
-	private static class TaskRuntimeValues {
-		private int currentProgress = 0;
-		private int startProgress = 0;
-		private int endProgress = 100;
-		private List<String> messages = new LinkedList<String>();
-	}
+
 	
 	private static Map<String, TaskRuntimeValues> runtimeTaskValues = new HashMap<String, TaskRuntimeValues>();
 	
@@ -352,6 +346,20 @@ public class QuartzUtils {
 		if(runtimeValues == null) return -1;
 		return runtimeValues.endProgress;
 	}
+	
+	
+	public static  TaskRuntimeValues getTaskRuntimeValues(String jobName, String jobGroup) {
+		TaskRuntimeValues runtimeValues = runtimeTaskValues.get(jobName + "-" + jobGroup);
+		if(runtimeValues == null) {
+			initializeTaskRuntimeValues(jobName, jobGroup);
+			
+		}
+			
+		return runtimeTaskValues.get(jobName + "-" + jobGroup);
+	}
+	
+	
+	
 
 	public static void setTaskEndProgress(String jobName, String jobGroup, int endProgress) {
 		TaskRuntimeValues runtimeValues = runtimeTaskValues.get(jobName + "-" + jobGroup);
@@ -657,7 +665,10 @@ public class QuartzUtils {
 		sched.pauseTrigger(triggerName, triggerGroup);
 	}
 
-	
+	public static Trigger getTrigger(String triggerName, String triggerGroup) throws SchedulerException {
+		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
+		return sched.getTrigger(triggerName, triggerGroup);
+	}
 	
 	/**
 	 * Resumes a trigger from all schedulers

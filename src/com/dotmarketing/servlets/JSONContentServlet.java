@@ -1,7 +1,6 @@
 package com.dotmarketing.servlets;
 
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +15,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.lucene.queryParser.ParseException;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -56,7 +54,7 @@ public class JSONContentServlet extends HttpServlet implements Servlet {
 				.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
 
 
-		
+		boolean render = (request.getParameter("render") !=null);
 		String q = request.getParameter("q");
 		if(!UtilMethods.isSet(q)){
 			
@@ -201,12 +199,12 @@ public class JSONContentServlet extends HttpServlet implements Servlet {
 			doJSON(cons, response);
 		}
 		else{
-			doXML(cons, response);
+			doXML(cons, response, render);
 		}
 
 	}
 	
-	private void doXML(List<Contentlet> cons, HttpServletResponse response) throws IOException{
+	private void doXML(List<Contentlet> cons, HttpServletResponse response, boolean render) throws IOException{
 		
 		XStream xstream = new XStream(new DomDriver()); 
 		xstream.alias("content", Map.class);
