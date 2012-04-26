@@ -60,12 +60,12 @@
 
 	function fillFields (data) {
 		if(data["allowImport"] == false){
-			document.getElementById('importDetails').hide();
-			document.getElementById('cantImportMessage').show();
+			document.getElementById('importDetails').style.display = "none";
+			document.getElementById('cantImportMessage').style.display = "block";
 			return;
 		}
-		document.getElementById('cantImportMessage').hide();
-		document.getElementById('importDetails').show();
+		document.getElementById('cantImportMessage').style.display = "none";
+		document.getElementById('importDetails').style.display = "block";
 		currentStructureFields = data["keyStructureFields"];
 		dwr.util.removeAllRows("import_fields_table");
 		dwr.util.addRows("import_fields_table", currentStructureFields, [fieldCheckbox], { escapeHtml: false });
@@ -287,7 +287,7 @@
 </liferay:box>
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
-		document.getElementById('cantImportMessage').hide();
+		document.getElementById('cantImportMessage').style.display = "none";
 		var structure = dijit.byId("structuresSelect").attr('value');
 		if ((structure != null) && (structure != '')) {
 			structureChanged(structure);

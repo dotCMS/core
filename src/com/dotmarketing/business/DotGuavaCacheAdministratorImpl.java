@@ -670,7 +670,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 			if (!flushMenus) {
 				if (key.equals("0")) {
-					if (group.equals(DotCacheAdministrator.ROOT_GOUP)) {
+					if (group.equalsIgnoreCase(DotCacheAdministrator.ROOT_GOUP)) {
 						CacheLocator.getCacheAdministrator().flushAlLocalOnlyl();
 					} else if (group.equalsIgnoreCase(menuGroup)) {
 						flushMenus = true;

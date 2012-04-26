@@ -3,6 +3,7 @@ package com.dotmarketing.business;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
@@ -38,6 +40,67 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	IdentifierCache ic = CacheLocator.getIdentifierCache();
 
+	@Override
+	protected List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean pullDeleted,boolean include,Host host)throws DotDataException {
+		return findByURIPattern(assetType, uri, hasLive, pullDeleted,include, host, null, null);
+	}
+	
+	@Override
+	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean pullDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
+		if(assetType.equals(new HTMLPage().getType())){
+			bob.append("join " + assetType + "_version_info vi on (i.id = vi.identifier) join " + assetType + " a on (" + (hasLive ? "vi.live_inode":"vi.working_inode") + " = a.inode) ");
+		}
+		
+		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+			bob.append("where concat(parent_path, asset_name) ");
+		}else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+			bob.append("where (parent_path + asset_name) ");
+		}else {
+			bob.append("where (parent_path || asset_name) ");
+		}
+		bob.append((include ? "":"NOT ") + "LIKE ? and host_inode = ? and asset_type = ? ");
+		if(startDate != null){
+			bob.append(" and a.mod_date >= ? ");
+		}
+		if(endDate != null){
+			bob.append(" and a.mod_date <= ? ");
+		}
+		if(!pullDeleted){
+			bob.append(" and vi.deleted=" + DbConnectionFactory.getDBFalse() + " ");
+		}
+		dc.setSQL(bob.toString());
+		dc.addParam(uri.replace("*", "%"));
+		dc.addParam(host.getIdentifier());
+		dc.addParam(assetType);
+		if(startDate != null){
+			dc.addParam(startDate);
+		}
+		if(endDate != null){
+			dc.addParam(endDate);
+		}
+		return convertDotConnectMapToPOJO(dc.loadResults());
+	}
+	
+	private List<Identifier> convertDotConnectMapToPOJO(List<Map<String,String>> results){
+		List<Identifier> ret = new ArrayList<Identifier>();
+		if(results == null || results.size()==0){
+			return ret;
+		}
+		
+		for (Map<String, String> map : results) {
+			Identifier i = new Identifier();
+			i.setAssetName(map.get("asset_name"));
+			i.setAssetType(map.get("asset_type"));
+			i.setHostId(map.get("host_inode"));
+			i.setId(map.get("id"));
+			i.setParentPath(map.get("parent_path"));
+			ret.add(i);
+		}
+		return ret;
+	}
+	
 	protected void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException {
 
 		Identifier identifier = find(webasset);
@@ -86,6 +149,17 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		ic.addIdentifierToCache(identifier);
 		return identifier;
 	}
+	
+	protected List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException {
+	    if(!parent_path.endsWith("/"))
+	        parent_path=parent_path+"/";
+	    
+        HibernateUtil dh = new HibernateUtil(Identifier.class);
+        dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where parent_path=? and host_inode = ?");
+        dh.setParam(parent_path);
+        dh.setParam(hostId);
+        return (List<Identifier>) dh.list();
+    }
 
 	protected Identifier loadFromDb(String identifier) throws DotDataException, DotStateException {
 		if (identifier == null) {
@@ -322,6 +396,21 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			db.addParam(ident.getInode());
 			List<Map<String,Object>> deleteme = db.loadResults();
 
+			String versionInfoTable=UtilMethods.getVersionInfoTableName(ident.getAssetType());
+			if(versionInfoTable!=null) {
+			    db.setSQL("delete from "+versionInfoTable+" where identifier = ?");
+			    db.addParam(ident.getId());
+			    db.loadResult();
+			}
+			
+			db.setSQL("select id from workflow_task where webasset = ?");
+			db.addParam(ident.getId());
+			List<Map<String,Object>> tasksToDelete=db.loadResults();
+			for(Map<String,Object> task : tasksToDelete) {
+			    WorkflowTask wft = APILocator.getWorkflowAPI().findTaskById((String)task.get("id"));
+			    APILocator.getWorkflowAPI().deleteWorkflowTask(wft);
+			}
+			
 			db.setSQL("delete from " + ident.getAssetType()+ " where identifier = ?");
 			db.addParam(ident.getId());
 			db.loadResult();

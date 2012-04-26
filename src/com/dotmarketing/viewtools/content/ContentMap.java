@@ -40,6 +40,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.velocity.VelocityServlet;
 import com.dotmarketing.viewtools.ContentsWebAPI;
 import com.liferay.portal.model.User;
 
@@ -125,7 +126,7 @@ public class ContentMap {
 				//http://jira.dotmarketing.net/browse/DOTCMS-6033	
 				}else if(fieldVariableName.contains("FileURI")){
 					f = retriveField(fieldVariableName.replaceAll("FileURI", ""));
-					if(f!=null && f.getFieldType().equals(Field.FieldType.FILE.toString()) 
+					if(f!=null && f.getFieldType()!= null && f.getFieldType().equals(Field.FieldType.FILE.toString()) 
 							|| f.getFieldType().equals(Field.FieldType.IMAGE.toString())){
 						String fid = (String)conAPI.getFieldValue(content, f);
 						if(!UtilMethods.isSet(fid)){
@@ -267,13 +268,15 @@ public class ContentMap {
 				VelocityEngine ve = VelocityUtil.getEngine();
 				Template template = null;
 				StringWriter sw = new StringWriter();
+				VelocityServlet.velocityCtx.set(context);
 				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? "working/":"live/") + content.getInode() + "_" + f.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION"));
 				template.merge(context, sw);
 				ret = sw.toString();
 			}
 			return ret;
 		} catch (Exception e) {
-			Logger.error(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(),e);
+			Logger.error(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage());
+			Logger.debug(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(),e);
 			return null;
 		}
 	}

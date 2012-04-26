@@ -48,7 +48,7 @@ import com.liferay.util.FileUtil;
 public class ContentletMapServices {
 
 	private static CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-	
+
 	public static CategoryAPI getCategoryAPI() {
 		return categoryAPI;
 	}
@@ -56,7 +56,7 @@ public class ContentletMapServices {
 	public static void setCategoryAPI(CategoryAPI categoryAPI) {
 		ContentletMapServices.categoryAPI = categoryAPI;
 	}
-   
+
 	public static void invalidate(Contentlet contentlet) throws DotDataException, DotSecurityException {
 		invalidate(contentlet, true);
 		invalidate(contentlet, false);
@@ -81,7 +81,7 @@ public class ContentletMapServices {
 		// To edit the look, see
 		// WEB-INF/velocity/static/preview/content_controls.vtl
 		sb.append("#set( $dotcms_content_" + content.getIdentifier() + " = ${contents.getEmptyMap()})\n");
-//		Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.  
+//		Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //      I actually think it should be fine passed the ctx which is a chained context here
 //		sb.append("#set($velocityContext = $UtilMethods.pushVelocityContext($velocityContext))\n");
 //		sb.append("$!velocityContext.put(\"content\",$content)\n");
@@ -93,7 +93,7 @@ public class ContentletMapServices {
 		sb.append("$!dotcms_content_" + content.getIdentifier() + ".put(\"contentTitle\", \"" + UtilMethods.espaceForVelocity(conTitle) + "\" )\n");
 		sb.append("$!dotcms_content_" + content.getIdentifier() + ".put(\"detailPageURI\", \"" + getDetailPageURI(content) + "\"  )\n");
 		Structure structure = content.getStructure();
-		
+
 		String modDateStr = UtilMethods.dateToHTMLDate((Date) content.getModDate(), "yyyy-MM-dd H:mm:ss");
 		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"modDate\", $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" + modDateStr + "\")))\n");
 		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentLastModDate\", $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" + modDateStr + "\")))\n");
@@ -106,7 +106,7 @@ public class ContentletMapServices {
 		Iterator<Field> fieldsIt = fields.iterator();
 
 		String widgetCode = "";
-		
+
 		while (fieldsIt.hasNext()) {
 			Field field = (Field) fieldsIt.next();
 
@@ -142,9 +142,9 @@ public class ContentletMapServices {
 					}else{
 						sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", \"" + UtilMethods.espaceForVelocity(field.getValues()).trim() + "\"))\n");
 					}
-					continue;	
+					continue;
 				}
-				
+
 			}
 			if (UtilMethods.isSet(contField)) {
 				try {
@@ -205,9 +205,9 @@ public class ContentletMapServices {
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageURI\", $filetool.getURI($" + field.getVelocityVarName() + ") ))\n");
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageTitle\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getTitle()) ))\n");
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageFriendlyName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getFriendlyName()) ))\n");
-				
+
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImagePath\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getPath()) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getNameOnly()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getFileName()) ))\n");
 
 			} else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 				String identifierValue = content.getStringProperty(field.getVelocityVarName());
@@ -220,7 +220,7 @@ public class ContentletMapServices {
 				}else{
 					sb.append("#set( $" + field.getVelocityVarName() + "Object = $filetool.getNewFile())\n");
 				}
-				
+
 
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileInode\", $" + field.getVelocityVarName() + "Object.getInode() ))\n");
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileIdentifier\", $" + field.getVelocityVarName() + "Object.getIdentifier() ))\n");
@@ -230,8 +230,8 @@ public class ContentletMapServices {
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileTitle\", $" + field.getVelocityVarName() + "Object.getTitle() ))\n");
 
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FilePath\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getPath()) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getNameOnly()) ))\n");
-								
+				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getFileName()) ))\n");
+
 			} //http://jira.dotmarketing.net/browse/DOTCMS-2178
 			else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
 				java.io.File binFile;
@@ -341,9 +341,9 @@ public class ContentletMapServices {
 						}
 					}
 				}
-				
+
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $categories.filterCategoriesByUserPermissions([" + catInodes + "] ))\n");
-				
+
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
@@ -356,14 +356,14 @@ public class ContentletMapServices {
 				sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys.add(''))\n");
 				sb.append("#end\n");
 				sb.append("#end\n");
-				
+
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "CategoryObjects\", $dotcms_content_" + content.getIdentifier() + "_filteredCategories ))\n");
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "Categories\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes ))\n");
 				//http://jira.dotmarketing.net/browse/DOTCMS-2288
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes ))\n");
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "CategoriesNames\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames ))\n");
 				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "CategoriesKeys\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys ))\n");
-				
+
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $contents.getEmptyList())\n");
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
@@ -394,7 +394,7 @@ public class ContentletMapServices {
 
 		// sets the categories as a list on velocity
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $categories.filterCategoriesByUserPermissions([" + categories + "] ))\n");
-		
+
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
@@ -407,7 +407,7 @@ public class ContentletMapServices {
 		sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys.add(''))\n");
 		sb.append("#end\n");
 		sb.append("#end\n");
-		
+
 		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"ContentletCategoryObjects\", $dotcms_content_" + content.getIdentifier() + "_filteredCategories ))\n");
 		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentletCategoryObjects\", $dotcms_content_" + content.getIdentifier() + "_filteredCategories ))\n");
 		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"ContentletCategories\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes ))\n");
@@ -416,17 +416,17 @@ public class ContentletMapServices {
 		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentletCategoriesNames\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames ))\n");
 		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"ContentletCategoriesKeys\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys ))\n");
 		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentletCategoriesKeys\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys ))\n");
-		
+
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
-//		Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.  
+//		Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //      I actually think it should be fine passed the ctx which is a chained context here
 //		sb.append("#set($velocityContext = $UtilMethods.popVelocityContext($velocityContext))\n");
-		
+
 		sb.append(widgetCode);
-		
+
 		if(structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET){
 			sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"isWidget\", \"" + true + "\"  ))\n");
 			if(structure.getName().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)){
@@ -437,30 +437,30 @@ public class ContentletMapServices {
 		}
 
 		sb.append("#set ($content = $dotcms_content_" + content.getIdentifier() + ")");
-		
+
 		if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			try {
-	
+
 				String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-	
+
 				if (velocityRootPath.startsWith("/WEB-INF")) {
 					velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
 				}
 				velocityRootPath += java.io.File.separator;
-	
+
 				String veloExt = Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION");
 				String baseFilename = String.format("%s_%d.%s", content.getIdentifier(), content.getLanguageId(), veloExt);
-	
+
 				// Save always to working
 				String filePath = "working" + java.io.File.separator + baseFilename;
 				saveToDisk(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator,filePath, sb.toString());
-	
+
 				// Save to live, if publishing
 				if (!EDIT_MODE) {
 					filePath = "live" + java.io.File.separator + baseFilename;
 					saveToDisk(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator,filePath, sb.toString());
 				}
-	
+
 			} catch (Exception e) {
 				Logger.error(ContentletMapServices.class, e.toString(), e);
 			}
@@ -474,7 +474,7 @@ public class ContentletMapServices {
         return result;
 
 	}
-	
+
 	public static void unpublishContentletMapFile(Contentlet asset) throws DotDataException {
 
 		Identifier identifier = APILocator.getIdentifierAPI().find(asset);
@@ -484,8 +484,8 @@ public class ContentletMapServices {
 	/**
 	 * Will remove all contentlet map files within a structure for both live and working. Uses the system user.
 	 * @param contentlets
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public static void removeContentletMapFile(Structure structure) throws DotDataException, DotSecurityException{
 		ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -502,17 +502,17 @@ public class ContentletMapServices {
 			size = contentlets.size();
 		}
 	}
-	
+
 	/**
 	 * Will remove all contentlet map files for both live and working
 	 * @param contentlets
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 */
 	public static void removeContentletMapFile(Contentlet contentlet) throws DotDataException{
 		removeContentletMapFile(contentlet, true);
 		removeContentletMapFile(contentlet, false);
 	}
-	
+
 	/**
 	 * Will remove all contentlet map files for both live and working
 	 * @param contentlets
@@ -522,7 +522,7 @@ public class ContentletMapServices {
 			removeContentletMapFile(contentlet);
 		}
 	}
-	
+
 	public static void removeContentletMapFile(Contentlet asset, boolean EDIT_MODE) throws DotDataException {
 
 		Identifier identifier = APILocator.getIdentifierAPI().find(asset);
@@ -552,11 +552,11 @@ public class ContentletMapServices {
 	/**
 	 * Returns the details page URI for a given <tt>contentlet</tt>. (Used by
 	 * #detailPageLink macro)
-	 * 
+	 *
 	 * @param the
 	 *            given <tt>contentlet</tt>
 	 * @return the details page URI
-	 * 
+	 *
 	 * @author Dimitris Zavaliadis
 	 * @version 1.0
 	 */

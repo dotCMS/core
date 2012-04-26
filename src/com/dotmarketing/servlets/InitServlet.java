@@ -28,7 +28,6 @@ import org.apache.lucene.search.BooleanQuery;
 import org.quartz.SchedulerException;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -123,7 +122,7 @@ public class InitServlet extends HttpServlet {
         new PluginLoader().loadPlugins(config.getServletContext().getRealPath("."),classPath);        
         
         //Check and start the ES Content Store
-        ESUtils.checkAndInitialiazeIndex();
+        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
         
         int mc = Config.getIntProperty("lucene_max_clause_count", 4096);
         BooleanQuery.setMaxClauseCount(mc); 
