@@ -231,6 +231,8 @@ public interface WorkflowAPI {
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException;
     public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException;
 
+    public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
+    
 	/**
 	 * This method will return the entry action of a scheme based on the content's structure.
 	 *

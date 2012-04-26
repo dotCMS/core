@@ -888,6 +888,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException{
     	return wfac.createDefaultScheme();
     }
+    
+    public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {
+    	return wfac.searchAllTasks(searcher);
+    }
 
     public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException {
 
