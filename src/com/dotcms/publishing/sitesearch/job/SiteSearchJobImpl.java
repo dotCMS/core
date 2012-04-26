@@ -1,4 +1,4 @@
-package com.dotmarketing.sitesearch.job;
+package com.dotcms.publishing.sitesearch.job;
 
 import java.io.IOException;
 import java.text.DateFormat;

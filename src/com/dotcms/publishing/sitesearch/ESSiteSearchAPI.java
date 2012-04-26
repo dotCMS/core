@@ -23,12 +23,14 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.publishing.sitesearch.job.SiteSearchJobProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.CronScheduledTask;
@@ -36,10 +38,8 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.sitesearch.job.SiteSearchJobProxy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.ThreadUtils;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
@@ -375,17 +375,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	public int getTaskProgress(String taskName) throws SchedulerException{
 		
 
+		
 		ScheduledTask t = getTask(taskName);
-		Trigger t = QuartzUtils.getTrigger(triggerName, triggerGroup)
-		
-		
-		
-		t.getTriggerGroup()
-		
-		
-		
-		
-		
+		Trigger tr = QuartzUtils.getTrigger(t.getTriggerName(), t.getTriggerGroup());
 		
 		return 0;
 		
