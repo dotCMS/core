@@ -60,15 +60,20 @@ public class Task00785DataModelChanges implements StartupTask  {
             		  "Alter table structure drop constraint fk_structure_host;"+
             		  "Alter table identifier drop constraint fk9f88aca95fb51eb;";
 		}
-
-		String deleteIdentifiers = "DELETE from tree where (parent in(select identifier from inode where type='file_asset') or parent in(select inode from folder)) and child in(select inode from inode where type ='file_asset');" +
+		
+		String deleteIdentifiers = "";
+		
+		if(Config.getBooleanProperty("upgrade-cleanup-bad-data",true))
+		      deleteIdentifiers =  "DELETE from tree where (parent in(select identifier from inode where type='file_asset') or parent in(select inode from folder)) and child in(select inode from inode where type ='file_asset');" +
 								   "DELETE from tree where parent in(select identifier from inode where type='template')and child in(select inode from inode where type ='template');" +
 								   "DELETE from tree where parent in(select identifier from inode where type='containers')and child in(select inode from inode where type ='containers');" +
 								   "DELETE from tree where parent in(select identifier from inode where type='contentlet')and child in(select inode from inode where type ='contentlet');" +
 								   "DELETE from tree where (parent in(select identifier from inode where type='htmlpage')or parent in(select inode from folder)) and child in(select inode from inode where type ='htmlpage');" +
-								   "DELETE from tree where (parent in(select identifier from inode where type='links') or parent in(select inode from folder)) and child in(select inode from inode where type ='links');" +
-								   "DELETE from inode where type='identifier';";
+								   "DELETE from tree where (parent in(select identifier from inode where type='links') or parent in(select inode from folder)) and child in(select inode from inode where type ='links');";
+		
+		deleteIdentifiers+="DELETE from inode where type='identifier';";
 
+		
 		/*String addFKs = "alter table tree add constraint FK36739EC4AB08AA foreign key (parent) references inode;" +
 						"alter table tree add constraint FK36739E5A3F51C foreign key (child) references inode;" +
 						"alter table permission add constraint permission_inode_fk foreign key (inode_id) references inode(inode);" +
