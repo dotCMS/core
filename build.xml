@@ -48,7 +48,7 @@
 	<property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
 	<property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
 	<property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
-	<property name="agent.version" value="28"/>
+	<property name="agent.version" value="29"/>
 
 	<property name="plugin.root.dir.default" value="${basedir}/dotCMS"/>
 	<property name="plugin.jar.deploy.dir.default" value="${basedir}/../../dotCMS/WEB-INF/lib" />
