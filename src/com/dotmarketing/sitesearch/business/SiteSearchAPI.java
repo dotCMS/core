@@ -47,4 +47,6 @@ public interface SiteSearchAPI {
 	ScheduledTask getTask(String taskName) throws SchedulerException;
 	
 	void pauseTask(String taskName)  throws SchedulerException;
+
+	int getTaskProgress(String jobName) throws SchedulerException;
 }
