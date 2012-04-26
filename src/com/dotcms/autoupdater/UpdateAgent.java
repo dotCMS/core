@@ -30,6 +30,7 @@ public class UpdateAgent {
     private String homeProjectPath;
     public static String FOLDER_HOME_DOTSERVER = "dotserver";
     public static String FOLDER_HOME_UPDATER = "autoupdater";
+    public static String FOLDER_HOME_BACK_UP = "backup";
     private String version;
     private String minor;
     private String backupFile;
@@ -224,7 +225,7 @@ public class UpdateAgent {
                     // Check to see if new version of the updater exists
                     File newAgent = downloadAgent();
                     if ( newAgent != null ) {
-                        // Exit, we found an update for the autoupdater
+                        // Exit, We found an update for the autoupdater, the auto updater script will restart the process after the update of the autoupdater.jar
                         logger.info( Messages.getString( "UpdateAgent.text.new.autoupdater" ) );
                         System.exit( 0 );
                     }
