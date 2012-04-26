@@ -49,6 +49,10 @@ public class TemplateForm extends ValidatorForm {
     private String drawedBody;
     
     private boolean drawed;
+    
+    private int countAddContainer;
+    
+    private int countContainers;
     // END GRAZIANO issue-12-dnd-template    
     
     private String owner;  // dotcms 472
@@ -183,8 +187,24 @@ public class TemplateForm extends ValidatorForm {
 	public void setDrawed(boolean drawed) {
 		this.drawed = drawed;
 	}
-	// END GRAZIANO issue-12-dnd-template
 	
+	public int getCountAddContainer() {
+		return countAddContainer;
+	}
+
+	public void setCountAddContainer(int countAddContainer) {
+		this.countAddContainer = countAddContainer;
+	}
+
+	public int getCountContainers() {
+		return countContainers;
+	}
+
+	public void setCountContainers(int countContainers) {
+		this.countContainers = countContainers;
+	}
+	// END GRAZIANO issue-12-dnd-template
+
 	/**
 	 * Returns the footer.
 	 * @return String

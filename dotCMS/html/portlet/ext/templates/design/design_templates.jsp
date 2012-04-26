@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.portlets.templates.design.bean.SplitBody"%>
+<%@ page import="com.dotmarketing.portlets.templates.design.bean.SplitBody"%>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.DesignTemplateJSParameter"%>
 <%@ page import="com.dotmarketing.beans.Host"%>
 <%@ page import="com.dotmarketing.beans.Identifier" %>
@@ -10,9 +10,9 @@
 <%@ page import="com.dotmarketing.portlets.templates.struts.TemplateForm"%>
 <%@ page import="java.net.URLDecoder"%>
 <%@ include file="/html/portlet/ext/templates/init.jsp" %>
-<%@page import="com.dotmarketing.portlets.containers.business.ContainerAPI"%>
+<%@ page import="com.dotmarketing.portlets.containers.business.ContainerAPI"%>
 
-<%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
+<%@ page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
 
 <style type="text/css">
 	@import url(/html/css/template/draw-template.css);
@@ -107,6 +107,17 @@
 			alert('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "template-title-mandatory"))%>');
 			return;
 		}
+		
+		var addContainerLinks = window.parseInt(document.getElementById("countAddContainerLinks").value);
+		var containersAdded = window.parseInt(document.getElementById("countContainersAdded").value);
+		if(containersAdded==0){
+			if(!confirm('Your template does not contains Containers. In this case you can\'t add contents. Are you sure you want to save?'))
+				return;
+		}else if(addContainerLinks>containersAdded){
+			if(!confirm('Not all sections have an associated Container. This could cause problems in editing of the Html Page. Are you sure you want to save?'))
+				return;
+		}
+		
 		saveBody();
 		form.<portlet:namespace />cmd.value = '<%=Constants.ADD_DESIGN%>';
 		form.<portlet:namespace />subcmd.value = subcmd;
@@ -231,6 +242,8 @@
 	<input name="<portlet:namespace />subcmd" type="hidden" value="">
 	<input name="userId" type="hidden" value="<%= user.getUserId() %>">
 	<input name="admin_l_list" type="hidden" value="">
+	<input name="countAddContainer" type="hidden" id="countAddContainerLinks" value="<%=template.getCountAddContainer()!=null?template.getCountAddContainer():"0"%>"/>
+	<input name="countContainers" type="hidden" id="countContainersAdded" value="<%=template.getCountContainers()!=null?template.getCountContainers():"0"%>"/>
 		
 <div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" style="height: 100%; min-height: 881px;" >
 	<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;height: 100%; min-height:851px;" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
@@ -283,12 +296,15 @@
 				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
 				</button>
-				<button id="buttonOne" data-dojo-type="dijit.form.Button" type="button">
+				<!--
+					NEXT FEATURE: add meta tag to head HTML and add Head code.
+					
+					TO DO..
+					 
+				<button id="buttonOne" data-dojo-type="dijit.form.Button" type="button" onClick="showAddMetatagDialog()">
 					<%=LanguageUtil.get(pageContext, "add-meta-tag")%>
-				    <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
-        				dijit.byId("dialogOne").show();
-    				</script>
-				</button>							
+				</button>
+				 -->							
 			</div>
 			<div class="clear"></div>
 			<div id="bodyTemplate"></div>
@@ -565,6 +581,7 @@
 
 <span dojoType="dotcms.dojo.data.ContainerReadStoreDrawedTemplate" jsId="containerStore"></span>
 
+<!-- ADD CONTAINER DIALOG BOX -->
 <div dojoType="dijit.Dialog" id="containerSelector" title="<%=LanguageUtil.get(pageContext, "select-a-container")%>">
 	<p class="alertContainerSelector"><%=LanguageUtil.get(pageContext, "only-containers-without-html-tag")%></p>
 	<p style="text-align: center">
@@ -580,7 +597,9 @@
 		<button dojoType="dijit.form.Button" onclick="dijit.byId('containerSelector').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
 	</div>
 </div>
+<!-- /ADD CONTAINER DIALOG BOX -->
 
+<!-- ADD METADATA DIALOG BOX -->
 <div id="dialogOne" dojoType="dijit.Dialog" title="<%=LanguageUtil.get(pageContext, "add-meta-tag")%>" style="width: 800px; height: 600px; padding: 0pt;">
     <div dojoType="dijit.layout.TabContainer" style="min-height: 500px; padding: 0pt;">
         <div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "metadata-tab")%>" style="width: auto; padding: 0pt;">
@@ -665,5 +684,6 @@
 		<button dojoType="dijit.form.Button" onclick="dijit.byId('dialogOne').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
 	</div>    
 </div>
+<!-- /ADD METADATA DIALOG BOX -->
 
 

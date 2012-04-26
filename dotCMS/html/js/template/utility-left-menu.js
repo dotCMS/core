@@ -8,9 +8,15 @@
 var addContainerMSG;
 var removeContainerMSG;
 
+var countAddContainerLinks;
+var countContainersAdded;
+
+
 function drawDefault(overrideBody, addContainer, removeContainer){
 	addContainerMSG = addContainer;
 	removeContainerMSG = removeContainer;
+	countAddContainerLinks = document.getElementById("countAddContainerLinks");	
+	countContainersAdded = document.getElementById("countContainersAdded");
 	var mainTemplateDiv = document.getElementById("bodyTemplate");
 	var textareaDrawedBodyHidden = document.getElementById("drawedBodyField");
 	var textareaBodyHidden = document.getElementById("bodyField");
@@ -37,6 +43,8 @@ function drawDefault(overrideBody, addContainer, removeContainer){
 		yuiMainDiv.appendChild(yuiBDiv1);	
 		bodyDiv.appendChild(yuiMainDiv);
 		mainDiv.insertBefore(bodyDiv,document.getElementById("ft-template"));
+		//update the add container links count
+		updateAddContainerLinksCount(true);
 	}else{
 		mainTemplateDiv.innerHTML=textareaDrawedBodyHidden.value;			
 	}
@@ -146,9 +154,12 @@ function addHeader(checked){
 		headerDiv.innerHTML=getAddContainer("hd-template")+"<h1>Header</h1>";
 		//adding at the first position
 		mainDiv.insertBefore(headerDiv,mainDiv.firstChild);
+		
+		updateAddContainerLinksCount(true);
 	} else { //delete the header div
 		var div = document.getElementById("hd-template");
 		div.parentNode.removeChild(div);
+		updateAddContainerLinksCount(false);
 	} 
 }
 
@@ -161,9 +172,12 @@ function addFooter(checked){
 		footerDiv.innerHTML=getAddContainer("ft-template")+"<h1>Footer</h1>";
 		// adding at the last position (append)
 		mainDiv.appendChild(footerDiv);
+		//update the add container links count
+		updateAddContainerLinksCount(true);
 	} else { //delete the footer div
 		var div = document.getElementById("ft-template");
 		div.parentNode.removeChild(div);
+		updateAddContainerLinksCount(false);
 	} 
 }
 
@@ -183,12 +197,16 @@ function addLayout(layout){
 			yuiBDiv.setAttribute("id","yui-b2");
 			yuiBDiv.style.height="70%";
 			yuiBDiv.innerHTML=getAddContainer("yui-b2")+"<h1>Sidebar</h1>"+getMockContent();
-			bodyDiv.appendChild(yuiBDiv);		
+			bodyDiv.appendChild(yuiBDiv);	
+			//update the add container links count
+			updateAddContainerLinksCount(true);
 		}		
 	}else{
 		mainDiv.removeAttribute("class");
 		if(null!=yuiB2)
 			bodyDiv.removeChild(yuiB2);
+		//update the add container links count
+		updateAddContainerLinksCount(false);
 	}
 }
 
@@ -207,6 +225,8 @@ function addGrid(gridId, yuiBId, rowCount){
 		}
 	}
 	if(1!=gridId){
+		// delete the first Add Container link created when was created the grid (100% body, default creation)
+		updateAddContainerLinksCount(false);
 		var gridDiv = document.createElement("div");
 		var yuiUFirst = document.createElement("div");
 		var yuiU2 = document.createElement("div");
@@ -217,29 +237,48 @@ function addGrid(gridId, yuiBId, rowCount){
 		yuiUFirst.setAttribute("class","yui-u-template first");
 		yuiUFirst.setAttribute("id",rowCount+"_yui-u-grid-1");
 		yuiUFirst.innerHTML=getAddContainer(rowCount+"_yui-u-grid-1")+"<h1>Body</h1>";
-//		yuiUFirst.style.height="50%";
+		//update the add container links count
+		updateAddContainerLinksCount(true);
 		yuiU2.setAttribute("class","yui-u-template");
 		yuiU2.setAttribute("id",rowCount+"_yui-u-grid-2");
 		yuiU2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-2")+"<h1>Body</h1>";
-//		yuiU2.style.height="50%";
+		//update the add container links count
+		updateAddContainerLinksCount(true);
 		gridDiv.appendChild(yuiUFirst);
 		gridDiv.appendChild(yuiU2);
 		if("yui-gb-template"==gridId){
 			yuiU3.setAttribute("class","yui-u-template");
 			yuiU3.setAttribute("id",rowCount+"_yui-u-grid-3");
 			yuiU3.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
-//			yuiU3.style.height="50%";
+			//update the add container links count
+			updateAddContainerLinksCount(true);
 			gridDiv.appendChild(yuiU3);
 		}		
 		yuiBDiv.appendChild(gridDiv);		
 	}else{
 		yuiBDiv.innerHTML=getAddContainer(yuiBId)+"<h1>Body</h1>";
+		//update the add container links count
+		updateAddContainerLinksCount(true);
 	}
 }
 
 function removeGrid(yuiBId){
 	var childToRemove = document.getElementById(yuiBId);
 	var mainDiv = document.getElementById("yui-main-template");
+	if(childToRemove.hasChildNodes()) {
+		var nodes = childToRemove.childNodes;
+		var child = nodes[0];
+		if(null==child.getAttribute("id"))
+			updateAddContainerLinksCount(false);
+		else {
+			//update the add container links count
+			updateAddContainerLinksCount(false);
+			//update the add container links count
+			updateAddContainerLinksCount(false);
+			if("yui-gb-template"==child.getAttribute("id"))
+				updateAddContainerLinksCount(false);
+		}
+	}
 	mainDiv.removeChild(childToRemove);
 }
 
@@ -288,21 +327,22 @@ function addDrawedContainer(idDiv, container, value, error_msg){
 			var child = nodes[i];
 			var child_title = child.getAttribute("title");			
 			if(null!=child_title && child_title.indexOf("container")>=0) //this element is a container
-				containers.push(child);						
+				containers.push(child);
 		}		
 	}
 	if(idDiv.value!="ft-template" && idDiv.value!="hd-template"){ //if the element is not a header or footer than I add the "add container" link
 		//set the add container link + the previuos containers
-		div.innerHTML=getAddContainer(idDiv.value);	
+		div.innerHTML=getAddContainer(idDiv.value);
 		for(var i=0; i<containers.length; i++)
-			div.appendChild(containers[i]);		
+			div.appendChild(containers[i]);
 	}else{ // in this case we don't need other containers...in header or footer only one container is predicted
 		div.innerHTML="";
 	}
 	
 	div.appendChild(titleContainerSpan);
 	div.appendChild(containerDivHidden);
-		
+	// update the container's link
+	updateContainersAddedCount(true);	
 }
 
 function removeDrawedContainer(idDiv,idContainer){
@@ -343,6 +383,9 @@ function removeDrawedContainer(idDiv,idContainer){
 		else
 			div.innerHTML+="<h1>Sidebar</h1>"+getMockContent();
 	}
+	
+	// update the containers counter
+	updateContainersAddedCount(false);
 	
 }
 
@@ -432,7 +475,7 @@ function printBody(){
 	alert(textareaBodyHidden.value);	
 }
 
-function saveBody(){	
+function saveBody(){
 	var textareaBodyHidden = document.getElementById("bodyField");
 	textareaBodyHidden.value=document.getElementById("bodyTemplate").innerHTML;	
 }
@@ -447,4 +490,36 @@ function getAddContainer(idDiv){
 
 function getRemoveContainer(idDiv, idContainer){
 	return '<div class="removeDiv"><a href="javascript: removeDrawedContainer(\''+idDiv+'\',\''+idContainer+'\');" title="'+removeContainerMSG+'"><span class="minusIcon"></span>'+removeContainerMSG+'</a></div>';	
+}
+
+/**
+ * Update the counter of the "Add Container" links 
+ * 
+ * @param add: if true --> +1; if false --> -1.
+ */
+function updateAddContainerLinksCount(add){
+	var integerCountAddContainerLinks = window.parseInt(countAddContainerLinks.value);
+	if(add) // we must add 1 to count		
+		integerCountAddContainerLinks+=1;
+	else if(integerCountAddContainerLinks>0){		
+		integerCountAddContainerLinks-=1;
+	}			
+//	alert('add container current value: ' + integerCountAddContainerLinks);
+	countAddContainerLinks.value = integerCountAddContainerLinks;
+}
+
+/**
+ * Update the counter of the Containers added to the template 
+ * 
+ * @param add: if true --> +1; if false --> -1.
+ */
+function updateContainersAddedCount(add){
+	var integerCountContainersAdded = window.parseInt(countContainersAdded.value);
+	if(add) // we must add 1 to count		
+		integerCountContainersAdded+=1;
+	else if(integerCountContainersAdded>0){		
+		integerCountContainersAdded-=1;
+	}
+//	alert('containers added current value: ' + integerCountContainersAdded);
+	countContainersAdded.value = integerCountContainersAdded;
 }

@@ -7,7 +7,6 @@ import java.util.List;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -37,6 +36,10 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	private boolean drawed;
 	
 	private String drawedBody;
+	
+	private Integer countAddContainer;
+	
+	private Integer countContainers;
 	//	*********************** END GRAZIANO issue-12-dnd-template
 
 	/** default constructor */
@@ -178,6 +181,22 @@ public class Template extends WebAsset implements Serializable, Comparable {
 
 	public void setDrawedBody(String drawedBody) {
 		this.drawedBody = drawedBody;
+	}
+
+	public Integer getCountAddContainer() {
+		return countAddContainer;
+	}
+
+	public void setCountAddContainer(Integer countAddContainer) {
+		this.countAddContainer = countAddContainer;
+	}
+
+	public Integer getCountContainers() {
+		return countContainers;
+	}
+
+	public void setCountContainers(Integer countContainers) {
+		this.countContainers = countContainers;
 	}
 
 	public int compareTo(Object compObject){

@@ -289,6 +289,8 @@
 			<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
 			<property column="drawed" name="drawed" type="boolean" />
 			<property column="drawed_body" name="drawedBody" type="string" length="123456789" />
+			<property column="add_container_links" length="4" name="countAddContainer" type="integer" />
+			<property column="containers_added" length="4" name="countContainers" type="integer" />
 			<!-- *********************** END GRAZIANO issue-12-dnd-template -->			
 		</joined-subclass>
 
