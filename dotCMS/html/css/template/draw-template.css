@@ -129,6 +129,15 @@ h2 {
 	margin: 3px;	
 }
 
+.metatagIcon {
+	background: url(/html/images/icons/icon_metatag.png) no-repeat;
+	width:32px;
+	height:32px;
+	display:inline-block;
+	vertical-align: top;
+	margin: 3px;	
+}
+
 .cssIcon h3, .jsIcon h3 {
 	margin-left: 37px;
 	margin-top: 6px;
@@ -137,6 +146,16 @@ h2 {
 	font-size: 14px;
 	font-family: Verdana,Geneva,sans-serif;
 	width: 500px;
+}
+
+.metatagIcon h3 {
+	margin-left: 37px;
+	margin-top: 6px;
+	color: #d0d0d0;
+	font-weight: bold;
+	font-size: 14px;
+	font-family: Verdana,Geneva,sans-serif;
+	width: 750px;
 } 
 
 .mockContent {
@@ -218,7 +237,7 @@ tr.spaceUnder > td
 }
 
 .cssSpan {
-	border: 1px solid rgb(154, 179, 206);
+	border: 1px dotted rgb(154, 179, 206);
 	background-color: white;
 	display: block;
 	width: auto;
@@ -226,6 +245,14 @@ tr.spaceUnder > td
 }
 
 .jsSpan {
+	border: 1px dotted rgb(154, 179, 206);
+	background-color: white;
+	display: block;
+	width: auto;
+	margin-bottom: 7px;
+}
+
+.metatagSpan {
 	border: 1px solid rgb(154, 179, 206);
 	background-color: white;
 	display: block;
@@ -233,13 +260,13 @@ tr.spaceUnder > td
 	margin-bottom: 7px;
 }
 
-.cssSpan .removeDiv, .jsSpan .removeDiv {
+.cssSpan .removeDiv, .jsSpan .removeDiv, .metatagSpan .removeDiv {
 	float: right;
 	margin-top: 7px;
 	text-align: right;
 }
 
-#fileContainerDiv .jsSpan, #fileContainerDiv .cssSpan {
+#fileContainerDiv .jsSpan, #fileContainerDiv .cssSpan, #fileContainerDiv .metatagSpan {
 	margin-left: 10px;
 }	
 
