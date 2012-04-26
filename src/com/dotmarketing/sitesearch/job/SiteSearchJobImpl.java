@@ -1,112 +1,144 @@
 package com.dotmarketing.sitesearch.job;
 
+import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.elasticsearch.ElasticSearchException;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.SchedulerException;
 
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.sitesearch.SiteSearchConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.sitesearch.CrawlerUtil;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 public class SiteSearchJobImpl {
-
+	private PublishStatus status = new PublishStatus();
+	public PublishStatus getStatus() {
+		return status;
+	}
+	public void setStatus(PublishStatus status) {
+		this.status = status;
+	}
 	@SuppressWarnings("unchecked")
-	public void run(JobExecutionContext jobContext) throws JobExecutionException {
+	public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticSearchException, IOException {
 
 		JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
-		String pathsToIgnore  = dataMap.getString("pathsToIgnore");
-		String extToignore    = dataMap.getString("extToIgnore");
-		boolean followQueryString = (Boolean)dataMap.get("followQueryString");
-		boolean indexAll = (Boolean)dataMap.get("indexAll");
-		boolean squentiallyScheduled = (Boolean)dataMap.get("squentiallyScheduled");
-		boolean runJobAfterSeq = (Boolean)dataMap.get("runJobAfterSeq");
-		List<String> indexHosts = (List<String>)dataMap.get("hosts");
-		String port    = dataMap.getString("port");
+		List<Host> selectedHosts = new ArrayList<Host>();
+		boolean indexAll = UtilMethods.isSet((String) dataMap.get("indexAll")) ? true : false;
+		String[] indexHosts = null;
+		Object obj = (dataMap.get("indexhost") != null) ?dataMap.get("indexhost") : new String[0];
+		if(obj instanceof String){
+			indexHosts = new String[] {(String) obj};
+		}
+		else{
+			indexHosts = (String[]) obj;
+		}
+
 		
-
-		HostAPI hostAPI = APILocator.getHostAPI();
-		UserAPI userAPI = APILocator.getUserAPI();
-
-		CrawlerUtil crawlerUtil = new CrawlerUtil();
-
-		if(UtilMethods.isSet(pathsToIgnore)){
-			List<String> paths = new ArrayList<String>();
-			for(String path :pathsToIgnore.split(",")){
-				path = path.trim().toLowerCase();
-				if(UtilMethods.isSet(path) && !path.contains("*")){
-					paths.add(path);
-				}
-			}
-			crawlerUtil.setPathsToIgnore(paths);
-		}
-
-		if(UtilMethods.isSet(extToignore)){
-			List<String> exts = new ArrayList<String>();
-			for(String ext :extToignore.split(",")){
-				ext = ext.trim().toLowerCase();
-				if(UtilMethods.isSet(ext) && !ext.contains("*")){
-					exts.add(ext);
-				}
-			}
-			crawlerUtil.setExtensionsToIgnore(exts);
-		}
-
-		if(indexAll || UtilMethods.isSet(indexHosts)){
-			List<Host> hostsToIndex = new ArrayList<Host>();
-			if(!indexAll){
-			for(String hostId : indexHosts){
-				try {
-					Host host = hostAPI.find(hostId, userAPI.getSystemUser(), false);
-					if(host!=null && !host.isSystemHost() && host.isLive()){
-						hostsToIndex.add(host);
-					}
-				} catch (Exception e) {
-					Logger.error(this, "Unable to get Host with id = " + hostId);
-				} 
-			}
-			}else{
-				try {
-					List<Host> allHosts = hostAPI.findAll(userAPI.getSystemUser(), false);
-					for(Host host : allHosts){
-						if(!host.isSystemHost() && !host.isArchived()){
-							hostsToIndex.add(host);
-						}
-					}
-				} catch (Exception e) {
-					Logger.error(this, "Exception trying to index All hosts caused by " + e);
-				} 
-			}
-			crawlerUtil.setHosts(hostsToIndex);
-		}
 		
-		if(UtilMethods.isSet(port)){
-			try{
-			    Integer.valueOf(port);
-			    crawlerUtil.setPortNumber(port);
-			}catch(NumberFormatException e){
-				Logger.error(this, "Invalid port number " + e);
-			}
+		boolean incremental = dataMap.getString("incremental") != null;
+		DateFormat df = new java.text.SimpleDateFormat("yyyy-M-d HH:mm:ss");
+		Date start = null;
+		Date end =null;
+		
+		try{
+			String startDateStr = dataMap.getString("startDateDate") + " " +dataMap.getString("startDateTime").replaceAll("T",""); 
+			start = df.parse(startDateStr);
 		}
+		catch(Exception e){
 			
-
-		crawlerUtil.setQueryStringEnabled(followQueryString);
-		crawlerUtil.index();
-		if (squentiallyScheduled && runJobAfterSeq) {
-			try {
-				QuartzUtils.resumeJob("site-search", "site-search-group");
-			} catch (SchedulerException e) {
-				throw new JobExecutionException(e);
-			}
 		}
+		try{
+			String endDateStr = dataMap.getString("endDateDate") + " " +dataMap.getString("endDateTime").replaceAll("T",""); 
+			end = df.parse(endDateStr);
+		}
+		catch(Exception e){
+			
+		}
+		
+		
+		User userToRun = APILocator.getUserAPI().getSystemUser();
+
+		boolean include = ("all".equals(dataMap.getString("includeExclude")) || "include".equals(dataMap.getString("includeExclude")));
+		
+		String path = dataMap.getString("paths");
+		List<String> paths = new ArrayList<String>();
+		if(path != null){
+			path = path.replace(',', '\r');
+			for(String x : path.split("\r")){
+				if(UtilMethods.isSet(x)){
+					paths.add(x);
+				}
+			}	
+		}
+		
+		
+
+		
+		SiteSearchConfig config = new SiteSearchConfig();
+		boolean squentiallyScheduled = true;
+		boolean runJobAfterSeq = true;
+
+		List<Host> hosts=new ArrayList<Host>();
+
+		if(indexAll){
+				hosts = APILocator.getHostAPI().findAll(userToRun, true);				
+		}else{
+			
+			for(String h : indexHosts){
+				hosts.add(APILocator.getHostAPI().find(h, userToRun, true));
+			}
+			
+		}
+
+		config.setHosts( hosts);		
+		
+
+		String indexName    = dataMap.getString("indexName");
+		if("DEFAULT".equals(indexName)){
+			indexName = APILocator.getIndiciesAPI().loadIndicies().site_search;
+		}
+		if("NEWINDEX".equals(indexName)){
+			indexName = "sitesearchindex_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
+			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName , 1);
+			config.setSwitchIndexWhenDone(true);
+		}
+		
+		config.setIndexName(indexName);
+
+		
+
+		
+
+		config.setStartDate(start);
+		config.setEndDate(end);
+		config.setIncremental(incremental);
+		config.setUser(userToRun);
+		if(include){
+			config.setIncludePatterns(paths);
+		}
+		else{
+			
+			config.setExcludePatterns(paths);
+		}
+
+
+		APILocator.getPublisherAPI().publish(config,status);
+		
+		
+		
+		
 	}
 
 }

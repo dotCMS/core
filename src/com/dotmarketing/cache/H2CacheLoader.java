@@ -37,7 +37,7 @@ import org.jboss.cache.RegionManager;
 import org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
 import org.jboss.cache.loader.CacheLoader;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -240,7 +240,7 @@ public class H2CacheLoader implements CacheLoader{
 	
 	public void moveh2dbDir() throws Exception {
 		File h2dbDir=new File(ConfigUtils.getDynamicContentPath() + File.separator + "h2db");
-		File trashDir = new File(ConfigUtils.getDynamicContentPath() + File.separator + "trash" + File.separator + "h2db"+ESIndexAPI.timestampFormatter.format(new Date()));
+		File trashDir = new File(ConfigUtils.getDynamicContentPath() + File.separator + "trash" + File.separator + "h2db"+APILocator.getContentletIndexAPI().timestampFormatter.format(new Date()));
 		
 		//move the dotsecure/h2db dir to dotsecure/trash/h2db{timestamp} 
 		//FileUtil.move(h2dbDir, trashDir);

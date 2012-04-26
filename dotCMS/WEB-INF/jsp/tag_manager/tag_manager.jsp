@@ -168,7 +168,7 @@ td {font-size: 100%;}
 			initialWidth : '100%',
 			autoHeight : true,
 			escapeHTMLInData : false,
-			class: "tundra",
+			'class': "tundra",
 			structure: layout,
 			dnd: true,
 			plugins:{
