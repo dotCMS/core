@@ -1,9 +1,10 @@
-package com.dotmarketing.sitesearch.job;
+package com.dotcms.publishing.sitesearch.job;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.sitesearch.job.SiteSearchJobImpl;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
