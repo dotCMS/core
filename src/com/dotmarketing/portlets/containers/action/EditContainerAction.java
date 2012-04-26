@@ -36,6 +36,8 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -556,6 +558,7 @@ public class EditContainerAction extends DotPortletAction implements
 		APILocator.getIdentifierAPI().save(identifier);
 
 		SessionMessages.add(httpReq, "message", "message.containers.save");
+		ActivityLogger.logInfo(this.getClass(), "Save WebAsset action", "User " + user.getPrimaryKey() + " saved " + container.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 		// saves to working folder under velocity
 		ContainerServices.invalidate(container, true);
 

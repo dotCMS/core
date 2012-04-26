@@ -570,3 +570,11 @@ create table indicies (
   index_name varchar(30) primary key,
   index_type varchar(16) not null unique
 );
+-- ****** Log Console Table *******
+  CREATE TABLE log_mapper (
+    enabled   	 bigint(1,0) not null,
+    log_name 	 varchar(30) not null,
+    description  varchar(50) not null,
+    primary key (log_name)
+  );
+  
