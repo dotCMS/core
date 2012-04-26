@@ -594,7 +594,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		permissionFactory.assignPermissions(includingLockedRolePermissions, permissionable);
 
-		AdminLogger.log(PermissionBitAPIImpl.class, "assisgnPermissions", "Assigning permissions to :"+permissionable.getPermissionId(),user);
+		AdminLogger.log(PermissionBitAPIImpl.class, "assign Permissions Action", "Assigning permissions to :"+permissionable.getPermissionId(),user);
 	}
 
 	public Set<User> getReadUsers(Permissionable permissionable) throws DotDataException {

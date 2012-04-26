@@ -319,6 +319,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		rc.add(r);
 		HibernateUtil.evict(r);
 		AdminLogger.log(RoleFactoryImpl.class, "save", "Role saved Id :"+r.getId());
+		
 		return r;
 	}
 	
@@ -336,6 +337,9 @@ public class RoleFactoryImpl extends RoleFactory {
 		rc.remove(r.getId());
 		rc.remove(r.getRoleKey());
 		rc.clearRoleCache();
+		
+		AdminLogger.log(RoleFactoryImpl.class, "delete", "Role deleted Id :"+r.getId());
+		
 	}
 	
 	@Override
