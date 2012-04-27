@@ -587,11 +587,11 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         if(DbConnectionFactory.isOracle()){
             contentlets = 
                   "select * from ( "+
-                  "  select identifier,inode,language_id,row_number() over (order by inode) rn "+ 
+                  "  select identifier,inode,language_id,mod_date,row_number() over (order by inode) rn "+ 
                   "  from contentlet where working = 0 and live = 1 "+
                   ") where rn >= ? and rn < ? order by identifier asc, language_id asc, mod_date desc";
         }else if(DbConnectionFactory.isMsSql()){
-            contentlets =  " SELECT TOP " + limit + " * FROM (SELECT identifier,inode,language_id,ROW_NUMBER() "
+            contentlets =  " SELECT TOP " + limit + " * FROM (SELECT identifier,inode,language_id,mod_date,ROW_NUMBER() "
                          + " OVER (order by mod_date) AS RowNumber FROM contentlet where working = "+DbConnectionFactory.getDBFalse()
                          + " and live ="+ DbConnectionFactory.getDBTrue()+ ") temp WHERE RowNumber > ? order by identifier asc, language_id asc, mod_date desc";
         }else{
