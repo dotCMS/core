@@ -35,6 +35,12 @@
        	<appender-ref ref="CONSOLE"/>
     </appender>
     
+    <appender name="ASYNC-USERACTIVITY" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
+       	<param name="BufferSize" value="500" />
+		<param name="FailToSync" value="false" />
+       	<appender-ref ref="USERS_ACTIVITY"/>
+    </appender>
+    
 <!--
     <appender name="ASYNC" class="org.apache.log4j.AsyncAppender">
        	<appender-ref ref="FILE"/>
@@ -91,6 +97,16 @@
                             value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
             </layout>
     </appender>    
+    
+    <appender name="USERS_ACTIVITY" class="com.dotmarketing.util.RollingNewFileAppender">
+            <param name="File" value="${catalina.home}/logs/dotcms-userActivity.log"/>
+            <param name="MaxFileSize" value="20MB"/>
+            <param name="MaxBackupIndex" value="10"/>
+            <layout class="org.apache.log4j.PatternLayout">
+                 <param name="ConversionPattern"
+                            value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+            </layout>
+    </appender>
 
     <logger name="org.directwebremoting">
 	  <level value="warn"/> 
@@ -140,10 +156,20 @@
 		<appender-ref ref="ASYNC-SITESEARCH" />
 	</logger>
 	
+	<logger name="com.dotmarketing.util.SecurityLogger" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-SECURITY" />
+	</logger>
+	
 	<logger name="com.dotmarketing.util.AdminLogger	" additivity="false">
 		<level value="info"/>
 		<appender-ref ref="ASYNC-ADMINAUDIT" />
 	</logger>	
+		
+	<logger name="com.dotmarketing.util.ActivityLogger" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-USERACTIVITY" />
+	</logger>
 	
     <root>
             <priority value="info"/>
