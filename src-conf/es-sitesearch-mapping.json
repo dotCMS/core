@@ -1,0 +1,65 @@
+{
+    "dot_site_search": {
+      "properties": {
+        "content": {
+          "type": "multi_field",
+          "fields": {
+            "untouched": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "content": {
+              "type": "string",
+              "analyzer": "standard_content"
+            },
+            "ngram": {
+              "search_analyzer": "standard_content",
+              "index_analyzer": "partial_content",
+              "type": "string"
+            }
+          }
+        },
+        "host": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "contentLength": {
+          "type": "long"
+        },
+        "uri": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "url": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "mimeType": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "title": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "description": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "modified": {
+          "type": "date"
+        },
+        "keywords": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "language": {
+          "type": "integer"
+        },
+        "author": {
+          "type": "string",
+          "index": "not_analyzed"
+        }
+      }
+    }
+}

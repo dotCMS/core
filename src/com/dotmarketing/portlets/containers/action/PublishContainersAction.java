@@ -16,6 +16,8 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -36,6 +38,7 @@ public class PublishContainersAction extends DotPortletAction {
 			 ActionRequest req, ActionResponse res)
 		 throws Exception {
 
+		
 		Logger.debug(this, "Running PublishContainersAction!!!!");
 
 		String referer = req.getParameter("referer");
@@ -61,7 +64,7 @@ public class PublishContainersAction extends DotPortletAction {
 		}
 	}
 
-	private void _publishContainers(ActionRequest req, User user) throws WebAssetException, DotDataException {
+	private void _publishContainers(ActionRequest req, User user) throws WebAssetException, DotDataException, DotSecurityException {
 		
 		String[] publishInode = req.getParameterValues("publishInode");
 		if (publishInode == null) return;
@@ -85,6 +88,8 @@ public class PublishContainersAction extends DotPortletAction {
 					SessionMessages.add(req, "error", "message.webasset.published.failed");
 				}
 			}
+			
+			ActivityLogger.logInfo(this.getClass(), "Publishing Container action", "User " + user.getPrimaryKey() + " publishing container" + container.getTitle(), HostUtil.hostNameUtil(req, user));
 		}
 
 		

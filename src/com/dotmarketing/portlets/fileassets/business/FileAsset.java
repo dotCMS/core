@@ -24,9 +24,24 @@ import com.liferay.portal.model.User;
 
 public class FileAsset extends Contentlet implements IFileAsset {
 
+	String metaData;
 	public FileAsset() {
 		super();
 
+	}
+
+	public String getMetaData(){
+		if(metaData ==null){
+			metaData=(String) super.get(FileAssetAPI.META_DATA_FIELD);
+		}
+		return metaData;
+
+	}
+	
+	
+
+	public void setMetaData(String metaData) {
+		this.metaData = metaData;
 	}
 
 	public void setMenuOrder(int sortOrder) {

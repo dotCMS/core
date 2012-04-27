@@ -1,0 +1,12 @@
+<!-- Use this file to add front end struts actions. You override backend portal struts action by providing an 
+Action with the same path attribute or a form-bean with the same name  -->
+
+<form-bean name="EscalationForm" type="com.dotcms.escalation.form.EscalationForm"></form-bean> 
+
+
+<action path="/ext/escalation/viewJobEsc" type="com.dotcms.escalation.business.ManualExpiryJobLaunchAction">
+	<forward name="portlet.ext.plugins.expCont.struts" path="portlet.ext.plugins.expCont.struts" />
+</action>
+<action path="/ext/escalation/RunJobEsc" type="com.dotcms.escalation.business.ManualExpiryJobLaunchAction" name="EscalationForm">
+	<forward name="portlet.ext.plugins.expCont.struts" path="portlet.ext.plugins.expCont.struts" />
+</action>
