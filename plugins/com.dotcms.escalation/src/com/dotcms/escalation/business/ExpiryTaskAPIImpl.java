@@ -2,6 +2,7 @@ package com.dotcms.escalation.business;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -41,7 +42,10 @@ public class ExpiryTaskAPIImpl extends ExpiryTaskAPI {
 
 		} catch (final Exception e) {
 			Logger.debug(this.getClass(), e.getMessage(), e);
+		} finally {
+			HibernateUtil.commitTransaction();
 		}
+		
 		// wfAPI.escaleTask(task, roleId);
 
 	}
