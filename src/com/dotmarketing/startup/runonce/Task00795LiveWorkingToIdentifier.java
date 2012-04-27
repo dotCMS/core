@@ -6,10 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -315,22 +313,25 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         String versionTable=UtilMethods.getVersionInfoTableName(table);
         PreparedStatement selectContentlets = null;
         final int limit=1000;
+        
+        Logger.info(this, "creating (working) version info records for "+table+" on "+versionTable);
+        
         if(DbConnectionFactory.isOracle()){
         	  selectContentlets = con.prepareStatement(
         	          "select * from ( "+
         	          "   select identifier,inode,live,locked,mod_date,mod_user,deleted, row_number() over (order by inode) rn "+ 
         	          "   from "+table+" where working = 1 "+ 
-        	          ") where rn >= ? and rn < ? ");
+        	          ") where rn >= ? and rn < ? order by identifier asc, mod_date desc");
         }else if(DbConnectionFactory.isMsSql()){
         	 selectContentlets = con.prepareStatement(
         			 " SELECT TOP " + limit  + "  * FROM (SELECT identifier,inode,live,locked,mod_date,mod_user,deleted,ROW_NUMBER() "
 	    		   + " OVER (order by mod_date) AS RowNumber FROM "+ table +" where working = "+DbConnectionFactory.getDBTrue()+") temp "
-	    		   + " WHERE RowNumber > ? ");
+	    		   + " WHERE RowNumber > ? order by identifier asc, mod_date desc");
 
         }else{
         	 selectContentlets = con.prepareStatement(
                      "select identifier,inode,live,locked,mod_date,mod_user,deleted from "+ table +
-                     " where working="+DbConnectionFactory.getDBTrue()+" limit ? offset ?");
+                     " where working="+DbConnectionFactory.getDBTrue()+" order by identifier asc, mod_date desc limit ? offset ? ");
         }
 
         PreparedStatement insertVersionInfo=con.prepareStatement(
@@ -340,6 +341,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
 
         int offset=0;
         boolean notDone=true;
+        String lastId="";
         do {
         	if(DbConnectionFactory.isMsSql()){
         		selectContentlets.setInt(1, offset);
@@ -358,27 +360,30 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                 notDone=true;
                 final String inode=rs.getString("inode");
                 final String identifier=rs.getString("identifier");
-                insertVersionInfo.setString(1, identifier);
-                insertVersionInfo.setString(2, inode);
-                boolean locked=rs.getBoolean("locked");
-                if(locked) {
-                    insertVersionInfo.setDate(3, rs.getDate("mod_date"));
-                    insertVersionInfo.setString(4, rs.getString("mod_user"));
+                if(UtilMethods.isSet(identifier) && !identifier.equals(lastId)) {
+                    lastId=identifier;
+                    insertVersionInfo.setString(1, identifier);
+                    insertVersionInfo.setString(2, inode);
+                    boolean locked=rs.getBoolean("locked");
+                    if(locked) {
+                        insertVersionInfo.setDate(3, rs.getDate("mod_date"));
+                        insertVersionInfo.setString(4, rs.getString("mod_user"));
+                    }
+                    else {
+                        insertVersionInfo.setDate(3, new Date(System.currentTimeMillis()));
+                        insertVersionInfo.setNull(4, Types.VARCHAR);
+                    }
+    
+                    insertVersionInfo.setBoolean(5, rs.getBoolean("deleted"));
+    
+                    boolean live=rs.getBoolean("live");
+                    if(live)
+                        insertVersionInfo.setString(6, inode);
+                    else
+                        insertVersionInfo.setNull(6, Types.VARCHAR);
+    
+                    insertVersionInfo.executeUpdate();
                 }
-                else {
-                    insertVersionInfo.setDate(3, new Date(System.currentTimeMillis()));
-                    insertVersionInfo.setNull(4, Types.VARCHAR);
-                }
-
-                insertVersionInfo.setBoolean(5, rs.getBoolean("deleted"));
-
-                boolean live=rs.getBoolean("live");
-                if(live)
-                    insertVersionInfo.setString(6, inode);
-                else
-                    insertVersionInfo.setNull(6, Types.VARCHAR);
-
-                insertVersionInfo.executeUpdate();
             }
             rs.close();
             //insertVersionInfo.executeBatch();
@@ -391,19 +396,26 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
     protected void associateLiveNotWorking(String table) throws DotDataException {
         DotConnect dc = new DotConnect();
         String versionTable=UtilMethods.getVersionInfoTableName(table);
+        String lastId="";
+        
+        Logger.info(this, "creating (live not working) version info records for "+table+" on "+versionTable);
+        
         String contentlets=
-            "select identifier,inode from " + table +
-            " where working="+DbConnectionFactory.getDBFalse()+" and live="+DbConnectionFactory.getDBTrue();
+            "select identifier,inode, mod_date from " + table +
+            " where working="+DbConnectionFactory.getDBFalse()+" and live="+DbConnectionFactory.getDBTrue()+
+            " order by identifier asc, mod_date desc";
         dc.setSQL(contentlets);
         List<Map<String,Object>> results=dc.loadObjectResults();
         for(Map<String,Object> rr : results) {
             String identifier=(String)rr.get("identifier");
             String inode=(String)rr.get("inode");
-
-            dc.setSQL("update "+versionTable+" set live_inode=? where identifier=?");
-            dc.addParam(inode);
-            dc.addParam(identifier);
-            dc.loadResult();
+            if(UtilMethods.isSet(identifier) && !identifier.equals(lastId)) {
+                lastId=identifier;
+                dc.setSQL("update "+versionTable+" set live_inode=? where identifier=?");
+                dc.addParam(inode);
+                dc.addParam(identifier);
+                dc.loadResult();
+            }
         }
     }
 
@@ -474,6 +486,8 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         DotConnect dc = new DotConnect();
         final int limit=1000;
         
+        Logger.info(this,"creating version_info records for contentlets");
+        
         // first working and (optionally) live
         String contentlets;
         if(DbConnectionFactory.isOracle()){
@@ -481,18 +495,20 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                   "select * from ( "+
                   "  select identifier,inode,live,locked,mod_user,mod_date,deleted,language_id,row_number() over (order by inode) rn "+ 
                   "  from contentlet where working = 1 "+ 
-                  ") where rn >= ? and rn < ? ";
+                  ") where rn >= ? and rn < ? order by identifier asc, language_id asc, mod_date desc";
         }else if(DbConnectionFactory.isMsSql()){
             contentlets =  " SELECT TOP "+ limit + " *  FROM (SELECT identifier,inode,live,locked,mod_user,mod_date,deleted,language_id,ROW_NUMBER() "
                          + " OVER (order by mod_date) AS RowNumber FROM contentlet where working="+DbConnectionFactory.getDBTrue()
-                         + ") temp WHERE RowNumber > ? ";
+                         + ") temp WHERE RowNumber > ? order by identifier asc, language_id asc, mod_date desc";
         }else{
             contentlets = "select identifier,inode,live,locked,mod_user,mod_date,deleted,language_id from contentlet "
-                       +  " where working="+DbConnectionFactory.getDBTrue()+" limit ? offset ?";
+                       +  " where working="+DbConnectionFactory.getDBTrue()+" order by identifier asc, language_id asc, mod_date desc limit ? offset ? ";
         }
         
         int offset=0;
         boolean notDone;
+        String lastId="";
+        long lastLang=-1;
         do {
 
             dc.setSQL(contentlets);
@@ -513,49 +529,56 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             for(Map<String,Object> rr : results) {
                 String identifier=(String)rr.get("identifier");
                 String inode=(String)rr.get("inode");
-                boolean live = false;
-                boolean locked = false;
-                boolean deleted = false;
-
-                if(DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle()){
-                	if(Integer.parseInt(rr.get("live").toString())==1)
-                		live = true;
-                	if(Integer.parseInt(rr.get("locked").toString())==1)
-                		locked = true;
-                	if(Integer.parseInt(rr.get("deleted").toString())==1)
-                		deleted = true;
-                }else{
-                	live = (Boolean)rr.get("live");
-                    locked = (Boolean)rr.get("locked");
-                    deleted =(Boolean)rr.get("deleted");
-                }
-
-                String mod_user=(String)rr.get("mod_user");
-                java.util.Date mod_date=(java.util.Date)rr.get("mod_date");
-                String insert="";
-
-            	insert="insert into contentlet_version_info(identifier,locked_on,locked_by,deleted,lang,working_inode"+(live?",live_inode":"")+") values " +
-                                                         "(?,?,?,?,?,?"+(live?",?":"")+")";
-                dc.setSQL(insert);
-                dc.addParam(identifier.trim());
-                if(locked) {
-                    dc.addParam(mod_date);
-                    dc.addParam(mod_user);
-                }
-                else {
-                    dc.addParam(new java.util.Date());
-                    dc.addObject(null);
-                }
-                dc.addParam(deleted);
-                dc.addParam(rr.get("language_id"));
-                dc.addParam(inode);
-                if(live)
-                    dc.addParam(inode);
+                long langId=Long.parseLong(rr.get("language_id").toString());
                 
-                try {
-                	dc.loadResult();
-                } catch (DotDataException e) {
-                	e.printStackTrace();
+                if(UtilMethods.isSet(identifier) && !(langId==lastLang && identifier.equals(lastId)) ) {
+                    lastLang=langId;
+                    lastId=identifier;
+                    
+                    boolean live = false;
+                    boolean locked = false;
+                    boolean deleted = false;
+    
+                    if(DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle() || DbConnectionFactory.isMySql()){
+                    	if(Integer.parseInt(rr.get("live").toString())==1)
+                    		live = true;
+                    	if(Integer.parseInt(rr.get("locked").toString())==1)
+                    		locked = true;
+                    	if(Integer.parseInt(rr.get("deleted").toString())==1)
+                    		deleted = true;
+                    }else{
+                    	live = Boolean.parseBoolean(rr.get("live").toString());
+                        locked = Boolean.parseBoolean(rr.get("locked").toString());
+                        deleted = Boolean.parseBoolean(rr.get("deleted").toString());
+                    }
+    
+                    String mod_user=(String)rr.get("mod_user");
+                    java.util.Date mod_date=(java.util.Date)rr.get("mod_date");
+                    String insert="";
+    
+                	insert="insert into contentlet_version_info(identifier,locked_on,locked_by,deleted,lang,working_inode"+(live?",live_inode":"")+") values " +
+                                                             "(?,?,?,?,?,?"+(live?",?":"")+")";
+                    dc.setSQL(insert);
+                    dc.addParam(identifier.trim());
+                    if(locked) {
+                        dc.addParam(mod_date);
+                        dc.addParam(mod_user);
+                    }
+                    else {
+                        dc.addParam(new java.util.Date());
+                        dc.addObject(null);
+                    }
+                    dc.addParam(deleted);
+                    dc.addParam(langId);
+                    dc.addParam(inode);
+                    if(live)
+                        dc.addParam(inode);
+                    
+                    try {
+                    	dc.loadResult();
+                    } catch (DotDataException e) {
+                    	e.printStackTrace();
+                    }
                 }
             }
         } while(notDone);
@@ -566,16 +589,18 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                   "select * from ( "+
                   "  select identifier,inode,language_id,row_number() over (order by inode) rn "+ 
                   "  from contentlet where working = 0 and live = 1 "+
-                  ") where rn >= ? and rn < ?";
+                  ") where rn >= ? and rn < ? order by identifier asc, language_id asc, mod_date desc";
         }else if(DbConnectionFactory.isMsSql()){
             contentlets =  " SELECT TOP " + limit + " * FROM (SELECT identifier,inode,language_id,ROW_NUMBER() "
                          + " OVER (order by mod_date) AS RowNumber FROM contentlet where working = "+DbConnectionFactory.getDBFalse()
-                         + " and live ="+ DbConnectionFactory.getDBTrue()+ ") temp WHERE RowNumber > ? ";
+                         + " and live ="+ DbConnectionFactory.getDBTrue()+ ") temp WHERE RowNumber > ? order by identifier asc, language_id asc, mod_date desc";
         }else{
             contentlets = "select identifier,inode,language_id from contentlet "
                         + " where working="+DbConnectionFactory.getDBFalse()+" and live="+DbConnectionFactory.getDBTrue()
-                        + " limit ? offset ?";
+                        + " order by identifier asc, language_id asc, mod_date desc limit ? offset ? ";
         }
+        lastId="";
+        lastLang=-1;
         offset=0;
         do {
 
@@ -595,12 +620,17 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             for(Map<String,Object> rr : results) {
                 String identifier=(String)rr.get("identifier");
                 String inode=(String)rr.get("inode");
-
-                dc.setSQL("update contentlet_version_info set live_inode=? where identifier=? and lang=?");
-                dc.addParam(inode);
-                dc.addParam(identifier);
-                dc.addParam(rr.get("language_id"));
-                dc.loadResult();
+                long langId=Long.parseLong(rr.get("language_id").toString());
+                if(UtilMethods.isSet(identifier) && !(langId==lastLang && identifier.equals(lastId))) {
+                    lastId=identifier;
+                    lastLang=langId;
+                    
+                    dc.setSQL("update contentlet_version_info set live_inode=? where identifier=? and lang=?");
+                    dc.addParam(inode);
+                    dc.addParam(identifier);
+                    dc.addParam(langId);
+                    dc.loadResult();
+                }
             }
         } while(notDone);
     }

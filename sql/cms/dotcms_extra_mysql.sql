@@ -480,7 +480,7 @@ alter table contentlet_version_info add constraint fk_contentlet_version_info_la
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
 alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);
---alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
+-- alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
 alter table workflow_comment add constraint workflowtask_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);
 alter table workflow_history add constraint workflowtask_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
 
@@ -570,6 +570,7 @@ create table indicies (
   index_name varchar(30) primary key,
   index_type varchar(16) not null unique
 );
+
 -- ****** Log Console Table *******
   CREATE TABLE log_mapper (
     enabled   	 bigint(1,0) not null,
