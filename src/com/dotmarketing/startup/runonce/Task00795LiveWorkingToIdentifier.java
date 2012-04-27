@@ -539,19 +539,25 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
                     boolean locked = false;
                     boolean deleted = false;
     
-                    if(DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle() || DbConnectionFactory.isMySql()){
-                    	if(Integer.parseInt(rr.get("live").toString())==1)
-                    		live = true;
-                    	if(Integer.parseInt(rr.get("locked").toString())==1)
-                    		locked = true;
-                    	if(Integer.parseInt(rr.get("deleted").toString())==1)
-                    		deleted = true;
-                    }else{
-                    	live = Boolean.parseBoolean(rr.get("live").toString());
-                        locked = Boolean.parseBoolean(rr.get("locked").toString());
-                        deleted = Boolean.parseBoolean(rr.get("deleted").toString());
-                    }
-    
+                    String liveStr=rr.get("live").toString().trim();
+                    String lockedStr=rr.get("locked").toString().trim();
+                    String deletedStr=rr.get("deleted").toString().trim();
+                    
+                    if(liveStr.equalsIgnoreCase("true") || liveStr.equalsIgnoreCase("false"))
+                        live = Boolean.parseBoolean(liveStr);
+                    else if(liveStr.equals("1") || liveStr.equals("0"))
+                        live = Integer.parseInt(liveStr)==1;
+                    
+                    if(lockedStr.equalsIgnoreCase("true") || lockedStr.equalsIgnoreCase("false"))
+                        locked = Boolean.parseBoolean(lockedStr);
+                    else if(lockedStr.equals("1") || lockedStr.equals("0"))
+                        locked = Integer.parseInt(lockedStr)==1;
+                    
+                    if(deletedStr.equalsIgnoreCase("true") || deletedStr.equalsIgnoreCase("false"))
+                        deleted = Boolean.parseBoolean(deletedStr);
+                    else if(deletedStr.equals("1") || deletedStr.equals("0"))
+                        deleted = Integer.parseInt(deletedStr)==1;
+                    
                     String mod_user=(String)rr.get("mod_user");
                     java.util.Date mod_date=(java.util.Date)rr.get("mod_date");
                     String insert="";
