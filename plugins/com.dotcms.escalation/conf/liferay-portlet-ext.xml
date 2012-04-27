@@ -1,0 +1,2 @@
+<!-- Use this file to add portlets and extend the portlet file -->
+<portlet id="EXT_EXPCONTENT_TOOL" struts-path="ext/escalation" narrow="true" />
