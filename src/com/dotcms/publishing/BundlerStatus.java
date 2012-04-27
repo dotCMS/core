@@ -4,6 +4,17 @@ public class BundlerStatus {
 	private long total = 0;
 	private long count = 0;
 	private long failures = 0;
+	private String bundlerClass;
+	public String getBundlerClass() {
+		return bundlerClass;
+	}
+	public BundlerStatus(String className){
+		
+		setBundlerClass(className);
+	}
+	public void setBundlerClass(String bundlerClass) {
+		this.bundlerClass = bundlerClass;
+	}
 
 	/**
 	 * @return the count

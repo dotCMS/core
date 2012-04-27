@@ -7,12 +7,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.bundlers.FileAssetBundler;
@@ -69,7 +71,7 @@ public class ESSiteSearchPublisher extends Publisher {
 	}
 
 	@Override
-	public PublisherConfig process() throws DotPublishingException {
+	public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
 		try {
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
 			int numThreads = config.getAdditionalThreads() + 1;
@@ -90,13 +92,13 @@ public class ESSiteSearchPublisher extends Publisher {
 						@Override
 						public void run() {
 							if (b instanceof FileAssetBundler) {
-								processFileObjects(list);
+								processFileObjects(list, status);
 							} else if (b instanceof URLMapBundler) {
-								processUrlMaps(list);
+								processUrlMaps(list, status);
 
 							}
 							else if (b instanceof StaticHTMLPageBundler) {
-								processHTMLPages(list);
+								processHTMLPages(list, status);
 
 							}
 						}
@@ -108,7 +110,19 @@ public class ESSiteSearchPublisher extends Publisher {
 
 			}
 			executor.shutdown();
-
+			Logger.info(this.getClass(), "Waiting for ES Publishing threads to complete");
+			try {
+			    /* The tasks are now running concurrently. We wait until all work is done, 
+			     * with a timeout of 1 day : */
+			    boolean b = executor.awaitTermination(24, TimeUnit.HOURS);
+			    /* If the execution timed out, false is returned: */
+			    Logger.info(this.getClass(), "All ES Publishing threads done");
+			} catch (InterruptedException e) { 
+				  Logger.error(this.getClass(), "ES Publishing threads failed to complete", e);
+				
+			
+			
+			}
 			
 			if(((SiteSearchConfig)config).switchIndexWhenDone()){
 				APILocator.getSiteSearchAPI().activateIndex(((SiteSearchConfig)config).getIndexName());
@@ -126,11 +140,12 @@ public class ESSiteSearchPublisher extends Publisher {
 		}
 	}
 
-	private void processFileObjects(List<File> files) {
+	private void processFileObjects(List<File> files, PublishStatus status) {
 		for (File f : files) {
 			try {
 				if (shouldProcess(f)) {
 					processFileObject(f);
+					status.addCurrentProgress();
 				}
 
 			} catch (IOException e) {
@@ -141,11 +156,12 @@ public class ESSiteSearchPublisher extends Publisher {
 
 	}
 
-	private void processUrlMaps(List<File> files) {
+	private void processUrlMaps(List<File> files, PublishStatus status) {
 		for (File f : files) {
 			try {
 				if (shouldProcess(f)) {
 					processUrlMap(f);
+					status.addCurrentProgress();
 				}
 
 			} catch (Exception e) {
@@ -156,11 +172,12 @@ public class ESSiteSearchPublisher extends Publisher {
 
 	}
 	
-	private void processHTMLPages(List<File> files) {
+	private void processHTMLPages(List<File> files, PublishStatus status) {
 		for (File f : files) {
 			try {
 				if (shouldProcess(f)) {
 					processHTMLPage(f);
+					status.addCurrentProgress();
 				}
 
 			} catch (Exception e) {

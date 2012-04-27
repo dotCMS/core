@@ -113,8 +113,10 @@ public class StaticHTMLPageBundler implements IBundler {
 						}
 						try{
 							writeFileToDisk(bundleRoot,w, i.getURI(), h, false);
+							status.addCount();
 						}catch (IOException e) {
 							Logger.error(this, e.getMessage() + " : Unable to write HTML to bundle", e);
+							status.addFailure();
 						}
 					}
 					
@@ -125,6 +127,7 @@ public class StaticHTMLPageBundler implements IBundler {
 						w.setPage(pAPI.loadLivePageById(i.getId(), uAPI.getSystemUser(), true));
 					}catch(Exception e){
 						Logger.error(this, e.getMessage() + " : Unable to get HTMLPage to write to bundle", e);
+						status.addFailure();
 						continue;
 					}
 					try{

@@ -25,7 +25,7 @@
 <%@page import="com.dotmarketing.quartz.SimpleScheduledTask"%>
 <%@page import="org.quartz.SchedulerException"%>
 <%@page import="org.quartz.SimpleTrigger"%>
-<%@page import="com.dotmarketing.sitesearch.job.SiteSearchJobProxy"%>
+
 
 <%
 
@@ -451,11 +451,44 @@ function doCreateSiteSearch() {
 
 
 
+function runNow() {
+	var runNow = dijit.byId("whenToRunNow").getValue();
+
+	if(runNow){
+		
+		dojo.query('.showScheduler').style({display:"none"});
+		dojo.query('.showRunNow').style({display:""});
+		dijit.byId("QUARTZ_JOB_NAME").setValue("<%=SiteSearchAPI.ES_SITE_SEARCH_EXECUTE_JOB_NAME%>");
+	}
+	else{
+		dojo.query('.showScheduler').style({display:""});
+		dojo.query('.showRunNow').style({display:"none"});
+		dijit.byId("QUARTZ_JOB_NAME").setValue("");
+	}
 
 
+}
 
 function scheduleJob() {
 
+	submitSchedule();
+
+}
+
+
+
+function submitSchedule() {
+	var runNow = dijit.byId("whenToRunNow").getValue();
+	if(runNow){
+		dijit.byId("cronExpression").required=false;
+		
+		
+		
+	}else{
+		
+		dijit.byId("cronExpression").required=true;
+	}
+	
 	var myForm = dijit.byId("sitesearch");
 
 	

@@ -6,7 +6,7 @@ import java.util.List;
 public interface IPublisher {
 
 
-	public PublisherConfig process() throws DotPublishingException;
+	public PublisherConfig process(PublishStatus status) throws DotPublishingException;
 	
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException;
 	

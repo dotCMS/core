@@ -1,7 +1,7 @@
 <%@page import="com.dotmarketing.util.StringUtils"%>
 <%@page import="java.net.URLDecoder"%>
 <%@page import="com.dotcms.publishing.sitesearch.SiteSearchResult"%>
-<%@page import="com.dotcms.publishing.sitesearch.DotSearchResults"%>
+<%@page import="com.dotcms.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
@@ -26,8 +26,7 @@
 <%@ include file="/html/common/init.jsp"%>
 <%@page import="java.util.List"%>
 <%
-
-List<Structure> structs = StructureFactory.getStructures();
+	List<Structure> structs = StructureFactory.getStructures();
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 ESIndexAPI esapi = APILocator.getESIndexAPI();
 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
@@ -37,7 +36,7 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 String testIndex = request.getParameter("testIndex");
 String testQuery = (request.getParameter("testQuery") != null) 
 		? request.getParameter("testQuery")
-				: "*";
+		: "*";
 
 
 int testStart = 0;
@@ -49,11 +48,11 @@ String testSort = "score";
 
 
 
-DotSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
+SiteSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
 
 String myError = (results.getError()!= null && results.getError().indexOf("nested:") > -1) 
-				? results.getError().substring(0, results.getError().indexOf("nested:"))  
-						: results.getError();
+		? results.getError().substring(0, results.getError().indexOf("nested:"))  
+				: results.getError();
 
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
@@ -62,7 +61,7 @@ try {
 	}
 } catch (Exception e) {
 	Logger.error(this.getClass(), e.getMessage());
-	%>
+%>
 	
 		<div class="callOutBox2" style="text-align:center;margin:40px;padding:20px;">
 		<%= LanguageUtil.get(pageContext,"you-have-been-logged-off-because-you-signed-on-with-this-account-using-a-different-session") %><br>&nbsp;<br>
