@@ -35,7 +35,6 @@ import net.sf.hibernate.persister.AbstractEntityPersister;
 
 import org.apache.commons.beanutils.BeanUtils;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -838,7 +837,7 @@ public class ImportExportUtil {
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Logger.info(this, "Building Initial Index");
         try {
-            new ESIndexAPI().getRidOfOldIndex();
+            APILocator.getContentletIndexAPI().getRidOfOldIndex();
         } catch (DotDataException e1) {
             Logger.warn(this, "Exception trying to delete old indexes",e1);
         }

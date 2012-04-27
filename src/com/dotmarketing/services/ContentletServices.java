@@ -51,7 +51,7 @@ import com.liferay.util.FileUtil;
 public class ContentletServices {
 
 	private static CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-	
+
 	public static CategoryAPI getCategoryAPI() {
 		return categoryAPI;
 	}
@@ -59,7 +59,7 @@ public class ContentletServices {
 	public static void setCategoryAPI(CategoryAPI categoryAPI) {
 		ContentletServices.categoryAPI = categoryAPI;
 	}
-     
+
 
 	public static void invalidate(Contentlet contentlet) throws DotDataException, DotSecurityException {
 
@@ -83,7 +83,7 @@ public class ContentletServices {
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		FieldAPI fAPI = APILocator.getFieldAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-		
+
 
 		// let's write this puppy out to our file
 		StringBuilder sb = new StringBuilder();
@@ -92,7 +92,7 @@ public class ContentletServices {
 		sb.append("#if($EDIT_MODE)");
 		sb.append("     #set( $EDIT_CONTENT_PERMISSION =$EDIT_CONTENT_PERMISSION" + identifier.getInode() + " )\n");
 		sb.append("#end");
-		
+
 		sb.append("#set( $CONTENT_INODE ='" + content.getInode() + "' )\n");
 		sb.append("#set( $IDENTIFIER_INODE ='" + identifier.getInode() + "' )\n");
 
@@ -110,12 +110,12 @@ public class ContentletServices {
 		// Structure fields
 
 		Structure structure = content.getStructure();
-		
+
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
 		Iterator<Field> fieldsIt = fields.iterator();
 
 		String widgetCode = "";
-		
+
 		while (fieldsIt.hasNext()) {
 			Field field = (Field) fieldsIt.next();
 
@@ -176,7 +176,7 @@ public class ContentletServices {
 						sb.append("#set( $" + field.getVelocityVarName() + " = \"" + UtilMethods.espaceForVelocity(contFieldValue).trim() + "\")\n");
 					}
 				}
-				
+
 			}
 
 			if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())) {
@@ -190,7 +190,7 @@ public class ContentletServices {
 				}else{
 					sb.append("#set( $" + field.getVelocityVarName() + "Object = $filetool.getNewFile())\n");
 				}
-				
+
 				sb.append("#set( $" + field.getVelocityVarName() + "ImageInode =$" + field.getVelocityVarName() + "Object.getInode() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "ImageIdentifier =$" + field.getVelocityVarName() + "Object.getIdentifier() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "ImageWidth =$" + field.getVelocityVarName() + "Object.getWidth() )\n");
@@ -199,10 +199,10 @@ public class ContentletServices {
 				sb.append("#set( $" + field.getVelocityVarName() + "ImageURI =$filetool.getURI($" + field.getVelocityVarName() + "Object))\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "ImageTitle =$UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getTitle()) )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "ImageFriendlyName =$UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getFriendlyName()) )\n");
-				
+
 				sb.append("#set( $" + field.getVelocityVarName() + "ImagePath =$" + field.getVelocityVarName() + "Object.getPath() )\n");
-				sb.append("#set( $" + field.getVelocityVarName() + "ImageName =$" + field.getVelocityVarName() + "Object.getNameOnly() )\n");
-				
+				sb.append("#set( $" + field.getVelocityVarName() + "ImageName =$" + field.getVelocityVarName() + "Object.getFileName() )\n");
+
 			}//	http://jira.dotmarketing.net/browse/DOTCMS-2178
 			else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())){
 				java.io.File binFile;
@@ -218,10 +218,10 @@ public class ContentletServices {
 					Logger.error(ContentletServices.class, "Unable to retrive binary file for content id " + content.getIdentifier() + " field " + field.getVelocityVarName(), e);
 					continue;
 				}
-			   	sb.append("#set( $" + field.getVelocityVarName() + "BinaryFileTitle =\"" + UtilMethods.espaceForVelocity(fileName) + "\" )\n");	
+			   	sb.append("#set( $" + field.getVelocityVarName() + "BinaryFileTitle =\"" + UtilMethods.espaceForVelocity(fileName) + "\" )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "BinaryFileSize =\"" + UtilMethods.espaceForVelocity(filesize) + "\" )\n");
 				String binaryFileURI = fileName.length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode()):"";
-				sb.append("#set( $" + field.getVelocityVarName() + "BinaryFileURI =\"" + binaryFileURI + "\" )\n");	
+				sb.append("#set( $" + field.getVelocityVarName() + "BinaryFileURI =\"" + binaryFileURI + "\" )\n");
 			}else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 				String identifierValue = content.getStringProperty(field.getVelocityVarName());
 				if( InodeUtils.isSet(identifierValue) ) {
@@ -233,18 +233,18 @@ public class ContentletServices {
 				}else{
 					sb.append("#set( $" + field.getVelocityVarName() + "Object = $filetool.getNewFile())\n");
 				}
-				
+
 				sb.append("#set( $" + field.getVelocityVarName() + "FileInode =$" + field.getVelocityVarName() + "Object.getInode() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileIdentifier =$" + field.getVelocityVarName() + "Object.getIdentifier() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileExtension =$" + field.getVelocityVarName() + "Object.getExtension() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileURI =$filetool.getURI($" + field.getVelocityVarName() + "Object))\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileTitle =$" + field.getVelocityVarName() + "Object.getTitle() )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "FileFriendlyName =$UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getFriendlyName() ))\n");
-				
+
 				sb.append("#set( $" + field.getVelocityVarName() + "FilePath =$UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getPath()) )\n");
-				sb.append("#set( $" + field.getVelocityVarName() + "FileName =$UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getNameOnly()) )\n");
-				
-				
+				sb.append("#set( $" + field.getVelocityVarName() + "FileName =$UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getFileName()) )\n");
+
+
 			} else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())) {
 				sb.append("#set( $" + field.getVelocityVarName() + "SelectLabelsValues = \"" + field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") + "\")\n");
 			} else if (field.getFieldType().equals(Field.FieldType.RADIO.toString())) {
@@ -335,9 +335,9 @@ public class ContentletServices {
 						}
 					}
 				}
-				
+
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $categories.filterCategoriesByUserPermissions([" + catInodes + "] ))\n");
-				
+
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
@@ -350,14 +350,14 @@ public class ContentletServices {
 				sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys.add(''))\n");
 				sb.append("#end\n");
 				sb.append("#end\n");
-				
+
 				sb.append("#set( $" + field.getVelocityVarName() + "FilteredCategories = $dotcms_content_" + content.getIdentifier() + "_filteredCategories )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "Categories = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "CategoriesNames = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames )\n");
 				//http://jira.dotmarketing.net/browse/DOTCMS-2288
 				sb.append("#set( $" + field.getVelocityVarName() + " = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes )\n");
 				sb.append("#set( $" + field.getVelocityVarName() + "CategoriesKeys = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys )\n");
-				
+
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $contents.getEmptyList())\n");
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
 				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
@@ -365,12 +365,12 @@ public class ContentletServices {
 			}
 		}
 
-		
+
         // get the contentlet categories to make a list
         String categories = "";
         String categoryNames = "";
 		String catKeys = "";
-        Set<Category> categoryList = new HashSet<Category>(categoryAPI.getParents(content, systemUser, false)); 
+        Set<Category> categoryList = new HashSet<Category>(categoryAPI.getParents(content, systemUser, false));
         if (categoryList!=null) {
 			Iterator<Category> it = categoryList.iterator();
 			while (it.hasNext()) {
@@ -389,7 +389,7 @@ public class ContentletServices {
 
         //sets the categories as a list on velocity
         sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $categories.filterCategoriesByUserPermissions([" + categories + "] ))\n");
-        
+
         sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
@@ -402,7 +402,7 @@ public class ContentletServices {
 		sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys.add(''))\n");
 		sb.append("#end\n");
 		sb.append("#end\n");
-        
+
 		sb.append("#set( $ContentletFilteredCategories = $dotcms_content_" + content.getIdentifier() + "_filteredCategories )\n");
         sb.append("#set( $ContentletCategories = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes )\n");
         sb.append("#set( $ContentletCategoryNames = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames )\n");
@@ -411,7 +411,7 @@ public class ContentletServices {
         sb.append("#set( $contentletCategories = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes )\n");
         sb.append("#set( $contentletCategoryNames = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames )\n");
         sb.append("#set( $contentletCategoryKeys = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys )\n");
-        
+
         sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
 		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
@@ -421,7 +421,7 @@ public class ContentletServices {
 		// the $CONTENT_INODE is reset sb.append("#set( $CONTENT_INODE =\"" + content.getInode() + "\" )\n");
 		//http://jira.dotmarketing.net/browse/DOTCMS-2808
 		sb.append(widgetCode);
-		
+
 		// This is code is repeated because the bug GETTYS-268, the content
 		// variables were been overwritten
 		// by the parse inside the some of the content fields
@@ -431,14 +431,14 @@ public class ContentletServices {
 		if(EDIT_MODE) {
 			sb.append("#set( $EDIT_CONTENT_PERMISSION =$EDIT_CONTENT_PERMISSION" + identifier.getInode() + " )\n");
 		}
-	
+
 		sb.append("#set( $CONTENT_INODE =\"" + content.getInode() + "\" )\n");
 		sb.append("#set( $IDENTIFIER_INODE =\"" + identifier.getInode() + "\" )\n");
 		sb.append("##Set Content properties\n");
 		sb.append("#set( $ContentInode =\"" + content.getInode() + "\" )\n");
 		sb.append("#set( $ContentIdentifier =\"" + identifier.getInode() + "\" )\n");
 		sb.append("#set( $ContentletTitle =\"" + UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)) + "\" )\n");
-		
+
 		if(structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET){
 			sb.append("#set( $isWidget = \"" + true + "\")\n");
 			if(structure.getName().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)){
@@ -447,7 +447,7 @@ public class ContentletServices {
 		}else{
 			sb.append("#set( $isWidget = \"" + false + "\")\n");
 		}
-		
+
 		if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			try {
 
@@ -484,7 +484,7 @@ public class ContentletServices {
 		}
         return result;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static List<Contentlet> sortContentlets(List<Contentlet> contentletList, String sortBy) {
 
@@ -524,8 +524,8 @@ public class ContentletServices {
 	/**
 	 * Will remove all contentlet files within a structure for both live and working. Uses the system user.
 	 * @param contentlets
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public static void removeContentletFile(Structure structure) throws DotDataException, DotSecurityException{
 		ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -542,30 +542,30 @@ public class ContentletServices {
 			size = contentlets.size();
 		}
 	}
-	
+
 	/**
 	 * Will remove all contentlet files for both live and working
 	 * @param contentlets
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 */
 	public static void removeContentletFile(Contentlet contentlet) throws DotStateException, DotDataException{
 		removeContentletFile(contentlet, true);
 		removeContentletFile(contentlet, false);
 	}
-	
+
 	/**
 	 * Will remove all contentlet files for both live and working
 	 * @param contentlets
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 */
 	public static void removeContentletFile(List<Contentlet> contentlets) throws DotStateException, DotDataException{
 		for (Contentlet contentlet : contentlets) {
 			removeContentletFile(contentlet);
 		}
 	}
-	
+
 	public static void removeContentletFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
 		String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
