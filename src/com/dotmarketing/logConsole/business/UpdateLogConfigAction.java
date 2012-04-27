@@ -53,18 +53,22 @@ public class UpdateLogConfigAction extends DotPortletAction {
 
 			boolean checked = false;
 
-			for (int i = 0; i < activeLogs.length; i++) {
+			if (activeLogs != null) {
+				for (int i = 0; i < activeLogs.length; i++) {
 
-				if(Integer.parseInt(activeLogs[i]) == j) {
-					lmr.setEnabled(1);
-					System.out.println("Trovato match: " + j);
-					checked = true;
+					if (Integer.parseInt(activeLogs[i]) == j) {
+						lmr.setEnabled(1);
+
+						checked = true;
+					}
 				}
-			}
 
-			if(!checked) {
+				if (!checked) {
+					lmr.setEnabled(0);
+
+				}
+			} else {
 				lmr.setEnabled(0);
-				System.out.println("Match non trovato: " + j);
 			}
 
 		}
