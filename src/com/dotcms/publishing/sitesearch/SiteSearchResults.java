@@ -3,7 +3,7 @@ package com.dotcms.publishing.sitesearch;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DotSearchResults {
+public class SiteSearchResults {
 
 	float maxScore=0;
 	int limit=50;

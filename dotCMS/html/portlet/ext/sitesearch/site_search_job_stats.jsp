@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.publishing.sitesearch.SiteSearchPublishStatus"%>
+<%@page import="com.dotcms.publishing.PublishStatus"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.quartz.QuartzUtils"%>
 <%@page import="java.net.URLEncoder"%>
@@ -61,13 +63,25 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 		}%>
 		<tr style="cursor:pointer;" class="trIdxNothing">
 		
-			<td>
-				<%=ssapi.getTaskProgress(task.getJobName()) %>
-			
-			</td>
+			 <td nowrap valign="top" align="center">
+				<%if(ssapi.isTaskRunning(task.getJobName())){ %>
+					<%SiteSearchPublishStatus ps = ssapi.getTaskProgress(task.getJobName()); %>
+
+	
+					
+					<div dojoType="dijit.ProgressBar" style="width:100px" id="<%=task.getJobName().hashCode()%> %>" maximum="10">
+					
+					errors:<%=ps.getBundleErrors()%> <br>
+					total:<%=ps.getTotalBundleWork()%> <br>
+					progress:<%=ps.getCurrentProgress()%> 
+				
+				<%} else{%>
+					<span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span>
+				<%} %>
+
 		
 		
-		    <td nowrap valign="top"><span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span></td>
+		   	</td>
 			<td nowrap valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
 			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>
 			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">

@@ -102,10 +102,11 @@ public class FileAssetBundler implements IBundler {
 		
 		
 		if(config.getHosts() != null && config.getHosts().size() > 0){
-			
+			bob.append(" +(" );
 			for(Host h : config.getHosts()){
-				bob.append(" +conhost:" + h.getIdentifier() + " ");
+				bob.append("conhost:" + h.getIdentifier() + " ");
 			}
+			bob.append(" ) " );
 		}
 		
 		

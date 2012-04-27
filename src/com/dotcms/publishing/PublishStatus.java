@@ -1,18 +1,29 @@
 package com.dotcms.publishing;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.dotmarketing.quartz.TaskRuntimeValues;
 
 public class PublishStatus extends TaskRuntimeValues {
 
+	
+	public PublishStatus() {
+		super();
 
+	}
 	List<BundlerStatus> bundlerStatuses = new ArrayList<BundlerStatus>();
+	Date lastRun;
 
 
 
-
+	public Date getLastRun() {
+		return lastRun;
+	}
+	public void setLastRun(Date lastRun) {
+		this.lastRun = lastRun;
+	}
 	public List<BundlerStatus> getBundlerStatuses() {
 		return bundlerStatuses;
 	}

@@ -139,10 +139,11 @@ public class URLMapBundler implements IBundler {
 		
 		
 		if(config.getHosts() != null && config.getHosts().size() > 0){
-			
+			bob.append(" +(" );
 			for(Host h : config.getHosts()){
-				bob.append(" +conhost:" + h.getIdentifier() + " ");
+				bob.append("conhost:" + h.getIdentifier() + " ");
 			}
+			bob.append(" ) " );
 		}
 		
 		
@@ -159,7 +160,7 @@ public class URLMapBundler implements IBundler {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + bob.toString(), e);
 		}
-		status.setTotal(cs.size());
+		
 		List<List<ContentletSearch>> listsOfCS = Lists.partition(cs, 500);
 		for (List<ContentletSearch> l : listsOfCS) {
 			List<String> inodes = new ArrayList<String>();
@@ -173,7 +174,7 @@ public class URLMapBundler implements IBundler {
 				Logger.error(this.getClass(),e.getMessage(),e);
 				throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to retrieve content", e);
 			}
-			
+			status.setTotal(cons.size());
 			for (Contentlet con : cons) {
 				try {
 					writeFileToDisk(bundleRoot, con);
@@ -188,7 +189,7 @@ public class URLMapBundler implements IBundler {
 		
 		}
 		catch(Exception e){
-			
+			status.addFailure();
 		}
 		
 	}

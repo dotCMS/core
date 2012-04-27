@@ -12,6 +12,12 @@ public class TaskRuntimeValues {
 	public int getCurrentProgress() {
 		return currentProgress;
 	}
+	public void addCurrentProgress(){
+		this.currentProgress++;
+	}
+	public void addEndProgress(){
+		this.endProgress++;
+	}
 	public void setCurrentProgress(int currentProgress) {
 		this.currentProgress = currentProgress;
 	}
