@@ -56,7 +56,7 @@ public class Task00900CreateLogConsoleTable implements StartupTask {
 		dc.executeStatement("create table log_mapper(\n" + 
 							"log_name varchar(30) primary key,\n" + 
 							"description varchar(50) not null,\n"+ 
-							"enabled int8(1,0) not null");
+							"enabled numeric(1,0) not null)");
 		
 		commonInsertStatement();
 
