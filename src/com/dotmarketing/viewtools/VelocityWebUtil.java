@@ -20,6 +20,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.velocity.VelocityServlet;
 
 /**
  * @author Jason Tesser
@@ -69,6 +70,7 @@ public class VelocityWebUtil implements ViewTool {
 	}
 
 	public String mergeTemplate(String templatePath) throws ResourceNotFoundException, ParseErrorException, Exception{
+		VelocityServlet.velocityCtx.set(ctx);
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
 		StringWriter sw = new StringWriter();
@@ -86,6 +88,7 @@ public class VelocityWebUtil implements ViewTool {
 	
 	
 	public void mergeTemplate(String templatePath, HttpServletResponse response) throws ResourceNotFoundException, ParseErrorException, Exception{
+		VelocityServlet.velocityCtx.set(ctx);
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
 		

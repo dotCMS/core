@@ -887,20 +887,12 @@ public class FolderFactoryImpl extends FolderFactory {
 		if(UtilMethods.isSet(nFolder.getInode()))
 			return false;
 
-		// renaming folder
-
-		// first we remove from cache with current name and path
-		CacheLocator.getFolderCache().removeFolder(folder, ident);
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
-
-		// get a fresh copy of the object passed to make sure hibernate works ok
-
+		
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		ff.setName(newName);
 		ff.setTitle(newName);
-		ident.setAssetName(newName);
-
-		APILocator.getIdentifierAPI().save(ident);
+		
 		APILocator.getFolderAPI().save(ff, user, respectFrontEndPermissions);
 
 		try {

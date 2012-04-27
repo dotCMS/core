@@ -16,6 +16,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UUIDGenerator;
@@ -1284,19 +1285,30 @@ public class Task00785DataModelChanges implements StartupTask  {
 		  if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))
 		     dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 
-		deleteOrphanedAssets();
+		
 		deleteIdentifiersFromInode();
+		deleteOrphanedAssets();
+		
 		String addConstraint = "";
 		String addIdentifierColumn = "alter table containers add identifier varchar(36);" +
 			             			 "alter table template add identifier varchar(36);" +
 			             		     "alter table htmlpage add identifier varchar(36);"+
 			             		     "alter table file_asset add identifier varchar(36);" +
 			             			 "alter table contentlet add identifier varchar(36);" +
-			             			 "alter table links add identifier varchar(36);";
-
+			             			 "alter table links add identifier varchar(36);";		
+		
 	    if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-		  addConstraint = "ALTER TABLE identifier change inode id varchar(36);" +
-						  "ALTER TABLE identifier drop index uri;";
+	        try {
+	            dc.executeStatement("alter table identifier drop foreign key host_inode_fk");
+	            dc.executeStatement("alter table identifier drop index host_inode_fk");
+	        }
+	        catch(Exception ex) {
+	            Logger.info(this, "no need to drop host_inode_fk");
+	        }
+	        addConstraint = "alter table structure drop foreign key fk_structure_host;"+
+                    "ALTER TABLE identifier change inode id varchar(36);" +
+                    "ALTER TABLE structure ADD CONSTRAINT fk_structure_host FOREIGN KEY (host) REFERENCES identifier (id);"+
+                    "ALTER TABLE identifier drop index uri;";
 	    }else  if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 		    dc.setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS where table_name='identifier' and constraint_type<>'FOREIGN KEY'");
 		    List<Map<String, String>> results = dc.getResults();
@@ -1322,6 +1334,11 @@ public class Task00785DataModelChanges implements StartupTask  {
 	   		  				"ALTER TABLE identifier DROP UNIQUE (uri,host_inode);";
 		    addIdentifierColumn=addIdentifierColumn.replaceAll("varchar\\(", "varchar2\\(");
 		}else{
+		    try {
+                dc.executeStatement("alter table identifier drop constraint host_inode_fk");
+            } catch(Exception ex) {
+                Logger.info(this, "no need to drop host_inode_fk");
+            }
 		   addConstraint = "ALTER TABLE identifier add id varchar(36);" +
 				   		   "UPDATE identifier set id = cast(inode as varchar(36));" +
 				   		   "ALTER TABLE identifier drop column inode;" +
@@ -1442,11 +1459,11 @@ public class Task00785DataModelChanges implements StartupTask  {
 			 assetType = "containers";
 			 parentPath = "/";
 			 assetName = ident+".containers";
-		   }else if(UtilMethods.getFileExtension(uri).equals("dot")){
+		   }else if(UtilMethods.getFileExtension(uri).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot"))){
 			 assetType = "htmlpage";
 			 parentPath = uri.substring(0, uri.lastIndexOf("/")+1);
 			 assetName = uri.substring(uri.lastIndexOf("/")+1);
-		   }else if(UtilMethods.getFileExtension(uri)!="" && !UtilMethods.getFileExtension(uri).equals("dot")){
+		   }else if(UtilMethods.getFileExtension(uri)!="" && !UtilMethods.getFileExtension(uri).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot"))){
 			 assetType="file_asset";
 			 parentPath = uri.substring(0, uri.lastIndexOf("/")+1);
 			 assetName = uri.substring(uri.lastIndexOf("/")+1);

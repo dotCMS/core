@@ -7,6 +7,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,7 +29,7 @@ public class ESMigrationUtil {
 	 */
 	public void migrateStructure(Structure struct) throws DotDataException, DotSecurityException, DotMappingException {
 		
-		ESUtils.checkAndInitialiazeIndex();
+		new ESContentletIndexAPI().checkAndInitialiazeIndex();
 		
 		
 		ContentletAPI capi = APILocator.getContentletAPI();

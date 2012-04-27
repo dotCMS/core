@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -25,7 +25,10 @@ import com.liferay.portal.model.User;
 
 public interface WorkflowAPI {
 
+
+
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
+
 
 	public java.util.List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;
 
@@ -35,7 +38,7 @@ public interface WorkflowAPI {
 
 	/**
 	 * Finds a workflow by id
-	 * 
+	 *
 	 * @param id
 	 * @return
 	 * @throws DotDataException
@@ -44,7 +47,7 @@ public interface WorkflowAPI {
 
 	/**
 	 * Finds comments on a workflow item
-	 * 
+	 *
 	 * @param task
 	 * @return
 	 * @throws DotDataException
@@ -53,7 +56,7 @@ public interface WorkflowAPI {
 
 	/**
 	 * Saves comments on a workflow item
-	 * 
+	 *
 	 * @param comment
 	 * @throws DotDataException
 	 */
@@ -61,7 +64,7 @@ public interface WorkflowAPI {
 
 	/**
 	 * deletes a specific comment on a workflow item
-	 * 
+	 *
 	 * @param comment
 	 * @throws DotDataException
 	 */
@@ -69,7 +72,7 @@ public interface WorkflowAPI {
 
 	/**
 	 * gets history of a particular workflow item
-	 * 
+	 *
 	 * @param task
 	 * @return
 	 * @throws DotDataException
@@ -78,7 +81,7 @@ public interface WorkflowAPI {
 
 	/**
 	 * Saves a new history item for a workflow
-	 * 
+	 *
 	 * @param history
 	 * @throws DotDataException
 	 */
@@ -86,7 +89,7 @@ public interface WorkflowAPI {
 
 	/**
 	 * deletes a history item from a workflow
-	 * 
+	 *
 	 * @param history
 	 * @throws DotDataException
 	 */
@@ -94,15 +97,25 @@ public interface WorkflowAPI {
 
 	/**
 	 * finds files associated with a workflow item
-	 * 
+	 *
 	 * @param task
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<File> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException;
+	public List<IFileAsset> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException;
 
 	/**
-	 * 
+	/**
+	 * finds files associated with a workflow item
+	 *
+	 * @param task
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<IFileAsset> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException;
+
+	/**
+	 *
 	 * @param task
 	 * @param fileInode
 	 * @throws DotDataException
@@ -111,7 +124,7 @@ public interface WorkflowAPI {
 	public void attachFileToTask(WorkflowTask task, String fileInode) throws DotDataException;
 
 	/**
-	 * 
+	 *
 	 * @param task
 	 * @param fileInode
 	 * @throws DotDataException
@@ -120,18 +133,18 @@ public interface WorkflowAPI {
 	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException;
 
 	/**
-	 * 
+	 *
 	 * @param task
 	 * @throws DotDataException
 	 */
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException;
 
 	/**
-	 * 
+	 *
 	 * @param task
 	 * @throws DotDataException
 	 */
-	public void saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException;
+	public void  saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
@@ -163,9 +176,11 @@ public interface WorkflowAPI {
 
 	public WorkflowAction findAction(String id, User user) throws DotDataException, DotSecurityException;
 
-	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
+	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
+	DotSecurityException ;
 
-	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException, DotSecurityException;
+	public List<WorkflowAction> findActions(WorkflowStep step, User user) throws DotDataException,
+			DotSecurityException;
 
 	public void saveSchemeForStruct(Structure struc, WorkflowScheme scheme) throws DotDataException;
 
@@ -193,48 +208,39 @@ public interface WorkflowAPI {
 
 	public void saveWorkflowActionClassParameters(List<WorkflowActionClassParameter> params) throws DotDataException;
 
+
 	/***
-	 * 
+	 *
 	 * This method will take a WorkflowActionId (set in the contentlet map) and
 	 * fire that action using the mod_user on the contentlet
-	 * 
 	 * @param contentlet
 	 * @throws DotDataException
 	 */
-	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet) throws DotDataException, DotWorkflowException, DotContentletValidationException;
+	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException;
+	public void fireWorkflowPostCheckin(WorkflowProcessor wflow) throws DotDataException,DotWorkflowException;
 
-	public void fireWorkflowPostCheckin(WorkflowProcessor wflow) throws DotDataException, DotWorkflowException;
 
-	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException, DotWorkflowException, DotContentletValidationException;
+	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException;
 
-	public int countTasks(WorkflowSearcher searcher) throws DotDataException;
+
+	public int countTasks(WorkflowSearcher searcher)  throws DotDataException;
 
 	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass to) throws DotDataException;
-
 	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to) throws DotDataException;
-
 	public void copyWorkflowAction(WorkflowAction from, WorkflowStep to) throws DotDataException;
-
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException;
+    public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException;
 
-	public WorkflowScheme createDefaultScheme() throws DotDataException, DotSecurityException;
-
+    public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
+    
 	/**
-	 * This method will return the entry action of a scheme based on the
-	 * content's structure.
-	 * 
+	 * This method will return the entry action of a scheme based on the content's structure.
+	 *
 	 * @param Contentlet
 	 * @param User
 	 * @return WorkflowAction
-	 * @throws DotDataException
-	 *             , DotSecurityException
+	 * @throws DotDataException, DotSecurityException
 	 */
 
-	public WorkflowAction findEntryAction(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
-
-	// christian escalation
-	public java.util.List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
-
-	public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException, DotSecurityException;
-	// christian escalation
+    public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException;
 }

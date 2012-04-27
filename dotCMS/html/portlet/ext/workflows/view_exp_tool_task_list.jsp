@@ -1,5 +1,5 @@
 <META HTTP-EQUIV="Refresh";URL=http://www.s.it/p.htm">
-<%@page import="com.sun.org.apache.xerces.internal.impl.xpath.XPath.Step"%>
+
 <portlet:defineObjects />
 <%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.business.Layout"%>

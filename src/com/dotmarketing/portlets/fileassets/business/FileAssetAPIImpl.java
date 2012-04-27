@@ -184,6 +184,16 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return fas;
 
 	}
+
+	public List<IFileAsset> fromContentletsI(List<Contentlet> cons) {
+		List<IFileAsset> fas = new ArrayList<IFileAsset>();
+		for (Contentlet con : cons) {
+			fas.add(fromContentlet(con));
+		}
+		return fas;
+
+	}
+
 	public boolean isFileAsset(Contentlet con)  {
 		return (con != null && con.getStructure() != null && con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ;
 	}
@@ -349,6 +359,22 @@ public class FileAssetAPIImpl implements FileAssetAPI {
             return path;
 
     }
+	
+	@Override
+	public String getRealAssetPath(String inode, String fileName) {
+		
+		String extension = UtilMethods.getFileExtension(fileName);
+		String fileNameWOExtenstion  =  UtilMethods.getFileName(fileName);
+		
+		
+        return getRealAssetPath(inode, fileNameWOExtenstion, extension);
+    	
+    }
+	
+	
+	
+	
+	
 
 	public String getRealAssetPath(String inode) {
         String _inode = inode;
