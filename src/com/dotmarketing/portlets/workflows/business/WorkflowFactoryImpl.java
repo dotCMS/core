@@ -88,8 +88,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return actionClass;
 	}
 
-	private WorkflowActionClassParameter convertActionClassParameter(Map<String, Object> row) throws IllegalAccessException,
-			InvocationTargetException {
+	private WorkflowActionClassParameter convertActionClassParameter(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 		final WorkflowActionClassParameter param = new WorkflowActionClassParameter();
 		row.put("actionClassId", row.get("workflow_action_class_id"));
 		BeanUtils.copyProperties(param, row);
@@ -111,8 +110,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return ret;
 	}
 
-	private Object convertMaptoObject(Map<String, Object> map, Class clazz) throws InstantiationException, IllegalAccessException,
-			InvocationTargetException {
+	private Object convertMaptoObject(Map<String, Object> map, Class clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
 
 		final Object obj = clazz.newInstance();
 
@@ -126,6 +124,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			return this.convertActionClassParameter(map);
 		} else if (obj instanceof WorkflowScheme) {
 			return this.convertScheme(map);
+		} else if (obj instanceof WorkflowHistory) {
+			return this.convertHistory(map);
 		} else {
 			return this.convert(obj, map);
 		}
@@ -149,6 +149,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		return step;
 	}
+	
+	 private WorkflowHistory convertHistory(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
+			final WorkflowHistory scheme = new WorkflowHistory();
+			row.put("actionId", row.get("workflow_action_id"));
+
+			BeanUtils.copyProperties(scheme, row);
+
+			return scheme;
+		    }
 
 	public void copyWorkflowAction(WorkflowAction from, WorkflowStep step) throws DotDataException {
 		throw new DotWorkflowException("Not implemented");
@@ -158,8 +167,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		throw new DotWorkflowException("Not implemented");
 	}
 
-	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass actionClass)
-			throws DotDataException {
+	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass actionClass) throws DotDataException {
 		throw new DotWorkflowException("Not implemented");
 	}
 
@@ -372,10 +380,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException {
 		final DotConnect db = new DotConnect();
 
-
 		Contentlet c = new Contentlet();
 		c.setIdentifier(task.getWebasset());
-
 
 		HibernateUtil.startTransaction();
 		try {
@@ -412,10 +418,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_ACTION);
 		db.addParam(id);
-		try{
+		try {
 			return (WorkflowAction) this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class).get(0);
-		}
-		catch(IndexOutOfBoundsException ioob){
+		} catch (IndexOutOfBoundsException ioob) {
 			return null;
 		}
 	}
@@ -473,8 +478,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.SELECT_ACTION_CLASS_PARAMS_BY_ACTIONCLASS);
 		db.addParam(actionClass.getId());
-		final List<WorkflowActionClassParameter> list = (List<WorkflowActionClassParameter>) this.convertListToObjects(
-				db.loadObjectResults(), WorkflowActionClassParameter.class);
+		final List<WorkflowActionClassParameter> list = (List<WorkflowActionClassParameter>) this.convertListToObjects(db.loadObjectResults(), WorkflowActionClassParameter.class);
 		final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap();
 		for (final WorkflowActionClassParameter param : list) {
 			map.put(param.getKey(), param);
@@ -619,8 +623,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@SuppressWarnings("unchecked")
 	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(WorkflowComment.class);
-		hu.setQuery("from workflow_comment in class com.dotmarketing.portlets.workflows.model.WorkflowComment "
-				+ "where workflowtask_id = ? order by creation_date desc");
+		hu.setQuery("from workflow_comment in class com.dotmarketing.portlets.workflows.model.WorkflowComment " + "where workflowtask_id = ? order by creation_date desc");
 		hu.setParam(task.getId());
 		return (List<WorkflowComment>) hu.list();
 	}
@@ -628,8 +631,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@SuppressWarnings("unchecked")
 	public List<WorkflowHistory> findWorkflowHistory(WorkflowTask task) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(WorkflowHistory.class);
-		hu.setQuery("from workflow_history in class com.dotmarketing.portlets.workflows.model.WorkflowHistory "
-				+ "where workflowtask_id = ? order by creation_date");
+		hu.setQuery("from workflow_history in class com.dotmarketing.portlets.workflows.model.WorkflowHistory " + "where workflowtask_id = ? order by creation_date");
 		hu.setParam(task.getId());
 		return (List<WorkflowHistory>) hu.list();
 	}
@@ -652,9 +654,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public List<IFileAsset> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(File.class);
 		hu.setSQLQuery("select {file_asset.*} from file_asset,inode file_asset_1_,workflow_task,workflowtask_files tf"
+
 				+ " where tf.file_inode = file_asset.inode and file_asset.inode = file_asset_1_.inode "
 				+ " and workflow_task.id = tf.workflowtask_id and workflow_task." +
 				"id = ? ");
+
 		hu.setParam(task.getId());
 		return (List<IFileAsset>) hu.list();
 	}
@@ -684,8 +688,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	private String getWorkflowSqlQuery(WorkflowSearcher searcher, boolean counting) throws DotDataException {
 
-		final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(),
-				APILocator.getRoleAPI().loadCMSAdminRole());
+		final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole());
 
 		final StringBuffer condition = new StringBuffer();
 		condition.append(", workflow_scheme, workflow_step ");
@@ -752,8 +755,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException {
-		final String query = "delete from workflowtask_files where workflowtask_id = '" + task.getId() + "' and file_inode = '" + fileInode
-				+ "'";
+		final String query = "delete from workflowtask_files where workflowtask_id = '" + task.getId() + "' and file_inode = '" + fileInode + "'";
 		final DotConnect dc = new DotConnect();
 		dc.setSQL(query);
 		dc.loadResult();
@@ -900,7 +902,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	public void deleteSchemeForStruct(String struc) throws DotDataException  {
+	public void deleteSchemeForStruct(String struc) throws DotDataException {
 		if (LicenseUtil.getLevel() < 200) {
 			return;
 		}
@@ -1051,4 +1053,39 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		hu.setFirstResult(searcher.getCount() * searcher.getPage());
 		return (List<WorkflowTask>) hu.list();
 	}
+
+	// christian escalation
+	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {
+
+		final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
+		final StringWriter sw = new StringWriter();
+		sw.append("select {workflow_task.*}  from workflow_task   ");
+		hu.setSQLQuery(sw.toString());
+		if (searcher != null) {
+			hu.setMaxResults(searcher.getCount());
+			hu.setFirstResult(searcher.getCount() * searcher.getPage());
+		}
+
+		return (List<WorkflowTask>) hu.list();
+
+	}
+
+	public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException {
+
+		final DotConnect db = new DotConnect();
+		try {
+
+			db.setSQL(sql.RETRIEVE_LAST_STEP_ACTIONID);
+			db.addParam(taskId);
+			db.loadResult();
+			System.out.println("QUERY retrieveTaskId ESEGUITA");
+
+		} catch (final Exception e) {
+			Logger.debug(this.getClass(), e.getMessage(), e);
+		}
+
+		return (WorkflowHistory) this.convertListToObjects(db.loadObjectResults(), WorkflowHistory.class).get(0);
+
+	}
+	// christian escalation
 }

@@ -26,6 +26,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -272,6 +274,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		} else {
 			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
+		
 	}
 
 	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {

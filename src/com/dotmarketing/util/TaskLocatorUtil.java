@@ -46,6 +46,7 @@ import com.dotmarketing.startup.runonce.Task00825UpdateLoadRecordsToIndex;
 import com.dotmarketing.startup.runonce.Task00835CreateIndiciesTables;
 import com.dotmarketing.startup.runonce.Task00840FixContentletVersionInfo;
 import com.dotmarketing.startup.runonce.Task00845ChangeLockedOnToTimeStamp;
+import com.dotmarketing.startup.runonce.Task00900CreateLogConsoleTable;
 import com.dotmarketing.startup.runonce.Task00850DropOldFilesConstraintInWorkflow;
 import com.dotmarketing.startup.runonce.Task00855FixRenameFolder;
 import com.dotmarketing.startup.runonce.Task00860ExtendServerIdsMSSQL;
@@ -101,6 +102,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00855FixRenameFolder.class);
 		ret.add(Task00860ExtendServerIdsMSSQL.class);
 		ret.add(Task00865AddTimestampToVersionTables.class);
+		ret.add(Task00900CreateLogConsoleTable.class);
 		return ret;
 	}
 
