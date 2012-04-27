@@ -11,17 +11,21 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -36,7 +40,9 @@ import com.dotmarketing.portlets.structure.struts.FieldForm;
 import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
@@ -402,6 +408,9 @@ public class EditFieldAction extends DotPortletAction {
 
 			// saves this field
 			FieldFactory.saveField(field);
+			
+			ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
+				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 
 			FieldsCache.removeFields(structure);
 			StructureCache.removeStructure(structure);
@@ -487,6 +496,10 @@ public class EditFieldAction extends DotPortletAction {
 			// Call the commit method to avoid a deadlock
 			HibernateUtil.commitTransaction();
 			FieldsCache.removeFields(structure);
+			
+			ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
+				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+			
 			StructureCache.removeStructure(structure);
 			StructureServices.removeStructureFile(structure);
 
@@ -530,6 +543,10 @@ public class EditFieldAction extends DotPortletAction {
 			//VirtualLinksCache.clearCache();
 			String message = "message.structure.reorderfield";
 			SessionMessages.add(req, "message", message);
+			
+			//AdminLogger.log(EditFieldAction.class, "_saveField", "Added field " + field.getFieldName() + " to " + structure.getName() + " Structure.", user);
+		    
+		    
 		} catch (Exception ex) {
 			Logger.error(EditFieldAction.class, ex.toString());
 		}
@@ -559,6 +576,27 @@ public class EditFieldAction extends DotPortletAction {
 	    }
 
 	    return true;
+
+	}
+	
+	public String hostNameUtil(ActionRequest req) {
+
+		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+		HttpSession session = httpReq.getSession();
+
+		String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+
+		Host h = null;
+		try {
+			h = APILocator.getHostAPI().find(hostId, _getUser(req), false);
+		} catch (DotDataException e) {
+			_handleException(e, req);
+		} catch (DotSecurityException e) {
+			_handleException(e, req);
+		}
+
+		return h.getTitle()!=null?h.getTitle():"default";
 
 	}
 

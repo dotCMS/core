@@ -359,6 +359,22 @@ public class FileAssetAPIImpl implements FileAssetAPI {
             return path;
 
     }
+	
+	@Override
+	public String getRealAssetPath(String inode, String fileName) {
+		
+		String extension = UtilMethods.getFileExtension(fileName);
+		String fileNameWOExtenstion  =  UtilMethods.getFileName(fileName);
+		
+		
+        return getRealAssetPath(inode, fileNameWOExtenstion, extension);
+    	
+    }
+	
+	
+	
+	
+	
 
 	public String getRealAssetPath(String inode) {
         String _inode = inode;

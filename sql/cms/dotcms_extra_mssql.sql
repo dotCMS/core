@@ -214,7 +214,7 @@ BEGIN
 fetch next from cur_Inserted into @newFolder,@newHost
 END;
 
-CREATE PROCEDURE load_records_to_index(@server_id VARCHAR, @records_to_fetch INT)
+CREATE PROCEDURE load_records_to_index(@server_id VARCHAR(100), @records_to_fetch INT)
 AS
 BEGIN
 WITH cte AS (
@@ -644,3 +644,11 @@ create table indicies (
   index_name varchar(30) primary key,
   index_type varchar(16) not null unique
 );
+-- ****** Log Console Table *******
+  CREATE TABLE log_mapper (
+    enabled   	 numeric(1,0) not null,
+    log_name 	 varchar(30) not null,
+    description  varchar(50) not null,
+    primary key (log_name)
+  );
+  

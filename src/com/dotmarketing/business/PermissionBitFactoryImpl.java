@@ -11,7 +11,8 @@ import java.util.Set;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -3308,7 +3309,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@Override
 	void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
 	    ContentletAPI contAPI = APILocator.getContentletAPI();
-	    ESIndexAPI indexAPI=new ESIndexAPI();
+	    ContentletIndexAPI indexAPI=new ESContentletIndexAPI();
 	    
 	    DotConnect dc = new DotConnect();
 		dc.setSQL(deleteContentReferencesByStructureSQL);
