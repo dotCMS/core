@@ -67,20 +67,12 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 				<%if(ssapi.isTaskRunning(task.getJobName())){ %>
 					<%SiteSearchPublishStatus ps = ssapi.getTaskProgress(task.getJobName()); %>
 
-	
-					
-					<div dojoType="dijit.ProgressBar" style="width:100px" id="<%=task.getJobName().hashCode()%> %>" maximum="10">
-					
-					errors:<%=ps.getBundleErrors()%> <br>
-					total:<%=ps.getTotalBundleWork()%> <br>
-					progress:<%=ps.getCurrentProgress()%> 
+					<div dojoType="dijit.ProgressBar" progress="<%=(ps.getCurrentProgress() + ps.getBundleErrors())%>" style="width:100px" id="<%=task.getJobName().hashCode()%> %>" maximum="<%=ps.getTotalBundleWork()%>"></div>
+
 				
 				<%} else{%>
 					<span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span>
 				<%} %>
-
-		
-		
 		   	</td>
 			<td nowrap valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
 			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>
@@ -113,8 +105,22 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 	<%if(ssapi==null ||ssapi.getTasks() == null || ssapi.getTasks().size() ==0) {%>
 		<tr>
 			<td colspan="100" align="center">
-				<div style="padding:20px;">
-					<%= LanguageUtil.get(pageContext,"No-Results-Found") %>
+				<div style="padding:30px;">
+					<a href="#" onclick="refreshJobSchedulePane('');"><%= LanguageUtil.get(pageContext,"No-Results-Found") %></a>
+				</div>
+			</td>
+			
+		</tr>
+	<%}else{ %>
+	
+			<tr>
+			<td colspan="100" align="center">
+				<div style="padding:30px;">
+						<button dojoType="dijit.form.Button"
+							id="refreshButton" onClick="refreshJobStats()"
+							iconClass="resetIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Refresh")) %>
+						</button>
+					
 				</div>
 			</td>
 			

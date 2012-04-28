@@ -113,7 +113,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		                </div>
 		           </div>
 			</div>
-		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="reloadIcon">
+		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="resetIcon">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>
 		

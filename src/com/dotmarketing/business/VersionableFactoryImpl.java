@@ -178,7 +178,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotDataException(e.getMessage());
 		}
 
-
+        vi.setVersionTs(new Timestamp(System.currentTimeMillis()));
         HibernateUtil.saveOrUpdate(vi);
         icache.removeVersionInfoFromCache(info.getIdentifier());
         icache.addVersionInfoToCache(info);
@@ -202,7 +202,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
-        HibernateUtil.saveOrUpdate(cvInfo);
+    	cvInfo.setVersionTs(new Timestamp(System.currentTimeMillis()));
+    	HibernateUtil.saveOrUpdate(cvInfo);
         icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
     }
 
