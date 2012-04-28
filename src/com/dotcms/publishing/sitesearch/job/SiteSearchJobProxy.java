@@ -13,7 +13,6 @@ import com.dotmarketing.util.Logger;
 public class SiteSearchJobProxy extends DotStatefulJob {
 	
 
-	
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {		
 		SiteSearchJobImpl jobImpl = new SiteSearchJobImpl();
 		SiteSearchPublishStatus status = null;
@@ -44,6 +43,4 @@ public class SiteSearchJobProxy extends DotStatefulJob {
 			}
 		}
 	}
-
-	
 }
