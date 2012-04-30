@@ -86,7 +86,7 @@ public class Task00805AddRenameFolderProcedure extends AbstractJDBCStartupTask {
 				  "DECLARE new_path varchar(100);\n" +    
 				  "DECLARE old_name varchar(100);\n" +
 				  "DECLARE hostInode varchar(100);\n" +
-				  "IF @disable_trigger <> 1 THEN" +
+				  "IF @disable_trigger IS NULL AND NEW.name<>OLD.name THEN\n"+
 				  "  select asset_name,parent_path,host_inode INTO old_name,old_parent_path,hostInode from identifier where id = NEW.identifier;\n" +
 				  "  SELECT CONCAT(old_parent_path,old_name,'/')INTO old_path;\n" +
 				  "  SELECT CONCAT(old_parent_path,NEW.name,'/')INTO new_path;\n" +
