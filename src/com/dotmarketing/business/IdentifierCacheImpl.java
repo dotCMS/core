@@ -14,6 +14,7 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * @author David
@@ -109,7 +110,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		String key = id.getHostId() + "-" + id.getURI();
 		cache.remove(getPrimaryGroup() + key, getPrimaryGroup());
 		
-		if(id.getAssetType().equals("folder")) {
+		if(UtilMethods.isSet(id.getAssetType()) && id.getAssetType().equals("folder")) {
 		    try {
 		        List<Identifier> idents=APILocator.getIdentifierAPI().findByParentPath(id.getHostId(), id.getURI());
 		        for(Identifier ii : idents)
