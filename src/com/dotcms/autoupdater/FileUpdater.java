@@ -88,53 +88,56 @@ public class FileUpdater {
         //.dotserver folder path
         String dotserverPath = home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER;
 
-        //First lets remove the "old" code in order to unzip the update on that folder .dotserver/
-        File dotserverFolder = new File( dotserverPath );
-        Boolean success = UpdateUtil.deleteDirectory( dotserverFolder );
-        if ( success ) {
-            logger.debug( "Removed outdated folder: " + dotserverFolder.getAbsolutePath() );
-        } else {
-            logger.error( "Error removing outdated folder: " + dotserverFolder.getAbsolutePath() );
-        }
+        if ( !dryrun ) {
 
-        //Now we need to unzip the content of the update file into the .dotserver folder, we just removed it, so lets create it again....
-        if ( !dotserverFolder.exists() ) {
-            success = dotserverFolder.mkdirs();
+            //First lets remove the "old" code in order to unzip the update on that folder .dotserver/
+            File dotserverFolder = new File( dotserverPath );
+            Boolean success = UpdateUtil.deleteDirectory( dotserverFolder );
             if ( success ) {
-                logger.debug( "Created folder: " + dotserverFolder.getAbsolutePath() );
+                logger.debug( "Removed outdated folder: " + dotserverFolder.getAbsolutePath() );
             } else {
-                logger.error( "Error creating folder: " + dotserverFolder.getAbsolutePath() );
-            }
-        }
-        success = UpdateUtil.unzipDirectory( updateFile, UpdateAgent.FOLDER_HOME_DOTSERVER, dotserverPath, dryrun );
-
-        if ( success ) {
-            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            //Now lets copy the assets contents
-
-            //Assets folder
-            String assets = "dotCMS" + File.separator + "assets";
-            File assetsFolder = new File( backUpPath + File.separator + assets );
-            File destFolder = new File( dotserverFolder + File.separator + assets );
-            copyFolder( assetsFolder, destFolder );
-
-            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            //Now lets copy the esdata contents
-
-            //esdata folder
-            String esdata = "dotCMS" + File.separator + "dotsecure" + File.separator + "esdata";
-            File esdataFolder = new File( backUpPath + File.separator + esdata );
-            destFolder = new File( dotserverFolder + File.separator + esdata );
-            copyFolder( esdataFolder, destFolder );
-
-        } else {
-            String error = "Error unzipping update file on: " + dotserverPath;
-            if ( !UpdateAgent.isDebug ) {
-                error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+                logger.error( "Error removing outdated folder: " + dotserverFolder.getAbsolutePath() );
             }
 
-            throw new UpdateException( error, UpdateException.ERROR );
+            //Now we need to unzip the content of the update file into the .dotserver folder, we just removed it, so lets create it again....
+            if ( !dotserverFolder.exists() ) {
+                success = dotserverFolder.mkdirs();
+                if ( success ) {
+                    logger.debug( "Created folder: " + dotserverFolder.getAbsolutePath() );
+                } else {
+                    logger.error( "Error creating folder: " + dotserverFolder.getAbsolutePath() );
+                }
+            }
+            success = UpdateUtil.unzipDirectory( updateFile, UpdateAgent.FOLDER_HOME_DOTSERVER, dotserverPath, dryrun );
 
+            if ( success ) {
+                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                //Now lets copy the assets contents
+
+                //Assets folder
+                String assets = "dotCMS" + File.separator + "assets";
+                File assetsFolder = new File( backUpPath + File.separator + assets );
+                File destFolder = new File( dotserverFolder + File.separator + assets );
+                copyFolder( assetsFolder, destFolder );
+
+                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                //Now lets copy the esdata contents
+
+                //esdata folder
+                String esdata = "dotCMS" + File.separator + "dotsecure" + File.separator + "esdata";
+                File esdataFolder = new File( backUpPath + File.separator + esdata );
+                destFolder = new File( dotserverFolder + File.separator + esdata );
+                copyFolder( esdataFolder, destFolder );
+
+            } else {
+                String error = "Error unzipping update file on: " + dotserverPath;
+                if ( !UpdateAgent.isDebug ) {
+                    error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+                }
+
+                throw new UpdateException( error, UpdateException.ERROR );
+
+            }
         }
 
         return true;
@@ -154,43 +157,46 @@ public class FileUpdater {
         PostProcess pp = new PostProcess();
         pp.setHome( home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER );
 
-        logger.info( Messages.getString( "UpdateAgent.debug.start.validation" ) );
+        if ( !dryrun ) {
 
-        if ( pp.postProcess( true ) ) {
+            logger.info( Messages.getString( "UpdateAgent.debug.start.validation" ) );
 
-            logger.info( Messages.getString( "UpdateAgent.debug.end.validation" ) );
+            if ( pp.postProcess( true ) ) {
 
-            // At this point we should try to use the build file we got from the update zip
-            File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
+                logger.info( Messages.getString( "UpdateAgent.debug.end.validation" ) );
 
-            //Create the ant invoker
-            boolean success;
-            AntInvoker invoker = new AntInvoker( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER );
-            // Try to do a clean up.
-            logger.debug( "Trying to clean update process traces..." );
-            if ( buildFile.exists() ) {
-                success = invoker.runTask( "clean", "build_new.xml" );
-                buildFile.delete();
+                // At this point we should try to use the build file we got from the update zip
+                File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
+
+                //Create the ant invoker
+                boolean success;
+                AntInvoker invoker = new AntInvoker( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER );
+                // Try to do a clean up.
+                logger.debug( "Trying to clean update process traces..." );
+                if ( buildFile.exists() ) {
+                    success = invoker.runTask( "clean", "build_new.xml" );
+                    buildFile.delete();
+                } else {
+                    success = invoker.runTask( "clean", null );
+                }
+                logger.debug( "Finished to clean update process traces." );
+
+
+                if ( !success ) {
+                    String error = Messages.getString( "UpdateAgent.error.ant.clean" );
+                    if ( !UpdateAgent.isDebug ) {
+                        error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+                    }
+                    throw new UpdateException( error, UpdateException.ERROR );
+                }
             } else {
-                success = invoker.runTask( "clean", null );
-            }
-            logger.debug( "Finished to clean update process traces." );
-
-
-            if ( !success ) {
-                String error = Messages.getString( "UpdateAgent.error.ant.clean" );
+                String error = Messages.getString( "UpdateAgent.error.plugin.incompatible" );
                 if ( !UpdateAgent.isDebug ) {
                     error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
                 }
+
                 throw new UpdateException( error, UpdateException.ERROR );
             }
-        } else {
-            String error = Messages.getString( "UpdateAgent.error.plugin.incompatible" );
-            if ( !UpdateAgent.isDebug ) {
-                error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
-            }
-
-            throw new UpdateException( error, UpdateException.ERROR );
         }
 
         logger.info( Messages.getString( "UpdateAgent.debug.end.post.process" ) );

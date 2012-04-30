@@ -118,6 +118,10 @@ public class UpdateUtil {
         ZipInputStream zis = new ZipInputStream( new BufferedInputStream( fis ) );
         ZipEntry entry;
 
+        /***************************************************************
+         * ZIP ENTRY FILES MUST HAVE '/' AS SEPARATOR ON ANY PLATFORM *
+         ***************************************************************/
+
         while ( ( entry = zis.getNextEntry() ) != null ) {
             String entryName1 = entry.getName();
             if ( entryName1.startsWith( "dotserver/dotCMS/WEB-INF/lib/dotcms_" ) && !entryName1.startsWith( "dotserver/dotCMS/WEB-INF/lib/dotcms_ant" ) ) {

@@ -4,6 +4,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -29,7 +30,8 @@ public class UpdateOptions {
     public static String ALLOW_TESTING_BUILDS = "allowtestingbuilds";
     public static String SPECIFIC_VERSION = "version";
 
-    Properties props = new Properties();
+    private Properties props = new Properties();
+    private static Options options;
 
     public UpdateOptions () {
         loadDefaults();
@@ -48,11 +50,16 @@ public class UpdateOptions {
 
     public Options getOptions () {
 
-        Options options = new Options();
+        if ( options == null ) {
+            options = new Options();
+        } else {
+            return options;
+        }
+
         Option userOption = new Option( UpdateOptions.USER, true, Messages.getString( "UpdateOptions.text.user" ) );
         Option passOption = new Option( UpdateOptions.PASSWORD, true, Messages.getString( "UpdateOptions.text.password" ) );
-        Option fileOption = new Option( UpdateOptions.FILE, true, Messages.getString( "UpdateOptions.text.file" ) );
-        Option backupOption = new Option( UpdateOptions.BACKUP, true, Messages.getString( "UpdateOptions.text.backup" ) );
+        Option fileOption = new Option( UpdateOptions.FILE, true, Messages.getString( "UpdateOptions.text.file", UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "updates" ) );
+        //Option backupOption = new Option( UpdateOptions.BACKUP, true, Messages.getString( "UpdateOptions.text.backup" ) );
         Option urlOption = new Option( UpdateOptions.URL, true, Messages.getString( "UpdateOptions.text.url" ) + props.getProperty( "update.url", "" ) );
         Option forceOption = new Option( UpdateOptions.FORCE, false, Messages.getString( "UpdateOptions.text.force" ) );
         Option noUpdaterOption = new Option( UpdateOptions.NO_UPDATE, false, Messages.getString( "UpdateOptions.text.no.autoupdater.updater" ) );
@@ -89,7 +96,7 @@ public class UpdateOptions {
         options.addOption( dryrunOption );
         options.addOption( helpOption );
         options.addOption( homeOption );
-        options.addOption( backupOption );
+        //options.addOption( backupOption );
         options.addOption( proxy );
         options.addOption( proxyUser );
         options.addOption( proxyPass );
@@ -102,6 +109,14 @@ public class UpdateOptions {
 
     public String getDefault ( String key, String defValue ) {
         return props.getProperty( key, defValue );
+    }
+
+    public void setHomeFolder ( String homeFolder ) {
+        options.getOption( UpdateOptions.HOME ).setDescription( Messages.getString( "UpdateOptions.text.home", homeFolder ) );
+    }
+
+    public void setUpdateFilesFolder (String updateFilesFolder) {
+        options.getOption( UpdateOptions.FILE ).setDescription( Messages.getString( "UpdateOptions.text.file", updateFilesFolder ) );
     }
 
 }
