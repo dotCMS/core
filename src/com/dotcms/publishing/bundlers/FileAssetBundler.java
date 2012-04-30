@@ -20,6 +20,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -87,7 +88,7 @@ public class FileAssetBundler implements IBundler {
 			cal.set(Calendar.YEAR, 2500);
 			String start = ESMappingAPIImpl.datetimeFormat.format(config.getStartDate());
 			String forever = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
-			bob.append(" +moddate:[" + start + " TO " + forever +"] ");
+			bob.append(" +versionTs:[" + start + " TO " + forever +"] ");
 		}
 		
 		if(config.getEndDate() != null){
@@ -96,7 +97,7 @@ public class FileAssetBundler implements IBundler {
 			
 			String end = ESMappingAPIImpl.datetimeFormat.format(config.getEndDate());
 			String longAgo = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
-			bob.append(" +moddate:[" + longAgo + " TO " + end +"] ");
+			bob.append(" +versionTs:[" + longAgo + " TO " + end +"] ");
 		}
 		
 		
@@ -167,7 +168,9 @@ public class FileAssetBundler implements IBundler {
 			
 			FileAssetWrapper wrap = new FileAssetWrapper();
 			wrap.setAsset(fileAsset);
-			wrap.setInfo(APILocator.getVersionableAPI().getContentletVersionInfo(fileAsset.getIdentifier(), fileAsset.getLanguageId()));
+			ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(fileAsset.getIdentifier(), fileAsset.getLanguageId());
+			
+			wrap.setInfo(info);
 			wrap.setId(APILocator.getIdentifierAPI().find(fileAsset.getIdentifier()));
 			
 			
@@ -183,7 +186,7 @@ public class FileAssetBundler implements IBundler {
 			
 			// Should we write or is the file already there:
 			Calendar cal = Calendar.getInstance();
-			cal.setTime(fileAsset.getModDate());
+			cal.setTime(info.getVersionTs());
 			cal.set(Calendar.MILLISECOND, 0);
 			
 			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));

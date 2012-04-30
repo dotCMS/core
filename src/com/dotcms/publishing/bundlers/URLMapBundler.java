@@ -124,7 +124,7 @@ public class URLMapBundler implements IBundler {
 			cal.set(Calendar.YEAR, 2500);
 			String start = ESMappingAPIImpl.datetimeFormat.format(config.getStartDate());
 			String forever = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
-			bob.append(" +moddate:[" + start + " TO " + forever +"] ");
+			bob.append(" +versionTs:[" + start + " TO " + forever +"] ");
 		}
 		
 		if(config.getEndDate() != null){
@@ -133,7 +133,7 @@ public class URLMapBundler implements IBundler {
 			
 			String end = ESMappingAPIImpl.datetimeFormat.format(config.getEndDate());
 			String longAgo = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
-			bob.append(" +moddate:[" + longAgo + " TO " + end +"] ");
+			bob.append(" +versionTs:[" + longAgo + " TO " + end +"] ");
 		}
 		
 		
@@ -231,7 +231,7 @@ public class URLMapBundler implements IBundler {
 			
 			// Should we write or is the file already there:
 			
-			cal.setTime(contentlet.getModDate());
+			cal.setTime(info.getVersionTs());
 			cal.set(Calendar.MILLISECOND, 0);
 			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
 				Structure struc = contentlet.getStructure();
