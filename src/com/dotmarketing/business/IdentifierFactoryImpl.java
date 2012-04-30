@@ -62,10 +62,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		bob.append((include ? "":"NOT ") + "LIKE ? and host_inode = ? and asset_type = ? ");
 		if(startDate != null){
-			bob.append(" and a.mod_date >= ? ");
+			bob.append(" and vi.version_ts >= ? ");
 		}
 		if(endDate != null){
-			bob.append(" and a.mod_date <= ? ");
+			bob.append(" and vi.version_ts <= ? ");
 		}
 		if(!pullDeleted){
 			bob.append(" and vi.deleted=" + DbConnectionFactory.getDBFalse() + " ");

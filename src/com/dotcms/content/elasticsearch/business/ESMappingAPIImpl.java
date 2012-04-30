@@ -41,6 +41,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
@@ -228,6 +229,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			loadRelationshipFields(con, m);
 
 			Identifier ident = APILocator.getIdentifierAPI().find(con);
+			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
 			Structure st=StructureCache.getStructureByInode(con.getStructureInode());
 
 			m.put("title", con.getTitle());
@@ -247,6 +249,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conHost", ident.getHostId());
             m.put("conFolder", con.getFolder());
             m.put("parentPath", ident.getParentPath());
+            m.put("versionTs", new SimpleDateFormat("yyyyMMddHHmmss").format(cvi.getVersionTs()));
             String uri = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
             if(uri != null){
             	m.put("uri",uri );	
