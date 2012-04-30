@@ -120,7 +120,7 @@ public class UpdateUtil {
 
         while ( ( entry = zis.getNextEntry() ) != null ) {
             String entryName1 = entry.getName();
-            if ( entryName1.startsWith( "dotCMS/WEB-INF/lib/dotcms_" ) && !entryName1.startsWith( "dotCMS/WEB-INF/lib/dotcms_ant" ) ) {
+            if ( entryName1.startsWith( "dotserver/dotCMS/WEB-INF/lib/dotcms_" ) && !entryName1.startsWith( "dotserver/dotCMS/WEB-INF/lib/dotcms_ant" ) ) {
 
                 // We found it
                 ZipInputStream zis2 = new ZipInputStream( new BufferedInputStream( zis ) );
