@@ -17,8 +17,6 @@ import java.util.jar.JarFile;
 
 public class UpdateAgent {
 
-    private UpdateOptions updateOptions;
-
     public static String MANIFEST_PROPERTY_AGENT_VERSION = "Agent-Version";
     private static String MANIFEST_PROPERTY_RELEASE_VERSION = "Release-Version";
 
@@ -31,9 +29,7 @@ public class UpdateAgent {
     public static String FOLDER_HOME_DOTSERVER = "dotserver";
     public static String FOLDER_HOME_UPDATER = "autoupdater";
     public static String FOLDER_HOME_BACK_UP = "backup";
-    private String version;
-    private String minor;
-    private String backupFile;
+    //private String backupFile;
     private String proxy;
     private String proxyUser;
     private String proxyPass;
@@ -48,7 +44,7 @@ public class UpdateAgent {
 
     public void run ( String[] args ) {
 
-        updateOptions = new UpdateOptions();
+        UpdateOptions updateOptions = new UpdateOptions();
         Options options = updateOptions.getOptions();
 
         // create the parser
@@ -76,13 +72,6 @@ public class UpdateAgent {
             //Initializing properties
             configureLogger( line );
 
-            SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
-
-            if ( line.hasOption( UpdateOptions.HELP ) || args.length == 0 ) {
-                UpdateUtil.printHelp( options, MESSAGES_HELP_TEXT );
-                return;
-            }
-
             //Command line parameters
             allowTestingBuilds = Boolean.parseBoolean( line.getOptionValue( UpdateOptions.ALLOW_TESTING_BUILDS ) );
             proxy = line.getOptionValue( UpdateOptions.PROXY );
@@ -90,6 +79,14 @@ public class UpdateAgent {
             proxyPass = line.getOptionValue( UpdateOptions.PROXY_PASS );
             url = line.getOptionValue( UpdateOptions.URL, updateOptions.getDefault( "update.url", "" ) );
             homeProjectPath = line.getOptionValue( UpdateOptions.HOME, System.getProperty( "user.dir" ) );
+            updateOptions.setHomeFolder( homeProjectPath );
+            updateOptions.setUpdateFilesFolder( homeProjectPath + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" );
+
+            //Verify if we need to print the help documentation
+            if ( line.hasOption( UpdateOptions.HELP ) || args.length == 0 ) {
+                UpdateUtil.printHelp( options, MESSAGES_HELP_TEXT );
+                return;
+            }
 
             logger.info( Messages.getString( "UpdateAgent.text.dotcms.home" ) + getHomeProjectPath() );
 
@@ -98,12 +95,13 @@ public class UpdateAgent {
             checkRequisites( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
 
             String newMinor = "";
-            version = getVersion();
-            minor = getMinor();
+            String version = getVersion();
+            String minor = getMinor();
+            /*SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
             backupFile = line.getOptionValue( UpdateOptions.BACKUP, "update_backup_b" + minor + "_" + sdf.format( new Date() ) + ".zip" );
             if ( !backupFile.endsWith( ".zip" ) ) {
                 backupFile += ".zip";
-            }
+            }*/
             String agentVersion = UpdateUtil.getManifestValue( MANIFEST_PROPERTY_AGENT_VERSION );
             logger.debug( Messages.getString( "UpdateAgent.text.autoupdater.version" ) + agentVersion );
 
