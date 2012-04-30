@@ -42,7 +42,7 @@ done
 
 
 SOURCE="-home"
-if echo "$CMD_LINE_ARGS" | grep -q "$SOURCE"; then
+if echo "$CMD_LINE_ARGS" | grep -q -- "$SOURCE"; then
   echo "home parameter not found setting default";
 else
   DIRECTORY=$(cd `dirname $0` && pwd)
@@ -53,7 +53,7 @@ else
 fi
 
 SOURCE="-url"
-if echo "$CMD_LINE_ARGS" | grep -q "$SOURCE"; then
+if echo "$CMD_LINE_ARGS" | grep -q -- "$SOURCE"; then
   echo "url parameter not found setting default";
 else
   CMD_LINE_ARGS="$CMD_LINE_ARGS -url http://www.dotcms.com:8080/servlets/upgrade2x"
