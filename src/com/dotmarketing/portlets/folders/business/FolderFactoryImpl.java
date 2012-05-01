@@ -888,19 +888,16 @@ public class FolderFactoryImpl extends FolderFactory {
 			return false;
 
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
+		CacheLocator.getFolderCache().removeFolder(folder, ident);
 		
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		ff.setName(newName);
 		ff.setTitle(newName);
 		
-		APILocator.getFolderAPI().save(ff, user, respectFrontEndPermissions);
-
-		try {
-			HibernateUtil.getSession().evict(ff);
-		} catch (HibernateException e) {
-			throw new DotDataException(e.getMessage());
-		}
-
+		save(ff);
+		
+		HibernateUtil.getSession().clear();
+		
 		return true;
 	}
 
