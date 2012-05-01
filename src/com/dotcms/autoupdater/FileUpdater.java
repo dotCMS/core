@@ -1,300 +1,254 @@
 package com.dotcms.autoupdater;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
-
 import org.apache.log4j.Logger;
-import com.dotcms.autoupdater.ActivityIndicator;
-import com.dotcms.autoupdater.Messages;
-import com.dotcms.autoupdater.UpdateAgent;
-import com.dotcms.autoupdater.UpdateException;
-import com.dotcms.autoupdater.UpdateUtil;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * This class backups and updates the file system.
- * 
+ *
  * @author andres
- * 
  */
 public class FileUpdater {
 
-	public static Logger logger;
+    public static Logger logger;
 
-	final int BUFFER = 1024;
+    private File updateFile;
+    private String home;
+    private Boolean dryrun;
 
-	private File file;
-	
-	//We only delete files that are on one of these locations
-	private String[] delLocations={"src/","dotCMS/html/","WEB-INF/lib/"}; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+    public FileUpdater ( File updateFile, String home, String backupFile, Boolean dryrun ) {
 
-	public FileUpdater(File file, String home, String backupFile) {
-		super();
-		this.file = file;
-		this.home = home;
-		this.backupFile = backupFile;
-		logger = UpdateAgent.logger;
-	}
+        this.updateFile = updateFile;
+        this.home = home;
+        this.dryrun = dryrun;
 
-	private String home;
-	private String backupFile;
-	private List<String> delList;
+        logger = UpdateAgent.logger;
+    }
+
+    /**
+     * This method will be call it before the update process, actually this method will work as preparation for the update, basically what it does to to back-up the current .dotserver/ code
+     *
+     * @throws IOException
+     * @throws UpdateException
+     */
+    public void preUpdate () throws IOException, UpdateException {
+
+        logger.info( Messages.getString( "UpdateAgent.debug.start.backUp" ) );
+
+        //First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
+        File antLauncher = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" );
+        if ( !antLauncher.exists() ) {
+            logger.debug( Messages.getString( "UpdateAgent.debug.extracting.ant" ) );
+            UpdateUtil.unzipDirectory( updateFile, "bin/ant", home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER, false );
+        }
+
+        // Find if we have a build.xml in the update. If we do, we use that one.
+        // Otherwise we use the current one
+        File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
+        boolean updateBuild = UpdateUtil.unzipFile( updateFile, "autoupdater/build.xml", buildFile );
+
+        // Create the back up folder using ant tasks
+        AntInvoker invoker = new AntInvoker( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER );
+        boolean ret;
+        if ( updateBuild ) {
+            ret = invoker.runTask( "prepare.back-up", "build_new.xml" );
+        } else {
+            ret = invoker.runTask( "prepare.back-up", null );
+        }
+
+        if ( !ret ) {
+            String error = Messages.getString( "UpdateAgent.error.ant.prepare.back-up" );
+            if ( !UpdateAgent.isDebug ) {
+                error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+            }
+            throw new UpdateException( error, UpdateException.ERROR );
+        }
+    }
+
+    /**
+     * Method that will handler the update process itself, unziping the download file on the .dotserver/ directory and aplying the required changes in there
+     *
+     * @return
+     * @throws IOException
+     * @throws UpdateException
+     */
+    public boolean doUpdate () throws IOException, UpdateException {
+
+        //Current format for the back-up folder
+        SimpleDateFormat folderDateFormat = new SimpleDateFormat( "yyyyMMdd" );
+
+        //This is the name of the folder where we stored the back-up
+        String currentBackUpFolderName = folderDateFormat.format( new Date() );
+        //Complete back-up path
+        String backUpPath = home + File.separator + UpdateAgent.FOLDER_HOME_BACK_UP + File.separator + currentBackUpFolderName;
+        //.dotserver folder path
+        String dotserverPath = home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER;
+
+        if ( !dryrun ) {
+
+            //First lets remove the "old" code in order to unzip the update on that folder .dotserver/
+            File dotserverFolder = new File( dotserverPath );
+            Boolean success = UpdateUtil.deleteDirectory( dotserverFolder );
+            if ( success ) {
+                logger.debug( "Removed outdated folder: " + dotserverFolder.getAbsolutePath() );
+            } else {
+                logger.error( "Error removing outdated folder: " + dotserverFolder.getAbsolutePath() );
+            }
+
+            //Now we need to unzip the content of the update file into the .dotserver folder, we just removed it, so lets create it again....
+            if ( !dotserverFolder.exists() ) {
+                success = dotserverFolder.mkdirs();
+                if ( success ) {
+                    logger.debug( "Created folder: " + dotserverFolder.getAbsolutePath() );
+                } else {
+                    logger.error( "Error creating folder: " + dotserverFolder.getAbsolutePath() );
+                }
+            }
+            success = UpdateUtil.unzipDirectory( updateFile, UpdateAgent.FOLDER_HOME_DOTSERVER, dotserverPath, dryrun );
+
+            if ( success ) {
+                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                //Now lets copy the assets contents
+
+                //Assets folder
+                String assets = "dotCMS" + File.separator + "assets";
+                File assetsFolder = new File( backUpPath + File.separator + assets );
+                File destFolder = new File( dotserverFolder + File.separator + assets );
+                copyFolder( assetsFolder, destFolder );
+
+                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                //Now lets copy the esdata contents
+
+                //esdata folder
+                String esdata = "dotCMS" + File.separator + "dotsecure" + File.separator + "esdata";
+                File esdataFolder = new File( backUpPath + File.separator + esdata );
+                destFolder = new File( dotserverFolder + File.separator + esdata );
+                copyFolder( esdataFolder, destFolder );
+
+            } else {
+                String error = "Error unzipping update file on: " + dotserverPath;
+                if ( !UpdateAgent.isDebug ) {
+                    error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+                }
+
+                throw new UpdateException( error, UpdateException.ERROR );
+
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The purpose of this method is to make final changes for the update processes, like cleaning, rebuilt fields, etc....
+     *
+     * @return
+     * @throws UpdateException
+     * @throws IOException
+     */
+    public Boolean postUpdate () throws UpdateException, IOException {
+
+        logger.info( Messages.getString( "UpdateAgent.debug.start.post.process" ) );
+
+        PostProcess pp = new PostProcess();
+        pp.setHome( home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER );
+
+        if ( !dryrun ) {
+
+            logger.info( Messages.getString( "UpdateAgent.debug.start.validation" ) );
+
+            if ( pp.postProcess( true ) ) {
+
+                logger.info( Messages.getString( "UpdateAgent.debug.end.validation" ) );
+
+                // At this point we should try to use the build file we got from the update zip
+                File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
+
+                //TODO: Windows will lock the bin jars are the are used by the ant file, so, lets remove it manually
+                /*
+                //Create the ant invoker
+                boolean success;
+                AntInvoker invoker = new AntInvoker( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER );
+                // Try to do a clean up.
+                logger.debug( "Trying to clean update process traces..." );
+                if ( buildFile.exists() ) {
+                    success = invoker.runTask( "clean", "build_new.xml" );
+                    buildFile.delete();
+                } else {
+                    success = invoker.runTask( "clean", null );
+                }*/
+
+                Boolean success = true;
+
+                //Deleting if exist the extracted build file
+                if ( buildFile.exists() ) {
+                    success = buildFile.delete();
+                }
+
+                //Deleting manually the bin folder on the autoupdater directory
+                File binFolder = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" );
+                if (binFolder.exists()) {
+                    success = UpdateUtil.deleteDirectory( binFolder );
+                }
+
+                logger.debug( "Finished to clean update process traces." );
 
 
-	public boolean doUpdate(boolean dryrun) throws IOException, UpdateException {
-		getDelList();
-		verifyWritePermissions();
-		doBackup(dryrun);
-		processData(dryrun);
+                if ( !success ) {
+                    String error = Messages.getString( "UpdateAgent.error.ant.clean" );
+                    if ( !UpdateAgent.isDebug ) {
+                        error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+                    }
+                    throw new UpdateException( error, UpdateException.ERROR );
+                }
+            } else {
+                String error = Messages.getString( "UpdateAgent.error.plugin.incompatible" );
+                if ( !UpdateAgent.isDebug ) {
+                    error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+                }
 
-		return true;
+                throw new UpdateException( error, UpdateException.ERROR );
+            }
+        }
 
-	}
-	
-	private boolean verifyWritePermissions() throws UpdateException{
-		List<String> missingPerms=new ArrayList<String>();
-		for (String fileName : delList) {
-			
-			String fullFileName=home+File.separator+fileName;
-			File file=new File(fullFileName);
-			if (file.exists() && !file.canWrite()) {
-				missingPerms.add(fileName);
-			}
-		}
-		
-		
-		try {
-			FileInputStream fis = new FileInputStream(file);
-			ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis));
-			ZipEntry entry;
-			
-			
-			while ((entry = zis.getNextEntry()) != null) {
-				if (!entry.isDirectory()) {
-					
-						File destFile=new File(home
-								+ File.separator + entry.getName());
-						File parentFile =destFile.getParentFile();
-						if (destFile.exists() && !destFile.canWrite()) {
-							missingPerms.add(entry.getName());
-							logger.debug("Missing write permission on: " + entry.getName());
-						} else {
-							//Recurse to see if the parent has write permissions
-							boolean done=false;
-							while (!done) {
-							if (parentFile.exists()) {
-								done=true;
-								if (!parentFile.canWrite()) {
-									missingPerms.add(parentFile.getAbsolutePath());
-									logger.debug("Missing write permission on: " + parentFile.getAbsolutePath());
-								} 
-							} else {
-								parentFile=parentFile.getParentFile();
-							}
-						}
-						}
-				}
-			}
-		} catch (FileNotFoundException e) {
-			logger.debug("FileNotFoundException: " + e.getMessage(),e); //$NON-NLS-1$
-		} catch (IOException e) {
-			logger.debug("IOException: " + e.getMessage(),e); //$NON-NLS-1$
-		}
-		
-		if (missingPerms.size()==0) {
-			return true;
-		}
-		StringBuffer sb=new StringBuffer();
-		if (missingPerms.size()==1) {
-			sb.append(Messages.getString("FileUpdater.error.file.permission")); //$NON-NLS-1$
-		} else {
-			sb.append(Messages.getString("FileUpdater.error.files.permissions")); //$NON-NLS-1$
-		}
-		
-		if (UpdateAgent.isDebug) {
-			throw new UpdateException( Messages.getString("FileUpdater.debug.file.permission"),UpdateException.ERROR);  //$NON-NLS-1$
-		}
-		
-		if (missingPerms.size()<=10) {
+        logger.info( Messages.getString( "UpdateAgent.debug.end.post.process" ) );
+        return true;
+    }
 
-			for (String fileName:missingPerms) {
-				sb.append(fileName+"\n"); //$NON-NLS-1$
-			}
-		} else {
-			if (missingPerms.size()==11) {
-				for (String fileName:missingPerms) {
-					sb.append(fileName+"\n"); //$NON-NLS-1$
-				}	
-			} else {
-				for (int i=0;i<10;i++) {
-					sb.append(missingPerms.get(i)+"\n");					 //$NON-NLS-1$
-				}
-				int left=missingPerms.size()-10;
-				sb.append(Messages.getString("FileUpdater.text.other.files", left+"",UpdateAgent.logFile)); //$NON-NLS-1$ //$NON-NLS-2$
-			}
-			
-		}
-		
-		throw new UpdateException(sb.toString(),UpdateException.ERROR);
-	}
+    /**
+     * Copy the contents of a given folder into another
+     *
+     * @param srcFolder
+     * @param destFolder
+     * @throws UpdateException
+     * @throws IOException
+     */
+    private void copyFolder ( File srcFolder, File destFolder ) throws UpdateException, IOException {
 
-	public void getDelList() throws IOException {
-		logger.debug("Starting getDelList" );
-		ZipFile zip=new ZipFile(file);
-		ZipEntry entry=zip.getEntry("dellist"); //$NON-NLS-1$
-		
-		delList = new ArrayList<String>();
-		if (entry!=null) {
-			logger.debug("dellist found");
-			InputStream is= zip.getInputStream(entry);
-			InputStreamReader isr=new InputStreamReader(is);
-			BufferedReader br=new BufferedReader(isr);
-			String line;
-			while ((line = br.readLine()) != null) {
-				delList.add(line);
-			}	
-		} else {
-			logger.debug("No dellist found");
-		}
-		logger.debug("Finished getDelList" );
-		
+        if ( srcFolder.exists() ) {//It may not exists, if don't exist is ok.....
 
-	}
+            //Where we are going to copy the assets contents
+            if ( !destFolder.exists() ) {
+                Boolean success = destFolder.mkdirs();
+                if ( success ) {
+                    logger.debug( "Created folder: " + destFolder );
+                } else {
+                    String error = "Error creating folder: " + destFolder;
+                    if ( !UpdateAgent.isDebug ) {
+                        error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+                    }
 
-	private void doBackup(boolean dryrun) throws IOException {
-		logger.info(Messages.getString("FileUpdater.debug.start.backup")); //$NON-NLS-1$
-		ActivityIndicator.startIndicator();
-		ZipOutputStream out = null;
-		FileInputStream fis = new FileInputStream(file);
-		ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis));
-		ZipEntry entry;
-		boolean hasEntry=false;
-		if (!dryrun) {
-			out = new ZipOutputStream(new FileOutputStream(backupFile));
-		}
+                    throw new UpdateException( error, UpdateException.ERROR );
+                }
+            }
 
-		while ((entry = zis.getNextEntry()) != null) {
-			if (!entry.isDirectory()) {
-				if (!entry.getName().equalsIgnoreCase("dellist")) { //$NON-NLS-1$
-					File oldFile = new File(home + File.separator
-							+ entry.getName());
-					if (oldFile.exists() && !oldFile.isDirectory()) {
-						logger.debug(Messages.getString("FileUpdater.debug.backup.file") + entry); //$NON-NLS-1$
-						if (!dryrun) {
-							backup(out, oldFile, entry.getName());
-							
-						}
-						hasEntry=true;
-					}
-				}
-
-			}
-		}
-		ActivityIndicator.endIndicator();
-		if (hasEntry) {
-			if (!dryrun) {
-				out.close();
-			}
-		logger.info(Messages.getString("FileUpdater.debug.end.backup"));  //$NON-NLS-1$
-		} else {
-			logger.info(Messages.getString("FileUpdater.text.no.backup")); //$NON-NLS-1$
-		}
-
-	}
-
-	public void processData(boolean dryrun) throws IOException {
-		
-		File jardir = new File(home+File.separator+"dotCMS"+File.separator+"WEB-INF/lib/");
-		logger.debug("Looking for previous dotcms jars: " + jardir.getAbsolutePath()); //$NON-NLS-1$
-		Pattern pat = Pattern.compile("dotcms_(\\d.\\d.*).jar");
-		for(File jar:jardir.listFiles()){
-			Matcher mat = pat.matcher(jar.getName());
-			if(mat.matches()){
-				logger.debug("Found file: " + jar.getName());
-				if (!dryrun) {
-					logger.debug("Deleting file: " + jar.getAbsolutePath());
-					jar.delete();
-				}
-			}
-
-		}
-		
-	
-		if (delList!=null) {
-			logger.info(Messages.getString("FileUpdater.debug.start.delete.files")); //$NON-NLS-1$
-			ActivityIndicator.startIndicator();
-			for (String fileName : delList) {
-				if (isDeletable(fileName)) {
-				String fullFileName=home+File.separator+fileName;
-				logger.debug("Looking for file: " + fullFileName); //$NON-NLS-1$
-				File file=new File(fullFileName);
-				if (file.exists()) {		
-					
-					logger.debug(Messages.getString("FileUpdater.debug.delete.file") + fullFileName); //$NON-NLS-1$
-					if (!dryrun) {
-						file.delete();
-					}
-				}
-				}
-				
-			}
-			ActivityIndicator.endIndicator();
-			logger.info(Messages.getString("FileUpdater.debug.end.delete.files")); //$NON-NLS-1$
-		}
-		
-		logger.info(Messages.getString("FileUpdater.debug.start.replace.files")); //$NON-NLS-1$
-
-		UpdateUtil.unzipDirectory(file, null, home, dryrun);
-		logger.info(Messages.getString("FileUpdater.debug.end.replace.files")); //$NON-NLS-1$
-	
-
-	}
-
-	private boolean isDeletable(String fileName) {
-		for (String stub : delLocations ) {
-			if (fileName.startsWith(stub)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private void backup(ZipOutputStream out, File f, String entry)
-			throws IOException {
-		FileInputStream in = new FileInputStream(f);
-
-		// Add ZIP entry to output stream.
-		out.putNextEntry(new ZipEntry(entry));
-		byte[] buf = new byte[1024];
-
-		// Transfer bytes from the file to the ZIP file
-		int len;
-		while ((len = in.read(buf)) > 0) {
-			out.write(buf, 0, len);
-		}
-
-		// Complete the entry
-		out.closeEntry();
-		in.close();
-
-	}
-	
+            //And finally copy the contents
+            UpdateUtil.copyFolder( srcFolder, destFolder );
+        }
+    }
 
 }
