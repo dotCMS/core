@@ -33,13 +33,14 @@ public class Task00805AddRenameFolderProcedure extends AbstractJDBCStartupTask {
 				"DECLARE @hostInode varchar(100)\n" +
 				"DECLARE @ident varchar(100)\n" +
 				"DECLARE folder_cur_Updated cursor LOCAL FAST_FORWARD for\n" +
-				 "Select identifier,name\n" +
-				 "from inserted\n" +
-				 "for Read Only\n" +
-				 "open folder_cur_Updated\n" +
-				 "fetch next from folder_cur_Updated into @ident,@newName\n" +
-				 "while @@FETCH_STATUS <> -1\n" +
-				 "BEGIN\n" +
+				" Select inserted.identifier,inserted.name\n" +
+				" from inserted join deleted on (inserted.inode=deleted.inode)\n" +
+				" where inserted.name<>deleted.name\n"+
+				" for Read Only\n" +
+				" open folder_cur_Updated\n" +
+				" fetch next from folder_cur_Updated into @ident,@newName\n" +
+				" while @@FETCH_STATUS <> -1\n" +
+				" BEGIN\n" +
 				     "SELECT @oldPath = parent_path+asset_name+'/',@newPath = parent_path +@newName+'/',@hostInode = host_inode from identifier where id = @ident\n" +
 				     "UPDATE identifier SET asset_name = @newName where id = @ident\n" +
 				     "EXEC renameFolderChildren @oldPath,@newPath,@hostInode\n" +
