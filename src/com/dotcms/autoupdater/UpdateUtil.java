@@ -85,7 +85,11 @@ public class UpdateUtil {
                         int count;
                         byte data[] = new byte[BUFFER];
 
-                        String entryName = entry.getName().replace( UpdateAgent.FOLDER_HOME_DOTSERVER + File.separator, "" );
+                        /***************************************************************
+                         * ZIP ENTRY FILES MUST HAVE '/' AS SEPARATOR ON ANY PLATFORM *
+                         ***************************************************************/
+
+                        String entryName = entry.getName().replace( UpdateAgent.FOLDER_HOME_DOTSERVER + '/', "" );
                         File destFile = new File( home + File.separator + entryName );
                         UpdateAgent.logger.debug( destFile.getAbsoluteFile() );
 
