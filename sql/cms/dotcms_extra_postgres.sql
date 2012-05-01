@@ -533,7 +533,7 @@ DECLARE
    old_name varchar(100);
    hostInode varchar(100);
 BEGIN
-   IF (tg_op = ''UPDATE'') THEN
+   IF (tg_op = ''UPDATE'' AND NEW.name<>OLD.name) THEN
       select asset_name,parent_path,host_inode INTO old_name,old_parent_path,hostInode from identifier where id = NEW.identifier;
       old_path := old_parent_path || old_name || ''/'';
       new_path := old_parent_path || NEW.name || ''/'';
