@@ -159,7 +159,7 @@ public class Task00805AddRenameFolderProcedure extends AbstractJDBCStartupTask {
 		          "old_name varchar(100);\n" +
 		          "hostInode varchar(100);\n" +  
 		       "BEGIN\n" +
-		          "IF (tg_op = ''UPDATE'') THEN\n" +   
+		          "IF (tg_op = ''UPDATE'' AND NEW.name<>OLD.name) THEN\n" +   
 		            "select asset_name,parent_path,host_inode INTO old_name,old_parent_path,hostInode from identifier where id = NEW.identifier;\n" +   
 		              "old_path := old_parent_path || old_name || ''/'';\n" +   
 		              "new_path := old_parent_path || NEW.name || ''/'';\n"+     
