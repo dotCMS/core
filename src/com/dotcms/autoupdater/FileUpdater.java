@@ -168,6 +168,8 @@ public class FileUpdater {
                 // At this point we should try to use the build file we got from the update zip
                 File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
 
+                //TODO: Windows will lock the bin jars are the are used by the ant file, so, lets remove it manually
+                /*
                 //Create the ant invoker
                 boolean success;
                 AntInvoker invoker = new AntInvoker( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER );
@@ -178,7 +180,21 @@ public class FileUpdater {
                     buildFile.delete();
                 } else {
                     success = invoker.runTask( "clean", null );
+                }*/
+
+                Boolean success = true;
+
+                //Deleting if exist the extracted build file
+                if ( buildFile.exists() ) {
+                    success = buildFile.delete();
                 }
+
+                //Deleting manually the bin folder on the autoupdater directory
+                File binFolder = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" );
+                if (binFolder.exists()) {
+                    success = UpdateUtil.deleteDirectory( binFolder );
+                }
+
                 logger.debug( "Finished to clean update process traces." );
 
 
