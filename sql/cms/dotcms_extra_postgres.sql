@@ -689,7 +689,7 @@ create table indicies (
 );
 -- ****** Log Console Table *******
   CREATE TABLE log_mapper (
-    enabled   	 int8(1,0) NOT null,
+    enabled   	 numeric(1,0) NOT null,
     log_name 	 varchar(30) NOT null,
     description  varchar(50) NOT null,
     primary key (log_name)
