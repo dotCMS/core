@@ -7,7 +7,7 @@
 	<!-- Load version props -->
 	<property file="src/com/liferay/portal/util/build.properties"/>
 	<property file="test/build.properties" />
-	
+
 	<!-- vars -->
 	<property name="src.dir" value="src" />
 	<property name="src.conf.dir" value="src-conf" />
@@ -45,14 +45,16 @@
 	<property name="distribution.output" value="../dist" />
 	<property name="ant.build.javac.target" value="1.5"/>
 	<property name="war.name" value="dotcms"/>
-	<property name="build.temp" value="build_temp" />
 	<property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
 	<property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
 	<property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
-	<property name="agent.version" value="28"/>
-	
+	<property name="agent.version" value="29"/>
+
 	<property name="plugin.root.dir.default" value="${basedir}/dotCMS"/>
 	<property name="plugin.jar.deploy.dir.default" value="${basedir}/../../dotCMS/WEB-INF/lib" />
+
+	<property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
+	<property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
 
 
 	<path id="build-classpath">
@@ -94,12 +96,12 @@
 		<mkdir dir="${build.classes}" />
 		<mkdir dir="${build.lib}" />
 	</target>
-	
+
 	<target name="clean-tinymce-gz" description="Removes all generated .gz pre-compressed files by tinymce_gzip.jsp">
 		<delete>
 			<fileset dir="dotCMS/html/js/tinymce/jscripts/tiny_mce/" includes="*.gz"/>
 		</delete>
-	</target>	                                                                
+	</target>
 
 	<target name="clean-core" description="Removes all compiled classes, jar." depends="check-src-build">
 		<replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
@@ -137,8 +139,8 @@
 
 	<target name="compile-anttasks" depends="prepare" description="Compiles source code need for clean and deploy plugins.">
 		<mkdir dir="${build.ant}" />
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.ant}" 
-			source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" 
+		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.ant}"
+			source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
 			memoryinitialsize="256m" memorymaximumsize="512m" >
 			<classpath refid="files-classpath" />
 			<include name="com/dotmarketing/plugin/ant/**"/>
@@ -149,8 +151,8 @@
 
 	<target name="compile-log4jappends" depends="prepare" description="Compiles source code need for our async appender.">
 		<mkdir dir="${build.log4j}" />
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}" 
-			source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" 
+		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}"
+			source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
 			memoryinitialsize="256m" memorymaximumsize="512m" >
 			<classpath refid="files-classpath" />
 			<include name="org/apache/log4j/appender/**"/>
@@ -202,7 +204,7 @@
 	<target name="jar-log4jtasks" depends="compile-log4jappends" description="Generates dotcms-log4j.jar in the 'tomcat/lib' directory.">
 		<jar jarfile="${build.lib}/dotcms_log4j.jar" basedir="${build.log4j}"/>
 	</target>
-	
+
 	<!-- Configure the directory into which the web application is built -->
 	<property name="build" value="build" />
 
@@ -291,16 +293,16 @@
 
 
 		<jasper2
-             validateXml="false" 
-             uriroot="dotCMS" 
+             validateXml="false"
+             uriroot="dotCMS"
              javaEncoding="UTF-8"
-             webXmlFragment="dotCMS/WEB-INF/generated_web.xml" 
+             webXmlFragment="dotCMS/WEB-INF/generated_web.xml"
              outputDir="${src.jsp}/">
 
 		</jasper2>
-		<javac debug="true" debuglevel="lines,vars,source" 
-		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.5" 
-		target="1.5" compiler="javac1.5" nowarn="true" optimize="true" 
+		<javac debug="true" debuglevel="lines,vars,source"
+		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.5"
+		target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
 		memoryinitialsize="256m" memorymaximumsize="512m">
 			<classpath refid="files-classpath" />
 		</javac>
@@ -396,15 +398,16 @@
 
 		<antcall target="deploy-core" />
 
-		<copy todir="${distribution.output}">
+        <!--dotserver code (./dotserver)-->
+        <copy todir="${distribution.dotserver.output}">
 			<fileset dir=".">
 				<exclude name="**/.svn" />
 				<exclude name="tomcat/logs/**" />
 				<exclude name="dotCMS/WEB-INF/dotlucene/**" />
 				<exclude name="dotCMS/assets/**" />
 				<exclude name="dotCMS/dotsecure/**" />
-				
-				<exclude name="dotCMS/html/js/dojo/src/**" />
+                <exclude name="bin/autoupdater/**" />
+                <exclude name="dotCMS/html/js/dojo/src/**" />
 				<exclude name="tomcat/temp/**" />
 				<exclude name="build/**" />
 				<exclude name="tomcat/work/**" />
@@ -414,14 +417,60 @@
 				<exclude name=".settings/**" />
 			</fileset>
 		</copy>
-		<mkdir dir="${distribution.output}/tomcat/logs" />
-		<mkdir dir="${distribution.output}/tomcat/temp" />
+		<mkdir dir="${distribution.dotserver.output}/tomcat/logs" />
+	  	<mkdir dir="${distribution.dotserver.output}/tomcat/temp" />
+
+        <!--autoupdater code (./autoupdater)-->
+        <copy todir="${distribution.autoupdater.output}">
+            <fileset dir="bin/autoupdater"/>
+        </copy>
 
 		<antcall target="javadoc" />
 
 		<zip destfile="${distribution.output}/../dotcms_${dotcms.release.version}.zip" basedir="${distribution.output}" />
 		<delete dir="${distribution.output}" />
 	</target>
+
+	<target name="create-update-dist" description="creates a zip file for dbs that autoincrement like MSSQL and MySQL distribution">
+
+			<antcall target="clean" />
+
+			<antcall target="deploy-core" />
+
+			<!--dotserver code (./dotserver)-->
+		 	<copy todir="${distribution.dotserver.output}">
+				<fileset dir=".">
+					<exclude name="**/.svn" />
+					<exclude name="tomcat/logs/**" />
+					<exclude name="dotCMS/WEB-INF/dotlucene/**" />
+					<exclude name="dotCMS/assets/**" />
+					<exclude name="dotCMS/dotsecure/**" />
+                    <exclude name="bin/autoupdater/**" />
+                    <exclude name="dotCMS/html/js/dojo/src/**" />
+					<exclude name="tomcat/temp/**" />
+					<exclude name="build/**" />
+					<exclude name="tomcat/work/**" />
+					<exclude name="src/**" />
+					<exclude name="test/**" />
+					<exclude name=".*" />
+					<exclude name=".settings/**" />
+					<exclude name="dotCMS/starter.zip" />
+				</fileset>
+			</copy>
+			<mkdir dir="${distribution.dotserver.output}/tomcat/logs" />
+		  	<mkdir dir="${distribution.dotserver.output}/tomcat/temp" />
+
+			<!--autoupdater code (./autoupdater)-->
+	        <copy todir="${distribution.autoupdater.output}">
+	            <fileset dir="bin/autoupdater"/>
+	        </copy>
+
+			<antcall target="javadoc" />
+
+			<zip destfile="${distribution.output}/../dotcms_${dotcms.release.version}.zip" basedir="${distribution.output}" />
+			<delete dir="${distribution.output}" />
+		</target>
+
 
 	<target name="javadoc" description="creates javadoc for dotCMS">
 		<javadoc maxmemory="1024m" packagenames="com.dotmarketing.*" sourcepath="${src.dir}" excludepackagenames="com.dummy.test.doc-files.*" defaultexcludes="yes" destdir="dotCMS/api" author="true" version="true" use="true" windowtitle="dotCMS API">
@@ -455,7 +504,7 @@
 
 
 <target name="war-file" description="builds dotCMS as a war">
-	
+
 	<mkdir dir="${build.war}"/>
 
 	<zip destfile="${build.war}/${war.name}.war">
@@ -500,7 +549,7 @@
 	<mkdir dir="${instrumented.dir}"/>
 	<emma enabled="true" >
 		<instr instrpathref="build-classpath"
-		           destdir="${instrumented.dir}"	
+		           destdir="${instrumented.dir}"
 		           metadatafile="${coverage.dir}/metadata.emma"
 		           merge="true">
 			<filter value="com.dotmarketing.*"/>
@@ -508,7 +557,7 @@
 		</instr>
 	</emma>
 </target>
-	
+
 <taskdef resource="cactus.tasks">
   <classpath>
     <pathelement location="${lib.app}/cactus.core.framework.uberjar.javaEE.14-1.8.0.jar"/>
@@ -532,18 +581,18 @@
 		    testtarget="test-all-junits"/>
 		<antcall target="restore-files"/>
 		<antcall target="drop-db"/>
-	</target>	
-	
+	</target>
+
 	<!-- Hit the tests servlet to run all the unit tests of the application -->
 	<target name="test-all-junits" depends="">
-		<condition property="get.ok">  
+		<condition property="get.ok">
 		<http url="http://localhost:${server.port}/servlet/test" errorsbeginat="400">
-		</http>  
-		</condition>  
+		</http>
+		</condition>
 		<fail unless="get.ok" message="One or more tests failed!!!" />
 		<echo message="dotCMS successfully tested"/>
-	</target>	
-		
+	</target>
+
 	<target name="tomcat-start" >
 		<java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
 	        <jvmarg value="-Dcatalina.home=tomcat"/>
@@ -557,7 +606,7 @@
 	        </classpath>
 	    </java>
 	</target>
-	
+
 	<target name="tomcat-stop">
 		 <java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
 	        <jvmarg value="-Dcatalina.home=tomcat"/>
@@ -569,8 +618,8 @@
 	        </classpath>
 	    </java>
 	</target>
-	
-	<!-- Creates an empty db. Attributes are defined in the build.properties file -->	
+
+	<!-- Creates an empty db. Attributes are defined in the build.properties file -->
 	<target name="create-db" >
 		<sql driver="org.postgresql.Driver"
 			url="${db.base.url}"
@@ -582,8 +631,8 @@
 			CREATE DATABASE ${db.name};
 		</sql>
 	</target>
-	
-	<!-- Drops the test db. Attributes are defined in the build.properties file -->	
+
+	<!-- Drops the test db. Attributes are defined in the build.properties file -->
 	<target name="drop-db" >
 				<sql driver="org.postgresql.Driver"
 					url="${db.base.url}"
@@ -596,8 +645,8 @@
 				</sql>
 			</target>
 
-	<!-- Prepare and relocate the server.xml and ROOT.xml used for the test while backing up the originals -->	
-	<!-- The db attributes and tomcat port is defined in the build.properties file -->	
+	<!-- Prepare and relocate the server.xml and ROOT.xml used for the test while backing up the originals -->
+	<!-- The db attributes and tomcat port is defined in the build.properties file -->
 	<target name="set-properties" depends="">
 		<move file="tomcat/conf/server.xml" tofile="${src.tests.dir}/server-orig.bck"/>
 		<move file="tomcat/conf/Catalina/localhost/ROOT.xml" tofile="${src.tests.dir}/ROOT-orig.bck"/>
@@ -610,8 +659,8 @@
 			<replacefilter token="{password}" value="${db.password}"/>
 		</replace>
 	</target>
-	
-	<!-- Reestablish the original server.xml and ROOT.xml files -->	
+
+	<!-- Reestablish the original server.xml and ROOT.xml files -->
 	<target name="restore-files" depends="">
 		<move file="${src.tests.dir}/server-orig.bck" tofile="tomcat/conf/server.xml" overwrite="true"/>
 		<move file="${src.tests.dir}/ROOT-orig.bck" tofile="tomcat/conf/Catalina/localhost/ROOT.xml" overwrite="true"/>
@@ -792,18 +841,18 @@
 <target name="-check-use-file">
    <available property="file.exists" file="build.properties"/>
 </target>
-	
+
 <target name="use-file" depends="-check-use-file" if="file.exists">
 	<loadproperties srcFile="build.properties"/>
-</target>	
-	
-	
+</target>
+
+
 <target name="setup-deploy-location" depends="use-file" description="sets up the locations where to deploy">
 	<condition property="plugin.root.dir"  value="${target.root}" else="${plugin.root.dir.default}">
-		<isset property="target.root"/> 
+		<isset property="target.root"/>
 	</condition>
 	<condition property="plugin.jar.deploy.dir"  value="${target.root}/WEB-INF/lib" else="${plugin.root.dir.default}/WEB-INF/lib">
-		<isset property="target.root"/> 
+		<isset property="target.root"/>
 	</condition>
 	<echo>Deploying plugins to: ${plugin.root.dir} | ${plugin.jar.deploy.dir}</echo>
 </target>
@@ -815,15 +864,15 @@
 		<dirset dir="plugins" includes="*"/>
 		<property name="plugin.root.dir" value="${plugin.root.dir}"/>
 		<property name="plugin.jar.deploy.dir" value="${plugin.jar.deploy.dir}"/>
-				
+
 	</subant>
 	<taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
 		<classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath">
 		</classpath>
 	</taskdef>
 	<echo>Deploying plugins from: ${plugin.root.dir}</echo>
-			
-		
+
+
 	<plugin-deploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
 </target>
 
@@ -831,7 +880,7 @@
 	<copy  todir="${plugin.jar.deploy.dir}">
 		<fileset dir="build/jar/" />
 	</copy>
-	
+
 </target>
 
 <target name="undeploy-plugins" depends="setup-deploy-location" description="undeploys all plugins, returns overridden files to default state">
@@ -856,70 +905,44 @@
 	</delete>
 </target>
 
-
-<target name="prepare-temp">
-	<delete dir="${build.temp}"/>
-	<mkdir dir="${build.temp}"/>
-	<copy todir="${build.temp}">
-		<fileset dir="." >
-			<include name="src-conf/"/>
-			<include name="dotCMS/WEB-INF/lib/"/>
-			<include name="tomcat/lib/"/>
-			<include name="plugins/" />
-			<include name="bin/" />
-
-			<include name="dotCMS/"/>
-			<exclude name="**/.svn"/>
-			<exclude name="dotCMS/assets/"/>
-			<exclude name="dotCMS/WEB-INF/backup/"/>
-			<exclude name="dotCMS/dotsecure/"/>
-		</fileset>
-	</copy>
-</target>
-
-
-<target name="clean-temp">
-	<delete dir="${build.temp}"/>
-</target>
-
 <target name="check-src-build" description="Checks to see if a build-core is possible. Fails if the src directory is missing or if the autoupdater is present. This prevents sourceless installs from running a clean" >
 	<available file="${src.dir}/com/dotmarketing" type="dir" property="src.dir.present" />
 	<fail message="Source directory not present. If trying to deploy plugins, please use bin/deploy-plugins.sh or bin/deploy-plugins.bat instead" unless="src.dir.present" />
 	<available file="bin/autoUpdater.jar" type="file" property="autoupdater.present" />
 	<fail message="Autoupdater present. If trying to deploy plugins, please use bin/deploy-plugins.sh or bin/deploy-plugins.bat instead" if="autoupdater.present" />
 </target>
-	
+
 <!--AUTO UPDATER -->
-	
+
 <path id="autoupdater-classpath">
 	<fileset dir="${basedir}/bin/autoupdater/libs">
 		<include name="**/*.jar" />
 	</fileset>
-</path>	
+</path>
 
 <target name="build-autoupdater-classpath">
    <manifestclasspath property="autoupdater-jar-cp" jarfile="${dist.autoupdater}/autoUpdater.jar">
 	 <classpath refid="autoupdater-classpath" />
   </manifestclasspath>
 </target>
-	
+
 <target name="clean-autoupdater">
 	<delete file="${dist.autoupdater}/autoUpdater.jar" failonerror="false" />
 	<delete dir="${build.autoupdater}" failonerror="false"/>
 </target>
-	
+
 <target name="compile-autoupdater" depends="prepare" description="Compiles autoupdater source.">
 	<mkdir dir="${build.autoupdater}" />
-	<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}" 
-				source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" 
+	<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}"
+				source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
 				memoryinitialsize="256m" memorymaximumsize="512m" >
 				<classpath refid="files-classpath" />
 				<include name="com/dotcms/autoupdater/**"/>
 	</javac>
 	<copy file="${src.dir}/com/dotcms/autoupdater/update.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/update.properties" />
-	<copy file="${src.dir}/com/dotcms/autoupdater/messages.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/messages.properties" />	
+	<copy file="${src.dir}/com/dotcms/autoupdater/messages.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/messages.properties" />
 </target>
-	
+
 <target name="jar-autoupdater" depends="compile-autoupdater,build-autoupdater-classpath" description="Generates autoUpdater.jar in the 'autoupdater/dist' directory.">
 		<jar jarfile="${dist.autoupdater}/autoUpdater.jar" basedir="${build.autoupdater}">
 			<manifest>
@@ -930,10 +953,6 @@
 			</manifest>
 		</jar>
 </target>
-	
-		
+
+
 </project>
-
-
-
-
