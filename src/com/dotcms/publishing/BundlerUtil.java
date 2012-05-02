@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.thoughtworks.xstream.XStream;
@@ -21,6 +22,9 @@ public class BundlerUtil {
 	 * @return
 	 */
 	public static boolean bundleExists(PublisherConfig config){
+		if(config.getId() ==null){
+			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
+		}
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
 		
 		

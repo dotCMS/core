@@ -76,43 +76,43 @@ public class URLMapBundler implements IBundler {
 		}
 		StringBuilder bob = new StringBuilder("+languageid:" + config.getLanguage() + " " );
 		
+		// if we have no urlmap structures...
 		if(structsToAdd.size() ==0){
-
-			if(config.getExcludePatterns() != null && config.getExcludePatterns().size()>0){
-				for (String p : config.getExcludePatterns()) {
-					if(!UtilMethods.isSet(p)){
-						continue;
-					}
-					p = p.replace(" ", "+");
-					bob.append("-uri:" + p + " ");
-				}
-			}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
-				for (String p : config.getIncludePatterns()) {
-					if(!UtilMethods.isSet(p)){
-						continue;
-					}
-					p = p.replace(" ", "+");
-					bob.append("+uri:" + p + " ");
-				}
-			}
-
+			return;
 		}
-		else{
-			if(structsToAdd.size() > 0){
-				bob.append("+(" );
-				for(String s : structsToAdd){
-					
-					
-					Structure struc = StructureFactory.getStructureByInode(s);
-					
 
-					
-					bob.append("structureName:" + struc.getVelocityVarName() + " ");
+
+		bob.append("+(" );
+		for(String s : structsToAdd){
+			Structure struc = StructureFactory.getStructureByInode(s);
+			bob.append("structureName:" + struc.getVelocityVarName() + " ");
+		}
+		bob.append(") " );
+
+		if(config.getExcludePatterns() != null && config.getExcludePatterns().size()>0){
+			bob.append("-(" );
+			for (String p : config.getExcludePatterns()) {
+				if(!UtilMethods.isSet(p)){
+					continue;
 				}
-				bob.append(") " );
+				p = p.replace(" ", "+");
+				bob.append("uri:" + p + " ");
 			}
+			bob.append(") " );
+		}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
+			bob.append("+(" );
+			for (String p : config.getIncludePatterns()) {
+				if(!UtilMethods.isSet(p)){
+					continue;
+				}
+				p = p.replace(" ", "+");
+				bob.append("uri:" + p + " ");
+			}
+			bob.append(") " );
+		}
+		
 			
-		}
+		
 		
 		
 
@@ -124,7 +124,7 @@ public class URLMapBundler implements IBundler {
 			cal.set(Calendar.YEAR, 2500);
 			String start = ESMappingAPIImpl.datetimeFormat.format(config.getStartDate());
 			String forever = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
-			bob.append(" +versionTs:[" + start + " TO " + forever +"] ");
+			bob.append(" +versionts:[" + start + " TO " + forever +"] ");
 		}
 		
 		if(config.getEndDate() != null){
@@ -133,7 +133,7 @@ public class URLMapBundler implements IBundler {
 			
 			String end = ESMappingAPIImpl.datetimeFormat.format(config.getEndDate());
 			String longAgo = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
-			bob.append(" +versionTs:[" + longAgo + " TO " + end +"] ");
+			bob.append(" +versionts:[" + longAgo + " TO " + end +"] ");
 		}
 		
 		
