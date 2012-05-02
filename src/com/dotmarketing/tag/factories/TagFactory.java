@@ -505,15 +505,20 @@ public class TagFactory {
 		try {
 			DotConnect dc = new DotConnect();
 			StringBuilder sb = new StringBuilder();
-			sb.append("select tag.tagname, tag.user_id from tag, user_ ");
-			sb.append("where tag.user_id = user_.userid ");
+			List<Tag> tags = new ArrayList<Tag>();
+
 			if(userIds!=null && !userIds.isEmpty()){
-				sb.append(" and user_.userid in (");
 				int count = 0;
+
 				for(String id:userIds){
+					if(count==0) {
+						sb.append("select tag.tagname, tag.user_id from tag, user_ ");
+						sb.append("where tag.user_id = user_.userid ");
+						sb.append(" and user_.userid in (");
+					}
 					if(count>0 && count%500==0){
-						count=0;
-						sb.append(") or user_.userid in (");
+						fetchUsers(dc, sb, tags);
+						break;
 					}
 					if(count>0){
 						sb.append(", '"+id+"'");
@@ -523,23 +528,9 @@ public class TagFactory {
 					count++;
 				}
 				sb.append(") ");
-			}
 
-			sb.append("order by tag.user_id");
-			dc.setSQL(sb.toString());
-
-			List<Tag> tags = new ArrayList<Tag>();
-			List<Map<String, Object>> results = (ArrayList<Map<String, Object>>)dc.loadResults();
-			for (int i = 0; i < results.size(); i++) {
-				Map<String, Object> hash = (Map<String, Object>) results.get(i);
-				if(!hash.isEmpty()){
-					String user_Id = (String) hash.get("user_id");
-					String tagName = (String) hash.get("tagname");
-					Tag tag = new Tag();
-					tag.setTagName(tagName);
-					tag.setUserId(user_Id);
-					tags.add(tag);
-
+				if(count==userIds.size()) {
+					fetchUsers(dc, sb, tags);
 				}
 			}
 
@@ -549,6 +540,24 @@ public class TagFactory {
 			 Logger.warn(TagFactory.class, "getAllTagsForUsers failed:" + e, e);
 		}
 		return new ArrayList();
+	}
+
+	private static void fetchUsers(DotConnect dc, StringBuilder sb, List<Tag> tags) throws DotDataException {
+		sb.append("order by tag.user_id");
+		dc.setSQL(sb.toString());
+		List<Map<String, Object>> results = (ArrayList<Map<String, Object>>)dc.loadResults();
+
+		for (int i = 0; i < results.size(); i++) {
+			Map<String, Object> hash = (Map<String, Object>) results.get(i);
+			if(!hash.isEmpty()){
+				String user_Id = (String) hash.get("user_id");
+				String tagName = (String) hash.get("tagname");
+				Tag tag = new Tag();
+				tag.setTagName(tagName);
+				tag.setUserId(user_Id);
+				tags.add(tag);
+			}
+		}
 	}
 
 	/**
