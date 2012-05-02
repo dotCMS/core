@@ -265,20 +265,25 @@ boolean hasPath = false;
 		<tr>
 			<td align="center" valign="top" nowrap="true" colspan="2">
 	
-				<div class="buttonRow">
-					<div class="showScheduler" style='<%=(runNow) ? "display: none; " : "" %>;padding:10px;'>
+				<div class="buttonRow" style="white-space: nowrap;">
+					<span class="showScheduler" style='<%=(runNow) ? "display: none; " : "" %>;'>
 						<button dojoType="dijit.form.Button"
 							id="saveButton" onClick="scheduleJob()"
 							iconClass="calListIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Schedule")) %>
 						</button>
-					</div>
+					</span>
 
-					<div class="showRunNow" style='<%=(!runNow) ? "display: none; " : "" %>;padding:10px;'>
+					<span class="showRunNow" style='<%=(!runNow) ? "display: none; " : "" %>'>
 						<button dojoType="dijit.form.Button"
 							id="saveAndExecuteButton" onClick="scheduleJob();"
 							iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
 						</button>
-					</div>
+					</span>
+					&nbsp; &nbsp; 
+					<button dojoType="dijit.form.Button"
+						id="cacnelButton" onClick="refreshJobsListingPane();"
+						iconClass="cancelIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+					</button>
 				</div>
 			</td>
 		</tr>
