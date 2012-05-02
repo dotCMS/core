@@ -659,27 +659,25 @@ public class UpdateAgent {
                 DownloadProgress downloadProgress = new DownloadProgress( length );
 
                 //Initializing the download.....
-                InputStream is;
-                byte[] buf;
-                int ByteRead, ByteWritten = 0;
-                OutputStream outStream = new BufferedOutputStream( new FileOutputStream( outputFile ) );
+                InputStream is = urlConnection.getInputStream();
+                OutputStream outStream = new FileOutputStream( outputFile );
 
-                is = urlConnection.getInputStream();
-                buf = new byte[length];
-                while ( ( ByteRead = is.read( buf ) ) != -1 ) {
-                    outStream.write( buf, 0, ByteRead );
-                    ByteWritten += ByteRead;
+                byte[] buffer = new byte[1024];
+                int bytesRead, bytesWritten = 0;
+                while ( ( bytesRead = is.read( buffer ) ) != -1 ) {
+                    outStream.write( buffer, 0, bytesRead );
+                    bytesWritten += bytesRead;
 
                     //Keep tracking of the download status
                     long currentTime = System.currentTimeMillis();
                     if ( ( currentTime - startTime ) > refreshInterval ) {
-                        String message = downloadProgress.getProgressMessage( ByteWritten, startTime, currentTime );
+                        String message = downloadProgress.getProgressMessage( bytesWritten, startTime, currentTime );
                         startTime = currentTime;
                         System.out.print( "\r" + message );
                     }
                 }
 
-                String message = downloadProgress.getProgressMessage( ByteWritten, startTime, System.currentTimeMillis() );
+                String message = Messages.getString( "UpdateAgent.text.download.complete" );
                 System.out.print( "\r" + message );
                 System.out.println( "" );
                 outStream.close();
