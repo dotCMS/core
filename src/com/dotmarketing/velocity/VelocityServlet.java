@@ -269,6 +269,7 @@ public abstract class VelocityServlet extends HttpServlet {
 				Logger.error(this, e.getMessage(), e);
 			}
 			DbConnectionFactory.closeConnection();
+			velocityCtx.remove();
 		}
 		if (profileTime != null) {
 			profileTime = Calendar.getInstance().getTimeInMillis() - profileTime;
