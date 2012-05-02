@@ -505,8 +505,9 @@ DECLARE @newName varchar(100)
 DECLARE @hostInode varchar(100)
 DECLARE @ident varchar(100)
 DECLARE folder_cur_Updated cursor LOCAL FAST_FORWARD for
- Select identifier,name
- from inserted
+ Select inserted.identifier,inserted.name
+ from inserted join deleted on (inserted.inode=deleted.inode)
+ where inserted.name<>deleted.name
  for Read Only
 open folder_cur_Updated
 fetch next from folder_cur_Updated into @ident,@newName

@@ -1,4 +1,4 @@
-package com.dotmarketing.util;
+package org.apache.log4j.appender;
 
 import java.io.IOException;
 import java.util.HashMap;
