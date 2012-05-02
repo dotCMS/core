@@ -96,7 +96,7 @@ public class UpdateAgent {
 
             String newMinor = "";
             String version = getVersion();
-            String minor = getMinor();
+            String minor = UpdateUtil.getBuildVersion( getJarProps() );
             /*SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
             backupFile = line.getOptionValue( UpdateOptions.BACKUP, "update_backup_b" + minor + "_" + sdf.format( new Date() ) + ".zip" );
             if ( !backupFile.endsWith( ".zip" ) ) {
@@ -112,7 +112,11 @@ public class UpdateAgent {
             //Verify if the user specified a version to update to
             if ( line.hasOption( UpdateOptions.SPECIFIC_VERSION ) ) {
 
-                logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " Version " + line.getOptionValue( UpdateOptions.SPECIFIC_VERSION ) );
+                if ( minor != null ) {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " Version " + line.getOptionValue( UpdateOptions.SPECIFIC_VERSION ) );
+                } else {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " Version " + line.getOptionValue( UpdateOptions.SPECIFIC_VERSION ) );
+                }
 
                 Map<String, String> map = new HashMap<String, String>();
                 map.put( "version", version );
@@ -133,7 +137,7 @@ public class UpdateAgent {
                             if ( minorArr.length > 1 ) {
                                 logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] + " / " + minorArr[1] );
                             } else {
-                                logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + newMinor );
+                                logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
                             }
                             logger.info( " " );
                         } else {
@@ -199,7 +203,12 @@ public class UpdateAgent {
             //Verify if the user provided an update file
             else if ( line.hasOption( UpdateOptions.FILE ) ) {
 
-                logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " file " + line.getOptionValue( UpdateOptions.FILE ) );
+                if ( minor != null ) {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " file " + line.getOptionValue( UpdateOptions.FILE ) );
+                } else {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " file " + line.getOptionValue( UpdateOptions.FILE ) );
+                }
+
                 // Use user provided file
                 updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + line.getOptionValue( UpdateOptions.FILE ) );
                 if ( !updateFile.exists() ) {
@@ -208,10 +217,14 @@ public class UpdateAgent {
 
                 // Get the version locally
                 String fileMajor = UpdateUtil.getFileMayorVersion( updateFile );
-                Integer fileMinor = UpdateUtil.getFileMinorVersion( updateFile );
+                String fileMinor = UpdateUtil.getFileMinorVersion( updateFile );
 
-                logger.info( Messages.getString( "UpdateAgent.text.file.version" ) + version + " / " + fileMinor );
-                newMinor = fileMinor + "";
+                if ( fileMinor != null ) {
+                    logger.info( Messages.getString( "UpdateAgent.text.file.version" ) + fileMajor + " / " + fileMinor );
+                    newMinor = fileMinor;
+                } else {
+                    logger.info( Messages.getString( "UpdateAgent.text.file.version" ) + fileMajor );
+                }
 
                 logger.info( " " );
 
@@ -230,7 +243,11 @@ public class UpdateAgent {
                 }
 
                 // Download update file
-                logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor );
+                if ( minor != null ) {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor );
+                } else {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version );
+                }
 
                 if ( updateFile == null ) {
 
@@ -252,7 +269,7 @@ public class UpdateAgent {
                                 if ( minorArr.length > 1 ) {
                                     logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] + " / " + minorArr[1] );
                                 } else {
-                                    logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + newMinor );
+                                    logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
                                 }
                                 logger.info( " " );
                             } else {
@@ -482,12 +499,6 @@ public class UpdateAgent {
         return props.getProperty( "dotcms.release.version" );
     }
 
-    private String getMinor () throws IOException, UpdateException {
-
-        Properties props = getJarProps();
-        return props.getProperty( "dotcms.release.build" );
-    }
-
     /**
      * Will verify for some requires files on this update, specially the ant jars require then to run our ant tasks
      *
@@ -645,8 +656,15 @@ public class UpdateAgent {
 
                 String downloadMessage = Messages.getString( "UpdateAgent.text.downloading" );
                 if ( newMinor != null ) {
+
                     downloadMessage += Messages.getString( "UpdateAgent.text.new.minor" );
-                    downloadMessage += newMinor;
+
+                    String[] minorArr = newMinor.split( "_" );
+                    if ( minorArr.length > 1 ) {
+                        downloadMessage += minorArr[0] + " / " + minorArr[1];
+                    } else {
+                        downloadMessage += minorArr[0];
+                    }
                 }
                 if ( length > 0 ) {
                     downloadMessage += " (" + length / 1024 + "kB)";
