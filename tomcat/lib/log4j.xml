@@ -98,7 +98,7 @@
             </layout>
     </appender>    
     
-    <appender name="USERS_ACTIVITY" class="com.dotmarketing.util.RollingNewFileAppender">
+    <appender name="USERS_ACTIVITY" class="org.apache.log4j.appender.RollingNewFileAppender">
             <param name="File" value="${catalina.home}/logs/dotcms-userActivity.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
