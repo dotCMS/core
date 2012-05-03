@@ -13,6 +13,10 @@
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
+
+<!-- AChecker support -->
+<script type='text/javascript' src='/dwr/interface/ACheckerDWR.js'></script>
+
 <script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
 <%if(Config.getBooleanProperty("ENABLE_GZIP",true)){ %>
 <script type="text/javascript" src="/html/js/tinymce/jscripts/tiny_mce/tiny_mce_gzip.js"></script>
@@ -27,25 +31,25 @@
 	dojo.require("dotcms.dijit.form.FileAjaxUploader");
 	dojo.require("dotcms.dijit.FileBrowserDialog");
 	dojo.require("dojo.dnd.Source");
-	
+
 <% User usera= com.liferay.portal.util.PortalUtil.getUser(request); %>
-	if(<%=Config.getBooleanProperty("ENABLE_GZIP",true) %>){		
+	if(<%=Config.getBooleanProperty("ENABLE_GZIP",true) %>){
 		tinyMCE_GZ.init({
 			plugins : 'style,layer,table,save,advhr,advimage,advlink,emotions,iespell,insertdatetime,preview,media,searchreplace,print,contextmenu',
 			themes : 'simple,advanced',
 			languages : '<%= usera.getLanguageId().substring(0,2) %>',
 			disk_cache : true,
 			debug : false
-			
+
 		});
-	}else{		
+	}else{
 		tinyMCE.init({
 			plugins : 'style,layer,table,save,advhr,advimage,advlink,emotions,iespell,insertdatetime,preview,media,searchreplace,print,contextmenu',
 			themes : 'simple,advanced',
 			languages : '<%= usera.getLanguageId().substring(0,2) %>',
 			disk_cache : true,
 			debug : false
-			
+
 		});
 	}
 </script>
@@ -58,19 +62,19 @@ var cmsfile=null;
 		this.moveTo(coordinates[0] + 10, coordinates[1]);
 		this.show();
 	}
-	
+
 	function hideHint(jsevent) {
 		this.hide();
 	}
-	
+
 	//Date/Time fields
-	function updateDate(varName) {		
+	function updateDate(varName) {
 		var field = $(varName);
 		var dateValue ="";
 		var myDate = dijit.byId(varName + "Date");
 		var x = new Date();
 		if(myDate != null){
-			x = myDate.getValue(); 
+			x = myDate.getValue();
 		}
 		var month = (x.getMonth() +1) + "";
 		month = (month.length < 2) ? "0" + month : month;
@@ -85,11 +89,11 @@ var cmsfile=null;
 			if(hour < 10) hour = "0" + hour;
 			var min = time.getMinutes();
 			if(min < 10) min = "0" + min;
-			dateValue += hour + ":" + min; 
+			dateValue += hour + ":" + min;
 		} else {
 			dateValue += "00:00";
 		}
-		
+
 		field.value = dateValue;
 	}
 
@@ -99,20 +103,20 @@ var cmsfile=null;
 	    	})
 	    	var dt = dojo.byId(x+'dt');
 	    	dt.innerHTML = '';
-	    	
+
 	    	//http://jira.dotmarketing.net/browse/DOTCMS-5802
 	 	    ContentletAjax.removeSiblingBinaryFromSession(x, null);
-	   
+
 	    	if(inode){
 	    	   FileAssetAjax.removeTempFile(inode, null);
 	    	}
-	 	
+
 	    }
 
-	
-	
-	
-	
+
+
+
+
 	function isInteger(s)
 	   {
 	      var i;
@@ -140,22 +144,22 @@ var cmsfile=null;
 	   {
 	      return ((c >= "0") && (c <= "9"))
 	   }
-		
+
 
 	function updateAmPm(varName) {
 		var hour = dijit.byId(varName + 'Hour').value;
 		if(hour > 11) {
-			$(varName + 'AMPM').update("PM");	
+			$(varName + 'AMPM').update("PM");
 		} else {
-			$(varName + 'AMPM').update("AM");	
+			$(varName + 'AMPM').update("AM");
 		}
 	}
 
-	function daysInMonth(month,year) 
-	{   		
-		return 32 - new Date(year,month,32).getDate(); 
+	function daysInMonth(month,year)
+	{
+		return 32 - new Date(year,month,32).getDate();
 	}
-	
+
 </script>
 
 <script type="text/javascript">
@@ -164,12 +168,12 @@ var cmsfile=null;
 	//### TINYMCE ###
 
 
-											
+
 	var enabledWYSIWYG = new Array();
 	var enabledCodeAreas = new Array();
-	
 
-	
+
+
 	function enableDisableWysiwygCodeOrPlain(id) {
 		var toggleValue=dijit.byId(id+'_toggler').attr('value');
 		if (toggleValue=="WYSIWYG"){
@@ -196,12 +200,12 @@ var cmsfile=null;
 			//Updating the list of disabled wysiwyg list
 			var elementWysiwyg = document.getElementById("disabledWysiwyg");
 			var wysiwygValue = elementWysiwyg.value;
-	
+
 			var result = "";
 			if(wysiwygValue != "")
 			{
 				var wysiwygValueArray = wysiwygValue.split(",");
-				
+
 				for(i = 0;i < wysiwygValueArray.length;i++)
 				{
 					var number = wysiwygValueArray[i];
@@ -219,7 +223,7 @@ var cmsfile=null;
 			elementWysiwyg.value = result;
 		}
 	}
-	
+
 	function toCodeArea(id) {
 		if(enabledWYSIWYG[id]){
 			disableWYSIWYG(id);
@@ -230,35 +234,35 @@ var cmsfile=null;
 
 	function toWYSIWYG(id) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg")) %>'))
-        {   
+        {
 			if(enabledCodeAreas[id]){
 				codeMirrorRemover(id);
 			}
 			enableWYSIWYG(id, false);
 		}
 	}
-	
+
 	function enableWYSIWYG(textAreaId, confirmChange)
 	{
         if(!isWYSIWYGEnabled(textAreaId))
         {
         	//Confirming the change
-			if(confirmChange == true && 
+			if(confirmChange == true &&
 				!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg.view")) %>'))
 			{
 				return;
 			}
 
-			
-			//Updating the disabled wysiwyg list 
+
+			//Updating the disabled wysiwyg list
 			var elementWysiwyg = document.getElementById("disabledWysiwyg");
 			var wysiwygValue = elementWysiwyg.value;
 			var result = "";
-			
+
 			if(wysiwygValue != "")
 			{
-				var wysiwygValueArray = wysiwygValue.split(",");		
-					
+				var wysiwygValueArray = wysiwygValue.split(",");
+
 				for(i = 0; i < wysiwygValueArray.length; i++)
 				{
 					var number = wysiwygValueArray[i];
@@ -279,17 +283,17 @@ var cmsfile=null;
 			try
 			{
 				(new tinymce.Editor(textAreaId, tinyMCEProps)).render();
-				
+
 			}
 			catch(e)
 			{
 				showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
 			enabledWYSIWYG[textAreaId] = true;
-			
+
 		}
 	}
-	
+
 	function disableWYSIWYG(textAreaId)
 	{
 
@@ -298,12 +302,12 @@ var cmsfile=null;
 			//Updating the list of disabled wysiwyg list
 			var elementWysiwyg = document.getElementById("disabledWysiwyg");
 			var wysiwygValue = elementWysiwyg.value;
-	
+
 			var result = "";
 			if(wysiwygValue != "")
 			{
 				var wysiwygValueArray = wysiwygValue.split(",");
-				
+
 				for(i = 0;i < wysiwygValueArray.length;i++)
 				{
 					var number = wysiwygValueArray[i];
@@ -315,18 +319,18 @@ var cmsfile=null;
 			}
 			result += textAreaId;
 			elementWysiwyg.value = result;
-			
-			//Disabling the control	
+
+			//Disabling the control
 			tinymce.EditorManager.get(textAreaId).remove();
 			enabledWYSIWYG[textAreaId] = false;
 		}
 	}
-	
+
 	function isWYSIWYGEnabled(id)
 	{
 		return (enabledWYSIWYG[id]);
 	}
-	
+
 	//WYSIWYG special functions
 	function cmsURLConverter (url, node, on_save) {
 		var idx = url.indexOf('#');
@@ -337,7 +341,7 @@ var cmsfile=null;
 			returl = url.substring(idx, url.length);
 		} else {
 			returl = url;
-		} 
+		}
 		return returl;
 	}
 
@@ -345,7 +349,7 @@ var cmsfile=null;
 	var wysiwyg_url;
 	var wysiwyg_type;
 	var wysiwyg_win;
-	
+
 	function cmsFileBrowser(field_name, url, type, win) {
 		wysiwyg_win = win;
 		wysiwyg_field_name = field_name;
@@ -358,9 +362,9 @@ var cmsfile=null;
 		dojo.style(dojo.query('.clearlooks2')[0], { zIndex: '100' })
 		dojo.style(dojo.byId('mceModalBlocker'), { zIndex: '90' })
 	}
-	
+
 	//Glossary terms search
-	
+
 	var glossaryTermId;
 	var lastGlossarySearch;
 
@@ -368,7 +372,7 @@ var cmsfile=null;
 
         glossaryTermId = textAreaId;
 
-	
+
 		var gt = dojo.byId("glossary_term_" + textAreaId);
 		var toSearch = dojo.byId("glossary_term_" + textAreaId).value;
 	    var menu = dojo.byId("glossary_term_popup_" + textAreaId);
@@ -381,17 +385,17 @@ var cmsfile=null;
 	        ContentletAjax.doSearchGlossaryTerm(lastGlossarySearch, language, lookupGlossaryTermReply);
 	    }
 	}
-	
+
 	function lookupGlossaryTermReply(data) {
-		
+
 	    if (!data) {
 	    	return;
 	    }
 
 		var glossaryTermsTable = dojo.byId("glossary_term_table_" + glossaryTermId);
-		
+
 		var strHTML = "";
-					    
+
 		if (data.length > 0) {
 			strHTML = '<table class="listingTable" style="width: 300px;">' +
 				'<tr><th><%= LanguageUtil.get(pageContext, "Term") %></th>' +
@@ -413,13 +417,13 @@ var cmsfile=null;
 	    } else {
 		    strHTML = "<table border='0' cellpadding='4' cellspacing='0' class='beta glosaryTermsTable'><tbody><tr class=\"beta\"><td class=\"beta\"><%= LanguageUtil.get(pageContext, "There-are-no-dictionary-terms-that-matched-your-search") %></td></tr></tbody></table>";
 	    }
-	       
+
 	    dojo.byId("glossary_term_table_" + glossaryTermId).innerHTML = strHTML;
-	    
+
 	    dojo.style("glossary_term_popup_" + glossaryTermId, { display: "" });
-	    
+
 	}
-	
+
 	function clearGlossaryTermsDelayed() {
 		setTimeout('clearGlossaryTerms()', 500);
 	}
@@ -433,7 +437,7 @@ var cmsfile=null;
 		}
 		dwr.util.removeAllRows("glossary_term_table_" + glossaryTermId);
 	}
-	
+
 	function addGlossaryTerm(option) {
 		if(enabledWYSIWYG[glossaryTermId]) {
 			tinymce.EditorManager.get(glossaryTermId).save();
@@ -449,23 +453,23 @@ var cmsfile=null;
 		}
 		clearGlossaryTerms();
 	}
-	
+
 	//Links kind of fields
 	function popupEditLink(inode, varName) {
 	    editlinkwin = window.open('<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="edit" /><portlet:param name="popup" value="1" /></portlet:actionURL>&inode=' + inode + '&child=true&page_width=650', "editlinkwin", 'width=700,height=400,scrollbars=yes,resizable=yes');
 	}
-	
+
 	//Other functions
 	function popUpMacroHelp(){
 		openwin = window.open('http://www.dotcms.org/documentation/dotCMSMacros',"newin","menubar=1,width=1100,height=750,scrollbars=1,toolbar=1,status=0,resizable=1");
 	}
-	
-	function updateHostFolderValues(field){	
+
+	function updateHostFolderValues(field){
 	  if(!isInodeSet(dijit.byId('HostSelector').attr('value'))){
 		 dojo.byId(field).value = "";
 		 dojo.byId('hostId').value = "";
 		 dojo.byId('folderInode').value = "";
-	  }else{ 
+	  }else{
 		 var data = dijit.byId('HostSelector').attr('selectedItem');
 		 if(data["type"]== "host"){
 			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
@@ -475,18 +479,18 @@ var cmsfile=null;
 			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
 			dojo.byId('folderInode').value =  dijit.byId('HostSelector').attr('value');
 			dojo.byId('hostId').value = "";
-		}					
+		}
 	  }
-	}	 
+	}
 	var codeMirrorEditors = [];
-	
+
 	function codeMirrorArea(textarea){
 		var dim = dojo.coords(textarea);
 		var areaWidth = dim.w - 27;
 		var areaHeight = "400px";
 		codeMirrorEditors[textarea] = CodeMirror.fromTextArea(textarea, {
 			width: areaWidth,
-			height:areaHeight,    
+			height:areaHeight,
 			parserfile: ["parsedummy.js","parsexml.js", "parsecss.js", "tokenizejavascript.js", "parsejavascript.js", "parsehtmlmixed.js"],
 			stylesheet: ["/html/js/codemirror/css/xmlcolors.css", "/html/js/codemirror/css/jscolors.css", "/html/js/codemirror/css/csscolors.css"],
 			path: "/html/js/codemirror/js/",
@@ -494,7 +498,7 @@ var cmsfile=null;
 		});
 		enabledCodeAreas[textarea]=true;
 	}
-	 
+
 	function codeMirrorRemover(textarea){
 	    var editorText=codeMirrorEditors[textarea].getCode();
 	    removeElement(dojo.query('.'+textarea+'_codeMirror')[0].parentNode);
@@ -523,7 +527,7 @@ var cmsfile=null;
 			wysiwyg_win.document.forms[0].elements["href"].value = /dotAsset/ + ident;
 		}
 	}
-	
+
 	function addKVPair(fieldId, fieldValueId){
 		var node = dojo.byId(fieldId+'_kvtable');
 		var key = dijit.byId(fieldValueId+'_key').value;
@@ -558,11 +562,17 @@ var cmsfile=null;
 			var input = document.createElement("input");
 			input.type="hidden";
 			input.id=newRow.id+"_k";
+			if(key!=null && key!='') {
+				key = key.replace("\"","\\\"");
+			}
 			input.value=key;
 			table.appendChild(input);
 		    input = document.createElement("input");
 			input.type="hidden";
 			input.id=newRow.id+"_v";
+			if(value!=null && value!='') {
+				value = value.replace("\"","\\\"");
+			}
 			input.value=value;
 			table.appendChild(input);
 			var dndTable = new dojo.dnd.Source(node);
@@ -573,14 +583,14 @@ var cmsfile=null;
 			setKVValue(fieldId, fieldValueId);
 			dijit.byId(fieldValueId+'_key').reset();
 			dijit.byId(fieldValueId+'_value').reset();
-			
+
 		}
 	  }
 	}
-	
-	
+
+
 	function deleteKVPair(fieldId, fieldValueId, key){
-		
+
 		var table = document.getElementById(fieldId+'_kvtable');
 		var row = document.getElementById(fieldId+'_'+key);
 			if(row){
@@ -598,19 +608,19 @@ var cmsfile=null;
 			}
 			setKVValue(fieldId, fieldValueId);
 	}
-	
-	
+
+
 	function recolorTable(fieldId){
 		var table = document.getElementById(fieldId+'_kvtable');
 		var rowCount = table.rows.length;
 		for(var i=0; i<rowCount; i++) {
 			 var node = dojo.byId(table.rows[i].id);
-			 dojo.removeClass(node, 'alternate_1'); 
-             dojo.removeClass(node, 'alternate_2'); 
+			 dojo.removeClass(node, 'alternate_1');
+             dojo.removeClass(node, 'alternate_2');
 			 if( (i % 2) != 0 ){
 	             dojo.addClass(node, 'alternate_2');
 	         }else{
-	             dojo.addClass(node, 'alternate_1'); 
+	             dojo.addClass(node, 'alternate_1');
 	         }
 		 }
 	}
@@ -623,16 +633,16 @@ var cmsfile=null;
 			var rowId = table.rows[i].id;
 			var key = document.getElementById(rowId+'_k').value;
 			var value = document.getElementById(rowId+'_v').value;
-			jsonStr+= '"' + key + '"' + ":" + '"' + value + '"' + (i!=rowCount-1?",":"");	
+			jsonStr+= '"' + key + '"' + ":" + '"' + value + '"' + (i!=rowCount-1?",":"");
 		}
         jsonStr+="}";
         fieldValue.value=jsonStr;
-		
+
 	}
-	
+
 	function editText(inode) {
 		editTextManager.editText(inode);
 	}
-</script> 
+</script>
 
 

@@ -1,0 +1,17 @@
+<portlet>
+		<portlet-name>EXT_EXPCONTENT_TOOL</portlet-name>
+		<display-name>Expiry Content Tool</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+				<name>view-action</name>
+				<value>/ext/escalation/viewJobEsc</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+</portlet>

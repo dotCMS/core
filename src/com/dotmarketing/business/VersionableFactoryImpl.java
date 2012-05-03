@@ -215,6 +215,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
         cVer.setIdentifier(identifier.getId());
         cVer.setLang(lang);
         cVer.setWorkingInode(workingInode);
+        cVer.setVersionTs(new Timestamp(System.currentTimeMillis()));
+        
         HibernateUtil.save(cVer);
         icache.addContentletVersionInfoToCache(cVer);
         return cVer;
@@ -234,6 +236,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setLockedBy(null);
         ver.setLockedOn(new Date());
         ver.setWorkingInode(workingInode);
+        ver.setVersionTs(new Timestamp(System.currentTimeMillis()));
         HibernateUtil.save(ver);
         icache.addVersionInfoToCache(ver);
         return ver;
