@@ -108,6 +108,21 @@ public class UpdateUtil {
                     }
 
                 }
+            } else {
+
+                //This code is to be certain that empty files are going to be create them as well....
+                if ( directoryName == null || entry.getName().contains( directoryName ) ) {
+
+                    String entryName = entry.getName().replace( UpdateAgent.FOLDER_HOME_DOTSERVER + '/', "" );
+                    File destFile = new File( home + File.separator + entryName );
+
+                    if (!destFile.exists()) {
+
+                        destFile.mkdirs();
+                        UpdateAgent.logger.debug( destFile.getAbsoluteFile() );
+                    }
+
+                }
             }
         }
         ActivityIndicator.endIndicator();
