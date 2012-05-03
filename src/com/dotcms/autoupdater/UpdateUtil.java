@@ -148,15 +148,21 @@ public class UpdateUtil {
         throw new UpdateException( Messages.getString( "UpdateUtil.error.no.version" ), UpdateException.ERROR );
     }
 
-    public static Integer getFileMinorVersion ( File zipFile ) throws IOException, UpdateException {
+    public static String getFileMinorVersion ( File zipFile ) throws IOException, UpdateException {
 
         Properties props = getInnerFileProps( zipFile );
-        String prop = props.getProperty( "dotcms.release.build" );
+        return getBuildVersion( props );
+    }
 
-        if ( prop != null && !prop.equals( "" ) ) {
-            return Integer.parseInt( prop );
+    public static String getBuildVersion ( Properties props ) {
+
+        String minor = props.getProperty( "dotcms.release.build" );
+
+        if ( minor != null && minor.equals( "" ) ) {
+            minor = null;
         }
-        throw new UpdateException( Messages.getString( "UpdateUtil.error.no.version" ), UpdateException.ERROR );
+
+        return minor;
     }
 
     public static String getFileMayorVersion ( File zipFile ) throws IOException, UpdateException {

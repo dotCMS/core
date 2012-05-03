@@ -389,7 +389,7 @@ function showLanguageSelector(){
 	<%} %>
 	<%= System.getProperty("dotcms_level_name")%>
 	<%= ReleaseInfo.getVersion() %><br/>
-	(<%= ReleaseInfo.getBuildNumber() %> / <%= ReleaseInfo.getBuildDateString() %>)
+	(<%= ReleaseInfo.getBuildDateString() %>)
 </div>
 <iframe name="actionJackson" id="actionJackson" style="width:0px;height:0px;" src="/html/portal/touch_protected.jsp" ></iframe>
 <script type="text/javascript">
