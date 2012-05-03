@@ -28,13 +28,8 @@ import org.apache.velocity.tools.view.context.ToolboxContext;
  * @author <a href="mailto:henning@schmiedehausen.org">Henning P. Schmiedehausen</a>
  * @version $Id: ToolboxManager.java 290235 2005-09-19 18:52:47Z nbubna $
  */
-public interface ToolboxManager
+public interface ToolboxManager extends PrimitiveToolboxManager
 {
-
-    /**
-     * Adds a tool to be managed
-     */
-    void addTool(ToolInfo info);
 
     /**
      * Adds a data object for the context.

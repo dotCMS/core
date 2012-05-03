@@ -39,9 +39,9 @@ import com.liferay.portal.model.User;
  * This class is a bridge impl that will support the older
  * com.dotmarketing.portlets.file.model.File as well as the new Contentlet based
  * files
- * 
+ *
  * @author will
- * 
+ *
  */
 public class FileAssetAPIImpl implements FileAssetAPI {
 
@@ -57,7 +57,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			DotSecurityException {
 		List<FileAsset> assets = null;
 		try{
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles), 
+			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
@@ -66,13 +66,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return assets;
 
 	}
-	
+
 	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException,
 	DotSecurityException {
 		List<FileAsset> assets = null;
 		try{
 			Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles), 
+			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
@@ -99,53 +99,53 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				false, false);
 		field.setVelocityVarName(BINARY_FIELD);
 		FieldFactory.saveField(field);
-		
-		
+
+
 		field = new Field(TITLE_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, true, true, true, 3, "", "", "", true, false,
 				true);
 		field.setVelocityVarName(TITLE_FIELD);
 		field.setListed(false);
 		FieldFactory.saveField(field);
-		
-		
+
+
 		field = new Field(FILE_NAME_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, false, true, true, 4, "", "", "", true, true,
 				true);
 		field.setVelocityVarName(FILE_NAME_FIELD);
 		FieldFactory.saveField(field);
-		
+
 
 		field = new Field(META_DATA_TAB_NAME, Field.FieldType.TAB_DIVIDER, Field.DataType.SECTION_DIVIDER, structure, false, false, false, 5, "", "", "", false,
 				false, false);
 		field.setVelocityVarName("MetadataTab");
 		FieldFactory.saveField(field);
-		
-		
+
+
 		field = new Field(META_DATA_FIELD_NAME, Field.FieldType.KEY_VALUE, Field.DataType.LONG_TEXT, structure, false, false, false, 6, "", "", "", true,
 				true, true);
 		field.setVelocityVarName(META_DATA_FIELD);
 		FieldFactory.saveField(field);
 
-		
+
 		field = new Field(SHOW_ON_MENU_NAME, Field.FieldType.CHECKBOX, Field.DataType.TEXT, structure, false, false, true, 7, "|true", "false", "", true, false,
 				false);
 		field.setVelocityVarName(SHOW_ON_MENU);
 		FieldFactory.saveField(field);
-		
-		
+
+
 		field = new Field(SORT_ORDER_NAME, Field.FieldType.TEXT, Field.DataType.INTEGER, structure, false, false, true, 8, "", "0", "", true, false,
 				false);
 		field.setVelocityVarName(SORT_ORDER);
 		FieldFactory.saveField(field);
-		
 
-		
+
+
 		field = new Field(DESCRIPTION_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, false, true, true, 9, "", "", "", true, false,
 				true);
 		field.setVelocityVarName(DESCRIPTION);
 		field.setListed(false);
 		field.setSearchable(false);
 		FieldFactory.saveField(field);
-		
+
 		FieldsCache.clearCache();
 	}
 
@@ -165,7 +165,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		if(UtilMethods.isSet(con.getFolder())){
 			try{
 				Identifier ident = APILocator.getIdentifierAPI().find(con);
-				User systemUser = APILocator.getUserAPI().getSystemUser();			
+				User systemUser = APILocator.getUserAPI().getSystemUser();
 				Host host = APILocator.getHostAPI().find(con.getHost(), systemUser , false);
 				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUser, false);
 				fa.setFolder(folder.getInode());
@@ -184,6 +184,16 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return fas;
 
 	}
+
+	public List<IFileAsset> fromContentletsI(List<Contentlet> cons) {
+		List<IFileAsset> fas = new ArrayList<IFileAsset>();
+		for (Contentlet con : cons) {
+			fas.add(fromContentlet(con));
+		}
+		return fas;
+
+	}
+
 	public boolean isFileAsset(Contentlet con)  {
 		return (con != null && con.getStructure() != null && con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ;
 	}
@@ -193,14 +203,17 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return new TikaUtils().getMetaDataMap(binFile);
 
 	}
-	
 
-	
+
+
 	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException{
 		if(!UtilMethods.isSet(fileName)){
 			return true;
 		}
 		if(folder==null)
+			return false;
+
+		if(host==null)
 			return false;
 
 		boolean ret = false;
@@ -228,7 +241,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return path;
 
 	}
-	
+
 	public  boolean renameFile (Contentlet fileAssetCont, String newName, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException, IOException {
 		boolean isfileAssetContLive = false;
 		Identifier id = APILocator.getIdentifierAPI().find(fileAssetCont);
@@ -239,7 +252,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			    FileAsset fa = fromContentlet(fileAssetCont);
 			    if(fa.isLive())
 					isfileAssetContLive = true;
-				
+
 				String ext = fa.getExtension();
 				File oldFile = fileAssetCont.getBinary(BINARY_FIELD);
 				File newFile = new File(oldFile.getPath().substring(0,oldFile.getPath().indexOf(oldFile.getName()))+newName+"."+ext);
@@ -253,7 +266,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				fileAssetCont= APILocator.getContentletAPI().checkin(fileAssetCont, user, respectFrontendRoles);
 				if(isfileAssetContLive)
 					 APILocator.getVersionableAPI().setLive(fileAssetCont);
-				
+
 				LiveCache.removeAssetFromCache(fileAssetCont);
 		    	LiveCache.addToLiveAssetToCache(fileAssetCont);
 		    	WorkingCache.removeAssetFromCache(fileAssetCont);
@@ -265,8 +278,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 		return false;
 	}
-	
-	
+
+
 	public  boolean moveFile (Contentlet fileAssetCont, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException  {
 		boolean isfileAssetContLive = false;
 		Identifier id = APILocator.getIdentifierAPI().find(fileAssetCont);
@@ -274,7 +287,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			FileAsset fa = fromContentlet(fileAssetCont);
 			if(fa.isLive())
 				isfileAssetContLive = true;
-			
+
 			Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
 			Folder oldParent = APILocator.getFolderAPI().findFolderByPath(id.getParentPath(), host, user, respectFrontendRoles);
 			if(!fileNameExists(host, parent, fa.getFileName(), id.getId())){
@@ -283,7 +296,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, respectFrontendRoles);
 				if(isfileAssetContLive)
 					 APILocator.getVersionableAPI().setLive(fileAssetCont);
-				
+
 				LiveCache.removeAssetFromCache(fileAssetCont);
 				LiveCache.addToLiveAssetToCache(fileAssetCont);
 				WorkingCache.removeAssetFromCache(fileAssetCont);
@@ -301,7 +314,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			throws DotDataException, DotSecurityException {
 		List<FileAsset> assets = null;
 		try{
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":""), -1, 0, sortBy , user, respectFrontendRoles), 
+			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":""), -1, 0, sortBy , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
@@ -309,13 +322,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 		return assets;
 	}
-	
+
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder,
 			String sortBy, boolean live, boolean working, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 		List<FileAsset> assets = null;
 		try{
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":""), -1, 0, sortBy , user, respectFrontendRoles), 
+			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":""), -1, 0, sortBy , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
@@ -323,7 +336,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 		return assets;
 	}
-	
+
 	public String getRealAssetPath(String inode, String fileName, String ext) {
         String _inode = inode;
         String path = "";
@@ -335,7 +348,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         String assetPath = Config.getStringProperty("ASSET_PATH");
         if (UtilMethods.isSet(assetPath) && !assetPath.endsWith(java.io.File.separator))
             assetPath = assetPath + java.io.File.separator;
-        
+
         path = ((!UtilMethods.isSet(realPath)) ? assetPath : realPath)
                 + _inode.charAt(0) + java.io.File.separator + _inode.charAt(1)
                 + java.io.File.separator + _inode+ java.io.File.separator + "fileAsset" + java.io.File.separator + fileName + "." + ext;
@@ -344,9 +357,25 @@ public class FileAssetAPIImpl implements FileAssetAPI {
             return Config.CONTEXT.getRealPath(path);
         else
             return path;
+
+    }
+	
+	@Override
+	public String getRealAssetPath(String inode, String fileName) {
+		
+		String extension = UtilMethods.getFileExtension(fileName);
+		String fileNameWOExtenstion  =  UtilMethods.getFileName(fileName);
+		
+		
+        return getRealAssetPath(inode, fileNameWOExtenstion, extension);
     	
     }
 	
+	
+	
+	
+	
+
 	public String getRealAssetPath(String inode) {
         String _inode = inode;
         String path = "";
@@ -358,7 +387,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         String assetPath = Config.getStringProperty("ASSET_PATH");
         if (UtilMethods.isSet(assetPath) && !assetPath.endsWith(java.io.File.separator))
             assetPath = assetPath + java.io.File.separator;
-        
+
         path = ((!UtilMethods.isSet(realPath)) ? assetPath : realPath)
                 + _inode.charAt(0) + java.io.File.separator + _inode.charAt(1)
                 + java.io.File.separator + _inode+ java.io.File.separator + "fileAsset" + java.io.File.separator;
@@ -367,12 +396,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
             return Config.CONTEXT.getRealPath(path);
         else
             return path;
-    	
-    }
-	
-	
 
-	
-	
-	
+    }
+
+
+
+
+
+
 }

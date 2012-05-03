@@ -40,6 +40,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.servlet.PortletSessionPool;
 import com.liferay.portal.util.Constants;
@@ -51,36 +52,35 @@ import com.liferay.util.StringPool;
 
 /**
  * <a href="LogoutAction.java.html"><b><i>View Source</i></b></a>
- *
- * @author  Brian Wing Shun Chan
+ * 
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.7 $
- *
+ * 
  */
 public class LogoutAction extends Action {
 
-	public ActionForward execute(
-			ActionMapping mapping, ActionForm form, HttpServletRequest req,
-			HttpServletResponse res)
-		throws Exception {
+	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse res) throws Exception {
 
 		try {
 			HttpSession ses = req.getSession();
-			try{
-				Logger.info(this, "User " + PortalUtil.getUser(req).getFullName() + " (" + 
-					PortalUtil.getUser(req).getUserId() + ") has logged out from IP: " + req.getRemoteAddr());
-			}
-			catch(Exception e){
-				Logger.info(this, "User has logged out from IP: " + req.getRemoteAddr());
+			try {
+				// Logger.info(this, "User " +
+				// PortalUtil.getUser(req).getFullName() + " (" +
+				// PortalUtil.getUser(req).getUserId() +
+				// ") has logged out from IP: " + req.getRemoteAddr());
+				SecurityLogger.logInfo(this.getClass(), "User " + PortalUtil.getUser(req).getFullName() + " (" + PortalUtil.getUser(req).getUserId() + ") has logged out from IP: "
+						+ req.getRemoteAddr());
+			} catch (Exception e) {
+				//Logger.info(this, "User has logged out from IP: " + req.getRemoteAddr());
+				SecurityLogger.logInfo(this.getClass(),"User has logged out from IP: " + req.getRemoteAddr());
 			}
 
-			EventsProcessor.process(PropsUtil.getArray(
-				PropsUtil.LOGOUT_EVENTS_PRE), req, res);
-
+			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_PRE), req, res);
 
 			ArrayList<Cookie> al = new ArrayList<Cookie>();
 			Cookie[] cookies = req.getCookies();
-			if(cookies != null){
-				for(int i=0; i<cookies.length; i++){
+			if (cookies != null) {
+				for (int i = 0; i < cookies.length; i++) {
 					Cookie cookie = cookies[i];
 					al.add(cookie);
 					cookie.setMaxAge(0);
@@ -88,8 +88,6 @@ public class LogoutAction extends Action {
 					res.addCookie(cookie);
 				}
 			}
-			
-			
 
 			Map sessions = PortletSessionPool.remove(ses.getId());
 
@@ -97,30 +95,26 @@ public class LogoutAction extends Action {
 				Iterator itr = sessions.entrySet().iterator();
 
 				while (itr.hasNext()) {
-					Map.Entry entry = (Map.Entry)itr.next();
+					Map.Entry entry = (Map.Entry) itr.next();
 
-					HttpSession portletSession = (HttpSession)entry.getValue();
+					HttpSession portletSession = (HttpSession) entry.getValue();
 
 					portletSession.invalidate();
 				}
 			}
-			
 
 			try {
 				ses.invalidate();
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 			}
 
-			EventsProcessor.process(PropsUtil.getArray(
-				PropsUtil.LOGOUT_EVENTS_POST), req, res);
+			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_POST), req, res);
 
-			//ActionForward af = mapping.findForward("referer");
-			//return af;
+			// ActionForward af = mapping.findForward("referer");
+			// return af;
 			return mapping.findForward(Constants.COMMON_REFERER);
-		}
-		catch (Exception e) {
-			req.setAttribute(PageContext.EXCEPTION, e);			
+		} catch (Exception e) {
+			req.setAttribute(PageContext.EXCEPTION, e);
 			return mapping.findForward(Constants.COMMON_REFERER);
 		}
 	}

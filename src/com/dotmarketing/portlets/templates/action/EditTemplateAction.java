@@ -39,6 +39,8 @@ import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.struts.TemplateForm;
 import com.dotmarketing.services.TemplateServices;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletURLUtil;
@@ -585,6 +587,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		} else {
 			cf.setHostId(templateHost.getIdentifier());
 		}
+		ActivityLogger.logInfo(this.getClass(), "Edit Template action", "User " + user.getPrimaryKey() + " edit template " + cf.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 		cf.setImage(fileAsContent?imageContentlet.getIdentifier():imageFile.getIdentifier());
 		
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
@@ -653,6 +656,9 @@ public class EditTemplateAction extends DotPortletAction implements
 		// *********************** END GRAZIANO issue-12-dnd-template
 
 		APILocator.getTemplateAPI().saveTemplate(newTemplate,host , user, false);
+		
+		ActivityLogger.logInfo(this.getClass(), "Save Template action", "User " + user.getPrimaryKey() + " saving template" + newTemplate.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
+		
 		APILocator.getVersionableAPI().setLocked(newTemplate, false, user);
 
 		SessionMessages.add(httpReq, "message", "message.template.save");

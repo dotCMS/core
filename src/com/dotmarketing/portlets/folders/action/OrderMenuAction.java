@@ -25,9 +25,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -42,9 +43,9 @@ import com.liferay.util.servlet.SessionMessages;
  */
 
 public class OrderMenuAction extends DotPortletAction {
-	
+
 	public static boolean debug = false;
-	
+
 	private PermissionAPI perAPI= null;
 	User user = null;
 	FolderAPI fapi = APILocator.getFolderAPI();
@@ -52,38 +53,38 @@ public class OrderMenuAction extends DotPortletAction {
 			ActionMapping mapping, ActionForm form, PortletConfig config,
 			ActionRequest req, ActionResponse res)
 	throws Exception {
-		
+
 		perAPI = APILocator.getPermissionAPI();
 		user = _getUser(req);
-	
+
 		try {
 			String cmd = req.getParameter("cmd");
-			
+
 			int startLevel = Integer.parseInt(req.getParameter("startLevel"));
 			int depth = Integer.parseInt(req.getParameter("depth"));
-			
+
 			req.setAttribute("depth", new Integer(depth));
 			Hashtable h = _getMenuItems(req,res,config,form, startLevel);
-			
+
 			List<Object> items = (List)h.get("menuItems");
 			boolean show = ((Boolean)h.get("showSaveButton")).booleanValue();
-			
+
 			Folder parentFolder = (Folder)h.get("mainMenuFolder");
 			List<Object> l = _getHtmlTreeList(items, show, depth);
-			
+
 			if(!((Boolean)l.get(1)).booleanValue()){
 				SessionMessages.add(req, "error", "error.menu.reorder.user_has_not_permission");
 			}
-			
+
 			req.setAttribute("htmlTreeList", l.get(0));
 			req.setAttribute("showSaveButton", l.get(1));
-			
+
 			//This condition works while saving the reordered menu
-			if (((cmd != null) && cmd.equals("generatemenu"))) {				
+			if (((cmd != null) && cmd.equals("generatemenu"))) {
 				HibernateUtil.startTransaction();
 				//regenerates menu files
 				boolean doReorderMenu = false;
-				if(l != null && (List)l.get(0) != null){		
+				if(l != null && (List)l.get(0) != null){
 					doReorderMenu = ((Boolean)l.get(1)).booleanValue();
 				}
 				if(doReorderMenu){
@@ -105,27 +106,27 @@ public class OrderMenuAction extends DotPortletAction {
 			}
 
 			//This part is executed while listing
-			
-			
+
+
 			req.setAttribute("startLevel", new Integer(startLevel));
 			req.setAttribute("depth", new Integer(depth));
-			
+
 			setForward(req,"portlet.ext.folders.order_menu");
-			
+
 		} catch (ActionException ae) {
 			_handleException(ae,req);
-		}		
+		}
 	}
-	
+
 	private Hashtable _getMenuItems(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, int startLevel)
 	throws Exception {
-		
+
 		Hashtable h = new Hashtable();
 		User user = _getUser(req);
 		String pagePath = req.getParameter("pagePath");
 		String hostId = req.getParameter("hostId");
 		String path = null;
-				
+
 		String [] pathTokens = pagePath.split("/");
 		if(startLevel <= 1){
 			path = "/";
@@ -133,15 +134,15 @@ public class OrderMenuAction extends DotPortletAction {
 			path = "";
 			for(int i = 1; i < startLevel; i++){
 				path += "/" + pathTokens[i];
-			}			
+			}
 		}
-		
+
 		boolean userHasPublishPermission = true;
 		Host host = APILocator.getHostAPI().find(hostId, user, true);
 		if (!path.equals("/")) {
 
 			Folder folder = fapi.findFolderByPath(path, host,user,false);
-			
+
 			//gets menu items for this folder
 			java.util.List<Inode> itemsList = fapi.findMenuItems(folder,user,false);
 			userHasPublishPermission = _findPublishPermissionExists(itemsList);
@@ -154,11 +155,11 @@ public class OrderMenuAction extends DotPortletAction {
 			userHasPublishPermission = _findPublishPermissionExists(itemsList);
 			req.setAttribute(WebKeys.MENU_ITEMS,itemsList);
 		}
-		
+
 		h.put("showSaveButton", new Boolean(userHasPublishPermission));
 		return h;
 	}
-	
+
 	private void _orderMenuItemsDragAndDrop(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form)
 	throws Exception {
 		try
@@ -167,7 +168,7 @@ public class OrderMenuAction extends DotPortletAction {
 			HashMap<String,HashMap<Integer, String>> hashMap = new HashMap<String,HashMap<Integer, String>>();
 			while(parameterNames.hasMoreElements())
 			{
-				String parameterName = (String) parameterNames.nextElement();			
+				String parameterName = (String) parameterNames.nextElement();
 				if(parameterName.startsWith("list"))
 				{
 					String value = req.getParameter(parameterName);
@@ -176,35 +177,45 @@ public class OrderMenuAction extends DotPortletAction {
 					int index = Integer.parseInt(indexString);
 					if(hashMap.get(smallParameterName) == null)
 					{
-						HashMap<Integer, String> hashInodes = new HashMap<Integer, String>();				
-						hashInodes.put(index,value);										
-						hashMap.put(smallParameterName,hashInodes); 
+						HashMap<Integer, String> hashInodes = new HashMap<Integer, String>();
+						hashInodes.put(index,value);
+						hashMap.put(smallParameterName,hashInodes);
 					}
 					else
 					{
 						HashMap<Integer, String> hashInodes = (HashMap<Integer, String>) hashMap.get(smallParameterName);
-						hashInodes.put(index,value);					
+						hashInodes.put(index,value);
 					}
 				}
 			}
-			
+
 			Set<String> keys = hashMap.keySet();
 			Iterator keysIterator = keys.iterator();
 			while(keysIterator.hasNext())
 			{
 				String key = (String) keysIterator.next();
 				HashMap hashInodes = (HashMap) hashMap.get(key);
+
 				for(int i = 0;i < hashInodes.size();i++)
 				{
 					String inode = (String) hashInodes.get(i);
-					Inode asset = (Inode) InodeFactory.getInode(inode,Inode.class);					
+					Inode asset = (Inode) InodeFactory.getInode(inode,Inode.class);
+					Contentlet c = null;
+					try {
+						c = APILocator.getContentletAPI().find(inode, user, false);
+					} catch(ClassCastException cce) {
+					}
+
 					if (asset instanceof Folder) {
 						((Folder)asset).setSortOrder(i);
 					} if (asset instanceof WebAsset)  {
 						((WebAsset)asset).setSortOrder(i);
+					} if (APILocator.getFileAssetAPI().isFileAsset(c))  {
+						c.setSortOrder(i);
+						APILocator.getContentletAPI().refresh(c);
 					}
-					HibernateUtil.saveOrUpdate(asset);									
-				}			
+					HibernateUtil.saveOrUpdate(asset);
+				}
 			}
 		}
 		catch(Exception ex)
@@ -213,18 +224,18 @@ public class OrderMenuAction extends DotPortletAction {
 			throw ex;
 		}
 	}
-	
+
 	private void _orderMenuItems(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form)
 	throws Exception {
-		
+
 		//gets item inode that's being moved
 		String itemInode = req.getParameter("item");
-		
+
 		//gets folder object from folderParent inode
 		Folder folder = (Folder) InodeFactory.getInode(req.getParameter("folderParent"),Folder.class);
-		
+
 		java.util.List itemsList = new ArrayList();
-		
+
 		if (InodeUtils.isSet(folder.getInode())) {
 			//gets menu items for this folder parent
 			itemsList = fapi.findMenuItems(folder,user,false);
@@ -235,32 +246,39 @@ public class OrderMenuAction extends DotPortletAction {
 			Host host = APILocator.getHostAPI().find(hostId, user, false);
 			itemsList = fapi.findSubFolders(host,true);
 		}
-		
+
 		int increment = 0;
-		
+
 		if (req.getParameter("move").equals("up")) {
 			//if it's up
-			increment = -3;	
+			increment = -3;
 		}
 		else {
 			//if it's down
-			increment = 3;	
+			increment = 3;
 		}
-		
+
 		Iterator i = itemsList.iterator();
 		int x = 0;
 		while (i.hasNext()) {
-			
+
 			Inode item = (Inode) i.next();
-			
-			
+			Contentlet c = null;
+			try {
+				c = APILocator.getContentletAPI().find(item.getInode(), user, false);
+			} catch(ClassCastException cce) {
+			}
+
 			if (item.getInode().equalsIgnoreCase( itemInode)) {
 				//this is the item to move
 				if (item instanceof Folder) {
 					((Folder)item).setSortOrder(x + increment);
 				}
-				else {
+				else if(item instanceof WebAsset) {
 					((WebAsset)item).setSortOrder(x + increment);
+				} if (APILocator.getFileAssetAPI().isFileAsset(c))  {
+					c.setSortOrder(x + increment);
+					APILocator.getContentletAPI().refresh(c);
 				}
 			}
 			else {
@@ -268,24 +286,27 @@ public class OrderMenuAction extends DotPortletAction {
 				if (item instanceof Folder) {
 					((Folder)item).setSortOrder(x);
 				}
-				else {
+				else if(item instanceof WebAsset) {
 					((WebAsset)item).setSortOrder(x);
+				}  if (APILocator.getFileAssetAPI().isFileAsset(c))  {
+					c.setSortOrder(x);
+					APILocator.getContentletAPI().refresh(c);
 				}
 			}
 			x = x + 2;
 		}
-		
+
 		SessionMessages.add(req, "message", "message.menu.reordered");
-		
+
 	}
-	
+
 	/**
 	 * This is a utility method that checks for the type of each permissionable object in a list and if at least one of them fails to have the permission,
 	 * returns false
-	 * 
+	 *
 	 * @param itemsList
 	 * @return
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 */
 	private boolean _findPublishPermissionExists(List itemsList) throws DotDataException{
 		boolean userHasPublishPermission = true;
@@ -299,39 +320,39 @@ public class OrderMenuAction extends DotPortletAction {
 	/**
 	 * This method returns a List object which contains two elements. The first one is the String representing the HTML tree and the other one is
 	 * a boolean indicating if the Save button will be shown to the user depending on the permissions
-	 * 
+	 *
 	 * @param items
 	 * @param show
 	 * @param depth
 	 * @return
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 */
 	private List _getHtmlTreeList(List items, boolean show, int depth) throws DotDataException{
 		boolean userHasEditPermission = true;
 		boolean hasMenuPubPer = show;
-		
+
 		//boolean showSaveButton = ((Boolean)request.getAttribute("editPermission")).booleanValue();
-		
+
 		//Iterator iterator = items.iterator();
-		
+
 		Object o= null;
 		List<Object> v = new ArrayList();
-		
+
 		if(items != null){
 			for(int i = 0; i < items.size(); i++){
 				v.add(items.get(i));
-			}					
-			items.clear();					
+			}
+			items.clear();
 			for(int i = 0; i < v.size(); i++){
-				o = v.get(i);			
-				
+				o = v.get(i);
+
 				if(!perAPI.doesUserHavePermission((com.dotmarketing.business.Permissionable)o, PermissionAPI.PERMISSION_READ, user, false)){
 					userHasEditPermission = false;
 				}else{
 					userHasEditPermission = true;
 				}
-				
-				
+
+
 				if(!userHasEditPermission){
 					o =  null;
 				}else{
@@ -339,27 +360,27 @@ public class OrderMenuAction extends DotPortletAction {
 						o = null;
 					}
 					if((o instanceof File && !((File)(o)).isShowOnMenu())){
-						o = null;															
+						o = null;
 					}
 					if((o instanceof Link && !((Link)(o)).isShowOnMenu())){
 						o = null;
 					}
 					if((o instanceof HTMLPage && !((HTMLPage)(o)).isShowOnMenu())){
 						o = null;
-					}	
+					}
 				}
 				if (o != null){
 					items.add(o);
 				}
 			}
 		}
-		
-		
-		
+
+
+
 		List<Object> l = new ArrayList();
 		l.add(fapi.buildNavigationTree(items, depth, user));
 		l.add(new Boolean(hasMenuPubPer));
 		return l;
 	}
-	
+
 }

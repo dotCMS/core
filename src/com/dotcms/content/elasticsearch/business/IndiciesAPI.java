@@ -10,7 +10,7 @@ import com.dotmarketing.exception.DotDataException;
  */
 public interface IndiciesAPI {
     public static class IndiciesInfo {
-        public String live, working, reindex_live, reindex_working;
+        public String live, working, reindex_live, reindex_working, site_search;
     }
     
     /**

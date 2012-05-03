@@ -1025,6 +1025,8 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 			tables.add("analytic_summary");
 			tables.add("inode");
 		}
+		if(DbConnectionFactory.isMySql())
+		    tables.add("permission");
 		return tables;
 	}
 	

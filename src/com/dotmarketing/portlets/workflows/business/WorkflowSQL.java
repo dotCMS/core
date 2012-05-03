@@ -74,7 +74,11 @@ abstract class WorkflowSQL {
 	protected static String UPDATE_ACTION_CLASS_PARAM= "update workflow_action_class_pars set workflow_action_class_id= ?, key=?, value=? where id =?";
 	protected static String DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS= "delete from workflow_action_class_pars where workflow_action_class_id =?";
 
-
+	// chri
+    protected static String UPDATE_USER_ASSIGNTO_TASK = "update workflow_task set assigned_to = ? where id = ?";
+    protected static String RETRIEVE_LAST_STEP_ACTIONID = "select  * from workflow_history where workflowtask_id = ? order by creation_date desc";
+    protected static String RETRIEVE_TASK = "select  * from workflow_history where workflowtask_id = ? order by creation_date desc";
+    // chri
 
 
 }

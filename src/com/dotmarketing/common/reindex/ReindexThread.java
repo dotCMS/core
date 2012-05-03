@@ -12,7 +12,7 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotmarketing.business.APILocator;
@@ -30,7 +30,7 @@ import com.dotmarketing.util.Logger;
 
 public class ReindexThread extends Thread {
 
-	private static final ESIndexAPI indexAPI = new ESIndexAPI();
+	private static final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
     private LinkedList<IndexJournal<String>> remoteQ = new LinkedList<IndexJournal<String>>();
 	private DistributedJournalAPI<String> jAPI = APILocator.getDistributedJournalAPI();
 

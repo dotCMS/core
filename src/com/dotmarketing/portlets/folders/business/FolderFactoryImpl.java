@@ -1,5 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
-
+// 1212
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,7 +67,7 @@ import com.liferay.portal.model.User;
 
 /**
  *
- * @author maria
+ * @author maria 2323
  */
 public class FolderFactoryImpl extends FolderFactory {
 	private int nodeId;
@@ -306,7 +306,11 @@ public class FolderFactoryImpl extends FolderFactory {
 			List<FileAsset> fileAssets = null;
 			try {
 				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
-				filesListSubChildren.addAll(fileAssets);
+				for(FileAsset fileAsset : fileAssets) {
+					if(fileAsset.isShowOnMenu()){
+						filesListSubChildren.add(fileAsset);
+					}					
+				}				
 			} catch (DotSecurityException e) {}
 
 			// gets all subitems
@@ -883,28 +887,17 @@ public class FolderFactoryImpl extends FolderFactory {
 		if(UtilMethods.isSet(nFolder.getInode()))
 			return false;
 
-		// renaming folder
-
-		// first we remove from cache with current name and path
-		CacheLocator.getFolderCache().removeFolder(folder, ident);
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
-
-		// get a fresh copy of the object passed to make sure hibernate works ok
-
+		CacheLocator.getFolderCache().removeFolder(folder, ident);
+		
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		ff.setName(newName);
 		ff.setTitle(newName);
-		ident.setAssetName(newName);
-
-		APILocator.getIdentifierAPI().save(ident);
-		APILocator.getFolderAPI().save(ff, user, respectFrontEndPermissions);
-
-		try {
-			HibernateUtil.getSession().evict(ff);
-		} catch (HibernateException e) {
-			throw new DotDataException(e.getMessage());
-		}
-
+		
+		save(ff);
+		
+		HibernateUtil.getSession().clear();
+		
 		return true;
 	}
 
