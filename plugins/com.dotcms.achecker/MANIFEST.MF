@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Plugin-Name: AChecker Validation Support
+Plugin-Version: 1.0
+Author: Engineering

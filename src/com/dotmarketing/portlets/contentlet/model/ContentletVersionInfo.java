@@ -15,6 +15,7 @@ public class ContentletVersionInfo implements Serializable {
     private long lang;
     private String workingInode;
     private String liveInode;
+    private Timestamp versionTs;
 
     public long getLang() {
         return lang;
@@ -85,4 +86,12 @@ public class ContentletVersionInfo implements Serializable {
         int langx=(int)lang;
         return identifier.hashCode()+17*(langx+1);
     }
+	public Timestamp getVersionTs() {
+		return versionTs;
+	}
+	public void setVersionTs(Timestamp versionTs) {
+		this.versionTs = versionTs;
+	}
+
+
 }

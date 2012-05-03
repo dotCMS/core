@@ -244,7 +244,8 @@ public class RoleAjax {
 			Role parentRole = roleAPI.loadRoleById(parentRoleId);
 			role.setParent(parentRole.getId());
 		}
-
+		
+		
 		return roleAPI.save(role).toMap();
 
 	}

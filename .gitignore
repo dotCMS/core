@@ -16,9 +16,12 @@ dotCMS/dotSecure
 dotCMS/dotsecure
 dotCMS/assets
 sql/cms
+
 dotCMS/WEB-INF/binary
 dotCMS/WEB-INF/binary/load
 dotCMS/WEB-INF/binary/felix-cache
+
+dotCMS/html/js/tinymce/jscripts/tiny_mce/*.gz
 
 # OS generated files #
 ######################
