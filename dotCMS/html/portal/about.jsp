@@ -1,6 +1,6 @@
 <%@ include file="/html/common/init.jsp" %>
 <h3><%= System.getProperty("dotcms_level_name")%></h3>
-<b><%= ReleaseInfo.getVersion() %> (<%= LanguageUtil.get(pageContext,"Build") %>: <%= ReleaseInfo.getBuildNumber() %> / <%= ReleaseInfo.getBuildDateString(LanguageUtil.getLocale(pageContext)) %>)</b><br><br>
+<b><%= ReleaseInfo.getVersion() %> (<%= ReleaseInfo.getBuildDateString(LanguageUtil.getLocale(pageContext)) %>)</b><br><br>
 
 <%= LanguageUtil.format(pageContext, "please-email-all-questions-to", "<b>" + company.getEmailAddress() + "</b>", false) %><br><br>
 

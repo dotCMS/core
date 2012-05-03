@@ -652,7 +652,7 @@ dojo.require("dojo.cookie");
                     </div>
                 </div>
                 <div style="padding:0 0 10px 0; border-bottom:1px solid #ccc;" align="center">
-                <b><%= LanguageUtil.get(pageContext, "You-are-running") %>:</b> <a href="javascript:whatsNew('current');"><%= ReleaseInfo.getVersion() +  " Build: " + ReleaseInfo.getBuildNumber()  %>(<%= LanguageUtil.get(pageContext, "Whats-new") %>)</a>
+                <b><%= LanguageUtil.get(pageContext, "You-are-running") %>:</b> <a href="javascript:whatsNew('current');"><%= ReleaseInfo.getVersion() %>(<%= LanguageUtil.get(pageContext, "Whats-new") %>)</a>
                 <br />
                 <br />
                 <div id="minorUpdate" style="display:none;">
