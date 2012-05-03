@@ -80,7 +80,13 @@ public class ReleaseInfo {
 		}
 
 		if (build == null) {
-			build = props.getProperty("dotcms.release.build", "0");
+
+			//build = props.getProperty("dotcms.release.build", "0");
+
+            //TODO:
+            //We are not using build numbers now, also it assumes this number will be always an int, change the method getBuildNumber() to return an String
+            //implies a lot of changes and for the dependencies it have we will have go even to the database model...., this will be change it on future releases...
+            build = "0";
 		}
 		if (date == null) {
 			date = props.getProperty("dotcms.release.date", "March 6 2009");
@@ -124,8 +130,8 @@ public class ReleaseInfo {
 
 
 	public static final String getReleaseInfo() {
-		return getName() + " " + getVersion() + " (" + getCodeName() + " / Build " + getBuildNumber() + " / " +
-		getBuildDateString()+ ")";
+		//return getName() + " " + getVersion() + " (" + getCodeName() + " / Build " + getBuildNumber() + " / " + getBuildDateString()+ ")";
+		return getName() + " " + getVersion() + " (" + getCodeName() + " / " + getBuildDateString()+ ")";
 	}
 
 	public static String getServerInfo() {
