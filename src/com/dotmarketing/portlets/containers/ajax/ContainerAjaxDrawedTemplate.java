@@ -22,7 +22,13 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
-
+/**
+ * Class used by new dwr interface created for Design Template.
+ * 
+ * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+ *
+ * May 3, 2012 - 11:26:32 AM
+ */
 public class ContainerAjaxDrawedTemplate extends ContainerAjax {
 	
 	/**
@@ -77,7 +83,13 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
 				}
 				
 				StringBuffer containerCode = new StringBuffer(cont.getCode());				
-				contMap.put("code", containerCode.toString());
+//				contMap.put("code", containerCode.toString());
+				
+				/**
+				 * adding the max_contentlets information to the result map because we must filter for the containers that accept
+				 * contents and doesn't stay into the template for more than one time.
+				 */
+				contMap.put("maxContentlets", cont.getMaxContentlets());
 				if(!ContainerAjaxUtil.checkContainerCode(containerCode))
 					list.add(contMap);
 			}
