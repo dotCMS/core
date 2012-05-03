@@ -33,7 +33,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	private String image;
 	
 	//	*********************** BEGIN GRAZIANO issue-12-dnd-template
-	private boolean drawed;
+	private Boolean drawed;
 	
 	private String drawedBody;
 	
@@ -163,7 +163,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	 * Identify the drawed template
 	 * @return
 	 */
-	public boolean isDrawed() {
+	public Boolean isDrawed() {
 		return drawed;
 	}
 
@@ -171,8 +171,11 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	 * Sets the boolean for drawed template 
 	 * @param drawed
 	 */
-	public void setDrawed(boolean drawed) {
-		this.drawed = drawed;
+	public void setDrawed(Boolean drawed) {
+		if(null!=drawed)
+			this.drawed = drawed;
+		else
+			this.drawed = false;
 	}
 		
 	public String getDrawedBody() {

@@ -45,6 +45,7 @@ import com.dotmarketing.startup.runonce.Task00820CreateNewWorkFlowTables;
 import com.dotmarketing.startup.runonce.Task00825UpdateLoadRecordsToIndex;
 import com.dotmarketing.startup.runonce.Task00835CreateIndiciesTables;
 import com.dotmarketing.startup.runonce.Task00840FixContentletVersionInfo;
+import com.dotmarketing.startup.runonce.Task00845AlterTemplateTable;
 
 
 public class TaskLocatorUtil {
@@ -92,6 +93,8 @@ public class TaskLocatorUtil {
 		ret.add(Task00825UpdateLoadRecordsToIndex.class);
 		ret.add(Task00835CreateIndiciesTables.class);
 		ret.add(Task00840FixContentletVersionInfo.class);
+		//GRAZIANO issue-12-dnd-template
+		ret.add(Task00845AlterTemplateTable.class);
 		return ret;
 	}
 
