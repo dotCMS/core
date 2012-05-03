@@ -118,9 +118,9 @@ public class FileAssetBundler implements IBundler {
 		
 		try {
 			cs = conAPI.searchIndex(bob.toString() + "+live:true", 0, 0, "moddate", systemUser, true);
-			if(!config.liveOnly()){
+			//if(!config.liveOnly()){
 				cs.addAll(conAPI.searchIndex(bob.toString() + "+working:true", 0, 0, "moddate", systemUser, true));
-			}
+			//}
 		} catch (Exception e) {
 			
 			Logger.error(FileAssetBundler.class,e.getMessage(),e);

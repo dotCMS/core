@@ -74,9 +74,9 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 					<span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span>
 				<%} %>
 		   	</td>
-			<td nowrap valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
+			<td nowrap valign="top" onclick="showJobSchedulePane'<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
+			<td valign="top" onclick="showJobSchedulePane'<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>
+			<td valign="top" onclick="showJobSchedulePane'<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
 			
 				<%for(Host h : selectedHosts){ %>
 					<%=h.getHostname() %><br>
@@ -86,15 +86,15 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 					<%= LanguageUtil.get(pageContext, "index-all-hosts") %>
 				<%} %>
 			</td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("CRON_EXPRESSION")%></td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
+			<td valign="top" onclick="showJobSchedulePane'<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("CRON_EXPRESSION")%></td>
+			<td valign="top" onclick="showJobSchedulePane'<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
 				<%=task.getProperties().get("includeExclude")%>
 				<%if(!"all".equals(task.getProperties().get("includeExclude"))){ %>:
 					<br>
 					<%=UtilMethods.htmlLineBreak(UtilMethods.webifyString((String) task.getProperties().get("paths")))%>
 				<%} %>
 			</td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"></td>
+			<td valign="top" onclick="showJobSchedulePane'<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"></td>
 			
 			
 			</td>
@@ -106,7 +106,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 		<tr>
 			<td colspan="100" align="center">
 				<div style="padding:30px;">
-					<a href="#" onclick="refreshJobSchedulePane('');"><%= LanguageUtil.get(pageContext,"No-Results-Found") %></a>
+					<a href="#" onclick="showJobSchedulePane('');"><%= LanguageUtil.get(pageContext,"No-Results-Found") %></a>
 				</div>
 			</td>
 			

@@ -14,6 +14,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -322,6 +323,27 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		}
 
     }
+    
+    
+    @Override
+    public SiteSearchResult getFromIndex(String index, String id){
+
+
+
+	   GetResponse response = new ESClient().getClient().prepareGet(index, ES_SITE_SEARCH_MAPPING, id)
+		        .execute()
+		        .actionGet();
+	   	if(response.exists()){
+			SiteSearchResult ssr = new SiteSearchResult(response.getSource());
+			ssr.setScore(1);
+			return ssr;
+	   	}
+	   	else {
+	   		return null;
+	   	}
+
+    }
+    
     
     @Override
     public void putToIndex(String idx, List<SiteSearchResult> res){

@@ -6,6 +6,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.io.output.FileWriterWithEncoding;
@@ -122,6 +123,7 @@ public class URLMapBundler implements IBundler {
 		if(config.getStartDate() != null){
 			Calendar cal = Calendar.getInstance();
 			cal.set(Calendar.YEAR, 2500);
+			Date d = (Date) config.getStartDate();
 			String start = ESMappingAPIImpl.datetimeFormat.format(config.getStartDate());
 			String forever = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
 			bob.append(" +versionts:[" + start + " TO " + forever +"] ");
@@ -130,7 +132,7 @@ public class URLMapBundler implements IBundler {
 		if(config.getEndDate() != null){
 			Calendar cal = Calendar.getInstance();
 			cal.set(Calendar.YEAR, 1900);
-			
+			Date d = (Date) config.getEndDate();
 			String end = ESMappingAPIImpl.datetimeFormat.format(config.getEndDate());
 			String longAgo = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
 			bob.append(" +versionts:[" + longAgo + " TO " + end +"] ");
@@ -149,12 +151,12 @@ public class URLMapBundler implements IBundler {
 		
 		
 		
-
+		Logger.info(this.getClass(),bob.toString());
 		try {
 			cs = capi.searchIndex(bob.toString() + " +live:true ", 0, 0, "moddate", systemUser, true);
-			if(!config.liveOnly()){
+			//if(!config.liveOnly()){
 				cs.addAll(capi.searchIndex(bob.toString() + "+working:true", 0, 0, "moddate", systemUser, true));
-			}
+			//}
 		} catch (Exception e) {
 			
 			Logger.error(this.getClass(),e.getMessage(),e);

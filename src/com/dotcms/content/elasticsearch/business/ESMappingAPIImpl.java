@@ -367,6 +367,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
 	public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+	
+	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	
+	
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
 	public static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
 	
