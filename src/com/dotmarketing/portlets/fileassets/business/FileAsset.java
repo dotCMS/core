@@ -24,14 +24,29 @@ import com.liferay.portal.model.User;
 
 public class FileAsset extends Contentlet implements IFileAsset {
 
+	String metaData;
 	public FileAsset() {
 		super();
 
 	}
 
+	public String getMetaData(){
+		if(metaData ==null){
+			metaData=(String) super.get(FileAssetAPI.META_DATA_FIELD);
+		}
+		return metaData;
+
+	}
+	
+	
+
+	public void setMetaData(String metaData) {
+		this.metaData = metaData;
+	}
+
 	public void setMenuOrder(int sortOrder) {
 		setLongProperty(FileAssetAPI.SORT_ORDER, new Long(sortOrder));
-		
+
 	}
 
 	public int getMenuOrder() {
@@ -63,7 +78,27 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public long getFileSize() {
-		return (Long) getLongProperty(FileAssetAPI.SIZE_FIELD);
+		return getFileAsset().length();
+	}
+
+	public int getHeight() {
+		int height = 0;
+		try {
+			height = javax.imageio.ImageIO.read(getFileAsset()).getHeight();
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return height;
+	}
+
+	public int getWidth() {
+		int width = 0;
+		try {
+			width = javax.imageio.ImageIO.read(getFileAsset()).getWidth();
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return width;
 	}
 
 	public void setFileName(String name) {
@@ -142,14 +177,14 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
        return isDeleted();
 	}
-	
+
 
 	/**
 	 * Returns the live.
 	 * @return boolean
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 */
 	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
 	    return APILocator.getVersionableAPI().isLive(this);
@@ -158,24 +193,24 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	/**
 	 * Returns the locked.
 	 * @return boolean
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 */
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
        return APILocator.getVersionableAPI().isLocked(this);
    }
 
-	
+
 	public String getType(){
 		return "file_asset";
 	}
-	
+
 	 public String getExtension(){
 		 return UtilMethods.getFileExtension(getFileName());
 
 	 }
-	 
+
 	 public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String,Object> map = super.getMap();
 		boolean live =  false;
@@ -210,7 +245,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 			map.put("modUserName", modUser.getFullName());
 		else
 			map.put("modUserName", "unknown");
-		
+
 		return map;
 	 }
 
@@ -218,12 +253,12 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return UtilMethods.isSet(getIdentifier()) ?
 		        APILocator.getIdentifierAPI().find(getIdentifier()).getURI()
 		       : "";
-		
+
 	}
 
 	public Date getIDate() {
 		// TODO Auto-generated method stub
 		return getModDate();
 	}
-	
+
 }

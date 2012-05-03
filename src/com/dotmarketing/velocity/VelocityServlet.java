@@ -103,7 +103,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	private static LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-
+	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
 	/**
 	 * @param permissionAPI
 	 *            the permissionAPI to set
@@ -121,6 +121,10 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+
+		
+		
 		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL) && LicenseUtil.getLevel() < 299) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;

@@ -19,8 +19,8 @@ CREATE INDEX idx_permission_reference_4 ON permission_reference (asset_id,permis
 CREATE INDEX idx_permission_reference_5 ON permission_reference (asset_id,reference_id,permission_type);
 CREATE INDEX idx_permission_reference_6 ON permission_reference (permission_type);
 
-CREATE UNIQUE INDEX idx_field_velocity_structure ON field (velocity_var_name,structure_inode); 
- 
+CREATE UNIQUE INDEX idx_field_velocity_structure ON field (velocity_var_name,structure_inode);
+
 alter table chain_state add constraint fk_state_chain foreign key (chain_id) references chain(id);
 alter table chain_state add constraint fk_state_code foreign key (link_code_id) references chain_link_code(id);
 alter table chain_state_parameter add constraint fk_parameter_state foreign key (chain_state_id) references chain_state(id);
@@ -32,9 +32,9 @@ alter table contentlet add constraint FK_structure_inode foreign key (structure_
 ALTER TABLE structure ALTER COLUMN fixed tinyint NOT NULL;
 alter table structure add CONSTRAINT [DF_structure_fixed]  DEFAULT ((0)) for fixed;
 
-ALTER TABLE field ALTER COLUMN fixed tinyint NOT NULL; 
+ALTER TABLE field ALTER COLUMN fixed tinyint NOT NULL;
 ALTER TABLE field ALTER COLUMN read_only tinyint  NOT NULL;
-ALTER TABLE campaign ALTER COLUMN active tinyint NOT NULL; 
+ALTER TABLE campaign ALTER COLUMN active tinyint NOT NULL;
 alter table field add CONSTRAINT [DF_field_fixed]  DEFAULT ((0)) for fixed;
 alter table field add CONSTRAINT [DF_field_read_only]  DEFAULT ((0)) for read_only;
 
@@ -69,7 +69,7 @@ ALTER TABLE dist_journal ADD CONSTRAINT
        );
 CREATE TABLE dist_process ( id bigint NOT NULL IDENTITY (1, 1), object_to_index varchar(1024) NOT NULL, serverid varchar(64) NOT NULL, journal_type int NOT NULL, time_entered datetime NOT NULL ) ;
 ALTER TABLE dist_process ADD CONSTRAINT PK_dist_process PRIMARY KEY CLUSTERED ( id);
-	
+
 create table plugin_property (
    plugin_id varchar(255) not null,
    propkey varchar(255) not null,
@@ -81,7 +81,7 @@ create table plugin_property (
 alter table plugin_property add constraint fk_plugin_plugin_property foreign key (plugin_id) references plugin(id);
 
 CREATE TABLE dist_reindex_journal ( id bigint NOT NULL IDENTITY (1, 1), inode_to_index varchar(100) NOT NULL,ident_to_index varchar(100) NOT NULL, serverid varchar(64), priority int NOT NULL, time_entered datetime DEFAULT getDate(), index_val varchar(325),dist_action integer NOT NULL DEFAULT 1);
-	
+
 CREATE INDEX dist_reindex_index1 on dist_reindex_journal (inode_to_index);
 CREATE INDEX dist_reindex_index2 on dist_reindex_journal (dist_action);
 CREATE INDEX dist_reindex_index3 on dist_reindex_journal (serverid);
@@ -101,7 +101,7 @@ AS
 DECLARE @c varchar(100)
 SELECT @c = count(*)
 FROM cms_role e INNER JOIN inserted i ON i.role_key = e.role_key WHERE i.role_key IS NOT NULL AND i.id <> e.id
-IF (@c > 0)  
+IF (@c > 0)
 BEGIN
    RAISERROR ('Duplicated role key.', 16, 1)
    ROLLBACK TRANSACTION
@@ -110,15 +110,15 @@ END;
 CREATE TRIGGER check_identifier_host_inode
 ON identifier
 FOR INSERT, UPDATE AS
-DECLARE @assetType varchar(10) 
+DECLARE @assetType varchar(10)
 DECLARE @hostInode varchar(50)
 DECLARE cur_Inserted cursor
 LOCAL FAST_FORWARD for
  Select asset_type, host_inode
- from inserted 
+ from inserted
  for Read Only
 open cur_Inserted
-fetch next from cur_Inserted into @assetType,@hostInode 
+fetch next from cur_Inserted into @assetType,@hostInode
 while @@FETCH_STATUS <> -1
 BEGIN
  IF(@assetType <> 'content' AND (@hostInode is null OR @hostInode = ''))
@@ -136,14 +136,14 @@ ALTER TABLE users_cms_roles ADD CONSTRAINT IX_cms_role UNIQUE NONCLUSTERED (role
 alter table users_cms_roles add constraint fkusers_cms_roles1 foreign key (role_id) references cms_role;
 alter table users_cms_roles add constraint fkusers_cms_roles2 foreign key (user_id) references user_;
 
-ALTER TABLE cms_layout ADD CONSTRAINT IX_cms_layout UNIQUE NONCLUSTERED (layout_name); 
+ALTER TABLE cms_layout ADD CONSTRAINT IX_cms_layout UNIQUE NONCLUSTERED (layout_name);
 
 ALTER TABLE portlet ADD CONSTRAINT IX_portletid UNIQUE NONCLUSTERED (portletid);
 
-ALTER TABLE cms_layouts_portlets ADD CONSTRAINT IX_cms_layouts_portlets UNIQUE NONCLUSTERED (portlet_id, layout_id); 
+ALTER TABLE cms_layouts_portlets ADD CONSTRAINT IX_cms_layouts_portlets UNIQUE NONCLUSTERED (portlet_id, layout_id);
 alter table cms_layouts_portlets add constraint fklcms_layouts_portlets foreign key (layout_id) references cms_layout;
 
-ALTER TABLE layouts_cms_roles ADD CONSTRAINT IX_layouts_cms_roles UNIQUE NONCLUSTERED (role_id, layout_id); 
+ALTER TABLE layouts_cms_roles ADD CONSTRAINT IX_layouts_cms_roles UNIQUE NONCLUSTERED (role_id, layout_id);
 alter table layouts_cms_roles add constraint fklayouts_cms_roles1 foreign key (role_id) references cms_role;
 alter table layouts_cms_roles add constraint fklayouts_cms_roles2 foreign key (layout_id) references cms_layout;
 
@@ -163,7 +163,7 @@ insert into dist_lock (dummy) values (1);
 create table import_audit (
 	id bigint not null,
 	start_date datetime,
-	userid varchar(255), 
+	userid varchar(255),
 	filename varchar(512),
 	status int,
 	last_inode varchar(100),
@@ -171,41 +171,41 @@ create table import_audit (
 	serverid varchar(255),
 	primary key (id)
 	);
-	
+
 alter table category alter column category_velocity_var_name varchar(255) not null;
 
 alter table import_audit add warnings text,
 	errors text,
 	results text,
 	messages text;
-	
-alter table structure add CONSTRAINT [DF_structure_host] DEFAULT 'SYSTEM_HOST' for host;	
+
+alter table structure add CONSTRAINT [DF_structure_host] DEFAULT 'SYSTEM_HOST' for host;
 alter table structure add CONSTRAINT [DF_structure_folder] DEFAULT 'SYSTEM_FOLDER' for folder;
-alter table structure add CONSTRAINT [CK_structure_host] CHECK(host <> '' AND host IS NOT NULL)		
-alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);	
+alter table structure add CONSTRAINT [CK_structure_host] CHECK(host <> '' AND host IS NOT NULL)
+alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
 alter table structure alter column velocity_var_name varchar(255) not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 
 CREATE TRIGGER structure_host_folder_trigger
 ON structure
 FOR INSERT, UPDATE AS
-DECLARE @newFolder varchar(100) 
+DECLARE @newFolder varchar(100)
 DECLARE @newHost varchar(100)
-DECLARE @folderInode varchar(100) 
+DECLARE @folderInode varchar(100)
 DECLARE @hostInode varchar(100)
 DECLARE cur_Inserted cursor
 LOCAL FAST_FORWARD for
  Select folder, host
- from inserted 
+ from inserted
  for Read Only
 open cur_Inserted
 fetch next from cur_Inserted into @newFolder,@newHost
 while @@FETCH_STATUS <> -1
 BEGIN
-   IF (@newHost <> 'SYSTEM_HOST' AND @newFolder <> 'SYSTEM_FOLDER') 
+   IF (@newHost <> 'SYSTEM_HOST' AND @newFolder <> 'SYSTEM_FOLDER')
    BEGIN
 	  SELECT @hostInode = identifier.host_inode, @folderInode = folder.inode from folder,identifier where folder.identifier = identifier.id and folder.inode = @newFolder
-      IF (@folderInode IS NULL OR @folderInode = '' OR @newHost <> @hostInode) 
+      IF (@folderInode IS NULL OR @folderInode = '' OR @newHost <> @hostInode)
       BEGIN
 	    RAISERROR (N'Cannot assign host/folder to structure, folder does not belong to given host', 10, 1)
 	    ROLLBACK WORK
@@ -214,13 +214,13 @@ BEGIN
 fetch next from cur_Inserted into @newFolder,@newHost
 END;
 
-CREATE PROCEDURE load_records_to_index(@server_id VARCHAR, @records_to_fetch INT)
-AS 
+CREATE PROCEDURE load_records_to_index(@server_id VARCHAR(100), @records_to_fetch INT)
+AS
 BEGIN
 WITH cte AS (
   SELECT TOP(@records_to_fetch) *
   FROM dist_reindex_journal WITH (ROWLOCK, READPAST, UPDLOCK)
-  WHERE serverid IS NULL 
+  WHERE serverid IS NULL
   ORDER BY priority ASC)
 UPDATE cte
   SET serverid=@server_id
@@ -232,40 +232,40 @@ CREATE Trigger check_file_versions
 ON file_asset
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)   
+ DECLARE @identifier varchar(100)
  DECLARE file_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
-  from deleted 
+  from deleted
   for Read Only
- open file_cur_Deleted   
+ open file_cur_Deleted
  fetch next from file_cur_Deleted into @identifier
- while @@FETCH_STATUS <> -1 
+ while @@FETCH_STATUS <> -1
  BEGIN
  select @totalCount = count(*) from file_asset where identifier = @identifier
- IF (@totalCount = 0)      
-  BEGIN       
+ IF (@totalCount = 0)
+  BEGIN
     DELETE from identifier where id = @identifier
-  END 
+  END
 fetch next from file_cur_Deleted into @identifier
 END;
 CREATE Trigger check_content_versions
 ON contentlet
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)   
+ DECLARE @identifier varchar(100)
  DECLARE content_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
-  from deleted 
+  from deleted
   for Read Only
- open content_cur_Deleted   
+ open content_cur_Deleted
  fetch next from content_cur_Deleted into @identifier
- while @@FETCH_STATUS <> -1 
+ while @@FETCH_STATUS <> -1
  BEGIN
  select @totalCount = count(*) from contentlet where identifier = @identifier
- IF (@totalCount = 0)      
-  BEGIN       
+ IF (@totalCount = 0)
+  BEGIN
    DELETE from identifier where id = @identifier
-  END 
+  END
 fetch next from content_cur_Deleted into @identifier
 END;
 
@@ -273,20 +273,20 @@ CREATE Trigger check_link_versions
 ON links
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)   
+ DECLARE @identifier varchar(100)
  DECLARE link_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
-  from deleted 
+  from deleted
   for Read Only
- open link_cur_Deleted   
+ open link_cur_Deleted
  fetch next from link_cur_Deleted into @identifier
- while @@FETCH_STATUS <> -1 
+ while @@FETCH_STATUS <> -1
  BEGIN
  select @totalCount = count(*) from links where identifier = @identifier
- IF (@totalCount = 0)      
-  BEGIN       
+ IF (@totalCount = 0)
+  BEGIN
    DELETE from identifier where id = @identifier
-  END 
+  END
 fetch next from link_cur_Deleted into @identifier
 END;
 
@@ -294,20 +294,20 @@ CREATE Trigger check_container_versions
 ON containers
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)   
+ DECLARE @identifier varchar(100)
  DECLARE container_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
-  from deleted 
+  from deleted
   for Read Only
- open container_cur_Deleted   
+ open container_cur_Deleted
  fetch next from container_cur_Deleted into @identifier
- while @@FETCH_STATUS <> -1 
+ while @@FETCH_STATUS <> -1
  BEGIN
  select @totalCount = count(*) from containers where identifier = @identifier
- IF (@totalCount = 0)      
-  BEGIN       
+ IF (@totalCount = 0)
+  BEGIN
    DELETE from identifier where id = @identifier
-  END 
+  END
 fetch next from container_cur_Deleted into @identifier
 END;
 
@@ -316,47 +316,47 @@ CREATE Trigger check_template_versions
 ON template
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)   
+ DECLARE @identifier varchar(100)
  DECLARE template_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
-  from deleted 
+  from deleted
   for Read Only
- open template_cur_Deleted   
+ open template_cur_Deleted
  fetch next from template_cur_Deleted into @identifier
- while @@FETCH_STATUS <> -1 
+ while @@FETCH_STATUS <> -1
  BEGIN
  select @totalCount = count(*) from template where identifier = @identifier
- IF (@totalCount = 0)      
-  BEGIN       
+ IF (@totalCount = 0)
+  BEGIN
    DELETE from identifier where id = @identifier
-  END 
+  END
 fetch next from template_cur_Deleted into @identifier
 END;
 
 CREATE Trigger check_htmlpage_versions
-ON htmlpage 
+ON htmlpage
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)   
+ DECLARE @identifier varchar(100)
  DECLARE htmlpage_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
-  from deleted 
+  from deleted
   for Read Only
- open htmlpage_cur_Deleted   
+ open htmlpage_cur_Deleted
  fetch next from htmlpage_cur_Deleted into @identifier
- while @@FETCH_STATUS <> -1 
+ while @@FETCH_STATUS <> -1
  BEGIN
  select @totalCount = count(*) from htmlpage where identifier = @identifier
- IF (@totalCount = 0)      
-  BEGIN       
+ IF (@totalCount = 0)
+  BEGIN
    DELETE from identifier where id = @identifier
-  END 
+  END
 fetch next from htmlpage_cur_Deleted into @identifier
 END;
 
 CREATE Trigger check_identifier_parent_path
  ON identifier
- FOR INSERT,UPDATE AS  
+ FOR INSERT,UPDATE AS
  DECLARE @folderId varchar(100)
  DECLARE @id varchar(100)
  DECLARE @assetType varchar(100)
@@ -364,27 +364,27 @@ CREATE Trigger check_identifier_parent_path
  DECLARE @hostInode varchar(100)
  DECLARE cur_Inserted cursor LOCAL FAST_FORWARD for
  Select id,asset_type,parent_path,host_inode
-  from inserted 
+  from inserted
   for Read Only
- open cur_Inserted   
+ open cur_Inserted
  fetch next from cur_Inserted into @id,@assetType,@parentPath,@hostInode
- while @@FETCH_STATUS <> -1 
+ while @@FETCH_STATUS <> -1
  BEGIN
   IF(@parentPath <>'/' AND @parentPath <>'/System folder')
   BEGIN
     select @folderId = id from identifier where asset_type='folder' and host_inode = @hostInode and parent_path+asset_name+'/' = @parentPath and id <>@id
-    IF (@folderId IS NULL)        
-     BEGIN           
-       RAISERROR (N'Cannot insert/update for this path does not exist for the given host', 10, 1)          
-       ROLLBACK WORK        
-     END 
+    IF (@folderId IS NULL)
+     BEGIN
+       RAISERROR (N'Cannot insert/update for this path does not exist for the given host', 10, 1)
+       ROLLBACK WORK
+     END
   END
  fetch next from cur_Inserted into @id,@assetType,@parentPath,@hostInode
 END;
 
-alter table structure add constraint fk_structure_host foreign key (host) references identifier(id);	
-   
-create index idx_template3 on template (title); 
+alter table structure add constraint fk_structure_host foreign key (host) references identifier(id);
+
+create index idx_template3 on template (title);
 
 CREATE INDEX idx_contentlet_4 ON contentlet (structure_inode);
 
@@ -484,7 +484,7 @@ DECLARE @newFolderPath varchar(100)
 DECLARE @oldFolderPath varchar(100)
 DECLARE @assetName varchar(100)
    UPDATE identifier SET  parent_path  = @newPath where parent_path = @oldPath and host_inode = @hostInode
-DECLARE folder_data_cursor CURSOR LOCAL FAST_FORWARD for 
+DECLARE folder_data_cursor CURSOR LOCAL FAST_FORWARD for
 select asset_name from identifier where asset_type='folder' and parent_path = @newPath and host_inode = @hostInode
 OPEN folder_data_cursor
 FETCH NEXT FROM folder_data_cursor INTO @assetName
@@ -500,13 +500,14 @@ CREATE Trigger rename_folder_assets_trigger
 on Folder
 FOR UPDATE AS
 DECLARE @oldPath varchar(100)
-DECLARE @newPath varchar(100) 
-DECLARE @newName varchar(100)   
+DECLARE @newPath varchar(100)
+DECLARE @newName varchar(100)
 DECLARE @hostInode varchar(100)
 DECLARE @ident varchar(100)
 DECLARE folder_cur_Updated cursor LOCAL FAST_FORWARD for
- Select identifier,name
- from inserted
+ Select inserted.identifier,inserted.name
+ from inserted join deleted on (inserted.inode=deleted.inode)
+ where inserted.name<>deleted.name
  for Read Only
 open folder_cur_Updated
 fetch next from folder_cur_Updated into @ident,@newName
@@ -554,7 +555,7 @@ alter table contentlet_version_info add constraint fk_contentlet_version_info_la
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
 alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);
-alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
+--alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
 alter table workflow_comment add constraint workflowtask_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);
 alter table workflow_history add constraint workflowtask_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
 
@@ -612,7 +613,7 @@ create table workflow_action_class_pars(
     "key" varchar(255) not null,
     value text
 );
-create index workflow_idx_action_class_param_action on 
+create index workflow_idx_action_class_param_action on
     workflow_action_class_pars(workflow_action_class_id);
 
 
@@ -621,10 +622,10 @@ create table workflow_scheme_x_structure(
     scheme_id varchar(36) references workflow_scheme(id),
     structure_id varchar(36) references structure(inode)
 );
-create index workflow_idx_scheme_structure_1 on 
+create index workflow_idx_scheme_structure_1 on
     workflow_scheme_x_structure(structure_id);
-    
-create unique index workflow_idx_scheme_structure_2 on 
+
+create unique index workflow_idx_scheme_structure_2 on
     workflow_scheme_x_structure(structure_id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
@@ -644,3 +645,11 @@ create table indicies (
   index_name varchar(30) primary key,
   index_type varchar(16) not null unique
 );
+-- ****** Log Console Table *******
+  CREATE TABLE log_mapper (
+    enabled   	 numeric(1,0) not null,
+    log_name 	 varchar(30) not null,
+    description  varchar(50) not null,
+    primary key (log_name)
+  );
+  

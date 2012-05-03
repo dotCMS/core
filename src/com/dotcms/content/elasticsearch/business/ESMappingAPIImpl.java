@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,10 +16,17 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -62,37 +70,60 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 		}
 	}
+	
+	/**
+	 * This method takes a mapping string, a type and puts it as the mapping
+	 * @param index
+	 * @param type
+	 * @param mapping
+	 * @return
+	 * @throws ElasticSearchException
+	 * @throws IOException
+	 */
+    public  boolean putMapping(String indexName, String type, String mapping) throws ElasticSearchException, IOException{
+    	
+    	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+    	return lis.actionGet().acknowledged();
+    }
+    
+	/**
+	 * This method takes a mapping string, a type and puts it as the mapping
+	 * @param index
+	 * @param type
+	 * @param mapping
+	 * @return
+	 * @throws ElasticSearchException
+	 * @throws IOException
+	 */
+    public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticSearchException, IOException{
+    	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+    	return lis.actionGet().acknowledged();
+    }
+    
+    public  boolean setSettings(String indexName,   String settings) throws ElasticSearchException, IOException{
+    	new ESClient().getClient().admin().indices().prepareUpdateSettings().setSettings(settings).setIndices( indexName).execute().actionGet();
+    	return true;
+    }
+    
+    
+    
+    /**
+     * Gets the mapping params for an index and type
+     * @param index
+     * @param type
+     * @return
+     * @throws ElasticSearchException
+     * @throws IOException
+     */
+    public  String getMapping(String index, String type) throws ElasticSearchException, IOException{
+    	
+    	return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
+        .actionGet().state().metaData().indices()
+        .get(index).mapping(type).source().string();
+    	
+    }
+    
 
-	/*
-	public String buildMapping(Structure struct) {
-
-		Map<String, Object> type = new HashMap<String, Object>();
-		Map<String, Object> props = new HashMap<String, Object>();
-		Map<String, Object> fields = getDefaultContentletFields();
-
-		// default mapping properties
-		Map m = new HashMap();
-		m.put("enabled", true);
-		props.put("_source", m);
-
-		// Indexed Fields
-		try {
-			List<Field> conFields = struct.getFields();
-			for (Field f : conFields) {
-				if (f.isIndexed()) {
-					fields.put(f.getVelocityVarName(), getFieldJson(f));
-
-				}
-
-			}
-			props.put("properties", fields);
-			type.put(struct.getVelocityVarName(), props);
-			return mapper.defaultPrettyPrintingWriter().writeValueAsString(type);
-		} catch (Exception e) {
-			Logger.error(this.getClass(), e.getMessage(), e);
-		}
-		return null;
-	}*/
 
 	private Map<String, Object> getFieldJson(Field f) throws DotMappingException {
 		Map<String, Object> fieldProps = getDefaultFieldMap();
@@ -215,6 +246,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("identifier", ident.getId());
             m.put("conHost", ident.getHostId());
             m.put("conFolder", con.getFolder());
+            m.put("parentPath", ident.getParentPath());
+            String uri = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
+            if(uri != null){
+            	m.put("uri",uri );	
+            }
 
             Map<String,String> mlowered=new HashMap<String,String>();
             for(Entry<String,String> entry : m.entrySet()){
@@ -230,45 +266,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	/*
-	public Contentlet toContentlet(String json) throws DotMappingException {
 
-		try {
-			JsonNode node = mapper.readValue((String) json, JsonNode.class);
-			node = node.path("_source");
-			Map<String, Object> map = mapper.readValue(node, HashMap.class);
-			return toContentlet(map);
-		} catch (Exception e) {
-			Logger.error(this.getClass(), e.getMessage());
-			throw new DotMappingException(e.getMessage());
-		}
-
-	}*/
-
-	/*
-	public Contentlet toContentlet(Map<String, Object> map) throws DotMappingException {
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-		Contentlet c = new Contentlet();
-		for (Map.Entry ent : map.entrySet()) {
-			String key = (String) ent.getKey();
-			Object obj = ent.getValue();
-			if (ent.getValue() instanceof String) {
-				String val = (String) ent.getValue();
-				if (val.length() == 20 && val.endsWith("Z")) {
-					try {
-
-						Date d = df.parse(val);
-						obj = d;
-					} catch (Exception e) {
-
-					}
-				}
-
-			}
-			c.setProperty(key, obj);
-		}
-		return c;
-	}*/
 
 	public Object toMappedObj(Contentlet con) throws DotMappingException {
 		return toJson(con);
@@ -363,10 +361,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         m.put("ownerCanPublish", Boolean.toString(ownerCanPub));
 	}
 
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-	private static final SimpleDateFormat datetimeFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-	private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
-	private static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
+	public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+	public static final SimpleDateFormat datetimeFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+	public static final SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
+	public static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
 	
 	@SuppressWarnings("unchecked")
 	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {
@@ -477,7 +475,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             }
         }
 	}
-
+	public String toJsonString(Map<String, Object> map) throws JsonGenerationException, JsonMappingException, IOException{
+		return mapper.writeValueAsString(map);
+	}
 	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {
 	    List<String> dependenciesToReindex = new ArrayList<String>();
 
@@ -603,5 +603,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 }
             }
         }
+
 	}
+	
+
 }

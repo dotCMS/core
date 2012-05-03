@@ -127,7 +127,7 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
-    private static final ESIndexAPI indexAPI = new ESIndexAPI();
+    private static final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private ESContentFactoryImpl conFac;
@@ -156,7 +156,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Object loadField(String inode, Field f) throws DotDataException {
         return conFac.loadField(inode, f.getFieldContentlet());
     }
-    
+
     public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException{
         return conFac.findAllCurrent(offset, limit);
     }
@@ -217,6 +217,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
+        if(languageId<=0) {
+            languageId=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        }
 
         try {
             ContentletVersionInfo clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
@@ -253,7 +256,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         try {
-            return perAPI.filterCollection(search("+conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return perAPI.filterCollection(search("+live:false +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
@@ -1365,8 +1368,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // we lock the table dist_reindex_journal until we
             ReindexThread.getInstance().lockCluster();
-            ESIndexAPI iAPI = new ESIndexAPI();
-            if(iAPI.isInFullReindex()){
+           
+            if(indexAPI.isInFullReindex()){
             	try{
             		ReindexThread.getInstance().unlockCluster();
             		HibernateUtil.commitTransaction();
@@ -2268,15 +2271,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	if(createNewVersion && workingContentlet!= null && UtilMethods.isSet(workingContentlet.getInode())){
             		APILocator.getVersionableAPI().setWorking(workingContentlet);
             	}
-				Logger.error(this, e.getMessage());
+            	Logger.error(this, e.getMessage());
+				Logger.error(this, e.toString());
 				if(e instanceof DotDataException)
 					throw (DotDataException)e;
 				if(e instanceof DotSecurityException)
 					throw (DotSecurityException)e;
-				if(e instanceof DotContentletStateException)
-					throw (DotContentletStateException)e;
 				if(e instanceof DotContentletValidationException)
 					throw (DotContentletValidationException)e;
+				if(e instanceof DotContentletStateException)
+					throw (DotContentletStateException)e;
 				if(e instanceof DotWorkflowException)
 					throw (DotWorkflowException)e;
 				if(e instanceof DotRuntimeException)
@@ -2750,7 +2754,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         Structure st = StructureCache.getStructureByInode(contentlet.getStructureInode());
         if(Structure.STRUCTURE_TYPE_FILEASSET==st.getStructureType()){
-            if(contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
+            if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
                 cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
                 throw cve;
@@ -2758,7 +2762,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean fileNameExists = false;
             try {
                 Host host = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
-                Folder folder = APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+                Folder folder = null;
+                if(UtilMethods.isSet(contentlet.getFolder()))
+                    folder=APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+                else
+                    folder=APILocator.getFolderAPI().findSystemFolder();
                 String fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD)!=null?contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName():"";
                 if(UtilMethods.isSet(contentlet.getStringProperty("fileName")))//DOTCMS-7093
                 	fileName = contentlet.getStringProperty("fileName");
@@ -2774,7 +2782,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (Exception e) {
             	if(e instanceof FileAssetValidationException)
             		throw (FileAssetValidationException)e ;
-                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD);
+                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD,e);
             }
             if(fileNameExists){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
@@ -3418,7 +3426,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         newContentlet.setInode("");
         newContentlet.setIdentifier("");
-        newContentlet.setHost(host != null?host.getIdentifier(): contentlet.getHost());
+        newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
         newContentlet.setFolder(folder != null?folder.getInode(): null);
         newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
         if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
@@ -3509,19 +3517,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
             host = new Host();
         Folder folder = folderAPI.findFolderByPath(contIdentifier.getParentPath(), host, user, false);
 
-        return copyContentlet(contentlet, host, folder, user, true, respectFrontendRoles);
+        return copyContentlet(contentlet, host, folder, user, needAppendCopy(contentlet,host,folder), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        return copyContentlet(contentlet, host, null, user, true, respectFrontendRoles);
+        return copyContentlet(contentlet, host, null, user, needAppendCopy(contentlet,host,null), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        return copyContentlet(contentlet, null, folder, user, true, respectFrontendRoles);
+        return copyContentlet(contentlet, null, folder, user, needAppendCopy(contentlet,null,folder), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         return copyContentlet(contentlet, null, folder, user, appendCopyToFileName, respectFrontendRoles);
+    }
+
+    private boolean needAppendCopy(Contentlet contentlet, Host host, Folder folder) throws DotDataException {
+        if(host!=null && contentlet.getHost()!=null && !contentlet.getHost().equals(host.getIdentifier()))
+            // if different host we really don't need to
+            return false;
+
+        String sourcef=null;
+        if(UtilMethods.isSet(contentlet.getFolder()))
+            sourcef=contentlet.getFolder();
+        else
+            sourcef=APILocator.getFolderAPI().findSystemFolder().getInode();
+
+        String destf=null;
+        if(UtilMethods.isSet(folder))
+            destf=folder.getInode();
+        else
+            destf=APILocator.getFolderAPI().findSystemFolder().getInode();
+
+        return sourcef.equals(destf);
     }
 
     private boolean hasAHostField(String structureInode) {
@@ -3620,11 +3648,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     urlMapField = urlMapField.replaceFirst("\\}", "\\\\}");
                     result = result.replaceAll(urlMapField, urlMapFieldValue);
                 }
+            }else  if (UtilMethods.isSet(structure.getDetailPage())) {
+            	HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
+            	if(p != null && UtilMethods.isSet(p.getIdentifier())){
+            		result = p.getURI() + "?id=" + contentlet.getInode();
+            	}
+            	
+            	
             }
-
             Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, respectFrontendRoles);
             if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles) {
-                result = result + "?host_id=" + host.getIdentifier();
+            	
+            	if(result == null || result.indexOf("?") <0){
+            	
+            		result = result + "?host_id=" + host.getIdentifier();
+            	}
+            	else{
+            		result = result + "&host_id=" + host.getIdentifier();
+            	}
             }
         }
 

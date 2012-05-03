@@ -36,8 +36,8 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
 import com.dotmarketing.beans.ClickstreamRequest;
@@ -237,22 +237,13 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		}
 		//Not being used this is being called using ajax
 		else if(cmd.equals("fixAssetsInconsistencies")){
-           //getServlet().getServletContext().getSer
-			Logger.info(this, "Running Fix Assets Inconsistencies");
-			int result = (Integer) CMSMaintenanceFactory.fixAssetsInconsistencies().get("error");
-			if(result >= 0){
-				message = "Fix Assets Inconsistencies completed. Total Assets recovered:" + result;
-			} else {
-				errorMessage = "Fixed Assets Inconsistencies fail";
-			}
-
+           // this one NOT
 		}
 		//Not being used this is being called using ajax
 		else if(cmd.equals("dropoldassets")){
 
 			Logger.info(this, "Running Drop old Assets");
-			int result = (Integer) CMSMaintenanceFactory.fixAssetsInconsistencies().get("error");
-			if(result >= 0 && _dropAssetOldVersions(ccf) >= 0){
+			if(_dropAssetOldVersions(ccf) >= 0){
 				message = "message.cmsmaintenance.dropoldassets.sucessfully";
 			}else{
 				errorMessage = "message.cmsmaintenance.dropoldassets.failed";
@@ -889,11 +880,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 			file = new File(backupTempFilePath + "/index_working.json");
-			ESUtils.backupIndex(info.working, file);
+			new ESIndexAPI().backupIndex(info.working, file);
 			 
 			
 			file = new File(backupTempFilePath + "/index_live.json");
-			ESUtils.backupIndex(info.live, file);
+			new ESIndexAPI().backupIndex(info.live, file);
 
 
 			

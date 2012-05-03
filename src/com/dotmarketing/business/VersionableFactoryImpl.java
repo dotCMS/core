@@ -1,11 +1,14 @@
 package com.dotmarketing.business;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -47,14 +50,14 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
 		dh.setParam(vinfo.getWorkingInode());
 		Logger.debug(this.getClass(), "findWorkingVersion query: " + dh.getQuery());
-		
+
 		Versionable v =(Versionable) dh.load();
 		if(v.getVersionId() ==null){
 			throw new DotStateException("Invalid working version for identifier : " +id + " / working inode : " + vinfo.getWorkingInode());
 		}
 		return v;
-		
-		
+
+
 	}
 
 	@Override
@@ -102,6 +105,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotDataException("identifier:" + id +" not found");
 		}
 		Class clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
+		if(clazz.equals(Inode.class))
+		    return new ArrayList<Versionable>(1);
 		HibernateUtil dh = new HibernateUtil(clazz);
 		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
 		dh.setParam(id);
@@ -115,6 +120,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
         VersionInfo vi = icache.getVersionInfo(identifier);
         if(vi==null || vi.getWorkingInode().equals("NOTFOUND")) {
             Identifier ident = APILocator.getIdentifierAPI().find(identifier);
+            if(ident==null || !UtilMethods.isSet(ident.getId()))
+                return null;
             Class clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
             HibernateUtil dh = new HibernateUtil(clazz);
             dh.setQuery("from "+clazz.getName()+" where identifier=?");
@@ -204,10 +211,12 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ContentletVersionInfo cVer=new ContentletVersionInfo();
         cVer.setDeleted(false);
         cVer.setLockedBy(null);
-        cVer.setLockedOn(new Date());
+        cVer.setLockedOn(new Timestamp(System.currentTimeMillis()));
         cVer.setIdentifier(identifier.getId());
         cVer.setLang(lang);
         cVer.setWorkingInode(workingInode);
+        cVer.setVersionTs(new Timestamp(System.currentTimeMillis()));
+        
         HibernateUtil.save(cVer);
         icache.addContentletVersionInfoToCache(cVer);
         return cVer;
@@ -227,6 +236,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setLockedBy(null);
         ver.setLockedOn(new Date());
         ver.setWorkingInode(workingInode);
+        ver.setVersionTs(new Timestamp(System.currentTimeMillis()));
         HibernateUtil.save(ver);
         icache.addVersionInfoToCache(ver);
         return ver;
@@ -234,7 +244,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	@Override
 	protected void deleteVersionInfo(String id) throws DotDataException {
-		VersionInfo info = getVersionInfo(id);
+		icache.removeVersionInfoFromCache(id);
+	    VersionInfo info = getVersionInfo(id);
 		if(info!=null && UtilMethods.isSet(info.getIdentifier())) {
 			HibernateUtil.delete(info);
 		}

@@ -154,7 +154,7 @@ public class VelocityUtil {
 
 	public static Context getBasicContext() {
 		Context context = new VelocityContext();
-		
+		VelocityServlet.velocityCtx.set(context);
 		context.put("UtilMethods", new UtilMethods());
 		context.put("PortletURLUtil", new PortletURLUtil());
 		context.put("quote", "\"");
@@ -234,7 +234,7 @@ public class VelocityUtil {
 		} catch (Exception nsue) {
 			Logger.error(VelocityServlet.class, nsue.getMessage(), nsue);
 		}
-
+		VelocityServlet.velocityCtx.set(context);
 		return context;
 
 	}

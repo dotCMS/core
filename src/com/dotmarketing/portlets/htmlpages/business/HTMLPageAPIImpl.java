@@ -553,9 +553,9 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId) throws DotStateException, DotDataException, DotSecurityException {
 		return getHTML(htmlPage, liveMode, contentId, null);
 	}
-	//http://jira.dotmarketing.net/browse/DOTCMS-3392
-	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId, User user) throws DotStateException, DotDataException, DotSecurityException {
-
+	
+	@Override
+	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user) throws DotStateException, DotDataException, DotSecurityException {
 		/*
 		 * The below code is copied from VelocityServlet.doLiveMode() and modified to parse a HTMLPage.
 		 * Replaced the request and response objects with DotRequestProxy and DotResponseProxyObjects.
@@ -579,8 +579,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 		StringWriter out = new StringWriter();
 		Context context = null;
-		String uri = htmlPage.getURI();
-		Host host = getParentHost(htmlPage);
+		
 
 		uri = UtilMethods.cleanURI(uri);
 
@@ -716,23 +715,23 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 					.merge(context, out);
 
 		} catch (PortalException e1) {
-			e1.printStackTrace();
+			Logger.error(this, e1.getMessage(), e1);
 		} catch (SystemException e1) {
-			e1.printStackTrace();
+			Logger.error(this, e1.getMessage(), e1);
 		} catch (DotDataException e1) {
-			e1.printStackTrace();
+			Logger.error(this, e1.getMessage(), e1);
 		} catch (DotSecurityException e1) {
-			e1.printStackTrace();
+			Logger.error(this, e1.getMessage(), e1);
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		} catch (ResourceNotFoundException e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		} catch (ParseErrorException e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		} catch (MethodInvocationException e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(), e);
 		}
 
 		context = null;
@@ -766,6 +765,13 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		}
 
 		return out.toString();
+	}
+	
+	//http://jira.dotmarketing.net/browse/DOTCMS-3392
+	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId, User user) throws DotStateException, DotDataException, DotSecurityException {
+		String uri = htmlPage.getURI();
+		Host host = getParentHost(htmlPage);
+		return getHTML(uri, host, liveMode, contentId, user);
 	}
 
 

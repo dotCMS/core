@@ -1409,6 +1409,7 @@
 		<property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
 		<property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
 		<property column="locked_on"     name="lockedOn"                 type="date"    not-null="true"/>
+        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
   	</class>
 	<class name="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" table="contentlet_version_info">
         <composite-id>
@@ -1419,7 +1420,8 @@
         <property column="live_inode"    name="liveInode"    length="36"  type="string"  not-null="false"/>
         <property column="deleted"       name="deleted"                   type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                  type="date"    not-null="false"/>
+        <property column="locked_on"     name="lockedOn"                  type="java.sql.Timestamp"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
     </class>
 	<class name="com.dotmarketing.portlets.templates.model.TemplateVersionInfo" table="template_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
@@ -1430,6 +1432,7 @@
         <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
         <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
     </class>
 	<class name="com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo" table="htmlpage_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
@@ -1440,6 +1443,7 @@
         <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
         <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
     </class>
 	<class name="com.dotmarketing.portlets.containers.model.ContainerVersionInfo" table="container_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
@@ -1450,6 +1454,7 @@
         <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
         <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
     </class>
 	<class name="com.dotmarketing.portlets.links.model.LinkVersionInfo" table="link_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
@@ -1460,6 +1465,7 @@
         <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
         <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
     </class>
 
 	<class  name="com.dotmarketing.portlets.structure.model.FieldVariable" table="field_variable">

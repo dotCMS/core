@@ -1,3 +1,6 @@
+<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth"%>
 <%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
 <%@page import="org.elasticsearch.action.admin.indices.status.IndexStatus"%>
@@ -19,31 +22,40 @@
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
-ESIndexAPI idxApi = new ESIndexAPI();
+ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 ContentletAPI capi = APILocator.getContentletAPI();
-
+ESIndexAPI esapi = APILocator.getESIndexAPI();
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
-
+	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+		throw new DotSecurityException("Invalid user accessing index_stats.jsp - is user '" + user + "' logged in?");
+	}
 } catch (Exception e) {
-
-}
-
-boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-if(!ADMIN_MODE || user == null){
-	response.sendError(403);
+	Logger.error(this.getClass(), e.getMessage());
+	%>
+	
+		<div class="callOutBox2" style="text-align:center;margin:40px;padding:20px;">
+		<%= LanguageUtil.get(pageContext,"you-have-been-logged-off-because-you-signed-on-with-this-account-using-a-different-session") %><br>&nbsp;<br>
+		<a href="/admin"><%= LanguageUtil.get(pageContext,"Click-here-to-login-to-your-account") %></a>
+		</div>
+		
+	<% 
+	//response.sendError(403);
 	return;
 }
+
+
+
 List<String> currentIdx =idxApi.getCurrentIndex();
 List<String> newIdx =idxApi.getNewIndex();
 
 List<String> indices=idxApi.listDotCMSIndices();
-Map<String, IndexStatus> indexInfo = idxApi.getIndicesAndStatus();
+Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
 
 
-Map<String,ClusterIndexHealth> map = new ESIndexAPI().getClusterHealth();
+Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 %>

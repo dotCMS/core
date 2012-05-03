@@ -9,8 +9,8 @@
 <%  String dojoPath = Config.getStringProperty("path.to.dojo"); %>
 
 <style type="text/css">
-@import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
-@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
+@import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getVersion() %>";
+@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 .realfile {
 position: relative;
 text-align: left;

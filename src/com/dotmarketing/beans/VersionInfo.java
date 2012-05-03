@@ -1,9 +1,8 @@
 package com.dotmarketing.beans;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.Date;
-
-import com.liferay.portal.model.User;
 
 public class VersionInfo implements Serializable {
 	private static final long serialVersionUID = 241933896664122728L;
@@ -13,7 +12,8 @@ public class VersionInfo implements Serializable {
 	private String lockedBy;
 	private Date lockedOn;
 	private boolean deleted;
-	
+	private Timestamp versionTs;
+
 	public String getIdentifier() {
 		return identifier;
 	}
@@ -61,4 +61,12 @@ public class VersionInfo implements Serializable {
         lockedBy=null;
         lockedOn=new Date();
     }
+	public Timestamp getVersionTs() {
+		return versionTs;
+	}
+	public void setVersionTs(Timestamp versionTs) {
+		this.versionTs = versionTs;
+	}
+
+
 }

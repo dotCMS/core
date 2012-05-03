@@ -11,9 +11,9 @@
 %>
 
 <style type="text/css">
-@import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
-@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
-@import "<%=dojoPath%>/dojox/grid/resources/blankGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
+@import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getVersion() %>";
+@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
+@import "<%=dojoPath%>/dojox/grid/resources/blankGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 
 /*Grid need a explicit width/height by default*/
 #addedGrid<%=counter%> { width: 43em; height:

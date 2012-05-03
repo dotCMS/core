@@ -26,6 +26,7 @@ import net.sf.hibernate.HibernateException;
 import org.directwebremoting.WebContextFactory;
 import org.quartz.JobExecutionContext;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotmarketing.beans.Clickstream;
@@ -93,7 +94,7 @@ public class CMSMaintenanceAjax {
     	validateUser();
     	ESIndexAPI esapi= new ESIndexAPI();
     	
-    	return  esapi.delete(indexName);
+    	return  APILocator.getContentletIndexAPI().delete(indexName);
     }
     
     
@@ -122,7 +123,7 @@ public class CMSMaintenanceAjax {
     public String cleanReindexStructure(String inode) throws DotDataException {
     	validateUser();
     	Structure structure = StructureCache.getStructureByInode(inode);
-    	new ESIndexAPI().removeContentFromIndexByStructureInode(inode);
+    	APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(inode);
     	APILocator.getContentletAPI().refresh(structure);
 
     	Company d = PublicCompanyFactory.getDefaultCompany();
@@ -135,7 +136,7 @@ public class CMSMaintenanceAjax {
     
     public void optimizeIndices() {
     	validateUser();
-        ESIndexAPI api=new ESIndexAPI();
+        ContentletIndexAPI api=APILocator.getContentletIndexAPI();
         List<String> indices=api.listDotCMSIndices();
         api.optimize(indices);
     }
@@ -206,20 +207,9 @@ public class CMSMaintenanceAjax {
 	}
 
     public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException {
-//        if(!CMSMaintenanceFactory.findAssetsInconsistencies()) {
-    		try {
-    			Logger.debug(this, "Starting to fix assets before deleting older ones");
-			    CMSMaintenanceFactory.fixAssetsInconsistencies();
-			} catch (Exception e) {
-				Logger.error(this,"There was a problem fixing asset inconsistencies",e);
-			}
-			Logger.debug(this, "Done fixing assets about to start deleting older ones");
         	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
         	MaintenanceUtil.deleteAssetsWithNoInode();
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
-//        } else {
-//        	return -2;
-//        }
     }
 
     public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {
