@@ -669,13 +669,23 @@ function refreshJobStats(){
 	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>";
 }
 
+var myJobName;
+var myIndexName;
+
 function refreshTestSearch(){
 	var x = dijit.byId("indexTestCp");
 	var y =Math.floor(Math.random()*1123213213);
-	x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?r=" + y  );
+	if(myIndexName == undefined || myIndexName.trim().length ==0){
+		x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?r=" + y  );
+	}
+	else{
+		x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?testIndex=" + myIndexName +"&r=" + y  );
+	}
+	
 	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "Search") %>";
+	myIndexName=null;
 }
-var myJobName;
+
 function refreshJobSchedule(){
 	var x = dijit.byId("scheduleCp");
 	var y =Math.floor(Math.random()*1123213213);
@@ -688,9 +698,10 @@ function refreshJobSchedule(){
 		x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?jobName=" +myJobName +"&r=" + y  );
 	}
 	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>";
+	myJobName=null;
 }
 
-function refreshJobsListingPane(){
+function showJobsListingPane(){
 
 	var tabs =dijit.byId("mainTabContainer");
 	var pane = dijit.byId("jobTabCp");
@@ -699,7 +710,7 @@ function refreshJobsListingPane(){
 }
 
 
-function refreshJobSchedulePane(jobName){
+function showJobSchedulePane(jobName){
 	myJobName=jobName;
 	var tabs =dijit.byId("mainTabContainer");
 	var pane = dijit.byId("scheduleTabCp");
@@ -707,6 +718,13 @@ function refreshJobSchedulePane(jobName){
 
 }
 
+function showSiteSearchPane(indexName){
+	myIndexName=indexName;
+	var tabs =dijit.byId("mainTabContainer");
+	var pane = dijit.byId("indexTestTabCp");
+	tabs.selectChild(pane);
+
+}
 dojo.addOnLoad (function(){
 	var tab =dijit.byId("mainTabContainer");
    	dojo.connect(tab, 'selectChild',

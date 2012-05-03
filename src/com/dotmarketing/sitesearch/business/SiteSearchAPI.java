@@ -54,4 +54,6 @@ public interface SiteSearchAPI {
 	boolean isTaskRunning(String jobName) throws SchedulerException;
 
 	void executeTaskNow(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException;
+
+	SiteSearchResult getFromIndex(String index, String id);
 }

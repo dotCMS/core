@@ -281,7 +281,7 @@ boolean hasPath = false;
 					</span>
 					&nbsp; &nbsp; 
 					<button dojoType="dijit.form.Button"
-						id="cacnelButton" onClick="refreshJobsListingPane();"
+						id="cacnelButton" onClick="showJobsListingPane();"
 						iconClass="cancelIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
 					</button>
 				</div>

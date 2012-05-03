@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +81,14 @@ public class ESSiteSearchPublisher extends Publisher {
 
 				List<File> files = FileUtil.listFilesRecursively(bundleRoot, b.getFileFilter());
 				List<List<File>> listsOfFiles = Lists.partition(files, 10);
-
+				final Map<String, File> identifiers = new ConcurrentHashMap<String,File>(); 
+				
+				
+				
+				
+				
+				
+				
 				for (final List<File> list : listsOfFiles) {
 
 					
@@ -194,19 +202,27 @@ public class ESSiteSearchPublisher extends Publisher {
 	private void processUrlMap(File file) throws DotPublishingException {
 		String docId=null;
 		try {
-		URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
-		if (wrap == null)
-			return;
-		
-		File htmlFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
-		String uri =getUriFromFilePath(htmlFile);
-		Host h = APILocator.getHostAPI().find(wrap.getContent().getHost(), APILocator.getUserAPI().getSystemUser(), true);
-		
-		docId=DigestUtils.md5Hex(h.getIdentifier()+ uri);
-		// is the live guy
-		if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getContent().getInode())) {
+			URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
+			if (wrap == null)
+				return;
 			
-				
+			File htmlFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
+
+			docId=wrap.getId().getId();
+			SiteSearchResult inIndex = APILocator.getSiteSearchAPI().getFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
+			
+			
+			// if what we have in the index is older than what we are putting, and this is an 
+			// incremental publish, remove the old file
+			if(inIndex != null && inIndex.getModified() !=null && inIndex.getModified().after(wrap.getInfo().getVersionTs())){
+				//file.delete();
+				return;
+			}
+			
+			
+			
+			// is the live guy
+			if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getContent().getInode())) {
 				Map<String, String> map = new TikaUtils().getMetaDataMap(htmlFile, "text/html");
 
 				if (map != null) {
@@ -221,8 +237,7 @@ public class ESSiteSearchPublisher extends Publisher {
 					res.setFileName(htmlFile.getName().replaceAll(".dotUrlMap", ""));
 					
 
-					res.setHost(h.getIdentifier());
-
+					res.setModified(wrap.getInfo().getVersionTs());
 					res.setUri(getUriFromFilePath(htmlFile));
 					res.setUrl(getUrlFromFilePath(htmlFile));
 
@@ -233,16 +248,16 @@ public class ESSiteSearchPublisher extends Publisher {
 				
 				
 				
-
-		//if this is the deleted guy
-			
-		} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
-			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
-			
-			
-		}
+	
+			//if this is the deleted guy
+			} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
+				APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
+				
+				
+			}
 
 		} catch (Exception e) {
+			
 			Logger.error(this.getClass(), "site search  failed: " + docId + " error" + e.getMessage());
 		}
 
@@ -253,19 +268,28 @@ public class ESSiteSearchPublisher extends Publisher {
 	private void processHTMLPage(File file) throws DotPublishingException {
 		String docId=null;
 		try {
-		HTMLPageWrapper wrap = (HTMLPageWrapper) BundlerUtil.xmlToObject(file);
-		if (wrap == null)
-			return;
-		
-		File htmlFile = new File(file.getAbsolutePath().replaceAll(StaticHTMLPageBundler.HTML_ASSET_EXTENSION, ""));
-		String uri =getUriFromFilePath(htmlFile);
-		Host h = APILocator.getHostAPI().find(wrap.getIdentifier().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
-		
-		docId=DigestUtils.md5Hex(h.getIdentifier()+ uri);
-		// is the live guy
-		if (UtilMethods.isSet(wrap.getVersionInfo().getLiveInode()) && wrap.getVersionInfo().getLiveInode().equals(wrap.getPage().getInode())) {
+			HTMLPageWrapper wrap = (HTMLPageWrapper) BundlerUtil.xmlToObject(file);
+			if (wrap == null)
+				return;
 			
+			File htmlFile = new File(file.getAbsolutePath().replaceAll(StaticHTMLPageBundler.HTML_ASSET_EXTENSION, ""));
+
+			Host h = APILocator.getHostAPI().find(wrap.getIdentifier().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
+			docId=wrap.getIdentifier().getId();
+			SiteSearchResult inIndex = APILocator.getSiteSearchAPI().getFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
+			
+			
+			// if what we have in the index is older than what we are putting, and this is an 
+			// incremental publish, remove the old file
+			if(inIndex != null && inIndex.getModified() !=null && inIndex.getModified().after(wrap.getVersionInfo().getVersionTs())){
+				//file.delete();
+				return;
+			}
+			
+			// is the live guy
+			if (UtilMethods.isSet(wrap.getVersionInfo().getLiveInode()) && wrap.getVersionInfo().getLiveInode().equals(wrap.getPage().getInode())) {
 				
+					
 				Map<String, String> map = new TikaUtils().getMetaDataMap(htmlFile, "text/html");
 
 				if (map != null) {
@@ -278,7 +302,7 @@ public class ESSiteSearchPublisher extends Publisher {
 					res.setContentLength(htmlFile.length());
 					res.setMimeType(map.get("contentType"));
 					res.setFileName(htmlFile.getName().replaceAll(".dotUrlMap", ""));
-					
+					res.setModified(wrap.getVersionInfo().getVersionTs());
 
 					res.setHost(h.getIdentifier());
 
@@ -290,16 +314,12 @@ public class ESSiteSearchPublisher extends Publisher {
 					APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
 				}
 				
+			//if this is the deleted guy
+			} else if (!UtilMethods.isSet(wrap.getVersionInfo().getLiveInode())) {
+				APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
 				
 				
-
-		//if this is the deleted guy
-			
-		} else if (!UtilMethods.isSet(wrap.getVersionInfo().getLiveInode())) {
-			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
-			
-			
-		}
+			}
 
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "site search  failed: " + docId + " error" + e.getMessage());
@@ -322,6 +342,17 @@ public class ESSiteSearchPublisher extends Publisher {
 			return;
 		}
 		FileAsset asset = wrap.getAsset();
+		String docId=wrap.getId().getId();
+		SiteSearchResult inIndex = APILocator.getSiteSearchAPI().getFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
+		
+		
+		// if what we have in the index is older than what we are putting, and this is an 
+		// incremental publish, remove the old file
+		if(inIndex != null && inIndex.getModified() !=null && inIndex.getModified().after(wrap.getInfo().getVersionTs())){
+			//file.delete();
+			return;
+		}
+		
 		// is the live guy
 		if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getAsset().getInode())) {
 			try {
@@ -340,9 +371,9 @@ public class ESSiteSearchPublisher extends Publisher {
 
 					res.setMimeType(APILocator.getFileAPI().getMimeType(asset.getFileName()));
 					res.setModified(asset.getModDate());
+					res.setModified(wrap.getInfo().getVersionTs());
 
-					String md5 = DigestUtils.md5Hex(asset.getHost() + res.getUri());
-					res.setId(md5);
+					res.setId(docId);
 
 					String x = asset.getMetaData();
 					if (x != null) {

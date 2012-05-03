@@ -25,7 +25,7 @@ public class BundlerUtil {
 		if(config.getId() ==null){
 			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
 		}
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId()+ File.separator + "bundle.xml";
 		
 		
 		return new File(bundlePath).exists();
