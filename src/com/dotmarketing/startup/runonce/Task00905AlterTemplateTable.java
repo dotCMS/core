@@ -30,7 +30,7 @@ import com.dotmarketing.util.WebKeys;
  *
  * May 3, 2012 - 10:08:29 AM
  */
-public class Task00845AlterTemplateTable implements StartupTask {
+public class Task00905AlterTemplateTable implements StartupTask {
     
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		Logger.info(this.getClass(), "Loading sql file for alter template table");
