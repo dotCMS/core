@@ -289,13 +289,17 @@ function removeGrid(yuiBId){
  * @param container
  * @param value
  */
-function addDrawedContainer(idDiv, container, value, error_msg){
-		
+function addDrawedContainer(idDiv, container, value, error_msg, container_exist){
 	var div_container = document.getElementById(idDiv.value+"_div_"+value);
 	var span_container = document.getElementById(idDiv.value+"_span_"+value);
 	
 	if(null!=div_container && null!=span_container){
 		alert(error_msg);
+		return;
+	}
+	
+	if(container.maxContentlets>0 && hasContainer(value)){
+		alert(container_exist);
 		return;
 	}
 	
@@ -490,6 +494,11 @@ function getAddContainer(idDiv){
 
 function getRemoveContainer(idDiv, idContainer){
 	return '<div class="removeDiv"><a href="javascript: removeDrawedContainer(\''+idDiv+'\',\''+idContainer+'\');" title="'+removeContainerMSG+'"><span class="minusIcon"></span>'+removeContainerMSG+'</a></div>';	
+}
+
+function hasContainer(value){
+	var body = document.getElementById("bodyTemplate").innerHTML;
+	return body.indexOf(value)>0;
 }
 
 /**
