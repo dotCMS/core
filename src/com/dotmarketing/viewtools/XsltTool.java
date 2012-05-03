@@ -249,16 +249,24 @@ public class XsltTool implements ViewTool {
 			Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
 			return false;
 		}
-		ica = new InternalContextAdapterImpl(ctx);
-		String fieldResourceName = ica.getCurrentTemplateName();
-		String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
+		try{
 		
-		Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
-		
-		
-		User mu = userAPI.loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), true);
-		Role scripting =APILocator.getRoleAPI().loadRoleByKey("Scripting Developer");
-		return APILocator.getRoleAPI().doesUserHaveRole(mu, scripting);
+			ica = new InternalContextAdapterImpl(ctx);
+			String fieldResourceName = ica.getCurrentTemplateName();
+			String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
+			
+			Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
+			
+			
+			User mu = userAPI.loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), true);
+			Role scripting =APILocator.getRoleAPI().loadRoleByKey("Scripting Developer");
+			return APILocator.getRoleAPI().doesUserHaveRole(mu, scripting);
+		}
+		catch(Exception e){
+			Logger.warn(this.getClass(), "Scripting called with error" + e);
+			return false;	
+			
+		}
 	}
 	
 }
