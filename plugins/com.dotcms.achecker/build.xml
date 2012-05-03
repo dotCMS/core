@@ -1,3 +1,0 @@
-<project name="dotCMS AChecker Plugin" default="build">	
-	<import file="../common.xml"/>	
-</project>

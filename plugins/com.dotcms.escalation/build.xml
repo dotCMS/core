@@ -1,3 +1,0 @@
-<project name="Escalation Plugin" default="build">	
-	<import file="../common.xml"/>	
-</project>
