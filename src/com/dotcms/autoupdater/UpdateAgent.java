@@ -95,6 +95,7 @@ public class UpdateAgent {
             checkRequisites( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
 
             String newMinor = "";
+            String newVersion = "";
             String version = getVersion();
             String minor = UpdateUtil.getBuildVersion( getJarProps() );
             /*SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
@@ -120,7 +121,7 @@ public class UpdateAgent {
 
                 Map<String, String> map = new HashMap<String, String>();
                 map.put( "version", version );
-                map.put( "buildNumber", minor );
+                //map.put( "buildNumber", minor );
                 map.put( "specificVersion", line.getOptionValue( UpdateOptions.SPECIFIC_VERSION ) );
                 if ( allowTestingBuilds ) {
                     map.put( "allowTestingBuilds", "true" );
@@ -139,6 +140,7 @@ public class UpdateAgent {
                             } else {
                                 logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
                             }
+                            newVersion = minorArr [0];
                             logger.info( " " );
                         } else {
                             throw new Exception();
@@ -225,6 +227,7 @@ public class UpdateAgent {
                 } else {
                     logger.info( Messages.getString( "UpdateAgent.text.file.version" ) + fileMajor );
                 }
+                newVersion = fileMajor;
 
                 logger.info( " " );
 
@@ -253,7 +256,7 @@ public class UpdateAgent {
 
                     Map<String, String> map = new HashMap<String, String>();
                     map.put( "version", version );
-                    map.put( "buildNumber", minor );
+                    //map.put( "buildNumber", minor );
                     if ( allowTestingBuilds ) {
                         map.put( "allowTestingBuilds", "true" );
                     }
@@ -271,6 +274,7 @@ public class UpdateAgent {
                                 } else {
                                     logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
                                 }
+                                newVersion = minorArr[0];
                                 logger.info( " " );
                             } else {
                                 throw new Exception();
@@ -280,7 +284,7 @@ public class UpdateAgent {
                             throw new UpdateException( Messages.getString( "UpdateAgent.error.no.minor.version" ), UpdateException.ERROR );
                         }
 
-                        String fileName = "update_" + newMinor + ".zip";
+                        String fileName = "update_" + newVersion + ".zip";
                         updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
                         if ( updateFile.exists() ) {
                             //check md5 of file
@@ -351,7 +355,11 @@ public class UpdateAgent {
 
                 //Clean up...
                 fileUpdater.postUpdate();
-                throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.dotcms.updated" ) + version + " / " + newMinor, UpdateException.SUCCESS );
+                if ( newMinor != null && !newMinor.equals( "" ) ) {
+                    throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.dotcms.updated" ) + newVersion + " / " + newMinor, UpdateException.SUCCESS );
+                } else {
+                    throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.dotcms.updated" ) + newVersion, UpdateException.SUCCESS );
+                }
             }
 
 
