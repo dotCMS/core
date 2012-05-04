@@ -1,7 +1,7 @@
 <%@page import="com.dotmarketing.util.StringUtils"%>
 <%@page import="java.net.URLDecoder"%>
 <%@page import="com.dotcms.publishing.sitesearch.SiteSearchResult"%>
-<%@page import="com.dotcms.publishing.sitesearch.DotSearchResults"%>
+<%@page import="com.dotcms.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
@@ -26,18 +26,17 @@
 <%@ include file="/html/common/init.jsp"%>
 <%@page import="java.util.List"%>
 <%
-
-List<Structure> structs = StructureFactory.getStructures();
+	List<Structure> structs = StructureFactory.getStructures();
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 ESIndexAPI esapi = APILocator.getESIndexAPI();
 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 
 
-String testIndex = info.site_search;
+String testIndex = (request.getParameter("testIndex") == null) ? info.site_search : request.getParameter("testIndex");
 String testQuery = (request.getParameter("testQuery") != null) 
 		? request.getParameter("testQuery")
-				: "";
+		: "";
 
 
 int testStart = 0;
@@ -47,7 +46,7 @@ String testSort = "score";
 
 
 
-DotSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
+SiteSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
 
 
 
@@ -58,7 +57,7 @@ try {
 	}
 } catch (Exception e) {
 	Logger.error(this.getClass(), e.getMessage());
-	%>
+%>
 	
 		<div class="callOutBox2" style="text-align:center;margin:40px;padding:20px;">
 		<%= LanguageUtil.get(pageContext,"you-have-been-logged-off-because-you-signed-on-with-this-account-using-a-different-session") %><br>&nbsp;<br>
@@ -110,7 +109,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<div class="buttonRow" style="padding:20px;">
 			<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "active") +") " : ""  %></option>
+						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
 			</select>
 		

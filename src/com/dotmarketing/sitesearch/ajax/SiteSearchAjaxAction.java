@@ -118,6 +118,35 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		}
 
 		try {
+			if(config.runNow()){
+				APILocator.getSiteSearchAPI().executeTaskNow(config);
+			}
+			else{
+				APILocator.getSiteSearchAPI().scheduleTask(config);
+			}
+		} catch (Exception e) {
+			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
+			writeError(response, e.getMessage());
+			
+		} 
+	}
+	
+	
+	public void scheduleJobNow(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
+		try {
+			Map<String, String[]> map = request.getParameterMap();
+
+			SiteSearchConfig config = new SiteSearchConfig();
+			for(String key : map.keySet()){
+				if(((String[]) map.get(key)).length ==1){
+					config.put(key,((String[]) map.get(key))[0]);
+				}
+				else{
+					config.put(key,map.get(key));
+				}
+			}
+			String taskName = URLDecoder.decode((String) config.get("taskName"), "UTF-8");
+
 			APILocator.getSiteSearchAPI().scheduleTask(config);
 		} catch (Exception e) {
 			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
@@ -125,6 +154,10 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			
 		} 
 	}
+	
+	
+	
+	
 	public void deleteJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 		try {
 			Map<String, String> map = getURIParams();

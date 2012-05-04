@@ -6,7 +6,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -41,6 +41,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
@@ -53,6 +54,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
@@ -64,7 +66,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			synchronized (this.getClass().getName()) {
 				if (mapper == null) {
 					mapper = new ObjectMapper();
-					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+					ThreadSafeSimpleDateFormat df = new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 					mapper.setDateFormat(df);
 				}
 			}
@@ -228,6 +230,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			loadRelationshipFields(con, m);
 
 			Identifier ident = APILocator.getIdentifierAPI().find(con);
+			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
 			Structure st=StructureCache.getStructureByInode(con.getStructureInode());
 
 			m.put("title", con.getTitle());
@@ -235,7 +238,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("structureType", st.getStructureType() + "");
             m.put("inode", con.getInode());
             m.put("type", "content");
-            m.put("modDate", new SimpleDateFormat("yyyyMMddHHmmss").format(con.getModDate()));
+            m.put("modDate", datetimeFormat.format(con.getModDate()));
             m.put("owner", con.getOwner()==null ? "0" : con.getOwner());
             m.put("modUser", con.getModUser());
             m.put("live", Boolean.toString(con.isLive()));
@@ -247,17 +250,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conHost", ident.getHostId());
             m.put("conFolder", con.getFolder());
             m.put("parentPath", ident.getParentPath());
+            m.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
             String uri = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
             if(uri != null){
             	m.put("uri",uri );	
             }
 
-            Map<String,String> mlowered=new HashMap<String,String>();
+            Map<String,Object> mlowered=new HashMap<String,Object>();
             for(Entry<String,String> entry : m.entrySet()){
                 mlowered.put(entry.getKey().toLowerCase(), entry.getValue().toLowerCase());
                 mlowered.put(entry.getKey().toLowerCase() + "_dotraw", entry.getValue().toLowerCase());
             }
-
+            //mlowered.put("versionts", cvi.getVersionTs());
 			String x = mapper.writeValueAsString(mlowered);
 			return x;
 		} catch (Exception e) {
@@ -361,9 +365,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         m.put("ownerCanPublish", Boolean.toString(ownerCanPub));
 	}
 
-	public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-	public static final SimpleDateFormat datetimeFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-	public static final SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
+	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
+	public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+	
+	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	
+	
+	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
 	public static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
 	
 	@SuppressWarnings("unchecked")
@@ -377,7 +385,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     || f.getFieldContentlet() != null && f.getFieldContentlet().startsWith("system_field")) {
                 continue;
             }
-
+            if(!f.isIndexed()){
+            	continue;
+            }
             try {
                 if(fAPI.isElementConstant(f)){
                     m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), (f.getValues() == null ? "":f.getValues().toString()));

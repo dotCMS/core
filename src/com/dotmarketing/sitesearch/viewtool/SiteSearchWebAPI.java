@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-import com.dotcms.publishing.sitesearch.DotSearchResults;
+import com.dotcms.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -57,9 +57,9 @@ public class SiteSearchWebAPI implements ViewTool {
 	 * @throws IOException
 	 */
 
-	public DotSearchResults search(String query, String sort, int start, int rows)
+	public SiteSearchResults search(String query, String sort, int start, int rows)
 			throws IOException {
-		DotSearchResults results= new DotSearchResults();
+		SiteSearchResults results= new SiteSearchResults();
 		if(query ==null){
 			results.setError("No query passed in");
 			return results;
@@ -96,7 +96,7 @@ public class SiteSearchWebAPI implements ViewTool {
 		}
 		
 				
-		DotSearchResults dsr = siteSearchAPI.search(query, sort, start, rows);
+		SiteSearchResults dsr = siteSearchAPI.search(query, sort, start, rows);
 
 
 		return dsr;
