@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Plugin-Name: Escalation Plugin
-Deploy-Class: com.dotcms.escalation.util.EscalationPluginDeployer
-Plugin-Version: 1.0
-Author: dotCMS

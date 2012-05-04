@@ -1,2 +1,0 @@
-<!-- Use this file to add portlets and extend the portlet file -->
-<portlet id="LOGMAN_TOOL" struts-path="ext/logConsole" narrow="true" />

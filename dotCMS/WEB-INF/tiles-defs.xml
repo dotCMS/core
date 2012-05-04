@@ -369,7 +369,7 @@
 		extends="portlet.ext.files">
 		<put name="content" value="/portlet/ext/files/window_close.jsp" />
 	</definition>
-	
+
 	<definition name="portlet.ext.files.view_files"
 		extends="portlet.ext.files">
 		<put name="content" value="/portlet/ext/files/view_files.jsp" />
@@ -1180,7 +1180,7 @@
 			value="/portlet/ext/formhandler/view_form.jsp" />
 	</definition>
 	<!-- END Form Handler -->
-	
+
 	<!-- Organization Manager-->
 	<definition name="portlet.ext.organization" extends="portal">
 		<put name="portlet_sub_nav"
@@ -1241,18 +1241,18 @@
 	</definition>
 
 	<!-- End User Manager Manager -->
-	
+
 	<!-- User Admin  -->
-	
+
 	<definition name="portlet.ext.useradmin.view_users" extends="portal">
 		<put name="portlet_sub_nav" value="/portlet/ext/useradmin/sub_nav.jsp" />
 		<put name="content" value="/portlet/ext/useradmin/view_users.jsp" />
 	</definition>
 
 	<!-- END User Admin -->
-	
+
 	<!-- User Admin  -->
-	
+
 	<definition name="portlet.ext.roleadmin.view_roles" extends="portal">
 		<put name="portlet_sub_nav" value="/portlet/ext/roleadmin/sub_nav.jsp" />
 		<put name="content" value="/portlet/ext/roleadmin/view_roles.jsp" />
@@ -1528,7 +1528,7 @@
 	</definition>
 
 	<!-- calendar -->
-	
+
 	<!-- Polls -->
 
 	<definition name="portlet.polls.edit_question" extends="portal">
@@ -1570,9 +1570,9 @@
 	<definition name="portlet.polls_display.view" extends="portal">
 		<put name="content" value="/portlet/polls_display/view.jsp" />
 	</definition>
-	
+
 	<!-- Host Admin -->
-	
+
 	<definition name="portlet.ext.hostadmin" extends="portal">
 		<put name="portlet_sub_nav"	value="/portlet/ext/hostadmin/sub_nav.jsp" />
 	</definition>
@@ -1580,23 +1580,39 @@
 	<definition name="portlet.ext.hostadmin.view_hosts"	extends="portlet.ext.hostadmin">
 		<put name="content"	value="/portlet/ext/hostadmin/view_hosts.jsp" />
 	</definition>
-	
+
 	<!-- Dashboard -->
-	
+
 	<definition name="portlet.ext.dashboard" extends="portal">
 		<put name="portlet_sub_nav"	value="/portlet/ext/dashboard/sub_nav.jsp" />
 	</definition>
-	
+
 	<definition name="portlet.ext.dashboard.view_dashboard"	extends="portlet.ext.dashboard">
 		<put name="content"	value="/portlet/ext/dashboard/view_dashboard.jsp" />
 	</definition>
-	
+
     <definition name="portlet.ext.dashboard.view_host_report" extends="portlet.ext.dashboard">
 		<put name="content"	value="/portlet/ext/dashboard/view_host_report.jsp" />
 	</definition>
-	
+
 	<definition name="portlet.ext.dashboard.view_workstream" extends="portlet.ext.dashboard">
 		<put name="content"	value="/portlet/ext/dashboard/view_workstream.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.dashboard.view_workstream" extends="portlet.ext.dashboard">
+		<put name="content"	value="/portlet/ext/dashboard/view_workstream.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.plugins.expCont.struts" extends="portal">
+		<put name="content" value="/portlet/ext/escalation/view_exp_tool.jsp" />
+		<put name="portlet_sub_nav"
+				value="/portlet/ext/escalation/sub_nav.jsp" />
+	</definition>
+
+	<definition name="portlet.ext.plugins.logMan.struts" extends="portal">
+		<put name="content" value="/plugins/com.dotcms.consoleLog4j/view/view_log_console.jsp" />
+		<put name="portlet_sub_nav"
+				value="/portlet/ext/workflows/sub_nav.jsp" />
 	</definition>
 
 
