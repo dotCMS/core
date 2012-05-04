@@ -202,6 +202,10 @@ public class XsltTool implements ViewTool {
 	 */
 	public XSLTranformationDoc XSLTTransformXMLString(String xmlString, String XSLPath) {
 		try {
+			if(!canUserEvalute()){
+				Logger.error(XsltTool.class, "XSLTTool user does not have scripting access ");
+				return null;
+			}
 			String outputXML = null;
 			Source xmlSource = null;
 			XSLTranformationDoc doc = null;

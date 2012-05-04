@@ -25,7 +25,7 @@
 <%@page import="com.dotmarketing.quartz.SimpleScheduledTask"%>
 <%@page import="org.quartz.SchedulerException"%>
 <%@page import="org.quartz.SimpleTrigger"%>
-<%@page import="com.dotmarketing.sitesearch.job.SiteSearchJobProxy"%>
+
 
 <%
 
@@ -451,11 +451,44 @@ function doCreateSiteSearch() {
 
 
 
+function runNow() {
+	var runNow = dijit.byId("whenToRunNow").getValue();
+
+	if(runNow){
+		
+		dojo.query('.showScheduler').style({display:"none"});
+		dojo.query('.showRunNow').style({display:""});
+		dijit.byId("QUARTZ_JOB_NAME").setValue("<%=SiteSearchAPI.ES_SITE_SEARCH_EXECUTE_JOB_NAME%>");
+	}
+	else{
+		dojo.query('.showScheduler').style({display:""});
+		dojo.query('.showRunNow').style({display:"none"});
+		dijit.byId("QUARTZ_JOB_NAME").setValue("");
+	}
 
 
+}
 
 function scheduleJob() {
 
+	submitSchedule();
+
+}
+
+
+
+function submitSchedule() {
+	var runNow = dijit.byId("whenToRunNow").getValue();
+	if(runNow){
+		dijit.byId("cronExpression").required=false;
+		
+		
+		
+	}else{
+		
+		dijit.byId("cronExpression").required=true;
+	}
+	
 	var myForm = dijit.byId("sitesearch");
 
 	
@@ -626,35 +659,72 @@ function refreshIndexStats(){
 	var x = dijit.byId("indexStatsCp");
 	var y =Math.floor(Math.random()*1123213213);
 	x.attr( "href","/html/portlet/ext/sitesearch/site_search_index_stats.jsp?r=" + y  );
+	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "Indices") %>";
 }
 
 function refreshJobStats(){
 	var x = dijit.byId("jobStatsCp");
 	var y =Math.floor(Math.random()*1123213213);
 	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_stats.jsp?r=" + y  );
+	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>";
 }
+
+var myJobName;
+var myIndexName;
 
 function refreshTestSearch(){
 	var x = dijit.byId("indexTestCp");
 	var y =Math.floor(Math.random()*1123213213);
-	x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?r=" + y  );
+	if(myIndexName == undefined || myIndexName.trim().length ==0){
+		x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?r=" + y  );
+	}
+	else{
+		x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?testIndex=" + myIndexName +"&r=" + y  );
+	}
+	
+	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "Search") %>";
+	myIndexName=null;
 }
+
 function refreshJobSchedule(){
 	var x = dijit.byId("scheduleCp");
 	var y =Math.floor(Math.random()*1123213213);
-	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?r=" + y  );
+	
+	if(myJobName == undefined || myJobName.trim().length ==0){
+		
+		x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?r=" + y  );
+	}
+	else{
+		x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?jobName=" +myJobName +"&r=" + y  );
+	}
+	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>";
+	myJobName=null;
 }
 
-function refreshJobSchedulePane(jobName){
-	
-	var x = dijit.byId("scheduleCp");
-	var y =Math.floor(Math.random()*1123213213);
+function showJobsListingPane(){
+
+	var tabs =dijit.byId("mainTabContainer");
+	var pane = dijit.byId("jobTabCp");
+	tabs.selectChild(pane);
+
+}
+
+
+function showJobSchedulePane(jobName){
+	myJobName=jobName;
 	var tabs =dijit.byId("mainTabContainer");
 	var pane = dijit.byId("scheduleTabCp");
 	tabs.selectChild(pane);
-	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?jobName=" +jobName +"&r=" + y  );
+
 }
 
+function showSiteSearchPane(indexName){
+	myIndexName=indexName;
+	var tabs =dijit.byId("mainTabContainer");
+	var pane = dijit.byId("indexTestTabCp");
+	tabs.selectChild(pane);
+
+}
 dojo.addOnLoad (function(){
 	var tab =dijit.byId("mainTabContainer");
    	dojo.connect(tab, 'selectChild',
@@ -673,7 +743,7 @@ dojo.addOnLoad (function(){
 			  		refreshJobSchedule();
 			  	}
 		});
-   	refreshJobSchedule();
+   	refreshIndexStats();
 	
 });	
 
@@ -713,16 +783,21 @@ dojo.addOnLoad (function(){
 
 
 <div class="portlet-wrapper">
+
+	<div class="subNavCrumbTrail">
+		<ul id="subNavCrumbUl">
+			<li>
+				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SITESEARCH")%></a>
+			</li>
+			<li class="lastCrumb"><span id="crumbTitleSpan"></span></li>
+		</ul>
+		<div class="clear"></div>
+	</div>
+	
+
+
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
-		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
-			<div dojoType="dojox.layout.ContentPane" id="scheduleCp" style="min-height:800px"></div>
-		</div>
-		
-		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>">
-			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp" style="min-height:700px"></div>
-		</div>
-		
-		
+
 		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Indices") %>">
 			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="min-height:700px"></div>
 		</div>
@@ -730,6 +805,15 @@ dojo.addOnLoad (function(){
 		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Search") %>">
 			<div dojoType="dojox.layout.ContentPane" id="indexTestCp" style="min-height:700px"></div>
 		</div>
+		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>">
+			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp" style="min-height:700px"></div>
+		</div>
+		
+		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
+			<div dojoType="dojox.layout.ContentPane" id="scheduleCp" style="min-height:800px"></div>
+		</div>
+		
+
 		
 		
 		

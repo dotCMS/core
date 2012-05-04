@@ -7,9 +7,10 @@ import java.util.List;
 import org.elasticsearch.ElasticSearchException;
 import org.quartz.SchedulerException;
 
-import com.dotcms.publishing.sitesearch.DotSearchResults;
 import com.dotcms.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.publishing.sitesearch.SiteSearchPublishStatus;
 import com.dotcms.publishing.sitesearch.SiteSearchResult;
+import com.dotcms.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.ScheduledTask;
 
@@ -17,7 +18,7 @@ import com.dotmarketing.quartz.ScheduledTask;
 public interface SiteSearchAPI {
     public static final String ES_SITE_SEARCH_NAME = "sitesearch";
     public static final String ES_SITE_SEARCH_MAPPING = "dot_site_search";
-    
+    public static final String ES_SITE_SEARCH_EXECUTE_JOB_NAME = "runningOnce";
 
 	List<String> listIndices();
 
@@ -40,11 +41,19 @@ public interface SiteSearchAPI {
 
 	void deleteFromIndex(String idx, String docId);
 
-	DotSearchResults search(String query, String sort, int start, int rows);
+	SiteSearchResults search(String query, String sort, int start, int rows);
 	
-	DotSearchResults search(String indexName, String query, String sort, int start, int rows);
+	SiteSearchResults search(String indexName, String query, String sort, int start, int rows);
 
 	ScheduledTask getTask(String taskName) throws SchedulerException;
 	
 	void pauseTask(String taskName)  throws SchedulerException;
+
+	SiteSearchPublishStatus getTaskProgress(String jobName) throws SchedulerException;
+
+	boolean isTaskRunning(String jobName) throws SchedulerException;
+
+	void executeTaskNow(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException;
+
+	SiteSearchResult getFromIndex(String index, String id);
 }

@@ -63,12 +63,12 @@ public class ContentletVersionInfo implements Serializable {
         return lockedBy!=null;
     }
     public void setLocked(String userId) {
-        lockedOn=new Timestamp(System.currentTimeMillis());
+        lockedOn=new Timestamp(new Date().getTime());
         lockedBy=userId;
     }
     public void unLock() {
         lockedBy=null;
-        lockedOn=new Timestamp(System.currentTimeMillis());
+        lockedOn=new Timestamp(new Date().getTime());
     }
     @Override
     public boolean equals(Object obj) {
@@ -93,5 +93,7 @@ public class ContentletVersionInfo implements Serializable {
 		this.versionTs = versionTs;
 	}
 
-
+	public void setVersionTs(Date versionDate) {
+		this.versionTs = new Timestamp(versionDate.getTime());
+	}
 }
