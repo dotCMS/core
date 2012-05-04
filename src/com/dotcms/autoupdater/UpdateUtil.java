@@ -108,6 +108,21 @@ public class UpdateUtil {
                     }
 
                 }
+            } else {
+
+                //This code is to be certain that empty files are going to be create them as well....
+                if ( directoryName == null || entry.getName().contains( directoryName ) ) {
+
+                    String entryName = entry.getName().replace( UpdateAgent.FOLDER_HOME_DOTSERVER + '/', "" );
+                    File destFile = new File( home + File.separator + entryName );
+
+                    if (!destFile.exists()) {
+
+                        destFile.mkdirs();
+                        UpdateAgent.logger.debug( destFile.getAbsoluteFile() );
+                    }
+
+                }
             }
         }
         ActivityIndicator.endIndicator();
@@ -148,15 +163,21 @@ public class UpdateUtil {
         throw new UpdateException( Messages.getString( "UpdateUtil.error.no.version" ), UpdateException.ERROR );
     }
 
-    public static Integer getFileMinorVersion ( File zipFile ) throws IOException, UpdateException {
+    public static String getFileMinorVersion ( File zipFile ) throws IOException, UpdateException {
 
         Properties props = getInnerFileProps( zipFile );
-        String prop = props.getProperty( "dotcms.release.build" );
+        return getBuildVersion( props );
+    }
 
-        if ( prop != null && !prop.equals( "" ) ) {
-            return Integer.parseInt( prop );
+    public static String getBuildVersion ( Properties props ) {
+
+        String minor = props.getProperty( "dotcms.release.build" );
+
+        if ( minor != null && minor.equals( "" ) ) {
+            minor = null;
         }
-        throw new UpdateException( Messages.getString( "UpdateUtil.error.no.version" ), UpdateException.ERROR );
+
+        return minor;
     }
 
     public static String getFileMayorVersion ( File zipFile ) throws IOException, UpdateException {

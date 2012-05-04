@@ -129,6 +129,54 @@ public class FileUpdater {
                 destFolder = new File( dotserverFolder + File.separator + esdata );
                 copyFolder( esdataFolder, destFolder );
 
+                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                //Now lets copy the plugins contents
+                //plugins folder
+                String plugins = "plugins";
+                String pluginsTemp = "plugins_temp";
+
+                destFolder = new File( dotserverFolder + File.separator + plugins );
+                File tempDestFolder = new File( dotserverFolder + File.separator + pluginsTemp );
+
+                //First we need to move this folder to a temporal one in order to extract some files later
+                if (destFolder.exists()) {
+                    success = destFolder.renameTo( tempDestFolder );
+
+                    if ( !success ) {
+                        String error = "Error updating plugins...";
+                        if ( !UpdateAgent.isDebug ) {
+                            error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+                        }
+                        throw new UpdateException( error, UpdateException.ERROR );
+                    }
+                }
+
+                //Now we need to copy the back up plugins folder
+                File pluginsFolder = new File( backUpPath + File.separator + plugins );
+                copyFolder( pluginsFolder, destFolder );
+
+                //Now we need to remove the common.xml and plugins.xml
+                File commonXML = new File( dotserverFolder + File.separator + plugins + File.separator + "common.xml" );
+                File pluginsXML = new File( dotserverFolder + File.separator + plugins + File.separator + "plugins.xml" );
+                if (commonXML.exists()) {
+                    commonXML.delete();
+                }
+                if (pluginsXML.exists()) {
+                    pluginsXML.delete();
+                }
+                //And copying them from the temporal plugins folder
+                File origCommonXML = new File( dotserverFolder + File.separator + pluginsTemp + File.separator + "common.xml" );
+                File origPluginsXML = new File( dotserverFolder + File.separator + pluginsTemp + File.separator + "plugins.xml" );
+                if (origCommonXML.exists()) {
+                    origCommonXML.renameTo( commonXML );
+                }
+                if (origPluginsXML.exists()) {
+                    origPluginsXML.renameTo( pluginsXML );
+                }
+
+                //And finally lets remove the temporal updated plugins folder
+                UpdateUtil.deleteDirectory( tempDestFolder );
+
             } else {
                 String error = "Error unzipping update file on: " + dotserverPath;
                 if ( !UpdateAgent.isDebug ) {
@@ -136,7 +184,6 @@ public class FileUpdater {
                 }
 
                 throw new UpdateException( error, UpdateException.ERROR );
-
             }
         }
 

@@ -82,7 +82,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 				IBundler b = (IBundler) c.newInstance();
 				confBundlers.add(b);
 				b.setConfig(config);
-				BundlerStatus bs = new BundlerStatus();
+				BundlerStatus bs = new BundlerStatus(b.getClass().getName());
 				status.addToBs(bs);
 				Logger.info(this.getClass(), "PubAPI: Running Bundler  : "+b.getName());
 				b.generate(bundleRoot, bs);
@@ -94,7 +94,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 			// run publishers
 			for (Publisher p : pubs) {
 				Logger.info(this.getClass(), "PubAPI: Running Publisher    : "+p.getClass().getName());
-				p.process();
+				p.process(status);
 				Logger.info(this.getClass(), "PubAPI: Publisher Completed  : "+p.getClass().getName());
 			}
 			Logger.info(this.getClass(), "PubAPI: Completed Publishing Task for Bundle: "+ config.getId());

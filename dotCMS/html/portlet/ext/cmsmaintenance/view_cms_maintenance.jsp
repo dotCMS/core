@@ -802,7 +802,7 @@ function undohighlight(id) {
 							<option><%= c.toString() %></option>	
 						<% } %>
 					</select>
-					<button dojoType="dijit.form.Button" onClick="submitform('flushCache');" iconClass="resetIcon">
+					<button dojoType="dijit.form.Button" onClick="submitform('flushCache');" iconClass="deleteIcon">
 		             <%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>
 		       		</button>
 		        </td>
@@ -828,7 +828,7 @@ function undohighlight(id) {
 		            <label for="showSize">
 		            <%= LanguageUtil.get(pageContext,"Show-Memory-Size") %>: <input type="checkbox" value="true" dojoType="dijit.form.CheckBox" name="showSize" id="showSize" />
 		            </label>
-		            <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="reloadIcon">
+		            <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon">
 		               <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
 		            </button>
 					</div>
@@ -902,7 +902,7 @@ function undohighlight(id) {
 
 					</td>
 					<td style="text-align:center;white-space:nowrap;" width="350">
-			            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="reindexIcon" onClick="doFullReindex()">
+			            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doFullReindex()">
 			                <%= LanguageUtil.get(pageContext,"Reindex") %>
 			            </button>
 			            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton" disabled="disabled">
