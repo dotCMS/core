@@ -20,7 +20,6 @@
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
-<%@page import="com.dotcms.consoleLog4j.model.*"%>
 <%@page import="com.dotmarketing.logConsole.model.*"%>
 <%@ include file="/html/common/init.jsp" %>
 <portlet:defineObjects />
