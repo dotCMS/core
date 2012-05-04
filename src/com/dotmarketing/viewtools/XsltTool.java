@@ -201,15 +201,11 @@ public class XsltTool implements ViewTool {
 	 * @param ttl Time to Live
 	 */
 	public XSLTranformationDoc XSLTTransformXMLString(String xmlString, String XSLPath) {
-		
-		
-		
 		try {
 			if(!canUserEvalute()){
 				Logger.error(XsltTool.class, "XSLTTool user does not have scripting access ");
 				return null;
 			}
-			
 			String outputXML = null;
 			Source xmlSource = null;
 			XSLTranformationDoc doc = null;
@@ -264,6 +260,7 @@ public class XsltTool implements ViewTool {
 			String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
 			
 			Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
+			
 			
 			User mu = userAPI.loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), true);
 			Role scripting =APILocator.getRoleAPI().loadRoleByKey("Scripting Developer");
