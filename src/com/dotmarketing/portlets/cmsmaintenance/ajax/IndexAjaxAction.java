@@ -216,8 +216,7 @@ public class IndexAjaxAction extends AjaxAction {
 		if(indexName == null)return;
 
 		APILocator.getESIndexAPI().clearIndex(indexName);
-		
-		
+
 	}
 	
 	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

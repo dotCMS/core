@@ -5,7 +5,7 @@ import java.util.List;
 
 public class StaticPublisher extends Publisher {
 	@Override
-	public PublisherConfig process() throws DotPublishingException {
+	public PublisherConfig process(PublishStatus status) throws DotPublishingException {
 		return config;
 	}
 

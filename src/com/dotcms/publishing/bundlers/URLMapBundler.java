@@ -6,6 +6,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.io.output.FileWriterWithEncoding;
@@ -76,43 +77,43 @@ public class URLMapBundler implements IBundler {
 		}
 		StringBuilder bob = new StringBuilder("+languageid:" + config.getLanguage() + " " );
 		
+		// if we have no urlmap structures...
 		if(structsToAdd.size() ==0){
-
-			if(config.getExcludePatterns() != null && config.getExcludePatterns().size()>0){
-				for (String p : config.getExcludePatterns()) {
-					if(!UtilMethods.isSet(p)){
-						continue;
-					}
-					p = p.replace(" ", "+");
-					bob.append("-uri:" + p + " ");
-				}
-			}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
-				for (String p : config.getIncludePatterns()) {
-					if(!UtilMethods.isSet(p)){
-						continue;
-					}
-					p = p.replace(" ", "+");
-					bob.append("+uri:" + p + " ");
-				}
-			}
-
+			return;
 		}
-		else{
-			if(structsToAdd.size() > 0){
-				bob.append("+(" );
-				for(String s : structsToAdd){
-					
-					
-					Structure struc = StructureFactory.getStructureByInode(s);
-					
 
-					
-					bob.append("structureName:" + struc.getVelocityVarName() + " ");
+
+		bob.append("+(" );
+		for(String s : structsToAdd){
+			Structure struc = StructureFactory.getStructureByInode(s);
+			bob.append("structureName:" + struc.getVelocityVarName() + " ");
+		}
+		bob.append(") " );
+
+		if(config.getExcludePatterns() != null && config.getExcludePatterns().size()>0){
+			bob.append("-(" );
+			for (String p : config.getExcludePatterns()) {
+				if(!UtilMethods.isSet(p)){
+					continue;
 				}
-				bob.append(") " );
+				p = p.replace(" ", "+");
+				bob.append("uri:" + p + " ");
 			}
+			bob.append(") " );
+		}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
+			bob.append("+(" );
+			for (String p : config.getIncludePatterns()) {
+				if(!UtilMethods.isSet(p)){
+					continue;
+				}
+				p = p.replace(" ", "+");
+				bob.append("uri:" + p + " ");
+			}
+			bob.append(") " );
+		}
+		
 			
-		}
+		
 		
 		
 
@@ -122,44 +123,46 @@ public class URLMapBundler implements IBundler {
 		if(config.getStartDate() != null){
 			Calendar cal = Calendar.getInstance();
 			cal.set(Calendar.YEAR, 2500);
+			Date d = (Date) config.getStartDate();
 			String start = ESMappingAPIImpl.datetimeFormat.format(config.getStartDate());
 			String forever = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
-			bob.append(" +moddate:[" + start + " TO " + forever +"] ");
+			bob.append(" +versionts:[" + start + " TO " + forever +"] ");
 		}
 		
 		if(config.getEndDate() != null){
 			Calendar cal = Calendar.getInstance();
 			cal.set(Calendar.YEAR, 1900);
-			
+			Date d = (Date) config.getEndDate();
 			String end = ESMappingAPIImpl.datetimeFormat.format(config.getEndDate());
 			String longAgo = ESMappingAPIImpl.datetimeFormat.format(cal.getTime());
-			bob.append(" +moddate:[" + longAgo + " TO " + end +"] ");
+			bob.append(" +versionts:[" + longAgo + " TO " + end +"] ");
 		}
 		
 		
 		
 		if(config.getHosts() != null && config.getHosts().size() > 0){
-			
+			bob.append(" +(" );
 			for(Host h : config.getHosts()){
-				bob.append(" +conhost:" + h.getIdentifier() + " ");
+				bob.append("conhost:" + h.getIdentifier() + " ");
 			}
+			bob.append(" ) " );
 		}
 		
 		
 		
 		
-
+		Logger.info(this.getClass(),bob.toString());
 		try {
 			cs = capi.searchIndex(bob.toString() + " +live:true ", 0, 0, "moddate", systemUser, true);
-			if(!config.liveOnly()){
+			//if(!config.liveOnly()){
 				cs.addAll(capi.searchIndex(bob.toString() + "+working:true", 0, 0, "moddate", systemUser, true));
-			}
+			//}
 		} catch (Exception e) {
 			
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + bob.toString(), e);
 		}
-		status.setTotal(cs.size());
+		
 		List<List<ContentletSearch>> listsOfCS = Lists.partition(cs, 500);
 		for (List<ContentletSearch> l : listsOfCS) {
 			List<String> inodes = new ArrayList<String>();
@@ -173,7 +176,7 @@ public class URLMapBundler implements IBundler {
 				Logger.error(this.getClass(),e.getMessage(),e);
 				throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to retrieve content", e);
 			}
-			
+			status.setTotal(cons.size());
 			for (Contentlet con : cons) {
 				try {
 					writeFileToDisk(bundleRoot, con);
@@ -188,7 +191,7 @@ public class URLMapBundler implements IBundler {
 		
 		}
 		catch(Exception e){
-			
+			status.addFailure();
 		}
 		
 	}
@@ -230,7 +233,7 @@ public class URLMapBundler implements IBundler {
 			
 			// Should we write or is the file already there:
 			
-			cal.setTime(contentlet.getModDate());
+			cal.setTime(info.getVersionTs());
 			cal.set(Calendar.MILLISECOND, 0);
 			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
 				Structure struc = contentlet.getStructure();

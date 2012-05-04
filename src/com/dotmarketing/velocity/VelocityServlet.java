@@ -196,7 +196,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
 			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
 			langWebAPI.checkSessionLocale(request);
-
+			
 			if (PREVIEW_MODE && ADMIN_MODE) {
 				// preview mode has the left hand menu and edit buttons on the
 				// working page
@@ -269,6 +269,7 @@ public abstract class VelocityServlet extends HttpServlet {
 				Logger.error(this, e.getMessage(), e);
 			}
 			DbConnectionFactory.closeConnection();
+			velocityCtx.remove();
 		}
 		if (profileTime != null) {
 			profileTime = Calendar.getInstance().getTimeInMillis() - profileTime;

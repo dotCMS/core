@@ -3,16 +3,15 @@ package com.dotcms.publishing.sitesearch;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import org.apache.commons.codec.digest.DigestUtils;
 
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.bundlers.FileAssetBundler;
@@ -69,52 +68,77 @@ public class ESSiteSearchPublisher extends Publisher {
 	}
 
 	@Override
-	public PublisherConfig process() throws DotPublishingException {
+	public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
 		try {
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
-			int numThreads = config.getAdditionalThreads() + 1;
-			ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+			//int numThreads = config.getAdditionalThreads() + 1;
+			//ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 			for (final IBundler b : config.getBundlers()) {
 
 				List<File> files = FileUtil.listFilesRecursively(bundleRoot, b.getFileFilter());
+				List<File> filteredFiles = new ArrayList<File>();
+				for(File f:files){
+					if(shouldProcess(f)){
+						filteredFiles.add(f);
+					}
+					
+				}
+				files=filteredFiles;
+				filteredFiles=null;
+				
+				
+				Collections.sort(files, new FileDateSortComparator( ));
+
+				
+				
+				
+				
+				
+				
 				List<List<File>> listsOfFiles = Lists.partition(files, 10);
+				
 
 				for (final List<File> list : listsOfFiles) {
 
 					
-					
-					
-					
-					
-					Runnable worker = new Runnable() {
-						@Override
-						public void run() {
+					// Runnable worker = new Runnable() {
+					//	@Override
+					//	public void run() {
 							if (b instanceof FileAssetBundler) {
-								processFileObjects(list);
+								processFileObjects(list, status);
 							} else if (b instanceof URLMapBundler) {
-								processUrlMaps(list);
+								processUrlMaps(list, status);
 
 							}
 							else if (b instanceof StaticHTMLPageBundler) {
-								processHTMLPages(list);
+								processHTMLPages(list, status);
 
 							}
 						}
-					};
-
-					executor.execute(worker);
-
-				}
+					// };
+					//executor.execute(worker);
+				//}
+			}
+			/*
+			executor.shutdown();
+			Logger.info(this.getClass(), "Waiting for ES Publishing threads to complete");
+			try {
+			    // The tasks are now running concurrently. We wait until all work is done, 
+			    // with a timeout of 1 day : 
+			    boolean b = executor.awaitTermination(24, TimeUnit.HOURS);
+			    // If the execution timed out, false is returned: 
+			    Logger.info(this.getClass(), "All ES Publishing threads done");
+			} catch (InterruptedException e) { 
+				  Logger.error(this.getClass(), "ES Publishing threads failed to complete", e);
 
 			}
-			executor.shutdown();
-
+			*/
+			
 			
 			if(((SiteSearchConfig)config).switchIndexWhenDone()){
 				APILocator.getSiteSearchAPI().activateIndex(((SiteSearchConfig)config).getIndexName());
 				
 			}
-			
 			
 			
 			
@@ -126,11 +150,12 @@ public class ESSiteSearchPublisher extends Publisher {
 		}
 	}
 
-	private void processFileObjects(List<File> files) {
+	private void processFileObjects(List<File> files, PublishStatus status) {
 		for (File f : files) {
 			try {
 				if (shouldProcess(f)) {
 					processFileObject(f);
+					status.addCurrentProgress();
 				}
 
 			} catch (IOException e) {
@@ -141,11 +166,12 @@ public class ESSiteSearchPublisher extends Publisher {
 
 	}
 
-	private void processUrlMaps(List<File> files) {
+	private void processUrlMaps(List<File> files, PublishStatus status) {
 		for (File f : files) {
 			try {
 				if (shouldProcess(f)) {
 					processUrlMap(f);
+					status.addCurrentProgress();
 				}
 
 			} catch (Exception e) {
@@ -156,11 +182,12 @@ public class ESSiteSearchPublisher extends Publisher {
 
 	}
 	
-	private void processHTMLPages(List<File> files) {
+	private void processHTMLPages(List<File> files, PublishStatus status) {
 		for (File f : files) {
 			try {
 				if (shouldProcess(f)) {
 					processHTMLPage(f);
+					status.addCurrentProgress();
 				}
 
 			} catch (Exception e) {
@@ -177,19 +204,18 @@ public class ESSiteSearchPublisher extends Publisher {
 	private void processUrlMap(File file) throws DotPublishingException {
 		String docId=null;
 		try {
-		URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
-		if (wrap == null)
-			return;
-		
-		File htmlFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
-		String uri =getUriFromFilePath(htmlFile);
-		Host h = APILocator.getHostAPI().find(wrap.getContent().getHost(), APILocator.getUserAPI().getSystemUser(), true);
-		
-		docId=DigestUtils.md5Hex(h.getIdentifier()+ uri);
-		// is the live guy
-		if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getContent().getInode())) {
+			URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
+			if (wrap == null)
+				return;
 			
-				
+			File htmlFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
+
+			docId=wrap.getId().getId();
+
+			
+			
+			// is the live guy
+			if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getContent().getInode())) {
 				Map<String, String> map = new TikaUtils().getMetaDataMap(htmlFile, "text/html");
 
 				if (map != null) {
@@ -204,8 +230,7 @@ public class ESSiteSearchPublisher extends Publisher {
 					res.setFileName(htmlFile.getName().replaceAll(".dotUrlMap", ""));
 					
 
-					res.setHost(h.getIdentifier());
-
+					res.setModified(wrap.getInfo().getVersionTs());
 					res.setUri(getUriFromFilePath(htmlFile));
 					res.setUrl(getUrlFromFilePath(htmlFile));
 
@@ -216,16 +241,16 @@ public class ESSiteSearchPublisher extends Publisher {
 				
 				
 				
-
-		//if this is the deleted guy
-			
-		} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
-			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
-			
-			
-		}
+	
+			//if this is the deleted guy
+			} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
+				APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
+				
+				
+			}
 
 		} catch (Exception e) {
+			
 			Logger.error(this.getClass(), "site search  failed: " + docId + " error" + e.getMessage());
 		}
 
@@ -236,19 +261,20 @@ public class ESSiteSearchPublisher extends Publisher {
 	private void processHTMLPage(File file) throws DotPublishingException {
 		String docId=null;
 		try {
-		HTMLPageWrapper wrap = (HTMLPageWrapper) BundlerUtil.xmlToObject(file);
-		if (wrap == null)
-			return;
-		
-		File htmlFile = new File(file.getAbsolutePath().replaceAll(StaticHTMLPageBundler.HTML_ASSET_EXTENSION, ""));
-		String uri =getUriFromFilePath(htmlFile);
-		Host h = APILocator.getHostAPI().find(wrap.getIdentifier().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
-		
-		docId=DigestUtils.md5Hex(h.getIdentifier()+ uri);
-		// is the live guy
-		if (UtilMethods.isSet(wrap.getVersionInfo().getLiveInode()) && wrap.getVersionInfo().getLiveInode().equals(wrap.getPage().getInode())) {
+			HTMLPageWrapper wrap = (HTMLPageWrapper) BundlerUtil.xmlToObject(file);
+			if (wrap == null)
+				return;
 			
+			File htmlFile = new File(file.getAbsolutePath().replaceAll(StaticHTMLPageBundler.HTML_ASSET_EXTENSION, ""));
+
+			Host h = APILocator.getHostAPI().find(wrap.getIdentifier().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
+			docId=wrap.getIdentifier().getId();
+
+			
+			// is the live guy
+			if (UtilMethods.isSet(wrap.getVersionInfo().getLiveInode()) && wrap.getVersionInfo().getLiveInode().equals(wrap.getPage().getInode())) {
 				
+					
 				Map<String, String> map = new TikaUtils().getMetaDataMap(htmlFile, "text/html");
 
 				if (map != null) {
@@ -261,7 +287,7 @@ public class ESSiteSearchPublisher extends Publisher {
 					res.setContentLength(htmlFile.length());
 					res.setMimeType(map.get("contentType"));
 					res.setFileName(htmlFile.getName().replaceAll(".dotUrlMap", ""));
-					
+					res.setModified(wrap.getVersionInfo().getVersionTs());
 
 					res.setHost(h.getIdentifier());
 
@@ -273,16 +299,12 @@ public class ESSiteSearchPublisher extends Publisher {
 					APILocator.getSiteSearchAPI().putToIndex(((SiteSearchConfig) config).getIndexName(), res);
 				}
 				
+			//if this is the deleted guy
+			} else if (!UtilMethods.isSet(wrap.getVersionInfo().getLiveInode())) {
+				APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
 				
 				
-
-		//if this is the deleted guy
-			
-		} else if (!UtilMethods.isSet(wrap.getVersionInfo().getLiveInode())) {
-			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
-			
-			
-		}
+			}
 
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "site search  failed: " + docId + " error" + e.getMessage());
@@ -305,6 +327,8 @@ public class ESSiteSearchPublisher extends Publisher {
 			return;
 		}
 		FileAsset asset = wrap.getAsset();
+		String docId=wrap.getId().getId();
+
 		// is the live guy
 		if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getAsset().getInode())) {
 			try {
@@ -323,9 +347,9 @@ public class ESSiteSearchPublisher extends Publisher {
 
 					res.setMimeType(APILocator.getFileAPI().getMimeType(asset.getFileName()));
 					res.setModified(asset.getModDate());
+					res.setModified(wrap.getInfo().getVersionTs());
 
-					String md5 = DigestUtils.md5Hex(asset.getHost() + res.getUri());
-					res.setId(md5);
+					res.setId(docId);
 
 					String x = asset.getMetaData();
 					if (x != null) {
@@ -354,9 +378,9 @@ public class ESSiteSearchPublisher extends Publisher {
 		} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
 			String url = asset.getHost() + asset.getPath() + asset.getFileName();
 			
-			String md5 = DigestUtils.md5Hex(url);
 
-			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), md5);
+
+			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
 		}
 
 	}
@@ -382,10 +406,32 @@ public class ESSiteSearchPublisher extends Publisher {
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
 
-		list.add(FileAssetBundler.class);
+		//list.add(FileAssetBundler.class);
 		list.add(StaticHTMLPageBundler.class);
-		list.add(URLMapBundler.class);
+		//list.add(URLMapBundler.class);
 		return list;
 	}
+	
+	private class FileDateSortComparator implements Comparator<File>{
+
+		@Override
+		public int compare(File o1, File o2) {
+			if(o1 ==null || o2==null){
+				return 0;
+			}
+			else if(o1.lastModified() > o2.lastModified()){
+				return 1;
+			}
+			else if(o1.lastModified() < o2.lastModified()){
+				return -1;
+			}else{
+				return 0;
+			}
+		}
+		
+		
+	}
+	
+	
 
 }

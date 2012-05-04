@@ -178,7 +178,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotDataException(e.getMessage());
 		}
 
-
+        vi.setVersionTs(new Timestamp(new Date().getTime()));
         HibernateUtil.saveOrUpdate(vi);
         icache.removeVersionInfoFromCache(info.getIdentifier());
         icache.addVersionInfoToCache(info);
@@ -202,7 +202,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
-        HibernateUtil.saveOrUpdate(cvInfo);
+    	cvInfo.setVersionTs(new Date());
+    	HibernateUtil.saveOrUpdate(cvInfo);
         icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
     }
 
@@ -211,11 +212,11 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ContentletVersionInfo cVer=new ContentletVersionInfo();
         cVer.setDeleted(false);
         cVer.setLockedBy(null);
-        cVer.setLockedOn(new Timestamp(System.currentTimeMillis()));
+        cVer.setLockedOn(new Timestamp(new Date().getTime()));
         cVer.setIdentifier(identifier.getId());
         cVer.setLang(lang);
         cVer.setWorkingInode(workingInode);
-        cVer.setVersionTs(new Timestamp(System.currentTimeMillis()));
+        cVer.setVersionTs(new Date());
         
         HibernateUtil.save(cVer);
         icache.addContentletVersionInfoToCache(cVer);
@@ -236,7 +237,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setLockedBy(null);
         ver.setLockedOn(new Date());
         ver.setWorkingInode(workingInode);
-        ver.setVersionTs(new Timestamp(System.currentTimeMillis()));
+        ver.setVersionTs(new Timestamp(new Date().getTime()));
         HibernateUtil.save(ver);
         icache.addVersionInfoToCache(ver);
         return ver;

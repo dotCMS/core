@@ -1,4 +1,4 @@
-package com.dotmarketing.sitesearch.job;
+package com.dotcms.publishing.sitesearch.job;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -19,6 +19,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -87,8 +89,7 @@ public class SiteSearchJobImpl {
 
 		
 		SiteSearchConfig config = new SiteSearchConfig();
-		boolean squentiallyScheduled = true;
-		boolean runJobAfterSeq = true;
+		config.setJobId(dataMap.getString("QUARTZ_JOB_NAME"));
 
 		List<Host> hosts=new ArrayList<Host>();
 
@@ -104,13 +105,13 @@ public class SiteSearchJobImpl {
 
 		config.setHosts( hosts);		
 		
-
+		// reuse or create new indexes as needed
 		String indexName    = dataMap.getString("indexName");
 		if("DEFAULT".equals(indexName)){
 			indexName = APILocator.getIndiciesAPI().loadIndicies().site_search;
 		}
 		if("NEWINDEX".equals(indexName)){
-			indexName = "sitesearchindex_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
+			indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME  + "_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
 			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName , 1);
 			config.setSwitchIndexWhenDone(true);
 		}
@@ -118,7 +119,16 @@ public class SiteSearchJobImpl {
 		config.setIndexName(indexName);
 
 		
-
+		
+		// if it is going to be an incremental job, write the bundle to the same folder
+		// every time.  Otherwise, create a new folder using a date stamp.
+		if(dataMap.get("incremental")!=null){
+			config.setId(StringUtils.sanitizeCamelCase(config.getJobName()));
+		}
+		else{
+			String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
+			config.setId(x);
+		}
 		
 
 		config.setStartDate(start);

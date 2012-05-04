@@ -1255,7 +1255,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             try{
             	resp = srb.execute().actionGet();
             }catch (SearchPhaseExecutionException e) {
-				if(e.getMessage().contains("-order_dotraw] in order to sort on")){
+				if(e.getMessage().contains("dotraw] in order to sort on")){
 					return new InternalSearchHits(InternalSearchHits.EMPTY,0,0);
 				}else{
 					throw e;
