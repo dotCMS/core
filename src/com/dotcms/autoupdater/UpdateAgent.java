@@ -95,8 +95,9 @@ public class UpdateAgent {
             checkRequisites( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
 
             String newMinor = "";
+            String newVersion = "";
             String version = getVersion();
-            String minor = getMinor();
+            String minor = UpdateUtil.getBuildVersion( getJarProps() );
             /*SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
             backupFile = line.getOptionValue( UpdateOptions.BACKUP, "update_backup_b" + minor + "_" + sdf.format( new Date() ) + ".zip" );
             if ( !backupFile.endsWith( ".zip" ) ) {
@@ -112,11 +113,15 @@ public class UpdateAgent {
             //Verify if the user specified a version to update to
             if ( line.hasOption( UpdateOptions.SPECIFIC_VERSION ) ) {
 
-                logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " Version " + line.getOptionValue( UpdateOptions.SPECIFIC_VERSION ) );
+                if ( minor != null ) {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " Version " + line.getOptionValue( UpdateOptions.SPECIFIC_VERSION ) );
+                } else {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " Version " + line.getOptionValue( UpdateOptions.SPECIFIC_VERSION ) );
+                }
 
                 Map<String, String> map = new HashMap<String, String>();
                 map.put( "version", version );
-                map.put( "buildNumber", minor );
+                //map.put( "buildNumber", minor );
                 map.put( "specificVersion", line.getOptionValue( UpdateOptions.SPECIFIC_VERSION ) );
                 if ( allowTestingBuilds ) {
                     map.put( "allowTestingBuilds", "true" );
@@ -133,8 +138,9 @@ public class UpdateAgent {
                             if ( minorArr.length > 1 ) {
                                 logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] + " / " + minorArr[1] );
                             } else {
-                                logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + newMinor );
+                                logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
                             }
+                            newVersion = minorArr [0];
                             logger.info( " " );
                         } else {
                             throw new Exception();
@@ -199,7 +205,12 @@ public class UpdateAgent {
             //Verify if the user provided an update file
             else if ( line.hasOption( UpdateOptions.FILE ) ) {
 
-                logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " file " + line.getOptionValue( UpdateOptions.FILE ) );
+                if ( minor != null ) {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor + " file " + line.getOptionValue( UpdateOptions.FILE ) );
+                } else {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " file " + line.getOptionValue( UpdateOptions.FILE ) );
+                }
+
                 // Use user provided file
                 updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + line.getOptionValue( UpdateOptions.FILE ) );
                 if ( !updateFile.exists() ) {
@@ -208,10 +219,15 @@ public class UpdateAgent {
 
                 // Get the version locally
                 String fileMajor = UpdateUtil.getFileMayorVersion( updateFile );
-                Integer fileMinor = UpdateUtil.getFileMinorVersion( updateFile );
+                String fileMinor = UpdateUtil.getFileMinorVersion( updateFile );
 
-                logger.info( Messages.getString( "UpdateAgent.text.file.version" ) + version + " / " + fileMinor );
-                newMinor = fileMinor + "";
+                if ( fileMinor != null ) {
+                    logger.info( Messages.getString( "UpdateAgent.text.file.version" ) + fileMajor + " / " + fileMinor );
+                    newMinor = fileMinor;
+                } else {
+                    logger.info( Messages.getString( "UpdateAgent.text.file.version" ) + fileMajor );
+                }
+                newVersion = fileMajor;
 
                 logger.info( " " );
 
@@ -230,13 +246,17 @@ public class UpdateAgent {
                 }
 
                 // Download update file
-                logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor );
+                if ( minor != null ) {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version + " / " + minor );
+                } else {
+                    logger.info( Messages.getString( "UpdateAgent.text.your.version" ) + version );
+                }
 
                 if ( updateFile == null ) {
 
                     Map<String, String> map = new HashMap<String, String>();
                     map.put( "version", version );
-                    map.put( "buildNumber", minor );
+                    //map.put( "buildNumber", minor );
                     if ( allowTestingBuilds ) {
                         map.put( "allowTestingBuilds", "true" );
                     }
@@ -252,8 +272,9 @@ public class UpdateAgent {
                                 if ( minorArr.length > 1 ) {
                                     logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] + " / " + minorArr[1] );
                                 } else {
-                                    logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + newMinor );
+                                    logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
                                 }
+                                newVersion = minorArr[0];
                                 logger.info( " " );
                             } else {
                                 throw new Exception();
@@ -263,7 +284,7 @@ public class UpdateAgent {
                             throw new UpdateException( Messages.getString( "UpdateAgent.error.no.minor.version" ), UpdateException.ERROR );
                         }
 
-                        String fileName = "update_" + newMinor + ".zip";
+                        String fileName = "update_" + newVersion + ".zip";
                         updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
                         if ( updateFile.exists() ) {
                             //check md5 of file
@@ -334,7 +355,11 @@ public class UpdateAgent {
 
                 //Clean up...
                 fileUpdater.postUpdate();
-                throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.dotcms.updated" ) + version + " / " + newMinor, UpdateException.SUCCESS );
+                if ( newMinor != null && !newMinor.equals( "" ) ) {
+                    throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.dotcms.updated" ) + newVersion + " / " + newMinor, UpdateException.SUCCESS );
+                } else {
+                    throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.dotcms.updated" ) + newVersion, UpdateException.SUCCESS );
+                }
             }
 
 
@@ -480,12 +505,6 @@ public class UpdateAgent {
 
         Properties props = getJarProps();
         return props.getProperty( "dotcms.release.version" );
-    }
-
-    private String getMinor () throws IOException, UpdateException {
-
-        Properties props = getJarProps();
-        return props.getProperty( "dotcms.release.build" );
     }
 
     /**
@@ -645,8 +664,15 @@ public class UpdateAgent {
 
                 String downloadMessage = Messages.getString( "UpdateAgent.text.downloading" );
                 if ( newMinor != null ) {
+
                     downloadMessage += Messages.getString( "UpdateAgent.text.new.minor" );
-                    downloadMessage += newMinor;
+
+                    String[] minorArr = newMinor.split( "_" );
+                    if ( minorArr.length > 1 ) {
+                        downloadMessage += minorArr[0] + " / " + minorArr[1];
+                    } else {
+                        downloadMessage += minorArr[0];
+                    }
                 }
                 if ( length > 0 ) {
                     downloadMessage += " (" + length / 1024 + "kB)";
@@ -659,27 +685,25 @@ public class UpdateAgent {
                 DownloadProgress downloadProgress = new DownloadProgress( length );
 
                 //Initializing the download.....
-                InputStream is;
-                byte[] buf;
-                int ByteRead, ByteWritten = 0;
-                OutputStream outStream = new BufferedOutputStream( new FileOutputStream( outputFile ) );
+                InputStream is = urlConnection.getInputStream();
+                OutputStream outStream = new FileOutputStream( outputFile );
 
-                is = urlConnection.getInputStream();
-                buf = new byte[length];
-                while ( ( ByteRead = is.read( buf ) ) != -1 ) {
-                    outStream.write( buf, 0, ByteRead );
-                    ByteWritten += ByteRead;
+                byte[] buffer = new byte[1024];
+                int bytesRead, bytesWritten = 0;
+                while ( ( bytesRead = is.read( buffer ) ) != -1 ) {
+                    outStream.write( buffer, 0, bytesRead );
+                    bytesWritten += bytesRead;
 
                     //Keep tracking of the download status
                     long currentTime = System.currentTimeMillis();
                     if ( ( currentTime - startTime ) > refreshInterval ) {
-                        String message = downloadProgress.getProgressMessage( ByteWritten, startTime, currentTime );
+                        String message = downloadProgress.getProgressMessage( bytesWritten, startTime, currentTime );
                         startTime = currentTime;
                         System.out.print( "\r" + message );
                     }
                 }
 
-                String message = downloadProgress.getProgressMessage( ByteWritten, startTime, System.currentTimeMillis() );
+                String message = Messages.getString( "UpdateAgent.text.download.complete" );
                 System.out.print( "\r" + message );
                 System.out.println( "" );
                 outStream.close();
