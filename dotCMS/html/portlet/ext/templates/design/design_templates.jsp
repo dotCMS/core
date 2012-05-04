@@ -137,6 +137,10 @@
 			self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="full_delete" /><portlet:param name="inode" value="<%=template.getInode()%>" /></portlet:actionURL>&referer=' + referer;
 		}
 	}
+	
+	function addMetatagDialog(){
+		dialogOne.show();
+	}
 
 	function showAddContainerDialog(idDiv) {
 		dijit.byId('containersList').attr('value', '');
@@ -296,15 +300,12 @@
 				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
 				</button>
-				<!--
-					NEXT FEATURE: add meta tag to head HTML and add Head code.
-					
-					TO DO..
-					 
-				<button id="buttonOne" data-dojo-type="dijit.form.Button" type="button" onClick="showAddMetatagDialog()">
-					<%=LanguageUtil.get(pageContext, "add-meta-tag")%>
+			 	
+			 	<!-- 
+				<button dojoType="dijit.form.Button" onClick="addMetatagDialog()" type="button">
+					<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-meta-tag"))%>
 				</button>
-				 -->							
+				 -->			
 			</div>
 			<div class="clear"></div>
 			<div id="bodyTemplate"></div>
@@ -600,7 +601,7 @@
 <!-- /ADD CONTAINER DIALOG BOX -->
 
 <!-- ADD METADATA DIALOG BOX -->
-<div id="dialogOne" dojoType="dijit.Dialog" title="<%=LanguageUtil.get(pageContext, "add-meta-tag")%>" style="width: 800px; height: 600px; padding: 0pt;">
+<div jsId="dialogOne" id="dialogOne" dojoType="dijit.Dialog" title="<%=LanguageUtil.get(pageContext, "add-meta-tag")%>" style="width: 800px; height: 600px; padding: 0pt;">
     <div dojoType="dijit.layout.TabContainer" style="min-height: 500px; padding: 0pt;">
         <div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "metadata-tab")%>" style="width: auto; padding: 0pt;">
    			<p><%=LanguageUtil.get(pageContext, "metadata-tab-description")%></p>
@@ -671,7 +672,7 @@
 			<br />
         </div>
         <div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "header-code-tab")%>" style="width: auto;">
-			<div id="textEditorArea" style="border: 0px;  width: auto; height: 80%;">
+			<div id="textEditorArea" style="border: 0px;  width: auto; height: 80%; padding-left: 20px;">
 				<textarea onkeydown="return catchTab(this,event)" style="width: 95%; height: 100%; font-size: 12px" id="headerField"></textarea>
 			</div>
 			<br />
