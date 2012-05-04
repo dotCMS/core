@@ -199,7 +199,7 @@ if(request.getParameter("in_frame")!=null){
 
     	<% if(inFrame) { %>
         if(parent.fileSubmitted) {
-            parent.fileSubmitted();
+            parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
         }
         <% } %>
 					</script>
@@ -251,7 +251,7 @@ if(request.getParameter("in_frame")!=null){
 
     	<% if(inFrame) { %>
         if(parent.fileSubmitted) {
-            parent.fileSubmitted();
+            parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
         }
         <% } %>
 					</script>
@@ -304,7 +304,7 @@ if(request.getParameter("in_frame")!=null){
 
     	<% if(inFrame) { %>
         if(parent.fileSubmitted) {
-            parent.fileSubmitted();
+            parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
         }
         <% } %>
 					</script>
