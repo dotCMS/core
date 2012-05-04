@@ -402,6 +402,8 @@
         <copy todir="${distribution.dotserver.output}">
 			<fileset dir=".">
 				<exclude name="**/.git" />
+				<exclude name=".git" />
+				<exclude name=".git/**" />
 				<exclude name="tomcat/logs/**" />
 				<exclude name="dotCMS/WEB-INF/dotlucene/**" />
 				<exclude name="dotCMS/assets/**" />
