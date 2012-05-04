@@ -2360,7 +2360,7 @@
 
 				<value>http://portalstandards.oracle.com/wsrp/jaxrpc</value>
 
-			</preference>			
+			</preference>
 
 			<preference>
 
@@ -2903,7 +2903,7 @@
 			<role-name>Form Editor</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_FORM_HANDLER</portlet-name>
 		<display-name>Form Handler</display-name>
@@ -2943,7 +2943,7 @@
 			<role-name>Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_USERMANAGER</portlet-name>
 		<display-name>User Manager</display-name>
@@ -2967,7 +2967,7 @@
 			<role-name>User Manager Editor</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_USER_ADMIN</portlet-name>
 		<display-name>User Admin</display-name>
@@ -2985,7 +2985,7 @@
 			<role-name>User</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_ROLE_ADMIN</portlet-name>
 		<display-name>Roles Admin</display-name>
@@ -3002,8 +3002,8 @@
 		<security-role-ref>
 			<role-name>User</role-name>
 		</security-role-ref>
-	</portlet>	
-	
+	</portlet>
+
 	<portlet>
 		<portlet-name>EXT_WEBFORMS</portlet-name>
 		<display-name>Web Forms</display-name>
@@ -3021,7 +3021,7 @@
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_FACILITY</portlet-name>
 		<display-name>Facility Manager</display-name>
@@ -3042,7 +3042,7 @@
 			<role-name>Events Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_EVENTSAPPROVAL</portlet-name>
 		<display-name>Events Approval</display-name>
@@ -3060,7 +3060,7 @@
 			<role-name>Events Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<!--
 	<portlet>
 		<portlet-name>EXT_USER</portlet-name>
@@ -3080,7 +3080,7 @@
 		</security-role-ref>
 	</portlet>
 	-->
-	
+
 	<portlet>
 		<portlet-name>EXT_USER_ACCOUNT_NOTES</portlet-name>
 		<display-name>User Manager</display-name>
@@ -3098,7 +3098,7 @@
 			<role-name>Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_CMS_MAINTENANCE</portlet-name>
 		<display-name>CMS Maintenance</display-name>
@@ -3134,7 +3134,7 @@
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_ECO_ORDER</portlet-name>
 		<display-name>Order Manager</display-name>
@@ -3170,7 +3170,7 @@
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_COMMUNICATIONS_MANAGER</portlet-name>
 		<display-name>Communication Manager</display-name>
@@ -3209,7 +3209,7 @@
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_CONTENTRATINGS</portlet-name>
 		<display-name>Content Ratings</display-name>
@@ -3248,7 +3248,7 @@
 			<role-name>User Manager Editor</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_SCHEDULER</portlet-name>
 		<display-name>Scheduler</display-name>
@@ -3266,7 +3266,7 @@
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_REPORTMANAGER</portlet-name>
 		<display-name>Report Manager</display-name>
@@ -3311,7 +3311,7 @@
 			<role-name>CMS User</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_HOSTADMIN</portlet-name>
 		<display-name>Host Admin</display-name>
@@ -3332,8 +3332,8 @@
 			<role-name>CMS User</role-name>
 		</security-role-ref>
 	</portlet>
-	
-	
+
+
 	<!-- JSP PORTLETS -->
 	<portlet>
 		<portlet-name>EXT_LUCENE_TOOL</portlet-name>
@@ -3356,7 +3356,7 @@
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_LICENSE_MANAGER</portlet-name>
 		<display-name>License Manager</display-name>
@@ -3378,7 +3378,7 @@
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_SITESEARCH</portlet-name>
 		<display-name>Site Search Manager</display-name>
@@ -3388,8 +3388,8 @@
 				<value>/portlet/ext/sitesearch/site_search.jsp</value>
 		</init-param>
 
-	</portlet>	
-	
+	</portlet>
+
 	<portlet>
 		<portlet-name>EXT_DASHBOARD</portlet-name>
 		<display-name>Dashboard</display-name>
@@ -3409,7 +3409,7 @@
 		<security-role-ref>
 			<role-name>CMS User</role-name>
 		</security-role-ref>
-	</portlet>	
+	</portlet>
 
 
 	<portlet>
@@ -3424,9 +3424,9 @@
 		<supports>
 			<mime-type>text/html</mime-type>
 		</supports>
-	
-	</portlet>	
-	
+
+	</portlet>
+
 	<portlet>
 		<portlet-name>OSGI_MANAGER</portlet-name>
 		<display-name>OSGI Manager</display-name>
@@ -3439,9 +3439,9 @@
 		<supports>
 			<mime-type>text/html</mime-type>
 		</supports>
-	
+
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>EXT_TAG_MANAGER</portlet-name>
 		<display-name>Tag Manager</display-name>
@@ -3464,7 +3464,41 @@
 		</security-role-ref>
 	</portlet>
 
+   <portlet>
+		<portlet-name>EXT_EXPCONTENT_TOOL</portlet-name>
+		<display-name>Expiry Content Tool</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+				<name>view-action</name>
+				<value>/ext/escalation/viewJobEsc</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
 
+	<portlet>
+		<portlet-name>LOGMAN_TOOL</portlet-name>
+		<display-name>Log Manager Tool</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+				<name>view-action</name>
+				<value>/ext/logConsole/viewConsole</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+	</portlet>
 
 	<custom-window-state>
 		<window-state>exclusive</window-state>
