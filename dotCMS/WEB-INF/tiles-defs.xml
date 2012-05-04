@@ -1610,7 +1610,7 @@
 	</definition>
 
 	<definition name="portlet.ext.plugins.logMan.struts" extends="portal">
-		<put name="content" value="/plugins/com.dotcms.consoleLog4j/view/view_log_console.jsp" />
+		<put name="content" value="/portlet/ext/consoleLog4j/view_log_console.jsp" />
 		<put name="portlet_sub_nav"
 				value="/portlet/ext/workflows/sub_nav.jsp" />
 	</definition>
