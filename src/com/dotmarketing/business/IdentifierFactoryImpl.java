@@ -46,7 +46,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 	
 	@Override
-	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean pullDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
+	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean onlyDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
 		if(assetType.equals(new HTMLPage().getType())){
@@ -67,8 +67,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		if(endDate != null){
 			bob.append(" and vi.version_ts <= ? ");
 		}
-		if(!pullDeleted){
-			bob.append(" and vi.deleted=" + DbConnectionFactory.getDBFalse() + " ");
+		if(onlyDeleted){
+			bob.append(" and vi.deleted=" + DbConnectionFactory.getDBTrue() + " ");
 		}
 		dc.setSQL(bob.toString());
 		dc.addParam(uri.replace("*", "%"));

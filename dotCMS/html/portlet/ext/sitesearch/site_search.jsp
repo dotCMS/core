@@ -743,7 +743,7 @@ dojo.addOnLoad (function(){
 			  		refreshJobSchedule();
 			  	}
 		});
-   	refreshJobStats();
+   	refreshIndexStats();
 	
 });	
 
@@ -787,9 +787,9 @@ dojo.addOnLoad (function(){
 	<div class="subNavCrumbTrail">
 		<ul id="subNavCrumbUl">
 			<li>
-				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER")%></a>
+				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SITESEARCH")%></a>
 			</li>
-			<li class="lastCrumb"><span id="crumbTitleSpan"><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER")%></span></li>
+			<li class="lastCrumb"><span id="crumbTitleSpan"></span></li>
 		</ul>
 		<div class="clear"></div>
 	</div>
@@ -798,7 +798,13 @@ dojo.addOnLoad (function(){
 
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 
+		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Indices") %>">
+			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="min-height:700px"></div>
+		</div>
 		
+		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Search") %>">
+			<div dojoType="dojox.layout.ContentPane" id="indexTestCp" style="min-height:700px"></div>
+		</div>
 		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>">
 			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp" style="min-height:700px"></div>
 		</div>
@@ -807,13 +813,7 @@ dojo.addOnLoad (function(){
 			<div dojoType="dojox.layout.ContentPane" id="scheduleCp" style="min-height:800px"></div>
 		</div>
 		
-		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Indices") %>">
-			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="min-height:700px"></div>
-		</div>
-		
-		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Search") %>">
-			<div dojoType="dojox.layout.ContentPane" id="indexTestCp" style="min-height:700px"></div>
-		</div>
+
 		
 		
 		

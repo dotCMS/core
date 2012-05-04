@@ -3381,7 +3381,7 @@
 	
 	<portlet>
 		<portlet-name>EXT_SITESEARCH</portlet-name>
-		<display-name>Schedule Site Search</display-name>
+		<display-name>Site Search Manager</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
 				<name>view-jsp</name>

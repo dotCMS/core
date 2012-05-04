@@ -3,14 +3,10 @@ package com.dotcms.publishing.sitesearch;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.codec.digest.DigestUtils;
 
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
@@ -75,30 +71,39 @@ public class ESSiteSearchPublisher extends Publisher {
 	public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
 		try {
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
-			int numThreads = config.getAdditionalThreads() + 1;
-			ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+			//int numThreads = config.getAdditionalThreads() + 1;
+			//ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 			for (final IBundler b : config.getBundlers()) {
 
 				List<File> files = FileUtil.listFilesRecursively(bundleRoot, b.getFileFilter());
+				List<File> filteredFiles = new ArrayList<File>();
+				for(File f:files){
+					if(shouldProcess(f)){
+						filteredFiles.add(f);
+					}
+					
+				}
+				files=filteredFiles;
+				filteredFiles=null;
+				
+				
+				Collections.sort(files, new FileDateSortComparator( ));
+
+				
+				
+				
+				
+				
+				
 				List<List<File>> listsOfFiles = Lists.partition(files, 10);
-				final Map<String, File> identifiers = new ConcurrentHashMap<String,File>(); 
 				
-				
-				
-				
-				
-				
-				
+
 				for (final List<File> list : listsOfFiles) {
 
 					
-					
-					
-					
-					
-					Runnable worker = new Runnable() {
-						@Override
-						public void run() {
+					// Runnable worker = new Runnable() {
+					//	@Override
+					//	public void run() {
 							if (b instanceof FileAssetBundler) {
 								processFileObjects(list, status);
 							} else if (b instanceof URLMapBundler) {
@@ -110,33 +115,30 @@ public class ESSiteSearchPublisher extends Publisher {
 
 							}
 						}
-					};
-
-					executor.execute(worker);
-
-				}
-
+					// };
+					//executor.execute(worker);
+				//}
 			}
+			/*
 			executor.shutdown();
 			Logger.info(this.getClass(), "Waiting for ES Publishing threads to complete");
 			try {
-			    /* The tasks are now running concurrently. We wait until all work is done, 
-			     * with a timeout of 1 day : */
+			    // The tasks are now running concurrently. We wait until all work is done, 
+			    // with a timeout of 1 day : 
 			    boolean b = executor.awaitTermination(24, TimeUnit.HOURS);
-			    /* If the execution timed out, false is returned: */
+			    // If the execution timed out, false is returned: 
 			    Logger.info(this.getClass(), "All ES Publishing threads done");
 			} catch (InterruptedException e) { 
 				  Logger.error(this.getClass(), "ES Publishing threads failed to complete", e);
-				
-			
-			
+
 			}
+			*/
+			
 			
 			if(((SiteSearchConfig)config).switchIndexWhenDone()){
 				APILocator.getSiteSearchAPI().activateIndex(((SiteSearchConfig)config).getIndexName());
 				
 			}
-			
 			
 			
 			
@@ -209,16 +211,7 @@ public class ESSiteSearchPublisher extends Publisher {
 			File htmlFile = new File(file.getAbsolutePath().replaceAll(URLMapBundler.FILE_ASSET_EXTENSION, ""));
 
 			docId=wrap.getId().getId();
-			SiteSearchResult inIndex = APILocator.getSiteSearchAPI().getFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
-			
-			
-			// if what we have in the index is older than what we are putting, and this is an 
-			// incremental publish, remove the old file
-			if(inIndex != null && inIndex.getModified() !=null && inIndex.getModified().after(wrap.getInfo().getVersionTs())){
-				//file.delete();
-				return;
-			}
-			
+
 			
 			
 			// is the live guy
@@ -276,15 +269,7 @@ public class ESSiteSearchPublisher extends Publisher {
 
 			Host h = APILocator.getHostAPI().find(wrap.getIdentifier().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
 			docId=wrap.getIdentifier().getId();
-			SiteSearchResult inIndex = APILocator.getSiteSearchAPI().getFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
-			
-			
-			// if what we have in the index is older than what we are putting, and this is an 
-			// incremental publish, remove the old file
-			if(inIndex != null && inIndex.getModified() !=null && inIndex.getModified().after(wrap.getVersionInfo().getVersionTs())){
-				//file.delete();
-				return;
-			}
+
 			
 			// is the live guy
 			if (UtilMethods.isSet(wrap.getVersionInfo().getLiveInode()) && wrap.getVersionInfo().getLiveInode().equals(wrap.getPage().getInode())) {
@@ -343,16 +328,7 @@ public class ESSiteSearchPublisher extends Publisher {
 		}
 		FileAsset asset = wrap.getAsset();
 		String docId=wrap.getId().getId();
-		SiteSearchResult inIndex = APILocator.getSiteSearchAPI().getFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
-		
-		
-		// if what we have in the index is older than what we are putting, and this is an 
-		// incremental publish, remove the old file
-		if(inIndex != null && inIndex.getModified() !=null && inIndex.getModified().after(wrap.getInfo().getVersionTs())){
-			//file.delete();
-			return;
-		}
-		
+
 		// is the live guy
 		if (UtilMethods.isSet(wrap.getInfo().getLiveInode()) && wrap.getInfo().getLiveInode().equals(wrap.getAsset().getInode())) {
 			try {
@@ -402,9 +378,9 @@ public class ESSiteSearchPublisher extends Publisher {
 		} else if (!UtilMethods.isSet(wrap.getInfo().getLiveInode())) {
 			String url = asset.getHost() + asset.getPath() + asset.getFileName();
 			
-			String md5 = DigestUtils.md5Hex(url);
 
-			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), md5);
+
+			APILocator.getSiteSearchAPI().deleteFromIndex(((SiteSearchConfig) config).getIndexName(), docId);
 		}
 
 	}
@@ -430,10 +406,32 @@ public class ESSiteSearchPublisher extends Publisher {
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
 
-		list.add(FileAssetBundler.class);
+		//list.add(FileAssetBundler.class);
 		list.add(StaticHTMLPageBundler.class);
-		list.add(URLMapBundler.class);
+		//list.add(URLMapBundler.class);
 		return list;
 	}
+	
+	private class FileDateSortComparator implements Comparator<File>{
+
+		@Override
+		public int compare(File o1, File o2) {
+			if(o1 ==null || o2==null){
+				return 0;
+			}
+			else if(o1.lastModified() > o2.lastModified()){
+				return 1;
+			}
+			else if(o1.lastModified() < o2.lastModified()){
+				return -1;
+			}else{
+				return 0;
+			}
+		}
+		
+		
+	}
+	
+	
 
 }

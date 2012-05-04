@@ -17,14 +17,14 @@ public interface IdentifierAPI {
 	 * @param include Should find all that match pattern if true or all that do not match pattern if false
 	 * @param assetType
 	 * @param hasLive
-	 * @param pullDeleted
+	 * @param onlyDeleted only pull deleted records
 	 * @param host
 	 * @param startDate use to search between dates
 	 * @param endDate
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Identifier> findByURIPattern(String assetType,String uri, boolean hasLive,boolean pullDeleted,boolean include, Host host) throws DotDataException;
+	public List<Identifier> findByURIPattern(String assetType,String uri, boolean hasLive,boolean onlyDeleted,boolean include, Host host) throws DotDataException;
 	
 	/**
 	 * Will look for all identifiers matting a URI pattern  
@@ -32,14 +32,14 @@ public interface IdentifierAPI {
 	 * @param include Should find all that match pattern if true or all that do not match pattern if false
 	 * @param assetType
 	 * @param hasLive
-	 * @param pullDeleted
+	 * @param onlyDeleted only pull deleted records
 	 * @param host
 	 * @param startDate
 	 * @param endDate
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean pullDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException;
+	public List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean onlyDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException;
 	
 	/**
 	 * Will take a String from an inode id and return its identifier from cache or db. If cache miss
