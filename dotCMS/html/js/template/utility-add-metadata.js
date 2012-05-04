@@ -27,12 +27,6 @@ function showSelectedAttribute(choose){
 	}
 }
 
-function showAddMetatagDialog(){
-	
-	
-	dijit.byId("dialogOne").show();
-}
-
 function addMetatag(){
 	var nameDiv = document.getElementById(NAME_DIV);
 	var httpEquivDiv = document.getElementById(HTTP_EQUIV_DIV);
