@@ -28,8 +28,8 @@ public abstract class Publisher implements IPublisher {
 		
 		return config;
 	}
-
-	abstract public PublisherConfig process() throws DotPublishingException ;
+	
+	abstract public PublisherConfig process(PublishStatus status) throws DotPublishingException ;
 
 
 

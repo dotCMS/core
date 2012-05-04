@@ -51,9 +51,13 @@ String endDateTime = (props.get("endDateTime") != null) ? (String) props.get("en
 String QUARTZ_JOB_NAME =  UtilMethods.isSet((String) props.get("QUARTZ_JOB_NAME")) ? (String) props.get("QUARTZ_JOB_NAME"): "" ;
 String CRON_EXPRESSION = UtilMethods.webifyString((String) props.get("CRON_EXPRESSION"));
 
+boolean runNow = false;
 
-
-
+try{
+	runNow =new Boolean((String)props.get("RUN_NOW")) ;
+}
+catch(Exception e){
+}
 
 String indexName = UtilMethods.webifyString((String) props.get("indexName"));
 boolean incremental = UtilMethods.isSet((String) props.get("incremental"));
@@ -90,172 +94,199 @@ boolean hasPath = false;
 
 %>
 
+
+<style>
+	.showScheduler:<%=(runNow) ? "display: none; " : "display: ; " %>;
+</style>
 <form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
-<table style="align:center;width:800px;" class="listingTable">
-
-	<tr>
-		<td align="right" valign="top" nowrap="true">
-			<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "name") %></strong>: 
-		</td>
-		<td>
-			<input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text" dojoType='dijit.form.ValidationTextBox' regExp="[\w -]+" required="true" style='width: 400px' value="<%=QUARTZ_JOB_NAME %>" size="200" />
-		</td>
-	</tr>
+	<table style="align:center;width:800px;" class="listingTable">
 	
 	
-	
-	
-	<tr>
-		<td align="right" valign="top" nowrap="true">
-			<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %>:</strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
-		</td>
-		<td>
-			<select id="hostSelector" name="hostSelector" dojoType="dijit.form.FilteringSelect"  store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname"  invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>" <%=indexAll?"disabled=true":"" %> required="false"></select>
-				<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addNewHost()" <%=indexAll?"disabled":"" %>><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
-				<br />
-			
-				<table class="listingTable" id="hostTable" style="margin:10px;width:90%">
-					<tr>
-					    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
-						<th nowrap><%= LanguageUtil.get(pageContext, "Host") %></th>
-					</tr>
-			
-					<%if(!indexAll){ %>
-				  		<% for (int k=0;k<selectedHosts.size();k++) { %>
-							<%Host host = selectedHosts.get(k); %>
-							<%boolean checked =  false; %>
-							<%if(!host.isSystemHost()){ %>
-					   
-						    	<%String str_style = ((k%2)==0)  ? "class=\"alternate_1\"" :  "class=\"alternate_2\""; %>
-								<tr id="<%=host.getIdentifier()%>" <%=str_style %>>
-								    <td nowrap>
-								       	<a href="javascript:deleteHost('<%=host.getIdentifier()%>');"><span class="deleteIcon"></span></a>
-								    </td>
-									<td nowrap><%= host.getHostname() %></td>
-									<td nowrap="nowrap" style="overflow:hidden; display:none; "> <input type="hidden" name="indexhost" id="indexhost<%= host.getIdentifier() %>" value="<%= host.getIdentifier() %>" /></td>
-						
-								</tr>
-							<%} %>
-						<%}%>
-			        <%} %>
-					<% if (indexAll || selectedHosts.size()==0) { %>
-					<tr id= "nohosts">
-						<td colspan="2">
-							<div class="noResultsMessage"><%= indexAll?LanguageUtil.get(pageContext, "all-hosts-selected"):LanguageUtil.get(pageContext, "no-hosts-selected") %></div>
-						</td>
-					</tr>
-					<% } %>
-				</table>
-			<br />
-			<strong><%= LanguageUtil.get(pageContext, "index-all-hosts") %>: </strong><input name="indexAll" id="indexAll" dojoType="dijit.form.CheckBox" type="checkbox" value="true" <%=!indexAll?"":"checked='true'"%> onclick="indexAll(this.checked)" />
-		</td>
-	</tr>
-	
-	
-	
-	<tr>
-		<td align="right" valign="top" nowrap="true">
-			<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "Index-Name") %>: </strong>
-		</td>
-		<td>
-			<select id="indexName" name="indexName" dojoType="dijit.form.FilteringSelect">
-			<%if(hasDefaultIndex){ %><option value="DEFAULT" <%=("DEFAULT".equals(indexName)) ? "selected='true'":"" %>><%= LanguageUtil.get(pageContext, "Default") %></option><%} %>
-			<option value="NEWINDEX" <%=("NEWINDEX".equals(indexName)) ? "selected='true'": ""%>><%= LanguageUtil.get(pageContext, "New-Index-Create") %></option>
-				<%for(String x : indexes){ %>
-					<option value="<%=x%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
-				<%} %>
-			</select>
-		</td>
-	</tr>
-	
-	
-	
-	
-	
-	
-	<tr>
-		<td align="right" valign="top" nowrap="true">
-			<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "cron-expression") %>: </strong> 
-		</td>
-		<td>
-			<input name="CRON_EXPRESSION" id="cronExpression" type="text" dojoType='dijit.form.ValidationTextBox' required="true" style='width: 200px'" value="<%=CRON_EXPRESSION %>" size="10" />
-			 <div style="width: 350px; margin:20px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
-				<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
-				<span style="font-size: 88%;">
-				<p></p>
-		        <p><b><%= LanguageUtil.get(pageContext, "cron-once-an-hour") %>:</b> 0 0/60 * * * ?</p> 	
-		        <p><b><%= LanguageUtil.get(pageContext, "cron-twice-a-day") %>:</b> 0 0 10-11 ? * *</p> 	
-		        <p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p> 
-				</span>
-			</div>
-		</td>
-	</tr>
-	 
-	 
-	 
-	 
-
-	<tr>
-		<td align="right" valign="top" nowrap="true">
-			<strong><%= LanguageUtil.get(pageContext, "Include-Date-Range") %>: </strong> <a href="javascript: ;" id="dateRangeHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="dateRangeHintHook1" class="fieldHint"><%=LanguageUtil.get(pageContext, "date-range-hint") %></span>
-		</td>
-		<td>
-			<div style="padding:5px;">
-				<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>><label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label> &nbsp; &nbsp; &nbsp; 
-			</div>
-			<!--  
-			<div style="padding:4px;">
-				<div style="width:50px;float:left;display: block-inline">
-					<%= LanguageUtil.get(pageContext, "Start:") %>
-				</div>
-				<input type="text" id="startDateDate" name="startDateDate" value="<%=startDateDate %>" dojoType="dijit.form.DateTextBox" disabled="<%=(incremental)%>">  
-				<input type="text" id="startDateTime" name="startDateTime" value="<%=startDateTime %>" dojoType="dijit.form.TimeTextBox" disabled="<%=(incremental)%>">
-			</div>
-			<div style="padding:4px;">
-				<div style="width:50px;float:left;display: block-inline">
-					<%= LanguageUtil.get(pageContext, "End:") %>
-				</div>
-				<input type="text" id="endDateDate" name="endDateDate" value="<%=endDateDate %>" dojoType="dijit.form.DateTextBox" disabled="<%=(incremental)%>">  
-				<input type="text" id="endDateTime" name="endDateTime" value="<%=endDateTime %>" dojoType="dijit.form.TimeTextBox" disabled="<%=(incremental)%>">
-			</div>
-			-->
-		</td>
-	</tr>
 		<tr>
-		<td align="right" valign="top" nowrap="true">
-			<strong><%= LanguageUtil.get(pageContext, "Paths") %>: </strong>
-			<a href="javascript: ;" id="pathsHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="pathsHintHook1" id="pathsHint1" class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
-			
-			
-			
-		</td>
-		<td>
-			<div style="padding:0px;">
-				<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="includeAll" name="includeExclude" value="all" <%="all".equals(includeExclude) ? "checked='true'" : ""%>     ><label for="includeAll">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All")) %></label> &nbsp; &nbsp; &nbsp; 
-				<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="include" name="includeExclude" value="include" <%="include".equals(includeExclude) ? "checked='true'" : ""%>><label for="include">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Include")) %></label> &nbsp; &nbsp; &nbsp; 
-				<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude" <%="exclude".equals(includeExclude) ? "checked='true'" : ""%>><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
-			</div>
-			<br>
-			<textarea  name="paths" id="paths" <%=("all".equals(includeExclude)) ? "disabled='true'" :"" %> type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'" value="" /><%=(UtilMethods.isSet(paths)) ? paths : "/*" %></textarea>
-		</td>
-	</tr>
-	<tr>
-		<td align="center" valign="top" nowrap="true" colspan="2">
-
-			<div class="buttonRow">
+			<td align="right" valign="top" nowrap="true">
+				<b><%= LanguageUtil.get(pageContext, "Run") %></b>
+			</td>
+			<td>
+				<input type="radio" onclick="runNow()" <%=(runNow) ? "checked='true'" : "" %> dojoType="dijit.form.RadioButton" name="RUN_NOW" id="whenToRunNow" value="true"><label for="whenToRunNow"><%= LanguageUtil.get(pageContext, "Now") %></label>&nbsp; &nbsp;
+				<input type="radio" onclick="runNow()" <%=(!runNow) ? "checked='true'" : "" %> dojoType="dijit.form.RadioButton" name="RUN_NOW" id="whenToRunCron" value="false"><label for="whenToRunCron"><%= LanguageUtil.get(pageContext, "Scheduled") %></label>
+			</td>
+		</tr>
 		
-			<button dojoType="dijit.form.Button"
-				id="saveButton" onClick="scheduleJob()"
-				iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Schedule")) %>
-			</button>
-			&nbsp; &nbsp; &nbsp; 
-			<button dojoType="dijit.form.Button"
-				id="saveAndExecuteButton" onClick="runNow();"
-				iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
-				</button>
+		
+		<tr class="showScheduler" >
+			<td align="right" valign="top" nowrap="true">
+				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "name") %></strong>: 
+			</td>
+			<td>
+				<input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text" dojoType='dijit.form.ValidationTextBox' regExp="[\w -]+" required="true" style='width: 400px' value="<%=QUARTZ_JOB_NAME %>" size="200" />
+			</td>
+		</tr>
+		
+		
+		
+		
+		<tr>
+			<td align="right" valign="top" nowrap="true">
+				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %>:</strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
+			</td>
+			<td>
+				<select id="hostSelector" name="hostSelector" dojoType="dijit.form.FilteringSelect"  store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname"  invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>" <%=indexAll?"disabled=true":"" %> required="false"></select>
+					<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addNewHost()" <%=indexAll?"disabled":"" %>><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
+					<br />
+				
+					<table class="listingTable" id="hostTable" style="margin:10px;width:90%">
+						<tr>
+						    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
+							<th nowrap><%= LanguageUtil.get(pageContext, "Host") %></th>
+						</tr>
+				
+						<%if(!indexAll){ %>
+					  		<% for (int k=0;k<selectedHosts.size();k++) { %>
+								<%Host host = selectedHosts.get(k); %>
+								<%boolean checked =  false; %>
+								<%if(!host.isSystemHost()){ %>
+						   
+							    	<%String str_style = ((k%2)==0)  ? "class=\"alternate_1\"" :  "class=\"alternate_2\""; %>
+									<tr id="<%=host.getIdentifier()%>" <%=str_style %>>
+									    <td nowrap>
+									       	<a href="javascript:deleteHost('<%=host.getIdentifier()%>');"><span class="deleteIcon"></span></a>
+									    </td>
+										<td nowrap><%= host.getHostname() %></td>
+										<td nowrap="nowrap" style="overflow:hidden; display:none; "> <input type="hidden" name="indexhost" id="indexhost<%= host.getIdentifier() %>" value="<%= host.getIdentifier() %>" /></td>
+							
+									</tr>
+								<%} %>
+							<%}%>
+				        <%} %>
+						<% if (indexAll || selectedHosts.size()==0) { %>
+						<tr id= "nohosts">
+							<td colspan="2">
+								<div class="noResultsMessage"><%= indexAll?LanguageUtil.get(pageContext, "all-hosts-selected"):LanguageUtil.get(pageContext, "no-hosts-selected") %></div>
+							</td>
+						</tr>
+						<% } %>
+					</table>
+				<br />
+				<strong><%= LanguageUtil.get(pageContext, "index-all-hosts") %>: </strong><input name="indexAll" id="indexAll" dojoType="dijit.form.CheckBox" type="checkbox" value="true" <%=!indexAll?"":"checked='true'"%> onclick="indexAll(this.checked)" />
+			</td>
+		</tr>
+		
+		
+		
+		<tr>
+			<td align="right" valign="top" nowrap="true">
+				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "Index-Name") %>: </strong>
+			</td>
+			<td>
+				<select id="indexName" name="indexName" dojoType="dijit.form.FilteringSelect">
+				<%if(hasDefaultIndex){ %><option value="DEFAULT" <%=("DEFAULT".equals(indexName)) ? "selected='true'":"" %>><%= LanguageUtil.get(pageContext, "Default") %></option><%} %>
+				<option value="NEWINDEX" <%=("NEWINDEX".equals(indexName)) ? "selected='true'": ""%>><%= LanguageUtil.get(pageContext, "New-Index-Create") %></option>
+					<%for(String x : indexes){ %>
+						<option value="<%=x%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
+					<%} %>
+				</select>
+			</td>
+		</tr>
+		
+	
+	
+		<tr>
+			<td align="right" valign="top" nowrap="true">
+				<strong><%= LanguageUtil.get(pageContext, "Include-Date-Range") %>: </strong> <a href="javascript: ;" id="dateRangeHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="dateRangeHintHook1" class="fieldHint"><%=LanguageUtil.get(pageContext, "date-range-hint") %></span>
+			</td>
+			<td>
+				<div style="padding:5px;">
+					<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>><label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label> &nbsp; &nbsp; &nbsp; 
+				</div>
+				<!--  
+				<div style="padding:4px;">
+					<div style="width:50px;float:left;display: block-inline">
+						<%= LanguageUtil.get(pageContext, "Start:") %>
+					</div>
+					<input type="text" id="startDateDate" name="startDateDate" value="<%=startDateDate %>" dojoType="dijit.form.DateTextBox" disabled="<%=(incremental)%>">  
+					<input type="text" id="startDateTime" name="startDateTime" value="<%=startDateTime %>" dojoType="dijit.form.TimeTextBox" disabled="<%=(incremental)%>">
+				</div>
+				<div style="padding:4px;">
+					<div style="width:50px;float:left;display: block-inline">
+						<%= LanguageUtil.get(pageContext, "End:") %>
+					</div>
+					<input type="text" id="endDateDate" name="endDateDate" value="<%=endDateDate %>" dojoType="dijit.form.DateTextBox" disabled="<%=(incremental)%>">  
+					<input type="text" id="endDateTime" name="endDateTime" value="<%=endDateTime %>" dojoType="dijit.form.TimeTextBox" disabled="<%=(incremental)%>">
+				</div>
+				-->
+			</td>
+		</tr>
+		
+		
+		<tr>
+			<td align="right" valign="top" nowrap="true">
+				<strong><%= LanguageUtil.get(pageContext, "Paths") %>: </strong>
+				<a href="javascript: ;" id="pathsHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="pathsHintHook1" id="pathsHint1" class="fieldHint"><%=LanguageUtil.get(pageContext, "paths-hint") %></span>
+				
+				
+				
+			</td>
+			<td>
+				<div style="padding:0px;">
+					<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="includeAll" name="includeExclude" value="all" <%="all".equals(includeExclude) ? "checked='true'" : ""%>     ><label for="includeAll">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All")) %></label> &nbsp; &nbsp; &nbsp; 
+					<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="include" name="includeExclude" value="include" <%="include".equals(includeExclude) ? "checked='true'" : ""%>><label for="include">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Include")) %></label> &nbsp; &nbsp; &nbsp; 
+					<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude" <%="exclude".equals(includeExclude) ? "checked='true'" : ""%>><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
+				</div>
+				<br>
+				<textarea  name="paths" id="paths" <%=("all".equals(includeExclude)) ? "disabled='true'" :"" %> type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'" value="" /><%=(UtilMethods.isSet(paths)) ? paths : "/*" %></textarea>
+			</td>
+		</tr>
+		
+		
+		
+		<tr class="showScheduler">
+			<td align="right" valign="top" nowrap="true">
+				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "cron-expression") %>: </strong> <br>
+			</td>
+			<td>
+
+				<input name="CRON_EXPRESSION" id="cronExpression" type="text" dojoType='dijit.form.ValidationTextBox' required="true" style='width: 200px'" value="<%=CRON_EXPRESSION %>" size="10" />
+				 <div style="width: 350px; margin:20px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
+					<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
+					<span style="font-size: 88%;">
+					<p></p>
+			        <p><b><%= LanguageUtil.get(pageContext, "cron-once-an-hour") %>:</b> 0 0/60 * * * ?</p> 	
+			        <p><b><%= LanguageUtil.get(pageContext, "cron-twice-a-day") %>:</b> 0 0 10-11 ? * *</p> 	
+			        <p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p> 
+					</span>
+				</div>
+
+			</td>
+		</tr>
+		
+		
+		
+		
+		<tr>
+			<td align="center" valign="top" nowrap="true" colspan="2">
+	
+				<div class="buttonRow" style="white-space: nowrap;">
+					<span class="showScheduler" style='<%=(runNow) ? "display: none; " : "" %>;'>
+						<button dojoType="dijit.form.Button"
+							id="saveButton" onClick="scheduleJob()"
+							iconClass="calListIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Schedule")) %>
+						</button>
+					</span>
+
+					<span class="showRunNow" style='<%=(!runNow) ? "display: none; " : "" %>'>
+						<button dojoType="dijit.form.Button"
+							id="saveAndExecuteButton" onClick="scheduleJob();"
+							iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
+						</button>
+					</span>
+					&nbsp; &nbsp; 
+					<button dojoType="dijit.form.Button"
+						id="cacnelButton" onClick="showJobsListingPane();"
+						iconClass="cancelIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+					</button>
 				</div>
 			</td>
 		</tr>
-	
+		
 	</table>
 </form>
