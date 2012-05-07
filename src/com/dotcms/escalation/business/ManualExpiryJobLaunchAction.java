@@ -8,29 +8,26 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import com.dotcms.escalation.form.EscalationForm;
+
 import com.dotcms.escalation.util.EscalationJob;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 public class ManualExpiryJobLaunchAction extends DotPortletAction {
 
 	
-	private String pluginId = "com.dotcms.escalation";
-	private PluginAPI pluginAPI = APILocator.getPluginAPI();
+	private String maintenanceRoleKey = "com.dotcms.escalation";
 	private WorkflowAPI wAPI = APILocator.getWorkflowAPI();
 	private ExpiryTaskAPI expAPI = ExpiryTaskAPI.getInstance();
 
@@ -44,7 +41,7 @@ public class ManualExpiryJobLaunchAction extends DotPortletAction {
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
 
 		
-		String roleKeyToEscale = pluginAPI.loadProperty(pluginId, "escalation.job.java.roleToEscale");
+		String roleKeyToEscale = Config.getStringProperty("escalation.job.java.roleToEscale", maintenanceRoleKey);
 		String[] taskToEscale = (String[]) req.getParameterValues("task");
 		//String selectedRole = ((EscalationForm)form).getUser();
 
