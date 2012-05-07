@@ -1187,7 +1187,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		    addIdentifierToFolder=addIdentifierToFolder.replaceAll("varchar\\(", "varchar2\\(");
 		String addFK = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id)";
 		String dropHostColumn = "ALTER TABLE Folder drop column host_inode";
-		String folderQuery = "Select * from folder where host_inode in(Select distinct host_inode from identifier) order by host_inode, path";
+		String folderQuery = "Select * from folder where inode<>'SYSTEM_FOLDER' and host_inode in(Select distinct host_inode from identifier) order by host_inode, path";
 		String deleteFromFolder = "Delete from folder where host_inode not in (select distinct host_inode from identifier) and inode<>'SYSTEM_FOLDER'";
 		String deletePathColumn = "ALTER TABLE Folder drop column path";
 
@@ -1207,22 +1207,25 @@ public class Task00785DataModelChanges implements StartupTask  {
 
 			dc.setSQL("insert into identifier(id,parent_path,asset_name,host_inode,asset_type)values (?,?,?,?,?)");
 			dc.addParam(uuid);
-			if(path !=null){
-				finalPath = path.substring(0, path.lastIndexOf("/"));
-				finalPath = finalPath.substring(0, finalPath.lastIndexOf("/")+1);
-			}
-			if(UtilMethods.isSet(finalPath)){
-				dc.addParam(finalPath);
-			}
-			dc.addParam(name);
-			dc.addParam(folder.get("host_inode").trim());
-			dc.addParam(type);
-			dc.loadResult();
-
-			dc.setSQL("Update folder set identifier =? where inode=?");
-			dc.addParam(uuid);
-			dc.addParam(inode);
-			dc.loadResult();
+            if(path !=null){
+                finalPath = path.substring(0, path.lastIndexOf("/"));
+                finalPath = finalPath.substring(0, finalPath.lastIndexOf("/")+1);
+            }
+            if(UtilMethods.isSet(finalPath)){
+                dc.addParam(finalPath);
+                dc.addParam(name);
+                dc.addParam(folder.get("host_inode").trim());
+                dc.addParam(type);
+                dc.loadResult();
+                
+                dc.setSQL("Update folder set identifier =? where inode=?");
+                dc.addParam(uuid);
+                dc.addParam(inode);
+                dc.loadResult();
+            }
+            else {
+                Logger.warn(this, "bad path data for Folder inode:"+inode+" name:"+name  );
+            }
 		}
 
 		dc.setSQL("select * from folder where inode='SYSTEM_FOLDER'");
