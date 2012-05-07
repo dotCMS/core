@@ -18,7 +18,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="org.apache.commons.beanutils.BeanUtils"%>
-<%@page import="com.dotmarketing.util.Config" %>
+
 
 <script language="Javascript">
 
@@ -85,7 +85,9 @@ var myCpP = dojo.byId("hangTaskListHere");
 </script>
 
 <%
-Role Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("escalation.job.java.roleToEscale", "com.dotcms.escalation"));
+Role Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(APILocator.getPluginAPI().loadProperty("com.dotcms.escalation", "escalation.job.java.roleToEscale"));
+
+if(Manutentor!=null){
 List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutentor); 
 
 %>
@@ -101,6 +103,8 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 <!-- END Button Row -->
 
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="height:500px;">
+
+
 
 <!-- START Left Column -->	
 	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;" class="lineRight">
@@ -162,6 +166,12 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 <!-- END Right Column -->
 </html:form>
 </liferay:box>
+<%} else {%>
+
+	<div class="error-message">Before you can use the Esclation Portlet, you need to create the proper role - with key "escalation.job.java.roleToEscale"</div>
+	<%
+	} %>
+
 
 <script type="text/javascript">
 resizeBrowser();
