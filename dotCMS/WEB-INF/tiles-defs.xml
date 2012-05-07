@@ -1604,9 +1604,9 @@
 	</definition>
 
 	<definition name="portlet.ext.plugins.expCont.struts" extends="portal">
-		<put name="content" value="/portlet/ext/escalation/view_exp_tool.jsp" />
+		<put name="content" value="/portlet/ext/workflows/view_exp_tool.jsp" />
 		<put name="portlet_sub_nav"
-				value="/portlet/ext/escalation/sub_nav.jsp" />
+				value="/portlet/ext/workflows/sub_nav.jsp" />
 	</definition>
 
 	<definition name="portlet.ext.plugins.logMan.struts" extends="portal">

@@ -1,30 +1,27 @@
 package com.dotcms.escalation.util;
 
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
-import com.dotcms.escalation.business.ExpiryTaskAPI;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import org.quartz.JobExecutionContext;
+import org.quartz.StatefulJob;
+
+import com.dotcms.escalation.business.ExpiryTaskAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 public class EscalationJob implements StatefulJob {
 
-	private String pluginId = "com.dotcms.escalation";
-	private PluginAPI pluginAPI = APILocator.getPluginAPI();
+	private String maintenanceRoleKey = "com.dotcms.escalation";
 	private WorkflowAPI wAPI = APILocator.getWorkflowAPI();
 	private ExpiryTaskAPI expAPI = ExpiryTaskAPI.getInstance();
 
@@ -35,10 +32,10 @@ public class EscalationJob implements StatefulJob {
 		Logger.info(EscalationJob.class, "Running Escalation  Job ---- CHRI -----");
 
 		try {
-			String d = pluginAPI.loadProperty(pluginId, "escalation.job.java.expiryTime");
+			String d = Config.getStringProperty("escalation.job.java.expiryTime", maintenanceRoleKey);
 			int days = Integer.parseInt(d);
 			
-			String roleKeyToEscale = pluginAPI.loadProperty(pluginId, "escalation.job.java.roleToEscale");
+			String roleKeyToEscale = Config.getStringProperty("escalation.job.java.roleToEscale", maintenanceRoleKey);
 
 			try {
 
@@ -77,8 +74,6 @@ public class EscalationJob implements StatefulJob {
 				Logger.error(EscalationJob.class, e.getMessage(), e);
 			}
 		} catch (NumberFormatException e1) {
-			Logger.error(EscalationJob.class, e1.getMessage(), e1);
-		} catch (DotDataException e1) {
 			Logger.error(EscalationJob.class, e1.getMessage(), e1);
 		}
 
