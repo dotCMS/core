@@ -23,7 +23,7 @@ public class ExpiryTaskAPIImpl extends ExpiryTaskAPI {
 
 	private static WorkflowAPI wAPI = APILocator.getWorkflowAPI();
 
-	protected static String UPDATE_USER_ASSIGNTO_TASK = "update workflow_task set assigned_to = ? where id = ?";
+	protected static String UPDATE_USER_ASSIGNTO_TASK = "update workflow_task set assigned_to = ?, mod_date = ? where id = ?";
 
 	@Override
 	public void escaleTask(String taskId, String roleId) throws Exception {
@@ -35,6 +35,7 @@ public class ExpiryTaskAPIImpl extends ExpiryTaskAPI {
 
 			db.setSQL(UPDATE_USER_ASSIGNTO_TASK);
 			db.addParam(roleId);
+			db.addParam(new java.sql.Timestamp(new java.util.Date().getTime()));
 			db.addParam(task.getId());
 
 			db.loadResult();
