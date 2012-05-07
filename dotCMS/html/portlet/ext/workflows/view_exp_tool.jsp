@@ -87,7 +87,7 @@ var myCpP = dojo.byId("hangTaskListHere");
 <%
 Role Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(APILocator.getPluginAPI().loadProperty("com.dotcms.escalation", "escalation.job.java.roleToEscale"));
 
-if(Manutentor==null){
+if(Manutentor!=null){
 List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutentor); 
 
 %>
