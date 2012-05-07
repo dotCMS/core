@@ -4,7 +4,6 @@
     "http://tuckey.org/res/dtds/urlrewrite3.2.dtd">
 <urlrewrite>
 <!--  
-
     <rule>
     	<from>^/denver$</from>
     	<to type="redirect">/where/denver/</to>
@@ -15,7 +14,6 @@
     	<to type="proxy">http://localhost/where/denver/$1</to>
     </rule>
     
-
 -->
 <!-- BEGIN PLUGINS -->
 <!-- END PLUGINS -->

@@ -19,7 +19,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.calendar.business.EventFactory;
 import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -132,7 +131,8 @@ public class ContentTool implements ViewTool {
 				return new ContentMap(l.get(0), user,EDIT_OR_PREVIEW_MODE,currentHost,context);
 			}
 		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
+			Logger.error(ContentTool.class,e.getMessage());
+			Logger.debug(ContentTool.class,e.getMessage(),e);
 			return null;
 		}
 	}
@@ -184,7 +184,8 @@ public class ContentTool implements ViewTool {
 				ret.add(new ContentMap(c,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
 			}
 		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
+			Logger.error(ContentTool.class,e.getMessage());
+			Logger.debug(ContentTool.class,e.getMessage(),e);
 		}
 		if(ret == null){
 			ret = new ArrayList<ContentMap>();
@@ -221,7 +222,8 @@ public class ContentTool implements ViewTool {
 				}
 			}
 		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
+			Logger.error(ContentTool.class,e.getMessage());
+			Logger.debug(ContentTool.class,e.getMessage(),e);
 		}
 		return ret;
 	}

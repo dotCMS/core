@@ -15,10 +15,10 @@
 	<property name="tinymce.dir" value="tiny_mce" />
 	<property name="dotcms.dir" value="dotcms" />
 	<property name="classpath.dir" value="classpath" />
+	<property name="ROOT.dir" value="ROOT" />
 	<property name="manifest.file" value="MANIFEST.MF" />
 
 	<property name="jar.file" value="${build.dir}/jar/plugin-${plugin.name}.jar" />
-
 
 	<path id="files-classpath">
 		<fileset dir="${lib.app}">
@@ -33,7 +33,6 @@
 		<pathelement path="${build.classes}" />
 		<pathelement path="../../build/classes" />
 	</path>
-
 
 	<target name="build" depends="compile,jar" />
 	<target name="compile">
@@ -72,7 +71,7 @@
 		<mkdir dir="${jsp.dir}" />
 		<mkdir dir="${tinymce.dir}" />
 		<mkdir dir="${dotcms.dir}" />
-		
+		<mkdir dir="${ROOT.dir}" />
 
 		<jar jarfile="${jar.file}" manifest="${manifest.file}">
 			<fileset dir="${build.classes}" />
@@ -81,15 +80,12 @@
 			<zipfileset dir="static_files" prefix="static_files" excludes="**/thumb.db" />
 			<zipfileset dir="static_velocity" prefix="static_velocity" />
 			<zipfileset dir="lib" prefix="lib" />
+			<zipfileset dir="${ROOT.dir}" prefix="ROOT" />
 			<zipfileset dir="${jsp.dir}" prefix="jsp" />
 			<zipfileset dir="${tinymce.dir}" prefix="tiny_mce" />
 			<zipfileset dir="${dotcms.dir}" prefix="dotcms" excludes="**/thumb.db" />
 		</jar>
-		
-	    
 
-
-		
 	</target>
 	
 	<target name="doif" depends="checkFileExists, if_target"/>
@@ -102,13 +98,8 @@
 	    <jar destfile="${lib.app}/plugin-${plugin.name}-classpath.jar" basedir="${classpath.dir}"/>
 	</target>
 
-
-
 	<target name="clean">
 		<delete dir="${build.dir}" />
 	</target>
-	
-
-
 
 </project>

@@ -1,5 +1,8 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -23,6 +26,16 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		ifac = FactoryLocator.getIdentifierFactory();
 	}
 
+	@Override
+	public List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean onlyDeleted,boolean include,Host host) throws DotDataException {
+		return ifac.findByURIPattern(assetType,uri,hasLive,onlyDeleted,include, host);
+	}
+	
+	@Override
+	public List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean onlyDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
+		return ifac.findByURIPattern(assetType, uri, hasLive,onlyDeleted,include, host, startDate, endDate);
+	}
+	
 	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
 		Identifier ident = null;
 		ident = ifac.loadFromCache(inodeOrIdentifier);
@@ -115,5 +128,9 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 
 	public void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException {
 		ifac.updateIdentifierURI(webasset, folder);
+	}
+	
+	public List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException {
+	    return ifac.findByParentPath(hostId, parent_path);
 	}
 }

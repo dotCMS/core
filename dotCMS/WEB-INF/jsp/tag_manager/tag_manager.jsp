@@ -51,8 +51,8 @@ String currentHostName = currentHost.getHostname();
 %>
 
 <style type="text/css">
-@import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
-@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
+@import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getVersion() %>";
+@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 .permissionWrapper{background:none;padding:0;margin:0 auto;width:90%;}
 
 .permissionTable{width:100%;margin:0;}
@@ -168,7 +168,7 @@ td {font-size: 100%;}
 			initialWidth : '100%',
 			autoHeight : true,
 			escapeHTMLInData : false,
-			class: "tundra",
+			'class': "tundra",
 			structure: layout,
 			dnd: true,
 			plugins:{

@@ -1,22 +1,22 @@
 package com.dotmarketing.sitesearch.viewtool;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.sitesearch.business.DotSearchResults;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.StringUtils;
 
 public class SiteSearchWebAPI implements ViewTool {
 
@@ -24,10 +24,13 @@ public class SiteSearchWebAPI implements ViewTool {
 	private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 	private static UserAPI userAPI = APILocator.getUserAPI();
 	private static SiteSearchAPI siteSearchAPI = APILocator.getSiteSearchAPI();
-	
+	private HttpServletRequest request;
+	private HttpServletResponse response;
 
 	public void init(Object initData) {
-
+		ViewContext context = (ViewContext) initData;
+		this.request = context.getRequest();
+		this.response = context.getResponse();
 	}
 	
 	/**
@@ -54,37 +57,48 @@ public class SiteSearchWebAPI implements ViewTool {
 	 * @throws IOException
 	 */
 
-	public DotSearchResults search(String query, String sort, int start, int rows, HttpServletRequest request)
+	public SiteSearchResults search(String query, String sort, int start, int rows)
 			throws IOException {
-
+		SiteSearchResults results= new SiteSearchResults();
+		if(query ==null){
+			results.setError("No query passed in");
+			return results;
+			
+		}
 		Host host = null;
 
-		try {
-			host = hostWebAPI.getCurrentHost(request);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
+		
+		
+		if(!StringUtils.isJson(query)){
 			try {
-				Logger.warn(this, "Error getting host from request, trying default host");
-				host = hostWebAPI.findDefaultHost(userAPI.getSystemUser(), false);
-			} catch (Exception e1) {
-				Logger.error(this, e1.getMessage(), e1);
-				throw new DotRuntimeException(e.getMessage(), e);
+				host = hostWebAPI.getCurrentHost(request);
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+				try {
+					Logger.warn(this, "Error getting host from request, trying default host");
+					host = hostWebAPI.findDefaultHost(userAPI.getSystemUser(), false);
+				} catch (Exception e1) {
+					Logger.error(this, e1.getMessage(), e1);
+					results.setError("no host:" + e.getMessage());
+					return results;
+				}
+			
 			}
-		
+			// add host if not there
+			if(query.indexOf("+host:") < 0){
+				query+= " +host:" + host.getIdentifier() ; 
+			}
+			
+			//add language if
+			if(query.indexOf("+language:") < 0){
+				query+= " +language:" + WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+			}
 		}
 		
-
-		
-		Locale locale = (Locale)request.getSession().getAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY);
-		String lang = request.getLocale().getLanguage();
-		if(locale!=null){
-			lang = locale.getLanguage();	
-		}
 				
-		DotSearchResults dsr = siteSearchAPI.search(query, sort, start, rows, lang, host.getIdentifier());
+		SiteSearchResults dsr = siteSearchAPI.search(query, sort, start, rows);
 
-		dsr.setHost(host);
-		dsr.setLang(lang);
+
 		return dsr;
 	}
 	

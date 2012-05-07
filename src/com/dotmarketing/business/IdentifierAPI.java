@@ -1,12 +1,46 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 public interface IdentifierAPI {
 
+	/**
+	 * Will look for all identifiers matting a URI pattern  
+	 * @param uri Can contain a * at the beginning or end
+	 * @param include Should find all that match pattern if true or all that do not match pattern if false
+	 * @param assetType
+	 * @param hasLive
+	 * @param onlyDeleted only pull deleted records
+	 * @param host
+	 * @param startDate use to search between dates
+	 * @param endDate
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<Identifier> findByURIPattern(String assetType,String uri, boolean hasLive,boolean onlyDeleted,boolean include, Host host) throws DotDataException;
+	
+	/**
+	 * Will look for all identifiers matting a URI pattern  
+	 * @param uri Can contain a * at the beginning or end
+	 * @param include Should find all that match pattern if true or all that do not match pattern if false
+	 * @param assetType
+	 * @param hasLive
+	 * @param onlyDeleted only pull deleted records
+	 * @param host
+	 * @param startDate
+	 * @param endDate
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean onlyDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException;
+	
 	/**
 	 * Will take a String from an inode id and return its identifier from cache or db. If cache miss
 	 * this will always hit the db
@@ -129,7 +163,14 @@ public interface IdentifierAPI {
 	public void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException;
 
 
-
-
+	/**
+	 * Finds identifiers with the specified parent path and host id
+	 * 
+	 * @param hostId
+	 * @param parent_path
+	 * @return
+	 * @throws DotHibernateException
+	 */
+	public List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException;
 
 }

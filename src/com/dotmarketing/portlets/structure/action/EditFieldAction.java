@@ -11,17 +11,21 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -36,7 +40,9 @@ import com.dotmarketing.portlets.structure.struts.FieldForm;
 import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
@@ -101,7 +107,7 @@ public class EditFieldAction extends DotPortletAction {
 									.getFieldType().equals(Field.FieldType.HIDDEN.toString()))) {
 						FieldForm fieldForm = (FieldForm) form;
 						field.setFieldName(fieldForm.getFieldName());
-						
+
 						// This is what you can change on a fixed field
 						if (field.isFixed()) {
 							field.setHint(fieldForm.getHint());
@@ -142,7 +148,7 @@ public class EditFieldAction extends DotPortletAction {
 		/*
 		 * If we are deleting the field, run the delete action and return to the
 		 * list
-		 * 
+		 *
 		 */
 		else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
 			try {
@@ -204,8 +210,8 @@ public class EditFieldAction extends DotPortletAction {
 			Structure structure = StructureFactory.getStructureByInode(field.getStructureInode());
 			boolean isNew = false;
 			boolean wasIndexed = field.isIndexed();
-			
-			
+
+
 			//http://jira.dotmarketing.net/browse/DOTCMS-5918
 			HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
 			try {
@@ -217,7 +223,7 @@ public class EditFieldAction extends DotPortletAction {
 				throw ae;
 			}
 
-	
+
 
 			String dataType = fieldForm.getDataType();
 
@@ -233,9 +239,9 @@ public class EditFieldAction extends DotPortletAction {
 			BeanUtils.copyProperties(field, fieldForm);
 
 
-			//To validate values entered for decimal/number type check box field  
+			//To validate values entered for decimal/number type check box field
 			//http://jira.dotmarketing.net/browse/DOTCMS-5516
-			if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())&& 
+			if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())&&
 					 (dataType.equals(Field.DataType.FLOAT.toString())||dataType.equals(Field.DataType.INTEGER.toString()))) {
                 		String values = fieldForm.getValues();
 	                  String temp = values.replaceAll("\r\n","|");
@@ -247,7 +253,7 @@ public class EditFieldAction extends DotPortletAction {
 			          String message = "message.structure.invaliddata";
 				    SessionMessages.add(req, "error", message);
 				    return false;
-				 }	
+				 }
                        }
                   }
 
@@ -294,12 +300,12 @@ public class EditFieldAction extends DotPortletAction {
 				if (found > 0) {
 					fieldVelocityName = fieldVelocityName + Integer.toString(found);
 				}
-				
+
 				//http://jira.dotmarketing.net/browse/DOTCMS-5616
 				if(!validateInternalFieldVelocityVarName(fieldVelocityName)){
 					fieldVelocityName+="1";
 				}
-				
+
 				field.setVelocityVarName(fieldVelocityName);
 			}
 
@@ -355,7 +361,7 @@ public class EditFieldAction extends DotPortletAction {
 					if (!field.getFieldType().equals("host or folder")){
 							field.setFieldContentlet("");
 						}
-					
+
 				} else if (!prevDataType.equals(fieldForm.getDataType())) {
 					String fieldContentlet = FieldFactory.getNextAvaliableFieldNumber(dataType, field.getInode(), field
 							.getStructureInode());
@@ -398,22 +404,27 @@ public class EditFieldAction extends DotPortletAction {
 				field.setFieldContentlet(FieldAPI.ELEMENT_CONSTANT);
 				field.setValues(fieldForm.getValues());
 			}
-			
-			
+
+
 			// saves this field
 			FieldFactory.saveField(field);
+			
+			ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
+				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 
 			FieldsCache.removeFields(structure);
 			StructureCache.removeStructure(structure);
 			StructureServices.removeStructureFile(structure);
 			StructureFactory.saveStructure(structure);
 
-			//Refreshing permissions 
+			FieldsCache.addFields(structure, structure.getFields());
+
+			//Refreshing permissions
 			PermissionAPI perAPI = APILocator.getPermissionAPI();
 			if(field.getFieldType().equals("host or folder")) {
 				perAPI.resetChildrenPermissionReferences(structure);
 			}
-			
+
 		    //http://jira.dotmarketing.net/browse/DOTCMS-5178
 			if(!isNew && ((!wasIndexed && fieldForm.isIndexed()) || (wasIndexed && !fieldForm.isIndexed()))){
 			  // rebuild contentlets indexes
@@ -485,16 +496,20 @@ public class EditFieldAction extends DotPortletAction {
 			// Call the commit method to avoid a deadlock
 			HibernateUtil.commitTransaction();
 			FieldsCache.removeFields(structure);
+			
+			ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
+				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+			
 			StructureCache.removeStructure(structure);
 			StructureServices.removeStructureFile(structure);
-			
-			//Refreshing permissions 
+
+			//Refreshing permissions
 			PermissionAPI perAPI = APILocator.getPermissionAPI();
 			if(field.getFieldType().equals("host or folder")) {
 				conAPI.cleanHostField(structure, APILocator.getUserAPI().getSystemUser(), false);
 				perAPI.resetChildrenPermissionReferences(structure);
 			}
-			
+
 			// rebuild contentlets indexes
 			conAPI.reindex(structure);
 			// remove the file from the cache
@@ -528,13 +543,17 @@ public class EditFieldAction extends DotPortletAction {
 			//VirtualLinksCache.clearCache();
 			String message = "message.structure.reorderfield";
 			SessionMessages.add(req, "message", message);
+			
+			//AdminLogger.log(EditFieldAction.class, "_saveField", "Added field " + field.getFieldName() + " to " + structure.getName() + " Structure.", user);
+		    
+		    
 		} catch (Exception ex) {
 			Logger.error(EditFieldAction.class, ex.toString());
 		}
 	}
-	
+
 	private boolean validateInternalFieldVelocityVarName(String fieldVelVarName){
-		
+
 	    if(fieldVelVarName.equals(Contentlet.INODE_KEY)||
 	    		fieldVelVarName.equals(Contentlet.LANGUAGEID_KEY)||
 	    		fieldVelVarName.equals(Contentlet.STRUCTURE_INODE_KEY)||
@@ -557,7 +576,28 @@ public class EditFieldAction extends DotPortletAction {
 	    }
 
 	    return true;
-		
+
+	}
+	
+	public String hostNameUtil(ActionRequest req) {
+
+		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+		HttpSession session = httpReq.getSession();
+
+		String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+
+		Host h = null;
+		try {
+			h = APILocator.getHostAPI().find(hostId, _getUser(req), false);
+		} catch (DotDataException e) {
+			_handleException(e, req);
+		} catch (DotSecurityException e) {
+			_handleException(e, req);
+		}
+
+		return h.getTitle()!=null?h.getTitle():"default";
+
 	}
 
 }
