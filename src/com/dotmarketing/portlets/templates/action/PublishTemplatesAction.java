@@ -22,6 +22,8 @@ import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -88,6 +90,7 @@ public class PublishTemplatesAction extends DotPortletAction {
 				//calls the asset factory edit
 				try{
 					PublishFactory.publishAsset(template,reqImpl.getHttpServletRequest());
+					ActivityLogger.logInfo(this.getClass(), "Publish Template action", "User " + user.getPrimaryKey() + " publishing template" + template.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 					SessionMessages.add(req, "message", "message.template_list.published");
 				}catch(WebAssetException wax){
 					Logger.error(this, wax.getMessage(),wax);

@@ -107,7 +107,7 @@
 	<portlet id="EXT_EVENTSAPPROVAL" struts-path="ext/eventsapproval" />
 	<portlet id="EXT_USER_ACCOUNT_NOTES" struts-path="ext/user" />
 	<portlet id="EXT_CMS_MAINTENANCE" struts-path="ext/cmsmaintenance" narrow="true"/>
-	<portlet id="EXT_PRODUCT" struts-path="ext/product" />		
+	<portlet id="EXT_PRODUCT" struts-path="ext/product" />
 	<portlet id="EXT_ECO_ORDER" struts-path="ext/order_manager" />
 	<portlet id="EXT_EVE_REG" struts-path="ext/event_registration" />
 	<portlet id="EXT_WEBEVENTS" struts-path="ext/webevents" />
@@ -125,6 +125,9 @@
 	<portlet id="EXT_SITESEARCH"  />
 	<portlet id="EXT_DASHBOARD" struts-path="ext/dashboard" />
 	<portlet id="WORKFLOW_SCHEMES"  />
+	<portlet id="OSGI_MANAGER"  />
 	<portlet id="EXT_TAG_MANAGER" struts-path="tag_manager" />
+	<portlet id="EXT_EXPCONTENT_TOOL" struts-path="ext/escalation" narrow="true" />
+	<portlet id="LOGMAN_TOOL" struts-path="ext/logConsole" narrow="true" />
 	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
 </portlets>

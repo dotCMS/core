@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+
+<project name="autoupdater" default="prepare.back-up" basedir=".">
+
+    <property name="back-up.folder" value="../backup"/>
+    <property name="dotserver.folder" value="../dotserver"/>
+    <property name="autoupdater.folder" value="../autoupdater"/>
+
+    <target name="init">
+        <!-- Create the time stamp -->
+        <tstamp/>
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${back-up.folder}"/>
+    </target>
+
+    <target name="prepare.back-up" depends="init">
+
+        <delete dir="${back-up.folder}/${DSTAMP}"/>
+        <mkdir dir="${back-up.folder}/${DSTAMP}"/>
+        <copy todir="${back-up.folder}/${DSTAMP}">
+            <fileset dir="${dotserver.folder}">
+                <include name="**/*"/>
+                <!--<include name="src-conf/"/>
+                <include name="dotCMS/WEB-INF/lib/"/>
+                <include name="tomcat/lib/"/>
+                <include name="plugins/"/>
+                <include name="bin/"/>
+                <include name="dotCMS/"/>
+
+                <exclude name="**/.svn"/>
+                <exclude name="dotCMS/assets/"/>
+                <exclude name="dotCMS/WEB-INF/backup/"/>
+                <exclude name="dotCMS/dotsecure/"/>-->
+            </fileset>
+        </copy>
+
+    </target>
+
+    <target name="clean">
+        <delete dir="bin/"/>
+    </target>
+
+</project>

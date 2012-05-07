@@ -42,21 +42,21 @@ done
 
 
 SOURCE="-home"
-if echo "$CMD_LINE_ARGS" | grep -q "$SOURCE"; then
+if echo "$CMD_LINE_ARGS" | grep -q -- "$SOURCE"; then
   echo "home parameter not found setting default";
 else
   DIRECTORY=$(cd `dirname $0` && pwd)
-  cd $DIRECTORY/../..
+  cd $DIRECTORY/..
   DIRECTORY2=$(cd `dirname $0` && pwd)
   cd $DIRECTORY
   CMD_LINE_ARGS="$CMD_LINE_ARGS -home $DIRECTORY2"
 fi
 
 SOURCE="-url"
-if echo "$CMD_LINE_ARGS" | grep -q "$SOURCE"; then
+if echo "$CMD_LINE_ARGS" | grep -q -- "$SOURCE"; then
   echo "url parameter not found setting default";
 else
-  CMD_LINE_ARGS="$CMD_LINE_ARGS -url http://www.dotcms.com:8080/servlets/upgrade"
+  CMD_LINE_ARGS="$CMD_LINE_ARGS -url http://www.dotcms.com:8080/servlets/upgrade2x"
 fi
 
 
@@ -82,5 +82,5 @@ then
     mv $PRGDIR/$NEWFILE $PRGDIR/$JARFILE
     echo "autoUpdater upgraded, restarting process."
     $JAVA_HOME/bin/java -jar $PRGDIR/autoUpdater.jar $CMD_LINE_ARGS
-  fi 
+  fi
 fi

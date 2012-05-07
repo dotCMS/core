@@ -2,16 +2,17 @@ package com.dotmarketing.quartz;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
@@ -30,12 +31,7 @@ import org.quartz.Trigger;
  */
 public class QuartzUtils {
 	
-	private static class TaskRuntimeValues {
-		private int currentProgress = 0;
-		private int startProgress = 0;
-		private int endProgress = 100;
-		private List<String> messages = new LinkedList<String>();
-	}
+
 	
 	private static Map<String, TaskRuntimeValues> runtimeTaskValues = new HashMap<String, TaskRuntimeValues>();
 	
@@ -352,6 +348,19 @@ public class QuartzUtils {
 		if(runtimeValues == null) return -1;
 		return runtimeValues.endProgress;
 	}
+	
+	
+	public static  TaskRuntimeValues getTaskRuntimeValues(String jobName, String jobGroup) {
+
+			
+		return runtimeTaskValues.get(jobName + "-" + jobGroup);
+	}
+	
+	public static void setTaskRuntimeValues(String jobName, String jobGroup, TaskRuntimeValues runtimeValues) {
+
+		 runtimeTaskValues.put(jobName + "-" + jobGroup , runtimeValues);
+	}
+	
 
 	public static void setTaskEndProgress(String jobName, String jobGroup, int endProgress) {
 		TaskRuntimeValues runtimeValues = runtimeTaskValues.get(jobName + "-" + jobGroup);
@@ -657,7 +666,21 @@ public class QuartzUtils {
 		sched.pauseTrigger(triggerName, triggerGroup);
 	}
 
-	
+	/**
+	 * 
+	 * @param triggerName
+	 * @param triggerGroup
+	 * @return
+	 * @throws SchedulerException
+	 */
+	public static Trigger getTrigger(String triggerName, String triggerGroup) throws SchedulerException {
+		Trigger t = getSequentialScheduler ().getTrigger(triggerName, triggerGroup);
+		if(t==null){
+			t = getStandardScheduler () .getTrigger(triggerName, triggerGroup);
+			
+		}
+		return t;
+	}
 	
 	/**
 	 * Resumes a trigger from all schedulers
@@ -778,5 +801,95 @@ public class QuartzUtils {
 	public static Scheduler getSequentialScheduler () throws SchedulerException {
 		return DotSchedulerFactory.getInstance().getSequentialScheduler();
 	}
+	
+	public static boolean isJobRunning(String jobName, String jobGroup) throws SchedulerException{
+		
+		List<JobExecutionContext> currentlyExecutingJobs = new ArrayList<JobExecutionContext>();
+		currentlyExecutingJobs.addAll(getSequentialScheduler().getCurrentlyExecutingJobs());
+		currentlyExecutingJobs.addAll(getStandardScheduler().getCurrentlyExecutingJobs());
+
+		JobDetail existingJobDetail = getSequentialScheduler().getJobDetail(jobName, jobGroup);
+
+		if (existingJobDetail == null) {
+			existingJobDetail = getStandardScheduler().getJobDetail(jobName, jobGroup);
+		}
+		if (existingJobDetail != null) {
+	        for (JobExecutionContext jec : currentlyExecutingJobs) {
+	        	JobDetail runningJobDetail = jec.getJobDetail();
+	            if(existingJobDetail.equals(runningJobDetail) || isSameJob(existingJobDetail, runningJobDetail)) {
+	                return true;
+	            }
+	        }
+		}
+
+
+		return false;
+		
+
+	}
+	
+	/**
+	 * 
+	 * @param job1
+	 * @param job2
+	 * @return
+	 */
+	private static boolean isSameJob(JobDetail job1, JobDetail job2){
+		
+		
+		
+		
+		
+		
+		try{
+			Map<String, Object> m1 = job1.getJobDataMap();
+			Map<String, Object> m2 = job2.getJobDataMap();
+			
+			for(String key : m1.keySet()){
+				if(m2.get(key) == null ){
+					return false;
+					
+				}
+				else if (m1.get(key) instanceof String[] && m2.get(key) instanceof String[]){
+					
+					String[] x = (String[]) m1.get(key);
+					String[] y = (String[]) m2.get(key);
+					Arrays.sort(x);
+					Arrays.sort(y);
+					
+					
+					
+					for(int i=0;i<x.length;i++){
+						if(!x[i].equals(y[i])){
+							return false;
+						}
+						
+					}
+					
+					
+				}
+				else if(! m1.get(key).equals(m2.get(key))){
+					
+
+					return false;
+				}
+				
+			}
+			
+			if(!job1.getJobClass().equals(job2.getJobClass())){
+				return false;
+			}
+			
+			//if(job1.
+			
+			return true;
+		}
+		catch(Exception e){
+			return false;
+		}
+		
+	}
+	
+	
 
 }

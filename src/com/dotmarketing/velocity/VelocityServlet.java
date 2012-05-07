@@ -103,7 +103,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	private static LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-
+	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
 	/**
 	 * @param permissionAPI
 	 *            the permissionAPI to set
@@ -121,6 +121,10 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+
+		
+		
 		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL) && LicenseUtil.getLevel() < 299) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
@@ -192,7 +196,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
 			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
 			langWebAPI.checkSessionLocale(request);
-
+			
 			if (PREVIEW_MODE && ADMIN_MODE) {
 				// preview mode has the left hand menu and edit buttons on the
 				// working page
@@ -265,6 +269,7 @@ public abstract class VelocityServlet extends HttpServlet {
 				Logger.error(this, e.getMessage(), e);
 			}
 			DbConnectionFactory.closeConnection();
+			velocityCtx.remove();
 		}
 		if (profileTime != null) {
 			profileTime = Calendar.getInstance().getTimeInMillis() - profileTime;

@@ -230,6 +230,10 @@
 	            </td>
 			</tr>
         </table>
+        
+        <!-- AChecker errors -->
+        <div id="acheck<%=field.getVelocityVarName()%>"></div>
+        
     </div>
     <script type="text/javascript">
         dojo.addOnLoad(function () {

@@ -41,7 +41,7 @@ public class PictureGalleryWebAPI implements ViewTool {
 	public List<Hashtable<String, Object>> getPictureGalleryIndexImages (String indexFolderPath, long hostId) throws DotDataException, DotSecurityException {
 		return getPictureGalleryIndexImages (indexFolderPath, String.valueOf(hostId));
 	}
-	
+
 	public List<Hashtable<String, Object>> getPictureGalleryIndexImages (String indexFolderPath, String hostId) throws DotDataException, DotSecurityException {
 		ArrayList<Hashtable<String, Object>> indexImages = new ArrayList<Hashtable<String, Object>> ();
 		indexFolderPath = indexFolderPath.trim().endsWith("/")?indexFolderPath.trim():indexFolderPath.trim() + "/";
@@ -99,7 +99,7 @@ public class PictureGalleryWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);
-		} 
+		}
 		List<IFileAsset> filesList = new ArrayList<IFileAsset>();
 		try {
 			filesList.addAll(APILocator.getFolderAPI().getWorkingFiles(folder, APILocator.getUserAPI().getSystemUser(),false));
@@ -107,7 +107,7 @@ public class PictureGalleryWebAPI implements ViewTool {
 			filesList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, APILocator.getUserAPI().getSystemUser(),false));
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
-		} 
+		}
 		List<IFileAsset> imagesList = new ArrayList<IFileAsset> ();
 		for(IFileAsset file : filesList) {
 			String ext = file.getExtension();
@@ -129,9 +129,9 @@ public class PictureGalleryWebAPI implements ViewTool {
 		return getFirstSubFolder(fromPath, String.valueOf(hostId));
 
 	}
-	
+
 	public String getFirstSubFolder(String fromPath, String hostId) throws DotStateException, DotDataException{
-		
+
 		fromPath = fromPath.trim().endsWith("/")?fromPath.trim():fromPath.trim() + "/";
 		List<Folder> subFolders;
 		try {
@@ -140,7 +140,7 @@ public class PictureGalleryWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 			throw new DotRuntimeException(e.getMessage(),e);
-		} 
+		}
 		Folder subFolder = (Folder) subFolders.get(0);
 		return	APILocator.getIdentifierAPI().find(subFolder).getPath();
 
@@ -151,7 +151,7 @@ public class PictureGalleryWebAPI implements ViewTool {
 		return getPhotoGalleryFolderImages(folderPath, host.getIdentifier());
 	}
     @SuppressWarnings("unchecked")
-	@Deprecated 
+	@Deprecated
 	public List getPhotoGalleryFolderImages(String folderPath, long hostId) {
 		return getPhotoGalleryFolderImages(folderPath, String.valueOf(hostId));
 	}
@@ -165,22 +165,22 @@ public class PictureGalleryWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
 			throw new DotRuntimeException(e.getMessage(),e);
-		} 
+		}
 		List imagesList = new ArrayList();
 		try {
 			imagesList.addAll(APILocator.getFolderAPI().getLiveFilesSortOrder(folder, null, true));
-			imagesList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, FileAssetAPI.SORT_ORDER + " asc ", true, APILocator.getUserAPI().getSystemUser(),false));
+			imagesList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "", true, APILocator.getUserAPI().getSystemUser(),false));
 		} catch (Exception e) {
 		Logger.error(this,e.getMessage(), e);
-		} 
+		}
 		return imagesList;
 	}
-	
+
 	// Pictures Gallery Methods
     public List<Map<String, Object>> getPhotoGalleryIndexImages(String indexFolderPath, Host host, String indexPicture) {
         return getPhotoGalleryIndexImages(indexFolderPath, host.getIdentifier(), indexPicture);
     }
-	
+
 	public List<Map<String, Object>> getPhotoGalleryIndexImages(String indexFolderPath, Host host) {
         return getPhotoGalleryIndexImages(indexFolderPath, host.getIdentifier());
     }
@@ -191,18 +191,18 @@ public class PictureGalleryWebAPI implements ViewTool {
 	public List<Map<String, Object>> getPhotoGalleryIndexImages(String indexFolderPath, String hostId) {
     	return getPhotoGalleryIndexImages(indexFolderPath, hostId, null);
     }
-	
+
 	@Deprecated
 	public List<Map<String, Object>> getPhotoGalleryIndexImages(String indexFolderPath, long hostId, String indexPicture) {
         return getPhotoGalleryIndexImages(indexFolderPath, String.valueOf(hostId), indexPicture);
     }
-	
+
 	public List<Map<String, Object>> getPhotoGalleryIndexImages(String indexFolderPath, String hostId, String indexPicture) {
-    	
+
     	if(!UtilMethods.isSet(indexPicture)) {
     		indexPicture =  "index.jpg";
     	}
-    	
+
         List<Map<String, Object>> indexImages = new ArrayList<Map<String, Object>>();
         indexFolderPath = indexFolderPath.trim().endsWith("/") ? indexFolderPath.trim() : indexFolderPath.trim() + "/";
         List<Folder> subFolders = new ArrayList<Folder>();
@@ -212,7 +212,7 @@ public class PictureGalleryWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage());
 			throw new DotRuntimeException(e.getMessage(),e);
-		} 
+		}
         Iterator<Folder> sFoldersIterator = subFolders.iterator();
         while (sFoldersIterator.hasNext()) {
             Folder subFolder = (Folder) sFoldersIterator.next();
@@ -222,7 +222,7 @@ public class PictureGalleryWebAPI implements ViewTool {
 				imagesList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(subFolder, "", true, APILocator.getUserAPI().getSystemUser(),false));
 			} catch (Exception e1) {
 				Logger.error(this, e1.getMessage(), e1);
-			} 
+			}
             if (imagesList.size() > 0) {
             	IFileAsset indexImg = imagesList.get(0);
                 for (IFileAsset img : imagesList) {
@@ -245,12 +245,12 @@ public class PictureGalleryWebAPI implements ViewTool {
 				} catch (Exception e) {
 					Logger.error(this, e.getMessage(),e);
 					throw new DotRuntimeException(e.getMessage(),e);
-				} 
+				}
                 folderProperties.put("galleryPath",identifier.getPath());
                 indexImages.add(folderProperties);
             }
         }
         return indexImages;
     }
-	
+
 }

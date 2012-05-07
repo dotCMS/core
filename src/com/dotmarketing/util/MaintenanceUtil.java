@@ -684,10 +684,7 @@ public class MaintenanceUtil {
 	 */
 	private static int deleteAssetsWithNoIdentifier(String tableNameOfAsset){
 		final String countSQL = "select count(*) as count from " + tableNameOfAsset + " t";
-		final String selectTreeIdentsSQl = "select at.inode as inode, i.inode as ident from inode ie, identifier i, " + tableNameOfAsset + " at, tree t " +
-											"where at.inode = t.child and i.inode = t.parent and at.inode = ie.inode and ie.identifier IS NULL";
-		final String updateIdentsSQL = "update inode set identifier = ? where inode = ?";
-		final String selectNullIdentsSQL = "select i.inode as inode from inode i, " + tableNameOfAsset + " at where at.inode = i.inode and i.identifier IS NULL";
+		final String selectNullIdentsSQL = "select inode from " + tableNameOfAsset + " where identifier IS NULL";
 
 		DotConnect dc = new DotConnect();
 		dc.setSQL(countSQL);
@@ -696,13 +693,6 @@ public class MaintenanceUtil {
 		try {
 			result = dc.getResults();
 			before = Integer.parseInt(result.get(0).get("count"));
-			/*dc.setSQL(selectTreeIdentsSQl);
-			List<HashMap<String, String>> results =  dc.getResults();
-			for (HashMap<String, String> r : results) {
-				dc.setSQL(updateIdentsSQL);
-				dc.addParam(r.get("ident"));
-				dc.addParam(r.get("inode"));
-			}*/
 			dc.setSQL(selectNullIdentsSQL);
 			List<HashMap<String, String>> results = dc.getResults();
 			List<String> inodesToClean = new ArrayList<String>();

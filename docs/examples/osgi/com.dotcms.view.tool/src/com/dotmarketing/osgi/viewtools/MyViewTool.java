@@ -9,7 +9,7 @@ public class MyViewTool implements ViewTool {
 	}
 
 	public String getHelloMessage() {
-		return "Ciao";
+		return "Hello dotCMS World";
 	}
 
 	public String getHelloMessage(String name) {

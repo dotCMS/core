@@ -20,6 +20,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.tag.factories.TagFactory;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
@@ -350,7 +351,7 @@ public class TagAPIImpl implements TagAPI{
         	catch (Exception e) {
         		Logger.error(this, "Unable to load host.");
         	}
-        	
+
         	if(host.getMap().get("tagStorage") == null){
         		hostId = host.getMap().get("identifier").toString();
         	}
@@ -791,51 +792,7 @@ public class TagAPIImpl implements TagAPI{
 	 */
 	@SuppressWarnings("unchecked")
 	public List<Tag> getAllTagsForUsers(List<String> userIds) {
-		try {
-			DotConnect dc = new DotConnect();
-			StringBuilder sb = new StringBuilder();
-			sb.append("select tag.tagname, tag.user_id from tag, user_ ");
-			sb.append("where tag.user_id = user_.userid ");
-			if(userIds!=null && !userIds.isEmpty()){
-				sb.append(" and user_.userid in (");
-				int count = 0;
-				for(String id:userIds){
-					if(count>0 && count%500==0){
-						count=0;
-						sb.append(") or user_.userid in (");
-					}
-					if(count>0){
-						sb.append(", '"+id+"'");
-					}else{
-						sb.append("'"+id+"'");
-					}
-					count++;
-				}
-				sb.append(") ");
-			}
-
-			sb.append("order by tag.user_id");
-			dc.setSQL(sb.toString());
-
-			List<Tag> tags = new ArrayList<Tag>();
-			List<Map<String, Object>> results = (ArrayList<Map<String, Object>>)dc.loadResults();
-			for (int i = 0; i < results.size(); i++) {
-				Map<String, Object> hash = (Map<String, Object>) results.get(i);
-				if(!hash.isEmpty()){
-					String user_Id = (String) hash.get("user_id");
-					String tagName = (String) hash.get("tagname");
-					Tag tag = new Tag();
-					tag.setTagName(tagName);
-					tag.setUserId(user_Id);
-					tags.add(tag);
-				}
-			}
-			return tags;
-		}
-		catch (Exception e) {
-			 Logger.warn(this, "getAllTagsForUsers failed:" + e, e);
-		}
-		return new ArrayList();
+		return TagFactory.getAllTagsForUsers(userIds);
 	}
 
 	/**

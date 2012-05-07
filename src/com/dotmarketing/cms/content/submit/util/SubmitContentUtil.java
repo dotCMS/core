@@ -10,6 +10,7 @@ import java.util.Map;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
@@ -87,12 +88,12 @@ public class SubmitContentUtil {
 	}
 
 	/**
-	 * Get the list of contents by relationship if exists. 
+	 * Get the list of contents by relationship if exists.
 	 * @param structure The content structure
 	 * @param contentlet The content
 	 * @param parametersOptions The macro form options parameters
 	 * @return Map<Relationship,List<Contentlet>>
-	 * @throws DotSecurityException 
+	 * @throws DotSecurityException
 	 **/
 	private static Map<Relationship,List<Contentlet>> getRelationships(Structure structure, Contentlet contentlet, String parametersOptions, User user) throws DotDataException, DotSecurityException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
@@ -123,7 +124,7 @@ public class SubmitContentUtil {
 	 * @param contentlet
 	 * @param uploadedFile
 	 * @param user
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 * @throws DotSecurityExceptionlanguageId
 	 */
 	private static Contentlet addFileToContentlet(Contentlet contentlet, Field field,Host host, java.io.File uploadedFile, User user, String title)throws DotSecurityException, DotDataException{
@@ -165,7 +166,7 @@ public class SubmitContentUtil {
 			String newFileName = "";
 			String name = UtilMethods.getFileName(title);
 			int counter = 1;
-			String fileName = name + "." + UtilMethods.getFileExtension(title); 
+			String fileName = name + "." + UtilMethods.getFileExtension(title);
 			while(APILocator.getFileAPI().fileNameExists(folder,fileName)) {
 			    newFileName  = name +"("+ counter+")";
 				fileName = newFileName + "." + UtilMethods.getFileExtension(title);
@@ -201,7 +202,7 @@ public class SubmitContentUtil {
 	public static FileAsset saveTempFile(User user, Host host, java.io.File uploadedFile, String folderPath, String title) throws Exception {
 
 		Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host,user,false);
-	
+
 		byte[] bytes = FileUtil.getBytes(uploadedFile);
 
 		if (bytes!=null) {
@@ -229,8 +230,8 @@ public class SubmitContentUtil {
 		return null;
 
 	}
-	
-	
+
+
 	/**
 	 * Set the field value, to a content according the content structure
 	 * @param structure The content structure
@@ -244,7 +245,7 @@ public class SubmitContentUtil {
 		Field field = structure.getFieldVar(fieldName);
 		String value="";
 		if(UtilMethods.isSet(field) && APILocator.getFieldAPI().valueSettable(field)){
-			try{				
+			try{
 				if(field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
 					value = VelocityUtil.cleanVelocity(values[0]);
 					Host host = APILocator.getHostAPI().find(value, APILocator.getUserAPI().getSystemUser(), false);
@@ -269,22 +270,22 @@ public class SubmitContentUtil {
 				}else if(field.getFieldType().equals(Field.FieldType.DATE.toString())){
 					value = VelocityUtil.cleanVelocity(values[0]);
 					if(value instanceof String){
-						value = value+" 00:00:00";						
+						value = value+" 00:00:00";
 					}
 				} else {
-				
+
 					value = VelocityUtil.cleanVelocity(values[0]);
 				}
 				conAPI.setContentletProperty(contentlet, field, value);
 
 
 			}catch(Exception e){
-				Logger.debug(SubmitContentUtil.class, e.getMessage());	
+				Logger.debug(SubmitContentUtil.class, e.getMessage());
 			}
 		}
 	}
-	
-	
+
+
 	/**
 	 * Create a new content, setting the content values with the specified list of param values
 	 * @param structureName The content structure name
@@ -315,7 +316,7 @@ public class SubmitContentUtil {
 	 * @param contentlet The content
 	 * @param user The user that add the content
 	 * @param moderatorRole The role to assign the work flow
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 * @throws DotDataException
 	 */
 	public static void createWorkFlowTask(Contentlet contentlet, String userId, String moderatorRole) throws DotDataException{
@@ -326,7 +327,7 @@ public class SubmitContentUtil {
 
 		changeHist.append("Title: " + UtilHTML.escapeHTMLSpecialChars(contentlet.getTitle()) + "<br>");
 		task.setTitle("A new content titled: " + UtilHTML.escapeHTMLSpecialChars(contentlet.getTitle())+ " has been posted.");
-		task.setDescription("A new content titled \"" + UtilHTML.escapeHTMLSpecialChars(contentlet.getTitle().trim()) + 
+		task.setDescription("A new content titled \"" + UtilHTML.escapeHTMLSpecialChars(contentlet.getTitle().trim()) +
 				"\" has been posted by " + UtilHTML.escapeHTMLSpecialChars(user.getFullName()) + " ("+user.getEmailAddress()+")");
 		changeHist.append("Description: " + UtilHTML.escapeHTMLSpecialChars(task.getDescription()) + "<br>");
 
@@ -360,7 +361,7 @@ public class SubmitContentUtil {
 		HibernateUtil.saveOrUpdate(hist);
 		relAPI.addRelationship(task.getInode(), hist.getInode(), "child");
 
-		//WorkflowEmailUtil.sendWorkflowChangeEmails (task, "New user content has been submitted", "New Task", null);        
+		//WorkflowEmailUtil.sendWorkflowChangeEmails (task, "New user content has been submitted", "New Task", null);
 
 
 	}
@@ -379,7 +380,7 @@ public class SubmitContentUtil {
 	 * @return Contentlet
 	 * @throws DotContentletStateException
 	 * @throws DotDataException
-	 * @throws DotSecurityException 
+	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings("unchecked")
 	public static Contentlet createContent(Structure st, ArrayList<Category> cats, String userId, List<String> parametersName,List<String[]> values, String options,List<Map<String,Object>> fileParameters, boolean autoPublish, Host formHost) throws DotContentletStateException, DotDataException, DotSecurityException{
@@ -406,24 +407,24 @@ public class SubmitContentUtil {
 		 * Set the content values
 		 */
 		contentlet = SubmitContentUtil.setAllFields(st.getName(), parametersName, values);
-		
+
 
 		/**
 		 * Get the required relationships
 		 */
 		Map<Relationship,List<Contentlet>> relationships = SubmitContentUtil.getRelationships(st, contentlet, options, user);
 
-		
+
 		/**
 		 * Validating content fields
-		 * 
+		 *
 		 */
-		//conAPI.validateContentlet(contentlet,relationships,cats); 
-		
+		//conAPI.validateContentlet(contentlet,relationships,cats);
+
 		/**
-		 * Set the binary field values 
+		 * Set the binary field values
 		 * http://jira.dotmarketing.net/browse/DOTCMS-3463
-		 * 
+		 *
 		 */
 		if(fileParameters.size() > 0){
 			for(Map<String,Object> value : fileParameters){
@@ -433,12 +434,12 @@ public class SubmitContentUtil {
 					try {
 						contentlet.setBinary(field.getVelocityVarName(), file);
 					} catch (IOException e) {
-						
+
 					}
 				}
 		     }
 		}
-		
+
 		if (st.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
 			contentlet.setHost(formHost.getIdentifier());
 			Host host = APILocator.getHostAPI().find(formHost.getIdentifier(), APILocator.getUserAPI().getSystemUser(), false);
@@ -446,17 +447,17 @@ public class SubmitContentUtil {
 				throw new DotSecurityException("User doesn't have write permissions to Contentlet");
 			}
 		}
-		
+
 		/**
 		 * If the moderator field is set, a work flow task is created
 		 */
 		if(UtilMethods.isSet(moderatorRole)){
-			
+
 			if(!UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY)))
 				contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, APILocator.getWorkflowAPI().findEntryAction(contentlet, user).getId());
-			
+
 			String contentletTitle = "";
-			
+
 	        List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 
 	        for (Field fld : fields) {
@@ -465,9 +466,9 @@ public class SubmitContentUtil {
 	                    contentletTitle = contentletTitle.length() > 250 ? contentletTitle.substring(0,250) : contentletTitle;
 	                }
 	        }
-			contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, "A new content titled \"" + UtilHTML.escapeHTMLSpecialChars(contentletTitle.trim()) + 
+			contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, "A new content titled \"" + UtilHTML.escapeHTMLSpecialChars(contentletTitle.trim()) +
 					"\" has been posted by " + UtilHTML.escapeHTMLSpecialChars(user.getFullName()) + " ("+user.getEmailAddress()+")");
-			
+
 			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, roleAPI.loadRoleByKey(moderatorRole).getId());
 		}
 
@@ -476,10 +477,12 @@ public class SubmitContentUtil {
 		 */
 		contentlet = conAPI.checkin(contentlet, relationships, cats, permissionList, user, true);
 
+		try {
 		APILocator.getVersionableAPI().setWorking(contentlet);
+		} catch(DotStateException e) {}
 		if(autoPublish)
 		    APILocator.getVersionableAPI().setLive(contentlet);
-		
+
 		/**
 		 * Saving file and images
 		 */
@@ -511,8 +514,8 @@ public class SubmitContentUtil {
 				conAPI.unpublish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
 			}
 		}
-		
-		
+
+
 
 		/*}catch(Exception e){
 
@@ -525,7 +528,7 @@ public class SubmitContentUtil {
 	}
 
 	/**
-	 * Check if a para is tupe file or image 
+	 * Check if a para is tupe file or image
 	 * @param structure
 	 * @param paramName
 	 * @return boolean
@@ -533,9 +536,9 @@ public class SubmitContentUtil {
 	public static boolean imageOrFileParam(Structure structure, String paramName){
 
 		Field field = structure.getFieldVar(paramName);
-		if(UtilMethods.isSet(field) && (field.getFieldType().equals(Field.FieldType.FILE.toString()) || field.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
+		if(UtilMethods.isSet(field) && (field.getFieldType().equals(Field.FieldType.FILE.toString()) || field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.BINARY.toString()))){
 			return true;
-		}				
+		}
 		return false;
 	}
 
