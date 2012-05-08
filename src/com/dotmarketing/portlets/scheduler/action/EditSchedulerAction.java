@@ -327,6 +327,13 @@ public class EditSchedulerAction extends DotPortletAction {
 					schedulerForm.setAtTimeHour(Integer.valueOf(hms[0].replace("T", "")));
 					schedulerForm.setAtTimeMinute(Integer.valueOf(hms[1]));
 					schedulerForm.setAtTimeSecond(Integer.valueOf(hms[2]));
+				}else{//Git-219 Campaigns
+					if(UtilMethods.isSet(req.getParameter("atTimeSecond")))
+						cronSecondsField = req.getParameter("atTimeSecond");
+					if(UtilMethods.isSet(req.getParameter("atTimeMinute")))
+						cronMinutesField = req.getParameter("atTimeMinute");
+					if(UtilMethods.isSet(req.getParameter("atTimeHour")))
+						cronHoursField = req.getParameter("atTimeHour");
 				}
 			}
 			
