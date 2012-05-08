@@ -566,8 +566,9 @@ public class ContentletBaseTest extends TestBase {
         permissionAPI.copyPermissions( testFolder, menuLink );
 
         //Make it working and live
+        /*APILocator.getVersionableAPI().setLocked( menuLink, false, user );
         APILocator.getVersionableAPI().setWorking( menuLink );
-        APILocator.getVersionableAPI().setLive( menuLink );
+        APILocator.getVersionableAPI().setLive( menuLink );*/
 
         return menuLink;
     }

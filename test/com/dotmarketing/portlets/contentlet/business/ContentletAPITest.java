@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.content.business.DotMappingException;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -11,6 +12,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
@@ -574,15 +576,16 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Getting a known structure
         Structure structure = structures.iterator().next();
 
+        //Search the contentlet for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+        Contentlet contentlet = contentletList.iterator().next();
+
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
         Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
 
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-
         //Getting the current value for this field
-        Object value = contentletAPI.getFieldValue( contentletList.iterator().next(), foundWysiwygField );
+        Object value = contentletAPI.getFieldValue( contentlet, foundWysiwygField );
 
         //Validations
         assertNotNull( value );
@@ -592,7 +595,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.cleanField( structure, foundWysiwygField, user, false );
 
         //Search for the value again
-        Object newValue = contentletAPI.getFieldValue( contentletList.iterator().next(), foundWysiwygField );
+        Object newValue = contentletAPI.getFieldValue( contentlet, foundWysiwygField );
 
         //Validations
         assertNotSame( value, newValue );
@@ -721,6 +724,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         Link menuLink = null;
         try {
+
+            String RELATION_TYPE = new Link().getType();
+
             //Getting a known structure
             Structure structure = structures.iterator().next();
 
@@ -732,14 +738,24 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet = contentletList.iterator().next();
 
             //Add to this contentlet a link
-            contentletAPI.addLinkToContentlet( contentlet, menuLink.getInode(), "child", user, false );
+            contentletAPI.addLinkToContentlet( contentlet, menuLink.getInode(), RELATION_TYPE, user, false );
 
             //Verify if the link was associated
-            List<Link> relatedLinks = contentletAPI.getRelatedLinks( contentlet, user, false );
+            //List<Link> relatedLinks = contentletAPI.getRelatedLinks( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
+
+            //Get the contentlet Identifier to gather the menu links
+            Identifier menuLinkIdentifier = APILocator.getIdentifierAPI().find( menuLink );
+
+            //Verify if the relation was created
+            Tree tree = TreeFactory.getTree( contentlet.getInode(), menuLinkIdentifier.getInode(), RELATION_TYPE );
 
             //Validations
-            assertNotNull( relatedLinks );
-            assertFalse( relatedLinks.isEmpty() );
+            assertNotNull( tree );
+            assertNotNull( tree.getParent() );
+            assertNotNull( tree.getChild() );
+            assertEquals( tree.getParent(), contentlet.getInode() );
+            assertEquals( tree.getChild(), menuLinkIdentifier.getInode() );
+            assertEquals( tree.getRelationType(), RELATION_TYPE );
         } finally {
             menuLinkAPI.delete( menuLink, user, false );
         }
@@ -755,8 +771,11 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void addFileToContentlet () throws Exception {
 
-        List<File> finalFiles = null;
+        File testFile = null;
         try {
+
+            String RELATION_TYPE = new File().getType();
+
             //Getting a known structure
             Structure structure = structures.iterator().next();
 
@@ -765,31 +784,41 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet = contentletList.iterator().next();
 
             //Creating the test file
-            File testFile = createFile( "test.txt" );
+            testFile = createFile( "test.txt" );
 
-            //Gettting the related files to this contentlet
-            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );
+            /*//Gettting the related files to this contentlet
+            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
             if ( files == null ) {
                 files = new ArrayList<File>();
             }
-            int initialSize = files.size();
+            int initialSize = files.size();*/
 
             //Adding the file to the contentlet
-            contentletAPI.addFileToContentlet( contentlet, testFile.getInode(), "testFileRelationName", user, false );
+            contentletAPI.addFileToContentlet( contentlet, testFile.getInode(), RELATION_TYPE, user, false );
 
             //Gettting the related files to this contentlet
-            finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );
+            //List<File> finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
+
+            //Get the contentlet Identifier to gather the menu links
+            Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
+
+            //Verify if the relation was created
+            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getInode(), RELATION_TYPE );
 
             //Validations
-            assertNotNull( finalFiles );
+            assertNotNull( tree );
+            assertNotNull( tree.getParent() );
+            assertNotNull( tree.getChild() );
+            assertEquals( tree.getParent(), contentlet.getInode() );
+            assertEquals( tree.getChild(), fileIdentifier.getInode() );
+            assertEquals( tree.getRelationType(), RELATION_TYPE );
+
+            //Validations
+            /*assertNotNull( finalFiles );
             assertTrue( !finalFiles.isEmpty() );
-            assertNotSame( initialSize, finalFiles.size() );
+            assertNotSame( initialSize, finalFiles.size() );*/
         } finally {
-            if ( finalFiles != null ) {
-                for ( File file : finalFiles ) {
-                    fileAPI.delete( file, user, false );
-                }
-            }
+            fileAPI.delete( testFile, user, false );
         }
     }
 
@@ -803,8 +832,11 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void addImageToContentlet () throws Exception {
 
-        List<File> finalFiles = null;
+        File testFile = null;
         try {
+
+            String RELATION_TYPE = new File().getType();
+
             //Getting a known structure
             Structure structure = structures.iterator().next();
 
@@ -813,31 +845,41 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet = contentletList.iterator().next();
 
             //Creating the test file
-            File testFile = createFile( "test.gif" );
+            testFile = createFile( "test.gif" );
 
-            //Gettting the related files to this contentlet
-            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );
+            /*//Gettting the related files to this contentlet
+            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
             if ( files == null ) {
                 files = new ArrayList<File>();
             }
-            int initialSize = files.size();
+            int initialSize = files.size();*/
 
             //Adding the file to the contentlet
-            contentletAPI.addImageToContentlet( contentlet, testFile.getInode(), "testFileImageRelationName", user, false );
+            contentletAPI.addImageToContentlet( contentlet, testFile.getInode(), RELATION_TYPE, user, false );
 
             //Gettting the related files to this contentlet
-            finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );
+            //List<File> finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
+
+            //Get the contentlet Identifier to gather the menu links
+            Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
+
+            //Verify if the relation was created
+            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getInode(), RELATION_TYPE );
 
             //Validations
+            assertNotNull( tree );
+            assertNotNull( tree.getParent() );
+            assertNotNull( tree.getChild() );
+            assertEquals( tree.getParent(), contentlet.getInode() );
+            assertEquals( tree.getChild(), fileIdentifier.getInode() );
+            assertEquals( tree.getRelationType(), RELATION_TYPE );
+
+            /*//Validations
             assertNotNull( finalFiles );
             assertTrue( !finalFiles.isEmpty() );
-            assertNotSame( initialSize, finalFiles.size() );
+            assertNotSame( initialSize, finalFiles.size() );*/
         } finally {
-            if ( finalFiles != null ) {
-                for ( File file : finalFiles ) {
-                    fileAPI.delete( file, user, false );
-                }
-            }
+            fileAPI.delete( testFile, user, false );
         }
     }
 
@@ -892,6 +934,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a known contentlet
         Contentlet contentlet = contentlets.iterator().next();
+
+        //Create the test relationship
+        createRelationShip( contentlet.getStructure(), false );
 
         //Find all the relationships for this contentlet
         ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( contentlet.getInode(), user, false );
@@ -1224,22 +1269,18 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Getting a known contentlet
         Contentlet contentlet = contentlets.iterator().next();
 
-        try {
-            //First lets archive this given contentlet (means it will be mark it as deleted)
-            contentletAPI.archive( contentlet, user, false );
+        //First lets archive this given contentlet (means it will be mark it as deleted)
+        contentletAPI.archive( contentlet, user, false );
 
-            //Now lets test the unarchive
-            contentletAPI.archive( contentlet, user, false );
+        //Now lets test the unarchive
+        contentletAPI.unarchive( contentlet, user, false );
 
-            //Verify if it continues as deleted
-            Boolean isDeleted = APILocator.getVersionableAPI().isDeleted( contentlet );
+        //Verify if it continues as deleted
+        Boolean isDeleted = APILocator.getVersionableAPI().isDeleted( contentlet );
 
-            //Validations
-            assertNotNull( isDeleted );
-            assertFalse( isDeleted );
-        } finally {
-            contentletAPI.unarchive( contentlet, user, false );
-        }
+        //Validations
+        assertNotNull( isDeleted );
+        assertFalse( isDeleted );
     }
 
     /**
@@ -1251,7 +1292,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see Contentlet
      */
     @Test
-    public void deleteAllVersionsandBackup () throws DotSecurityException, DotDataException {
+    public void deleteAllVersionsAndBackup () throws DotSecurityException, DotDataException {
 
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
