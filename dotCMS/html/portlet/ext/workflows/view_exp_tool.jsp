@@ -85,7 +85,11 @@ var myCpP = dojo.byId("hangTaskListHere");
 </script>
 
 <%
-Role Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(APILocator.getPluginAPI().loadProperty("com.dotcms.escalation", "escalation.job.java.roleToEscale"));
+Role Manutentor = null;
+try{
+	Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("escalation.job.java.roleToEscale", "com.dotcms.escalation"));
+}catch(Exception e){}
+
 
 if(Manutentor!=null){
 List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutentor); 
@@ -168,7 +172,7 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 </liferay:box>
 <%} else {%>
 
-	<div class="error-message">Before you can use the Esclation Portlet, you need to create the proper role - with key "escalation.job.java.roleToEscale"</div>
+	<div class="error-message"><%= LanguageUtil.get(pageContext, "EXP_Role_Required") %></div>
 	<%
 	} %>
 
