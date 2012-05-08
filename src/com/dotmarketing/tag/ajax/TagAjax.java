@@ -64,7 +64,14 @@ public class TagAjax {
         	String tagStorageForHost = "";
         	Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 
-        	if(host.getIdentifier().equals(Host.SYSTEM_HOST))
+        	if(host==null) {
+
+        		HttpSession session = WebContextFactory.get().getSession();
+        		hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+        		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
+        	}
+
+        	if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
         		tagStorageForHost = Host.SYSTEM_HOST;
         	else {
         		try {
@@ -92,6 +99,10 @@ public class TagAjax {
         	}
 
         }
+
+
+        callbackData.put("tags", new TagAjax().getTagByUser(userId));
+
         return callbackData;
 	}
 
@@ -120,6 +131,7 @@ public class TagAjax {
         		SessionMessages.clear(req.getSession());
         	}
         }
+
         return callbackData;
 	}
 
@@ -166,6 +178,18 @@ public class TagAjax {
 	 */
 	public List<Tag> getTagByUser(String userId) {
 		return TagFactory.getTagByUser(userId);
+	}
+
+	/**
+	 * Gets all the tag created by an user
+	 * @param userId id of the user
+	 * @return a Map with a list of all the tags created
+	 */
+	public Map<String, List<Tag>> getTagsByUser(String userId) {
+		List<Tag> tags =  TagFactory.getTagByUser(userId);
+		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
+		map.put("tags", tags);
+		return map;
 	}
 
 	/**
@@ -227,6 +251,20 @@ public class TagAjax {
 	 */
 	public List deleteTagInode(String tagName, String inode) {
 		return TagFactory.deleteTagInode(tagName, inode);
+	}
+
+	/**
+	 * Deletes an object tag assignment(s)
+	 * @param tagName name(s) of the tag(s)
+	 * @param inode inode of the object tagged
+	 * @return a list of all tags assigned to a user
+	 */
+	public Map<String, List<Tag>> deleteTag(String tagName, String userId) {
+		TagFactory.deleteTag(TagFactory.getTag(tagName, userId));
+		List<Tag> tags = TagFactory.getTagByUser(userId);
+		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
+		map.put("tags", tags);
+		return map;
 	}
 
 	public static void deleteTagFullCommand(String tagName)
