@@ -11,6 +11,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.liferay.portal.util.*"%>
@@ -18,7 +19,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="org.apache.commons.beanutils.BeanUtils"%>
-<%@page import="com.dotmarketing.util.Config" %>
+
 
 <script language="Javascript">
 
@@ -85,7 +86,13 @@ var myCpP = dojo.byId("hangTaskListHere");
 </script>
 
 <%
-Role Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("escalation.job.java.roleToEscale", "com.dotcms.escalation"));
+Role Manutentor = null;
+try{
+	Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("escalation.job.java.roleToEscale", "com.dotcms.escalation"));
+}catch(Exception e){}
+
+
+if(Manutentor!=null){
 List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutentor); 
 
 %>
@@ -101,6 +108,8 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 <!-- END Button Row -->
 
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="height:500px;">
+
+
 
 <!-- START Left Column -->	
 	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;" class="lineRight">
@@ -162,6 +171,12 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 <!-- END Right Column -->
 </html:form>
 </liferay:box>
+<%} else {%>
+
+	<div class="error-message"><%= LanguageUtil.get(pageContext, "EXP_Role_Required") %></div>
+	<%
+	} %>
+
 
 <script type="text/javascript">
 resizeBrowser();

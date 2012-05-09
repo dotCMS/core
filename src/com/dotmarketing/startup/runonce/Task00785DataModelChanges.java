@@ -1294,7 +1294,13 @@ public class Task00785DataModelChanges implements StartupTask  {
                     "ALTER TABLE identifier change inode id varchar(36);" +
                     "ALTER TABLE identifier drop index uri;";
 	    }else  if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-		    dc.setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS where table_name='identifier' and constraint_type<>'FOREIGN KEY'");
+	        try {
+                dc.executeStatement("alter table identifier drop constraint host_inode_fk");
+            } catch(Exception ex) {
+                Logger.info(this, "no need to drop host_inode_fk");
+            }
+	        
+	        dc.setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS where table_name='identifier' and constraint_type<>'FOREIGN KEY'");
 		    List<Map<String, String>> results = dc.getResults();
 		    for(Map<String, String> key :results){
 			   String constraint = key.get("constraint_name");
@@ -1310,7 +1316,13 @@ public class Task00785DataModelChanges implements StartupTask  {
    		  				  	"ALTER TABLE identifier ADD CONSTRAINT identifier_pkey PRIMARY KEY(id);" +
    		  				  	"CREATE INDEX idx_identifier ON identifier(id);";
 	    }else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
-		    addConstraint = "ALTER TABLE identifier add id varchar2(36);" +
+	        try {
+                dc.executeStatement("alter table identifier drop constraint host_inode_fk");
+            } catch(Exception ex) {
+                Logger.info(this, "no need to drop host_inode_fk");
+            }
+	        
+	        addConstraint = "ALTER TABLE identifier add id varchar2(36);" +
 	   		  				"UPDATE identifier set id = cast(inode as varchar2(36));" +
 	   		  				"ALTER TABLE identifier drop column inode;" +
 	   		  			    "ALTER TABLE identifier MODIFY (id NOT NULL);" +
