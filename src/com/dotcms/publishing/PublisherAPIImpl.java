@@ -99,7 +99,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 			}
 			Logger.info(this.getClass(), "PubAPI: Completed Publishing Task for Bundle: "+ config.getId());
 		} catch (Exception e) {
-			Logger.error(PublisherAPIImpl.class, e.getMessage());
+			Logger.error(PublisherAPIImpl.class, e.getMessage(), e);
 			throw new DotPublishingException(e.getMessage());
 		}
 
