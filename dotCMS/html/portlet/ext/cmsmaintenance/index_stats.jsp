@@ -60,12 +60,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 %>
 
-<script language="Javascript">
-	dojo.require("dijit.DropDownMenu");
-	dojo.addOnLoad (function(){
-		checkReindexation();
-	});
-</script>
+
 
 <style>
 	.trIdxBuilding{

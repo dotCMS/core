@@ -179,9 +179,10 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		}
 
         vi.setVersionTs(new Timestamp(new Date().getTime()));
+        
         HibernateUtil.saveOrUpdate(vi);
-        icache.removeVersionInfoFromCache(info.getIdentifier());
-        icache.addVersionInfoToCache(info);
+        icache.removeVersionInfoFromCache(vi.getIdentifier());
+        icache.addVersionInfoToCache(vi);
     }
 
     @Override
