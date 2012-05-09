@@ -345,14 +345,13 @@ public class ESSiteSearchPublisher extends Publisher {
 		}
 
 	}
-
 	@Override
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
 
-		// list.add(FileAssetBundler.class);
+		list.add(FileAssetBundler.class);
 		list.add(StaticHTMLPageBundler.class);
-		// list.add(URLMapBundler.class);
+		list.add(URLMapBundler.class);
 		return list;
 	}
 
