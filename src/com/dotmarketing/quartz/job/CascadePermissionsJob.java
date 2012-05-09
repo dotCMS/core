@@ -18,6 +18,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -136,20 +137,22 @@ public class CascadePermissionsJob implements Job {
 		}
 		
 		if(perm == null) {
-			
-			DotConnect dc = new DotConnect();
-			dc.setSQL("select inode, type from inode where identifier = ?");
-			dc.addParam(assetId);
-			ArrayList results = dc.loadResults();
-			
-			if(results.size() > 0) {
-				String inode = (String) ((Map)results.get(0)).get("inode");
-				perm = InodeFactory.getInode(inode, Inode.class);
+			// is it an identifier?
+			Identifier ident=APILocator.getIdentifierAPI().find(assetId);
+			if(ident!=null && UtilMethods.isSet(ident.getId())) {
+    			if(ident.getAssetType().equals("folder"))
+    			    perm = APILocator.getFolderAPI()
+    			            .findFolderByPath(ident.getURI(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+    			else 
+    			    perm = (Permissionable)
+    			            APILocator.getVersionableAPI()
+    			             .findWorkingVersion(assetId, APILocator.getUserAPI().getSystemUser(), false);
 			}
-			
 		}
 
 		if(perm == null || !UtilMethods.isSet(perm.getPermissionId())) {
+		    // is it an inode?
+		    
 			perm = InodeFactory.getInode(assetId, Inode.class);
 		}
 		return perm;
