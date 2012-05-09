@@ -232,7 +232,7 @@ public class ContentMap {
 						return null;
 					}
 				}else{
-				     return CacheLocator.getFolderCache().getFolder(content.getFolder());
+					return APILocator.getFolderAPI().find(content.getFolder(), user, true);
 				}
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.SELECT.toString())){
 				return new SelectMap(f, content);
