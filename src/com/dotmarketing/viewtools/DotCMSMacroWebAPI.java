@@ -93,7 +93,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 				roles = new Role[]{APILocator.getRoleAPI().loadCMSAnonymousRole()};
 			}
 			roles[0].getId();
-			Folder folder = CacheLocator.getFolderCache().getFolderByPathAndHost(folderPath, host);
+			Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, user, true);
 			if(InodeUtils.isSet(folder.getInode()))
 			{
 				links = APILocator.getFolderAPI().getLinks(folder, user, false);
