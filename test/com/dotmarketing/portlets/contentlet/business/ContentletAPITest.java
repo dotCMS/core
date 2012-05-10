@@ -368,7 +368,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
             assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
             assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
-            assertEquals( copyContentlet.getHost(), contentlet.getHost() );
+            assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
         } finally {
             contentletAPI.delete( copyContentlet, user, false );
         }
@@ -399,6 +399,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
             assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
             assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
+            assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
             assertEquals( copyContentlet.getHost(), contentlet.getHost() );
         } finally {
             contentletAPI.delete( copyContentlet, user, false );
@@ -433,7 +434,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
             assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
             assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
-            assertEquals( copyContentlet.getHost(), contentlet.getHost() );
+            assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
         } finally {
             contentletAPI.delete( copyContentlet, user, false );
         }
@@ -1299,17 +1300,19 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Now a new contentlet
         Contentlet newContentlet = createContentlet( testStructure, null, false );
+        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet.getIdentifier() );
 
         //Now test this delete
         List<Contentlet> testContentlets = new ArrayList<Contentlet>();
         testContentlets.add( newContentlet );
         contentletAPI.deleteAllVersionsandBackup( testContentlets, user, false );
 
-        //Try to find the deleted Contentlet
-        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+        //Try to find the versions for this Contentlet (Must be only one version)
+        List<Contentlet> versions = contentletAPI.findAllVersions( contentletIdentifier, user, false );
 
         //Validations
-        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+        assertNotNull( versions );
+        assertEquals( versions.size(), 1 );
     }
 
     /**
@@ -1487,10 +1490,21 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
 
         //Try to find the related Contentlet
-        List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
+        //List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );//TODO: This is not the correct method to test the relateContent?? (relateContent and getRelatedContent..., is should, some how it does work for me....)
+
+        /*//Validations
+        assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );*/
+
+        //Verify if the content was related
+        Tree tree = TreeFactory.getTree( parentContentlet.getIdentifier(), childContentlet.getIdentifier(), testRelationship.getRelationTypeValue() );
 
         //Validations
-        assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
+        assertNotNull( tree );
+        assertNotNull( tree.getParent() );
+        assertNotNull( tree.getChild() );
+        assertEquals( tree.getParent(), parentContentlet.getIdentifier() );
+        assertEquals( tree.getChild(), childContentlet.getIdentifier() );
+        assertEquals( tree.getRelationType(), testRelationship.getRelationTypeValue() );
     }
 
     /**
@@ -1518,14 +1532,25 @@ public class ContentletAPITest extends ContentletBaseTest {
         List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
         contentRelationships.add( childContentlet );
 
-        //Testing the relate content...
+        //Relate the content
         contentletAPI.relateContent( parentContentlet, testRelationship, contentRelationships, user, false );
 
         //Try to find the related Contentlet
-        List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
+        //List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );//TODO: This is not the correct method to test the relateContent?? (relateContent and getRelatedContent..., is should, some how it does work for me....)
+
+        /*//Validations
+        assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );*/
+
+        //Verify if the content was related
+        Tree tree = TreeFactory.getTree( parentContentlet.getIdentifier(), childContentlet.getIdentifier(), testRelationship.getRelationTypeValue() );
 
         //Validations
-        assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
+        assertNotNull( tree );
+        assertNotNull( tree.getParent() );
+        assertNotNull( tree.getChild() );
+        assertEquals( tree.getParent(), parentContentlet.getIdentifier() );
+        assertEquals( tree.getChild(), childContentlet.getIdentifier() );
+        assertEquals( tree.getRelationType(), testRelationship.getRelationTypeValue() );
     }
 
     /**
