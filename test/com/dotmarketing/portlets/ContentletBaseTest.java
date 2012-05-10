@@ -223,9 +223,9 @@ public class ContentletBaseTest extends TestBase {
         }
 
         //Delete the identifiers
-        for ( Identifier identifier : identifiers ) {
+        /*for ( Identifier identifier : identifiers ) {
             APILocator.getIdentifierAPI().delete( identifier );
-        }
+        }*/
 
         //hostAPI.delete( defaultHost, user, false );
 
@@ -669,13 +669,27 @@ public class ContentletBaseTest extends TestBase {
      */
     protected static Relationship createRelationShip ( Structure structure, boolean required ) throws DotHibernateException {
 
+        return createRelationShip( structure.getInode(), structure.getInode(), required );
+    }
+
+    /**
+     * Creates a Relationship object for a later use in the tests
+     *
+     * @param parentStructureInode
+     * @param childStrunctureInode
+     * @param required
+     * @return
+     * @throws DotHibernateException
+     */
+    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required ) throws DotHibernateException {
+
         Relationship relationship = new Relationship();
         //Set Parent Info
-        relationship.setParentStructureInode( structure.getInode() );
+        relationship.setParentStructureInode( parentStructureInode );
         relationship.setParentRelationName( "parent" );
         relationship.setParentRequired( required );
         //Set Child Info
-        relationship.setChildStructureInode( structure.getInode() );
+        relationship.setChildStructureInode( childStrunctureInode );
         relationship.setChildRelationName( "child" );
         relationship.setChildRequired( required );
         //Set general info
