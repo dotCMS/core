@@ -624,7 +624,7 @@
 
 	<!-- Creates an empty db. Attributes are defined in the build.properties file -->
 	<target name="create-db" >
-		<sql driver="org.postgresql.Driver"
+		<sql driver="${db.driver}"
 			url="${db.base.url}"
 			userid="${db.username}"
 			password="${db.password}"
@@ -637,13 +637,12 @@
 
 	<!-- Drops the test db. Attributes are defined in the build.properties file -->
 	<target name="drop-db" >
-				<sql driver="org.postgresql.Driver"
+				<sql driver="${db.driver}"
 					url="${db.base.url}"
 					userid="${db.username}"
 					password="${db.password}"
 					autocommit="true"
 					classpathref="files-classpath">
-					select pg_terminate_backend(procpid) from pg_stat_activity where datname='${db.name}';
 					DROP DATABASE IF EXISTS ${db.name};
 				</sql>
 			</target>
