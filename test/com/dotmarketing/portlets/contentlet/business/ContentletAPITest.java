@@ -1582,7 +1582,16 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.relateContent( parentContentlet, testRelationship, contentRelationships, user, false );
 
         //Try to find the related Contentlet
-        List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
+        //List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
+
+        List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure( parentContentlet.getStructure() );
+        //Validations
+        assertTrue( relationships != null && !relationships.isEmpty() );
+
+        List<Contentlet> foundContentlets = null;
+        for ( Relationship relationship : relationships ) {
+            foundContentlets = contentletAPI.getRelatedContent( parentContentlet, relationship, user, true );
+        }
 
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
@@ -1618,8 +1627,14 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         Boolean hasParent = RelationshipFactory.isParentOfTheRelationship( testRelationship, parentContentlet.getStructure() );
 
-        //Try to find the related Contentlet
-        List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, hasParent, user, false );
+        List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure( parentContentlet.getStructure() );
+        //Validations
+        assertTrue( relationships != null && !relationships.isEmpty() );
+
+        List<Contentlet> foundContentlets = null;
+        for ( Relationship relationship : relationships ) {
+            foundContentlets = contentletAPI.getRelatedContent( parentContentlet, relationship, hasParent, user, true );
+        }
 
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
