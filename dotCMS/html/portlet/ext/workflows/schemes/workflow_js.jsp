@@ -582,7 +582,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Saved")%>");
 		var actionId  = message.split(":")[1];
-		mainAdmin.show(this.baseJsp + "?actionId=" + actionId);
+		mainAdmin.show(this.baseJsp + "?stepId=" + stepId + "&actionId=" + actionId);
 		
 
 	},
@@ -604,7 +604,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	},
 	
 	addToWhoCanUse : function ( myId, myName){
-		for(i=0;i<this.whoCanUse.length;i++){
+		for(i=0;i < this.whoCanUse.length;i++){
 			if(myId == this.whoCanUse[i].id  ||  myId == "user-" + this.whoCanUse[i].id || myId == "role-" + this.whoCanUse[i].id){
 				return;
 			}
@@ -619,7 +619,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 		var x=0;
 		var newCanUse = new Array();
-		for(i=0;i<this.whoCanUse.length;i++){
+		for(i=0;i < this.whoCanUse.length;i++){
 			if(myId != this.whoCanUse[i].id){
 				newCanUse[x] = this.whoCanUse[i];
 				x++;
@@ -771,7 +771,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 	removeFromActionClasses: function (id){
 		var x=0;
 		var newActionlets = new Array();
-		for(i=0;i<this.actionClasses.length;i++){
+		for(i=0;i < this.actionClasses.length;i++){
 			if(id != this.actionClasses[i].id){
 				newActionlets[x] = this.actionClasses[i];
 				x++;
