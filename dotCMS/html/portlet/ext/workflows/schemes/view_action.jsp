@@ -171,9 +171,8 @@
 </script>
 
 
-
+<div>
 	<div dojoType="dijit.form.Form" id="addEditAction" jsId="addEditAction" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax" method="POST">
-		<input type="hidden" name="cmd" value="save"> <input type="hidden" name="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
 		<input type="hidden" name="cmd" value="save">
 		<input type="hidden" name="stepId"	value="<%=UtilMethods.webifyString(step.getId())%>">
 		<input type="hidden" name="schemeId"	value="<%=UtilMethods.webifyString(scheme.getId())%>">
