@@ -2,14 +2,17 @@ package com.dotmarketing.viewtools;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpSession;
 
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.cms.rating.api.RatingAPI;
 import com.dotmarketing.util.CookieUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 
 public class RatingWebAPI implements ViewTool {
 
@@ -32,7 +35,24 @@ public class RatingWebAPI implements ViewTool {
 		}
 		_dotCMSID = UtilMethods.getCookieValue(req.getCookies(),
 				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
-		return RatingAPI.getRating(_dotCMSID, identifier).getRating();
+
+		User currentUser = null;
+		String userId = "";
+		try {
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+
+			if(currentUser==null) {
+				HttpSession session = req.getSession(false);
+				if (session != null) {
+					currentUser = (User) session.getAttribute(WebKeys.CMS_USER);
+				}
+			}
+			userId = currentUser.getUserId();
+		} catch (Exception e) {
+			Logger.debug(this, "Error trying to obtain the current liferay user from the request.", e);
+		}
+
+		return RatingAPI.getRating(_dotCMSID, identifier, userId).getRating();
 	}
 
 	@Deprecated
