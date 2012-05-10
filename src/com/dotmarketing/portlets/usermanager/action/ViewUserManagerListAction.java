@@ -986,6 +986,7 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                 try {
                                     userId = lineTok[i++];
                                 } catch (Exception e) {
+                                	 Logger.info(this, e.getMessage());
                                 }
                             }
 
@@ -1029,11 +1030,6 @@ public class ViewUserManagerListAction extends DotPortletAction {
 
                                 // Check company authorization type to set user id.
                                 if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-                                	try {
-                                		 user = APILocator.getUserAPI().createUser(userId, null);
-                                	} catch (IndexOutOfBoundsException ie) {
-                                		Logger.error(this.getClass(), ie.getMessage(), ie);
-                                	}
 
                                 	if(userId.equalsIgnoreCase("")) {
 	                                	if (!someError) {
@@ -1042,6 +1038,11 @@ public class ViewUserManagerListAction extends DotPortletAction {
 	                                    }
 	                                    returnMessage.append(LanguageUtil.get(com.liferay.portal.util.PortalUtil.getUser(req), "Missing-User-ID-on-line")+" " + lineNumber + "<br>");
 	                                    continue;
+                                	}
+                                	try {
+                                		user = APILocator.getUserAPI().createUser(userId, null);
+                                	} catch (IndexOutOfBoundsException ie) {
+                                		Logger.error(this.getClass(), ie.getMessage(), ie);
                                 	}
                                 }else {
                                 	 user = APILocator.getUserAPI().createUser(null, null);
