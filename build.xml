@@ -573,16 +573,17 @@
   </classpath>
 </taskdef>
 
+    <target name="drop-create-db-test" depends="set-properties, drop-db, create-db"/>
 
 	<!-- Main test target, this tasks will run all the unit tests of the application -->
-	<target name="test-dotcms" depends="deploy-tests, set-properties, create-db">
+	<target name="test-dotcms" depends="deploy-tests, drop-create-db-test">
 		<runservertests
 		    testurl="http://localhost:${server.port}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
 		    testtarget="test-all-junits"/>
 		<antcall target="restore-files"/>
-		<antcall target="drop-db"/>
+		<!--<antcall target="drop-db"/>-->
 	</target>
 
 	<!-- Hit the tests servlet to run all the unit tests of the application -->
