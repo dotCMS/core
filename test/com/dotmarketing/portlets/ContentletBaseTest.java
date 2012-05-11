@@ -24,23 +24,35 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.files.business.FileAPI;
+import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.links.business.MenuLinkAPI;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.*;
 
 /**
@@ -53,8 +65,9 @@ public class ContentletBaseTest extends TestBase {
     protected static ContentletAPI contentletAPI;
     protected static Host defaultHost;
     protected static Folder testFolder;
-    //protected static Host testHost;
     protected static ContentletFactory contentletFactory;
+    protected static MenuLinkAPI menuLinkAPI;
+    protected static FileAPI fileAPI;
     private static RoleAPI roleAPI;
     private static PermissionAPI permissionAPI;
     private static LanguageAPI languageAPI;
@@ -72,6 +85,7 @@ public class ContentletBaseTest extends TestBase {
     protected static Collection<Structure> structures;
     protected static Collection<Template> templates;
     protected static Collection<Permission> permissions;
+    protected static Collection<Identifier> identifiers;
     protected static int FIELDS_SIZE = 14;
 
     private static String wysiwygValue = "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. " +
@@ -97,16 +111,10 @@ public class ContentletBaseTest extends TestBase {
         templateAPI = APILocator.getTemplateAPI();
         htmlPageAPI = APILocator.getHTMLPageAPI();
         folderAPI = APILocator.getFolderAPI();
+        menuLinkAPI = APILocator.getMenuLinkAPI();
+        fileAPI = APILocator.getFileAPI();
 
         defaultHost = hostAPI.findDefaultHost( user, false );
-        //Create a new test host
-        /*testHost = new Host();
-        testHost.setHostname( "dotcms_junit_test_host" );
-        testHost.setModDate( new Date() );
-        testHost.setModUser( user.getUserId() );
-        testHost.setOwner( user.getUserId() );
-        testHost.setProperty( "theme", "default" );
-        testHost = hostAPI.save( testHost, user, false );*/
 
         structures = new ArrayList<Structure>();
         permissions = new ArrayList<Permission>();
@@ -114,6 +122,7 @@ public class ContentletBaseTest extends TestBase {
         containers = new ArrayList<Container>();
         templates = new ArrayList<Template>();
         htmlPages = new ArrayList<HTMLPage>();
+        identifiers = new ArrayList<Identifier>();
 
         //*******************************************************************************
         //Create the new folder
@@ -121,15 +130,16 @@ public class ContentletBaseTest extends TestBase {
 
         testFolder.setFilesMasks( "" );
         testFolder.setIDate( new Date() );
-        testFolder.setName( "dotcms_junit_test_folder" );
+        testFolder.setName( "dotcms_junit_test_folder_" + String.valueOf( new Date().getTime() ) );
         testFolder.setOwner( user.getUserId() );
         testFolder.setShowOnMenu( false );
         testFolder.setSortOrder( 0 );
-        testFolder.setTitle( "dotcms_junit_test_folder" );
+        testFolder.setTitle( "dotcms_junit_test_folder_" + String.valueOf( new Date().getTime() ) );
         testFolder.setType( "folder" );
         testFolder.setHostId( defaultHost.getIdentifier() );
         //Creates and set an identifier
         Identifier identifier = APILocator.getIdentifierAPI().createNew( testFolder, defaultHost );
+        identifiers.add( identifier );
         testFolder.setIdentifier( identifier.getId() );
 
         //Saving the folder
@@ -137,11 +147,14 @@ public class ContentletBaseTest extends TestBase {
 
         //*******************************************************************************
         //Creating tests structures
-
-        addStructure( "JUnit Test Structure_0", "junit_test_structure_0" );
-        addStructure( "JUnit Test Structure_1", "junit_test_structure_1" );
-        addStructure( "JUnit Test Structure_2", "junit_test_structure_2" );
-        addStructure( "JUnit Test Structure_3", "junit_test_structure_3" );
+        Structure newStructure = createStructure( "JUnit Test Structure_0", "junit_test_structure_0" );
+        structures.add( newStructure );
+        newStructure = createStructure( "JUnit Test Structure_1", "junit_test_structure_1" );
+        structures.add( newStructure );
+        newStructure = createStructure( "JUnit Test Structure_2", "junit_test_structure_2" );
+        structures.add( newStructure );
+        newStructure = createStructure( "JUnit Test Structure_3", "junit_test_structure_3" );
+        structures.add( newStructure );
 
         //Adding the fields to the structures
         for ( Structure structure : structures ) {
@@ -155,7 +168,8 @@ public class ContentletBaseTest extends TestBase {
         Structure testStructure2 = structureIterator.next();
 
         //NO set the language
-        addContentlet( testStructure1, null );
+        Contentlet newContentlet = createContentlet( testStructure1, null, true );
+        contentlets.add( newContentlet );
 
         //Set the language to default value
         Language language = languageAPI.getDefaultLanguage();
@@ -166,7 +180,8 @@ public class ContentletBaseTest extends TestBase {
                 break;
             }
         }
-        addContentlet( testStructure2, language );
+        newContentlet = createContentlet( testStructure2, language, true );
+        contentlets.add( newContentlet );
     }
 
     @AfterClass
@@ -207,12 +222,19 @@ public class ContentletBaseTest extends TestBase {
             StructureFactory.deleteStructure( structure );
         }
 
+        //Delete the identifiers
+        /*for ( Identifier identifier : identifiers ) {
+            APILocator.getIdentifierAPI().delete( identifier );
+        }*/
+
+        //hostAPI.delete( defaultHost, user, false );
+
         //Delete the folder
-        folderAPI.delete( testFolder, user, false );
+        //folderAPI.delete( testFolder, user, false );
     }
 
     /**
-     * Creates and add an structure to a collection for a later use in the tests
+     * Creates an Structure object for a later use in the tests
      *
      * @param name
      * @param structureVelocityVarName
@@ -221,7 +243,7 @@ public class ContentletBaseTest extends TestBase {
      * @throws com.dotmarketing.exception.DotSecurityException
      *
      */
-    private static void addStructure ( String name, String structureVelocityVarName ) throws DotDataException, DotSecurityException {
+    protected static Structure createStructure ( String name, String structureVelocityVarName ) throws DotDataException, DotSecurityException {
 
         //Create the structure
         Structure testStructure = new Structure();
@@ -254,8 +276,7 @@ public class ContentletBaseTest extends TestBase {
         permissions.add( permissionEdit );
         permissions.add( permissionWrite );
 
-        //Finally add it to the test collection
-        structures.add( testStructure );
+        return testStructure;
     }
 
     /**
@@ -265,7 +286,7 @@ public class ContentletBaseTest extends TestBase {
      * @throws com.dotmarketing.exception.DotHibernateException
      *
      */
-    private static void addFields ( Structure jUnitTestStructure ) throws DotHibernateException {
+    protected static void addFields ( Structure jUnitTestStructure ) throws DotHibernateException {
 
         //Create the fields
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, jUnitTestStructure, false, true, false, 1, false, false, false );
@@ -312,7 +333,7 @@ public class ContentletBaseTest extends TestBase {
     }
 
     /**
-     * Creates and add a Contentlet to a collection for a later use in the tests
+     * Creates a Contentlet object for a later use in the tests
      *
      * @param structure
      * @param language
@@ -320,10 +341,11 @@ public class ContentletBaseTest extends TestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private static void addContentlet ( Structure structure, Language language ) throws DotDataException, DotSecurityException {
+    protected static Contentlet createContentlet ( Structure structure, Language language, Boolean createWithContainer ) throws DotDataException, DotSecurityException {
 
         //Create the new Contentlet
         Contentlet contentlet = new Contentlet();
+        contentlet.setReviewInterval( "1m" );
         contentlet.setStructureInode( structure.getInode() );
         contentlet.setHost( defaultHost.getIdentifier() );
         if ( UtilMethods.isSet( language ) ) {
@@ -367,11 +389,12 @@ public class ContentletBaseTest extends TestBase {
         //Save the contentlet
         contentlet = contentletAPI.checkin( contentlet, categories, structurePermissions, user, true );
 
-        //Create a container
-        addContainer( contentlet );
+        if ( createWithContainer ) {
+            //Create a container
+            addContainer( contentlet );
+        }
 
-        //Adding it to the test collection
-        contentlets.add( contentlet );
+        return contentlet;
     }
 
     /**
@@ -504,8 +527,205 @@ public class ContentletBaseTest extends TestBase {
         //Save the multi tree
         MultiTreeFactory.saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), contentlet.getIdentifier() ) );
 
+        //Make it working and live
+        APILocator.getVersionableAPI().setWorking( htmlPage );
+        APILocator.getVersionableAPI().setLive( htmlPage );
+
         //Adding it to the test collection
         htmlPages.add( htmlPage );
+    }
+
+    /**
+     * Creates a Link object for a later use in the tests
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    protected static Link createMenuLink () throws DotSecurityException, DotDataException {
+
+        //Creating the menu link
+        Link menuLink = new Link();
+        menuLink.setModUser( user.getUserId() );
+        menuLink.setOwner( user.getUserId() );
+        menuLink.setProtocal( "" );
+        menuLink.setShowOnMenu( true );
+        menuLink.setSortOrder( 2 );
+        menuLink.setTarget( "_blank" );
+        menuLink.setTitle( "JUnit MenuLink Test" );
+        menuLink.setType( "links" );
+        menuLink.setUrl( "www.dotcms.org" );
+        menuLink.setFriendlyName( "JUnit Test Menu Link" );
+        menuLink.setIDate( new Date() );
+        menuLink.setInternalLinkIdentifier( "" );
+        menuLink.setLinkCode( "" );
+        menuLink.setLinkType( Link.LinkType.EXTERNAL.toString() );
+        menuLink.setModDate( new Date() );
+
+        //Saving it and adding it permissions
+        menuLinkAPI.save( menuLink, testFolder, user, false );
+        permissionAPI.copyPermissions( testFolder, menuLink );
+
+        //Make it working and live
+        /*APILocator.getVersionableAPI().setLocked( menuLink, false, user );
+        APILocator.getVersionableAPI().setWorking( menuLink );
+        APILocator.getVersionableAPI().setLive( menuLink );*/
+
+        return menuLink;
+    }
+
+    /**
+     * Creates a File object for a later use in the tests
+     *
+     * @param fileName
+     * @return savedFile
+     * @throws Exception
+     * @see File
+     */
+    protected static File createFile ( String fileName ) throws Exception {
+
+        String testFilesPath = ".." + java.io.File.separator +
+                "test" + java.io.File.separator +
+                "com" + java.io.File.separator +
+                "dotmarketing" + java.io.File.separator +
+                "portlets" + java.io.File.separator +
+                "contentlet" + java.io.File.separator +
+                "business" + java.io.File.separator +
+                "test_files" + java.io.File.separator;
+
+        String copyTestFilesPath = ".." + java.io.File.separator +
+                "test" + java.io.File.separator +
+                "com" + java.io.File.separator +
+                "dotmarketing" + java.io.File.separator +
+                "portlets" + java.io.File.separator +
+                "contentlet" + java.io.File.separator +
+                "business" + java.io.File.separator +
+                "test_files" + java.io.File.separator +
+                "copy" + java.io.File.separator;
+
+        //Reading the file
+        String testFilePath = Config.CONTEXT.getRealPath( testFilesPath + fileName );
+        java.io.File tempTestFile = new java.io.File( testFilePath );
+        if ( !tempTestFile.exists() ) {
+            String message = "File does not exist: '" + testFilePath + "'";
+            throw new Exception( message );
+        }
+
+        //Copying the file
+        String copyTestFilePath = Config.CONTEXT.getRealPath( copyTestFilesPath + fileName );
+        java.io.File copyTempTestFile = new java.io.File( copyTestFilePath );
+        if ( !copyTempTestFile.exists() ) {
+            if ( !copyTempTestFile.createNewFile() ) {
+                String message = "Cannot create copy of the test file: '" + copyTestFilePath + "'";
+                throw new Exception( message );
+            }
+        }
+
+        InputStream in = new FileInputStream( tempTestFile );
+        OutputStream out = new FileOutputStream( copyTestFilePath );
+
+        byte[] buf = new byte[1024];
+        int len;
+        while ( 0 < ( len = in.read( buf ) ) ) {
+            out.write( buf, 0, len );
+        }
+
+        //Creating a test file
+        File testFile = new File();
+        testFile.setAuthor( user.getUserId() );
+        testFile.setFileName( "junit_test_file.txt" );
+        testFile.setFriendlyName( "JUnit Test File Friendly Name" );
+        testFile.setIDate( new Date() );
+        testFile.setMaxSize( 1024 );
+        testFile.setMimeType( "text/plain" );
+        testFile.setModDate( new Date() );
+        testFile.setModUser( user.getUserId() );
+        testFile.setOwner( user.getUserId() );
+        testFile.setPublishDate( new Date() );
+        testFile.setShowOnMenu( true );
+        testFile.setSize( ( int ) tempTestFile.length() );
+        testFile.setSortOrder( 2 );
+        testFile.setTitle( "JUnit Test File" );
+        testFile.setType( "file_asset" );
+
+        //Storing the file
+        File savedFile = fileAPI.saveFile( testFile, copyTempTestFile, testFolder, user, false );
+        //Adding permissions
+        permissionAPI.copyPermissions( testFolder, savedFile );
+
+        if ( copyTempTestFile.exists() ) {
+            copyTempTestFile.delete();
+        }
+
+        return savedFile;
+    }
+
+    /**
+     * Creates a Relationship object for a later use in the tests
+     *
+     * @param structure
+     * @param required
+     * @return
+     * @throws DotHibernateException
+     */
+    protected static Relationship createRelationShip ( Structure structure, boolean required ) throws DotHibernateException {
+
+        return createRelationShip( structure.getInode(), structure.getInode(), required );
+    }
+
+    /**
+     * Creates a Relationship object for a later use in the tests
+     *
+     * @param parentStructureInode
+     * @param childStrunctureInode
+     * @param required
+     * @return
+     * @throws DotHibernateException
+     */
+    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required ) throws DotHibernateException {
+
+        Relationship relationship = new Relationship();
+        //Set Parent Info
+        relationship.setParentStructureInode( parentStructureInode );
+        relationship.setParentRelationName( "parent" );
+        relationship.setParentRequired( required );
+        //Set Child Info
+        relationship.setChildStructureInode( childStrunctureInode );
+        relationship.setChildRelationName( "child" );
+        relationship.setChildRequired( required );
+        //Set general info
+        relationship.setRelationTypeValue( "parent-child" );
+        relationship.setCardinality( 0 );
+
+        //Save it
+        RelationshipFactory.saveRelationship( relationship );
+
+        return relationship;
+    }
+
+    /**
+     * Creates a ContentletRelationships object for a later use in the tests
+     *
+     * @param relationship
+     * @param contentlet
+     * @param structure
+     * @return
+     */
+    protected static ContentletRelationships createContentletRelationships ( Relationship relationship, Contentlet contentlet, Structure structure, List<Contentlet> contentRelationships ) {
+
+        //Create the contentlet relationships
+        ContentletRelationships contentletRelationships = new ContentletRelationships( contentlet );
+
+        boolean hasParent = RelationshipFactory.isParentOfTheRelationship( relationship, structure );
+
+        //Adding the relationships records
+        ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords = contentletRelationships.new ContentletRelationshipRecords( relationship, hasParent );
+        contentletRelationshipRecords.setRecords( contentRelationships );
+
+        List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+        relationshipsRecords.add( contentletRelationshipRecords );
+        contentletRelationships.setRelationshipsRecords( relationshipsRecords );
+
+        return contentletRelationships;
     }
 
 }
