@@ -26,7 +26,8 @@
 <%@ include file="/html/common/init.jsp"%>
 <%@page import="java.util.List"%>
 <%
-	List<Structure> structs = StructureFactory.getStructures();
+
+List<Structure> structs = StructureFactory.getStructures();
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 ESIndexAPI esapi = APILocator.getESIndexAPI();
 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
@@ -34,9 +35,7 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 
 String testIndex = (request.getParameter("testIndex") == null) ? info.site_search : request.getParameter("testIndex");
-String testQuery = (request.getParameter("testQuery") != null) 
-		? request.getParameter("testQuery")
-		: "";
+String testQuery = request.getParameter("testQuery");
 
 
 int testStart = 0;
@@ -45,9 +44,10 @@ String testSort = "score";
 
 
 
-
-SiteSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
-
+SiteSearchResults results= new SiteSearchResults();
+if(testQuery != null && testIndex != null){
+	results = APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
+}
 
 
 try {
@@ -81,6 +81,17 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 %>
+
+<script>
+dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
+    key = evt.keyCode;
+
+    if(key == dojo.keys.ENTER) {
+    	doTestSearch();
+    }
+});
+
+</script>
 
 
 <style>
