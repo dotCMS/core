@@ -18,6 +18,17 @@ dojo.subscribe("/dojo/hashchange", this, function(hash){mainAdmin.refresh();});
 dojo.require("dijit.layout.TabContainer");
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dotcms.dojo.data.RoleReadStore");
+dojo.provide("ValidationTextarea");
+dojo.require("dijit.form.SimpleTextarea");
+
+dojo.declare(
+    "ValidationTextarea",
+    [dijit.form.ValidationTextBox,dijit.form.SimpleTextarea],
+    {
+        invalidMessage: "This field is required"
+    }
+);
+
 
 
 
