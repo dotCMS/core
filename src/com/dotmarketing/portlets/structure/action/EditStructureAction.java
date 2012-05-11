@@ -15,6 +15,7 @@ import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.Globals;
@@ -252,7 +253,7 @@ public class EditStructureAction extends DotPortletAction {
 			Structure auxStructure = StructureCache.getStructureByType(auxStructureName);
 
 			if (InodeUtils.isSet(auxStructure.getInode()) && !auxStructure.getInode().equalsIgnoreCase(structure.getInode())) {
-				throw new DotDataException(LanguageUtil.get(user, "There-is-another-structure-with-the-same-name"));
+				throw new DotDataException(LanguageUtil.format(user.getLocale(), "structure-name-already-exist",new String[]{auxStructureName},false));
 			}
 
 			Arrays.sort(reservedStructureNames);
@@ -430,7 +431,7 @@ public class EditStructureAction extends DotPortletAction {
 			AdminLogger.log(EditStructureAction.class, "_saveStructure", "Structure saved : " + structure.getName(), user);
 		} catch (Exception ex) {
 			Logger.error(this.getClass(), ex.toString());
-			String message = ex.toString();
+			String message = ex.getMessage();
 			SessionMessages.add(req, "error", message);
 		}
 	}
