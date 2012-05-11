@@ -30,14 +30,24 @@ public class PreviewFactory {
 		params = new java.util.HashMap<String, String[]>();
 		params.put("struts_action",new String[] {"/ext/browser/view_browser"});
 		portletId="EXT_BROWSER";
-		String viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
-		//iewBrowserURL =(UtilMethods.isSet(hreq.getParameter("referer"))?hreq.getParameter("referer"):viewBrowserURL);
+		String viewBrowserURL = null;
+		try {
+			 viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
+		} catch(Exception e) {
+			viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params);
+		}
 		session.setAttribute(WebKeys.VIEW_BROWSER_URL, viewBrowserURL);
 
 		portletId="EXT_BROWSER";
 		params = new java.util.HashMap<String, String[]>();
 		params.put("struts_action",new String[] {"/ext/htmlpages/preview_htmlpage"});
-		String previewPageURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params,portletId);
+		String previewPageURL = null;
+		try {
+			previewPageURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params,portletId);
+		} catch (Exception e) {
+			previewPageURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params);
+		}
+
 		session.setAttribute(WebKeys.PREVIEW_PAGE_URL, previewPageURL);
 
 		params = new java.util.HashMap<String, String[]>();
