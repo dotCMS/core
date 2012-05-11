@@ -326,7 +326,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         	 selectContentlets = con.prepareStatement(
         			 " SELECT TOP " + limit  + "  * FROM (SELECT identifier,inode,live,locked,mod_date,mod_user,deleted,ROW_NUMBER() "
 	    		   + " OVER (order by mod_date) AS RowNumber FROM "+ table +" where working = "+DbConnectionFactory.getDBTrue()+") temp "
-	    		   + " WHERE RowNumber > ? order by identifier asc, mod_date desc");
+	    		   + " WHERE RowNumber > ? order by RowNumber, identifier asc, mod_date desc");
 
         }else{
         	 selectContentlets = con.prepareStatement(
