@@ -62,7 +62,7 @@
 				<tr>
 					<td nowrap="true" valign="top" style="text-align: right;"><%if(x.isRequired()){ %><span class="required"></span><%} %><%=x.getDisplayName() %>:</td>
 					<td>
-						<textarea class="wfParamTextArea" dojoType="dijit.form.Textarea" id="acp-<%=x.getKey() %>"  name="acp-<%=x.getKey() %>" /><%=UtilMethods.webifyString(value) %></textarea>
+						<textarea class="wfParamTextArea" dojoType="ValidationTextarea" required="<%=x.isRequired() %>" id="acp-<%=x.getKey() %>"  name="acp-<%=x.getKey() %>" ><%=UtilMethods.webifyString(value) %></textarea>
 					</td>
 				</tr>
 			<%}%>
