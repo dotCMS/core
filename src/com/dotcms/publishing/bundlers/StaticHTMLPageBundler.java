@@ -8,7 +8,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
@@ -71,8 +73,8 @@ public class StaticHTMLPageBundler implements IBundler {
 		boolean include = true;
 		boolean hasPatterns = false;
 		List<String> patterns = null;
-		List<Identifier> pageIdents = new ArrayList<Identifier>();
-		List<Identifier> deletedIdents = new ArrayList<Identifier>();
+		Set<Identifier> pageIdents = new HashSet<Identifier>();
+		Set<Identifier> deletedIdents = new HashSet<Identifier>();
 		
 		if(config.getExcludePatterns()!=null && config.getExcludePatterns().size()>0){
 			hasPatterns = true;
@@ -153,51 +155,80 @@ public class StaticHTMLPageBundler implements IBundler {
 		
 		
 		try{
-			String wrapperFile = bundleRoot.getPath() + File.separator 
-					+ (live ? "live" : "working") + File.separator 
-					+ h.getHostname() 
-					+ uri.replace("/", File.separator) + HTML_ASSET_EXTENSION;
-			File wf = new File(wrapperFile);
-			
 			String staticFile = bundleRoot.getPath() + File.separator 
 					+ (live ? "live" : "working") + File.separator 
 					+ h.getHostname() 
-					+ uri.replace("/", File.separator);
-			File sf = new File(staticFile);
+					+ uri.replace("/", File.separator) + HTML_ASSET_EXTENSION;
+			File file = new File(staticFile);
+			
 			
 			// Should we write or is the file already there:
-			Calendar cal = Calendar.getInstance();
-			cal.setTime(htmlPageWrapper.getVersionInfo().getVersionTs());
-			cal.set(Calendar.MILLISECOND, 0);
+			Calendar lastMod = Calendar.getInstance();
 			
-			String dir = wrapperFile.substring(0, wrapperFile.lastIndexOf(File.separator));
+			
+
+
+			lastMod.setTime(htmlPageWrapper.getVersionInfo().getVersionTs());
+			lastMod.set(Calendar.MILLISECOND, 0);
+			/*
+				System.out.println("file              :" + file.getCanonicalPath());
+				System.out.println("getVersionTs  time:" + htmlPageWrapper.getVersionInfo().getVersionTs().getTime());
+				System.out.println("cal time          :" + lastMod.getTimeInMillis());
+			*/
+			
+			String dir = staticFile.substring(0, staticFile.lastIndexOf(File.separator));
 			new File(dir).mkdirs();
 			
-			if(!wf.exists() || wf.lastModified() != cal.getTimeInMillis()){
-				BundlerUtil.objectToXML(htmlPageWrapper, wf);
+			if(!file.exists() || file.lastModified() != lastMod.getTimeInMillis()){
+				BundlerUtil.objectToXML(htmlPageWrapper, file);
 				// set the time of the file
-				wf.setLastModified(cal.getTimeInMillis());
+				file.setLastModified(lastMod.getTimeInMillis());
 			}
 			
-			if(!sf.exists() || sf.lastModified() != cal.getTimeInMillis()){
+			
+			
+			 staticFile = bundleRoot.getPath() + File.separator 
+					+ (live ? "live" : "working") + File.separator 
+					+ h.getHostname() 
+					+ uri.replace("/", File.separator);
+			 file = new File(staticFile);
+			
+			
+			
+			
+			
+			if(!file.exists() || file.lastModified() != lastMod.getTimeInMillis()){
 				try {
 					
 					BufferedWriter out = null;
 					try{
-						if(!sf.exists())sf.createNewFile();
-						FileWriter fstream = new FileWriter(sf);
+						if(!file.exists()){
+							file.createNewFile();
+						}
+						FileWriter fstream = new FileWriter(file);
 						out = new BufferedWriter(fstream);
 						String html = new String();
 						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser());
 						out.write(html);
 						out.close();
-						sf.setLastModified(cal.getTimeInMillis());
+						file.setLastModified(lastMod.getTimeInMillis());
 					}catch(Exception e){
-						Logger.error(this, e.getMessage() + " Unable to get page : " + htmlPageWrapper.getIdentifier().getHostId() + htmlPageWrapper.getIdentifier().getURI());
+						try{
+							Logger.error(this, e.getMessage() + " Unable to get page : " + htmlPageWrapper.getIdentifier().getHostId() + htmlPageWrapper.getIdentifier().getURI());
+						}
+						catch(Exception ex){
+							Logger.error(this, e.getMessage(),e);
+						}
 					}
 					finally{
 						if(out !=null){
 							out.close();
+							try{
+								file.setLastModified(lastMod.getTimeInMillis());	
+							}
+							catch(Exception e){
+								
+							}
 						}
 					}
 					
@@ -210,7 +241,8 @@ public class StaticHTMLPageBundler implements IBundler {
 			}
 		}
 		catch(Exception e){
-			throw new DotBundleException("cant get host for " + uri + " reason " + e.getMessage());
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
+			throw new DotBundleException("error on " + uri + " reason " + e.getMessage());
 		}
 	}
 

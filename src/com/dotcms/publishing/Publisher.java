@@ -1,6 +1,7 @@
 package com.dotcms.publishing;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -115,4 +116,61 @@ public abstract class Publisher implements IPublisher {
 		return getHostFromFilePath(file).getHostname()  + getUriFromFilePath(file);
 		
 	}
+	
+	
+	
+	protected boolean shouldProcess(File f) throws IOException, DotPublishingException{
+		if(f.isDirectory()){
+			return false;
+		}else if(config.getStartDate() != null && f.lastModified() <  config.getStartDate().getTime()){	
+			return false;
+		
+		}else if(config.getEndDate() != null && f.lastModified() >  config.getEndDate().getTime()){	
+			return false;
+		}
+		
+		
+		
+		String filePath = getUriFromFilePath(f);
+		
+		
+		
+		
+		
+		filePath = filePath.replace(File.pathSeparatorChar, '/');
+		if(config.getIncludePatterns() != null){
+			for(String x : config.getIncludePatterns()){
+				boolean startsWith = x.startsWith("*");
+				boolean endsWith = x.endsWith("*");
+				x = x.replace("*", "");
+
+
+				if(endsWith && filePath.indexOf(x)!=0){
+					return false;
+				}
+				else if(startsWith && !filePath.contains(x + ".")){
+					return false;
+				}
+			}
+		}
+		if(config.getExcludePatterns() != null){
+			for(String x : config.getExcludePatterns()){
+				boolean startsWith = x.startsWith("*");
+				boolean endsWith = x.endsWith("*");
+				x = x.replace("*", "");
+
+				if(endsWith && filePath.indexOf(x)==0){
+					return false;
+				}
+				else if(startsWith && filePath.contains(x + ".")){
+					return false;
+				}
+				
+			}
+		}
+		
+		return true;
+	}
+	
+	
 }

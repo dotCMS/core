@@ -733,10 +733,12 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			Logger.error(this, e.getMessage(), e);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
+		}finally{
+			context = null;
+			VelocityServlet.velocityCtx.remove();
 		}
 
-		context = null;
-		VelocityServlet.velocityCtx.remove();
+
 		if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
 			Logger.debug(HTMLPageAPIImpl.class, "Into the ClickstreamFilter");
 			// Ensure that clickstream is recorded only once per request.
