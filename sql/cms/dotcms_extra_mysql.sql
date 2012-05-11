@@ -446,6 +446,7 @@ END
 
 DROP FUNCTION IF EXISTS dotFolderPath;
 CREATE FUNCTION dotFolderPath (parent_path char(255), asset_name char(255)) RETURNS char(255)
+DETERMINISTIC
 BEGIN
 IF (parent_path='/System folder') THEN
   RETURN '/';

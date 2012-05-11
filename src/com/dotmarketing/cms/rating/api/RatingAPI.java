@@ -42,10 +42,14 @@ public class RatingAPI {
 	 * @param identifier
 	 * @return
 	 */
-	public static Rating getRating(String longLiveCookie, String identifier) {
+	public static Rating getRating(String longLiveCookie, String identifier, String userId) {
 
 		/* get rating from cache */
-		Rating rating = (Rating) RatingCache.getRatingFromCache(identifier, longLiveCookie);
+ 		Rating rating = (Rating) RatingCache.getRatingFromCache(identifier, longLiveCookie);
+
+		if(!UtilMethods.isSet(rating.getIdentifier())) {
+			rating = RatingsFactory.getRatingByUserId(identifier, userId);
+		}
 		return rating;
 
 	}
