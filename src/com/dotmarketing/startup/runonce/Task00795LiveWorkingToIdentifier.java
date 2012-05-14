@@ -326,7 +326,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         	 selectContentlets = con.prepareStatement(
         			 " SELECT TOP " + limit  + "  * FROM (SELECT identifier,inode,live,locked,mod_date,mod_user,deleted,ROW_NUMBER() "
 	    		   + " OVER (order by mod_date) AS RowNumber FROM "+ table +" where working = "+DbConnectionFactory.getDBTrue()+") temp "
-	    		   + " WHERE RowNumber > ? order by identifier asc, mod_date desc");
+	    		   + " WHERE RowNumber > ? order by RowNumber, identifier asc, mod_date desc");
 
         }else{
         	 selectContentlets = con.prepareStatement(
@@ -499,7 +499,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         }else if(DbConnectionFactory.isMsSql()){
             contentlets =  " SELECT TOP "+ limit + " *  FROM (SELECT identifier,inode,live,locked,mod_user,mod_date,deleted,language_id,ROW_NUMBER() "
                          + " OVER (order by mod_date) AS RowNumber FROM contentlet where working="+DbConnectionFactory.getDBTrue()
-                         + ") temp WHERE RowNumber > ? order by identifier asc, language_id asc, mod_date desc";
+                         + ") temp WHERE RowNumber > ? order by RowNumber, identifier asc, language_id asc, mod_date desc";
         }else{
             contentlets = "select identifier,inode,live,locked,mod_user,mod_date,deleted,language_id from contentlet "
                        +  " where working="+DbConnectionFactory.getDBTrue()+" order by identifier asc, language_id asc, mod_date desc limit ? offset ? ";
@@ -599,7 +599,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         }else if(DbConnectionFactory.isMsSql()){
             contentlets =  " SELECT TOP " + limit + " * FROM (SELECT identifier,inode,language_id,mod_date,ROW_NUMBER() "
                          + " OVER (order by mod_date) AS RowNumber FROM contentlet where working = "+DbConnectionFactory.getDBFalse()
-                         + " and live ="+ DbConnectionFactory.getDBTrue()+ ") temp WHERE RowNumber > ? order by identifier asc, language_id asc, mod_date desc";
+                         + " and live ="+ DbConnectionFactory.getDBTrue()+ ") temp WHERE RowNumber > ? order by RowNumber, identifier asc, language_id asc, mod_date desc";
         }else{
             contentlets = "select identifier,inode,language_id from contentlet "
                         + " where working="+DbConnectionFactory.getDBFalse()+" and live="+DbConnectionFactory.getDBTrue()
