@@ -75,7 +75,7 @@ public class ContentsWebAPI implements ViewTool {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
 	}
-	
+
 	public CategoryAPI getCategoryAPI() {
 		return categoryAPI;
 	}
@@ -83,7 +83,7 @@ public class ContentsWebAPI implements ViewTool {
 	public void setCategoryAPI(CategoryAPI categoryAPI) {
 		this.categoryAPI = categoryAPI;
 	}
-	
+
 	public ContentletAPI getContentletAPI() {
 		return conAPI;
 	}
@@ -94,42 +94,42 @@ public class ContentsWebAPI implements ViewTool {
 
 
 	/**
-	 * 
+	 *
 	 * @param cont
 	 * @return
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
-	 */           
+	 */
 	public Identifier getContentIdentifier(Contentlet cont) throws DotStateException, DotDataException {
 		return (Identifier) APILocator.getIdentifierAPI().find(cont);
 	}
 
 	/**
-	 * 
+	 *
 	 * @param inode
 	 * @return
 	 * @deprecated
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public Contentlet getContentByInode(long inode) throws DotDataException, DotSecurityException {
 		return getContentByInode(String.valueOf(inode));
 	}
 
 	/**
-	 * 
+	 *
 	 * @param inode
 	 * @return
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public Contentlet getContentByInode(String inode) throws DotDataException, DotSecurityException {
 		return conAPI.find(inode, user, true);
 	}
 
 	/**
-	 * 
+	 *
 	 * @param structureType
 	 * @return
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
@@ -151,14 +151,14 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param structure
 	 * @param category
 	 * @param maxResults
 	 * @return
-	 * @throws ParseException 
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws ParseException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
 	public List<Contentlet> getLastestContents(Structure structure, Category category, int maxResults) throws DotDataException, DotSecurityException, ParseException {
@@ -168,14 +168,14 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param structureType
 	 * @param categoryName
 	 * @param maxResults
 	 * @return
-	 * @throws DotDataException 
-	 * @throws DotSecurityException 
-	 * @throws ParseException 
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws ParseException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
 	public List<Contentlet> getLastestContents(String structureType, String categoryName, int maxResults) throws DotDataException, DotSecurityException, ParseException {
@@ -185,12 +185,12 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param structure
 	 * @param category
 	 * @return
-	 * @throws ParseException 
-	 * @throws DotSecurityException 
+	 * @throws ParseException
+	 * @throws DotSecurityException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
 	public List<Contentlet> getLastestContents(Structure structure, Category category)throws DotDataException, DotSecurityException, ParseException {
@@ -200,13 +200,13 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param structureType
 	 * @param categoryName
 	 * @return
-	 * @throws DotDataException 
-	 * @throws DotSecurityException 
-	 * @throws ParseException 
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws ParseException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
 	public List<Contentlet> getLastestContents(String structureType, String categoryName) throws DotDataException, DotSecurityException, ParseException {
@@ -221,7 +221,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param fieldName The presentation name of the field
 	 * @return The field found
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
-	 *              we encourage the use of the logical name of the field instead 
+	 *              we encourage the use of the logical name of the field instead
 	 */
 	public Field getFieldByName(Structure st, String fieldName) {
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
@@ -239,7 +239,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return The field found
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
-	 */            
+	 */
 	public Field getFieldByName(String structureType, String fieldName) {
 		Structure st = StructureCache.getStructureByType(structureType);
 		return getFieldByName(st, fieldName);
@@ -252,7 +252,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return The field found
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
-	 */            
+	 */
 	public Field getFieldByInode(long structureInode, String fieldName) {
 		return getFieldByInode(String.valueOf(structureInode), fieldName);
 	}
@@ -263,7 +263,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return The field found
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
-	 */    
+	 */
 	public Field getFieldByInode(String structureInode, String fieldName) {
 		Structure st = StructureCache.getStructureByInode(structureInode);
 		return getFieldByName(st, fieldName);
@@ -289,7 +289,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param structureType The structure type name
 	 * @param fieldName  The presentation name of the field
 	 * @return The field found, an empty field if it wasn't found
-	 */            
+	 */
 	public Field getFieldByLogicalName(String structureType, String fieldName) {
 		@SuppressWarnings("deprecation")
 		Structure st = StructureCache.getStructureByType(structureType);
@@ -317,7 +317,7 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param fieldName
 	 * @param content
 	 * @return
@@ -345,14 +345,14 @@ public class ContentsWebAPI implements ViewTool {
 
 
 	/**
-	 * 
+	 *
 	 * @param structure
 	 * @param fieldName
 	 * @param fieldValue
 	 * @return
-	 * @throws ParseException 
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws ParseException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
@@ -364,15 +364,15 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param structure
 	 * @param orderFieldName
 	 * @param direction
 	 * @param rowNumber
 	 * @return
-	 * @throws ParseException 
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws ParseException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
@@ -380,17 +380,17 @@ public class ContentsWebAPI implements ViewTool {
 			String direction, int rowNumber) throws DotDataException, DotSecurityException, ParseException {
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("+live:true +deleted:false +structureInode:" + structure.getInode());
-		return conAPI.search(buffy.toString(), rowNumber, -1, orderFieldName + " " + direction, user, true); 
+		return conAPI.search(buffy.toString(), rowNumber, -1, orderFieldName + " " + direction, user, true);
 	}
 
 	/**
-	 * 
+	 *
 	 * @param structureType
 	 * @param categoryName
 	 * @return
-	 * @throws DotDataException 
-	 * @throws DotSecurityException 
-	 * @throws ParseException 
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws ParseException
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
@@ -407,7 +407,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * uses the contentlet database names of the fields in the condition and the
 	 * sort by field so you should convert the display names of the fields to
 	 * the contentlet fields names before call this method
-	 * 
+	 *
 	 * @param structureType
 	 *            The name or inode of the structure, E.G: "Web Page Content" or
 	 *            12354
@@ -421,7 +421,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param rowsPerPage
 	 *            The number of records you want to show per page.
 	 * @return
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	@SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
 	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, String pageStr,
@@ -449,7 +449,7 @@ public class ContentsWebAPI implements ViewTool {
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("structureInode:" + structInode + " deleted:false ");
 		buffy.append(luceneCondition);
-		
+
 		try {
 			assets = conAPI.searchIndex(buffy.toString(), perPage, offset, sortBy,user,true);
 		} catch (DotDataException e) {
@@ -507,7 +507,7 @@ public class ContentsWebAPI implements ViewTool {
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("structureInode:" + structInode + " deleted:false ");
 		buffy.append(luceneCondition);
-		
+
 		try {
 			assets = conAPI.searchIndex(buffy.toString(), maxResults, offSet, sortBy, user, true);
 		} catch (DotDataException e) {
@@ -526,7 +526,7 @@ public class ContentsWebAPI implements ViewTool {
 
 	/**
 	 * This methods retrieves the disk paths for a list of contents hits retrieved from lucene
-	 * this method is used in the dynamic containers code to get the list of contents paths 
+	 * this method is used in the dynamic containers code to get the list of contents paths
 	 * @param assets The assets hits
 	 * @param working True if you want the working path to the content file, false if you the live path to the file
 	 * @return A list of paths to the contents
@@ -543,7 +543,7 @@ public class ContentsWebAPI implements ViewTool {
 		}
 		return paths;
 	}
-	
+
 	/**
 	 * This methods retrieves the identifier for a list of contents hits retrieved from lucene
 	 * this method is used in the dynamic containers code to get the list of contents
@@ -579,12 +579,12 @@ public class ContentsWebAPI implements ViewTool {
 	/**
 	 * This methods gets the list of all the relationship objects associated to
 	 * the structure of the contentlet as a parent or a child
-	 * 
+	 *
 	 * @param cont
 	 *            The contentlet
 	 * @return A list of relationship objects
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List<Relationship> getRelationshipsOfContentlet(Contentlet cont) throws DotDataException, DotSecurityException {
 		return getRelationshipsOfContentlet(cont.getInode());
@@ -602,15 +602,15 @@ public class ContentsWebAPI implements ViewTool {
 	/**
 	 * This gets the list of all the relationship objects associated to the
 	 * structure of the contentlet
-	 * 
+	 *
 	 * @param cont
 	 *            The contentlet
 	 * @param hasParent
 	 *            true If you find the relations where the contentlet is parent,
 	 *            false If you find the relations where the contentlet is child
 	 * @return A list of relationship objects
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List<Relationship> getRelationshipsOfContentlet(Contentlet cont, boolean hasParent) throws DotDataException, DotSecurityException {
 		return getRelationshipsOfContentlet(cont.getInode(), hasParent);
@@ -628,7 +628,7 @@ public class ContentsWebAPI implements ViewTool {
 	/**
 	 * This gets the list of all the relationship objects associated to the
 	 * structure of the contentlet
-	 * 
+	 *
 	 * @param cont
 	 *            The contentlet
 	 * @param hasParent
@@ -654,7 +654,7 @@ public class ContentsWebAPI implements ViewTool {
 	/**
 	 * This methods retrieve the list of related contentlets in a relationship
 	 * of a given contentlet
-	 * 
+	 *
 	 * @param relationship
 	 *            The relationship
 	 * @param cont
@@ -664,8 +664,8 @@ public class ContentsWebAPI implements ViewTool {
 	 *            contentlet is the parent, false Find the related parents
 	 *            contentlets where the given contentlet is a child
 	 * @return The list of related contentlets
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 */
 	public static List<Contentlet> getRelatedContentlets(Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotStateException, DotDataException {
 		return RelationshipFactory.getAllRelationshipRecords(relationship, contentlet, hasParent, true,"");
@@ -719,11 +719,11 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param limit
 	 * @param orderBy
 	 * @return
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List<Contentlet> pullRelatedContent (String relationshipName, String contentletInode, String limit, String orderBy) throws DotDataException, DotSecurityException  {
-		
+
 		int limitI = 0;
 		try { limitI = Integer.parseInt(limit); } catch (Exception e) { }
 
@@ -738,13 +738,13 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param orderBy
 	 * @deprecated
 	 * @return
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List<Contentlet> pullRelatedContent (String relationshipName, long contentletInode, int limit, String orderBy) {
 		return pullRelatedContent (relationshipName, String.valueOf(contentletInode), limit, orderBy);
 	}
-	
+
 	/**
 	 * This method is used by the pullRelatedContent macro to retrieve related content and display it in a page
 	 * @param relationshipName
@@ -752,13 +752,13 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param limit
 	 * @param orderBy
 	 * @return
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List<Contentlet> pullRelatedContent (String relationshipName, String contentletInode, int limit, String orderBy) {
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-		
-		Contentlet contentlet = null; 
+
+		Contentlet contentlet = null;
 		try {
 			contentlet = conAPI.find(contentletInode, APILocator.getUserAPI().getSystemUser(), true);
 		} catch (DotSecurityException e) {
@@ -779,20 +779,20 @@ public class ContentsWebAPI implements ViewTool {
 				if(orderBySeg.toLowerCase().equals("moddate")) {
 					orderBy = orderBy.replaceAll("(?i)moddate", "mod_date");
 					continue;
-				}				
+				}
 				Field field = FieldFactory.getFieldByVariableName(contentlet.getStructureInode(), orderBySeg);
-				if (field != null && InodeUtils.isSet(field.getInode())) 
+				if (field != null && InodeUtils.isSet(field.getInode()))
 					orderBy = orderBy.replaceAll(orderBySeg, field.getFieldContentlet());
 			}
 		}
 		return RelationshipFactory.getRelatedContentlets(relationship, contentlet, orderBy, null, true, limit);
 
-	}	
+	}
 
 	/**
 	 * This methods checks if the given contentlet has the role of parent of the
 	 * given relationship
-	 * 
+	 *
 	 * @param contentlet
 	 *            The contentlet
 	 * @param relationship
@@ -803,7 +803,7 @@ public class ContentsWebAPI implements ViewTool {
 		Structure contStructure = contentlet.getStructure();
 		return relationship.getParentStructure().getInode().equalsIgnoreCase(contStructure.getInode());
 	}
-	
+
     @Deprecated
 	public boolean isParentOfTheRelationship(long contentletInode, long relationshipInode) throws DotDataException, DotSecurityException {
 		return isParentOfTheRelationship(String.valueOf(contentletInode), String.valueOf(relationshipInode));
@@ -818,7 +818,7 @@ public class ContentsWebAPI implements ViewTool {
 	/**
 	 * This methods checks if the given contentlet has the role of child of the
 	 * given relationship
-	 * 
+	 *
 	 * @param contentlet
 	 *            The contentlet
 	 * @param relationship
@@ -829,7 +829,7 @@ public class ContentsWebAPI implements ViewTool {
 		Structure contStructure = contentlet.getStructure();
 		return relationship.getChildStructure().getInode().equalsIgnoreCase(contStructure.getInode());
 	}
-	
+
     @Deprecated
 	public boolean isChildOfTheRelationship(long contentletInode, long relationshipInode) throws DotDataException, DotSecurityException {
 		return isChildOfTheRelationship(String.valueOf(contentletInode), String.valueOf(relationshipInode));
@@ -849,7 +849,7 @@ public class ContentsWebAPI implements ViewTool {
 	public List pullContent(String query, String lim, String sortBy) throws ParseException, DotSecurityException, DotDataException {
 		return pullContent(query, lim, sortBy, false);
 	}
-	
+
 	/*
 	 * Used to pull dynamic lists of content in the form of maps
 	 * for the front end of the web site.  This is used by the
@@ -874,8 +874,8 @@ public class ContentsWebAPI implements ViewTool {
 		List<Map> l = new ArrayList<Map>();
 		//LuceneHits hits = new LuceneHits();
 		List <ContentletSearch> hits = new ArrayList<ContentletSearch>();
-		
-	
+
+
 		int offset = 0;
 
 		try {
@@ -887,7 +887,7 @@ public class ContentsWebAPI implements ViewTool {
 		} catch (Exception e) {
 			return l;
 		}
-		
+
 		if(UtilMethods.isSet(sortBy) && sortBy.equalsIgnoreCase("random")){
 			sortBy="";
 			if(limit>=(MAX_LIMIT-10)){
@@ -895,7 +895,7 @@ public class ContentsWebAPI implements ViewTool {
 			}else{
 				limit = MAX_LIMIT;
 			}
-			
+
 		}
 
 
@@ -908,7 +908,7 @@ public class ContentsWebAPI implements ViewTool {
 		 */
 
 		for (ContentletSearch conwrap: hits) {
-	
+
 
 
 				Map<String, Object> hm = new HashMap<String, Object>();
@@ -936,7 +936,7 @@ public class ContentsWebAPI implements ViewTool {
 
 		for(HashMap content: contents) {
 			String inode = (String) content.get("inode");
-			
+
 			Contentlet contentlet = new Contentlet();
 			try{
 				contentlet = conAPI.find(inode, user, true);
@@ -978,7 +978,7 @@ public class ContentsWebAPI implements ViewTool {
 		try
 		{
 			int i = 0;
-			try 
+			try
 			{
 				i = Integer.parseInt(limit);
 			}
@@ -988,9 +988,9 @@ public class ContentsWebAPI implements ViewTool {
 				i = list.size();
 			}
 
-			if(!list.isEmpty()) 
+			if(!list.isEmpty())
 			{
-				Collections.shuffle(list); 
+				Collections.shuffle(list);
 				return (list.size() > i ? list.subList(0,i):list);
 			}
 			else
@@ -1037,23 +1037,24 @@ public class ContentsWebAPI implements ViewTool {
 
 		List<Map> l = new ArrayList<Map>();
 		SearchHits hits = null;
+		List<Contentlet> c = new ArrayList<Contentlet>();
 
 		try {
-		    APILocator.getContentletAPI().search(query, limit, -1, sortBy, user, true);
-			
+		    c = APILocator.getContentletAPI().search(query, limit, -1, sortBy, user, true);
+
 		} catch (Exception ex) {
 			Logger.error(this.getClass(), "indexSearch: Error Searching Contentlets - lucene query: " + query, ex);
 		}
 
-		for (int i = minIndex; i < hits.getTotalHits(); i++) {
+		for (int i = minIndex; i < c.size(); i++) {
 			if(i==maxIndex){
 				break;
 			}
 			try{
 
 				Map<String, Object> hm = new HashMap<String, Object>();
-				hm.put("inode", hits.getAt(i).field("inode").value());
-				hm.put("identifier", hits.getAt(i).field("identifier").value());
+				hm.put("inode", c.get(i).getInode());
+				hm.put("identifier", c.get(i).getIdentifier());
 				l.add(hm);
 
 			}
@@ -1061,7 +1062,7 @@ public class ContentsWebAPI implements ViewTool {
 		}
 
 		retMap.put("_inodeList", l);
-		retMap.put("_total", String.valueOf(hits.getTotalHits()));
+		retMap.put("_total", String.valueOf(c.size()));
 
 		return retMap;
 	}
@@ -1078,15 +1079,15 @@ public class ContentsWebAPI implements ViewTool {
 
 
 	/**
-	 * This method return if a identifier or inode is from a 
+	 * This method return if a identifier or inode is from a
 	 * contentlet object. is use in the permalink macro
 	 * @param inode
 	 * @return boolean
 	 * @author Oswaldo Gallango
 	 * @version 1.5
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws NumberFormatException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws NumberFormatException
 	 * @since 1.5
 	 */
 	public boolean isContentletIdentifierOrInode(String id) throws NumberFormatException{
@@ -1110,7 +1111,7 @@ public class ContentsWebAPI implements ViewTool {
 				contentlet = conAPI.findContentletByIdentifier(id, false, langAPI.getDefaultLanguage().getId(), user, true);
 			} catch (Exception e) {
 				Logger.debug(this, "Unable to find contentlet by identifier", e);
-			} 
+			}
 			if(contentlet != null && InodeUtils.isSet(contentlet.getInode())){
 				return true;
 			}else{
@@ -1119,11 +1120,11 @@ public class ContentsWebAPI implements ViewTool {
 		}
 	}
 	/**
-	 * This methods matches the browsers URL to a contentlet field and 
+	 * This methods matches the browsers URL to a contentlet field and
 	 * returns the contentlet with the closest match.  For example, let's say the
 	 * user is viewing a page called /departments/accounting
 	 * and there is a structure wi
-	 * 
+	 *
 	 * @param request
 	 *            The HTTPServletRequest, from velocity: $request
 	 * @param structureName
@@ -1156,17 +1157,17 @@ public class ContentsWebAPI implements ViewTool {
 
 			//DOTCMS-1992 Match the exact url without the trailing / like /departments/sciences
 			al.add(sb.toString()+ "^" + boost);
-			
+
 			//DOTCMS-1992 Match the exact url with the trailing / like /departments/sciences/
 			al.add(sb.toString()+ "/^" + boost);
-			
+
 			//DOTCMS-1992 Also added term boosting to the query to be able to have a more exact match
 			//Let say you have a structure with a field url like /departments and other with /departments/hispanic
 			//Without the boost logic hitting a url like /departments/hispanic/index.dot could be matching the structure with
 			//url field like /departments when it's more accurate to return the content with /departments/hispanic value on the
 			//matching field
-			
-			
+
+
 			boost++;
 
 		}
@@ -1180,8 +1181,8 @@ public class ContentsWebAPI implements ViewTool {
             Logger.error(this.getClass(), "getContentletByUrl unable to find structure " +structureName + "." +fieldName );
             return null;
         }
-		
-		
+
+
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
 		Field field = null;
 		for (Field f : fields) {
@@ -1197,8 +1198,8 @@ public class ContentsWebAPI implements ViewTool {
             Logger.error(this.getClass(), "getContentletByUrl unable to find field " +structureName + "." +fieldName );
             return null;
         }
-		
-		
+
+
 		StringBuffer luceneQuery = new StringBuffer();
 		luceneQuery.append(" +structureName:");
 		luceneQuery.append(structure.getVelocityVarName());
@@ -1234,31 +1235,31 @@ public class ContentsWebAPI implements ViewTool {
 		}
 
 	}
-	
+
 	//Permission related methods
-	
+
 	/**
 	 * This method checks if the logged in user (frontend) has the required permission over
 	 * the passed contentlet id
-	 * @deprecated 
+	 * @deprecated
 	 */
 	public boolean doesUserHasPermission (long contentInode, int permission) throws DotDataException {
 		return doesUserHasPermission(String.valueOf(contentInode), permission, user, true);
 	}
-	
 
-	
+
+
 	/**
 	 * This method checks if the logged in user (frontend) has the required permission over
-	 * the passed contentlet id 
+	 * the passed contentlet id
 	 */
 	public boolean doesUserHasPermission (String contentInode, int permission) throws DotDataException {
 		return doesUserHasPermission(contentInode, permission, user, true);
 	}
-	
+
 	/**
 	 * This method checks if the logged in user (frontend) has the required permission over
-	 * the passed contentlet id 
+	 * the passed contentlet id
 	 * @deprecated
 	 */
 	public boolean doesUserHasPermission (long contentInode, int permission, boolean editMode) throws DotDataException {
@@ -1266,32 +1267,32 @@ public class ContentsWebAPI implements ViewTool {
 			return doesUserHasPermission(String.valueOf(contentInode), permission, backuser, true);
 		return doesUserHasPermission(String.valueOf(contentInode), permission, user, true);
 	}
-	
 
-	
+
+
 	/**
 	 * This method checks if the logged in user (frontend) has the required permission over
-	 * the passed contentlet id 
+	 * the passed contentlet id
 	 */
 	public boolean doesUserHasPermission (String contentInode, int permission, boolean editMode) throws DotDataException {
 		if(editMode)
 			return doesUserHasPermission(contentInode, permission, backuser, true);
 		return doesUserHasPermission(contentInode, permission, user, true);
 	}
-	
+
 	/**
 	 * This method checks if the logged in user (frontend) has the required permission over
-	 * the passed contentlet id 
-	 * @deprecated 
+	 * the passed contentlet id
+	 * @deprecated
 	 */
 	public boolean doesUserHasPermission (long contentInode, int permission, User user, boolean respectFrontendRoles) throws DotDataException {
 		return doesUserHasPermission (String.valueOf(contentInode),permission, user, respectFrontendRoles);
-	}	
-	
-	
+	}
+
+
 	/**
 	 * This method checks if the logged in user (frontend) has the required permission over
-	 * the passed contentlet id 
+	 * the passed contentlet id
 	 */
 	public boolean doesUserHasPermission (String contentInode, int permission, User user, boolean respectFrontendRoles) throws DotDataException {
 		try {
@@ -1303,7 +1304,7 @@ public class ContentsWebAPI implements ViewTool {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * This method return the possible values in a field of all the contents of the specified structure
 	 * @param structureName type of structure of the contentlets
@@ -1313,29 +1314,29 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public List<String> findFieldValues(String structureName, String fieldName, User user) throws DotDataException {
 		List<String> result = new ArrayList<String>();
-		
+
 		try {
 			@SuppressWarnings("deprecation")
 			Structure structure = StructureCache.getStructureByName(structureName);
 			if ((structure == null) || !InodeUtils.isSet(structure.getInode()))
 				return result;
-			
+
 			Field field = FieldFactory.getFieldByName(structure.getInode(), fieldName);
 			if ((field == null) || !InodeUtils.isSet(field.getInode()))
 				return result;
-			
+
 			result = conAPI.findFieldValues(structure.getInode(), field, user, true);
 		} catch (Exception e) {
 			Logger.debug(this, e.toString());
 			HibernateUtil.closeSession();
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Return the URL Map for the specified content if the structure associated to the content has the URL Map Pattern set.
-	 * 
+	 *
 	 * @param contentlet
 	 * @return String with the URL Map. Null if the structure of the content doesn't have the URL Map Pattern set.
 	 */
@@ -1346,13 +1347,13 @@ public class ContentsWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.warn(ContentsWebAPI.class, e.toString());
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Return the URL Map for the specified content identifier if the structure associated to the content has the URL Map Pattern set.
-	 * 
+	 *
 	 * @param identifier
 	 * @return String with the URL Map. Null if the structure of the content doesn't have the URL Map Pattern set.
 	 */
@@ -1364,13 +1365,13 @@ public class ContentsWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.warn(ContentsWebAPI.class, e.toString());
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Return the URL Map for the specified content if the structure associated to the content has the URL Map Pattern set.
-	 * 
+	 *
 	 * @param contentlet
 	 * @return String with the URL Map. Null if the structure of the content doesn't have the URL Map Pattern set.
 	 */
@@ -1381,7 +1382,7 @@ public class ContentsWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.warn(ContentsWebAPI.class, e.toString());
 		}
-		
+
 		return result;
 	}
 }
