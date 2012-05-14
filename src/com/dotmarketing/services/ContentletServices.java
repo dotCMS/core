@@ -443,6 +443,8 @@ public class ContentletServices {
 			sb.append("#set( $isWidget = \"" + true + "\")\n");
 			if(structure.getName().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)){
 				sb.append("#set( $isFormWidget = \"" + true + "\")\n");
+			}else{
+				sb.append("#set( $isFormWidget = \"" + false + "\")\n");
 			}
 		}else{
 			sb.append("#set( $isWidget = \"" + false + "\")\n");
