@@ -578,7 +578,7 @@
 	<!-- Main test target, this tasks will run all the unit tests of the application -->
 	<target name="test-dotcms" depends="deploy-tests, drop-create-db-test">
 		<runservertests
-		    testurl="http://localhost:${server.port}"
+		    testurl="${server.test.url}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
 		    testtarget="test-all-junits"/>
@@ -656,6 +656,7 @@
 		<copy file="${src.tests.dir}/ROOT.xml" todir="tomcat/conf/Catalina/localhost"/>
 		<replace file="tomcat/conf/server.xml" token="{port}" value="${server.port}"/>
 		<replace file="tomcat/conf/Catalina/localhost/ROOT.xml">
+			<replacefilter token="{driver}" value="${db.driver}"/>
 			<replacefilter token="{url}" value="${db.url}"/>
 			<replacefilter token="{username}" value="${db.username}"/>
 			<replacefilter token="{password}" value="${db.password}"/>
