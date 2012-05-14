@@ -14,18 +14,15 @@ import java.util.List;
 /**
  * Created by Jonathan Gamba.
  * Date: 3/8/12
- * Time: 11:39 AM
  * <p/>
  * Class that will listen every event for the jUnit tests, with this class we can handle the way the output will be display it
  */
-public class TestRingingListener extends RunListener {
-
-    private static final Log Logger = LogFactory.getLog( TestRingingListener.class );
+public class TestTextRingingListener extends RunListener {
 
     private int statusCode = HttpServletResponse.SC_OK;
     private StringBuffer globalBuffer;
 
-    public TestRingingListener () {
+    public TestTextRingingListener () {
         this.globalBuffer = new StringBuffer();
     }
 
