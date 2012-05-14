@@ -19,8 +19,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.IdentifierFactory;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -28,6 +26,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
@@ -43,6 +42,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
 
 public class DotResourceLoader extends ResourceLoader {
@@ -65,12 +65,12 @@ public class DotResourceLoader extends ResourceLoader {
     private String VELOCITY_HOST_EXTENSION= null;
     private ContentletAPI conAPI = APILocator.getContentletAPI();
     private DotResourceCache resourceCache = CacheLocator.getVeloctyResourceCache();
-    
+
     private static String velocityCanoncalPath;
     private static String assetCanoncalPath;
     private static String assetRealCanoncalPath;
     private static DotResourceLoader instance;
-    
+
     /* (non-Javadoc)
      * @see org.apache.velocity.runtime.resource.loader.FileResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
      */
@@ -86,14 +86,14 @@ public class DotResourceLoader extends ResourceLoader {
         VELOCITY_STRUCTURE_EXTENSION = Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION");
         VELOCITY_BANNER_EXTENSION = Config.getStringProperty("VELOCITY_BANNER_EXTENSION");
         VELOCITY_HOST_EXTENSION=Config.getStringProperty("VELOCITY_HOST_EXTENSION");
-        
+
         String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
         if (velocityRootPath.startsWith("/WEB-INF")) {
             velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
         }
-        
+
         VELOCITY_ROOT = velocityRootPath + File.separator;
-        
+
         File f = new File(VELOCITY_ROOT);
         try {
             if(f.exists()){
@@ -102,7 +102,7 @@ public class DotResourceLoader extends ResourceLoader {
         } catch (IOException e) {
         	Logger.fatal(this,e.getMessage(),e);
         }
-        
+
         try {
             if(UtilMethods.isSet(Config.getStringProperty("ASSET_REAL_PATH"))){
                 f = new File(Config.getStringProperty("ASSET_REAL_PATH"));
@@ -113,7 +113,7 @@ public class DotResourceLoader extends ResourceLoader {
         } catch (IOException e) {
         	Logger.fatal(this,e.getMessage(),e);
         }
-        
+
         try {
             if(UtilMethods.isSet(Config.getStringProperty("ASSET_PATH"))){
                 f = new File(Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")));
@@ -126,7 +126,7 @@ public class DotResourceLoader extends ResourceLoader {
         }
         instance = this;
     }
-    
+
     public DotResourceLoader() {
         super();
     }
@@ -147,26 +147,26 @@ public class DotResourceLoader extends ResourceLoader {
         }
         long timer = System.currentTimeMillis();
         InputStream result = null;
-        
+
         synchronized (arg0.intern()) {
 	        try {
 	            if(!UtilMethods.isSet(arg0)) {
 	               throw new ResourceNotFoundException("cannot find resource");
 	            }
-	            
+
 	            log.debug("DotResourceLoader:\targ0:" + arg0);
-	       
+
 	            if (isACMSVelocityFile(arg0)) {
 	            	result = new BufferedInputStream(generateStream(arg0));
 	            }else{
 	            	boolean serveFile = false;
 	            	log.debug("DotResourceLoader:\targ0:" + arg0);
-	            	
+
 	            	java.io.File f=null;
 	            	String lookingFor="";
 	            	if (arg0.startsWith("dynamic")) {
 	            		lookingFor =ConfigUtils.getDynamicContentPath() + File.separator +  "velocity" + File.separator+arg0;
-	            		
+
 	            	} else {
 	            		lookingFor = VELOCITY_ROOT + arg0;
 	            	}
@@ -179,7 +179,7 @@ public class DotResourceLoader extends ResourceLoader {
 	                }
 	            	String canon = f.getCanonicalPath();
 	            	File dynamicContent=new File(ConfigUtils.getDynamicContentPath());
-	                
+
 	                if(assetRealCanoncalPath != null && canon.startsWith(assetRealCanoncalPath)){
 	                    serveFile = true;
 	                }
@@ -193,7 +193,7 @@ public class DotResourceLoader extends ResourceLoader {
 	                	serveFile =true;
 	                }
 	                if(!serveFile){
-	                    Logger.warn(this, "POSSIBLE HACK ATTACK DotResourceLoader: " + lookingFor);                    
+	                    Logger.warn(this, "POSSIBLE HACK ATTACK DotResourceLoader: " + lookingFor);
 	                    throw new ResourceNotFoundException("cannot find resource");
 	                }
 	                result = new BufferedInputStream(new FileInputStream(f));
@@ -217,11 +217,11 @@ public class DotResourceLoader extends ResourceLoader {
 				Logger.error(DotResourceLoader.class,e.getMessage(),e);
 			}
         }
-        
+
         log.trace(String.format("=>>>>>>>>>>>> time consumed for resource %s: %d ms\n", arg0, System.currentTimeMillis() - timer));
         return result;
     }
-    
+
     private InputStream generateStream(String arg0) throws Exception {
     	User user=APILocator.getUserAPI().getSystemUser();
 
@@ -245,7 +245,7 @@ public class DotResourceLoader extends ResourceLoader {
 
         InputStream result = new ByteArrayInputStream("".getBytes());
         if (arg0.endsWith(VELOCITY_CONTAINER_EXTENSION)) {
-            
+
             try {
                 //Integer.parseInt(x);
                 Identifier identifier = APILocator.getIdentifierAPI().find(x);
@@ -284,17 +284,30 @@ public class DotResourceLoader extends ResourceLoader {
             	Identifier identifier = APILocator.getIdentifierAPI().find(x);
                 Contentlet contentlet = null;
                 if(CacheLocator.getVeloctyResourceCache().isMiss(arg0)){
-            		throw new ResourceNotFoundException("Contentlet is a miss in the cache");
+                	if(LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
+                		 LanguageAPI langAPI = APILocator.getLanguageAPI();
+                		 language = Long.toString(langAPI.getDefaultLanguage().getId());
+                	} else {
+                		throw new ResourceNotFoundException("Contentlet is a miss in the cache");
+                	}
             	}
-                if (preview) {	
-	                contentlet = conAPI.findContentletByIdentifier(identifier.getInode(), false,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);               	
-                } else {
-                    contentlet = conAPI.findContentletByIdentifier(identifier.getInode(), true,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
+                try {
+	                contentlet = conAPI.findContentletByIdentifier(identifier.getInode(), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
+                } catch (DotContentletStateException e) {
+                	if(LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
+                		LanguageAPI langAPI = APILocator.getLanguageAPI();
+           		 		language = Long.toString(langAPI.getDefaultLanguage().getId());
+           		 		contentlet = conAPI.findContentletByIdentifier(identifier.getInode(), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
+                	} else {
+                		throw e;
+                	}
                 }
                 if(contentlet == null || !InodeUtils.isSet(contentlet.getInode())){
                 	CacheLocator.getVeloctyResourceCache().addMiss(arg0);
                 	throw new ResourceNotFoundException("Contentlet is a miss in the cache");
                 }
+
+
 
                 log.debug("DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
 
@@ -325,7 +338,7 @@ public class DotResourceLoader extends ResourceLoader {
         		//fieldInode = Integer.parseInt(fieldID);
         		result = FieldServices.buildVelocity(fieldID, conInode, preview);
         	}
-        	
+
         }else if (arg0.endsWith(VELOCITY_CONTENT_MAP_EXTENSION)) {
             try {
 	            String language = "";
@@ -336,7 +349,7 @@ public class DotResourceLoader extends ResourceLoader {
 	                x = x.substring(0, x.indexOf("_"));
 	                log.debug("x=" + x);
 	            }
-	
+
 	            Contentlet contentlet = null;
 	            if(CacheLocator.getVeloctyResourceCache().isMiss(arg0)){
             		throw new ResourceNotFoundException("Contentlet is a miss in the cache");
@@ -350,9 +363,9 @@ public class DotResourceLoader extends ResourceLoader {
                 	CacheLocator.getVeloctyResourceCache().addMiss(arg0);
                 	throw new ResourceNotFoundException("Contentlet is a miss in the cache");
                 }
-	
+
 	            log.debug("DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
-	
+
 	            result = ContentletMapServices.buildVelocity(contentlet, preview);
             } catch (DotContentletStateException e) {
             	CacheLocator.getVeloctyResourceCache().addMiss(arg0);
@@ -388,17 +401,17 @@ public class DotResourceLoader extends ResourceLoader {
                 throw new ResourceNotFoundException("Invalid resource path provided = " + arg0);
             }
         }else if (arg0.endsWith(VELOCITY_HOST_EXTENSION)) {
-            
+
                 //Integer.parseInt(x)
-            
+
                 Host host= APILocator.getHostAPI().find(x, APILocator.getUserAPI().getSystemUser(), false);
-          
+
                  if (!InodeUtils.isSet(host.getInode()))
                 log.debug("host not found");
                  else
                 	result = HostServices.buildStream(host, preview);
 
-            
+
         }else if (arg0.endsWith(VELOCITY_TEMPLATE_EXTENSION)) {
             try {
                 //Integer.parseInt(x);
@@ -419,13 +432,13 @@ public class DotResourceLoader extends ResourceLoader {
                 log.warn("getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
                 throw new ResourceNotFoundException("Invalid resource path provided = " + arg0);
             }
-        }else if (arg0.endsWith(VELOCITY_STRUCTURE_EXTENSION)) 
+        }else if (arg0.endsWith(VELOCITY_STRUCTURE_EXTENSION))
         {
             try
             {
                 //Integer.parseInt(x);
-                Structure  structure = (Structure) InodeFactory.getInode(x, Structure.class);               
-                result = StructureServices.buildVelocity(structure);              
+                Structure  structure = (Structure) InodeFactory.getInode(x, Structure.class);
+                result = StructureServices.buildVelocity(structure);
             }
             catch(NumberFormatException e)
             {
@@ -470,5 +483,5 @@ public class DotResourceLoader extends ResourceLoader {
     public static DotResourceLoader getInstance(){
     	return instance;
     }
-    
+
 }
