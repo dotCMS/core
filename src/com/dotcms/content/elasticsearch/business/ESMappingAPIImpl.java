@@ -37,6 +37,7 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -251,10 +252,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conFolder", con.getFolder());
             m.put("parentPath", ident.getParentPath());
             m.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
-            String uri = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
-            if(uri != null){
-            	m.put("uri",uri );	
+            String uri = null;
+            try{
+            	uri = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
+                if(uri != null){
+                	m.put("uri",uri );	
+                }
             }
+            catch(Exception e){
+            	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
+            	throw new DotRuntimeException(uri, e);
+            }
+
 
             Map<String,Object> mlowered=new HashMap<String,Object>();
             for(Entry<String,String> entry : m.entrySet()){
