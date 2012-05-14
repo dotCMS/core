@@ -251,6 +251,7 @@
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
 		<copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+		<antcall target="deploy-plugins" />
 	</target>
 
 	<target name="deploy-anttasks" depends="jar-anttasks" description="builds and deploys core and plugins">
@@ -258,7 +259,6 @@
 			<fileset dir="${deploy.dir}" includes="dotcms_ant.jar" />
 		</delete>
 		<copy file="${build.lib}/dotcms_ant.jar" tofile="${deploy.dir}/dotcms_ant.jar" />
-
 	</target>
 
 	<target name="rep">
