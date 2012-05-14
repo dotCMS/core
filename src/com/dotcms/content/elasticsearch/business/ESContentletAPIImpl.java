@@ -3640,15 +3640,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
                 String urlMapField;
                 String urlMapFieldValue;
-                result = structure.getUrlMapPattern();
+                String testResult = structure.getUrlMapPattern();
                 for (RegExMatch match: matches) {
                     urlMapField = match.getMatch();
                     urlMapFieldValue = contentlet.getStringProperty(urlMapField.substring(1, (urlMapField.length() - 1)));
                     urlMapField = urlMapField.replaceFirst("\\{", "\\\\{");
                     urlMapField = urlMapField.replaceFirst("\\}", "\\\\}");
-                    result = result.replaceAll(urlMapField, urlMapFieldValue);
+                    if(urlMapFieldValue !=null ){
+                    	result = testResult.replaceAll(urlMapField, urlMapFieldValue);
+                    }
+                    
+                    
                 }
-            }else  if (UtilMethods.isSet(structure.getDetailPage())) {
+            }
+            if (result == null && UtilMethods.isSet(structure.getDetailPage())) {
             	HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
             	if(p != null && UtilMethods.isSet(p.getIdentifier())){
             		result = p.getURI() + "?id=" + contentlet.getInode();
