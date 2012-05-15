@@ -59,6 +59,7 @@ public class TemplateAjax {
 		if(count<=0)count=10;
 
 		List<Template> fullListTemplates = new ArrayList<Template>();
+		List<Template> totalTemplates = new ArrayList<Template>();
 		Host host = hostAPI.find(query.get("hostId"), user, respectFrontendRoles);
 
 		try{
@@ -102,15 +103,15 @@ public class TemplateAjax {
 			}
 		}
 
-
+		totalTemplates = templateAPI.findTemplatesAssignedTo(host);
 //		if(start >= list.size()) start =  list.size() - 1;
 //		if(start < 0)  start  = 0;
 //		if(start + count >= list.size()) count = list.size() - start;
 //		List<Map<String, Object>> templates = list.subList(start, start + count);
 
-		results.put("totalResults", list.size());
+		results.put("totalResults", totalTemplates.size());
 		if(UtilMethods.isSet(query.get("hostId"))) {
-			results.put("totalResults", list.size());
+			results.put("totalResults", totalTemplates.size());
 		}
 		results.put("list", list);
 
