@@ -2,8 +2,6 @@ package com.dotmarketing.portlets.templates.design.servlets;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,11 +10,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.design.util.PreviewTemplateUtil;
@@ -52,27 +48,12 @@ public class PreviewDesignTemplateServlet extends HttpServlet {
 			//replace the text
 			for(Container c : containers){
 				String identifier = c.getIdentifier();
-				try {
-					Contentlet mockContentlet = APILocator.getContentletAPI().getPreviewContentlet(c.getStructureInode());
-					// if the container isn't into the header or into the footer than we insert the mock content...
-					if(c.getMaxContentlets()>0)
-//					if(containers.indexOf(c)>0 && (containers.size()-containers.indexOf(c)>1))
-						endBody = new StringBuffer(endBody.toString().replace("#parseContainer('"+identifier+"')", PreviewTemplateUtil.getMockBodyContent()));
-					else //...else the container's code
-						endBody = new StringBuffer(endBody.toString().replace("#parseContainer('"+identifier+"')", c.getCode()));
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}				
+				// if the container isn't into the header or into the footer than we insert the mock content...
+				if(c.getMaxContentlets()>0)
+					endBody = new StringBuffer(endBody.toString().replace("#parseContainer('"+identifier+"')", PreviewTemplateUtil.getMockBodyContent()));
+				else //...else the container's code
+					endBody = new StringBuffer(endBody.toString().replace("#parseContainer('"+identifier+"')", c.getCode()));
 			}
-			
-			
 			PrintWriter out = response.getWriter();
 			out.print(endBody);			
 		} catch (DotDataException e) {
