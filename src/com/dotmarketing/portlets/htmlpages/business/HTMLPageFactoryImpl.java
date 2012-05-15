@@ -24,7 +24,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
@@ -40,7 +39,9 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 	static HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
 
 	public void save(HTMLPage htmlPage) throws DotDataException, DotStateException, DotSecurityException {
-		HibernateUtil.save(htmlPage);
+	    CacheLocator.getIdentifierCache().removeFromCacheByVersionable(htmlPage);
+		
+	    HibernateUtil.save(htmlPage);
 
 		htmlPageCache.remove(htmlPage);
 
