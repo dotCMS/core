@@ -84,25 +84,6 @@ public class StructureFactoryTest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link StructureFactory#getStructureByInodeNoLock(String)}
-     *
-     * @see StructureFactory
-     */
-    @Test
-    public void getStructureByInodeNoLock () {
-
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Search the structure
-        Structure foundStructure = StructureFactory.getStructureByInodeNoLock( structure.getInode() );
-
-        //Validations
-        assertNotNull( foundStructure );
-        assertEquals( foundStructure.getInode(), structure.getInode() );
-    }
-
-    /**
      * Testing {@link StructureFactory#getDefaultStructure()}
      *
      * @see StructureFactory
