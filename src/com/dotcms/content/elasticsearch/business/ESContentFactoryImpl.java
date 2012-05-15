@@ -708,23 +708,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		throw new DotDataException("findAllCurrent() will blow your stack off, use findAllCurrent(offset, limit)");
 	}
 
-	@Override
-	protected List<Contentlet> findAllCurrent(int offset, int limit) throws ElasticSearchException {
-		QueryBuilder builder = QueryBuilders.matchAllQuery();
+    @Override
+    protected List<Contentlet> findAllCurrent ( int offset, int limit ) throws ElasticSearchException {
 
-		SearchResponse response = client.getClient().prepareSearch().setQuery(builder).setSize(limit).setFrom(offset).execute().actionGet();
-		SearchHits hits = response.hits();
-		List<Contentlet> cons = new ArrayList<Contentlet>();
-		for (int i = 0; i < hits.getTotalHits(); i++) {
-			try {
-				cons.add(find(hits.getAt(i).field("inode").value().toString()));
-			} catch (Exception e) {
-				throw new ElasticSearchException(e.getMessage(),e);
-			}
+        QueryBuilder builder = QueryBuilders.matchAllQuery();
 
-		}
-		return cons;
-	}
+        SearchResponse response = client.getClient().prepareSearch().setQuery( builder ).setSize( limit ).setFrom( offset ).execute().actionGet();
+        SearchHits hits = response.hits();
+        List<Contentlet> cons = new ArrayList<Contentlet>();
+
+        for ( SearchHit hit : hits ) {
+            try {
+                cons.add( find( hit.getSource().get( "inode" ).toString() ) );
+            } catch ( Exception e ) {
+                throw new ElasticSearchException( e.getMessage(), e );
+            }
+        }
+
+        return cons;
+    }
 
 	@Override
 	protected List<Contentlet> findAllUserVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
