@@ -256,6 +256,9 @@
 			<property column="notes" name="notes" type="string" />
 			<property column="identifier" length="36" name="identifier" type="string" />
 			<property column="structure_inode" length="36" name="structureInode" type="string" />
+			<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
+			<property column="for_metadata" name="forMetadata" type="boolean" />
+			<!-- *********************** END GRAZIANO issue-12-dnd-template   -->
 		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.folders.model.Folder" table="folder">
