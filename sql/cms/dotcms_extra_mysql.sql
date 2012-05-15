@@ -574,7 +574,7 @@ create table indicies (
 
 -- ****** Log Console Table *******
   CREATE TABLE log_mapper (
-    enabled   	 bigint(1,0) not null,
+    enabled   	 varchar(1) not null,
     log_name 	 varchar(30) not null,
     description  varchar(50) not null,
     primary key (log_name)
