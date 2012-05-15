@@ -562,19 +562,23 @@
 	<!-- BEGIN SERVLETS -->
  <!-- END SERVLETS -->
     <!-- TEST FRAMEWORK SERVLETS
-
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
        </servlet>
-
        <servlet-mapping>
          <servlet-name>ServletTestRunner</servlet-name>
          <url-pattern>/servlet/test</url-pattern>
       </servlet-mapping>
-
 	END OF TEST FRAMEWORK SERVLETS -->
-
+	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
+    <servlet>
+    	<description>Provides the drawed template preview functionality</description>
+    	<display-name>PreviewDesignTemplateServlet</display-name>
+    	<servlet-name>PreviewDesignTemplateServlet</servlet-name>
+    	<servlet-class>com.dotmarketing.portlets.templates.design.servlets.PreviewDesignTemplateServlet</servlet-class>
+    </servlet>
+    <!-- END GRAZIANO issue-12-dnd-template -->
 	<!-- DOTCMS SERVLET-MAPPINGS -->
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
@@ -827,6 +831,13 @@
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<url-pattern>/JSONTags/*</url-pattern>
 	</servlet-mapping>
+	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
+	<servlet-mapping>
+		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
+		<url-pattern>/servlets/template/design/preview</url-pattern>
+	</servlet-mapping>
+	<!-- END GRAZIANO issue-12-dnd-template -->	
+	
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLET-MAPPINGS -->
