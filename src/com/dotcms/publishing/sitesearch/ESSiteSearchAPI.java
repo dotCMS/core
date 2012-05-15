@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -22,23 +24,23 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.publishing.sitesearch.job.SiteSearchJobProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
-import com.dotmarketing.quartz.SimpleScheduledTask;
+import com.dotmarketing.quartz.TaskRuntimeValues;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.sitesearch.job.SiteSearchJobProxy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.ibm.icu.text.SimpleDateFormat;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
@@ -63,8 +65,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		return indices;
 	}
 	@Override
-	public DotSearchResults search(String query, String sort, int start, int rows) throws ElasticSearchException{
-		DotSearchResults results = new DotSearchResults();
+	public SiteSearchResults search(String query, String sort, int start, int rows) throws ElasticSearchException{
+		SiteSearchResults results = new SiteSearchResults();
 		if(query ==null){
 			results.setError("null query");
 			return results;
@@ -90,8 +92,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	}
 	
 	@Override
-	public DotSearchResults search(String indexName, String query, String sort, int offset, int limit) {
-		DotSearchResults results = new DotSearchResults();
+	public SiteSearchResults search(String indexName, String query, String sort, int offset, int limit) {
+		SiteSearchResults results = new SiteSearchResults();
 		if(indexName ==null){
 			return results;
 		}
@@ -265,31 +267,14 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		name.replace('"', '\'');
 		name.replace("'", "");
 		String cronString = config.getCronExpression();
-		boolean runNow = config.runNow();
+
 		
 
-	    //Create new task with updated cron expression and properties
-		if(runNow){
-			if (!QuartzUtils.isJobSequentiallyScheduled("site-search-execute-once", "site-search-execute-once-group")) {
-				config.put("squentiallyScheduled", true);
-				SimpleScheduledTask scheduledTask = new SimpleScheduledTask("site-search-execute-once", ES_SITE_SEARCH_NAME, "Site Search ",SiteSearchJobProxy.class.getCanonicalName(), false,
-						"site-search-execute-once-trigger", "site-search-execute-once-trigger-group", new Date(), null,
-						SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT, 5, true, config, 0, 0);
-				try{
-				   //QuartzUtils.scheduleTask(scheduledTask);
-				}catch(Exception e){
-					QuartzUtils.removeJob("site-search-execute-once", ES_SITE_SEARCH_NAME);	
-				}
-			}else{
 
-			}
-		}
-		else{
-			ScheduledTask	task = new CronScheduledTask(name, ES_SITE_SEARCH_NAME,"Site Search ", SiteSearchJobProxy.class.getCanonicalName(),new Date(),null, 1,config,cronString);
-			task.setSequentialScheduled(true);
-			
-			QuartzUtils.scheduleTask(task);
-		}
+		ScheduledTask	task = new CronScheduledTask(name, ES_SITE_SEARCH_NAME,"Site Search ", SiteSearchJobProxy.class.getCanonicalName(),new Date(),null, 1,config,cronString);
+		task.setSequentialScheduled(true);
+		
+		QuartzUtils.scheduleTask(task);
 		
 	}
 	
@@ -339,20 +324,33 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
     }
     
+    
+    @Override
+    public SiteSearchResult getFromIndex(String index, String id){
+
+
+
+	   GetResponse response = new ESClient().getClient().prepareGet(index, ES_SITE_SEARCH_MAPPING, id)
+		        .execute()
+		        .actionGet();
+	   	if(response.exists()){
+			SiteSearchResult ssr = new SiteSearchResult(response.getSource());
+			ssr.setScore(1);
+			return ssr;
+	   	}
+	   	else {
+	   		return null;
+	   	}
+
+    }
+    
+    
     @Override
     public void putToIndex(String idx, List<SiteSearchResult> res){
-	   try{
-		   /*
-		   Client client=new ESClient().getClient();
-		   String json = new ESMappingAPIImpl().toJsonString(res.getMap());
-		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", res.getId())
-			        .setSource(json)
-			        .execute()
-			        .actionGet();
-		   */
-		} catch (Exception e) {
-		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
-		}
+	 for(SiteSearchResult r : res){
+		 putToIndex(idx, r);
+	 }
+    	
     }
     
     @Override
@@ -378,8 +376,44 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		
 	}
     
+	@Override
+	public SiteSearchPublishStatus getTaskProgress(String taskName) throws SchedulerException{
+		
+
+		TaskRuntimeValues trv = QuartzUtils.getTaskRuntimeValues(taskName, ES_SITE_SEARCH_NAME);
+		if(trv==null || !(trv instanceof SiteSearchPublishStatus) ){
+			QuartzUtils.setTaskRuntimeValues(taskName, ES_SITE_SEARCH_NAME, new SiteSearchPublishStatus());
+		}
+		return (SiteSearchPublishStatus) QuartzUtils.getTaskRuntimeValues(taskName, ES_SITE_SEARCH_NAME);
+			
+			
+		
+		
+		
+		
+	}
+	@Override
+	public boolean isTaskRunning(String jobName) throws SchedulerException{
+		
+		return QuartzUtils.isJobRunning(jobName, ES_SITE_SEARCH_NAME);
+		
+	}
 	
-	
+	@Override
+	public void executeTaskNow(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException{
+
+
+		
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.SECOND, 10);
+		
+		String cron = new SimpleDateFormat("ss mm H d M ? yyyy").format(cal.getTime());
+		
+		config.setCronExpression(cron);
+
+
+		scheduleTask(config);
+	}
 	
 	
 	

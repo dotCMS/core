@@ -65,6 +65,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -732,9 +733,11 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			Logger.error(this, e.getMessage(), e);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
+		}finally{
+			context = null;
+			VelocityServlet.velocityCtx.remove();
 		}
 
-		context = null;
 
 		if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
 			Logger.debug(HTMLPageAPIImpl.class, "Into the ClickstreamFilter");

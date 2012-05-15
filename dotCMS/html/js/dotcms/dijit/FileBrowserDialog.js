@@ -482,13 +482,30 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	},
 
 	/* hack for IE only */
-	_fileSubmitted: function() {
+	_fileSubmitted: function(numOfFiles,waitMsg) {
 		dojo.global.fileSubmittedWaitToSave = dojo.hitch(this, this._fileSubmittedWaitToSave);
-		setTimeout('fileSubmittedWaitToSave()', 1000);
+		
+		this.addFileDialog.hide();
+		this._hide(this.noContent);
+		this._hide(this.noResults);
+		this._show(this.loadingContentWrapper);
+		this._hide(this.tablesWrapper);
+		this._hide(this.detailsTable);
+		this._hide(this.tablesSummary);
+		this._hide(this.listTable);
+		this._hide(this.thumbnailsTable);
+		this._removeRows(this.detailsTableBody);
+		this._removeRows(this.listTableBody);
+		this._removeRows(this.thumbnailsTableBody);
+		
+		showDotCMSSystemMessage(waitMsg,true);
+		if(numOfFiles < 5)
+			setTimeout('fileSubmittedWaitToSave()', numOfFiles*2000);
+		else
+			setTimeout('fileSubmittedWaitToSave()', numOfFiles*1000);
 	},
 
 	_fileSubmittedWaitToSave: function() {
-		this.addFileDialog.hide();
 		this.addingAFile = false;
 		this._loadFolder();
 	},

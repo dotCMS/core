@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.publishing.sitesearch.SiteSearchPublishStatus"%>
+<%@page import="com.dotcms.publishing.PublishStatus"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.quartz.QuartzUtils"%>
 <%@page import="java.net.URLEncoder"%>
@@ -60,10 +62,21 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 			catch(Exception e){}
 		}%>
 		<tr style="cursor:pointer;" class="trIdxNothing">
-		    <td nowrap valign="top"><span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span></td>
-			<td nowrap valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
+		
+			 <td nowrap valign="top" align="center">
+				<%if(ssapi.isTaskRunning(task.getJobName())){ %>
+					<%SiteSearchPublishStatus ps = ssapi.getTaskProgress(task.getJobName()); %>
+
+					<div dojoType="dijit.ProgressBar" progress="<%=(ps.getCurrentProgress() + ps.getBundleErrors())%>" style="width:100px" id="<%=task.getJobName().hashCode()%> %>" maximum="<%=ps.getTotalBundleWork()%>"></div>
+
+				
+				<%} else{%>
+					<span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span>
+				<%} %>
+		   	</td>
+			<td nowrap valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
+			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>
+			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
 			
 				<%for(Host h : selectedHosts){ %>
 					<%=h.getHostname() %><br>
@@ -73,15 +86,15 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 					<%= LanguageUtil.get(pageContext, "index-all-hosts") %>
 				<%} %>
 			</td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("CRON_EXPRESSION")%></td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
+			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("CRON_EXPRESSION")%></td>
+			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
 				<%=task.getProperties().get("includeExclude")%>
 				<%if(!"all".equals(task.getProperties().get("includeExclude"))){ %>:
 					<br>
 					<%=UtilMethods.htmlLineBreak(UtilMethods.webifyString((String) task.getProperties().get("paths")))%>
 				<%} %>
 			</td>
-			<td valign="top" onclick="refreshJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"></td>
+			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"></td>
 			
 			
 			</td>
@@ -92,8 +105,22 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 	<%if(ssapi==null ||ssapi.getTasks() == null || ssapi.getTasks().size() ==0) {%>
 		<tr>
 			<td colspan="100" align="center">
-				<div style="padding:20px;">
-					<%= LanguageUtil.get(pageContext,"No-Results-Found") %>
+				<div style="padding:30px;">
+					<a href="#" onclick="showJobSchedulePane('');"><%= LanguageUtil.get(pageContext,"No-Results-Found") %></a>
+				</div>
+			</td>
+			
+		</tr>
+	<%}else{ %>
+	
+			<tr>
+			<td colspan="100" align="center">
+				<div style="padding:30px;">
+						<button dojoType="dijit.form.Button"
+							id="refreshButton" onClick="refreshJobStats()"
+							iconClass="resetIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Refresh")) %>
+						</button>
+					
 				</div>
 			</td>
 			

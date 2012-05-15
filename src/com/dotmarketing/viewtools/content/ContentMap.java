@@ -126,8 +126,8 @@ public class ContentMap {
 				//http://jira.dotmarketing.net/browse/DOTCMS-6033	
 				}else if(fieldVariableName.contains("FileURI")){
 					f = retriveField(fieldVariableName.replaceAll("FileURI", ""));
-					if(f!=null && f.getFieldType()!= null && f.getFieldType().equals(Field.FieldType.FILE.toString()) 
-							|| f.getFieldType().equals(Field.FieldType.IMAGE.toString())){
+					if(f!=null && (f.getFieldType()!= null && f.getFieldType().equals(Field.FieldType.FILE.toString()) 
+							|| f.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
 						String fid = (String)conAPI.getFieldValue(content, f);
 						if(!UtilMethods.isSet(fid)){
 							return null;
@@ -232,7 +232,7 @@ public class ContentMap {
 						return null;
 					}
 				}else{
-				     return CacheLocator.getFolderCache().getFolder(content.getFolder());
+					return APILocator.getFolderAPI().find(content.getFolder(), user, true);
 				}
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.SELECT.toString())){
 				return new SelectMap(f, content);

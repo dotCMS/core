@@ -60,12 +60,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 %>
 
-<script language="Javascript">
-	dojo.require("dijit.DropDownMenu");
-	dojo.addOnLoad (function(){
-		checkReindexation();
-	});
-</script>
+
 
 
 
@@ -123,7 +118,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					}%>
 
 
-				<tr class="<%=(active) ? "trIdxActive"  : "trIdxNothing" %>" id="<%=x%>Row">
+				<tr class="<%=(active) ? "trIdxActive"  : "trIdxNothing" %> pointer" id="<%=x%>Row" onclick="showSiteSearchPane('<%=x%>')">
 					<td  align="center" class="showPointer" >
 						<%if(active){ %>
 							<%= LanguageUtil.get(pageContext,"default") %>
@@ -175,26 +170,21 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			 		<%= LanguageUtil.get(pageContext,"Download-Index") %>
 			 	</div>
 			 	<%if(!active){%>
-			 	<div dojoType="dijit.MenuItem" onClick="doActivateIndex('<%=x %>');" class="showPointer">
-			 		<span class="publishIcon"></span>
-			 		<%= LanguageUtil.get(pageContext,"Make-Default") %>
-			 	</div>
-			 	<%}else{ %>
-			 	<div dojoType="dijit.MenuItem" onClick="doDeactivateIndex('<%=x %>');" class="showPointer">
-			 		<span class="unpublishIcon"></span>
-			 		<%= LanguageUtil.get(pageContext,"Remove-Default") %>
-			 	</div>
-			 	<%} %>
-			 	<div dojoType="dijit.MenuItem" onClick="doClearIndex('<%=x %>');" class="showPointer">
-			 		<span class="shrinkIcon"></span>
-			 		<%= LanguageUtil.get(pageContext,"Clear-Index") %>
-			 	</div>
-			 	<%if(!active){%>
+				 	<div dojoType="dijit.MenuItem" onClick="doActivateIndex('<%=x %>');" class="showPointer">
+				 		<span class="publishIcon"></span>
+				 		<%= LanguageUtil.get(pageContext,"Make-Default") %>
+				 	</div>
 				 	<div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', false)" class="showPointer">
 				 		<span class="deleteIcon"></span>
 				 		<%= LanguageUtil.get(pageContext,"Delete-Index") %>
 				 	</div>
+			 	<%}else{ %>
+				 	<div dojoType="dijit.MenuItem" onClick="doDeactivateIndex('<%=x %>');" class="showPointer">
+				 		<span class="unpublishIcon"></span>
+				 		<%= LanguageUtil.get(pageContext,"Remove-Default") %>
+				 	</div>
 			 	<%} %>
+
 			</div>
 		<%} %>
 
@@ -233,11 +223,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		   </form>
 		   <br/>
 
-		   <button id="uploadSubmit" data-dojo-type="dijit.form.Button" type="button">
-		      <span class="uploadIcon"></span>
-		      <%= LanguageUtil.get(pageContext,"Upload-File") %>
-              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndex();</script>
-           </button>
+
 
 		   <button data-dojo-type="dijit.form.Button" type="button">
 		      <span class="deleteIcon"></span>

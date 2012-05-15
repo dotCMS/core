@@ -60,12 +60,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 %>
 
-<script language="Javascript">
-	dojo.require("dijit.DropDownMenu");
-	dojo.addOnLoad (function(){
-		checkReindexation();
-	});
-</script>
+
 
 <style>
 	.trIdxBuilding{
@@ -113,7 +108,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		                </div>
 		           </div>
 			</div>
-		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="reloadIcon">
+		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="resetIcon">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>
 		

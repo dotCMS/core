@@ -8,7 +8,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
@@ -18,6 +20,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
@@ -28,6 +31,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class StaticHTMLPageBundler implements IBundler {
@@ -69,8 +73,8 @@ public class StaticHTMLPageBundler implements IBundler {
 		boolean include = true;
 		boolean hasPatterns = false;
 		List<String> patterns = null;
-		List<Identifier> pageIdents = new ArrayList<Identifier>();
-		List<Identifier> deletedIdents = new ArrayList<Identifier>();
+		Set<Identifier> pageIdents = new HashSet<Identifier>();
+		Set<Identifier> deletedIdents = new HashSet<Identifier>();
 		
 		if(config.getExcludePatterns()!=null && config.getExcludePatterns().size()>0){
 			hasPatterns = true;
@@ -86,54 +90,54 @@ public class StaticHTMLPageBundler implements IBundler {
 			for(Host h : config.getHosts()){
 				if(!hasPatterns){
 					try{
-						pageIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(), "/*",config.liveOnly(),false,include, h, config.getStartDate(), config.getEndDate()));
+						//live
+						pageIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(), "/*",true ,false,include, h, config.getStartDate(), config.getEndDate()));
+						//working
+						pageIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(), "/*",false,false,include, h, config.getStartDate(), config.getEndDate()));
+
 					}catch (NullPointerException e) {}
 				}else{
 					for(String pattern : patterns){
 						try{
-							pageIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(),pattern ,config.liveOnly(),true, include, h, config.getStartDate(), config.getEndDate()));
+							//live
+							pageIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(),pattern ,true ,false, include, h, config.getStartDate(), config.getEndDate()));
+							//working (including deleted)
+							pageIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(),pattern ,false,false, include, h, config.getStartDate(), config.getEndDate()));
+
 						}catch (NullPointerException e) {}
 					}
 				}
-				try{
-					deletedIdents.addAll(iAPI.findByURIPattern(new HTMLPage().getType(), "/*",config.liveOnly(),true,include, h, config.getStartDate(), config.getEndDate()));
-				}catch(NullPointerException e){}
-				
+
 				status.setTotal(pageIdents.size());
 				for (Identifier i : pageIdents) {
-					if(!config.liveOnly()){
-						HTMLPageWrapper w = new HTMLPageWrapper();
-						try{
-							w.setIdentifier(i);
-							w.setVersionInfo(vAPI.getVersionInfo(i.getId()));
-							w.setPage(pAPI.loadWorkingPageById(i.getId(), uAPI.getSystemUser(), true));
-						}catch(Exception e){
-							Logger.error(this, e.getMessage() + " : Unable to get HTMLPage to write to bundle", e);
-							continue;
-						}
-						try{
-							writeFileToDisk(bundleRoot,w, i.getURI(), h, false);
-						}catch (IOException e) {
-							Logger.error(this, e.getMessage() + " : Unable to write HTML to bundle", e);
-						}
-					}
+
+
 					
-					HTMLPageWrapper w = new HTMLPageWrapper();
 					try{
+						HTMLPageWrapper w = new HTMLPageWrapper();
+						VersionInfo vi = vAPI.getVersionInfo(i.getId());
 						w.setIdentifier(i);
-						w.setVersionInfo(vAPI.getVersionInfo(i.getId()));
-						w.setPage(pAPI.loadLivePageById(i.getId(), uAPI.getSystemUser(), true));
+						w.setVersionInfo(vi);
+
+						
+						List<HTMLPage> pages = new ArrayList<HTMLPage>();
+						pages.add(pAPI.loadWorkingPageById(i.getId(), uAPI.getSystemUser(), true));
+						if(UtilMethods.isSet(vi.getLiveInode())){
+							pages.add(pAPI.loadLivePageById(i.getId(), uAPI.getSystemUser(), true));
+						}
+						for(HTMLPage p : pages){
+							w.setPage(p);
+							writeFileToDisk(bundleRoot,w, i.getURI(), h);
+							status.addCount();
+						}
+						
+						
 					}catch(Exception e){
 						Logger.error(this, e.getMessage() + " : Unable to get HTMLPage to write to bundle", e);
+						status.addFailure();
 						continue;
 					}
-					try{
-						writeFileToDisk(bundleRoot,w, i.getURI(), h, true);
-						status.addCount();
-					}catch (IOException e) {
-						Logger.error(this, e.getMessage() + " : Unable to write HTML to bundle", e);
-						status.addFailure();
-					}
+
 				}
 			}
 		}catch (DotDataException e) {
@@ -141,57 +145,90 @@ public class StaticHTMLPageBundler implements IBundler {
 		}
 	}
 	
-	private void writeFileToDisk(File bundleRoot, HTMLPageWrapper htmlPageWrapper, String uri, Host h, boolean live) throws IOException, DotBundleException{
+	private void writeFileToDisk(File bundleRoot, HTMLPageWrapper htmlPageWrapper, String uri, Host h) throws IOException, DotBundleException{
 		if(uri == null){
 			Logger.warn(this, "URI is not set for Bundler to write");
 			return;
 		}
+		
+		boolean live = (htmlPageWrapper.getPage().getInode().equals(htmlPageWrapper.getVersionInfo().getLiveInode() )) ;
+		
+		
 		try{
-			String wrapperFile = bundleRoot.getPath() + File.separator 
-					+ (live ? "live" : "working") + File.separator 
-					+ h.getHostname() 
-					+ uri.replace("/", File.separator) + HTML_ASSET_EXTENSION;
-			File wf = new File(wrapperFile);
-			
 			String staticFile = bundleRoot.getPath() + File.separator 
 					+ (live ? "live" : "working") + File.separator 
 					+ h.getHostname() 
-					+ uri.replace("/", File.separator);
-			File sf = new File(staticFile);
+					+ uri.replace("/", File.separator) + HTML_ASSET_EXTENSION;
+			File file = new File(staticFile);
+			
 			
 			// Should we write or is the file already there:
-			Calendar cal = Calendar.getInstance();
-			cal.setTime(htmlPageWrapper.getPage().getModDate());
-			cal.set(Calendar.MILLISECOND, 0);
+			Calendar lastMod = Calendar.getInstance();
 			
-			String dir = wrapperFile.substring(0, wrapperFile.lastIndexOf(File.separator));
+			
+
+
+			lastMod.setTime(htmlPageWrapper.getVersionInfo().getVersionTs());
+			lastMod.set(Calendar.MILLISECOND, 0);
+			/*
+				System.out.println("file              :" + file.getCanonicalPath());
+				System.out.println("getVersionTs  time:" + htmlPageWrapper.getVersionInfo().getVersionTs().getTime());
+				System.out.println("cal time          :" + lastMod.getTimeInMillis());
+			*/
+			
+			String dir = staticFile.substring(0, staticFile.lastIndexOf(File.separator));
 			new File(dir).mkdirs();
 			
-			if(!wf.exists() || wf.lastModified() != cal.getTimeInMillis()){
-				BundlerUtil.objectToXML(htmlPageWrapper, wf);
+			if(!file.exists() || file.lastModified() != lastMod.getTimeInMillis()){
+				BundlerUtil.objectToXML(htmlPageWrapper, file);
 				// set the time of the file
-				wf.setLastModified(cal.getTimeInMillis());
+				file.setLastModified(lastMod.getTimeInMillis());
 			}
 			
-			if(!sf.exists() || sf.lastModified() != cal.getTimeInMillis()){
+			
+			
+			 staticFile = bundleRoot.getPath() + File.separator 
+					+ (live ? "live" : "working") + File.separator 
+					+ h.getHostname() 
+					+ uri.replace("/", File.separator);
+			 file = new File(staticFile);
+			
+			
+			
+			
+			
+			if(!file.exists() || file.lastModified() != lastMod.getTimeInMillis()){
 				try {
 					
 					BufferedWriter out = null;
 					try{
-						if(!sf.exists())sf.createNewFile();
-						FileWriter fstream = new FileWriter(sf);
+						if(!file.exists()){
+							file.createNewFile();
+						}
+						FileWriter fstream = new FileWriter(file);
 						out = new BufferedWriter(fstream);
 						String html = new String();
 						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser());
 						out.write(html);
 						out.close();
-						sf.setLastModified(cal.getTimeInMillis());
+						file.setLastModified(lastMod.getTimeInMillis());
 					}catch(Exception e){
-						Logger.error(this, e.getMessage() + " Unable to get page : " + htmlPageWrapper.getIdentifier().getHostId() + htmlPageWrapper.getIdentifier().getURI());
+						try{
+							Logger.error(this, e.getMessage() + " Unable to get page : " + htmlPageWrapper.getIdentifier().getHostId() + htmlPageWrapper.getIdentifier().getURI());
+						}
+						catch(Exception ex){
+							Logger.error(this, e.getMessage(),e);
+						}
 					}
 					finally{
 						if(out !=null){
 							out.close();
+							try{
+								file.setLastModified(lastMod.getTimeInMillis());	
+							}
+							catch(Exception e){
+								
+							}
 						}
 					}
 					
@@ -204,7 +241,8 @@ public class StaticHTMLPageBundler implements IBundler {
 			}
 		}
 		catch(Exception e){
-			throw new DotBundleException("cant get host for " + uri + " reason " + e.getMessage());
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
+			throw new DotBundleException("error on " + uri + " reason " + e.getMessage());
 		}
 	}
 

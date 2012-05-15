@@ -283,8 +283,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	public Contentlet convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
 			throws DotDataException, DotStateException, DotSecurityException {
 	    Contentlet con = new Contentlet();
-        Identifier identifier = new Identifier();
-        String folderInode = "";
+
+
         con.setStructureInode(fatty.getStructureInode());
         Map<String, Object> contentletMap = fatty.getMap();
 
@@ -306,37 +306,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
         con.setModDate(fatty.getModDate());
         con.setReviewInterval(fatty.getReviewInterval());
 
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(fatty.getStructureInode());
-        Field hostField = null;
-        for (Field field: fields) {
-            if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()))
-                hostField = field;
-        }
-        if (InodeUtils.isSet(fatty.getIdentifier())) {
-            IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-            identifier = identifierAPI.find(fatty.getIdentifier());
-            Folder folder = null;
-            if(identifier.getParentPath().length()>1)
-                folder = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), identifier.getHostId(), APILocator.getUserAPI().getSystemUser(),false);
-            else
-                folder = APILocator.getFolderAPI().findSystemFolder();
-
-            folderInode = folder.getInode();
-        }
-        if (hostField != null) {
-            String hostId = con.getStringProperty(hostField.getVelocityVarName());
-            if (!InodeUtils.isSet(hostId)) {
-                if (InodeUtils.isSet(fatty.getIdentifier())) {
-                    con.setHost(identifier.getHostId());
-                } else {
-                    Host systemHost = APILocator.getHostAPI().findSystemHost();
-                    con.setHost(systemHost.getIdentifier());
-                }
-            }else {
-                con.setHost(hostId);
-            }
-        }
-        con.setFolder(folderInode);
+        
+        
+	     if(UtilMethods.isSet(fatty.getIdentifier())){   
+	        IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+	        Identifier identifier = identifierAPI.find(fatty.getIdentifier());
+	        Folder folder = null;
+	        if(identifier.getParentPath().length()>1){
+	            folder = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), identifier.getHostId(), APILocator.getUserAPI().getSystemUser(),false);
+	        }else{
+	            folder = APILocator.getFolderAPI().findSystemFolder();
+	        }
+	        con.setHost(identifier.getHostId());
+	        con.setFolder(folder.getInode());
+	        
+		}
+	     else{
+	         con.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
+	         con.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
+	     }
         String wysiwyg = fatty.getDisabledWysiwyg();
         if( UtilMethods.isSet(wysiwyg) ) {
             List<String> wysiwygFields = new ArrayList<String>();
@@ -1255,7 +1243,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             try{
             	resp = srb.execute().actionGet();
             }catch (SearchPhaseExecutionException e) {
-				if(e.getMessage().contains("-order_dotraw] in order to sort on")){
+				if(e.getMessage().contains("dotraw] in order to sort on")){
 					return new InternalSearchHits(InternalSearchHits.EMPTY,0,0);
 				}else{
 					throw e;

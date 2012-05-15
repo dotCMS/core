@@ -555,7 +555,6 @@
     <servlet>
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-       <load-on-startup>1</load-on-startup>
     </servlet>
 	<!--END DOTMARKETING SERVLETS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
@@ -579,7 +578,7 @@
     	<servlet-class>com.dotmarketing.portlets.templates.design.servlets.PreviewDesignTemplateServlet</servlet-class>
     </servlet>
     <!-- END GRAZIANO issue-12-dnd-template -->
-	<!-- DOTCMS SERVLET-MAPPINGS -->
+    <!-- DOTCMS SERVLET-MAPPINGS -->
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
       <url-pattern>/spring/*</url-pattern>
