@@ -1,3 +1,4 @@
+<%@ page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.SplitBody"%>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.DesignTemplateJSParameter"%>
 <%@ page import="com.dotmarketing.beans.Host"%>
@@ -20,7 +21,8 @@
 </style>
 
 <%
- 
+	boolean enablePreview = Boolean.parseBoolean(Config.getStringProperty(com.dotmarketing.util.WebKeys.PREVIEW_TEMPLATE_DESIGN_ENABLE)); 
+
 	boolean overrideBody = (Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY);
 	
 	DesignTemplateJSParameter parameters = (DesignTemplateJSParameter)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_JAVASCRIPT_PARAMETERS);
@@ -89,10 +91,12 @@
 
 %>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
+<script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
 <script language="Javascript">
 
 	dojo.require('dotcms.dijit.form.FileSelector');
 	dojo.require('dotcms.dojo.data.ContainerReadStoreDrawedTemplate');
+	dojo.require('dotcms.dojo.data.MetadataContainerReadStore');
 	
 	var referer = '<%=referer%>';
 
@@ -122,6 +126,7 @@
 		form.<portlet:namespace />cmd.value = '<%=Constants.ADD_DESIGN%>';
 		form.<portlet:namespace />subcmd.value = subcmd;
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
+		form.removeAttribute('onsubmit');
 		submitForm(form);
 	}
 	
@@ -138,7 +143,7 @@
 		}
 	}
 	
-	function addMetatagDialog(){
+	function addHeadCodeDialog(){
 		dialogOne.show();
 	}
 
@@ -146,6 +151,11 @@
 		dijit.byId('containersList').attr('value', '');
 		dijit.byId('containerSelector').show();
 		document.getElementById("idDiv").value=idDiv;
+	}
+	
+	function showAddMetadataContainerDialog() {
+		dijit.byId('metadataContainersList').attr('value', '');
+		dijit.byId('metadataContainerSelector').show();
 	}
 	
 	function addContainer() {
@@ -156,11 +166,36 @@
 		
 		addDrawedContainer(idDiv,container,value,'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>','<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-with-contents-already-exists"))%>');
 	}
+	
+	function addMetadataContainer() {
+		dijit.byId('metadataContainerSelector').hide();
+		var value = dijit.byId('metadataContainersList').attr('value');
+		var container = dijit.byId('metadataContainersList').attr('item');
+		
+		addDrawedMetadataContainer(container, value, '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>');
+		
+	}
 
 	function addFile() {
 		fileSelector.show();
 	}
+	
+	function previewTemplate(name, params) {
+		var url = '/servlets/template/design/preview';
+		openWindowWithPost(url, name, params);
+	}
 
+	function openWindowWithPost(url, name, params) {
+		var newWindow = window.open(url, name, params);
+		if (!newWindow) return false;
+		var bodyTemplateHTML = document.getElementById('bodyTemplate').innerHTML;
+		var html = "";
+		html += '<html><head></head><body><form id="previewForm" name="previewForm" method="post" action="' + url + '">';
+		html += '<textarea style="display: none;" name="bodyTemplateHTML">'+bodyTemplateHTML+'</textarea></form><script>document.previewForm.submit();<' + '/script' + '>' + '</body></html>';
+		newWindow.document.write(html);
+		return newWindow;
+	}
+	
 	function addFileCallback(file) {
 		if(file.extension == 'js') {
 			var html = '<script type="text/javascript" src="' + file.path + file.fileName + '" >' + '<' + '/script' + '>';
@@ -301,17 +336,23 @@
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
 				</button>
 			 	
-			 	<!-- 
-				<button dojoType="dijit.form.Button" onClick="addMetatagDialog()" type="button">
-					<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-meta-tag"))%>
+				<button dojoType="dijit.form.Button" onClick="showAddMetadataContainerDialog()" type="button">
+					<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-meta"))%>
 				</button>
-				 -->			
+				
+				<button dojoType="dijit.form.Button" onClick="addHeadCodeDialog()" type="button">
+					<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-head-code"))%>
+				</button>
+				<%if(enablePreview){%>
+					<button dojoType="dijit.form.Button" onClick="previewTemplate('Preview','width=1024,height=768')" type="button" iconClass="previewIcon">
+						<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "preview"))%>
+					</button>
+				<%}%>
 			</div>
 			<div class="clear"></div>
 			<div id="bodyTemplate"></div>
 		</div>
 	</div>
-
 </div>		
 <div class="buttonRow-left lineRight" id="editContentletButtonRow" style="height: 100%; min-height: 617px;">
 <%
@@ -581,6 +622,7 @@
 </div>
 
 <span dojoType="dotcms.dojo.data.ContainerReadStoreDrawedTemplate" jsId="containerStore"></span>
+<span dojoType="dotcms.dojo.data.MetadataContainerReadStore" jsId="metadataContainerStore"></span>
 
 <!-- ADD CONTAINER DIALOG BOX -->
 <div dojoType="dijit.Dialog" id="containerSelector" title="<%=LanguageUtil.get(pageContext, "select-a-container")%>">
@@ -600,86 +642,33 @@
 </div>
 <!-- /ADD CONTAINER DIALOG BOX -->
 
+<!-- ADD METADATA CONTAINER DIALOG BOX -->
+<div dojoType="dijit.Dialog" id="metadataContainerSelector" title="<%=LanguageUtil.get(pageContext, "select-a-metadata-container")%>">
+	<p style="text-align: center">
+		<%=LanguageUtil.get(pageContext, "Container")%> 
+  		<select id="metadataContainersList" name="metadataContainersList" dojoType="dijit.form.FilteringSelect" 
+        	store="metadataContainerStore" searchDelay="300" pageSize="10" labelAttr="fullTitle" searchAttr="title" 
+            invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+        </select>
+    </p>
+    <div class="buttonRow">
+		<button dojoType="dijit.form.Button" onclick="addMetadataContainer()" type="button"><%=LanguageUtil.get(pageContext, "add-meta")%></button> 
+		<button dojoType="dijit.form.Button" onclick="dijit.byId('metadataContainerSelector').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
+	</div>
+</div>
+<!-- /ADD METADATA CONTAINER DIALOG BOX -->
+
+
 <!-- ADD METADATA DIALOG BOX -->
-<div jsId="dialogOne" id="dialogOne" dojoType="dijit.Dialog" title="<%=LanguageUtil.get(pageContext, "add-meta-tag")%>" style="width: 800px; height: 600px; padding: 0pt;">
-    <div dojoType="dijit.layout.TabContainer" style="min-height: 500px; padding: 0pt;">
-        <div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "metadata-tab")%>" style="width: auto; padding: 0pt;">
-   			<p><%=LanguageUtil.get(pageContext, "metadata-tab-description")%></p>
-   			<dl>
-   				<dt><%=LanguageUtil.get(pageContext, "Choose-Attribute")%></dt>
-   				<dd>
-   					<select id="choose-attribute" dojoType="dijit.form.FilteringSelect" name="choose-attribute" onchange="javascript: showSelectedAttribute(this.value)">
-						<option value="-1" selected="selected"></option>
-						<option value="0"><%= LanguageUtil.get(pageContext, "Name-Attribute") %></option>
-						<option value="1"><%= LanguageUtil.get(pageContext, "Http-Equiv-Attribute") %></option>
-					</select>
-   				</dd>
-   				<div id="name-div" style="display: none;">
-	   				<dt><%=LanguageUtil.get(pageContext, "Name-Attribute")%></dt>
-	   				<dd>
-	   					<select id="name-attribute" dojoType="dijit.form.FilteringSelect" name="name-attribute">
-							<option value="none" selected="selected"></option>
-							<option value="<%= LanguageUtil.get(pageContext, "name-author") %>"><%= LanguageUtil.get(pageContext, "name-author") %></option>
-							<option value="<%= LanguageUtil.get(pageContext, "name-description") %>"><%= LanguageUtil.get(pageContext, "name-description") %></option>						
-							<option value="<%= LanguageUtil.get(pageContext, "name-keywords") %>"><%= LanguageUtil.get(pageContext, "name-keywords") %></option>
-							<option value="<%= LanguageUtil.get(pageContext, "name-generator") %>"><%= LanguageUtil.get(pageContext, "name-generator") %></option>
-							<option value="<%= LanguageUtil.get(pageContext, "name-revised") %>"><%= LanguageUtil.get(pageContext, "name-revised") %></option>
-						</select>
-					</dd>
-				</div>
-				<div id="http-equiv-div" style="display: none;">
-	   				<dt><%=LanguageUtil.get(pageContext, "Http-Equiv-Attribute")%></dt>
-	   				<dd>
-	   					<select id="http-equiv-attribute" dojoType="dijit.form.FilteringSelect" name="http-equiv-attribute">
-							<option value="none" selected="selected"></option>
-							<option value="<%= LanguageUtil.get(pageContext, "http-equiv-content-type") %>"><%= LanguageUtil.get(pageContext, "http-equiv-content-type") %></option>
-							<option value="<%= LanguageUtil.get(pageContext, "http-equiv-content-style-type") %>"><%= LanguageUtil.get(pageContext, "http-equiv-content-style-type") %></option>
-							<option value="<%= LanguageUtil.get(pageContext, "http-equiv-expires") %>"><%= LanguageUtil.get(pageContext, "http-equiv-expires") %></option>
-							<option value="<%= LanguageUtil.get(pageContext, "http-equiv-set-cookie") %>"><%= LanguageUtil.get(pageContext, "http-equiv-set-cookie") %></option>
-						</select>
-					</dd>
-				</div>				
-   				<dt><%=LanguageUtil.get(pageContext, "Content-Attribute")%></dt>
-   				<dd>
-   					<input type="text" dojoType="dijit.form.TextBox" style="width:300px" name="content-attribute" id="content-attribute" value="" />
-				</dd>   				   			
-   			</dl>
-   			<hr />
-			<div class="buttonRow">
-				<button dojoType="dijit.form.Button" onclick="addMetatag()" type="button" iconClass="plusIcon"><%=LanguageUtil.get(pageContext, "add-meta")%></button>
-			</div>
-			<hr />
-			<table class="listingTable" id="metadataTable">
-				<tr>
-					<th nowrap style="width:5%; text-align:center;">
-						<%= LanguageUtil.get(pageContext, "Action") %>
-					</th>				
-					<th nowrap style="width:10%;text-align:center;">
-						<%= LanguageUtil.get(pageContext, "Attribute") %>
-					</th>
-					<th nowrap style="width:15%;text-align:center;">
-						<%= LanguageUtil.get(pageContext, "Attribute-Value") %>
-					</th>					
-					<th nowrap style="width:20%;text-align:center;">
-						<%= LanguageUtil.get(pageContext, "Content") %>
-					</th>
-					<th nowrap style="width:50%;text-align:center;">
-						<%= LanguageUtil.get(pageContext, "Generated-HTML") %>
-					</th>					
-				</th>	
-			</table>
-			<div class="clear"></div>
-			<br />
-        </div>
-        <div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "header-code-tab")%>" style="width: auto;">
-			<div id="textEditorArea" style="border: 0px;  width: auto; height: 80%; padding-left: 20px;">
-				<textarea onkeydown="return catchTab(this,event)" style="width: 95%; height: 100%; font-size: 12px" id="headerField"></textarea>
-			</div>
-			<br />
-		    <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="codeMirrorColoration();"  checked="checked"  />
-		    <label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label> 
-        </div>
-    </div>
+<div jsId="dialogOne" id="dialogOne" dojoType="dijit.Dialog" title="<%=LanguageUtil.get(pageContext, "add-head-code")%>" style="width: 800px; height: 600px; padding: 0pt;">
+	<div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "header-code-tab")%>" style="width: auto;">
+		<div id="textEditorArea" style="border: 0px;  width: auto; height: 80%; padding-left: 20px;">
+			<textarea onkeydown="return catchTab(this,event)" style="width: 95%; height: 100%; font-size: 12px" id="headerField"></textarea>
+		</div>
+		<br />
+	    <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="codeMirrorColoration();"  checked="checked"  />
+	    <label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label> 
+	</div>
     <div class="buttonRow">
 		<button dojoType="dijit.form.Button" onclick="saveMetaAndHeaderCode()" type="button"><%=LanguageUtil.get(pageContext, "Add")%></button> 
 		<button dojoType="dijit.form.Button" onclick="dijit.byId('dialogOne').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>

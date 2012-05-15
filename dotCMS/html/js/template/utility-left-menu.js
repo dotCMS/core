@@ -402,15 +402,15 @@ function removeDrawedContainer(idDiv,idContainer){
  * @param html
  */
 function addFileToTemplate(html, file, error_msg){
-	
-	var spanFile = document.getElementById("span_"+file.path+"_"+file.fileName);	
+
+	var spanFile = document.getElementById("span_"+file.inode+"_"+file.parent+"_"+file.isContentlet);	
 	if(null!=spanFile){ //this file already exists into the template
 		alert(error_msg);
 		return;
 	}else{
 		//create the span
 		spanFile = document.createElement("span");
-		spanFile.setAttribute("id", "span_"+file.path+"_"+file.fileName);
+		spanFile.setAttribute("id", "span_"+file.inode+"_"+file.parent+"_"+file.isContentlet);
 		spanFile.setAttribute("class", file.extension+"Span");
 		
 		spanIcon = document.createElement("span");
@@ -420,7 +420,7 @@ function addFileToTemplate(html, file, error_msg){
 		//create the remove file link
 		var removeFile = document.createElement("div");
 		removeFile.setAttribute("class", "removeDiv");
-		removeFile.innerHTML='<a href="javascript: removeFile(\''+file.path+'\', \''+file.fileName+'\');" title="Remove File"><span class="minusIcon"></span>Remove File</a></div>';
+		removeFile.innerHTML='<a href="javascript: removeFile(\''+file.inode+"_"+file.parent+"_"+file.isContentlet+'\');" title="Remove File"><span class="minusIcon"></span>Remove File</a></div>';
 		spanFile.appendChild(spanIcon);
 		spanFile.appendChild(removeFile);
 		var divForSpanFiles = document.getElementById("fileContainerDiv");
@@ -441,7 +441,7 @@ function addFileToTemplate(html, file, error_msg){
 		
 		// append the new file
 		var divHiddenSingleFile = document.createElement("div");
-		divHiddenSingleFile.setAttribute("id", "div_"+file.path+"_"+file.fileName);
+		divHiddenSingleFile.setAttribute("id", "div_"+file.inode+"_"+file.parent+"_"+file.isContentlet);
 		divHiddenSingleFile.style.display="none";
 		divHiddenSingleFile.innerHTML='<!-- '+html+' -->';
 		divHiddenForFiles.appendChild(divHiddenSingleFile);
@@ -452,13 +452,13 @@ function addFileToTemplate(html, file, error_msg){
 	}
 }
 
-function removeFile(path, fileName){
+function removeFile(inode){
 	var divHiddenForFiles = document.getElementById("jsCssToAdd");
 	if(divHiddenForFiles.hasChildNodes()) {
 		var nodes = divHiddenForFiles.childNodes;
 		for(var i=0; i<nodes.length; i++){
 			var child = nodes[i];
-			if(child.getAttribute("id")=="div_"+path+"_"+fileName)
+			if(child.getAttribute("id")=="div_"+inode)
 				divHiddenForFiles.removeChild(child);
 		}
 	}	
@@ -467,7 +467,7 @@ function removeFile(path, fileName){
 		var nodes = divForSpanFiles.childNodes;
 		for(var i=0; i<nodes.length; i++){
 			var child = nodes[i];
-			if(child.getAttribute("id")=="span_"+path+"_"+fileName)
+			if(child.getAttribute("id")=="span_"+inode)
 				divForSpanFiles.removeChild(child);
 		}
 	}	
