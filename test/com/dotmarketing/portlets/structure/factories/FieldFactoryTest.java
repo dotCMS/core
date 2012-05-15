@@ -83,25 +83,6 @@ public class FieldFactoryTest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link FieldFactory#getFieldByStructureNoLock(String)}
-     *
-     * @see FieldFactory
-     */
-    @Test
-    public void getFieldByStructureNoLock () {
-
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Getting the fields for this structure
-        Collection<Field> fields = FieldFactory.getFieldByStructureNoLock( structure.getInode() );
-
-        //Start with the validations
-        assertTrue( fields != null && !fields.isEmpty() );
-        assertEquals( fields.size(), FIELDS_SIZE );
-    }
-
-    /**
      * Testing {@link FieldFactory#isTagField(String, com.dotmarketing.portlets.structure.model.Structure)}
      *
      * @see FieldFactory
