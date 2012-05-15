@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Plugin-Name: Console Manager Plugin
-Deploy-Class: com.dotcms.consoleLog4j.util.ConsoleLog4jDeployer
-Plugin-Version: 1.0
-Author: dotCMS

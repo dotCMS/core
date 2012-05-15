@@ -19,16 +19,16 @@
 	Set<Role> writeRoles = new HashSet<Role>();
 
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
-	
+
 	if (InodeUtils.isSet(userFilterInode)) {
 		uf = UserFilterFactory.getUserFilter(userFilterInode);
 		readRoles = perAPI.getReadRoles(uf);
 		writeRoles = perAPI.getWriteRoles(uf);
 	}
-	
+
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action",new String[] {"/ext/mailinglists/view_mailinglists"});
-	
+
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
 %>
 
@@ -49,7 +49,7 @@
 			actionList.value = "<%= com.liferay.portal.util.Constants.SAVE %>";
 		}
 	}
-	
+
 	function toggleBox(szDivID, labelID, height)
 	{
 		if(document.layers)	   //NN4+
@@ -113,9 +113,9 @@
 				return false;
 			}
 		}
-		
+
 		var condition = saveSelectedGroupsRoles();
-		
+
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/usermanager/view_usermanagerlist" /><portlet:param name="cmd" value="<%=com.liferay.portal.util.Constants.ADD%>" /></portlet:actionURL>' + condition;
 	    loadButton = dijit.byId("loadButton");
 		loadButton.attr('disabled', true);
@@ -124,11 +124,11 @@
    function downloadCSVTemplate(){
 		window.location.href='<portlet:actionURL><portlet:param name="struts_action" value="/ext/usermanager/view_usermanagerlist" /><portlet:param name="cmd" value="downloadCSVTemplate" /></portlet:actionURL>';
    }
-   
+
 	function saveSelectedGroupsRoles() {
 	    var groups = listSelect(document.UserManagerListSearchForm.<portlet:namespace />users_selected_groups);
 	    var roles = listSelect(document.UserManagerListSearchForm.<portlet:namespace />users_selected_roles);
-	    
+
 	    var condition = "&groups=" + groups + "&roles=" + roles;
 
 		return condition;
@@ -156,37 +156,37 @@
 		<dl>
 			<dt><%= LanguageUtil.get(pageContext, "Users-CSV-File") %>:</dt>
 			<dd><input type="file" name="<portlet:namespace />newUsersFile"></dd>
-			
+
 			<dt>&nbsp;</dt>
 			<dd>
 				<input type="checkbox" dojoType="dijit.form.CheckBox" name="ignoreHeaders" id="ignoreHeaders" checked="checked" onClick="console.log('clicked cb1')">
 				<label for="ignoreHeaders"><%= LanguageUtil.get(pageContext, "Ignore-Column-Headers") %></label>
 			</dd>
-			
+
 			<dt>&nbsp;</dt>
 			<dd>
 				<input type="checkbox" dojoType="dijit.form.CheckBox" name="updateDuplicatedUsers" />
 				<label for="updateDuplicatedUsers"><%= LanguageUtil.get(pageContext, "Update-Duplicated-Users") %></label>
 			</dd>
 
-			
+
 			<dt><%= LanguageUtil.get(pageContext, "Tag-your-new-users-optional") %> <a href="#" id="tip1">?</a></dt>
 			<dd>
 				<textarea id="tagName" name="tagName" cols="20" rows="10" onkeyup="suggestTagsForSearch(this, 'suggestedTagsDiv');" style="height: 100px; width: 300px;" class="tagField"></textarea>
 				<div class="callOutBox2 hintBox" style="top:130px;margin-left:320px; _margin-left:20px;">
-					<%= LanguageUtil.get(pageContext, "Suggested-Tags") %>: 
+					<%= LanguageUtil.get(pageContext, "Suggested-Tags") %>:
 					<span id="suggestedTagsDiv"></span>
 				</div>
 			</dd>
 		</dl>
-		
-		<%  
+
+		<%
 			boolean isMailingListAdmin = com.dotmarketing.portlets.mailinglists.factories.MailingListFactory.isMailingListAdmin(user);
-			
+
 			List mailingList = null;
 			List roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 			Iterator rolesIt = roles.iterator();
-		
+
 			if (isMailingListAdmin)
 				mailingList = com.dotmarketing.portlets.mailinglists.factories.MailingListFactory.getAllMailingLists();
 			else {
@@ -203,7 +203,7 @@
 				<%= LanguageUtil.get(pageContext, "New-Mailing-List-Title") %>:
 				<input type="text" dojoType="dijit.form.TextBox" name="usermanagerListTitle" id="usermanagerListTitle" tabindex="1" value="" size="20" class="form-text" />
 			</dd>
-			
+
 			<dd>
 				<input type="radio" dojoType="dijit.form.RadioButton" value="<%= com.liferay.portal.util.Constants.SAVE %>" name="actionList" onclick="enableDisable('append');" />
 				<%= LanguageUtil.get(pageContext, "Existing-Mailing-List") %>:
@@ -218,7 +218,7 @@
 					<% } %>
 				</select>
 			</dd>
-		
+
 			<dt>&nbsp;</dt>
 			<dd>
 				<input type="checkbox" dojoType="dijit.form.CheckBox" name="allowPublicToSubscribe" />
@@ -226,18 +226,18 @@
 			</dd>
 		</dl>
 	<% } %>
-		
+
 	</div>
 	<!-- END Main Tab -->
-	
-	<!-- START Permissions Tab - DISABLED for 1.9 
+
+	<!-- START Permissions Tab - DISABLED for 1.9
 	<div id="TabTwo" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
-		
+
 		<h2>Put permission stuff here!</h2>
-		
+
 	</div>
 	END Permissions Tab -->
-	
+
 </div>
 <!-- END Tabs -->
 
@@ -265,7 +265,7 @@
 		<b><%= LanguageUtil.get(pageContext, "Fields-must-be-in-this-order") %>:</b><br/>
 		<%= LanguageUtil.get(pageContext, "message.usermanager.fields.order") %><%	for (int j=1; j<=numberGenericVariables; j++) { %>, <%=LanguageUtil.get(pageContext, "user.profile.var"+j)%><%}%>.
 	</p>
-	
+
 	<p>
 		<b><%= LanguageUtil.get(pageContext, "Required") %>:</b><br/>
 		<%= LanguageUtil.get(pageContext, "message.usermanager.fields.required") %>
@@ -274,8 +274,11 @@
 		<b><%= LanguageUtil.get(pageContext, "Optional-may-be-omitted") %>:</b><br/>
 		<%= LanguageUtil.get(pageContext, "message.usermanager.fields.omitted") %><%	for (int j=1; j<=numberGenericVariables; j++) { %>, <%=LanguageUtil.get(pageContext, "user.profile.var"+j)%><%}%>.
 	</p>
+	<p>
+		<b><%= LanguageUtil.get(pageContext, "Required-Auth-Type-User-ID") %></b><br/>
+	</p>
 </div>
-<!-- START Popup Hint -->					
+<!-- START Popup Hint -->
 
 <!-- START Hint -->
 	<span dojoType="dijit.Tooltip" connectId="tip1" id="one_tooltip">

@@ -1,8 +1,12 @@
 package com.dotcms.publishing.sitesearch;
 
+import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotmarketing.util.Logger;
 
 public class SiteSearchResult {
 	Map<String, Object> map = new HashMap<String, Object>();
@@ -115,7 +119,23 @@ public class SiteSearchResult {
 	}
 
 	public Date getModified() {
-		return (Date) map.get("modified");
+		
+		if(!map.containsKey("modified")){
+			return null;
+		}
+		if(map.get("modified") instanceof Date){
+			return (Date) map.get("modified");
+		}
+		if(map.get("modified") instanceof String){
+			
+			try {
+				return (Date) ESMappingAPIImpl.elasticSearchDateTimeFormat.parseObject((String) map.get("modified") );
+			} catch (ParseException e) {
+				Logger.error(SiteSearchResult.class,e.getMessage());
+			}
+	
+		}
+		return null;
 	}
 
 	public void setModified(Date modified) {

@@ -13,7 +13,14 @@
 		<appender-ref ref="FILE" />
        	<appender-ref ref="CONSOLE" />
     </appender>
- 
+
+    <appender name="ASYNC-TEST" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
+        <param name="BufferSize" value="500" />
+        <param name="FailToSync" value="false" />
+        <appender-ref ref="TEST" />
+        <appender-ref ref="CONSOLE" />
+    </appender>
+
     <appender name="ASYNC-SECURITY" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
@@ -66,6 +73,16 @@
                  <param name="ConversionPattern"
                             value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
             </layout>
+    </appender>
+
+    <appender name="TEST" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${catalina.home}/logs/dotcms-testing.log"/>
+        <param name="MaxFileSize" value="20MB"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+        </layout>
     </appender>
 
     <appender name="SECURITY" class="org.apache.log4j.RollingFileAppender">
@@ -170,6 +187,11 @@
 		<level value="info"/>
 		<appender-ref ref="ASYNC-USERACTIVITY" />
 	</logger>
+
+    <logger name="com.dotmarketing.servlets.test.ServletTestRunner" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="ASYNC-TEST" />
+    </logger>
 	
     <root>
             <priority value="info"/>

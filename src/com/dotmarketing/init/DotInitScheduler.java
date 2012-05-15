@@ -19,6 +19,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.DashboardProxy;
+import com.dotcms.escalation.util.EscalationJob;
 import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
@@ -42,7 +43,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * 
+ *
  * Initializes all dotCMS startup jobs
  * @author David H Torres
  *
@@ -51,9 +52,9 @@ public class DotInitScheduler {
 
 	public static void start() throws SchedulerException {
 		try {
-			
+
 			Scheduler sched = QuartzUtils.getStandardScheduler();
-			
+
 			JobDetail job;
 			CronTrigger trigger;
 			Calendar calendar;
@@ -62,7 +63,7 @@ public class DotInitScheduler {
 			if(Config.getBooleanProperty("ENABLE_DELIVER_CAMPAIGN_THREAD")) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("DeliverCampaignJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("DeliverCampaignJob", "dotcms_jobs", DeliverCampaignThread.class);
@@ -78,7 +79,7 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger1", "group1", "DeliverCampaignJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("DELIVER_CAMPAIGN_THREAD_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -93,11 +94,11 @@ public class DotInitScheduler {
 					sched.deleteJob("DeliverCampaignJob", "dotcms_jobs");
 				}
 			}
-			
+
 			if(Config.getBooleanProperty("ENABLE_UPDATE_RATINGS_THREAD")) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("UpdateRatingJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("UpdateRatingJob", "dotcms_jobs", UpdateRatingThread.class);
@@ -113,7 +114,7 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger2", "group2", "UpdateRatingJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("UPDATE_RATINGS_THREAD_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -128,11 +129,11 @@ public class DotInitScheduler {
 					sched.deleteJob("UpdateRatingJob", "dotcms_jobs");
 				}
 			}
-			
+
 			if(Config.getBooleanProperty("ENABLE_CONTENT_REVIEW_THREAD")) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("ContentReviewJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("ContentReviewJob", "dotcms_jobs", ContentReviewThread.class);
@@ -148,7 +149,7 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger3", "group3", "ContentReviewJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("CONTENT_REVIEW_THREAD_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -163,16 +164,16 @@ public class DotInitScheduler {
 					sched.deleteJob("ContentReviewJob", "dotcms_jobs");
 				}
 			}
-			
+
 
 	        try {
 	        	//Register cluster MBean
-				
-	        	MBeanServer mbs = ManagementFactory.getPlatformMBeanServer(); 
-				ObjectName name; 
-				
-				name = new ObjectName("org.dotcms:type=Cluster"); 
-				Cluster clusteMBean = new Cluster(); 
+
+	        	MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+				ObjectName name;
+
+				name = new ObjectName("org.dotcms:type=Cluster");
+				Cluster clusteMBean = new Cluster();
 				mbs.registerMBean(clusteMBean, name);
 			} catch (MalformedObjectNameException e) {
 				Logger.debug(InitServlet.class,"MalformedObjectNameException: " + e.getMessage(),e);
@@ -184,8 +185,8 @@ public class DotInitScheduler {
 				Logger.debug(InitServlet.class,"NotCompliantMBeanException: " + e.getMessage(),e);
 			} catch (NullPointerException e) {
 				Logger.debug(InitServlet.class,"NullPointerException: " + e.getMessage(),e);
-			}		
-				
+			}
+
 			if(Config.getBooleanProperty("ENABLE_CONTENT_REINDEXATION_THREAD")) {
 				try {
 					ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
@@ -200,12 +201,12 @@ public class DotInitScheduler {
 					sched.deleteJob("ContentReindexerJob", "dotcms_jobs");
 				}
 			}
-			
+
 			//Bounces popper task
 			if(Config.getBooleanProperty("ENABLE_POP_BOUNCES_THREAD")) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("PopBouncedMailJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("PopBouncedMailJob", "dotcms_jobs", PopBouncedMailThread.class);
@@ -221,7 +222,7 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger6", "group6", "PopBouncedMailJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("POP_BOUNCES_THREAD_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -236,11 +237,11 @@ public class DotInitScheduler {
 					sched.deleteJob("PopBouncedMailJob", "dotcms_jobs");
 				}
 			}
-			
+
 			if(Config.getBooleanProperty("ENABLE_USERS_TO_DELETE_THREAD")) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("UsersToDeleteJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("UsersToDeleteJob", "dotcms_jobs", UsersToDeleteThread.class);
@@ -256,7 +257,7 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger7", "group7", "UsersToDeleteJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("USERS_TO_DELETE_THREAD_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -271,13 +272,13 @@ public class DotInitScheduler {
 					sched.deleteJob("UsersToDeleteJob", "dotcms_jobs");
 				}
 			}
-			
+
 			//Calendar Reminder Job
-			
+
 			if(Config.getBooleanProperty("CALENDAR_REMINDER_THREAD")) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("CalendarReminderJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("CalendarReminderJob", "dotcms_jobs", CalendarReminderThread.class);
@@ -293,7 +294,7 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger8", "group8", "CalendarReminderJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("CALENDAR_REMINDER_THREAD_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -308,15 +309,15 @@ public class DotInitScheduler {
 					sched.deleteJob("CalendarReminderJob", "dotcms_jobs");
 				}
 			}
-			
+
 			//END Calendar Reminder Job
-			
-		
+
+
 
 			if(UtilMethods.isSet(Config.getStringProperty("WEBDAV_CLEANUP_JOB_CRON_EXPRESSION"))) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("WebDavCleanupJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("WebDavCleanupJob", "dotcms_jobs", WebDavCleanupJob.class);
@@ -331,7 +332,7 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger10", "group10", "WebDavCleanupJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("WEBDAV_CLEANUP_JOB_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -345,12 +346,12 @@ public class DotInitScheduler {
 				if ((job = sched.getJobDetail("WebDavCleanupJob", "dotcms_jobs")) != null) {
 					sched.deleteJob("WebDavCleanupJob", "dotcms_jobs");
 				}
-			}			
+			}
 			//http://jira.dotmarketing.net/browse/DOTCMS-1073
 			if(UtilMethods.isSet(Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION"))) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("BinaryCleanupJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("BinaryCleanupJob", "dotcms_jobs", BinaryCleanupJob.class);
@@ -365,7 +366,7 @@ public class DotInitScheduler {
 				    trigger = new CronTrigger("trigger11", "group11", "BinaryCleanupJob", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -379,13 +380,13 @@ public class DotInitScheduler {
 				if ((job = sched.getJobDetail("BinaryCleanupJob", "dotcms_jobs")) != null) {
 					sched.deleteJob("BinaryCleanupJob", "dotcms_jobs");
 				}
-			}			
-			
-			
+			}
+
+
 			if(UtilMethods.isSet(Config.getStringProperty("TRASH_CLEANUP_JOB_CRON_EXPRESSION"))) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("TrashCleanupJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("TrashCleanupJob", "dotcms_jobs", TrashCleanupJob.class);
@@ -400,7 +401,7 @@ public class DotInitScheduler {
 				    trigger = new CronTrigger("trigger12", "group12", "TrashCleanupJob", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("TRASH_CLEANUP_JOB_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -415,11 +416,11 @@ public class DotInitScheduler {
 					sched.deleteJob("TrashCleanupJob", "dotcms_jobs");
 				}
 			}
-			
+
 			if(UtilMethods.isSet(Config.getStringProperty("DIST_REINDEX_JOURNAL_CLEANUP_CRON_EXPRESSION"))) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("ReindexJournalCleanupJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("ReindexJournalCleanupJob", "dotcms_jobs", DistReindexJournalCleanupThread.class);
@@ -434,7 +435,7 @@ public class DotInitScheduler {
 				    trigger = new CronTrigger("trigger13", "group13", "ReindexJournalCleanupJob", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("DIST_REINDEX_JOURNAL_CLEANUP_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -449,11 +450,11 @@ public class DotInitScheduler {
 					sched.deleteJob("ReindexJournalCleanupJob", "dotcms_jobs");
 				}
 			}
-			
+
 			if(UtilMethods.isSet(Config.getStringProperty("DIST_REINDEX_JOURNAL_CLEANUP_2_CRON_EXPRESSION"))) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("ReindexJournalCleanupJob2", "dotcms_jobs")) == null) {
 							job = new JobDetail("ReindexJournalCleanupJob2", "dotcms_jobs", DistReindexJournalCleanupThread2.class);
@@ -468,7 +469,7 @@ public class DotInitScheduler {
 				    trigger = new CronTrigger("trigger14", "group14", "ReindexJournalCleanupJob2", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("DIST_REINDEX_JOURNAL_CLEANUP_2_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -483,11 +484,11 @@ public class DotInitScheduler {
 					sched.deleteJob("ReindexJournalCleanupJob2", "dotcms_jobs");
 				}
 			}
-			
+
 			if(UtilMethods.isSet(Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"))) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("DashboardJobImpl", "dotcms_jobs")) == null) {
 							job = new JobDetail("DashboardJobImpl", "dotcms_jobs", DashboardProxy.getDashboardJobImplClass());
@@ -502,7 +503,7 @@ public class DotInitScheduler {
 				    trigger = new CronTrigger("trigger15", "group15", "DashboardJobImpl", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -517,11 +518,11 @@ public class DotInitScheduler {
 					sched.deleteJob("DashboardJobImpl", "dotcms_jobs");
 				}
 			}
-			
+
 			if(UtilMethods.isSet(Config.getStringProperty("CLEAN_BLOCK_CACHE_JOB_CRON_EXPRESSION"))) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("CleanBlockCacheScheduledTask", "dotcms_jobs")) == null) {
 							job = new JobDetail("CleanBlockCacheScheduledTask", "dotcms_jobs", CleanBlockCacheScheduledTask.class);
@@ -536,7 +537,7 @@ public class DotInitScheduler {
 				    trigger = new CronTrigger("trigger16", "group16", "CleanBlockCacheScheduledTask", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("CLEAN_BLOCK_CACHE_JOB_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -551,12 +552,12 @@ public class DotInitScheduler {
 					sched.deleteJob("CleanBlockCacheScheduledTask", "dotcms_jobs");
 				}
 			}
-			
-			
+
+
 			if(Config.getBooleanProperty("ENABLE_CREATE_CONTENT_FROM_EMAIL")) {
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("ContentFromEmailJob", "dotcms_jobs")) == null) {
 							job = new JobDetail("ContentFromEmailJob", "dotcms_jobs", ContentFromEmailJob.class);
@@ -572,7 +573,7 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger17", "group17", "ContentFromEmailJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("CONTENT_FROM_EMAIL_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
@@ -587,11 +588,11 @@ public class DotInitScheduler {
 					sched.deleteJob("ContentFromEmailJob", "dotcms_jobs");
 				}
 			}
-			
+
 			if(Config.getBooleanProperty("ENABLE_DELETE_OLDER_CLICKSTREAMS", false)){
 				try {
 					isNew = false;
-					
+
 					try {
 						if ((job = sched.getJobDetail("DeleteOldClickstreams", "dotcms_jobs")) == null) {
 							job = new JobDetail("DeleteOldClickstreams", "dotcms_jobs", DeleteOldClickstreams.class);
@@ -606,32 +607,52 @@ public class DotInitScheduler {
 					trigger = new CronTrigger("trigger18", "group18", "DeleteOldClickstreams", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("DELETE_OLDER_CLICKSTREAMS_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
-					
+
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
 						sched.rescheduleJob("trigger18", "group18", trigger);
 				} catch (Exception e) {
 					Logger.info(DotInitScheduler.class, e.toString());
-				}				
+				}
 			}
 
+			if(Config.getBooleanProperty("ENABLE_ESCALATION", false)){
+				try {
+					isNew = false;
 
-			
-			
-			
-			
-			
-			
-						
+					try {
+						if ((job = sched.getJobDetail("EscalationQueueJob", "dotcms_jobs")) == null) {
+							job = new JobDetail("EscalationQueueJob", "dotcms_jobs", EscalationJob.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob("EscalationQueueJob", "dotcms_jobs");
+						job = new JobDetail("EscalationQueueJob", "dotcms_jobs", EscalationJob.class);
+						isNew = true;
+					}
+					calendar = GregorianCalendar.getInstance();
+					trigger = new CronTrigger("trigger19", "group19", "EscalationQueueJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("ESCALATION_QUEUE_JOB_CRON_EXPRESSION"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					sched.addJob(job, true);
+
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob("trigger19", "group19", trigger);
+				} catch (Exception e) {
+					Logger.info(DotInitScheduler.class, e.toString());
+				}
+			}
+
 	        QuartzUtils.startSchedulers();
-	        
+
 		} catch (SchedulerException e) {
 			Logger.fatal(DotInitScheduler.class, "An error as ocurred scheduling critical startup task of dotCMS, the system will shutdown immediately, " + e.toString(), e);
 			throw e;
 		}
 	}
-	
-	
-	
+
+
+
 }

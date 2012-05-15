@@ -51,7 +51,7 @@ public class SiteSearchConfig extends PublisherConfig {
 		
 	}
 	public boolean runNow(){
-		return this.get(MyConfig.RUN_NOW.toString()) !=null && (Boolean)this.get(MyConfig.RUN_NOW.toString());
+		return this.get(MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(MyConfig.RUN_NOW.toString()));
 		
 	}
 	public void setRunNow(boolean once){

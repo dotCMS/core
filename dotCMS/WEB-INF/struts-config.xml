@@ -43,24 +43,24 @@
       <form-bean name="UserManagerListSearchForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm"></form-bean>
       <form-bean name="UserManagerForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerForm"></form-bean>
       <form-bean name="UserProxyForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerForm"></form-bean>
-      
+
       <form-bean name="FacilityForm" type="com.dotmarketing.portlets.facilities.struts.FacilityForm"></form-bean>
       <form-bean name="UserCategoriesForm" type="com.dotmarketing.portlets.user.struts.UserCategoriesForm"></form-bean>
-      <form-bean name="UserCommentsForm" type="com.dotmarketing.portlets.user.struts.UserCommentsForm"></form-bean>     
+      <form-bean name="UserCommentsForm" type="com.dotmarketing.portlets.user.struts.UserCommentsForm"></form-bean>
       <form-bean name="UserAdditionalInfoForm" type="com.dotmarketing.portlets.user.struts.UserAdditionalInfoForm"></form-bean>
 
       <!--  Product Manager -->
       <form-bean name="DotProductForm" type="com.dotmarketing.portlets.product.struts.ProductForm"></form-bean>
-      <form-bean name="DiscountCodeForm" type="com.dotmarketing.portlets.discountcode.struts.DiscountCodeForm"></form-bean>            
+      <form-bean name="DiscountCodeForm" type="com.dotmarketing.portlets.discountcode.struts.DiscountCodeForm"></form-bean>
       <form-bean name="FormatForm" type="com.dotmarketing.portlets.product.struts.ProductFormatForm"></form-bean>
       <form-bean name="PriceForm" type="com.dotmarketing.portlets.product.struts.ProductPriceForm"></form-bean>
-      
+
       <!--  Order Manager -->
       <form-bean name="OrderForm" type="com.dotmarketing.portlets.order_manager.struts.OrderForm"></form-bean>
       <form-bean name="OrderItemForm" type="com.dotmarketing.portlets.order_manager.struts.OrderItemForm"></form-bean>
       <form-bean name="ViewOrdersForm" type="com.dotmarketing.portlets.order_manager.struts.ViewOrdersForm"></form-bean>
       <form-bean name="productsForm" type="com.dotmarketing.cms.product.struts.ProductsForm"></form-bean>
-      <form-bean name="usersForm" type="com.dotmarketing.portlets.order_manager.struts.UsersForm"></form-bean>    
+      <form-bean name="usersForm" type="com.dotmarketing.portlets.order_manager.struts.UsersForm"></form-bean>
 
       <!--  Web Event Manager -->
       <form-bean name="WebEventForm" type="com.dotmarketing.portlets.webevents.struts.WebEventForm"></form-bean>
@@ -73,16 +73,22 @@
 
       <!-- Comunication Manager -->
       <form-bean name="CommunicationsForm" type="com.dotmarketing.portlets.communications.struts.CommunicationsForm"></form-bean>
-      
+
       <form-bean name="SchedulerForm" type="com.dotmarketing.portlets.scheduler.struts.SchedulerForm"></form-bean>
-      <form-bean name="ReportForm" type="com.dotmarketing.portlets.report.struts.ReportForm"></form-bean>      
-      
+      <form-bean name="ReportForm" type="com.dotmarketing.portlets.report.struts.ReportForm"></form-bean>
+
       <!-- Events Calendar -->
       <form-bean name="CalendarEventForm" type="com.dotmarketing.portlets.calendar.struts.EventForm"></form-bean>
-      
+
       <!-- Product -->
-      <form-bean name="ProductForm" type="com.dotmarketing.portlets.merchant.product.struts.ProductForm"></form-bean> 
-      
+      <form-bean name="ProductForm" type="com.dotmarketing.portlets.merchant.product.struts.ProductForm"></form-bean>
+
+      <!-- Escalation -->
+      <form-bean name="EscalationForm" type="com.dotcms.escalation.form.EscalationForm"></form-bean>
+
+      <!-- Console Log4J -->
+	  <form-bean name="logConsoleForm" type="com.dotmarketing.logConsole.form.ConsoleLogForm" ></form-bean>
+
    <!-- Forms DOTMARKETING -->
 	</form-beans>
 
@@ -94,7 +100,7 @@
 		<forward name="/common/forward_jsp.jsp" path="/common/forward_jsp.jsp" />
 		<forward name="/common/null.html" path="/common/null.html" />
 		<forward name="/common/null.jsp" path="/common/null.jsp" />
-		<forward name="/common/referer_js.jsp" path="/common/referer_js.jsp" />				
+		<forward name="/common/referer_js.jsp" path="/common/referer_js.jsp" />
 		<forward name="/common/referer_jsp.jsp" path="/common/referer_jsp.jsp" />
 		<forward name="/portal/error" path="portal.error" />
 		<forward name="/portal/portlet_access_denied" path="portal.portlet_access_denied" />
@@ -169,10 +175,10 @@
 		<action path="/portal/logout" type="com.liferay.portal.action.LogoutAction">
 			<forward name="/destroy.jsp" path="/destroy.jsp" redirect="true"/>
 		</action>
-		
-		<action path="/portal/login_as" type="com.liferay.portal.action.LoginAsAction" />      
 
-		<action path="/portal/logout_as" type="com.liferay.portal.action.LogoutAsAction" />      
+		<action path="/portal/login_as" type="com.liferay.portal.action.LoginAsAction" />
+
+		<action path="/portal/logout_as" type="com.liferay.portal.action.LogoutAsAction" />
 
 		<action path="/portal/notifications" forward="/portal/notifications.jsp" />
 
@@ -291,7 +297,7 @@
 
 		<action path="/iframe/proxy" forward="/portlet/iframe/proxy.jsp" />
 
-	
+
 
 		<!-- My Account -->
 
@@ -403,26 +409,26 @@
 
 
 		 <!--- ACTION MAPPINGS DOTMARKETING -->
-      
+
       <!-- User Categories-->
       <action path="/ext/user/saveUserCategories" type="com.dotmarketing.portlets.user.action.EditUserCategoriesAction" name="UserCategoriesForm" parameter="dispatch" scope="request">
          <forward name="portlet.my_account.edit_profile" path="portlet.admin.edit_user_profile" />
          <forward name="portlet.admin.list_users" path="portlet.admin.list_users" />
       </action>
       <!--END User Categories -->
-      
+
       <!-- User Comments -->
       <action path="/ext/user/saveUserComments" type="com.dotmarketing.portlets.user.action.EditUserCommentAction" name="UserCommentsForm" parameter="dispatch">
          <forward name="portlet.my_account.edit_profile" path="portlet.admin.edit_user_profile" />
          <forward name="portlet.admin.list_users" path="portlet.admin.list_users" />
       </action>
-      <!--END User Comments -->     
+      <!--END User Comments -->
 
       <!-- User Proxy -->
       <action path="/ext/user/saveUserProxy" type="com.dotmarketing.portlets.user.action.EditUserProxyAction" name="UserProxyForm" parameter="dispatch" validate="false">
          <forward name="portlet.my_account.edit_profile" path="portlet.admin.edit_user_profile" />
       </action>
-      <!--END User Proxy -->  
+      <!--END User Proxy -->
 
 
 
@@ -485,7 +491,7 @@
       <action path="/ext/contentlet/edit_contentlet" type="com.dotmarketing.portlets.contentlet.action.EditContentletAction" name="ContentletForm"  input="portlet.ext.contentlet.edit_contentlet" scope="request" validate="false">
          <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.contentlet.edit_contentlet"></forward>
       </action>
-      
+
       <action path="/ext/contentlet/view_contentlets_popup" type="com.dotmarketing.portlets.contentlet.action.ViewContentletAction">
          <forward name="portlet.ext.contentlet.view_contentlets" path="portlet.ext.contentlet.view_contentlets_popup" />
          <forward name="portlet.ext.contentlet.view" path="portlet.ext.contentlet.view_contentlets_popup" />
@@ -548,7 +554,7 @@
          <forward name="portlet.ext.folders.edit_folder" path="portlet.ext.folders.edit_folder" />
          <forward name="portlet.ext.folders.view_folders" path="/c/ext/folders/view_folders" redirect="true" />
       </action>
-	  
+
       <action path="/ext/folders/publish_folder" type="com.dotmarketing.portlets.folders.action.PublishFolderAction">
          <forward name="portlet.ext.folders.publish_folder" path="portlet.ext.folders.publish_folder" />
       </action>
@@ -578,7 +584,7 @@
       <action path="/ext/files/upload_multiple" type="com.dotmarketing.portlets.files.action.UploadMultipleFilesAction" name="FileForm" scope="request" input="portlet.ext.files.upload_multiple" validate="false">
          <forward name="portlet.ext.files.upload_multiple" path="portlet.ext.files.upload_multiple"></forward>
       </action>
-	  
+
       <!-- File Management -->
 
       <!-- File Upload Management -->
@@ -779,16 +785,16 @@
          <forward name="portlet.ext.events.edit_recurance" path="portlet.ext.events.edit_recurance" />
       </action>
       <!-- Events Admin -->
-      
+
       <!-- Events Approval -->
       <action path="/ext/eventsapproval/view_events" type="com.dotmarketing.portlets.eventsapproval.action.ViewEventsAction">
          <forward name="portlet.ext.eventsapproval.view" path="portlet.ext.eventsapproval.view" />
          <forward name="portlet.ext.eventsapproval.view_events" path="portlet.ext.eventsapproval.view_events" />
       </action>
-      
+
       <action path="/ext/eventsapproval/edit_event" type="com.dotmarketing.portlets.eventsapproval.action.EditEventAction">
          <forward name="portlet.ext.eventsapproval.view_events" path="portlet.ext.eventsapproval.view_events" />
-      </action> 
+      </action>
       <!-- Events Approval -->
 
       <!-- CMS Maintenance -->
@@ -829,10 +835,10 @@
       <action path="/ext/structure/edit_relationship" type="com.dotmarketing.portlets.structure.action.EditRelationshipAction" name="RelationshipForm" input="portlet.ext.structure.edit_relationship" validate="false" scope="request">
          <forward name="portlet.ext.structure.edit_relationship" path="portlet.ext.structure.edit_relationship" />
       </action>
-     
-      
+
+
       <!-- END STRUCTURE & FIELD-->
-      
+
 	<!-- FORM HANDLER -->
       <action path="/ext/formhandler/view_form" type="com.dotmarketing.portlets.form.action.ViewFormHandlerAction" name="" input="portlet.ext.formhandler.view" validate="false" scope="request">
          <forward name="portlet.ext.formhandler.view" path="portlet.ext.formhandler.view" />
@@ -889,12 +895,12 @@
          <forward name="portlet.ext.facilities.view" path="portlet.ext.facilities.view" />
          <forward name="portlet.ext.facilities.view_facilities" path="portlet.ext.facilities.view_facilities" />
       </action>
-      
+
       <action path="/ext/facilities/edit_facility" type="com.dotmarketing.portlets.facilities.action.EditFacilityAction" name="FacilityForm" validate="false" input="portlet.ext.facilities.edit_facility" scope="request">
          <forward name="portlet.ext.facilities.edit_facility" path="portlet.ext.facilities.edit_facility" />
       </action>
       <!-- Facilities Admin -->
-      
+
       <!-- Web Forms -->
       <action path="/ext/webforms/view_webforms" type="com.dotmarketing.portlets.webforms.action.ViewWebFormsAction">
          <forward name="portlet.ext.webforms.view" path="portlet.ext.webforms.view" />
@@ -916,42 +922,42 @@
          <forward name="portlet.ext.product.edit_format" path="portlet.ext.product.edit_format" />
          <forward name="portlet.ext.product.view" path="portlet.ext.product.view" />
       </action>
-      <action path="/ext/product/edit_price" type="com.dotmarketing.portlets.product.action.EditPriceAction" name="FormatForm" validate="false" input="portlet.ext.product.edit_format" scope="request">    
+      <action path="/ext/product/edit_price" type="com.dotmarketing.portlets.product.action.EditPriceAction" name="FormatForm" validate="false" input="portlet.ext.product.edit_format" scope="request">
          <forward name="portlet.ext.product.edit_format" path="portlet.ext.product.edit_format" />
          <forward name="portlet.ext.product.edit_price" path="portlet.ext.product.edit_price" />
          <forward name="portlet.ext.product.edit_product" path="portlet.ext.product.edit_product" />
          <forward name="portlet.ext.product.view" path="portlet.ext.product.view" />
-      </action> 
+      </action>
       <action path="/ext/product/relate_product" type="com.dotmarketing.portlets.product.action.RelateProductAction" name="DotProductForm" validate="false" input="portlet.ext.product.related_product" scope="request">
          <forward name="portlet.ext.product.related_product" path="portlet.ext.product.related_product" />
-      </action>  
+      </action>
 
       <!-- Order Manager -->
       <action path="/ext/order_manager/view_orders" type="com.dotmarketing.portlets.order_manager.action.ViewOrdersAction" name="ViewOrdersForm" validate="false" scope="request">
          <forward name="portlet.ext.order_manager.view" path="portlet.ext.order_manager.view" />
          <forward name="portlet.ext.order_manager.view_orders" path="portlet.ext.order_manager.view_orders" />
       </action>
-      
+
       <action path="/ext/order_manager/edit_order" type="com.dotmarketing.portlets.order_manager.action.EditOrderAction" name="OrderForm" validate="false" input="portlet.ext.order_manager.view" scope="request">
          <forward name="portlet.ext.order_manager.view" path="portlet.ext.order_manager.view" />
          <forward name="portlet.ext.order_manager.view_cart" path="portlet.ext.order_manager.view_cart" />
-         <forward name="portlet.ext.order_manager.edit_order" path="portlet.ext.order_manager.edit_order" />         
+         <forward name="portlet.ext.order_manager.edit_order" path="portlet.ext.order_manager.edit_order" />
       </action>
-            
+
       <action path="/ext/order_manager/view_products" type="com.dotmarketing.portlets.order_manager.action.ViewProductsAction" name="productsForm" validate="false" input="" scope="request">
          <forward name="portlet.ext.order_manager.view_products" path="portlet.ext.order_manager.view_products" />
          <forward name="portlet.ext.order_manager.view_cart" path="portlet.ext.order_manager.view_cart" />
       </action>
-      
+
       <action path="/ext/order_manager/view_users" type="com.dotmarketing.portlets.order_manager.action.ViewUsersAction" name="usersForm" validate="false" input="" scope="request">
          <forward name="portlet.ext.order_manager.view_users" path="portlet.ext.order_manager.view_users" />
          <forward name="checkout" path="/c/ext/order_manager/view_checkout?cmd=view"/>
       </action>
-      
+
       <action path="/ext/order_manager/view_checkout" type="com.dotmarketing.portlets.order_manager.action.ViewCheckOutAction" name="OrderForm" validate="false" input="portlet.ext.order_manager.view_checkOut" scope="request">
          <forward name="portlet.ext.order_manager.view_checkOut" path="portlet.ext.order_manager.view_checkOut" />
-         <forward name="portlet.ext.order_manager.view_invoice" path="portlet.ext.order_manager.view_invoice" />        
-      </action>             
+         <forward name="portlet.ext.order_manager.view_invoice" path="portlet.ext.order_manager.view_invoice" />
+      </action>
       <!-- Order Manager -->
 
       <!-- Web Events Registration Manager -->
@@ -967,7 +973,7 @@
          <forward name="portlet.ext.webevents_registration.add_registration.checkConfirmationEmail" path="/application/webevents/webevent_registration_confirmation_check_email.dot" />
          <forward name="portlet.ext.webevents_registration.add_registration.webinarConfirmationEmail" path="/application/webevents/webinar_registration_confirmation_email.dot" />
          <forward name="portlet.ext.webevents_registration.add_registration.webinarCheckConfirmationEmail" path="/application/webevents/webinar_registration_check_confirmation_email.dot" />
-      </action> 
+      </action>
 
       <action path="/ext/event_registration/add_registration" type="com.dotmarketing.portlets.event_registrations.action.AddRegistrationAction" name="WebEventRegistrationForm" validate="false" input="portlet.ext.webevents_registration.edit_registration" scope="session">
          <forward name="portlet.ext.webevents_registration.add_registration.step1" path="portlet.ext.webevents_registration.add_registration.step1" />
@@ -983,10 +989,10 @@
          <forward name="portlet.ext.webevents_registration.add_registration.webinarConfirmationEmail" path="/application/webevents/webinar_registration_confirmation_email.dot" />
          <forward name="portlet.ext.webevents_registration.add_registration.webinarCheckConfirmation" path="portlet.ext.webevents_registration.add_registration.webinarCheckConfirmation" />
          <forward name="portlet.ext.webevents_registration.add_registration.webinarCheckConfirmationEmail" path="/application/webevents/webinar_registration_check_confirmation_email.dot" />
-      </action> 
+      </action>
 
       <!-- Web Events Registration Manager -->
-      
+
       <!-- Comunication Manager -->
       <action path="/ext/communications/view_communications" type="com.dotmarketing.portlets.communications.action.ViewCommunicationsAction">
          <forward name="portlet.ext.communications.view" path="portlet.ext.communications.view" />
@@ -998,25 +1004,25 @@
          <forward name="portlet.ext.communications.view_communications" path="portlet.ext.communications.view_communications" redirect="true" />
       </action>
       <!-- Comunication Manager   -->
-      
+
       <!-- User Proxy Additional Information -->
       <action path="/ext/user/saveUserAdditionalInfo" type="com.dotmarketing.portlets.user.action.EditUserAdditionalInfoAction" name="UserAdditionalInfoForm" parameter="dispatch">
          <forward name="portlet.my_account.edit_profile" path="portlet.admin.edit_user_profile" />
       </action>
-      <!--END User Proxy Additional Information -->      
+      <!--END User Proxy Additional Information -->
 
-      <!-- Discount Code -->     
+      <!-- Discount Code -->
       <action path="/ext/discountcode/view_discountcode" type="com.dotmarketing.portlets.discountcode.action.ViewDiscountCodeAction" name="DiscountCodeForm" validate="false" input="portlet.ext.discountcode.view_discountcode" scope="request">
          <forward name="portlet.ext.discountcode.view" path="portlet.ext.discountcode.view" />
          <forward name="portlet.ext.discountcode.view_discountcode" path="portlet.ext.discountcode.view_discountcode" />
       </action>
-      
+
       <action path="/ext/discountcode/edit_discountcode" type="com.dotmarketing.portlets.discountcode.action.EditDiscountCodeAction" name="DiscountCodeForm" validate="false" input="portlet.ext.discountcode.edit_discountcode" scope="request">
          <forward name="portlet.ext.discountcode.edit_discountcode" path="portlet.ext.discountcode.edit_discountcode" />
          <forward name="portlet.ext.discountcode.view" path="portlet.ext.discountcode.view" />
-      </action> 
-      <!-- Discount Code -->  
-      
+      </action>
+      <!-- Discount Code -->
+
       <!-- Content Ratings -->
       <action path="/ext/contentratings/view_contentratings" type="com.dotmarketing.portlets.contentratings.action.ViewContentRatingsAction">
          <forward name="portlet.ext.contentratings.view" path="portlet.ext.contentratings.view" />
@@ -1025,7 +1031,7 @@
          <forward name="portlet.ext.contentratings.view" path="portlet.ext.contentratings.view" />
       </action>
       <!-- Content Ratings -->
-      
+
       <!-- Schedulers Management -->
       <action path="/ext/scheduler/view_schedulers" type="com.dotmarketing.portlets.scheduler.action.ViewSchedulersAction">
          <forward name="portlet.ext.scheduler.view_schedulers" path="portlet.ext.scheduler.view_schedulers" />
@@ -1049,7 +1055,7 @@
          <forward name="portlet.ext.report.get_parameters" path="portlet.ext.report.get_parameters" />
       </action>
       <!-- Reporter -->
-      
+
       <!-- Events Calendar Manager -->
       <action path="/ext/calendar/view_calendar" type="com.dotmarketing.portlets.calendar.action.ViewCalendarAction">
          <forward name="portlet.ext.calendar.view" path="portlet.ext.calendar.view" />
@@ -1060,13 +1066,13 @@
          <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.calendar.edit_event"></forward>
       </action>
 
-      <!-- Events Calendar Manager   -->    
-      
+      <!-- Events Calendar Manager   -->
+
       <!-- Host Admin -->
       <action path="/ext/hostadmin/view_hosts" type="com.dotmarketing.portlets.hostadmin.action.ViewHostsAction" name="" validate="false" scope="request">
          <forward name="portlet.ext.hostadmin.view_hosts" path="portlet.ext.hostadmin.view_hosts" />
       </action>
-      
+
       <!-- Dashboard -->
       <action path="/ext/dashboard/view_dashboard" type="com.dotmarketing.portlets.dashboard.action.ViewDashboardAction" name="" validate="false" scope="request">
          <forward name="portlet.ext.dashboard.view_dashboard" path="portlet.ext.dashboard.view_dashboard" />
@@ -1077,10 +1083,25 @@
          <forward name="portlet.ext.files.view_files" path="portlet.ext.files.view_files" />
       </action>
 
+	<!-- Escalation -->
+	<action path="/ext/escalation/viewJobEsc" type="com.dotcms.escalation.business.ManualExpiryJobLaunchAction">
+		<forward name="portlet.ext.plugins.expCont.struts" path="portlet.ext.plugins.expCont.struts" />
+	</action>
+	<action path="/ext/escalation/RunJobEsc" type="com.dotcms.escalation.business.ManualExpiryJobLaunchAction" name="EscalationForm">
+		<forward name="portlet.ext.plugins.expCont.struts" path="portlet.ext.plugins.expCont.struts" />
+	</action>
 
-		
+	<!-- Console LOG4J -->
+	<action path="/ext/logConsole/viewConsole" type="com.dotmarketing.logConsole.business.LogConfigAction" name="logConsoleForm">
+		<forward name="portlet.ext.plugins.logMan.struts" path="portlet.ext.plugins.logMan.struts" />
+	</action>
+
+	<action path="/ext/logConsole/runConsole" type="com.dotmarketing.logConsole.business.UpdateLogConfigAction" name="logConsoleForm">
+		<forward name="portlet.ext.plugins.logMan.struts" path="portlet.ext.plugins.logMan.struts" />
+	</action>
+
 	</action-mappings>
-	
+
 	<!--  DOTMARKETING -->
 		<controller processorClass="com.dotmarketing.struts.PortalRequestProcessor" contentType="text/html; charset=UTF-8"/>
 	<!--  DOTMARKETING -->
@@ -1102,7 +1123,7 @@
 		<set-property property="moduleAware" value="true" />
 		<set-property property="definitions-parser-validate" value="true" />
 	</plug-in>
-	
+
 	<!-- Validation Plug-In DOTMARKETING -->
    <plug-in className="org.apache.struts.validator.ValidatorPlugIn">
       <set-property property="pathnames" value="/WEB-INF/validator-rules.xml, /WEB-INF/validation.xml" />

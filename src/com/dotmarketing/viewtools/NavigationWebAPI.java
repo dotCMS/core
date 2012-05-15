@@ -194,7 +194,7 @@ public class NavigationWebAPI implements ViewTool {
 		if (openPath.equals(fullPath) && openPath.endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"))) {
 			getPageTrail(stringbuffer, fullPath, crumbTitle, request);
 		} else {
-			Folder folder = CacheLocator.getFolderCache().getFolderByPathAndHost(openPath, host);
+			Folder folder = APILocator.getFolderAPI().findFolderByPath(openPath, host, user, true);
 
 			String tempPath = openPath + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
@@ -373,7 +373,7 @@ public class NavigationWebAPI implements ViewTool {
 					fileExists = false;
 				}
 			} else {
-				Folder folder = CacheLocator.getFolderCache().getFolderByPathAndHost(startFromPath, APILocator.getHostAPI().find(hostId, user, true));
+				Folder folder = APILocator.getFolderAPI().findFolderByPath(startFromPath, hostId, user, true);
 				Logger.debug(NavigationWebAPI.class, "NavigationWebAPI :: StaticMenuBuilder folder=" + APILocator.getIdentifierAPI().find(folder).getPath());
 
 				fileName = folder.getInode() + "_levels_" + numberOfLevels + paramsValues.hashCode() + "_static.vtl";
@@ -848,9 +848,10 @@ public class NavigationWebAPI implements ViewTool {
 				}
 
 			} else {
- 
-				Folder folder = CacheLocator.getFolderCache().getFolderByPathAndHost(startFromPath, APILocator.getHostAPI().find(hostId, user,true));
-				Logger.debug(StaticMenuBuilder.class, "StaticMenuBuilder folder=" + APILocator.getIdentifierAPI().find(folder).getPath());
+				Folder folder = APILocator.getFolderAPI().findFolderByPath(startFromPath, hostId, user, true);
+				try{
+					Logger.debug(StaticMenuBuilder.class, "StaticMenuBuilder folder=" + APILocator.getIdentifierAPI().find(folder).getPath());
+				}catch (Exception e) {/*do nothing*/}
 
 				fileName = folder.getInode() + "_siteMapLevels_"+startFromLevel+"_" + numberOfLevels+"_"+reverseOrder+"_"+addHome + "_" + siteMapIdPrefix+ "_static.vtl";
 				menuId = String.valueOf(folder.getInode());
@@ -1189,7 +1190,7 @@ public class NavigationWebAPI implements ViewTool {
 			}
 			else
 			{
-				Folder folder = CacheLocator.getFolderCache().getFolderByPathAndHost(startFromPath, APILocator.getHostAPI().find(hostId, user, true));
+				Folder folder = APILocator.getFolderAPI().findFolderByPath(startFromPath, hostId, user, true);
 				fileName = folder.getInode() + "_levels_" + numberOfLevels + paramsValues.hashCode() +  "_static.vtl";
 				file = new java.io.File(MENU_VTL_PATH + fileName);
 				if (file.exists() && file.length() > 0)
@@ -1411,8 +1412,10 @@ public class NavigationWebAPI implements ViewTool {
 					fileExists = false;
 				}
 			} else {
-                Folder folder = CacheLocator.getFolderCache().getFolderByPathAndHost(startFromPath, APILocator.getHostAPI().find(hostId, user,true));
-				Logger.debug(NavigationWebAPI.class, "NavigationWebAPI :: StaticMenuBuilder folder=" + APILocator.getIdentifierAPI().find(folder).getPath());
+                Folder folder = APILocator.getFolderAPI().findFolderByPath(startFromPath, hostId, user, true);
+                try{
+                	Logger.debug(NavigationWebAPI.class, "NavigationWebAPI :: StaticMenuBuilder folder=" + APILocator.getIdentifierAPI().find(folder).getPath());
+                }catch(Exception e){/*do Nothing*/}
 
 				fileName = folder.getInode() + "_levels" + startFromPath.replace("/", "_") + "_" + numberOfLevels + "_static.vtl";
 				file = new java.io.File(MENU_VTL_PATH + fileName);

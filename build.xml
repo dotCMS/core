@@ -251,6 +251,7 @@
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
 		<copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+		<antcall target="deploy-plugins" />
 	</target>
 
 	<target name="deploy-anttasks" depends="jar-anttasks" description="builds and deploys core and plugins">
@@ -258,7 +259,6 @@
 			<fileset dir="${deploy.dir}" includes="dotcms_ant.jar" />
 		</delete>
 		<copy file="${build.lib}/dotcms_ant.jar" tofile="${deploy.dir}/dotcms_ant.jar" />
-
 	</target>
 
 	<target name="rep">
@@ -402,6 +402,8 @@
         <copy todir="${distribution.dotserver.output}">
 			<fileset dir=".">
 				<exclude name="**/.git" />
+				<exclude name=".git" />
+				<exclude name=".git/**" />
 				<exclude name="tomcat/logs/**" />
 				<exclude name="dotCMS/WEB-INF/dotlucene/**" />
 				<exclude name="dotCMS/assets/**" />
@@ -571,22 +573,23 @@
   </classpath>
 </taskdef>
 
+    <target name="drop-create-db-test" depends="set-properties, drop-db, create-db"/>
 
 	<!-- Main test target, this tasks will run all the unit tests of the application -->
-	<target name="test-dotcms" depends="deploy-tests, set-properties, create-db">
+	<target name="test-dotcms" depends="deploy-tests, drop-create-db-test">
 		<runservertests
 		    testurl="http://localhost:${server.port}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
 		    testtarget="test-all-junits"/>
 		<antcall target="restore-files"/>
-		<antcall target="drop-db"/>
+		<!--<antcall target="drop-db"/>-->
 	</target>
 
 	<!-- Hit the tests servlet to run all the unit tests of the application -->
 	<target name="test-all-junits" depends="">
 		<condition property="get.ok">
-		<http url="http://localhost:${server.port}/servlet/test" errorsbeginat="400">
+		<http url="${server.test.url}" errorsbeginat="400">
 		</http>
 		</condition>
 		<fail unless="get.ok" message="One or more tests failed!!!" />
@@ -621,7 +624,7 @@
 
 	<!-- Creates an empty db. Attributes are defined in the build.properties file -->
 	<target name="create-db" >
-		<sql driver="org.postgresql.Driver"
+		<sql driver="${db.driver}"
 			url="${db.base.url}"
 			userid="${db.username}"
 			password="${db.password}"
@@ -634,13 +637,12 @@
 
 	<!-- Drops the test db. Attributes are defined in the build.properties file -->
 	<target name="drop-db" >
-				<sql driver="org.postgresql.Driver"
+				<sql driver="${db.driver}"
 					url="${db.base.url}"
 					userid="${db.username}"
 					password="${db.password}"
 					autocommit="true"
 					classpathref="files-classpath">
-					select pg_terminate_backend(procpid) from pg_stat_activity where datname='${db.name}';
 					DROP DATABASE IF EXISTS ${db.name};
 				</sql>
 			</target>
@@ -654,6 +656,7 @@
 		<copy file="${src.tests.dir}/ROOT.xml" todir="tomcat/conf/Catalina/localhost"/>
 		<replace file="tomcat/conf/server.xml" token="{port}" value="${server.port}"/>
 		<replace file="tomcat/conf/Catalina/localhost/ROOT.xml">
+			<replacefilter token="{driver}" value="${db.driver}"/>
 			<replacefilter token="{url}" value="${db.url}"/>
 			<replacefilter token="{username}" value="${db.username}"/>
 			<replacefilter token="{password}" value="${db.password}"/>
