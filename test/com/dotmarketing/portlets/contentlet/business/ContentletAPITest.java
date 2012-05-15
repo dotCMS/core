@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import org.apache.lucene.queryParser.ParseException;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -49,6 +50,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
+    @Ignore ( "Not Ready to Run." )
     @Test
     public void findAllContent () throws DotDataException, DotSecurityException {
 
@@ -571,6 +573,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
+    @Ignore ( "Not Ready to Run." )
     @Test
     public void cleanField () throws DotDataException, DotSecurityException {
 
@@ -769,6 +772,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
+    @Ignore ( "Not Ready to Run." )
     @Test
     public void addFileToContentlet () throws Exception {
 
@@ -830,6 +834,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
+    @Ignore ( "Not Ready to Run." )
     @Test
     public void addImageToContentlet () throws Exception {
 
@@ -1561,6 +1566,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
+    @Ignore ( "Not Ready to Run." )
     @Test
     public void getRelatedContent () throws DotSecurityException, DotDataException {
 
@@ -1605,6 +1611,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
+    @Ignore ( "Not Ready to Run." )
     @Test
     public void getRelatedContentPullByParent () throws DotSecurityException, DotDataException {
 
