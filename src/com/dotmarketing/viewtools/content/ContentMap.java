@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.dotmarketing.viewtools.content;
 
@@ -47,14 +47,14 @@ import com.liferay.portal.model.User;
 /**
  * The purpose of this object is to provide an easy way on the frontend of dotCMS
  * to get at fields, categories, permissions and other related things surrounding content.
- * From Velocity you should be able to do things like $content.myField where myfield is the 
- * velocity variable of a field on the content. 
- * 
- * On a technical note maintainers of this class need to ensure that Velocity's introspector's datacache 
+ * From Velocity you should be able to do things like $content.myField where myfield is the
+ * velocity variable of a field on the content.
+ *
+ * On a technical note maintainers of this class need to ensure that Velocity's introspector's datacache
  * doesn't grow out of control when pulling saying thousands of these objects. We have seen
- * Velocity not do well when storing many categories in it's context.  
+ * Velocity not do well when storing many categories in it's context.
  * @author Jason Tesser
- * @since 1.9.3 
+ * @since 1.9.3
  */
 public class ContentMap {
 
@@ -70,7 +70,7 @@ public class ContentMap {
 	private Structure structure;
 	private String title;
 	private Context context;
-	
+
 	public ContentMap(Contentlet content, User user, boolean EDIT_OR_PREVIEW_MODE, Host host, Context context) {
 		this.content = content;
 		this.conAPI = APILocator.getContentletAPI();
@@ -81,22 +81,22 @@ public class ContentMap {
 		this.host = host;
 		this.context = context;
 	}
-	
+
 	/**
 	 * Use to get a value of the field on a content returned from the ContentTool Viewtool
 	 * This method gets called automatically when you place a "." after the contentmap object in Velocity<br/>
 	 * EXAMPLE : $mycontent.headline will call this method and return the value for the headline field of a piece of content.<br/>
-	 * NOTE: This is the last thing that gets called meaning if you do $mycontent.urlMap it will call the actual getUrlMap because that 
-	 * method exists. This is case sensitive and uses standard Java bean reflection. For those not familiar here take note that the way to 
-	 * call the getUrlMap is $mycontent.urlMap the get is removed and the next letter us lowered.<br/> 
-	 * 
+	 * NOTE: This is the last thing that gets called meaning if you do $mycontent.urlMap it will call the actual getUrlMap because that
+	 * method exists. This is case sensitive and uses standard Java bean reflection. For those not familiar here take note that the way to
+	 * call the getUrlMap is $mycontent.urlMap the get is removed and the next letter us lowered.<br/>
+	 *
 	 * Notes and Examples on Field Types <br/>
-	 * CATEGORY FIELDS : The category field is a heavier pull.  It is retrieved lazily meaning not until you say $mycon.mycatfield will it get retrieved. 
+	 * CATEGORY FIELDS : The category field is a heavier pull.  It is retrieved lazily meaning not until you say $mycon.mycatfield will it get retrieved.
 	 * It is not a bad performance but certainly slower then not displaying the category fields. Searching for categories doesn't effect the speed at all
 	 * it is only displaying them that will. The value returned to Velocity are the actual Category Objects. You get an ArrayList of them<br/>
 	 * <br/>
 	 * FILE/IMAGE FIELDS: You can get File/Image fields as well. $con.myimage or $con.myfile. It will return a FileMap object which wraps the actual File object from dotCMS.It adds the uri as a variable.
-	 * All the objects have toString implemented on them which means you can spit it out in velocity and see what it available to you.<br/> 
+	 * All the objects have toString implemented on them which means you can spit it out in velocity and see what it available to you.<br/>
 	 * <br/>
 	 * BINARY FIELDS : You can also get at binary field types. $mycon.myBinaryField This return the BinaryMap object to you.<br/>
 	 * TAG FIELDS : You get a TagList which is an arrayList that lets you get at the raw tag value. Meaning a comma separated list of values. <br />
@@ -123,10 +123,10 @@ public class ContentMap {
 					ret =  getContentletsTitle();
 				}else if(fieldVariableName.equalsIgnoreCase("structure")){
 					return getStructure();
-				//http://jira.dotmarketing.net/browse/DOTCMS-6033	
+				//http://jira.dotmarketing.net/browse/DOTCMS-6033
 				}else if(fieldVariableName.contains("FileURI")){
 					f = retriveField(fieldVariableName.replaceAll("FileURI", ""));
-					if(f!=null && (f.getFieldType()!= null && f.getFieldType().equals(Field.FieldType.FILE.toString()) 
+					if(f!=null && (f.getFieldType()!= null && f.getFieldType().equals(Field.FieldType.FILE.toString())
 							|| f.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
 						String fid = (String)conAPI.getFieldValue(content, f);
 						if(!UtilMethods.isSet(fid)){
@@ -152,7 +152,7 @@ public class ContentMap {
 						}
 					}else{
 						return null;
-					}	
+					}
 				}else{
 					return content.getMap().get(fieldVariableName);
 				}
@@ -255,14 +255,15 @@ public class ContentMap {
 					retMap.put(key.replaceAll("\\W",""), keyValueMap.get(key));
 				}
 				retMap.put("keys", retMap.keySet());
+				retMap.put("map", keyValueMap);
 				return retMap;
 			}
-			
+
 			//ret could have been set by title
 			if(ret == null){
 				ret = conAPI.getFieldValue(content, f);
 			}
-			
+
 			//handle Velicty Code
 			if(ret != null && (f == null || f.getFieldType().equals(Field.FieldType.TEXT.toString()) || f.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || f.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString()) || f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) && (ret.toString().contains("#") || ret.toString().contains("$"))){
 				VelocityEngine ve = VelocityUtil.getEngine();
@@ -280,7 +281,7 @@ public class ContentMap {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Returns the URLMap if it exists for a piece of content. <br/>
 	 * EXAMPLE : $mycontent.urlMap OR $mycontent.getUrlMap() both of these work the same.
@@ -295,28 +296,28 @@ public class ContentMap {
 		}
 		return result;
 	}
-	
+
 	private Field retriveField(String fieldVariableName) throws Exception{
 		if(fieldMap == null){
 			fieldMap = UtilMethods.convertListToHashMap(fields, "getVelocityVarName", String.class);
 		}
 		return fieldMap.get(fieldVariableName);
 	}
-	
+
 	public Structure getStructure() {
 		structure = content.getStructure();
 		return structure;
 	}
-	
+
 	public String getContentletsTitle() {
 		title = content.getTitle();
 		return title;
 	}
-	
+
 	public String toString() {
 		getContentletsTitle();
 		getStructure();
 		return ToStringBuilder.reflectionToString(this);
 	}
-	
+
 }
