@@ -20,6 +20,9 @@ public class ContainerAjaxUtil {
 	private static final String PATTERN_BODY_START = "^.*<body>.*$";
 	private static final String PATTERN_BODY_END = "^.*</body>.*$";
 	
+	private static final String PATTERN_METATAG = "^<meta.*/>$";
+	
+	
 	private static List<String> PATTERNS = new ArrayList<String>();
 	
 	static {
@@ -49,5 +52,16 @@ public class ContainerAjaxUtil {
 			}
 		}
 		return match;
+	}
+	
+	public static boolean checkMetadataContainerCode(StringBuffer containerCode){
+		return checkMetadataContainerCode(containerCode.toString());
+	}
+	
+	public static boolean checkMetadataContainerCode(String containerCode){		
+		Pattern patt = Pattern.compile(PATTERN_METATAG);
+		String _containerCode = containerCode.replaceAll("\n", "").replaceAll("\r", "");
+		Matcher matcher = patt.matcher(_containerCode);
+		return matcher.matches();
 	}
 }

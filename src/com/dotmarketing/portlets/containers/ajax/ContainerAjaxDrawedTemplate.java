@@ -90,7 +90,7 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
 				 * contents and doesn't stay into the template for more than one time.
 				 */
 				contMap.put("maxContentlets", cont.getMaxContentlets());
-				if(!ContainerAjaxUtil.checkContainerCode(containerCode))
+				if(!ContainerAjaxUtil.checkContainerCode(containerCode) && !cont.isForMetadata())
 					list.add(contMap);
 			}
 		}

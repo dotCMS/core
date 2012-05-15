@@ -200,7 +200,6 @@ public class BrowserAPI {
         			continue;
         		}
         		IFileAsset fileAsset = (IFileAsset)file;
-
         		List<Map<String, Object>> wfActionMapList = new ArrayList<Map<String, Object>> ();
         		for(WorkflowAction action : wfActions){
 
@@ -225,6 +224,7 @@ public class BrowserAPI {
 
 
         		Map<String, Object> fileMap = fileAsset.getMap();
+        		
         		fileMap.put("permissions", permissions);
         		fileMap.put("mimeType", APILocator.getFileAPI().getMimeType(fileAsset.getFileName()));
         		fileMap.put("name", fileAsset.getFileName());
@@ -236,12 +236,18 @@ public class BrowserAPI {
         		fileMap.put("contentEditable", contentEditable);
         		fileMap.put("size", fileAsset.getFileSize());
         		fileMap.put("publishDate", fileAsset.getIDate());
+        		// BEGIN GRAZIANO issue-12-dnd-template
+        		fileMap.put("parent", fileAsset.getParent()!=null?fileAsset.getParent():"");
+        		fileMap.put("isContentlet", false);
+        		// END GRAZIANO issue-12-dnd-template
         		if(contentlet != null){
         			fileMap.put("identifier", contentlet.getIdentifier());
         			fileMap.put("inode", contentlet.getInode());
         			fileMap.put("languageId", contentlet.getLanguageId());
         			fileMap.put("isLocked", contentlet.isLocked());
+        			fileMap.put("isContentlet", true);
         		}
+        	
         		returnList.add(fileMap);
         	}
         	}
