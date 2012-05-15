@@ -159,11 +159,6 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		this.reviewInterval = reviewInterval;
 	}
 
-	public List<Field> getFieldsNoLock()
-	{
-		return FieldFactory.getFieldByStructureNoLock(inode);
-	}
-
 	/**
 	 * Retrieves a structure field based on the field label name
 	 * This is a not recommended way to obtain a field since the
