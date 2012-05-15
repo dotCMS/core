@@ -7,3 +7,8 @@ ADD (
  	ADD_CONTAINER_LINKS integer,
  	CONTAINERS_ADDED integer
 );
+
+ALTER TABLE CONTAINERS
+ADD (
+ 	FOR_METADATA tinyint(1)
+);
