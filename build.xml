@@ -578,7 +578,7 @@
 	<!-- Main test target, this tasks will run all the unit tests of the application -->
 	<target name="test-dotcms" depends="deploy-tests, drop-create-db-test">
 		<runservertests
-		    testurl="${server.test.url}"
+		    testurl="http://localhost:${server.port}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
 		    testtarget="test-all-junits"/>
@@ -589,7 +589,7 @@
 	<!-- Hit the tests servlet to run all the unit tests of the application -->
 	<target name="test-all-junits" depends="">
 		<condition property="get.ok">
-		<http url="http://localhost:${server.port}/servlet/test" errorsbeginat="400">
+		<http url="${server.test.url}" errorsbeginat="400">
 		</http>
 		</condition>
 		<fail unless="get.ok" message="One or more tests failed!!!" />
