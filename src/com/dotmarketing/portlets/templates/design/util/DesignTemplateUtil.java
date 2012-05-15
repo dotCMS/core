@@ -300,10 +300,12 @@ public class DesignTemplateUtil {
 	private static void getMetatagContainers(Document templateBody){
 		Element head = templateBody.head();
 		Element metatagToAdd = templateBody.getElementById("metatagToAdd");
-		Elements metatags = metatagToAdd.getElementsByAttributeValueStarting(ID_ATTRIBUTE, FILE_TO_ADD_START_ID);
-		for(Element meta:metatags)
-			head.append(meta.html());
-		metatagToAdd.remove();
+		if(null!=metatagToAdd){
+			Elements metatags = metatagToAdd.getElementsByAttributeValueStarting(ID_ATTRIBUTE, FILE_TO_ADD_START_ID);
+			for(Element meta:metatags)
+				head.append(meta.html());
+			metatagToAdd.remove();
+		}
 	}
 	
 	// **********************************************************************************************************
