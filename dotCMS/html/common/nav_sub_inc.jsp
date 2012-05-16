@@ -690,7 +690,7 @@ dojo.require("dojo.cookie");
 				<h2><%=LanguageUtil.get(pageContext, "Report-a-Bug") %></h2>
 				<p><%=LanguageUtil.get(pageContext, "dotCMS-is-dedicated-to-quality-assurance") %></p>
 				<div class="buttonRow">
-					<button dojoType="dijit.form.Button" iconClass="bugIcon" onclick="window.open('http://www.dotcms.org/jira');">
+					<button dojoType="dijit.form.Button" iconClass="bugIcon" onclick="window.open('https://github.com/dotCMS');">
 						<%=LanguageUtil.get(pageContext, "Report-a-Bug") %>
 					</button>
 			</td>
