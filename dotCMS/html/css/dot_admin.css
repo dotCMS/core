@@ -619,3 +619,7 @@ table.bgThumbnail td div{padding:4px;border:1px solid #a0a0a0;margin:6px;-moz-bo
 table.bgThumbnail td div a{border:1px solid #a0a0a0;padding:2px;display:block;}
 
 .showPointer{cursor: pointer;};
+
+/* Help Dialog */
+div#_dotHelpMenu{color:red;}
+#_dotHelpResults{margin-left:230px;border-left:1px solid #ccc; padding-left:15px;}

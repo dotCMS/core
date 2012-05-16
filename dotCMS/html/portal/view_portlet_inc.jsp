@@ -166,3 +166,61 @@ if(!statePopUp || portletException){%>
 <%}else{ %>
 	<%= renderRequest.getAttribute(WebKeys.PORTLET_CONTENT) %>
 <%}}%>
+
+
+<style>
+.dotcmsHelpButton{display:block;position:absolute;top:3px;right:50%;margin-left:200px;padding:3px 5px;border:1px solid #fff;font-size:11px;background: rgba(255, 255, 255, 0.3);color:#000;text-decoration:none;}
+.dotcmsHelpButton:hover{background: rgba(255, 255, 255, 0.8);}
+</style>
+
+<script>
+	function showHelp(){
+		dijit.byId("_helpWindow").show();
+		
+		
+		
+		var jsonpArgs = {
+			url: "http://dotcms.com/internal/jsonp.dot?id=<%=portlet.getPortletId() %>",
+			callbackParamName: "dotcallback",
+			load: function(data){
+				var content = data.contentlets;
+				var targetMenu = dojo.byId("_dotHelpMenu");
+				var targetBody = dojo.byId("_dotHelpResults");
+				
+				targetMenu.innerHTML = "";
+				targetBody.innerHTML = "";
+				
+				var i = 0;
+				dojo.forEach(content, function(contentlets,i){
+					targetMenu.innerHTML += "<a href='#" + i + "' class='helpMenuLink'>" + data.contentlets[i].headline + "</a><br>";
+					i++;
+				});
+				
+				var i = 0;
+				dojo.forEach(content, function(contentlets,i){
+					targetBody.innerHTML += "<h2 id='" + i + "'>" + data.contentlets[i].headline + "</h2>" 
+					targetBody.innerHTML += data.contentlets[i].body;
+					targetBody.innerHTML += "<div style='border-top:1px solid #ccc;margin-top:30px;padding-top:20px;'>&nbsp;<div>";
+					i++;
+				});
+			},
+			error: function(error){
+				targetBody.innerHTML = "An unexpected error occurred: " + error;
+			}
+		};
+		dojo.io.script.get(jsonpArgs);
+    }
+</script>
+
+
+
+<a href="#" onclick="showHelp();" class="dotcmsHelpButton">
+	Help for: <%=portlet.getPortletId() %>
+</a>
+
+<div id="_helpWindow" data-dojo-type="dijit.Dialog" data-dojo-props="title:'dotCMS Help'">
+	<div style="height:600px;width:900px;overflow:auto;padding:20px;position:relative;">
+		<div id="_dotHelpMenu" style="position:absolute;top:0;left:0;padding:20px 10px;width:210px;"> </div>
+		<div id="_dotHelpResults"></div>
+	</div>
+</div>
