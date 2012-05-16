@@ -220,10 +220,10 @@ public class SystemRootResourceImpl implements FolderResource, LockingCollection
 		return null;
 	}
 
-	public LockToken createAndLock(String arg0, LockTimeout arg1, LockInfo arg2)
+	public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
 			throws NotAuthorizedException {
-		// TODO Auto-generated method stub
-		return null;
+		createCollection(name);
+		return lock(timeout, lockInfo).getLockToken();
 	}
 
 }

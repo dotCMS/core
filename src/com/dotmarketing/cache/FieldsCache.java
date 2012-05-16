@@ -37,7 +37,8 @@ public class FieldsCache {
         if (fields == null) {
             Structure st = StructureCache.getStructureByInode(inode);
             fields = st.getFields();
-            addFields(st, fields);
+            if(fields.size()>0)
+                addFields(st, fields);
         }
         return fields;
 	}
@@ -80,7 +81,8 @@ public class FieldsCache {
         		if(fields ==null){
 		            Structure st = StructureCache.getStructureByVelocityVarName(velocityVarName);
 		            fields = FieldFactory.getFieldsByStructure(st.getInode());
-		            addFields(st, fields);
+		            if(fields.size()>0)
+		                addFields(st, fields);
         		}
         	}
         }

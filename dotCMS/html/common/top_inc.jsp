@@ -34,11 +34,11 @@ THIS FILE AND ITS INCLUDES
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 	 
 	<style type="text/css">
-		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getBuildNumber() %>"; 
-        @import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css?b=<%= ReleaseInfo.getBuildNumber() %>";
-        @import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getBuildNumber() %>";
-        @import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getBuildNumber() %>";
-        @import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getBuildNumber() %>";
+		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>"; 
+        @import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css?b=<%= ReleaseInfo.getVersion() %>";
+        @import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
+        @import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
+        @import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
 
     </style>
 	
@@ -67,17 +67,17 @@ THIS FILE AND ITS INCLUDES
 		}
    	</script>
 
-	<script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/html/common/javascript.jsp?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/engine.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/util.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/interface/TemplateAjax.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/interface/HostAjax.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/interface/ContainerAjax.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/interface/RoleAjax.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/interface/BrowserAjax.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/interface/UserAjax.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
-	<script type="text/javascript" src="/dwr/interface/InodeAjax.js?b=<%= ReleaseInfo.getBuildNumber() %>"></script>
+	<script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/html/common/javascript.jsp?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/engine.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/util.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/interface/TemplateAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/interface/HostAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/interface/ContainerAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/interface/RoleAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/interface/BrowserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/interface/UserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/dwr/interface/InodeAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 
     <script type="text/javascript">
 		dojo.require("dijit.Dialog");
@@ -112,7 +112,7 @@ THIS FILE AND ITS INCLUDES
 		dojo.require("dojox.form.Uploader");
         dojo.require("dojox.form.uploader.FileList");
         dojo.require("dojox.form.uploader.plugins.HTML5");
-        dojo.require("dojo.io.script");
+		dojo.require("dojo.io.script");
 		
 		dojo.addOnLoad(function () {
 			dojo.global.DWRUtil = dwr.util;

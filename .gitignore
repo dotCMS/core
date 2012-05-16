@@ -15,10 +15,16 @@ tomcat/temp
 dotCMS/dotSecure
 dotCMS/dotsecure
 dotCMS/assets
-sql/cms
+sql/cms/dotcms_mssql-sybase.sql
+sql/cms/dotcms_mysql.sql
+sql/cms/dotcms_oracle.sql
+sql/cms/dotcms_postgresql.sql
+
 dotCMS/WEB-INF/binary
 dotCMS/WEB-INF/binary/load
 dotCMS/WEB-INF/binary/felix-cache
+
+dotCMS/html/js/tinymce/jscripts/tiny_mce/*.gz
 
 # OS generated files #
 ######################

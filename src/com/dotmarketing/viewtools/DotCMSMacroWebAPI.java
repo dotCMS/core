@@ -2,7 +2,6 @@ package com.dotmarketing.viewtools;
 
 import java.io.FilenameFilter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -12,7 +11,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.lucene.queryParser.ParseException;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.beans.Host;
@@ -26,13 +24,13 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -42,7 +40,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -51,35 +48,35 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 	private static final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
+	private BrowserAPI browser = new BrowserAPI();
 
 	public void init(Object obj) {
 
 	}
-    
+
 	public List getfileRepository(String folderPath, String searchFolder,
 			HttpServletRequest request) throws DotDataException, PortalException, SystemException, DotSecurityException {
-
 		Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-
-		User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
-
-		Folder folder = CacheLocator.getFolderCache().getFolderByPathAndHost(folderPath, host);
+		User user = com.liferay.portal.util.PortalUtil.getUser(request);
+		Folder folder = (Folder) APILocator.getFolderAPI().findFolderByPath(folderPath, host, user, false);
+		List returnList = null;
 
 		if (Boolean.parseBoolean(searchFolder)) {
-			return APILocator.getFolderAPI().findSubFolders(folder, user, true);
-		} 
-		else 
-		{		
-			return APILocator.getFolderAPI().getLiveFilesSortTitle(folder, user, true);
+			returnList = APILocator.getFolderAPI().findSubFolders(folder, user, true);
 		}
+		else {
 
+			Map<String, Object> resultsMap = browser.getFolderContent(user, folder.getInode(), 0, -1, "", null, null, false, true, true, null, true);
+			returnList = (List<Map<String, Object>>) resultsMap.get("list");
+		}
+		return returnList;
 	}
-	
-	public List<Link> getLinkRepository(String folderPath,HttpServletRequest request) 
-	{	
+
+	public List<Link> getLinkRepository(String folderPath,HttpServletRequest request)
+	{
 		List<Link> links = new ArrayList<Link>();
 		try
-		{		
+		{
 			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 			Role[] roles;
 			User user = (User) request.getSession().getAttribute("CMS_USER");
@@ -96,10 +93,10 @@ public class DotCMSMacroWebAPI implements ViewTool {
 				roles = new Role[]{APILocator.getRoleAPI().loadCMSAnonymousRole()};
 			}
 			roles[0].getId();
-			Folder folder = CacheLocator.getFolderCache().getFolderByPathAndHost(folderPath, host);
+			Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, user, true);
 			if(InodeUtils.isSet(folder.getInode()))
 			{
-				links = APILocator.getFolderAPI().getLinks(folder, user, false); 
+				links = APILocator.getFolderAPI().getLinks(folder, user, false);
 			}
 			else
 			{
@@ -140,8 +137,8 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @param startDayOffset
 	 * @param daysToShow
 	 * @return a list of events
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List getEvents(String categories, int limit, int startDayOffset,
 			String daysToShow) throws DotDataException, DotSecurityException {
@@ -163,8 +160,8 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @param startDayOffset
 	 * @param daysToShow
 	 * @return a list of events
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List getEvents(String categories, int limit, String startDayOffset,
 			int daysToShow) throws DotDataException, DotSecurityException {
@@ -187,8 +184,8 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @param startDayOffset
 	 * @param daysToShow
 	 * @return a list of events
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List getEvents(String categories, int limit, String startDayOffset,
 			String daysToShow) throws DotDataException, DotSecurityException {
@@ -214,8 +211,8 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @param startDayOffset
 	 * @param daysToShow
 	 * @return a list of events
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	public List getEvents(String categories, int limit, int startDayOffset,
 			int daysToShow) throws DotDataException, DotSecurityException {
@@ -239,12 +236,12 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		toCal.set(GregorianCalendar.HOUR_OF_DAY, 23);
 		toCal.set(GregorianCalendar.MINUTE, 59);
 		toCal.set(GregorianCalendar.SECOND, 58);
-		
+
 		String[] categorieInodes=categories.split(",");
 		List<Category> categoriesList=new ArrayList<Category>(categorieInodes.length);
 		for(String inode : categorieInodes)
 			categoriesList.add(categoryAPI.find(inode, userAPI.getSystemUser(), false));
-		
+
 		return APILocator.getEventAPI().find(fromCal.getTime(), toCal.getTime(),
 				null, null, categoriesList, true, false, 0, limit, userAPI.getSystemUser(), false);
 	}
@@ -380,7 +377,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			Structure st = StructureCache.getStructureByName(structure);
 			if(st == null)
 				continue;
-			
+
 			String languageId = "";
 			if(request.getParameter("language")!=null)
 					languageId= " +languageId:"+request.getParameter("language");
@@ -394,7 +391,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			String query = "+type:content +deleted:false +live:true "+languageId+" +structureName:" + st.getVelocityVarName();
 			List<Contentlet> hits = new ArrayList <Contentlet>();
 			ContentletAPI conAPI = APILocator.getContentletAPI();
-			
+
 			try {
 				hits = conAPI.search(query,  -1, 0, null, userAPI.getSystemUser(), false);
 			} catch (DotDataException e) {
@@ -407,7 +404,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 
 			for (Contentlet contentlet: hits) {
-				
+
 				for (Field tagField : tagFields) {
 					String tagsValue = (String) contentlet.getMap().get(tagField.getVelocityVarName());
 					if(UtilMethods.isSet(tagsValue)) {
@@ -499,7 +496,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 	/**
 	 * returns a map of the top most popular tags, this map has the tag name as a key and
-	 * the tag count as value 
+	 * the tag count as value
 	 * @param tagHashMap map to be verified, in order to get the top most popular tags
 	 * @param maxNumberOfTags maximum number of tag to be returned, if 0 is provided, then
 	 * returns the original map, i.e. returns all tags
@@ -508,7 +505,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	public static HashMap topMostPopularTags(HashMap tagHashMap, int maxNumberOfTags){
 		List<String> tempList = new ArrayList<String>(30);
 		HashMap result = new HashMap();
-		
+
 		int i;
 		Set<String> keySet = tagHashMap.keySet();
 		for (String stringKey: keySet) {
@@ -519,12 +516,12 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 					int tagCount = ((Integer) tagHashMap.get(stringKey)).intValue();
 					int tempTagCount = ((Integer) tagHashMap.get(tempList.get(i))).intValue();
-					
+
 					if (tagCount > tempTagCount) {
 						break;
 					}
 				}
-				
+
 				tempList.add(i, stringKey);
 			}
 		}
@@ -534,22 +531,22 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			result.put(tempList.get(i), tagHashMap.get(tempList.get(i)));
 			i++;
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
-	 * Return a list of hashmap with the files to show in the media gallery 
+	 * Return a list of hashmap with the files to show in the media gallery
 	 * @param folderPath String with the path with the files to show.
 	 * @param host Host where the folder path belongs.
 	 * @return List of the hashmap with the files to show in the media gallery. Each hashmap can contain these keys: 'movie' (null if there is no movie file) or 'photo' (The photo file. If there is a movie file, this will be the photo associated to the movie).
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 */
 	public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, Host host) throws DotDataException {
 		return getMediaGalleryFolderFiles(folderPath, host.getIdentifier());
 	}
-	
-	
+
+
 	public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, String hostId) throws DotDataException {
         folderPath = (folderPath == null) ? "" : folderPath;
         folderPath = folderPath.trim().endsWith("/") ? folderPath.trim() : folderPath.trim() + "/";
@@ -564,22 +561,22 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		try {
 			boolean live = true;
 			fileList.addAll(APILocator.getFolderAPI().getLiveFilesSortTitle(folder, null, true));
-			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, FileAssetAPI.FILE_NAME_FIELD + "asc", true, APILocator.getUserAPI().getSystemUser(), false));
+			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "", true, APILocator.getUserAPI().getSystemUser(), false));
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
-		} 
+		}
         List<HashMap<String, IFileAsset>> result = new ArrayList<HashMap<String, IFileAsset>>();
         HashMap<String, IFileAsset> resultFile;
         List<IFileAsset> noPhotoFile = new ArrayList<IFileAsset>();
         int pos;
         IFileAsset fileListFile;
         String videoPhotoFileName;
-        
+
         for (IFileAsset file: fileList) {
         	resultFile = new HashMap<String, IFileAsset>();
 			if (file.getExtension().toLowerCase().endsWith("flv")) {
 				resultFile.put("movie", file);
-				
+
 				videoPhotoFileName = file.getURI().substring(0,file.getURI().length()-4) + ".jpg";
 				for (pos = 0; pos < fileList.size(); ++pos) {
 					fileListFile = fileList.get(pos);
@@ -594,27 +591,27 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			}
 			result.add(resultFile);
         }
-        
+
         for (IFileAsset file: noPhotoFile) {
         	for (pos = 0; pos < result.size(); ++pos) {
         		resultFile = result.get(pos);
-        		if ((resultFile.get("movie") == null) && 
+        		if ((resultFile.get("movie") == null) &&
         			(resultFile.get("photo").equals(file))) {
         			result.remove(pos);
         			break;
         		}
         	}
         }
-        
+
         return result;
     }
-	
+
 	/**
-	 * Return a list of hashmap with the files to show in the media gallery 
+	 * Return a list of hashmap with the files to show in the media gallery
 	 * @param folderPath String with the path with the files to show.
 	 * @param host long with the hostId of the host where the folder path belongs.
 	 * @return List of the hashmap with the files to show in the media gallery. Each hashmap can contain these keys: 'movie' (null if there is no movie file) or 'photo' (The photo file. If there is a movie file, this will be the photo associated to the movie).
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 */
 	@Deprecated
     public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, long hostId) throws DotDataException {

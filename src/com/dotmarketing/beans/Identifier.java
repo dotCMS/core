@@ -10,6 +10,7 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.business.Categorizable;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 
@@ -158,7 +159,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 			setAssetType("containers");
 			setParentPath("/");
 			setAssetName(this.id + ".containers");
-		}else if(UtilMethods.getFileExtension(uRI).equals("dot")){
+		}else if(UtilMethods.getFileExtension(uRI).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot"))){
 			if(uRI.contains("http://")){
 				setAssetType("links");
 				setParentPath(uRI.substring(0, uRI.lastIndexOf("http://")));
@@ -168,7 +169,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 				setParentPath(uRI.substring(0, uRI.lastIndexOf("/")+1));
 				setAssetName(uRI.substring(uRI.lastIndexOf("/")+1));
 			}
-		}else if(UtilMethods.getFileExtension(uRI)!="" && !UtilMethods.getFileExtension(uRI).equals("dot")){
+		}else if(UtilMethods.getFileExtension(uRI)!="" && !UtilMethods.getFileExtension(uRI).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot"))){
 			if(uRI.contains("http://")){
 				setAssetType("links");
 				setParentPath(uRI.substring(0, uRI.lastIndexOf("http://")));
@@ -279,5 +280,35 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
     		return x;
 	    }
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Identifier other = (Identifier) obj;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		return true;
+	}
+	
+	
+	
+	
+	
 
 }

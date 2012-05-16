@@ -113,23 +113,6 @@ public class StructureFactory {
 		return structure;
 	}
 
-	public static Structure getStructureByInodeNoLock(String inode)
-	{
-		HibernateUtil dh = new HibernateUtil(Structure.class);
-		Structure result = null;
-		StringBuffer querie = new StringBuffer();
-		querie.append("select {structure.*} from structure with (nolock), inode structure_1_ with (nolock) ");
-		querie.append("where structure_1_.type='structure' and structure.inode = structure_1_.inode and structure.inode = '" + inode +"' ");
-
-		try {
-			dh.setSQLQuery(querie.toString());
-			result = (Structure) dh.load();
-		} catch (DotHibernateException e) {
-			Logger.error(StructureFactory.class, e.getMessage(),e);
-		}
-		return result;
-	}
-
 	public static Structure getDefaultStructure()
 	{
 		Structure structure = null;
@@ -347,7 +330,7 @@ public class StructureFactory {
 
 	public static List getStructures(int limit)
 	{
-		String orderBy = "title asc";
+		String orderBy = "name";
 		return getStructures(orderBy,limit);
 	}
 

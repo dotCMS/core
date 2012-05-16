@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
@@ -15,9 +16,35 @@ import com.dotmarketing.portlets.folders.model.Folder;
  */
 public abstract class IdentifierFactory {
 
+	/**
+	 * Will look for all identifiers matting a URI pattern  
+	 * @param uri Can contain a * at the beginning or end
+	 * @param include Should find all that match pattern if true or all that do not match pattern if false
+	 * @param assetType
+	 * @param host
+	 * @param hasLive pull only if the identifier has a published version
+	 * @param pullDeleted
+	 * @param startDate use to search between dates
+	 * @param endDate
+	 * @return
+	 * @throws DotDataException
+	 */
+	abstract protected List<Identifier> findByURIPattern(String assetType,String uri, boolean hasLive, boolean pullDeleted,boolean include, Host host, Date startDate, Date endDate) throws DotDataException;
+	
 	abstract protected void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException;
 
-	
+	/**
+	 * Will look for all identifiers matting a URI pattern  
+	 * @param uri Can contain a * at the beginning or end
+	 * @param include Should find all that match pattern if true or all that do not match pattern if false
+	 * @param assetType
+	 * @param hasLive pull only if the identifier has a published version
+	 * @param pullDeleted
+	 * @param host
+	 * @return
+	 * @throws DotDataException
+	 */
+	abstract protected List<Identifier> findByURIPattern(String assetType,String uri, boolean hasLive,boolean pullDeleted,boolean include, Host host) throws DotDataException;
 	
 	/**
 	 * looks in cache first, then in db.  It will load the cache for future use
@@ -95,5 +122,7 @@ public abstract class IdentifierFactory {
 	abstract protected Identifier saveIdentifier(Identifier identifier)throws DotDataException;
 	
 	abstract protected void deleteIdentifier(Identifier ident) throws DotDataException;
+	
+	abstract protected List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException;
 
 }

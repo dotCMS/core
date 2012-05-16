@@ -15,6 +15,7 @@ import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.Globals;
@@ -52,7 +53,9 @@ import com.dotmarketing.portlets.structure.struts.StructureForm;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
@@ -81,11 +84,9 @@ public class EditStructureAction extends DotPortletAction {
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
-	private final String[] reservedStructureNames = { "Host", "Folder", "File", "HTML Page", "Menu Link",
-			"Virtual Link", "Container", "Template", "User" };
+	private final String[] reservedStructureNames = { "Host", "Folder", "File", "HTML Page", "Menu Link", "Virtual Link", "Container", "Template", "User" };
 
-	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req,
-			ActionResponse res) throws Exception {
+	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
 
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
@@ -115,11 +116,9 @@ public class EditStructureAction extends DotPortletAction {
 				Logger.debug(this, "Calling Add/Edit Method");
 				if (Validator.validate(req, form, mapping)) {
 
-
-					if(UtilMethods.isSet(((StructureForm)form).getInode())){
+					if (UtilMethods.isSet(((StructureForm) form).getInode())) {
 						returnToList = true;
 					}
-
 
 					_saveStructure(form, req, res);
 
@@ -134,7 +133,6 @@ public class EditStructureAction extends DotPortletAction {
 		/*
 		 * If we are deleteing the structure, run the delete action and return
 		 * to the list
-		 *
 		 */
 		else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
 			try {
@@ -168,28 +166,26 @@ public class EditStructureAction extends DotPortletAction {
 
 		HibernateUtil.commitTransaction();
 		_loadForm(form, req, res);
-		if(returnToList){
-			if(!UtilMethods.isSet(referer)){
-				java.util.Map<String,String[]> params = new java.util.HashMap<String,String[]>();
+		if (returnToList) {
+			if (!UtilMethods.isSet(referer)) {
+				java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
 
 				if (((StructureForm) form).getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
-					params.put("struts_action",new String[] {"/ext/formhandler/view_form"});
+					params.put("struts_action", new String[] { "/ext/formhandler/view_form" });
 				} else {
-					params.put("struts_action",new String[] {"/ext/structure/view_structure"});
+					params.put("struts_action", new String[] { "/ext/structure/view_structure" });
 				}
 
-				referer= com.dotmarketing.util.PortletURLUtil.getActionURL(req,WindowState.MAXIMIZED.toString(),params);
+				referer = com.dotmarketing.util.PortletURLUtil.getActionURL(req, WindowState.MAXIMIZED.toString(), params);
 			}
 			_sendToReferral(req, res, referer);
-		}
-		else{
+		} else {
 			setForward(req, "portlet.ext.structure.edit_structure");
 		}
 	}
 
 	@SuppressWarnings("deprecation")
-	private Structure _loadStructure(ActionForm form, ActionRequest req, ActionResponse res) throws ActionException,
-			DotDataException {
+	private Structure _loadStructure(ActionForm form, ActionRequest req, ActionResponse res) throws ActionException, DotDataException {
 
 		User user = _getUser(req);
 		Structure structure = new Structure();
@@ -239,17 +235,10 @@ public class EditStructureAction extends DotPortletAction {
 			StructureForm structureForm = (StructureForm) form;
 			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
 
-
-
-
-
-
-
 			User user = _getUser(req);
 			HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
 
-			if(!UtilMethods.isSet(structureForm.getHost()) && (!UtilMethods.isSet(structureForm.getFolder())
-					|| structureForm.getFolder().equals("SYSTEM_FOLDER"))){
+			if (!UtilMethods.isSet(structureForm.getHost()) && (!UtilMethods.isSet(structureForm.getFolder()) || structureForm.getFolder().equals("SYSTEM_FOLDER"))) {
 				throw new DotDataException(LanguageUtil.get(user, "Host-or-folder-is-required"));
 			}
 
@@ -263,9 +252,8 @@ public class EditStructureAction extends DotPortletAction {
 			@SuppressWarnings("deprecation")
 			Structure auxStructure = StructureCache.getStructureByType(auxStructureName);
 
-			if (InodeUtils.isSet(auxStructure.getInode())
-					&& !auxStructure.getInode().equalsIgnoreCase(structure.getInode())) {
-				throw new DotDataException(LanguageUtil.get(user, "There-is-another-structure-with-the-same-name"));
+			if (InodeUtils.isSet(auxStructure.getInode()) && !auxStructure.getInode().equalsIgnoreCase(structure.getInode())) {
+				throw new DotDataException(LanguageUtil.format(user.getLocale(), "structure-name-already-exist",new String[]{auxStructureName},false));
 			}
 
 			Arrays.sort(reservedStructureNames);
@@ -279,8 +267,7 @@ public class EditStructureAction extends DotPortletAction {
 			} else {
 				String structureName = structure.getName();
 				String structureFormName = structureForm.getName();
-				if (UtilMethods.isSet(structureName) && UtilMethods.isSet(structureFormName)
-						&& !structureName.equals(structureFormName) && !structure.isFixed()) {
+				if (UtilMethods.isSet(structureName) && UtilMethods.isSet(structureFormName) && !structureName.equals(structureFormName) && !structure.isFixed()) {
 
 					StructureCache.removeStructure(structure);
 
@@ -301,41 +288,40 @@ public class EditStructureAction extends DotPortletAction {
 			if (UtilMethods.isSet(structure.getVelocityVarName())) {
 				structureForm.setVelocityVarName(structure.getVelocityVarName());
 			}
-			if(UtilMethods.isSet(structureForm.getHost())){
-				if(!structureForm.getHost().equals(Host.SYSTEM_HOST) && hostAPI.findSystemHost().getIdentifier().equals(structureForm.getHost())){
+			if (UtilMethods.isSet(structureForm.getHost())) {
+				if (!structureForm.getHost().equals(Host.SYSTEM_HOST) && hostAPI.findSystemHost().getIdentifier().equals(structureForm.getHost())) {
 					structureForm.setHost(Host.SYSTEM_HOST);
 				}
 				structureForm.setFolder("SYSTEM_FOLDER");
-			}else if(UtilMethods.isSet(structureForm.getFolder())){
-				structureForm.setHost(folderAPI.find(structureForm.getFolder(),user,false).getHostId());
+			} else if (UtilMethods.isSet(structureForm.getFolder())) {
+				structureForm.setHost(folderAPI.find(structureForm.getFolder(), user, false).getHostId());
 			}
 
-
-			if(UtilMethods.isSet(structureForm.getHost()) && (!UtilMethods.isSet(structureForm.getFolder())
-					|| structureForm.getFolder().equals("SYSTEM_FOLDER"))){
+			if (UtilMethods.isSet(structureForm.getHost()) && (!UtilMethods.isSet(structureForm.getFolder()) || structureForm.getFolder().equals("SYSTEM_FOLDER"))) {
 				Host host = hostAPI.find(structureForm.getHost(), user, false);
-				if(host!=null){
-					if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM){
-						if(!perAPI.doesUserHavePermissions(host, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", STRUCTURES:"+ PermissionAPI.PERMISSION_PUBLISH, user)){
+				if (host != null) {
+					if (structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
+						if (!perAPI.doesUserHavePermissions(host, "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH, user)) {
 							throw new DotDataException(LanguageUtil.get(user, "User-does-not-have-add-children-permission-on-host-folder"));
 						}
-					}else{
-						if(!perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)){
+					} else {
+						if (!perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
 							throw new DotDataException(LanguageUtil.get(user, "User-does-not-have-add-children-permission-on-host-folder"));
 						}
 					}
 				}
 			}
 
-			if(UtilMethods.isSet(structureForm.getFolder()) && !structureForm.getFolder().equals("SYSTEM_FOLDER")){
-				Folder folder = folderAPI.find(structureForm.getFolder(),user,false);
-				if(folder!=null){
-					if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM){
-						if(!perAPI.doesUserHavePermissions(folder, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", STRUCTURES:"+ PermissionAPI.PERMISSION_PUBLISH, user)){
+			if (UtilMethods.isSet(structureForm.getFolder()) && !structureForm.getFolder().equals("SYSTEM_FOLDER")) {
+				Folder folder = folderAPI.find(structureForm.getFolder(), user, false);
+				if (folder != null) {
+					if (structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
+						if (!perAPI.doesUserHavePermissions(folder, "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+								user)) {
 							throw new DotDataException(LanguageUtil.get(user, "User-does-not-have-add-children-permission-on-host-folder"));
 						}
-					}else{
-						if(!perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)){
+					} else {
+						if (!perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
 							throw new DotDataException(LanguageUtil.get(user, "User-does-not-have-add-children-permission-on-host-folder"));
 						}
 					}
@@ -380,8 +366,7 @@ public class EditStructureAction extends DotPortletAction {
 
 			// Saving interval review properties
 			if (structureForm.isReviewContent()) {
-				structure.setReviewInterval(structureForm.getReviewIntervalNum()
-						+ structureForm.getReviewIntervalSelect());
+				structure.setReviewInterval(structureForm.getReviewIntervalNum() + structureForm.getReviewIntervalSelect());
 			} else {
 				structure.setReviewInterval(null);
 				structure.setReviewerRole(null);
@@ -407,13 +392,10 @@ public class EditStructureAction extends DotPortletAction {
 
 			String schemeId = req.getParameter("workflowScheme");
 
-
-			if(scheme != null && UtilMethods.isSet(schemeId) && !schemeId.equals(scheme.getId())){
+			if (scheme != null && UtilMethods.isSet(schemeId) && !schemeId.equals(scheme.getId())) {
 				scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
 				APILocator.getWorkflowAPI().saveSchemeForStruct(structure, scheme);
 			}
-
-
 
 			// if the structure is a widget we need to add the base fields.
 			if (newStructure && structureForm.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) {
@@ -429,9 +411,12 @@ public class EditStructureAction extends DotPortletAction {
 			if (newStructure && structureForm.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
 				APILocator.getFileAssetAPI().createBaseFileAssetFields(structure);
 			}
-			if(!newStructure){
+			if (!newStructure) {
 				perAPI.resetPermissionReferences(structure);
 			}
+			System.out.println("L'host settato all'interno dellastructure è: " + structure.getHost());
+			ActivityLogger.logInfo(ActivityLogger.class, "Save Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added structure "
+					+ structure.getName() + ".", HostUtil.hostNameUtil(req, _getUser(req)));
 
 			// Saving the structure in cache
 			StructureCache.removeStructure(structure);
@@ -439,14 +424,14 @@ public class EditStructureAction extends DotPortletAction {
 			StructureServices.removeStructureFile(structure);
 
 			String message = "message.structure.savestructure";
-			if(structure.getStructureType()==3){
+			if (structure.getStructureType() == 3) {
 				message = "message.form.saveform";
 			}
 			SessionMessages.add(req, "message", message);
 			AdminLogger.log(EditStructureAction.class, "_saveStructure", "Structure saved : " + structure.getName(), user);
 		} catch (Exception ex) {
 			Logger.error(this.getClass(), ex.toString());
-			String message = ex.toString();
+			String message = ex.getMessage();
 			SessionMessages.add(req, "error", message);
 		}
 	}
@@ -518,13 +503,12 @@ public class EditStructureAction extends DotPortletAction {
 			_checkDeletePermissions(structure, user, httpReq);
 
 			// checking if there is containers using this structure
-			List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(structure.getInode());
-			if(containers.size()>0) {
-				StringBuilder names=new StringBuilder();
-				for(int i=0; i<containers.size(); i++)
+			List<Container> containers = APILocator.getContainerAPI().findContainersForStructure(structure.getInode());
+			if (containers.size() > 0) {
+				StringBuilder names = new StringBuilder();
+				for (int i = 0; i < containers.size(); i++)
 					names.append(containers.get(i).getFriendlyName()).append(", ");
-				Logger.warn(EditStructureAction.class, "Structure "+structure.getName()+
-						" can't be deleted because the following containers are using it: "+names);
+				Logger.warn(EditStructureAction.class, "Structure " + structure.getName() + " can't be deleted because the following containers are using it: " + names);
 				SessionMessages.add(req, "message", "message.structure.notdeletestructure.container");
 				return;
 			}
@@ -562,16 +546,16 @@ public class EditStructureAction extends DotPortletAction {
 						@SuppressWarnings({ "deprecation", "static-access" })
 						Field field = st.getField(fAPI.FORM_WIDGET_FORM_ID_FIELD_NAME);
 
-						List<Contentlet> widgetresults = conAPI.search("+structureInode:" + st.getInode() + " +"
-								+ field.getFieldContentlet() + ":" + structure.getInode(), 0, 0, "", user, false);
+						List<Contentlet> widgetresults = conAPI.search("+structureInode:" + st.getInode() + " +" + field.getFieldContentlet() + ":" + structure.getInode(), 0, 0,
+								"", user, false);
 						if (widgetresults.size() > 0) {
 							conAPI.delete(widgetresults, user, false);
 						}
 					}
 				}
 
-				//http://jira.dotmarketing.net/browse/DOTCMS-6435
-				if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
+				// http://jira.dotmarketing.net/browse/DOTCMS-6435
+				if (structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
 					StructureFactory.updateFolderFileAssetReferences(structure);
 				}
 
@@ -588,6 +572,9 @@ public class EditStructureAction extends DotPortletAction {
 				perAPI.removePermissions(structure);
 
 				StructureFactory.deleteStructure(structure);
+				
+				ActivityLogger.logInfo(ActivityLogger.class, "Delete Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted structure "
+						+ structure.getName() + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 
 				// Removing the structure from cache
 				FieldsCache.removeFields(structure);
@@ -635,6 +622,5 @@ public class EditStructureAction extends DotPortletAction {
 			throw ae;
 		}
 	}
-
 
 }

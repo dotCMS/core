@@ -250,10 +250,14 @@ public class EditSchedulerAction extends DotPortletAction {
 	private CronScheduledTask _retrieveScheduledJob(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
 		SchedulerForm schedulerForm = (SchedulerForm) form;
 		
-		if (UtilMethods.isSet(schedulerForm.getJobGroup()))
-			return (CronScheduledTask) QuartzUtils.getStandardScheduledTask(schedulerForm.getJobName(), schedulerForm.getJobGroup()).get(0);
-		else
-			return (CronScheduledTask) QuartzUtils.getStandardScheduledTask(req.getParameter("name"), req.getParameter("group")).get(0);
+		try{
+			if (UtilMethods.isSet(schedulerForm.getJobGroup()))
+				return (CronScheduledTask) QuartzUtils.getStandardScheduledTask(schedulerForm.getJobName(), schedulerForm.getJobGroup()).get(0);
+			else
+				return (CronScheduledTask) QuartzUtils.getStandardScheduledTask(req.getParameter("name"), req.getParameter("group")).get(0);
+		}catch(ArrayIndexOutOfBoundsException e){
+			return null;
+		}
 	}
 
 	public static boolean _saveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception {
@@ -323,6 +327,13 @@ public class EditSchedulerAction extends DotPortletAction {
 					schedulerForm.setAtTimeHour(Integer.valueOf(hms[0].replace("T", "")));
 					schedulerForm.setAtTimeMinute(Integer.valueOf(hms[1]));
 					schedulerForm.setAtTimeSecond(Integer.valueOf(hms[2]));
+				}else{//Git-219 Campaigns
+					if(UtilMethods.isSet(req.getParameter("atTimeSecond")))
+						cronSecondsField = req.getParameter("atTimeSecond");
+					if(UtilMethods.isSet(req.getParameter("atTimeMinute")))
+						cronMinutesField = req.getParameter("atTimeMinute");
+					if(UtilMethods.isSet(req.getParameter("atTimeHour")))
+						cronHoursField = req.getParameter("atTimeHour");
 				}
 			}
 			

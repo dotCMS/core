@@ -46,6 +46,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.RequiredLayoutException;
@@ -78,7 +79,7 @@ import com.liferay.util.servlet.SessionMessages;
 /**
  * <a href="LoginAction.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author  Brian Wing Shun Changer
  * @version $Revision: 1.4 $
  *
  */
@@ -265,11 +266,13 @@ public class LoginAction extends Action {
 		}
 
 		if (authResult != Authenticator.SUCCESS) {
-			Logger.info(this, "An ivalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
+			//Logger.info(this, "An ivalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
+			SecurityLogger.logInfo(this.getClass(),"User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
 			throw new AuthException();
 		}
 		
-		Logger.info(this, "User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
+		//Logger.info(this, "User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
+		SecurityLogger.logInfo(this.getClass(),"User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
 	}
 
 	private void _sendPassword(HttpServletRequest req) throws Exception {
@@ -279,7 +282,8 @@ public class LoginAction extends Action {
 		UserManagerUtil.sendPassword(
 			PortalUtil.getCompanyId(req), emailAddress);
 
-		Logger.info(this, "Email address " + emailAddress + " has request to reset his password from IP: " + req.getRemoteAddr());
+		//Logger.info(this, "Email address " + emailAddress + " has request to reset his password from IP: " + req.getRemoteAddr());
+		SecurityLogger.logInfo(this.getClass(),"Email address " + emailAddress + " has request to reset his password from IP: " + req.getRemoteAddr());
 
 		SessionMessages.add(req, "new_password_sent", emailAddress);
 	}

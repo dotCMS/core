@@ -21,10 +21,10 @@ public class UpdateUtil {
 	 */
 	public static String getNewVersion() throws DotDataException{
 
-		String fileUrl = "https://www.dotcms.org/servlets/upgrade/";
+		String fileUrl = "https://www.dotcms.org/servlets/upgrade2x/";
 		Map<String, String> pars = new HashMap<String, String>();
-		pars.put("version", ReleaseInfo.getVersion()); //$NON-NLS-1$
-		pars.put("minor", ReleaseInfo.getBuildNumber() + ""); //$NON-NLS-1$
+		pars.put("version", ReleaseInfo.getVersion());
+		//pars.put("minor", ReleaseInfo.getBuildNumber() + "");
 		pars.put("check_version", "true");
 		pars.put("level", System.getProperty("dotcms_level"));
 		if (System.getProperty("dotcms_license_serial") != null) {

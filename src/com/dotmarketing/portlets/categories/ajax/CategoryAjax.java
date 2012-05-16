@@ -319,6 +319,7 @@ public class CategoryAjax {
 		cat.setKey(key);
 		cat.setCategoryVelocityVarName(var);
 		cat.setSortOrder(sort);
+		cat.setKeywords(keywords);
 
 		if(UtilMethods.isSet(inode) && !save) {
 			cat.setInode(inode);

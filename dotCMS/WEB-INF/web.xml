@@ -555,35 +555,21 @@
     <servlet>
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-       <load-on-startup>1</load-on-startup>
     </servlet>
 	<!--END DOTMARKETING SERVLETS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
  <!-- END SERVLETS -->
-	<!-- TEST FRAMEWORK SERVLETS -->
-<!--
-	<servlet>
-	  <servlet-name>ServletRedirector</servlet-name>
-	  <servlet-class>org.apache.cactus.server.ServletTestRedirector</servlet-class>
-	</servlet>
-	<servlet>
-	  <servlet-name>ServletTestRunner</servlet-name>
-	  <servlet-class>org.apache.cactus.server.runner.ServletTestRunner</servlet-class>
-	</servlet>
--->
-<!--
+    <!-- TEST FRAMEWORK SERVLETS
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
        </servlet>
-
        <servlet-mapping>
          <servlet-name>ServletTestRunner</servlet-name>
          <url-pattern>/servlet/test</url-pattern>
       </servlet-mapping>
--->
-	<!-- END OF TEST FRAMEWORK SERVLETS -->
+	END OF TEST FRAMEWORK SERVLETS -->
 	<!-- DOTCMS SERVLET-MAPPINGS -->
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
