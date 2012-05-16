@@ -84,15 +84,7 @@ public class SiteSearchWebAPI implements ViewTool {
 				}
 			
 			}
-			// add host if not there
-			if(query.indexOf("+host:") < 0){
-				query+= " +host:" + host.getIdentifier() ; 
-			}
-			
-			//add language if
-			if(query.indexOf("+language:") < 0){
-				query+= " +language:" + WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-			}
+
 		}
 		
 				
