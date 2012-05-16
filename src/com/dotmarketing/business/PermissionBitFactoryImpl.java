@@ -406,9 +406,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenHTMLPageSQL =
-		"select distinct identifier.id from htmlpage, inode, identifier where " +
-		"htmlpage.inode = inode.inode and htmlpage.identifier = identifier.id and " +
-		"identifier.host_inode = ? and identifier.parent_path like ?";
+		"select distinct identifier.id from htmlpage join identifier " +
+		" on (htmlpage.identifier = identifier.id) where " +
+		" identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load html pages identifiers that are children of a host and have inheritable permissions
@@ -451,18 +451,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		" permission_type = '" + HTMLPage.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 			"select distinct folder.inode " +
-			"from folder, inode,identifier " +
-			"where folder.inode = inode.inode " +
-			"and folder.identifier = identifier.id and identifier.host_inode = ? " +
-			"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-			"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
-			"and reference_id = folder.inode" +
+			" from folder join identifier on (folder.identifier = identifier.id) " +
+			" where identifier.host_inode = ? " +
+			" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+			" and reference_id = folder.inode" +
 			") " +
-			"OR EXISTS(SELECT c.inode " +
-			"FROM contentlet c JOIN inode i " +
-			"ON  " +
-			"  i.type = 'contentlet' " +
-			"  AND i.inode = c.inode" +
+			" OR EXISTS(SELECT c.inode " +
+			"  FROM contentlet c " +
 			"  WHERE c.identifier = reference_id)	" +
 			")";
 
@@ -1638,6 +1633,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		if(idsToClear.size() < 30) {
 			for(Map<String, Object> idToClear: idsToClear) {
 				String inode = (String)(idToClear.get("inode") != null?idToClear.get("inode"):idToClear.get("asset_id"));
+				if(inode==null) inode=(String)idToClear.get("id");
 				permissionCache.remove(inode);
 			}
 		} else {
