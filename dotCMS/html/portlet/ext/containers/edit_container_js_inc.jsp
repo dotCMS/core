@@ -82,7 +82,7 @@
 	}
 
 	function addImage(velocityVarName){
-		var insert = "#if ($UtilMethods.isSet($imageImageURI)) \n   <img src=\"$!{"+velocityVarName+"ImageURI}\" alt=\"$!{"+velocityVarName+"ImageTitle}\"  /> \n#end \n";	
+		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"ImageURI})) \n   <img src=\"$!{"+velocityVarName+"ImageURI}\" alt=\"$!{"+velocityVarName+"ImageTitle}\"  /> \n#end \n";
 		insertAtCursor(insert, "codeMask");
 		dijit.byId('variablesDialog').hide();
 	}
