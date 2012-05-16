@@ -33,12 +33,12 @@ import com.liferay.portlet.ActionRequestImpl;
 /**
  * @author David Torres
  * @author Oswaldo Gallango
- * 
+ *
  */
 
 public class UserManagerListBuilderFactory {
 
-	public static List<Map<String, Object>> doSearch(UserManagerListSearchForm form) {				
+	public static List<Map<String, Object>> doSearch(UserManagerListSearchForm form) {
 		boolean isCount = false;
 		return doSearch( form, isCount);
 	}
@@ -63,7 +63,7 @@ public class UserManagerListBuilderFactory {
 
 		querySelectPortion.append(select);
 		if(UtilMethods.isSet(form.getTagName())) {
-			querySelectPortion.append(", tag_inode");
+			querySelectPortion.append(", tag_inode, tag");
 		}
 
 		queryWherePortion.append(" where user_.companyid ='");
@@ -84,7 +84,7 @@ public class UserManagerListBuilderFactory {
 					queryUserArrayPortion.append(",'"+arrayUserIds[i]+"'");
 				}
 				first = false;
-				
+
 				if((i % 500) == 0 && i != 0){
 					queryUserArrayPortion.append(")");
 					String query = querySelectPortion.toString() + queryWherePortion.toString() + queryUserArrayPortion.toString();
@@ -107,19 +107,19 @@ public class UserManagerListBuilderFactory {
 			String emailAddress = (UtilMethods.isSet(form.getEmailAddress()) ? form.getEmailAddress().trim().toLowerCase()  : null);
 			String dateOfBirthTypeSearch =    (UtilMethods.isSet(form.getDateOfBirthTypeSearch()) ? form.getDateOfBirthTypeSearch() : null);
 			Date dateOfBirthFromDate =        (UtilMethods.isSet(form.getDateOfBirthFromDate()) ? form.getDateOfBirthFromDate() : null);
-			Date dateOfBirthToDate =          (UtilMethods.isSet(form.getDateOfBirthToDate()) ? form.getDateOfBirthToDate() : null);        
+			Date dateOfBirthToDate =          (UtilMethods.isSet(form.getDateOfBirthToDate()) ? form.getDateOfBirthToDate() : null);
 			Date dateOfBirthSinceDate =       (UtilMethods.isSet(form.getDateOfBirthSinceDate()) ? form.getDateOfBirthSinceDate() : null);
 			String lastLoginTypeSearch =      (UtilMethods.isSet(form.getLastLoginTypeSearch()) ? form.getLastLoginTypeSearch() : null);
 			Date lastLoginFromDate =          (UtilMethods.isSet(form.getLastLoginDateFromDate()) ? form.getLastLoginDateFromDate() : null);
-			Date lastLoginToDate =            (UtilMethods.isSet(form.getLastLoginDateToDate()) ? form.getLastLoginDateToDate() : null);        
+			Date lastLoginToDate =            (UtilMethods.isSet(form.getLastLoginDateToDate()) ? form.getLastLoginDateToDate() : null);
 			String lastLoginSince =           (UtilMethods.isSet(form.getLastLoginSince()) ? form.getLastLoginSince() : null);
 			String createdTypeSearch =        (UtilMethods.isSet(form.getCreatedTypeSearch()) ? form.getCreatedTypeSearch() : null);
 			Date createdDateFromDate =        (UtilMethods.isSet(form.getCreatedDateFromDate()) ? form.getCreatedDateFromDate() : null);
-			Date createdDateToDate =          (UtilMethods.isSet(form.getCreatedDateToDate()) ? form.getCreatedDateToDate() : null);        
+			Date createdDateToDate =          (UtilMethods.isSet(form.getCreatedDateToDate()) ? form.getCreatedDateToDate() : null);
 			String createdSince =             (UtilMethods.isSet(form.getCreatedSince()) ? form.getCreatedSince() : null);
 			String lastVisitTypeSearch =      (UtilMethods.isSet(form.getLastVisitTypeSearch()) ? form.getLastVisitTypeSearch() : null);
 			Date lastVisitDateFromDate =      (UtilMethods.isSet(form.getLastVisitDateFromDate()) ? form.getLastVisitDateFromDate() : null);
-			Date lastVisitDateToDate =        (UtilMethods.isSet(form.getLastVisitDateToDate()) ? form.getLastVisitDateToDate() : null);        
+			Date lastVisitDateToDate =        (UtilMethods.isSet(form.getLastVisitDateToDate()) ? form.getLastVisitDateToDate() : null);
 			String lastVisitSince =           (UtilMethods.isSet(form.getLastVisitSince()) ? form.getLastVisitSince() : null);
 			String active =       (UtilMethods.isSet(form.getActive()) ? form.getActive() : null);
 			String tagName =      (UtilMethods.isSet(form.getTagName()) ? form.getTagName() : null);
@@ -143,15 +143,15 @@ public class UserManagerListBuilderFactory {
 			}
 			if (UtilMethods.isSet(emailAddress))
 			{
-				emailAddress = "%" + emailAddress + "%"; 
+				emailAddress = "%" + emailAddress + "%";
 				queryWherePortion.append(" and lower(user_.emailAddress) like ? ");
 			}
 			if (UtilMethods.isSet(dateOfBirthTypeSearch)) {
 				if (dateOfBirthTypeSearch.equalsIgnoreCase("DateRange")) {
-					if (UtilMethods.isSet(dateOfBirthFromDate)) {            
+					if (UtilMethods.isSet(dateOfBirthFromDate)) {
 						queryWherePortion.append(" and user_.birthday >= ? ");
 					}
-					if (UtilMethods.isSet(dateOfBirthToDate))	{            
+					if (UtilMethods.isSet(dateOfBirthToDate))	{
 						queryWherePortion.append(" and user_.birthday <= ? ");
 					}
 				}
@@ -165,25 +165,25 @@ public class UserManagerListBuilderFactory {
 			}
 			if (UtilMethods.isSet(lastLoginTypeSearch)) {
 				if (lastLoginTypeSearch.equalsIgnoreCase("DateRange")) {
-					if (UtilMethods.isSet(lastLoginFromDate)) {            
+					if (UtilMethods.isSet(lastLoginFromDate)) {
 						queryWherePortion.append(" and user_.logindate >= ? ");
 					}
-					if (UtilMethods.isSet(lastLoginToDate))	{            
+					if (UtilMethods.isSet(lastLoginToDate))	{
 						queryWherePortion.append(" and user_.logindate <= ? ");
 					}
 				}
 				else if (lastLoginTypeSearch.equalsIgnoreCase("Since")) {
-					if (UtilMethods.isSet(lastLoginSince)) { 
+					if (UtilMethods.isSet(lastLoginSince)) {
 						queryWherePortion.append(" and user_.logindate >= ? ");
 					}
 				}
 			}
 			if (UtilMethods.isSet(createdTypeSearch)) {
 				if (createdTypeSearch.equalsIgnoreCase("DateRange")) {
-					if (UtilMethods.isSet(createdDateFromDate)) {            
+					if (UtilMethods.isSet(createdDateFromDate)) {
 						queryWherePortion.append(" and user_.createdate >= ? ");
 					}
-					if (UtilMethods.isSet(createdDateToDate))	{            
+					if (UtilMethods.isSet(createdDateToDate))	{
 						queryWherePortion.append(" and user_.createdate <= ? ");
 					}
 				}
@@ -209,7 +209,7 @@ public class UserManagerListBuilderFactory {
 						}
 						queryWherePortion.append(" and clickstream.start_date >= ? ");
 					}
-					if (UtilMethods.isSet(lastVisitDateToDate))	{            
+					if (UtilMethods.isSet(lastVisitDateToDate))	{
 						if(!usingClickStreamTable) {
 							querySelectPortion.append(", clickstream");
 							usingClickStreamTable = true;
@@ -222,7 +222,7 @@ public class UserManagerListBuilderFactory {
 					}
 				}
 				else if (lastVisitTypeSearch.equalsIgnoreCase("Since")) {
-					if (UtilMethods.isSet(lastVisitSince)) {            
+					if (UtilMethods.isSet(lastVisitSince)) {
 						if(!usingClickStreamTable) {
 							querySelectPortion.append(", clickstream");
 							usingClickStreamTable = true;
@@ -258,7 +258,7 @@ public class UserManagerListBuilderFactory {
 				}
 
 				querySelectPortion.append(", user_proxy");
-				queryWherePortion.append(" and tag_inode.tagName in ("+tagNameParam+") ");
+				queryWherePortion.append(" and tag.tag_id = tag_inode.tag_id and tag.tagname in ("+tagNameParam+") ");
 				queryWherePortion.append(" and tag_inode.inode = user_proxy.inode ");
 				queryWherePortion.append(" and user_proxy.user_Id = user_.userId ");
 				addingUserProxyWhere = true;
@@ -268,8 +268,8 @@ public class UserManagerListBuilderFactory {
 			if (UtilMethods.isSet(form.getCity()) || UtilMethods.isSet(form.getCountry())
 					|| UtilMethods.isSet(form.getState()) || UtilMethods.isSet(form.getZipStr())
 					|| UtilMethods.isSet(form.getPhone()) || UtilMethods.isSet(form.getFax())
-					|| UtilMethods.isSet(form.getCellPhone())) 
-			{        
+					|| UtilMethods.isSet(form.getCellPhone()))
+			{
 				querySelectPortion.append(", address");
 				queryWherePortion.append(" and address.userId = user_.userId");
 			}
@@ -285,7 +285,7 @@ public class UserManagerListBuilderFactory {
 
 			if (UtilMethods.isSet(city))
 			{
-				city = "%" + city + "%";					
+				city = "%" + city + "%";
 				queryWherePortion.append(" and lower(address.city) like ? ");
 			}
 
@@ -336,9 +336,9 @@ public class UserManagerListBuilderFactory {
 				referer = "%" + referer + "%";
 				queryWherePortion.append(" and user_.userid=clickstream.user_id and clickstream_request.clickstream_id = clickstream.clickstream_id ");
 				queryWherePortion.append(" and (clickstream_request.request_uri like ? or clickstream.referer like ?)");
-			}	
+			}
 
-			//User Id Search			
+			//User Id Search
 			if (UtilMethods.isSet(userIdSearch))
 			{
 				userIdSearch = "%" + userIdSearch + "%";
@@ -369,8 +369,8 @@ public class UserManagerListBuilderFactory {
 						categories = categories + "tree.child = " + cat ;
 					}else{
 						categories = categories + " or tree.child = " + cat ;
-					}		
-					counter+=1;	
+					}
+					counter+=1;
 				}
 
 				if (!addingUserProxyWhere) {
@@ -413,20 +413,20 @@ public class UserManagerListBuilderFactory {
 			}
 			if (UtilMethods.isSet(dateOfBirthTypeSearch)) {
 				if (dateOfBirthTypeSearch.equalsIgnoreCase("DateRange")) {
-					if (UtilMethods.isSet(dateOfBirthFromDate)) {            
+					if (UtilMethods.isSet(dateOfBirthFromDate)) {
 						dc.addParam(dateOfBirthFromDate);
 					}
-					if (UtilMethods.isSet(dateOfBirthToDate))	{            
+					if (UtilMethods.isSet(dateOfBirthToDate))	{
 						dc.addParam(dateOfBirthToDate);
 					}
 				}
 			}
 			if (UtilMethods.isSet(lastLoginTypeSearch)) {
 				if (lastLoginTypeSearch.equalsIgnoreCase("DateRange")) {
-					if (UtilMethods.isSet(lastLoginFromDate)) {            
+					if (UtilMethods.isSet(lastLoginFromDate)) {
 						dc.addParam(lastLoginFromDate);
 					}
-					if (UtilMethods.isSet(lastLoginToDate))	{            
+					if (UtilMethods.isSet(lastLoginToDate))	{
 						dc.addParam(lastLoginToDate);
 					}
 				}
@@ -441,10 +441,10 @@ public class UserManagerListBuilderFactory {
 			}
 			if (UtilMethods.isSet(createdTypeSearch)) {
 				if (createdTypeSearch.equalsIgnoreCase("DateRange")) {
-					if (UtilMethods.isSet(createdDateFromDate)) {            
+					if (UtilMethods.isSet(createdDateFromDate)) {
 						dc.addParam(createdDateFromDate);
 					}
-					if (UtilMethods.isSet(createdDateToDate))	{            
+					if (UtilMethods.isSet(createdDateToDate))	{
 						dc.addParam(createdDateToDate);
 					}
 				}
@@ -459,10 +459,10 @@ public class UserManagerListBuilderFactory {
 			}
 			if (UtilMethods.isSet(lastVisitTypeSearch)) {
 				if (lastVisitTypeSearch.equalsIgnoreCase("DateRange")) {
-					if (UtilMethods.isSet(lastVisitDateFromDate)) {            
+					if (UtilMethods.isSet(lastVisitDateFromDate)) {
 						dc.addParam(lastVisitDateFromDate);
 					}
-					if (UtilMethods.isSet(lastVisitDateToDate))	{            
+					if (UtilMethods.isSet(lastVisitDateToDate))	{
 						dc.addParam(lastVisitDateFromDate);
 					}
 				}
@@ -509,7 +509,7 @@ public class UserManagerListBuilderFactory {
 				dc.addParam(referer);
 			}
 
-			//User Id Search			
+			//User Id Search
 			if(UtilMethods.isSet(userIdSearch))
 			{
 				dc.addParam(userIdSearch);
@@ -573,7 +573,7 @@ public class UserManagerListBuilderFactory {
 	}
 
 	/**
-	 * return a String with the userIds that are retieved from a UserManager's  SearchForm, also save that String to the session in this 
+	 * return a String with the userIds that are retieved from a UserManager's  SearchForm, also save that String to the session in this
 	 * variable "usersFullCommand"
 	 * @param req the request where the UserManagerListSearchForm object is store
 	 * @return String with the userIds, separated by ","
@@ -596,9 +596,9 @@ public class UserManagerListBuilderFactory {
 			StringBuffer userFullCommandSB = new StringBuffer();
 
 			//Get the Iterator and the userIds
-			Iterator it = matches.iterator();            
-			for (int i = 0; it.hasNext(); i++) 
-			{               
+			Iterator it = matches.iterator();
+			for (int i = 0; it.hasNext(); i++)
+			{
 				String userId = (String) ((Map) it.next()).get("userid");
 				userFullCommandSB.append(userId + ",");
 			}
@@ -613,9 +613,9 @@ public class UserManagerListBuilderFactory {
 	}
 
 	/**
-	 * Get a String with the userIds of the users to retrieve, separated by a "," and return an arraylist of the userproxies 
+	 * Get a String with the userIds of the users to retrieve, separated by a "," and return an arraylist of the userproxies
 	 * that represent those userIds
-	 * @param userIdList userIds to be retrieved 
+	 * @param userIdList userIds to be retrieved
 	 * @return a list of userProxy that represent those user
 	 */
 
@@ -631,7 +631,7 @@ public class UserManagerListBuilderFactory {
 			} catch (Exception e) {
 				Logger.error(UserManagerListBuilderFactory.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
-			}	
+			}
 			if(InodeUtils.isSet(userProxy.getInode()))
 			{
 				userProxyList.add(userProxy);

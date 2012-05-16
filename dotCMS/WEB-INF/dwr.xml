@@ -87,9 +87,20 @@
     </create>
     <create creator="new" javascript="FileAssetAjax" scope="request">
       <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
-    </create>    
+    </create>
     <!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
+<!-- BEGIN PLUGIN:com.dotcms.achecker -->
+	<create creator="new" javascript="ACheckerDWR">
+		<param name="class" value="com.dotcms.achecker.tinymce.ACheckerDWR" />
+	</create>
+	<convert converter="bean" match="com.dotcms.achecker.ACheckerResponse"/>
+	<convert converter="bean" match="com.dotcms.achecker.AccessibilityResult"/>
+	<convert converter="bean" match="com.dotcms.achecker.CheckBean"/>
+	<convert converter="enum" match="com.dotcms.achecker.Confidence"/>
+	<convert converter="bean" match="com.dotcms.achecker.model.GuideLineBean"/>
+
+<!-- END PLUGIN:com.dotcms.achecker -->
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
 	<convert converter="bean" match="com.dotmarketing.cms.polls.ajax.PollsAjax$VoteAnswer"/>
@@ -103,12 +114,12 @@
 	<convert converter="bean" match="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod"/>
 	<convert match="java.lang.Exception" converter="exception">
 	  <param name='include' value='message,lineNumber'/>
-	</convert>	
+	</convert>
 	<convert match="java.lang.StackTraceElement" converter="bean"/>
 	<convert converter="null" match="java.io.File"/>
-	<convert converter="bean" 
+	<convert converter="bean"
       match="com.dotmarketing.business.PermissionableObjectDWR">
-      <param name="include" 
+      <param name="include"
         value="id,type,isParentPermissionable,doesUserHavePermissionsToEdit,isFolder,isHost"/>
     </convert>
   </allow>

@@ -103,7 +103,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	private static LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-
+	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
 	/**
 	 * @param permissionAPI
 	 *            the permissionAPI to set
@@ -119,8 +119,12 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	public static final String VELOCITY_CONTEXT = "velocityContext";
 
-	
+
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+
+
+
 		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL) && LicenseUtil.getLevel() < 299) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
@@ -265,6 +269,7 @@ public abstract class VelocityServlet extends HttpServlet {
 				Logger.error(this, e.getMessage(), e);
 			}
 			DbConnectionFactory.closeConnection();
+			velocityCtx.remove();
 		}
 		if (profileTime != null) {
 			profileTime = Calendar.getInstance().getTimeInMillis() - profileTime;
@@ -470,14 +475,14 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 
 		Writer out = (buildCache) ? new StringWriter(4096) : new VelocityFilterWriter(response.getWriter());
-		
+
 		//get the context from the requst if possible
 		Context context = VelocityUtil.getWebContext(request, response);
-		
+
 		request.setAttribute("velocityContext", context);
 		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + idInode);
 
-		
+
 
 		try {
 
@@ -560,7 +565,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		context.put("previewPage", "2");
 		context.put("livePage", "0");
 		// get the containers for the page and stick them in context
-		List<Container> containers = APILocator.getTemplateAPI().getContainersInTemplate(cmsTemplate, 
+		List<Container> containers = APILocator.getTemplateAPI().getContainersInTemplate(cmsTemplate,
 				APILocator.getUserAPI().getSystemUser(),false);
 		for (Container c : containers) {
 
@@ -961,7 +966,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 	}
 
-	
+
 
 
 
@@ -989,6 +994,9 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 		else {
 			User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+			if(user==null) {
+				user = com.liferay.portal.util.PortalUtil.getUser(request);
+			}
 			host = hostWebAPI.find(hostId, user, true);
 		}
 

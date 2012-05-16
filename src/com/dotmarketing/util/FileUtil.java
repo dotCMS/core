@@ -92,7 +92,7 @@ public class FileUtil {
 			return fileName;
 		}
 		fileName = URLDecoder.decode(fileName);
-		char[] invalids ={'\\', '/',':', '*', '?' ,'"','\'' ,'<' ,'>' ,'|'};
+		char[] invalids ={'\\', '/',':', '*', '?' ,'"','\'' ,'<' ,'>' ,'|','&'};
 		
 		
 		for(int i=0;i< invalids.length;i++){

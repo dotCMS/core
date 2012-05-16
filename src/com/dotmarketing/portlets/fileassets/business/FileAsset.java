@@ -24,9 +24,24 @@ import com.liferay.portal.model.User;
 
 public class FileAsset extends Contentlet implements IFileAsset {
 
+	String metaData;
 	public FileAsset() {
 		super();
 
+	}
+
+	public String getMetaData(){
+		if(metaData ==null){
+			metaData=(String) super.get(FileAssetAPI.META_DATA_FIELD);
+		}
+		return metaData;
+
+	}
+	
+	
+
+	public void setMetaData(String metaData) {
+		this.metaData = metaData;
 	}
 
 	public void setMenuOrder(int sortOrder) {
@@ -64,6 +79,26 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	public long getFileSize() {
 		return getFileAsset().length();
+	}
+
+	public int getHeight() {
+		int height = 0;
+		try {
+			height = javax.imageio.ImageIO.read(getFileAsset()).getHeight();
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return height;
+	}
+
+	public int getWidth() {
+		int width = 0;
+		try {
+			width = javax.imageio.ImageIO.read(getFileAsset()).getWidth();
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return width;
 	}
 
 	public void setFileName(String name) {

@@ -36,8 +36,8 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
 import com.dotmarketing.beans.ClickstreamRequest;
@@ -880,11 +880,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 			file = new File(backupTempFilePath + "/index_working.json");
-			ESUtils.backupIndex(info.working, file);
+			new ESIndexAPI().backupIndex(info.working, file);
 			 
 			
 			file = new File(backupTempFilePath + "/index_live.json");
-			ESUtils.backupIndex(info.live, file);
+			new ESIndexAPI().backupIndex(info.live, file);
 
 
 			

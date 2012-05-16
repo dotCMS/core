@@ -2,6 +2,7 @@ package com.dotcms.publishing;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,10 +20,16 @@ public class PublisherConfig implements Map<String, Object> {
 	private enum Config {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
-		THREADS, ID, TIMESTAMP
+		THREADS, ID, TIMESTAMP, BUNDLERS,INCREMENTAL;
 	};
 
+	
+	public void PublisherConfig(Map<String, Object> map){
+		params = map;
+	}
+	
 	Map<String, Object> params;
+	private boolean liveOnly = true;
 
 	@SuppressWarnings("unchecked")
 	public List<Folder> getFolders() {
@@ -45,6 +52,17 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.MAKE_BUNDLE.name(), bundle);
 	}
 	
+	/**
+	 * Defaults to live. This handles most cause.  Is set to false bundlers should bundle both working and live
+	 * @return
+	 */
+	public boolean liveOnly(){
+		return liveOnly;
+	}
+	
+	public void setLiveOnly(boolean liveOnly){
+		this.liveOnly = liveOnly;
+	}
 	
 	public void setStructures(List<Structure> structures) {
 		params.put(Config.STRUCTURES.name(), structures);
@@ -123,6 +141,7 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	public Date getEndDate() {
+
 		return (Date) params.get(Config.END_DATE.name());
 	}
 
@@ -155,7 +174,7 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	public PublisherConfig() {
-
+		params = new HashMap<String, Object>();
 		setId(UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_'));
 
 		Date startDate = new java.util.Date();
@@ -212,6 +231,7 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	public String getId() {
+
 		return (String) params.get(Config.ID.name());
 	}
 
@@ -219,11 +239,12 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.ID.name(), id);
 	}
 
-	public List<Class<Publisher>> getPublishers() {
-		return (List<Class<Publisher>>) params.get(Config.PUBLISHER.name());
+	public List<Class> getPublishers() {
+		return (List<Class>) params.get(Config.PUBLISHER.name());
 	}
 
-	public void setPublishers(List<Class<Publisher>> publishers) {
+	public void setPublishers(List<Class> publishers) {
+		System.out.println(publishers);
 		params.put(Config.PUBLISHER.name(), publishers);
 	}
 
@@ -231,5 +252,26 @@ public class PublisherConfig implements Map<String, Object> {
 	public String toString() {
 		return "PublisherConfig [params=" + params + "]";
 	}
+	public void setBundlers(List<IBundler> bundlers) {
 
+		params.put(Config.BUNDLERS.name(), bundlers);
+	}
+	
+	
+	public List<IBundler> getBundlers() {
+
+		return (List<IBundler>) params.get(Config.BUNDLERS.name());
+	}
+	public boolean isIncremental(){
+		return (params.get(Config.INCREMENTAL.name()) !=null);
+		
+	}
+	public void setIncremental(boolean inc){
+		if(inc){
+			params.put(Config.INCREMENTAL.name(), true);
+		}
+		else{
+			params.remove(Config.INCREMENTAL.name());
+		}
+	}
 }

@@ -11,12 +11,24 @@ dojo.require("dojo.dnd.Source");
 dojo.require("dojox.layout.ContentPane");
 dojo.require("dijit.TooltipDialog");
 dojo.require("dojox.data.QueryReadStore");
+dojo.require("dojo.NodeList-manipulate");
 // refresh page when the hash has changed
 dojo.subscribe("/dojo/hashchange", this, function(hash){mainAdmin.refresh();});
 
 dojo.require("dijit.layout.TabContainer");
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dotcms.dojo.data.RoleReadStore");
+dojo.provide("ValidationTextarea");
+dojo.require("dijit.form.SimpleTextarea");
+
+dojo.declare(
+    "ValidationTextarea",
+    [dijit.form.ValidationTextBox,dijit.form.SimpleTextarea],
+    {
+        invalidMessage: "This field is required"
+    }
+);
+
 
 
 
@@ -581,7 +593,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Saved")%>");
 		var actionId  = message.split(":")[1];
-		mainAdmin.show(this.baseJsp + "?actionId=" + actionId);
+		mainAdmin.show(this.baseJsp + "?stepId=" + stepId + "&actionId=" + actionId);
 		
 
 	},
@@ -603,7 +615,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	},
 	
 	addToWhoCanUse : function ( myId, myName){
-		for(i=0;i<this.whoCanUse.length;i++){
+		for(i=0;i < this.whoCanUse.length;i++){
 			if(myId == this.whoCanUse[i].id  ||  myId == "user-" + this.whoCanUse[i].id || myId == "role-" + this.whoCanUse[i].id){
 				return;
 			}
@@ -618,7 +630,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 		var x=0;
 		var newCanUse = new Array();
-		for(i=0;i<this.whoCanUse.length;i++){
+		for(i=0;i < this.whoCanUse.length;i++){
 			if(myId != this.whoCanUse[i].id){
 				newCanUse[x] = this.whoCanUse[i];
 				x++;
@@ -646,7 +658,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 			dojo.create("td", { innerHTML: this.whoCanUse[i].name + what}, tr);
 
 		}
-		dojo.byId("whoCanUse").value = x;
+		dojo.query('#whoCanUse').val(x);
 		
 	},
 	doChange: function(){
@@ -770,7 +782,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 	removeFromActionClasses: function (id){
 		var x=0;
 		var newActionlets = new Array();
-		for(i=0;i<this.actionClasses.length;i++){
+		for(i=0;i < this.actionClasses.length;i++){
 			if(id != this.actionClasses[i].id){
 				newActionlets[x] = this.actionClasses[i];
 				x++;

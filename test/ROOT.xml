@@ -13,7 +13,7 @@
 	<!-- POSTGRESQL -->
 	<Resource name="jdbc/dotCMSPool" auth="Container" 
 	        type="javax.sql.DataSource"
-	        driverClassName="org.postgresql.Driver"
+	        driverClassName="{driver}"
 	        url="{url}"
 	        username="{username}" password="{password}" maxActive="60" maxIdle="10" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 

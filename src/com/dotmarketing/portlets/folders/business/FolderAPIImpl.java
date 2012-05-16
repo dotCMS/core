@@ -27,6 +27,7 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -110,8 +111,8 @@ public class FolderAPIImpl implements FolderAPI  {
 				HibernateUtil.startTransaction();
 			}
 
-			renamed = renameAndUpdateChildrenParentPath(folder, newName, user, respectFrontEndPermissions);
-
+			return ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
+			
 		} catch (Exception e) {
 
 			if (localTransaction) {
@@ -123,84 +124,6 @@ public class FolderAPIImpl implements FolderAPI  {
 				HibernateUtil.commitTransaction();
 			}
 		}
-
-		return renamed;
-
-	}
-
-
-	private Boolean renameAndUpdateChildrenParentPath(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-
-		Boolean renamed = false;
-
-		List<Identifier> identifierList = new ArrayList<Identifier>();
-
-
-		Identifier idFolder = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-
-		renamed = updateChildrenParentPath(identifierList, idFolder.getParentPath()+newName+"/", folder, user, respectFrontEndPermissions);
-
-		renamed = renamed & ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
-
-		for (Identifier identifier : identifierList) {
-			APILocator.getIdentifierAPI().save(identifier);
-		}
-
-		return renamed;
-	}
-
-	private Boolean updateChildrenParentPath(List<Identifier> identifierList, String folderPath, Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		List<Folder> folderChildren = findSubFolders(folder, user, respectFrontEndPermissions);
-
-		// recursively update parent path
-		for (Folder childFolder : folderChildren) {
-			// sub deletes use system user - if a user has rights to parent
-			// permission (checked above) they can delete to children
-			updateChildrenParentPath(identifierList, folderPath+childFolder.getName()+"/", childFolder, user, respectFrontEndPermissions);
-
-			Identifier id = APILocator.getIdentifierAPI().find(childFolder.getIdentifier());
-			id.setParentPath(folderPath);
-			identifierList.add(id);
-		}
-
-
-		ContentletAPI capi = APILocator.getContentletAPI();
-
-
-		List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
-		List<HTMLPage> htmlPages = getHTMLPages(folder, user, respectFrontEndPermissions);
-		List<File> files = getFiles(folder, user, respectFrontEndPermissions);
-		List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
-
-		/************ conList *****************/
-		for (Contentlet c : conList) {
-			Identifier iden = APILocator.getIdentifierAPI().find(c.getIdentifier());
-			iden.setParentPath(folderPath);
-			identifierList.add(iden);
-		}
-
-		/************ htmlPages *****************/
-		for (HTMLPage page : htmlPages) {
-			Identifier iden = APILocator.getIdentifierAPI().find(page.getIdentifier());
-			iden.setParentPath(folderPath);
-			identifierList.add(iden);
-		}
-
-		/************ Files *****************/
-		for (File file : files) {
-			Identifier iden = APILocator.getIdentifierAPI().find(file.getIdentifier());
-			iden.setParentPath(folderPath);
-			identifierList.add(iden);
-		}
-
-		/************ Links *****************/
-		for (Link linker : links) {
-			Identifier iden = APILocator.getIdentifierAPI().find(linker.getIdentifier());
-			iden.setParentPath(folderPath);
-			identifierList.add(iden);
-		}
-
-		return true;
 	}
 
 
@@ -400,9 +323,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				// permission (checked above) they can delete to children
 				delete(childFolder, user, respectFrontEndPermissions);
 			}
-
-			HibernateUtil.commitTransaction();
-
+			
 			// delete assets in this folder
 			_deleteChildrenAssetsFromFolder(folder, user, respectFrontEndPermissions);
 			APILocator.getPermissionAPI().removePermissions(folder);
@@ -418,20 +339,18 @@ public class FolderAPIImpl implements FolderAPI  {
 				// RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(faker);
 			}
+			
+			if(localTransaction){
+                HibernateUtil.commitTransaction();
+            }
 
 		} catch (Exception e) {
 
 			if (localTransaction) {
 				HibernateUtil.rollbackTransaction();
 			}
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 		}
-		finally {
-			if(localTransaction){
-				HibernateUtil.commitTransaction();
-			}
-		}
-
 	}
 
 	private void _deleteChildrenAssetsFromFolder(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException,
@@ -442,20 +361,24 @@ public class FolderAPIImpl implements FolderAPI  {
 			ContentletAPI capi = APILocator.getContentletAPI();
 
 			/************ conList *****************/
+			HibernateUtil.getSession().clear();
 			List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
 			for (Contentlet c : conList) {
 				capi.delete(c, user, false);
 			}
 
 			/************ htmlPages *****************/
+			HibernateUtil.getSession().clear();
 			List<HTMLPage> htmlPages = getHTMLPages(folder, user, respectFrontEndPermissions);
 			for (HTMLPage page : htmlPages) {
 				APILocator.getHTMLPageAPI().delete((HTMLPage) page, user, false);
 			}
 
 			/************ Files *****************/
+			HibernateUtil.getSession().clear();
 			List<File> files = getFiles(folder, user, respectFrontEndPermissions);
 			for (File file : files) {
+			    HibernateUtil.getSession().clear();
 				APILocator.getFileAPI().delete((File) file, user, false);
 			}
 			/************ Structures *****************/
@@ -465,6 +388,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				// APILocator.getFileAPI().delete((File) file, sys, false);
 			}
 			/************ Links *****************/
+			HibernateUtil.getSession().clear();
 			List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
 			for (Link linker : links) {
 				Link link = (Link) linker;
@@ -482,6 +406,24 @@ public class FolderAPIImpl implements FolderAPI  {
 
 					APILocator.getIdentifierAPI().delete(identifier);
 				}
+			}
+			
+			/******** delete possible orphaned identifiers under the folder *********/
+			HibernateUtil.getSession().clear();
+			Identifier ident=APILocator.getIdentifierAPI().find(folder);
+			List<Identifier> orphanList=APILocator.getIdentifierAPI().findByParentPath(folder.getHostId(), ident.getURI());
+			for(Identifier orphan : orphanList) {
+			    APILocator.getIdentifierAPI().delete(orphan);
+			    HibernateUtil.getSession().clear();
+			    try {
+    			    DotConnect dc = new DotConnect();
+    			    dc.setSQL("delete from identifier where id=?");
+    			    dc.addParam(orphan.getId());
+    			    dc.loadResult();
+			    } catch(Exception ex) {
+			        Logger.warn(this, "can't delete the orphan identifier",ex);
+			    }
+			    HibernateUtil.getSession().clear();
 			}
 
 			/************ Structures *****************/

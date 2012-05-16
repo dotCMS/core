@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth"%>
@@ -21,9 +22,9 @@
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
-ESIndexAPI idxApi = new ESIndexAPI();
+ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 ContentletAPI capi = APILocator.getContentletAPI();
-
+ESIndexAPI esapi = APILocator.getESIndexAPI();
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
 	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
@@ -49,22 +50,17 @@ List<String> currentIdx =idxApi.getCurrentIndex();
 List<String> newIdx =idxApi.getNewIndex();
 
 List<String> indices=idxApi.listDotCMSIndices();
-Map<String, IndexStatus> indexInfo = idxApi.getIndicesAndStatus();
+Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
 
 
-Map<String,ClusterIndexHealth> map = new ESIndexAPI().getClusterHealth();
+Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 %>
 
-<script language="Javascript">
-	dojo.require("dijit.DropDownMenu");
-	dojo.addOnLoad (function(){
-		checkReindexation();
-	});
-</script>
+
 
 <style>
 	.trIdxBuilding{
@@ -112,7 +108,7 @@ Map<String,ClusterIndexHealth> map = new ESIndexAPI().getClusterHealth();
 		                </div>
 		           </div>
 			</div>
-		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="reloadIcon">
+		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="resetIcon">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>
 		

@@ -11,6 +11,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -424,7 +425,8 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 			htmlpageTableChanges();
 			triggerChanges();
 			addTriggerToFolder();
-			deleteMappingsFromTree();
+			if(Config.getBooleanProperty("upgrade-cleanup-bad-data",true))
+			    deleteMappingsFromTree();
 		} catch (Exception e) {
 		    HibernateUtil.rollbackTransaction();
 			Logger.error(this, e.getMessage());

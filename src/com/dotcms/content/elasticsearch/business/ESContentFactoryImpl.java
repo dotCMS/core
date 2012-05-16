@@ -20,8 +20,10 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.CustomScoreQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.internal.InternalSearchHits;
@@ -85,7 +87,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		client = new ESClient();
 
 	}
-	
+
 	@Override
 	protected Object loadField(String inode, String fieldContentlet) throws DotDataException {
 	    String sql="SELECT "+fieldContentlet+" FROM contentlet WHERE inode=?";
@@ -281,8 +283,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	public Contentlet convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
 			throws DotDataException, DotStateException, DotSecurityException {
 	    Contentlet con = new Contentlet();
-        Identifier identifier = new Identifier();
-        String folderInode = "";
+
+
         con.setStructureInode(fatty.getStructureInode());
         Map<String, Object> contentletMap = fatty.getMap();
 
@@ -304,37 +306,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
         con.setModDate(fatty.getModDate());
         con.setReviewInterval(fatty.getReviewInterval());
 
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(fatty.getStructureInode());
-        Field hostField = null;
-        for (Field field: fields) {
-            if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()))
-                hostField = field;
-        }
-        if (InodeUtils.isSet(fatty.getIdentifier())) {
-            IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-            identifier = identifierAPI.find(fatty.getIdentifier());
-            Folder folder = null;
-            if(identifier.getParentPath().length()>1)
-                folder = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), identifier.getHostId(), APILocator.getUserAPI().getSystemUser(),false);
-            else
-                folder = APILocator.getFolderAPI().findSystemFolder();
-
-            folderInode = folder.getInode();
-        }
-        if (hostField != null) {
-            String hostId = con.getStringProperty(hostField.getVelocityVarName());
-            if (!InodeUtils.isSet(hostId)) {
-                if (InodeUtils.isSet(fatty.getIdentifier())) {
-                    con.setHost(identifier.getHostId());
-                } else {
-                    Host systemHost = APILocator.getHostAPI().findSystemHost();
-                    con.setHost(systemHost.getIdentifier());
-                }
-            }else {
-                con.setHost(hostId);
-            }
-        }
-        con.setFolder(folderInode);
+        
+        
+	     if(UtilMethods.isSet(fatty.getIdentifier())){   
+	        IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+	        Identifier identifier = identifierAPI.find(fatty.getIdentifier());
+	        Folder folder = null;
+	        if(identifier.getParentPath().length()>1){
+	            folder = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), identifier.getHostId(), APILocator.getUserAPI().getSystemUser(),false);
+	        }else{
+	            folder = APILocator.getFolderAPI().findSystemFolder();
+	        }
+	        con.setHost(identifier.getHostId());
+	        con.setFolder(folder.getInode());
+	        
+		}
+	     else{
+	         con.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
+	         con.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
+	     }
         String wysiwyg = fatty.getDisabledWysiwyg();
         if( UtilMethods.isSet(wysiwyg) ) {
             List<String> wysiwygFields = new ArrayList<String>();
@@ -568,7 +558,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             //Checking contentlet exists inode > 0
             if(InodeUtils.isSet(c.getInode())){
                 APILocator.getPermissionAPI().removePermissions(c);
-                
+
                 ContentletVersionInfo verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(c.getIdentifier(), c.getLanguageId());
                 if(verInfo!=null && UtilMethods.isSet(verInfo.getIdentifier())) {
                     if(UtilMethods.isSet(verInfo.getLiveInode()) && verInfo.getLiveInode().equals(c.getInode()))
@@ -580,7 +570,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     if(verInfo.getWorkingInode().equals(c.getInode()))
                         APILocator.getVersionableAPI().deleteContentletVersionInfo(c.getIdentifier(), c.getLanguageId());
                 }
-                
+
                 HibernateUtil.delete(c);
                 //db.setSQL("delete from inode where identifier like '6050'");
                 //try{
@@ -630,9 +620,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<Map<String, String>> result = dc.loadResults();
         int before = Integer.parseInt(result.get(0).get("count"));
 
-        String deleteContentletSQL = "delete from contentlet where mod_date < ? and inode not in " +
-                                     " ((select working_inode from contentlet_version_info) " +
-                                     "  union (select live_inode from contentlet_version_info)) ";
+        String deleteContentletSQL = "delete from contentlet where identifier<>'SYSTEM_HOST' and mod_date < ? " +
+        "and not exists (select * from contentlet_version_info where working_inode=contentlet.inode or live_inode=contentlet.inode)";
         dc.setSQL(deleteContentletSQL);
         dc.addParam(date);
         dc.loadResult();
@@ -642,7 +631,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.setSQL(countSQL);
         result = dc.loadResults();
         int after = Integer.parseInt(result.get(0).get("count"));
-        return before - after;
+
+        int deleted=before - after;
+
+        if(deleted>0)
+            cc.clearCache();
+
+        return deleted;
 	}
 
 	@Override
@@ -713,23 +708,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		throw new DotDataException("findAllCurrent() will blow your stack off, use findAllCurrent(offset, limit)");
 	}
 
-	@Override
-	protected List<Contentlet> findAllCurrent(int offset, int limit) throws ElasticSearchException {
-		QueryBuilder builder = QueryBuilders.matchAllQuery();
+    @Override
+    protected List<Contentlet> findAllCurrent ( int offset, int limit ) throws ElasticSearchException {
 
-		SearchResponse response = client.getClient().prepareSearch().setQuery(builder).setSize(limit).setFrom(offset).execute().actionGet();
-		SearchHits hits = response.hits();
-		List<Contentlet> cons = new ArrayList<Contentlet>();
-		for (int i = 0; i < hits.getTotalHits(); i++) {
-			try {
-				cons.add(find(hits.getAt(i).field("inode").value().toString()));
-			} catch (Exception e) {
-				throw new ElasticSearchException(e.getMessage(),e);
-			}
+        QueryBuilder builder = QueryBuilders.matchAllQuery();
 
-		}
-		return cons;
-	}
+        SearchResponse response = client.getClient().prepareSearch().setQuery( builder ).setSize( limit ).setFrom( offset ).execute().actionGet();
+        SearchHits hits = response.hits();
+        List<Contentlet> cons = new ArrayList<Contentlet>();
+
+        for ( SearchHit hit : hits ) {
+            try {
+                cons.add( find( hit.getSource().get( "inode" ).toString() ) );
+            } catch ( Exception e ) {
+                throw new ElasticSearchException( e.getMessage(), e );
+            }
+        }
+
+        return cons;
+    }
 
 	@Override
 	protected List<Contentlet> findAllUserVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
@@ -759,7 +756,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
 	    if(!InodeUtils.isSet(identifier.getInode()))
             return new ArrayList<Contentlet>();
-        
+
         DotConnect dc = new DotConnect();
         dc.setSQL("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
         dc.addObject(identifier.getId());
@@ -968,7 +965,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                    .append("from contentlet, inode contentlet_1_, contentlet_version_info contentvi ")
                    .append("where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and ")
                    .append("contentvi.identifier=contentlet.identifier and ")
-                   .append(((live!=null && live.booleanValue()) ?  
+                   .append(((live!=null && live.booleanValue()) ?
                             "contentvi.live_inode":"contentvi.working_inode"))
                    .append(" = contentlet_1_.inode ");
 
@@ -1101,10 +1098,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected List<Contentlet> getContentletsByIdentifier(String identifier, Boolean live) throws DotDataException, DotStateException, DotSecurityException {
 	    StringBuilder queryBuffer = new StringBuilder();
         queryBuffer.append("SELECT {contentlet.*} ")
-                   .append(" FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode = contentlet_1_.inode) ") 
+                   .append(" FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode = contentlet_1_.inode) ")
         		   .append(" JOIN contentlet_version_info contentletvi ON (contentlet.identifier=contentletvi.identifier) ")
                    .append(" WHERE ")
-                   .append((live!=null && live.booleanValue() ? 
+                   .append((live!=null && live.booleanValue() ?
                            "contentletvi.live_inode" : "contentletvi.working_inode"))
                    .append(" = contentlet.inode and contentlet.identifier = ? ");
         HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
@@ -1213,16 +1210,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    Client client=new ESClient().getClient();
 	    SearchResponse resp = null;
         try {
-            SearchRequestBuilder srb = client.prepareSearch()
-                 .setQuery(QueryBuilders.queryString(qq))
-                 .setIndices(indexToHit);
+        	QueryStringQueryBuilder qb = QueryBuilders.queryString(qq);
+        	SearchRequestBuilder srb = client.prepareSearch();
+
+        	if(UtilMethods.isSet(sortBy) && sortBy.equals("random")) {
+        		CustomScoreQueryBuilder cs = new CustomScoreQueryBuilder(qb);
+        		cs.script("random()");
+        		srb.setQuery(cs);
+        	} else {
+        		srb.setQuery(qb);
+        	}
+
+        	srb.setIndices(indexToHit);
 
             if(limit>0)
                 srb.setSize(limit);
             if(offset>0)
                 srb.setFrom(offset);
 
-            if(UtilMethods.isSet(sortBy) && !sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")) {
+            if(UtilMethods.isSet(sortBy) && !sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
             	String[] sortbyArr=sortBy.split(",");
             	for (String sort : sortbyArr) {
             		String[] x=sort.trim().split(" ");
@@ -1239,7 +1245,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             try{
             	resp = srb.execute().actionGet();
             }catch (SearchPhaseExecutionException e) {
-				if(e.getMessage().contains("-order_dotraw] in order to sort on")){
+				if(e.getMessage().contains("dotraw] in order to sort on")){
 					return new InternalSearchHits(InternalSearchHits.EMPTY,0,0);
 				}else{
 					throw e;
@@ -1251,7 +1257,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	    return resp.getHits();
 	}
-	
+
 
 	@Override
 	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticSearchException, DotSecurityException {
@@ -1270,7 +1276,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
              String inode = ident.get("inode");
              cc.remove(inode);
              Contentlet content = find(inode);
-             new ESIndexAPI().addContentToIndex(content);
+             new ESContentletIndexAPI().addContentToIndex(content);
           }
         } catch (DotDataException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
@@ -1320,7 +1326,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			int offset = i * 1000;
 			List<Contentlet> cons = findContentletsByHost(hostIdentifier, 1000, offset);
 			List<String> ids = new ArrayList<String>();
-			for (Contentlet con : cons) 
+			for (Contentlet con : cons)
 				con.setHost(systemHost.getIdentifier());
 		}
 	}
@@ -1348,7 +1354,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
              String inode = ident.get("inode");
              cc.remove(inode);
              Contentlet content = find(inode);
-             new ESIndexAPI().addContentToIndex(content);
+             new ESContentletIndexAPI().addContentToIndex(content);
         }
 	}
 
