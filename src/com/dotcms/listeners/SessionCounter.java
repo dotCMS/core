@@ -1,10 +1,12 @@
 package com.dotcms.listeners;
 
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
+
+import com.dotmarketing.util.WebKeys;
 
 /** 
  *  Listener that keeps track of the number of sessions
@@ -18,58 +20,46 @@ import javax.servlet.http.HttpSessionListener;
  *  By: IPFW Web Team
  */
 public class SessionCounter implements HttpSessionListener {
-  private long totalSessionCount = 0;
-  private long currentSessionCount = 0;
-  private long maxSessionCount = 0;
+  private AtomicLong totalSessionCount = new AtomicLong(0L);
+  private AtomicLong currentSessionCount = new AtomicLong(0L);
+  private AtomicLong maxSessionCount = new AtomicLong(0L);
   private ServletContext context = null;
   
   public void sessionCreated(HttpSessionEvent event) {
-    totalSessionCount++;
-    currentSessionCount++;	
+    totalSessionCount.addAndGet(1);
+    currentSessionCount.addAndGet(1);
 	
-    if (currentSessionCount > maxSessionCount) {
-      maxSessionCount = currentSessionCount;
+    synchronized(maxSessionCount) {
+        if (currentSessionCount.longValue() > maxSessionCount.longValue()) {
+          maxSessionCount = currentSessionCount;
+        }
     }
+    
     if (context == null) {
       storeInServletContext(event);
     }
-  }//end of sessionCreated method
+  }
 
   public void sessionDestroyed(HttpSessionEvent event) {
-	
-	if(currentSessionCount > 0){
-		currentSessionCount--;
-	}
-	
-	String id = event.getSession().getId();
-	
-	//note, if no one has logged into the backend and there was a undestroyed session
-	//left over from the previous restart of the system, this throws an exception.
-	Map<String, String> allusers = (Map<String, String>)context.getAttribute("ipfwUsers");
-	
-	if(allusers != null && allusers.containsKey(id)){		
-		String currentItemName = allusers.get(id);
-		allusers.remove(id);
-		context.setAttribute("ipfwUsers", allusers);				
-	}
-	
-  }//end of sessionDestroyed method
+	currentSessionCount.decrementAndGet();
+	currentSessionCount.compareAndSet(-1, 0);
+  }
 
   /** The total number of sessions created. */
   public long getTotalSessionCount() {
-    return(totalSessionCount);
+    return(totalSessionCount.longValue());
   }
 
   /** The number of sessions currently in memory. */
   public long getCurrentSessionCount() {
-    return(currentSessionCount);
+    return(currentSessionCount.longValue());
   }
 
   /** The largest number of sessions ever in memory
    *  at any one time.
    */
   public long getMaxSessionCount() {
-    return(maxSessionCount);
+    return(maxSessionCount.longValue());
   }
 
   /** Register self in the servlet context so that
@@ -77,6 +67,6 @@ public class SessionCounter implements HttpSessionListener {
    */
   private void storeInServletContext(HttpSessionEvent event) {
     context = event.getSession().getServletContext();
-    context.setAttribute("sessionCounter", this);
+    context.setAttribute(WebKeys.SESSION_COUNTER, this);
   }
 }
