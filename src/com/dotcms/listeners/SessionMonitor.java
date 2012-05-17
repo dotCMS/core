@@ -7,6 +7,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
 /** 
@@ -31,12 +32,10 @@ public class SessionMonitor implements HttpSessionAttributeListener {
    */
   public void attributeAdded(HttpSessionBindingEvent event) {
     String currentAttributeName = event.getName().toString();
-    
 	if(currentAttributeName.equals("USER_ID")){
 		String currentItemName = event.getValue().toString();
 		String id = event.getSession().getId();
 		sysUsers.put(id, currentItemName);
-		
 		ServletContext context = event.getSession().getServletContext();			
 		context.setAttribute(WebKeys.LOGGED_USERS, sysUsers);	
 	}

@@ -6,17 +6,17 @@
 
 	<h2>List of Logged-In Users in the System:</h2>
 	<ol class="orderMe" id="users">
-		#set($allIPFWUsers = ${ipfwUsers})
-		#foreach($ipfw_user in $allIPFWUsers)
-			<li>$!{ipfw_user}</li>
+		#set($allUsers = ${LOGGED_USERS})
+		#foreach($auser in $allUsers)
+			<li>$!{auser}</li>
 		#end
 	</ol>
 
 	<h2>User Session Statistics:</h2>
 	<ul>
-		<li>Total number of sessions since the system was up: $!{sessionCounter.totalSessionCount} </li>
-		<li>Number of sessions currently in memory:	$!{sessionCounter.currentSessionCount} </li>
-		<li>Maximum number of sessions that have ever been in memory at any one time: $!{sessionCounter.maxSessionCount} </li>
+		<li>Total number of sessions since the system was up: $!{SESSION_COUNTER.totalSessionCount} </li>
+		<li>Number of sessions currently in memory:	$!{SESSION_COUNTER.currentSessionCount} </li>
+		<li>Maximum number of sessions that have ever been in memory at any one time: $!{SESSION_COUNTER.maxSessionCount} </li>
 	</ul>
 	
 	<h2> System Properties </h2>
