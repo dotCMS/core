@@ -105,6 +105,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		Identifier identifier = find(webasset);
 		Identifier folderId = find(folder);
+		ic.removeFromCacheByVersionable(webasset);
+		
 		if (webasset instanceof HTMLPage) {
 			identifier.setURI(folderId.getPath() + ((HTMLPage) webasset).getPageUrl());
 		} else if (webasset instanceof File) {

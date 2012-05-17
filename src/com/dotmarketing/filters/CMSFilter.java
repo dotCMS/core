@@ -236,7 +236,7 @@ public class CMSFilter implements Filter {
         if (PREVIEW_MODE || EDIT_MODE) {
 			try {
 				pointer = LiveCache.getPathFromCache(uri, host);
-				
+
 				if(!UtilMethods.isSet(pointer)){//DOTCMS-7062
 					pointer = WorkingCache.getPathFromCache(uri, host);
 				}
@@ -418,6 +418,14 @@ public class CMSFilter implements Filter {
                     Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
                 }
 
+                if(user==null) {
+                	try {
+						user = com.liferay.portal.util.PortalUtil.getUser(request);
+					} catch (Exception nsue) {
+	                    Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
+	                }
+                }
+
                 boolean signedIn = false;
                 if (user != null) {
                     signedIn = true;
@@ -441,7 +449,7 @@ public class CMSFilter implements Filter {
             			}else{
             				langId = Long.parseLong(langIdReq);
             			}
-                		
+
                 		try{
                 			ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
                 			Contentlet proxy  = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
@@ -524,7 +532,7 @@ public class CMSFilter implements Filter {
 
     public void init(FilterConfig config) throws ServletException {
         VELOCITY_PAGE_EXTENSION = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-        ASSET_PATH = APILocator.getFileAPI().getRelativeAssetsRootPath(); 
+        ASSET_PATH = APILocator.getFileAPI().getRelativeAssetsRootPath();
         ASSET_REAL_PATH = Config.getStringProperty("ASSET_REAL_PATH");
         CMS_ANONYMOUS_ROLE = Config.getStringProperty("CMS_ANONYMOUS_ROLE");
 
@@ -597,7 +605,7 @@ public class CMSFilter implements Filter {
 
 	 	        }
 	         }
-			
+
 
 		}
 		return excludeList;
@@ -607,12 +615,12 @@ public class CMSFilter implements Filter {
         if (uri.trim().equals("/c")
         		|| uri.trim().startsWith("/c/")
         		|| (uri.indexOf("/ajaxfileupload/upload") != -1)
-        		||  new File(Config.CONTEXT.getRealPath(uri)).exists() 
+        		||  new File(Config.CONTEXT.getRealPath(uri)).exists()
         		&& !"/".equals(uri)) {
         	return true;
         }
-        
-       
+
+
         if(excludeList == null){
         	loadExcludeList();
         }
