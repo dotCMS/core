@@ -88,6 +88,9 @@
     <create creator="new" javascript="FileAssetAjax" scope="request">
       <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
     </create>
+    <create creator="new" javascript="ThreadMonitorTool" >
+      <param name="class" value="com.dotcms.threadmonitor.ThreadMonitorTool"/>
+    </create>
     <!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
 <!-- BEGIN PLUGIN:com.dotcms.achecker -->
