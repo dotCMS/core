@@ -311,7 +311,8 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
 	titleContainerSpan.innerHTML=getRemoveContainer(idDiv.value,value)+"<div class=\"clear\"></div>"+getContainerMockContent(container.title);
 	
 	var containerDivHidden = document.createElement("div");
-	containerDivHidden.style.display="none";
+
+	containerDivHidden.setAttribute("style","display: none;");
 	//set the title for better recognize the container's div
 	containerDivHidden.setAttribute("title","container_"+value);
 	containerDivHidden.setAttribute("id", idDiv.value+"_div_"+value);
