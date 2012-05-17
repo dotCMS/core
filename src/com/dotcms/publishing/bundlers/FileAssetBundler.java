@@ -69,16 +69,16 @@ public class FileAssetBundler implements IBundler {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
-				p = p.replace(" ", "+");
-				bob.append("-uri:" + p + " ");
+				//p = p.replace(" ", "+");
+				bob.append("-path:" + p + " ");
 			}
 		}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
 			for (String p : config.getIncludePatterns()) {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
-				p = p.replace(" ", "+");
-				bob.append("+uri:" + p + " ");
+				//p = p.replace(" ", "+");
+				bob.append("+path:" + p + " ");
 			}
 		}
 		
