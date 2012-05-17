@@ -15,6 +15,7 @@ import net.sf.hibernate.ObjectNotFoundException;
 
 import org.apache.commons.collections.map.LRUMap;
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -1188,6 +1189,32 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return dh.list();
 	}
 
+	protected long indexCount(String query) {
+	    String qq=findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+	    
+	    // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return 0;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true"))
+            indexToHit=info.live;
+        else
+            indexToHit=info.working;
+
+        Client client=new ESClient().getClient();
+        QueryStringQueryBuilder qb = QueryBuilders.queryString(qq);
+        CountRequestBuilder crb = client.prepareCount();
+        crb.setQuery(qb);
+        crb.setIndices(indexToHit);
+        return crb.execute().actionGet().count();
+	}
+	
 	@Override
 	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
 	    String qq=findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
