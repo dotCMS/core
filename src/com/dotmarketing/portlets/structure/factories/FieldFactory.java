@@ -40,26 +40,7 @@ public class FieldFactory {
 		String order = "sort_order asc";		
 		return InodeFactory.getInodesOfClassByConditionAndOrderBy(Field.class,condition,order);
 	}	
-	
-	@SuppressWarnings("unchecked")
-	public static List<Field> getFieldByStructureNoLock(String structureInode)
-	{
-		List<Field> result =null; 
-		HibernateUtil dh = new HibernateUtil(Field.class);
-		StringBuffer querie = new StringBuffer();
-		querie.append("select {field.*} from field with (nolock), inode field_1_ with (nolock) ");
-		querie.append("where field_1_.type='field' and field.inode = field_1_.inode and field.structure_inode = '"+structureInode+ "' ");
-		querie.append(" order by sort_order asc, field_name asc");
-		
-		try {
-			dh.setSQLQuery(querie.toString());
-			result = dh.list(); 
-		} catch (DotHibernateException e) {
-			Logger.error(FieldFactory.class, e.getMessage(),e);
-		}		
-		
-		return result;
-	}
+
 	public static boolean isTagField(String fieldLuceneName, Structure st) 
 	{
 		
