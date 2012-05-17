@@ -42,12 +42,29 @@ public class Task00865AddTimestampToVersionTables implements StartupTask {
         }
         else if(DbConnectionFactory.isMySql()) {
             // MySQL
-            dc.executeStatement("alter table container_version_info add version_ts timestamp default CURRENT_TIMESTAMP not null");
-            dc.executeStatement("alter table contentlet_version_info add version_ts timestamp default CURRENT_TIMESTAMP not null");
-            dc.executeStatement("alter table fileasset_version_info add version_ts timestamp default CURRENT_TIMESTAMP not null");
-            dc.executeStatement("alter table htmlpage_version_info add version_ts timestamp default CURRENT_TIMESTAMP not null");
-            dc.executeStatement("alter table link_version_info add version_ts timestamp default CURRENT_TIMESTAMP not null");
-            dc.executeStatement("alter table template_version_info add version_ts timestamp default CURRENT_TIMESTAMP not null");
+            dc.executeStatement("alter table container_version_info add version_ts datetime");
+            dc.executeStatement("update container_version_info set version_ts=now()");
+            dc.executeStatement("alter table container_version_info modify version_ts datetime not null");
+            
+            dc.executeStatement("alter table contentlet_version_info add version_ts datetime");
+            dc.executeStatement("update contentlet_version_info set version_ts=now()");
+            dc.executeStatement("alter table contentlet_version_info modify version_ts datetime not null");
+            
+            dc.executeStatement("alter table fileasset_version_info add version_ts datetime");
+            dc.executeStatement("update fileasset_version_info set version_ts=now()");
+            dc.executeStatement("alter table fileasset_version_info modify version_ts datetime not null");
+            
+            dc.executeStatement("alter table htmlpage_version_info add version_ts datetime");
+            dc.executeStatement("update htmlpage_version_info set version_ts=now()");
+            dc.executeStatement("alter table htmlpage_version_info modify version_ts datetime not null");
+            
+            dc.executeStatement("alter table link_version_info add version_ts datetime");
+            dc.executeStatement("update link_version_info set version_ts=now()");
+            dc.executeStatement("alter table link_version_info modify version_ts datetime not null");
+            
+            dc.executeStatement("alter table template_version_info add version_ts datetime");
+            dc.executeStatement("update template_version_info set version_ts=now()");
+            dc.executeStatement("alter table template_version_info modify version_ts datetime not null");
         }
         else if(DbConnectionFactory.isPostgres()) {
             // PostgreSQL
