@@ -322,22 +322,13 @@ public class ContentTool implements ViewTool {
 	 * @param query - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
 	 * @return
 	 */
-	public int count(String query){
-		List<ContentletSearch> l= null;
+	public long count(String query) {
 		try {
-			l = conAPI.searchIndex(addDefaultsToQuery(query), 0, -1, "modDate", user, true);
-		} catch (ParseException e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
-		} catch (DotSecurityException e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
-		} catch (DotDataException e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
-		}
-		if(l != null){
-			return l.size();
-		}else{
-			return 0;
-		}
+            return conAPI.indexCount(query, user, true);
+        } catch (Exception e) {
+            Logger.error(this, "can't get indexCount for query: "+query,e);
+            return 0;
+        }
 	}
 	
 	/**

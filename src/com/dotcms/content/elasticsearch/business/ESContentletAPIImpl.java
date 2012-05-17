@@ -3784,4 +3784,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 		return findContentRelationships(contentlet);
 	}
+
+    @Override
+    public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        boolean isAdmin = false;
+        List<Role> roles = new ArrayList<Role>();
+        if(user == null && !respectFrontendRoles){
+            throw new DotSecurityException("You must specify a user if you are not respecting frontend roles");
+        }
+        if(user != null){
+            if (!APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
+                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
+            }else{
+                isAdmin = true;
+            }
+        }
+        StringBuffer buffy = new StringBuffer(luceneQuery);
+
+        // Permissions in the query
+        if (!isAdmin)
+            addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
+        
+        return conFac.indexCount(buffy.toString());
+    }
 }

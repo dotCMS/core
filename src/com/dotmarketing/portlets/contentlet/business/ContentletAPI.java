@@ -1385,4 +1385,14 @@ public interface ContentletAPI {
 	 * 
 	 */
     public Object loadField(String inode, Field f) throws DotDataException;
+    
+    /**
+     * Allows to count how many records match the specified lucene query and user
+     * 
+     * @param luceneQuery
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     */
+    public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 }
