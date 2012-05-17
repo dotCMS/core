@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHookAbstractImp;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
@@ -37,7 +38,7 @@ import com.liferay.portal.model.User;
  * @author jasontesser
  *
  */
-public class HelloWorldContentletPreHook implements ContentletAPIPreHook {
+public class HelloWorldContentletPreHook extends ContentletAPIPreHookAbstractImp {
 	/*
 	 * (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#addFileToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
@@ -1024,40 +1025,10 @@ public class HelloWorldContentletPreHook implements ContentletAPIPreHook {
 		return true;
 	}
 
-	public boolean refreshContentUnderHost(Host host)throws DotReindexStateException{
+	public boolean indexCount(String luceneQuery, User user,
+            boolean respectFrontendRoles) {
 		return true;
 	}
 
-	public boolean indexCount(String luceneQuery, User user, boolean respectFrontendRoles){
-		return true;
-	}
-
-	public boolean refreshContentUnderFolder(Folder folder)throws DotReindexStateException{
-		return true;
-	}
-
-	public boolean removeFolderReferences(Folder folder) throws DotDataException{
-		return true;
-	}
-
-	public boolean canLock(Contentlet contentlet, User user) throws   DotLockException{
-		return true;
-	}
-
-	public boolean searchIndexCount(String luceneQuery, User user, boolean respectFrontendRoles){
-		return true;
-	}
-
-	public boolean findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException{
-		return true;
-	}
-
-	public boolean loadField(String inode, Field field) throws DotDataException{
-		return true;
-	}
-
-	public boolean copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles){
-		return true;
-	}
 
 }
