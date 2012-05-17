@@ -40,6 +40,8 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	private Integer countAddContainer;
 	
 	private Integer countContainers;
+	
+	private String headCode;
 	//	*********************** END GRAZIANO issue-12-dnd-template
 
 	/** default constructor */
@@ -200,6 +202,14 @@ public class Template extends WebAsset implements Serializable, Comparable {
 
 	public void setCountContainers(Integer countContainers) {
 		this.countContainers = countContainers;
+	}
+
+	public String getHeadCode() {
+		return headCode;
+	}
+
+	public void setHeadCode(String headCode) {
+		this.headCode = headCode;
 	}
 
 	public int compareTo(Object compObject){

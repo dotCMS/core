@@ -5,7 +5,8 @@ ADD (
  	DRAWED number(1,0),
  	DRAWED_BODY nclob,
  	ADD_CONTAINER_LINKS number(10,0),
- 	CONTAINERS_ADDED number(10,0)
+ 	CONTAINERS_ADDED number(10,0),
+ 	HEAD_CODE nclob
 );
 
 ALTER TABLE CONTAINERS

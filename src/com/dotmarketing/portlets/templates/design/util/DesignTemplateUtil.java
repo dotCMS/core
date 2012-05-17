@@ -88,7 +88,7 @@ public class DesignTemplateUtil {
 	 * @param _body - the body became by jsp TemplateForm
 	 * @return endBody with all HTML tags
 	 */
-	public static StringBuffer getBody(String _body){
+	public static StringBuffer getBody(String _body, String headCode){
 		StringBuffer endBody;
 		Document templateBody = Jsoup.parse(_body);
 		
@@ -116,6 +116,10 @@ public class DesignTemplateUtil {
 		
 		// gets the metatag containers
 		getMetatagContainers(templateBody);
+		
+		// add head code to body
+		if(null!=headCode && !"".equals(headCode.trim()))
+			addHeadCode(templateBody, headCode);
 		
 		endBody = new StringBuffer(templateBody.toString());
 		return endBody;
@@ -220,38 +224,10 @@ public class DesignTemplateUtil {
 		}
 	}
 	
-//	private static void addPreviewJsCssFiles(Document templateBody, List<PreviewFileAsset> savedFiles){
-//		Element head = templateBody.head();
-//		Element divFilesToAdd = templateBody.getElementById(FILES_TO_ADD_DIV_ID);
-//		if(null!=divFilesToAdd){
-//			Elements filesToAdd = divFilesToAdd.getElementsByAttributeValueStarting(ID_ATTRIBUTE, FILE_TO_ADD_START_ID);
-//			for(Element singleFile : filesToAdd){
-//				// check the ID value...
-//				String[] id_values = singleFile.attr("id").split("_");
-//				String inode = id_values[1];
-//				for(PreviewFileAsset savedFile: savedFiles){
-//					if(inode.equals(savedFile.getInode())){ // we must replace the path with the real preview path file
-//						String html = singleFile.html();
-//						html = replaceHTMLComments(singleFile.html());
-//						Document link_script = Jsoup.parseBodyFragment(html);
-//						Elements link_elements = link_script.select("link[href]");
-//						Elements script_elements = link_script.select("script[src]");
-//						if(link_elements.size()>0){ // a link
-//							Element link_el = link_elements.get(0);
-//							link_el.attr("href",savedFile.getRealFileSystemPath());
-//							head.append(link_el.toString());
-//						}else{ //a script
-//							Element script_el = script_elements.get(0);
-//							script_el.attr("src",savedFile.getRealFileSystemPath());
-//							head.append(script_el.toString());
-//						}					
-//						singleFile.remove();
-//					}					
-//				}
-//			}
-//			divFilesToAdd.remove();
-//		}
-//	}
+	private static void addHeadCode(Document templateBody, String headCode){
+		Element head = templateBody.head();
+		head.append(headCode);
+	}
 	
 	private static String getPageWithValue(Document templateDrawedBody){
 		Element globalContainer = templateDrawedBody.getElementsByAttributeValue(NAME_ATTRIBUTE, MAIN_DIV_NAME_VALUE).get(0);

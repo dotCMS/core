@@ -5,7 +5,8 @@ ADD (
  	DRAWED tinyint(1),
  	DRAWED_BODY longtext,
  	ADD_CONTAINER_LINKS integer,
- 	CONTAINERS_ADDED integer
+ 	CONTAINERS_ADDED integer,
+ 	HEAD_CODE longtext
 );
 
 ALTER TABLE CONTAINERS

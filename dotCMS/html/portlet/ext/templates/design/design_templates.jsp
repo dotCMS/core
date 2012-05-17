@@ -21,7 +21,7 @@
 </style>
 
 <%
-	boolean enablePreview = Boolean.parseBoolean(Config.getStringProperty(com.dotmarketing.util.WebKeys.PREVIEW_TEMPLATE_DESIGN_ENABLE)); 
+	boolean enablePreview = null!=Config.getStringProperty(com.dotmarketing.util.WebKeys.PREVIEW_TEMPLATE_DESIGN_ENABLE)?Boolean.parseBoolean(Config.getStringProperty(com.dotmarketing.util.WebKeys.PREVIEW_TEMPLATE_DESIGN_ENABLE)):false; 
 
 	boolean overrideBody = (Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY);
 	
@@ -144,7 +144,7 @@
 	}
 	
 	function addHeadCodeDialog(){
-		dialogOne.show();
+		headerCode.show();
 	}
 
 	function showAddContainerDialog(idDiv) {
@@ -175,7 +175,7 @@
 		addDrawedMetadataContainer(container, value, '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>');
 		
 	}
-
+	
 	function addFile() {
 		fileSelector.show();
 	}
@@ -233,6 +233,7 @@
 <script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-left-menu.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-add-metadata.js" type="text/javascript"></script>
+<script src="/html/js/template/utility-add-head-code.js" type="text/javascript"></script>
 <script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
 
 <script type="text/javascript">
@@ -339,20 +340,30 @@
 				<button dojoType="dijit.form.Button" onClick="showAddMetadataContainerDialog()" type="button">
 					<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-meta"))%>
 				</button>
-				
-				<button dojoType="dijit.form.Button" onClick="addHeadCodeDialog()" type="button">
-					<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-head-code"))%>
-				</button>
 				<%if(enablePreview){%>
 					<button dojoType="dijit.form.Button" onClick="previewTemplate('Preview','width=1024,height=768')" type="button" iconClass="previewIcon">
 						<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "preview"))%>
 					</button>
 				<%}%>
 			</div>
-			<div class="clear"></div>
+			<div class="clear"></div>			
 			<div id="bodyTemplate"></div>
 		</div>
 	</div>
+	<div id="headCodeContentPane" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="<%= LanguageUtil.get(pageContext, "add-head-code") %>" >	
+		<div class="wrapperRight" style="position:relative;" id="headCodeContentPaneWrapper">
+			<div id="headCode">
+				<h3><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "head-code-tab-description"))%></h3>
+				<br />
+				<div id="addHeaderCodeTextArea" style="border: 0px;  width: auto; height: 450px; padding-left: 20px;">
+					<html:textarea property="headCode" onkeydown="return catchTab(this,event)" style="width: auto; height: 450px; font-size: 12px" styleId="headerField"></html:textarea>
+				</div>
+				<br />
+		    	<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor" style="margin-left: 26px" onClick="codeMirrorColoration();"  checked="checked"  />
+		    	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label> 
+			</div>
+		</div>
+	</div>	
 </div>		
 <div class="buttonRow-left lineRight" id="editContentletButtonRow" style="height: 100%; min-height: 617px;">
 <%
@@ -657,23 +668,3 @@
 	</div>
 </div>
 <!-- /ADD METADATA CONTAINER DIALOG BOX -->
-
-
-<!-- ADD METADATA DIALOG BOX -->
-<div jsId="dialogOne" id="dialogOne" dojoType="dijit.Dialog" title="<%=LanguageUtil.get(pageContext, "add-head-code")%>" style="width: 800px; height: 600px; padding: 0pt;">
-	<div dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "header-code-tab")%>" style="width: auto;">
-		<div id="textEditorArea" style="border: 0px;  width: auto; height: 80%; padding-left: 20px;">
-			<textarea onkeydown="return catchTab(this,event)" style="width: 95%; height: 100%; font-size: 12px" id="headerField"></textarea>
-		</div>
-		<br />
-	    <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="codeMirrorColoration();"  checked="checked"  />
-	    <label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label> 
-	</div>
-    <div class="buttonRow">
-		<button dojoType="dijit.form.Button" onclick="saveMetaAndHeaderCode()" type="button"><%=LanguageUtil.get(pageContext, "Add")%></button> 
-		<button dojoType="dijit.form.Button" onclick="dijit.byId('dialogOne').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
-	</div>    
-</div>
-<!-- /ADD METADATA DIALOG BOX -->
-
-

@@ -625,13 +625,15 @@ public class EditTemplateAction extends DotPortletAction implements
 			newTemplate.setDrawed(true);
 			
 			// create the body with all the main HTML tags
-			StringBuffer endBody = DesignTemplateUtil.getBody(newTemplate.getBody());
+			StringBuffer endBody = DesignTemplateUtil.getBody(newTemplate.getBody(), newTemplate.getHeadCode());
 			
 			// set the drawedBody for future edit
 			newTemplate.setDrawedBody(newTemplate.getBody());
 			
 			// set the real body
-			newTemplate.setBody(endBody.toString());			
+			newTemplate.setBody(endBody.toString());	
+			
+			newTemplate.setHeadCode(cf.getHeadCode());
 		}		
 		// *********************** END GRAZIANO issue-12-dnd-template
 

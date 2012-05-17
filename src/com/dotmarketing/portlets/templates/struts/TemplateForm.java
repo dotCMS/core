@@ -53,6 +53,8 @@ public class TemplateForm extends ValidatorForm {
     private int countAddContainer;
     
     private int countContainers;
+    
+    private String headCode;
     // END GRAZIANO issue-12-dnd-template    
     
     private String owner;  // dotcms 472
@@ -203,6 +205,14 @@ public class TemplateForm extends ValidatorForm {
 	public void setCountContainers(int countContainers) {
 		this.countContainers = countContainers;
 	}
+
+	public String getHeadCode() {
+		return headCode;
+	}
+
+	public void setHeadCode(String headCode) {
+		this.headCode = headCode;
+	}	
 	// END GRAZIANO issue-12-dnd-template
 
 	/**
