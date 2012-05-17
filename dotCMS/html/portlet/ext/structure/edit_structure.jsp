@@ -386,6 +386,9 @@ function changeStructureType(){
 			   disableFormFields();
 			<%}%>
 		}
+		else if(val==4) {
+			dojo.style("detailPageDiv", { display: '' });
+		}
 
 }
 
