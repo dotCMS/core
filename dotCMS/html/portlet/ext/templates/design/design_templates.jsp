@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@ page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.SplitBody"%>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.DesignTemplateJSParameter"%>
@@ -88,7 +89,16 @@
 	if(UtilMethods.isSet(hostId)) {
 		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false);
 	}	
-
+	Folder themeFolder= APILocator.getFolderAPI().findFolderByPath("/application/themes", host, user, false);
+	List<Folder> themes = null;
+	try{
+		themes = APILocator.getFolderAPI().findSubFolders(themeFolder, user, false);
+	}
+	catch(Exception e){
+		
+	}
+	
+	
 %>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
@@ -272,21 +282,20 @@
 	}	
 </script>
 
-<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
-<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"draw-template\") %>" /> 
 
-	<html:form action='/ext/templates/edit_template' styleId="fm">
-	<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="add">
-	<input name="<portlet:namespace />referer" type="hidden" value="<%=referer%>">
-	<input name="<portlet:namespace />inode" type="hidden" value="<%=template.getInode()%>">
-	<input name="<portlet:namespace />subcmd" type="hidden" value="">
-	<input name="userId" type="hidden" value="<%= user.getUserId() %>">
-	<input name="admin_l_list" type="hidden" value="">
-	<input name="countAddContainer" type="hidden" id="countAddContainerLinks" value="<%=template.getCountAddContainer()!=null?template.getCountAddContainer():"0"%>"/>
-	<input name="countContainers" type="hidden" id="countContainersAdded" value="<%=template.getCountContainers()!=null?template.getCountContainers():"0"%>"/>
-		
+<html:form action='/ext/templates/edit_template' styleId="fm">
+<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="add">
+<input name="<portlet:namespace />referer" type="hidden" value="<%=referer%>">
+<input name="<portlet:namespace />inode" type="hidden" value="<%=template.getInode()%>">
+<input name="<portlet:namespace />subcmd" type="hidden" value="">
+<input name="userId" type="hidden" value="<%= user.getUserId() %>">
+<input name="admin_l_list" type="hidden" value="">
+<input name="countAddContainer" type="hidden" id="countAddContainerLinks" value="<%=template.getCountAddContainer()!=null?template.getCountAddContainer():"0"%>"/>
+<input name="countContainers" type="hidden" id="countContainersAdded" value="<%=template.getCountContainers()!=null?template.getCountContainers():"0"%>"/>
+	
 <div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" style="height: 100%; min-height: 881px;" >
 	<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;height: 100%; min-height:851px;" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
+		
 		<div class="wrapperRight" style="position:relative; height: 500px;">
 			<dl>
 				<%if(id!=null) {%>
@@ -370,6 +379,24 @@
 	if(null!=parameters) { // retrieve the parameters for auto-populate the fields
 %>
 	<div class="gradient2">
+		<%if(themes != null && themes.size() > 0){ %>
+			<div class="fieldWrapperSide">
+				<div class="leftProperties">		
+					<dl>
+						<dt><%=LanguageUtil.get(pageContext, "Theme") %>:</dt>						
+						<dd>
+							<select id="theme" dojoType="dijit.form.FilteringSelect" name="theme" onchange="javascript: setTheme(this.value)">
+								<%for(Folder f : themes){%>
+									<option value="<%=f.getName() %>"><%=f.getName() %></option>
+								<%} %>
+							</select>
+						</dd>
+					</dl>
+				</div>	
+			</div>
+		<%} %>
+	
+	
 		<div class="fieldWrapperSide">
 			<div class="leftProperties">		
 				<dl>
@@ -501,6 +528,23 @@
 	} else {
 %>	
 	<div class="gradient2">
+		<%if(themes != null && themes.size() > 0){ %>
+			<div class="fieldWrapperSide">
+				<div class="leftProperties">		
+					<dl>
+						<dt><%=LanguageUtil.get(pageContext, "Theme") %>:</dt>						
+						<dd>
+							<select id="theme" dojoType="dijit.form.FilteringSelect" name="theme" onchange="javascript: setTheme(this.value)">
+								<option value=""></option>
+								<%for(Folder f : themes){%>
+									<option value="<%=f.getName() %>"><%=f.getName() %></option>
+								<%} %>
+							</select>
+						</dd>
+					</dl>
+				</div>	
+			</div>
+		<%} %>
 		<div class="fieldWrapperSide">
 			<div class="leftProperties">		
 				<dl>
@@ -623,7 +667,11 @@
 </div>
 <div class="clear"></div>
 </html:form>
-</liferay:box>
+
+
+
+
+
 <div id="editTempateBox" dojoType="dijit.Dialog" style="display:none" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-container")) %>">
 	<div dojoType="dijit.layout.ContentPane" style="width:400px;height:150px;" class="box" hasShadow="true" id="editTemplateBoxCp">
 	</div>
