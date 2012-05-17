@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 2.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
 <hibernate-mapping>
-	<class name="com.dotmarketing.plugins.hello.world.HelloBean" table="hello_world_bean">
-		<id name="id" column="id" type="string" unsaved-value="any">
-			<!-- generator class="native"/ -->
-			<generator class="sequence">
-				<param name="sequence">hello_world_bean_id_seq</param>
-			</generator>
-		</id>
-		<property name="Name" column="name" type="string" not-null="true"/>			
-	</class>	
+	<!-- Insert your Mappings here -->
 </hibernate-mapping>
