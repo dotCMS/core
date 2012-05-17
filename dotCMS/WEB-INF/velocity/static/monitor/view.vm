@@ -1,0 +1,115 @@
+<script type="text/javascript" src="/dwr/engine.js"></script>
+<script type="text/javascript" src="/dwr/util.js"></script>
+<script type="text/javascript" src="/dwr/interface/ThreadMonitorTool.js"></script>
+<a name="top"></a>
+<div id="monitorDiv">
+
+	<h2>List of Logged-In Users in the System:</h2>
+	<ol class="orderMe" id="users">
+		#set($allIPFWUsers = ${ipfwUsers})
+		#foreach($ipfw_user in $allIPFWUsers)
+			<li>$!{ipfw_user}</li>
+		#end
+	</ol>
+
+	<h2>User Session Statistics:</h2>
+	<ul>
+		<li>Total number of sessions since the system was up: $!{sessionCounter.totalSessionCount} </li>
+		<li>Number of sessions currently in memory:	$!{sessionCounter.currentSessionCount} </li>
+		<li>Maximum number of sessions that have ever been in memory at any one time: $!{sessionCounter.maxSessionCount} </li>
+	</ul>
+	
+	<h2> System Properties </h2>
+	<ul id="sysInfo"> </ul><br />
+	
+	<p class="button">
+		<input value="View Threads:" type="button" onclick="getAllThreads()"/> &nbsp; 
+		<input value="Hide Threads:" type="button" onclick="hideAllThreads()"/>
+	</p>
+	
+	<ol class="orderMe" id="threadList"></ol>
+	<ol class="orderMe" id="threadStats"></ol>
+	
+	<a href="#top">GO TO TOP</a>
+
+</div>
+
+<script>  
+	function getAllThreads() {
+		ThreadMonitorTool.getThreads({
+			callback:function(data) {
+				var tempString = "";
+				var parity = "odd";
+				for(var i = 0; i < data.length; i++){
+					tempString += "<li class='" + parity + "'>"+ data[i] +"</li>";
+					if(parity == "odd"){
+						parity = "even";
+					}else{
+						parity = "odd";
+					}
+				}
+
+				dwr.util.setValue("threadList", tempString, { escapeHtml:false });
+				
+			},
+			errorHandler:function(message) {
+				alert("Oops: " + message);
+			}
+		});
+	}
+	
+	function hideAllThreads() {
+		document.getElementById('threadList').innerHTML = "";
+	}
+	
+	function getSysInfo() {
+		ThreadMonitorTool.getSysProps({
+			callback:function(data) {
+				var tempString = "";
+				
+				for(var dat in data){
+					tempString += "<li>"+ dat +": " + data[dat] +"</li>";
+				}
+
+				dwr.util.setValue("sysInfo", tempString, { escapeHtml:false });				
+			},
+			errorHandler:function(message) {
+				alert("Oops: " + message);
+			}
+		});
+	}
+	getSysInfo();
+</script>
+
+<style>
+	#monitorDiv{
+	  padding:20px;
+	  margin:20px;
+	  background-color:lightBlue;
+	}
+	ol#threadList{  
+	  margin-left:40px;
+	}
+	#monitorDiv h2{
+	  margin:15px;
+	  padding:5px;
+	  background-color:lightGray;
+	}
+	#monitorDiv p.button{
+	  margin-left:20px;
+	}
+	#monitorDiv ul li{
+	  list-style-type:square;
+	  margin:10px;
+	}
+	.orderMe li{
+	  margin:10px;
+	  list-style-type:decimal;
+	}
+	#menu ul.dropdown li.dotCMS_MONITOR_PORTLET_VELOCITY a span{
+	  background: url("/html/images/icons/dotcms-sprite.png") no-repeat scroll 0px -1740px transparent;
+	}
+	#threadList li.odd{
+	  background-color:lightGreen;
+	}
+</style>

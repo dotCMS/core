@@ -3506,7 +3506,7 @@
                 <portlet-class>com.liferay.portlet.VelocityPortlet</portlet-class>
                 <init-param>
                     <name>view-template</name>
-                    <value>/dotCMS/html/portlet/ext/monitor/view.vm</value>
+                    <value>/dotCMS/WEB-INF/velocity/static/monitor/view.vm</value>
                 </init-param>
                 <expiration-cache>0</expiration-cache>
                 <supports>
