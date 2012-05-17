@@ -96,8 +96,8 @@ public class URLMapBundler implements IBundler {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
-				p = p.replace(" ", "+");
-				bob.append("uri:" + p + " ");
+				//p = p.replace(" ", "+");
+				bob.append("urlMap:" + p + " ");
 			}
 			bob.append(") " );
 		}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
@@ -106,8 +106,8 @@ public class URLMapBundler implements IBundler {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
-				p = p.replace(" ", "+");
-				bob.append("uri:" + p + " ");
+				//p = p.replace(" ", "+");
+				bob.append("urlMap:" + p + " ");
 			}
 			bob.append(") " );
 		}

@@ -65,21 +65,25 @@ public class FileAssetBundler implements IBundler {
 		StringBuilder bob = new StringBuilder("+languageid:" + config.getLanguage() + " +structuretype:" + Structure.STRUCTURE_TYPE_FILEASSET + " ");
 		
 		if(config.getExcludePatterns() != null && config.getExcludePatterns().size()>0){
+			bob.append("-(" );
 			for (String p : config.getExcludePatterns()) {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
 				//p = p.replace(" ", "+");
-				bob.append("-path:" + p + " ");
+				bob.append("path:" + p + " ");
 			}
+			bob.append(")" );
 		}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
+			bob.append("+(" );
 			for (String p : config.getIncludePatterns()) {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
 				//p = p.replace(" ", "+");
-				bob.append("+path:" + p + " ");
+				bob.append("path:" + p + " ");
 			}
+			bob.append(")" );
 		}
 		
 		
