@@ -354,7 +354,7 @@ END IF;
 END
 #
 DROP TRIGGER IF EXISTS folder_identifier_check;
-CREATE TRIGGER folder_identifier_check BEFORE DELETE
+CREATE TRIGGER folder_identifier_check AFTER DELETE
 on folder
 FOR EACH ROW
 BEGIN
