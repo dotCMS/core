@@ -566,7 +566,7 @@ public class ContentletMapServices {
 		String detailPageId = structure.getDetailPage();
 		try {
 			Identifier pageIdentifier = APILocator.getIdentifierAPI().find(detailPageId);
-			if (!InodeUtils.isSet(pageIdentifier.getInode())) {
+			if (!InodeUtils.isSet(pageIdentifier.getInode()) && UtilMethods.isSet(detailPageId)) {
 				pageIdentifier = APILocator.getIdentifierAPI().find((HTMLPage) InodeFactory.getInode(detailPageId, HTMLPage.class));
 			}
 			detailPageURI = pageIdentifier.getURI();
