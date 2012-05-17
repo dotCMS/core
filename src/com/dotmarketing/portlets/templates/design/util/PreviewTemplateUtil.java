@@ -120,7 +120,7 @@ public class PreviewTemplateUtil {
 		String _templateBody = templateBody.toString();
 		while(_templateBody.length()>i){
 			i = _templateBody.indexOf("#parseContainer('");
-			if(i>0){
+			if(i>=0){
 				//delete the before part
 				_templateBody = _templateBody.substring(i);
 				String inodeContainer = _templateBody.substring("#parseContainer('".length(), _templateBody.indexOf("')"));
