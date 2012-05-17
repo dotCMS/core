@@ -1,11 +1,13 @@
 package com.dotcms.listeners;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
+
+import com.dotmarketing.util.WebKeys;
 
 /** 
  *  Listener that keeps track of logged in users
@@ -16,8 +18,7 @@ import javax.servlet.http.HttpSessionBindingEvent;
 public class SessionMonitor implements HttpSessionAttributeListener {
   
   // this will hold all logged in users
-  private Map<String, String> sysUsers = new HashMap<String, String>();
-
+  private Map<String, String> sysUsers = new ConcurrentHashMap<String, String>();
   // getter for the bean - sysUsers
   public Map<String, String> getUsers(){
 	return( sysUsers );
@@ -37,10 +38,10 @@ public class SessionMonitor implements HttpSessionAttributeListener {
 		sysUsers.put(id, currentItemName);
 		
 		ServletContext context = event.getSession().getServletContext();			
-		context.setAttribute("ipfwUsers", sysUsers);	
+		context.setAttribute(WebKeys.LOGGED_USERS, sysUsers);	
 	}
 	   
-  }//end of attributeAdded method
+  }
 
   /** 
    *  Checks if the attribute removed is "USER_ID".
@@ -54,13 +55,8 @@ public class SessionMonitor implements HttpSessionAttributeListener {
 		
 		String id = event.getSession().getId();
 		
-		if(sysUsers.containsKey(id)){
-			String currentItemName = event.getValue().toString();
-			ServletContext context = event.getSession().getServletContext();			
-			sysUsers.remove(id);			
-			context.setAttribute("ipfwUsers", sysUsers);
-
-		}
+		sysUsers.remove(id);
+		event.getSession().getServletContext().setAttribute(WebKeys.LOGGED_USERS, sysUsers);
 	}
   }
 

@@ -657,5 +657,7 @@ public final class WebKeys {
 
 	public static final String CONTENT_EDITABLE = "CONTENT_EDITABLE";
 
-
+	// SYS Monitor
+	public static final String LOGGED_USERS = "LOGGED_USERS";
+	public static final String SESSION_COUNTER = "SESSION_COUNTER";
 }
