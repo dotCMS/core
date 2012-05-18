@@ -231,12 +231,9 @@
 	<listener>
 		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
 	</listener>
-        <listener>
-        	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
-        </listener>
-        <listener>
-        	<listener-class>com.dotcms.listeners.SessionCounter</listener-class>
-        </listener>
+    <listener>
+    	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
+    </listener>
 	<!-- this must be the last listener -->
 	<listener>
 	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
