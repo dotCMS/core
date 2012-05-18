@@ -3500,25 +3500,6 @@
 		</security-role-ref>
 	</portlet>
 
-        <portlet>
-                <portlet-name>MONITOR_PORTLET_VELOCITY</portlet-name>
-                <display-name>System Health Monitor</display-name>
-                <portlet-class>com.liferay.portlet.VelocityPortlet</portlet-class>
-                <init-param>
-                    <name>view-template</name>
-                    <value>/static/monitor/view.vm</value>
-                </init-param>
-                <expiration-cache>0</expiration-cache>
-                <supports>
-                    <mime-type>text/html</mime-type>
-                </supports>
-                <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-                <security-role-ref>
-                    <role-name>CMS Administrator</role-name>
-                </security-role-ref>
-        </portlet>
-
-
 	<custom-window-state>
 		<window-state>exclusive</window-state>
 	</custom-window-state>
