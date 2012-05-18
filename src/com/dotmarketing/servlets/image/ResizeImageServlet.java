@@ -2,9 +2,6 @@ package com.dotmarketing.servlets.image;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -21,8 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.time.FastDateFormat;
-
-import sun.awt.image.codec.JPEGImageEncoderImpl;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -45,7 +40,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.sun.image.codec.jpeg.JPEGEncodeParam;
 
 /**
  * This servlet resize an image proportionally without placing that image into a
@@ -500,16 +494,22 @@ public class ResizeImageServlet extends HttpServlet {
                     // set the content type and get the output stream
                     response.setContentType("image/jpeg");
                     // Construct the image
+                    String path = fileAPI.getRealAssetsRootPath() + java.io.File.separator + ".." + java.io.File.separator + "html" + java.io.File.separator + "js" + java.io.File.separator +
+                    		"editor" + java.io.File.separator + "images" + java.io.File.separator + "spacer.gif";
+                    java.io.File f = new java.io.File(path);
+
+                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
                     OutputStream os = response.getOutputStream();
-                    JPEGImageEncoderImpl jpegEncode = new JPEGImageEncoderImpl(os);
-                    BufferedImage bufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-                    Graphics2D graphics = bufferedImage.createGraphics();
-                    Color bgColor = new Color(255, 255, 255);
-                    graphics.setBackground(bgColor);
-                    JPEGEncodeParam encodeParam = jpegEncode.getDefaultJPEGEncodeParam(bufferedImage);
-                    encodeParam.setQuality(1, true);
-                    jpegEncode.setJPEGEncodeParam(encodeParam);
-                    jpegEncode.encode(bufferedImage);
+                    byte[] buf = new byte[4096];
+                    int i = 0;
+
+                    while ((i = bis.read(buf)) != -1) {
+                        os.write(buf, 0, i);
+                    }
+
+                    os.flush();
+                    os.close();
+                    bis.close();
                 }
 
             }

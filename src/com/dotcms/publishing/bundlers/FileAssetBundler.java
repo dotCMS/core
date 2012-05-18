@@ -198,7 +198,7 @@ public class FileAssetBundler implements IBundler {
 			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
 				String x  = (String) fileAsset.get("metaData");
 				fileAsset.setMetaData(x);
-				BundlerUtil.objectToXML(wrap, f);
+				BundlerUtil.objectToXML(wrap, f, true);
 				f.setLastModified(cal.getTimeInMillis());
 			}
 			
@@ -206,7 +206,7 @@ public class FileAssetBundler implements IBundler {
 			f = new File(myFile.replaceAll(FILE_ASSET_EXTENSION,""));
 			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
 				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPath(fileAsset.getInode(), fileAsset.getFileName()));
-				FileUtil.copyFile(oldAsset, f);
+				FileUtil.copyFile(oldAsset, f, true);
 				f.setLastModified(cal.getTimeInMillis());
 			}
 			// set the time of the file
