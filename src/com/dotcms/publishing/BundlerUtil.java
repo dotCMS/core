@@ -31,23 +31,25 @@ public class BundlerUtil {
 		return new File(bundlePath).exists();
 	}
 	
-	
-	
+	/**
+	 * This method takes a config and will create the bundle directory and
+	 * write the bundle.xml file to it
+	 * @param name Name of bundle
+	 */
+	public static File getBundleRoot(String name) {
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + name;
+		File dir = new File(bundlePath);
+		dir.mkdirs();
+		return dir;
+	}
 	
 	/**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
-	 * @param config
+	 * @param config Config with the id of bundle
 	 */
 	public static File getBundleRoot(PublisherConfig config){
-		
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
-		File dir = new File(bundlePath);
-		dir.mkdirs();
-
-
-		return dir;
-
+		return getBundleRoot(config.getId());
 	}
 	
 	/**
@@ -78,12 +80,20 @@ public class BundlerUtil {
 		}
 	}
 	
+	public static void objectToXML(Object obj, File f){
+		objectToXML(obj, f, true);
+	}
+
 	/**
 	 * 
 	 * @param obj
 	 * @param f File to write to
 	 */
-	public static void objectToXML(Object obj, File f){
+	public static void objectToXML(Object obj, File f, boolean removeFirst){
+
+		if ( removeFirst && f.exists() )
+			f.delete();
+		
 		XStream xstream = new XStream(new DomDriver());
 
 		try {
