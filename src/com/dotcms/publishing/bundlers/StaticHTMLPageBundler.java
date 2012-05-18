@@ -180,7 +180,7 @@ public class StaticHTMLPageBundler implements IBundler {
 			new File(dir).mkdirs();
 			
 			if(!file.exists() || file.lastModified() != lastMod.getTimeInMillis()){
-				BundlerUtil.objectToXML(htmlPageWrapper, file);
+				BundlerUtil.objectToXML(htmlPageWrapper, file, true);
 				// set the time of the file
 				file.setLastModified(lastMod.getTimeInMillis());
 			}
@@ -198,6 +198,10 @@ public class StaticHTMLPageBundler implements IBundler {
 			
 			
 			if(!file.exists() || file.lastModified() != lastMod.getTimeInMillis()){
+				
+				if ( file.exists() )
+					file.delete();
+				
 				try {
 					
 					BufferedWriter out = null;
