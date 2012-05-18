@@ -1,5 +1,6 @@
 package com.dotcms.publishing;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,9 +21,8 @@ public class PublisherConfig implements Map<String, Object> {
 	private enum Config {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
-		THREADS, ID, TIMESTAMP, BUNDLERS,INCREMENTAL;
+		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE;
 	};
-
 	
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
@@ -239,6 +239,14 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.ID.name(), id);
 	}
 
+	public String getDestinationBundle() {
+		return (String) params.get(Config.DESTINATION_BUNDLE.name());
+	}
+	
+	public void setDestinationBundle(String bundle) {
+		params.put(Config.DESTINATION_BUNDLE.name(), bundle);
+	}
+	
 	public List<Class> getPublishers() {
 		return (List<Class>) params.get(Config.PUBLISHER.name());
 	}
