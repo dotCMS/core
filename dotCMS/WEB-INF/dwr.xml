@@ -89,7 +89,10 @@
       <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
     </create>
     <create creator="new" javascript="ThreadMonitorTool" >
-      <param name="class" value="com.dotcms.threadmonitor.ThreadMonitorTool"/>
+      <param name="class" value="com.dotcms.cmsmaintenance.ajax.ThreadMonitorTool"/>
+    </create>
+    <create creator="new" javascript="UserSessionAjax" >
+      <param name="class" value="com.dotcms.cmsmaintenance.ajax.UserSessionAjax"/>
     </create>
     <!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
@@ -102,7 +105,6 @@
 	<convert converter="bean" match="com.dotcms.achecker.CheckBean"/>
 	<convert converter="enum" match="com.dotcms.achecker.Confidence"/>
 	<convert converter="bean" match="com.dotcms.achecker.model.GuideLineBean"/>
-
 <!-- END PLUGIN:com.dotcms.achecker -->
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
