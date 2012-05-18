@@ -410,13 +410,6 @@
 		<scope>application</scope>
 		<class>com.dotmarketing.viewtools.WorkflowTool</class>
 	</tool>
-
-        <tool>
-        	<key>threadMonitor</key>
-        	<scope>application</scope>
-        	<class>com.dotcms.threadmonitor.ThreadMonitorTool</class>
-        </tool>
-	
 	<!-- Dotmarketing View Tools End -->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
