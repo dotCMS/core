@@ -9,9 +9,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.thoughtworks.xstream.XStream;
@@ -143,29 +148,96 @@ public class BundlerUtil {
 	
 
 	/**
-	 * 
-	 * @param startDate
-	 * @param endDate
+	 * Returns the PageIds for Pages whose Templates, Containers, or COntent have been modified between 2 dates even if the page hasn't been modified
+	 * @param startDate Must be set
+	 * @param endDate Must be Set
 	 * @return
 	 */
 	public static List<String> getUpdatedHTMLPageIds(Date startDate, Date endDate){
 
-		List<String> ids = new ArrayList<String>();
+		List<Map<String,Object>> ids = null;
+		Set<String> ret = new HashSet<String>();
 		
+		StringBuilder bob = new StringBuilder();
+		DotConnect dc = new DotConnect();
+		bob.append("SELECT p.identifier as pident "); 
+		bob.append("from htmlpage p ");
+		bob.append("join htmlpage_version_info vi on (p.identifier = vi.identifier) ");
+		bob.append("join template_version_info tvi on (p.template_id = tvi.identifier) ");
+		bob.append("where tvi.version_ts >= ? ");
+		bob.append("and tvi.version_ts <= ?");
+		dc.setSQL(bob.toString());
+		dc.addParam(startDate);
+		dc.addParam(endDate);
+		try {
+			ids = dc.loadObjectResults();
+		} catch (DotDataException e) {
+			Logger.error(BundlerUtil.class,e.getMessage(),e);
+		}
+		if(ids != null && ids.size()>0){
+			for (Map<String,Object> row : ids) {
+				try{
+					ret.add(row.get("pident").toString());
+				}catch(Exception e){}
+			}
+		}
+		ids = null;
+		dc = null;
+		dc = new DotConnect();
+		bob = null;
+		bob = new StringBuilder();
+		bob.append("SELECT p.identifier as pident "); 
+		bob.append("from htmlpage p " );
+		bob.append("join template_containers tc on (p.template_id = tc.template_id) ");
+		bob.append("join container_version_info cvi on (tc.container_id = cvi.identifier) ");
+		bob.append("where cvi.version_ts >= ? ");
+		bob.append("and cvi.version_ts <= ?");
+		dc.setSQL(bob.toString());
+		dc.addParam(startDate);
+		dc.addParam(endDate);
 		
+		try {
+			ids = dc.loadObjectResults();
+		} catch (DotDataException e) {
+			Logger.error(BundlerUtil.class,e.getMessage(),e);
+		}
+		if(ids != null && ids.size()>0){
+			for (Map<String,Object> row : ids) {
+				try{
+					ret.add(row.get("pident").toString());
+				}catch(Exception e){}
+			}
+		}
 		
-		return ids;
+		ids = null;
+		dc = null;
+		dc = new DotConnect();
+		bob = null;
+		bob = new StringBuilder();
+		bob.append("SELECT p.identifier as pident "); 
+		bob.append("from htmlpage p " );
+		bob.append("join multi_tree mt on (p.identifier = mt.parent1) ");
+		bob.append("join contentlet_version_info cvi on (mt.child = cvi.identifier) ");
+		bob.append("where cvi.version_ts >= ? ");
+		bob.append("and cvi.version_ts <= ?");
+		dc.setSQL(bob.toString());
+		dc.addParam(startDate);
+		dc.addParam(endDate);
 		
+		try {
+			ids = dc.loadObjectResults();
+		} catch (DotDataException e) {
+			Logger.error(BundlerUtil.class,e.getMessage(),e);
+		}
+		if(ids != null && ids.size()>0){
+			for (Map<String,Object> row : ids) {
+				try{
+					ret.add(row.get("pident").toString());
+				}catch(Exception e){}
+			}
+		}
 		
-		
+		return new ArrayList<String>(ret);
 	}
-	
-	
-	
-	
 
-	
-	
-	
-	
 }
