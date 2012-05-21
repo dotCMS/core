@@ -7,6 +7,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
@@ -137,6 +140,27 @@ public class BundlerUtil {
 		}
 
 	}
+	
+
+	/**
+	 * 
+	 * @param startDate
+	 * @param endDate
+	 * @return
+	 */
+	public static List<String> getUpdatedHTMLPageIds(Date startDate, Date endDate){
+
+		List<String> ids = new ArrayList<String>();
+		
+		
+		
+		return ids;
+		
+		
+		
+	}
+	
+	
 	
 	
 
