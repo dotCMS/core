@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -541,44 +541,43 @@ public class CMSFilter implements Filter {
 
     }
 
-    private static final Map<String,String> excludeList=new ConcurrentHashMap<String,String>();
-    private static final String EXISTS="EXISTS";
+    private static final Set<String> excludeList=new HashSet<String>();
     static {
     	 // allow servlets to be called without a 404
-         excludeList.put("/servlet",EXISTS);
+         excludeList.add("/servlet");
          //Load some defaults
-         excludeList.put("/c/portal",EXISTS);
-         excludeList.put("/portal",EXISTS);
-         excludeList.put("/icon",EXISTS);
-         excludeList.put("/dwr",EXISTS);
-         excludeList.put("/titleServlet",EXISTS);
-         excludeList.put("/categoriesServlet",EXISTS);
-         excludeList.put("/xspf",EXISTS);
-         excludeList.put("/thumbnail",EXISTS);
-         excludeList.put("/html/skin/",EXISTS);
-         excludeList.put("/webdav",EXISTS);
-         excludeList.put("/dotAsset",EXISTS);
-         excludeList.put("/JSONContentServlet",EXISTS);
-         excludeList.put("/resize_image",EXISTS);
-         excludeList.put("/thumbnail",EXISTS);
-         excludeList.put("/image/company_logo",EXISTS);
-         excludeList.put("/servlets/",EXISTS);
-         excludeList.put("/dotScheduledJobs",EXISTS);
-         excludeList.put("/dot_slideshow",EXISTS);
-         excludeList.put("/redirect",EXISTS);
-         excludeList.put("/imageShim",EXISTS);
-         excludeList.put("/DotAjaxDirector",EXISTS);
-         excludeList.put("/cmis",EXISTS);
+         excludeList.add("/c/portal");
+         excludeList.add("/portal");
+         excludeList.add("/icon");
+         excludeList.add("/dwr");
+         excludeList.add("/titleServlet");
+         excludeList.add("/categoriesServlet");
+         excludeList.add("/xspf");
+         excludeList.add("/thumbnail");
+         excludeList.add("/html/skin/");
+         excludeList.add("/webdav");
+         excludeList.add("/dotAsset");
+         excludeList.add("/JSONContentServlet");
+         excludeList.add("/resize_image");
+         excludeList.add("/thumbnail");
+         excludeList.add("/image/company_logo");
+         excludeList.add("/servlets/");
+         excludeList.add("/dotScheduledJobs");
+         excludeList.add("/dot_slideshow");
+         excludeList.add("/redirect");
+         excludeList.add("/imageShim");
+         excludeList.add("/DotAjaxDirector");
+         excludeList.add("/cmis");
          // http://jira.dotmarketing.net/browse/DOTCMS-5187
-         excludeList.put("/admin",EXISTS);
-         excludeList.put("/edit",EXISTS);
-         excludeList.put("/dotTailLogServlet",EXISTS);
+         excludeList.add("/admin");
+         excludeList.add("/edit");
+         excludeList.add("/dotTailLogServlet");
          //http://jira.dotmarketing.net/browse/DOTCMS-2178
-         excludeList.put("/contentAsset/",EXISTS);
+         excludeList.add("/contentAsset/");
          //http://jira.dotmarketing.net/browse/DOTCMS-6079
-         excludeList.put("/c/portal_public",EXISTS);
+         excludeList.add("/c/portal_public");
          //http://jira.dotmarketing.net/browse/DOTCMS-6753
-         excludeList.put("/JSONTagsServlet",EXISTS);
+         excludeList.add("/JSONTagsServlet");
 
          //Load exclusions from plugins
          PluginAPI pAPI=APILocator.getPluginAPI();
@@ -592,8 +591,8 @@ public class CMSFilter implements Filter {
  						if (items!=null && items.length>0) {
  							for (String item:items) {
  								item=item.trim();
- 								if (UtilMethods.isSet(item) && excludeList.get(item)==null) {
- 										excludeList.put(item,EXISTS);
+ 								if (UtilMethods.isSet(item) && !excludeList.contains(item)) {
+ 										excludeList.add(item);
  								}
  							}
  						}
@@ -615,9 +614,9 @@ public class CMSFilter implements Filter {
         	return true;
         }
 
-        if(excludeList.get(uri)!=null) return true;
+        if(excludeList.contains(uri)) return true;
         
-    	for(String exclusion:excludeList.keySet()) {
+    	for(String exclusion:excludeList) {
     		if(exclusion.endsWith("/"))
     			exclusion=exclusion.substring(0, exclusion.lastIndexOf("/"));
     		
