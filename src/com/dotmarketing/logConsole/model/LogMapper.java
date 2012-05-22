@@ -34,7 +34,7 @@ public class LogMapper {
     public Collection<LogMapperRow> getLogList () throws DotCacheException, DotDataException {
 
         //First lets try to find them in cache
-        logList = cache.getAll();
+        logList = cache.get();
 
         // Not in cache?
         if ( logList == null ) {
@@ -43,11 +43,8 @@ public class LogMapper {
             logList = consoleLogFactory.findLogMapper();
 
             //If we found something add them to cache
-            if ( logList != null && !logList.isEmpty() ) {
-
-                for ( LogMapperRow logMapperRow : logList ) {
-                    cache.put( logMapperRow );
-                }
+            if ( logList != null ) {
+                cache.put( logList );
             }
         }
 
@@ -62,35 +59,21 @@ public class LogMapper {
      */
     public boolean isLogEnabled ( String logName ) {
 
-        //First lets try to find it in cache
-        LogMapperRow logMapperRow = null;
+        Collection<LogMapperRow> logMapperRows = null;
         try {
-            logMapperRow = cache.get( logName );
-        } catch ( DotCacheException e ) {
-            Logger.warn( this, "isLogEnabled: Error retrieving LogMapperRow from cache.", e );
+            //Lets try to find all the logs...
+            logMapperRows = getLogList();
+        } catch ( Exception e ) {
+            Logger.error( this, "isLogEnabled: Error retrieving LogMapperRows.", e );
         }
 
-        // Not in cache?
-        if ( logMapperRow == null ) {
+        if ( logMapperRows != null ) {
 
-            //Lets try to find all the logs, if we find something it will be add it to cache
-            Collection<LogMapperRow> logMapperRows = null;
-            try {
-                logMapperRows = getLogList();
-            } catch ( Exception e ) {
-                Logger.error( this, "isLogEnabled: Error retrieving LogMapperRows.", e );
-            }
-
-            if ( logMapperRows != null && !logMapperRows.isEmpty() ) {
-
-                for ( LogMapperRow mapperRow : logMapperRows ) {
-                    if ( logName.equals( mapperRow.getLog_name() ) && mapperRow.getEnabled() == 1 ) {
-                        return true;
-                    }
+            for ( LogMapperRow mapperRow : logMapperRows ) {
+                if ( logName.equals( mapperRow.getLog_name() ) && mapperRow.getEnabled() == 1 ) {
+                    return true;
                 }
             }
-        } else {
-            return logMapperRow.getEnabled() == 1;
         }
 
         return false;

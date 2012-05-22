@@ -4,7 +4,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -19,54 +18,30 @@ public class LogMapperCacheImpl implements LogMapperCache {
     protected final String primaryGroup = "LogMapperCache";
     protected final String[] groupNames = { primaryGroup };
 
+    private final String KEY_LOGS = primaryGroup + "_ALL";
+
     public LogMapperCacheImpl () {
         cache = CacheLocator.getCacheAdministrator();
     }
 
     /**
-     * Gets an LogMapperRow object from cache.
+     * Return all the records stored on cache for this primary group
      *
-     * @param logName
      * @return
      * @throws DotCacheException
      */
-    public LogMapperRow get ( String logName ) throws DotCacheException {
-        return ( LogMapperRow ) cache.get( logName, primaryGroup );
+    public Collection<LogMapperRow> get () throws DotCacheException {
+        return ( Collection<LogMapperRow> ) cache.get( KEY_LOGS, primaryGroup );
     }
 
     /**
-     * Puts an LogMapperRow object in a cache.
+     * Puts a LogMapperRow collection in a cache.
      *
-     * @param logMapperRow
+     * @param logMapperRows
      * @throws DotCacheException
      */
-    public void put ( LogMapperRow logMapperRow ) throws DotCacheException {
-        cache.put( logMapperRow.getLog_name(), logMapperRow, primaryGroup );
-    }
-
-    /**
-     * Return all the records stored on cache for this primary group
-     *
-     * @return logMapperRows
-     * @throws DotCacheException
-     */
-    public Collection<LogMapperRow> getAll () throws DotCacheException {
-
-        Collection<LogMapperRow> logMapperRows = null;
-
-        //Get all the keys for this primary group
-        Collection<String> keys = cache.getKeys( primaryGroup );
-        if ( keys != null && !keys.isEmpty() ) {
-
-            //Create an array with all the elements on cache for this primary group
-            logMapperRows = new ArrayList<LogMapperRow>();
-
-            for ( String key : keys ) {
-                logMapperRows.add( get( key ) );
-            }
-        }
-
-        return logMapperRows;
+    public void put ( Collection<LogMapperRow> logMapperRows ) throws DotCacheException {
+        cache.put( KEY_LOGS, logMapperRows, primaryGroup );
     }
 
     @Override
