@@ -12,7 +12,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Created by Jonathan Gamba.
@@ -56,14 +56,14 @@ public class LogConsoleAjaxAction extends IndexAjaxAction {
             //Getting the names of the selected logs
             String[] selectedLogs = null;
             String selectedLogsParam = getURIParams().get( "selection" );
-            if (selectedLogsParam != null) {
+            if ( selectedLogsParam != null ) {
                 selectedLogs = selectedLogsParam.split( "," );
             }
 
             if ( selectedLogs != null ) {
 
                 //Getting our current logs
-                List<LogMapperRow> currentLogs = LogMapper.getInstance().getLogList();
+                Collection<LogMapperRow> currentLogs = LogMapper.getInstance().getLogList();
 
                 for ( LogMapperRow logMapperRow : currentLogs ) {
                     for ( String selectedLog : selectedLogs ) {
@@ -111,7 +111,7 @@ public class LogConsoleAjaxAction extends IndexAjaxAction {
 
         try {
             //Getting our current logs
-            List<LogMapperRow> logList = LogMapper.getInstance().getLogList();
+            Collection<LogMapperRow> logList = LogMapper.getInstance().getLogList();
 
             //Preparing a json response
             JSONArray logsJSONArray = new JSONArray();
