@@ -61,7 +61,8 @@
 	}
 
 
-    boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
+    boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())
+                               || APILocator.getRoleAPI().doesUserHaveRole(user,RoleAPI.WORKFLOW_ADMIN_ROLE_KEY);
 	List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 
     Role assignedTo  = APILocator.getRoleAPI().loadRoleById(searcher.getAssignedTo());

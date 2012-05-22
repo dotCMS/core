@@ -11,6 +11,7 @@ public interface RoleAPI {
 
 	public final String SYSTEM_ROOT_ROLE_KEY = "cms_system";
 	public final String USERS_ROOT_ROLE_KEY = "cms_users";
+	public final String WORKFLOW_ADMIN_ROLE_KEY = "cms_workflow_admin";
 	
 	/**
 	 * Will retrieve all roles.
