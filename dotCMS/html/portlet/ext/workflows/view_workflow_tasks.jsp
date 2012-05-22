@@ -225,13 +225,13 @@
 		"stepId");
 		
 		var olderThanCombo = new dijit.form.ComboBox({
-	        id:"daysOld",
-	        name:"daysOld",
+	        id:"daysold",
+	        name:"daysold",
 	        store:daysOldStore,
 	        required:false,
 	        value:"",
 	        searchAttr:"d"
-	    },"daysOld");
+	    },"daysold");
 		
 		
 		doFilter();
@@ -470,7 +470,7 @@ bottom="/html/common/box_bottom.jsp">
 					</dd>
 					<dt><%=LanguageUtil.get(pageContext, "Older-than (days)") %></dt>
 					<dd>
-					   <input type="text" id="daysOld" name="daysOld"/>
+					   <input type="text" id="daysold" name="daysold"/>
 					</dd>
 					<dt><%=LanguageUtil.get(pageContext, "Scheme")%>:</dt>
 					<dd>

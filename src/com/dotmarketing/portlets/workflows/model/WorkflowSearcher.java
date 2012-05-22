@@ -24,6 +24,11 @@ public class WorkflowSearcher {
 	int page = 0;
 	User user;
 	int totalCount;
+	int daysOld=-1;
+	
+	public int getDaysOld() {
+	    return daysOld;
+	}
 
 	public boolean getShow4All() {
 	    return show4all;
@@ -94,6 +99,10 @@ public class WorkflowSearcher {
 		show4all = getBooleanValue("show4all", map);
 		open = getBooleanValue("open", map);
 		closed = getBooleanValue("closed", map);
+		String daysOldstr = getStringValue("daysold", map);
+		
+		if(UtilMethods.isSet(daysOldstr) && daysOldstr.matches("^\\d+$"))
+		    daysOld = Integer.parseInt(daysOldstr);
 
 		this.user = user;
 
