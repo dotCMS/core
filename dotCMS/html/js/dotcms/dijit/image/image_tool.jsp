@@ -217,7 +217,7 @@
 							<input type="text" id="displayImageHeight" class="textInputClass" maxlength="4" onblur="imageEditor.setWidthFromHeight()"  onkeydown="return imageEditor.allowNumbers(event)"></td>
 						
 					<td>
-						<button dojoType="dijit.form.Button" id="resizeBtn" iconClass="resizeIcon" onclick="imageEditor.resizeBtnClick()">
+						<button dojoType="dijit.form.Button" id="resizeBtn" iconClass="resizeIcon" onclick="imageEditor.resizeBtnClick('resize')">
 							<%= LanguageUtil.get(pageContext, "Resize") %>
 						</button>
 					</td>
