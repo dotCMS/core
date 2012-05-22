@@ -115,6 +115,12 @@
 			}
 		});
 		
+		<%if(isAdministrator) {%>
+		     if(show4All) {
+		    	 url = url + "&show4all=true";
+		     }
+		<%}%>
+		
 		refreshTaskList(url);
 
 
@@ -177,9 +183,9 @@
 	var assignedToStore = new dotcms.dojo.data.RoleReadStore({nodeId: "assignedTo", jsId:"assignedToStore"});
 	var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
 	var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
-	
-
-	
+	var daysData= { "identifier" : "d", "label" : "days", "items":
+		[{d:1},{d:2},{d:5},{d:10},{d:15},{d:20},{d:30},{d:40},{d:50},{d:60}]};
+	var daysOldStore = new dojo.data.ItemFileReadStore({data:daysData});
 	
 	dojo.ready(function(){
 
@@ -218,6 +224,15 @@
 		},
 		"stepId");
 		
+		var olderThanCombo = new dijit.form.ComboBox({
+	        id:"daysOld",
+	        name:"daysOld",
+	        store:daysOldStore,
+	        required:false,
+	        value:"",
+	        searchAttr:"d"
+	    },"daysOld");
+		
 		
 		doFilter();
 		
@@ -239,15 +254,37 @@
 	}
 	
 	function assignedToMe(){
+		<%if(isAdministrator){%>
+             disable4AllUsers();
+        <%}%>
+		
 		var assignedTo = dijit.byId("assignedTo");
 		assignedTo.displayedValue="";
 		assignedTo.setValue("<%=myRole.getId()%>");
-
-
 	}
-	function gotItem(item) {
-		alert(item);
-	}
+	<%if(isAdministrator){%>
+	    var show4All=false;
+		function showTasks4AllUsers() {
+			if(show4All) {
+				disable4AllUsers();
+			}
+			else {
+				var assignedTo = dijit.byId("assignedTo");
+		        assignedTo.displayedValue="";
+		        
+		        assignedTo.attr("disabled","true");
+		        dojo.style(dojo.byId("showAllLink"),"fontWeight","bold");
+		        show4All=true;
+			}
+			doFilter();
+		}
+		function disable4AllUsers() {
+			show4All=false;
+			var assignedTo = dijit.byId("assignedTo");
+			assignedTo.attr("disabled",false);
+			dojo.style(dojo.byId("showAllLink"),"fontWeight","normal");
+		}
+	<%}%>
 	function resetFilters(){
 		var stepId = dijit.byId("stepId");
 		stepId.store= emptyStore;
@@ -256,7 +293,9 @@
 		assignedTo.store= emptyStore;
 		assignedTo.setValue("");
 		assignedTo.store=assignedToStore;
-		
+		<%if(isAdministrator){%>
+		     disable4AllUsers();
+		<%}%>
 		var schemeId = dijit.byId("schemeId");
 
 		schemeId.setValue("");
@@ -422,12 +461,16 @@ bottom="/html/common/box_bottom.jsp">
 					<dt><%=LanguageUtil.get(pageContext, "Keywords")%>:</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox" name="keywords" id="keywords" value="<%=UtilMethods.webifyString(searcher.getKeywords())%>" /></dd>
 					<dt><%=LanguageUtil.get(pageContext, "Assigned-To")%>:</dt>
+					<dd>	
+						<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" />
+						<%if(isAdministrator) { %>
+						<a id="showAllLink" href="#" onclick="showTasks4AllUsers()"><%=LanguageUtil.get(pageContext, "all") %></a>
+                        <%} %>
+				        <a href="#" onclick="assignedToMe()"><%=LanguageUtil.get(pageContext, "me") %></a> 
+					</dd>
+					<dt><%=LanguageUtil.get(pageContext, "Older-than (days)") %></dt>
 					<dd>
-					
-						
-						<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" /> <a href="#" onclick="assignedToMe()"><%=LanguageUtil.get(pageContext, "me") %></a>
-
-				         
+					   <input type="text" id="daysOld" name="daysOld"/>
 					</dd>
 					<dt><%=LanguageUtil.get(pageContext, "Scheme")%>:</dt>
 					<dd>
