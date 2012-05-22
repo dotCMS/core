@@ -16,7 +16,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     currentUrl:"/contentAsset/image",
     ajaxUrl:"/servlet/dotImageToolAjax",
 
-
+    resizeFilter:false,
     zoomValue:0,
     inode:'0',
     identifier:'0',
@@ -376,6 +376,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             this.filters=new Array();
             this.saveAsIncrement=1;
             this.imagesLoaded=false;
+            this.resizeFilter=false;
         }
     },
 
@@ -880,7 +881,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var baseImage = this.iframe.dojo.byId("baseImage");
         var bic = dojo.coords(baseImage);
         var w = Math.round(bic.w * (zoomValue / 100));
-        this.iframe.dojo.byId("displayImageWidth").value = w;
+        if(!this.resizeFilter)
+        	this.iframe.dojo.byId("displayImageWidth").value = w;
+        
+        this.resizeFilter= false;
         this.setHieghtFromWidth();
     },
 
@@ -955,7 +959,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      * This function takes a width and handles all resizes
      */
     _doResize: function(width){
-        var args=  "/resize_w/" + (parseInt(width) +1 ) ;
+        var args=  "/resize_w/" + (parseInt(width)) ;
         this._addFilter("Resize", args);
         this._redrawImage();
     },
@@ -976,7 +980,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      * Called when someone types in a new width
      */
 
-    resizeBtnClick: function(){
+    resizeBtnClick: function(action){
+    	if(action == 'resize')
+    		this.resizeFilter = true;
+    	
         var width =parseInt(this.iframe.dojo.byId("displayImageWidth").value);
         if(!isNaN(width)){
             this._doResize(width);
