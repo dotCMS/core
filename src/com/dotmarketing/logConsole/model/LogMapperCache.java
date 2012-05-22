@@ -13,28 +13,20 @@ import java.util.Collection;
 public interface LogMapperCache extends Cachable {
 
     /**
-     * Gets an LogMapperRow object from cache.
+     * Return all the records stored on cache for this primary group
      *
-     * @param logName
      * @return
      * @throws DotCacheException
      */
-    public LogMapperRow get ( String logName ) throws DotCacheException;
+    public Collection<LogMapperRow> get () throws DotCacheException;
 
     /**
-     * Puts an LogMapperRow object in a cache.
+     * Puts a LogMapperRow collection in a cache.
      *
-     * @param logMapperRow
+     * @param logMapperRows
      * @throws DotCacheException
      */
-    public void put ( LogMapperRow logMapperRow ) throws DotCacheException;
+    public void put ( Collection<LogMapperRow> logMapperRows ) throws DotCacheException;
 
-    /**
-     * Return all the records stored on cache for this primary group
-     *
-     * @return logMapperRows
-     * @throws DotCacheException
-     */
-    public Collection<LogMapperRow> getAll () throws DotCacheException;
 
 }
