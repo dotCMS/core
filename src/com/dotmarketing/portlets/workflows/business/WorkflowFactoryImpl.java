@@ -17,6 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -699,28 +700,30 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 
 		final List<Role> userRoles = new ArrayList();
-		if (UtilMethods.isSet(searcher.getAssignedTo())) {
-
-			final Role r = new Role();
-			r.setId(searcher.getAssignedTo());
-			userRoles.add(r);
-		} else {
-			userRoles.addAll(APILocator.getRoleAPI().loadRolesForUser(searcher.getUser().getUserId(), false));
-			userRoles.add(APILocator.getRoleAPI().getUserRole(searcher.getUser()));
-
+		if(!searcher.getShow4All() || !(APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
+                || APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(),RoleAPI.WORKFLOW_ADMIN_ROLE_KEY))) {
+    		if (UtilMethods.isSet(searcher.getAssignedTo())) {
+    
+    			final Role r = new Role();
+    			r.setId(searcher.getAssignedTo());
+    			userRoles.add(r);
+    		} else {
+    			userRoles.addAll(APILocator.getRoleAPI().loadRolesForUser(searcher.getUser().getUserId(), false));
+    			userRoles.add(APILocator.getRoleAPI().getUserRole(searcher.getUser()));
+    
+    		}
+    
+    		String rolesString = "";
+    
+    		for (final Role role : userRoles) {
+    			if (!rolesString.equals("")) {
+    				rolesString += ",";
+    			}
+    			rolesString += "'" + role.getId() + "'";
+    		}
+    
+    		condition.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
 		}
-
-		String rolesString = "";
-
-		for (final Role role : userRoles) {
-			if (!rolesString.equals("")) {
-				rolesString += ",";
-			}
-			rolesString += "'" + role.getId() + "'";
-		}
-
-		condition.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
-
 		condition.append(" workflow_step.id = workflow_task.status and workflow_step.scheme_id = workflow_scheme.id and ");
 
 		if (!searcher.isClosed() && searcher.isOpen()) {
