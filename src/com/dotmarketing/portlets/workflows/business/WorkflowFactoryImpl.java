@@ -691,18 +691,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole());
 
-		final StringBuffer condition = new StringBuffer();
+		final StringBuilder condition = new StringBuilder();
 		condition.append(", workflow_scheme, workflow_step ");
 		condition.append(" where  ");
 		if (UtilMethods.isSet(searcher.getKeywords())) {
 			condition.append(" (lower(workflow_task.title) like '%" + searcher.getKeywords().trim().toLowerCase() + "%' or ");
 			condition.append(" lower(workflow_task.description) like '%" + searcher.getKeywords().trim().toLowerCase() + "%' )  and ");
 		}
-
-		final List<Role> userRoles = new ArrayList();
+		
 		if(!searcher.getShow4All() || !(APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
                 || APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(),RoleAPI.WORKFLOW_ADMIN_ROLE_KEY))) {
-    		if (UtilMethods.isSet(searcher.getAssignedTo())) {
+		    final List<Role> userRoles = new ArrayList<Role>();
+		    if (UtilMethods.isSet(searcher.getAssignedTo())) {
     
     			final Role r = new Role();
     			r.setId(searcher.getAssignedTo());
@@ -726,6 +726,17 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 		condition.append(" workflow_step.id = workflow_task.status and workflow_step.scheme_id = workflow_scheme.id and ");
 
+		if(searcher.getDaysOld()!=-1) {
+		    if(DbConnectionFactory.isMySql())
+		        condition.append(" datediff(now(),workflow_task.creation_date)>=").append(searcher.getDaysOld());
+		    else if(DbConnectionFactory.isPostgres())
+		        condition.append("TODO");
+		    else if(DbConnectionFactory.isMsSql())
+		        condition.append("TODO");
+		    else if(DbConnectionFactory.isOracle())
+		        condition.append("TODO");
+		}
+		
 		if (!searcher.isClosed() && searcher.isOpen()) {
 			condition.append("  workflow_step.resolved = " + DbConnectionFactory.getDBFalse() + " and ");
 		} else if (searcher.isClosed() && !searcher.isOpen()) {
