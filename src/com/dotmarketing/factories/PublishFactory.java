@@ -164,7 +164,11 @@ public class PublishFactory {
 				Container container =(Container) identifiersIter.next();
 
 			    Logger.debug(PublishFactory.class, "*****I'm a Template -- Publishing my Container Child=" + container.getInode());
-				publishAsset(container,user, respectFrontendRoles, isNewVersion);
+			    if(!container.isLive()){
+			    	publishAsset(container,user, respectFrontendRoles, isNewVersion);
+			    }
+				
+				
 			}
 			//writes the template to a live directory under velocity folder
 			TemplateServices.invalidate((Template)webAsset);

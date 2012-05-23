@@ -487,16 +487,8 @@ public class WebAssetFactory {
 		
 		HibernateUtil.startTransaction();
 		try{
-			// sets new working to live, only if this is needed
-			try{
-				if(!workingwebasset.isLive()){
-					APILocator.getVersionableAPI().setLive(workingwebasset);
-				}
-			}
-			catch(Exception e){
-				Logger.error(WebAssetFactory.class, e.getMessage(), e);
-			}
-	       
+			// sets new working to live
+	        APILocator.getVersionableAPI().setLive(workingwebasset);
 			if(isNewVersion){
 			   workingwebasset.setModDate(new java.util.Date());
 			   workingwebasset.setModUser(user.getUserId());
