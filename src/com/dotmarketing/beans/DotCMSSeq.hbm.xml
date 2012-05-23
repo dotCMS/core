@@ -1097,7 +1097,7 @@
 			<column name="class_name" length="255" unique="true" />
 		</property>
 		<property name="code" column="code" type="string" length="123456789"  not-null="true"/>
-		<property name="lastModifiedDate" column="last_mod_date" type="date"  not-null="true"/>
+		<property name="lastModifiedDate" column="last_mod_date" type="java.util.Date"  not-null="true"/>
 		<property name="languageKey" column="language" type="string"  not-null="true"/>
 	</class>
 	<class name="com.dotmarketing.portlets.chains.model.ChainStateParameter" table="chain_state_parameter">
@@ -1123,8 +1123,8 @@
 		<property name="pluginName" column="plugin_name" type="string" not-null="true"/>
 		<property name="pluginVersion" column="plugin_version" type="string" not-null="true"/>
 		<property name="author" column="author" type="string" not-null="true"/>
-		<property name="firstDeployedDate" column="first_deployed_date" type="date"  not-null="true"/>
-		<property name="lastDeployedDate" column="last_deployed_date" type="date"  not-null="true"/>
+		<property name="firstDeployedDate" column="first_deployed_date" type="java.util.Date"  not-null="true"/>
+		<property name="lastDeployedDate" column="last_deployed_date" type="java.util.Date"  not-null="true"/>
 	</class>
 
 	<!-- End Mapping for Plugin Tables -->
@@ -1188,7 +1188,7 @@
 		<property name="key" column="variable_key" type="string" />
 		<property name="value" column="variable_value" type="string"  />
 		<property name="lastModifierId" column="user_id" type="string" />
-		<property name="lastModDate" column="last_mod_date" type="date"  />
+		<property name="lastModDate" column="last_mod_date" type="java.util.Date"  />
 	</class>
 
 	<class  name="com.dotmarketing.beans.FixAudit" table="fixes_audit">
@@ -1198,7 +1198,7 @@
 		<property name="tableName" column="table_name" type="string" />
 		<property name="action" column="action" type="string"  />
 		<property name="recordsAltered" column="records_altered" type="integer" />
-		<property name="datetime" column="datetime" type="date"  />
+		<property name="datetime" column="datetime" type="java.util.Date"  />
 	</class>
 
 	<class name="com.dotmarketing.beans.Identifier" table="identifier">
@@ -1402,8 +1402,8 @@
 		<property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
 		<property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
 		<property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-		<property column="locked_on"     name="lockedOn"                 type="date"    not-null="true"/>
-        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
+		<property column="locked_on"     name="lockedOn"                 type="java.util.Date"    not-null="true"/>
+        <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
   	</class>
 	<class name="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" table="contentlet_version_info">
         <composite-id>
@@ -1414,8 +1414,8 @@
         <property column="live_inode"    name="liveInode"    length="36"  type="string"  not-null="false"/>
         <property column="deleted"       name="deleted"                   type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                  type="java.sql.Timestamp"    not-null="false"/>
-        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
+        <property column="locked_on"     name="lockedOn"                  type="java.util.Date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
     </class>
 	<class name="com.dotmarketing.portlets.templates.model.TemplateVersionInfo" table="template_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
@@ -1425,8 +1425,8 @@
         <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
         <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
-        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
+        <property column="locked_on"     name="lockedOn"                 type="java.util.Date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
     </class>
 	<class name="com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo" table="htmlpage_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
@@ -1436,8 +1436,8 @@
         <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
         <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
-        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
+        <property column="locked_on"     name="lockedOn"                 type="java.util.Date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
     </class>
 	<class name="com.dotmarketing.portlets.containers.model.ContainerVersionInfo" table="container_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
@@ -1447,8 +1447,8 @@
         <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
         <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
-        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
+        <property column="locked_on"     name="lockedOn"                 type="java.util.Date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
     </class>
 	<class name="com.dotmarketing.portlets.links.model.LinkVersionInfo" table="link_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
@@ -1458,8 +1458,8 @@
         <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
         <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
         <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                 type="date"    not-null="false"/>
-        <property column="version_ts"     name="versionTs"  type="java.sql.Timestamp"    not-null="true"/>
+        <property column="locked_on"     name="lockedOn"                 type="java.util.Date"    not-null="false"/>
+        <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
     </class>
 
 	<class  name="com.dotmarketing.portlets.structure.model.FieldVariable" table="field_variable">
@@ -1471,7 +1471,7 @@
 		<property name="key" column="variable_key" type="string" />
 		<property name="value" column="variable_value" type="string" length="123456789" />
 		<property name="lastModifierId" column="user_id" type="string" />
-		<property name="lastModDate" column="last_mod_date" type="date"  />
+		<property name="lastModDate" column="last_mod_date" type="java.util.Date"  />
 	</class>
 
 </hibernate-mapping>
