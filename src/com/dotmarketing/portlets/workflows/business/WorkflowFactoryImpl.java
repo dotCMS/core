@@ -730,11 +730,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		    if(DbConnectionFactory.isMySql())
 		        condition.append(" datediff(now(),workflow_task.creation_date)>=").append(searcher.getDaysOld());
 		    else if(DbConnectionFactory.isPostgres())
-		        condition.append("TODO");
+		        condition.append(" extract(day from (now()-workflow_task.creation_date))>=").append(searcher.getDaysOld());
 		    else if(DbConnectionFactory.isMsSql())
-		        condition.append("TODO");
+		        condition.append(" datediff(d,workflow_task.creation_date,GETDATE())>=").append(searcher.getDaysOld());
 		    else if(DbConnectionFactory.isOracle())
-		        condition.append("TODO");
+		        condition.append(" floor(sysdate-workflow_task.creation_date)>=").append(searcher.getDaysOld());
+		    condition.append(" and ");
 		}
 		
 		if (!searcher.isClosed() && searcher.isOpen()) {
