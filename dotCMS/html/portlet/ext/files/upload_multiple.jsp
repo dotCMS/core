@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.cache.FieldsCache"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI"%>
@@ -23,6 +25,19 @@ String selectedStructure = (request.getParameter("selectedStructure") != null ) 
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
 WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(s);
+
+boolean hasExplicitRequiredFields = false;//GIT-191
+List<Field> fields = FieldsCache.getFieldsByStructureInode(selectedStructure);
+for (Field field : fields) {
+	if(field.isRequired()
+			// the below required fields values are implicitly set to content in UploadMultipleFilesAction._saveFileAsset()
+			&& (!field.getVelocityVarName().equalsIgnoreCase("title")
+					&& !field.getVelocityVarName().equalsIgnoreCase("fileName")
+					&& !field.getVelocityVarName().equalsIgnoreCase("fileAsset")
+					&& !field.getVelocityVarName().equalsIgnoreCase("hostFolder"))){
+		hasExplicitRequiredFields = true;
+	}
+}
 
 
 PermissionAPI perAPI = APILocator.getPermissionAPI();
@@ -89,6 +104,31 @@ if(request.getParameter("in_frame")!=null){
 			}
     </style>
     <body>
+    
+    
+	<% if(hasExplicitRequiredFields){ %>
+		
+		<div class="callOutBox" style="margin-left:40px;margin-right:40px;margin-bottom:10px" >
+	    	<b><%= LanguageUtil.get(pageContext, "Note") %></b>: <%= LanguageUtil.get(pageContext, "Multiple-File-Upload-does-not-upload-custom-files-with-explicit-required-fields") %>
+	    </div>
+	                 
+		<div class="buttonRow">
+			<button dojoType="dijit.form.Button" iconClass="cancelIcon">
+	            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+	            <script type="dojo/method" event="onClick" args="evt">						
+                	if(dijit.byId('addFileDialog')){
+                		dijit.byId('addFileDialog').hide();
+                	}else {
+        				if(parent.closeAddFileDialog) {
+        	    				parent.closeAddFileDialog();
+    	    			}
+	                }
+            	</script>
+	     	</button>
+	    </div>
+	    
+	<% }else{ %>
+	    
 		 <div id="tableDiv" style="display: ; position:relative; z-index: 100">
 			 <html:form action="/ext/files/upload_multiple" method="POST"  styleId="fm" enctype="multipart/form-data" onsubmit="return false;">
 	             
@@ -323,9 +363,10 @@ if(request.getParameter("in_frame")!=null){
                 	</script>
                 </button>
 			</div>
-    	</div>
 	</html:form>
 </div>
+
+<% } %>
 
 <div id="messageDiv" class="messageBox shadowBox" style="display: none;">
 	<b><%= LanguageUtil.get(pageContext, "File-Uploading") %>  . . .</b><BR>
