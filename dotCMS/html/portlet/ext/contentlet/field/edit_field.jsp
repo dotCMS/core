@@ -439,7 +439,7 @@
 							<a href="<%=resourceLink %>" target="_new"><%=identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)%></a>
 								<% if (mimeType.indexOf("text")!=-1 || mimeType.indexOf("xml")!=-1) { %>
 									<% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
-											<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText('<%= binInode%>')" type="button">
+											<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText($('contentletInode').value)" type="button">
 												<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-text")) %>
 											</button>
 									<% } %>
