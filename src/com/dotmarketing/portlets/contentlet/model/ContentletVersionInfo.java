@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
 import java.util.Date;
 
 import com.dotmarketing.util.UtilMethods;
@@ -11,11 +10,11 @@ public class ContentletVersionInfo implements Serializable {
     private String identifier;
     private boolean deleted;
     private String lockedBy;
-    private Timestamp lockedOn;
+    private Date lockedOn;
     private long lang;
     private String workingInode;
     private String liveInode;
-    private Timestamp versionTs;
+    private Date versionTs;
 
     public long getLang() {
         return lang;
@@ -44,7 +43,7 @@ public class ContentletVersionInfo implements Serializable {
     public Date getLockedOn() {
         return lockedOn;
     }
-    public void setLockedOn(Timestamp lockedOn) {
+    public void setLockedOn(Date lockedOn) {
         this.lockedOn = lockedOn;
     }
     public String getIdentifier() {
@@ -63,12 +62,12 @@ public class ContentletVersionInfo implements Serializable {
         return lockedBy!=null;
     }
     public void setLocked(String userId) {
-        lockedOn=new Timestamp(new Date().getTime());
+        lockedOn=new Date();
         lockedBy=userId;
     }
     public void unLock() {
         lockedBy=null;
-        lockedOn=new Timestamp(new Date().getTime());
+        lockedOn=new Date();
     }
     @Override
     public boolean equals(Object obj) {
@@ -86,14 +85,12 @@ public class ContentletVersionInfo implements Serializable {
         int langx=(int)lang;
         return identifier.hashCode()+17*(langx+1);
     }
-	public Timestamp getVersionTs() {
+	public Date getVersionTs() {
 		return versionTs;
 	}
-	public void setVersionTs(Timestamp versionTs) {
-		this.versionTs = versionTs;
-	}
+
 
 	public void setVersionTs(Date versionDate) {
-		this.versionTs = new Timestamp(versionDate.getTime());
+		this.versionTs = versionDate;
 	}
 }
