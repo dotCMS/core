@@ -1,20 +1,13 @@
 package com.dotmarketing.business;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.jgroups.JChannel;
-
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.logConsole.model.LogMapperCache;
+import com.dotmarketing.logConsole.model.LogMapperCacheImpl;
 import com.dotmarketing.plugin.business.PluginCache;
 import com.dotmarketing.plugin.business.PluginCacheImpl;
 import com.dotmarketing.portlets.categories.business.CategoryCache;
@@ -48,6 +41,11 @@ import com.dotmarketing.portlets.workflows.business.WorkflowCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.DotResourceCache;
+import org.jgroups.JChannel;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -142,6 +140,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static ChainCache getChainCache(){
 		return (ChainCache)getInstance(CacheIndex.Chain);
 	}
+
+    public static LogMapperCache getLogMapperCache () {
+        return ( LogMapperCache ) getInstance( CacheIndex.LogMapper );
+    }
 	
 	public static RelationshipCache getRelationshipCache() {
 		return (RelationshipCache)getInstance(CacheIndex.Relationship);
@@ -274,6 +276,7 @@ enum CacheIndex
 	Category("Category"),
 	Contentlet("Contentlet"),
 	Chain("Chain"),
+	LogMapper("LogMapper"),
 	Relationship("Relationship"),
 	Plugin("Plugin"),
 	Language("Language"),
@@ -305,6 +308,7 @@ enum CacheIndex
       	case Velocity : return new DotResourceCache();
       	case Relationship: return new RelationshipCacheImpl();
       	case Chain : return new ChainCacheImpl();
+        case LogMapper: return new LogMapperCacheImpl();
       	case Plugin : return new PluginCacheImpl();
       	case Language : return new LanguageCacheImpl();
       	case User : return new UserCacheImpl();
