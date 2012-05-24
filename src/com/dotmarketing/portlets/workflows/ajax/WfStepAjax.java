@@ -40,6 +40,9 @@ public class WfStepAjax extends WfBaseAction {
 		String stepId = request.getParameter("stepId");
 		String o = request.getParameter("stepOrder");
 		String stepName = request.getParameter("stepName");
+		boolean enableEscalation=request.getParameter("enableEscalation")!=null;
+		String escalationAction = request.getParameter("escalationAction");
+		String escalationTime = request.getParameter("escalationTime");
 		WorkflowAPI wapi = APILocator.getWorkflowAPI();
 		boolean stepResolved = request.getParameter("stepResolved") != null;
 		int order = 0;
