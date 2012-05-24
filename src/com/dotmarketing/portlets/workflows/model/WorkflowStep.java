@@ -17,7 +17,30 @@ public class WorkflowStep implements Serializable {
 	String schemeId;
 	int myOrder=0;
 	boolean resolved;
-	public String getId() {
+	
+	boolean enableEscalation;
+	String escalationAction;
+	int escalationTime;
+	
+	public boolean isEnableEscalation() {
+        return enableEscalation;
+    }
+    public void setEnableEscalation(boolean enableEscalation) {
+        this.enableEscalation = enableEscalation;
+    }
+    public String getEscalationAction() {
+        return escalationAction;
+    }
+    public void setEscalationAction(String escalationAction) {
+        this.escalationAction = escalationAction;
+    }
+    public int getEscalationTime() {
+        return escalationTime;
+    }
+    public void setEscalationTime(int escalationTime) {
+        this.escalationTime = escalationTime;
+    }
+    public String getId() {
 		return id;
 	}
 	public void setId(String id) {
