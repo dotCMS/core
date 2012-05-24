@@ -458,9 +458,83 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 	
 });
 
+function edit_step_toggleEscalation() {
+    var dialogHeight=dojo.style(dojo.byId("stepEditDia"),'height');
+    if(dijit.byId("enableEscalation").checked) {
+        var newHeight=dialogHeight+120;
+        dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
+        dojo.query("#stepEditDia .escalation-row").style("display","table-row")
+    }
+    else {
+        var newHeight=dialogHeight-120;
+        dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
+        dojo.query("#stepEditDia .escalation-row").style("display","none")
+        
+    }
+}
 
-
-
+function showExpirationTime(){
+    var ttl = dijit.byId("escalationTime").getValue();
+    
+    var m = 60 * 60 * 24 * 30;
+    var w = 60*60*24*7;
+    var d = 60*60*24;
+    var h = 60*60;
+    var mm = 60;
+    var message = "";
+    var x = 0;
+    while(ttl>0){
+        if(x>0){
+        message+=", ";
+        }
+        
+        if(ttl>=m){
+            x = Math.floor(ttl / m);
+            message+= x;
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Month") %>" 
+                : " <%= LanguageUtil.get(pageContext, "Months") %>";
+            ttl = Math.floor(ttl % m);
+        }
+        else if(ttl >= w){
+            x = Math.floor(ttl / w);
+            message+= x;
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Week") %>" 
+                : " <%= LanguageUtil.get(pageContext, "Weeks") %>";
+            ttl = Math.floor(ttl % w);
+        }
+        else if(ttl >= d){
+            x = Math.floor(ttl / d);
+            message+= x;
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Day") %>" 
+                : " <%= LanguageUtil.get(pageContext, "Days") %>";
+            ttl = Math.floor(ttl % d);
+        }
+        else if(ttl >= h){
+            x = Math.floor(ttl / h);
+            message+= x;
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Hour") %>" 
+                : " <%= LanguageUtil.get(pageContext, "Hours") %>";
+            ttl = Math.floor(ttl % h);
+        }
+        else if(ttl >= mm){
+            x = Math.floor(ttl / mm);
+            message+= x;
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Minute") %>" 
+                : " <%= LanguageUtil.get(pageContext, "Minutes") %>";
+            ttl = Math.floor(ttl % mm);
+        }
+        else if(ttl > 0){
+            x =ttl;
+            message+= x;
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Second") %>" 
+                : " <%= LanguageUtil.get(pageContext, "Seconds") %>";
+            ttl=0;
+                
+        }
+    }
+    
+    dojo.byId("showExpirationTime").innerHTML = message;
+}
 
 
 
