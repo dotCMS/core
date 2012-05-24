@@ -759,7 +759,7 @@ alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) ref
 create table indicies (
   index_name varchar2(30) primary key,
   index_type varchar2(16) not null unique
-  
+);
   -- ****** Log Console Table *******
   create table log_mapper (
     enabled   	 number(1,0) not null,
