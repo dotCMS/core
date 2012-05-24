@@ -2125,32 +2125,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                java.io.File workingInodeFile = null;
 
 				                if (InodeUtils.isSet(workingContentletInode)) {
-				                    java.io.File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + workingContentletInode.charAt(0)
+				                    java.io.File originalFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + workingContentletInode.charAt(0)
 				                            + java.io.File.separator + workingContentletInode.charAt(1) + java.io.File.separator + workingContentletInode
 				                            + java.io.File.separator + velocityVarNm + java.io.File.separator + binaryFileName);
 				                    java.io.File editedFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + workingContentletInode.charAt(0)
 				                            + java.io.File.separator + workingContentletInode.charAt(1) + java.io.File.separator + workingContentletInode
 				                            + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + binaryFileName);
-				                    if(editedFile.exists()){
-				                        FileChannel ic = new FileInputStream(editedFile).getChannel();
-				                        FileChannel oc = new FileOutputStream(destFile).getChannel();
-				                        ic.transferTo(0, ic.size(), oc);
-				                        ic.close();
-				                        oc.close();
-				                    }
-				                    workingInodeFile = destFile;
-				                    editedFile.delete();
-
+				                    if(editedFile.exists())
+				                        workingInodeFile = editedFile;
+				                    else
+				                        workingInodeFile = originalFile;
 				                }
 
-				                if (tempFile.exists()) {
+				                if(workingInodeFile!=null)
+				                    srcFile = workingInodeFile;
+				                else if (tempFile.exists()) {
 				                    srcFile = tempFile;
 				                } else {
-				                    if ((workingInodeFile == null) || !workingInodeFile.exists()){
-				                        Logger.debug(this,"The file must be set");
-				                        continue;
-				                    }
-				                    srcFile = workingInodeFile;
+			                        Logger.debug(this,"The file must be set");
+			                        continue;
 				                }
 				                String newInodeAssetFolderPath = APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + newContentletInode.charAt(0)
 				                + java.io.File.separator + newContentletInode.charAt(1) + java.io.File.separator + newContentletInode + java.io.File.separator

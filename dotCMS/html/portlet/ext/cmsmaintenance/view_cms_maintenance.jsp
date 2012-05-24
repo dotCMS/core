@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.listeners.SessionMonitor"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESContentletIndexAPI"%>
@@ -18,7 +19,6 @@
 
 <%@ include file="/html/portlet/ext/cmsmaintenance/init.jsp"%>
 
-
 <%
 
 DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.SHORT, locale);
@@ -32,7 +32,11 @@ session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, true);
 ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 List<Structure> structs = StructureFactory.getStructures();
 %>
+<script type="text/javascript" src="/dwr/engine.js"></script>
+<script type="text/javascript" src="/dwr/util.js"></script>
 <script type='text/javascript' src='/dwr/interface/CMSMaintenanceAjax.js'></script>
+<script type="text/javascript" src="/dwr/interface/ThreadMonitorTool.js"></script>
+<script type="text/javascript" src="/dwr/interface/UserSessionAjax.js"></script>
 
 <script language="Javascript">
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
@@ -756,6 +760,126 @@ function undohighlight(id) {
     dojo.removeClass(id,"highlight");
 }
 
+function getAllThreads() {
+	document.getElementById('threadList').innerHTML = "";
+	dojo.query('#threadProgress').style({display:"block"});
+    ThreadMonitorTool.getThreads({
+        callback:function(data) {
+        	dojo.query('#threadProgress').style({display:"none"});
+            var tempString = "";
+            var parity = "odd";
+            for(var i = 0; i < data.length; i++){
+                tempString += "<li class='" + parity + "'>"+ data[i] +"</li>";
+                if(parity == "odd"){
+                    parity = "even";
+                }else{
+                    parity = "odd";
+                }
+            }
+
+            dwr.util.setValue("threadList", tempString, { escapeHtml:false });
+            
+        },
+        errorHandler:function(message) {
+            alert("Oops: " + message);
+            dojo.query('#threadProgress').style({display:"none"});
+        }
+    });
+}
+
+function hideAllThreads() {
+    document.getElementById('threadList').innerHTML = "";
+}
+
+function getSysInfo() {
+	dwr.util.setValue("sysInfo", "", { escapeHtml:false });
+	dojo.query('#sysInfoProgress').style({display:"block"});
+    ThreadMonitorTool.getSysProps({
+        callback:function(data) {
+        	dojo.query('#sysInfoProgress').style({display:"none"});
+            var tempString = "";
+            
+            for(var dat in data){
+                tempString += "<tr><td>"+ dat +"</td><td> " + data[dat] +"</td></tr>";
+            }
+            
+            dwr.util.setValue("sysInfo", tempString, { escapeHtml:false });             
+        },
+        errorHandler:function(message) {
+        	dojo.query('#sysInfoProgress').style({display:"none"});
+            alert("Oops: " + message);
+        }
+    });
+}
+
+function killSession(sessionId) {
+	dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"none",visibility:"hidden"});
+	dojo.query('#killSessionProgress-'+sessionId).style({display:"block"});
+	UserSessionAjax.invalidateSession(sessionId,{
+			callback:function() {
+				dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"block",visibility:"visible"});
+			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
+			    dijit.byId('invalidateButton-'+sessionId).set('disabled',true);
+			    
+			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-killed")%>');
+			},
+			errorHandler:function(message) {
+				dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"block",visibility:"visible"});
+			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
+			    
+			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-notkilled")%>');
+			}			
+	});
+}
+
+function loadUsers() {
+	
+	var oldButtons=dojo.query("#sessionList .killsessionButton");
+	for(var i=0;i<oldButtons.length;i++)
+		dijit.byNode(oldButtons[i]).destroy();
+	
+	dwr.util.setValue("sessionList", "<img src='/html/images/icons/round-progress-bar.gif'/>", { escapeHtml:false });
+	
+	UserSessionAjax.getSessionList({
+		callback: function(sessionList) {
+			if(sessionList.size() > 0) {
+				var html="";
+				for(var i=0;i<sessionList.size();i++) {
+					var session=sessionList[i];
+					html+="<tr> ";
+					html+="<td>"+session.sessionId+"</td> ";
+					html+="<td>"+session.address+"</td> ";
+					html+="<td>"+session.userId+"</td> ";
+					html+="<td>"+session.userEmail+"</td> ";
+					html+="<td>"+session.userFullName+"</td> ";
+					html+="<td> ";
+					html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
+					html+=" <button id='invalidateButtonNode-"+session.sessionId+"' type='button'> ";
+	                html+=" </button></td>";
+					html+="</tr>";
+				}
+				dwr.util.setValue("sessionList", html, { escapeHtml:false });
+				for(var i=0;i<sessionList.size();i++) {
+                    var session=sessionList[i];
+                    new dijit.form.Button({
+                    	id:"invalidateButton-"+session.sessionId,
+                        label: "<%= LanguageUtil.get(pageContext,"logged-users-tab-killsession") %>",
+                        iconClass: "deleteIcon",
+                        sid : session.sessionId,
+                        class: "killsessionButton",
+                        onClick: function(){
+                            killSession(this.sid);
+                        }
+                    }, "invalidateButtonNode-"+session.sessionId);
+				}
+			}
+		},
+		errorHandler: function(message) {
+			showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-reload-error")%>');
+		}
+	});
+	
+}
 
 </script>
 
@@ -767,7 +891,9 @@ function undohighlight(id) {
     background: #94BBFF;
     color: white !important;
 }
-
+#threadList li.odd{
+    background-color:#ECECEC;
+}
 
 </style>
 <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
@@ -1161,7 +1287,55 @@ function undohighlight(id) {
         
 
 	</div>
-
+    
+    <div id="threads" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "threads-tab-title") %>" >
+        <table class="listingTable shadowBox" style="width:800px !important;">
+        <thead>
+            <th>System information</th>
+            <th>Value</th>
+        </thead>
+        <tbody id="sysInfo">
+        </tbody>
+        </table>
+        <img style="display:none;" id="sysInfoProgress" src="/html/images/icons/round-progress-bar.gif"/>
+        <br/>
+        <div dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 50px;">
+        <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="repeatIcon">
+            <%= LanguageUtil.get(pageContext,"thread-tab-reload") %>
+        </button>
+        <button dojoType="dijit.form.Button" onClick="getSysInfo()" iconClass="infoIcon">
+            <%= LanguageUtil.get(pageContext,"thread-tab-reload-sysinfo") %>
+        </button>
+        </div>
+	    
+	    <ol class="orderMe" id="threadList"></ol>
+	    <ol class="orderMe" id="threadStats"></ol>
+	    <img style="display:none;" id="threadProgress" src="/html/images/icons/round-progress-bar.gif"/>
+    </div>
+    
+    <div id="loggedusers" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "logged-users-tab-title") %>" >
+        <div dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 50px;">
+	        <button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="repeatIcon">
+	            <%= LanguageUtil.get(pageContext,"logged-users-reload") %>
+	        </button>
+        </div>
+        
+        
+        <table class="listingTable shadowBox" style="width:800px !important;">
+        <thead>
+        <tr>
+            <th>Session ID</th>
+            <th>Remote Address</th>
+            <th>User ID</th>
+            <th>User Email</th>
+            <th>User Name</th>
+            <th>Action &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</th> 
+        </tr>
+        </thead>
+        <tbody id="sessionList">
+        </tbody>
+        </table>
+    </div>
 </div>	
 	
 </html:form>
@@ -1184,6 +1358,8 @@ dojo.require("dijit.form.DateTextBox");
 				  	}
 			  	
 			});
-		
+		//getAllThreads();
+		getSysInfo();
+		loadUsers();
 	});	
 </script>
