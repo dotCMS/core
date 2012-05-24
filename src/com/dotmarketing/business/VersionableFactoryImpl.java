@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -178,7 +177,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotDataException(e.getMessage());
 		}
 
-        vi.setVersionTs(new Timestamp(new Date().getTime()));
+        vi.setVersionTs(new Date());
         
         HibernateUtil.saveOrUpdate(vi);
         icache.removeVersionInfoFromCache(vi.getIdentifier());
@@ -206,6 +205,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
     	cvInfo.setVersionTs(new Date());
     	HibernateUtil.saveOrUpdate(cvInfo);
         icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
+
     }
 
     @Override
@@ -213,7 +213,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ContentletVersionInfo cVer=new ContentletVersionInfo();
         cVer.setDeleted(false);
         cVer.setLockedBy(null);
-        cVer.setLockedOn(new Timestamp(new Date().getTime()));
+        cVer.setLockedOn(new Date());
         cVer.setIdentifier(identifier.getId());
         cVer.setLang(lang);
         cVer.setWorkingInode(workingInode);
@@ -238,7 +238,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setLockedBy(null);
         ver.setLockedOn(new Date());
         ver.setWorkingInode(workingInode);
-        ver.setVersionTs(new Timestamp(new Date().getTime()));
+        ver.setVersionTs(new Date());
         HibernateUtil.save(ver);
         icache.addVersionInfoToCache(ver);
         return ver;

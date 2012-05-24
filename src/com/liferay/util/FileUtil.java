@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Properties;
 
 import com.dotmarketing.util.Logger;
-
+import com.liferay.util.jna.CLibrary;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -61,12 +61,18 @@ public class FileUtil {
 	final static long TERA_BYTE = 1024*1024*1024*1024;
 
 	public static void copyDirectory(
+			String sourceDirName, String destinationDirName, boolean hardLinks) {
+
+			copyDirectory(new File(sourceDirName), new File(destinationDirName), hardLinks);
+		}
+
+	public static void copyDirectory(
 		String sourceDirName, String destinationDirName) {
 
 		copyDirectory(new File(sourceDirName), new File(destinationDirName));
 	}
 
-	public static void copyDirectory(File source, File destination) {
+	public static void copyDirectory(File source, File destination, boolean hardLinks) {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
 				destination.mkdirs();
@@ -79,16 +85,20 @@ public class FileUtil {
 					copyDirectory(
 						fileArray[i],
 						new File(destination.getPath() + File.separator
-							+ fileArray[i].getName()));
+							+ fileArray[i].getName()), hardLinks);
 				}
 				else {
 					copyFile(
 						fileArray[i],
 						new File(destination.getPath() + File.separator
-							+ fileArray[i].getName()));
+							+ fileArray[i].getName()), hardLinks);
 				}
 			}
 		}
+	}
+		
+	public static void copyDirectory(File source, File destination) {
+		copyDirectory(source, destination, false);
 	}
 
 	public static void copyFile(
@@ -98,6 +108,10 @@ public class FileUtil {
 	}
 
 	public static void copyFile(File source, File destination) {
+		copyFile(source, destination, false);
+	}
+	
+	public static void copyFile(File source, File destination, boolean hardLinks) {
 		if (!source.exists()) {
 			return;
 		}
@@ -107,20 +121,26 @@ public class FileUtil {
 
 			destination.getParentFile().mkdirs();
 		}
-
-		try {
-			FileChannel srcChannel = new FileInputStream(source).getChannel();
-			FileChannel dstChannel = new FileOutputStream(
-				destination).getChannel();
-
-			dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-
-			srcChannel.close();
-			dstChannel.close();
+		
+		if ( hardLinks ) {
+			CLibrary.INSTANCE.link(source.getAbsolutePath(), destination.getAbsolutePath());
 		}
-		catch (IOException ioe) {
-			Logger.error(FileUtil.class,ioe.getMessage(),ioe);
+		else {
+			try {
+				FileChannel srcChannel = new FileInputStream(source).getChannel();
+				FileChannel dstChannel = new FileOutputStream(
+					destination).getChannel();
+
+				dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
+
+				srcChannel.close();
+				dstChannel.close();
+			}
+			catch (IOException ioe) {
+				Logger.error(FileUtil.class,ioe.getMessage(),ioe);
+			}
 		}
+
 	}
 
 	public static void copyFileLazy(String source, String destination)

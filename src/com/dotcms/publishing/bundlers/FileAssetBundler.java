@@ -65,21 +65,25 @@ public class FileAssetBundler implements IBundler {
 		StringBuilder bob = new StringBuilder("+languageid:" + config.getLanguage() + " +structuretype:" + Structure.STRUCTURE_TYPE_FILEASSET + " ");
 		
 		if(config.getExcludePatterns() != null && config.getExcludePatterns().size()>0){
+			bob.append("-(" );
 			for (String p : config.getExcludePatterns()) {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
-				p = p.replace(" ", "+");
-				bob.append("-uri:" + p + " ");
+				//p = p.replace(" ", "+");
+				bob.append("path:" + p + " ");
 			}
+			bob.append(")" );
 		}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
+			bob.append("+(" );
 			for (String p : config.getIncludePatterns()) {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
-				p = p.replace(" ", "+");
-				bob.append("+uri:" + p + " ");
+				//p = p.replace(" ", "+");
+				bob.append("path:" + p + " ");
 			}
+			bob.append(")" );
 		}
 		
 		
@@ -198,7 +202,7 @@ public class FileAssetBundler implements IBundler {
 			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
 				String x  = (String) fileAsset.get("metaData");
 				fileAsset.setMetaData(x);
-				BundlerUtil.objectToXML(wrap, f);
+				BundlerUtil.objectToXML(wrap, f, true);
 				f.setLastModified(cal.getTimeInMillis());
 			}
 			
@@ -206,7 +210,7 @@ public class FileAssetBundler implements IBundler {
 			f = new File(myFile.replaceAll(FILE_ASSET_EXTENSION,""));
 			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
 				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPath(fileAsset.getInode(), fileAsset.getFileName()));
-				FileUtil.copyFile(oldAsset, f);
+				FileUtil.copyFile(oldAsset, f, true);
 				f.setLastModified(cal.getTimeInMillis());
 			}
 			// set the time of the file

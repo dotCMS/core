@@ -20,9 +20,9 @@ public class PublisherConfig implements Map<String, Object> {
 	private enum Config {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
-		THREADS, ID, TIMESTAMP, BUNDLERS,INCREMENTAL;
+		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
+		UPDATED_HTML_PAGE_IDS;
 	};
-
 	
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
@@ -38,7 +38,6 @@ public class PublisherConfig implements Map<String, Object> {
 
 	public void setFolders(List<Folder> folders) {
 		params.put(Config.FOLDERS.name(), folders);
-
 	}
 
 	public List<Structure> getStructures() {
@@ -160,7 +159,26 @@ public class PublisherConfig implements Map<String, Object> {
 	public List<String> getIncludePatterns() {
 		return (List<String>) params.get(Config.INCLUDE_PATTERN.name());
 	}
-
+	
+	public List<String> getUpdatedHTMLPageIds() {
+		
+		// lazy load
+		if(params.get(Config.UPDATED_HTML_PAGE_IDS.name()) ==null){
+			List<String> ids = BundlerUtil.getUpdatedHTMLPageIds(getStartDate(), getEndDate());
+			params.put(Config.UPDATED_HTML_PAGE_IDS.name(), ids);
+		}
+		
+		
+		
+		
+		return (List<String>) params.get(Config.UPDATED_HTML_PAGE_IDS.name());
+	}
+	
+	public void setUpdatedHTMLPageIds(List<String> pageIds) {
+		params.put(Config.UPDATED_HTML_PAGE_IDS.name(), pageIds);
+	}
+	
+	
 	public void setIncludePatterns(List<String> includePatterns) {
 		params.put(Config.INCLUDE_PATTERN.name(), includePatterns);
 	}
@@ -239,6 +257,14 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.ID.name(), id);
 	}
 
+	public String getDestinationBundle() {
+		return (String) params.get(Config.DESTINATION_BUNDLE.name());
+	}
+	
+	public void setDestinationBundle(String bundle) {
+		params.put(Config.DESTINATION_BUNDLE.name(), bundle);
+	}
+	
 	public List<Class> getPublishers() {
 		return (List<Class>) params.get(Config.PUBLISHER.name());
 	}
