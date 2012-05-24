@@ -14,8 +14,26 @@ public class SiteSearchResults {
 	String index;
 	String error=null;
 	String took;
-	
-	
+	/**
+	 * Backward compatable alias
+	 * for getOffset()
+	 * @return
+	 */
+	public int getStart(){
+		return this.getOffset();
+	}
+	/**
+	 * Backward compatible alias
+	 * for getTotalResults()
+	 * @return
+	 */
+	public long getTotalHits(){
+		return this.getTotalResults();
+	}
+	/**
+	 * How long the query took
+	 * @return
+	 */
 	public String getTook() {
 		return took;
 	}

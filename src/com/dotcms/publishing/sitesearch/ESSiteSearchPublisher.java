@@ -78,8 +78,19 @@ public class ESSiteSearchPublisher extends Publisher {
 				List<File> files = FileUtil.listFilesRecursively(bundleRoot, b.getFileFilter());
 				List<File> filteredFiles = new ArrayList<File>();
 				for (File f : files) {
+					
+					
+					
+					
+					
+					
 					if (shouldProcess(f)) {
+						
+						System.out.println("######### processing: "  + f);
+						
 						filteredFiles.add(f);
+					}else {
+						System.out.println("######### skipping  : "  + f);
 					}
 
 				}
