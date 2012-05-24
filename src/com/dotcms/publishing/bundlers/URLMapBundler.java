@@ -96,8 +96,8 @@ public class URLMapBundler implements IBundler {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
-				p = p.replace(" ", "+");
-				bob.append("uri:" + p + " ");
+				//p = p.replace(" ", "+");
+				bob.append("urlMap:" + p + " ");
 			}
 			bob.append(") " );
 		}else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
@@ -106,8 +106,8 @@ public class URLMapBundler implements IBundler {
 				if(!UtilMethods.isSet(p)){
 					continue;
 				}
-				p = p.replace(" ", "+");
-				bob.append("uri:" + p + " ");
+				//p = p.replace(" ", "+");
+				bob.append("urlMap:" + p + " ");
 			}
 			bob.append(") " );
 		}
@@ -244,6 +244,9 @@ public class URLMapBundler implements IBundler {
 				String dir = myFileUrl.substring(0, myFileUrl.lastIndexOf(File.separator));
 				new File(dir).mkdirs();
 	
+				if ( f.exists() )
+					f.delete();
+				
 				w = new BufferedWriter(new FileWriterWithEncoding(f, "UTF-8"));
 				w.write(pageString);
 				w.close();
@@ -252,7 +255,7 @@ public class URLMapBundler implements IBundler {
 			}
 			f = new File(f.getAbsolutePath() + FILE_ASSET_EXTENSION);
 			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
-				BundlerUtil.objectToXML(wrap, f);
+				BundlerUtil.objectToXML(wrap, f, true);
 				f.setLastModified(cal.getTimeInMillis());
 			}
 			

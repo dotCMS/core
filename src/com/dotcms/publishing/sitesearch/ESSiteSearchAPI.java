@@ -40,6 +40,7 @@ import com.dotmarketing.quartz.TaskRuntimeValues;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.ibm.icu.text.SimpleDateFormat;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
@@ -295,19 +296,22 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     public void putToIndex(String idx, SiteSearchResult res){
 	   try{
 		   
+		   
+		   
+		   
 		   if(res.getTitle() ==null && res.getFileName() != null){
 			   res.setTitle(res.getFileName() );
 		   }
 		   
-		   if(res.getDescription() ==null && res.getContent() != null){
+		   if(!UtilMethods.isSet( res.getDescription() ) && UtilMethods.isSet( res.getContent())){
 			   
-			   //String x = res.getContent();
-			  // String noHTMLString = res.getContent().replaceAll("\\<.*?\\>", "");
-			   
-			   
+			   String x = res.getContent();
+			   String noHTMLString = res.getContent().replaceAll("\\<.*?\\>", "");
 			   
 			   
-			   //res.setDescription(UtilMethods.prettyShortenString(noHTMLString, 500));
+			   
+			   
+			   res.setDescription(UtilMethods.prettyShortenString(noHTMLString, 500));
 		   }
 		   
 		   Logger.info(this.getClass(), "writing from : " + idx  + " url:" + res.getUrl());
