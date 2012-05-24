@@ -91,9 +91,9 @@ try{
 	Manutentor = (Role)APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("escalation.job.java.roleToEscale", "com.dotcms.escalation"));
 }catch(Exception e){}
 
-
+List<User> userL = null;
 if(Manutentor!=null){
-List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutentor); 
+userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutentor); 
 
 %>
 
@@ -127,9 +127,14 @@ List<User> userL = (List<User>)APILocator.getRoleAPI().findUsersForRole(Manutent
 						
 						<select name="user" id="userId" dojoType="dijit.form.FilteringSelect" value="" >
 							<option value=""></option>
-							<%for(User u : userL) {%>
-								<option value="<%=APILocator.getRoleAPI().getUserRole(u)%>" ><%=u.getFirstName()+" - "+Manutentor.getName()%></option>
-							<%} %>
+							<%
+								if(userL != null){
+									for(User u : userL) {%>
+										<option value="<%=APILocator.getRoleAPI().getUserRole(u)%>" ><%=u.getFirstName()+" - "+Manutentor.getName()%></option>
+							<%
+									} 
+								}
+							%>
 						</select>
 
 				         

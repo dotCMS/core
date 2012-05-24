@@ -151,6 +151,7 @@
 		addedStore<%=counter%>.fetch({onComplete:function(items) {
 			for (var i = 0; i < items.length; i++){
 				addedStore<%=counter%>.deleteItem(items[i]);
+				 dojo.destroy(dojo.byId("preview"+items[i].id));
 			   }
 			addedStore<%=counter%>.save();
 		}});

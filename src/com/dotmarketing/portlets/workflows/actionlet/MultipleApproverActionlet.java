@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -93,11 +94,11 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 		WorkflowHistory h = new WorkflowHistory();
 		h.setActionId(processor.getAction().getId());
 		h.setMadeBy(processor.getUser().getUserId());
-		histories.add(h);
+		if(histories == null){
+			histories = new ArrayList<WorkflowHistory>();
+			histories.add(h);
+		}else histories.add(h);
 		
-		
-
-
 		for (User u : requiredApprovers) {
 
 			for (WorkflowHistory history : histories) {
@@ -111,10 +112,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 			}
 
 		}
-
 		
-		
-		User nextAssignee = null;
 		if (hasApproved.size() < requiredApprovers.size()) {
 			
 			shouldStop = true;
@@ -126,7 +124,19 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 			List<String> emails = new ArrayList<String>();
 			for (User u : requiredApprovers) {
 				if(!hasApproved.contains(u)){
-					emails.add(u.getEmailAddress());
+					emails.add(u.getEmailAddress());					
+				}
+			}
+			
+			// to assign it for next assignee
+			for (User u : requiredApprovers) {
+				if(!hasApproved.contains(u)){					
+					try {
+	                   processor.setNextAssign(APILocator.getRoleAPI().getUserRole(u));
+	                   break;
+	                } catch (DotDataException e) {
+	                   Logger.error(MultipleApproverActionlet.class,e.getMessage(),e);
+	                }
 				}
 			}
 			
