@@ -998,7 +998,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.getSchemeId());
 			db.addParam(step.getMyOrder());
 			db.addParam(step.isResolved());
-			db.addParam(step.isEnableEscalation() ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse());
+			db.addParam(step.isEnableEscalation());
 			if(step.isEnableEscalation()) {
     			db.addParam(step.getEscalationAction());
     			db.addParam(step.getEscalationTime());
@@ -1014,8 +1014,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.getSchemeId());
 			db.addParam(step.getMyOrder());
 			db.addParam(step.isResolved());
-			db.addParam(step.getId());
-			db.addParam(step.isEnableEscalation() ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse());
+			db.addParam(step.isEnableEscalation());
 			if(step.isEnableEscalation()) {
                 db.addParam(step.getEscalationAction());
                 db.addParam(step.getEscalationTime());
@@ -1024,6 +1023,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 db.addParam((Object)null);
                 db.addParam(0);
             }
+			db.addParam(step.getId());
 			db.loadResult();
 		}
 		cache.remove(step);

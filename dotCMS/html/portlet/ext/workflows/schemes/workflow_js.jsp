@@ -402,17 +402,17 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		}
 
 
-		myCp = new dijit.layout.ContentPane({
-			id : "stepEditCp",
-			parseOnLoad : true,
-		
-			
+		myCp = new dojox.layout.ContentPane({
+			id : "stepEditCp"
 		})		
 		
 		myCp.placeAt("stepEditDia");
 		
 		dia.show();
 		myCp.attr("href","/html/portlet/ext/workflows/schemes/edit_step.jsp?stepId=" + stepId);
+		setTimeout(function() {
+		    showExpirationTime();
+		},1000);
 	},
 	hideEdit: function(){
 		var dia = dijit.byId("stepEditDia");
@@ -461,12 +461,12 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 function edit_step_toggleEscalation() {
     var dialogHeight=dojo.style(dojo.byId("stepEditDia"),'height');
     if(dijit.byId("enableEscalation").checked) {
-        var newHeight=dialogHeight+120;
+        var newHeight=dialogHeight+100;
         dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
         dojo.query("#stepEditDia .escalation-row").style("display","table-row")
     }
     else {
-        var newHeight=dialogHeight-120;
+        var newHeight=dialogHeight-100;
         dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
         dojo.query("#stepEditDia .escalation-row").style("display","none")
         
