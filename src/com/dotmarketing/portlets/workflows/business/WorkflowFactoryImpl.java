@@ -146,6 +146,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final WorkflowStep step = new WorkflowStep();
 		row.put("myOrder", row.get("my_order"));
 		row.put("schemeId", row.get("scheme_id"));
+		row.put("enableEscalation", row.get("escalation_enable"));
+		row.put("escalationAction", row.get("escalation_action"));
+		row.put("escalationTime", row.get("escalation_time"));
 		BeanUtils.copyProperties(step, row);
 
 		return step;
@@ -995,6 +998,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.getSchemeId());
 			db.addParam(step.getMyOrder());
 			db.addParam(step.isResolved());
+			db.addParam(step.isEnableEscalation() ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse());
+			if(step.isEnableEscalation()) {
+    			db.addParam(step.getEscalationAction());
+    			db.addParam(step.getEscalationTime());
+			}
+			else {
+			    db.addParam((Object)null);
+			    db.addParam(0);
+			}
 			db.loadResult();
 		} else {
 			db.setSQL(sql.UPDATE_STEP);
@@ -1003,6 +1015,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.getMyOrder());
 			db.addParam(step.isResolved());
 			db.addParam(step.getId());
+			db.addParam(step.isEnableEscalation() ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse());
+			if(step.isEnableEscalation()) {
+                db.addParam(step.getEscalationAction());
+                db.addParam(step.getEscalationTime());
+            }
+            else {
+                db.addParam((Object)null);
+                db.addParam(0);
+            }
 			db.loadResult();
 		}
 		cache.remove(step);
