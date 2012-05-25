@@ -1,14 +1,12 @@
-
 <%@page import="java.util.regex.Matcher"%>
 <%@page import="java.util.regex.Pattern"%>
-<%@page import="com.dotmarketing.exception.DotDataException"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@ include file="/html/common/init.jsp"%>
-<%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+
 <%
 
 	String regex = Config.getStringProperty("TAIL_LOG_FILE_REGEX");
@@ -51,8 +49,6 @@
 
 	
 %>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <%request.setAttribute("popup", "true"); %>
 <%@ include file="/html/common/top_inc.jsp" %>
@@ -71,18 +67,27 @@
 		margin-bottom:30px;
 		height:80%;
 		width:94%;
-		position: absolute;
+		position: relative;
 		top: 40px;; 
 	    left: 3%; 
 	}
 	#headerContainer{
-		position: absolute;
+		position: relative;
 		width:94%;
 	   	left: 3%; 
 		border:0px solid silver;
 		padding-top:10px;
 		padding-left:10px;
 	}
+    #logManagerContainer {
+        margin-top:10px;
+        margin-bottom:30px;
+        height:80%;
+        width:94%;
+        position: relative;
+        top: 40px;;
+        left: 3%;
+    }
 	
 	#popMeUp{
 		float:right;
@@ -107,6 +112,7 @@
 	}
 
 	dojo.ready(function(){
+
 		if(self != top){
 			dojo.style(dojo.byId("popMeUp"), "display", "block");
 		}
@@ -117,10 +123,7 @@
 		<%}%>
 		
 	});
-	
-	
-	
-	
+
 </script>
 
 
@@ -148,10 +151,156 @@
 	<div id="tailContainer">
 		<iframe id="tailingFrame" src="/html/blank.jsp"></iframe>
 	</div>
-	
 
-</body>
+    <script type="text/javascript">
 
+        dojo.ready( function () {
 
+            //Find and load our current logs...
+            getCurrentLogs();
 
-</html>
+        } );
+
+        function checkUncheck () {
+
+            var x = dijit.byId( "checkAllCkBx" ).checked;
+            dojo.query( ".taskCheckBox" ).forEach( function ( node ) {
+                node.checked = x;
+            } );
+
+        }
+
+        /**
+         * Will search for all the current logs and it will populate the table with those logs details
+         */
+        function getCurrentLogs () {
+
+            var xhrArgs = {
+
+                url:"/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.LogConsoleAjaxAction/cmd/getLogs/",
+
+                handleAs:"json",
+                handle:function ( data, ioArgs ) {
+
+                    if ( data.response == "error" ) {
+                        showDotCMSSystemMessage( data.message, true );
+                    } else {
+                        //If everything its ok lets populate the table with the returned logs details
+                        populateTable( data.logs );
+                    }
+                }
+            };
+            dojo.xhrPost( xhrArgs );
+        }
+
+        /**
+         * Will enable/disable the selected logs
+         */
+        function enableDisableLogs () {
+
+            //Find the list of checked logs details
+            var selectedLogs = "";
+            dojo.query( ".taskCheckBox" ).forEach( function ( node ) {
+                if ( node.checked ) {
+                    selectedLogs += node.value + ",";
+                }
+            } );
+
+            var xhrArgs = {
+
+                url:"/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.LogConsoleAjaxAction/cmd/enabledDisabledLogs/selection/" + selectedLogs,
+
+                handleAs:"json",
+                handle:function ( data, ioArgs ) {
+
+                    if ( data.response == "error" ) {
+                        showDotCMSSystemMessage( data.message, true );
+                    } else {
+                        //If everything its ok lets populate the table with the returned logs details
+                        populateTable( data.logs );
+                    }
+                }
+            };
+            dojo.xhrPost( xhrArgs );
+        }
+
+        /**
+         * Populate the logs table with a given logs details array
+         * @param logsData logs details array
+         */
+        var populateTable = function ( logsData ) {
+
+            //First we need to remove the old rows
+            var currentItems = dojo.query( ".logsTableRow" );
+            if ( currentItems.length ) {
+                for ( i = 0; i < currentItems.length; i++ ) {
+                    dojo.destroy( currentItems[i] );
+                }
+            }
+
+            //Now lets add the new ones
+            for ( i = 0; i < logsData.length; i++ ) {
+
+                var logDetail = logsData[i];
+
+                var name = logDetail.name;
+                var enabled = logDetail.enabled;
+                var description = logDetail.description;
+
+                //Creating the html code....
+                var tdCheckbox = '<input name="logs" class="taskCheckBox" dojoType="dijit.form.CheckBox" type="checkbox" name="logs" value="' + name + '" id="' + name + '" />';
+                var tdStatus;
+                if ( enabled == 1 ) {
+                    tdStatus = '<td><span class="liveIcon"></span></td>';
+                } else {
+                    tdStatus = '<td><span class="archivedIcon"></span></td>';
+                }
+                var tdName = '<td>' + name + '</td>';
+                var tdDescription = '<td><strong>' + description + '</strong></td>';
+
+                //And building the node...
+                var tableNode = dojo.byId( "logsTable" );
+                var headerNode = dojo.byId( "logsTableHeader" );
+                var newTr = dojo.create( "tr", {
+                    innerHTML:tdCheckbox + tdStatus + tdName + tdDescription,
+                    className:"logsTableRow",
+                    id:"tr-" + name
+                }, tableNode );
+            }
+
+        };
+
+    </script>
+
+    <div id="logManagerContainer">
+
+        <div class="portlet-wrapper">
+            <div>
+                <%= LanguageUtil.get(pageContext, "LOG_Manager") %>
+                <hr/>
+            </div>
+            <div>
+                <div id="search" title="<%= LanguageUtil.get(pageContext, "LOG_activity") %>" >
+
+                    <div>
+
+                        <div style="margin-left: 225px;margin-right: 225px">
+                            <table class="listingTable" id="logsTable">
+                                <tr id="logsTableHeader">
+                                    <th><input width="5%" type="checkbox" dojoType="dijit.form.CheckBox" id="checkAllCkBx" value="true" onClick="checkUncheck()" /></th>
+                                    <th nowrap="nowrap" width="5%" style="text-align:center;">Status</th>
+                                    <th nowrap="nowrap" width="32%" style="text-align:center;">Log Name</th>
+                                    <th nowrap="nowrap" width="58%" style="text-align:center;">Log Description</th>
+                                </tr>
+                            </table>
+                        </div>
+
+                    </div>
+                    <div>&nbsp;</div>
+                    <div class="buttonRow">
+                        <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="enableDisableLogs()"> <%= LanguageUtil.get(pageContext, "LOG_button") %> </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
