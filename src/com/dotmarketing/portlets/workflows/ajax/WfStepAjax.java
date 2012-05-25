@@ -52,6 +52,16 @@ public class WfStepAjax extends WfBaseAction {
 				writeError(response, "Cannot-edit-step");
 				return;
 			}
+			if(enableEscalation) {
+			    step.setEnableEscalation(true);
+			    step.setEscalationAction(escalationAction);
+			    step.setEscalationTime(Integer.parseInt(escalationTime));
+			}
+			else {
+			    step.setEnableEscalation(false);
+			    step.setEscalationAction(null);
+			    step.setEscalationTime(0);
+			}
 			step.setName(stepName);
 			step.setResolved(stepResolved);
 			order = step.getMyOrder();

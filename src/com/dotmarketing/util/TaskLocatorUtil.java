@@ -52,6 +52,7 @@ import com.dotmarketing.startup.runonce.Task00855FixRenameFolder;
 import com.dotmarketing.startup.runonce.Task00860ExtendServerIdsMSSQL;
 import com.dotmarketing.startup.runonce.Task00865AddTimestampToVersionTables;
 import com.dotmarketing.startup.runonce.Task00905FixAddFolderAfterDelete;
+import com.dotmarketing.startup.runonce.Task00910AddEscalationFields;
 
 public class TaskLocatorUtil {
 
@@ -105,6 +106,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00865AddTimestampToVersionTables.class);
 		ret.add(Task00900CreateLogConsoleTable.class);
 		ret.add(Task00905FixAddFolderAfterDelete.class);
+		ret.add(Task00910AddEscalationFields.class);
 		return ret;
 	}
 
