@@ -18,8 +18,12 @@
 	List<WorkflowAction> actions = wapi.findActions(step, APILocator.getUserAPI().getSystemUser());
 
 %>
-
-<div dojoType="dijit.form.Form" id="addEditStepForm" jsId="addEditStepForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax" method="POST">
+<style type="text/css">
+<%= step.isEnableEscalation() ? "#stepEditDia{height:350px;} #stepEditDia .escalation-row{display:table-row;}" : "" %>
+</style>
+<div dojoType="dijit.form.Form" id="addEditStepForm" jsId="addEditStepForm" 
+      encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax" 
+      method="POST">
 	
 	<!-- START Listing Results -->
 	<table class="listingTable tableNintyPercent" style="width:90%">
@@ -60,14 +64,16 @@
 			<tr>
 			    <td align="right"><%=LanguageUtil.get(pageContext, "Escalation-Enable")%>:</td>
 			    <td><input type="checkbox" name="enableEscalation" onChange="edit_step_toggleEscalation()"
-                    id="enableEscalation" dojoType="dijit.form.CheckBox"/>
+                    id="enableEscalation" dojoType="dijit.form.CheckBox"  
+                    <%=step.isEnableEscalation() ? "checked='true'" : "" %>/>
 			    </td>
 			</tr>
 			<tr class="escalation-row">
 			    <td align="right"><%=LanguageUtil.get(pageContext, "Escalation-Action")%>:</td>
 			    <td><select dojoType="dijit.form.FilteringSelect" id="escalationAction" name="escalationAction">
 			           <% for(WorkflowAction wa : actions) {%>
-			                <option value="<%=UtilMethods.webifyString(wa.getId())%>">
+			                <option value="<%=UtilMethods.webifyString(wa.getId())%>" 
+			                    <%= wa.getId().equals(step.getEscalationAction()) ? "selected='true'" : "" %>>
 			                    <%=UtilMethods.webifyString(wa.getName()) %>
 			                </option>
 			           <% }%>
@@ -80,7 +86,7 @@
                    <input type="text" onchange="showExpirationTime()" dojoType="dijit.form.NumberTextBox" 
                           name="escalationTime" constraints="{min:0,max:30758400,places:0}"  
                           id="escalationTime" 
-                          value="" 
+                          value="<%= step.isEnableEscalation() ? step.getEscalationTime() : 0 %>" 
                           style="width:80px" />   (sec)
                    <br/><span id="showExpirationTime">&nbsp;</span>
                 </td>
