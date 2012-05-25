@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 
+import com.dotmarketing.logConsole.model.LogMapperRow;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.persister.AbstractEntityPersister;
 
@@ -83,6 +84,7 @@ public class ImportExportUtil {
     private File userXML;
     private File rolesLayoutsXML;
     private File layoutsPortletsXML;
+    private File logMapperRowXML;
     private List<File> dashboardUserPreferencesXMLs = new ArrayList<File>();
     private List<File> analyticSummary404XMLs = new ArrayList<File>();
     private List<File> analyticSummaryRefererXMLs = new ArrayList<File>();
@@ -261,6 +263,8 @@ public class ImportExportUtil {
                 usersRolesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.business.PortletsLayouts_")){
                 layoutsPortletsXML = new File(_importFile.getPath());
+            }else if(_importFile.getName().endsWith( "LogsMappers.xml" )){
+                logMapperRowXML = new File(_importFile.getPath());
             }else if(_importFile.getName().contains("com.dotmarketing.beans.Tree_")){
                 treeXMLs.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.business.Role_")){
@@ -418,6 +422,11 @@ public class ImportExportUtil {
             doXMLFileImport(layoutsPortletsXML, out);
         } catch (Exception e) {
             Logger.error(this, "Unable to load " + layoutsPortletsXML.getName() + " : " + e.getMessage(), e);
+        }
+        try {
+            doXMLFileImport( logMapperRowXML, out );
+        } catch ( Exception e ) {
+            Logger.error( this, "Unable to load " + logMapperRowXML.getName() + " : " + e.getMessage(), e );
         }
         try{
             doXMLFileImport(rolesLayoutsXML, out);
@@ -1058,6 +1067,7 @@ public class ImportExportUtil {
             boolean counter = false;
             boolean image = false;
             boolean portlet = false;
+            boolean logsMappers = false;
             boolean portletpreferences = false;
             boolean address = false;
             boolean pollschoice = false;
@@ -1081,6 +1091,8 @@ public class ImportExportUtil {
                 image = true;
             }else if(_className.equals("Portlet")){
                 portlet = true;
+            }else if(_className.equals("LogsMappers")){
+                logsMappers = true;
             }else if(_className.equals("Portletpreferences")){
                 portletpreferences = true;
             }else if(_className.equals("Pollschoice")){
@@ -1273,6 +1285,16 @@ public class ImportExportUtil {
                     dc.addParam(dcResults.get("companyid"));
                     dc.addParam(dcResults.get("defaultpreferences"));
                     dc.addParam(dcResults.get("roles"));
+                    dc.getResults();
+                }
+            }else if(logsMappers){
+                for ( int j = 0; j < l.size(); j++ ) {
+                    LogMapperRow logMapperRow = ( LogMapperRow ) l.get( j );
+                    DotConnect dc = new DotConnect();
+                    dc.setSQL( "insert into log_mapper values (?,?,?)" );
+                    dc.addParam( logMapperRow.getEnabled() );
+                    dc.addParam( logMapperRow.getLog_name() );
+                    dc.addParam( logMapperRow.getDescription() );
                     dc.getResults();
                 }
             }else if(portletpreferences){
