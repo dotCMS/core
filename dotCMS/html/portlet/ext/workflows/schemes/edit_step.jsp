@@ -19,7 +19,7 @@
 
 %>
 <style type="text/css">
-<%= step.isEnableEscalation() ? "#stepEditDia{height:350px;} #stepEditDia .escalation-row{display:table-row;}" : "" %>
+<%= step.isEnableEscalation() ? "#stepEditDia{height:370px;} #stepEditDia .escalation-row{display:table-row;}" : "" %>
 </style>
 <div dojoType="dijit.form.Form" id="addEditStepForm" jsId="addEditStepForm" 
       encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax" 
@@ -81,14 +81,14 @@
 			    </td>
 			</tr>
 			<tr class="escalation-row">
-			    <td align="right"><%=LanguageUtil.get(pageContext, "Escalation-Time")%>:</td>
+			    <td align="right" width="40%"><%=LanguageUtil.get(pageContext, "Escalation-Time")%>:</td>
                 <td>
                    <input type="text" onchange="showExpirationTime()" dojoType="dijit.form.NumberTextBox" 
                           name="escalationTime" constraints="{min:0,max:30758400,places:0}"  
                           id="escalationTime" 
                           value="<%= step.isEnableEscalation() ? step.getEscalationTime() : 0 %>" 
-                          style="width:80px" />   (sec)
-                   <br/><span id="showExpirationTime">&nbsp;</span>
+                          style="width:80px" />
+                          <span id="showExpirationTime" style="float: left;">&nbsp;</span>
                 </td>
 			</tr>
 		</table>

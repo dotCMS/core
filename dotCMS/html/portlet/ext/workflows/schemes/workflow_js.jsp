@@ -461,12 +461,12 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 function edit_step_toggleEscalation() {
     var dialogHeight=dojo.style(dojo.byId("stepEditDia"),'height');
     if(dijit.byId("enableEscalation").checked) {
-        var newHeight=dialogHeight+100;
+        var newHeight=dialogHeight+120;
         dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
         dojo.query("#stepEditDia .escalation-row").style("display","table-row")
     }
     else {
-        var newHeight=dialogHeight-100;
+        var newHeight=dialogHeight-120;
         dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
         dojo.query("#stepEditDia .escalation-row").style("display","none")
         
