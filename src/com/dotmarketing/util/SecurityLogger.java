@@ -4,20 +4,21 @@ import com.dotmarketing.logConsole.model.LogMapper;
 
 
 public class SecurityLogger {
-	
-	private static String filename = "dotcms-security.log";
 
-	public static void logInfo(Class cl, String msg) {
+    private static String filename = "dotcms-security.log";
 
-		if(LogMapper.getInstance().isLogEnabled(filename)) {
-			Logger.info(cl, cl.toString() + " : " + msg);
-		}
-	}
+    public static void logInfo ( Class cl, String msg ) {
 
-	public static void logDebug(Class cl, String msg) {
-		if(LogMapper.getInstance().isLogEnabled(filename)) {
-			Logger.debug(cl, cl.toString() + " : " + msg);
-		}
-	}
+        if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
+            Logger.info( cl, cl.toString() + " : " + msg );
+        }
+    }
+
+    public static void logDebug ( Class cl, String msg ) {
+
+        if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
+            Logger.debug( cl, cl.toString() + " : " + msg );
+        }
+    }
 
 }
