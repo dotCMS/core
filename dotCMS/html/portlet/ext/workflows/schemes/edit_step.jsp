@@ -88,7 +88,7 @@
                           id="escalationTime" 
                           value="<%= step.isEnableEscalation() ? step.getEscalationTime() : 0 %>" 
                           style="width:80px" />
-                          <span id="showExpirationTime" style="float: left;">&nbsp;</span>
+                          <br/><span id="showExpirationTime" style="float: left;">&nbsp;</span>
                 </td>
 			</tr>
 		</table>
