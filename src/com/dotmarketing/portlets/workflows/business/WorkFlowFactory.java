@@ -117,4 +117,6 @@ public interface WorkFlowFactory {
 
 	public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException;
 	// christian escalation
+
+    public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException;
 }

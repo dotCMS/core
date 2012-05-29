@@ -1124,4 +1124,19 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 	// christian escalation
+
+    @Override
+    public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException {
+        final DotConnect db = new DotConnect();
+        List<WorkflowTask> list=new ArrayList<WorkflowTask>();
+        try {
+
+            db.setSQL(sql.SELECT_EXPIRED_TASKS);
+            List<Map<String,Object>> results=db.loadResults();
+            
+        } catch (final Exception e) {
+            Logger.error(this, e.getMessage(), e);
+        }        
+        return list;
+    }
 }

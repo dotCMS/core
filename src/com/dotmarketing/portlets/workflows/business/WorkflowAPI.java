@@ -245,4 +245,14 @@ public interface WorkflowAPI {
 	 */
 
     public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException;
+    
+    /**
+     * finds tasks that have been in a step (with escalation enabled) for more time that the 
+     * configured
+     * 
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException;
 }
