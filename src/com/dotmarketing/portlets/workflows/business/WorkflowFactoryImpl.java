@@ -1130,10 +1130,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final DotConnect db = new DotConnect();
         List<WorkflowTask> list=new ArrayList<WorkflowTask>();
         try {
-
             db.setSQL(sql.SELECT_EXPIRED_TASKS);
             List<Map<String,Object>> results=db.loadResults();
-            
+            for (Map<String, Object> map : results) {
+                String taskId=(String)map.get("id");
+                WorkflowTask task=findWorkFlowTaskById(taskId);
+                list.add(task);
+            }
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
         }        
