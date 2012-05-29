@@ -33,7 +33,6 @@ public class WidgetResource extends WebResource {
 	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotDataException, DotSecurityException, IOException {
 
 		Map<String, String> params = parsePath(path);
-		String renderStr = params.get(RENDER);
 		String id = params.get(ID);
 		String username = params.get(USER);
 		String password = params.get(PASSWORD);
@@ -54,24 +53,24 @@ public class WidgetResource extends WebResource {
 
 		if (contStructure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) {
 			StringWriter writer = new StringWriter();
-			String widgetCode = "";
+			StringBuilder widgetExecuteCode = new StringBuilder();
 
 
 			org.apache.velocity.context.Context context = VelocityUtil.getWebContext(request, response);
 
 			for(String key : widget.getMap().keySet()){
 				context.put(key, widget.getMap().get(key));
-				if(key.equals("code")) {
-					widgetCode = (String) widget.getMap().get(key);
-				}
 			}
 
-			if(UtilMethods.isSet(renderStr) && renderStr.equalsIgnoreCase("true")) {
-				VelocityUtil.getEngine().evaluate(context, writer, "", widgetCode);
-				result = writer.toString();
-			} else {
-				result = widgetCode;
-			}
+			Field field = contStructure.getFieldVar("widgetPreexecute");
+			widgetExecuteCode.append(field.getValues().trim() + "\n");
+
+			field = contStructure.getFieldVar("widgetCode");
+			widgetExecuteCode.append(field.getValues().trim() + "\n");
+
+			VelocityUtil.getEngine().evaluate(context, writer, "", widgetExecuteCode.toString());
+			result = writer.toString();
+
 		}
 
 		return result;
