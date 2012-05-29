@@ -248,7 +248,7 @@
                 var description = logDetail.description;
 
                 //Creating the html code....
-                var tdCheckbox = '<input name="logs" class="taskCheckBox" dojoType="dijit.form.CheckBox" type="checkbox" name="logs" value="' + name + '" id="' + name + '" />';
+                var tdCheckbox = '<td><input name="logs" class="taskCheckBox" dojoType="dijit.form.CheckBox" type="checkbox" name="logs" value="' + name + '" id="' + name + '" /></td>';
                 var tdStatus;
                 if ( enabled == 1 ) {
                     tdStatus = '<td><span class="liveIcon"></span></td>';
