@@ -792,18 +792,25 @@ function hideAllThreads() {
 }
 
 function getSysInfo() {
-	dwr.util.setValue("sysInfo", "", { escapeHtml:false });
-	dojo.query('#sysInfoProgress').style({display:"block"});
+
+    var tableId = "sysInfo";
+    var rowsClass = tableId + "_row";
+
+    //Cleaning the table contents
+    cleanTable(rowsClass);
+
+    dojo.query('#sysInfoProgress').style({display:"block"});
     ThreadMonitorTool.getSysProps({
         callback:function(data) {
+
         	dojo.query('#sysInfoProgress').style({display:"none"});
-            var tempString = "";
-            
+
             for(var dat in data){
-                tempString += "<tr><td>"+ dat +"</td><td> " + data[dat] +"</td></tr>";
+                var rowData = "<td>"+ dat +"</td><td> " + data[dat] +"</td>";
+                //Creating the row and adding it to the table
+                createRow(tableId, rowData, rowsClass, null);
             }
-            
-            dwr.util.setValue("sysInfo", tempString, { escapeHtml:false });             
+
         },
         errorHandler:function(message) {
         	dojo.query('#sysInfoProgress').style({display:"none"});
@@ -811,6 +818,43 @@ function getSysInfo() {
         }
     });
 }
+
+/**
+* Remove all the elements with a given class name
+* @param rowsClass
+ */
+var cleanTable = function (rowsClass) {
+
+    //First we need to remove the old rows
+    var currentItems = dojo.query( "." + rowsClass );
+    if ( currentItems.length ) {
+        for ( i = 0; i < currentItems.length; i++ ) {
+            dojo.destroy( currentItems[i] );
+        }
+    }
+};
+
+/**
+* Creates a tr node and add it to a table
+* @param tableId
+* @param rowInnerHtml inner html for the tr node
+* @param className
+* @param id
+ */
+var createRow = function (tableId, rowInnerHtml, className, id) {
+
+    if (id == null) {
+        id = "";
+    }
+
+    //And building the node...
+    var tableNode = dojo.byId( tableId );
+    var newTr = dojo.create( "tr", {
+        innerHTML:rowInnerHtml,
+        className:className,
+        id:id
+    }, tableNode );
+};
 
 function killSession(sessionId) {
 	dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"none",visibility:"hidden"});
@@ -837,17 +881,24 @@ function loadUsers() {
 	var oldButtons=dojo.query("#sessionList .killsessionButton");
 	for(var i=0;i<oldButtons.length;i++)
 		dijit.byNode(oldButtons[i]).destroy();
+
+    var tableId = "sessionList";
+    var rowsClass = tableId + "_row";
+
+    //Cleaning the table contents
+    cleanTable(rowsClass);
 	
-	dwr.util.setValue("sessionList", "<img src='/html/images/icons/round-progress-bar.gif'/>", { escapeHtml:false });
-	
+    dojo.query('#loggedUsersProgress').style({display:"block"});
 	UserSessionAjax.getSessionList({
 		callback: function(sessionList) {
+
+            dojo.query('#loggedUsersProgress').style({display:"none"});
+
 			if(sessionList.size() > 0) {
-				var html="";
-				for(var i=0;i<sessionList.size();i++) {
+
+                for(var i=0;i<sessionList.size();i++) {
 					var session=sessionList[i];
-					html+="<tr> ";
-					html+="<td>"+session.sessionId+"</td> ";
+					var html ="<td>"+session.sessionId+"</td> ";
 					html+="<td>"+session.address+"</td> ";
 					html+="<td>"+session.userId+"</td> ";
 					html+="<td>"+session.userEmail+"</td> ";
@@ -856,17 +907,19 @@ function loadUsers() {
 					html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
 					html+=" <button id='invalidateButtonNode-"+session.sessionId+"' type='button'> ";
 	                html+=" </button></td>";
-					html+="</tr>";
+
+                    //Creating the row and adding it to the table
+                    createRow(tableId, html, rowsClass, null)
 				}
-				dwr.util.setValue("sessionList", html, { escapeHtml:false });
+
 				for(var i=0;i<sessionList.size();i++) {
                     var session=sessionList[i];
                     new dijit.form.Button({
                     	id:"invalidateButton-"+session.sessionId,
                         label: "<%= LanguageUtil.get(pageContext,"logged-users-tab-killsession") %>",
                         iconClass: "deleteIcon",
+                        "class": "killsessionButton",
                         sid : session.sessionId,
-                        class: "killsessionButton",
                         onClick: function(){
                             killSession(this.sid);
                         }
@@ -1289,14 +1342,16 @@ function loadUsers() {
 	</div>
     
     <div id="threads" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "threads-tab-title") %>" >
+
         <table class="listingTable shadowBox" style="width:800px !important;">
-        <thead>
-            <th>System information</th>
-            <th>Value</th>
-        </thead>
-        <tbody id="sysInfo">
-        </tbody>
+            <thead>
+                <th>System information</th>
+                <th>Value</th>
+            </thead>
+            <tbody id="sysInfo">
+            </tbody>
         </table>
+
         <img style="display:none;" id="sysInfoProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <br/>
         <div dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 50px;">
@@ -1335,6 +1390,8 @@ function loadUsers() {
         <tbody id="sessionList">
         </tbody>
         </table>
+
+        <img style="display:none;" id="loggedUsersProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
 </div>	
 	
