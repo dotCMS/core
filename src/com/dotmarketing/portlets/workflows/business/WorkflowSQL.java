@@ -80,5 +80,5 @@ abstract class WorkflowSQL {
     protected static String RETRIEVE_TASK = "select  * from workflow_history where workflowtask_id = ? order by creation_date desc";
     // chri
 
-
+    protected static String SELECT_EXPIRED_TASKS = "";
 }
