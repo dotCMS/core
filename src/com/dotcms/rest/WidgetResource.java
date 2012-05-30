@@ -13,9 +13,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -30,14 +31,13 @@ public class WidgetResource extends WebResource {
 	@GET
 	@Path("/{path:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotDataException, DotSecurityException, IOException {
+	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws ResourceNotFoundException, ParseErrorException, Exception {
 
 		Map<String, String> params = parsePath(path);
 		String id = params.get(ID);
 		String username = params.get(USER);
 		String password = params.get(PASSWORD);
 		User user = null;
-		String result = null;
 
 		/* Authenticate the User if passed */
 
@@ -49,10 +49,17 @@ public class WidgetResource extends WebResource {
 
 		Contentlet widget = APILocator.getContentletAPI().find(id, user, true);
 
+		return parseWidget(request, response, widget);
+
+	}
+
+	public static String parseWidget(HttpServletRequest request, HttpServletResponse response, Contentlet widget) throws IOException {
 		Structure contStructure = widget.getStructure();
+		String result = "";
 
 		if (contStructure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) {
-			StringWriter writer = new StringWriter();
+			StringWriter firstEval = new StringWriter();
+			StringWriter secondEval = new StringWriter();
 			StringBuilder widgetExecuteCode = new StringBuilder();
 
 
@@ -62,19 +69,18 @@ public class WidgetResource extends WebResource {
 				context.put(key, widget.getMap().get(key));
 			}
 
-			Field field = contStructure.getFieldVar("widgetPreexecute");
+  			Field field = contStructure.getFieldVar("widgetPreexecute");
 			widgetExecuteCode.append(field.getValues().trim() + "\n");
 
 			field = contStructure.getFieldVar("widgetCode");
 			widgetExecuteCode.append(field.getValues().trim() + "\n");
 
-			VelocityUtil.getEngine().evaluate(context, writer, "", widgetExecuteCode.toString());
-			result = writer.toString();
+			VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
+			VelocityUtil.getEngine().evaluate(context, secondEval, "", firstEval.toString());
+			result = secondEval.toString();
 
 		}
-
 		return result;
-
 	}
 
 }
