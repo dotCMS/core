@@ -28,6 +28,7 @@ import org.apache.lucene.search.BooleanQuery;
 import org.quartz.SchedulerException;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -209,7 +210,9 @@ public class InitServlet extends HttpServlet {
 			throw new ServletException("Unable to initialize system folder", e1);
 		}
 		
-		
+		if(Config.getBooleanProperty("ESCALATION_ENABLE",false)) {
+		    EscalationThread.getInstace().start();
+		}
 
         /*
          * SHOULD BE LAST THING THAT HAPPENS
