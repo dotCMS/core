@@ -559,6 +559,18 @@
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
     </servlet>
+    <!-- REST -->
+    <servlet>
+		<servlet-name>RESTAPI</servlet-name>
+		<servlet-class>
+		  com.sun.jersey.spi.container.servlet.ServletContainer
+		</servlet-class>
+		<init-param>
+		  <param-name>com.sun.jersey.config.property.packages</param-name>
+		  <param-value>com.dotcms.rest</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
 	<!--END DOTMARKETING SERVLETS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
@@ -824,6 +836,10 @@
 	<servlet-mapping>
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<url-pattern>/JSONTags/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>RESTAPI</servlet-name>
+		<url-pattern>/api/*</url-pattern>
 	</servlet-mapping>
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
