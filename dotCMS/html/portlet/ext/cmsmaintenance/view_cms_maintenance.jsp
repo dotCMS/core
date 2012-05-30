@@ -792,18 +792,25 @@ function hideAllThreads() {
 }
 
 function getSysInfo() {
-	dwr.util.setValue("sysInfo", "", { escapeHtml:false });
-	dojo.query('#sysInfoProgress').style({display:"block"});
+
+    var tableId = "sysInfo";
+    var rowsClass = tableId + "_row";
+
+    //Cleaning the table contents
+    cleanTable(rowsClass);
+
+    dojo.query('#sysInfoProgress').style({display:"block"});
     ThreadMonitorTool.getSysProps({
         callback:function(data) {
+
         	dojo.query('#sysInfoProgress').style({display:"none"});
-            var tempString = "";
-            
+
             for(var dat in data){
-                tempString += "<tr><td>"+ dat +"</td><td> " + data[dat] +"</td></tr>";
+                var rowData = "<td>"+ dat +"</td><td> " + data[dat] +"</td>";
+                //Creating the row and adding it to the table
+                createRow(tableId, rowData, rowsClass, null);
             }
-            
-            dwr.util.setValue("sysInfo", tempString, { escapeHtml:false });             
+
         },
         errorHandler:function(message) {
         	dojo.query('#sysInfoProgress').style({display:"none"});
@@ -811,6 +818,43 @@ function getSysInfo() {
         }
     });
 }
+
+/**
+* Remove all the elements with a given class name
+* @param rowsClass
+ */
+var cleanTable = function (rowsClass) {
+
+    //First we need to remove the old rows
+    var currentItems = dojo.query( "." + rowsClass );
+    if ( currentItems.length ) {
+        for ( i = 0; i < currentItems.length; i++ ) {
+            dojo.destroy( currentItems[i] );
+        }
+    }
+};
+
+/**
+* Creates a tr node and add it to a table
+* @param tableId
+* @param rowInnerHtml inner html for the tr node
+* @param className
+* @param id
+ */
+var createRow = function (tableId, rowInnerHtml, className, id) {
+
+    if (id == null) {
+        id = "";
+    }
+
+    //And building the node...
+    var tableNode = dojo.byId( tableId );
+    var newTr = dojo.create( "tr", {
+        innerHTML:rowInnerHtml,
+        className:className,
+        id:id
+    }, tableNode );
+};
 
 function killSession(sessionId) {
 	dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"none",visibility:"hidden"});
@@ -837,17 +881,24 @@ function loadUsers() {
 	var oldButtons=dojo.query("#sessionList .killsessionButton");
 	for(var i=0;i<oldButtons.length;i++)
 		dijit.byNode(oldButtons[i]).destroy();
+
+    var tableId = "sessionList";
+    var rowsClass = tableId + "_row";
+
+    //Cleaning the table contents
+    cleanTable(rowsClass);
 	
-	dwr.util.setValue("sessionList", "<img src='/html/images/icons/round-progress-bar.gif'/>", { escapeHtml:false });
-	
+    dojo.query('#loggedUsersProgress').style({display:"block"});
 	UserSessionAjax.getSessionList({
 		callback: function(sessionList) {
+
+            dojo.query('#loggedUsersProgress').style({display:"none"});
+
 			if(sessionList.size() > 0) {
-				var html="";
-				for(var i=0;i<sessionList.size();i++) {
+
+                for(var i=0;i<sessionList.size();i++) {
 					var session=sessionList[i];
-					html+="<tr> ";
-					html+="<td>"+session.sessionId+"</td> ";
+					var html ="<td>"+session.sessionId+"</td> ";
 					html+="<td>"+session.address+"</td> ";
 					html+="<td>"+session.userId+"</td> ";
 					html+="<td>"+session.userEmail+"</td> ";
@@ -856,17 +907,19 @@ function loadUsers() {
 					html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
 					html+=" <button id='invalidateButtonNode-"+session.sessionId+"' type='button'> ";
 	                html+=" </button></td>";
-					html+="</tr>";
+
+                    //Creating the row and adding it to the table
+                    createRow(tableId, html, rowsClass, null)
 				}
-				dwr.util.setValue("sessionList", html, { escapeHtml:false });
+
 				for(var i=0;i<sessionList.size();i++) {
                     var session=sessionList[i];
                     new dijit.form.Button({
                     	id:"invalidateButton-"+session.sessionId,
                         label: "<%= LanguageUtil.get(pageContext,"logged-users-tab-killsession") %>",
                         iconClass: "deleteIcon",
+                        "class": "killsessionButton",
                         sid : session.sessionId,
-                        class: "killsessionButton",
                         onClick: function(){
                             killSession(this.sid);
                         }
@@ -896,449 +949,466 @@ function loadUsers() {
 }
 
 </style>
-<html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
-<input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>"> 
-<input type="hidden" name="referer" value="<%=referer%>"> 
-<input type="hidden" name="cacheName" id="cacheName">
-<input type="hidden" name="dataOnly" id="dataOnly">
-<input type="hidden" name="cmd" value="">
-<input type="hidden" name="shards" id="numberOfShards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
+
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-	<!-- START Cache TAB -->
-	<div id="cache" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Cache") %>" >
+    <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
+        <input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>">
+        <input type="hidden" name="referer" value="<%=referer%>">
+        <input type="hidden" name="cacheName" id="cacheName">
+        <input type="hidden" name="dataOnly" id="dataOnly">
+        <input type="hidden" name="cmd" value="">
+        <input type="hidden" name="shards" id="numberOfShards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
 
-		
+        <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+        <!-- START Cache TAB -->
+        <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+        <div id="cache" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Cache") %>" >
 
-		
-		
-		
-		
-		<table class="listingTable shadowBox">
-			<tr>
-				<th colspan="2"><%= LanguageUtil.get(pageContext,"Cache") %></th>
-				<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-			</tr>
-			<tr>
-				<td colspan="2">&nbsp;</td>
-				<td align="center">
-			        <select name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
-						<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Flush-All-Caches") %></option>
-						<% for(Object c : CacheLocator.getCacheIndexes()){ %>
-							<option><%= c.toString() %></option>	
-						<% } %>
-					</select>
-					<button dojoType="dijit.form.Button" onClick="submitform('flushCache');" iconClass="deleteIcon">
-		             <%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>
-		       		</button>
-		        </td>
-			</tr>
-			<tr>
-				<th colspan="2"><%= LanguageUtil.get(pageContext,"Menus-File-Store") %></th>
-				<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-			</tr>
-			<tr>
-				<td colspan="2">&nbsp;</td>
-				<td align="center">
-		            <button dojoType="dijit.form.Button"  onClick="submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES%>');" iconClass="deleteIcon">
-		               <%= LanguageUtil.get(pageContext,"Delete-Menu-Cache") %>
-		            </button>
-		        </td>
-			</tr>
-			<tr>
-				<th colspan="3"><%= LanguageUtil.get(pageContext,"Cache-Stats") %></th>
-			</tr>
-			<tr>
-				<td colspan="3">
-					<div class="buttonRow" style="text-align: right">
-		            <label for="showSize">
-		            <%= LanguageUtil.get(pageContext,"Show-Memory-Size") %>: <input type="checkbox" value="true" dojoType="dijit.form.CheckBox" name="showSize" id="showSize" />
-		            </label>
-		            <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon">
-		               <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
-		            </button>
-					</div>
-					<div id="cacheStatsCp" dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 100px;">
-						
-						
-		<div style="padding-bottom:30px;">
-	
-	
-			<table class="listingTable shadowBox" style="width:400px">
-				<tr>
-					<th><%= LanguageUtil.get(pageContext, "Total-Memory-Available") %></th>
-					<td align="right"><%=UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory())%> </td>
-				</tr>
-				<tr>
-					<th><%= LanguageUtil.get(pageContext, "Memory-Allocated") %></th>
-					<td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory())%></td>
-				</tr>
-				<tr>
-					<th><%= LanguageUtil.get(pageContext, "Filled-Memory") %></th>
-					<td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())%></td>
-				</tr>
-				<tr>
-					<th><%= LanguageUtil.get(pageContext, "Free-Memory") %></th>
-					<td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory())%></td>
-				</tr>
-			</table>
-			<div class="clear"></div>
-		</div>
-		
-						
-						<a href="#" onclick="refreshCache()"><%= LanguageUtil.get(pageContext,"Refresh-Stats") %></a>
-					
+            <table class="listingTable shadowBox">
+                <tr>
+                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Cache") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td colspan="2">&nbsp;</td>
+                    <td align="center">
+                        <select name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
+                            <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Flush-All-Caches") %></option>
+                            <% for(Object c : CacheLocator.getCacheIndexes()){ %>
+                                <option><%= c.toString() %></option>
+                            <% } %>
+                        </select>
+                        <button dojoType="dijit.form.Button" onClick="submitform('flushCache');" iconClass="deleteIcon">
+                         <%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <th colspan="2"><%= LanguageUtil.get(pageContext,"Menus-File-Store") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td colspan="2">&nbsp;</td>
+                    <td align="center">
+                        <button dojoType="dijit.form.Button"  onClick="submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES%>');" iconClass="deleteIcon">
+                           <%= LanguageUtil.get(pageContext,"Delete-Menu-Cache") %>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <th colspan="3"><%= LanguageUtil.get(pageContext,"Cache-Stats") %></th>
+                </tr>
+                <tr>
+                    <td colspan="3">
+                        <div class="buttonRow" style="text-align: right">
+                        <label for="showSize">
+                        <%= LanguageUtil.get(pageContext,"Show-Memory-Size") %>: <input type="checkbox" value="true" dojoType="dijit.form.CheckBox" name="showSize" id="showSize" />
+                        </label>
+                        <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon">
+                           <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
+                        </button>
+                        </div>
+                        <div id="cacheStatsCp" dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 100px;">
 
 
+                            <div style="padding-bottom:30px;">
 
-					</div>
+                                <table class="listingTable shadowBox" style="width:400px">
+                                    <tr>
+                                        <th><%= LanguageUtil.get( pageContext, "Total-Memory-Available" ) %>
+                                        </th>
+                                        <td align="right"><%=UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory() )%>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th><%= LanguageUtil.get( pageContext, "Memory-Allocated" ) %>
+                                        </th>
+                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() )%>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th><%= LanguageUtil.get( pageContext, "Filled-Memory" ) %>
+                                        </th>
+                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() )%>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th><%= LanguageUtil.get( pageContext, "Free-Memory" ) %>
+                                        </th>
+                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory() )%>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="clear"></div>
+                            </div>
 
+                            <a href="#" onclick="refreshCache()"><%= LanguageUtil.get(pageContext,"Refresh-Stats") %></a>
 
-				</td>
-			</tr>
-		</table>
-	</div>
-	
-	<!-- START Index TAB -->
-	<div dojoType="dojox.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Index") %>" >	
-		
-		<div class="indexActionsDiv" <%=(idxApi.isInFullReindex()) ? "style='display:none'" : "" %>>
-			<table class="listingTable">
-				<tr>
-					<th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
-				</tr>
-				<tr>
-					<td colspan="2" align="center">
-						<div id="currentIndexDirDiv"></div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<div id="lastIndexationDiv"></div>
+                        </div>
 
-							<%= LanguageUtil.get(pageContext,"Reindex") %>:
-							<select id="structure" dojoType="dijit.form.ComboBox" style="width:250px;" autocomplete="true" name="structure" onchange="indexStructureChanged();">
-								<option><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
-								<%
+                    </td>
+                </tr>
+            </table>
+        </div>
 
-									for(Structure structure : structs){%>
-									<option><%=structure.getVelocityVarName()%></option>
-								<%}%>
-							</select>
+        <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+        <!-- START Index TAB -->
+        <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+        <div dojoType="dojox.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Index") %>" >
 
-					</td>
-					<td style="text-align:center;white-space:nowrap;" width="350">
-			            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doFullReindex()">
-			                <%= LanguageUtil.get(pageContext,"Reindex") %>
-			            </button>
-			            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton" disabled="disabled">
-			                <%= LanguageUtil.get(pageContext,"Delete-Reindex-Structure") %>
-			            </button>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<%= LanguageUtil.get(pageContext,"Optimize-Index") %> (<%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> )
-					</td>
-					<td align="center">
-			        	<button dojoType="dijit.form.Button" id="idxShrinkBtn" iconClass="shrinkIcon" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
-			            	<%= LanguageUtil.get(pageContext,"Optimize-Index") %>
-						</button>
-			    	 </td>
-				</tr>
-			</table>
-		</div>
+            <div class="indexActionsDiv" <%=(idxApi.isInFullReindex()) ? "style='display:none'" : "" %>>
+                <table class="listingTable">
+                    <tr>
+                        <th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="center">
+                            <div id="currentIndexDirDiv"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div id="lastIndexationDiv"></div>
 
-		<!-- START Re-Index Progress Display -->
-		<div id="reindexationInProgressDiv"  <%=(idxApi.isInFullReindex()) ? "" : "style='display:none'" %>>
-			<table class="listingTable">
-				<tr>
-					<th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
-				</tr>
-				<tr>
-					<td colspan="2" align="center">
-						<div>
-							<%= LanguageUtil.get(pageContext,"A-reindexation-process-is-in-progress") %>
-						</div>
-						<div id="indexationStartTimeDiv"></div>
-						<div id="newIndexDirPathDiv"></div>
-						<div style="width:200px" maximum="200" id="reindexProgressBar" progress="0" dojoType="dijit.ProgressBar"></div>
-						<div id="indexationProgressDiv"></div>
-					</div>
-					</td>
-				</tr>
-				<tr>
-					<td colspan="2" align="center">
-						<button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexing();">
-			                <%= LanguageUtil.get(pageContext,"Stop-Reindexation") %>
-			            </button>
-					</td>
-				</tr>
-			</table>
-		</div>
+                                <%= LanguageUtil.get(pageContext,"Reindex") %>:
+                                <select id="structure" dojoType="dijit.form.ComboBox" style="width:250px;" autocomplete="true" name="structure" onchange="indexStructureChanged();">
+                                    <option><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
+                                    <%
 
-		<div id="indexStatsCp"  dojoType="dijit.layout.ContentPane"></div>  
-		
-		
-	</div>			
-	
-	<!-- START Tools TAB -->
-	<div id="tools" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Tools") %>" >
-		<div style="height:20px">&nbsp;</div>
-		<table class="listingTable">
-			<tr>
-				<th><%= LanguageUtil.get(pageContext,"Import/Export-dotCMS-Content") %></th>
-				<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-			</tr>
-			<tr>
-				<td><%= LanguageUtil.get(pageContext,"Backup-to-Zip-file") %></td>
-				<td style="text-align:center;white-space:nowrap;">
-		            <button dojoType="dijit.form.Button" onClick="doCreateZipAjax('true');" iconClass="backupIcon">
-		               <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
-		            </button>
-		            <button dojoType="dijit.form.Button" onClick="doCreateZipAjax('false');" iconClass="backupIcon">
-		              <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
-		            </button>
-				</td>
-			</tr>
-			<tr>
-				<td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
-				<td style="text-align:center;white-space:nowrap;">
-		            <button dojoType="dijit.form.Button" onClick="doDownloadZip('true');" iconClass="downloadIcon">
-		               <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
-		            </button>
-		            
-		            <button dojoType="dijit.form.Button" onClick="doDownloadZip('false');" iconClass="downloadIcon">
-		              <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
-		            </button>
-				</td>
-			</tr>
-		</table>
-		
-		<div style="height:20px">&nbsp;</div>			
-		
-		<table class="listingTable">
-			<tr>
-				<th><%= LanguageUtil.get(pageContext,"Search-And-Replace-Utility") %></th>
-				<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-			</tr>
-			<tr>
-				<td>
-					<p><%= LanguageUtil.get(pageContext,"This-utility-will-do-a-find-and-replace") %></p>
-					<%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>:
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext,"String-to-find") %>:</dt>
-						<dd><input type="text" name="searchString" id="searchString" size="50"></dd>
-						
-			    		<dt><%= LanguageUtil.get(pageContext,"Replace-with") %>:</dt>
-						<dd><input type="text" name="replaceString" id="replaceString" size="50"></dd>
-					</dl>
-				</td>
-				<td align="center" valing="middle">
-		            <button dojoType="dijit.form.Button" onclick="doReplace();" iconClass="reorderIcon">
-		               <%= LanguageUtil.get(pageContext,"Replace") %>
-		            </button>
-		        </td>
-			</tr>
-		</table>
-		
-		<div style="height:20px">&nbsp;</div>			
-		
-		<table class="listingTable">
-			<tr>
-				<th><%= LanguageUtil.get(pageContext,"Fix-Assets-Inconsistencies") %></th>
-				<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-			</tr>
-			<tr>
-				<td>
-					<p><%= LanguageUtil.get(pageContext,"This-utility-will-fix-assets-inconsistencies") %></p>
-					<p style="color:#ff0000;"><%= LanguageUtil.get(pageContext,"It's-recommended-to-have-a-fresh") %></p>
-			    	<div align="center" id="fixAssetsMessage"></div>
-					<%= LanguageUtil.get(pageContext,"Fix-Assets-Inconsistencies") %>
-					<div align="center" id="fixAssetInfo"></div>
-					<div align="center" id="fixAssetTime"></div>
-				</td>
-				<td align="center">
-					<div id="fixAssetsButtonDiv">
-		                <button dojoType="dijit.form.Button" id="fixAssetsButton"  onClick="doFixAssetsInconsistencies();" iconClass="fixIcon">
-		                    <%= LanguageUtil.get(pageContext,"Execute") %>
-		                </button>
-					</div>
-				</td>
-			</tr>
-		</table>
-		
-		<div style="height:20px">&nbsp;</div>			
-		
-		<table class="listingTable">
-			<tr>
-				<th><%= LanguageUtil.get(pageContext,"Drop-Old-Assets-Versions") %></th>
-				<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-			</tr>
-			<tr>
-				<td>
-					<p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-old-versions-of-contentlets") %></p>
-					<div align="center"  id="dropAssetsMessage">&nbsp;</div>
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext,"Remove-assets-older-than") %>:</dt>
-						<dd>
-							<input type="text" name="removeassetsdate" id="removeassetsdate" constraints="{datePattern:'MM/dd/yyyy'}" invalidMessage="Invalid date."  data-dojo-type="dijit.form.DateTextBox" maxlength="10" size="8"> 							 
-						</dd>
-						<dd style="color:#ff0000;"><%= LanguageUtil.get(pageContext,"It's-recommended-to-have-a-fresh") %></dd>
-					</dl>
-			    </td>
-				<td align="center">
-		          <button dojoType="dijit.form.Button" onClick="doDropAssets();"  id="dropAssetsButton" iconClass="dropIcon">
-		             <%= LanguageUtil.get(pageContext,"Execute") %>
-		          </button>
-		        </td>
-			</tr>
-		</table>
-		
-		<div style="height:20px">&nbsp;</div>			
-		
-		<table class="listingTable">
-			<tr>
-				<th><%= LanguageUtil.get(pageContext,"Delete-Contentlets") %></th>
-				<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-			</tr>
-			<tr>
-				<td>
-					<p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-contentlets-from-a-list-of-comma-separated-identifier") %></p>
-					<div align="center"  id="deleteContentletMessage"></div>
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext,"Place-list-here") %>:</dt>
-						<dd>
-						<textarea style="width:350px" name="contentIdsList" id="contentIdsList">
-						</textarea>
-						</dd>
-					</dl>
-			    </td>
-				<td align="center">
-		          <button dojoType="dijit.form.Button" onClick="doDeleteContentlets();"  id="deleteContentletButton" iconClass="deleteIcon">
-		             <%= LanguageUtil.get(pageContext,"Execute") %>
-		          </button>
-		        </td>
-			</tr>
-			
-		</table>
-	</div>
-	<div id="Logging" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Log-Files") %>" >	
-		<div style="height:20px">&nbsp;</div>
-		<div style="margin-bottom:10px;height:500px;border:0px solid red">
-			<iframe style="margin-bottom:10px;height:500px;width:100%;border:0px;" id="_logFileInclude" src="/html/portlet/ext/cmsmaintenance/tail_log.jsp" style=""></iframe>
-		</div>
-	</div>
-	
-	<div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
-	
-	<table class="listingTable shadowBox" style="width:600px !important;">
-        <thead>
-        	<th>
-				<%= LanguageUtil.get(pageContext, "Env-Variable") %>
-        		
-        	</th>
-        	<th>
-        		<%= LanguageUtil.get(pageContext, "Value") %>
-        	</th>
-        </thead>
-        
-        <%Map<String,String> s = System.getenv();%>
-        <%for(Object key : s.keySet()){ %>
-			<tr>
-				<td valign="top"><%=key %></td>
-				<td style="white-space: normal;word-wrap: break-word;"><%=s.get(key) %></td>
-			</tr>
+                                        for(Structure structure : structs){%>
+                                        <option><%=structure.getVelocityVarName()%></option>
+                                    <%}%>
+                                </select>
 
-		<%} %>
-	</table>
-	
-	<table class="listingTable shadowBox" style="width:600px !important;">
-        <thead>
-        	<th>
-				<%= LanguageUtil.get(pageContext, "System-Property") %>
-        		
-        	</th>
-        	<th>
-        		<%= LanguageUtil.get(pageContext, "Value") %>
-        	</th>
-        </thead>
-        
-        <%Properties p = System.getProperties();%>
-        <% RuntimeMXBean b = ManagementFactory.getRuntimeMXBean(); %>
-        <tr>
-        <td valign="top" style="vertical-align: top">Startup Args</td>
-		<td valign="top" style="vertical-align: top">
-       		<%for(Object key : b.getInputArguments()){ %>
-				<%=key %><br>
-			<%} %>
-        </td>
-			</tr>
-       
-		<%for(Object key : p.keySet()){ %>
-		
-			<tr>
-				<td><%=key %></td>
-				<td style="white-space: normal;word-wrap: break-word;"><%=p.get(key) %></td>
-			</tr>
+                        </td>
+                        <td style="text-align:center;white-space:nowrap;" width="350">
+                            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doFullReindex()">
+                                <%= LanguageUtil.get(pageContext,"Reindex") %>
+                            </button>
+                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton" disabled="disabled">
+                                <%= LanguageUtil.get(pageContext,"Delete-Reindex-Structure") %>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <%= LanguageUtil.get(pageContext,"Optimize-Index") %> (<%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> )
+                        </td>
+                        <td align="center">
+                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" iconClass="shrinkIcon" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
+                                <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
+                            </button>
+                         </td>
+                    </tr>
+                </table>
+            </div>
 
-		<%} %>
+            <!-- START Re-Index Progress Display -->
+            <div id="reindexationInProgressDiv"  <%=(idxApi.isInFullReindex()) ? "" : "style='display:none'" %>>
+                <table class="listingTable">
+                    <tr>
+                        <th colspan="2"><%= LanguageUtil.get(pageContext,"Content-Index-Tasks") %></th>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="center">
+                            <div>
+                                <%= LanguageUtil.get(pageContext,"A-reindexation-process-is-in-progress") %>
+                            </div>
+                            <div id="indexationStartTimeDiv"></div>
+                            <div id="newIndexDirPathDiv"></div>
+                            <div style="width:200px" maximum="200" id="reindexProgressBar" progress="0" dojoType="dijit.ProgressBar"></div>
+                            <div id="indexationProgressDiv"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="center">
+                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexing();">
+                                <%= LanguageUtil.get(pageContext,"Stop-Reindexation") %>
+                            </button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div id="indexStatsCp"  dojoType="dijit.layout.ContentPane"></div>
+
+        </div>
+
+        <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+        <!-- START Tools TAB -->
+        <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+        <div id="tools" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Tools") %>" >
+            <div style="height:20px">&nbsp;</div>
+            <table class="listingTable">
+                <tr>
+                    <th><%= LanguageUtil.get(pageContext,"Import/Export-dotCMS-Content") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td><%= LanguageUtil.get(pageContext,"Backup-to-Zip-file") %></td>
+                    <td style="text-align:center;white-space:nowrap;">
+                        <button dojoType="dijit.form.Button" onClick="doCreateZipAjax('true');" iconClass="backupIcon">
+                           <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
+                        </button>
+                        <button dojoType="dijit.form.Button" onClick="doCreateZipAjax('false');" iconClass="backupIcon">
+                          <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
+                    <td style="text-align:center;white-space:nowrap;">
+                        <button dojoType="dijit.form.Button" onClick="doDownloadZip('true');" iconClass="downloadIcon">
+                           <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
+                        </button>
+
+                        <button dojoType="dijit.form.Button" onClick="doDownloadZip('false');" iconClass="downloadIcon">
+                          <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
+                        </button>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="height:20px">&nbsp;</div>
+
+            <table class="listingTable">
+                <tr>
+                    <th><%= LanguageUtil.get(pageContext,"Search-And-Replace-Utility") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td>
+                        <p><%= LanguageUtil.get(pageContext,"This-utility-will-do-a-find-and-replace") %></p>
+                        <%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>:
+                        <dl>
+                            <dt><%= LanguageUtil.get(pageContext,"String-to-find") %>:</dt>
+                            <dd><input type="text" name="searchString" id="searchString" size="50"></dd>
+
+                            <dt><%= LanguageUtil.get(pageContext,"Replace-with") %>:</dt>
+                            <dd><input type="text" name="replaceString" id="replaceString" size="50"></dd>
+                        </dl>
+                    </td>
+                    <td align="center" valing="middle">
+                        <button dojoType="dijit.form.Button" onclick="doReplace();" iconClass="reorderIcon">
+                           <%= LanguageUtil.get(pageContext,"Replace") %>
+                        </button>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="height:20px">&nbsp;</div>
+
+            <table class="listingTable">
+                <tr>
+                    <th><%= LanguageUtil.get(pageContext,"Fix-Assets-Inconsistencies") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td>
+                        <p><%= LanguageUtil.get(pageContext,"This-utility-will-fix-assets-inconsistencies") %></p>
+                        <p style="color:#ff0000;"><%= LanguageUtil.get(pageContext,"It's-recommended-to-have-a-fresh") %></p>
+                        <div align="center" id="fixAssetsMessage"></div>
+                        <%= LanguageUtil.get(pageContext,"Fix-Assets-Inconsistencies") %>
+                        <div align="center" id="fixAssetInfo"></div>
+                        <div align="center" id="fixAssetTime"></div>
+                    </td>
+                    <td align="center">
+                        <div id="fixAssetsButtonDiv">
+                            <button dojoType="dijit.form.Button" id="fixAssetsButton"  onClick="doFixAssetsInconsistencies();" iconClass="fixIcon">
+                                <%= LanguageUtil.get(pageContext,"Execute") %>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="height:20px">&nbsp;</div>
+
+            <table class="listingTable">
+                <tr>
+                    <th><%= LanguageUtil.get(pageContext,"Drop-Old-Assets-Versions") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td>
+                        <p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-old-versions-of-contentlets") %></p>
+                        <div align="center"  id="dropAssetsMessage">&nbsp;</div>
+                        <dl>
+                            <dt><%= LanguageUtil.get(pageContext,"Remove-assets-older-than") %>:</dt>
+                            <dd>
+                                <input type="text" name="removeassetsdate" id="removeassetsdate" constraints="{datePattern:'MM/dd/yyyy'}" invalidMessage="Invalid date."  data-dojo-type="dijit.form.DateTextBox" maxlength="10" size="8">
+                            </dd>
+                            <dd style="color:#ff0000;"><%= LanguageUtil.get(pageContext,"It's-recommended-to-have-a-fresh") %></dd>
+                        </dl>
+                    </td>
+                    <td align="center">
+                      <button dojoType="dijit.form.Button" onClick="doDropAssets();"  id="dropAssetsButton" iconClass="dropIcon">
+                         <%= LanguageUtil.get(pageContext,"Execute") %>
+                      </button>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="height:20px">&nbsp;</div>
+
+            <table class="listingTable">
+                <tr>
+                    <th><%= LanguageUtil.get(pageContext,"Delete-Contentlets") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td>
+                        <p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-contentlets-from-a-list-of-comma-separated-identifier") %></p>
+                        <div align="center"  id="deleteContentletMessage"></div>
+                        <dl>
+                            <dt><%= LanguageUtil.get(pageContext,"Place-list-here") %>:</dt>
+                            <dd>
+                            <textarea style="width:350px" name="contentIdsList" id="contentIdsList">
+                            </textarea>
+                            </dd>
+                        </dl>
+                    </td>
+                    <td align="center">
+                      <button dojoType="dijit.form.Button" onClick="doDeleteContentlets();"  id="deleteContentletButton" iconClass="deleteIcon">
+                         <%= LanguageUtil.get(pageContext,"Execute") %>
+                      </button>
+                    </td>
+                </tr>
+
+            </table>
+        </div>
+
+    </html:form>
+
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- START Logging TAB -->
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <div id="Logging" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Log-Files") %>" >
+        <div style="height:20px">&nbsp;</div>
+        <div style="margin-bottom:10px;height:500px;border:0px solid red">
+            <iframe style="margin-bottom:10px;height:500px;width:100%;border:0px;" id="_logFileInclude" src="/html/portlet/ext/cmsmaintenance/tail_log.jsp" style=""></iframe>
+        </div>
+    </div>
+
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- START System Info TAB -->
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
+
+        <table class="listingTable shadowBox" style="width:600px !important;">
+            <thead>
+            <th>
+                <%= LanguageUtil.get(pageContext, "Env-Variable") %>
+            </th>
+            <th>
+                <%= LanguageUtil.get(pageContext, "Value") %>
+            </th>
+            </thead>
+
+            <%Map<String,String> s = System.getenv();%>
+            <%for(Object key : s.keySet()){ %>
+            <tr>
+                <td valign="top"><%=key %></td>
+                <td style="white-space: normal;word-wrap: break-word;"><%=s.get(key) %></td>
+            </tr>
+
+            <%} %>
         </table>
-        
 
-	</div>
-    
+        <table class="listingTable shadowBox" style="width:600px !important;">
+            <thead>
+            <th>
+                <%= LanguageUtil.get(pageContext, "System-Property") %>
+            </th>
+            <th>
+                <%= LanguageUtil.get(pageContext, "Value") %>
+            </th>
+            </thead>
+
+            <%Properties p = System.getProperties();%>
+            <% RuntimeMXBean b = ManagementFactory.getRuntimeMXBean(); %>
+            <tr>
+                <td valign="top" style="vertical-align: top">Startup Args</td>
+                <td valign="top" style="vertical-align: top">
+                    <%for(Object key : b.getInputArguments()){ %>
+                    <%=key %><br>
+                    <%} %>
+                </td>
+            </tr>
+
+            <%for(Object key : p.keySet()){ %>
+
+            <tr>
+                <td><%=key %></td>
+                <td style="white-space: normal;word-wrap: break-word;"><%=p.get(key) %></td>
+            </tr>
+
+            <%} %>
+        </table>
+
+    </div>
+
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- START Threads TAB -->
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="threads" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "threads-tab-title") %>" >
+
         <table class="listingTable shadowBox" style="width:800px !important;">
-        <thead>
+            <thead>
             <th>System information</th>
             <th>Value</th>
-        </thead>
-        <tbody id="sysInfo">
-        </tbody>
+            </thead>
+            <tbody id="sysInfo">
+            </tbody>
         </table>
+
         <img style="display:none;" id="sysInfoProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <br/>
         <div dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 50px;">
-        <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="repeatIcon">
-            <%= LanguageUtil.get(pageContext,"thread-tab-reload") %>
-        </button>
-        <button dojoType="dijit.form.Button" onClick="getSysInfo()" iconClass="infoIcon">
-            <%= LanguageUtil.get(pageContext,"thread-tab-reload-sysinfo") %>
-        </button>
+            <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="repeatIcon">
+                <%= LanguageUtil.get(pageContext,"thread-tab-reload") %>
+            </button>
+            <button dojoType="dijit.form.Button" onClick="getSysInfo()" iconClass="infoIcon">
+                <%= LanguageUtil.get(pageContext,"thread-tab-reload-sysinfo") %>
+            </button>
         </div>
-	    
-	    <ol class="orderMe" id="threadList"></ol>
-	    <ol class="orderMe" id="threadStats"></ol>
-	    <img style="display:none;" id="threadProgress" src="/html/images/icons/round-progress-bar.gif"/>
+
+        <ol class="orderMe" id="threadList"></ol>
+        <ol class="orderMe" id="threadStats"></ol>
+        <img style="display:none;" id="threadProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
-    
+
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- START Logged Users TAB -->
+    <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="loggedusers" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "logged-users-tab-title") %>" >
         <div dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 50px;">
-	        <button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="repeatIcon">
-	            <%= LanguageUtil.get(pageContext,"logged-users-reload") %>
-	        </button>
+            <button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="repeatIcon">
+                <%= LanguageUtil.get(pageContext,"logged-users-reload") %>
+            </button>
         </div>
-        
-        
+
+
         <table class="listingTable shadowBox" style="width:800px !important;">
-        <thead>
-        <tr>
-            <th>Session ID</th>
-            <th>Remote Address</th>
-            <th>User ID</th>
-            <th>User Email</th>
-            <th>User Name</th>
-            <th>Action &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</th> 
-        </tr>
-        </thead>
-        <tbody id="sessionList">
-        </tbody>
+            <thead>
+            <tr>
+                <th>Session ID</th>
+                <th>Remote Address</th>
+                <th>User ID</th>
+                <th>User Email</th>
+                <th>User Name</th>
+                <th>Action &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</th>
+            </tr>
+            </thead>
+            <tbody id="sessionList">
+            </tbody>
         </table>
+
+        <img style="display:none;" id="loggedUsersProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
-</div>	
-	
-</html:form>
+
+</div>
 
 <script language="Javascript">
 dojo.require("dijit.form.DateTextBox");
