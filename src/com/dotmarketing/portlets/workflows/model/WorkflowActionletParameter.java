@@ -32,4 +32,8 @@ public class WorkflowActionletParameter implements Serializable {
 		return "WorkflowActionletParameter [key=" + key + "]";
 	}
 	
+	public String hasError(String stringToValidate) {
+		return null;
+	}
+	
 }
