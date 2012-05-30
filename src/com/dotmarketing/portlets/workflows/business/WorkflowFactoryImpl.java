@@ -17,6 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -145,6 +146,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final WorkflowStep step = new WorkflowStep();
 		row.put("myOrder", row.get("my_order"));
 		row.put("schemeId", row.get("scheme_id"));
+		row.put("enableEscalation", row.get("escalation_enable"));
+		row.put("escalationAction", row.get("escalation_action"));
+		row.put("escalationTime", row.get("escalation_time"));
 		BeanUtils.copyProperties(step, row);
 
 		return step;
@@ -690,39 +694,53 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole());
 
-		final StringBuffer condition = new StringBuffer();
+		final StringBuilder condition = new StringBuilder();
 		condition.append(", workflow_scheme, workflow_step ");
 		condition.append(" where  ");
 		if (UtilMethods.isSet(searcher.getKeywords())) {
 			condition.append(" (lower(workflow_task.title) like '%" + searcher.getKeywords().trim().toLowerCase() + "%' or ");
 			condition.append(" lower(workflow_task.description) like '%" + searcher.getKeywords().trim().toLowerCase() + "%' )  and ");
 		}
-
-		final List<Role> userRoles = new ArrayList();
-		if (UtilMethods.isSet(searcher.getAssignedTo())) {
-
-			final Role r = new Role();
-			r.setId(searcher.getAssignedTo());
-			userRoles.add(r);
-		} else {
-			userRoles.addAll(APILocator.getRoleAPI().loadRolesForUser(searcher.getUser().getUserId(), false));
-			userRoles.add(APILocator.getRoleAPI().getUserRole(searcher.getUser()));
-
+		
+		if(!searcher.getShow4All() || !(APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
+                || APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(),RoleAPI.WORKFLOW_ADMIN_ROLE_KEY))) {
+		    final List<Role> userRoles = new ArrayList<Role>();
+		    if (UtilMethods.isSet(searcher.getAssignedTo())) {
+    
+    			final Role r = new Role();
+    			r.setId(searcher.getAssignedTo());
+    			userRoles.add(r);
+    		} else {
+    			userRoles.addAll(APILocator.getRoleAPI().loadRolesForUser(searcher.getUser().getUserId(), false));
+    			userRoles.add(APILocator.getRoleAPI().getUserRole(searcher.getUser()));
+    
+    		}
+    
+    		String rolesString = "";
+    
+    		for (final Role role : userRoles) {
+    			if (!rolesString.equals("")) {
+    				rolesString += ",";
+    			}
+    			rolesString += "'" + role.getId() + "'";
+    		}
+    
+    		condition.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
 		}
-
-		String rolesString = "";
-
-		for (final Role role : userRoles) {
-			if (!rolesString.equals("")) {
-				rolesString += ",";
-			}
-			rolesString += "'" + role.getId() + "'";
-		}
-
-		condition.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
-
 		condition.append(" workflow_step.id = workflow_task.status and workflow_step.scheme_id = workflow_scheme.id and ");
 
+		if(searcher.getDaysOld()!=-1) {
+		    if(DbConnectionFactory.isMySql())
+		        condition.append(" datediff(now(),workflow_task.creation_date)>=").append(searcher.getDaysOld());
+		    else if(DbConnectionFactory.isPostgres())
+		        condition.append(" extract(day from (now()-workflow_task.creation_date))>=").append(searcher.getDaysOld());
+		    else if(DbConnectionFactory.isMsSql())
+		        condition.append(" datediff(d,workflow_task.creation_date,GETDATE())>=").append(searcher.getDaysOld());
+		    else if(DbConnectionFactory.isOracle())
+		        condition.append(" floor(sysdate-workflow_task.creation_date)>=").append(searcher.getDaysOld());
+		    condition.append(" and ");
+		}
+		
 		if (!searcher.isClosed() && searcher.isOpen()) {
 			condition.append("  workflow_step.resolved = " + DbConnectionFactory.getDBFalse() + " and ");
 		} else if (searcher.isClosed() && !searcher.isOpen()) {
@@ -980,6 +998,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.getSchemeId());
 			db.addParam(step.getMyOrder());
 			db.addParam(step.isResolved());
+			db.addParam(step.isEnableEscalation());
+			if(step.isEnableEscalation()) {
+    			db.addParam(step.getEscalationAction());
+    			db.addParam(step.getEscalationTime());
+			}
+			else {
+			    db.addParam((Object)null);
+			    db.addParam(0);
+			}
 			db.loadResult();
 		} else {
 			db.setSQL(sql.UPDATE_STEP);
@@ -987,6 +1014,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.getSchemeId());
 			db.addParam(step.getMyOrder());
 			db.addParam(step.isResolved());
+			db.addParam(step.isEnableEscalation());
+			if(step.isEnableEscalation()) {
+                db.addParam(step.getEscalationAction());
+                db.addParam(step.getEscalationTime());
+            }
+            else {
+                db.addParam((Object)null);
+                db.addParam(0);
+            }
 			db.addParam(step.getId());
 			db.loadResult();
 		}
@@ -1088,4 +1124,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 	// christian escalation
+
+    @Override
+    public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException {
+        final DotConnect db = new DotConnect();
+        List<WorkflowTask> list=new ArrayList<WorkflowTask>();
+        try {
+            db.setSQL(sql.SELECT_EXPIRED_TASKS);
+            List<Map<String,Object>> results=db.loadResults();
+            for (Map<String, Object> map : results) {
+                String taskId=(String)map.get("id");
+                WorkflowTask task=findWorkFlowTaskById(taskId);
+                list.add(task);
+            }
+        } catch (final Exception e) {
+            Logger.error(this, e.getMessage(), e);
+        }        
+        return list;
+    }
 }
