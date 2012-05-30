@@ -92,8 +92,8 @@ public class WfActionClassAjax extends WfBaseAction {
 			WorkFlowActionlet actionlet = wapi.findActionlet(wac.getClazz());
 			List<WorkflowActionletParameter> params = actionlet.getParameters();
 			Map<String, WorkflowActionClassParameter> enteredParams = wapi.findParamsForActionClass(wac);
-			List<WorkflowActionClassParameter> newParams = new ArrayList<WorkflowActionClassParameter>();			
-
+			List<WorkflowActionClassParameter> newParams = new ArrayList<WorkflowActionClassParameter>();
+			String userIds = null;
 			for (WorkflowActionletParameter expectedParam : params) {
 				WorkflowActionClassParameter enteredParam = enteredParams.get(expectedParam.getKey());
 				if (enteredParam == null) {
@@ -104,12 +104,14 @@ public class WfActionClassAjax extends WfBaseAction {
 
 				enteredParam.setKey(expectedParam.getKey());
 				enteredParam.setValue(request.getParameter("acp-" + expectedParam.getKey()));
-
 				newParams.add(enteredParam);
+				if(enteredParam.getKey().equalsIgnoreCase("approvers")){
+					userIds = enteredParam.getValue();
+				}
 			}
 			// validates Require Multiple Approvers field UserIds Or Emails.
 			if(actionlet.getName().equalsIgnoreCase("Require Multiple Approvers") ){
-				String errors = valdateRMA(enteredParams);
+				String errors = valdateRMA(userIds);
 				if(errors.length() > 0){
 					writeError(response, errors);
 					return;
@@ -126,11 +128,10 @@ public class WfActionClassAjax extends WfBaseAction {
 	
 	// This method validates Require Multiple Approvers field UserIds Or Emails.
 	
-	private String valdateRMA(Map<String, WorkflowActionClassParameter> enteredParams) throws ServletException, IOException{
-		
-			String userIds = (enteredParams.get("approvers") == null) ? "" : enteredParams.get("approvers").getValue();
-			StringTokenizer st = new StringTokenizer(userIds, ", ");
-			StringBuffer uIdsEmails = new StringBuffer();					
+	private String valdateRMA(String userIds) throws ServletException, IOException{	
+		StringBuffer uIdsEmails = new StringBuffer();		
+		if((userIds != null) || (userIds != "")){
+			StringTokenizer st = new StringTokenizer(userIds, ", ");						
 			while (st.hasMoreTokens()) {
 				String x = st.nextToken();
 				if (Validator.isEmailAddress(x)) {
@@ -150,8 +151,9 @@ public class WfActionClassAjax extends WfBaseAction {
 						uIdsEmails.append("Unable to find user with userID:" + x +"</br>");						
 					}
 				}
-			}	
-			return uIdsEmails.toString();
+			}				
+		}
+		return uIdsEmails.toString();
 	}
 
 }
