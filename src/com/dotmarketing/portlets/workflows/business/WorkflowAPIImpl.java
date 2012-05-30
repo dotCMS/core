@@ -926,6 +926,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
     	return entryAction;
     }
+
+    @Override
+    public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException {
+        return wfac.findExpiredTasks();
+    }
     
     
 }
