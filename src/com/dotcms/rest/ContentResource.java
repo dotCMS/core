@@ -7,10 +7,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import org.codehaus.jettison.json.JSONArray;
@@ -18,8 +21,6 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -27,7 +28,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -38,7 +38,7 @@ public class ContentResource extends WebResource {
 	@GET
 	@Path("/{path:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getContent(@PathParam("path") String path) throws DotDataException, DotSecurityException, IOException {
+	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotDataException, DotSecurityException, IOException {
 
 		/* Getting values from the URL  */
 
@@ -54,7 +54,7 @@ public class ContentResource extends WebResource {
 		String password = params.get(PASSWORD);
 		String result = null;
 		User user = null;
-		type = UtilMethods.isSet(type)?type:"xml";
+		type = UtilMethods.isSet(type)?type:"json";
 		orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
 
 		/* Authenticate the User if passed */
@@ -93,9 +93,9 @@ public class ContentResource extends WebResource {
 		/* Converting the Contentlet list to XML or JSON */
 
 		if("xml".equals(type)) {
-			result = getXML(cons);
-		} else if("json".equals(type)) {
-			result = getJSON(cons);
+			result = getXML(cons, request, response, render);
+		} else {
+			result = getJSON(cons, request, response, render);
 		}
 
 		return result;
@@ -103,7 +103,7 @@ public class ContentResource extends WebResource {
 
 
 	@SuppressWarnings({ "unchecked", "deprecation", "rawtypes" })
-	private String getXML(List<Contentlet> cons) throws DotDataException {
+	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws DotDataException, IOException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
 		StringBuilder sb = new StringBuilder();
@@ -120,6 +120,11 @@ public class ContentResource extends WebResource {
 					m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
 				}
 			}
+
+			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
+				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
+			}
+
 			sb.append(xstream.toXML(m));
 		}
 
@@ -127,13 +132,13 @@ public class ContentResource extends WebResource {
 		return sb.toString();
 	}
 
-	private String getJSON(List<Contentlet> cons) throws IOException{
+	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws IOException{
 		JSONObject json = new JSONObject();
 		JSONArray jsonCons = new JSONArray();
 
 		for(Contentlet c : cons){
 			try {
-				jsonCons.put(contentletToJSON(c));
+				jsonCons.put(contentletToJSON(c, request, response, render));
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 				Logger.debug(this.getClass(), "unable to find contentlet", e);
@@ -151,7 +156,7 @@ public class ContentResource extends WebResource {
 	}
 
 	@SuppressWarnings({ "rawtypes", "deprecation" })
-	private JSONObject contentletToJSON(Contentlet con) throws JSONException{
+	private JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render) throws JSONException, IOException{
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
 		Map map = con.getMap();
@@ -168,6 +173,10 @@ public class ContentResource extends WebResource {
 				jo.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  con.getIdentifier() + "/" + f.getVelocityVarName()	);
 				jo.put(f.getVelocityVarName() + "ContentAsset", con.getIdentifier() + "/" +f.getVelocityVarName()	);
 			}
+		}
+
+		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
+			jo.put("parsedCode",  WidgetResource.parseWidget(request, response, con));
 		}
 
 		return jo;
