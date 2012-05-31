@@ -461,9 +461,11 @@ public class CalendarAjax {
 		if(eventDeleteErrors.size()<=0){
 		   HibernateUtil.commitTransaction();
 		}
-		if(!contAPI.isInodeIndexed(ev.getInode())){
+
+        //At this point we already deleted the content from the index on the delete call
+		/*if(!contAPI.isInodeIndexed(ev.getInode())){
 			Logger.error(this, "Timed out while waiting for index to return");
-		}
+		}*/
 		
 		return callbackData;
 	}		
