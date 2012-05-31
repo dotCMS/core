@@ -43,6 +43,14 @@ User user = APILocator.getUserAPI().getSystemUser();
 %>
 			<p>
 			<a href="timemachine.jsp?tm-disconnect=true">close</a>
+			<form action="timemachine.jsp">
+				<select name="tmbundle">
+					<% for (Date date : APILocator.getTimeMachineAPI().getAvailableTimeMachineForSite(host)) { %>
+						<option value="<%=date.getTime()%>"><%= date%></option>
+					<% } %>
+				</select>
+				<input type="submit" value="Switch" />
+			</form>
 			</p>
 		
 			<iframe src="http://demo.michele.com:8080" width="100%" height="100%"></iframe>
