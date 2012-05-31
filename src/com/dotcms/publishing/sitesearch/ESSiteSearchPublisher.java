@@ -56,7 +56,7 @@ public class ESSiteSearchPublisher extends Publisher {
 		}
 		if (UtilMethods.isSet(myConf.getIndexName()) && !APILocator.getESIndexAPI().indexExists(myConf.getIndexName())) {
 			try {
-				APILocator.getSiteSearchAPI().createSiteSearchIndex(myConf.getIndexName(), 0);
+				APILocator.getSiteSearchAPI().createSiteSearchIndex(myConf.getIndexName(), "alias_"+myConf.getIndexName(), 0);
 			} catch (Exception e) {
 				throw new DotPublishingException(e.getMessage());
 			}

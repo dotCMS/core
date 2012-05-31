@@ -414,8 +414,7 @@ function connectUploadEvents() {
 }
 
 function doCreateSiteSearch(alias,number) {
-
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	
 	if(!number || !alias){
 		return;
 	}

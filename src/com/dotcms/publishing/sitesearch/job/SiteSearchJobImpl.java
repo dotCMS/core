@@ -112,7 +112,7 @@ public class SiteSearchJobImpl {
 		}
 		if("NEWINDEX".equals(indexName)){
 			indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME  + "_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
-			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName , 1);
+			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, dataMap.getString("alias"), 1);
 			config.setSwitchIndexWhenDone(true);
 		}
 		

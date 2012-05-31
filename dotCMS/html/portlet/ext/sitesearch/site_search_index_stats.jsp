@@ -51,7 +51,7 @@ try {
 
 List<String> indices=ssapi.listIndices();
 Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
-
+Map<String, String> alias = esapi.getIndexAlias(indexInfo.keySet().toArray(new String[indexInfo.size()]));
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
@@ -108,6 +108,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 				<tr>
 					<th style="text-align: center">Status</th>
 					<th>Index Name</th>
+					<th>Alias</th>
 					<th>Created</th>
 					<th style="text-align: center">Count</th>
 					<th style="text-align: center">Shards</th>
@@ -141,6 +142,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 						<%}%>
 					</td>
 					<td  class="showPointer" ><%=x %></td>
+					<td><%= alias.get(x) %></td>
 					<td><%=UtilMethods.webifyString(myDate) %></td>
 
 					<td align="center">

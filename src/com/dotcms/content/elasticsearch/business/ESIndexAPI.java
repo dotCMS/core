@@ -24,9 +24,12 @@ import org.apache.tools.zip.ZipEntry;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -46,6 +49,11 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.client.Requests;
+import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.cluster.metadata.MetaData;
+import org.elasticsearch.common.io.stream.Streamable;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -541,7 +549,42 @@ public class ESIndexAPI {
 
     }
     
+    public void createAlias(String indexName, String alias) {
+        try{
+            Client client=new ESClient().getClient();
+            IndicesAliasesRequest req=new IndicesAliasesRequest();
+            req.addAlias(indexName, alias);
+            client.admin().indices().aliases(req).actionGet(30000L);
+         } catch (Exception e) {
+             Logger.error(ESIndexAPI.class, e.getMessage(), e);
+             throw new RuntimeException(e);
+         }
+    }
     
+    public Map<String,String> getIndexAlias(String[] indexNames) {
+        Map<String,String> alias=new HashMap<String,String>();
+        try{
+            Client client=new ESClient().getClient();
+            ClusterStateRequest clusterStateRequest = Requests.clusterStateRequest()
+                    .filterRoutingTable(true)
+                    .filterNodes(true)
+                    .filteredIndices(indexNames);
+            MetaData md=client.admin().cluster().state(clusterStateRequest)
+                                                .actionGet(30000).state().metaData();
+            
+            for(IndexMetaData imd : md)
+                for(AliasMetaData amd : imd.aliases().values())
+                    alias.put(imd.index(), amd.alias());
+            
+            return alias;
+         } catch (Exception e) {
+             Logger.error(ESIndexAPI.class, e.getMessage(), e);
+             throw new RuntimeException(e);
+         }
+    }
     
+    public String getIndexAlias(String indexName) {
+        return getIndexAlias(new String[]{indexName}).get(indexName);
+    }
     
 }
