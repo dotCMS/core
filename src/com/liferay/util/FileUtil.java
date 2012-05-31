@@ -123,6 +123,10 @@ public class FileUtil {
 		}
 		
 		if ( hardLinks ) {
+			// unlink first
+			if(destination.exists()){
+				destination.delete();
+			}
 			CLibrary.INSTANCE.link(source.getAbsolutePath(), destination.getAbsolutePath());
 		}
 		else {
