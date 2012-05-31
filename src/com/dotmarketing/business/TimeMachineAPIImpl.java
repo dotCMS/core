@@ -46,11 +46,14 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 		String bundlePath = ConfigUtils.getBundlePath();
 		for ( File file : new File(bundlePath).listFiles()) {
 			if ( file.isDirectory() && file.getName().startsWith("tm_")) {
-				try {
-					list.add(new Date(Long.parseLong(file.getName().substring(3))));
-				}
-				catch (Throwable t) {
-					Logger.error(this, "bundle seems a time machine bundle but it is not! " + file.getName());
+				File hostDir = new File(file.getAbsolutePath() + File.separator + "live" + File.separator + host.getHostname());
+				if ( hostDir.exists() && hostDir.isDirectory() ) {
+					try {
+						list.add(new Date(Long.parseLong(file.getName().substring(3))));
+					}
+					catch (Throwable t) {
+						Logger.error(this, "bundle seems a time machine bundle but it is not! " + file.getName());
+					}
 				}
 			}
 		}
