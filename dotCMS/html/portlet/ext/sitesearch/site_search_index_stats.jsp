@@ -68,14 +68,30 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 
-
+    <div data-dojo-type="dijit.Dialog" style="width:400px;" id="createIndexDialog">
+      <div class="dotForm">
+       <label for="createIndexAlias">Alias:</label>
+	   <input id="createIndexAlias" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
+	   <label for="createIndexNumShards">Shards:</label>
+	   <input id="createIndexNumShards" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
+	   <div style="text-align: right;">
+		   <button dojoType="dijit.form.Button"  iconClass="addIcon"
+		           onClick="doCreateSiteSearch(dijit.byId('createIndexAlias').attr('value'),dijit.byId('createIndexNumShards').attr('value'))">
+		      <%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
+		   </button>
+		   <button dojoType="dijit.form.Button"  iconClass="deleteIcon" onClick="dijit.byId('createIndexDialog').hide()">
+		      <%= LanguageUtil.get(pageContext,"Cancel") %>
+		   </button>
+	   </div>
+	  </div>
+    </div>
 
 
 
 
 		<div class="buttonRow" style="text-align: right;padding:20px;">
 
-		    <button dojoType="dijit.form.Button"  onClick="doCreateSiteSearch()" iconClass="addIcon">
+		    <button dojoType="dijit.form.Button"  onClick="showNewIndexDialog()" iconClass="addIcon">
                <%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
             </button>
 
