@@ -414,13 +414,14 @@ dojo.require("dojox.layout.ContentPane");
 	function createLockedWarningDiv(){
 
 		//handle if the node is locked &&  editable and node is locked &! editable
-		var lockedNode = dojo.byId("lockContentButton");
-
+		var lockedNode = dojo.byId("lockContentButton") ;
+		var destroyAfterClick = true;
 		var endColor = "#ffffff";
 		if(!lockedNode){
 			if(!dojo.byId("unlockContentButton")){
 				lockedNode = dojo.byId("lockedTextInfoDiv");
 				endColor = "#eeeeee";
+				destroyAfterClick = false;
 			}
 		}
 
@@ -430,7 +431,9 @@ dojo.require("dojox.layout.ContentPane");
 				var n = dojo.create("div", {className:"lockedWarningDiv"}, node, "first");
 				dojo.connect(n, "onmousedown", null,function(){
 	    			dojo.query(".lockedWarningDiv").forEach(function(node){
-	    				//dojo.destroy(node);
+	    				if(destroyAfterClick){
+	    					dojo.destroy(node);
+	    				}
 	    			});
 				 	dojo.animateProperty({
 			            node: lockedNode,

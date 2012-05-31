@@ -4,12 +4,10 @@
 package com.dotcms.content.elasticsearch.business;
 
 import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -2136,8 +2134,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                    else
 				                        workingInodeFile = originalFile;
 				                }
-
-				                if(workingInodeFile!=null)
+				                if (tempFile.exists()) {
+				                	srcFile = tempFile;
+				                }
+				                else if(workingInodeFile!=null)
 				                    srcFile = workingInodeFile;
 				                else if (tempFile.exists()) {
 				                    srcFile = tempFile;
@@ -2162,11 +2162,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				                if (srcFile.equals(workingInodeFile)) {
 				                    if(!srcFile.equals(destFile)){//DOTCMS-5063
-				                        FileChannel ic = new FileInputStream(srcFile).getChannel();
-				                        FileChannel oc = new FileOutputStream(destFile).getChannel();
-				                        ic.transferTo(0, ic.size(), oc);
-				                        ic.close();
-				                        oc.close();
+				                    	FileUtil.copyFile(srcFile, destFile, true);
 				                    }
 				                } else {
 				                    if(!srcFile.renameTo(destFile)){
