@@ -94,19 +94,6 @@ public class TimeMachineFilter implements Filter {
 		        
 	}
 
-//	private String getHostName(ServletRequest request) {
-//		String remoteHost = request.getRemoteHost();
-//		Host host = null;
-//		try {
-//			host = APILocator.getHostAPI().resolveHostName(remoteHost, APILocator.getUserAPI().getSystemUser(), true);
-//		} catch (DotDataException e) {
-//			e.printStackTrace();
-//		} catch (DotSecurityException e) {
-//			e.printStackTrace();
-//		}
-//		return host.getHostname();
-//	}
-
 	private File adjustFileIfNotExists(String url, File file) {
 		if ( url.trim().equals("/")) {
 			return new File(file.getAbsoluteFile() + File.separator + "home" + File.separator + "index.dot");
@@ -131,83 +118,6 @@ public class TimeMachineFilter implements Filter {
 		out.flush();
 		return copied;
 	}
-
-//	private void dump(HttpServletRequest request) {
-//
-//		// Render the generic servlet request properties
-//		StringWriter sw = new StringWriter();
-//		PrintWriter writer = new PrintWriter(sw);
-//		writer.println("Request Received at " + (new Timestamp(System.currentTimeMillis())));
-//		writer.println(" characterEncoding=" + request.getCharacterEncoding());
-//		writer.println("     contentLength=" + request.getContentLength());
-//		writer.println("       contentType=" + request.getContentType());
-//		writer.println("            locale=" + request.getLocale());
-//		writer.print("           locales=");
-//		Enumeration locales = request.getLocales();
-//		boolean first = true;
-//		while (locales.hasMoreElements()) {
-//			Locale locale = (Locale) locales.nextElement();
-//			if (first)
-//				first = false;
-//			else
-//				writer.print(", ");
-//			writer.print(locale.toString());
-//		}
-//		writer.println();
-//		Enumeration names = request.getParameterNames();
-//		while (names.hasMoreElements()) {
-//			String name = (String) names.nextElement();
-//			writer.print("         parameter=" + name + "=");
-//			String values[] = request.getParameterValues(name);
-//			for (int i = 0; i < values.length; i++) {
-//				if (i > 0)
-//					writer.print(", ");
-//				writer.print(values[i]);
-//			}
-//			writer.println();
-//		}
-//		writer.println("          protocol=" + request.getProtocol());
-//		writer.println("        remoteAddr=" + request.getRemoteAddr());
-//		writer.println("        remoteHost=" + request.getRemoteHost());
-//		writer.println("            scheme=" + request.getScheme());
-//		writer.println("        serverName=" + request.getServerName());
-//		writer.println("        serverPort=" + request.getServerPort());
-//		writer.println("          isSecure=" + request.isSecure());
-//
-//		// Render the HTTP servlet request properties
-//		if (request instanceof HttpServletRequest) {
-//			writer.println("---------------------------------------------");
-//			HttpServletRequest hrequest = (HttpServletRequest) request;
-//			writer.println("       contextPath=" + hrequest.getContextPath());
-//			Cookie cookies[] = hrequest.getCookies();
-//			if (cookies == null)
-//				cookies = new Cookie[0];
-//			for (int i = 0; i < cookies.length; i++) {
-//				writer.println("            cookie=" + cookies[i].getName() +
-//						"=" + cookies[i].getValue());
-//			}
-//			names = hrequest.getHeaderNames();
-//			while (names.hasMoreElements()) {
-//				String name = (String) names.nextElement();
-//				String value = hrequest.getHeader(name);
-//				writer.println("            header=" + name + "=" + value);
-//			}
-//			writer.println("            method=" + hrequest.getMethod());
-//			writer.println("          pathInfo=" + hrequest.getPathInfo());
-//			writer.println("       queryString=" + hrequest.getQueryString());
-//			writer.println("        remoteUser=" + hrequest.getRemoteUser());
-//			writer.println("requestedSessionId=" +
-//					hrequest.getRequestedSessionId());
-//			writer.println("        requestURI=" + hrequest.getRequestURI());
-//			writer.println("       servletPath=" + hrequest.getServletPath());
-//		}
-//		writer.println("=============================================");
-//
-//		// Log the resulting string
-//		writer.flush();
-//		
-//		System.out.println(sw.getBuffer().toString());
-//	}
 
 	@Override
 	public void destroy() {
