@@ -9,6 +9,7 @@ import java.util.StringTokenizer;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -160,14 +161,14 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 	}
 	private boolean shouldStop = false;
 	
-	private static List<WorkflowActionletParameter> paramList = null; 
+	private static ArrayList<WorkflowActionletParameter> paramList = null; 
 	@Override
 	public List<WorkflowActionletParameter> getParameters() {
 		if (paramList == null) {
 			synchronized (this.getClass()) {
 				if (paramList == null) {
 					paramList = new ArrayList<WorkflowActionletParameter>();
-					paramList.add(new WorkflowActionletParameter("approvers", "User IDs or Emails", null, true));
+					paramList.add(new MultiEmailParameter("approvers", "User IDs or Emails", null, true));
 					paramList.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "Multiple Approval Required", false));
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
 
