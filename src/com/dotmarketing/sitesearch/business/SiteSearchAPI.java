@@ -26,7 +26,7 @@ public interface SiteSearchAPI {
 
 	void deactivateIndex(String indexName) throws DotDataException, IOException;
 
-	boolean createSiteSearchIndex(String indexName, int shards) throws ElasticSearchException, IOException; 
+	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticSearchException, IOException; 
 
 	
 	List<ScheduledTask> getTasks() throws SchedulerException;
