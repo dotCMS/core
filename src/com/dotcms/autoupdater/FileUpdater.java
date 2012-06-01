@@ -52,7 +52,7 @@ public class FileUpdater {
 
         try {
             //First we need to create the back up for the current project, for this we need to user hard links, this back up could be huge
-            FileUtil.copyDirectory(dotserverPath, dotserverPath, true);
+            FileUtil.copyDirectory(dotserverPath, backUpPath, true);
 
             //First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
             File antLauncher = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" );
