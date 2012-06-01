@@ -1,5 +1,6 @@
 package com.dotcms.autoupdater;
 
+import com.liferay.util.FileUtil;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -35,18 +36,40 @@ public class FileUpdater {
      * @throws IOException
      * @throws UpdateException
      */
-    public void preUpdate () throws IOException, UpdateException {
+    public void preUpdate () throws UpdateException {
 
         logger.info( Messages.getString( "UpdateAgent.debug.start.backUp" ) );
 
-        //First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
-        File antLauncher = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" );
-        if ( !antLauncher.exists() ) {
-            logger.debug( Messages.getString( "UpdateAgent.debug.extracting.ant" ) );
-            UpdateUtil.unzipDirectory( updateFile, "bin/ant", home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER, false );
+        //Current format for the back-up folder
+        SimpleDateFormat folderDateFormat = new SimpleDateFormat( "yyyyMMdd" );
+
+        //This is the name of the folder where we are going to store the back-up
+        String currentBackUpFolderName = folderDateFormat.format( new Date() );
+        //Complete back-up path
+        String backUpPath = home + File.separator + UpdateAgent.FOLDER_HOME_BACK_UP + File.separator + currentBackUpFolderName;
+        //.dotserver folder path
+        String dotserverPath = home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER;
+
+        try {
+            //First we need to create the back up for the current project, for this we need to user hard links, this back up could be huge
+            FileUtil.copyDirectory(dotserverPath, dotserverPath, true);
+
+            //First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
+            File antLauncher = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" );
+            if ( !antLauncher.exists() ) {
+                logger.debug( Messages.getString( "UpdateAgent.debug.extracting.ant" ) );
+                UpdateUtil.unzipDirectory( updateFile, "bin/ant", home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER, false );
+            }
+        } catch (Exception e) {
+            String error = Messages.getString( "UpdateAgent.error.ant.prepare.back-up" );
+            if ( !UpdateAgent.isDebug ) {
+                error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+            }
+            logger.error( error, e );
+            throw new UpdateException( error, UpdateException.ERROR );
         }
 
-        // Find if we have a build.xml in the update. If we do, we use that one.
+        /*// Find if we have a build.xml in the update. If we do, we use that one.
         // Otherwise we use the current one
         File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
         boolean updateBuild = UpdateUtil.unzipFile( updateFile, "autoupdater/build.xml", buildFile );
@@ -66,7 +89,7 @@ public class FileUpdater {
                 error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
             }
             throw new UpdateException( error, UpdateException.ERROR );
-        }
+        }*/
     }
 
     /**
@@ -215,20 +238,6 @@ public class FileUpdater {
                 // At this point we should try to use the build file we got from the update zip
                 File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
 
-                //TODO: Windows will lock the bin jars are the are used by the ant file, so, lets remove it manually
-                /*
-                //Create the ant invoker
-                boolean success;
-                AntInvoker invoker = new AntInvoker( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER );
-                // Try to do a clean up.
-                logger.debug( "Trying to clean update process traces..." );
-                if ( buildFile.exists() ) {
-                    success = invoker.runTask( "clean", "build_new.xml" );
-                    buildFile.delete();
-                } else {
-                    success = invoker.runTask( "clean", null );
-                }*/
-
                 Boolean success = true;
 
                 //Deleting if exist the extracted build file
@@ -243,7 +252,6 @@ public class FileUpdater {
                 }
 
                 logger.debug( "Finished to clean update process traces." );
-
 
                 if ( !success ) {
                     String error = Messages.getString( "UpdateAgent.error.ant.clean" );
