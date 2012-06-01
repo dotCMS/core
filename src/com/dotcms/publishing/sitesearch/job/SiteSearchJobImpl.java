@@ -5,12 +5,14 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.ElasticSearchException;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
@@ -106,14 +108,20 @@ public class SiteSearchJobImpl {
 		config.setHosts( hosts);		
 		
 		// reuse or create new indexes as needed
-		String indexName    = dataMap.getString("indexName");
-		if("DEFAULT".equals(indexName)){
+		String indexAlias = dataMap.getString("indexAlias");
+		String indexName;
+		ESIndexAPI iapi=new ESIndexAPI();
+		Map<String,String> aliasMap=iapi.getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices());
+		if("DEFAULT".equals(indexAlias)){
 			indexName = APILocator.getIndiciesAPI().loadIndicies().site_search;
 		}
-		if("NEWINDEX".equals(indexName)){
+		else if(aliasMap.get(indexAlias)==null){
 			indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME  + "_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
-			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName , 1);
+			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, indexAlias, 1);
 			config.setSwitchIndexWhenDone(true);
+		}
+		else {
+		    indexName=aliasMap.get(indexAlias);
 		}
 		
 		config.setIndexName(indexName);

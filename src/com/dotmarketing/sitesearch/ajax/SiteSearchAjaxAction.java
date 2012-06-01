@@ -88,17 +88,17 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		
 		Map<String, String> map = getURIParams();
 		int shards = 0;
-		
+		String alias="";
 		try{
 			shards = Integer.parseInt(map.get("shards"));
-
+			alias = URLDecoder.decode((String) map.get("alias"), "UTF-8");
 		}
 		catch(Exception e){
 			
 		}
 
 		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format(new Date());
-		APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, shards);
+		APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
 
 	}
 	

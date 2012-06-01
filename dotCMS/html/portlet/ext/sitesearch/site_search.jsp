@@ -413,10 +413,9 @@ function connectUploadEvents() {
     });
 }
 
-function doCreateSiteSearch() {
-
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
+function doCreateSiteSearch(alias,number) {
+	
+	if(!number || !alias){
 		return;
 	}
 	
@@ -427,7 +426,7 @@ function doCreateSiteSearch() {
 	}
 	
 	var xhrArgs = {
-       url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/createSiteSearchIndex/shards/" + shards ,
+       url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/createSiteSearchIndex/shards/" + shards +"/alias/"+alias,
        handleAs: "text",
        handle : function(dataOrError, ioArgs) {
            if (dojo.isString(dataOrError)) {
@@ -725,6 +724,13 @@ function showSiteSearchPane(indexName){
 	tabs.selectChild(pane);
 
 }
+
+function showNewIndexDialog() {
+	dijit.byId('createIndexAlias').attr('value','');
+	dijit.byId('createIndexNumShards').attr('value','2');
+	dijit.byId('createIndexDialog').show()
+} 
+
 dojo.addOnLoad (function(){
 	var tab =dijit.byId("mainTabContainer");
    	dojo.connect(tab, 'selectChild',
@@ -775,6 +781,13 @@ dojo.addOnLoad (function(){
 	 #uploadProgress {
 	   float: right;
 	   display: none;
+	 }
+	 .dotForm label {
+	   position: absolute; text-align:right; width:6em;
+	 }
+	
+	 .dotForm .dotFormInput {
+	   margin-left: 7em;
 	 }
 </style>
 

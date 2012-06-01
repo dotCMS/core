@@ -95,9 +95,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	@Override
 	public SiteSearchResults search(String indexName, String query, String sort, int offset, int limit) {
 		SiteSearchResults results = new SiteSearchResults();
-		if(indexName ==null){
-			return results;
-		}
+		
 		boolean isJson = StringUtils.isJson(query);
 
 
@@ -114,10 +112,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         		
         	}
         	
-        	
-        	
             SearchRequestBuilder srb = null;
-
             
             if(!isJson){
                 srb = client.prepareSearch()
@@ -197,7 +192,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 	
 	@Override
-	public synchronized boolean createSiteSearchIndex(String indexName, int shards) throws ElasticSearchException, IOException {
+	public synchronized boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticSearchException, IOException {
 		if(indexName==null){
 			return false;
 		}
@@ -208,9 +203,6 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
 		url = classLoader.getResource("es-sitesearch-mapping.json");
 		String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-
-			
-		
 		
 		
 		//create index
@@ -229,12 +221,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 			}
 		}
 		
-		
+		iapi.createAlias(indexName, alias);
 
 		//put mappings
 		mappingAPI.putMapping(indexName, ES_SITE_SEARCH_MAPPING, mapping);
-			
-		
 		
 		return true;
 	}
