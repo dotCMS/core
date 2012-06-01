@@ -95,9 +95,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	@Override
 	public SiteSearchResults search(String indexName, String query, String sort, int offset, int limit) {
 		SiteSearchResults results = new SiteSearchResults();
-		if(indexName ==null){
-			return results;
-		}
+		
 		boolean isJson = StringUtils.isJson(query);
 
 
@@ -114,10 +112,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         		
         	}
         	
-        	
-        	
             SearchRequestBuilder srb = null;
-
             
             if(!isJson){
                 srb = client.prepareSearch()
