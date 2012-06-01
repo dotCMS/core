@@ -138,23 +138,31 @@ public class FileUpdater {
                 //Now lets copy the assets contents
 
                 //Assets folder
+                logger.debug( "Copying assets folder..." );
                 String assets = "dotCMS" + File.separator + "assets";
                 File assetsFolder = new File( backUpPath + File.separator + assets );
                 File destFolder = new File( dotserverFolder + File.separator + assets );
-                copyFolder( assetsFolder, destFolder );
+                //Copying using hardlinks
+                FileUtil.copyDirectory(assetsFolder, destFolder, true);
+                //copyFolder( assetsFolder, destFolder );
 
                 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 //Now lets copy the esdata contents
 
                 //esdata folder
+                logger.debug( "Copying esdata folder..." );
                 String esdata = "dotCMS" + File.separator + "dotsecure" + File.separator + "esdata";
                 File esdataFolder = new File( backUpPath + File.separator + esdata );
                 destFolder = new File( dotserverFolder + File.separator + esdata );
-                copyFolder( esdataFolder, destFolder );
+                //Copying using hardlinks
+                FileUtil.copyDirectory(esdataFolder, destFolder, true);
+                //copyFolder( esdataFolder, destFolder );
 
                 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 //Now lets copy the plugins contents
+
                 //plugins folder
+                logger.debug( "Copying plugins folder..." );
                 String plugins = "plugins";
                 String pluginsTemp = "plugins_temp";
 
@@ -176,7 +184,9 @@ public class FileUpdater {
 
                 //Now we need to copy the back up plugins folder
                 File pluginsFolder = new File( backUpPath + File.separator + plugins );
-                copyFolder( pluginsFolder, destFolder );
+                //Copying using hardlinks
+                FileUtil.copyDirectory(pluginsFolder, destFolder, true);
+                //copyFolder( pluginsFolder, destFolder );
 
                 //Now we need to remove the common.xml and plugins.xml
                 File commonXML = new File( dotserverFolder + File.separator + plugins + File.separator + "common.xml" );
