@@ -36,7 +36,9 @@ if(request.getParameter("jobName") != null){
 	}
 }
 
+ESIndexAPI iapi=new ESIndexAPI();
 List<String> indexes = ssapi.listIndices();
+Map<String,String> alias = iapi.getIndexAlias(indexes);
 
 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 SimpleDateFormat tdf = new SimpleDateFormat("HH:mm:ss");
@@ -178,12 +180,15 @@ boolean hasPath = false;
 				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "Index-Name") %>: </strong>
 			</td>
 			<td>
-				<select id="indexName" name="indexName" dojoType="dijit.form.FilteringSelect">
+				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.ComboBox">
 				<%if(hasDefaultIndex){ %><option value="DEFAULT" <%=("DEFAULT".equals(indexName)) ? "selected='true'":"" %>><%= LanguageUtil.get(pageContext, "Default") %></option><%} %>
-				<option value="NEWINDEX" <%=("NEWINDEX".equals(indexName)) ? "selected='true'": ""%>><%= LanguageUtil.get(pageContext, "New-Index-Create") %></option>
-					<%for(String x : indexes){ %>
-						<option value="<%=x%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>><%=x%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
-					<%} %>
+				<%for(String x : indexes){ %>
+					<option value="<%=alias.get(x)%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>>
+					  <%=alias.get(x)%> 
+					  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? 
+					          "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
+					</option>
+				<%} %>
 				</select>
 			</td>
 		</tr>

@@ -561,6 +561,10 @@ public class ESIndexAPI {
          }
     }
     
+    public Map<String,String> getIndexAlias(List<String> indexNames) {
+        return getIndexAlias(indexNames.toArray(new String[indexNames.size()]));
+    }
+    
     public Map<String,String> getIndexAlias(String[] indexNames) {
         Map<String,String> alias=new HashMap<String,String>();
         try{
@@ -585,6 +589,14 @@ public class ESIndexAPI {
     
     public String getIndexAlias(String indexName) {
         return getIndexAlias(new String[]{indexName}).get(indexName);
+    }
+    
+    public Map<String,String> getAliasToIndexMap(List<String> indices) {
+        Map<String,String> map=getIndexAlias(indices);
+        Map<String,String> mapReverse=new HashMap<String,String>();
+        for (String idx : map.keySet())
+            mapReverse.put(map.get(idx), idx);
+        return mapReverse;
     }
     
 }
