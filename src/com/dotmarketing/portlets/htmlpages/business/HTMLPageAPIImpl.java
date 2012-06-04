@@ -557,6 +557,11 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	
 	@Override
 	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user) throws DotStateException, DotDataException, DotSecurityException {
+	    return getHTML(uri,host,liveMode,contentId,user,null);
+	}
+	
+	@Override
+	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user, String langId) throws DotStateException, DotDataException, DotSecurityException {
 		/*
 		 * The below code is copied from VelocityServlet.doLiveMode() and modified to parse a HTMLPage.
 		 * Replaced the request and response objects with DotRequestProxy and DotResponseProxyObjects.
@@ -692,6 +697,10 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			if(UtilMethods.isSet(contentId)){
 				requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
 			}
+			if(UtilMethods.isSet(langId)) {
+			    requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langId);
+			}
+			
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
 			if(! liveMode ){
 				context.put("PREVIEW_MODE", new Boolean(true));
