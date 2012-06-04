@@ -17,7 +17,7 @@ import com.liferay.portal.util.PropsUtil;
 public class Task00003CreateSystemRoles implements StartupTask {
 
 	private final String getSystemRole = "select id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, " +
-		"locked, system from cms_role where role_name = 'System' and id = parent";
+		"locked, system from cms_role where role_key = 'System' and id = parent";
 
 	private final String getUsersRole = "select id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, " +
 		"locked, system from cms_role where role_name = 'Users' and id = parent";

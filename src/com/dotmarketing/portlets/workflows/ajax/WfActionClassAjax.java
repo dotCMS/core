@@ -100,22 +100,17 @@ public class WfActionClassAjax extends WfBaseAction {
 				if (enteredParam == null) {
 					enteredParam = new WorkflowActionClassParameter();
 				}
-
 				enteredParam.setActionClassId(wac.getId());
-
 				enteredParam.setKey(expectedParam.getKey());
 				enteredParam.setValue(request.getParameter("acp-" + expectedParam.getKey()));
 				newParams.add(enteredParam);
-				if(enteredParam.getKey().equalsIgnoreCase("approvers")){
-					MultiEmailParameter emailParameter = new MultiEmailParameter(expectedParam.getKey(), expectedParam.getDisplayName(), expectedParam.getDefaultValue(), expectedParam.isRequired());
-					userIds = enteredParam.getValue();
-					//Validate userIds or emails
-					String errors = emailParameter.hasError(userIds);
-					if(errors.length() > 0){
-						writeError(response, errors);
-						return;
-					}
-				}
+				userIds = enteredParam.getValue();
+				//Validate userIds or emails
+				String errors = expectedParam.hasError(userIds);
+				if(errors != null){
+					writeError(response, errors);
+					return;
+				}		
 			}			
 			wapi.saveWorkflowActionClassParameters(newParams);
 			response.getWriter().println(wac.getId() + ":" + wac.getName());
