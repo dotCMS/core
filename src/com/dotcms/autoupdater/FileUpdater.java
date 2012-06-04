@@ -54,12 +54,12 @@ public class FileUpdater {
             //First we need to create the back up for the current project, for this we need to user hard links, this back up could be huge
             FileUtil.copyDirectory(dotserverPath, backUpPath, true);
 
-            //First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
+            /*//First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
             File antLauncher = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" );
             if ( !antLauncher.exists() ) {
                 logger.debug( Messages.getString( "UpdateAgent.debug.extracting.ant" ) );
                 UpdateUtil.unzipDirectory( updateFile, "bin/ant", home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER, false );
-            }
+            }*/
         } catch (Exception e) {
             String error = Messages.getString( "UpdateAgent.error.ant.prepare.back-up" );
             if ( !UpdateAgent.isDebug ) {
@@ -246,20 +246,20 @@ public class FileUpdater {
                 logger.info( Messages.getString( "UpdateAgent.debug.end.validation" ) );
 
                 // At this point we should try to use the build file we got from the update zip
-                File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
+                //File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
 
                 Boolean success = true;
 
                 //Deleting if exist the extracted build file
-                if ( buildFile.exists() ) {
+                /*if ( buildFile.exists() ) {
                     success = buildFile.delete();
-                }
+                }*/
 
-                //Deleting manually the bin folder on the autoupdater directory
+                /*//Deleting manually the bin folder on the autoupdater directory
                 File binFolder = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" );
                 if (binFolder.exists()) {
                     success = UpdateUtil.deleteDirectory( binFolder );
-                }
+                }*/
 
                 logger.debug( "Finished to clean update process traces." );
 
