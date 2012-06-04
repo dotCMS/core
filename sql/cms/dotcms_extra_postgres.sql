@@ -609,7 +609,10 @@ create table workflow_step(
 	name varchar(255) not null,
 	scheme_id varchar(36) references workflow_scheme(id),
 	my_order int default 0,
-	resolved boolean default false
+	resolved boolean default false,
+	escalation_enable boolean default false,
+	escalation_action varchar(36),
+	escalation_time int default 0
 );
 create index workflow_idx_step_scheme on workflow_step(scheme_id);
 
@@ -667,7 +670,7 @@ delete from workflow_task;
 alter table workflow_task add constraint FK_workflow_task_asset foreign key (webasset) references identifier(id);
 alter table workflow_task add constraint FK_workflow_assign foreign key (assigned_to) references cms_role(id);
 alter table workflow_task add constraint FK_workflow_step foreign key (status) references workflow_step(id);
-
+alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);

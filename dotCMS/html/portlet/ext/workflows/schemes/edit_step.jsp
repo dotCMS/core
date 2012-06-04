@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page
 	import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
@@ -14,11 +15,15 @@
 	WorkflowStep step = wapi.findStep(stepId);
 	WorkflowScheme scheme = wapi.findScheme(step.getSchemeId());
 
-
+	List<WorkflowAction> actions = wapi.findActions(step, APILocator.getUserAPI().getSystemUser());
 
 %>
-
-<div dojoType="dijit.form.Form" id="addEditStepForm" jsId="addEditStepForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax" method="POST">
+<style type="text/css">
+<%= step.isEnableEscalation() ? "#stepEditDia{height:370px;} #stepEditDia .escalation-row{display:table-row;}" : "" %>
+</style>
+<div dojoType="dijit.form.Form" id="addEditStepForm" jsId="addEditStepForm" 
+      encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax" 
+      method="POST">
 	
 	<!-- START Listing Results -->
 	<table class="listingTable tableNintyPercent" style="width:90%">
@@ -55,6 +60,36 @@
 					id="stepResolved" dojoType="dijit.form.CheckBox" value="true"
 					<%=(step.isResolved()) ? "checked='true'" : ""%>>
 				</td>
+			</tr>
+			<tr>
+			    <td align="right"><%=LanguageUtil.get(pageContext, "Escalation-Enable")%>:</td>
+			    <td><input type="checkbox" name="enableEscalation" onChange="edit_step_toggleEscalation()"
+                    id="enableEscalation" dojoType="dijit.form.CheckBox"  
+                    <%=step.isEnableEscalation() ? "checked='true'" : "" %>/>
+			    </td>
+			</tr>
+			<tr class="escalation-row">
+			    <td align="right"><%=LanguageUtil.get(pageContext, "Escalation-Action")%>:</td>
+			    <td><select dojoType="dijit.form.FilteringSelect" id="escalationAction" name="escalationAction">
+			           <% for(WorkflowAction wa : actions) {%>
+			                <option value="<%=UtilMethods.webifyString(wa.getId())%>" 
+			                    <%= wa.getId().equals(step.getEscalationAction()) ? "selected='true'" : "" %>>
+			                    <%=UtilMethods.webifyString(wa.getName()) %>
+			                </option>
+			           <% }%>
+			        </select>
+			    </td>
+			</tr>
+			<tr class="escalation-row">
+			    <td align="right" width="40%"><%=LanguageUtil.get(pageContext, "Escalation-Time")%>:</td>
+                <td>
+                   <input type="text" onchange="showExpirationTime()" dojoType="dijit.form.NumberTextBox" 
+                          name="escalationTime" constraints="{min:0,max:30758400,places:0}"  
+                          id="escalationTime" 
+                          value="<%= step.isEnableEscalation() ? step.getEscalationTime() : 0 %>" 
+                          style="width:80px" />
+                          <br/><span id="showExpirationTime" style="float: left;">&nbsp;</span>
+                </td>
 			</tr>
 		</table>
 			
