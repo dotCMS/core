@@ -366,7 +366,7 @@ dojo.require("dojox.layout.ContentPane");
 	   	 });
 
 	   	if(isAjaxFileUploading){
-	   	   alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-wait-until-all-files-are-uploaded")) %>');
+	   	showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-wait-until-all-files-are-uploaded")) %>');
 	       return false;
 	   	}
 

@@ -2152,19 +2152,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                
 			                // if we have an incoming file
 			                else if (incomingFile.exists() ){
+			                	String fileName  = incomingFile.getName();
 			                	java.io.File oldFile = null;
 			                	if(UtilMethods.isSet(oldInode)) {
 			                		//get old file
-			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  incomingFile.getName());
+			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  fileName);
 					               
 			                		// do we have an inline edited file, if so use that
-					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + incomingFile.getName());
+					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + fileName);
 				                    if(editedFile.exists()){
 				                    	incomingFile = editedFile;
 				                    }
 			                	}
 			                	
-				                java.io.File newFile = new java.io.File(newDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  incomingFile.getName());
+				                java.io.File newFile = new java.io.File(newDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  fileName);
 				                binaryFieldFolder.mkdirs();
 				                
 				                // we move files that have been newly uploaded or edited
@@ -2172,6 +2173,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                	//FileUtil.deltree(binaryFieldFolder);
 				                	
 			                		FileUtil.move(incomingFile, newFile);
+			                		
+			                		// what happens is we never clean up the temp directory
+			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), fileName);
+			                		if(delMe.exists() && delMe.getAbsolutePath().contains(Config.CONTEXT
+											.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+											+ java.io.File.separator + user.getUserId() 
+											+ java.io.File.separator + velocityVarNm ) ){
+			                			delMe.delete();
+			                			delMe = incomingFile.getParentFile().getParentFile();
+			                			FileUtil.deltree(delMe);
+			                			
+			                		}
 			                		
 			                	}
 			                	else if (oldFile.exists()) {
