@@ -2179,7 +2179,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		if(delMe.exists() && delMe.getAbsolutePath().contains(Config.CONTEXT
 											.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
 											+ java.io.File.separator + user.getUserId() 
-											+ java.io.File.separator + velocityVarNm ) ){
+											+ java.io.File.separator  ) ){
 			                			delMe.delete();
 			                			delMe = incomingFile.getParentFile().getParentFile();
 			                			FileUtil.deltree(delMe);
