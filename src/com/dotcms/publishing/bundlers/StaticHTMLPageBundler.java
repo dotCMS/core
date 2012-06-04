@@ -127,7 +127,7 @@ public class StaticHTMLPageBundler implements IBundler {
 						}
 						for(HTMLPage p : pages){
 							w.setPage(p);
-							writeFileToDisk(bundleRoot,w, i.getURI(), h);
+							writeFileToDisk(bundleRoot,w, i.getURI(), h, Long.toString(config.getLanguage()));
 							status.addCount();
 						}
 						
@@ -145,7 +145,7 @@ public class StaticHTMLPageBundler implements IBundler {
 		}
 	}
 	
-	private void writeFileToDisk(File bundleRoot, HTMLPageWrapper htmlPageWrapper, String uri, Host h) throws IOException, DotBundleException{
+	private void writeFileToDisk(File bundleRoot, HTMLPageWrapper htmlPageWrapper, String uri, Host h, String langId) throws IOException, DotBundleException{
 		if(uri == null){
 			Logger.warn(this, "URI is not set for Bundler to write");
 			return;
@@ -212,7 +212,7 @@ public class StaticHTMLPageBundler implements IBundler {
 						FileWriter fstream = new FileWriter(file);
 						out = new BufferedWriter(fstream);
 						String html = new String();
-						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser());
+						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser(),langId);
 						out.write(html);
 						out.close();
 						file.setLastModified(lastMod.getTimeInMillis());
