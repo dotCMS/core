@@ -552,7 +552,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             // delete workflow task for contentlet
             WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
             WorkflowTask wft = wff.findTaskByContentlet(con);
-            wff.deleteWorkflowTask(wft);
+            if ( InodeUtils.isSet(wft.getInode() ) ) {
+                wff.deleteWorkflowTask(wft);
+            }
 
             com.dotmarketing.portlets.contentlet.business.Contentlet c =
                 (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(con.getInode(), com.dotmarketing.portlets.contentlet.business.Contentlet.class);

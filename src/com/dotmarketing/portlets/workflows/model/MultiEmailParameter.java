@@ -4,6 +4,7 @@ import java.util.StringTokenizer;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Validator;
 
@@ -16,6 +17,7 @@ public class MultiEmailParameter extends WorkflowActionletParameter {
 	}
 
 	public String hasError(String stringToValidate) {
+		String results = null;		
 		StringBuffer uIdsEmails = new StringBuffer();		
 		if((stringToValidate != null) || (stringToValidate != "")){
 			StringTokenizer st = new StringTokenizer(stringToValidate, ", ");						
@@ -40,6 +42,8 @@ public class MultiEmailParameter extends WorkflowActionletParameter {
 				}
 			}				
 		}
-		return uIdsEmails.toString();
+		if(UtilMethods.isSet(uIdsEmails.toString())){
+			return uIdsEmails.toString();
+		}else return results;
 	}
 }
