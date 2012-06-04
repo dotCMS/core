@@ -115,7 +115,11 @@ public class APILocator extends Locator<APIIndex>{
 	public static TemplateAPI getTemplateAPI() {
 		return (TemplateAPI)getInstance(APIIndex.TEMPLATE_API);
 	}
-	
+
+	public static TimeMachineAPI getTimeMachineAPI() {
+		return (TimeMachineAPI)getInstance(APIIndex.TIME_MACHINE_API);
+	}
+
 	/**
 	 * This will return to you the intercepter which wraps the contentletAPI
 	 * It handles all the AOP logic in that it controls the pre-hooks and post hooks
@@ -347,7 +351,8 @@ enum APIIndex
 	INDICIES_API,
 	CONTENLET_INDEX_API,
 	PUBLISHER_API,
-	ES_INDEX_API;
+	ES_INDEX_API,
+	TIME_MACHINE_API;
 	Object create() {
 		switch(this) {
 		case PERMISSION_API: return new PermissionBitAPIImpl(FactoryLocator.getPermissionFactory());
@@ -391,6 +396,7 @@ enum APIIndex
 		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
 		case ES_INDEX_API: return new ESIndexAPI();
 		case PUBLISHER_API: return new PublisherAPIImpl();
+		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

@@ -39,7 +39,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 	<tr>
 	    <th nowrap><span><%= LanguageUtil.get(pageContext, "") %></span></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Job") %></th>
-		<th nowrap><%= LanguageUtil.get(pageContext, "Index") %></th>
+		<th nowrap><%= LanguageUtil.get(pageContext, "IndexAlias") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Hosts") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Cron") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Include/Exclude") %></th>
@@ -75,7 +75,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 				<%} %>
 		   	</td>
 			<td nowrap valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
-			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>
+			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexAlias")%></td>
 			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
 			
 				<%for(Host h : selectedHosts){ %>

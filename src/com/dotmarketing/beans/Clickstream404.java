@@ -13,8 +13,8 @@ public class Clickstream404 implements Serializable {
     private String hostId;
     private String userId;
     private Date timestamp;
-   
-    
+
+
 	public long getClickstream404Id() {
 		return clickstream404Id;
 	}
@@ -26,9 +26,9 @@ public class Clickstream404 implements Serializable {
 	}
 	public void setRequestURI(String requestURI) {
 		 if(requestURI != null && requestURI.length() > 255){
-			    requestURI.substring(0,254);
-		        }
-			this.requestURI = requestURI;
+			  requestURI = requestURI.substring(0,254);
+		 }
+		 this.requestURI = requestURI;
 	}
 	public String getRefererURI() {
 		return refererURI;
@@ -66,6 +66,6 @@ public class Clickstream404 implements Serializable {
 	        }
 		this.queryString = queryString;
 	}
-    
-    
+
+
 }
