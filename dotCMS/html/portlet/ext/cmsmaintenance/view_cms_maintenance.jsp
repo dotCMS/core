@@ -28,7 +28,7 @@ params.put("struts_action",	new String[] { "/ext/cmsmaintenance/view_cms_mainten
 String referer = java.net.URLEncoder.encode(com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.NORMAL.toString(), params), "UTF-8");
 
 CmsMaintenanceForm CMF = (com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm) request.getAttribute("CmsMaintenanceForm");
-session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, true); 
+session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, true);
 ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 List<Structure> structs = StructureFactory.getStructures();
 %>
@@ -39,6 +39,8 @@ List<Structure> structs = StructureFactory.getStructures();
 <script type="text/javascript" src="/dwr/interface/UserSessionAjax.js"></script>
 
 <script language="Javascript">
+dojo.require("dijit.Editor");
+
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
 
 var isIndexTabShownOnReindexing = false;
@@ -78,17 +80,17 @@ function checkReindexationCallback (response) {
 
 
 		reindexationInProgressDiv.style.display = "";
-		
+
 
 		var bar = dijit.byId("reindexProgressBar");
 		if(bar != undefined){
 		    dijit.byId("reindexProgressBar").update({
-		      maximum: contentCountToIndex, 
+		      maximum: contentCountToIndex,
 		      progress: lastIndexationProgress
 		    });
 		}
 		stillInReindexation = true;
-		var indexationProgressDiv = document.getElementById("indexationProgressDiv"); 
+		var indexationProgressDiv = document.getElementById("indexationProgressDiv");
 		indexationProgressDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"Reindex-Progress") %>: " + lastIndexationProgress + " / " + contentCountToIndex + " ";
 	} else {
 		dojo.query(".indexActionsDiv").style("display","");
@@ -96,7 +98,7 @@ function checkReindexationCallback (response) {
 		if(stillInReindexation){
 			stillInReindexation = false;
 			refreshIndexStats();
-			
+
 		}
 	}
 	setTimeout("checkReindexation()", 5000);
@@ -116,12 +118,12 @@ function optimizeCallback() {
 }
 
 function checkFixAssetCallback (responser) {
-	$("fixAssetsButton").disabled = false;	
+	$("fixAssetsButton").disabled = false;
 
 	var fixAssetInfoDiv = document.getElementById("fixAssetInfo");
 	var fixAssetTimeDiv = document.getElementById("fixAssetTime");
 	var infodiv = "";
-	
+
 	if(responser != undefined){
 
 		for(i=0;i<responser.size();i++){
@@ -140,31 +142,31 @@ function checkFixAssetCallback (responser) {
 
 		     infodiv =infodiv +"<%= LanguageUtil.get(pageContext,"The-Task-perform-was") %> " + description + " .<%= LanguageUtil.get(pageContext,"The-total-of-assets-to-change-is") %> " + total + " <%= LanguageUtil.get(pageContext,"--and--") %> " + error + " <%= LanguageUtil.get(pageContext,"assets-were-succesfully-fixed") %>"+"<br />";
 		     infodiv  =infodiv+"<%= LanguageUtil.get(pageContext,"The-start-time-was") %> " + initialTime + " <%= LanguageUtil.get(pageContext,"and-ended-on") %>  "+ finalTime+"<br /><br />";
-			
+
 			}
-		
+
 			fixAssetInfoDiv.innerHTML = infodiv;
 			//fixAssetTimeDiv.innerHTML = timeDiv;
 			document.getElementById("fixAssetsMessage").innerHTML ="";
 			//$("fixAssetsButton").disabled = true;
-			document.getElementById("fixAssetsButtonDiv").style.display = "";	
-			
+			document.getElementById("fixAssetsButtonDiv").style.display = "";
+
 		//	setTimeout("fixAssetsCallback()", 10000000);
 	}
 
 	else{
 		fixAssetInfoDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"No-Tasks-were-executed") %>"
 		fixAssetTimeDiv.innerHTML = "";
-		
+
 		document.getElementById("fixAssetsButtonDiv").style.display = "";
 		document.getElementById("fixAssetsMessage").innerHTML ="";
 		//setTimeout("fixAssetsCallback()", 10000000);
-				
+
 	}
 
 	setTimeout("fixAssetsCallback()", 10000000);
 }
-		
+
 
 function checkFixAsset()
 {
@@ -232,18 +234,18 @@ function doUpload(){
 
 function doFixAssetsInconsistencies(){
    form = document.getElementById('cmsMaintenanceForm');
-      
+
    if (confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-fix-assets-inconsistencies") %>")) {
    		document.getElementById("fixAssetsButtonDiv").style.display = "none";
 	 	$("fixAssetsButton").disabled = true;
-		document.getElementById("fixAssetsMessage").innerHTML = "<font face='Arial' size='2' color='#ff0000'><b><%= LanguageUtil.get(pageContext,"Working") %></b></font>";		
+		document.getElementById("fixAssetsMessage").innerHTML = "<font face='Arial' size='2' color='#ff0000'><b><%= LanguageUtil.get(pageContext,"Working") %></b></font>";
 		CMSMaintenanceAjax.fixAssetsInconsistencies(fixAssetsCallback);
 	}
 }
 
 function fixAssetsCallback(responser)
 {
-	$("fixAssetsButton").disabled = false;	
+	$("fixAssetsButton").disabled = false;
 
 	var fixAssetInfoDiv = document.getElementById("fixAssetInfo");
 	var fixAssetTimeDiv = document.getElementById("fixAssetTime");
@@ -266,21 +268,21 @@ function fixAssetsCallback(responser)
 
 		     infodiv =infodiv +"<%= LanguageUtil.get(pageContext,"The-Task-perform-was") %> " + description + " .<%= LanguageUtil.get(pageContext,"The-total-of-assets-to-change-is") %> " + total + " <%= LanguageUtil.get(pageContext,"--and--") %> " + error + " <%= LanguageUtil.get(pageContext,"assets-were-succesfully-fixed") %>"+"<br />";
 		     infodiv  =infodiv+"<%= LanguageUtil.get(pageContext,"The-start-time-was") %> " + initialTime + " <%= LanguageUtil.get(pageContext,"and-ended-on") %>  "+ finalTime+"<br /><br />";
-			
+
 			}
-		
+
 			fixAssetInfoDiv.innerHTML = infodiv;
 			document.getElementById("fixAssetsMessage").innerHTML ="";
-			document.getElementById("fixAssetsButtonDiv").style.display = "";	
-			
+			document.getElementById("fixAssetsButtonDiv").style.display = "";
+
 	}
 
 	else{
 		fixAssetInfoDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"No-Tasks-were-executed") %>"
 		fixAssetTimeDiv.innerHTML = "";
-		
+
 		document.getElementById("fixAssetsButtonDiv").style.display = "";
-		document.getElementById("fixAssetsMessage").innerHTML ="";			
+		document.getElementById("fixAssetsMessage").innerHTML ="";
 	}
 }
 
@@ -302,44 +304,44 @@ function doDeleteContentlets(){
 }
 
 function doDeleteContentletsCallback(contentlets){
- 	
+
     var message="";
- 
+
  	if (contentlets[0]!="")
- 	{ 
+ 	{
  		var contaddedsize=contentlets[0];
  	 	/*if(contentlets[0].indexOf(",")){
  	 	 	var contadded=contentlets[0].split(',')
  	 	 	contaddedsize=contadded.length;
  	 	 	}*/
- 	 	message+= contaddedsize+ ' <%= LanguageUtil.get(pageContext,"contentlets-were-succesfully-deleted") %></br>';	
+ 	 	message+= contaddedsize+ ' <%= LanguageUtil.get(pageContext,"contentlets-were-succesfully-deleted") %></br>';
  	}
 	if (contentlets[1]!="")
- 	{ 
+ 	{
  	 	if(contentlets[1].indexOf(",")){
  	 	 	var contnotfound=contentlets[1].split(',')
- 	 	 	message+=  '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlets-were-not-found") %>: '+ contentlets[1] +'</br>';	
+ 	 	 	message+=  '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlets-were-not-found") %>: '+ contentlets[1] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-was-not-found") %>: '+ contentlets[1] +'</br>';	
+ 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-was-not-found") %>: '+ contentlets[1] +'</br>';
  	}
 
 	if (contentlets[2]!="")
- 	{ 
+ 	{
  	 	if(contentlets[2].indexOf(",")){
  	 	 	var conthasreqrel=contentlets[2].split(',')
- 	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + conthasreqrel.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content") %>: '+ contentlets[2] +'</br>';	
+ 	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + conthasreqrel.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content") %>: '+ contentlets[2] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content") %>: '+ contentlets[2] +'</br>';	
+ 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content") %>: '+ contentlets[2] +'</br>';
  	}
 	if (contentlets[3]!="")
- 	{ 
+ 	{
  	 	if(contentlets[3].indexOf(",")){
  	 	 	var contnotfound=contentlets[3].split(',')
- 	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[3] +'</br>';	
+ 	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[3] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[1] +'</br>';	
+ 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[1] +'</br>';
  	}
- 	
+
 	document.getElementById("deleteContentletMessage").innerHTML=message;
 	document.getElementById("deleteContentletButton").disabled = false;
 }
@@ -350,7 +352,7 @@ function doDropAssets(){
      alert("<%= LanguageUtil.get(pageContext,"Please,-enter-a-valid-date") %>");
      return false;
    }
-   
+
   if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")){
 	 	$("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
 	 	$("dropAssetsButton").disabled = true;
@@ -375,23 +377,23 @@ function validateDate(date){
   }
 
   var dateStr = date.value;
-  var datearr = dateStr.split("/"); 
-  
+  var datearr = dateStr.split("/");
+
   var month= datearr[0];
   if(parseInt(month) > 12){
   	return false;
   }
-  
+
   var day= datearr[1];
   if(parseInt(day) > 31){
   	return false;
   }
-  
+
   var year= datearr[2];
   if(parseInt(year) > 9999 || parseInt(year) < 1900  ){
   	return false;
   }
-  
+
   return true;
 }
 
@@ -427,11 +429,11 @@ function refreshCache(){
 	<%if(CacheLocator.getCacheAdministrator().getImplementationClass().equals(DotGuavaCacheAdministratorImpl.class)){%>
 		if(dijit.byId("showSize").checked){
 			x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats_guava.jsp?showSize=true&r=" + y  );
-			
+
 		}
 		else{
 			x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats_guava.jsp?r=" + y  );
-			
+
 		}
 	<%}else{%>
 		x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats.jsp?r=" + y  );
@@ -442,7 +444,7 @@ function refreshCache(){
 }
 
 function deleteIndex(indexName, live){
-	
+
 	if(live && ! confirm("<%= LanguageUtil.get(pageContext, "Delete-Live-Index") %>")){
 		return;
 	}
@@ -467,42 +469,42 @@ function refreshIndexStats(){
 }
 
 function doDownloadIndex(indexName){
-	
+
 
 	window.location="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/downloadIndex/indexName/" + indexName;
-	
+
 }
 
 function doFullReindex(){
-	
-	
+
+
 	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
 	}
-	
+
 	var shards = parseInt(number);
 	if(shards <1){
-		return;	
+		return;
 	}
 	dojo.byId("numberOfShards").value = shards;
-	
+
 	dijit.byId('idxReindexButton').setDisabled(true);
 	dijit.byId('idxShrinkBtn').setDisabled(true);
 	submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
 	return false;
-	
+
 }
 
 function doClearIndex(indexName){
-	
+
 	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index")%>")){
 		return;
-		
+
 	}
 
 	var xhrArgs = {
-	
+
 		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/clearIndex/indexName/" + indexName,
 
 		handleAs: "text",
@@ -523,14 +525,14 @@ function doClearIndex(indexName){
 
 }
 function doActivateIndex(indexName){
-	
+
 	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index")%>")){
 		return;
-		
+
 	}
 
 	var xhrArgs = {
-	
+
 		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/activateIndex/indexName/" + indexName,
 
 		handleAs: "text",
@@ -550,14 +552,14 @@ function doActivateIndex(indexName){
 	dojo.xhrPost(xhrArgs);
 }
 function doDeactivateIndex(indexName){
-	
+
 	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index")%>")){
 		return;
-		
+
 	}
 
 	var xhrArgs = {
-	
+
 		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/deactivateIndex/indexName/" + indexName,
 
 		handleAs: "text",
@@ -627,12 +629,12 @@ function connectUploadEvents() {
 			    dojo.byId("uploadFileName").innerHTML=data.name;
 			    var uploadName=data.name;
 			    var indexName=dojo.byId("indexToRestore").value;
-			    
+
 			    if(indexName.indexOf("working")==0 && uploadName.indexOf("working")!=0)
 			    	dojo.byId("uploadWarningWorking").style.display="block";
 			    else
 			    	dojo.byId("uploadWarningWorking").style.display="none";
-			    
+
 			    if(indexName.indexOf("live")==0 && uploadName.indexOf("live")!=0)
 			    	dojo.byId("uploadWarningLive").style.display="block";
                 else
@@ -646,19 +648,19 @@ function connectUploadEvents() {
 }
 
 function doCreateWorking() {
-	
-	
+
+
 	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
 	}
-	
+
 	var shards = parseInt(number);
 	if(shards <1){
-		return;	
-	
+		return;
+
 	}
-	
+
 	var xhrArgs = {
        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/" + shards,
        handleAs: "text",
@@ -680,20 +682,20 @@ function doCreateWorking() {
 }
 
 function doCreateLive() {
-	
-	
+
+
 	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
 	}
-	
+
 	var shards = parseInt(number);
 	if(shards <1){
-		return;	
+		return;
 	}
-	
-	
-	
+
+
+
 	var xhrArgs = {
        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/" + shards,
        handleAs: "text",
@@ -716,19 +718,19 @@ function doCreateLive() {
 function updateReplicas(indexName,currentNum){
 
 	var number=prompt("<%=LanguageUtil.get(pageContext, "Update-Replicas-Index")%> for index:\n\n" + indexName, currentNum);
-	
+
 	if(!number){
 		return;
 	}
-	
-	
+
+
 	var replicas = parseInt(number);
 	if(currentNum != replicas){
-		
+
 		var xhrArgs = {
-				
+
 				url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/updateReplicas/indexName/" + indexName + "/replicas/" + replicas,
-			
+
 				handleAs: "text",
 				handle : function(dataOrError, ioArgs) {
 					if (dojo.isString(dataOrError)) {
@@ -744,7 +746,7 @@ function updateReplicas(indexName,currentNum){
 				}
 			};
 			dojo.xhrPost(xhrArgs);
-		
+
 	}
 
 
@@ -777,8 +779,10 @@ function getAllThreads() {
                 }
             }
 
+//             var editor = dijit.byId('threadList');
+//             editor.set('value',tempString);
             dwr.util.setValue("threadList", tempString, { escapeHtml:false });
-            
+
         },
         errorHandler:function(message) {
             alert("Oops: " + message);
@@ -864,20 +868,32 @@ function killSession(sessionId) {
 				dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"block",visibility:"visible"});
 			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
 			    dijit.byId('invalidateButton-'+sessionId).set('disabled',true);
-			    
+
 			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-killed")%>');
 			},
 			errorHandler:function(message) {
 				dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"block",visibility:"visible"});
 			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
-			    
+
 			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-notkilled")%>');
-			}			
+			}
+	});
+}
+
+function killAllSessions() {
+	UserSessionAjax.invalidateAllSessions({
+			callback:function() {
+			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-killed")%>');
+			    loadUsers();
+			},
+			errorHandler:function(message) {
+			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-notkilled")%>');
+			}
 	});
 }
 
 function loadUsers() {
-	
+
 	var oldButtons=dojo.query("#sessionList .killsessionButton");
 	for(var i=0;i<oldButtons.length;i++)
 		dijit.byNode(oldButtons[i]).destroy();
@@ -887,7 +903,7 @@ function loadUsers() {
 
     //Cleaning the table contents
     cleanTable(rowsClass);
-	
+
     dojo.query('#loggedUsersProgress').style({display:"block"});
 	UserSessionAjax.getSessionList({
 		callback: function(sessionList) {
@@ -898,7 +914,7 @@ function loadUsers() {
 
                 for(var i=0;i<sessionList.size();i++) {
 					var session=sessionList[i];
-					var html ="<td>"+session.sessionId+"</td> ";
+					var html ="<td>"+session.sessionTime+"</td> ";
 					html+="<td>"+session.address+"</td> ";
 					html+="<td>"+session.userId+"</td> ";
 					html+="<td>"+session.userEmail+"</td> ";
@@ -931,7 +947,17 @@ function loadUsers() {
 			showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-reload-error")%>');
 		}
 	});
-	
+
+}
+
+function selectAll(id){
+
+	document.selection;
+	 s = window.getSelection();
+	 var r1 = document.createRange();
+	 r1.setStartBefore(document.getElementById(id));
+	 r1.setEndAfter(document.getElementById(id));
+	 s.addRange(r1);
 }
 
 </script>
@@ -1373,9 +1399,15 @@ function loadUsers() {
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload-sysinfo") %>
             </button>
         </div>
-
-        <ol class="orderMe" id="threadList"></ol>
+		<div style="width: 98%; margin-left:auto; margin-right:auto; margin-top: -30px">
+		<button dojoType="dijit.form.Button"  name="btn" onClick="selectAll('threadList');">
+			 <%= LanguageUtil.get(pageContext,"Select-all") %>
+		</button>
+		</div>
+<!--         <ol class="orderMe" id="threadList"></ol> -->
         <ol class="orderMe" id="threadStats"></ol>
+        <div  id="threadList" style="margin-top:10px; width:98%;height:500px;overflow:auto; margin-left:auto; margin-right:auto; border:1px solid #C0C0C0;"></div>
+<!--         <textarea class="tailerBody" style="width:98%; height: 800px;  display: block; margin-left: auto; margin-right: auto;" name="contentIdsList" id="threadList"></textarea> -->
         <img style="display:none;" id="threadProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
 
@@ -1393,12 +1425,13 @@ function loadUsers() {
         <table class="listingTable shadowBox" style="width:800px !important;">
             <thead>
             <tr>
-                <th>Session ID</th>
+                <th>Session Time</th>
                 <th>Remote Address</th>
                 <th>User ID</th>
                 <th>User Email</th>
                 <th>User Name</th>
-                <th>Action &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</th>
+                <th><button dojoType="dijit.form.Button" onClick="killAllSessions();">
+                <%= LanguageUtil.get(pageContext, "logged-users-tab-killsession-all") %></button></th>
             </tr>
             </thead>
             <tbody id="sessionList">
@@ -1413,23 +1446,23 @@ function loadUsers() {
 <script language="Javascript">
 dojo.require("dijit.form.DateTextBox");
 	dojo.addOnLoad (function(){
-		
+
 		checkReindexation();
 		checkFixAsset();
 		//indexStructureChanged();
-		
+
 			var tab =dijit.byId("mainTabContainer");
 		   	dojo.connect(tab, 'selectChild',
 			 function (evt) {
 			 	selectedTab = tab.selectedChildWidget;
-			 	
+
 				  	if(selectedTab.id =="indexTabCp"){
 				  		refreshIndexStats();
 				  	}
-			  	
+
 			});
 		//getAllThreads();
 		getSysInfo();
 		loadUsers();
-	});	
+	});
 </script>
