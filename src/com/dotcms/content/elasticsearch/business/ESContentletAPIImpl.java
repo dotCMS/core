@@ -4,12 +4,10 @@
 package com.dotcms.content.elasticsearch.business;
 
 import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -2099,91 +2097,119 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				// method reindexes.
 				contentlet.setLowIndexPriority(priority);
 
+				
+				
+				
+				
 				// http://jira.dotmarketing.net/browse/DOTCMS-1073
 				// storing binary files in file system.
 				Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
 
-				if(createNewVersion){
-				    List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-				    for (Field field : structFields) {
-				        if (field.getFieldContentlet().startsWith("binary")) {
-				            try {
-				                Object binaryFileName = null;
-				                String velocityVarNm = field.getVelocityVarName();
-				                java.io.File tempFile = contentletRaw.getBinary(velocityVarNm);
-				                contentlet.setBinary(velocityVarNm, tempFile);
 
-				                if (tempFile != null) {
-				                    binaryFileName = tempFile.getName();
-				                }
-				                if (!UtilMethods.isSet(binaryFileName) || binaryFileName.toString().contains("-removed-")){
-				                    continue;
-				                }
-				                String newContentletInode = contentlet.getInode();
-				                java.io.File srcFile;
+				// Binary Files
+				String newInode = contentlet.getInode();
+                String oldInode = workingContentlet.getInode();
 
-				                java.io.File workingInodeFile = null;
 
-				                if (InodeUtils.isSet(workingContentletInode)) {
-				                    java.io.File originalFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + workingContentletInode.charAt(0)
-				                            + java.io.File.separator + workingContentletInode.charAt(1) + java.io.File.separator + workingContentletInode
-				                            + java.io.File.separator + velocityVarNm + java.io.File.separator + binaryFileName);
-				                    java.io.File editedFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + workingContentletInode.charAt(0)
-				                            + java.io.File.separator + workingContentletInode.charAt(1) + java.io.File.separator + workingContentletInode
-				                            + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + binaryFileName);
-				                    if(editedFile.exists())
-				                        workingInodeFile = editedFile;
-				                    else
-				                        workingInodeFile = originalFile;
-				                }
+                java.io.File newDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator 
+                		+ newInode.charAt(0)
+                        + java.io.File.separator 
+                        + newInode.charAt(1) + java.io.File.separator + newInode);
+                newDir.mkdirs();
+                
+                java.io.File oldDir = null;
+                if(UtilMethods.isSet(oldInode)) {
+                	oldDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath() 
+            			+ java.io.File.separator + oldInode.charAt(0)
+            			+ java.io.File.separator + oldInode.charAt(1) 
+            			+ java.io.File.separator + oldInode);
+                }
+                
 
-				                if(workingInodeFile!=null)
-				                    srcFile = workingInodeFile;
-				                else if (tempFile.exists()) {
-				                    srcFile = tempFile;
-				                } else {
-			                        Logger.debug(this,"The file must be set");
-			                        continue;
-				                }
-				                String newInodeAssetFolderPath = APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + newContentletInode.charAt(0)
-				                + java.io.File.separator + newContentletInode.charAt(1) + java.io.File.separator + newContentletInode + java.io.File.separator
-				                + velocityVarNm;
+                
 
-				                java.io.File newInodeAssetFolder = new java.io.File(newInodeAssetFolderPath);
+				
+				// loop over the new field values
+				// if we have a new temp file or a deleted file
+				// do it to the new inode directory
+			    List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+			    for (Field field : structFields) {
+			        if (field.getFieldContentlet().startsWith("binary")) {
+			            try {
 
-				                if (!newInodeAssetFolder.exists())
-				                    newInodeAssetFolder.mkdirs();
+			                String velocityVarNm = field.getVelocityVarName();
+			                java.io.File incomingFile = contentletRaw.getBinary(velocityVarNm);
+			                java.io.File binaryFieldFolder = new java.io.File(newDir.getAbsolutePath() + java.io.File.separator + velocityVarNm);
+			                
+			                				                
 
-				                java.io.File destFile = new java.io.File(newInodeAssetFolder.getAbsolutePath() + java.io.File.separator + srcFile.getName());
-				                if(StructureCache.getStructureByInode(contentlet.getStructureInode()).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){//DOTCMS-7093
-			                    	if(UtilMethods.isSet(contentlet.getStringProperty("fileName")))
-			                    		destFile = new java.io.File(newInodeAssetFolder.getAbsolutePath() + java.io.File.separator + contentlet.getStringProperty("fileName"));
-			                    }
-
-				                if (srcFile.equals(workingInodeFile)) {
-				                    if(!srcFile.equals(destFile)){//DOTCMS-5063
-				                        FileChannel ic = new FileInputStream(srcFile).getChannel();
-				                        FileChannel oc = new FileOutputStream(destFile).getChannel();
-				                        ic.transferTo(0, ic.size(), oc);
-				                        ic.close();
-				                        oc.close();
+			                // if the user has removed this  file via the ui
+			                if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
+			                    FileUtil.deltree(binaryFieldFolder);
+			                    contentlet.setBinary(velocityVarNm, null);
+			                	continue;
+			                }
+			                
+			                // if we have an incoming file
+			                else if (incomingFile.exists() ){
+			                	String fileName  = incomingFile.getName();
+			                	java.io.File oldFile = null;
+			                	if(UtilMethods.isSet(oldInode)) {
+			                		//get old file
+			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  fileName);
+					               
+			                		// do we have an inline edited file, if so use that
+					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + fileName);
+				                    if(editedFile.exists()){
+				                    	incomingFile = editedFile;
 				                    }
-				                } else {
-				                    if(!srcFile.renameTo(destFile)){
-				                        FileUtils.moveFile(srcFile, destFile);
-				                    }
-				                }
-				            } catch (FileNotFoundException e) {
-				                e.printStackTrace();
-				                throw new DotContentletValidationException("Error occurred while processing the file. ");
-				            } catch (IOException e) {
-				                e.printStackTrace();
-				                throw new DotContentletValidationException("Error occurred while processing the file.");
-				            }
-				        }
-				    }
-				}
+			                	}
+			                	
+				                java.io.File newFile = new java.io.File(newDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  fileName);
+				                binaryFieldFolder.mkdirs();
+				                
+				                // we move files that have been newly uploaded or edited
+			                	if(oldFile==null || !oldFile.equals(incomingFile)){
+				                	//FileUtil.deltree(binaryFieldFolder);
+				                	
+			                		FileUtil.move(incomingFile, newFile);
+			                		
+			                		// what happens is we never clean up the temp directory
+			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), fileName);
+			                		if(delMe.exists() && delMe.getAbsolutePath().contains(Config.CONTEXT
+											.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+											+ java.io.File.separator + user.getUserId() 
+											+ java.io.File.separator  ) ){
+			                			delMe.delete();
+			                			delMe = incomingFile.getParentFile().getParentFile();
+			                			FileUtil.deltree(delMe);
+			                			
+			                		}
+			                		
+			                	}
+			                	else if (oldFile.exists()) {
+			                		// otherwise, we copy the files as hardlinks
+			                		FileUtil.copyFile(oldFile, newFile, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
+			                	}
+			                	contentlet.setBinary(velocityVarNm, newFile);
+			                }
+			            } catch (FileNotFoundException e) {
+			                e.printStackTrace();
+			                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage());
+			            } catch (IOException e) {
+			                e.printStackTrace();
+			                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage());
+			            }
+			        }
+			    }
+				
 
+				
+				
+				
+				
+				
+				
 				Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
 				if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier()) && contentlet.getStructureInode().equals(hostStructure.getInode())) {
 				    HostAPI hostAPI = APILocator.getHostAPI();
@@ -2276,8 +2302,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					throw (DotContentletStateException)e;
 				if(e instanceof DotWorkflowException)
 					throw (DotWorkflowException)e;
-				if(e instanceof DotRuntimeException)
-					throw (DotRuntimeException)e;
+				if(e instanceof Exception)
+					Logger.error(this, e.toString(), e);
+					throw new DotRuntimeException(e.getMessage());
 			}
 
 
