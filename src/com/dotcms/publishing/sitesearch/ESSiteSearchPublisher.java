@@ -251,7 +251,7 @@ public class ESSiteSearchPublisher extends Publisher {
 			File htmlFile = new File(file.getAbsolutePath().replaceAll(StaticHTMLPageBundler.HTML_ASSET_EXTENSION, ""));
 
 			Host h = APILocator.getHostAPI().find(wrap.getIdentifier().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
-			docId = wrap.getIdentifier().getId();
+			docId = wrap.getIdentifier().getId()+"_"+wrap.getLanguageId();
 
 			// is the live guy
 			if (UtilMethods.isSet(wrap.getVersionInfo().getLiveInode())
