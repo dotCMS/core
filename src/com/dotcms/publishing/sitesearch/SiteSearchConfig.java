@@ -25,11 +25,17 @@ public class SiteSearchConfig extends PublisherConfig {
 
 
 	private enum MyConfig {
-		CRON_EXPRESSION, QUARTZ_JOB_NAME, RUN_NOW,INDEX_NAME; 
+		CRON_EXPRESSION, QUARTZ_JOB_NAME, RUN_NOW,INDEX_NAME, LANGUAGE_TO_INDEX; 
 
 	};
 
+	public String getLanguageToIndex() {
+	    return (String) this.get(MyConfig.LANGUAGE_TO_INDEX.toString());
+	}
 	
+	public void setLanguageToIndex(String lang) {
+	    this.put(MyConfig.LANGUAGE_TO_INDEX.toString(),lang);
+	}
 	
 	public String getCronExpression(){
 		return (String) this.get(MyConfig.CRON_EXPRESSION.toString());

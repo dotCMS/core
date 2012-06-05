@@ -63,7 +63,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 			}
 			catch(Exception e){}
 		}
-		String languageStr=(String)task.getProperties().get("languageToIndex");
+		String languageStr=(String)task.getProperties().get("langToIndex");
 		if(UtilMethods.isSet(languageStr)) {
 			if(languageStr.equals("default"))
 			    languageStr=LanguageUtil.get(pageContext, "Default");
