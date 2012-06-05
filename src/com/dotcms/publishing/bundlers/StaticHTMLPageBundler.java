@@ -118,7 +118,7 @@ public class StaticHTMLPageBundler implements IBundler {
 						VersionInfo vi = vAPI.getVersionInfo(i.getId());
 						w.setIdentifier(i);
 						w.setVersionInfo(vi);
-
+						w.setLanguageId(Long.toString(config.getLanguage()));
 						
 						List<HTMLPage> pages = new ArrayList<HTMLPage>();
 						pages.add(pAPI.loadWorkingPageById(i.getId(), uAPI.getSystemUser(), true));
