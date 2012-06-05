@@ -2152,20 +2152,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                
 			                // if we have an incoming file
 			                else if (incomingFile.exists() ){
-			                	String fileName  = incomingFile.getName();
+			                	String oldFileName  = incomingFile.getName();
+			                	String newFileName  = (UtilMethods.isSet(contentlet.getStringProperty("fileName")) && contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ? contentlet.getStringProperty("fileName"): oldFileName;
+
+			                	
+			                	
+			                	
 			                	java.io.File oldFile = null;
 			                	if(UtilMethods.isSet(oldInode)) {
 			                		//get old file
-			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  fileName);
+			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  oldFileName);
 					               
 			                		// do we have an inline edited file, if so use that
-					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + fileName);
+					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + oldFileName);
 				                    if(editedFile.exists()){
 				                    	incomingFile = editedFile;
 				                    }
 			                	}
 			                	
-				                java.io.File newFile = new java.io.File(newDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  fileName);
+				                java.io.File newFile = new java.io.File(newDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  newFileName);
 				                binaryFieldFolder.mkdirs();
 				                
 				                // we move files that have been newly uploaded or edited
@@ -2175,7 +2180,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		FileUtil.move(incomingFile, newFile);
 			                		
 			                		// what happens is we never clean up the temp directory
-			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), fileName);
+			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
 			                		if(delMe.exists() && delMe.getAbsolutePath().contains(Config.CONTEXT
 											.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
 											+ java.io.File.separator + user.getUserId() 
@@ -2183,7 +2188,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                			delMe.delete();
 			                			delMe = incomingFile.getParentFile().getParentFile();
 			                			FileUtil.deltree(delMe);
-			                			
 			                		}
 			                		
 			                	}
