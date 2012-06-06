@@ -184,7 +184,7 @@ public class FileAssetBundler implements IBundler {
 			String liveworking = (fileAsset.getInode().equals(wrap.getInfo().getLiveInode() )) ? "live" : "working";
 			String myFile = bundleRoot.getPath() + File.separator 
 					+liveworking + File.separator 
-					+ h.getHostname() 
+					+ h.getHostname() + File.separator + config.getLanguage()
 					+ fileAsset.getURI().replace("/", File.separator) + FILE_ASSET_EXTENSION;
 
 			

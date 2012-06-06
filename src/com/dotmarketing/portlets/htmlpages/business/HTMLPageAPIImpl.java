@@ -697,15 +697,20 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			if(UtilMethods.isSet(contentId)){
 				requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
 			}
+			
 			if(UtilMethods.isSet(langId)) {
 			    requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langId);
+			    requestProxy.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langId);
 			}
 			
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
 			if(! liveMode ){
 				context.put("PREVIEW_MODE", new Boolean(true));
 			}
-
+			
+			if(UtilMethods.isSet(langId)) {
+                context.put("language", langId);
+            }
 
 			context.put("host", host);
 			VelocityEngine ve = VelocityUtil.getEngine();
