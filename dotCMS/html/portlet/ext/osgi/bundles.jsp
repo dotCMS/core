@@ -1,3 +1,6 @@
+<%@page import="java.util.Arrays"%>
+<%@page import="java.util.ArrayList"%>
+<%@page import="java.util.List"%>
 <%@page import="java.io.File"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.Map"%>
@@ -6,6 +9,10 @@
 <%@page import="org.osgi.framework.Bundle"%>
 <%
 Bundle[] ba = OsgiFelixListener.m_fwk.getBundleContext().getBundles();
+
+List<String> ignoreBuns =Arrays.asList(new String[]{"org.apache.felix.framework", "org.apache.felix.bundlerepository","org.apache.felix.fileinstall","org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core"});
+
+
 Map<Integer,String> states = new HashMap<Integer,String>();
 states.put(Bundle.ACTIVE, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Active"));
 states.put(Bundle.INSTALLED, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Installed"));
@@ -50,6 +57,8 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Actions")%></th>		
 	</tr>
 	<% for(Bundle b : ba){ %>
+	<%if(ignoreBuns.contains(b.getSymbolicName()) ){%>
+	<%continue;} %>
 	<tr>
 		<td><%=b.getSymbolicName()%></td>
 		<td><%=states.get(b.getState())%></td>
