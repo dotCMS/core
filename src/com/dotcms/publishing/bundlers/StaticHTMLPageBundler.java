@@ -127,7 +127,7 @@ public class StaticHTMLPageBundler implements IBundler {
 						}
 						for(HTMLPage p : pages){
 							w.setPage(p);
-							writeFileToDisk(bundleRoot,w, i.getURI(), h, Long.toString(config.getLanguage()));
+							writeFileToDisk(bundleRoot,w, i.getURI(), h);
 							status.addCount();
 						}
 						
@@ -145,7 +145,7 @@ public class StaticHTMLPageBundler implements IBundler {
 		}
 	}
 	
-	private void writeFileToDisk(File bundleRoot, HTMLPageWrapper htmlPageWrapper, String uri, Host h, String langId) throws IOException, DotBundleException{
+	private void writeFileToDisk(File bundleRoot, HTMLPageWrapper htmlPageWrapper, String uri, Host h) throws IOException, DotBundleException{
 		if(uri == null){
 			Logger.warn(this, "URI is not set for Bundler to write");
 			return;
@@ -157,7 +157,7 @@ public class StaticHTMLPageBundler implements IBundler {
 		try{
 			String staticFile = bundleRoot.getPath() + File.separator 
 					+ (live ? "live" : "working") + File.separator 
-					+ h.getHostname() 
+					+ h.getHostname() + File.separator + config.getLanguage()
 					+ uri.replace("/", File.separator) + HTML_ASSET_EXTENSION;
 			File file = new File(staticFile);
 			
@@ -189,7 +189,7 @@ public class StaticHTMLPageBundler implements IBundler {
 			
 			 staticFile = bundleRoot.getPath() + File.separator 
 					+ (live ? "live" : "working") + File.separator 
-					+ h.getHostname() 
+					+ h.getHostname() + File.separator + config.getLanguage()
 					+ uri.replace("/", File.separator);
 			 file = new File(staticFile);
 			
@@ -212,7 +212,7 @@ public class StaticHTMLPageBundler implements IBundler {
 						FileWriter fstream = new FileWriter(file);
 						out = new BufferedWriter(fstream);
 						String html = new String();
-						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser(),langId);
+						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser(),Long.toString(config.getLanguage()));
 						out.write(html);
 						out.close();
 						file.setLastModified(lastMod.getTimeInMillis());
