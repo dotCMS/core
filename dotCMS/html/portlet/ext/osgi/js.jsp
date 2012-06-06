@@ -85,6 +85,10 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 	},
 	deploy : function(){
 		var availBundles = dijit.byId('availBundlesCombo');
+		if(availBundles.getValue() == undefined || availBundles.getValue()==""){
+			return;
+		}
+		
 		var jarName = availBundles.value;
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=deploy&jar=" + jarName,
