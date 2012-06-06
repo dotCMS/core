@@ -85,6 +85,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 					if (!fname.endsWith(".jar")) {
 						Logger.warn(this,
 								"Cannot deplpy bundle as it is not a JAR");
+						writeError(response, "Cannot deplpy bundle as it is not a JAR");
 						break;
 					}
 

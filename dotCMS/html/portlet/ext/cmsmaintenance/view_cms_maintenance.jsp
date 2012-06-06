@@ -964,6 +964,9 @@ function selectAll(id){
 	 s.addRange(r1);
 }
 
+
+
+
 </script>
 
 <style>
@@ -1213,10 +1216,10 @@ function selectAll(id){
                         <%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>:
                         <dl>
                             <dt><%= LanguageUtil.get(pageContext,"String-to-find") %>:</dt>
-                            <dd><input type="text" name="searchString" id="searchString" size="50"></dd>
+                            <dd><input type="text" dojoType="dijit.form.TextBox" name="searchString" id="searchString" size="50"></dd>
 
                             <dt><%= LanguageUtil.get(pageContext,"Replace-with") %>:</dt>
-                            <dd><input type="text" name="replaceString" id="replaceString" size="50"></dd>
+                            <dd><input type="text" dojoType="dijit.form.TextBox" name="replaceString" id="replaceString" size="50"></dd>
                         </dl>
                     </td>
                     <td align="center" valing="middle">
@@ -1319,6 +1322,7 @@ function selectAll(id){
         <div style="margin-bottom:10px;height:700px;border:0px solid red">
             <iframe style="margin-bottom:10px;height:500px;width:100%;border:0px;" id="_logFileInclude" src="/html/portlet/ext/cmsmaintenance/tail_log.jsp" style=""></iframe>
         </div>
+   
     </div>
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
