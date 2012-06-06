@@ -227,7 +227,7 @@ public class URLMapBundler implements IBundler {
 
 			String myFileUrl = bundleRoot.getPath() + File.separator 
 					+liveworking + File.separator 
-					+ h.getHostname() 
+					+ h.getHostname() + File.separator + config.getLanguage()
 					+ url.replace("/", File.separator) ;
 			 f = new File(myFileUrl);
 			

@@ -9,8 +9,15 @@ public class HTMLPageWrapper {
 	private Identifier identifier;
 	private VersionInfo versionInfo;
 	private HTMLPage page;
+	private String languageId;
 	
-	/**
+	public String getLanguageId() {
+        return languageId;
+    }
+    public void setLanguageId(String languageId) {
+        this.languageId = languageId;
+    }
+    /**
 	 * @return the identifier
 	 */
 	public Identifier getIdentifier() {

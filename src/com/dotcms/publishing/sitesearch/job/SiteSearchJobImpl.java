@@ -151,11 +151,12 @@ public class SiteSearchJobImpl {
 			config.setExcludePatterns(paths);
 		}
 
-
+		String languageToIndex=dataMap.getString("langToIndex");
+		if("default".equals(languageToIndex))
+		    languageToIndex=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		config.setLanguage(Long.parseLong(languageToIndex));
+		
 		APILocator.getPublisherAPI().publish(config,status);
-		
-		
-		
 		
 	}
 
