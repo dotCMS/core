@@ -454,7 +454,10 @@ public class CommentsAction extends DispatchAction {
 		Map<String, Object> parameters = new HashMap<String, Object> ();
 		//I set a dummy TO email address to send the real emails using BCC
 		//parameters.put("to", to); 
-		parameters.put("to", "test@example.com");
+		String emailTo = Config.getStringProperty("EMAIL_TO");
+		if(UtilMethods.isSet(emailTo)){
+			parameters.put("to", emailTo);
+		}		
 		parameters.put("from", from); 
 		parameters.put("userName", userName);
 		parameters.put("userEmail", userEmail);
