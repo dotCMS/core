@@ -41,14 +41,12 @@ String testQuery = (request.getParameter("testQuery") != null)
 
 int testStart = 0;
 int testLimit = 50;
-String testSort = "score";
 
 
 
 
 
-
-SiteSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
+SiteSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery,  testStart, testLimit);
 
 String myError = (results.getError()!= null && results.getError().indexOf("nested:") > -1) 
 		? results.getError().substring(0, results.getError().indexOf("nested:"))  
