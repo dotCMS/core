@@ -379,7 +379,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
                     Identifier id = APILocator.getIdentifierAPI().find(value);
                     if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
-                        Contentlet fileAssetCont = findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                    	Contentlet fileAssetCont = null;
+                    	try {
+                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        } catch(DotContentletStateException se) {
+                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        }
                         publish(fileAssetCont, APILocator.getUserAPI().getSystemUser(), false);
                     }else if(InodeUtils.isSet(id.getInode())){
                         File file  = (File) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
@@ -1366,7 +1371,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // we lock the table dist_reindex_journal until we
             ReindexThread.getInstance().lockCluster();
-           
+
             if(indexAPI.isInFullReindex()){
             	try{
             		ReindexThread.getInstance().unlockCluster();
@@ -2097,10 +2102,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				// method reindexes.
 				contentlet.setLowIndexPriority(priority);
 
-				
-				
-				
-				
+
+
+
+
 				// http://jira.dotmarketing.net/browse/DOTCMS-1073
 				// storing binary files in file system.
 				Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
@@ -2111,24 +2116,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 String oldInode = workingContentlet.getInode();
 
 
-                java.io.File newDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator 
+                java.io.File newDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator
                 		+ newInode.charAt(0)
-                        + java.io.File.separator 
+                        + java.io.File.separator
                         + newInode.charAt(1) + java.io.File.separator + newInode);
                 newDir.mkdirs();
-                
+
                 java.io.File oldDir = null;
                 if(UtilMethods.isSet(oldInode)) {
-                	oldDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath() 
+                	oldDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
             			+ java.io.File.separator + oldInode.charAt(0)
-            			+ java.io.File.separator + oldInode.charAt(1) 
+            			+ java.io.File.separator + oldInode.charAt(1)
             			+ java.io.File.separator + oldInode);
                 }
-                
 
-                
 
-				
+
+
+
 				// loop over the new field values
 				// if we have a new temp file or a deleted file
 				// do it to the new inode directory
@@ -2140,8 +2145,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                String velocityVarNm = field.getVelocityVarName();
 			                java.io.File incomingFile = contentletRaw.getBinary(velocityVarNm);
 			                java.io.File binaryFieldFolder = new java.io.File(newDir.getAbsolutePath() + java.io.File.separator + velocityVarNm);
-			                
-			                				                
+
+
 
 			                // if the user has removed this  file via the ui
 			                if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
@@ -2149,47 +2154,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                    contentlet.setBinary(velocityVarNm, null);
 			                	continue;
 			                }
-			                
+
 			                // if we have an incoming file
 			                else if (incomingFile.exists() ){
 			                	String oldFileName  = incomingFile.getName();
 			                	String newFileName  = (UtilMethods.isSet(contentlet.getStringProperty("fileName")) && contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ? contentlet.getStringProperty("fileName"): oldFileName;
 
-			                	
-			                	
-			                	
+
+
+
 			                	java.io.File oldFile = null;
 			                	if(UtilMethods.isSet(oldInode)) {
 			                		//get old file
 			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  oldFileName);
-					               
+
 			                		// do we have an inline edited file, if so use that
 					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + oldFileName);
 				                    if(editedFile.exists()){
 				                    	incomingFile = editedFile;
 				                    }
 			                	}
-			                	
+
 				                java.io.File newFile = new java.io.File(newDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  newFileName);
 				                binaryFieldFolder.mkdirs();
-				                
+
 				                // we move files that have been newly uploaded or edited
 			                	if(oldFile==null || !oldFile.equals(incomingFile)){
 				                	//FileUtil.deltree(binaryFieldFolder);
-				                	
+
 			                		FileUtil.move(incomingFile, newFile);
-			                		
+
 			                		// what happens is we never clean up the temp directory
 			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
 			                		if(delMe.exists() && delMe.getAbsolutePath().contains(Config.CONTEXT
 											.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
-											+ java.io.File.separator + user.getUserId() 
+											+ java.io.File.separator + user.getUserId()
 											+ java.io.File.separator  ) ){
 			                			delMe.delete();
 			                			delMe = incomingFile.getParentFile().getParentFile();
 			                			FileUtil.deltree(delMe);
 			                		}
-			                		
+
 			                	}
 			                	else if (oldFile.exists()) {
 			                		// otherwise, we copy the files as hardlinks
@@ -2206,14 +2211,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			            }
 			        }
 			    }
-				
 
-				
-				
-				
-				
-				
-				
+
+
+
+
+
+
+
 				Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
 				if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier()) && contentlet.getStructureInode().equals(hostStructure.getInode())) {
 				    HostAPI hostAPI = APILocator.getHostAPI();
@@ -3673,8 +3678,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(urlMapFieldValue !=null ){
                     	result = testResult.replaceAll(urlMapField, urlMapFieldValue);
                     }
-                    
-                    
+
+
                 }
             }
             if (result == null && UtilMethods.isSet(structure.getDetailPage())) {
@@ -3682,14 +3687,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	if(p != null && UtilMethods.isSet(p.getIdentifier())){
             		result = p.getURI() + "?id=" + contentlet.getInode();
             	}
-            	
-            	
+
+
             }
             Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, respectFrontendRoles);
             if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles) {
-            	
+
             	if(result == null || result.indexOf("?") <0){
-            	
+
             		result = result + "?host_id=" + host.getIdentifier();
             	}
             	else{
@@ -3828,7 +3833,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // Permissions in the query
         if (!isAdmin)
             addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
-        
+
         return conFac.indexCount(buffy.toString());
     }
 }
