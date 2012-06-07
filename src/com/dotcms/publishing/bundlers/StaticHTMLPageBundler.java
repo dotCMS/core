@@ -118,7 +118,7 @@ public class StaticHTMLPageBundler implements IBundler {
 						VersionInfo vi = vAPI.getVersionInfo(i.getId());
 						w.setIdentifier(i);
 						w.setVersionInfo(vi);
-
+						w.setLanguageId(Long.toString(config.getLanguage()));
 						
 						List<HTMLPage> pages = new ArrayList<HTMLPage>();
 						pages.add(pAPI.loadWorkingPageById(i.getId(), uAPI.getSystemUser(), true));
@@ -157,7 +157,7 @@ public class StaticHTMLPageBundler implements IBundler {
 		try{
 			String staticFile = bundleRoot.getPath() + File.separator 
 					+ (live ? "live" : "working") + File.separator 
-					+ h.getHostname() 
+					+ h.getHostname() + File.separator + config.getLanguage()
 					+ uri.replace("/", File.separator) + HTML_ASSET_EXTENSION;
 			File file = new File(staticFile);
 			
@@ -189,7 +189,7 @@ public class StaticHTMLPageBundler implements IBundler {
 			
 			 staticFile = bundleRoot.getPath() + File.separator 
 					+ (live ? "live" : "working") + File.separator 
-					+ h.getHostname() 
+					+ h.getHostname() + File.separator + config.getLanguage()
 					+ uri.replace("/", File.separator);
 			 file = new File(staticFile);
 			
@@ -212,7 +212,7 @@ public class StaticHTMLPageBundler implements IBundler {
 						FileWriter fstream = new FileWriter(file);
 						out = new BufferedWriter(fstream);
 						String html = new String();
-						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser());
+						html = pAPI.getHTML(htmlPageWrapper.getIdentifier().getURI(), h,live , null, uAPI.getSystemUser(),Long.toString(config.getLanguage()));
 						out.write(html);
 						out.close();
 						file.setLastModified(lastMod.getTimeInMillis());

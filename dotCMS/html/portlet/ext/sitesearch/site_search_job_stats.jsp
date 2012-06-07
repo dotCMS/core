@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotcms.publishing.sitesearch.SiteSearchPublishStatus"%>
 <%@page import="com.dotcms.publishing.PublishStatus"%>
 <%@page import="com.dotmarketing.beans.Host"%>
@@ -41,6 +42,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 		<th nowrap><%= LanguageUtil.get(pageContext, "Job") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "IndexAlias") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Hosts") %></th>
+		<th nowrap><%= LanguageUtil.get(pageContext, "Language") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Cron") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Include/Exclude") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Paths") %></th>
@@ -60,7 +62,20 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 				selectedHosts.add(APILocator.getHostAPI().find(x, user, true));
 			}
 			catch(Exception e){}
-		}%>
+		}
+		String languageStr=(String)task.getProperties().get("langToIndex");
+		if(UtilMethods.isSet(languageStr)) {
+			if(languageStr.equals("default"))
+			    languageStr=LanguageUtil.get(pageContext, "Default");
+			else {
+			    Language lang=APILocator.getLanguageAPI().getLanguage(Long.parseLong(languageStr));
+			    languageStr=lang.getLanguage()+" - "+lang.getCountry();
+			}   
+		}
+		else
+		    languageStr="";
+		
+		%>
 		<tr style="cursor:pointer;" class="trIdxNothing">
 		
 			 <td nowrap valign="top" align="center">
@@ -86,6 +101,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 					<%= LanguageUtil.get(pageContext, "index-all-hosts") %>
 				<%} %>
 			</td>
+			<td valign="top"><%= languageStr %></td>
 			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("CRON_EXPRESSION")%></td>
 			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
 				<%=task.getProperties().get("includeExclude")%>

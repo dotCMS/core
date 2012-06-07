@@ -9,7 +9,9 @@ import java.util.StringTokenizer;
 import javax.servlet.http.Cookie;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 //http://jira.dotmarketing.net/browse/DOTCMS-3392
@@ -130,8 +132,8 @@ public class DotInvocationHandler implements InvocationHandler{
 	public Object get(String key){
 
 		// LANG
-		 if(key.equalsIgnoreCase("com.dotmarketing.htmlpage.language"))
-			return "1";
+		 if(key.equalsIgnoreCase(WebKeys.HTMLPAGE_LANGUAGE) && !DotRequestProxy.map.containsKey(key))
+			return APILocator.getLanguageAPI().getDefaultLanguage().getId();
 					
 		//COOKIE
 		if(key.equalsIgnoreCase("cookies"))
