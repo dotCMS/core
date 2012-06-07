@@ -275,6 +275,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 #menu ul.dropdown li.dotCMS_EXT_CONTENTRATINGS a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1340px;}
 #menu ul.dropdown li.dotCMS_WORKFLOW_SCHEMES a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -520px;}
 #menu ul.dropdown li.dotCMS_EXT_TAG_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1300px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 
 
