@@ -2,6 +2,7 @@ package com.dotcms.cmsmaintenance.ajax;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,9 +15,11 @@ import org.directwebremoting.WebContextFactory;
 import com.dotcms.listeners.SessionMonitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
@@ -97,7 +100,9 @@ public class UserSessionAjax {
             ss.put("userFullName", user.getFullName());
             ss.put("address", sm.getSysUsersAddress().get(id));
             HttpSession session=sm.getUserSessions().get(id);
-            ss.put("sessionTime", sdf.format(System.currentTimeMillis()-session.getCreationTime()));
+            Date d = new Date();
+            d.setTime(session.getCreationTime());
+            ss.put("sessionTime", DateUtil.prettyDateSince(d, PublicCompanyFactory.getDefaultCompany().getLocale()) );
             sessionList.add(ss);
         }
         return sessionList;
