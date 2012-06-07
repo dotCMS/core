@@ -192,6 +192,10 @@ table.workflowInfo td{vertical-align:top;width:100%;}
 .requiredBox{text-align:right;z-index:9999;position:absolute;top:130px;right:60px;}
 .contentHint{display:block;color:#999;font-size:11px;font-weight:normal;line-height:14px;white-space:normal;font-style:italic;}
 
+.contentViewQuery{color:red;word-wrap:break-word;padding:20px;padding-top:0px;padding-bottom:0px;margin:0px;}
+.contentViewTitle{font-weight:bold;padding-top:10px;margin:0px;}
+.contentViewDialog{padding:10px;padding-top:0px;}
+
 .secondColumn dt{width:20%;}
 .secondColumn dd{margin-left:20%;}
 .halfColumn dt{width:50%;}
