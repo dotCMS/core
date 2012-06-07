@@ -58,8 +58,8 @@ public class SiteSearchWebAPI implements ViewTool {
 	 * @throws IOException
 	 */
 
-	public SiteSearchResults search(String query, String sort, int start, int rows) throws IOException {
-		return search(null, query, sort, start, rows);
+	public SiteSearchResults search(String query, int start, int rows) throws IOException {
+		return search(null, query, start, rows);
 	}
 	
 	/**
@@ -84,7 +84,7 @@ public class SiteSearchWebAPI implements ViewTool {
 	 * @param rows
 	 * @return
 	 */
-	public SiteSearchResults search(String indexAlias, String query, String sort, int start, int rows) {
+	public SiteSearchResults search(String indexAlias, String query, int start, int rows) {
 	    SiteSearchResults results= new SiteSearchResults();
         if(query ==null){
             results.setError("No query passed in");
@@ -120,7 +120,7 @@ public class SiteSearchWebAPI implements ViewTool {
     	    }
         }
         
-        return siteSearchAPI.search(indexName, query, sort, start, rows);
+        return siteSearchAPI.search(indexName, query, start, rows);
 	}
 
 }
