@@ -41,9 +41,9 @@ public interface SiteSearchAPI {
 
 	void deleteFromIndex(String idx, String docId);
 
-	SiteSearchResults search(String query, String sort, int start, int rows);
+	SiteSearchResults search(String query, int start, int rows);
 	
-	SiteSearchResults search(String indexName, String query, String sort, int start, int rows);
+	SiteSearchResults search(String indexName, String query, int start, int rows);
 
 	ScheduledTask getTask(String taskName) throws SchedulerException;
 	

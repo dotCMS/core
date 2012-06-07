@@ -40,13 +40,12 @@ String testQuery = request.getParameter("testQuery");
 
 int testStart = 0;
 int testLimit = 50;
-String testSort = "score";
 
 
 
 SiteSearchResults results= new SiteSearchResults();
 if(testQuery != null && testIndex != null){
-	results = APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
+	results = APILocator.getSiteSearchAPI().search(testIndex, testQuery, testStart, testLimit);
 }
 
 

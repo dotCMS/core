@@ -66,7 +66,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		return indices;
 	}
 	@Override
-	public SiteSearchResults search(String query, String sort, int start, int rows) throws ElasticSearchException{
+	public SiteSearchResults search(String query, int start, int rows) throws ElasticSearchException{
 		SiteSearchResults results = new SiteSearchResults();
 		if(query ==null){
 			results.setError("null query");
@@ -76,7 +76,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 		try{
 
 		
-			results =  search(APILocator.getIndiciesAPI().loadIndicies().site_search, query, null, start, rows);
+			results =  search(APILocator.getIndiciesAPI().loadIndicies().site_search, query, start, rows);
 
 		
 		}
@@ -93,7 +93,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 	}
 	
 	@Override
-	public SiteSearchResults search(String indexName, String query, String sort, int offset, int limit) {
+	public SiteSearchResults search(String indexName, String query, int offset, int limit) {
+		if(!UtilMethods.isSet(query)){
+			query = "*";
+		}
 		SiteSearchResults results = new SiteSearchResults();
 		
 		boolean isJson = StringUtils.isJson(query);
