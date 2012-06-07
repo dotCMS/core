@@ -1,4 +1,0 @@
-({
-huePickerTitle: "Nyansevelger",
-saturationPickerTitle: "Metningsvelger"
-})

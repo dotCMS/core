@@ -1,5 +1,0 @@
-({
-huePickerTitle: "Farbtonauswahl",
-saturationPickerTitle: "Sättigungsauswahl"
-})
-

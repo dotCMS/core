@@ -1,4 +1,0 @@
-({
-	"pageBreak": "Sayfa Sonu"
-})
-
