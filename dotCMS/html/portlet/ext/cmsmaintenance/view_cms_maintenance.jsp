@@ -920,9 +920,13 @@ function loadUsers() {
 					html+="<td>"+session.userEmail+"</td> ";
 					html+="<td>"+session.userFullName+"</td> ";
 					html+="<td> ";
-					html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
-					html+=" <button id='invalidateButtonNode-"+session.sessionId+"' type='button'> ";
-	                html+=" </button></td>";
+					if("<%=session.getId()%>" !=session.sessionId ){
+						html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
+						html+=" <button id='invalidateButtonNode-"+session.sessionId+"' type='button'> ";
+		                html+=" </button>";
+					}
+	                
+					html+=" </td>";
 
                     //Creating the row and adding it to the table
                     createRow(tableId, html, rowsClass, null)
@@ -959,6 +963,9 @@ function selectAll(id){
 	 r1.setEndAfter(document.getElementById(id));
 	 s.addRange(r1);
 }
+
+
+
 
 </script>
 
@@ -1209,10 +1216,10 @@ function selectAll(id){
                         <%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>:
                         <dl>
                             <dt><%= LanguageUtil.get(pageContext,"String-to-find") %>:</dt>
-                            <dd><input type="text" name="searchString" id="searchString" size="50"></dd>
+                            <dd><input type="text" dojoType="dijit.form.TextBox" name="searchString" id="searchString" size="50"></dd>
 
                             <dt><%= LanguageUtil.get(pageContext,"Replace-with") %>:</dt>
-                            <dd><input type="text" name="replaceString" id="replaceString" size="50"></dd>
+                            <dd><input type="text" dojoType="dijit.form.TextBox" name="replaceString" id="replaceString" size="50"></dd>
                         </dl>
                     </td>
                     <td align="center" valing="middle">
@@ -1312,67 +1319,74 @@ function selectAll(id){
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="Logging" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Log-Files") %>" >
         <div style="height:20px">&nbsp;</div>
-        <div style="margin-bottom:10px;height:500px;border:0px solid red">
+        <div style="margin-bottom:10px;height:700px;border:0px solid red">
             <iframe style="margin-bottom:10px;height:500px;width:100%;border:0px;" id="_logFileInclude" src="/html/portlet/ext/cmsmaintenance/tail_log.jsp" style=""></iframe>
         </div>
+   
     </div>
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- START System Info TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
-
-        <table class="listingTable shadowBox" style="width:600px !important;">
-            <thead>
-            <th>
-                <%= LanguageUtil.get(pageContext, "Env-Variable") %>
-            </th>
-            <th>
-                <%= LanguageUtil.get(pageContext, "Value") %>
-            </th>
-            </thead>
-
-            <%Map<String,String> s = System.getenv();%>
-            <%for(Object key : s.keySet()){ %>
-            <tr>
-                <td valign="top"><%=key %></td>
-                <td style="white-space: normal;word-wrap: break-word;"><%=s.get(key) %></td>
-            </tr>
-
-            <%} %>
-        </table>
-
-        <table class="listingTable shadowBox" style="width:600px !important;">
-            <thead>
-            <th>
-                <%= LanguageUtil.get(pageContext, "System-Property") %>
-            </th>
-            <th>
-                <%= LanguageUtil.get(pageContext, "Value") %>
-            </th>
-            </thead>
-
-            <%Properties p = System.getProperties();%>
-            <% RuntimeMXBean b = ManagementFactory.getRuntimeMXBean(); %>
-            <tr>
-                <td valign="top" style="vertical-align: top">Startup Args</td>
-                <td valign="top" style="vertical-align: top">
-                    <%for(Object key : b.getInputArguments()){ %>
-                    <%=key %><br>
-                    <%} %>
-                </td>
-            </tr>
-
-            <%for(Object key : p.keySet()){ %>
-
-            <tr>
-                <td><%=key %></td>
-                <td style="white-space: normal;word-wrap: break-word;"><%=p.get(key) %></td>
-            </tr>
-
-            <%} %>
-        </table>
-
+		<br>&nbsp;<br>
+		<div style="width:80%;margin: 0 auto;">
+	        <table class="listingTable shadowBox">
+	            <thead>
+	            <th>
+	                <%= LanguageUtil.get(pageContext, "Env-Variable") %>
+	            </th>
+	            <th>
+	                <%= LanguageUtil.get(pageContext, "Value") %>
+	            </th>
+	            </thead>
+	
+	            <%Map<String,String> s = System.getenv();%>
+	            <%for(Object key : s.keySet()){ %>
+	            <tr>
+	                <td valign="top"><%=key %></td>
+	                <td style="white-space: normal;word-wrap: break-word;"><%=s.get(key) %></td>
+	            </tr>
+	
+	            <%} %>
+	        </table>
+		<br>&nbsp;<br>
+	        <table class="listingTable shadowBox">
+	            <thead>
+	            <th>
+	                <%= LanguageUtil.get(pageContext, "System-Property") %>
+	            </th>
+	            <th>
+	                <%= LanguageUtil.get(pageContext, "Value") %>
+	            </th>
+	            </thead>
+	
+	            <%Properties p = System.getProperties();%>
+	            <% RuntimeMXBean b = ManagementFactory.getRuntimeMXBean(); %>
+	            <tr>
+	                <td valign="top" style="vertical-align: top">Startup Args</td>
+	                <td valign="top" style="vertical-align: top">
+	                    <%for(Object key : b.getInputArguments()){ %>
+	                    <%=key %><br>
+	                    <%} %>
+	                </td>
+	            </tr>
+	
+	            <%for(Object key : p.keySet()){ %>
+	
+	            <tr>
+	                <td valign="top"><%=key %></td>
+	                <td>
+	                <div  style="white-space: normal;word-wrap: break-word !important;max-width: 400px">
+	                	<%=p.get(key) %>
+	                </div>
+	                </td>
+	            </tr>
+	
+	            <%} %>
+	        </table>
+	        <br>&nbsp;<br>
+		</div>
     </div>
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
@@ -1391,8 +1405,8 @@ function selectAll(id){
 
         <img style="display:none;" id="sysInfoProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <br/>
-        <div dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 50px;">
-            <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="repeatIcon">
+         <div class="buttonRow" style="text-align:right;width:98% !important;">
+            <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="resetIcon">
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload") %>
             </button>
             <button dojoType="dijit.form.Button" onClick="getSysInfo()" iconClass="infoIcon">
@@ -1415,23 +1429,26 @@ function selectAll(id){
     <!-- START Logged Users TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="loggedusers" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "logged-users-tab-title") %>" >
-        <div dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 50px;">
-            <button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="repeatIcon">
+        <div class="buttonRow" style="text-align:right;width:90% !important;">
+            <button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="resetIcon">
                 <%= LanguageUtil.get(pageContext,"logged-users-reload") %>
             </button>
         </div>
 
 
-        <table class="listingTable shadowBox" style="width:800px !important;">
+        <table class="listingTable shadowBox" style="width:90% !important;">
             <thead>
             <tr>
-                <th>Session Time</th>
-                <th>Remote Address</th>
-                <th>User ID</th>
-                <th>User Email</th>
-                <th>User Name</th>
-                <th><button dojoType="dijit.form.Button" onClick="killAllSessions();">
-                <%= LanguageUtil.get(pageContext, "logged-users-tab-killsession-all") %></button></th>
+                <th><%= LanguageUtil.get(pageContext,"Started") %></th>
+                <th><%= LanguageUtil.get(pageContext,"Remote-Address") %></th>
+                <th><%= LanguageUtil.get(pageContext,"user-id") %></th>
+                <th><%= LanguageUtil.get(pageContext,"Email") %></th>
+                <th><%= LanguageUtil.get(pageContext,"user-name") %></th>
+                <th style="text-align:center;">
+                	<button dojoType="dijit.form.Button" onClick="killAllSessions();" iconClass="exclamation-red" >
+                	<%= LanguageUtil.get(pageContext, "logged-users-tab-killsession-all") %>
+                </button>
+                </th>
             </tr>
             </thead>
             <tbody id="sessionList">

@@ -124,6 +124,49 @@
 		
 	});
 
+
+	
+	
+
+	function doManageLogs(){
+		
+		var myCp = dijit.byId("mangeLogCp");
+		if (myCp) {
+			myCp.destroyRecursive(false);
+		}
+		var href = "/html/portlet/ext/cmsmaintenance/log_manager.jsp";
+
+
+		myCp = new dijit.layout.ContentPane({
+			id : "mangeLogCp",
+			parseOnLoad : true,
+			
+		})
+
+		
+		var dia = dijit.byId("mangeLogDia");
+		if(dia){
+			dia.destroyRecursive(false);
+		}
+
+		dia = new dijit.Dialog({
+			id			:	"mangeLogDia",
+			title		: 	"<%=LanguageUtil.get(pageContext, "LOG_Manager")%>",
+			style		:	"width:640px;height:480px;",
+			});
+		
+		
+		
+		myCp.placeAt("mangeLogDia");
+
+		dia.show();
+		myCp.attr("href", href);
+		
+		
+	}
+
+	
+	
 </script>
 
 
@@ -141,9 +184,13 @@
 		</select>
 		&nbsp; &nbsp; 
 		<%=LanguageUtil.get(pageContext, "Follow") %> <input type='checkbox' id='scrollMe' dojoType="dijit.form.CheckBox" value=1 checked="true" />
-		
+		            <button dojoType="dijit.form.Button" onClick="doPopup()"  iconClass="detailView"  value="popup" name="popup" >
+                <%= LanguageUtil.get(pageContext,"popup") %>
+            </button>
 		<div id="popMeUp">
-			<input type="button" value="popup" name="popup" label="popup" onclick="doPopup()" dojoType="dijit.form.Button" />
+            <button dojoType="dijit.form.Button" onClick="doManageLogs()"  iconClass="detailView"  value="popup" name="popup" >
+                <%= LanguageUtil.get(pageContext,"LOG_Manager") %>
+            </button>
 		</div>
 		
 	</div>
@@ -197,7 +244,7 @@
          * Will enable/disable the selected logs
          */
         function enableDisableLogs () {
-
+			alert("test");
             //Find the list of checked logs details
             var selectedLogs = "";
             dojo.query( ".taskCheckBox" ).forEach( function ( node ) {
@@ -272,35 +319,4 @@
 
     </script>
 
-    <div id="logManagerContainer">
 
-        <div class="portlet-wrapper">
-            <div>
-                <%= LanguageUtil.get(pageContext, "LOG_Manager") %>
-                <hr/>
-            </div>
-            <div>
-                <div id="search" title="<%= LanguageUtil.get(pageContext, "LOG_activity") %>" >
-
-                    <div>
-
-                        <div style="margin-left: 225px;margin-right: 225px">
-                            <table class="listingTable" id="logsTable">
-                                <tr id="logsTableHeader">
-                                    <th><input width="5%" type="checkbox" dojoType="dijit.form.CheckBox" id="checkAllCkBx" value="true" onClick="checkUncheck()" /></th>
-                                    <th nowrap="nowrap" width="5%" style="text-align:center;">Status</th>
-                                    <th nowrap="nowrap" width="32%" style="text-align:center;">Log Name</th>
-                                    <th nowrap="nowrap" width="58%" style="text-align:center;">Log Description</th>
-                                </tr>
-                            </table>
-                        </div>
-
-                    </div>
-                    <div>&nbsp;</div>
-                    <div class="buttonRow">
-                        <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="enableDisableLogs()"> <%= LanguageUtil.get(pageContext, "LOG_button") %> </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
