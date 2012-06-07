@@ -122,7 +122,7 @@ public class PluginRoot {
         for ( String rootFilePath : rootFilesPaths ) {
 
             //Getting the relative path based on the ROOT path, ie: ROOT/tomcat/conf/server.xml --> tomcat/conf/server.xml
-            String relativeFilePath = rootFilePath.replace( ROOT_FOLDER + File.separator, "" );
+            String relativeFilePath = rootFilePath.replace( ROOT_FOLDER + "/", "" );//ZIP/JAR ENTRY FILES MUST HAVE '/' AS SEPARATOR ON ANY PLATFORM
             File backUpFile = new File( getAbsoluteBackUpPath( relativeFilePath ) );//The possible back-up path for this file
             File originalFile = new File( getAbsolutePath( relativeFilePath ) );//The path of the original file to be override/add it
 
