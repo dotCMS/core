@@ -40,7 +40,7 @@ public class PluginRoot {
     private String backUpPath;
     private Collection<File> plugins;
 
-    public PluginRoot (String rootPath, String pluginsPath) {
+    public PluginRoot ( String rootPath, String pluginsPath ) {
 
         setRootPath( rootPath );
         setPluginsPath( pluginsPath );
@@ -114,7 +114,7 @@ public class PluginRoot {
      * @throws IOException
      * @see PluginRoot#deploy()
      */
-    private void moveForPlugin (JarFile pluginJar) throws IOException {
+    private void moveForPlugin ( JarFile pluginJar ) throws IOException {
 
         //Now we need to get all the files under the ROOT folder of the plugin, for now lets focus in files with extension ie: ROOT/folder/folder/fileName.xyz
         //Directories with out files are going to be ignore
@@ -213,7 +213,7 @@ public class PluginRoot {
      *
      * @param dir
      */
-    private void restoreFilesUnder (File dir) {
+    private void restoreFilesUnder ( File dir ) {
 
         if ( dir.isDirectory() ) {
             String[] children = dir.list();
@@ -232,7 +232,7 @@ public class PluginRoot {
      * @param dir
      * @return
      */
-    public static boolean deleteDirectory (File dir) {
+    public static boolean deleteDirectory ( File dir ) {
 
         if ( dir.isDirectory() ) {
             String[] children = dir.list();
@@ -254,7 +254,7 @@ public class PluginRoot {
      *
      * @param fileToRestore
      */
-    private void restore (File fileToRestore) {
+    private void restore ( File fileToRestore ) {
 
         //Back-up file path
         String backUpFilePath = fileToRestore.getAbsolutePath();
@@ -304,7 +304,7 @@ public class PluginRoot {
      * @param destination
      * @throws IOException
      */
-    private void copyContent (InputStream inputStream, File destination) throws IOException {
+    private void copyContent ( InputStream inputStream, File destination ) throws IOException {
 
         //For Overwrite the file.
         OutputStream out = new FileOutputStream( destination );
@@ -326,7 +326,7 @@ public class PluginRoot {
 
                 //For linux lets try to do something more...
                 if ( SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_UNIX ) {
-                    Runtime.getRuntime().exec( "chmod 775 " + destination.getAbsolutePath() );
+                    Runtime.getRuntime().exec( "chmod +x " + destination.getAbsolutePath() );
                 } else {
                     destination.setReadable( true );
                     destination.setWritable( true );
@@ -344,7 +344,7 @@ public class PluginRoot {
      * @param path
      * @return
      */
-    public String getAbsolutePath (String path) {
+    public String getAbsolutePath ( String path ) {
         File parentFolder = new File( getRootPath() );
         return parentFolder.getParent() + File.separator + path;
     }
@@ -355,7 +355,7 @@ public class PluginRoot {
      * @param path
      * @return
      */
-    public String getAbsoluteBackUpPath (String path) {
+    public String getAbsoluteBackUpPath ( String path ) {
         return getBackUpPath() + File.separator + path;
     }
 
@@ -372,7 +372,7 @@ public class PluginRoot {
         return rootPath;
     }
 
-    private void setRootPath (String rootPath) {
+    private void setRootPath ( String rootPath ) {
         this.rootPath = rootPath;
     }
 
@@ -380,7 +380,7 @@ public class PluginRoot {
         return pluginsPath;
     }
 
-    private void setPluginsPath (String pluginsPath) {
+    private void setPluginsPath ( String pluginsPath ) {
         this.pluginsPath = pluginsPath;
     }
 
@@ -388,7 +388,7 @@ public class PluginRoot {
         return plugins;
     }
 
-    private void setPlugins (Collection<File> plugins) {
+    private void setPlugins ( Collection<File> plugins ) {
         this.plugins = plugins;
     }
 
