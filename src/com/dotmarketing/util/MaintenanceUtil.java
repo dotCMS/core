@@ -1,17 +1,5 @@
 package com.dotmarketing.util;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import net.sf.hibernate.HibernateException;
-
-import org.apache.commons.io.FileUtils;
-
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -26,6 +14,12 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.util.FileUtil;
+import net.sf.hibernate.HibernateException;
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.sql.SQLException;
+import java.util.*;
 
 public class MaintenanceUtil {
 
@@ -714,65 +708,66 @@ public class MaintenanceUtil {
 	}
 
 
-	/**
-	 * Deleting all inodes of the assets from inode table in case that inode in the table does not exist any more
-	 */
-	@SuppressWarnings("unchecked")
-	public static void deleteAssetsWithNoInode() throws DotDataException {
-		String assetsPath = fileAPI.getRealAssetsRootPath();
-		File assetsRootFolder = new File(assetsPath);
-		String reportsPath = "";
-		if (UtilMethods.isSet(Config.getStringProperty("ASSET_REAL_PATH"))) {
-			reportsPath = Config.getStringProperty("ASSET_REAL_PATH") + File.separator + Config.getStringProperty("REPORT_PATH");
-		} else {
-			reportsPath = Config.CONTEXT.getRealPath(File.separator + Config.getStringProperty("ASSET_PATH") + File.separator + Config.getStringProperty("REPORT_PATH"));
-		}
-		File reportsFolder = new File(reportsPath);
+    /**
+     * Deleting all inodes of the assets from inode table in case that inode in the table does not exist any more
+     */
+    @SuppressWarnings ("unchecked")
+    public static void deleteAssetsWithNoInode () throws DotDataException {
 
-		String messagesPath = "";
-		if (UtilMethods.isSet(Config.getStringProperty("ASSET_REAL_PATH"))) {
-			messagesPath = Config.getStringProperty("ASSET_REAL_PATH") + File.separator + "messages";
-		} else {
-			messagesPath = Config.CONTEXT.getRealPath(File.separator + Config.getStringProperty("ASSET_PATH") + File.separator + "messages");
-		}
-		File messagesFolder = new File(messagesPath);
+        String assetsPath = fileAPI.getRealAssetsRootPath();
+        File assetsRootFolder = new File( assetsPath );
+        String reportsPath = "";
+        if ( UtilMethods.isSet( Config.getStringProperty( "ASSET_REAL_PATH" ) ) ) {
+            reportsPath = Config.getStringProperty( "ASSET_REAL_PATH" ) + File.separator + Config.getStringProperty( "REPORT_PATH" );
+        } else {
+            reportsPath = Config.CONTEXT.getRealPath( File.separator + Config.getStringProperty( "ASSET_PATH" ) + File.separator + Config.getStringProperty( "REPORT_PATH" ) );
+        }
+        File reportsFolder = new File( reportsPath );
 
-		DotConnect dc = new DotConnect();
-		int counter = 0;
-		File file = null;
-		final String selectInodesSQL = "select i.inode from inode i where type = 'file_asset'";
-		dc.setSQL(selectInodesSQL);
-		List<HashMap<String, String>> results = dc.loadResults();
+        String messagesPath = "";
+        if ( UtilMethods.isSet( Config.getStringProperty( "ASSET_REAL_PATH" ) ) ) {
+            messagesPath = Config.getStringProperty( "ASSET_REAL_PATH" ) + File.separator + "messages";
+        } else {
+            messagesPath = Config.CONTEXT.getRealPath( File.separator + Config.getStringProperty( "ASSET_PATH" ) + File.separator + "messages" );
+        }
+        File messagesFolder = new File( messagesPath );
 
-		List<Object> filesAssetsCanBeParsed = new ArrayList<Object>();
-		try{
-			filesAssetsCanBeParsed = findFileAssetsCanBeParsed();
-		}catch(Exception ex){
-			Logger.error(MaintenanceUtil.class, ex.getMessage(),ex);
-		}
-		List<String> fileAssetsListFromFileSystem = (List<String>) filesAssetsCanBeParsed.get(0);
-		List<String> fileAssetsInodesListFromFileSystem = (List<String>) filesAssetsCanBeParsed.get(1);
-		List<String> fileAssetsInodesList = new ArrayList<String>();
-		for(HashMap<String, String> r : results){
-			fileAssetsInodesList.add(r.get("inode").toString());
-		}
-		results = null;
-		for(int i = 0; i < fileAssetsInodesListFromFileSystem.size(); i++){
-			if(!fileAssetsInodesList.contains(fileAssetsInodesListFromFileSystem.get(i))){
-				file = new File(fileAssetsListFromFileSystem.get(i));
-				if(!file.getPath().startsWith(assetsRootFolder.getPath()+java.io.File.separator+"license")
-						&&  !file.getPath().startsWith(reportsFolder.getPath())
-						&&  !file.getPath().startsWith(messagesFolder.getPath())){
-					Logger.info(MaintenanceUtil.class, "Deleting " + file.getPath() + "...");
-					file.delete();
-					counter++;
-				}
-			}
-		}
-		Logger.info(MaintenanceUtil.class, "Deleted " + counter + " files");
-	}
+        DotConnect dc = new DotConnect();
+        int counter = 0;
+        File file = null;
+        final String selectInodesSQL = "select i.inode from inode i where type = 'file_asset'";
+        dc.setSQL( selectInodesSQL );
+        List<HashMap<String, String>> results = dc.loadResults();
 
-	/**
+        List<Object> filesAssetsCanBeParsed = new ArrayList<Object>();
+        try {
+            filesAssetsCanBeParsed = findFileAssetsCanBeParsed();
+        } catch ( Exception ex ) {
+            Logger.error( MaintenanceUtil.class, ex.getMessage(), ex );
+        }
+        List<String> fileAssetsListFromFileSystem = (List<String>) filesAssetsCanBeParsed.get( 0 );
+        List<String> fileAssetsInodesListFromFileSystem = (List<String>) filesAssetsCanBeParsed.get( 1 );
+        List<String> fileAssetsInodesList = new ArrayList<String>();
+        for ( HashMap<String, String> r : results ) {
+            fileAssetsInodesList.add( r.get( "inode" ).toString() );
+        }
+        for ( int i = 0; i < fileAssetsInodesListFromFileSystem.size(); i++ ) {
+            if ( !fileAssetsInodesList.contains( fileAssetsInodesListFromFileSystem.get( i ) ) ) {
+                file = new File( fileAssetsListFromFileSystem.get( i ) );
+                if ( !file.getPath().startsWith( assetsRootFolder.getPath() + java.io.File.separator + "license" )
+                        && !file.getPath().startsWith( reportsFolder.getPath() )
+                        && !file.getPath().startsWith( messagesFolder.getPath() ) ) {
+                    Logger.info( MaintenanceUtil.class, "Deleting " + file.getPath() + "..." );
+                    file.delete();
+                    counter++;
+                }
+            }
+        }
+
+        Logger.info( MaintenanceUtil.class, "Deleted " + counter + " files" );
+    }
+
+    /**
 	 *
 	 * @param folder This is the folder where the assets are stored
 	 * @param fileAssetsList This is the list of all the file assets
@@ -814,48 +809,50 @@ public class MaintenanceUtil {
         return fileAssetsList;
 	}
 
-	/**
-	 * This method returns a list which keeps two lists. The first one is the list of file
-	 * asset files of which names without the extension can be parsed to a long, meaning that
-	 * they are inodes. The second list keeps those inodes obtained by taking the left parts
-	 * of the . in the file asset file names
-	 * @return
-	 */
-	public static List<Object> findFileAssetsCanBeParsed() {
-		String fileName = null;
-		List<String> fileAssetsList = new ArrayList<String>();
-        File folder = new File(fileAPI.getRealAssetPath());
-		fileAssetsList = findFileAssetsList(folder, fileAssetsList);
-		List<String> fileAssets = new ArrayList<String>();
-		List<String> fileAssetsInodes = new ArrayList<String>();
-		File file = null;
-		for(int i = 0; i < fileAssetsList.size(); i++){
-			file = new File((String)fileAssetsList.get(i));
-			fileName = file.getName();
-			String [] fileSplitted = fileName.split("\\.");
-			if(fileSplitted.length > 2 || file.isDirectory()){
-				continue;
-			}
-			try{
-				if(fileSplitted[0].indexOf("resized") != -1  || fileSplitted[0].indexOf("thumb") != -1){
-					String [] underscoreSplitted = fileSplitted[0].split("_");
-					fileAssetsInodes.add(underscoreSplitted[0]);
-				}else{
-					fileAssetsInodes.add(fileSplitted[0]);
-				}
-				fileAssets.add((String)fileAssetsList.get(i));
+    /**
+     * This method returns a list which keeps two lists. The first one is the list of file
+     * asset files of which names without the extension can be parsed to a long, meaning that
+     * they are inodes. The second list keeps those inodes obtained by taking the left parts
+     * of the . in the file asset file names
+     *
+     * @return
+     */
+    public static List<Object> findFileAssetsCanBeParsed () {
 
-			}catch(NumberFormatException numberFormatException){
-				Logger.info(MaintenanceUtil.class, "File " + fileName + " is not an inode");
-			}catch(Exception exception){
-				Logger.error(MaintenanceUtil.class, exception.getMessage(), exception);
-			}
-		}
-		List<Object> assetFilesAndInodes = new ArrayList<Object>();
-		assetFilesAndInodes.add(fileAssets);
-		assetFilesAndInodes.add(fileAssetsInodes);
-		return assetFilesAndInodes;
-	}
+        String fileName = null;
+        List<String> fileAssetsList = new ArrayList<String>();
+        File folder = new File( fileAPI.getRealAssetPath() );
+        fileAssetsList = findFileAssetsList( folder, fileAssetsList );
+        List<String> fileAssets = new ArrayList<String>();
+        List<String> fileAssetsInodes = new ArrayList<String>();
+        File file = null;
+        for ( int i = 0; i < fileAssetsList.size(); i++ ) {
+            file = new File( (String) fileAssetsList.get( i ) );
+            fileName = file.getName();
+            String[] fileSplitted = fileName.split( "\\." );
+            if ( fileSplitted.length > 2 || file.isDirectory() ) {
+                continue;
+            }
+            try {
+                if ( fileSplitted[0].indexOf( "resized" ) != -1 || fileSplitted[0].indexOf( "thumb" ) != -1 ) {
+                    String[] underscoreSplitted = fileSplitted[0].split( "_" );
+                    fileAssetsInodes.add( underscoreSplitted[0] );
+                } else {
+                    fileAssetsInodes.add( fileSplitted[0] );
+                }
+                fileAssets.add( (String) fileAssetsList.get( i ) );
+
+            } catch ( NumberFormatException numberFormatException ) {
+                Logger.info( MaintenanceUtil.class, "File " + fileName + " is not an inode" );
+            } catch ( Exception exception ) {
+                Logger.error( MaintenanceUtil.class, exception.getMessage(), exception );
+            }
+        }
+        List<Object> assetFilesAndInodes = new ArrayList<Object>();
+        assetFilesAndInodes.add( fileAssets );
+        assetFilesAndInodes.add( fileAssetsInodes );
+        return assetFilesAndInodes;
+    }
 
 	public static void fixImagesTable() throws SQLException{
 		DotConnect dc = new DotConnect();

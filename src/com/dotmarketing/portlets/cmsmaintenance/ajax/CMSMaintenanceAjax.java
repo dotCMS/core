@@ -1,40 +1,9 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-
-import net.sf.hibernate.HibernateException;
-
-import org.directwebremoting.WebContextFactory;
-import org.quartz.JobExecutionContext;
-
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
-import com.dotmarketing.beans.Clickstream;
-import com.dotmarketing.beans.ClickstreamRequest;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.PermissionReference;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -59,14 +28,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.TagInode;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.HibernateCollectionConverter;
-import com.dotmarketing.util.HibernateMapConverter;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.MaintenanceUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.ZipUtil;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
@@ -80,6 +42,18 @@ import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import com.thoughtworks.xstream.mapper.Mapper;
+import net.sf.hibernate.HibernateException;
+import org.directwebremoting.WebContextFactory;
+import org.quartz.JobExecutionContext;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import java.io.*;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.zip.ZipOutputStream;
 
 public class CMSMaintenanceAjax {
 
@@ -206,10 +180,29 @@ public class CMSMaintenanceAjax {
 		return results;
 	}
 
-    public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException {
-        	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
-        	MaintenanceUtil.deleteAssetsWithNoInode();
-        	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
+    /**
+     * Method that will remove old versions of contentlets, containers, templates, links and assets, that are older than
+     * the date specified. It won't touch live and working versions of the assets.
+     *
+     * @param date
+     * @return
+     * @throws ParseException
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    public int removeOldVersions ( String date ) throws ParseException, SQLException, DotDataException {
+
+        Date assetsOlderThan = new SimpleDateFormat( "MM/dd/yyyy" ).parse( date );
+        return CMSMaintenanceFactory.deleteOldAssetVersions( assetsOlderThan );
+    }
+
+    /**
+     * Method that will clean assets deleting assets that are no longer in the File asset table and the Contentlet table
+     * where the structure type is <b>file_asset<b/>.
+     * @throws DotDataException
+     */
+    public void cleanAssets () throws DotDataException {
+        MaintenanceUtil.deleteAssetsWithNoInode();
     }
 
     public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {

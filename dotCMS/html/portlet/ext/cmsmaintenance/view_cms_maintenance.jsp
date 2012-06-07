@@ -346,19 +346,29 @@ function doDeleteContentletsCallback(contentlets){
 	document.getElementById("deleteContentletButton").disabled = false;
 }
 
-function doDropAssets(){
-   var form = $('cmsMaintenanceForm');
-   if(!validateDate(form.removeassetsdate)){
-     alert("<%= LanguageUtil.get(pageContext,"Please,-enter-a-valid-date") %>");
-     return false;
-   }
+function doDropAssets() {
 
-  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")){
-	 	$("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
-	 	$("dropAssetsButton").disabled = true;
-		CMSMaintenanceAjax.removeOldVersions(form.removeassetsdate.value, doDropAssetsCallback);
-	}
+    var form = $('cmsMaintenanceForm');
+    if (!validateDate(form.removeassetsdate)) {
+        alert("<%= LanguageUtil.get(pageContext,"Please,-enter-a-valid-date") %>");
+        return false;
+    }
+
+    if (confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")) {
+        $("dropAssetsMessage").innerHTML = '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
+        $("dropAssetsButton").disabled = true;
+        CMSMaintenanceAjax.removeOldVersions(form.removeassetsdate.value, doDropAssetsCallback);
+    }
 }
+
+var doCleanAssets = function () {
+
+    if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.button.confirmation.clean.assets") %>")) {
+        $("cleanAssetsButton").innerHTML = '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
+        $("cleanAssetsButton").disabled = true;
+        CMSMaintenanceAjax.cleanAssets(doDropAssetsCallback);
+    }
+};
 
 function doDropAssetsCallback(removed){
  	$("dropAssetsButton").disabled = false;
@@ -1278,6 +1288,16 @@ function selectAll(id){
                     <td align="center">
                       <button dojoType="dijit.form.Button" onClick="doDropAssets();"  id="dropAssetsButton" iconClass="dropIcon">
                          <%= LanguageUtil.get(pageContext,"Execute") %>
+                      </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p><%= LanguageUtil.get(pageContext,"cms.maintenance.button.explanation.clean.assets") %></p>
+                    </td>
+                    <td align="center">
+                      <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
+                         <%= LanguageUtil.get(pageContext,"cms.maintenance.button.label.clean.assets") %>
                       </button>
                     </td>
                 </tr>
