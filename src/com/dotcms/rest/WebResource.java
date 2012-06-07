@@ -23,8 +23,9 @@ public class WebResource {
 	protected static final String USER = "user";
 	protected static final String PASSWORD = "password";
 	protected static final String ID = "id";
-
-
+	protected static final String INODE = "inode";
+	protected static final String LIVE = "live";
+	protected static final String LANGUAGE = "language";
 	protected User authenticateUser(String username, String password) throws DotDataException, DotSecurityException {
 		/* Authenticating the User if passed */
 		User user = null;
