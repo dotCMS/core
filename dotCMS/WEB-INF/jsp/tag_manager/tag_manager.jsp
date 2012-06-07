@@ -83,7 +83,7 @@ td {font-size: 100%;}
 	dojo.require("dijit.form.Button");
 	dojo.require("dijit.form.CheckBox");
 	dojo.require("dojox.grid.EnhancedGrid");
-	dojo.require("dojox.grid.enhanced.DataSelection");
+	//dojo.require("dojox.grid.enhanced.DataSelection");
 	dojo.require("dojox.grid.enhanced.plugins.Menu");
 	dojo.require("dojox.grid.enhanced.plugins.DnD");
 	dojo.require("dojox.grid.enhanced.plugins.NestedSorting");

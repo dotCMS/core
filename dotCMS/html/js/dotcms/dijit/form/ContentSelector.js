@@ -51,7 +51,8 @@ dojo.provide("dotcms.dijit.form.ContentSelector");
 	dojo.require("dijit._Templated");
 	dojo.require("dijit.Dialog");
 	dojo.require("dijit.form.Button");
-
+	dojo.require("dijit.layout.BorderContainer");
+	
 dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templated], {
 		
 		templatePath: dojo.moduleUrl("dotcms", "dijit/form/ContentSelector.jsp"),

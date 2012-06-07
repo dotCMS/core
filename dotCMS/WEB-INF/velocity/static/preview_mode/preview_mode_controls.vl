@@ -20,6 +20,10 @@
 </style>
 
 <script>
+	dojo.require("dijit.Dialog");
+	dojo.require("dijit.ProgressBar");
+	dojo.require("dijit.form.Button");
+	dojo.require("dijit.form.TextBox");
 	
 	//Widget functions
 	var _dotStructureTypeName = "";
@@ -723,10 +727,12 @@
 			else{
 				document.body.className = document.body.className  + " dmundra";
 			}
+			
+			dojo.connect(dijit.byId("dotAddWidget"), "hide", _dotWidgetInitiate);
 	  	}
 	);
 
-	dojo.connect(dijit.byId("dotAddWidget"), "hide", _dotWidgetInitiate);
+	
     	
     	
 </script>
