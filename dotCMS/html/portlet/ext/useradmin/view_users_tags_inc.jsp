@@ -18,8 +18,7 @@
 			</div>
 		</td>
 		<td style="border:0;vertical-align:top;">
-			<table class="listingTable" style="width:400px;margin:0 auto;font-size:100%;">
-				<tbody id="tags_table"></tbody>
+			<table  id="tags_table" class="listingTable" style="width:400px;margin:0 auto;font-size:100%;">
 			</table>
 		</td>
 	</tr>
