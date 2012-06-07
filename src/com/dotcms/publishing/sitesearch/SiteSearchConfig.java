@@ -25,11 +25,8 @@ public class SiteSearchConfig extends PublisherConfig {
 
 
 	private enum MyConfig {
-		CRON_EXPRESSION, QUARTZ_JOB_NAME, RUN_NOW,INDEX_NAME; 
-
+		CRON_EXPRESSION, QUARTZ_JOB_NAME, RUN_NOW,INDEX_NAME;
 	};
-
-	
 	
 	public String getCronExpression(){
 		return (String) this.get(MyConfig.CRON_EXPRESSION.toString());

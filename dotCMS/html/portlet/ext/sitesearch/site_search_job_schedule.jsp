@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="java.net.URLEncoder"%>
 <%@page import="com.dotmarketing.quartz.ScheduledTask"%>
@@ -49,7 +50,7 @@ String startDateDate = (props.get("startDateDate") != null) ? (String) props.get
 String endDateDate = (props.get("endDateDate") != null) ? (String) props.get("endDateDate"): "" ;//ssdf.format(new Date());
 String startDateTime = (props.get("startDateTime") != null) ? (String) props.get("startDateTime"): "" ;//s"T" + tdf.format(startDate);
 String endDateTime = (props.get("endDateTime") != null) ? (String) props.get("endDateTime"): "" ;//s"T" + tdf.format(endDate);
-
+String langToIndex = (props.get("langToIndex") != null) ? (String) props.get("langToIndex"): "default" ;
 String QUARTZ_JOB_NAME =  UtilMethods.isSet((String) props.get("QUARTZ_JOB_NAME")) ? (String) props.get("QUARTZ_JOB_NAME"): "" ;
 String CRON_EXPRESSION = UtilMethods.webifyString((String) props.get("CRON_EXPRESSION"));
 
@@ -85,7 +86,7 @@ for(String x : indexHosts){
 boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().site_search != null;
 
 
-
+List<Language> langs=APILocator.getLanguageAPI().getLanguages();
 
 String paths = UtilMethods.webifyString((String) props.get("paths"));
 String includeExclude = (String) props.get("includeExclude") ==null ? "all": (String) props.get("includeExclude");
@@ -221,6 +222,30 @@ boolean hasPath = false;
 				-->
 			</td>
 		</tr>
+		
+		<tr>
+            <td align="right" valign="top" nowrap="true">
+              <strong>
+                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language")) %>:
+              </strong>
+            </td>
+            <td>
+                 <input type="radio" dojoType="dijit.form.RadioButton" id="op_default" name="langToIndex" 
+                        value="default" <%="default".equals(langToIndex) ? "checked='true'" : ""%> />
+                  <label for="op_default">
+                     <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Default")) %>
+                  </label> 
+                      
+                 <% for(Language lang : langs) { %>
+                        <br/>
+                        <input type="radio" dojoType="dijit.form.RadioButton" id="op_<%=lang.getId()%>"
+                               name="langToIndex" value="<%=lang.getId()%>" />
+                        <label for="op_<%=lang.getId()%>">
+                          <%= lang.getLanguage() + " - " + lang.getCountry() %>
+                        </label>
+                 <% } %>
+            </td>
+        </tr>
 		
 		
 		<tr>
