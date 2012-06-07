@@ -1,5 +1,0 @@
-({
-	"setButtonText": "Ορισμός",
-	"cancelButtonText": "Ακύρωση"
-})
-

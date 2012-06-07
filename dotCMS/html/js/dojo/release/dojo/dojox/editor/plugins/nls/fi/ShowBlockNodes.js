@@ -1,4 +1,0 @@
-({
-	"showBlockNodes": "Näytä HTML-lohkoelementit"
-})
-

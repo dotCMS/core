@@ -1,4 +1,0 @@
-({
-	"blockquote": "Blokovno besedilo"
-})
-
