@@ -170,10 +170,6 @@ if(!statePopUp || portletException){%>
 
 
 // Inline Help Popup. Pulls results from dotcms.com
-<style>
-.dotcmsHelpButton{display:block;position:absolute;top:3px;right:50%;margin-left:200px;padding:3px 5px;border:1px solid #fff;font-size:11px;background: rgba(255, 255, 255, 0.3);color:#000;text-decoration:none;}
-.dotcmsHelpButton:hover{background: rgba(255, 255, 255, 0.8);}
-</style>
 
 <script>
 	function showHelp(){
@@ -189,9 +185,8 @@ if(!statePopUp || portletException){%>
 </script>
 
 
-
-<a href="#" onclick="showHelp();" class="dotcmsHelpButton">
-	Help for: <%=portlet.getPortletId() %>
-</a>
+<div class="helpId">
+	<a href="#" onclick="showHelp();" class="dotcmsHelpButton"><%=LanguageUtil.get(pageContext, "Help") %></a>
+</div>
 
 
