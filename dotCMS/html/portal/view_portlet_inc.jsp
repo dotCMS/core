@@ -166,3 +166,27 @@ if(!statePopUp || portletException){%>
 <%}else{ %>
 	<%= renderRequest.getAttribute(WebKeys.PORTLET_CONTENT) %>
 <%}}%>
+
+
+
+// Inline Help Popup. Pulls results from dotcms.com
+
+<script>
+	function showHelp(){
+		var helpUrl = "http://dotcms.com/inline-help/2.0/<%=portlet.getPortletId() %>";
+		var dialog = new dijit.Dialog({
+			title: "dotCMS Help",
+			content: "<iframe id='myIframe' src='" + helpUrl + "' width='480' height='640' style='border: 0 none;margin:-10px;'></iframe>",
+			loadingMessage: "Loading...",
+			style: "width:480px;height:640px;padding:0;"
+    	});
+    	dialog.show();
+	}
+</script>
+
+
+<div class="helpId">
+	<a href="#" onclick="showHelp();" class="dotcmsHelpButton"><%=LanguageUtil.get(pageContext, "Help") %></a>
+</div>
+
+
