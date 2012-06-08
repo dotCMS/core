@@ -64,7 +64,6 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
 
 			db.setSQL(ConsoleLoggerSQL.SELECT_LOGGING_CRITERIA);
 			db.loadResult();
-			System.out.println("QUERY retrieveLogs ESEGUITA");
 
 		} catch (final Exception e) {
 			Logger.debug(this.getClass(), e.getMessage(), e);
@@ -82,7 +81,6 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
 			db.addParam(r.getEnabled());
 			db.addParam(r.getLog_name());
 			db.loadResult();
-			System.out.println("QUERY updateLogs ESEGUITA");
 
 		} catch (final Exception e) {
 			Logger.debug(this.getClass(), e.getMessage(), e);
