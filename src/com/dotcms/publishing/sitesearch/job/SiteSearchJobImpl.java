@@ -87,77 +87,74 @@ public class SiteSearchJobImpl {
 			}	
 		}
 		
-		
-
-		
-		SiteSearchConfig config = new SiteSearchConfig();
-		config.setJobId(dataMap.getString("QUARTZ_JOB_NAME"));
-
-		List<Host> hosts=new ArrayList<Host>();
-
-		if(indexAll){
-				hosts = APILocator.getHostAPI().findAll(userToRun, true);				
-		}else{
-			
-			for(String h : indexHosts){
-				hosts.add(APILocator.getHostAPI().find(h, userToRun, true));
-			}
-			
-		}
-
-		config.setHosts( hosts);		
-		
-		// reuse or create new indexes as needed
-		String indexAlias = dataMap.getString("indexAlias");
-		String indexName;
-		ESIndexAPI iapi=new ESIndexAPI();
-		Map<String,String> aliasMap=iapi.getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices());
-		if("DEFAULT".equals(indexAlias)){
-			indexName = APILocator.getIndiciesAPI().loadIndicies().site_search;
-		}
-		else if(aliasMap.get(indexAlias)==null){
-			indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME  + "_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
-			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, indexAlias, 1);
-			config.setSwitchIndexWhenDone(true);
-		}
-		else {
-		    indexName=aliasMap.get(indexAlias);
-		}
-		
-		config.setIndexName(indexName);
-
-		
-		
-		// if it is going to be an incremental job, write the bundle to the same folder
-		// every time.  Otherwise, create a new folder using a date stamp.
-		if(dataMap.get("incremental")!=null){
-			config.setId(StringUtils.sanitizeCamelCase(config.getJobName()));
-		}
-		else{
-			String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
-			config.setId(x);
-		}
-		
-
-		config.setStartDate(start);
-		config.setEndDate(end);
-		config.setIncremental(incremental);
-		config.setUser(userToRun);
-		if(include){
-			config.setIncludePatterns(paths);
-		}
-		else{
-			
-			config.setExcludePatterns(paths);
-		}
-
-		String languageToIndex=dataMap.getString("langToIndex");
-		if("default".equals(languageToIndex))
-		    languageToIndex=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-		config.setLanguage(Long.parseLong(languageToIndex));
-		
-		APILocator.getPublisherAPI().publish(config,status);
-		
+		String[] languageToIndex=(String[])dataMap.get("langToIndex");
+        for(String lang : languageToIndex) {
+            SiteSearchConfig config = new SiteSearchConfig();
+            
+            config.setLanguage(Long.parseLong(lang));		
+    		
+    		config.setJobId(dataMap.getString("QUARTZ_JOB_NAME"));
+    
+    		List<Host> hosts=new ArrayList<Host>();
+    
+    		if(indexAll){
+    				hosts = APILocator.getHostAPI().findAll(userToRun, true);				
+    		}else{
+    			
+    			for(String h : indexHosts){
+    				hosts.add(APILocator.getHostAPI().find(h, userToRun, true));
+    			}
+    			
+    		}
+    
+    		config.setHosts( hosts);		
+    		
+    		// reuse or create new indexes as needed
+    		String indexAlias = dataMap.getString("indexAlias");
+    		String indexName;
+    		ESIndexAPI iapi=new ESIndexAPI();
+    		Map<String,String> aliasMap=iapi.getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices());
+    		if("DEFAULT".equals(indexAlias)){
+    			indexName = APILocator.getIndiciesAPI().loadIndicies().site_search;
+    		}
+    		else if(aliasMap.get(indexAlias)==null){
+    			indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME  + "_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
+    			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, indexAlias, 1);
+    			config.setSwitchIndexWhenDone(true);
+    		}
+    		else {
+    		    indexName=aliasMap.get(indexAlias);
+    		}
+    		
+    		config.setIndexName(indexName);
+    
+    		
+    		
+    		// if it is going to be an incremental job, write the bundle to the same folder
+    		// every time.  Otherwise, create a new folder using a date stamp.
+    		if(dataMap.get("incremental")!=null){
+    			config.setId(StringUtils.sanitizeCamelCase(config.getJobName()));
+    		}
+    		else{
+    			String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
+    			config.setId(x);
+    		}
+    		
+    
+    		config.setStartDate(start);
+    		config.setEndDate(end);
+    		config.setIncremental(incremental);
+    		config.setUser(userToRun);
+    		if(include){
+    			config.setIncludePatterns(paths);
+    		}
+    		else{
+    			
+    			config.setExcludePatterns(paths);
+    		}
+    		
+    	    APILocator.getPublisherAPI().publish(config,status);
+        }
 	}
 
 }
