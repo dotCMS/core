@@ -112,6 +112,7 @@ THIS FILE AND ITS INCLUDES
 		dojo.require("dojox.form.Uploader");
         dojo.require("dojox.form.uploader.FileList");
         dojo.require("dojox.form.uploader.plugins.HTML5");
+		dojo.require("dojo.io.script");
 		
 		dojo.addOnLoad(function () {
 			dojo.global.DWRUtil = dwr.util;
