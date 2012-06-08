@@ -132,7 +132,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 			</button>
 		</div>
 	</div>
-	<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" style="height:700px;overflow: auto;;">
+	<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" >
 	
 	
 		<table class="listingTable" style="width:98%">
