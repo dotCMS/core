@@ -1,9 +1,9 @@
 package com.dotmarketing.logConsole.model;
 
+import java.util.List;
+
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
-
-import java.util.Collection;
 
 /**
  * Created by Jonathan Gamba.
@@ -18,7 +18,7 @@ public interface LogMapperCache extends Cachable {
      * @return
      * @throws DotCacheException
      */
-    public Collection<LogMapperRow> get () throws DotCacheException;
+    public List<LogMapperRow> get () throws DotCacheException;
 
     /**
      * Puts a LogMapperRow collection in a cache.
@@ -26,7 +26,7 @@ public interface LogMapperCache extends Cachable {
      * @param logMapperRows
      * @throws DotCacheException
      */
-    public void put ( Collection<LogMapperRow> logMapperRows ) throws DotCacheException;
+    public void put ( List<LogMapperRow> logMapperRows ) throws DotCacheException;
 
 
 }
