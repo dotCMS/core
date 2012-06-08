@@ -1,10 +1,10 @@
 package com.dotmarketing.logConsole.model;
 
+import java.util.List;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
-
-import java.util.Collection;
 
 /**
  * Created by Jonathan Gamba.
@@ -30,8 +30,8 @@ public class LogMapperCacheImpl implements LogMapperCache {
      * @return
      * @throws DotCacheException
      */
-    public Collection<LogMapperRow> get () throws DotCacheException {
-        return ( Collection<LogMapperRow> ) cache.get( KEY_LOGS, primaryGroup );
+    public List<LogMapperRow> get () throws DotCacheException {
+        return ( List<LogMapperRow> ) cache.get( KEY_LOGS, primaryGroup );
     }
 
     /**
@@ -40,7 +40,7 @@ public class LogMapperCacheImpl implements LogMapperCache {
      * @param logMapperRows
      * @throws DotCacheException
      */
-    public void put ( Collection<LogMapperRow> logMapperRows ) throws DotCacheException {
+    public void put ( List<LogMapperRow> logMapperRows ) throws DotCacheException {
         cache.put( KEY_LOGS, logMapperRows, primaryGroup );
     }
 
