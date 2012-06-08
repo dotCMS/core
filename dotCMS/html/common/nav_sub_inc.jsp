@@ -524,13 +524,6 @@ dojo.require("dojo.cookie");
 <!-- End Site Tools -->
 
 
-<!-- Server Info -->
-<%String serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");%>
-<% if (UtilMethods.isSet(serverId)){ %>
-	<div class="serverId">Server: <%=serverId%></div>
-<% } %>
-<!-- End Server Info -->
-
 <!-- User Info Drop Down -->
 
 <div id="account-menu" class="account-flyout" style="display:none;">
@@ -678,8 +671,13 @@ dojo.require("dojo.cookie");
 	
 	<!-- About pop up -->
 	<div id="dotBackEndDialog" dojoType="dijit.Dialog" style="display:none" title="<%= LanguageUtil.get(pageContext, "about") %> dotCMS">
-		<div dojoType="dijit.layout.ContentPane" style="width:400px;height:150px;" class="box" hasShadow="true" id="dotBackEndDialogCP">
-		</div>
+		<!-- Server Info -->
+			<%String serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");%>
+			<% if (UtilMethods.isSet(serverId)){ %>
+				<div class="serverID"><strong>Server:</strong> <%=serverId%></div>
+			<% } %>
+		<!-- End Server Info -->
+		<div dojoType="dijit.layout.ContentPane" style="width:400px;height:150px;" class="box" hasShadow="true" id="dotBackEndDialogCP"></div>
 		<div class="copyright">&copy;<%=new GregorianCalendar().get(Calendar.YEAR)%> dotCMS Inc. <%= LanguageUtil.get(pageContext, "All-rights-reserved") %>.</div>
 	</div>
 

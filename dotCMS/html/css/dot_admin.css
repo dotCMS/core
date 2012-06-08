@@ -32,7 +32,10 @@
 .account-flyout .login-out table td a{padding:8px 10px;}
 .account-flyout .service-links{margin:7px 0 0 0;border-top:1px solid #dfdfdf;}
 .copyright{font-size:10px;color:#555;text-align:center;}
-.serverId{position:fixed;left:50px;bottom:0px;padding:5px 10px;line-height:10px;background:rgba(0, 0, 0, 0.7);font-size: 10px;color:#ddd;z-index:9999;-moz-box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);-webkit-box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);}
+.serverID{position:absolute;top:35px;right:10px;}
+.helpId{position:fixed;left:50px;bottom:-1px;color:#ddd;z-index:9999;-moz-box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);-webkit-box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);}
+.dotcmsHelpButton{display:block;padding:5px 20px;border:1px solid #fff;font-size:12px;font-weight:bold;background:rgba(0, 0, 0, 0.7);color:#ddd;text-decoration:none;line-height:10px;font-size: 10px;}
+.dotcmsHelpButton:hover{background: rgba(0, 0, 0, 0.9);color:#fff;}
 
 /* NAV MENU STYLES 2.0 */
 #menu {width:100%;white-space: nowrap;}
