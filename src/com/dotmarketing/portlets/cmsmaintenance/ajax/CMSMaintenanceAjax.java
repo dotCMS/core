@@ -36,6 +36,7 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -45,6 +46,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.FixTasksExecutor;
+import com.dotmarketing.logConsole.model.LogMapper;
+import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
@@ -321,6 +324,7 @@ public class CMSMaintenanceAjax {
 		 * @throws IOException
 		 * @author Will
 		 * @throws DotDataException
+		 * @throws DotCacheException 
 		 */
 		@SuppressWarnings("unchecked")
 		public void createXMLFiles() throws ServletException, IOException, DotDataException {
@@ -679,12 +683,18 @@ public class CMSMaintenanceAjax {
 				WorkflowImportExportUtil.getInstance().exportWorkflows(file);
 				
 				
-				
-				
-				
-				
-				
-				
+				/* log_mapper */
+				List<LogMapperRow> logs;
+                try {
+                    logs = LogMapper.getInstance().getLogList();
+                    _xstream = new XStream(new DomDriver());
+                    _writing = new File(backupTempFilePath + "/LogsMappers.xml");
+                    _bout = new BufferedOutputStream(new FileOutputStream(_writing));
+                    _xstream.toXML(logs, _bout);
+                    _bout.close();
+                } catch (DotCacheException e) {
+                    Logger.error(this, e.getMessage(), e);
+                }
 				
 			} catch (HibernateException e) {
 				Logger.error(this,e.getMessage(),e);
