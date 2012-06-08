@@ -199,11 +199,13 @@ public class CMSMaintenanceAjax {
     /**
      * Method that will clean assets deleting assets that are no longer in the File asset table and the Contentlet table
      * where the structure type is <b>File Asset<b/>.
+     *
+     * @return Deleted files count
      * @throws DotDataException
      */
-    public void cleanAssets () throws DotDataException {
+    public int cleanAssets () throws DotDataException {
 
-        MaintenanceUtil.deleteAssetsWithNoInode();
+        return MaintenanceUtil.deleteAssetsWithNoInode();
     }
 
     public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {

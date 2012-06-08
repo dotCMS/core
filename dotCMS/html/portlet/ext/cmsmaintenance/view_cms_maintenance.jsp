@@ -355,29 +355,41 @@ function doDropAssets() {
     }
 
     if (confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")) {
-        $("dropAssetsMessage").innerHTML = '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
-        $("dropAssetsButton").disabled = true;
+        $("dropAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></spanstyle>';
+        dijit.byId('dropAssetsButton').attr('disabled', true);
         CMSMaintenanceAjax.removeOldVersions(form.removeassetsdate.value, doDropAssetsCallback);
     }
 }
 
 var doCleanAssets = function () {
 
-    if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.button.confirmation.clean.assets") %>")) {
-        $("cleanAssetsButton").innerHTML = '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
-        $("cleanAssetsButton").disabled = true;
-        CMSMaintenanceAjax.cleanAssets(doDropAssetsCallback);
+    if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation") %>")) {
+        $("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress") %></b></spanstyle>';
+        dijit.byId('cleanAssetsButton').attr('disabled', true);
+        CMSMaintenanceAjax.cleanAssets(doCleanAssetsCallback);
     }
 };
 
 function doDropAssetsCallback(removed){
- 	$("dropAssetsButton").disabled = false;
+
+    dijit.byId('dropAssetsButton').attr('disabled', false);
 	if (removed >= 0)
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b>' + removed + '<%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></font>';
+	 	document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></spanstyle>';
 	else if (removed == -2)
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></font>';
+	 	document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
 	else
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></font>';
+	 	document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+}
+
+function doCleanAssetsCallback(removed){
+
+    dijit.byId('cleanAssetsButton').attr('disabled', false);
+    if (removed >= 0)
+        document.getElementById("cleanAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.result") %></b></spanstyle>';
+    else if (removed == -2)
+        document.getElementById("cleanAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
+    else
+        document.getElementById("cleanAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
 }
 
 function validateDate(date){
@@ -1293,11 +1305,12 @@ function selectAll(id){
                 </tr>
                 <tr>
                     <td>
-                        <p><%= LanguageUtil.get(pageContext,"cms.maintenance.button.explanation.clean.assets") %></p>
+                        <p><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.explanation") %></p>
+                        <div align="center"  id="cleanAssetsMessage">&nbsp;</div>
                     </td>
                     <td align="center">
                       <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
-                         <%= LanguageUtil.get(pageContext,"cms.maintenance.button.label.clean.assets") %>
+                         <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
                       </button>
                     </td>
                 </tr>

@@ -710,10 +710,14 @@ public class MaintenanceUtil {
 
     /**
      * Deleting all inodes of the assets from inode table in case that inode in the table does not exist any more
+     *
+     * @return
+     * @throws DotDataException
      */
     @SuppressWarnings ("unchecked")
-    public static void deleteAssetsWithNoInode () throws DotDataException {
+    public static int deleteAssetsWithNoInode () throws DotDataException {
 
+        //Assest folder path
         String assetsPath = fileAPI.getRealAssetsRootPath();
         File assetsRootFolder = new File( assetsPath );
 
@@ -737,15 +741,17 @@ public class MaintenanceUtil {
 
         //Find the inodes for the assets files we need to keep
         DotConnect dc = new DotConnect();
+        //FIXME: Query to work on!!!
         final String selectInodesSQL = "select i.inode from inode i where type = 'file_asset'";
+        //FIXME: Query to work on!!!
         dc.setSQL( selectInodesSQL );
         List<HashMap<String, String>> results = dc.loadResults();
-        List<String> fileAssetsInodesList = new ArrayList<String>();
+        List<String> fileAssetsInodes = new ArrayList<String>();
         for ( HashMap<String, String> r : results ) {
-            fileAssetsInodesList.add( r.get( "inode" ).toString() );
+            fileAssetsInodes.add( r.get( "inode" ) );
         }
 
-        //Find the assets files
+        //Find all the assets files candidates to deletion
         List<Object> filesAssetsCanBeParsed = new ArrayList<Object>();
         try {
             filesAssetsCanBeParsed = findFileAssetsCanBeParsed();
@@ -758,22 +764,29 @@ public class MaintenanceUtil {
         int counter = 0;
         for ( int i = 0; i < fileAssetsInodesListFromFileSystem.size(); i++ ) {
 
-            if ( !fileAssetsInodesList.contains( fileAssetsInodesListFromFileSystem.get( i ) ) ) {
+            if ( !fileAssetsInodes.contains( fileAssetsInodesListFromFileSystem.get( i ) ) ) {
 
-                File file = new File( fileAssetsListFromFileSystem.get( i ) );
-                if ( !file.getPath().startsWith( assetsRootFolder.getPath() + java.io.File.separator + "license" )
-                        && !file.getPath().startsWith( reportsFolder.getPath() )
-                        && !file.getPath().startsWith( messagesFolder.getPath() ) ) {
+                File assetFile = new File( fileAssetsListFromFileSystem.get( i ) );
+                if ( !assetFile.getPath().startsWith( assetsRootFolder.getPath() + java.io.File.separator + "license" )
+                        && !assetFile.getPath().startsWith( reportsFolder.getPath() )
+                        && !assetFile.getPath().startsWith( messagesFolder.getPath() ) ) {
 
-                    Logger.info( MaintenanceUtil.class, "Deleting " + file.getPath() + "..." );
+                    Logger.info( MaintenanceUtil.class, "Deleting " + assetFile.getPath() + "..." );
+
+                    //FIXME: Testing code!!!
                     //And finally delete the old asset file
-                    file.delete();
-                    counter++;
+                    //Boolean success = assetFile.delete();//FIXME: Testing code!!!
+                    Boolean success = true;//FIXME: Testing code!!!
+                    if ( success ) {
+                        counter++;
+                    }
+                    //FIXME: Testing code!!!
                 }
             }
         }
 
         Logger.info( MaintenanceUtil.class, "Deleted " + counter + " files" );
+        return counter;
     }
 
     /**
@@ -799,12 +812,12 @@ public class MaintenanceUtil {
         List<String> fileAssetsInodes = new ArrayList<String>();
 
         String fileName;
-        for ( String aFileAssetsList : fileAssetsList ) {
+        for ( String fileAsset : fileAssetsList ) {
 
-            File file = new File( aFileAssetsList );
-
+            File file = new File( fileAsset );
             if ( file.isDirectory() ) continue;
 
+            //Verify it is the kind of file we need
             fileName = file.getName();
             String[] fileSplitted = fileName.split( "\\." );
             if ( fileSplitted.length > 2 ) {
@@ -812,13 +825,15 @@ public class MaintenanceUtil {
             }
 
             try {
+
+                //Get the inode from this file
                 if ( fileSplitted[0].contains( "resized" ) || fileSplitted[0].contains( "thumb" ) ) {
                     String[] underscoreSplitted = fileSplitted[0].split( "_" );
                     fileAssetsInodes.add( underscoreSplitted[0] );
                 } else {
                     fileAssetsInodes.add( fileSplitted[0] );
                 }
-                fileAssets.add( aFileAssetsList );
+                fileAssets.add( fileAsset );
 
             } catch ( NumberFormatException numberFormatException ) {
                 Logger.info( MaintenanceUtil.class, "File " + fileName + " is not an inode" );
@@ -836,6 +851,8 @@ public class MaintenanceUtil {
     }
 
     /**
+     * Method that will return the assets file paths under a given assets folder
+     *
      * @param assetsFolder   This is the folder where the assets are stored
      * @param structures     List of all the application structures
      * @param fileAssetsList This is the list of all the file assets
@@ -845,7 +862,7 @@ public class MaintenanceUtil {
 
         //Getting the files under this assets folder
         File[] files = assetsFolder.listFiles();
-        if ( 0 < files.length ) {
+        if ( files != null && files.length > 0 ) {
 
             //Find all the binary fields on these given structures
             List<Field> binaryFields = new ArrayList<Field>();
