@@ -99,7 +99,16 @@ boolean hasPath = false;
 
 
 <style>
-	.showScheduler:<%=(runNow) ? "display: none; " : "display: ; " %>;
+	.showScheduler {
+	   <%=(runNow) ? "display: none; " : "" %>
+	}
+	span.langContainer {
+	   width: 30%;
+	   white-space: nowrap;
+	   display: inline-block;
+	   padding: 3px 3px;
+	   
+	}
 </style>
 <form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
 	<table style="align:center;width:800px;" class="listingTable">
@@ -229,20 +238,15 @@ boolean hasPath = false;
                  <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language")) %>:
               </strong>
             </td>
-            <td>
-                 <input type="radio" dojoType="dijit.form.RadioButton" id="op_default" name="langToIndex" 
-                        value="default" <%="default".equals(langToIndex) ? "checked='true'" : ""%> />
-                  <label for="op_default">
-                     <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Default")) %>
-                  </label> 
-                      
+            <td valign="top">
                  <% for(Language lang : langs) { %>
-                        <br/>
-                        <input type="radio" dojoType="dijit.form.RadioButton" id="op_<%=lang.getId()%>"
+                      <span class="langContainer">
+                        <input type="radio" dojoType="dijit.form.CheckBox" id="op_<%=lang.getId()%>"
                                name="langToIndex" value="<%=lang.getId()%>" />
                         <label for="op_<%=lang.getId()%>">
                           <%= lang.getLanguage() + " - " + lang.getCountry() %>
                         </label>
+                      </span>
                  <% } %>
             </td>
         </tr>
