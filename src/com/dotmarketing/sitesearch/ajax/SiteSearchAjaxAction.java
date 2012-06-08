@@ -109,7 +109,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		
 		SiteSearchConfig config = new SiteSearchConfig();
 		for(String key : map.keySet()){
-			if(((String[]) map.get(key)).length ==1){
+			if(((String[]) map.get(key)).length ==1 && !key.equals("langToIndex")){
 				config.put(key,((String[]) map.get(key))[0]);
 			}
 			else{
@@ -145,8 +145,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 					config.put(key,map.get(key));
 				}
 			}
-			String taskName = URLDecoder.decode((String) config.get("taskName"), "UTF-8");
-
+			
 			APILocator.getSiteSearchAPI().scheduleTask(config);
 		} catch (Exception e) {
 			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);

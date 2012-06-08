@@ -50,9 +50,11 @@ String startDateDate = (props.get("startDateDate") != null) ? (String) props.get
 String endDateDate = (props.get("endDateDate") != null) ? (String) props.get("endDateDate"): "" ;//ssdf.format(new Date());
 String startDateTime = (props.get("startDateTime") != null) ? (String) props.get("startDateTime"): "" ;//s"T" + tdf.format(startDate);
 String endDateTime = (props.get("endDateTime") != null) ? (String) props.get("endDateTime"): "" ;//s"T" + tdf.format(endDate);
-String langToIndex = (props.get("langToIndex") != null) ? (String) props.get("langToIndex"): "default" ;
+String[] langToIndexArr = (props.get("langToIndex") != null) ? (String[]) props.get("langToIndex"): null ;
 String QUARTZ_JOB_NAME =  UtilMethods.isSet((String) props.get("QUARTZ_JOB_NAME")) ? (String) props.get("QUARTZ_JOB_NAME"): "" ;
 String CRON_EXPRESSION = UtilMethods.webifyString((String) props.get("CRON_EXPRESSION"));
+
+Set<String> langToIndexSet = new HashSet<String>(Arrays.asList(langToIndexArr));
 
 boolean runNow = false;
 
@@ -207,28 +209,18 @@ boolean hasPath = false;
 	
 		<tr>
 			<td align="right" valign="top" nowrap="true">
-				<strong><%= LanguageUtil.get(pageContext, "Include-Date-Range") %>: </strong> <a href="javascript: ;" id="dateRangeHintHook1">?</a> <span dojoType="dijit.Tooltip" connectId="dateRangeHintHook1" class="fieldHint"><%=LanguageUtil.get(pageContext, "date-range-hint") %></span>
+				&nbsp;
 			</td>
 			<td>
 				<div style="padding:5px;">
-					<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>><label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label> &nbsp; &nbsp; &nbsp; 
+					<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>>
+					<label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label>
+					<a href="javascript: ;" id="incrementalHintHook1">?</a> 
+					<span dojoType="dijit.Tooltip" connectId="incrementalHintHook1" class="fieldHint">
+					  <%=LanguageUtil.get(pageContext, "incremental-hint") %>
+					</span> 
 				</div>
-				<!--  
-				<div style="padding:4px;">
-					<div style="width:50px;float:left;display: block-inline">
-						<%= LanguageUtil.get(pageContext, "Start:") %>
-					</div>
-					<input type="text" id="startDateDate" name="startDateDate" value="<%=startDateDate %>" dojoType="dijit.form.DateTextBox" disabled="<%=(incremental)%>">  
-					<input type="text" id="startDateTime" name="startDateTime" value="<%=startDateTime %>" dojoType="dijit.form.TimeTextBox" disabled="<%=(incremental)%>">
-				</div>
-				<div style="padding:4px;">
-					<div style="width:50px;float:left;display: block-inline">
-						<%= LanguageUtil.get(pageContext, "End:") %>
-					</div>
-					<input type="text" id="endDateDate" name="endDateDate" value="<%=endDateDate %>" dojoType="dijit.form.DateTextBox" disabled="<%=(incremental)%>">  
-					<input type="text" id="endDateTime" name="endDateTime" value="<%=endDateTime %>" dojoType="dijit.form.TimeTextBox" disabled="<%=(incremental)%>">
-				</div>
-				-->
+				
 			</td>
 		</tr>
 		
@@ -241,8 +233,9 @@ boolean hasPath = false;
             <td valign="top">
                  <% for(Language lang : langs) { %>
                       <span class="langContainer">
-                        <input type="radio" dojoType="dijit.form.CheckBox" id="op_<%=lang.getId()%>"
-                               name="langToIndex" value="<%=lang.getId()%>" />
+                        <input type="checkbox" dojoType="dijit.form.CheckBox" id="op_<%=lang.getId()%>"
+                               name="langToIndex" value="<%=lang.getId()%>" 
+                               <%=(langToIndexSet.contains(Long.toString(lang.getId()))) ? "checked='true'" : "" %>/>
                         <label for="op_<%=lang.getId()%>">
                           <%= lang.getLanguage() + " - " + lang.getCountry() %>
                         </label>
