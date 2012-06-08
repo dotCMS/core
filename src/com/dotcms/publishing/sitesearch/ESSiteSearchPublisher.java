@@ -86,11 +86,11 @@ public class ESSiteSearchPublisher extends Publisher {
 					
 					if (shouldProcess(f)) {
 						
-						System.out.println("######### processing: "  + f);
+						Logger.debug(this, "######### processing: "  + f);
 						
 						filteredFiles.add(f);
 					}else {
-						System.out.println("######### skipping  : "  + f);
+						Logger.debug(this, "######### skipping  : "  + f);
 					}
 
 				}
