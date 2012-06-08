@@ -74,6 +74,10 @@
 		if(e){
 		   dojo.style(e, "height", viewport_height -150+"px");
 		}
+		var bc = dijit.byId('borderContainer');
+	    if(bc != undefined){
+	    	bc.resize();
+	    }
 
 
 		var  d =  dijit.byId("userTabsContainer");
