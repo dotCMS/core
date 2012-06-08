@@ -169,7 +169,6 @@ if(!statePopUp || portletException){%>
 
 
 
-// Inline Help Popup. Pulls results from dotcms.com
 
 <script>
 	function showHelp(){
