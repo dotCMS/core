@@ -198,10 +198,11 @@ public class CMSMaintenanceAjax {
 
     /**
      * Method that will clean assets deleting assets that are no longer in the File asset table and the Contentlet table
-     * where the structure type is <b>file_asset<b/>.
+     * where the structure type is <b>File Asset<b/>.
      * @throws DotDataException
      */
     public void cleanAssets () throws DotDataException {
+
         MaintenanceUtil.deleteAssetsWithNoInode();
     }
 

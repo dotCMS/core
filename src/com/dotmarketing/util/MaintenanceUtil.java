@@ -716,6 +716,8 @@ public class MaintenanceUtil {
 
         String assetsPath = fileAPI.getRealAssetsRootPath();
         File assetsRootFolder = new File( assetsPath );
+
+        //Reports path
         String reportsPath = "";
         if ( UtilMethods.isSet( Config.getStringProperty( "ASSET_REAL_PATH" ) ) ) {
             reportsPath = Config.getStringProperty( "ASSET_REAL_PATH" ) + File.separator + Config.getStringProperty( "REPORT_PATH" );
@@ -724,6 +726,7 @@ public class MaintenanceUtil {
         }
         File reportsFolder = new File( reportsPath );
 
+        //Messages path
         String messagesPath = "";
         if ( UtilMethods.isSet( Config.getStringProperty( "ASSET_REAL_PATH" ) ) ) {
             messagesPath = Config.getStringProperty( "ASSET_REAL_PATH" ) + File.separator + "messages";
@@ -732,13 +735,17 @@ public class MaintenanceUtil {
         }
         File messagesFolder = new File( messagesPath );
 
+        //Find the inodes for the assets files we need to keep
         DotConnect dc = new DotConnect();
-        int counter = 0;
-        File file = null;
         final String selectInodesSQL = "select i.inode from inode i where type = 'file_asset'";
         dc.setSQL( selectInodesSQL );
         List<HashMap<String, String>> results = dc.loadResults();
+        List<String> fileAssetsInodesList = new ArrayList<String>();
+        for ( HashMap<String, String> r : results ) {
+            fileAssetsInodesList.add( r.get( "inode" ).toString() );
+        }
 
+        //Find the assets files
         List<Object> filesAssetsCanBeParsed = new ArrayList<Object>();
         try {
             filesAssetsCanBeParsed = findFileAssetsCanBeParsed();
@@ -747,17 +754,19 @@ public class MaintenanceUtil {
         }
         List<String> fileAssetsListFromFileSystem = (List<String>) filesAssetsCanBeParsed.get( 0 );
         List<String> fileAssetsInodesListFromFileSystem = (List<String>) filesAssetsCanBeParsed.get( 1 );
-        List<String> fileAssetsInodesList = new ArrayList<String>();
-        for ( HashMap<String, String> r : results ) {
-            fileAssetsInodesList.add( r.get( "inode" ).toString() );
-        }
+
+        int counter = 0;
         for ( int i = 0; i < fileAssetsInodesListFromFileSystem.size(); i++ ) {
+
             if ( !fileAssetsInodesList.contains( fileAssetsInodesListFromFileSystem.get( i ) ) ) {
-                file = new File( fileAssetsListFromFileSystem.get( i ) );
+
+                File file = new File( fileAssetsListFromFileSystem.get( i ) );
                 if ( !file.getPath().startsWith( assetsRootFolder.getPath() + java.io.File.separator + "license" )
                         && !file.getPath().startsWith( reportsFolder.getPath() )
                         && !file.getPath().startsWith( messagesFolder.getPath() ) ) {
+
                     Logger.info( MaintenanceUtil.class, "Deleting " + file.getPath() + "..." );
+                    //And finally delete the old asset file
                     file.delete();
                     counter++;
                 }
@@ -766,48 +775,6 @@ public class MaintenanceUtil {
 
         Logger.info( MaintenanceUtil.class, "Deleted " + counter + " files" );
     }
-
-    /**
-	 *
-	 * @param folder This is the folder where the assets are stored
-	 * @param fileAssetsList This is the list of all the file assets
-	 * @return
-	 */
-	private static List<String> findFileAssetsList(File folder, List<String> fileAssetsList){
-		File[] files = folder.listFiles();
-		if (0 < files.length) {
-			List<Structure> structures = StructureFactory.getStructures();
-			List<Field> binaryFields = new ArrayList<Field>();
-			List<Field> fields;
-			for (Structure structure: structures) {
-				fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-
-				for (Field field: fields) {
-					if (field.getFieldType().equals(Field.FieldType.BINARY.toString()))
-						binaryFields.add(field);
-				}
-			}
-
-			boolean isBinaryField;
-	        for(int j = 0; j < files.length; j++) {
-	            fileAssetsList.add(files[j].getPath());
-	            if(files[j].isDirectory()) {
-
-	            	isBinaryField = false;
-	            	for (Field field: binaryFields) {
-	            		if (field.getVelocityVarName().equals(files[j].getName())) {
-	            			isBinaryField = true;
-	            			break;
-	            		}
-	            	}
-
-	            	if (!isBinaryField)
-	            		findFileAssetsList(files[j], fileAssetsList);
-	            }
-	        }
-		}
-        return fileAssetsList;
-	}
 
     /**
      * This method returns a list which keeps two lists. The first one is the list of file
@@ -819,28 +786,39 @@ public class MaintenanceUtil {
      */
     public static List<Object> findFileAssetsCanBeParsed () {
 
-        String fileName = null;
+        //Asset files path
+        File assetsFolder = new File( fileAPI.getRealAssetPath() );
+
+        //Get all the structures
+        List<Structure> structures = StructureFactory.getStructures();
+        //Getting the assets files under the assest folder
         List<String> fileAssetsList = new ArrayList<String>();
-        File folder = new File( fileAPI.getRealAssetPath() );
-        fileAssetsList = findFileAssetsList( folder, fileAssetsList );
+        fileAssetsList = findFileAssetsList( assetsFolder, structures, fileAssetsList );
+
         List<String> fileAssets = new ArrayList<String>();
         List<String> fileAssetsInodes = new ArrayList<String>();
-        File file = null;
-        for ( int i = 0; i < fileAssetsList.size(); i++ ) {
-            file = new File( (String) fileAssetsList.get( i ) );
+
+        String fileName;
+        for ( String aFileAssetsList : fileAssetsList ) {
+
+            File file = new File( aFileAssetsList );
+
+            if ( file.isDirectory() ) continue;
+
             fileName = file.getName();
             String[] fileSplitted = fileName.split( "\\." );
-            if ( fileSplitted.length > 2 || file.isDirectory() ) {
+            if ( fileSplitted.length > 2 ) {
                 continue;
             }
+
             try {
-                if ( fileSplitted[0].indexOf( "resized" ) != -1 || fileSplitted[0].indexOf( "thumb" ) != -1 ) {
+                if ( fileSplitted[0].contains( "resized" ) || fileSplitted[0].contains( "thumb" ) ) {
                     String[] underscoreSplitted = fileSplitted[0].split( "_" );
                     fileAssetsInodes.add( underscoreSplitted[0] );
                 } else {
                     fileAssetsInodes.add( fileSplitted[0] );
                 }
-                fileAssets.add( (String) fileAssetsList.get( i ) );
+                fileAssets.add( aFileAssetsList );
 
             } catch ( NumberFormatException numberFormatException ) {
                 Logger.info( MaintenanceUtil.class, "File " + fileName + " is not an inode" );
@@ -848,10 +826,60 @@ public class MaintenanceUtil {
                 Logger.error( MaintenanceUtil.class, exception.getMessage(), exception );
             }
         }
+
+        //Return the just created lists
         List<Object> assetFilesAndInodes = new ArrayList<Object>();
         assetFilesAndInodes.add( fileAssets );
         assetFilesAndInodes.add( fileAssetsInodes );
+
         return assetFilesAndInodes;
+    }
+
+    /**
+     * @param assetsFolder   This is the folder where the assets are stored
+     * @param structures     List of all the application structures
+     * @param fileAssetsList This is the list of all the file assets
+     * @return
+     */
+    private static List<String> findFileAssetsList ( File assetsFolder, List<Structure> structures, List<String> fileAssetsList ) {
+
+        //Getting the files under this assets folder
+        File[] files = assetsFolder.listFiles();
+        if ( 0 < files.length ) {
+
+            //Find all the binary fields on these given structures
+            List<Field> binaryFields = new ArrayList<Field>();
+            for ( Structure structure : structures ) {
+
+                List<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
+                for ( Field field : fields ) {
+                    if ( field.getFieldType().equals( Field.FieldType.BINARY.toString() ) ) {
+                        binaryFields.add( field );
+                    }
+                }
+            }
+
+            for ( File file : files ) {
+
+                fileAssetsList.add( file.getPath() );
+                if ( file.isDirectory() ) {
+
+                    boolean isBinaryField = false;
+                    for ( Field field : binaryFields ) {
+                        if ( field.getVelocityVarName().equals( file.getName() ) ) {
+                            isBinaryField = true;
+                            break;
+                        }
+                    }
+
+                    if ( !isBinaryField ) {
+                        findFileAssetsList( file, structures, fileAssetsList );
+                    }
+                }
+            }
+        }
+
+        return fileAssetsList;
     }
 
 	public static void fixImagesTable() throws SQLException{
