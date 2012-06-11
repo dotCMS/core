@@ -5,8 +5,8 @@
 
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@ page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotcms.publishing.timemachine.TimeMachineConfig" %>
-<%@page import="com.dotcms.publishing.timemachine.TimeMachinePublisher" %>
+<%@page import="com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig" %>
+<%@page import="com.dotcms.enterprise.publishing.timemachine.TimeMachinePublisher" %>
 <%@page import="com.dotcms.publishing.PublishStatus"%>
 <%@page import="com.dotmarketing.business.TimeMachineSessionBean"%>
 <%@page import="com.liferay.portal.model.User"%>

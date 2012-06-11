@@ -1,7 +1,7 @@
 <%@page import="com.dotmarketing.util.StringUtils"%>
 <%@page import="java.net.URLDecoder"%>
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchResult"%>
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchResults"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
