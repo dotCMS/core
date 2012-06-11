@@ -1,9 +1,9 @@
+<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="java.net.URLEncoder"%>
 <%@page import="com.dotmarketing.quartz.ScheduledTask"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
-<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
