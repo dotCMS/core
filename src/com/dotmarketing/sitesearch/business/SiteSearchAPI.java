@@ -7,10 +7,10 @@ import java.util.List;
 import org.elasticsearch.ElasticSearchException;
 import org.quartz.SchedulerException;
 
-import com.dotcms.publishing.sitesearch.SiteSearchConfig;
-import com.dotcms.publishing.sitesearch.SiteSearchPublishStatus;
-import com.dotcms.publishing.sitesearch.SiteSearchResult;
-import com.dotcms.publishing.sitesearch.SiteSearchResults;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.ScheduledTask;
 
