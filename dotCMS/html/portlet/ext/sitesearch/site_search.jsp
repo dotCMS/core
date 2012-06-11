@@ -501,7 +501,10 @@ function submitSchedule() {
 		return;
 	}
 	
-	
+	if(dojo.query("#sitesearch input[name='langToIndex'][aria-pressed='true']").length==0) {
+		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Choose-a-Language")) %>");
+		return;
+	}
 	
 	if (myForm.validate()) {
 		dojo.xhrPost({
