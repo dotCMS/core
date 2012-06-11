@@ -54,7 +54,9 @@ String[] langToIndexArr = (props.get("langToIndex") != null) ? (String[]) props.
 String QUARTZ_JOB_NAME =  UtilMethods.isSet((String) props.get("QUARTZ_JOB_NAME")) ? (String) props.get("QUARTZ_JOB_NAME"): "" ;
 String CRON_EXPRESSION = UtilMethods.webifyString((String) props.get("CRON_EXPRESSION"));
 
-Set<String> langToIndexSet = new HashSet<String>(Arrays.asList(langToIndexArr));
+Set<String> langToIndexSet = new HashSet<String>();
+if(UtilMethods.isSet(langToIndexArr))
+    langToIndexSet.addAll(Arrays.asList(langToIndexArr));
 
 boolean runNow = false;
 
@@ -112,6 +114,7 @@ boolean hasPath = false;
 	   
 	}
 </style>
+
 <form dojoType="dijit.form.Form"  name="sitesearch" id="sitesearch" action="/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob" method="post">
 	<table style="align:center;width:800px;" class="listingTable">
 	
@@ -192,7 +195,7 @@ boolean hasPath = false;
 				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "Index-Name") %>: </strong>
 			</td>
 			<td>
-				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.ComboBox">
+				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.ComboBox" required="true">
 				<%if(hasDefaultIndex){ %><option value="DEFAULT" <%=("DEFAULT".equals(indexName)) ? "selected='true'":"" %>><%= LanguageUtil.get(pageContext, "Default") %></option><%} %>
 				<%for(String x : indexes){ %>
 					<option value="<%=alias.get(x)%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>>
@@ -226,6 +229,7 @@ boolean hasPath = false;
 		
 		<tr>
             <td align="right" valign="top" nowrap="true">
+              <span class="required"></span>
               <strong>
                  <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language")) %>:
               </strong>
@@ -243,7 +247,6 @@ boolean hasPath = false;
                  <% } %>
             </td>
         </tr>
-		
 		
 		<tr>
 			<td align="right" valign="top" nowrap="true">
