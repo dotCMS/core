@@ -35,7 +35,7 @@ public class SiteSearchWebAPI implements ViewTool {
 	}
 	
 	/**
-	 * Performs a search on the site search index using the current host in the request
+	 * Performs a search on the default site search index using the current host in the request
 	 * Sample usage from velocity:
 	 * <pre>
      * {@code
@@ -65,7 +65,7 @@ public class SiteSearchWebAPI implements ViewTool {
      * Sample usage from velocity:
      * <pre>
      * {@code
-     * #set($searchresults = $sitesearch.search("indexAlias","dotcms",null,0,10,$request))
+     * #set($searchresults = $sitesearch.search("indexAlias","dotcms",0,10))
      * #set($hitsdetail = $searchresults.getDetails())
      * #set($summaries = $searchresults.getSummaries())
      * #foreach ($i in [0..$math.sub($searchresults.getEnd(),1)])
