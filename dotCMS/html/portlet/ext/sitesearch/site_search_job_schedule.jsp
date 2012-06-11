@@ -107,7 +107,7 @@ boolean hasPath = false;
 	   <%=(runNow) ? "display: none; " : "" %>
 	}
 	span.langContainer {
-	   width: 30%;
+	   
 	   white-space: nowrap;
 	   display: inline-block;
 	   padding: 3px 3px;
