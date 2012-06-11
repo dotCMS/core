@@ -120,7 +120,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 		<div class="buttonRow" style="padding:20px;">
 			<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
+						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
 			</select>
 		
