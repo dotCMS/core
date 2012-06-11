@@ -8,7 +8,7 @@ import java.util.List;
 
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
-import com.dotcms.publishing.timemachine.TimeMachineConfig;
+import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
