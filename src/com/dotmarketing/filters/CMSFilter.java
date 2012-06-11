@@ -578,6 +578,7 @@ public class CMSFilter implements Filter {
          excludeList.add("/c/portal_public");
          //http://jira.dotmarketing.net/browse/DOTCMS-6753
          excludeList.add("/JSONTagsServlet");
+         excludeList.add("/spring");
 
          //Load exclusions from plugins
          PluginAPI pAPI=APILocator.getPluginAPI();
