@@ -34,12 +34,12 @@ public class WorkflowEmailUtil {
 	 * and send a generic workflow email to them. If subject is null, it will be
 	 * intelligently inferred, and if the email text is null, the system will
 	 * try send the file: "static/workflow/workflow_email_template.html".
-	 * 
+	 *
 	 * Both the subject and the emailBody will be parsed by Velocity with an
 	 * $workflow object in their context This object is the
 	 * {@link WorkflowProcessor} object that has access to every aspect of the
 	 * workflow task.
-	 * 
+	 *
 	 * @param processor
 	 * @param subject
 	 * @param emailText
@@ -47,8 +47,8 @@ public class WorkflowEmailUtil {
 	 */
 
 	public static void sendWorkflowEmail(WorkflowProcessor processor, String[] email, String subject, String emailText, Boolean isHTML) {
-		
-			
+
+
 		try {
 			if (isHTML == null) {
 				isHTML = false;
@@ -77,15 +77,24 @@ public class WorkflowEmailUtil {
 			DotResponseProxy responseProxy = (DotResponseProxy) Proxy.newProxyInstance(DotResponseProxy.class.getClassLoader(),
 					new Class[] { DotResponseProxy.class }, dotInvocationHandler);
 
-			ChainedContext ctx = (ChainedContext) VelocityUtil.getWebContext(requestProxy, responseProxy);
+			org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
 			ctx.put("host", host);
 			ctx.put("host_id", host.getIdentifier());
 			ctx.put("user", processor.getUser());
 			ctx.put("workflow", processor);
 			ctx.put("workflowLink", link);
+			ctx.put("stepName", processor.getStep().getName());
+			ctx.put("stepId", processor.getStep().getId());
+			ctx.put("nextAssign", processor.getNextAssign().getName());
+			ctx.put("workflowMessage", processor.getWorkflowMessage());
+			ctx.put("nextStepResolved", processor.getNextStep().isResolved());
+			ctx.put("nextStepId", processor.getNextStep().getId());
+			ctx.put("nextStepName", processor.getNextStep().getName());
+			ctx.put("workflowTaskTitle", processor.getTask().getTitle());
+			ctx.put("modDate", processor.getTask().getModDate());
+			ctx.put("structureName", processor.getContentlet().getStructure().getName());
 
 
-			
 
 			if (!UtilMethods.isSet(emailText)) {
 				emailText = VelocityUtil.mergeTemplate("static/workflow/workflow_email_template.html", ctx);
@@ -122,7 +131,7 @@ public class WorkflowEmailUtil {
 	 * emailBody will be parsed by Velocity with an $workflow object in their
 	 * context This object is the {@link WorkflowProcessor} object that has
 	 * access to every aspect of the workflow task.
-	 * 
+	 *
 	 * @param processor
 	 * @param subject
 	 * @param emailText
@@ -157,7 +166,7 @@ public class WorkflowEmailUtil {
 			} catch (Exception e) {
 
 			}
-			
+
 			String[] to = (String[]) recipients.toArray(new String[recipients.size()]);
 			// send'em workflows
 
