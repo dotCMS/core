@@ -39,7 +39,7 @@ public class SiteSearchWebAPI implements ViewTool {
 	 * Sample usage from velocity:
 	 * <pre>
      * {@code
-	 * #set($searchresults = $sitesearch.search("dotcms",null,0,10,$request))
+	 * #set($searchresults = $sitesearch.search("dotcms",0,10))
      * #set($hitsdetail = $searchresults.getDetails())
      * #set($summaries = $searchresults.getSummaries())
      * #foreach ($i in [0..$math.sub($searchresults.getEnd(),1)])
@@ -50,10 +50,8 @@ public class SiteSearchWebAPI implements ViewTool {
      * }
      * </pre>
 	 * @param query String to search for
-	 * @param sort Property to sort the results
 	 * @param start Start row
 	 * @param rows  Number of rows to return (10 by default)
-	 * @param request
 	 * @return DotSearchResults
 	 * @throws IOException
 	 */
