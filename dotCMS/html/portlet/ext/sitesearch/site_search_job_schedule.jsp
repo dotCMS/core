@@ -54,7 +54,9 @@ String[] langToIndexArr = (props.get("langToIndex") != null) ? (String[]) props.
 String QUARTZ_JOB_NAME =  UtilMethods.isSet((String) props.get("QUARTZ_JOB_NAME")) ? (String) props.get("QUARTZ_JOB_NAME"): "" ;
 String CRON_EXPRESSION = UtilMethods.webifyString((String) props.get("CRON_EXPRESSION"));
 
-Set<String> langToIndexSet = new HashSet<String>(Arrays.asList(langToIndexArr));
+Set<String> langToIndexSet = new HashSet<String>();
+if(UtilMethods.isSet(langToIndexArr))
+    langToIndexSet.addAll(Arrays.asList(langToIndexArr));
 
 boolean runNow = false;
 
