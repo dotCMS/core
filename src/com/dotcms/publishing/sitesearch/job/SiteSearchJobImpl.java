@@ -117,9 +117,9 @@ public class SiteSearchJobImpl {
     		if("DEFAULT".equals(indexAlias)){
     			indexName = APILocator.getIndiciesAPI().loadIndicies().site_search;
     		}
-    		else if(aliasMap.get(indexAlias)==null){
+    		else if(indexAlias.equalsIgnoreCase("default")){
     			indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME  + "_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
-    			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, indexAlias, 1);
+    			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, null, 1);
     			config.setSwitchIndexWhenDone(true);
     		}
     		else {

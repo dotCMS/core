@@ -142,7 +142,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 						<%}%>
 					</td>
 					<td  class="showPointer" ><%=x %></td>
-					<td><%= alias.get(x) %></td>
+					<td><%= alias.get(x) == null ? "": alias.get(x)%></td>
 					<td><%=UtilMethods.webifyString(myDate) %></td>
 
 					<td align="center">

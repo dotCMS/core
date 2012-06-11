@@ -224,7 +224,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 			}
 		}
 		
-		iapi.createAlias(indexName, alias);
+		if(UtilMethods.isSet(alias)){
+			iapi.createAlias(indexName, alias);
+		}
 
 		//put mappings
 		mappingAPI.putMapping(indexName, ES_SITE_SEARCH_MAPPING, mapping);
