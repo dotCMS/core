@@ -206,10 +206,12 @@ public class CMSMaintenanceAjax {
      */
     public Map cleanAssets () throws DotDataException {
 
+        //Create the thread to clean the assets
         CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true );
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
         cleanAssetsThread.start();
 
+        //Return the initial process status
         return processStatus.getStatusMap();
     }
 
@@ -220,9 +222,11 @@ public class CMSMaintenanceAjax {
      */
     public Map getCleanAssetsStatus () {
 
+        //Getting the running clean assets thread
         CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( false );
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
 
+        //Return its current running status
         return processStatus.getStatusMap();
     }
 

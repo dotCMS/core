@@ -11,10 +11,10 @@ import java.util.Map;
  */
 public class BasicProcessStatus implements Serializable {
 
-    private String ERROR_MESSAGE = "errorMessage";
-    private String ERROR = "error";
-    private String ACTIVE = "active";
-    private String MESSAGE = "message";
+    public static String ERROR_MESSAGE = "errorMessage";
+    public static String ERROR = "error";
+    public static String ACTIVE = "active";
+    public static String MESSAGE = "message";
 
     private Boolean active;
     private Boolean error;

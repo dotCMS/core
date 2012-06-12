@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.util.BasicProcessStatus;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.structure.model.Structure;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ public class CleanAssetsThread extends Thread {
     }
 
     /**
-     * Deleting all inodes of the assets from inode table in case that inode in the table does not exist any more
+     * Delete all files who are no longer in the FileAsset Table (this is the 1.9 table) and the Contentlet Table where the structure type is a type of File Asset
      *
      * @return
      * @throws com.dotmarketing.exception.DotDataException
@@ -93,7 +94,9 @@ public class CleanAssetsThread extends Thread {
 
         //Find the inodes for the assets files we need to keep
         DotConnect dc = new DotConnect();
-        final String selectInodesSQL = "select i.inode from inode i where type = 'file_asset'";
+        final String selectInodesSQL = "select c.inode from contentlet c " +
+                " join structure s on s.inode = c.structure_inode and s.structureType = " + Structure.STRUCTURE_TYPE_FILEASSET +
+                " join file_asset a on c.inode = a.inode";
         dc.setSQL( selectInodesSQL );
         List<HashMap<String, String>> results = dc.loadResults();
         List<String> fileAssetsInodes = new ArrayList<String>();
