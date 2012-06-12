@@ -34,7 +34,7 @@ String error = "";
 boolean success = false;
 
 %>
-<%if(LicenseUtil.getLevel() > 200){ %>
+<%if(LicenseUtil.getLevel() < 200){ %>
 	<div class="portlet-wrapper">
 	
 		<div class="subNavCrumbTrail">
