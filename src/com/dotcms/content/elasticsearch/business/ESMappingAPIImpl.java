@@ -379,7 +379,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
 	public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
 	
-	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss'Z'";
+	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern);
 	
 	
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
