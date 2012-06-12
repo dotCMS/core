@@ -185,7 +185,7 @@ if(!statePopUp || portletException){%>
 
 
 <div class="helpId">
-	<a href="#" onclick="showHelp();" class="dotcmsHelpButton"><%=LanguageUtil.get(pageContext, "Help") %></a>
+	<a href="#" onclick="showHelp();" class="dotcmsHelpButton"><%=LanguageUtil.get(pageContext, "help") %></a>
 </div>
 
 
