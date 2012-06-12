@@ -361,6 +361,21 @@ function doDropAssets() {
     }
 }
 
+function doDropAssetsCallback(removed){
+
+    dijit.byId('dropAssetsButton').attr('disabled', false);
+    if (removed >= 0)
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></spanstyle>';
+    else if (removed == -2)
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
+    else
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+}
+
+/**
+ * Call to clean assets deleting assets that are no longer in the File asset table and the Contentlet table
+ * where the structure type is <b>File Asset<b/>
+ */
 var doCleanAssets = function () {
 
     if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation") %>")) {
@@ -371,21 +386,18 @@ var doCleanAssets = function () {
     }
 };
 
-function doDropAssetsCallback(removed){
-
-    dijit.byId('dropAssetsButton').attr('disabled', false);
-	if (removed >= 0)
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></spanstyle>';
-	else if (removed == -2)
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
-	else
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
-}
-
+/**
+ * This call will verify the status of the cleanAssets process
+ */
 function doCleanAssetsCallback() {
     CMSMaintenanceAjax.getCleanAssetsStatus(getCleanAssetsStatusCallback);
 }
 
+/**
+ * Callback for the method call doCleanAssetsCallback who verify the status of the cleanAssets process.
+ * This method will give a feedback to the user about the status of the process
+ * @param status Map with the current progress status
+ */
 function getCleanAssetsStatusCallback(status) {
 
     if (status['active']) {
