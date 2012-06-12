@@ -195,11 +195,11 @@ boolean hasPath = false;
 				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "Index-Name") %>: </strong><a href="javascript: ;" id="aliasHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="aliasHintHook" id="aliasHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "search-alias-hint") %></span>
 			</td>
 			<td>
-				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.ComboBox" required="true">
-				<%if(hasDefaultIndex){ %><option value="DEFAULT" <%=("DEFAULT".equals(indexName)) ? "selected='true'":"" %>><%= LanguageUtil.get(pageContext, "Create-New-Make-Default") %></option><%} %>
+				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.FilteringSelect" required="true">
+				<option value="create-new"><%= LanguageUtil.get(pageContext, "Create-New-Make-Default") %></option>
 				<%for(String x : indexes){ %>
-					<option value="<%=alias.get(x)%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>>
-					  <%=alias.get(x)%> 
+					<option value="<%=alias.get(x) == null ? x:alias.get(x)%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>>
+					  <%=alias.get(x) == null ? x:alias.get(x) %> 
 					  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? 
 					          "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
 					</option>

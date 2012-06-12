@@ -3464,24 +3464,6 @@
 		</security-role-ref>
 	</portlet>
 
-	<portlet>
-		<portlet-name>LOGMAN_TOOL</portlet-name>
-		<display-name>Log Manager Tool</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<init-param>
-				<name>view-action</name>
-				<value>/ext/logConsole/viewConsole</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>CMS Administrator</role-name>
-		</security-role-ref>
-	</portlet>
-
 	<custom-window-state>
 		<window-state>exclusive</window-state>
 	</custom-window-state>
