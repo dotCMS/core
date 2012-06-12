@@ -336,7 +336,7 @@ function doDeleteContentletsCallback(contentlets){
 	if (contentlets[3]!="")
  	{
  	 	if(contentlets[3].indexOf(",")){
- 	 	 	var contnotfound=contentlets[3].split(',')
+ 	 	 	var contnotfound=contentlets[3].split(',');
  	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[3] +'</br>';
  	 	 	}
  	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[1] +'</br>';
@@ -366,6 +366,7 @@ var doCleanAssets = function () {
     if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation") %>")) {
         $("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress") %></b></spanstyle>';
         dijit.byId('cleanAssetsButton').attr('disabled', true);
+
         CMSMaintenanceAjax.cleanAssets(doCleanAssetsCallback);
     }
 };
@@ -381,15 +382,35 @@ function doDropAssetsCallback(removed){
 	 	document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
 }
 
-function doCleanAssetsCallback(removed){
+function doCleanAssetsCallback() {
+    CMSMaintenanceAjax.getCleanAssetsStatus(getCleanAssetsStatusCallback);
+}
 
-    dijit.byId('cleanAssetsButton').attr('disabled', false);
-    if (removed >= 0)
-        document.getElementById("cleanAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.result") %></b></spanstyle>';
-    else if (removed == -2)
-        document.getElementById("cleanAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
-    else
-        document.getElementById("cleanAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+function getCleanAssetsStatusCallback(status) {
+
+    if (status['active']) {
+
+        var removed = status['message'];
+        if (removed != null && removed != "null") {
+            document.getElementById("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress.small") %>, ' + removed + ' <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.result") %></b></spanstyle>';
+        }
+
+        if (status['error']) {
+            document.getElementById("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+        }
+
+        setTimeout("doCleanAssetsCallback()", 1000);
+    } else {
+
+        if (status['error']) {
+            document.getElementById("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+        } else {
+            var removed = status['message'];
+            document.getElementById("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.result") %></b></spanstyle>';
+        }
+
+        dijit.byId('cleanAssetsButton').attr('disabled', false);
+    }
 }
 
 function validateDate(date){

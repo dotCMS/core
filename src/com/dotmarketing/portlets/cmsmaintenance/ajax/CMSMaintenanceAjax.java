@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.util.BasicProcessStatus;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.APILocator;
@@ -203,9 +204,26 @@ public class CMSMaintenanceAjax {
      * @return Deleted files count
      * @throws DotDataException
      */
-    public int cleanAssets () throws DotDataException {
+    public Map cleanAssets () throws DotDataException {
 
-        return MaintenanceUtil.deleteAssetsWithNoInode();
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true );
+        BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
+        cleanAssetsThread.start();
+
+        return processStatus.getStatusMap();
+    }
+
+    /**
+     * Method to check the status of the clean assets process
+     *
+     * @return map with the current status information
+     */
+    public Map getCleanAssetsStatus () {
+
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( false );
+        BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
+
+        return processStatus.getStatusMap();
     }
 
     public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {
