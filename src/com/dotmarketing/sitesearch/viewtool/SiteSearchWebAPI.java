@@ -9,7 +9,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.publishing.sitesearch.SiteSearchResults;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;

@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
-import com.dotcms.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
