@@ -1,14 +1,17 @@
 package com.dotmarketing.plugin.util;
 
-import com.dotmarketing.util.UtilMethods;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.log4j.Logger;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
+import org.apache.commons.lang.SystemUtils;
+import org.apache.log4j.Logger;
 
 /**
  * This plugin will allow any file to be overridden or added.
@@ -318,7 +321,7 @@ public class PluginRoot {
         out.close();
 
         //Now, lets try to add specific permissions for some specific type of files
-        String fileExtension = UtilMethods.getFileExtension( destination.getName() );
+        String fileExtension = getFileExtension( destination.getName() );
         try {
             Collection<String> executables = Arrays.asList( executableFiles );
             if ( executables.contains( fileExtension ) ) {
@@ -392,4 +395,16 @@ public class PluginRoot {
         this.plugins = plugins;
     }
 
+    public static String getFileExtension(String x) {
+        String r = "";
+        try {
+            if (x.lastIndexOf(".") != -1) {
+                return x.substring(x.lastIndexOf(".") + 1).toLowerCase();
+            } else {
+                return r;
+            }
+        } catch (Exception e) {
+            return "ukn";
+        }
+    }
 }
