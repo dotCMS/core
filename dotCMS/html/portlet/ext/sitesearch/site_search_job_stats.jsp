@@ -1,5 +1,5 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchPublishStatus"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus"%>
 <%@page import="com.dotcms.publishing.PublishStatus"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.quartz.QuartzUtils"%>
