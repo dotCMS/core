@@ -38,7 +38,7 @@ dojo.declare(
 
 
 
-// 
+//
 //
 // -------------------- SchemeAdminMain --------------------
 //
@@ -60,7 +60,7 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 		dojo.hash(encodeURIComponent(href));
 
 	},
-	
+
 	refresh : function() {
 		var hashValue = decodeURIComponent(dojo.hash());
 
@@ -81,27 +81,27 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 
 		myCp.attr("href", hashValue);
 		dojo.parser.parse("hangWorkflowMainHere");
-		
-		
 
-		
+
+
+
 	},
 
 
-	
-	
-	
-	
+
+
+
+
 	addCrumbtrail : function (title, urlx){
 		var entry = {title:title, url:urlx};
 
 		this.wfCrumbTrail[this.wfCrumbTrail.length] = entry;
-		
-		
+
+
 	},
 	resetCrumbTrail : function(){
-		
-		
+
+
 		this.wfCrumbTrail = new Array();
 	},
 
@@ -110,14 +110,14 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 		crumbDiv.innerHTML ="";
 		// dojo.create("li",
 		// {onClick:this.show(this.wfCrumbTrail[i].url)},crumbDiv )
-		
-		
-		
+
+
+
 		dojo.create("li", {innerHTML:"<span class='hostStoppedIcon' style='float:left;margin-right:5px;'></span><%=LanguageUtil.get(pageContext, "Global-Page")%>", id:"selectHostDiv", onClick:"window.location='/c'"},crumbDiv );
 
 
-		
-		
+
+
 		for( i =0;i< this.wfCrumbTrail.length;i++ ){
 			var className="showPointer";
 			if(i+1 ==this.wfCrumbTrail.length){
@@ -131,40 +131,40 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 			}
 
 		}
-		
+
 
 	},
 	confirm : function(confirmationMessage ){
-		
-		
+
+
 		var dia = dijit.byId("wfConfirmDialog");
 		if(dia){
 			dia.destroyRecursive();
 		}
-		
-		
-		
+
+
+
 		dia = new dijit.Dialog({
 			id			:	"wfConfirmDialog",
 			title		: 	"<%=LanguageUtil.get(pageContext, "Confirm")%>",
 			innerHTML 		: confirmationMessage
 			});
-		
 
-		
-		
+
+
+
 		dia.show();
-		
-		
-		
+
+
+
 	}
-	
-	
+
+
 });
 
-			
-			
-			
+
+
+
 //
 //
 //
@@ -179,7 +179,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	crumbTitle:"<%=LanguageUtil.get(pageContext, "Schemes")%>",
 	addEditDiv:"wfEditSchemeDia",
 	constructor : function() {
-		
+
 	},
 
 	show : function() {
@@ -204,10 +204,10 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		myCp = new dijit.layout.ContentPane({
 			id : "wfEditSchemeCp",
 			parseOnLoad : true,
-			
+
 		})
 
-		
+
 		var dia = dijit.byId(this.addEditDiv);
 		if(dia){
 			dia.destroyRecursive(false);
@@ -217,11 +217,11 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 			id			:	this.addEditDiv,
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>",
 			});
-		
-		
-		
+
+
+
 		myCp.placeAt("wfEditSchemeDia");
-	
+
 		dia.show();
 		myCp.attr("href", href);
 
@@ -278,7 +278,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		}
 		else{
 			dojo.style('forceInitialAction', 'display', 'none');
-		
+
 		}
 	}
 
@@ -307,7 +307,7 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 	},
 	editStep : function(schemeId, stepId){
 		mainAdmin.show(this.editJsp + "?schemeId=" + schemeId + "&stepId="+ stepId);
-		
+
 	},
 	alreadyDone : "",
 	addStep : function (){
@@ -317,7 +317,7 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		var myParams = "cmd=add&stepName=" + encodeURIComponent(stepName) + "&schemeId=" +  this.schemeId;
 
 		var xhrArgs = {
-		
+
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax",
 			postData : myParams,
     		handleAs: "text",
@@ -339,21 +339,21 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		dojo.xhrPost(xhrArgs);
 
 		return;
-		
 
-	},	
+
+	},
 	addSuccess : function (data){
 		mainAdmin.refresh();
 		showDotCMSSystemMessage("Added");
 	},
-	
+
 	deleteStep : function (stepId){
-		
+
 		if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Step")%>")){
 			return;
-		
+
 		}
-		
+
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=delete&stepId=" + stepId,
 			handle : function(dataOrError, ioArgs) {
@@ -375,17 +375,17 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		dojo.xhrPut(xhrArgs);
 
 		return;
-		
-		
-	
 
-	},	
+
+
+
+	},
 	deleteSuccess : function (data){
 		mainAdmin.refresh();
 		showDotCMSSystemMessage("deleted");
 	},
-	
-	
+
+
 	showStepEdit : function(stepId){
 		var dia = dijit.byId("stepEditDia");
 		if(dia){
@@ -395,7 +395,7 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 			id			:	"stepEditDia",
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Step")%>"
 			});
-		
+
 		var myCp = dijit.byId("stepEditCp");
 		if (myCp) {
 			myCp.destroyRecursive(true);
@@ -404,10 +404,10 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 
 		myCp = new dojox.layout.ContentPane({
 			id : "stepEditCp"
-		})		
-		
+		})
+
 		myCp.placeAt("stepEditDia");
-		
+
 		dia.show();
 		myCp.attr("href","/html/portlet/ext/workflows/schemes/edit_step.jsp?stepId=" + stepId);
 		setTimeout(function() {
@@ -447,15 +447,15 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 					}
 				}
 			});
-			
+
 			var x = dijit.byId("addEditStepDia");
 			x.hide();
 
-			
-			
+
+
 		}
 	}
-	
+
 });
 
 function edit_step_toggleEscalation() {
@@ -469,13 +469,13 @@ function edit_step_toggleEscalation() {
         var newHeight=dialogHeight-120;
         dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
         dojo.query("#stepEditDia .escalation-row").style("display","none")
-        
+
     }
 }
 
 function showExpirationTime(){
     var ttl = dijit.byId("escalationTime").getValue();
-    
+
     var m = 60 * 60 * 24 * 30;
     var w = 60*60*24*7;
     var d = 60*60*24;
@@ -487,52 +487,52 @@ function showExpirationTime(){
         if(x>0){
         message+=", ";
         }
-        
+
         if(ttl>=m){
             x = Math.floor(ttl / m);
             message+= x;
-            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Month") %>" 
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Month") %>"
                 : " <%= LanguageUtil.get(pageContext, "Months") %>";
             ttl = Math.floor(ttl % m);
         }
         else if(ttl >= w){
             x = Math.floor(ttl / w);
             message+= x;
-            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Week") %>" 
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Week") %>"
                 : " <%= LanguageUtil.get(pageContext, "Weeks") %>";
             ttl = Math.floor(ttl % w);
         }
         else if(ttl >= d){
             x = Math.floor(ttl / d);
             message+= x;
-            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Day") %>" 
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Day") %>"
                 : " <%= LanguageUtil.get(pageContext, "Days") %>";
             ttl = Math.floor(ttl % d);
         }
         else if(ttl >= h){
             x = Math.floor(ttl / h);
             message+= x;
-            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Hour") %>" 
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Hour") %>"
                 : " <%= LanguageUtil.get(pageContext, "Hours") %>";
             ttl = Math.floor(ttl % h);
         }
         else if(ttl >= mm){
             x = Math.floor(ttl / mm);
             message+= x;
-            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Minute") %>" 
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Minute") %>"
                 : " <%= LanguageUtil.get(pageContext, "Minutes") %>";
             ttl = Math.floor(ttl % mm);
         }
         else if(ttl > 0){
             x =ttl;
             message+= x;
-            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Second") %>" 
+            message+=(x==1) ? " <%= LanguageUtil.get(pageContext, "Second") %>"
                 : " <%= LanguageUtil.get(pageContext, "Seconds") %>";
             ttl=0;
-                
+
         }
     }
-    
+
     dojo.byId("showExpirationTime").innerHTML = message;
 }
 
@@ -549,8 +549,8 @@ function showExpirationTime(){
 //
 //
 dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
-	
-	baseJsp : "/html/portlet/ext/workflows/schemes/view_action.jsp",	
+
+	baseJsp : "/html/portlet/ext/workflows/schemes/view_action.jsp",
 	crumbTitle:"<%=LanguageUtil.get(pageContext, "Actions")%>",
 	whoCanUse:new Array(),
 	reorderAction : function (nodes){
@@ -562,9 +562,9 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		var actionId = movedId.split("_")[1];
 		var i=0;
 		dojo.query("#jsNode" + stepId + " tr").forEach(function(node){
-			
 
-			
+
+
 			if(node.id == movedId ){
 				var xhrArgs = {
 					url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=reorder&actionId=" + actionId + "&order=" + i,
@@ -586,10 +586,10 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 				return;
 			}
 			i++;
-			
+
 		})
 	},
-	
+
 	deleteAction : function (actionId){
 		if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
 			return;
@@ -599,11 +599,11 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 			handle : function(dataOrError, ioArgs) {
 				if (dojo.isString(dataOrError)) {
 
-					
+
 					if (dataOrError.indexOf("FAILURE") == 0) {
 						showDotCMSSystemMessage(dataOrError, true);
 
-						
+
 					} else {
 						actionAdmin.deleteSuccess(dataOrError);
 					}
@@ -620,18 +620,18 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	deleteSuccess : function(message) {
 		console.log(message);
 		console.log(message.split(":")[1]);
-		stepAdmin.showViewSteps(message.split(":")[1]);	
-		
+		stepAdmin.showViewSteps(message.split(":")[1]);
+
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Deleted")%>");
 
 	},
-	
+
 	viewAction : function(stepId, actionId) {
-		mainAdmin.show(this.baseJsp + "?stepId=" + stepId + "&actionId=" + actionId);
+		mainAdmin.show(this.baseJsp + "?stepId=" + stepId + "&actionId=" + actionId + "&" + Math.random());
 
 	},
-	
-	saveAction : function() {
+
+	saveAction : function(stepId) {
 
 		var myForm = dijit.byId("addEditAction");
 
@@ -639,17 +639,18 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 			dojo.xhrPost({
 				form : "addEditAction",
 				preventCache:true,
-				
+
 				timeout : 30000,
 				handle : function(dataOrError, ioArgs) {
 					if (dojo.isString(dataOrError) && dataOrError) {
-						
+
 						if (dataOrError.indexOf("FAILURE") == 0) {
 
 							actionAdmin.saveError(dataOrError);
 						} else {
-						
-							actionAdmin.saveSuccess(dataOrError);
+							var actionId  = dataOrError.split(":")[1];
+							actionAdmin.viewAction(stepId, actionId);
+							showDotCMSSystemMessage("Saved");
 						}
 					} else {
 
@@ -668,18 +669,18 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Saved")%>");
 		var actionId  = message.split(":")[1];
 		mainAdmin.show(this.baseJsp + "?stepId=" + stepId + "&actionId=" + actionId);
-		
+
 
 	},
 	saveError : function(message) {
 		showDotCMSSystemMessage(message, true);
 
 	},
-	
-	
+
+
 	addSelectedToWhoCanUse : function(){
 		var select = dijit.byId("whoCanUseSelect");
-		
+
 		var user = select.getValue();
 		var userName = select.attr('displayedValue');
 
@@ -687,19 +688,19 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		actionAdmin.refreshWhoCanUse();
 		actionAdmin.doChange();
 	},
-	
+
 	addToWhoCanUse : function ( myId, myName){
 		for(i=0;i < this.whoCanUse.length;i++){
 			if(myId == this.whoCanUse[i].id  ||  myId == "user-" + this.whoCanUse[i].id || myId == "role-" + this.whoCanUse[i].id){
 				return;
 			}
 		}
-		
+
 		var entry = {name:myName,id:myId };
 		this.whoCanUse[this.whoCanUse.length] =entry;
-		
+
 	},
-	
+
 	removeFromWhoCanUse: function (myId){
 
 		var x=0;
@@ -713,12 +714,12 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		this.whoCanUse= newCanUse;
 		actionAdmin.doChange();
 	},
-	
+
 	refreshWhoCanUse : function (){
 		dojo.empty("whoCanUseTbl");
 		var table = dojo.byId("whoCanUseTbl");
 		var x = "";
-		
+
 		this.whoCanUse = this.whoCanUse.sort(function(a,b){
 			var x = a.name.toLowerCase();
 		    var y = b.name.toLowerCase();
@@ -733,7 +734,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 		}
 		dojo.query('#whoCanUse').val(x);
-		
+
 	},
 	doChange: function(){
 		dojo.attr("saveButtonDiv","className", "saveButtonDivShow");
@@ -749,14 +750,14 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
           		dojo.style("divRoleHierarchyForAssign", "visibility", "hidden");
 			}
         	else{
-          		dojo.style("divRoleHierarchyForAssign", "visibility", "visible");		
+          		dojo.style("divRoleHierarchyForAssign", "visibility", "visible");
       		}
       	}else{
        		dojo.style("divRoleHierarchyForAssign", "visibility", "hidden");
       	}
 	}
 });
-	
+
 
 
 //
@@ -768,29 +769,29 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 //
 //
 //
-	
+
 dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 	actionClasses : new Array(),
 	dndHandle : null,
 	addSelectedToActionClasses : function(){
 		var select = dijit.byId("wfActionlets");
-		
+
 		var clazz = select.getValue();
 		var name = select.attr('displayedValue');
 
 		this.addActionClass(clazz, name);
 
 	},
-	
+
 	addToActionClassesArray: function ( id, myName){
-		
+
 		var entry = {id:id,name:myName};
 		this.actionClasses[this.actionClasses.length] =entry;
-	
+
 	},
-	
-	
-	
+
+
+
 	addActionClass : function ( clazz, myName){
 		var actionId = dojo.byId("actionId").value;
 		var xhrArgs = {
@@ -801,7 +802,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 							showDotCMSSystemMessage(dataOrError, true);
 
 						} else {
-		
+
 							var x = dataOrError.split(":",2);
 							actionClassAdmin.addToActionClassesArray(x[0], x[1]);
 							actionClassAdmin.refreshActionClasses();
@@ -816,18 +817,18 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 				}
 			};
 			dojo.xhrPut(xhrArgs);
-			
+
 
 	},
 
-	
+
 	deleteActionClass : function (actionClassId){
 		if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Subaction")%>")){
 			return;
 		}
-		
-		
-		
+
+
+
 		var xhrArgs = {
 			 url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax?cmd=delete&actionClassId=" + actionClassId ,
 			handle : function(dataOrError, ioArgs) {
@@ -852,7 +853,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 		return;
 	},
 
-	
+
 	removeFromActionClasses: function (id){
 		var x=0;
 		var newActionlets = new Array();
@@ -867,13 +868,13 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 		this.refreshActionClasses();
 
 	},
-	
+
 	refreshActionClasses : function (){
 		if(!dojo.byId("actionletsTbl")){
 			return;
 		}
-		
-		
+
+
 		dojo.empty("actionletsTbl");
 		var table = dojo.byId("actionletsTbl");
 		var x = "";
@@ -886,8 +887,8 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 		var tr = dojo.create("tr", null, table);
 		dojo.create("th", {colspan:2, innerHTML:"SubActions "}, tr);
 		var tbody = dojo.create("tbody", null, table);
-		
-		
+
+
 		for(i=0; i< this.actionClasses.length ; i++){
 
 			x = x + this.actionClasses[i].id + ",";
@@ -902,14 +903,14 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 			tr = dojo.create("tr", null, tbody);
 			dojo.create("td", { colSpan: 2, className:"wfnoSubActions", innerHTML:"<%=LanguageUtil.get(pageContext, "No-Sub-Actions-Configured")%>" }, tr);
 		}
-		
+
 
 
 		var c1 = new dojo.dnd.Container(dojo.byId("actionletsTbl"));
 		var myDnD = new dojo.dnd.Source("actionletsTbl");
 		this.dndHandle = dojo.connect(myDnD, "onDndDrop", actionClassAdmin.reorderActionClasses);
 	},
-	
+
 
 	reorderActionClasses : function(source, nodes, copy){
 		var actionClassId=source.anchor.id.replace("myRow", "");
@@ -920,24 +921,24 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 				order=i;
 			}
 			i++;
-			
+
 		})
 		console.log("id:" + actionClassId);
 		console.log("order:" + order);
-		
+
 		var xhrArgs = {
 				 url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax?cmd=reorder&actionClassId=" + actionClassId + "&order=" + order,
 				handle : function(dataOrError, ioArgs) {
-					
+
 					if (dojo.isString(dataOrError)) {
-					
+
 						if (dataOrError.indexOf("FAILURE") == 0) {
 
 							showDotCMSSystemMessage(dataOrError, true);
-						} 
+						}
 						else{
 							//showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Reordered")%>", false);
-							
+
 						}
 					} else {
 						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-reorder")%>", true);
@@ -947,32 +948,32 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 			dojo.xhrGet(xhrArgs);
 
 			return;
-		
-		
-		
-		
-	
+
+
+
+
+
 	},
 	manageParams : function (actionClassId){
-		
+
 		var dia = dijit.byId("actionClassParamsDia");
 		if(dia){
 			dia.destroyRecursive();
-			
+
 		}
 		dia = new dijit.Dialog({
 			id			:	"actionClassParamsDia",
 			title		: 	"<%=LanguageUtil.get(pageContext, "Sub-Action-Parameters")%>",
 			href 		: "/html/portlet/ext/workflows/schemes/view_action_class_params.jsp?actionClassId=" + actionClassId
 		});
-		
 
-		
-		
+
+
+
 		dia.show();
-		
-		
-		
+
+
+
 	},
 	saveActionParameters : function() {
 
