@@ -175,9 +175,9 @@ if(!statePopUp || portletException){%>
 		var helpUrl = "http://dotcms.com/inline-help/2.0/<%=portlet.getPortletId() %>";
 		var dialog = new dijit.Dialog({
 			title: "dotCMS Help",
-			content: "<iframe id='myIframe' src='" + helpUrl + "' width='480' height='640' style='border: 0 none;margin:-10px;'></iframe>",
+			content: "<iframe id='myIframe' src='" + helpUrl + "' width='640' height='640' style='border: 0 none;margin:-10px;'></iframe>",
 			loadingMessage: "Loading...",
-			style: "width:480px;height:640px;padding:0;"
+			style: "width:640px;height:640px;padding:0;"
     	});
     	dialog.show();
 	}
