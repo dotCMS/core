@@ -28,7 +28,10 @@ public class RatingAjax  {
 		String userId = "";
 		try {
 			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			userId = currentUser.getUserId();
+
+			if(currentUser!=null) {
+				userId = currentUser.getUserId();
+			}
 		} catch (Exception e) {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
@@ -42,7 +45,7 @@ public class RatingAjax  {
 		rt.setSessionId(session.getId());
 		rt.setUserIP(req.getRemoteAddr());
 
-		RatingAPI.saveRating (rt);
+		RatingAPI.saveRating(rt);
 
 	}
 }
