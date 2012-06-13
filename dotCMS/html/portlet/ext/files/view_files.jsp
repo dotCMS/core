@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.UUIDGenerator"%>
 <%@page import="com.dotmarketing.util.UtilHTML"%>
 <%@ include file="/html/portlet/ext/files/init.jsp" %>
 
@@ -276,6 +277,7 @@ function togglePublish(){
 	%>
 
 	<tr <%=str_style %> id="tr<%=k%>">
+	
 		
 		<td nowrap style="text-align:center;">
 			<% if (permissions.contains(PermissionAPI.PERMISSION_PUBLISH)) { %>
@@ -283,20 +285,19 @@ function togglePublish(){
 			<% } %>
 		</td>
 		
-		<td id="td<%=k%>">
+		<td id="td<%=k%>" <%if(!file.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=file.getInode()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>>
 			<span class="uknIcon <%=UtilMethods.getFileExtension(file.getFileName())%>Icon"></span>
-			
 			<%=file.getFileName()%>
 		</td>
-		<td nowrap="true">
+		<td nowrap="true" <%if(!file.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=file.getInode()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>>
 		
 			<%=UtilHTML.getStatusIcons(file) %>
 
 
 		</td>
-		<td><%=file.getTitle()==null?"":file.getTitle()%></td>
-		<td nowrap><%=pathToMe%></td>
-		<td nowrap>
+		<td <%if(!file.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=file.getInode()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%=file.getTitle()==null?"":file.getTitle()%></td>
+		<td nowrap <%if(!file.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=file.getInode()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%=pathToMe%></td>
+		<td nowrap <%if(!file.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=file.getInode()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>>
 			<%=modDateFormat.format(file.getModDate())%>
 			<script language="JavaScript">
 			//popup div for the htmlpages
