@@ -98,13 +98,13 @@
 	<!-- BEGIN PLUGINS -->
 <!-- BEGIN PLUGIN:com.dotcms.achecker -->
 	<create creator="new" javascript="ACheckerDWR">
-		<param name="class" value="com.dotcms.achecker.tinymce.ACheckerDWR" />
+		<param name="class" value="com.dotcms.enterprise.achecker.tinymce.ACheckerDWR" />
 	</create>
-	<convert converter="bean" match="com.dotcms.achecker.ACheckerResponse"/>
-	<convert converter="bean" match="com.dotcms.achecker.AccessibilityResult"/>
-	<convert converter="bean" match="com.dotcms.achecker.CheckBean"/>
-	<convert converter="enum" match="com.dotcms.achecker.Confidence"/>
-	<convert converter="bean" match="com.dotcms.achecker.model.GuideLineBean"/>
+	<convert converter="bean" match="com.dotcms.enterprise.achecker.ACheckerResponse"/>
+	<convert converter="bean" match="com.dotcms.enterprise.achecker.AccessibilityResult"/>
+	<convert converter="bean" match="com.dotcms.enterprise.achecker.CheckBean"/>
+	<convert converter="enum" match="com.dotcms.enterprise.achecker.Confidence"/>
+	<convert converter="bean" match="com.dotcms.enterprise.achecker.model.GuideLineBean"/>
 <!-- END PLUGIN:com.dotcms.achecker -->
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
