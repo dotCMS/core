@@ -196,35 +196,43 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		
 		
 	}
-	
-	private String rolesToJson(List<Role> roles) throws JsonGenerationException, JsonMappingException, IOException, DotDataException, LanguageException{
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        Map<String,Object> m = new LinkedHashMap<String, Object>();
-        
-        List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
-        Map<String,Object> map = new HashMap<String,Object>();
-        Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
-        for(Role role : roles){
 
-        	map = new HashMap<String,Object>();
-        	if(role.getId().equals(cmsAnon.getId())){
-        		map.put("name", role.getName()  );
-        	}
-        	else{
-        		map.put("name", role.getName()  + ((role.isUser()) ? " (" + LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "User") + ")" : "") );
-        	}
-        	map.put("id", role.getId());
-    		list.add(map);
+    private String rolesToJson ( List<Role> roles ) throws IOException, DotDataException, LanguageException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure( Feature.FAIL_ON_UNKNOWN_PROPERTIES, false );
+        Map<String, Object> m = new LinkedHashMap<String, Object>();
+
+        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        Map<String, Object> map;
+
+        Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        Role defaultRole = APILocator.getRoleAPI().loadDefaultRole();
+        for ( Role role : roles ) {
+
+            map = new HashMap<String, Object>();
+
+            //We need to exclude the default Role
+            if ( role.getId().equals( defaultRole.getId() ) ) {
+                continue;
+            }
+
+            //We need to exclude also the anonymous Role
+            if ( role.getId().equals( cmsAnon.getId() ) ) {
+                continue;
+            }
+
+            map.put( "name", role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get( PublicCompanyFactory.getDefaultCompany(), "User" ) + ")" : "") );
+            map.put( "id", role.getId() );
+
+            list.add( map );
         }
-        
-        
-        
-        m.put("identifier", "id");
-        m.put("label", "name");
-        m.put("items", list);
-		return mapper.defaultPrettyPrintingWriter().writeValueAsString(m);
-	}
-	
-	
+
+        m.put( "identifier", "id" );
+        m.put( "label", "name" );
+        m.put( "items", list );
+
+        return mapper.defaultPrettyPrintingWriter().writeValueAsString( m );
+    }
+
 }
