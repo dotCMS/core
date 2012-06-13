@@ -296,15 +296,13 @@ function processDelete(inode, referer) {
 					<input dojoType="dijit.form.CheckBox" type="checkbox" name="publishInode" id="publishInode<%= container.getInode() %>" value="<%= container.getInode() %>" onclick="togglePublish()" />
 				<% } %>
 			</td>
-			<td nowrap>
-				<a href="javascript: editContainer('<%=inode%>','<%=userId%>','<%= referer %>','<%= live %>','<%= working %>','<%= write %>');">
-					<span class="container"></span>
+			<td nowrap <%if(!container.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>" ><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=container.getInode()%>&referer=<%=referer%>'"<%} %>>
+					<span class="container"></span>&nbsp;
 					<%=container.getTitle()%>
-				</a>
 			</td>
-			<td nowrap><%= com.dotmarketing.util.UtilHTML.getStatusIcons(container) %></td>
-			<td><%=container.getFriendlyName()%></td>
-			<td nowrap>
+			<td nowrap <%if(!container.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>" ><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=container.getInode()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(container) %></td>
+			<td <%if(!container.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>" ><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=container.getInode()%>&referer=<%=referer%>'"<%} %>><%=container.getFriendlyName()%></td>
+			<td nowrap <%if(!container.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>" ><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=container.getInode()%>&referer=<%=referer%>'"<%} %>>
 				<%=modDateFormat.format(container.getModDate())%>
 				<script language="JavaScript">
 					//popup div for the containers
