@@ -238,6 +238,10 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		return CMS_ADMIN;		
 	}
+
+    public Role loadDefaultRole () throws DotDataException {
+        return rf.loadRoleByKey( DEFAULT_USER_ROLE_KEY );
+    }
 	
 	public List<String> findUserIdsForRole(Role role) throws DotDataException {
 		return rf.findUserIdsForRole(role);
