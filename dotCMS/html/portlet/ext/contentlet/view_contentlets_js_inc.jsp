@@ -1815,25 +1815,22 @@
                         var div = document.getElementById("queryResults");
                         var apicall="<%= restBaseUrl %>/query/"+queryRaw+"/orderby/"+sortBy;
                         var apicall_urlencode="<%= restBaseUrl %>/query/"+dojox.dtl.filter.strings.urlencode(queryRaw)+"/orderby/"+dojox.dtl.filter.strings.urlencode(sortBy);
-                        div.innerHTML ="<p><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></p>"+
-                            "<p><b><%= LanguageUtil.get(pageContext, "frontend-query") %></b><br>"+
-                                "<span style=\"color:red;\">#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</span></p>" +
-                            "<p><b><%= LanguageUtil.get(pageContext, "The-actual-query-") %></b><br>"+
-                                "<span style=\"color:red;\">"+queryRaw+"</span></p>" +
-                                
-                                "<p><b><%= LanguageUtil.get(pageContext, "rest-api-call") %></b><br/>"+
-                                "<span style=\"color:red;\">"+apicall+"</span></p>"+
-                                
-                                "<p><b><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></b><br/>"+
-                                "<span style=\"color:red;\">"+apicall_urlencode+"</span></p>"+
-                                
-                                "<b><%= LanguageUtil.get(pageContext, "Ordered-by") %>:</b> " + sortBy +
-                                "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
-                                "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint3") %> " +
-                                "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint4") %> " + 
-                                "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint5") %></li>"+
-                                "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint6")%></li>"+
-                                "</ul>";
+                        div.innerHTML ="<div class='contentViewDialog'>" +
+
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
+                            "<div class='contentViewQuery'>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</div>" +
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
+                            "<div class='contentViewQuery'>"+queryRaw+"</div>" +
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
+                            "<div class='contentViewQuery'><a href='"+apicall_urlencode+"' target='_blank'>"+apicall_urlencode+"</a></div></p>"+
+                            "<b><%= LanguageUtil.get(pageContext, "Ordered-by") %>:</b> " + sortBy +
+                            "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
+                            "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint3") %> " +
+                            "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint4") %> " + 
+                            "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint5") %></li>"+
+                            "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint6")%></li>"+
+                            "<li><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></li>"+ 
+                            "</ul></div>";
 
         }       
 

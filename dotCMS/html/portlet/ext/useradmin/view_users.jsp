@@ -37,35 +37,35 @@
 
 <!-- START Left Column User listing -->
 	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;margin-top:38px;overflow:auto;" class="lineRight">
-		
+
 			<div dojoType="dojox.grid.DataGrid" jsId="usersGrid" id="usersGrid" style="cursor: pointer; cursor: hand" autoHeight="true" structure="usersGridLayout" query="{ id: '*' }"></div>
 			<div class="clear"></div>
 			<div id="loadingUsers"><img src="/html/js/lightbox/images/loading.gif"></div>
 			<div class="clear"></div>
-		
+
 		<div class"inputCaption" style="padding:3px 0 10px 10px;"><%= LanguageUtil.get(pageContext, "Limit-Max-50-Results") %></div>
 	</div>
 <!-- END Left Column User listing -->
 
 <!-- START Right Column User Details -->
 	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
-		
+
 		<div id="loadingUserProfile" style="display: none;"><img src="/html/js/lightbox/images/loading.gif"></div>
-		
+
 		<div id="userProfileTabs">
-		
+
 		<!-- START User Tabs -->
 			<div dojoType="dijit.layout.TabContainer" id="userTabsContainer">
-					
+
 				<!-- START User Detail Tab -->
-					<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="userDetailsTab" title="<%= LanguageUtil.get(pageContext, "User-Details") %>"> 
-						
+					<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="userDetailsTab" title="<%= LanguageUtil.get(pageContext, "User-Details") %>">
+
 							<div class="yui-g nameHeader">
 								<div class="yui-u first">
 									<span id="fullUserName" class="fullUserName"></span>
 								</div>
 			        		</div>
-	
+
 							<div style="padding:0 0 10px 0; border-bottom:1px solid #ccc;">
 								<form id="userInfoForm" dojoType="dijit.form.Form">
 									<input type="hidden" name="userPasswordChanged" value="false"/>
@@ -94,46 +94,46 @@
 							<div class="buttonRow">
 								<button dojoType="dijit.form.Button" onclick="saveUserDetails()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
 			        		</div>
-	
+
 		    		</div>
 				<!-- END User Detail Tab -->
-				
+
 				<!-- START Roles Tab -->
 					<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="userRolesTab" title="<%= LanguageUtil.get(pageContext, "Roles") %>">
-						
+
 						<div class="yui-g nameHeader">
 							<div class="yui-u first">
 								<span id="fullUserName" class="fullUserName"></span>
 							</div>
 		        		</div>
-							
+
 						<div id="roleFilterWrapper" style="vertical-align:middle;margin-left:10px;">
 							<b><%= LanguageUtil.get(pageContext, "Filter") %>:</b> <input dojoType="dijit.form.TextBox" onkeyup="filterUserRoles()" trim="true" name="userRolesFilter" id="userRolesFilter">
 							<button dojoType="dijit.form.Button" onclick="clearUserRolesFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 							<span><input type="checkbox" dojoType="dijit.form.CheckBox"  onclick="filterOnlyUserRoles()" id="onlyUserRolesFilter" />
 							<label for="onlyUserRolesFilter"><%= LanguageUtil.get(pageContext, "User-asigined-roles-only") %></label></span>
 						</div>
-	
+
 						<div id="loadingRolesWrapper">
 							<img src="/html/js/lightbox/images/loading.gif">
 						</div>
-						
+
 						<div id="noRolesFound" style="display: none;">
 							<%= LanguageUtil.get(pageContext, "No-roles-found") %>
 						</div>
-						
+
 						<div id="userRolesTreeWrapper" style="display: none; padding:5px 10px 10px 25px; border-bottom:1px solid #ccc;">
 							<div id="userRolesTree"></div>
 						</div>
-						
+
 						<div class="buttonRow">
 							<button dojoType="dijit.form.Button" onclick="resetRoles()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Reset") %></button>
 							<button dojoType="dijit.form.Button" onclick="saveRoles()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
 						</div>
-	
+
 					</div>
 				<!-- END Roles Tab -->
-				
+
 				<!-- START Permissions Tab -->
 					<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="userPermissionsTab" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
 					    <br />
@@ -141,16 +141,16 @@
 						<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_inc.jsp" %>
 					</div>
 				<!-- END Permissions Tab -->
-				
+
 				<!-- START Additional Info Tab -->
 					<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="userAdditionalInfoTab" title="<%= LanguageUtil.get(pageContext, "Additional-Info") %>">
-						
+
 						<div class="yui-g nameHeader">
 							<div class="yui-u first">
 								<span id="fullUserName" class="fullUserName"></span>
 							</div>
 		        		</div>
-	
+
 						<div class="userInfoForm" id="additionalUserInfoFormWrapper"  style="border-bottom:1px solid #ccc;">
 							<form id="userAdditionalInfoForm" dojoType="dijit.form.Form">
 								<dl>
@@ -172,27 +172,27 @@
 									<% } %>
 								</dl>
 							</form>
-							
+
 							<hr/>
 							<div class="clear"></div>
-							
+
 							<div class="buttonRow" style="text-align:right;">
 								<button dojoType="dijit.form.Button" id="addAddressIcon" onclick="addAddress()" type="button" iconClass="plusIcon">
 									<%= LanguageUtil.get(pageContext, "Addresses-Phones") %>
 								</button>
 							</div>
-							
+
 							<div dojoType="dojox.grid.DataGrid" jsId="userAddressesGrid" id="userAddressesGrid" autoHeight="true" store="userAddressesStore" structure="userAddressesGridLayout" query="{ addressId: '*' }"> </div>
-							
+
 						</div>
-						
+
 						<div class="clear"></div>
-						
+
 						<div class="buttonRow">
 							<button dojoType="dijit.form.Button" onclick="saveUserAdditionalInfo()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
 						</div>
-	
-	
+
+
 						<!-- START Popup Address -->
 							<div id="addressDialog" title="<%= LanguageUtil.get(pageContext, "edit-address") %>" dojoType="dijit.Dialog" style="display: none; width:400px;">
 								<form id="addressForm" dojoType="dijit.form.Form" class="userInfoForm">
@@ -227,21 +227,21 @@
 								</form>
 							</div>
 						<!-- END Popup Address -->
-						
+
 					</div>
 				<!-- END Additional Info Tab -->
-					
+
 				<!-- START Marketing Tab -->
 					<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="marketingInfoTab" title="<%= LanguageUtil.get(pageContext, "Marketing") %>">
-						
+
 						<div class="yui-g nameHeader">
 							<div class="yui-u first">
 								<span id="fullUserName" class="fullUserName"></span>
 							</div>
 		        		</div>
-						
+
 						<div id="marketingInfoWrapper">
-							
+
 							<table class="listingTable" style="margin:10px;width:98%;">
 								<tr>
 									<th>
@@ -249,7 +249,7 @@
 											<span class="statisticsIcon"></span> <%= LanguageUtil.get(pageContext, "Click-Tracking") %>
 										</div>
 										<div style="float:right;font-weight:normal;">
-											<input type="checkbox" dojoType="dijit.form.CheckBox" name="userClickTrackingCheck" id="userClickTrackingCheck" onChange="userClicktrackingChanged()" />
+											<input type="checkbox" dojoType="dijit.form.CheckBox" name="userClickTrackingCheck" id="userClickTrackingCheck" onClick="userClicktrackingChanged()" />
 											<label for="userClickTrackingCheck"><%= LanguageUtil.get(pageContext, "Disable-click-tracking") %></label>
 										</div>
 										<div class="clear"></div>
@@ -261,45 +261,45 @@
 									</td>
 								</tr>
 							</table>
-							
+
 							<table class="listingTable" style="margin:10px;width:98%;">
 								<tr><th nowrap><span class="tagIcon"></span> <%= LanguageUtil.get(pageContext, "User-Tags") %></th></tr>
 								<tr><td nowrap><%@ include file="/html/portlet/ext/useradmin/view_users_tags_inc.jsp" %></td></tr>
 							</table>
-							
+
 				<!-- DOTCMS-4943 <table class="listingTable" style="margin:10px;width:98%;">
 								<tr><th nowrap><span class="mapPinIcon"></span> <%= LanguageUtil.get(pageContext, "User-Locale") %></th></tr>
 								<tr><td style="font-size:100%;"><%@ include file="/html/portlet/ext/useradmin/view_users_locale_inc.jsp" %></td></tr>
 							</table>
-				-->			
+				-->
 							<div id="userClickHistoryDialog" title="<%= LanguageUtil.get(pageContext, "user-clicks-history") %>" dojoType="dijit.Dialog" style="display: none">
 								<div id="userClickHistoryPane"></div>
 								<div id="userClickHistoryDetailPane" style="display:none; overflow:auto;"></div>
-							</div>								
+							</div>
 						</div>
-					</div> 
+					</div>
 				<!-- END Marketing Tab -->
-				
-				
-				
-			</div> 
+
+
+
+			</div>
 		<!-- END User Tabs -->
-		
+
 		</div>
-		
+
 	</div>
 <!-- END Right Column User Details -->
 
 </div>
 <script type="text/javascript">
-     
+
 	dojo.addOnLoad(function () {
 		var userId='<%= request.getParameter("user_id")%>';
 	    if(userId!='null'){
 			editUser(userId);
 		}
 	});
-	
+
 	resizeRoleBrowser();
-	
+
 </script>

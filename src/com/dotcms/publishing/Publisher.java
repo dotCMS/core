@@ -98,7 +98,7 @@ public abstract class Publisher implements IPublisher {
 		
 			
 			List<String> path = Arrays.asList(file.getAbsolutePath().split(File.separator));
-			path = path.subList(path.indexOf(config.getId())+3, path.size());
+			path = path.subList(path.indexOf(config.getId())+4, path.size());
 			StringBuilder bob = new StringBuilder();
 			for(String x:path){
 				bob.append("/" + x);
