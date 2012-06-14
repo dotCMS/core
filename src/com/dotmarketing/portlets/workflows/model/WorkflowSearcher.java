@@ -34,6 +34,10 @@ public class WorkflowSearcher {
 	    return show4all;
 	}
 	
+	public void setShow4All(boolean value) {
+	    show4all=value;
+	}
+	
 	public int getTotalCount() {
 		return totalCount;
 	}
@@ -219,7 +223,7 @@ public class WorkflowSearcher {
 				+ "&keywords=" + URLEncoder.encode(UtilMethods.webifyString(keywords))
 				+ "&orderBy=" + orderBy 
 				+ "&count=" + count
-				+ ((show4all) ? "$show4all=true" : "")
+				+ ((show4all) ? "&show4all=true" : "")
 				+ "&page=" + page;
 
 	}
