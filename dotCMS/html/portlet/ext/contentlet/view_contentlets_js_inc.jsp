@@ -1814,7 +1814,7 @@
                         var sortBy = counters["sortByUF"];
                         var div = document.getElementById("queryResults");
                         var apicall="<%= restBaseUrl %>/query/"+queryRaw+"/orderby/"+sortBy;
-                        var apicall_urlencode="<%= restBaseUrl %>/query/"+dojox.dtl.filter.strings.urlencode(queryRaw)+"/orderby/"+dojox.dtl.filter.strings.urlencode(sortBy);
+                        var apicall_urlencode="<%= restBaseUrl %>/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
                         div.innerHTML ="<div class='contentViewDialog'>" +
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
