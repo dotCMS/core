@@ -455,10 +455,12 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		if(InodeUtils.isSet(template.getImage())){
 			Identifier imageIdentifier = APILocator.getIdentifierAPI().find(template.getImage());
-			if(fileAsContent = imageIdentifier.getAssetType().equals("contentlet")) {
-				imageContentlet = APILocator.getContentletAPI().findContentletByIdentifier(imageIdentifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-			} else {
-				imageFile = (File) APILocator.getVersionableAPI().findWorkingVersion(imageIdentifier,APILocator.getUserAPI().getSystemUser(),false);
+			if(imageIdentifier!=null && UtilMethods.isSet(imageIdentifier.getAssetType())) {
+    			if(fileAsContent = imageIdentifier.getAssetType().equals("contentlet")) {
+    				imageContentlet = APILocator.getContentletAPI().findContentletByIdentifier(imageIdentifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+    			} else {
+    				imageFile = (File) APILocator.getVersionableAPI().findWorkingVersion(imageIdentifier,APILocator.getUserAPI().getSystemUser(),false);
+    			}
 			}
 		}
 
