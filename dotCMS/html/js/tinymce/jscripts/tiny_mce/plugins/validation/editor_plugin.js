@@ -64,16 +64,14 @@
 							        'fragment'  : true
 							};
  				var idName ='acheck'+tinyMCE.activeEditor.id;
-				var div = document.getElementById(idName);
+				
 				
 				function createValidationResult( response ){
-					if( div == null ){
-						var divTag = document.createElement("div"); 
-						divTag.id = idName; 
-						divTag.setAttribute("align", "center"); 
-						document.body.appendChild(divTag); 
-						div =	divTag;
-					}
+					
+					var div = document.createElement("div"); 
+					div.id = idName; 
+					div.setAttribute("align", "center");
+				
 					var text = "" ;
 					var errors = false;
 					var msgText = ed.getLang('validation.validation_complete', 0);
@@ -113,9 +111,17 @@
 							text += "</tr> ";
 						}
 						text += "</table>";
+						div.innerHTML = text;
+						var dialog = dijit.Dialog({
+							title: msgText,
+							content : div,
+							style: "width: 640px"
+						});
+						dialog.show();
 					}
- 					div.innerHTML = text;					
-					tinyMCE.activeEditor.windowManager.alert( msgText );
+					else {
+						showDotCMSSystemMessage( msgText );
+					}
 				} 
 				try{
 				    ACheckerDWR.validate( request ,createValidationResult );

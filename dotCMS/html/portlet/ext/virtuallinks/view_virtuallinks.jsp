@@ -118,15 +118,10 @@ window.location="<portlet:renderURL windowState='<%= WindowState.MAXIMIZED.toStr
 					<% for (int k=minIndex;k<maxIndex && k<lists.size();k++) { %>
 						<%com.dotmarketing.portlets.virtuallinks.model.VirtualLink vl = (com.dotmarketing.portlets.virtuallinks.model.VirtualLink) lists.get(k);%>
 						<%  String str_style =  ((k%2)==0)  ? "class=\"alternate_1\"" : "class=\"alternate_2\""; %>
-						<tr <%=str_style%>>
+						<tr <%=str_style%> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/virtuallinks/edit_virtuallink" /><portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" /><portlet:param name="inode" value="<%= vl.getInode() %>" /></portlet:actionURL>'">
 							<td>
-								<span class="vlinksIcon"></span>
-								<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-								<portlet:param name="struts_action" value="/ext/virtuallinks/edit_virtuallink" />
-								<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" />
-								<portlet:param name="inode" value="<%= vl.getInode() %>" />
-								</portlet:actionURL>"><%=vl.getTitle()%>
-								</a> 
+								<span class="vlinksIcon"></span>&nbsp;
+								<%=vl.getTitle()%> 
 							</td>
 							<td><%=vl.getUrl()%></td>
 							<td><a href="<%=com.dotmarketing.util.UtilMethods.encodeURIComponent(vl.getUri())%>"><%=vl.getUri()%></a></td>
