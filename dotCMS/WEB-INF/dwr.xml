@@ -94,18 +94,16 @@
     <create creator="new" javascript="UserSessionAjax" >
       <param name="class" value="com.dotcms.cmsmaintenance.ajax.UserSessionAjax"/>
     </create>
+    <create creator="new" javascript="ACheckerDWR">
+      <param name="class" value="com.dotcms.enterprise.achecker.tinymce.ACheckerDWR" />
+    </create>
+    <convert converter="bean" match="com.dotcms.enterprise.achecker.ACheckerResponse"/>
+    <convert converter="bean" match="com.dotcms.enterprise.achecker.AccessibilityResult"/>
+    <convert converter="bean" match="com.dotcms.enterprise.achecker.CheckBean"/>
+    <convert converter="enum" match="com.dotcms.enterprise.achecker.Confidence"/>
+    <convert converter="bean" match="com.dotcms.enterprise.achecker.model.GuideLineBean"/>
     <!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
-<!-- BEGIN PLUGIN:com.dotcms.achecker -->
-	<create creator="new" javascript="ACheckerDWR">
-		<param name="class" value="com.dotcms.achecker.tinymce.ACheckerDWR" />
-	</create>
-	<convert converter="bean" match="com.dotcms.achecker.ACheckerResponse"/>
-	<convert converter="bean" match="com.dotcms.achecker.AccessibilityResult"/>
-	<convert converter="bean" match="com.dotcms.achecker.CheckBean"/>
-	<convert converter="enum" match="com.dotcms.achecker.Confidence"/>
-	<convert converter="bean" match="com.dotcms.achecker.model.GuideLineBean"/>
-<!-- END PLUGIN:com.dotcms.achecker -->
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
 	<convert converter="bean" match="com.dotmarketing.cms.polls.ajax.PollsAjax$VoteAnswer"/>
