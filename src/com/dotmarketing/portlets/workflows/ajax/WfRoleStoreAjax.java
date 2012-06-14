@@ -107,7 +107,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		        		role.setName(cmsAnonName);
 		        		addSystemUser = false;
 		        	}		        	
-		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId())){
+		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId()) && !role.getId().equals(APILocator.getRoleAPI().loadCMSAdminRole().getId())){
 		        		continue;
 		        	}
 		        	if(role.getName().equals(searchName)){
