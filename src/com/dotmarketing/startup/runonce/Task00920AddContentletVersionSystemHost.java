@@ -63,8 +63,12 @@ public class Task00920AddContentletVersionSystemHost implements StartupTask {
                 dc.addParam( inode );
                 if ( DbConnectionFactory.isPostgres() ) {
                     dc.addParam( false );
-                } else {
-                    dc.addParam( DbConnectionFactory.getDBFalse() );
+                } else if ( DbConnectionFactory.isMsSql() ) {
+                    dc.addParam( 0 );
+                } else if ( DbConnectionFactory.isMySql() ) {
+                    dc.addParam( 0 );
+                } else if ( DbConnectionFactory.isOracle() ) {
+                    dc.addParam( 0 );
                 }
                 dc.addObject( null );
                 dc.addParam( new Date() );
