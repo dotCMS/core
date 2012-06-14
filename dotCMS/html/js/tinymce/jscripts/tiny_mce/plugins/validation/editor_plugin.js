@@ -112,13 +112,10 @@
 						}
 						text += "</table>";
 						div.innerHTML = text;
-						var maxTextAreaWidth=dojo.query("textarea").map(function(x) {
-							return dojo.style(x,'width');
-					    }).max();
 						var dialog = dijit.Dialog({
 							title: msgText,
 							content : div,
-							style: "width: "+ maxTextAreaWidth +"px"
+							style: "width: 640px"
 						});
 						dialog.show();
 					}
