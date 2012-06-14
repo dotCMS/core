@@ -1,6 +1,6 @@
 (function() {
         tinymce.PluginManager.requireLangPack('validation');
-
+        dojo.require("dojox.widget.Standby");
         tinymce.create('tinymce.plugins.ValidationPlugin', {
 		 
                 /**
@@ -64,9 +64,15 @@
 							        'fragment'  : true
 							};
  				var idName ='acheck'+tinyMCE.activeEditor.id;
-				
-				
+ 				
+ 				var loaddialog = dijit.Dialog({
+					title: "Validating",
+					content : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src='/html/images/icons/round-progress-bar.gif' alt='loading'/>"
+				});
+				loaddialog.show();
+ 				
 				function createValidationResult( response ){
+					loaddialog.hide(); loaddialog.destroy();
 					
 					var div = document.createElement("div"); 
 					div.id = idName; 
@@ -124,7 +130,9 @@
 					}
 				} 
 				try{
+					
 				    ACheckerDWR.validate( request ,createValidationResult );
+				    
 				} catch(e){
 				    alert(e);
 				}
