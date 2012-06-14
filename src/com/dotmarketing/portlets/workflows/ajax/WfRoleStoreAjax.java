@@ -207,15 +207,20 @@ public class WfRoleStoreAjax extends WfBaseAction {
         Map<String, Object> map;
 
         Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
-        Role defaultRole = APILocator.getRoleAPI().loadDefaultRole();
         for ( Role role : roles ) {
 
             map = new HashMap<String, Object>();
 
-            //We need to exclude the default Role
-            if ( role.getId().equals( defaultRole.getId() ) ) {
-                continue;
-            }
+            //Exclude default user
+            try{
+	            User u = APILocator.getUserAPI().getDefaultUser();
+	            if(u!=null){
+		            Role r = APILocator.getRoleAPI().getUserRole(u);
+		            if(r != null && role.getId().equals(r.getId())){
+		            	continue;
+		            }
+	            }
+            }catch (Exception e) {}
 
             //We need to exclude also the anonymous Role
             if ( role.getId().equals( cmsAnon.getId() ) ) {
