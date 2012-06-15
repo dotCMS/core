@@ -223,9 +223,9 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }catch (Exception e) {}
 
             //We need to exclude also the anonymous Role
-            if ( role.getId().equals( cmsAnon.getId() ) ) {
-                continue;
-            }
+//            if ( role.getId().equals( cmsAnon.getId() ) ) {
+//                continue;
+//            }
 
             map.put( "name", role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get( PublicCompanyFactory.getDefaultCompany(), "User" ) + ")" : "") );
             map.put( "id", role.getId() );
