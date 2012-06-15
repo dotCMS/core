@@ -247,7 +247,8 @@
 		var myHeight = 375;
 		for(var i = 0; i < data.length; i++) {
 			var id = data[i].type=='host'?data[i].identifier:data[i].inode;
-			selectedChildPaneId = id;
+			if(id != systemHost.identifier)
+				selectedChildPaneId = id;
 			myHeight += dojo.marginBox('permissionsAccordionPane-' + id + "_button").h;
 			dojo.parser.parse(dojo.byId('hostFolderAccordionPermissionsTitleWrapper-' + id));
 		}
