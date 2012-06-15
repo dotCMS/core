@@ -319,7 +319,7 @@
 		  dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
 		}
 		dijit.byId('userTabsContainer').selectChild(dijit.byId('userDetailsTab'));
-
+		resizeRoleBrowser();
 	}
 
 	//Handler from when the user info has changed
