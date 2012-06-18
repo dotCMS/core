@@ -778,9 +778,10 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 		var clazz = select.getValue();
 		var name = select.attr('displayedValue');
-
-		this.addActionClass(clazz, name);
-
+        if(clazz.length>0)
+		   this.addActionClass(clazz, name);
+        else
+           showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "Workflow-please-choose-actionlet") %>");
 	},
 
 	addToActionClassesArray: function ( id, myName){
@@ -885,7 +886,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 		 **********************************************************************/
 
 		var tr = dojo.create("tr", null, table);
-		dojo.create("th", {colspan:2, innerHTML:"SubActions "}, tr);
+		dojo.create("th", {colspan:2, innerHTML:"<%= LanguageUtil.get(pageContext, "Workflow-SubActions") %>    "}, tr);
 		var tbody = dojo.create("tbody", null, table);
 
 
