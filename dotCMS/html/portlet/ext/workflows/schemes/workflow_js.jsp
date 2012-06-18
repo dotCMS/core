@@ -778,8 +778,8 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 		var clazz = select.getValue();
 		var name = select.attr('displayedValue');
-
-		this.addActionClass(clazz, name);
+        if(clazz.length>0)
+		   this.addActionClass(clazz, name);
 
 	},
 
