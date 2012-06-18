@@ -1814,7 +1814,14 @@
                         var sortBy = counters["sortByUF"];
                         var div = document.getElementById("queryResults");
                         var apicall="<%= restBaseUrl %>/query/"+queryRaw+"/orderby/"+sortBy;
-                        var apicall_urlencode="<%= restBaseUrl %>/query/"+dojox.dtl.filter.strings.urlencode(queryRaw)+"/orderby/"+dojox.dtl.filter.strings.urlencode(sortBy);
+                        var test_api_xml_link="/api/content/render/false/type/xml/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
+                        var test_api_json_link="/api/content/render/false/type/json/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
+                        var apicall_urlencode="<%= restBaseUrl %>/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
+                        
+                        
+                        
+                        
+                        
                         div.innerHTML ="<div class='contentViewDialog'>" +
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
@@ -1822,7 +1829,16 @@
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
                             "<div class='contentViewQuery'>"+queryRaw+"</div>" +
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
-                            "<div class='contentViewQuery'><a href='"+apicall_urlencode+"' target='_blank'>"+apicall_urlencode+"</a></div></p>"+
+                            "<div class='contentViewQuery'>"+apicall_urlencode+"</div>"+
+                            "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
+                            
+	                            "<a href='" + test_api_xml_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "xml") %></a>"+
+	                            "&nbsp;|&nbsp;"+
+	                            "<a href='" + test_api_json_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "json") %></a>"+
+	                            
+                            "</div>"+
+                            
+                            
                             "<b><%= LanguageUtil.get(pageContext, "Ordered-by") %>:</b> " + sortBy +
                             "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
                             "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint3") %> " +

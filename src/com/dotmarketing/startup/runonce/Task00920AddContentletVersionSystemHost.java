@@ -35,35 +35,49 @@ public class Task00920AddContentletVersionSystemHost implements StartupTask {
 
         dc.loadResult();
 
-        //Getting the SYSTEM_HOST contentlet
+        //Verify if we already have a contentlet version for the SYSTEM_HOST contentlet
         dc = new DotConnect();
-        dc.setSQL( "select inode, language_id from contentlet where title = 'System Host'" );
+        dc.setSQL( "select identifier from contentlet_version_info where identifier = ?" );
+        dc.addParam( Host.SYSTEM_HOST );
+        ArrayList<Map<String, String>> versionsResults = dc.loadResults();
 
-        ArrayList<Map<String, String>> results = dc.loadResults();
-        if ( results != null && results.size() > 0 ) {
+        //Ok, we didn't found a version for this SYSTEM_HOST contentlet, so we need to create one
+        if ( versionsResults == null || versionsResults.isEmpty() ) {
 
-            String inode = results.get( 0 ).get( "inode" );
-            String languageId = results.get( 0 ).get( "language_id" );
-
-            //Insert a contentlet version for the SYSTEM_HOST contentlet
+            //Getting the SYSTEM_HOST contentlet
             dc = new DotConnect();
-            dc.setSQL( "insert into contentlet_version_info values (?,?,?,?,?,?,?,?)" );
-            dc.addParam( Host.SYSTEM_HOST );
-            dc.addParam( Long.valueOf( languageId ) );
-            dc.addParam( inode );
-            dc.addParam( inode );
-            if ( DbConnectionFactory.isPostgres() ) {
-                dc.addParam( false );
-            } else {
-                dc.addParam( DbConnectionFactory.getDBFalse() );
-            }
-            dc.addObject( null );
-            dc.addParam( new Date() );
-            dc.addParam( new Date() );
+            dc.setSQL( "select inode, language_id from contentlet where title = 'System Host'" );
+            ArrayList<Map<String, String>> results = dc.loadResults();
 
-            dc.loadResult();
-        } else {
-            throw new DotRuntimeException( "Error querying SYSTEM_HOST contentlet." );
+            if ( results != null && results.size() > 0 ) {
+
+                String inode = results.get( 0 ).get( "inode" );
+                String languageId = results.get( 0 ).get( "language_id" );
+
+                //Insert a contentlet version for the SYSTEM_HOST contentlet
+                dc = new DotConnect();
+                dc.setSQL( "insert into contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) values (?,?,?,?,?,?,?,?)" );
+                dc.addParam( Host.SYSTEM_HOST );
+                dc.addParam( Long.valueOf( languageId ) );
+                dc.addParam( inode );
+                dc.addParam( inode );
+                if ( DbConnectionFactory.isPostgres() ) {
+                    dc.addParam( false );
+                } else if ( DbConnectionFactory.isMsSql() ) {
+                    dc.addParam( 0 );
+                } else if ( DbConnectionFactory.isMySql() ) {
+                    dc.addParam( 0 );
+                } else if ( DbConnectionFactory.isOracle() ) {
+                    dc.addParam( 0 );
+                }
+                dc.addObject( null );
+                dc.addParam( new Date() );
+                dc.addParam( new Date() );
+
+                dc.loadResult();
+            } else {
+                throw new DotRuntimeException( "Error querying SYSTEM_HOST contentlet." );
+            }
         }
 
     }
