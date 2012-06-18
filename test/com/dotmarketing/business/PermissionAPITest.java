@@ -2,13 +2,49 @@ package com.dotmarketing.business;
 
 import static org.junit.Assert.*;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.dotcms.TestBase;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
-public class PermissionAPITest {
+public class PermissionAPITest extends TestBase {
+    
+    Host host;
+    
+    @Before
+    void createTestHost() throws Exception {
+        final User sysuser=APILocator.getUserAPI().getSystemUser();
+        host = new Host();
+        host.setHostname("testhost.demo.dotcms.com");
+        APILocator.getHostAPI().save(host, sysuser, false);
+        
+        Template tt=new Template();
+        tt.setTitle("testtemplate");
+        tt.setBody("<html><head></head><body>en empty template just for test</body></html>");
+        APILocator.getTemplateAPI().saveTemplate(tt, host, sysuser, false);
+        
+        for(int w=1;w<=5;w++)
+         for(int x=1;x<=5;x++)
+          for(int y=1;y<=5;y++)
+           for(int z=1;z<=5;z++) {
+               String path="/f"+w+"/f"+x+"/f"+y+"/f"+z;
+               Folder folder=APILocator.getFolderAPI().createFolders(path, host, sysuser, false);
+               
+               HTMLPage page=new HTMLPage();
+               page.setPageUrl("testpage");
+               page.setFriendlyName("testpage");
+               page.setTitle("testpage");
+               APILocator.getHTMLPageAPI().saveHTMLPage(page, tt, folder, sysuser, false);
+           }
+    }
     
     @Test
     public void doesRoleHavePermission(Permissionable permissionable, int permissionType, Role role, boolean respectFrontendRoles) throws DotDataException {
