@@ -52,10 +52,21 @@ public class ContentResource extends WebResource {
 		String offsetStr = params.get(OFFSET);
 		String username = params.get(USER);
 		String password = params.get(PASSWORD);
+		String inode = params.get(INODE);
 		String result = null;
 		User user = null;
 		type = UtilMethods.isSet(type)?type:"json";
 		orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
+		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+		if(params.get(LANGUAGE) != null){
+			try{
+				language= Long.parseLong(params.get(LANGUAGE))	;
+			}
+			catch(Exception e){
+				Logger.error(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+			}
+		}
 
 		/* Authenticate the User if passed */
 
@@ -80,12 +91,15 @@ public class ContentResource extends WebResource {
 		} catch(NumberFormatException e) {
 		}
 
+		boolean live = (params.get(LIVE) == null || ! "false".equals(params.get(LIVE)));
+
 		/* Fetching the content using a query if passed or an id */
 
 		List<Contentlet> cons = new ArrayList<Contentlet>();
 
 		if(UtilMethods.isSet(id)) {
-			cons.add(APILocator.getContentletAPI().find(id, user, true));
+			cons.add(APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true));
+			cons.add(APILocator.getContentletAPI().find(inode, user, true));
 		} else if(UtilMethods.isSet(query)) {
 			cons = APILocator.getContentletAPI().search(query,new Integer(limit),new Integer(offset),orderBy,user,true);
 		}
