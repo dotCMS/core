@@ -20,7 +20,7 @@ var tinyMCEProps = {
 			theme : "advanced", 
 			language:'<%= userb.getLanguageId().substring(0,2) %>',
     		plugins : "validation,table,advhr,advimage,advlink,preview,searchreplace,print,paste,directionality,fullscreen,inlinepopups,style,dotimageclipboard,safari,spellchecker",
-    		spellchecker_languages : "+English=en_US,EspaÃ±ol=es_ES",
+    		spellchecker_languages : "+English=en_US,Español=es_ES",
     		spellchecker_rpc_url : "/servlets/jmyspell-spellchecker",
     		theme_advanced_buttons1_add : "separator,forecolor,fontselect,fontsizeselect,separator,fullscreen,preview",
     		theme_advanced_buttons1_add_before : "newdocument,separator",
