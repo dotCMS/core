@@ -1372,12 +1372,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         //String parentFolderId = parentFolder!=null?parentFolder.getInode():FolderAPI.SYSTEM_FOLDER;
         DotConnect dc = new DotConnect();
-        dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? ");
+        dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? and host_inode=?");
         dc.addParam(folderId.getPath());
+        dc.addParam(folder.getHostId());
         List<HashMap<String, String>> contentInodes = dc.loadResults();
-        dc.setSQL("update identifier set parent_path = ? where asset_type='contentlet' and parent_path = ?");
+        dc.setSQL("update identifier set parent_path = ? where asset_type='contentlet' and parent_path = ? and host_inode=?");
         dc.addParam("/");
         dc.addParam(folderId.getPath());
+        dc.addParam(folder.getHostId());
         dc.loadResult();
         for(HashMap<String, String> ident:contentInodes){
              String inode = ident.get("inode");
