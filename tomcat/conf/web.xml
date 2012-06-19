@@ -587,6 +587,10 @@
         <mime-type>application/msword</mime-type>
     </mime-mapping>
     <mime-mapping>
+        <extension>docx</extension>
+        <mime-type>application/vnd.openxmlformats-officedocument.wordprocessingml.document</mime-type>
+    </mime-mapping>
+    <mime-mapping>
         <extension>dtd</extension>
         <mime-type>application/xml-dtd</mime-type>
     </mime-mapping>
@@ -917,6 +921,10 @@
         <mime-type>application/vnd.ms-powerpoint</mime-type>
     </mime-mapping>
     <mime-mapping>
+        <extension>pptx</extension>
+        <mime-type>application/vnd.openxmlformats-officedocument.presentationml.presentation</mime-type>
+    </mime-mapping>
+    <mime-mapping>
         <extension>pps</extension>
         <mime-type>application/vnd.ms-powerpoint</mime-type>
     </mime-mapping>
@@ -1088,6 +1096,10 @@
     </mime-mapping>
     <mime-mapping>
         <extension>xls</extension>
+        <mime-type>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>xlsx</extension>
         <mime-type>application/vnd.ms-excel</mime-type>
     </mime-mapping>
     <mime-mapping>
