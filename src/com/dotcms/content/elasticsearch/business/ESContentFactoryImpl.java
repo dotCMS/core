@@ -1326,6 +1326,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (InodeUtils.isSet(contentlet.getHost())) {
             content.setHost(contentlet.getHost());
         }
+        
+        if (InodeUtils.isSet(contentlet.getFolder())) {
+            content.setFolder(contentlet.getFolder());
+        }
 
         cc.remove(content.getInode());
         cc.add(content.getInode(), content);
