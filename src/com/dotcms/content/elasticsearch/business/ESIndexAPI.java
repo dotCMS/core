@@ -61,6 +61,7 @@ import org.elasticsearch.search.SearchHit;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -125,8 +126,8 @@ public class ESIndexAPI {
 			bw = new BufferedWriter(
 			        new OutputStreamWriter(zipOut), 500000); // 500K buffer 
 			
-			// getting mapping for "content"
-	        final String mapping = mappingAPI.getMapping(index, "content");
+			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING : "content"; 
+	        final String mapping = mappingAPI.getMapping(index, type);
 	        bw.write(MAPPING_MARKER);
 	        bw.write(mapping);
 	        bw.newLine();
