@@ -1140,6 +1140,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
         }        
+        finally {
+            HibernateUtil.getSession().clear();
+        }
         return list;
     }
 }
