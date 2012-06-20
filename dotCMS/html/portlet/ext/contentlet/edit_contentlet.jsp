@@ -201,6 +201,7 @@ var editButtonRow="editContentletButtonRow";
 								%>
 								<%=textValue %>
 							</div>
+                            <div class="clear"></div>
 						</div>
 					<% } %>
 

@@ -140,10 +140,10 @@ public class UtilMethods {
 
         return strBuff.toString();
     }
-    
+
     public static final String join(List<String> strList, String separator) {
         StringBuilder strBuff = new StringBuilder();
-        for (String str : strList) 
+        for (String str : strList)
             strBuff.append(str).append(separator);
         return strBuff.toString();
     }
@@ -280,9 +280,9 @@ public class UtilMethods {
         if(x.length() ==4 && x.toLowerCase().equals("null")){
         	return false;
         }
-        
+
         return (x.length() > 0);
-        
+
     }
 
     public static final boolean isSet(java.util.Date x) {
@@ -347,22 +347,22 @@ public class UtilMethods {
 
     /**
      * Description of the Method
-     * 
+     *
      * @param cmdline
      *            Description of the Parameter
      * @return Description of the Return Value
-     * 
+     *
      * public static final String CmdExec(String cmdline) { StringBuffer sb =
      * new StringBuffer();
-     * 
+     *
      * try { String line; Process p = Runtime.getRuntime().exec(cmdline);
      * BufferedReader input = new BufferedReader(new InputStreamReader(p
      * .getInputStream()));
-     * 
+     *
      * while ((line = input.readLine()) != null) { sb.append(line); }
-     * 
+     *
      * input.close(); } catch (Exception err) { sb.append(err); }
-     * 
+     *
      * return sb.toString(); }
      */
     public static final String dateToDayViewDate(java.util.Date x) {
@@ -501,7 +501,7 @@ public class UtilMethods {
 
     /**
      * Takes a date and return a string with the date formatted as DD/MM/YYYY
-     * 
+     *
      * @param x
      *            Date to format
      * @return
@@ -592,7 +592,7 @@ public class UtilMethods {
 
         if (rDate == null) {
         	HTML_DB_TO_DATE2.setTimeZone(tz);
-            rDate = HTML_DB_TO_DATE2.parse(d, pos);	// Try to parse a db date without millisecond component 
+            rDate = HTML_DB_TO_DATE2.parse(d, pos);	// Try to parse a db date without millisecond component
         }
 
         if (rDate == null) {
@@ -627,7 +627,7 @@ public class UtilMethods {
 
     /**
      * Take a string and converts it to Date using the google mini search format
-     * 
+     *
      * @param d
      *            string date to converts
      * @return
@@ -661,7 +661,7 @@ public class UtilMethods {
 
     /*
      * Expecting a string like yyyy-MM-dd hh:mm:ss
-     * 
+     *
      */
     public static String jdbcDateToHtml(String jdbcdate) {
         if (!isSet(jdbcdate)) {
@@ -715,7 +715,7 @@ public class UtilMethods {
     }
 
     /**
-     * Use 
+     * Use
      * @deprecated Use obfuscateEmail and create the <a> in your html
      * @param email
      * @return
@@ -768,16 +768,16 @@ public class UtilMethods {
         return text;
     }
 
-    
+
     public static String prettyMemory(long memory) {
         return prettyByteify(memory);
     }
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
     public static String prettyString(String text, String alternateText) {
         if (text == null)
             return alternateText;
@@ -963,10 +963,10 @@ public class UtilMethods {
         html.append("");
 
         try {
-        	System.setProperty("sun.net.client.defaultReadTimeout","20000"); 
-    		System.setProperty("sun.net.client.defaultConnectTimeout","10000"); 
+        	System.setProperty("sun.net.client.defaultReadTimeout","20000");
+    		System.setProperty("sun.net.client.defaultConnectTimeout","10000");
 			 java.net.URL pointer = new java.net.URL(URI);
-			 
+
 			 java.net.URLConnection conn = pointer.openConnection();
 			 conn.setUseCaches(false);
 			 conn.setConnectTimeout(10000);
@@ -1048,7 +1048,7 @@ public class UtilMethods {
      * portion set. Pass it www.dotcms.org and it will return
      * http://www.dotcms.org. Pass it http://www.dotcms.org and it will return
      * http://www.dotcms.org
-     * 
+     *
      * @param x
      *            The string to check to make sure it starts with http
      * @return The string with http:// prepended if needed
@@ -1187,11 +1187,11 @@ public class UtilMethods {
 
     }
 
-    
-    
+
+
     public static String validateFileName(String fileName) throws IllegalArgumentException{
-    	
-        if (!isSet(fileName)  || 
+
+        if (!isSet(fileName)  ||
         		fileName.indexOf("..") != -1 || fileName.indexOf("WEB-INF") != -1 || fileName.indexOf("META-INF") != -1 || fileName.indexOf("!") != -1
                 || fileName.indexOf(":") != -1 || fileName.indexOf(";") != -1 || fileName.indexOf(";") != -1 || fileName.indexOf("&") != -1
                 || fileName.indexOf("?") != -1 || fileName.indexOf("$") != -1 || fileName.indexOf("*") != -1 || fileName.indexOf("\"") != -1
@@ -1256,7 +1256,7 @@ public class UtilMethods {
     public static String evaluateVelocity(String vtl, Context ctx) {
         try {
             StringWriter sw = new StringWriter();
-            //Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.  
+            //Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //            I actually think it should be fine passed the ctx which is a chained context here
 //            VelocityContext vc = pushVelocityContext(ctx);
             VelocityEngine ve = VelocityUtil.getEngine();
@@ -1272,7 +1272,7 @@ public class UtilMethods {
     }
 
     public static Context pushVelocityContext(Context ctx) {
-//    	/Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.  
+//    	/Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //      I actually think it should be fine passed the ctx which is a chained context here
 //    	return new VelocityContext(ctx);
     	return ctx;
@@ -1282,7 +1282,7 @@ public class UtilMethods {
     }
 
     public static String escapeUnicodeCharsForHTML(String valueSt) {
-    	
+
         // inverted exclamation mark �
         valueSt = valueSt.replaceAll("\u00A1", "&iexcl;");
         // cent sign �
@@ -1529,9 +1529,9 @@ public class UtilMethods {
         // non-standard, use &Yuml; �
         valueSt = valueSt.replaceAll("\u0178", "&Yuml;");
 
-        return valueSt;    	
+        return valueSt;
     }
-    
+
     public static String escapeHTMLSpecialChars(String valueSt) {
     	if(valueSt ==null){
     		return null;
@@ -1540,16 +1540,16 @@ public class UtilMethods {
     	valueSt = valueSt.replaceAll("&amp;", "_DOTCMS_AMP_");
 		valueSt = valueSt.replaceAll("&", "&amp;");
 		valueSt = valueSt.replaceAll("_DOTCMS_AMP_", "&amp;");
-		
+
 		valueSt = valueSt.replaceAll("&lt;", "_DOTCMS_LT_");
 		valueSt = valueSt.replaceAll("<", "&lt;");
 		valueSt = valueSt.replaceAll("_DOTCMS_LT_","&lt;");
-		
+
 		valueSt = valueSt.replaceAll("&gt;", "_DOTCMS_GT_");
 		valueSt = valueSt.replaceAll(">", "&gt;");
 		valueSt = valueSt.replaceAll("_DOTCMS_GT_","&gt;");
-		
-        // inverted exclamation mark 
+
+        // inverted exclamation mark
 		if(valueSt.indexOf("\\u") > -1){
 			valueSt = escapeUnicodeCharsForHTML(valueSt);
 		}
@@ -1699,9 +1699,9 @@ public class UtilMethods {
     public static String obfuscateCreditCard(String ccnum) {
         return obfuscateString(ccnum,4);
     }
-    
+
     public static String obfuscateString(String toOfuscate,int size) {
-        if (toOfuscate != null && toOfuscate.length() > size) 
+        if (toOfuscate != null && toOfuscate.length() > size)
         {
         	int ofuscateSize = toOfuscate.length() - size;
         	toOfuscate = toOfuscate.substring(ofuscateSize,toOfuscate.length());
@@ -1718,7 +1718,7 @@ public class UtilMethods {
 
     /**
      * Special split function, to split csv files exported from access
-     * 
+     *
      * @param reader
      *            The file reader
      * @param delim
@@ -1781,18 +1781,18 @@ public class UtilMethods {
     }
 
     /**
-     * Extracts the character set that has been configured by the 
+     * Extracts the character set that has been configured by the
      * admin, for this installation of dotCMS
-     * e.g. "text/html;charset=UTF-8" => "UTF-8" 
+     * e.g. "text/html;charset=UTF-8" => "UTF-8"
      * @return the configured character set
-     * 
+     *
      * @author Dimitris Zavaliadis
      * @version 1.0
      */
     public static String getCharsetConfiguration() {
     	// CHARSET key in properties file specifies both content type and charset
-    	String charsetWithContentType = Config.getStringProperty("CHARSET");	
-    	
+    	String charsetWithContentType = Config.getStringProperty("CHARSET");
+
     	if (isSet(charsetWithContentType)) {
     		// We are only interested in charset
     		if(charsetWithContentType.indexOf("charset") > 0) {
@@ -1864,7 +1864,7 @@ public class UtilMethods {
      * @see URLEncoder#encode(java.lang.String, java.lang.String)
      */
     public static String encodeURIComponent(String uri) {
-    	String result = uri; 
+    	String result = uri;
         try {
         	result = URLEncoder.encode(result, getCharsetConfiguration());
         	result = result.replaceAll("%2F", "/").replaceAll("%3A", ":");
@@ -2000,7 +2000,7 @@ public class UtilMethods {
     /**
      * Special split function, to split csv files exported from access, excel,
      * ...
-     * 
+     *
      * @param reader
      * @param delim
      * @param textQualifier
@@ -2033,7 +2033,7 @@ public class UtilMethods {
 
     /**
      * Compares if two dates (yyyy/MM/dd)) have equals values
-     * 
+     *
      * @param date1
      *            Actual date
      * @param date2
@@ -2067,22 +2067,22 @@ public class UtilMethods {
         Logger.debug(UtilMethods.class, "cal1:" + cal1.getTime().toString() + " - cal2:" + cal2.getTime().toString());
         return cal1.compareTo(cal2);
     }
-    
-    
+
+
     /**
      * This method takes two strings as input and tries to
      * parse and format them to the correct format needed
-     * by compareDates(Date,Date), this way we are not bound 
-     * to use Date data types only. 
-     * @param stringDate1 
+     * by compareDates(Date,Date), this way we are not bound
+     * to use Date data types only.
+     * @param stringDate1
      *        String representation of the actual date
-     * @param stringDate2 
+     * @param stringDate2
      *        String representation of the date to be compared
      * @return see compareDates(Date, Date)
      */
-    
+
     public static int compareDates(String stringDate1, String stringDate2){
-    	
+
         SimpleDateFormat simpleFormat = new SimpleDateFormat("yyyy/MM/dd");
         Date date1 = null;
         Date date2 = null;
@@ -2090,16 +2090,16 @@ public class UtilMethods {
               date1 = simpleFormat.parse(stringDate1);
               date2 = simpleFormat.parse(stringDate2);
         }catch(ParseException e){
-        	
-        }      
-    	
+
+        }
+
     	return(compareDates(date1,date2));
-   	
+
     }
 
     /**
      * Get the modelu of x % y
-     * 
+     *
      * @param x
      *            dividend
      * @param y
@@ -2203,7 +2203,7 @@ public class UtilMethods {
         }
         return typeName;
     }
-    
+
     public static String getUserEmail(User user) {
         String email = "";
         if (user != null) {
@@ -2288,30 +2288,30 @@ public class UtilMethods {
 
     public static List<Object> randomList(List<Object> list, int number) {
     	List<Object> randomList = new ArrayList<Object>();
-    	
+
     	if(list.size() > 0) {
 	    	int done = 0;
 	    	int i = 0;
-	    	
+
 	    	// Randomize the list
 	    	Collections.shuffle(list);
-	    	
+
 	    	// Build the random list with number elements
-	    	while(done < number) {		    	
-	    		// number can be > list.size() 
+	    	while(done < number) {
+	    		// number can be > list.size()
 	    		if(i >= list.size()) {
 	    			// in this case resuffle the list and start over
 	    			Collections.shuffle(list);
 	    			i = 0;
 	    		}
-	    		
+
 	    		randomList.add(list.get(i));
-	    		
+
 	    		done++;
 	    		i++;
 	    	}
     	}
-    	
+
         return randomList;
     }
 
@@ -2331,7 +2331,7 @@ public class UtilMethods {
      * This methods receives an object and builds a map based on the object
      * simple properties (integers, longs, strings, floats, doubles, dates,
      * chars, booleans) of the object
-     * 
+     *
      * @param obj
      * @return
      */
@@ -2369,7 +2369,7 @@ public class UtilMethods {
      * This method create a list of element for the
      * getLuceneDocumentForContentlet to facilitate the search of multiple
      * elements the contentlet search
-     * 
+     *
      * @param stringList
      * @return a list of elements for the getLuceneDocumentForContentlet
      */
@@ -2384,7 +2384,7 @@ public class UtilMethods {
 
     /**
      * Generate a ramdom number between 0 and maxRanger number
-     * 
+     *
      * @param maxRange
      * @return int
      */
@@ -2399,11 +2399,11 @@ public class UtilMethods {
     /**
      * get the velocity template from the liveUrl, if the file is not publish,
      * automatically is published
-     * 
+     *
      * @param liveUrl
      * @return Velocity Template
-     * @throws DotDataException 
-     * @throws DotSecurityException 
+     * @throws DotDataException
+     * @throws DotSecurityException
      */
     public static Template getVelocityTemplate(String liveUrl) throws WebAssetException, DotDataException, DotSecurityException {
 
@@ -2421,15 +2421,15 @@ public class UtilMethods {
             	PublishFactory.publishAsset(htmlPage, APILocator.getUserAPI().getSystemUser(), false);
             	return getVelocityTemplate(liveUrl);
             }
-            
-            
+
+
         }
         return null;
     }
 
     /**
      * Return is a date is equals or before the actual date
-     * 
+     *
      * @param date
      * @return
      */
@@ -2491,7 +2491,7 @@ public class UtilMethods {
 
     /**
      * An optimized routine for concatenating String objects together.
-     * 
+     *
      * @param objects
      *            variable arity list of Objects. Java 1.5 auto-boxing allows
      *            this method to accept primitive values to be concatenated
@@ -2508,7 +2508,7 @@ public class UtilMethods {
 
     /**
      * An optimized routine for concatenating String objects together.
-     * 
+     *
      * @param objects
      *            variable arity list of Objects. Java 1.5 auto-boxing allows
      *            this method to accept primitive values to be concatenated
@@ -2542,7 +2542,7 @@ public class UtilMethods {
     }
 
     /**
-     * 
+     *
      * @param <E>
      * @param arli
      * @return
@@ -2857,7 +2857,7 @@ public class UtilMethods {
      * padToLength("bob", 6) -> "bob " padToLength("bob", 6, "&nbsp;") ->
      * "bob&nbsp;&nbsp;&nbsp;" padToLengthL("bob", 6) -> " bob"
      * padToLengthL("bob", 6, "&nbsp;") -> "&nbsp;&nbsp;&nbsp;bob"
-     * 
+     *
      * padToLengthL("bob", 8, ".") -> ".....bob"
      */
     public static String padToLength(String baseString, int finalLength) {
@@ -2915,7 +2915,7 @@ public class UtilMethods {
      * string yields an empty string). Example: String sample = "I like dogs and
      * cats" shortenText(sample, 14, true) // gives "I like dogs..." instead of
      * "I like dogs an"
-     * 
+     *
      * maxNumberOfChars does not count the three periods if includeEllipsis
      * always leaves at least ten of the original characters
      */
@@ -3076,7 +3076,7 @@ public class UtilMethods {
 
     /**
      * "null safe" comparison of the two objects.
-     * 
+     *
      * @param first
      * @param second
      * @return True if objects are both null or first.equals(second); false
@@ -3186,7 +3186,7 @@ public class UtilMethods {
     /**
      * Accepts any format string (that includes digits) and creates a double out
      * of it (primarily used for currency).
-     * 
+     *
      * @param num
      *            the string to be parsed.
      * @return the double value represented by the string argument.
@@ -3244,7 +3244,7 @@ public class UtilMethods {
     // return ((float) selection / (float) total) * Util.TWO_DECIMAL_PLACES +
     // "%";
     // }
-    //	    
+    //
     // public static String formatPercent(long selection, long total) {
     // return ((float) selection / (float) total) * Util.TWO_DECIMAL_PLACES +
     // "%";
@@ -3324,12 +3324,12 @@ public class UtilMethods {
         }
         return tempdir;
     }
-    
+
     public static Company getDefaultCompany()
     {
     	return CompanyUtils.getDefaultCompany();
     }
-    
+
     public static String getDotCMSStackTrace() {
     	StringBuilder strB = new StringBuilder ();
 //    	StackTraceElement[] elems = Thread.currentThread().getStackTrace();
@@ -3339,14 +3339,14 @@ public class UtilMethods {
 //    		}
 //    	}
     	return strB.toString();
-    
+
     }
-    
+
     public static boolean contains(String string1, String string2){
     	return(string1.contains(string2));
     }
-    
-    
+
+
     public static boolean compareVersions(String v1, String v2){
     	String[] v1Arr = v1.split("\\.");
     	String[] v2Arr = v2.split("\\.");
@@ -3380,8 +3380,8 @@ public class UtilMethods {
     	}
     	return isMajor;
     }
-    
-    public static String getStringFromReader(Reader rd) throws IOException {  
+
+    public static String getStringFromReader(Reader rd) throws IOException {
     	StringBuilder sb = new StringBuilder();
     	int cp;
     	while ((cp = rd.read()) != -1) {
@@ -3389,7 +3389,7 @@ public class UtilMethods {
     	}
     	return sb.toString();
     }
-    
+
     public static String getVersionInfoTableName(String asset_type) {
         if(asset_type.equals("links"))
             return "link_version_info";
@@ -3405,7 +3405,7 @@ public class UtilMethods {
             return "htmlpage_version_info";
         else return null;
     }
-    
+
     public static Class getVersionInfoType(String type) {
         if(type.equals("links"))
             return LinkVersionInfo.class;
@@ -3420,5 +3420,13 @@ public class UtilMethods {
         else if(type.equals("htmlpage"))
             return HTMLPageVersionInfo.class;
         else return null;
+    }
+
+    public static void removeBrowserCache(HttpServletResponse response) {
+        response.setContentType("text/plain; charset=utf-8");
+        response.setCharacterEncoding("utf-8");
+        response.setHeader("Cache-Control", "public, no-store, no-cache, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", System.currentTimeMillis());
     }
 }

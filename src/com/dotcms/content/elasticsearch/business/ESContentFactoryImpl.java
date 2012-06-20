@@ -552,7 +552,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             // delete workflow task for contentlet
             WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
             WorkflowTask wft = wff.findTaskByContentlet(con);
-            wff.deleteWorkflowTask(wft);
+            if ( InodeUtils.isSet(wft.getInode() ) ) {
+                wff.deleteWorkflowTask(wft);
+            }
 
             com.dotmarketing.portlets.contentlet.business.Contentlet c =
                 (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(con.getInode(), com.dotmarketing.portlets.contentlet.business.Contentlet.class);
@@ -1324,6 +1326,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (InodeUtils.isSet(contentlet.getHost())) {
             content.setHost(contentlet.getHost());
         }
+        
+        if (InodeUtils.isSet(contentlet.getFolder())) {
+            content.setFolder(contentlet.getFolder());
+        }
 
         cc.remove(content.getInode());
         cc.add(content.getInode(), content);
@@ -1370,12 +1376,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         //String parentFolderId = parentFolder!=null?parentFolder.getInode():FolderAPI.SYSTEM_FOLDER;
         DotConnect dc = new DotConnect();
-        dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? ");
+        dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? and host_inode=?");
         dc.addParam(folderId.getPath());
+        dc.addParam(folder.getHostId());
         List<HashMap<String, String>> contentInodes = dc.loadResults();
-        dc.setSQL("update identifier set parent_path = ? where asset_type='contentlet' and parent_path = ?");
+        dc.setSQL("update identifier set parent_path = ? where asset_type='contentlet' and parent_path = ? and host_inode=?");
         dc.addParam("/");
         dc.addParam(folderId.getPath());
+        dc.addParam(folder.getHostId());
         dc.loadResult();
         for(HashMap<String, String> ident:contentInodes){
              String inode = ident.get("inode");

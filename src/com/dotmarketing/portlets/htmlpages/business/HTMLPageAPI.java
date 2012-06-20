@@ -337,6 +337,7 @@ public interface HTMLPageAPI {
 	 * @throws DotSecurityException 
 	 */	
 	public String getHTML(String uri, Host host,boolean liveMode,String contentId,User user) throws DotStateException, DotDataException, DotSecurityException;
+	public String getHTML(String uri, Host host,boolean liveMode,String contentId,User user, String langId) throws DotStateException, DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves the working version of a page based on its identifier

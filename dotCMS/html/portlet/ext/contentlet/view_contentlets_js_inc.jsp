@@ -8,7 +8,7 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%boolean canReindex= APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
 
-
+        dojo.require("dojox.dtl.filter.strings");
         dojo.require("dijit.form.FilteringSelect");
         dojo.require("dijit.form.MultiSelect");
         dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
@@ -1801,22 +1801,52 @@
         }       
 
         function fillQuery (counters) {
+                        <%
+                        String restBaseUrl="http://"+
+                           APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
+                           ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
+                           "/api/content/render/false";
+                        %>
                         var queryRaw = counters["luceneQueryRaw"];
                         var queryfield=document.getElementById("luceneQuery");
                         queryfield.value=queryRaw;
                         var queryFrontend = counters["luceneQueryFrontend"];
                         var sortBy = counters["sortByUF"];
-                        var div = document.getElementById("queryResults")
-                        div.innerHTML ="<p><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></p>"+
-                            "<p><b><%= LanguageUtil.get(pageContext, "frontend-query") %></b><br>"+
-                                "<span style=\"color:red;\">#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</span></p>" +
-                            "<p><b><%= LanguageUtil.get(pageContext, "The-actual-query-") %></b><br>"+
-                                "<span style=\"color:red;\">"+queryRaw+"</span></p>" +
-                                "<b><%= LanguageUtil.get(pageContext, "Ordered-by") %>:</b> " + sortBy +
-                                "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
-                                "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint3") %> " +
-                                "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint4") %> " + 
-                                "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint5") %></li></ul>";
+                        var div = document.getElementById("queryResults");
+                        var apicall="<%= restBaseUrl %>/query/"+queryRaw+"/orderby/"+sortBy;
+                        var test_api_xml_link="/api/content/render/false/type/xml/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
+                        var test_api_json_link="/api/content/render/false/type/json/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
+                        var apicall_urlencode="<%= restBaseUrl %>/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
+                        
+                        
+                        
+                        
+                        
+                        div.innerHTML ="<div class='contentViewDialog'>" +
+
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
+                            "<div class='contentViewQuery'>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</div>" +
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
+                            "<div class='contentViewQuery'>"+queryRaw+"</div>" +
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
+                            "<div class='contentViewQuery'>"+apicall_urlencode+"</div>"+
+                            "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
+                            
+	                            "<a href='" + test_api_xml_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "xml") %></a>"+
+	                            "&nbsp;|&nbsp;"+
+	                            "<a href='" + test_api_json_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "json") %></a>"+
+	                            
+                            "</div>"+
+                            
+                            
+                            "<b><%= LanguageUtil.get(pageContext, "Ordered-by") %>:</b> " + sortBy +
+                            "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
+                            "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint3") %> " +
+                            "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint4") %> " + 
+                            "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint5") %></li>"+
+                            "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint6")%></li>"+
+                            "<li><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></li>"+ 
+                            "</ul></div>";
 
         }       
 

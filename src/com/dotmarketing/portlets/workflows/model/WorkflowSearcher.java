@@ -17,13 +17,27 @@ public class WorkflowSearcher {
 	String stepId;
 	boolean open;
 	boolean closed;
+	boolean show4all;
 	String keywords;
 	String orderBy;
 	int count = 20;
 	int page = 0;
 	User user;
 	int totalCount;
+	int daysOld=-1;
+	
+	public int getDaysOld() {
+	    return daysOld;
+	}
 
+	public boolean getShow4All() {
+	    return show4all;
+	}
+	
+	public void setShow4All(boolean value) {
+	    show4all=value;
+	}
+	
 	public int getTotalCount() {
 		return totalCount;
 	}
@@ -86,9 +100,13 @@ public class WorkflowSearcher {
 		stepId = getStringValue("stepId", map);
 		keywords = getStringValue("keywords", map);
 		orderBy = getStringValue("orderBy", map);
-
+		show4all = getBooleanValue("show4all", map);
 		open = getBooleanValue("open", map);
 		closed = getBooleanValue("closed", map);
+		String daysOldstr = getStringValue("daysold", map);
+		
+		if(UtilMethods.isSet(daysOldstr) && daysOldstr.matches("^\\d+$"))
+		    daysOld = Integer.parseInt(daysOldstr);
 
 		this.user = user;
 
@@ -196,9 +214,17 @@ public class WorkflowSearcher {
 	}
 
 	public String getQueryString() {
-		return "&schemeId=" + UtilMethods.webifyString(schemeId) + "&assignedTo=" + UtilMethods.webifyString(assignedTo) + "&createdBy=" + UtilMethods.webifyString(createdBy)
-				+ "&stepId=" + UtilMethods.webifyString(stepId) + "&open=" + open + "&closed=" + closed + "&keywords=" + URLEncoder.encode(UtilMethods.webifyString(keywords))
-				+ "&orderBy=" + orderBy + "&count=" + count + "&page=" + page;
+		return   "&schemeId=" + UtilMethods.webifyString(schemeId) 
+		        + "&assignedTo=" + UtilMethods.webifyString(assignedTo) 
+		        + "&createdBy=" + UtilMethods.webifyString(createdBy)
+				+ "&stepId=" + UtilMethods.webifyString(stepId) 
+				+ "&open=" + open 
+				+ "&closed=" + closed 
+				+ "&keywords=" + URLEncoder.encode(UtilMethods.webifyString(keywords))
+				+ "&orderBy=" + orderBy 
+				+ "&count=" + count
+				+ ((show4all) ? "&show4all=true" : "")
+				+ "&page=" + page;
 
 	}
 

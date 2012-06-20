@@ -1,7 +1,7 @@
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchConfig"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig"%>
 <%@page import="java.util.Date"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.dotcms.publishing.sitesearch.ESSiteSearchPublisher"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchPublisher"%>
 <%@page import="java.util.Arrays"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>

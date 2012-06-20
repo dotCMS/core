@@ -9,9 +9,11 @@ import com.liferay.portal.model.User;
 
 public interface RoleAPI {
 
-	public final String SYSTEM_ROOT_ROLE_KEY = "cms_system";
+	public final String SYSTEM_ROOT_ROLE_KEY = "System";
 	public final String USERS_ROOT_ROLE_KEY = "cms_users";
-	
+	public final String WORKFLOW_ADMIN_ROLE_KEY = "cms_workflow_admin";
+	public final String DEFAULT_USER_ROLE_KEY = "dotcms.org.default";
+
 	/**
 	 * Will retrieve all roles.
 	 * @param showSystemRoles
@@ -207,6 +209,14 @@ public interface RoleAPI {
 	 * @throws DotDataException
 	 */
 	public Role loadCMSAdminRole() throws DotDataException;
+
+    /**
+     * Returns deafult Role
+     *
+     * @return default role
+     * @throws DotDataException
+     */
+    public Role loadDefaultRole () throws DotDataException;
 	
 	/**
 	 * 

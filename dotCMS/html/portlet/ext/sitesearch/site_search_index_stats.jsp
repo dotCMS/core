@@ -51,7 +51,7 @@ try {
 
 List<String> indices=ssapi.listIndices();
 Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
-
+Map<String, String> alias = esapi.getIndexAlias(indexInfo.keySet().toArray(new String[indexInfo.size()]));
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
@@ -68,14 +68,30 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 
-
+    <div data-dojo-type="dijit.Dialog" style="width:400px;" id="createIndexDialog">
+      <div class="dotForm">
+       <label for="createIndexAlias">Alias:</label>
+	   <input id="createIndexAlias" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
+	   <label for="createIndexNumShards">Shards:</label>
+	   <input id="createIndexNumShards" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
+	   <div style="text-align: right;">
+		   <button dojoType="dijit.form.Button"  iconClass="addIcon"
+		           onClick="doCreateSiteSearch(dijit.byId('createIndexAlias').attr('value'),dijit.byId('createIndexNumShards').attr('value'))">
+		      <%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
+		   </button>
+		   <button dojoType="dijit.form.Button"  iconClass="deleteIcon" onClick="dijit.byId('createIndexDialog').hide()">
+		      <%= LanguageUtil.get(pageContext,"Cancel") %>
+		   </button>
+	   </div>
+	  </div>
+    </div>
 
 
 
 
 		<div class="buttonRow" style="text-align: right;padding:20px;">
 
-		    <button dojoType="dijit.form.Button"  onClick="doCreateSiteSearch()" iconClass="addIcon">
+		    <button dojoType="dijit.form.Button"  onClick="showNewIndexDialog()" iconClass="addIcon">
                <%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
             </button>
 
@@ -92,6 +108,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 				<tr>
 					<th style="text-align: center">Status</th>
 					<th>Index Name</th>
+					<th>Alias</th>
 					<th>Created</th>
 					<th style="text-align: center">Count</th>
 					<th style="text-align: center">Shards</th>
@@ -125,6 +142,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 						<%}%>
 					</td>
 					<td  class="showPointer" ><%=x %></td>
+					<td><%= alias.get(x) == null ? "": alias.get(x)%></td>
 					<td><%=UtilMethods.webifyString(myDate) %></td>
 
 					<td align="center">

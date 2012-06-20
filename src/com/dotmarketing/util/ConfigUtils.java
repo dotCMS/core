@@ -38,7 +38,7 @@ public class ConfigUtils {
 	}
 
 	public static String getACheckerPath() {
-		return getDynamicContentPath() + File.separator + "achecker";
+		return Config.CONTEXT.getRealPath("/WEB-INF/achecker_sql");
 	}
 
 	public static String getLucenePath() {

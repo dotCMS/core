@@ -37,8 +37,8 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return metaData;
 
 	}
-	
-	
+
+
 
 	public void setMetaData(String metaData) {
 		this.metaData = metaData;
@@ -78,7 +78,10 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public long getFileSize() {
-		return getFileAsset().length();
+		if(getFileAsset()!=null)
+			return getFileAsset().length();
+		else
+			return 0;
 	}
 
 	public int getHeight() {
