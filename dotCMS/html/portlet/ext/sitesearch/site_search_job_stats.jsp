@@ -1,4 +1,5 @@
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchPublishStatus"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus"%>
 <%@page import="com.dotcms.publishing.PublishStatus"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.quartz.QuartzUtils"%>
@@ -39,8 +40,9 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 	<tr>
 	    <th nowrap><span><%= LanguageUtil.get(pageContext, "") %></span></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Job") %></th>
-		<th nowrap><%= LanguageUtil.get(pageContext, "Index") %></th>
+		<th nowrap><%= LanguageUtil.get(pageContext, "IndexAlias") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Hosts") %></th>
+		<th nowrap><%= LanguageUtil.get(pageContext, "Language") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Cron") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Include/Exclude") %></th>
 		<th nowrap><%= LanguageUtil.get(pageContext, "Paths") %></th>
@@ -60,7 +62,18 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 				selectedHosts.add(APILocator.getHostAPI().find(x, user, true));
 			}
 			catch(Exception e){}
-		}%>
+		}
+		String[] languageArr=(String[])task.getProperties().get("langToIndex");
+		String languageStr="";
+		if(UtilMethods.isSet(languageArr)) {
+		    StringBuilder sb=new StringBuilder();
+		    for(int i=0;i<languageArr.length;i++) {
+		        Language lang=APILocator.getLanguageAPI().getLanguage(Long.parseLong(languageArr[i]));
+		        sb.append(lang.getLanguage()).append(" - ").append(lang.getCountry()).append("<br/>");
+		    }
+		    languageStr=sb.toString();   
+		}
+		%>
 		<tr style="cursor:pointer;" class="trIdxNothing">
 		
 			 <td nowrap valign="top" align="center">
@@ -75,7 +88,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 				<%} %>
 		   	</td>
 			<td nowrap valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
-			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexName")%></td>
+			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexAlias")%></td>
 			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
 			
 				<%for(Host h : selectedHosts){ %>
@@ -86,6 +99,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 					<%= LanguageUtil.get(pageContext, "index-all-hosts") %>
 				<%} %>
 			</td>
+			<td valign="top"><%= languageStr %></td>
 			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("CRON_EXPRESSION")%></td>
 			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')">
 				<%=task.getProperties().get("includeExclude")%>

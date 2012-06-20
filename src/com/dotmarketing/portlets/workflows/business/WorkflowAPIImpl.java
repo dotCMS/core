@@ -587,6 +587,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 						try {
 							actionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
+							actionletClasses.add(actionlet.getClass());
 						} catch (InstantiationException e) {
 							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
 						} catch (IllegalAccessException e) {
@@ -888,11 +889,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException{
     	return wfac.createDefaultScheme();
     }
-    
+
     public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {
     	return wfac.searchAllTasks(searcher);
     }
-    
+
     public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException {
 
 		return wfac.retrieveLastStepAction(taskId);
@@ -926,6 +927,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
     	return entryAction;
     }
-    
-    
+
+    @Override
+    public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException {
+        return wfac.findExpiredTasks();
+    }
+
+
 }

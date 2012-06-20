@@ -121,7 +121,9 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	width:380px;
 	margin:auto;
 }
-
+#stepEditDia .escalation-row {
+	display: none;
+}
 
 #contentletWfDialog{
 	width:500px;

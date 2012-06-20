@@ -163,6 +163,8 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable) || !UtilMethods.isSet(versionable.getVersionId()))
         	return false;
         Identifier ident = APILocator.getIdentifierAPI().find(versionable);
+        if(ident==null || !UtilMethods.isSet(ident.getId()) || !UtilMethods.isSet(ident.getAssetType()))
+            return false;
         String liveInode;
         if(ident.getAssetType().equals("contentlet")) {
             Contentlet cont = (Contentlet)versionable;

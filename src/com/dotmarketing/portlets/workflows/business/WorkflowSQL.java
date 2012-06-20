@@ -54,10 +54,10 @@ abstract class WorkflowSQL {
 	protected static String DELETE_ACTION= "delete from workflow_action where id = ? ";
 	
 	protected static String SELECT_STEP= "select * from workflow_step where id = ? ";
-	protected static String INSERT_STEP= "insert into workflow_step (id, name, scheme_id,my_order,resolved) values (?, ?, ?, ?, ?) ";
-	protected static String UPDATE_STEP= "update workflow_step set name=?, scheme_id=?, my_order=?, resolved = ? where id = ?";
+	protected static String INSERT_STEP= "insert into workflow_step (id, name, scheme_id,my_order,resolved,escalation_enable,escalation_action,escalation_time) values (?, ?, ?, ?, ?, ?, ?, ?) ";
+	protected static String UPDATE_STEP= "update workflow_step set name=?, scheme_id=?, my_order=?, resolved = ?, escalation_enable = ?, escalation_action=?, escalation_time = ? where id = ?";
 	protected static String DELETE_STEP= "delete from workflow_step where id = ?";
-	protected static String SELECT_STEP_BY_CONTENTLET= "select workflow_step.* from workflow_step, workflow_task where workflow_task.status = workflow_step.id and workflow_task.webasset= ?";
+	protected static String SELECT_STEP_BY_CONTENTLET= "select workflow_step.* from workflow_step join workflow_task on workflow_task.status = workflow_step.id where workflow_task.webasset= ?";
 	protected static String RESET_CONTENTLET_STEPS= "update workflow_task set status = ? where webasset= ?";
 	
 	
@@ -80,5 +80,5 @@ abstract class WorkflowSQL {
     protected static String RETRIEVE_TASK = "select  * from workflow_history where workflowtask_id = ? order by creation_date desc";
     // chri
 
-
+    protected static String SELECT_EXPIRED_TASKS = "";
 }

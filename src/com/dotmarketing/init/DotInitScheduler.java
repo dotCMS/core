@@ -19,7 +19,6 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.DashboardProxy;
-import com.dotcms.escalation.util.EscalationJob;
 import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
@@ -612,34 +611,6 @@ public class DotInitScheduler {
 						sched.scheduleJob(trigger);
 					else
 						sched.rescheduleJob("trigger18", "group18", trigger);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			}
-
-			if(Config.getBooleanProperty("ENABLE_ESCALATION", false)){
-				try {
-					isNew = false;
-
-					try {
-						if ((job = sched.getJobDetail("EscalationQueueJob", "dotcms_jobs")) == null) {
-							job = new JobDetail("EscalationQueueJob", "dotcms_jobs", EscalationJob.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("EscalationQueueJob", "dotcms_jobs");
-						job = new JobDetail("EscalationQueueJob", "dotcms_jobs", EscalationJob.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					trigger = new CronTrigger("trigger19", "group19", "EscalationQueueJob", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("ESCALATION_QUEUE_JOB_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger19", "group19", trigger);
 				} catch (Exception e) {
 					Logger.info(DotInitScheduler.class, e.toString());
 				}

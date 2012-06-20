@@ -18,16 +18,16 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-/** 
+/**
  *  This class gets various system property data.
  *  Each method collects information that might be helpful for system admins.
- *  
+ *
  *  By: IPFW Web Team
  *  Author: Marat Kurbanov
  */
 
 public class ThreadMonitorTool{
-    public boolean validateUser() {     
+    public boolean validateUser() {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = null;
         try {
@@ -39,7 +39,7 @@ public class ThreadMonitorTool{
         } catch (Exception e) {
             Logger.error(this, e.getMessage());
             throw new DotRuntimeException (e.getMessage());
-        }       
+        }
     }
 
 	/**
@@ -50,14 +50,14 @@ public class ThreadMonitorTool{
 		ThreadInfo[] threadInfos = getAllThreadInfos();
 		int arraySize = threadInfos.length;
 		String[] threads = new String[arraySize];
-		
+
 		for (int i = 0; i < arraySize; i++ ) {
 			threads[i] = threadInfos[i].toString().replace("at ", "<br />&nbsp; &nbsp; &nbsp; at ");
 		}
 		return threads;
 
-	} // end of getThreadArray method	
-	
+	} // end of getThreadArray method
+
 	/**
 	  * Generates an array of thread infos. Adopted from
 	  * http://nadeausoftware.com/articles/2008/04/java_tip_how_list_and_find_threads_and_thread_groups
@@ -75,14 +75,14 @@ public class ThreadMonitorTool{
 			infos = thbean.getThreadInfo(ids, true, true);
 
 		final ThreadInfo[] notNulls = new ThreadInfo[infos.length];
-		
+
 		int nNotNulls = 0;
 		for (ThreadInfo info : infos){
 			if (info != null){
-				notNulls[nNotNulls++] = info;				
+				notNulls[nNotNulls++] = info;
 			}
-		}		
-		
+		}
+
 		if (nNotNulls == infos.length)
 			return infos;
 		return java.util.Arrays.copyOf(notNulls, nNotNulls);
@@ -95,16 +95,16 @@ public class ThreadMonitorTool{
 	    validateUser();
 		final RuntimeMXBean rmxbean = ManagementFactory.getRuntimeMXBean();
 		ThreadMXBean tb = ManagementFactory.getThreadMXBean();
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
-		
+
+		SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+
 		Map<String, String> sysProps = new HashMap<String, String>();
-		
+
 		sysProps.put("System Startup Time ", sdf.format(rmxbean.getStartTime()));
 		sysProps.put("Thread Count - Current ", (tb.getThreadCount() + ""));
-		sysProps.put("Thread Count - Peak ", (tb.getPeakThreadCount() + ""));		
+		sysProps.put("Thread Count - Peak ", (tb.getPeakThreadCount() + ""));
 
 		return sysProps;
 	}
-	
+
 }

@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -93,67 +94,31 @@ public class WfActionClassAjax extends WfBaseAction {
 			List<WorkflowActionletParameter> params = actionlet.getParameters();
 			Map<String, WorkflowActionClassParameter> enteredParams = wapi.findParamsForActionClass(wac);
 			List<WorkflowActionClassParameter> newParams = new ArrayList<WorkflowActionClassParameter>();			
-
-			for (WorkflowActionletParameter expectedParam : params) {
+			String userIds = null;
+			for (WorkflowActionletParameter expectedParam : params) {				
 				WorkflowActionClassParameter enteredParam = enteredParams.get(expectedParam.getKey());
 				if (enteredParam == null) {
 					enteredParam = new WorkflowActionClassParameter();
 				}
-
 				enteredParam.setActionClassId(wac.getId());
-
 				enteredParam.setKey(expectedParam.getKey());
 				enteredParam.setValue(request.getParameter("acp-" + expectedParam.getKey()));
-
 				newParams.add(enteredParam);
-			}
-			// validates Require Multiple Approvers field UserIds Or Emails.
-			if(actionlet.getName().equalsIgnoreCase("Require Multiple Approvers") ){
-				String errors = valdateRMA(enteredParams);
-				if(errors.length() > 0){
+				userIds = enteredParam.getValue();
+				//Validate userIds or emails
+				String errors = expectedParam.hasError(userIds);
+				if(errors != null){
 					writeError(response, errors);
 					return;
-				}
-			}
+				}		
+			}			
 			wapi.saveWorkflowActionClassParameters(newParams);
-
 			response.getWriter().println(wac.getId() + ":" + wac.getName());
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
 		}
 	}
-	
-	// This method validates Require Multiple Approvers field UserIds Or Emails.
-	
-	private String valdateRMA(Map<String, WorkflowActionClassParameter> enteredParams) throws ServletException, IOException{
-		
-			String userIds = (enteredParams.get("approvers") == null) ? "" : enteredParams.get("approvers").getValue();
-			StringTokenizer st = new StringTokenizer(userIds, ", ");
-			StringBuffer uIdsEmails = new StringBuffer();					
-			while (st.hasMoreTokens()) {
-				String x = st.nextToken();
-				if (Validator.isEmailAddress(x)) {
-					try {
-						User u = APILocator.getUserAPI().loadByUserByEmail(x, APILocator.getUserAPI().getSystemUser(), false);
-						
-					} catch (Exception e) {
-						Logger.error(this.getClass(), "Unable to find user with email:" + x);										
-						uIdsEmails.append("Unable to find user with email:"+ x +"</br>");						
-					}
-				} else {
-					try {
-						User u = APILocator.getUserAPI().loadUserById(x, APILocator.getUserAPI().getSystemUser(), false);
-						
-					} catch (Exception e) {						
-						Logger.error(this.getClass(), "Unable to find user with userID:" + x);
-						uIdsEmails.append("Unable to find user with userID:" + x +"</br>");						
-					}
-				}
-			}	
-			return uIdsEmails.toString();
-	}
-
 }
 
 

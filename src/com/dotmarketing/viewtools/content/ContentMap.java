@@ -18,7 +18,6 @@ import org.apache.velocity.context.Context;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.LiveCache;
@@ -245,7 +244,8 @@ public class ContentMap {
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
 			    final String jsonData=(String)conAPI.getFieldValue(content, f);
 				Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(jsonData);
-				Map<String,Object> retMap = new java.util.HashMap<String,Object>() {
+				//needs to be ordered
+				Map<String,Object> retMap = new java.util.LinkedHashMap<String,Object>() {
 				    @Override
 				    public String toString() {
 				        return jsonData;
