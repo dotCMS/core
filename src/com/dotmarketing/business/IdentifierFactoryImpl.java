@@ -374,6 +374,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		DotConnect db = new DotConnect();
 		try {
+		    db.setSQL("delete from template_containers where template_id = ?");
+		    db.addParam(ident.getId());
+		    db.loadResult();
+		    
 			db.setSQL("delete from Permission where inode_id = ?");
 			db.addParam(ident.getInode());
 			db.loadResult();
