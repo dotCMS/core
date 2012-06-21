@@ -14,7 +14,7 @@ public class JNALibrary {
 				createHardLinkWithExec(sourceFile, destinationFile);
 			}
 		} else  {
-			CLibrary.INSTANCE.link(sourceFile, sourceFile);
+			CLibrary.INSTANCE.link(sourceFile, destinationFile);
 		}
 	}
 
