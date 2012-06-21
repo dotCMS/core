@@ -59,11 +59,14 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 public class ESIndexAPI {
 	private  final String MAPPING_MARKER = "mapping=";
 
@@ -125,8 +128,8 @@ public class ESIndexAPI {
 			bw = new BufferedWriter(
 			        new OutputStreamWriter(zipOut), 500000); // 500K buffer 
 			
-			// getting mapping for "content"
-	        final String mapping = mappingAPI.getMapping(index, "content");
+			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING : "content"; 
+	        final String mapping = mappingAPI.getMapping(index, type);
 	        bw.write(MAPPING_MARKER);
 	        bw.write(mapping);
 	        bw.newLine();
@@ -310,12 +313,13 @@ public class ESIndexAPI {
 	 * Creates an index with default settings. If shards<1 then shards will be default
 	 * @param indexName
 	 * @param shards
+	 * @return 
 	 * @throws DotStateException
 	 * @throws IOException
 	 */
-	public  void  createIndex(String indexName, int shards) throws DotStateException, IOException{
+	public  CreateIndexResponse  createIndex(String indexName, int shards) throws DotStateException, IOException{
 
-		createIndex(indexName, null, shards);
+		return createIndex(indexName, null, shards);
 	}
 	
 	
@@ -334,8 +338,23 @@ public class ESIndexAPI {
 		int shards = cih.getNumberOfShards();
 		int replicas = cih.getNumberOfReplicas();
 		
+		String alias=getIndexAlias(indexName);
+		
 		iapi.delete(indexName);
-		createIndex(indexName, shards);
+		CreateIndexResponse res=createIndex(indexName, shards);
+		
+		try {
+		    int w=0;
+		    while(!res.acknowledged() && ++w<100)
+		        Thread.sleep(100);
+		}
+		catch(InterruptedException ex) {
+		    Logger.warn(this, ex.getMessage(), ex);
+		}
+		
+		if(UtilMethods.isSet(alias)) {
+		    createAlias(indexName, alias);
+		}
 	}
 	
 	/**
