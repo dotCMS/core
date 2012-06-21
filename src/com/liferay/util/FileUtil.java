@@ -44,9 +44,7 @@ import java.util.List;
 import java.util.Properties;
 
 import com.dotmarketing.util.Logger;
-import com.liferay.util.jna.CLibrary;
-import com.liferay.util.jna.Kernel32Library;
-import com.sun.jna.Platform;
+import com.liferay.util.jna.JNALibrary;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -126,16 +124,16 @@ public class FileUtil {
 
 		if ( hardLinks ) {
 			// I think we need to be sure to unlink first
-			if(Platform.isWindows()) {
-				if(destination.exists()){
-					Kernel32Library.INSTANCE.DeleteFileA(destination.getAbsolutePath());
+			if(destination.exists()){
+				JNALibrary.unlink(destination.getAbsolutePath());
+			}
+			else  {
+				try {
+					JNALibrary.link(source.getAbsolutePath(), destination.getAbsolutePath());
+				} catch (IOException e) {
+					Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+							+ ", destination: " + destination.getAbsolutePath());
 				}
-				Kernel32Library.INSTANCE.CreateHardLinkA(source.getAbsolutePath(), destination.getAbsolutePath(), null);
-			} else  {
-				if(destination.exists()){
-					CLibrary.INSTANCE.unlink(destination.getAbsolutePath());
-				}
-				CLibrary.INSTANCE.link(source.getAbsolutePath(), destination.getAbsolutePath());
 			}
 		}
 		else {

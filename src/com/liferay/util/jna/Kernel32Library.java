@@ -19,7 +19,5 @@ public interface Kernel32Library extends StdCallLibrary {
 
     boolean CreateHardLinkA(String newPath, String existingPath, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
 
-    boolean CreateSymbolicLinkA(String newPath, String existingPath, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
-
     boolean DeleteFileA(String existingPath);
 }
