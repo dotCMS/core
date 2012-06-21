@@ -23,7 +23,9 @@ import org.apache.commons.io.IOUtils;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
@@ -31,6 +33,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -106,12 +109,16 @@ public class IndexAjaxAction extends AjaxAction {
             
             String indexToRestore=null;
             boolean clearBeforeRestore=false;
+            String aliasToRestore=null;
             File ufile=null;
             for(FileItem it : items) {
-               if(it.getFieldName().equals("indexToRestore")) {
+               if(it.getFieldName().equalsIgnoreCase("indexToRestore")) {
                    indexToRestore=it.getString().trim();
                }
-               else if(it.getFieldName().equals("uploadedfiles[]")) {
+               else if(it.getFieldName().equalsIgnoreCase("aliasToRestore")) {
+                   aliasToRestore=it.getString().trim();
+               }
+               else if(it.getFieldName().equalsIgnoreCase("uploadedfiles[]")) {
                    ufile=File.createTempFile("indexToRestore", "idx");
                    InputStream in=it.getInputStream();
                    FileOutputStream out = new FileOutputStream(ufile);
@@ -119,9 +126,22 @@ public class IndexAjaxAction extends AjaxAction {
                    IOUtils.closeQuietly(out);
                    IOUtils.closeQuietly(in);
                }
-               else if(it.getFieldName().equals("clearBeforeRestore")) {
+               else if(it.getFieldName().equalsIgnoreCase("clearBeforeRestore")) {
                    clearBeforeRestore=true;
                }
+            }
+            
+            if(LicenseUtil.getLevel()>=200) {
+                if(UtilMethods.isSet(aliasToRestore)) {
+                    String indexName=APILocator.getESIndexAPI()
+                             .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
+                             .get(aliasToRestore);
+                    if(UtilMethods.isSet(indexName))
+                        indexToRestore=indexName;
+                }
+                else if(!UtilMethods.isSet(indexToRestore)) {
+                    indexToRestore=APILocator.getIndiciesAPI().loadIndicies().site_search;
+                }
             }
             
             if(ufile!=null) {
@@ -153,9 +173,19 @@ public class IndexAjaxAction extends AjaxAction {
 	public void downloadIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		response.setContentType("application/zip");
+		
 		String indexName = map.get("indexName");
 		
-		if(indexName == null)return;
+		String indexAlias = map.get("indexAlias");
+		if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel()>=200) {
+		    String indexName1=APILocator.getESIndexAPI()
+                    .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
+                    .get(indexAlias);
+		    if(UtilMethods.isSet(indexName1))
+		        indexName=indexName1;
+		}
+		
+		if(!UtilMethods.isSet(indexName))return;
 		
 		if(indexName.equalsIgnoreCase("live") || indexName.equalsIgnoreCase("working")){
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();

@@ -389,8 +389,6 @@ function showRestoreIndexDialog(indexName) {
 	dijit.byId('uploadSubmit').set('disabled',false);
 	dojo.query('#uploadProgress').style({display:"none"});
 	connectUploadEvents();
-	dojo.byId("uploadWarningLive").style.display="none";
-	dojo.byId("uploadWarningWorking").style.display="none";
 	dialog.show();
 }
 
@@ -420,24 +418,6 @@ dojo.ready(function() {
 });
 
 function connectUploadEvents() {
-	var uploader=dijit.byId("restoreIndexUploader");
-	dojo.connect(uploader, "onChange", function(dataArray){
-		 dojo.forEach(dataArray, function(data){
-			    dojo.byId("uploadFileName").innerHTML=data.name;
-			    var uploadName=data.name;
-			    var indexName=dojo.byId("indexToRestore").value;
-			    
-			    if(indexName.indexOf("working")==0 && uploadName.indexOf("working")!=0)
-			    	dojo.byId("uploadWarningWorking").style.display="block";
-			    else
-			    	dojo.byId("uploadWarningWorking").style.display="none";
-			    
-			    if(indexName.indexOf("live")==0 && uploadName.indexOf("live")!=0)
-			    	dojo.byId("uploadWarningLive").style.display="block";
-                else
-                	dojo.byId("uploadWarningLive").style.display="none";
-		 });
-	});
 	dojo.connect(uploader, "onComplete", function(dataArray) {
            hideRestoreIndex();
            showDotCMSSystemMessage("Upload Complete. Index Restores in background");
