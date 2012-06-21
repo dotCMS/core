@@ -173,9 +173,19 @@ public class IndexAjaxAction extends AjaxAction {
 	public void downloadIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		response.setContentType("application/zip");
+		
 		String indexName = map.get("indexName");
 		
-		if(indexName == null)return;
+		String indexAlias = map.get("indexAlias");
+		if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel()>=200) {
+		    String indexName1=APILocator.getESIndexAPI()
+                    .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
+                    .get(indexAlias);
+		    if(UtilMethods.isSet(indexName1))
+		        indexName=indexName1;
+		}
+		
+		if(!UtilMethods.isSet(indexName))return;
 		
 		if(indexName.equalsIgnoreCase("live") || indexName.equalsIgnoreCase("working")){
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
