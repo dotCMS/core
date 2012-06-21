@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:osgi="http://www.springframework.org/schema/osgi"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/osgi
+                           http://www.springframework.org/schema/osgi/spring-osgi.xsd">
+
+    <!--<osgi:reference id="helloWorldService" interface="com.apress.springosgi.ch3.service.HelloWorldService"/>-->
+    <bean id="helloWorldService" class="com.dotmarketing.osgi.service.manual.HelloWorldService"/>
+    <osgi:service ref="helloWorldService" interface="com.dotmarketing.osgi.service.manual.HelloWorld"/>
+
+    <bean id="helloWorldController" class="com.dotmarketing.osgi.spring.ExampleController"/>
+    <!--<bean id="helloWorldController" class="com.dotmarketing.osgi.spring.ExampleController">
+        <property name="helloWorldService" ref="helloWorldService"/>
+    </bean>-->
+
+    <bean id="urlMapper" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="/**">helloWorldController</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!--<bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+        <property name="prefix" value="/jsp/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>-->
+
+</beans>

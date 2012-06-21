@@ -1,0 +1,27 @@
+Bundle-Version: 1.0
+Bundle-Name: Spring controller
+Bundle-SymbolicName: Spring controller
+Bundle-Description: A bundle that registers an Spring controller
+Bundle-Vendor: Spring-OSGi
+Spring-Context: /WEB-INF/applicationContext.xml
+Bundle-Classpath: .,WEB-INF/classes
+Export-Package: com.dotmarketing.osgi.spring
+Import-Package: javax.servlet,
+ javax.servlet.http,
+ javax.servlet.resources,
+ org.springframework.core,
+ org.springframework.ui,
+ org.springframework.stereotype,
+ org.springframework.context.support,
+ org.springframework.web.context,
+ org.springframework.web.context.support,
+ org.springframework.web.servlet,
+ org.springframework.web.servlet.handler,
+ org.springframework.web.servlet.mvc,
+ org.springframework.web.servlet.view,
+ org.springframework.web.bind.annotation,
+ org.springframework.osgi.service.importer,
+ org.springframework.osgi.web.context.support,
+ org.springframework.osgi.service.importer.support
+Web-ContextPath: /
+Bundle-ManifestVersion: 2
