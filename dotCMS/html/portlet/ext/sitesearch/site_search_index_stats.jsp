@@ -224,24 +224,17 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			          label="Select File" id="restoreIndexUploader"
 			          showProgress="true"
 			          onComplete="restoreUploadCompleted()"/>
-
-			   <span id="uploadWarningWorking">
-			      <span class="exclamation"></span>
-			      <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Working-Index-Data") %>
-			   </span>
-
-			   <span id="uploadWarningLive">
-			      <span class="exclamation"></span>
-			      <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Live-Index-Data") %>
-			   </span>
-
 			   <br/>
 
 			   <input type="checkbox" name="clearBeforeRestore"/><%= LanguageUtil.get(pageContext,"Clear-Existing-Data") %>
 		   </form>
 		   <br/>
 
-
+           <button id="uploadSubmit" data-dojo-type="dijit.form.Button" type="button">
+              <span class="uploadIcon"></span>
+              <%= LanguageUtil.get(pageContext,"Upload-File") %>
+              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndex();</script>
+           </button>
 
 		   <button data-dojo-type="dijit.form.Button" type="button">
 		      <span class="deleteIcon"></span>
