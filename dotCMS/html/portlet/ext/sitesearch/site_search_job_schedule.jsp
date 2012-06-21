@@ -66,7 +66,7 @@ try{
 catch(Exception e){
 }
 
-String indexName = UtilMethods.webifyString((String) props.get("indexName"));
+String indexName = UtilMethods.webifyString((String) props.get("indexAlias"));
 boolean incremental = UtilMethods.isSet((String) props.get("incremental"));
 List<Host> selectedHosts = new ArrayList<Host>();
 boolean indexAll = UtilMethods.isSet((String) props.get("indexAll")) ? true : false;
@@ -198,7 +198,7 @@ boolean hasPath = false;
 				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.FilteringSelect" required="true">
 				<option value="create-new"><%= LanguageUtil.get(pageContext, "Create-New-Make-Default") %></option>
 				<%for(String x : indexes){ %>
-					<option value="<%=alias.get(x) == null ? x:alias.get(x)%>" <%=(x.equals(indexName)) ? "selected='true'": ""%>>
+					<option value="<%=alias.get(x) == null ? x:alias.get(x)%>" <%=(x.equals(indexName)||(alias.get(x)!=null && alias.get(x).equals(indexName))) ? "selected='true'": ""%>>
 					  <%=alias.get(x) == null ? x:alias.get(x) %> 
 					  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? 
 					          "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
