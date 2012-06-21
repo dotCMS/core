@@ -45,6 +45,8 @@ import java.util.Properties;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.util.jna.CLibrary;
+import com.liferay.util.jna.Kernel32Library;
+import com.sun.jna.Platform;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -96,7 +98,7 @@ public class FileUtil {
 			}
 		}
 	}
-		
+
 	public static void copyDirectory(File source, File destination) {
 		copyDirectory(source, destination, false);
 	}
@@ -110,7 +112,7 @@ public class FileUtil {
 	public static void copyFile(File source, File destination) {
 		copyFile(source, destination, false);
 	}
-	
+
 	public static void copyFile(File source, File destination, boolean hardLinks) {
 		if (!source.exists()) {
 			return;
@@ -121,13 +123,20 @@ public class FileUtil {
 
 			destination.getParentFile().mkdirs();
 		}
-		
+
 		if ( hardLinks ) {
 			// I think we need to be sure to unlink first
-			if(destination.exists()){
-				CLibrary.INSTANCE.unlink(destination.getAbsolutePath());
+			if(Platform.isWindows()) {
+				if(destination.exists()){
+					Kernel32Library.INSTANCE.DeleteFileA(destination.getAbsolutePath());
+				}
+				Kernel32Library.INSTANCE.CreateHardLinkA(source.getAbsolutePath(), destination.getAbsolutePath(), null);
+			} else  {
+				if(destination.exists()){
+					CLibrary.INSTANCE.unlink(destination.getAbsolutePath());
+				}
+				CLibrary.INSTANCE.link(source.getAbsolutePath(), destination.getAbsolutePath());
 			}
-			CLibrary.INSTANCE.link(source.getAbsolutePath(), destination.getAbsolutePath());
 		}
 		else {
 			try {
@@ -194,7 +203,7 @@ public class FileUtil {
 			}
 		}
 	}
-	
+
 	public static void deltree(File directory) {
 		deltree(directory, true);
 	}
@@ -433,7 +442,7 @@ public class FileUtil {
 		String finalVal;
 		long filesize = fileName.length();
 		BigDecimal size = new BigDecimal(filesize);
-		BigDecimal byteVal = null;	
+		BigDecimal byteVal = null;
 		BigDecimal changedByteVal = null;
 		finalVal = "";
 		if(filesize <= 0){
@@ -463,9 +472,9 @@ public class FileUtil {
 				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" TB";
 			}
 		}
-		return finalVal;		
+		return finalVal;
 	}
-	
+
 	/**
 	  * Recursively walk a directory tree and return a List of all
 	  * Files found; the List is sorted using File.compareTo().
@@ -475,9 +484,9 @@ public class FileUtil {
 	  static public List<File> listFilesRecursively(File aStartingDir) throws FileNotFoundException {
 		    return listFilesRecursively(aStartingDir, null);
 	  }
-	
-	
-	
+
+
+
 	/**
 	  * Recursively walk a directory tree and return a List of all
 	  * Files found; the List is sorted using File.compareTo().
@@ -490,12 +499,12 @@ public class FileUtil {
 		    Collections.sort(result);
 		    return result;
 	  }
-	  
-	  
+
+
 	  // PRIVATE //
 	  static private List<File> getFileListingNoSort(File aStartingDir, FileFilter filter) throws FileNotFoundException {
 	    List<File> result = new ArrayList<File>();
-	  
+
 	    File[] filesAndDirs = null;
 	    if(filter !=null){
 	    	filesAndDirs = aStartingDir.listFiles(filter);
@@ -533,5 +542,5 @@ public class FileUtil {
 	       throw new IllegalArgumentException("Directory cannot be read: " + aDirectory);
 	     }
 	   }
-	 
+
 }
