@@ -87,7 +87,7 @@
         </action>
        
         <action path="/createAccount"  type="com.dotmarketing.cms.createaccount.action.CreateAccountAction" name="createAccountForm" scope="request" validate="false" parameter="dispatch" input="/global/login.dot">
-			<forward name="createAccount" path="/application/login/login.dot" />
+			<forward name="createAccount" path="/application/createaccount/create_account.dot" />
 			<forward name="myAccountPage" path="/dotCMS/myAccount" redirect="true"/>
         </action>
                 
