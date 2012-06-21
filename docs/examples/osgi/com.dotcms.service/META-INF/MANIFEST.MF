@@ -1,0 +1,9 @@
+Bundle-Name: Custom service
+Bundle-SymbolicName: Custom service
+Bundle-Description: A bundle that creates a custom service
+Bundle-Vendor: Apache Felix
+Bundle-Version: 1.0.0
+Bundle-Activator: com.dotmarketing.osgi.service.manual.Activator
+Export-Package: com.dotmarketing.osgi.service
+Import-Package: org.osgi.framework,
+ com.dotmarketing.osgi

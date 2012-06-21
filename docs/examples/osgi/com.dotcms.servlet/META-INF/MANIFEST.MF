@@ -1,0 +1,11 @@
+Bundle-Name: Servlet for Hello World
+Bundle-SymbolicName: Servlet for Hello World
+Bundle-Description: Servlet for Hello World
+Bundle-Version: 1.0.0
+Bundle-Activator: com.dotmarketing.osgi.servlet.Activator
+Import-Package:  org.osgi.framework,
+ org.osgi.util.tracker,
+ javax.servlet,
+ javax.servlet.http,
+ org.osgi.service.http,
+ com.dotmarketing.osgi.service
