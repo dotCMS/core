@@ -48,7 +48,7 @@ while(i1.hasNext()){
 		System.out.println("The CMD is " + cmd);
 		Process p = Runtime.getRuntime().exec(cmd);
 		ProcessBuilder pb = new ProcessBuilder();
-		pb.
+		//pb.
 		InputStream is = p.getInputStream();  
 		int c;
 	    while ((c = is.read()) != -1) {
