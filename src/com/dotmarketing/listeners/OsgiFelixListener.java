@@ -23,6 +23,7 @@ import org.osgi.framework.launch.Framework;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import org.springframework.osgi.web.context.support.OsgiBundleXmlWebApplicationContext;
 
 public class OsgiFelixListener implements ServletContextListener {
 
@@ -96,6 +97,9 @@ public class OsgiFelixListener implements ServletContextListener {
             // (10) Start the framework.
             m_fwk.start();
             Logger.info(this, "osgi felix framework started");
+
+            context.getServletContext().setAttribute( OsgiBundleXmlWebApplicationContext.BUNDLE_CONTEXT_ATTRIBUTE, m_fwk.getBundleContext() );
+
         }
         catch (Exception ex)
         {
