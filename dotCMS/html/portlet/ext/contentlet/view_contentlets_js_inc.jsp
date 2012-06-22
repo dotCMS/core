@@ -1230,6 +1230,9 @@
                                 sortBy = sortBy + " desc";
                         currentSortBy = sortBy;
                 }
+                else {
+                        sortBy=document.getElementById('currentSortBy').value;
+                }
                         
                 var filterSystemHost = false;
                 if (document.getElementById("filterSystemHostCB").checked && document.getElementById("filterSystemHostTable").style.display != "none") {
