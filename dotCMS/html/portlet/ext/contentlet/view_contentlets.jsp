@@ -320,7 +320,7 @@
 <input type="hidden" name="filterSystemHost" id="filterSystemHost" value="">
 <input type="hidden" name="filterLocked" id="filterLocked" value="">
 <input type="hidden" name="currentPage" id="currentPage" value="">
-<input type="hidden" name="currentSortBy" id="currentSortBy" value="">
+<input type="hidden" name="currentSortBy" id="currentSortBy" value="modDate desc">
 <input type="hidden" value="" name="lastModDateFrom"  id="lastModDateFrom" size="10" maxlength="10" readonly="true"/>
 <input type="hidden" value="" name="lastModDateTo"  id="lastModDateTo" size="10" maxlength="10" readonly="true"/>
 <input type="hidden" name="structureVelocityVarNames" id="structureVelocityVarNames" value="<%= structureVelocityVarNames %>">
