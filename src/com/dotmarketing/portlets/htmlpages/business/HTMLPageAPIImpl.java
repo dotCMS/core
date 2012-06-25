@@ -706,6 +706,8 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
 			if(! liveMode ){
 				context.put("PREVIEW_MODE", new Boolean(true));
+			}else{
+				context.put("PREVIEW_MODE", new Boolean(false));
 			}
 			
 			if(UtilMethods.isSet(langId)) {
