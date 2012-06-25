@@ -322,8 +322,8 @@ public class WebAPI implements ViewTool {
 			parsePath = identifier;
 		}else{
 			if(identifier.indexOf(Config.getStringProperty("VELOCITY_CONTENT_EXTENSION")) == -1){
-				if(UtilMethods.isSet((String)request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE))){
-					parsePath = folderPath + identifier + "_"+(String)request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE)+"." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
+				if(UtilMethods.isSet((String)request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString())){
+					parsePath = folderPath + identifier + "_"+(String)request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString()+"." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
 				}else{
 					parsePath = folderPath + identifier + "_"+langAPI.getDefaultLanguage().getId()+"." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
 				}
