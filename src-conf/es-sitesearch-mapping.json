@@ -51,8 +51,8 @@
         },
         "keywords": {
           "type": "string",
-          "index": "not_analyzed"
-        },
+ 	  "analyzer": "comma_analyzer"	
+	},
         "language": {
           "type": "integer"
         },
