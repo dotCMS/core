@@ -94,6 +94,7 @@ public class SiteSearchJobImpl {
         String[] languageToIndex=(String[])dataMap.get("langToIndex");
         int counter = 0;  
         String indexName = null;
+        boolean createNew=false;
         for(String lang : languageToIndex) {
         	counter = counter + 1;
             SiteSearchConfig config = new SiteSearchConfig();
@@ -128,6 +129,7 @@ public class SiteSearchJobImpl {
 	            }
 	            else if(indexAlias.equals("create-new")){
 	            	Logger.info(this, "Index Alias is default");
+	            	createNew=true;
 	                indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME  + "_" + ESMappingAPIImpl.datetimeFormat.format(new Date());
 	                APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, null, 1);
 	            }
@@ -136,7 +138,7 @@ public class SiteSearchJobImpl {
 	                Logger.info(this, "Index Alias is " + indexName);
 	            }
             }
-            if(languageToIndex.length == counter){
+            if(createNew && languageToIndex.length == counter){
             	config.setSwitchIndexWhenDone(true);
             }
             
