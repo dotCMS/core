@@ -9,7 +9,7 @@ public class JNALibrary {
 	public static void link(String sourceFile, String destinationFile) throws IOException {
 		if(Platform.isWindows()) {
 			try {
-				Kernel32Library.INSTANCE.CreateHardLinkA(sourceFile, destinationFile, null);
+				Kernel32Library.INSTANCE.CreateHardLinkA(destinationFile , sourceFile, null);
 			} catch(UnsatisfiedLinkError e) {
 				createHardLinkWithExec(sourceFile, destinationFile);
 			}
