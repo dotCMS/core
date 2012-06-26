@@ -10,6 +10,12 @@
 		<param-name>company_id</param-name>
 		<param-value>dotcms.org</param-value>
 	</context-param>
+	<context-param>
+        <param-name>contextClass</param-name>
+        <param-value>org.eclipse.virgo.web.dm.ServerOsgiBundleXmlWebApplicationContext</param-value>
+        <param-name>contextConfigLocation</param-name>
+		<param-value>classpath:*context.xml</param-value>
+    </context-param>
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN CONTEXT-PARAMS -->
     <!-- END CONTEXT-PARAMS -->
@@ -570,21 +576,13 @@
         </init-param>
         <load-on-startup>100</load-on-startup>
     </servlet>
-
-    <context-param>
-        <param-name>contextClass</param-name>
-        <param-value>org.eclipse.virgo.web.dm.ServerOsgiBundleXmlWebApplicationContext</param-value>
-    </context-param>
-
     <listener>
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
-
     <servlet>
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
     </servlet>
-
     <!-- REST -->
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -597,6 +595,21 @@
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
+	
+	<servlet>
+		<servlet-name>SpringOSGI</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextClass</param-name>
+			<param-value>org.eclipse.virgo.web.dm.ServerOsgiBundleXmlWebApplicationContext</param-value>
+		</init-param>
+		<init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:*context.xml</param-value>
+        </init-param>
+		<load-on-startup>2</load-on-startup>
+	</servlet>
+	
 	<!--END DOTMARKETING SERVLETS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
@@ -612,6 +625,10 @@
       </servlet-mapping>
 	END OF TEST FRAMEWORK SERVLETS -->
 	<!-- DOTCMS SERVLET-MAPPINGS -->
+	<servlet-mapping>
+		<servlet-name>SpringOSGI</servlet-name>
+		<url-pattern>/osgitest/*</url-pattern>
+	</servlet-mapping>
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
       <url-pattern>/spring/*</url-pattern>
