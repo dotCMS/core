@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	  http://www.springframework.org/schema/beans/spring-beans.xsd
+	  http://www.springframework.org/schema/context
+	  http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- enable classpath scanning -->
+	<context:component-scan base-package="com.dotmarketing.osgi.controller" />
+
+	<!-- enable anntotation-driven controllers -->
+	<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" />
+ 
+	<bean id="viewResolver" class="com.dotcms.spring.web.DotViewResolver" >
+		<property name="prefix" value="/application/spring/" />
+		<property name="suffix" value=".html" />
+	</bean>
+</beans>

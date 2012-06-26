@@ -18,6 +18,7 @@ public class ExampleController {
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ModelAndView helloWorld() {
+    	Logger.info( this.getClass(), "Received request to hello" );
         String myMessage = "Hello World, Spring 3.1 and dotCMS!";
         // This will resolve to /application/spring/helloworld.dot, and put the String myMessage in the map with key "message"
         return new ModelAndView("helloworld", "message", myMessage);
@@ -27,7 +28,7 @@ public class ExampleController {
     @RequestMapping(value = "/{userName}", method = RequestMethod.GET)
     public String getHello(@PathVariable String userName, Model model) {
 
-        Logger.debug( this.getClass(), "Received request to hello user" );
+        Logger.info( this.getClass(), "Received request to hello user" );
 
         // set the message
         String aMessage = (userName != null)
