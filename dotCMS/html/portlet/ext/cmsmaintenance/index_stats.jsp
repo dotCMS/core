@@ -171,10 +171,23 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<%} %>
 			
 			<% for(String idx : closedIndices) {%>
+			    
+			    <%   Date d = null;
+                    String myDate = null;
+                    try{
+                         myDate = idx.split("_")[1];
+                        d = dater.parse(myDate);
+
+                        myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+                        }
+                        catch(Exception e){}%>
+			    
+			    
 			    <tr class="trIdxNothing" id="<%=idx%>Row">
 			         <td  align="center" class="showPointer"> <%= LanguageUtil.get(pageContext,"Closed") %> </td>
 			         <td  class="showPointer" ><%=idx%></td>
-			         <td colspan="7"></td>
+			         <td><%=UtilMethods.webifyString(myDate) %></td>
+			         <td colspan="6"></td>
 			    </tr>
 			<% } %>
 			<tr>
