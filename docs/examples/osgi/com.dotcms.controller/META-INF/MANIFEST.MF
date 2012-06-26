@@ -1,18 +1,12 @@
 Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
 Bundle-Name: Spring controller
-Bundle-SymbolicName: spring.controller
-Bundle-Description: A bundle that registers an Spring controller
-Spring-Context: *;wait-for-dependencies:=true
-Bundle-ClassPath: .
-Import-Library: org.springframework.spring
-Bundle-Vendor: Apache Felix
+Bundle-Activator: com.dotmarketing.osgi.controller.Activator
+Bundle-SymbolicName: springosgi
 Bundle-Version: 1.0.0
 Bundle-RequiredExecutionEnvironment: OSGi/Minimum-1.0
-Bundle-Activator: com.dotmarketing.osgi.controller.Activator
-Provide-Package: com.dotmarketing.osgi
 Export-Package: com.dotmarketing.osgi
-Import-Package: org.osgi.framework,
+Import-Package: org.eclipse.virgo.web.dm,
+ org.osgi.framework,
  org.osgi.util.tracker,
  com.dotmarketing.osgi,
  javax.servlet,
@@ -33,3 +27,6 @@ Import-Package: org.osgi.framework,
  org.springframework.web.bind.annotation,
  org.springframework.osgi.service.importer,
  org.springframework.osgi.service.importer.support
+Import-Library: org.springframework.spring
+Excluded-Imports: org.springframework.*
+Provide-Package: com.dotmarketing.osgi
