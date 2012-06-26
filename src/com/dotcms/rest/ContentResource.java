@@ -22,7 +22,6 @@ import org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -38,7 +37,7 @@ public class ContentResource extends WebResource {
 	@GET
 	@Path("/{path:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotDataException, DotSecurityException, IOException {
+	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) {
 
 		/* Getting values from the URL  */
 
@@ -70,7 +69,11 @@ public class ContentResource extends WebResource {
 
 		/* Authenticate the User if passed */
 
-		user = authenticateUser(username, password);
+		try {
+			user = authenticateUser(username, password);
+		} catch (Exception e) {
+			Logger.error(this, "Error authenticating user, username: " + username + ", password: " + password);
+		}
 
 		/* Limit and Offset Parameters Handling, if not passed, using default */
 
@@ -96,20 +99,38 @@ public class ContentResource extends WebResource {
 		/* Fetching the content using a query if passed or an id */
 
 		List<Contentlet> cons = new ArrayList<Contentlet>();
+		Boolean idPassed = false;
+		Boolean inodePassed = false;
+		Boolean queryPassed = false;
 
-		if(UtilMethods.isSet(id)) {
-			cons.add(APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true));
-			cons.add(APILocator.getContentletAPI().find(inode, user, true));
-		} else if(UtilMethods.isSet(query)) {
-			cons = APILocator.getContentletAPI().search(query,new Integer(limit),new Integer(offset),orderBy,user,true);
+		try {
+			if(idPassed = UtilMethods.isSet(id)) {
+				cons.add(APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true));
+			} else if(inodePassed = UtilMethods.isSet(inode)) {
+				cons.add(APILocator.getContentletAPI().find(inode, user, true));
+			} else if(queryPassed = UtilMethods.isSet(query)) {
+					cons = APILocator.getContentletAPI().search(query,new Integer(limit),new Integer(offset),orderBy,user,true);
+			}
+		} catch (Exception e) {
+			if(idPassed) {
+				Logger.error(this, "Can't find Content with Identifier: " + id);
+			} else if(queryPassed) {
+				Logger.error(this, "Can't find Content with Inode: " + inode);
+			} else if(inodePassed) {
+				Logger.error(this, "Error searching Content : "  + e.getMessage());
+			}
 		}
 
 		/* Converting the Contentlet list to XML or JSON */
 
-		if("xml".equals(type)) {
-			result = getXML(cons, request, response, render);
-		} else {
-			result = getJSON(cons, request, response, render);
+		try {
+			if("xml".equals(type)) {
+					result = getXML(cons, request, response, render);
+			} else {
+				result = getJSON(cons, request, response, render);
+			}
+		} catch (Exception e) {
+			Logger.error(this, "Error converting result to XML/JSON");
 		}
 
 		return result;
