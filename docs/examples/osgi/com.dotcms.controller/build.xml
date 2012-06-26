@@ -97,12 +97,21 @@
         <mkdir dir="lib"/>
 
         <war needxmlfile="false" warfile="${war.file}" manifest="${manifest.file}">
+
             <metainf dir="${meta-inf.dir}"/>
             <webinf dir="${web-inf.dir}"/>
-            <!--<zipfileset dir="src" prefix=""/>-->
+
             <classes dir="${build.classes}">
                 <include name="**"/>
             </classes>
+
+            <zipfileset dir=".">
+                <exclude name="src/**"/>
+                <exclude name="build/**"/>
+                <exclude name="WEB-INF/**"/>
+                <exclude name="META-INF/**"/>
+                <exclude name="build.xml"/>
+            </zipfileset>
 
             <service type="org.apache.commons.logging.LogFactory" provider="org.apache.commons.logging.impl.LogFactoryImpl"/>
             <service type="javax.xml.parsers.DocumentBuilderFactory" provider="org.apache.xerces.jaxp.DocumentBuilderFactoryImpl"/>
