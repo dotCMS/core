@@ -573,7 +573,7 @@
 
     <context-param>
         <param-name>contextClass</param-name>
-        <param-value>org.springframework.osgi.web.context.support.OsgiBundleXmlWebApplicationContext</param-value>
+        <param-value>org.eclipse.virgo.web.dm.ServerOsgiBundleXmlWebApplicationContext</param-value>
     </context-param>
 
     <listener>
@@ -583,15 +583,6 @@
     <servlet>
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>springmvcosgi</servlet-name>
-        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-        <load-on-startup>2</load-on-startup>
-        <init-param>
-            <param-name>contextClass</param-name>
-            <param-value>org.springframework.osgi.web.context.support.OsgiBundleXmlWebApplicationContext</param-value>
-        </init-param>
     </servlet>
 
     <!-- REST -->
@@ -624,10 +615,6 @@
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
       <url-pattern>/spring/*</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-      <servlet-name>springmvcosgi</servlet-name>
-      <url-pattern>/bundle/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>AjaxDirector</servlet-name>
