@@ -28,6 +28,10 @@
         ],
         "type": "custom",
         "tokenizer": "standard"
+      },
+      "comma_analyzer": {
+         "type": "pattern",
+         "pattern":","
       }
     }
   }
