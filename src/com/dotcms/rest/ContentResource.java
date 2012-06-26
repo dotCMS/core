@@ -3,9 +3,10 @@ package com.dotcms.rest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +22,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -137,7 +139,6 @@ public class ContentResource extends WebResource {
 	}
 
 
-	@SuppressWarnings({ "unchecked", "deprecation", "rawtypes" })
 	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws DotDataException, IOException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
@@ -146,10 +147,10 @@ public class ContentResource extends WebResource {
 		sb.append("<contentlets>");
 
 		for(Contentlet c : cons){
-			Map m = c.getMap();
+			Map<String,Object> m = c.getMap();
 			Structure s = c.getStructure();
 
-			for(Field f : s.getFields()){
+			for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
 				if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
 					m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
 					m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
@@ -159,6 +160,11 @@ public class ContentResource extends WebResource {
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
 			}
+			
+			Set<String> jsonFields=getJSONFields(s);
+			for(String key : m.keySet())
+			    if(jsonFields.contains(key)) 
+			        m.put(key, c.getKeyValueProperty(key));
 
 			sb.append(xstream.toXML(m));
 		}
@@ -189,21 +195,33 @@ public class ContentResource extends WebResource {
 
 		return json.toString();
 	}
+	
+	private Set<String> getJSONFields(Structure s) {
+	    Set<String> jsonFields=new HashSet<String>();
+        for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode()))
+            if(f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()))
+                jsonFields.add(f.getVelocityVarName());   
+        return jsonFields;
+	}
 
-	@SuppressWarnings({ "rawtypes", "deprecation" })
 	private JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render) throws JSONException, IOException{
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
-		Map map = con.getMap();
+		Map<String,Object> map = con.getMap();
 
-		for (Iterator it = map.keySet().iterator(); it.hasNext(); ) {
-			String key = (String) it.next();
-			if(Arrays.binarySearch(ignoreFields, key) < 0){
-				jo.put(key, map.get(key));
-			}
+		Set<String> jsonFields=getJSONFields(s);
+		
+		for(String key : map.keySet()) {
+			if(Arrays.binarySearch(ignoreFields, key) < 0)
+			    if(jsonFields.contains(key)) {
+			        Logger.info(this, key+" is a json field: "+map.get(key).toString());
+			        jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
+			    }
+			    else
+			        jo.put(key, map.get(key));
 		}
 
-		for(Field f : s.getFields()){
+		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
 			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
 				jo.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  con.getIdentifier() + "/" + f.getVelocityVarName()	);
 				jo.put(f.getVelocityVarName() + "ContentAsset", con.getIdentifier() + "/" +f.getVelocityVarName()	);
