@@ -23,7 +23,6 @@ import org.apache.commons.io.IOUtils;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
@@ -325,9 +324,18 @@ public class IndexAjaxAction extends AjaxAction {
 		response.getWriter().println("FAILURE: " + ret);
 	}
 
+	public void closeIndex(HttpServletRequest request, HttpServletResponse response) {
+	    Map<String, String> map = getURIParams();
+	    String indexName=map.get("indexName");
+	    
+	    APILocator.getESIndexAPI().closeIndex(indexName);
+	}
 	
-	
-	
-	
+	public void openIndex(HttpServletRequest request, HttpServletResponse response) {
+        Map<String, String> map = getURIParams();
+        String indexName=map.get("indexName");
+        
+        APILocator.getESIndexAPI().openIndex(indexName);
+    }
 	
 }
