@@ -187,7 +187,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			         <td  align="center" class="showPointer"> <%= LanguageUtil.get(pageContext,"Closed") %> </td>
 			         <td  class="showPointer" ><%=idx%></td>
 			         <td><%=UtilMethods.webifyString(myDate) %></td>
-			         <td colspan="5"></td>
+			         <td colspan="5">n/a</td>
 			    </tr>
 			<% } %>
 			<tr>
