@@ -248,6 +248,7 @@ public class EditStructureAction extends DotPortletAction {
 			// Check if another structure with the same name exist
 			String auxStructureName = structureForm.getName();
 			auxStructureName = (auxStructureName != null ? auxStructureName.trim() : "");
+			auxStructureName = auxStructureName.replace("'", "''");
 
 			@SuppressWarnings("deprecation")
 			Structure auxStructure = StructureCache.getStructureByType(auxStructureName);
@@ -572,7 +573,7 @@ public class EditStructureAction extends DotPortletAction {
 				perAPI.removePermissions(structure);
 
 				StructureFactory.deleteStructure(structure);
-				
+
 				ActivityLogger.logInfo(ActivityLogger.class, "Delete Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted structure "
 						+ structure.getName() + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 

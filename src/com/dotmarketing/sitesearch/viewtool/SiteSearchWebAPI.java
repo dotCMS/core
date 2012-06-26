@@ -1,12 +1,14 @@
 package com.dotmarketing.sitesearch.viewtool;
 
 import java.io.IOException;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
+import org.elasticsearch.search.facet.Facet;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
@@ -15,6 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -121,4 +124,15 @@ public class SiteSearchWebAPI implements ViewTool {
         return siteSearchAPI.search(indexName, query, start, rows);
 	}
 
+	
+	
+	public Map<String, Facet> getFacets(String indexName, String query) throws DotDataException{
+		
+		return  siteSearchAPI.getFacets(indexName, query);
+		
+	}
+	
+	
+	
+	
 }

@@ -223,6 +223,7 @@ public class H2CacheLoader implements CacheLoader{
 	}
 	
 	public void create() throws Exception {
+		Logger.info(this, "Starting Disk Cache");
 		instance = this;
 		int x = 1;
 		while(x<=numberOfSpaces*dbsPerSpace){
@@ -236,6 +237,7 @@ public class H2CacheLoader implements CacheLoader{
 				Logger.debug(this, "Cannot sleep : ", e);
 			}
 		}
+		Logger.info(this, "Disk Cache Started");
 	}
 	
 	public void moveh2dbDir() throws Exception {
