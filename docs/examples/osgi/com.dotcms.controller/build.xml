@@ -79,6 +79,9 @@
             <zipfileset dir="${conf.dir}" prefix="conf"/>
             <zipfileset dir="${build.conf}" prefix="conf"/>
             <zipfileset dir="lib" prefix="lib"/>
+
+            <service type="org.apache.commons.logging.LogFactory" provider="org.apache.commons.logging.impl.LogFactoryImpl"/>
+            <service type="javax.xml.parsers.DocumentBuilderFactory" provider="org.apache.xerces.jaxp.DocumentBuilderFactoryImpl"/>
         </jar>
 
     </target>
