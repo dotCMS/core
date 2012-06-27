@@ -99,8 +99,7 @@ public abstract class Publisher implements IPublisher {
 
 
 			String absolutePath = file.getAbsolutePath();
-			String separator = Platform.isWindows()?File.separator+"\\":File.separator;
-			List<String> path = Arrays.asList(absolutePath.split(separator));
+			List<String> path = Arrays.asList(absolutePath.split(File.separator));
 			path = path.subList(path.indexOf(config.getId())+4, path.size());
 			StringBuilder bob = new StringBuilder();
 			for(String x:path){
