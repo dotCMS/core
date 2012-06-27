@@ -11,6 +11,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.sun.jna.Platform;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
@@ -99,8 +101,11 @@ public abstract class Publisher implements IPublisher {
 
 
 			String absolutePath = file.getAbsolutePath();
+			Logger.info(this, "absolutePath="+absolutePath);
 			List<String> path = Arrays.asList(absolutePath.split(File.separator));
+			Logger.info(this, "after split="+UtilMethods.join(path, ","));
 			path = path.subList(path.indexOf(config.getId())+4, path.size());
+			Logger.info(this, "after sublist="+UtilMethods.join(path, ","));
 			StringBuilder bob = new StringBuilder();
 			for(String x:path){
 				bob.append("/" + x);
@@ -109,7 +114,7 @@ public abstract class Publisher implements IPublisher {
 
 		}
 		catch(Exception e){
-			throw new DotPublishingException("error getting host:" + e.getMessage());
+			throw new DotPublishingException("error getting host:" + e.getMessage(), e);
 		}
 
 	}
