@@ -1091,15 +1091,6 @@
 		<forward name="portlet.ext.plugins.expCont.struts" path="portlet.ext.plugins.expCont.struts" />
 	</action>
 
-	<!-- Console LOG4J -->
-	<action path="/ext/logConsole/viewConsole" type="com.dotmarketing.logConsole.business.LogConfigAction" name="logConsoleForm">
-		<forward name="portlet.ext.plugins.logMan.struts" path="portlet.ext.plugins.logMan.struts" />
-	</action>
-
-	<action path="/ext/logConsole/runConsole" type="com.dotmarketing.logConsole.business.UpdateLogConfigAction" name="logConsoleForm">
-		<forward name="portlet.ext.plugins.logMan.struts" path="portlet.ext.plugins.logMan.struts" />
-	</action>
-
 	</action-mappings>
 
 	<!--  DOTMARKETING -->

@@ -20,18 +20,18 @@
 <table cellpadding="5" cellspacing="1" border="0" width="660" bgcolor="#eeeeee">
 	 <tr>
 		 <td valign="top" colspan="2">
-			<b>$languagewebapi.getFromUserLanguage("dotCMS-Workflow")</b> 
-			#if($workflow.nextStep.resolved)
+			<b>$languagewebapi.getFromUserLanguage("dotCMS-Workflow")</b>
+			#if($nextStepResolved)
 				($languagewebapi.getFromUserLanguage("Resolved")!)
 			#end
 		</td>
 	</tr>
 	 <tr bgcolor="white">
 		 <td align="right" valign="top">
-			<font color="gray"><b>$workflow.contentlet.structure.name:</b></font>
+			<font color="gray"><b>$structureName:</b></font>
 		</td>
 		<td>
-			<a href="${workflowLink}">$!{workflow.task.title}</a><br>
+			<a href="${workflowLink}">$!{workflowTaskTitle}</a><br>
 		</td>
 	</tr>
 	<tr bgcolor="white">
@@ -39,19 +39,19 @@
 			<font color="gray"><b>$languagewebapi.getFromUserLanguage("Updated-By"):</b></font>
 		</td>
 		<td>
-			$!{user.fullName} @ $!{UtilMethods.dateToHTMLDate($workflow.task.modDate, "MM/dd/yyyy hh:mm:ss a")}
-			
+			$!{user.fullName} @ $!{UtilMethods.dateToHTMLDate($modDate, "MM/dd/yyyy hh:mm:ss a")}
+
 		</td>
 	</tr>
-	#if($workflow.step.id != $workflow.nextStep.id)
+	#if($stepId != $nextStepId)
 		 <tr bgcolor="white">
 			 <td align="right">
 				<font color="gray"><b>$languagewebapi.getFromUserLanguage("Moved-from"):</b></font>
 			</td>
 			<td>
-			
-				$!{workflow.step.name} --> $!{workflow.nextStep.name}
-	
+
+				$!{stepName} --> $!{nextStepName}
+
 			</td>
 		</tr>
 	#else
@@ -60,7 +60,7 @@
 				<font color="gray"><b>$languagewebapi.getFromUserLanguage("Current-Step"):</b></font>
 			</td>
 			<td>
-				$!{workflow.step.name} 
+				$!{step}
 			</td>
 		</tr>
 	#end
@@ -70,19 +70,19 @@
 			<font color="gray"><b>$languagewebapi.getFromUserLanguage("Assignee"):</b></font>
 		</td>
 		<td>
-			$!{workflow.nextAssign.name}
+			$!{nextAssign}
 		</td>
 	</tr>
 
-	#if($UtilMethods.isSet($workflow.workflowMessage))
+	#if($UtilMethods.isSet($workflowMessage))
 
-		
+
 		<tr bgcolor="white">
 			 <td align="right">
 				<font color="gray"><b>$languagewebapi.getFromUserLanguage("Comment"):</b></font>
 			</td>
 			<td>
-				<em>$workflow.workflowMessage</em>
+				<em>$workflowMessage</em>
 			</td>
 		</tr>
 	#end

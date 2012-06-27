@@ -47,8 +47,6 @@ public class WfRoleStoreAjax extends WfBaseAction {
 			//System.out.println(x + ":"+ ((String[])mm.get(x))[0]);
 		}
 		
-		
-		
 		int start = 0 ;
 		int count = 20;
 		try{
@@ -62,10 +60,6 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		} catch (Exception e) {
 
 		}
-
-
-		
-
 		
 		try {
 			Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
@@ -77,7 +71,6 @@ public class WfRoleStoreAjax extends WfBaseAction {
 			}
 
 	        List<Role> roleList = new ArrayList<Role>();
-	        
 	        if(UtilMethods.isSet(roleId)){
 	        	try{
 	        		Role r = rapi.loadRoleById(roleId);
@@ -85,54 +78,44 @@ public class WfRoleStoreAjax extends WfBaseAction {
 	        			roleList.add(r);
 	        			response.getWriter().write(rolesToJson(roleList));
 	        			return;
-	        		}
-	        		
+	        		}	        		
 	        	}
 	        	catch(Exception e){
 	        		
 	        	}
 	        	
-	        }
+	        }	        
 	        
-	        
-	        
-	        
-	        
-	        
-			while(roleList.size() < count){
-				
-				
-				
+			while(roleList.size() < count){				
 				List<Role> roles = rapi.findRolesByFilterLeftWildcard(searchName, start, count);
-	
 				if(roles.size() ==0){
 					break;
 				}
 		        for(Role role : roles){
-		        
-		        	
-		        	if(role.getId().equals(cmsAnon.getId())){
-		        		
+		        	if(role.isUser()){		        		
+			        	try {		        		
+			        		APILocator.getUserAPI().loadUserById(role.getRoleKey(), APILocator.getUserAPI().getSystemUser(), false);
+						} catch (Exception e) {						
+							//Logger.error(WfRoleStoreAjax.class,e.getMessage(),e);
+							continue;
+						}
+		        	}
+		        	if(role.getId().equals(cmsAnon.getId())){		        		
 		        		Role rAnon = new Role();
-		        		BeanUtils.copyProperties(rAnon, role);
-		        		
-		        		role = rAnon;
-		        		
+		        		BeanUtils.copyProperties(rAnon, role);		        		
+		        		role = rAnon;		        		
 		        		role.setName(cmsAnonName);
 		        		addSystemUser = false;
-		        	}
-		        	
-		        	
-		        	
-		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId())){
+		        	}		        	
+		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId()) && !role.getId().equals(APILocator.getRoleAPI().loadCMSAdminRole().getId())){
 		        		continue;
 		        	}
 		        	if(role.getName().equals(searchName)){
 		        		roleList.add(0,role);
 		        	}
 		        	else{
-		        		roleList.add(role);
-		        	}
+		        		roleList.add(role);		        		
+		        	}		        		        
 		        }
 		        start = start + count;
 			}
@@ -213,35 +196,48 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		
 		
 	}
-	
-	private String rolesToJson(List<Role> roles) throws JsonGenerationException, JsonMappingException, IOException, DotDataException, LanguageException{
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        Map<String,Object> m = new LinkedHashMap<String, Object>();
-        
-        List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
-        Map<String,Object> map = new HashMap<String,Object>();
-        Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
-        for(Role role : roles){
 
-        	map = new HashMap<String,Object>();
-        	if(role.getId().equals(cmsAnon.getId())){
-        		map.put("name", role.getName()  );
-        	}
-        	else{
-        		map.put("name", role.getName()  + ((role.isUser()) ? " (" + LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "User") + ")" : "") );
-        	}
-        	map.put("id", role.getId());
-    		list.add(map);
+    private String rolesToJson ( List<Role> roles ) throws IOException, DotDataException, LanguageException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure( Feature.FAIL_ON_UNKNOWN_PROPERTIES, false );
+        Map<String, Object> m = new LinkedHashMap<String, Object>();
+
+        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        Map<String, Object> map;
+
+        Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        for ( Role role : roles ) {
+
+            map = new HashMap<String, Object>();
+
+            //Exclude default user
+            try{
+	            User u = APILocator.getUserAPI().getDefaultUser();
+	            if(u!=null){
+		            Role r = APILocator.getRoleAPI().getUserRole(u);
+		            if(r != null && role.getId().equals(r.getId())){
+		            	continue;
+		            }
+	            }
+            }catch (Exception e) {}
+
+            //We need to exclude also the anonymous Role
+//            if ( role.getId().equals( cmsAnon.getId() ) ) {
+//                continue;
+//            }
+
+            map.put( "name", role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get( PublicCompanyFactory.getDefaultCompany(), "User" ) + ")" : "") );
+            map.put( "id", role.getId() );
+
+            list.add( map );
         }
-        
-        
-        
-        m.put("identifier", "id");
-        m.put("label", "name");
-        m.put("items", list);
-		return mapper.defaultPrettyPrintingWriter().writeValueAsString(m);
-	}
-	
-	
+
+        m.put( "identifier", "id" );
+        m.put( "label", "name" );
+        m.put( "items", list );
+
+        return mapper.defaultPrettyPrintingWriter().writeValueAsString( m );
+    }
+
 }

@@ -18,8 +18,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHookAbstractImp;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -35,67 +38,67 @@ import com.liferay.portal.model.User;
  * @author jasontesser
  *
  */
-public class HelloWorldContentletPreHook implements ContentletAPIPreHook {
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#addFileToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
-     */
+public class HelloWorldContentletPreHook extends ContentletAPIPreHookAbstractImp {
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#addFileToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean addFileToContentlet(Contentlet contentlet, String fileInode,
 			String relationName, User user, boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#addImageToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#addImageToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean addImageToContentlet(Contentlet contentlet,
 			String imageInode, String relationName, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#addLinkToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#addLinkToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean addLinkToContentlet(Contentlet contentlet, String linkInode,
 			String relationName, User user, boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#applyStructurePermissionsToChildren(com.dotmarketing.portlets.structure.model.Structure, com.liferay.portal.model.User, java.util.List, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#applyStructurePermissionsToChildren(com.dotmarketing.portlets.structure.model.Structure, com.liferay.portal.model.User, java.util.List, boolean)
+	 */
 	public boolean applyStructurePermissionsToChildren(Structure structure,
 			User user, List<Permission> permissions,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#archive(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#archive(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean archive(Contentlet contentlet, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#archive(java.util.List, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#archive(java.util.List, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean archive(List<Contentlet> contentlets, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkin(Contentlet contentlet,
 			Map<Relationship, List<Contentlet>> contentRelationships,
 			List<Category> cats, List<Permission> permissions, User user,
@@ -103,10 +106,10 @@ public class HelloWorldContentletPreHook implements ContentletAPIPreHook {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.ContentletRelationships, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.ContentletRelationships, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkin(Contentlet currentContentlet,
 			ContentletRelationships relationshipsData, List<Category> cats,
 			List<Permission> selectedPermissions, User user,
@@ -114,67 +117,67 @@ public class HelloWorldContentletPreHook implements ContentletAPIPreHook {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkin(Contentlet contentlet, List<Category> cats,
 			List<Permission> permissions, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.List, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.List, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkin(Contentlet contentlet, List<Permission> permissions,
 			User user, boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, java.util.List)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, java.util.List)
+	 */
 	public boolean checkin(Contentlet contentlet, User user,
 			boolean respectFrontendRoles, List<Category> cats) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkin(Contentlet contentlet,
 			Map<Relationship, List<Contentlet>> contentRelationships,
 			List<Category> cats, User user, boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkin(Contentlet contentlet, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkin(Contentlet contentlet,
 			Map<Relationship, List<Contentlet>> contentRelationships,
 			User user, boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkinWithoutVersioning(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkinWithoutVersioning(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkinWithoutVersioning(Contentlet contentlet,
 			Map<Relationship, List<Contentlet>> contentRelationships,
 			List<Category> cats, List<Permission> permissions, User user,
@@ -182,117 +185,117 @@ public class HelloWorldContentletPreHook implements ContentletAPIPreHook {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkout(java.lang.String, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkout(java.lang.String, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkout(String contentletInode, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		Logger.info(this, "The helloworld plugin prehook about to get contentlet with inode " + contentletInode);
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkout(java.util.List, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkout(java.util.List, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkout(List<Contentlet> contentlets, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkout(java.lang.String, com.liferay.portal.model.User, boolean, int, int)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkout(java.lang.String, com.liferay.portal.model.User, boolean, int, int)
+	 */
 	public boolean checkout(String luceneQuery, User user,
 			boolean respectFrontendRoles, int offset, int limit) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkoutWithQuery(java.lang.String, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#checkoutWithQuery(java.lang.String, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean checkoutWithQuery(String luceneQuery, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#cleanField(com.dotmarketing.portlets.structure.model.Structure, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#cleanField(com.dotmarketing.portlets.structure.model.Structure, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean cleanField(Structure structure, Field field, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#contentletCount()
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#contentletCount()
+	 */
 	public boolean contentletCount() throws DotDataException {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#contentletIdentifierCount()
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#contentletIdentifierCount()
+	 */
 	public boolean contentletIdentifierCount() throws DotDataException {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#convertContentletToFatContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.contentlet.business.Contentlet)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#convertContentletToFatContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.contentlet.business.Contentlet)
+	 */
 	public boolean convertContentletToFatContentlet(Contentlet cont,
 			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet)
+	 */
 	public boolean convertFatContentletToContentlet(
 			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-   /*
-    * (non-Javadoc)
-    * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#copyContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-    */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#copyContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean copyContentlet(Contentlet currentContentlet, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#copyProperties(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#copyProperties(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map)
+	 */
 	public boolean copyProperties(Contentlet contentlet,
 			Map<String, Object> properties) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
+	 */
 	public boolean delete(Contentlet contentlet, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
 		return true;
 	}
-    /*
-     * (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, boolean)
-     */
+	/*
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, boolean)
+	 */
 	public boolean delete(Contentlet contentlet, User user,
 			boolean respectFrontendRoles, boolean allVersions) {
 		// TODO Auto-generated method stub
@@ -978,25 +981,25 @@ public class HelloWorldContentletPreHook implements ContentletAPIPreHook {
 		// TODO Auto-generated method stub
 		return true;
 	}
-	
+
 	/**
 	 * Method will update hostInode of content to systemhost
 	 * @param identifier
-	 */	
+	 */
 	public boolean UpdateContentWithSystemHost(String hostIdentifier)throws DotDataException{
 		return true;
 	}
 	/**
-	 * Method will remove User References of the given userId in Contentlet  
+	 * Method will remove User References of the given userId in Contentlet
 	 * @param userId
-	 */	
+	 */
 	public boolean removeUserReferences(String userId)throws DotDataException{
 		return true;
 	}
 
 	/**
 	 * Return the URL Map for the specified content if the structure associated to the content has the URL Map Pattern set.
-	 * 
+	 *
 	 * @param contentlet
 	 * @param user
 	 * @param respectFrontendRoles
@@ -1005,23 +1008,27 @@ public class HelloWorldContentletPreHook implements ContentletAPIPreHook {
 	public boolean getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
 		return true;
 	}
-	
+
 	public boolean deleteVersion(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException{
 		return true;
 	}
-	
-	public boolean  saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
-	       return true;
-	}
-	
-	public boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, ParseException {
-	      return true;
-    } 
-	
-	public boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException, ParseException {
-          return true;
-    }
 
-  
-	
+	public boolean  saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
+		return true;
+	}
+
+	public boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, ParseException {
+		return true;
+	}
+
+	public boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException, ParseException {
+		return true;
+	}
+
+	public boolean indexCount(String luceneQuery, User user,
+            boolean respectFrontendRoles) {
+		return true;
+	}
+
+
 }

@@ -1699,7 +1699,7 @@ public class WebAssetFactory {
 				else if(currWebAsset instanceof Template)
 				{
 					TemplateServices.unpublishTemplateFile((Template)currWebAsset);
-					webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
+					//webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
 				}
 				else if(currWebAsset instanceof Link)
 				{

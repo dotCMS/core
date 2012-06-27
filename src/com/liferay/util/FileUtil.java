@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Properties;
 
 import com.dotmarketing.util.Logger;
-
+import com.liferay.util.jna.JNALibrary;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -61,12 +61,18 @@ public class FileUtil {
 	final static long TERA_BYTE = 1024*1024*1024*1024;
 
 	public static void copyDirectory(
+			String sourceDirName, String destinationDirName, boolean hardLinks) {
+
+			copyDirectory(new File(sourceDirName), new File(destinationDirName), hardLinks);
+		}
+
+	public static void copyDirectory(
 		String sourceDirName, String destinationDirName) {
 
 		copyDirectory(new File(sourceDirName), new File(destinationDirName));
 	}
 
-	public static void copyDirectory(File source, File destination) {
+	public static void copyDirectory(File source, File destination, boolean hardLinks) {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
 				destination.mkdirs();
@@ -79,16 +85,20 @@ public class FileUtil {
 					copyDirectory(
 						fileArray[i],
 						new File(destination.getPath() + File.separator
-							+ fileArray[i].getName()));
+							+ fileArray[i].getName()), hardLinks);
 				}
 				else {
 					copyFile(
 						fileArray[i],
 						new File(destination.getPath() + File.separator
-							+ fileArray[i].getName()));
+							+ fileArray[i].getName()), hardLinks);
 				}
 			}
 		}
+	}
+
+	public static void copyDirectory(File source, File destination) {
+		copyDirectory(source, destination, false);
 	}
 
 	public static void copyFile(
@@ -98,6 +108,10 @@ public class FileUtil {
 	}
 
 	public static void copyFile(File source, File destination) {
+		copyFile(source, destination, false);
+	}
+
+	public static void copyFile(File source, File destination, boolean hardLinks) {
 		if (!source.exists()) {
 			return;
 		}
@@ -108,19 +122,36 @@ public class FileUtil {
 			destination.getParentFile().mkdirs();
 		}
 
-		try {
-			FileChannel srcChannel = new FileInputStream(source).getChannel();
-			FileChannel dstChannel = new FileOutputStream(
-				destination).getChannel();
-
-			dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-
-			srcChannel.close();
-			dstChannel.close();
+		if ( hardLinks ) {
+			// I think we need to be sure to unlink first
+			if(destination.exists()){
+				JNALibrary.unlink(destination.getAbsolutePath());
+			}
+			else  {
+				try {
+					JNALibrary.link(source.getAbsolutePath(), destination.getAbsolutePath());
+				} catch (IOException e) {
+					Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+							+ ", destination: " + destination.getAbsolutePath());
+				}
+			}
 		}
-		catch (IOException ioe) {
-			Logger.error(FileUtil.class,ioe.getMessage(),ioe);
+		else {
+			try {
+				FileChannel srcChannel = new FileInputStream(source).getChannel();
+				FileChannel dstChannel = new FileOutputStream(
+					destination).getChannel();
+
+				dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
+
+				srcChannel.close();
+				dstChannel.close();
+			}
+			catch (IOException ioe) {
+				Logger.error(FileUtil.class,ioe.getMessage(),ioe);
+			}
 		}
+
 	}
 
 	public static void copyFileLazy(String source, String destination)
@@ -170,7 +201,7 @@ public class FileUtil {
 			}
 		}
 	}
-	
+
 	public static void deltree(File directory) {
 		deltree(directory, true);
 	}
@@ -409,7 +440,7 @@ public class FileUtil {
 		String finalVal;
 		long filesize = fileName.length();
 		BigDecimal size = new BigDecimal(filesize);
-		BigDecimal byteVal = null;	
+		BigDecimal byteVal = null;
 		BigDecimal changedByteVal = null;
 		finalVal = "";
 		if(filesize <= 0){
@@ -439,9 +470,9 @@ public class FileUtil {
 				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" TB";
 			}
 		}
-		return finalVal;		
+		return finalVal;
 	}
-	
+
 	/**
 	  * Recursively walk a directory tree and return a List of all
 	  * Files found; the List is sorted using File.compareTo().
@@ -451,9 +482,9 @@ public class FileUtil {
 	  static public List<File> listFilesRecursively(File aStartingDir) throws FileNotFoundException {
 		    return listFilesRecursively(aStartingDir, null);
 	  }
-	
-	
-	
+
+
+
 	/**
 	  * Recursively walk a directory tree and return a List of all
 	  * Files found; the List is sorted using File.compareTo().
@@ -466,12 +497,12 @@ public class FileUtil {
 		    Collections.sort(result);
 		    return result;
 	  }
-	  
-	  
+
+
 	  // PRIVATE //
 	  static private List<File> getFileListingNoSort(File aStartingDir, FileFilter filter) throws FileNotFoundException {
 	    List<File> result = new ArrayList<File>();
-	  
+
 	    File[] filesAndDirs = null;
 	    if(filter !=null){
 	    	filesAndDirs = aStartingDir.listFiles(filter);
@@ -509,5 +540,5 @@ public class FileUtil {
 	       throw new IllegalArgumentException("Directory cannot be read: " + aDirectory);
 	     }
 	   }
-	 
+
 }

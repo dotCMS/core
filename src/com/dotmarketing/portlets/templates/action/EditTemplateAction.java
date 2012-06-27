@@ -132,7 +132,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 			} catch (Exception ae) {
 				if ((referer != null) && (referer.length() != 0)) {
-					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+					if (ae.getMessage()!=null && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						//The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
 						java.util.Map<String,String[]> params = new java.util.HashMap<String,String[]>();
@@ -542,10 +542,12 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		if(InodeUtils.isSet(template.getImage())){
 			Identifier imageIdentifier = APILocator.getIdentifierAPI().find(template.getImage());
-			if(fileAsContent = imageIdentifier.getAssetType().equals("contentlet")) {
-				imageContentlet = APILocator.getContentletAPI().findContentletByIdentifier(imageIdentifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-			} else {
-				imageFile = (File) APILocator.getVersionableAPI().findWorkingVersion(imageIdentifier,APILocator.getUserAPI().getSystemUser(),false);
+			if(imageIdentifier!=null && UtilMethods.isSet(imageIdentifier.getAssetType())) {
+    			if(fileAsContent = imageIdentifier.getAssetType().equals("contentlet")) {
+    				imageContentlet = APILocator.getContentletAPI().findContentletByIdentifier(imageIdentifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+    			} else {
+    				imageFile = (File) APILocator.getVersionableAPI().findWorkingVersion(imageIdentifier,APILocator.getUserAPI().getSystemUser(),false);
+    			}
 			}
 		}
 

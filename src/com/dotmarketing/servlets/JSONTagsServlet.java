@@ -40,6 +40,8 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
+		UtilMethods.removeBrowserCache(response);
+
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		User user = null;
 

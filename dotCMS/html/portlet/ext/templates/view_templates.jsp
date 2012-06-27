@@ -260,13 +260,13 @@ function processDelete(inode, referer) {
 								<input dojoType="dijit.form.CheckBox" type="checkbox" name="publishInode" id="publishInode<%= template.getInode() %>" value="<%= template.getInode() %>" onclick="togglePublish()" />
 					<% } %>
 				</td>
-				<td nowrap>
-					<span class="templateIcon"></span>
-					<a href="javascript:editTemplate('<%=inode%>');" ><%=template.getTitle()%></a>
+				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>>
+					<span class="templateIcon"></span>&nbsp;
+					<%=template.getTitle()%>
 				</td>
-				<td nowrap><%= com.dotmarketing.util.UtilHTML.getStatusIcons(template) %></td>
-				<td><%=template.getFriendlyName()%></td>
-				<td nowrap>
+				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(template) %></td>
+				<td <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>><%=template.getFriendlyName()%></td>
+				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>>
 					<%=modDateFormat.format(template.getModDate())%>
 					<script language="JavaScript">
 						//popup div for the template

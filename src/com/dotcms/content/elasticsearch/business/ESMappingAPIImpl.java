@@ -251,17 +251,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conHost", ident.getHostId());
             m.put("conFolder", con.getFolder());
             m.put("parentPath", ident.getParentPath());
+            m.put("path", ident.getPath());
+            
             m.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
-            String uri = null;
+            String urlMap = null;
             try{
-            	uri = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
-                if(uri != null){
-                	m.put("uri",uri );	
+            	urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
+                if(urlMap != null){
+                	m.put("urlMap",urlMap );	
                 }
             }
             catch(Exception e){
             	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
-            	throw new DotRuntimeException(uri, e);
+            	throw new DotRuntimeException(urlMap, e);
             }
 
 
@@ -377,7 +379,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
 	public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
 	
-	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss'Z'";
+	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern);
 	
 	
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");

@@ -19,6 +19,10 @@
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
 	</filter>
 	<filter>
+	    <filter-name>TimeMachineFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>		
+	</filter>
+	<filter>
 		<filter-name>FixCmisFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.FixCmis.FixCmisFilter</filter-class>
 	</filter>
@@ -48,10 +52,12 @@
 		<filter-name>LoginRequiredFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
 	</filter>
+	<!-- 
 	<filter>
 		<filter-name>JBossRulesFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.JBossRulesFilter</filter-class>
 	</filter>
+	 -->
 	<filter>
 		<filter-name>NoCacheFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.NoCacheFilter</filter-class>
@@ -77,13 +83,14 @@
 	<!-- BEGIN FILTERS -->
  <!-- END FILTERS -->
 		<!-- Don't ever delete the following comment tags, it will break the plugin system -->
-	<!-- BEGIN FILTER-MAPPINGS --> <!-- END FILTER-MAPPINGS -->
+	<!-- BEGIN FILTER-MAPPINGS -->
+ <!-- END FILTER-MAPPINGS -->
 	<!--DOTMARKETING FILTER-MAPPINGS-->
 	<!-- compression Mappings -->
 <!--
   <filter-mapping>
     <filter-name>Compress</filter-name>
-    <url-pattern>*.dot</url-pattern>
+    <url-pattern>*.html</url-pattern>
   </filter-mapping>
   <filter-mapping>
     <filter-name>Compress</filter-name>
@@ -96,6 +103,11 @@
   -->
   <filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+  <filter-mapping>
+		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
   <filter-mapping>
@@ -164,14 +176,17 @@
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	<!--  
 	<filter-mapping>
 		<filter-name>JBossRulesFilter</filter-name>
-		<url-pattern>*.dot</url-pattern>
+		<url-pattern>*.html</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
 		<filter-name>JBossRulesFilter</filter-name>
 		<url-pattern>/dotCMS/*</url-pattern>
 	</filter-mapping>
+	-->
 	<filter-mapping>
 		<filter-name>NoCacheFilter</filter-name>
 		<url-pattern>/dotCMS/*</url-pattern>
@@ -195,7 +210,7 @@
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>Compression Filter</filter-name>
-		<url-pattern>*.dot</url-pattern>
+		<url-pattern>*.html</url-pattern>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>Compression Filter</filter-name>
@@ -231,6 +246,9 @@
 	<listener>
 		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
 	</listener>
+    <listener>
+    	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
+    </listener>
 	<!-- this must be the last listener -->
 	<listener>
 	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
@@ -556,6 +574,18 @@
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
     </servlet>
+    <!-- REST -->
+    <servlet>
+		<servlet-name>RESTAPI</servlet-name>
+		<servlet-class>
+		  com.sun.jersey.spi.container.servlet.ServletContainer
+		</servlet-class>
+		<init-param>
+		  <param-name>com.sun.jersey.config.property.packages</param-name>
+		  <param-value>com.dotcms.rest</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
 	<!--END DOTMARKETING SERVLETS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
@@ -745,9 +775,10 @@
 		<servlet-name>SlideShowServlet</servlet-name>
 		<url-pattern>/dot_slideshow</url-pattern>
 	</servlet-mapping>
-	<servlet-mapping>
+	
+<servlet-mapping>
 		<servlet-name>VelocityServlet</servlet-name>
-		<url-pattern>*.dot</url-pattern>
+		<url-pattern>*.html</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>FileServlet</servlet-name>
@@ -830,6 +861,12 @@
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<url-pattern>/JSONTags/*</url-pattern>
 	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>RESTAPI</servlet-name>
+		<url-pattern>/api/*</url-pattern>
+	</servlet-mapping>
+	
+	
 	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
 	<servlet-mapping>
 		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
@@ -837,6 +874,9 @@
 	</servlet-mapping>
 	<!-- END GRAZIANO issue-12-dnd-template -->	
 	
+
+
+
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLET-MAPPINGS -->

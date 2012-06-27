@@ -15,6 +15,7 @@ import net.sf.hibernate.ObjectNotFoundException;
 
 import org.apache.commons.collections.map.LRUMap;
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -551,7 +552,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             // delete workflow task for contentlet
             WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
             WorkflowTask wft = wff.findTaskByContentlet(con);
-            wff.deleteWorkflowTask(wft);
+            if ( InodeUtils.isSet(wft.getInode() ) ) {
+                wff.deleteWorkflowTask(wft);
+            }
 
             com.dotmarketing.portlets.contentlet.business.Contentlet c =
                 (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(con.getInode(), com.dotmarketing.portlets.contentlet.business.Contentlet.class);
@@ -1188,6 +1191,32 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return dh.list();
 	}
 
+	protected long indexCount(String query) {
+	    String qq=findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+	    
+	    // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return 0;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true"))
+            indexToHit=info.live;
+        else
+            indexToHit=info.working;
+
+        Client client=new ESClient().getClient();
+        QueryStringQueryBuilder qb = QueryBuilders.queryString(qq);
+        CountRequestBuilder crb = client.prepareCount();
+        crb.setQuery(qb);
+        crb.setIndices(indexToHit);
+        return crb.execute().actionGet().count();
+	}
+	
 	@Override
 	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
 	    String qq=findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
@@ -1297,6 +1326,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (InodeUtils.isSet(contentlet.getHost())) {
             content.setHost(contentlet.getHost());
         }
+        
+        if (InodeUtils.isSet(contentlet.getFolder())) {
+            content.setFolder(contentlet.getFolder());
+        }
 
         cc.remove(content.getInode());
         cc.add(content.getInode(), content);
@@ -1343,12 +1376,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         //String parentFolderId = parentFolder!=null?parentFolder.getInode():FolderAPI.SYSTEM_FOLDER;
         DotConnect dc = new DotConnect();
-        dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? ");
+        dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? and host_inode=?");
         dc.addParam(folderId.getPath());
+        dc.addParam(folder.getHostId());
         List<HashMap<String, String>> contentInodes = dc.loadResults();
-        dc.setSQL("update identifier set parent_path = ? where asset_type='contentlet' and parent_path = ?");
+        dc.setSQL("update identifier set parent_path = ? where asset_type='contentlet' and parent_path = ? and host_inode=?");
         dc.addParam("/");
         dc.addParam(folderId.getPath());
+        dc.addParam(folder.getHostId());
         dc.loadResult();
         for(HashMap<String, String> ident:contentInodes){
              String inode = ident.get("inode");
