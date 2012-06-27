@@ -60,4 +60,6 @@ public interface SiteSearchAPI {
 	SiteSearchResult getFromIndex(String index, String id);
 
 	Map<String, Facet> getFacets(String indexName, String query) throws DotDataException;
+
+    List<String> listClosedIndices();
 }
