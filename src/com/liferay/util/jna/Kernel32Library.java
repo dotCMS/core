@@ -18,7 +18,7 @@ public interface Kernel32Library extends StdCallLibrary {
         public boolean bInheritHandle;
     }
 
-    boolean CreateHardLinkA(String newPath, String existingPath, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+    boolean CreateHardLink(String newPath, String existingPath, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
 
-    boolean DeleteFileA(String existingPath);
+    boolean DeleteFile(String existingPath);
 }
