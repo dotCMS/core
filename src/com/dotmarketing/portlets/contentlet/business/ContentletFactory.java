@@ -320,4 +320,6 @@ public abstract class ContentletFactory {
 	protected abstract void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException;
 
     protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
+    
+    protected abstract long indexCount(String query);
 }

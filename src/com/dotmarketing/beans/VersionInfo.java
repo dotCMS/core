@@ -1,7 +1,6 @@
 package com.dotmarketing.beans;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
 import java.util.Date;
 
 public class VersionInfo implements Serializable {
@@ -12,7 +11,7 @@ public class VersionInfo implements Serializable {
 	private String lockedBy;
 	private Date lockedOn;
 	private boolean deleted;
-	private Timestamp versionTs;
+	private Date versionTs;
 
 	public String getIdentifier() {
 		return identifier;
@@ -61,10 +60,10 @@ public class VersionInfo implements Serializable {
         lockedBy=null;
         lockedOn=new Date();
     }
-	public Timestamp getVersionTs() {
+	public Date getVersionTs() {
 		return versionTs;
 	}
-	public void setVersionTs(Timestamp versionTs) {
+	public void setVersionTs(Date versionTs) {
 		this.versionTs = versionTs;
 	}
 

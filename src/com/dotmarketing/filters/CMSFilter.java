@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -539,76 +541,79 @@ public class CMSFilter implements Filter {
 
     }
 
-    private static List<String> excludeList;
-    private static synchronized List<String> loadExcludeList() {
+    private static Set<String> excludeList=null;
+    private static final Integer mutex=new Integer(0);
+    private static void buildExcludeList() {
+        synchronized(mutex) {
+         if(excludeList!=null) return;
+         
+         Set<String> set=new HashSet<String>();
+         
+    	 // allow servlets to be called without a 404
+         set.add("/servlet");
+         //Load some defaults
+         set.add("/c/portal");
+         set.add("/portal");
+         set.add("/icon");
+         set.add("/dwr");
+         set.add("/titleServlet");
+         set.add("/categoriesServlet");
+         set.add("/xspf");
+         set.add("/thumbnail");
+         set.add("/html/skin/");
+         set.add("/webdav");
+         set.add("/dotAsset");
+         set.add("/JSONContentServlet");
+         set.add("/resize_image");
+         set.add("/thumbnail");
+         set.add("/image/company_logo");
+         set.add("/servlets/");
+         set.add("/dotScheduledJobs");
+         set.add("/dot_slideshow");
+         set.add("/redirect");
+         set.add("/imageShim");
+         set.add("/DotAjaxDirector");
+         set.add("/cmis");
+         // http://jira.dotmarketing.net/browse/DOTCMS-5187
+         set.add("/admin");
+         set.add("/edit");
+         set.add("/dotTailLogServlet");
+         //http://jira.dotmarketing.net/browse/DOTCMS-2178
+         set.add("/contentAsset/");
+         //http://jira.dotmarketing.net/browse/DOTCMS-6079
+         set.add("/c/portal_public");
+         //http://jira.dotmarketing.net/browse/DOTCMS-6753
+         set.add("/JSONTagsServlet");
+         set.add("/spring");
+         set.add("/api");
 
-		if (excludeList == null) {
-			excludeList=new ArrayList<String>();
-	    	 // allow servlets to be called without a 404
-	         excludeList.add("/servlet");
-	         //Load some defaults
-	         excludeList.add("/c/portal");
-	         excludeList.add("/portal");
-	         excludeList.add("/icon");
-	         excludeList.add("/dwr");
-	         excludeList.add("/titleServlet");
-	         excludeList.add("/categoriesServlet");
-	         excludeList.add("/xspf");
-	         excludeList.add("/thumbnail");
-	         excludeList.add("/html/skin/");
-	         excludeList.add("/webdav");
-	         excludeList.add("/dotAsset");
-	         excludeList.add("/JSONContentServlet");
-	         excludeList.add("/resize_image");
-	         excludeList.add("/thumbnail");
-	         excludeList.add("/image/company_logo");
-	         excludeList.add("/servlets/");
-	         excludeList.add("/dotScheduledJobs");
-	         excludeList.add("/dot_slideshow");
-	         excludeList.add("/redirect");
-	         excludeList.add("/imageShim");
-	         excludeList.add("/DotAjaxDirector");
-	         excludeList.add("/cmis");
-	         // http://jira.dotmarketing.net/browse/DOTCMS-5187
-	         excludeList.add("/admin");
-	         excludeList.add("/edit");
-	         excludeList.add("/dotTailLogServlet");
-	         //http://jira.dotmarketing.net/browse/DOTCMS-2178
-	         excludeList.add("/contentAsset/");
-	//         excludeList.add("/php");
-	         //http://jira.dotmarketing.net/browse/DOTCMS-6079
-	         excludeList.add("/c/portal_public");
-	         //http://jira.dotmarketing.net/browse/DOTCMS-6753
-	         excludeList.add("/JSONTagsServlet");
+         //Load exclusions from plugins
+         PluginAPI pAPI=APILocator.getPluginAPI();
+         List<String> pluginList=pAPI.getDeployedPluginOrder();
+         if (pluginList!=null) {
+ 	        for (String pluginID:pluginList) {
+ 	        	try {
+ 					String list=pAPI.loadPluginConfigProperty(pluginID, "cmsfilter.servlet.exclusions");
+ 					Logger.info(CMSFilter.class,"plugin "+pluginID+" cmsfilter.servlet.exclusions="+list);
+ 					if (list!=null) {
+ 						String[] items=list.split(",");
+ 						if (items!=null && items.length>0) {
+ 							for (String item:items) {
+ 								item=item.trim();
+ 								if (UtilMethods.isSet(item) && !set.contains(item)) {
+ 										set.add(item);
+ 								}
+ 							}
+ 						}
+ 					}
+ 				} catch (DotDataException e) {
+ 					Logger.debug(CMSFilter.class,"DotDataException: " + e.getMessage(),e);
+ 				}
 
-	         //Load exclusions from plugins
-	         PluginAPI pAPI=APILocator.getPluginAPI();
-	         List<String> pluginList=pAPI.getDeployedPluginOrder();
-	         if (pluginList!=null) {
-	 	        for (String pluginID:pluginList) {
-	 	        	try {
-	 					String list=pAPI.loadPluginConfigProperty(pluginID, "cmsfilter.servlet.exclusions");
-	 					if (list!=null) {
-	 						String[] items=list.split(",");
-	 						if (items!=null && items.length>0) {
-	 							for (String item:items) {
-	 								item=item.trim();
-	 								if (UtilMethods.isSet(item) && !excludeList.contains(item)) {
-	 										excludeList.add(item);
-	 								}
-	 							}
-	 						}
-	 					}
-	 				} catch (DotDataException e) {
-	 					Logger.debug(CMSFilter.class,"DotDataException: " + e.getMessage(),e);
-	 				}
-
-	 	        }
-	         }
-
-
-		}
-		return excludeList;
+ 	        }
+         }
+         excludeList=set;
+        }
     }
 
     public static boolean excludeURI(String uri) {
@@ -619,21 +624,15 @@ public class CMSFilter implements Filter {
         		&& !"/".equals(uri)) {
         	return true;
         }
+        
+        if(excludeList==null) buildExcludeList();
 
-
-        if(excludeList == null){
-        	loadExcludeList();
-        }
-    	for(final String noModify:excludeList) {
-    		String exclusion = new String(noModify);
-    		//http://jira.dotmarketing.net/browse/DOTCMS-6079
-    		if(exclusion.equals(uri)){
-    			return true;
-    		}
-
-    		if(exclusion.endsWith("/")){
+        if(excludeList.contains(uri)) return true;
+        
+    	for(String exclusion:excludeList) {
+    		if(exclusion.endsWith("/"))
     			exclusion=exclusion.substring(0, exclusion.lastIndexOf("/"));
-    		}
+    		
     		exclusion=exclusion+"(/|#|&|\\?).*";
     		Pattern p = Pattern.compile(exclusion);
     		Matcher m = p.matcher(uri);

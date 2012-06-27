@@ -681,8 +681,10 @@ create table workflow_step(
 	name varchar2(255) not null,
 	scheme_id varchar2(36) not null references workflow_scheme(id),
 	my_order number(10,0) default 0,
-	resolved number(1,0) default 0
-
+	resolved number(1,0) default 0,
+	escalation_enable number(1,0) default 0,
+    escalation_action varchar(36),
+    escalation_time number(10,0) default 0
 );
 create index wk_idx_step_scheme on workflow_step(scheme_id);
 
@@ -741,7 +743,7 @@ delete from workflow_task;
 alter table workflow_task add constraint FK_workflow_task_asset foreign key (webasset) references identifier(id);
 alter table workflow_task add constraint FK_workflow_assign foreign key (assigned_to) references cms_role(id);
 alter table workflow_task add constraint FK_workflow_step foreign key (status) references workflow_step(id);
-
+alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
 alter table container_version_info  add constraint FK_tainer_ver_info_lockedby  foreign key (locked_by) references user_(userid);
@@ -759,7 +761,7 @@ alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) ref
 create table indicies (
   index_name varchar2(30) primary key,
   index_type varchar2(16) not null unique
-  
+);
   -- ****** Log Console Table *******
   create table log_mapper (
     enabled   	 number(1,0) not null,

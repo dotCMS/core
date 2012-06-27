@@ -1,3 +1,6 @@
+<%@page import="java.util.Arrays"%>
+<%@page import="java.util.ArrayList"%>
+<%@page import="java.util.List"%>
 <%@page import="java.io.File"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.Map"%>
@@ -6,6 +9,10 @@
 <%@page import="org.osgi.framework.Bundle"%>
 <%
 Bundle[] ba = OsgiFelixListener.m_fwk.getBundleContext().getBundles();
+
+List<String> ignoreBuns =Arrays.asList(new String[]{"org.apache.felix.gogo.shell","org.apache.felix.framework", "org.apache.felix.bundlerepository","org.apache.felix.fileinstall","org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core"});
+
+
 Map<Integer,String> states = new HashMap<Integer,String>();
 states.put(Bundle.ACTIVE, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Active"));
 states.put(Bundle.INSTALLED, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Installed"));
@@ -25,6 +32,8 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 </div>
 <div class="buttonBoxRight">
 	<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
+	<button dojoType="dijit.form.Button" onClick="mainAdmin.refresh();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
+
 </div>
 <div class="clear" style="height:40px;">&nbsp;</div>
 
@@ -49,21 +58,29 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Jar")%></th>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Actions")%></th>		
 	</tr>
+	<%boolean hasBundles = false; %>
 	<% for(Bundle b : ba){ %>
-	<tr>
-		<td><%=b.getSymbolicName()%></td>
-		<td><%=states.get(b.getState())%></td>
-		<td><%=b.getLocation().contains(File.separator)?b.getLocation().substring(b.getLocation().lastIndexOf(File.separator) + 1):"System"%></td>
-		<td>
-			<%if(b.getState() != Bundle.ACTIVE){ %><a href="javascript:bundles.start('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a><% } %>
-			<%if(b.getState() == Bundle.ACTIVE){ %><a href="javascript:bundles.stop('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a><% } %>
-			<%if(b.getLocation().contains(File.separator) && b.getLocation().contains(File.separator + "load" + File.separator)){ %>&nbsp;|&nbsp;<a href="javascript:bundles.undeploy('<%=b.getLocation().substring(b.getLocation().lastIndexOf(File.separatorChar) + 1)%>')"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a><%} %>
-		</td>
-	</tr>
+		<%if(ignoreBuns.contains(b.getSymbolicName()) ){continue;} %>
+		<% hasBundles = true; %>
+		<tr>
+			<td><%=b.getSymbolicName()%></td>
+			<td><%=states.get(b.getState())%></td>
+			<td><%=b.getLocation().contains(File.separator)?b.getLocation().substring(b.getLocation().lastIndexOf(File.separator) + 1):"System"%></td>
+			<td>
+				<%if(b.getState() != Bundle.ACTIVE){ %><a href="javascript:bundles.start('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a><% } %>
+				<%if(b.getState() == Bundle.ACTIVE){ %><a href="javascript:bundles.stop('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a><% } %>
+				<%if(b.getLocation().contains(File.separator) && b.getLocation().contains(File.separator + "load" + File.separator)){ %>&nbsp;|&nbsp;<a href="javascript:bundles.undeploy('<%=b.getLocation().substring(b.getLocation().lastIndexOf(File.separatorChar) + 1)%>')"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a><%} %>
+			</td>
+		</tr>
+	<%}%>
+	<%if(!hasBundles){ %>
+		<tr>
+			<td colspan="100" align="center"><%=LanguageUtil.get(pageContext, "No-Results-Found")%></td>
+		</tr>
 	<%}%>
 </table>
 
-<div align="center"><a href="javascript:mainAdmin.refresh();">Refresh</a></div>
+
 <div id="savingOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="OSGI" style="display: none;">
 	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
 </div>

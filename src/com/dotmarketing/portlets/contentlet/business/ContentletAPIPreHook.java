@@ -1177,4 +1177,7 @@ public interface ContentletAPIPreHook {
 	public boolean findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
 	
 	public boolean loadField(String inode, Field field) throws DotDataException;
+
+    public boolean indexCount(String luceneQuery, User user,
+            boolean respectFrontendRoles);
 }

@@ -214,7 +214,10 @@ public class VelocityUtil {
 
 		// put the list of languages on the page
 		context.put("languages", getLanguages());
-		context.put("language", (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+		if(!UtilMethods.isSet(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)))
+		    context.put("language", (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+		else
+		    context.put("language", request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
 
 		
 		try {

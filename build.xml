@@ -85,6 +85,7 @@
 		<fileset dir="${lib.app}">
 			<include name="log4j.jar" />
 			<include name="dotcms_ant.jar" />
+			<include name="commons-lang-2.4.jar" />
 		</fileset>
 	</path>
 
@@ -443,6 +444,8 @@
 		 	<copy todir="${distribution.dotserver.output}">
 				<fileset dir=".">
 					<exclude name="**/.git" />
+					<exclude name=".git" />
+					<exclude name=".git/**" />
 					<exclude name="tomcat/logs/**" />
 					<exclude name="dotCMS/WEB-INF/dotlucene/**" />
 					<exclude name="dotCMS/assets/**" />

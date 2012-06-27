@@ -2102,5 +2102,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         }
         return value;
     }
+
+    @Override
+    public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.indexCount(luceneQuery,user,respectFrontendRoles);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        
+        long value=conAPI.indexCount(luceneQuery, user, respectFrontendRoles);
+        
+        for(ContentletAPIPostHook post : postHooks){
+            post.indexCount(luceneQuery,user,respectFrontendRoles,value);
+        }
+        return value;
+    }
 	
 }

@@ -153,6 +153,9 @@ public abstract class VelocityServlet extends HttpServlet {
 			uri = URLDecoder.decode(uri, "UTF-8");
 			File file = new File(Config.CONTEXT.getRealPath(uri));
 			if (file.exists()) {
+				if(file.isDirectory()){
+					file = new File(file.getAbsolutePath() + File.separator + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
+				}
 				FileInputStream fileIS = new FileInputStream(file);
 				ServletOutputStream servletOS = response.getOutputStream();
 				int b;

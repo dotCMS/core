@@ -4,12 +4,10 @@
 package com.dotcms.content.elasticsearch.business;
 
 import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -381,7 +379,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
                     Identifier id = APILocator.getIdentifierAPI().find(value);
                     if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
-                        Contentlet fileAssetCont = findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                    	Contentlet fileAssetCont = null;
+                    	try {
+                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        } catch(DotContentletStateException se) {
+                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        }
                         publish(fileAssetCont, APILocator.getUserAPI().getSystemUser(), false);
                     }else if(InodeUtils.isSet(id.getInode())){
                         File file  = (File) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
@@ -480,12 +483,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
         contents.setTotalResults(list.getTotalResults());
-        String[] identifiers = new String[list.size()];
-        int count = 0;
+        
+        List<String> identifierList = new ArrayList<String>();
         for(ContentletSearch conwrap: list){
-            identifiers[count] = conwrap.getIdentifier();
-            count++;
+            String ident=conwrap.getIdentifier();
+            Identifier ii=APILocator.getIdentifierAPI().find(ident);
+            if(ii!=null && UtilMethods.isSet(ii.getId()))
+                identifierList.add(ident);
         }
+        String[] identifiers=new String[identifierList.size()];
+        identifiers=identifierList.toArray(identifiers);
 
         List<Contentlet> contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
@@ -1368,7 +1375,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // we lock the table dist_reindex_journal until we
             ReindexThread.getInstance().lockCluster();
-           
+
             if(indexAPI.isInFullReindex()){
             	try{
             		ReindexThread.getInstance().unlockCluster();
@@ -2099,97 +2106,122 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				// method reindexes.
 				contentlet.setLowIndexPriority(priority);
 
+
+
+
+
 				// http://jira.dotmarketing.net/browse/DOTCMS-1073
 				// storing binary files in file system.
 				Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
 
-				if(createNewVersion){
-				    List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-				    for (Field field : structFields) {
-				        if (field.getFieldContentlet().startsWith("binary")) {
-				            try {
-				                Object binaryFileName = null;
-				                String velocityVarNm = field.getVelocityVarName();
-				                java.io.File tempFile = contentletRaw.getBinary(velocityVarNm);
-				                contentlet.setBinary(velocityVarNm, tempFile);
 
-				                if (tempFile != null) {
-				                    binaryFileName = tempFile.getName();
-				                }
-				                if (!UtilMethods.isSet(binaryFileName) || binaryFileName.toString().contains("-removed-")){
-				                    continue;
-				                }
-				                String newContentletInode = contentlet.getInode();
-				                java.io.File srcFile;
+				// Binary Files
+				String newInode = contentlet.getInode();
+                String oldInode = workingContentlet.getInode();
 
-				                java.io.File workingInodeFile = null;
 
-				                if (InodeUtils.isSet(workingContentletInode)) {
-				                    java.io.File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + workingContentletInode.charAt(0)
-				                            + java.io.File.separator + workingContentletInode.charAt(1) + java.io.File.separator + workingContentletInode
-				                            + java.io.File.separator + velocityVarNm + java.io.File.separator + binaryFileName);
-				                    java.io.File editedFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + workingContentletInode.charAt(0)
-				                            + java.io.File.separator + workingContentletInode.charAt(1) + java.io.File.separator + workingContentletInode
-				                            + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + binaryFileName);
+                java.io.File newDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator
+                		+ newInode.charAt(0)
+                        + java.io.File.separator
+                        + newInode.charAt(1) + java.io.File.separator + newInode);
+                newDir.mkdirs();
+
+                java.io.File oldDir = null;
+                if(UtilMethods.isSet(oldInode)) {
+                	oldDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+            			+ java.io.File.separator + oldInode.charAt(0)
+            			+ java.io.File.separator + oldInode.charAt(1)
+            			+ java.io.File.separator + oldInode);
+                }
+
+
+
+
+
+				// loop over the new field values
+				// if we have a new temp file or a deleted file
+				// do it to the new inode directory
+			    List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+			    for (Field field : structFields) {
+			        if (field.getFieldContentlet().startsWith("binary")) {
+			            try {
+
+			                String velocityVarNm = field.getVelocityVarName();
+			                java.io.File incomingFile = contentletRaw.getBinary(velocityVarNm);
+			                java.io.File binaryFieldFolder = new java.io.File(newDir.getAbsolutePath() + java.io.File.separator + velocityVarNm);
+
+
+
+			                // if the user has removed this  file via the ui
+			                if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
+			                    FileUtil.deltree(binaryFieldFolder);
+			                    contentlet.setBinary(velocityVarNm, null);
+			                	continue;
+			                }
+
+			                // if we have an incoming file
+			                else if (incomingFile.exists() ){
+			                	String oldFileName  = incomingFile.getName();
+			                	String newFileName  = (UtilMethods.isSet(contentlet.getStringProperty("fileName")) && contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ? contentlet.getStringProperty("fileName"): oldFileName;
+
+
+
+
+			                	java.io.File oldFile = null;
+			                	if(UtilMethods.isSet(oldInode)) {
+			                		//get old file
+			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  oldFileName);
+
+			                		// do we have an inline edited file, if so use that
+					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + oldFileName);
 				                    if(editedFile.exists()){
-				                        FileChannel ic = new FileInputStream(editedFile).getChannel();
-				                        FileChannel oc = new FileOutputStream(destFile).getChannel();
-				                        ic.transferTo(0, ic.size(), oc);
-				                        ic.close();
-				                        oc.close();
+				                    	incomingFile = editedFile;
 				                    }
-				                    workingInodeFile = destFile;
-				                    editedFile.delete();
+			                	}
 
-				                }
+				                java.io.File newFile = new java.io.File(newDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  newFileName);
+				                binaryFieldFolder.mkdirs();
 
-				                if (tempFile.exists()) {
-				                    srcFile = tempFile;
-				                } else {
-				                    if ((workingInodeFile == null) || !workingInodeFile.exists()){
-				                        Logger.debug(this,"The file must be set");
-				                        continue;
-				                    }
-				                    srcFile = workingInodeFile;
-				                }
-				                String newInodeAssetFolderPath = APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + newContentletInode.charAt(0)
-				                + java.io.File.separator + newContentletInode.charAt(1) + java.io.File.separator + newContentletInode + java.io.File.separator
-				                + velocityVarNm;
+				                // we move files that have been newly uploaded or edited
+			                	if(oldFile==null || !oldFile.equals(incomingFile)){
+				                	//FileUtil.deltree(binaryFieldFolder);
 
-				                java.io.File newInodeAssetFolder = new java.io.File(newInodeAssetFolderPath);
+			                		FileUtil.move(incomingFile, newFile);
 
-				                if (!newInodeAssetFolder.exists())
-				                    newInodeAssetFolder.mkdirs();
+			                		// what happens is we never clean up the temp directory
+			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
+			                		if(delMe.exists() && delMe.getAbsolutePath().contains(Config.CONTEXT
+											.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+											+ java.io.File.separator + user.getUserId()
+											+ java.io.File.separator  ) ){
+			                			delMe.delete();
+			                			delMe = incomingFile.getParentFile().getParentFile();
+			                			FileUtil.deltree(delMe);
+			                		}
 
-				                java.io.File destFile = new java.io.File(newInodeAssetFolder.getAbsolutePath() + java.io.File.separator + srcFile.getName());
-				                if(StructureCache.getStructureByInode(contentlet.getStructureInode()).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){//DOTCMS-7093
-			                    	if(UtilMethods.isSet(contentlet.getStringProperty("fileName")))
-			                    		destFile = new java.io.File(newInodeAssetFolder.getAbsolutePath() + java.io.File.separator + contentlet.getStringProperty("fileName"));
-			                    }
+			                	}
+			                	else if (oldFile.exists()) {
+			                		// otherwise, we copy the files as hardlinks
+			                		FileUtil.copyFile(oldFile, newFile, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
+			                	}
+			                	contentlet.setBinary(velocityVarNm, newFile);
+			                }
+			            } catch (FileNotFoundException e) {
+			                e.printStackTrace();
+			                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage());
+			            } catch (IOException e) {
+			                e.printStackTrace();
+			                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage());
+			            }
+			        }
+			    }
 
-				                if (srcFile.equals(workingInodeFile)) {
-				                    if(!srcFile.equals(destFile)){//DOTCMS-5063
-				                        FileChannel ic = new FileInputStream(srcFile).getChannel();
-				                        FileChannel oc = new FileOutputStream(destFile).getChannel();
-				                        ic.transferTo(0, ic.size(), oc);
-				                        ic.close();
-				                        oc.close();
-				                    }
-				                } else {
-				                    if(!srcFile.renameTo(destFile)){
-				                        FileUtils.moveFile(srcFile, destFile);
-				                    }
-				                }
-				            } catch (FileNotFoundException e) {
-				                e.printStackTrace();
-				                throw new DotContentletValidationException("Error occurred while processing the file. ");
-				            } catch (IOException e) {
-				                e.printStackTrace();
-				                throw new DotContentletValidationException("Error occurred while processing the file.");
-				            }
-				        }
-				    }
-				}
+
+
+
+
+
+
 
 				Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
 				if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier()) && contentlet.getStructureInode().equals(hostStructure.getInode())) {
@@ -2283,8 +2315,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					throw (DotContentletStateException)e;
 				if(e instanceof DotWorkflowException)
 					throw (DotWorkflowException)e;
-				if(e instanceof DotRuntimeException)
-					throw (DotRuntimeException)e;
+				if(e instanceof Exception)
+					Logger.error(this, e.toString(), e);
+					throw new DotRuntimeException(e.getMessage());
 			}
 
 
@@ -3649,8 +3682,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(urlMapFieldValue !=null ){
                     	result = testResult.replaceAll(urlMapField, urlMapFieldValue);
                     }
-                    
-                    
+
+
                 }
             }
             if (result == null && UtilMethods.isSet(structure.getDetailPage())) {
@@ -3658,14 +3691,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	if(p != null && UtilMethods.isSet(p.getIdentifier())){
             		result = p.getURI() + "?id=" + contentlet.getInode();
             	}
-            	
-            	
+
+
             }
             Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, respectFrontendRoles);
             if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles) {
-            	
+
             	if(result == null || result.indexOf("?") <0){
-            	
+
             		result = result + "?host_id=" + host.getIdentifier();
             	}
             	else{
@@ -3784,4 +3817,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 		return findContentRelationships(contentlet);
 	}
+
+    @Override
+    public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        boolean isAdmin = false;
+        List<Role> roles = new ArrayList<Role>();
+        if(user == null && !respectFrontendRoles){
+            throw new DotSecurityException("You must specify a user if you are not respecting frontend roles");
+        }
+        if(user != null){
+            if (!APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
+                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
+            }else{
+                isAdmin = true;
+            }
+        }
+        StringBuffer buffy = new StringBuffer(luceneQuery);
+
+        // Permissions in the query
+        if (!isAdmin)
+            addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
+
+        return conFac.indexCount(buffy.toString());
+    }
 }
