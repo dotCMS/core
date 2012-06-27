@@ -112,7 +112,7 @@ public abstract class Publisher implements IPublisher {
 
 		}
 		catch(Exception e){
-			throw new DotPublishingException("error getting host:" + e.getMessage());
+			throw new DotPublishingException("error getting URI:" + e.getMessage(),e);
 		}
 
 	}
