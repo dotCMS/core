@@ -460,6 +460,15 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
     public boolean isDotCMSIndexName(String indexName) {
         return indexName.startsWith(ES_WORKING_INDEX_NAME+"_") || indexName.startsWith(ES_LIVE_INDEX_NAME+"_");
     }
+    
+    public List<String> listDotCMSClosedIndices() {
+        List<String> indexNames=new ArrayList<String>();
+        List<String> list=APILocator.getESIndexAPI().getClosedIndexes();
+        for(String idx : list)
+            if(isDotCMSIndexName(idx))
+                indexNames.add(idx);
+        return indexNames;
+    }
 
     /**
      * Returns a list of dotcms working and live indices.
