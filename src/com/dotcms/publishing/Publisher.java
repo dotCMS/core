@@ -108,10 +108,12 @@ public abstract class Publisher implements IPublisher {
 			for(String x:path){
 				bob.append("/" + x);
 			}
+			Logger.info(this, "URI: "+bob);
 			return bob.toString();
 
 		}
 		catch(Exception e){
+		    Logger.error(this, "error getting URI:" + e.getMessage(),e);
 			throw new DotPublishingException("error getting URI:" + e.getMessage(),e);
 		}
 
