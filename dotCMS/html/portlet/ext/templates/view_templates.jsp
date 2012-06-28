@@ -261,7 +261,13 @@ function processDelete(inode, referer) {
 					<% } %>
 				</td>
 				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>>
-					<span class="templateIcon"></span>&nbsp;
+					<%if(template.isDrawed()){ %>
+						<span class="designTemplateIcon"></span>
+					<%}else{ %>
+						<span class="templateIcon"></span>
+					<%} %>
+					&nbsp;
+					
 					<%=template.getTitle()%>
 				</td>
 				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(template) %></td>

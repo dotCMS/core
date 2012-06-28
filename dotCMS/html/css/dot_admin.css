@@ -439,7 +439,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .fileIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -840px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 /* BEGIN GRAZIANO issue-12-dnd-template */
-.designTemplateIcon {background: url(/html/images/icons/design-template.png); width:18px;height:18px;display:inline-block;vertical-align:top;}
+.designTemplateIcon {background: url(/html/images/icons/layout-design.png); width:18px;height:18px;display:inline-block;vertical-align:top;}
 /* END GRAZIANO issue-12-dnd-template */
 
 /* Disabled Styles */

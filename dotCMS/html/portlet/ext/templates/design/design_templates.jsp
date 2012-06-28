@@ -599,7 +599,7 @@
 		<div class="wrapperRight" style="position:relative;border:0px solid red" id="containerBodyTemplate">
 		<div style="float:left;margin:10px;">
 		
-			<input tabindex="1" type="text" name="title" id="titleField"  style="font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;" value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
+			<input tabindex="1" type="text" name="title" id="titleField" maxlength="255" style="color:black;font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;" value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
 			<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>
 
 		</div>
@@ -679,6 +679,31 @@
 		</div>
 	</div>	
 	 -->
+	 
+		 	
+	<!-- Permissions Tab -->
+	<%
+		boolean canEditAsset = perAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
+		if (canEditAsset) {
+	%>
+		<div id="filePermissionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" >
+			<%
+				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, template);
+			%>
+			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+		</div>
+	<%
+		}
+	%>
+	<!-- /Permissions Tab  -->
+		
+	<!-- Versions Tab -->  
+		<%if(template != null && InodeUtils.isSet(template.getInode())){ %>
+			<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" >
+				<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
+			</div>
+		<%} %>
+	<!-- /Versions Tab -->   
 </div>		
 
 </html:form>
