@@ -43,6 +43,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
 import com.dotmarketing.util.Logger;
 import com.liferay.util.jna.JNALibrary;
 
@@ -284,14 +287,44 @@ public class FileUtil {
 		return listFiles(new File(fileName));
 	}
 
-	public static String[] listFiles(File file) throws IOException {
-		List files = new ArrayList();
+	public static String[] listFiles(String fileName, Boolean includeSubDirs) throws IOException {
+		return listFiles(new File(fileName), includeSubDirs);
+	}
 
-		File[] fileArray = file.listFiles();
+	public static boolean containsParentFolder(File file, File[] folders) {
+		for (File folder : Arrays.asList(folders)) {
 
-		for (int i = 0; i < fileArray.length; i++) {
-			if (fileArray[i].isFile()) {
-				files.add(fileArray[i].getName());
+			if(file.getParent().equalsIgnoreCase(folder.getPath())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public static String[] listFiles(File dir) throws IOException {
+		return listFiles(dir, false);
+	}
+
+	public static String[] listFiles(File dir, Boolean includeSubDirs) throws IOException {
+		 FileFilter fileFilter = new FileFilter() {
+		        public boolean accept(File file) {
+		            return file.isDirectory();
+		        }
+		    };
+		File[] subFolders = dir.listFiles(fileFilter);
+
+		List<String> files = new ArrayList<String>();
+
+		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE));
+
+		for (File file : fileArray) {
+			if(file.isFile()) {
+				if(includeSubDirs && containsParentFolder(file, subFolders)) {
+					files.add(file.getParentFile().getName() + File.separator + file.getName());
+				} else {
+					files.add(file.getName());
+				}
 			}
 		}
 

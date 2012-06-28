@@ -13,23 +13,23 @@
 	if(!UtilMethods.isSet(regex)){
 		regex=".*";
 	}
-	String[] files = FileUtil.listFiles(Config.CONTEXT.getRealPath(Config.getStringProperty("TAIL_LOG_LOG_FOLDER")));
-	Pattern p = Pattern.compile(regex);  
+	String[] files = FileUtil.listFiles(Config.CONTEXT.getRealPath(Config.getStringProperty("TAIL_LOG_LOG_FOLDER")), true);
+	Pattern p = Pattern.compile(regex);
 	List<String> l = new ArrayList<String>();
 	for(String x : files){
-		if(p.matcher(x).matches()){  
-			l.add(x);   
+		if(p.matcher(x).matches()){
+			l.add(x);
 		}
 	}
 	// http://jira.dotmarketing.net/browse/DOTCMS-6271
 	// put matched files set to an array with exact size and then sort them
 	files = l.toArray(new String[l.size()]);
 	Arrays.sort(files);
-	
 
 
-	
-	
+
+
+
 	try {
 		user = com.liferay.portal.util.PortalUtil.getUser(request);
 	} catch (Exception e) {
@@ -47,7 +47,7 @@
 		return;
 	}
 
-	
+
 %>
 
 <%request.setAttribute("popup", "true"); %>
@@ -60,7 +60,7 @@
 		height:100%;
 		height:100%;
 		width:100%;
-	
+
 	}
 	#tailContainer {
 		margin-top:10px;
@@ -68,23 +68,23 @@
 		height:80%;
 		width:94%;
 		position: relative;
-		top: 40px;; 
-	    left: 3%; 
+		top: 40px;;
+	    left: 3%;
 	}
 	#headerContainer{
 		position: relative;
 		width:94%;
-	   	left: 3%; 
+	   	left: 3%;
 		border:0px solid silver;
 		padding-top:10px;
 		padding-left:10px;
 	}
-    
+
 	#popMeUp{
 		float:right;
 		display:none;
 	}
-	
+
 	#logman_dia {
 	   width:640px;
        height:480px;
@@ -112,17 +112,17 @@
 			dojo.style(dojo.byId("popMeUp"), "display", "block");
 		}
 
-			
+
 		<%if(request.getParameter("fileName")!= null){%>
 			dijit.byId("fileName").setValue("<%=UtilMethods.xmlEscape(request.getParameter("fileName"))%>");
 		<%}%>
-		
+
 	});
 
 	function doManageLogs() {
-		
+
 		dijit.byId('logman_dia').show();
-		
+
 	}
 
     function checkUncheck () {
@@ -232,18 +232,18 @@
         }
 
     };
-    
+
     dojo.ready(function() {
     	dojo.connect(dijit.byId("logman_dia"),"onShow",null,getCurrentLogs);
     });
-	
+
 </script>
 
 
 
 
 	<div id="headerContainer">
-		<%=LanguageUtil.get(pageContext, "Tail")%>: 
+		<%=LanguageUtil.get(pageContext, "Tail")%>:
 		<select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
 			<option value=""></option>
 			<%for(String f: files){ %>
@@ -252,7 +252,7 @@
 
 			<%} %>
 		</select>
-		&nbsp; &nbsp; 
+		&nbsp; &nbsp;
 		<%=LanguageUtil.get(pageContext, "Follow") %> <input type='checkbox' id='scrollMe' dojoType="dijit.form.CheckBox" value=1 checked="true" />
 		            <button dojoType="dijit.form.Button" onClick="doPopup()"  iconClass="detailView"  value="popup" name="popup" >
                 <%= LanguageUtil.get(pageContext,"popup") %>
@@ -262,17 +262,17 @@
                 <%= LanguageUtil.get(pageContext,"LOG_Manager") %>
             </button>
 		</div>
-		
+
 	</div>
-	
+
 	<div id="tailContainer">
 		<iframe id="tailingFrame" src="/html/blank.jsp"></iframe>
 	</div>
 
-    
+
    <div id="logman_dia" dojoType="dijit.Dialog">
         <div id="search" title="<%= LanguageUtil.get(pageContext, "LOG_activity") %>" >
-		
+
 		<div style="width:90%;margin:auto;">
 		    <table class="listingTable" id="logsTable" align="center">
 		        <tr id="logsTableHeader">
@@ -284,12 +284,11 @@
 		    </table>
 		</div>
 		<div>&nbsp;</div>
-		
+
 		<div class="buttonRow">
 		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="enableDisableLogs()"> <%= LanguageUtil.get(pageContext, "LOG_button") %> </button>
 		    <button dojoType="dijit.form.Button" iconClass="resetIcon" name="refreshButton" onclick="getCurrentLogs()"> Refresh </button>
 		</div>
-		
+
    </div>
 
-   
