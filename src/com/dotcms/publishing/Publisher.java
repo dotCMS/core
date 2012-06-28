@@ -78,8 +78,8 @@ public abstract class Publisher implements IPublisher {
 				throw new DotPublishingException("no bundle file found");
 			}
 
-
-			List<String> path = Arrays.asList(file.getAbsolutePath().split(File.separator));
+			String separator = Platform.isWindows()?File.separator+"\\":File.separator;
+			List<String> path = Arrays.asList(file.getAbsolutePath().split(separator));
 			String host = path.get(path.indexOf(config.getId())+2);
 
 			return APILocator.getHostAPI().resolveHostName(host, APILocator.getUserAPI().getSystemUser(), true);
@@ -110,7 +110,7 @@ public abstract class Publisher implements IPublisher {
 
 		}
 		catch(Exception e){
-			throw new DotPublishingException("error getting host:" + e.getMessage());
+			throw new DotPublishingException("error getting uri:" + e.getMessage());
 		}
 
 	}
