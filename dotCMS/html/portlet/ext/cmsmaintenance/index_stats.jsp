@@ -50,6 +50,7 @@ List<String> currentIdx =idxApi.getCurrentIndex();
 List<String> newIdx =idxApi.getNewIndex();
 
 List<String> indices=idxApi.listDotCMSIndices();
+List<String> closedIndices=idxApi.listDotCMSClosedIndices();
 Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -168,6 +169,27 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<td align="center"><div  style='background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
 				</tr>
 			<%} %>
+			
+			<% for(String idx : closedIndices) {%>
+			    
+			    <%   Date d = null;
+                    String myDate = null;
+                    try{
+                         myDate = idx.split("_")[1];
+                        d = dater.parse(myDate);
+
+                        myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+                        }
+                        catch(Exception e){}%>
+			    
+			    
+			    <tr class="trIdxNothing" id="<%=idx%>Row">
+			         <td  align="center" class="showPointer"> <%= LanguageUtil.get(pageContext,"Closed") %> </td>
+			         <td  class="showPointer" ><%=idx%></td>
+			         <td><%=UtilMethods.webifyString(myDate) %></td>
+			         <td colspan="5">n/a</td>
+			    </tr>
+			<% } %>
 			<tr>
 				<td colspan="15" align="center" style="padding:20px;"><a href="#" onclick="refreshIndexStats()"><%= LanguageUtil.get(pageContext,"refresh") %></a></td>
 			</tr>
@@ -218,6 +240,11 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			 		<%= LanguageUtil.get(pageContext,"Clear-Index") %>
 			 	</div>
 			 	<%if(!active){%>
+				 	<div dojoType="dijit.MenuItem" onClick="doCloseIndex('<%=x %>');" class="showPointer">
+	                    <span class="deleteIcon"></span>
+	                    <%= LanguageUtil.get(pageContext,"Close-Index") %>
+	                </div>
+			 	
 				 	<div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', <%=(currentIdx.contains(x)) %>)" class="showPointer">
 				 		<span class="deleteIcon"></span>
 				 		<%= LanguageUtil.get(pageContext,"Delete-Index") %>
@@ -226,7 +253,22 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			</div>
 		<%} %>
 
-
+        <% for(String idx : closedIndices) { %>
+             <div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
+                 targetNodeIds="<%=idx%>Row" onOpen="dohighlight('<%=idx%>Row')" onClose="undohighlight('<%=idx%>Row')">
+                 
+                 <div dojoType="dijit.MenuItem" onClick="doOpenIndex('<%=idx %>');" class="showPointer">
+                     <span class="publishIcon"></span>
+                     <%= LanguageUtil.get(pageContext,"Open-Index") %>
+                 </div>
+                 
+                 <div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=idx%>', false)" class="showPointer">
+                     <span class="deleteIcon"></span>
+                     <%= LanguageUtil.get(pageContext,"Delete-Index") %>
+                 </div>
+                 
+             </div>
+        <% } %>
 
 
 		<div data-dojo-type="dijit.Dialog" style="width:400px;" id="restoreIndexDialog">
