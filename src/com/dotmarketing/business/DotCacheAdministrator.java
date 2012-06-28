@@ -87,4 +87,5 @@ public interface DotCacheAdministrator  {
 	public List<Map<String, Object>> getCacheStatsList();
 	
 	public Class getImplementationClass();
+	public DotCacheAdministrator getImplementationObject();
 }
