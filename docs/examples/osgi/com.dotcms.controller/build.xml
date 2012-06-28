@@ -5,12 +5,11 @@
     <property name="build.dir" value="build"/>
     <property name="src.dir" value="src"/>
     <property name="jar.name" value="bundle-${plugin.name}.jar"/>
-    <property name="war.name" value="bundle-${plugin.name}.war"/>
     <property name="jar.file" value="${build.dir}/jar/${jar.name}"/>
-    <property name="war.file" value="${build.dir}/war/${war.name}"/>
 
     <property name="app.base" value="${basedir}/../../../../"/>
     <property name="lib.app" value="${app.base}/dotCMS/WEB-INF/lib"/>
+    <property name="lib.bundles" value="${app.base}/dotCMS/WEB-INF/felix/bundle"/>
     <property name="lib.server" value="${app.base}/tomcat/lib"/>
     <property name="deploy.dir" value="${app.base}/dotCMS/WEB-INF/felix/load"/>
     <property name="build.classes" value="${build.dir}/classes"/>
@@ -22,6 +21,9 @@
 
     <path id="files-classpath">
         <fileset dir="${lib.app}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${lib.bundles}">
             <include name="**/*.jar"/>
         </fileset>
         <fileset dir="lib">
@@ -38,8 +40,7 @@
         <pathelement path="../../build/classes"/>
     </path>
 
-    <target name="build-jar" depends="clean,compile,jar"/>
-    <target name="build" depends="clean,compile,war"/>
+    <target name="build" depends="clean,compile,jar"/>
     <target name="compile">
 
         <echo>Building at: ${plugin.name} at ${basedir}</echo>
@@ -77,33 +78,7 @@
             <metainf dir="${meta-inf.dir}" />
             <fileset dir="${build.classes}"/>
             <zipfileset dir="lib" prefix="lib"/>
-            <zipfileset dir="${web-inf.dir}" prefix="${web-inf.dir}"/>
-
-            <service type="org.apache.commons.logging.LogFactory" provider="org.apache.commons.logging.impl.LogFactoryImpl"/>
-            <service type="javax.xml.parsers.DocumentBuilderFactory" provider="org.apache.xerces.jaxp.DocumentBuilderFactoryImpl"/>
-        </jar>
-
-    </target>
-
-    <target name="war" depends="compile,doif">
-
-        <mkdir dir="${build.dir}/war"/>
-
-        <!--
-          CREATE DIRECTORIES THAT DON'T EXIST.
-          THIS PREVENTS THE jar TASK FROM FAILING
-          -->
-        <mkdir dir="${build.classes}"/>
-        <mkdir dir="lib"/>
-
-        <war needxmlfile="false" warfile="${war.file}" manifest="${manifest.file}">
-
-            <metainf dir="${meta-inf.dir}"/>
-            <webinf dir="${web-inf.dir}"/>
-
-            <classes dir="${build.classes}">
-                <include name="**"/>
-            </classes>
+            <!--<zipfileset dir="${web-inf.dir}" prefix="${web-inf.dir}"/>-->
 
             <zipfileset dir=".">
                 <exclude name="src/**"/>
@@ -113,9 +88,9 @@
                 <exclude name="build.xml"/>
             </zipfileset>
 
-            <service type="org.apache.commons.logging.LogFactory" provider="org.apache.commons.logging.impl.LogFactoryImpl"/>
-            <service type="javax.xml.parsers.DocumentBuilderFactory" provider="org.apache.xerces.jaxp.DocumentBuilderFactoryImpl"/>
-        </war>
+            <!--<service type="org.apache.commons.logging.LogFactory" provider="org.apache.commons.logging.impl.LogFactoryImpl"/>-->
+            <!--<service type="javax.xml.parsers.DocumentBuilderFactory" provider="org.apache.xerces.jaxp.DocumentBuilderFactoryImpl"/>-->
+        </jar>
 
     </target>
 
@@ -133,20 +108,12 @@
         <delete dir="${build.dir}"/>
     </target>
 
-    <target name="deploy-jar">
+    <target name="deploy">
         <copy file="${jar.file}" tofile="${deploy.dir}/${jar.name}"/>
     </target>
 
-    <target name="deploy">
-        <copy file="${war.file}" tofile="${deploy.dir}/${war.name}"/>
-    </target>
-
-    <target name="undeploy-jar">
-        <delete file="${deploy.dir}/${jar.name}"/>
-    </target>
-
     <target name="undeploy">
-        <delete file="${deploy.dir}/${war.name}"/>
+        <delete file="${deploy.dir}/${jar.name}"/>
     </target>
 
 </project>

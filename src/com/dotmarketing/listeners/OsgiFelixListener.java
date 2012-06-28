@@ -55,7 +55,7 @@ public class OsgiFelixListener implements ServletContextListener {
     	String autoLoadDir = felixDir + File.separator + "load";
     	
     	// we need gosh to not expecting stdin to work
-    	configProps.setProperty("gosh.args", "--noi");
+    	//configProps.setProperty("gosh.args", "--noi");
     	
     	// (2) Load system properties.
         Main.loadSystemProperties();
