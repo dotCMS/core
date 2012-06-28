@@ -250,6 +250,7 @@
 	dojo.addOnLoad(function() {
 		drawDefault(<%=overrideBody%>,'<%= LanguageUtil.get(pageContext, "Add-Container") %>','<%= LanguageUtil.get(pageContext, "Remove-Container") %>');
 		setTimeout('codeMirrorArea()',1);
+		dojo.byId("titleField").focus(true);
 	});
 	
 	var editor;
@@ -596,10 +597,10 @@
 		
 		
 		<div class="wrapperRight" style="position:relative;border:0px solid red" id="containerBodyTemplate">
-		<div style="float:left;">
-				<input type="text" style="font-size:120%;padding:10px;margin:10px;border:1px solid silver;min-width:450px;" value="<%= UtilMethods.webifyString(template.getTitle())%>">
-
-
+		<div style="float:left;margin:10px;">
+		
+			<input tabindex="1" type="text" name="title" id="titleField"  style="font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;" value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
+			<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>
 
 		</div>
 			<div id="addFileToTemplate">
@@ -644,12 +645,7 @@
 					</select>
 					</dd>
 				<% } %>
-				<dt>
-					<span class="required"></span>
-					<%= LanguageUtil.get(pageContext, "Title") %>:
-				</dt>
-				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="title" id="titleField" value="<%= UtilMethods.isSet(template.getTitle()) ? template.getTitle() : "" %>" /></dd>
-					
+
 				<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
 				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="friendlyName" id="friendlyNameField" value="<%= UtilMethods.isSet(template.getFriendlyName()) ? template.getFriendlyName() : "" %>" /></dd>
 				
@@ -667,7 +663,7 @@
 			</dl>	
 		</div>	
 	</div>
-
+	<!-- 
 	<div id="headCodeContentPane" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="<%= LanguageUtil.get(pageContext, "add-head-code") %>" >	
 		<div class="wrapperRight" style="position:relative;" id="headCodeContentPaneWrapper">
 			<div id="headCode">
@@ -682,6 +678,7 @@
 			</div>
 		</div>
 	</div>	
+	 -->
 </div>		
 
 </html:form>
