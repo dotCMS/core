@@ -7,7 +7,6 @@ import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
-import org.eclipse.virgo.web.dm.ServerOsgiBundleXmlWebApplicationContext;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
@@ -76,7 +75,9 @@ public class OsgiFelixListener implements ServletContextListener {
         
         // Create host activator;
         List<BundleActivator> list = new ArrayList<BundleActivator>();
-        list.add(HostActivator.instance());
+        HostActivator hostActivator = HostActivator.instance();
+        hostActivator.setServletContext( context.getServletContext() );
+        list.add( hostActivator );
         configProps.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, list);
         
         configProps.put("felix.fileinstall.dir", autoLoadDir);
@@ -94,9 +95,7 @@ public class OsgiFelixListener implements ServletContextListener {
             
             // (10) Start the framework.
             m_fwk.start();
-            Logger.info(this, "osgi felix framework started");
-
-            context.getServletContext().setAttribute( ServerOsgiBundleXmlWebApplicationContext.BUNDLE_CONTEXT_ATTRIBUTE, m_fwk.getBundleContext() );
+            Logger.info( this, "osgi felix framework started" );
         }
         catch (Exception ex)
         {

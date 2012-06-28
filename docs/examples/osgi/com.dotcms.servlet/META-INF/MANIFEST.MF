@@ -1,5 +1,6 @@
+Manifest-Version: 1.0
 Bundle-Name: Servlet for Hello World
-Bundle-SymbolicName: Servlet for Hello World
+Bundle-SymbolicName: com.dotmarketing.osgi.servlet
 Bundle-Description: Servlet for Hello World
 Bundle-Version: 1.0.0
 Bundle-Activator: com.dotmarketing.osgi.servlet.Activator
@@ -8,4 +9,5 @@ Import-Package:  org.osgi.framework,
  javax.servlet,
  javax.servlet.http,
  org.osgi.service.http,
+ org.apache.felix.http.api,
  com.dotmarketing.osgi.service

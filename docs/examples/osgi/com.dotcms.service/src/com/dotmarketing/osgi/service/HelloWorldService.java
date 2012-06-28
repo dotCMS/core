@@ -3,7 +3,7 @@ package com.dotmarketing.osgi.service;
 /**
  * Created by Jonathan Gamba
  */
-public class HelloWorldService implements com.dotmarketing.osgi.service.manual.HelloWorld {
+public class HelloWorldService implements HelloWorld {
 
     @Override
     public String hello () {
