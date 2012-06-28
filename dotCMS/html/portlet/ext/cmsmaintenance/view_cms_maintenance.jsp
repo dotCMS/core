@@ -496,6 +496,50 @@ function doFullReindex(){
 
 }
 
+function doCloseIndex(indexName) {
+	var xhrArgs = {
+
+        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/closeIndex/indexName/" + indexName,
+
+        handleAs: "text",
+        handle : function(dataOrError, ioArgs) {
+            if (dojo.isString(dataOrError)) {
+                if (dataOrError.indexOf("FAILURE") == 0) {
+                    showDotCMSSystemMessage(dataOrError, true);
+                } else {
+                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Closed")%>", true);
+                    refreshIndexStats();
+                }
+            } else {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+            }
+        }
+    };
+    dojo.xhrPost(xhrArgs);
+}
+
+function doOpenIndex(indexName) {
+	var xhrArgs = {
+
+        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/openIndex/indexName/" + indexName,
+
+        handleAs: "text",
+        handle : function(dataOrError, ioArgs) {
+            if (dojo.isString(dataOrError)) {
+                if (dataOrError.indexOf("FAILURE") == 0) {
+                    showDotCMSSystemMessage(dataOrError, true);
+                } else {
+                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Opened")%>", true);
+                    refreshIndexStats();
+                }
+            } else {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+            }
+        }
+    };
+    dojo.xhrPost(xhrArgs);
+}
+
 function doClearIndex(indexName){
 
 	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index")%>")){
