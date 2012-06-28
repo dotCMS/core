@@ -24,6 +24,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.content.submit.util.CaptchaUtil;
 import com.dotmarketing.cms.content.submit.util.SubmitContentUtil;
@@ -342,7 +343,7 @@ public class SubmitContentAction extends DispatchAction{
 			//http://jira.dotmarketing.net/browse/DOTCMS-3463
 			Map <String, Object> tempBinaryValues= new HashMap <String, Object>();
 			fileFields = StructureFactory.getFilesFieldsList(st, parametersfileName, filevalues);
-			List <Field> catfields = st.getFields();
+			List <Field> catfields = FieldsCache.getFieldsByStructureInode(st.getInode());
 			for(Field field:catfields){
 				Map <String, Object> binaryvalues= new HashMap <String, Object>();
 				if (field.getFieldType().equals("binary"))
