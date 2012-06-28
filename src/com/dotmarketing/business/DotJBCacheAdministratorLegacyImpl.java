@@ -105,4 +105,9 @@ public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
     public Class getImplementationClass() {
         return DotJBCacheAdministratorLegacyImpl.class;
     }
+
+    @Override
+    public DotCacheAdministrator getImplementationObject() {
+        return this;
+    }
 }
