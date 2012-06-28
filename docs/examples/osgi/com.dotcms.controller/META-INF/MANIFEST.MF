@@ -4,13 +4,14 @@ Bundle-Description: Static.Manifest
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: springosgi
 Bundle-Version: 2.5.1
-Tool: Bundlor 1.1.0.M05
-Web-ContextPath: testme
-Bundle-ClassPath: .,WEB-INF/classes
-Bundle-RequiredExecutionEnvironment: OSGi/Minimum-1.0
+Bundle-Activator: com.dotmarketing.osgi.controller.Activator
 Import-Library: org.springframework.spring
-Import-Package: javax.servlet,
- org.eclipse.virgo.web.dm,
+Import-Package: org.osgi.framework,
+ javax.servlet,
+ org.osgi.util.tracker,
+ javax.servlet.http,
+ org.osgi.service.http,
+ org.apache.felix.http.api,
  org.springframework.beans.factory.annotation,
  org.springframework.core.io,
  org.springframework.stereotype,

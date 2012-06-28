@@ -8,7 +8,6 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.http.HttpService;
 import org.osgi.util.tracker.ServiceTracker;
-import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.servlet.Servlet;
 import java.util.Hashtable;
@@ -28,7 +27,7 @@ public class Activator implements BundleActivator {
 
         // create new ServiceTracker for HelloWorldService via HelloWorld interface
         helloWorldServiceTracker = new ServiceTracker( context, HelloWorld.class.getName(), null );
-        
+
         //1) // create new ServiceTracker for HttpService
         ServiceReference sRef = context.getServiceReference( HttpService.class.getName() );
         //ServiceReference sRef2 = context.getServiceReference( ExtHttpService.class.getName() );
@@ -37,9 +36,7 @@ public class Activator implements BundleActivator {
             helloWorldServiceTracker.addingService( sRef );
             HttpService service = (HttpService) context.getService( sRef );
             try {
-            	DispatcherServlet ds = new DispatcherServlet();
-            	ds.setContextConfigLocation("classpath:/spring/dispatch-servlet.xml");
-                service.registerServlet( "/spring", ds, null, null );
+                service.registerServlet( "/helloworld", new HelloWorldServlet( helloWorldServiceTracker ), null, null );
             } catch ( Exception e ) {
                 e.printStackTrace();
             }
