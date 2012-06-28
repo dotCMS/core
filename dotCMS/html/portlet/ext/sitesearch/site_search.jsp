@@ -377,6 +377,54 @@ function doDeactivateIndex(indexName){
 
 }
 
+function doCloseIndex(indexName){
+    
+    var xhrArgs = {
+    
+        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/closeIndex/indexName/" + indexName,
+
+        handleAs: "text",
+        handle : function(dataOrError, ioArgs) {
+            if (dojo.isString(dataOrError)) {
+                if (dataOrError.indexOf("FAILURE") == 0) {
+                    showDotCMSSystemMessage(dataOrError, true);
+                } else {
+                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Closed")%>", true);
+                    refreshIndexStats();
+                }
+            } else {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+            }
+        }
+    };
+    dojo.xhrPost(xhrArgs);
+
+}
+
+function doOpenIndex(indexName){
+    
+    var xhrArgs = {
+    
+        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/openIndex/indexName/" + indexName,
+
+        handleAs: "text",
+        handle : function(dataOrError, ioArgs) {
+            if (dojo.isString(dataOrError)) {
+                if (dataOrError.indexOf("FAILURE") == 0) {
+                    showDotCMSSystemMessage(dataOrError, true);
+                } else {
+                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Opened")%>", true);
+                    refreshIndexStats();
+                }
+            } else {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+            }
+        }
+    };
+    dojo.xhrPost(xhrArgs);
+
+}
+
 function hideRestoreIndex() {
     dijit.byId("restoreIndexDialog").hide();
 }
@@ -804,6 +852,10 @@ function  resizeBrowser(){
 	.dotForm label {position: absolute; text-align:right; width:6em;}
 	.dotForm .dotFormInput {margin-left: 7em;}
 	.listingTable td{word-wrap: break-word;}
+	.highlight td {
+	    background: #94BBFF;
+	    color: white !important;
+	}
 </style>
 
 

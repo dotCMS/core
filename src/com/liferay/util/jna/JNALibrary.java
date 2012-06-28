@@ -9,7 +9,7 @@ public class JNALibrary {
 	public static void link(String sourceFile, String destinationFile) throws IOException {
 		if(Platform.isWindows()) {
 			try {
-				Kernel32Library.INSTANCE.CreateHardLinkA(destinationFile, sourceFile, null);
+				Kernel32Library.INSTANCE.CreateHardLink(destinationFile, sourceFile, null);
 			} catch(UnsatisfiedLinkError e) {
 				createHardLinkWithExec(sourceFile, destinationFile);
 			}
@@ -20,7 +20,7 @@ public class JNALibrary {
 
 	public static void unlink(String file) {
 		if(Platform.isWindows()) {
-			Kernel32Library.INSTANCE.DeleteFileA(file);
+			Kernel32Library.INSTANCE.DeleteFile(file);
 		} else  {
 			CLibrary.INSTANCE.unlink(file);
 		}
