@@ -1,11 +1,14 @@
 package com.dotcms.rest;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,6 +32,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 @Path("/content")
@@ -63,7 +71,7 @@ public class ContentResource extends WebResource {
 				language= Long.parseLong(params.get(LANGUAGE))	;
 			}
 			catch(Exception e){
-				Logger.error(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+				Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
 			}
 		}
 
@@ -72,7 +80,7 @@ public class ContentResource extends WebResource {
 		try {
 			user = authenticateUser(username, password);
 		} catch (Exception e) {
-			Logger.error(this, "Error authenticating user, username: " + username + ", password: " + password);
+			Logger.warn(this, "Error authenticating user, username: " + username + ", password: " + password);
 		}
 
 		/* Limit and Offset Parameters Handling, if not passed, using default */
@@ -113,11 +121,11 @@ public class ContentResource extends WebResource {
 			}
 		} catch (Exception e) {
 			if(idPassed) {
-				Logger.error(this, "Can't find Content with Identifier: " + id);
+				Logger.warn(this, "Can't find Content with Identifier: " + id);
 			} else if(queryPassed) {
-				Logger.error(this, "Can't find Content with Inode: " + inode);
+				Logger.warn(this, "Can't find Content with Inode: " + inode);
 			} else if(inodePassed) {
-				Logger.error(this, "Error searching Content : "  + e.getMessage());
+				Logger.warn(this, "Error searching Content : "  + e.getMessage());
 			}
 		}
 
@@ -130,23 +138,24 @@ public class ContentResource extends WebResource {
 				result = getJSON(cons, request, response, render);
 			}
 		} catch (Exception e) {
-			Logger.error(this, "Error converting result to XML/JSON");
+			Logger.warn(this, "Error converting result to XML/JSON");
 		}
 
 		return result;
 	}
 
 
-	@SuppressWarnings({ "unchecked", "deprecation", "rawtypes" })
+	@SuppressWarnings({ "deprecation" })
 	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws DotDataException, IOException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
+		xstream.registerConverter(new MapEntryConverter());
 		StringBuilder sb = new StringBuilder();
 		sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
 		sb.append("<contentlets>");
 
 		for(Contentlet c : cons){
-			Map m = c.getMap();
+			Map<String, Object> m = c.getMap();
 			Structure s = c.getStructure();
 
 			for(Field f : s.getFields()){
@@ -175,7 +184,7 @@ public class ContentResource extends WebResource {
 			try {
 				jsonCons.put(contentletToJSON(c, request, response, render));
 			} catch (Exception e) {
-				Logger.error(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
+				Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 				Logger.debug(this.getClass(), "unable to find contentlet", e);
 			}
 		}
@@ -183,7 +192,7 @@ public class ContentResource extends WebResource {
 		try {
 			json.put("contentlets", jsonCons);
 		} catch (JSONException e) {
-			Logger.error(this.getClass(), "unable to create JSONObject");
+			Logger.warn(this.getClass(), "unable to create JSONObject");
 			Logger.debug(this.getClass(), "unable to create JSONObject", e);
 		}
 
@@ -218,4 +227,32 @@ public class ContentResource extends WebResource {
 	}
 
 	final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
+
+	public class MapEntryConverter implements Converter{
+		public boolean canConvert(@SuppressWarnings("rawtypes") Class clazz) {
+		    return AbstractMap.class.isAssignableFrom(clazz);
+		}
+
+		public void marshal(Object value, HierarchicalStreamWriter writer, MarshallingContext context) {
+		    @SuppressWarnings("unchecked")
+			Map<String,Object> map = (Map<String,Object>) value;
+		    for (Entry<String,Object> entry : map.entrySet()) {
+		        writer.startNode(entry.getKey().toString());
+		        writer.setValue(entry.getValue()!=null?entry.getValue().toString():"");
+		        writer.endNode();
+		    }
+		}
+
+		public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+		    Map<String, String> map = new HashMap<String, String>();
+
+		    while(reader.hasMoreChildren()) {
+		        reader.moveDown();
+		        map.put(reader.getNodeName(), reader.getValue());
+		        reader.moveUp();
+		    }
+		    return map;
+		}
+
+	}
 }
