@@ -4,13 +4,14 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
-import com.dotmarketing.util.Logger;
+import javax.servlet.ServletContext;
 
 public class HostActivator implements BundleActivator {
 	
     private BundleContext m_context = null;
+    private ServletContext servletContext;
 
-	private static HostActivator instance;
+    private static HostActivator instance;
 
 	private HostActivator() {
 	}
@@ -22,13 +23,21 @@ public class HostActivator implements BundleActivator {
 	}
 	
     public void start(BundleContext context) {
+
+        if ( servletContext != null ) {
+            servletContext.setAttribute( BundleContext.class.getName(), context );
+        }
         m_context = context;
     }
 
     public void stop(BundleContext context) {
         m_context = null;
     }
-    
+
+    public void setServletContext ( ServletContext servletContext ) {
+        this.servletContext = servletContext;
+    }
+
     public BundleContext getBundleContext() {
     	return m_context;
     }
@@ -38,4 +47,5 @@ public class HostActivator implements BundleActivator {
             return m_context.getBundles();
         return null;
     }
+
 }
