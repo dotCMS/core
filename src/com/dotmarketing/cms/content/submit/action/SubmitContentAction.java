@@ -190,10 +190,10 @@ public class SubmitContentAction extends DispatchAction{
 				String fieldTypeStr = field!=null?field.getFieldType():"";
 				Field.FieldType fieldType =  Field.FieldType.getFieldType(fieldTypeStr);
 				String[] fieldValues = request.getParameterValues(parameterName);
-				String value = "";
+				StringBuilder value = new StringBuilder();
 				if(fieldValues.length>1){
 					for(String val:fieldValues){
-						value+=","+val;
+						value.append(",").append(val);
 					}
 					parameters.put(parameterName,value.substring(1));
 				}else{
