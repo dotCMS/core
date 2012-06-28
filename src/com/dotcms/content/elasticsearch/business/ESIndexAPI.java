@@ -24,16 +24,17 @@ import org.apache.tools.zip.ZipEntry;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
@@ -52,14 +53,13 @@ import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.cluster.metadata.IndexMetaData.State;
 import org.elasticsearch.cluster.metadata.MetaData;
-import org.elasticsearch.common.io.stream.Streamable;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
@@ -618,4 +618,26 @@ public class ESIndexAPI {
         return mapReverse;
     }
     
+    public void closeIndex(String indexName) {
+        Client client=new ESClient().getClient();
+        client.admin().indices().close(new CloseIndexRequest(indexName)).actionGet();
+    }
+    
+    public void openIndex(String indexName) {
+        Client client=new ESClient().getClient();
+        client.admin().indices().open(new OpenIndexRequest(indexName)).actionGet();
+    }
+    
+    public List<String> getClosedIndexes() {
+        Client client=new ESClient().getClient();
+        Map<String,IndexMetaData> indexState=client.admin().cluster().prepareState().execute().actionGet()
+                                                           .getState().getMetaData().indices();
+        List<String> closeIdx=new ArrayList<String>();
+        for(String idx : indexState.keySet()) {
+            IndexMetaData idxM=indexState.get(idx);
+            if(idxM.getState().equals(State.CLOSE))
+                closeIdx.add(idx);
+        }
+        return closeIdx;
+    }
 }

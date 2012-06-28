@@ -88,5 +88,7 @@ public interface ContentletIndexAPI {
 	public List<String> getCurrentIndex() throws DotDataException;
 
 	public List<String> getNewIndex() throws DotDataException;
+	
+	public List<String> listDotCMSClosedIndices();
 
 }
