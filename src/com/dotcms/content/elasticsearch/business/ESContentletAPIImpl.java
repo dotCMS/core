@@ -1954,7 +1954,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentlet.setModUser(user.getUserId());
 				// start up workflow
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
-				WorkflowProcessor workflow = wapi.fireWorkflowPreCheckin(contentlet);
+				WorkflowProcessor workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
 
 				workingContentlet = contentlet;
 				if(createNewVersion)
