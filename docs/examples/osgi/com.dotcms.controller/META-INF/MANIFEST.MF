@@ -18,5 +18,6 @@ Import-Package: org.osgi.framework,
  org.springframework.web.bind.annotation,
  org.springframework.web.context,
  org.springframework.web.servlet,
- org.springframework.web.servlet.mvc.annotation
+ org.springframework.web.servlet.mvc.annotation,
+ com.dotmarketing.filters
 Provide-Package: com.dotmarketing.osgi.controller
