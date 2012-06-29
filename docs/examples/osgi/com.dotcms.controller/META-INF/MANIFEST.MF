@@ -5,7 +5,6 @@ Bundle-ManifestVersion: 2
 Bundle-SymbolicName: springosgi
 Bundle-Version: 2.5.1
 Bundle-Activator: com.dotmarketing.osgi.controller.Activator
-Import-Library: org.springframework.spring
 Import-Package: org.osgi.framework,
  javax.servlet,
  javax.inject.Qualifier,
@@ -38,4 +37,3 @@ Import-Package: org.osgi.framework,
  org.aopalliance.intercept,
  com.dotcms.spring.web,
  com.dotmarketing.filters
-Provide-Package: com.dotmarketing.osgi.controller
