@@ -69,7 +69,7 @@ public class WfTaskAjax extends WfBaseAction {
 				c.setStringProperty("wfActionAssign", wfActionAssign);
 				
 				
-				wapi.fireWorkflowNoCheckin(c);
+				wapi.fireWorkflowNoCheckin(c, getUser());
 			}
 
 		} catch (Exception e) {
@@ -153,7 +153,7 @@ public class WfTaskAjax extends WfBaseAction {
 					con.setStringProperty("wfActionComments", wfActionComments);
 					con.setStringProperty("wfActionAssign", wfActionAssign);
 					
-					wapi.fireWorkflowNoCheckin(con);
+					wapi.fireWorkflowNoCheckin(con, getUser());
 					
 				}
 				

@@ -288,7 +288,7 @@ public class BrowserAjax {
 			c.setStringProperty("wfActionComments", wfActionComments);
 			c.setStringProperty("wfActionAssign", wfActionAssign);
 
-			wapi.fireWorkflowNoCheckin(c);
+			wapi.fireWorkflowNoCheckin(c, usr);
 
 		} catch (Exception e) {
 			Logger.error(BrowserAjax.class, e.getMessage(), e);
