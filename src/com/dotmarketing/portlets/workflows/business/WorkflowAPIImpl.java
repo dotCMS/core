@@ -726,8 +726,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return startTransaction;
     }
 
-	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException{
-		WorkflowProcessor processor = new WorkflowProcessor(contentlet);
+	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
+		WorkflowProcessor processor = new WorkflowProcessor(contentlet, user);
 		if(!processor.inProcess()){
 			return processor;
 		}
@@ -857,9 +857,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
-	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException{
+	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 
-		WorkflowProcessor processor =fireWorkflowPreCheckin(contentlet);
+		WorkflowProcessor processor =fireWorkflowPreCheckin(contentlet, user);
 
 		fireWorkflowPostCheckin(processor);
 		return processor;

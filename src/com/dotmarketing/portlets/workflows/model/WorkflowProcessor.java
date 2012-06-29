@@ -81,11 +81,11 @@ public class WorkflowProcessor {
 
 
 
-	public WorkflowProcessor(Contentlet contentlet) {
+	public WorkflowProcessor(Contentlet contentlet, User firingUser) {
 		this.contentlet = contentlet;
 
 		try {
-			user = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.getUserAPI().getSystemUser(), false);
+			this.user = firingUser;
 			scheme = getWorkflowAPI().findSchemeForStruct(contentlet.getStructure());
 			task = getWorkflowAPI().findTaskByContentlet(contentlet);
 			
@@ -148,14 +148,6 @@ public class WorkflowProcessor {
 				history = getWorkflowAPI().findWorkflowHistory(task);
 			}
 				
-				
-
-
-
-
-			
-
-
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage());
 		}
