@@ -24,15 +24,12 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -45,12 +42,11 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
-import com.dotmarketing.portlets.folders.business.ChildrenCondition;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
@@ -61,17 +57,13 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.BrowserAPI;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 
@@ -323,8 +315,9 @@ public class BrowserAjax {
 		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
-
-			Contentlet cont = contAPI.findContentletByIdentifier(ident.getId(),true, APILocator.getLanguageAPI().getDefaultLanguage().getId() , user, respectFrontendRoles);
+		    ContentletVersionInfo vinfo=APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		    boolean live = respectFrontendRoles || vinfo.getLiveInode()!=null;
+			Contentlet cont = contAPI.findContentletByIdentifier(ident.getId(),live, APILocator.getLanguageAPI().getDefaultLanguage().getId() , user, respectFrontendRoles);
 			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
 			java.io.File file = fileAsset.getFileAsset();
 			String mimeType = servletContext.getMimeType(file.getName().toLowerCase());
