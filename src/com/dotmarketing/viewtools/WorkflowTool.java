@@ -121,18 +121,18 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findActionlet(clazz);
 	}
 
-	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet) throws DotDataException, DotWorkflowException,
+	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet, User user) throws DotDataException, DotWorkflowException,
 			DotContentletValidationException {
-		return wapi.fireWorkflowPreCheckin(contentlet);
+		return wapi.fireWorkflowPreCheckin(contentlet, user);
 	}
 
 	public void fireWorkflowPostCheckin(WorkflowProcessor wflow) throws DotDataException, DotWorkflowException {
 		wapi.fireWorkflowPostCheckin(wflow);
 	}
 
-	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException, DotWorkflowException,
+	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException, DotWorkflowException,
 			DotContentletValidationException {
-		return wapi.fireWorkflowNoCheckin(contentlet);
+		return wapi.fireWorkflowNoCheckin(contentlet,user);
 	}
 
 }

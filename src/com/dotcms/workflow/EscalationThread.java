@@ -74,7 +74,7 @@ public class EscalationThread extends Thread {
                                 c.setStringProperty("wfActionId", action.getId());
                                 c.setStringProperty("wfActionComments", wfActionComments);
                                 c.setStringProperty("wfActionAssign", wfActionAssign);
-                                wapi.fireWorkflowNoCheckin(c);
+                                wapi.fireWorkflowNoCheckin(c, APILocator.getUserAPI().getSystemUser());
                             }
                         }
                         HibernateUtil.commitTransaction();
