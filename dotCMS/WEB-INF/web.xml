@@ -245,9 +245,6 @@
 	<listener>
 		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
 	</listener>
-    <!--<listener>
-        <listener-class>com.dotmarketing.listeners.FelixStartupListener</listener-class>
-    </listener>-->
     <listener>
         <listener-class>org.apache.felix.http.proxy.ProxyListener</listener-class>
     </listener>
