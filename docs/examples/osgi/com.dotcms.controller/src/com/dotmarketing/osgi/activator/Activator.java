@@ -1,4 +1,4 @@
-package com.dotmarketing.osgi.controller;
+package com.dotmarketing.osgi.activator;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;

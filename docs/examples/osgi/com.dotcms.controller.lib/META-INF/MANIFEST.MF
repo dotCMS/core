@@ -1,10 +1,11 @@
 Manifest-Version: 1.0
-Bundle-Name: Example Spring controller
+Bundle-Name: Example Spring controller Lib
 Bundle-Description: Static.Manifest
 Bundle-ManifestVersion: 2
-Bundle-SymbolicName: springosgi
+Bundle-SymbolicName: Spring OSGI Lib
 Bundle-Version: 2.5.1
-Bundle-Activator: com.dotmarketing.osgi.activator.Activator
+Export-Package: com.dotmarketing.osgi.controller
+Provide-Package: com.dotmarketing.osgi.controller
 Import-Package: org.osgi.framework,
  javax.servlet,
  javax.inject.Qualifier,
@@ -36,5 +37,4 @@ Import-Package: org.osgi.framework,
  org.aopalliance.aop,
  org.aopalliance.intercept,
  com.dotcms.spring.web,
- com.dotmarketing.osgi.controller,
  com.dotmarketing.filters
