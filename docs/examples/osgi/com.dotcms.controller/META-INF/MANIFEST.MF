@@ -5,6 +5,7 @@ Bundle-ManifestVersion: 2
 Bundle-SymbolicName: springosgi
 Bundle-Version: 2.5.1
 Bundle-Activator: com.dotmarketing.osgi.controller.Activator
+Export-Package: com.dotmarketing.osgi.*
 Import-Package: org.osgi.framework,
  javax.servlet,
  javax.inject.Qualifier,
