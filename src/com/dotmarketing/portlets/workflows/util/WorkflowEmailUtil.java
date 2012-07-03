@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.util;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -67,7 +68,7 @@ public class WorkflowEmailUtil {
 			String link = "http://" + host.getHostname() + Config.getStringProperty("WORKFLOWS_URL") + "&_EXT_21_inode="
 					+ String.valueOf(processor.getTask().getId());
 
-			InvocationHandler dotInvocationHandler = new DotInvocationHandler();
+			InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
 
 			DotRequestProxy requestProxy = (DotRequestProxy) Proxy.newProxyInstance(DotRequestProxy.class.getClassLoader(),
 					new Class[] { DotRequestProxy.class }, dotInvocationHandler);

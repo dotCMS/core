@@ -571,7 +571,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		 * TODO: I don't think it will work - jorge.urdaneta
 		 */
 
-		InvocationHandler dotInvocationHandler = new DotInvocationHandler();
+		InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
 
 		DotRequestProxy requestProxy = (DotRequestProxy) Proxy
 				.newProxyInstance(DotRequestProxy.class.getClassLoader(),
