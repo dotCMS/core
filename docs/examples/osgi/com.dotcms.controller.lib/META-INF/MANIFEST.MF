@@ -4,7 +4,7 @@ Bundle-Description: Static.Manifest
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: Spring OSGI Lib
 Bundle-Version: 2.5.1
-Export-Package: com.dotmarketing.osgi.controller
+Export-Package: com.dotmarketing.osgi.controller.ExampleController
 Provide-Package: com.dotmarketing.osgi.controller
 Import-Package: org.osgi.framework,
  javax.servlet,
