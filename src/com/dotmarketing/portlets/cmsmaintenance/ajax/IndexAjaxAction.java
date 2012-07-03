@@ -33,15 +33,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceAction;
-import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -404,39 +398,11 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 
 	public void stopReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
-
-		try {
-			ReindexThread.getInstance().stopFullReindexation();
-			response.getWriter().println("true");
-		} catch (DotDataException e) {
-			response.getWriter().println("false");
-		}
-
+		ReindexThread.stopThread();
 	}
 
 	public void startReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		String resp = "false";
-
-		try {
-			try{
-				int shards = Config.getIntProperty("es.index.number_of_shards", 2);
-				System.setProperty("es.index.number_of_shards", String.valueOf(shards));
-				Logger.info(this, "Running Contentlet Reindex");
-				HibernateUtil.startTransaction();
-				APILocator.getContentletAPI().reindex();
-				HibernateUtil.commitTransaction();
-				AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
-				resp = "true";
-			}catch(DotReindexStateException dre){
-				Logger.warn(this, "Content Reindexation Failed caused by: "+ dre.getMessage());
-				HibernateUtil.rollbackTransaction();
-			}
-		} catch (DotHibernateException e) {
-			Logger.warn(this, e.getMessage());
-		}
-
-		response.getWriter().println(resp);
-
+		ReindexThread.stopThread();
 	}
 
 	public void getReindexThreadStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
