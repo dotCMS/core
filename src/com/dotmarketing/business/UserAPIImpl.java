@@ -105,8 +105,13 @@ public class UserAPIImpl implements UserAPI {
 		try {
 			user = uf.loadUserById("system");
 		} catch (NoSuchUserException e) {
-			new Task00003CreateSystemRoles().executeUpgrade();
-			user = uf.loadUserById("system");
+		    user = createUser("system", "system@dotcmsfakeemail.org");
+            user.setUserId("system");
+            user.setFirstName("system user");
+            user.setLastName("system user");
+            user.setCreateDate(new java.util.Date());
+            user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
+            uf.saveUser(user);
 		}
 		if(!roleAPI.doesUserHaveRole(user, cmsAdminRole))
 			roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
