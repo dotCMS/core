@@ -506,13 +506,6 @@ public class SubmitContentUtil {
 					contentlet = addFileToContentlet(contentlet, field,host, uploadedFile, user, title);
 				}
 			}
-			if(autoPublish){//DOTCMS-5188
-				contentlet = conAPI.checkinWithoutVersioning(contentlet, relationships, cats, permissionList, user, true);
-				conAPI.publish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
-			}else{
-				contentlet = conAPI.checkinWithoutVersioning(contentlet, relationships, cats, permissionList, user, true);
-				conAPI.unpublish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
-			}
 		}
 
 

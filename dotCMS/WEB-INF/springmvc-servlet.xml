@@ -14,6 +14,6 @@
  
 	<bean id="viewResolver" class="com.dotcms.spring.web.DotViewResolver" >
 		<property name="prefix" value="/application/spring/" />
-		<property name="suffix" value=".dot" />
+		<property name="suffix" value=".html" />
 	</bean>
 </beans>

@@ -3,8 +3,10 @@ package com.dotmarketing.sitesearch.business;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.search.facet.Facet;
 import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
@@ -56,4 +58,8 @@ public interface SiteSearchAPI {
 	void executeTaskNow(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException;
 
 	SiteSearchResult getFromIndex(String index, String id);
+
+	Map<String, Facet> getFacets(String indexName, String query) throws DotDataException;
+
+    List<String> listClosedIndices();
 }

@@ -43,8 +43,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
 import com.dotmarketing.util.Logger;
-import com.liferay.util.jna.CLibrary;
+import com.liferay.util.jna.JNALibrary;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -96,7 +99,7 @@ public class FileUtil {
 			}
 		}
 	}
-		
+
 	public static void copyDirectory(File source, File destination) {
 		copyDirectory(source, destination, false);
 	}
@@ -110,7 +113,7 @@ public class FileUtil {
 	public static void copyFile(File source, File destination) {
 		copyFile(source, destination, false);
 	}
-	
+
 	public static void copyFile(File source, File destination, boolean hardLinks) {
 		if (!source.exists()) {
 			return;
@@ -121,13 +124,20 @@ public class FileUtil {
 
 			destination.getParentFile().mkdirs();
 		}
-		
+
 		if ( hardLinks ) {
 			// I think we need to be sure to unlink first
 			if(destination.exists()){
-				CLibrary.INSTANCE.unlink(destination.getAbsolutePath());
+				JNALibrary.unlink(destination.getAbsolutePath());
 			}
-			CLibrary.INSTANCE.link(source.getAbsolutePath(), destination.getAbsolutePath());
+			else  {
+				try {
+					JNALibrary.link(source.getAbsolutePath(), destination.getAbsolutePath());
+				} catch (IOException e) {
+					Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+							+ ", destination: " + destination.getAbsolutePath());
+				}
+			}
 		}
 		else {
 			try {
@@ -194,7 +204,7 @@ public class FileUtil {
 			}
 		}
 	}
-	
+
 	public static void deltree(File directory) {
 		deltree(directory, true);
 	}
@@ -277,14 +287,44 @@ public class FileUtil {
 		return listFiles(new File(fileName));
 	}
 
-	public static String[] listFiles(File file) throws IOException {
-		List files = new ArrayList();
+	public static String[] listFiles(String fileName, Boolean includeSubDirs) throws IOException {
+		return listFiles(new File(fileName), includeSubDirs);
+	}
 
-		File[] fileArray = file.listFiles();
+	public static boolean containsParentFolder(File file, File[] folders) {
+		for (File folder : Arrays.asList(folders)) {
 
-		for (int i = 0; i < fileArray.length; i++) {
-			if (fileArray[i].isFile()) {
-				files.add(fileArray[i].getName());
+			if(file.getParent().equalsIgnoreCase(folder.getPath())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public static String[] listFiles(File dir) throws IOException {
+		return listFiles(dir, false);
+	}
+
+	public static String[] listFiles(File dir, Boolean includeSubDirs) throws IOException {
+		 FileFilter fileFilter = new FileFilter() {
+		        public boolean accept(File file) {
+		            return file.isDirectory();
+		        }
+		    };
+		File[] subFolders = dir.listFiles(fileFilter);
+
+		List<String> files = new ArrayList<String>();
+
+		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE));
+
+		for (File file : fileArray) {
+			if(file.isFile()) {
+				if(includeSubDirs && containsParentFolder(file, subFolders)) {
+					files.add(file.getParentFile().getName() + File.separator + file.getName());
+				} else {
+					files.add(file.getName());
+				}
 			}
 		}
 
@@ -433,7 +473,7 @@ public class FileUtil {
 		String finalVal;
 		long filesize = fileName.length();
 		BigDecimal size = new BigDecimal(filesize);
-		BigDecimal byteVal = null;	
+		BigDecimal byteVal = null;
 		BigDecimal changedByteVal = null;
 		finalVal = "";
 		if(filesize <= 0){
@@ -463,9 +503,9 @@ public class FileUtil {
 				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" TB";
 			}
 		}
-		return finalVal;		
+		return finalVal;
 	}
-	
+
 	/**
 	  * Recursively walk a directory tree and return a List of all
 	  * Files found; the List is sorted using File.compareTo().
@@ -475,9 +515,9 @@ public class FileUtil {
 	  static public List<File> listFilesRecursively(File aStartingDir) throws FileNotFoundException {
 		    return listFilesRecursively(aStartingDir, null);
 	  }
-	
-	
-	
+
+
+
 	/**
 	  * Recursively walk a directory tree and return a List of all
 	  * Files found; the List is sorted using File.compareTo().
@@ -490,12 +530,12 @@ public class FileUtil {
 		    Collections.sort(result);
 		    return result;
 	  }
-	  
-	  
+
+
 	  // PRIVATE //
 	  static private List<File> getFileListingNoSort(File aStartingDir, FileFilter filter) throws FileNotFoundException {
 	    List<File> result = new ArrayList<File>();
-	  
+
 	    File[] filesAndDirs = null;
 	    if(filter !=null){
 	    	filesAndDirs = aStartingDir.listFiles(filter);
@@ -533,5 +573,5 @@ public class FileUtil {
 	       throw new IllegalArgumentException("Directory cannot be read: " + aDirectory);
 	     }
 	   }
-	 
+
 }

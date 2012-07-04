@@ -18,6 +18,7 @@ import com.dotmarketing.beans.ChallengeQuestion;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -54,9 +55,13 @@ public class CMSUsersWebAPI implements ViewTool {
 		ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest();
 		ctx = context.getVelocityContext();
-		HttpSession ses = request.getSession(false);
-		if (ses != null)
-			user = (User) ses.getAttribute(WebKeys.CMS_USER);
+
+		try {
+			user = WebAPILocator.getUserWebAPI().getLoggedInUser(this.request);
+		} catch (Exception e) {
+			Logger.debug(CMSUsersWebAPI.class,e.getMessage(),e);
+		}
+
 
 	}
 
@@ -440,4 +445,22 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 
+	/**
+	 * This method return true|false if the user has
+	 * a specific role (by key)
+	 * @param roleKey String the key of the role
+	 * @return boolean
+	 * @throws DotDataException 
+	 */
+	public boolean hasRole(String roleKey) throws DotDataException {
+
+		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadRoleByKey(roleKey));
+
+	}
+	
+	
+	
+	
+	
+	
 }
