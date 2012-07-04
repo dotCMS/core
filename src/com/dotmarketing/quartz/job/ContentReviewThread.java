@@ -77,15 +77,15 @@ public class ContentReviewThread implements Runnable, Job {
                 	
                 	if(UtilMethods.isSet(task.getAssignedTo())){
                 		// If a task exists for this content, placing a comment and an email to review the content.
-                		WorkflowProcessor processor = new WorkflowProcessor(cont);
-    					WorkflowComment comment = new WorkflowComment();
+                		
     					String assignedTo = task.getAssignedTo();
     					
     					// add the user if assign is a user
     					Set<String> recipients = new HashSet<String>();
+    					User usr=null;
     					try {
-    						recipients.add(userAPI
-    								.loadUserById(assignedTo, userAPI.getSystemUser(), false).getEmailAddress());
+    					    usr=userAPI.loadUserById(task.getAssignedTo(), userAPI.getSystemUser(), false);
+    						recipients.add(usr.getEmailAddress());
     					} catch (Exception e) {
 
     					}
@@ -96,12 +96,16 @@ public class ContentReviewThread implements Runnable, Job {
     						for(User u : users){
     							recipients.add(u.getEmailAddress());
     						}
+    						usr=systemUser;
     					} catch (Exception e) {
 
     					}
     					
     					String[] to = (String[]) recipients.toArray(new String[recipients.size()]);
 
+    					WorkflowProcessor processor = new WorkflowProcessor(cont,usr);
+                        WorkflowComment comment = new WorkflowComment();
+    					
     					// Commenting on task to review
     					comment.setComment(LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "Please-review-this-content-comment"));    					
     					comment.setWorkflowtaskId(task.getId());

@@ -88,6 +88,9 @@ public class CacheLocator extends Locator<CacheIndex>{
                 throw new RuntimeException(e);
             }
         }
+        public DotCacheAdministrator getImplementationObject() {
+            return dotcache;
+        }
     }
     
 	private static CacheLocator instance;

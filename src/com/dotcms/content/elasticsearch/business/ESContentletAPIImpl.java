@@ -483,12 +483,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
         contents.setTotalResults(list.getTotalResults());
-        String[] identifiers = new String[list.size()];
-        int count = 0;
+        
+        List<String> identifierList = new ArrayList<String>();
         for(ContentletSearch conwrap: list){
-            identifiers[count] = conwrap.getIdentifier();
-            count++;
+            String ident=conwrap.getIdentifier();
+            Identifier ii=APILocator.getIdentifierAPI().find(ident);
+            if(ii!=null && UtilMethods.isSet(ii.getId()))
+                identifierList.add(ident);
         }
+        String[] identifiers=new String[identifierList.size()];
+        identifiers=identifierList.toArray(identifiers);
 
         List<Contentlet> contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
@@ -1950,7 +1954,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentlet.setModUser(user.getUserId());
 				// start up workflow
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
-				WorkflowProcessor workflow = wapi.fireWorkflowPreCheckin(contentlet);
+				WorkflowProcessor workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
 
 				workingContentlet = contentlet;
 				if(createNewVersion)

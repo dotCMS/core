@@ -50,6 +50,8 @@ try {
 
 
 List<String> indices=ssapi.listIndices();
+List<String> closedIndices=ssapi.listClosedIndices();
+
 Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
 Map<String, String> alias = esapi.getIndexAlias(indexInfo.keySet().toArray(new String[indexInfo.size()]));
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
@@ -154,6 +156,29 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<td align="center"><div  style='background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
 				</tr>
 			<%} %>
+			
+			<% for(String x : closedIndices) { %>
+			    <%   Date d = null;
+                    String myDate = null;
+                    try {
+                         myDate = x.split("_")[1];
+                         d = dater.parse(myDate);
+                         myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+                    }
+                    catch(Exception e){}%>
+			    <tr class="trIdxNothing pointer" id="<%=x%>Row">
+                    <td  align="center" class="showPointer" >
+                       <%= LanguageUtil.get(pageContext,"Closed") %>
+                    </td>
+                    <td  class="showPointer" ><%=x %></td>
+                    <td><%= alias.get(x) == null ? "": alias.get(x)%></td>
+                    <td><%=UtilMethods.webifyString(myDate) %></td>
+
+                    <td colspan="5" align="center">
+                        n/a
+                    </td>
+                </tr>
+			<% } %>
 			<tr>
 				<td colspan="15" align="center" style="padding:20px;"><a href="#" onclick="refreshIndexStats()"><%= LanguageUtil.get(pageContext,"refresh") %></a></td>
 			</tr>
@@ -192,6 +217,10 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 				 		<span class="publishIcon"></span>
 				 		<%= LanguageUtil.get(pageContext,"Make-Default") %>
 				 	</div>
+				 	<div dojoType="dijit.MenuItem" onclick="doCloseIndex('<%=x%>', false)" class="showPointer">
+	                     <span class="deleteIcon"></span>
+	                     <%= LanguageUtil.get(pageContext,"Close-Index") %>
+	                 </div>
 				 	<div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', false)" class="showPointer">
 				 		<span class="deleteIcon"></span>
 				 		<%= LanguageUtil.get(pageContext,"Delete-Index") %>
@@ -206,8 +235,20 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			</div>
 		<%} %>
 
-
-
+        <% for(String x : closedIndices) { %>
+            <div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
+                 targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
+                 <div dojoType="dijit.MenuItem" onclick="doOpenIndex('<%=x%>', false)" class="showPointer">
+                     <span class="publishIcon"></span>
+                     <%= LanguageUtil.get(pageContext,"Open-Index") %>
+                 </div>
+                 
+                 <div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', false)" class="showPointer">
+                       <span class="deleteIcon"></span>
+                       <%= LanguageUtil.get(pageContext,"Delete-Index") %>
+                 </div>
+            </div>
+        <% } %>
 
 		<div data-dojo-type="dijit.Dialog" style="width:400px;" id="restoreIndexDialog">
 		    <img id="uploadProgress" src="/html/images/icons/round-progress-bar.gif"/>
@@ -224,24 +265,17 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			          label="Select File" id="restoreIndexUploader"
 			          showProgress="true"
 			          onComplete="restoreUploadCompleted()"/>
-
-			   <span id="uploadWarningWorking">
-			      <span class="exclamation"></span>
-			      <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Working-Index-Data") %>
-			   </span>
-
-			   <span id="uploadWarningLive">
-			      <span class="exclamation"></span>
-			      <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Live-Index-Data") %>
-			   </span>
-
 			   <br/>
 
 			   <input type="checkbox" name="clearBeforeRestore"/><%= LanguageUtil.get(pageContext,"Clear-Existing-Data") %>
 		   </form>
 		   <br/>
 
-
+           <button id="uploadSubmit" data-dojo-type="dijit.form.Button" type="button">
+              <span class="uploadIcon"></span>
+              <%= LanguageUtil.get(pageContext,"Upload-File") %>
+              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndex();</script>
+           </button>
 
 		   <button data-dojo-type="dijit.form.Button" type="button">
 		      <span class="deleteIcon"></span>

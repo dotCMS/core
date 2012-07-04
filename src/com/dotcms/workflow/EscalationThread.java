@@ -2,6 +2,7 @@ package com.dotcms.workflow;
 
 import java.util.List;
 
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -24,6 +25,10 @@ public class EscalationThread extends Thread {
     
     @Override
     public void run() {
+    	// if we don't have workflows, no need for this thread.
+        if(LicenseUtil.getLevel()<200){
+            return ;
+        }
         if(Config.getBooleanProperty("ESCALATION_ENABLE",false)) {
             final int interval=Config.getIntProperty("ESCALATION_CHECK_INTERVAL_SECS",600);
             final String wfActionAssign=Config.getStringProperty("ESCALATION_DEFAULT_ASSIGN","");
@@ -69,7 +74,7 @@ public class EscalationThread extends Thread {
                                 c.setStringProperty("wfActionId", action.getId());
                                 c.setStringProperty("wfActionComments", wfActionComments);
                                 c.setStringProperty("wfActionAssign", wfActionAssign);
-                                wapi.fireWorkflowNoCheckin(c);
+                                wapi.fireWorkflowNoCheckin(c, APILocator.getUserAPI().getSystemUser());
                             }
                         }
                         HibernateUtil.commitTransaction();

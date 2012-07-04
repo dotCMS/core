@@ -185,10 +185,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				    for(var i = 0; i < option.length; i++){
 				       var actual_option = option[i].split("|");
 				       if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-				       		result = result + "<input type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
+				       		result = result + "<input type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field-R"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
 				       		 if(!this.radiobuttonsIds[this.dialogCounter])
 				       			this.radiobuttonsIds[this.dialogCounter]=new Array();
-				       		 this.radiobuttonsIds[this.dialogCounter][this.radiobuttonsIds[this.dialogCounter].length] = this.structureVelVar+"."+fieldVelocityVarName + "Field"+ this.counter_radio;
+				       		 this.radiobuttonsIds[this.dialogCounter][this.radiobuttonsIds[this.dialogCounter].length] = this.structureVelVar+"."+fieldVelocityVarName + "Field-R"+ this.counter_radio;
 
 				       		 this.setDotFieldTypeStr = this.setDotFieldTypeStr 
 			 						+ "dojo.attr("
