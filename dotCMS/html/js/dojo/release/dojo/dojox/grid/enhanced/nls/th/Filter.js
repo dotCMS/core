@@ -1,7 +1,9 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/th/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "ลบตัวกรอง",
 	"filterDefDialogTitle": "ตัวกรอง",
-	"incompleteRuleTip": "กฏนี้ยังไม่สมบูรณ์",
 	"ruleTitleTemplate": "กฏ ${0}",
 	
 	"conditionEqual": "เท่ากับ",
@@ -21,6 +23,7 @@
 	"conditionBefore": "ก่อน",
 	"conditionAfter": "หลัง",
 	"conditionRange": "ช่วง",
+	"conditionIsEmpty": "ว่างอยู่",
 	
 	"all": "ทั้งหมด",
 	"any": "ใด",
@@ -62,8 +65,8 @@
 	"anycolumn": "คอลัมน์ใดๆ",
 	"statusTipTitleNoFilter": "แถบตัวกรอง",
 	"statusTipTitleHasFilter": "ตัวกรอง",
-	"statusTipRelPre": "ตรงกับ",
-	"statusTipRelPost": "กฏ",
+	"statusTipRelAny": "ตรงกับกฏใดๆ",
+	"statusTipRelAll": "ตรงกับทุกกฏ",
 	
 	"defaultItemsName": "ไอเท็ม",
 	"filterBarMsgHasFilterTemplate": "${0} ของ ${1} ${2} จะถูกแสดง",
@@ -79,10 +82,8 @@
 	"clearFilterMsg": "ซึ่งจะลบตัวกรองออกและแสดงเร็กคอร์ดที่พร้อมใช้งานทั้งหมด",
 	"anyColumnOption": "คอลัมน์ใดๆ",
 	
-	"trueLabelEditable": "ได้รับการตรวจสอบ",
 	"trueLabel": "จริง",
 	"falseLabel": "เท็จ"
 })
-
-
-
+//end v1.x content
+);

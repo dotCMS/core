@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/ja/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "フィルターのクリア",
 	"filterDefDialogTitle": "フィルター",
@@ -62,8 +65,8 @@
 	"anycolumn": "いずれかの列",
 	"statusTipTitleNoFilter": "フィルター・バー",
 	"statusTipTitleHasFilter": "フィルター",
-	"statusTipRelPre": "一致",
-	"statusTipRelPost": "ルール",
+	"statusTipRelAny": "いずれかのルールに一致。",
+	"statusTipRelAll": "すべてのルールに一致。",
 	
 	"defaultItemsName": "項目",
 	"filterBarMsgHasFilterTemplate": "${0}/${1} ${2} が表示されました。",
@@ -82,4 +85,5 @@
 	"trueLabel": "True",
 	"falseLabel": "False"
 })
-
+//end v1.x content
+);

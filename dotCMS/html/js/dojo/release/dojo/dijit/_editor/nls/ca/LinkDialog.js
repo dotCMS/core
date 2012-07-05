@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/ca/LinkDialog", //begin v1.x content
 ({
 	createLinkTitle: "Propietats de l\'enllaç",
 	insertImageTitle: "Propietats de la imatge",
@@ -11,3 +13,5 @@
 	topWindow: "Finestra superior",
 	newWindow: "Finestra nova"
 })
+//end v1.x content
+);

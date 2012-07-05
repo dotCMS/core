@@ -1,10 +1,2 @@
-if(!dojo._hasResource["dijit.form.RadioButton"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.form.RadioButton"] = true;
-dojo.provide("dijit.form.RadioButton");
-dojo.require("dijit.form.CheckBox");
-
-
-
-// TODO: for 2.0, move the RadioButton code into this file
-
-}
+//>>built
+define("dijit/form/RadioButton",["dojo/_base/declare","./CheckBox","./_RadioButtonMixin"],function(_1,_2,_3){return _1("dijit.form.RadioButton",[_2,_3],{baseClass:"dijitRadio"});});

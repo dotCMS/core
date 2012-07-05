@@ -619,5 +619,5 @@
 </div>
 
 <script type="text/javascript">
-resizeBrowser();
+dojo.ready(resizeBrowser);
 </script>

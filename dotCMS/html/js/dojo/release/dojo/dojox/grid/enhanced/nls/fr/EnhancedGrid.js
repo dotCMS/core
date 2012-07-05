@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/fr/EnhancedGrid", //begin v1.x content
 ({
 	singleSort: "Tri simple",
 	nestedSort: "Tri imbriqué",
@@ -9,4 +12,6 @@
 	indirectSelectionCheckBox: "Ligne ${0}, sélection multiple, case à cocher",
 	selectAll: "Tout sélectionner"
 })
+//end v1.x content
+);
 

@@ -435,19 +435,19 @@
 		var store = new dojo.data.ItemFileReadStore({ data: selectData });
 
 		if(dijit.byId('parentRole')) {
-			dijit.byId('parentRole').store = store;
-		} else {
-	        var filteringSelect = new dijit.form.FilteringSelect({
-	            id: "parentRole",
-	            name: "parentRole",
-	            store: store,
-	            searchAttr: "name",
-	            required: true,
-	            labelType: "html"
-	        },
-	        "parentRole");
-		}
-		
+			dijit.byId('parentRole').destroyRecursive(false);
+			dojo.place('<select id="parentRole"></select>', "parentRoleWrapper", "only");
+		}			
+
+        var filteringSelect = new dijit.form.FilteringSelect({
+            id: "parentRole",
+            name: "parentRole",
+            store: store,
+            searchAttr: "name",
+            required: true,
+            labelType: "html"
+        },
+        "parentRole");
         
 	}
 
@@ -459,7 +459,13 @@
 		
 		//setRoleName(null);
 		
-		dijit.byId('newRoleForm').reset();
+		dojo.byId('addRoleErrorMessagesList').innerHTML = '';
+		dijit.byId('roleName').reset();
+		dijit.byId('roleKey').reset();
+		dijit.byId('editUsers').reset();
+		dijit.byId('editPermissions').reset();
+		dijit.byId('editTabs').reset();
+		dijit.byId('roleDescription').reset();		
 		
 		if (currentRoleId)
 			dijit.byId('parentRole').attr('value', currentRoleId);

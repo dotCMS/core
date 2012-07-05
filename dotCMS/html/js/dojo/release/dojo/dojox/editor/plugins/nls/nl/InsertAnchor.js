@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/nl/InsertAnchor", //begin v1.x content
 ({
 	insertAnchor: "Anker invoegen",
 	title: "Ankereigenschappen",
@@ -7,3 +10,5 @@
 	cancel: "Annuleren"
 })
 
+//end v1.x content
+);

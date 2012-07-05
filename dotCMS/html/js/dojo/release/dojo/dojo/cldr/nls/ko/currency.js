@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/ko/currency", //begin v1.x content
 {
 	"HKD_displayName": "홍콩 달러",
 	"CHF_displayName": "스위스 프랑",
@@ -10,3 +12,5 @@
 	"GBP_displayName": "영국령 파운드 스털링",
 	"EUR_displayName": "유로화"
 }
+//end v1.x content
+);

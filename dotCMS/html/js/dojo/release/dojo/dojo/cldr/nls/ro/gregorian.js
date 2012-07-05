@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/ro/gregorian", //begin v1.x content
 {
 	"months-format-narrow": [
 		"I",
@@ -246,3 +248,5 @@
 	"dateTimeFormat-short": "{1}, {0}",
 	"dateFormatItem-MMMEEEd": "EEE, d MMM"
 }
+//end v1.x content
+);

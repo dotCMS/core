@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/widget/nls/pt-pt/ColorPicker", //begin v1.x content
 ({
 redLabel: "e",
 greenLabel: "v",
@@ -7,4 +10,4 @@ valueLabel: "val", /* aka intensity or brightness */
 huePickerTitle: "Selector de tonalidade",
 saturationPickerTitle: "Selector de saturação"
 })
-
+);

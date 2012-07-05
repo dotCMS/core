@@ -112,6 +112,12 @@ THIS FILE AND ITS INCLUDES
 		dojo.require("dojox.form.Uploader");
         dojo.require("dojox.form.uploader.FileList");
         dojo.require("dojox.form.uploader.plugins.HTML5");
+        dojo.require("dijit.form.ComboBox");
+   		dojo.require("dijit.TooltipDialog");
+		dojo.require("dojox.grid.EnhancedGrid");
+		dojo.require("dojox.grid.enhanced.plugins.Menu");
+		dojo.require("dojo.data.ItemFileReadStore");
+		dojo.require("dijit.form.Form");
 		dojo.require("dojo.io.script");
 		
 		dojo.addOnLoad(function () {

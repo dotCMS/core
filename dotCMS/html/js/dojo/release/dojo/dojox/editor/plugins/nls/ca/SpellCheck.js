@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ca/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "Correcció ortogràfica per lots",
 	unfound: "No trobat",
@@ -15,3 +18,5 @@
 	iMsg: "No hi ha suggeriments ortogràfics"
 })
 
+//end v1.x content
+);

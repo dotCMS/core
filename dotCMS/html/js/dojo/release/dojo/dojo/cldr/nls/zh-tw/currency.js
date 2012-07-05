@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/zh-tw/currency", //begin v1.x content
 {
 	"USD_symbol": "$",
 	"EUR_displayName": "歐元",
@@ -9,3 +11,5 @@
 	"AUD_displayName": "澳幣",
 	"CNY_displayName": "人民幣"
 }
+//end v1.x content
+);

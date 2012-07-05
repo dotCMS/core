@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/fi/AutoSave", //begin v1.x content
 ({
 	"saveLabel": "Tallenna",
 	"saveSettingLabelOn": "Aseta automaattisen tallennuksen väli...",
@@ -12,3 +15,5 @@
 	"saveMessageFail": "Tallennus epäonnistui ${0}"
 })
 
+//end v1.x content
+);

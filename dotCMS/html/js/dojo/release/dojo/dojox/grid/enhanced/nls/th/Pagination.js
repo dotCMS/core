@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/th/Pagination", //begin v1.x content
 ({
 	"descTemplate": "${2} - ${3} จาก ${1} ${0}",
 	"firstTip": "หน้าแรก",
@@ -5,6 +8,7 @@
 	"nextTip": "หน้าถัดไป",
 	"prevTip": "หน้าก่อนหน้านี้",
 	"itemTitle": "ไอเท็ม",
+	"singularItemTitle": "ไอเท็ม",
 	"pageStepLabelTemplate": "หน้า ${0}",
 	"pageSizeLabelTemplate": "${0} ไอเท็มต่อหน้า",
 	"allItemsLabelTemplate": "รายการ ทั้งหมด",
@@ -13,6 +17,8 @@
 	"dialogIndication": "ระบุหมายเลขหน้า",
 	"pageCountIndication": " (${0} หน้า)",
 	"dialogConfirm": "ไปที่",
-	"dialogCancel": "ยกเลิก"
+	"dialogCancel": "ยกเลิก",
+	"all": "ทั้งหมด"
 })
-
+//end v1.x content
+);

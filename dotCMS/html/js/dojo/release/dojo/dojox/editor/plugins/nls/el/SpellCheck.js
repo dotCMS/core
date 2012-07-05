@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/el/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "Συνολικός ορθογραφικός έλεγχος",
 	unfound: "Δεν εντοπίστηκε",
@@ -15,3 +18,5 @@
 	iMsg: "Δεν υπάρχουν προτάσεις ορθογραφίας"
 })
 
+//end v1.x content
+);

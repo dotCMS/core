@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/es/InsertAnchor", //begin v1.x content
 ({
 	insertAnchor: "Insertar ancla",
 	title: "Propiedades del ancla",
@@ -7,3 +10,5 @@
 	cancel: "Cancelar"
 })
 
+//end v1.x content
+);

@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/cs/gregorian", //begin v1.x content
 {
 	"dateFormatItem-yM": "M.y",
 	"dateFormatItem-yQ": "Q yyyy",
@@ -210,3 +212,5 @@
 		"po Kr."
 	]
 }
+//end v1.x content
+);
