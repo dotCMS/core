@@ -27,7 +27,7 @@ public interface ContentletIndexAPI {
 	/**
 	 * creates new working and live indexes with reading aliases pointing to old
 	 * index and write aliases pointing to both old and new indexes
-	 * 
+	 *
 	 * @return the timestamp string used as suffix for indices
 	 * @throws DotDataException
 	 * @throws DotIndexException
@@ -39,7 +39,7 @@ public interface ContentletIndexAPI {
 	/**
 	 * This will drop old index and will point read aliases to new index. This
 	 * method should be called after call to {@link #setUpFullReindex()}
-	 * 
+	 *
 	 * @return
 	 */
 	public void fullReindexSwitchover();
@@ -74,7 +74,7 @@ public interface ContentletIndexAPI {
 
 	/**
 	 * Returns a list of dotcms working and live indices.
-	 * 
+	 *
 	 * @return
 	 */
 	public List<String> listDotCMSIndices();
@@ -88,7 +88,9 @@ public interface ContentletIndexAPI {
 	public List<String> getCurrentIndex() throws DotDataException;
 
 	public List<String> getNewIndex() throws DotDataException;
-	
+
 	public List<String> listDotCMSClosedIndices();
+
+	public String getActiveIndexName(String type) throws DotDataException;
 
 }
