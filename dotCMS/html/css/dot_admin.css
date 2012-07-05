@@ -438,6 +438,10 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .formIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .fileIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -840px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
+/* BEGIN GRAZIANO issue-12-dnd-template */
+.designTemplateIcon {background: url(/html/images/icons/layout-design.png); width:18px;height:18px;display:inline-block;vertical-align:top;}
+/* END GRAZIANO issue-12-dnd-template */
+
 /* Disabled Styles */
 .dijitDisabled .plusIcon {background: url(/html/images/icons/dotcms-sprite-off.png) no-repeat -1px 0px;}
 .dijitDisabled .addIcon {background: url(/html/images/icons/dotcms-sprite-off.png) no-repeat -1px -20px;}
