@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/ru/EnhancedGrid", //begin v1.x content
 ({
 	singleSort: "Простая сортировка",
 	nestedSort: "Вложенная сортировка",
@@ -9,4 +12,6 @@
 	indirectSelectionCheckBox: "Строка ${0}, несколько выборов, переключатель",
 	selectAll: "Выбрать все"
 })
+//end v1.x content
+);
 

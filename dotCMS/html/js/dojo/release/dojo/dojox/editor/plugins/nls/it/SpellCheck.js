@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/it/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "Controllo ortografico batch",
 	unfound: "Non trovato",
@@ -15,3 +18,5 @@
 	iMsg: "Nessun suggerimento ortografico"
 })
 
+//end v1.x content
+);

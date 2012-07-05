@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/ru/commands", //begin v1.x content
 ({
 	'bold': 'Полужирный',
 	'copy': 'Копировать',
@@ -47,3 +49,5 @@
 	'systemShortcut': 'Действие "${0}" можно выполнить в браузере только путем нажатия клавиш ${1}.'
 })
 
+//end v1.x content
+);

@@ -1,7 +1,9 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/pt-pt/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Limpar filtro",
 	"filterDefDialogTitle": "Filtro",
-	"incompleteRuleTip": "Esta regra não está completa.",
 	"ruleTitleTemplate": "Regra ${0}",
 	
 	"conditionEqual": "igual",
@@ -21,6 +23,7 @@
 	"conditionBefore": "antes",
 	"conditionAfter": "após",
 	"conditionRange": "intervalo",
+	"conditionIsEmpty": "está vazio",
 	
 	"all": "tudo",
 	"any": "qualquer",
@@ -62,8 +65,6 @@
 	"anycolumn": "qualquer coluna",
 	"statusTipTitleNoFilter": "Barra do filtro",
 	"statusTipTitleHasFilter": "Filtro",
-	"statusTipRelPre": "Correspondência",
-	"statusTipRelPost": "regras.",
 	
 	"defaultItemsName": "itens",
 	"filterBarMsgHasFilterTemplate": "${0} de ${1} ${2} apresentado(s).",
@@ -79,10 +80,11 @@
 	"clearFilterMsg": "Este procedimento irá remover o filtro e apresentar todos os registos disponíveis.",
 	"anyColumnOption": "Qualquer coluna",
 	
-	"trueLabelEditable": "Verificado",
 	"trueLabel": "True",
 	"falseLabel": "False"
 })
+//end v1.x content
+);
 
 
 

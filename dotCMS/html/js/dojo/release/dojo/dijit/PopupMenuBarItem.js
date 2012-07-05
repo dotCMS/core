@@ -1,14 +1,2 @@
-if(!dojo._hasResource["dijit.PopupMenuBarItem"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.PopupMenuBarItem"] = true;
-dojo.provide("dijit.PopupMenuBarItem");
-dojo.require("dijit.PopupMenuItem");
-dojo.require("dijit.MenuBarItem");
-
-
-
-dojo.declare("dijit.PopupMenuBarItem", [dijit.PopupMenuItem, dijit._MenuBarItemMixin], {
-	// summary:
-	//		Item in a MenuBar like "File" or "Edit", that spawns a submenu when pressed (or hovered)
-});
-
-}
+//>>built
+define("dijit/PopupMenuBarItem",["dojo/_base/declare","./PopupMenuItem","./MenuBarItem"],function(_1,_2,_3){var _4=_3._MenuBarItemMixin;return _1("dijit.PopupMenuBarItem",[_2,_4],{});});

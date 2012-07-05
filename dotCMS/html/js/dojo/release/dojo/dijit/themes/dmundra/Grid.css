@@ -44,8 +44,6 @@
 	border-color: #F6F4EB #ACA899 #ACA899 #F6F4EB;
 	background: url(images/grid_dx_gradient.gif) #E8E1CF top repeat-x;
 	padding-bottom: 2px;
-	font-family: Verdana, Geneva, Arial, sans-serif;
-	font-size: 11px;
 }
 .dojoxGridHeader .dojoxGridCellOver {
 	background-image: none;
@@ -56,7 +54,7 @@
 	border-bottom-width: 3px;
 }
 .dojoxGridHeader .dojoxGridCellFocus {
-/* 	border: 1px dashed blue; */
+	border: 1px dashed blue;
 }
 .dojoxGridHeader.dojoxGridCellFocus.dojoxGridCellOver {
 	background-image: none;
@@ -176,8 +174,6 @@
 	padding: 3px 3px 3px 3px;
 	text-align: left;
 	overflow: hidden;
-	font-family: Verdana, Geneva, Arial, sans-serif;
-	font-size: 11px;
 }
 .dojoxGridCellFocus {
 	border: 1px dashed blue;

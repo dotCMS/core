@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/he/gregorian", //begin v1.x content
 {
 	"field-weekday": "יום בשבוע",
 	"dateFormatItem-yQQQ": "y QQQ",
@@ -208,3 +210,5 @@
 	"dateFormatItem-hms": "h:mm:ss a",
 	"dateFormatItem-yyyy": "y"
 }
+//end v1.x content
+);

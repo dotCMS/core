@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/fi/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Tyhjennä suodatin",
 	"filterDefDialogTitle": "Suodatin",
@@ -62,8 +65,8 @@
 	"anycolumn": "mikä tahansa sarake",
 	"statusTipTitleNoFilter": "Suodatinpalkki",
 	"statusTipTitleHasFilter": "Suodatin",
-	"statusTipRelPre": "Vastine",
-	"statusTipRelPost": "säännöt.",
+	"statusTipRelAny": "Vastaa jotakin sääntöä.",
+	"statusTipRelAll": "Vastaa kaikkia sääntöjä.",
 	
 	"defaultItemsName": "nimikkeet",
 	"filterBarMsgHasFilterTemplate": "näkyvissä ${0} / ${1} ${2}.",
@@ -82,6 +85,5 @@
 	"trueLabel": "Tosi",
 	"falseLabel": "Epätosi"
 })
-
-
-
+//end v1.x content
+);

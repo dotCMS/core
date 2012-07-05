@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/nb/currency", //begin v1.x content
 {
 	"HKD_displayName": "Hongkong-dollar",
 	"CHF_displayName": "sveitsiske franc",
@@ -18,3 +20,5 @@
 	"AUD_symbol": "AUD",
 	"EUR_displayName": "euro"
 }
+//end v1.x content
+);

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/tr/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "Tablo Ekle",
 	modifyTableTitle: "Tabloyu Değiştir",
@@ -28,3 +31,5 @@
 	deleteTableRowLabel: "Satırı Sil",
 	deleteTableColumnLabel: "Sütunu Sil"
 })
+//end v1.x content
+);

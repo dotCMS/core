@@ -243,14 +243,27 @@
 		var container = dijit.byId('permissionsAccordionContainer');
 		container.startup();
 
+		var selectedChildPaneId = systemHost.identifier;
 		var myHeight = 375;
 		for(var i = 0; i < data.length; i++) {
 			var id = data[i].type=='host'?data[i].identifier:data[i].inode;
+			if(id != systemHost.identifier)
+				selectedChildPaneId = id;
 			myHeight += dojo.marginBox('permissionsAccordionPane-' + id + "_button").h;
 			dojo.parser.parse(dojo.byId('hostFolderAccordionPermissionsTitleWrapper-' + id));
 		}
-		container.resize({ h: myHeight })
+		container.resize({ h: myHeight });
 		container._verticalSpace = 375;
+		
+		if(data.length > 1)//GIT-417 -- To fix the weird behaviour of permissions tab under roles portlet.
+			container.selectChild(dijit.byId('permissionsAccordionPane-' + norm(selectedChildPaneId)));
+		else{
+			var dummyPaneId = 'dotDummyPane'+(new Date().getTime());
+			container.addChild(new dijit.layout.ContentPane({id:dummyPaneId}));
+			container.selectChild(dijit.byId(dummyPaneId));
+			container.selectChild(dijit.byId('permissionsAccordionPane-' + norm(systemHost.identifier)));
+			container.removeChild(dijit.byId(dummyPaneId));
+		}
 
 	}
 

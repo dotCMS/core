@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/da/FontChoice", //begin v1.x content
 ({
 	fontSize: "Størrelse",
 	fontName: "Skrifttype",
@@ -25,3 +27,5 @@
 	6: "x-large",
 	7: "xx-large"
 })
+//end v1.x content
+);

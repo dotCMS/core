@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/hu/currency", //begin v1.x content
 {
 	"HKD_displayName": "Hongkongi dollár",
 	"CHF_displayName": "Svájci frank",
@@ -12,3 +14,5 @@
 	"GBP_displayName": "Brit font sterling",
 	"EUR_displayName": "Euro"
 }
+//end v1.x content
+);

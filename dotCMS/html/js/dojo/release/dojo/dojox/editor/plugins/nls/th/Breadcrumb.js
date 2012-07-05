@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/th/Breadcrumb", //begin v1.x content
 ({
 	"nodeActions": "${nodeName} แอ็คชัน",
 	"selectContents": "เลือกเนื้อหา",
@@ -8,3 +11,5 @@
 	"moveEnd": "ย้ายเคอร์เซอร์ไปยังจุดสิ้นสุด"
 })
 
+//end v1.x content
+);

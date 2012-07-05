@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ko/LocalImage", //begin v1.x content
 ({
 	insertImageTitle: "이미지 삽입",
 	url: "이미지",
@@ -9,3 +12,5 @@
 	prePopuTextBrowse: "또는 로컬 파일 찾아보기"
 })
 
+//end v1.x content
+);

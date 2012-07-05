@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/da/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Ryd filter",
 	"filterDefDialogTitle": "Filter",
@@ -62,8 +65,8 @@
 	"anycolumn": "vilkårlig kolonne",
 	"statusTipTitleNoFilter": "Filterlinje",
 	"statusTipTitleHasFilter": "Filter",
-	"statusTipRelPre": "Match",
-	"statusTipRelPost": "regler.",
+	"statusTipRelAny": "Matcher en hvilken som helst regel.",
+	"statusTipRelAll": "Matcher alle regler.",
 	
 	"defaultItemsName": "elementer",
 	"filterBarMsgHasFilterTemplate": "${0} af ${1} ${2} vist.",
@@ -82,6 +85,5 @@
 	"trueLabel": "Sand",
 	"falseLabel": "Falsk"
 })
-
-
-
+//end v1.x content
+);
