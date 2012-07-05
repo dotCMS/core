@@ -218,7 +218,7 @@ public class ContentletAjax {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 
-		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, page, orderBy, perPage, currentUser, sess, null, null);
+		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, perPage, currentUser, sess, null, null);
 	}
 
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
@@ -241,10 +241,10 @@ public class ContentletAjax {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 
-		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
+		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
 
-	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterLocked, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		HttpSession sess = WebContextFactory.get().getSession();
@@ -260,7 +260,7 @@ public class ContentletAjax {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 
-		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, filterLocked, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
+		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
 
 	/**
@@ -337,7 +337,7 @@ public class ContentletAjax {
 	 * @throws DotStateException
 	 */
 	@SuppressWarnings("unchecked")
-	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterLocked, int page, String orderBy,int perPage, User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 
 
 
@@ -555,6 +555,7 @@ public class ContentletAjax {
 		lastSearchMap.put("showDeleted", showDeleted);
 		lastSearchMap.put("filterSystemHost", filterSystemHost);
 		lastSearchMap.put("filterLocked", filterLocked);
+		lastSearchMap.put("filterUnpublish", filterUnpublish);
 
 
 		if(!showDeleted)
@@ -566,6 +567,9 @@ public class ContentletAjax {
 
 		if(filterLocked)
 			luceneQuery.append("+locked:true ");
+		
+		if(filterUnpublish)
+			luceneQuery.append("+live:false ");
 
 		/*if we have a date*/
 		if(modDateFrom!=null || modDateTo!=null){
