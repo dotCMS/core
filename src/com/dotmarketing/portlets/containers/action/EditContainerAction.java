@@ -28,6 +28,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
+import com.dotmarketing.portlets.containers.ajax.util.ContainerAjaxUtil;
 import com.dotmarketing.portlets.containers.factories.ContainerFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.struts.ContainerForm;
@@ -448,7 +449,13 @@ public class EditContainerAction extends DotPortletAction implements
         if (UtilMethods.isSet(container.getLuceneQuery())) {
             cf.setDynamic(true);
         }
-
+        
+		// BEGIN GRAZIANO issue-12-dnd-template
+        if(UtilMethods.isSet(container.getCode())){
+			if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
+				container.setForMetadata(true);
+			// END GRAZIANO issue-12-dnd-template
+        }
 		// Getting container structure
 		if (!InodeUtils.isSet(cf.getStructureInode())) {
 			Structure currentStructure;
@@ -528,8 +535,12 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 		container.setStructureInode(currentStructure.getInode());
 		//container.addParent(currentStructure);
-
-
+		
+		// BEGIN GRAZIANO issue-12-dnd-template
+		if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
+			container.setForMetadata(true);
+		// END GRAZIANO issue-12-dnd-template
+		
 		// it saves or updates the asset
 		if (InodeUtils.isSet(currentContainer.getInode())) {
 			Identifier identifier = APILocator.getIdentifierAPI().find(currentContainer);
