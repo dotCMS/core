@@ -41,17 +41,19 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
 			return;
 		}
 		if (myCp) {
-			myCp.destroyRecursive(true);
-		}
+			myCp.attr("content","");//myCp.destroyRecursive(true);
+		}else{
 		myCp = new dojox.layout.ContentPane({
 			id : this.baseDiv
 		}).placeAt("osgiMain");
-
+		}
 		myCp.attr("href", hashValue);
 		dojo.parser.parse("osgiMain");
 	
 	}
 });
+
+
 
 dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 	baseJsp : "/html/portlet/ext/osgi/bundles.jsp",

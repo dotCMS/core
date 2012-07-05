@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/ca/currency", //begin v1.x content
 {
 	"HKD_displayName": "dòlar de Hong Kong",
 	"CHF_displayName": "franc suís",
@@ -10,3 +12,5 @@
 	"GBP_displayName": "lliura esterlina britànica",
 	"EUR_displayName": "euro"
 }
+//end v1.x content
+);

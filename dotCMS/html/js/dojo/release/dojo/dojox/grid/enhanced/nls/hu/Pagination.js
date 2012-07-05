@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/hu/Pagination", //begin v1.x content
 ({
 	"descTemplate": "${2} - ${3} / ${1} ${0}",
 	"firstTip": "Első oldal",
@@ -5,6 +8,7 @@
 	"nextTip": "Következő oldal",
 	"prevTip": "Előző oldal",
 	"itemTitle": "elemek",
+	"singularItemTitle": "elem",
 	"pageStepLabelTemplate": "${0}. oldal",
 	"pageSizeLabelTemplate": "${0} elem oldalanként",
 	"allItemsLabelTemplate": "Összes elem",
@@ -13,6 +17,9 @@
 	"dialogIndication": "Adja meg az oldalszámot",
 	"pageCountIndication": " (${0} oldal)",
 	"dialogConfirm": "Mehet",
-	"dialogCancel": "Mégse"
+	"dialogCancel": "Mégse",
+	"all": "mind"
 })
+//end v1.x content
+);
 

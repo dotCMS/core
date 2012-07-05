@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/fi/Breadcrumb", //begin v1.x content
 ({
 	"nodeActions": "${nodeName} - Toiminnot",
 	"selectContents": "Valitse sisältö",
@@ -8,3 +11,5 @@
 	"moveEnd": "Siirrä kohdistin loppuun"
 })
 
+//end v1.x content
+);

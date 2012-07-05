@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/tr/commands", //begin v1.x content
 ({
 	'bold': 'Kalın',
 	'copy': 'Kopyala',
@@ -47,3 +49,5 @@
 	'systemShortcut': '"${0}" işlemi yalnızca tarayıcınızda bir klavye kısayoluyla birlikte kullanılabilir. Şunu kullanın: ${1}.'
 })
 
+//end v1.x content
+);

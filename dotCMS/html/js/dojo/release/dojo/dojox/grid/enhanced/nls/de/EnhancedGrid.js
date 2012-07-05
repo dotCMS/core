@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/de/EnhancedGrid", //begin v1.x content
 ({
 	singleSort: "Einzelne Sortierung",
 	nestedSort: "Verschachtelte Sortierung",
@@ -9,4 +12,6 @@
 	indirectSelectionCheckBox: "Zeile ${0}, Mehrfachauswahl, Kontrollkästchen",
 	selectAll: "Alles auswählen"
 })
+//end v1.x content
+);
 

@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/da/gregorian", //begin v1.x content
 {
 	"months-format-narrow": [
 		"J",
@@ -232,3 +234,5 @@
 	"dateFormatItem-hms": "h.mm.ss a",
 	"dateFormatItem-yyyy": "y"
 }
+//end v1.x content
+);

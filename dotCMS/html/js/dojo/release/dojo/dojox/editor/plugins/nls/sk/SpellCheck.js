@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/sk/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "Dávková kontrola pravopisu",
 	unfound: "Nenašlo sa",
@@ -15,3 +18,5 @@
 	iMsg: "Žiadne návrhy na hláskovanie"
 })
 
+//end v1.x content
+);

@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/zh-tw/gregorian", //begin v1.x content
 {
 	"quarters-standAlone-wide": [
 		"第1季",
@@ -75,3 +77,5 @@
 	"field-zone": "區域",
 	"dateFormatItem-Ed": "d日(E)"
 }
+//end v1.x content
+);

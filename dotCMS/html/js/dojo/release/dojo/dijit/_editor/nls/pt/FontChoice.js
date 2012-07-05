@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/pt/FontChoice", //begin v1.x content
 ({
 	fontSize: "Tamanho",
 	fontName: "Fonte",
@@ -25,3 +27,5 @@
 	6: "extra-grande",
 	7: "extra-extra-grande"
 })
+//end v1.x content
+);

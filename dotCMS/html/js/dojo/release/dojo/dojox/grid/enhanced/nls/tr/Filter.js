@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/tr/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Süzgeci Kaldır",
 	"filterDefDialogTitle": "Süzgeç",
@@ -62,8 +65,8 @@
 	"anycolumn": "herhangi bir sütun",
 	"statusTipTitleNoFilter": "Süzgeç Çubuğu",
 	"statusTipTitleHasFilter": "Süzgeç",
-	"statusTipRelPre": "Eşleştir",
-	"statusTipRelPost": "kurallar.",
+	"statusTipRelAny": "Herhangi bir kuralı eşleştir.",
+	"statusTipRelAll": "Bütün kuralları eşleştir.",
 	
 	"defaultItemsName": "öğe",
 	"filterBarMsgHasFilterTemplate": "${0} / ${1} ${2} gösteriliyor.",
@@ -82,6 +85,5 @@
 	"trueLabel": "Doğru",
 	"falseLabel": "Yanlış"
 })
-
-
-
+//end v1.x content
+);

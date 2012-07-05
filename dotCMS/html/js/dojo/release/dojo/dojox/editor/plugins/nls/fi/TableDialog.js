@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/fi/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "Lisää taulukko",
 	modifyTableTitle: "Muokkaa taulukkoa",
@@ -28,3 +31,5 @@
 	deleteTableRowLabel: "Poista rivi",
 	deleteTableColumnLabel: "Poista sarake"
 })
+//end v1.x content
+);

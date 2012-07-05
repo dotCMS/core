@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/nls/nb/colors", //begin v1.x content
 ({
 // local representation of all CSS3 named colors, companion to dojo.colors.  To be used where descriptive information
 // is required for each color, such as a palette widget, and not for specifying color programatically.
@@ -145,6 +147,7 @@ tan: "matt mellombrun",
 teal: "mørk grønnblå",
 thistle: "lys grålilla",
 tomato: "tomatrød",
+transparent: "gjennomsiktig",
 turquoise: "turkis",
 violet: "fiolett",
 wheat: "varm sienna",
@@ -153,3 +156,5 @@ whitesmoke: "røykhvit",
 yellow: "gul",
 yellowgreen: "gulgrønn"
 })
+//end v1.x content
+);

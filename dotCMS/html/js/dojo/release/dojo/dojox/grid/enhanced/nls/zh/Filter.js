@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/zh/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "清除过滤器",
 	"filterDefDialogTitle": "过滤器",
@@ -62,8 +65,8 @@
 	"anycolumn": "任何列",
 	"statusTipTitleNoFilter": "过滤器栏",
 	"statusTipTitleHasFilter": "过滤器",
-	"statusTipRelPre": "符合",
-	"statusTipRelPost": "规则。",
+	"statusTipRelAny": "与任何规则匹配。",
+	"statusTipRelAll": "与所有规则匹配。",
 	
 	"defaultItemsName": "项目",
 	"filterBarMsgHasFilterTemplate": "显示的 ${1} ${2} 的 ${0}。",
@@ -82,6 +85,5 @@
 	"trueLabel": "True",
 	"falseLabel": "False"
 })
-
-
-
+//end v1.x content
+);

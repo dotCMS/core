@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/nls/pt-pt/colors", //begin v1.x content
 ({
 // local representation of all CSS3 named colors, companion to dojo.colors.  To be used where descriptive information
 // is required for each color, such as a palette widget, and not for specifying color programatically.
@@ -153,3 +155,5 @@ whitesmoke: "fumo branco",
 yellow: "amarelo",
 yellowgreen: "verde amarelado"
 })
+//end v1.x content
+);

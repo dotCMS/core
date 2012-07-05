@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/hu/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "Kötegelt helyesírás-ellenőrzés",
 	unfound: "Nem található",
@@ -15,3 +18,5 @@
 	iMsg: "Nincsenek helyesírási javaslatok"
 })
 
+//end v1.x content
+);

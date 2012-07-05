@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/pt/AutoSave", //begin v1.x content
 ({
 	"saveLabel": "Salvar",
 	"saveSettingLabelOn": "Configurar Intervalo de Salvamento Automático...",
@@ -11,3 +14,5 @@
 	"saveMessageSuccess": "Salvo em ${0}",
 	"saveMessageFail": "Falha ao salvar em ${0}"
 })
+//end v1.x content
+);

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/nl/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Filter wissen",
 	"filterDefDialogTitle": "Filteren",
@@ -62,8 +65,8 @@
 	"anycolumn": "een kolom",
 	"statusTipTitleNoFilter": "Filterbalk",
 	"statusTipTitleHasFilter": "Filter",
-	"statusTipRelPre": "Voldoen aan",
-	"statusTipRelPost": "regel.",
+	"statusTipRelAny": "Voldoen aan een van de regels.",
+	"statusTipRelAll": "Voldoen aan alle regels.",
 	
 	"defaultItemsName": "items",
 	"filterBarMsgHasFilterTemplate": "${0} van ${1} ${2} afgebeeld.",
@@ -82,6 +85,5 @@
 	"trueLabel": "Waar",
 	"falseLabel": "Onwaar"
 })
-
-
-
+//end v1.x content
+);

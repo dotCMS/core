@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/fr/commands", //begin v1.x content
 ({
 	'bold': 'Gras',
 	'copy': 'Copier',
@@ -46,3 +48,5 @@
 	/* Error messages */
 	'systemShortcut': 'L\'action "${0}" est disponible dans votre navigateur uniquement, par le biais d\'un raccourci-clavier. Utilisez ${1}.'
 })
+//end v1.x content
+);

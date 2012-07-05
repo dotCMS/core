@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/ko/FontChoice", //begin v1.x content
 ({
 	fontSize: "크기",
 	fontName: "글꼴",
@@ -25,3 +27,5 @@
 	6: "조금 크게",
 	7: "가장 크게"
 })
+//end v1.x content
+);

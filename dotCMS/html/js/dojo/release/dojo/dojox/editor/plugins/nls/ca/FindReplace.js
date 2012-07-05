@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ca/FindReplace", //begin v1.x content
 ({
 	"findLabel": "Cerca:",
 	"findTooltip": "Especifiqueu el text que voleu trobar",
@@ -8,7 +11,6 @@
 	"matchCaseTooltip": "Coincidència de majúscules i minúscules",
 	"backwards": "Cap enrere",
 	"backwardsTooltip": "Cerca text cap enrere",
-	"replaceAll": "Totes les aparicions",
 	"replaceAllButton": "Substitueix tot",
 	"replaceAllButtonTooltip": "Substitueix tot el text",
 	"findButton": "Cerca",
@@ -21,3 +23,5 @@
 	"eofDialogTextReplace": "substituït"
 })
 
+//end v1.x content
+);

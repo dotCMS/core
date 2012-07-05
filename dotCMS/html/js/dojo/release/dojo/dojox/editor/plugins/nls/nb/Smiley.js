@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/nb/Smiley", //begin v1.x content
 ({
 	smiley: "Sett inn uttrykksikon",
 	emoticonSmile: "smil",
@@ -17,5 +20,8 @@
 	emoticonYes: "ja",
 	emoticonNo: "nei",
 	emoticonAngel: "engel",
-	emoticonCrying: "gråt"
+	emoticonCrying: "gråt",
+	emoticonHappy: "glad"
 })
+//end v1.x content
+);

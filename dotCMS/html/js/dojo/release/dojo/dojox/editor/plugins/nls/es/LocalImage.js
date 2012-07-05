@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/es/LocalImage", //begin v1.x content
 ({
 	insertImageTitle: "Insertar imagen",
 	url: "Imagen",
@@ -9,3 +12,5 @@
 	prePopuTextBrowse: " o seleccione un archivo local."
 })
 
+//end v1.x content
+);

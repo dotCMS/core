@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ko/Breadcrumb", //begin v1.x content
 ({
 	"nodeActions": "${nodeName} 조치",
 	"selectContents": "컨텐츠 선택",
@@ -8,3 +11,5 @@
 	"moveEnd": "커서를 이동하여 종료"
 })
 
+//end v1.x content
+);

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/zh-tw/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "清除過濾器",
 	"filterDefDialogTitle": "過濾器",
@@ -62,8 +65,8 @@
 	"anycolumn": "任何直欄",
 	"statusTipTitleNoFilter": "過濾器列",
 	"statusTipTitleHasFilter": "過濾器",
-	"statusTipRelPre": "符合",
-	"statusTipRelPost": "規則。",
+	"statusTipRelAny": "符合任何規則。",
+	"statusTipRelAll": "符合所有規則。",
 	
 	"defaultItemsName": "項目",
 	"filterBarMsgHasFilterTemplate": "顯示 ${1} ${2} 之 ${0}。",
@@ -82,6 +85,5 @@
 	"trueLabel": "True",
 	"falseLabel": "False"
 })
-
-
-
+//end v1.x content
+);

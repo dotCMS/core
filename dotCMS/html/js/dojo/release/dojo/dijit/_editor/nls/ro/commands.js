@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/ro/commands", //begin v1.x content
 ({
 	'bold': 'Aldin',
 	'copy': 'Copiere',
@@ -46,3 +48,5 @@
 	/* Error messages */
 	'systemShortcut': 'Acţiunea "${0}" este disponibilă în browser doar utilizând o comandă rapidă de la tastatură. Utilizaţi ${1}.'
 })
+//end v1.x content
+);
