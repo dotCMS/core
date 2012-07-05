@@ -1,0 +1,314 @@
+@CHARSET "UTF-8";
+
+/* *********************************************************************************************************** */
+/* Template design */
+/* *********************************************************************************************************** */
+h1 {
+	color: #d0d0d0;
+	font-weight: bold;
+	font-size: 30px;
+	font-family: Verdana,Geneva,sans-serif;
+	padding: 20px;
+}
+
+h2 {
+	color: #d0d0d0;
+	font-weight: bold;
+	font-size: 24px;
+	font-family: Verdana,Geneva,sans-serif;
+	padding: 10px;
+}
+	
+#hd-template, #ft-template {
+	margin-bottom: 10px;
+	margin-top: 10px;
+	border:1px solid #9AB3CE;	
+	background-color: #E0E9F6;
+	text-align: center;
+}
+			
+.yui-b-template {
+	border:1px solid #9AB3CE;
+	background-color: #E0E9F6;
+	padding: 5px 1px 5px 1px;
+	margin-bottom: 0.7%;				 		
+}
+			
+.yui-u-template {
+	border:1px solid #9AB3CE;
+	background-color: #EEF5F9;
+	padding: 5px 1px 5px 1px;			
+}
+			
+#yui-b2 {
+	text-align: center;
+	vertical-align: middle;
+}			
+
+.yui-u-template h1, .yui-b-template h1, #hd-template h1, #ft-template h1, .yui-u-template h2, .yui-b-template h2, #hd-template h2, #ft-template h2 {
+	vertical-align: middle;
+	text-align: center;
+}
+
+.yui-u-template h2, .yui-b-template h2, #hd-template h2, #ft-template h2 {
+	vertical-align: middle;
+	text-align: left;
+	padding-left:0;
+}
+
+.removeDiv {
+	width: 140px;
+	text-align: left;
+	vertical-align: middle;
+	padding: 3px;
+	margin: 2px;	
+}
+
+.removeDiv a {
+	text-decoration: none;	
+	color: #315395;
+	font-family: Verdana,Geneva,Arial,sans-serif;
+	font-size: 12px;	
+	font-weight: normal;
+	display: block;
+	line-height: 13px;
+	padding: 3px;
+}
+
+.addContainerSpan {
+	width: 140px;
+	text-align: left;
+	vertical-align: middle;
+	padding: 3px;
+	margin: 2px;	
+}
+
+.addContainerSpan a {
+	text-decoration: none;	
+	color: #315395;
+	font-family: Verdana,Geneva,Arial,sans-serif;
+	font-size: 12px;	
+	display: block;
+	line-height: 13px;
+	padding: 3px;
+}
+
+.plusBlueIcon {
+	background: url(/html/images/icons/plusBlue.png) no-repeat;
+	width:14px;
+	height:14px;
+	display:inline-block;
+	vertical-align: top;
+	margin-right: 3px;	
+}
+
+.minusIcon {
+	background: url(/html/images/icons/minus.png) no-repeat;
+	width:14px;
+	height:14px;
+	display:inline-block;
+	vertical-align: top;
+	margin-right: 3px;	
+}
+
+.cssIcon {
+	background: url(/html/images/icons/icon_css.png) no-repeat;
+	width:32px;
+	height:32px;
+	display:inline-block;
+	vertical-align: top;
+	margin: 3px;	
+}
+
+.jsIcon {
+	background: url(/html/images/icons/icon_js.png) no-repeat;
+	width:32px;
+	height:32px;
+	display:inline-block;
+	vertical-align: top;
+	margin: 3px;	
+}
+
+.metatagIcon {
+	background: url(/html/images/icons/icon_metatag.png) no-repeat;
+	width:32px;
+	height:32px;
+	display:inline-block;
+	vertical-align: top;
+	margin: 3px;	
+}
+
+.headCodeIcon {
+	background: url(/html/images/icons/icon_code.png) no-repeat;
+	width:32px;
+	height:32px;
+	display:inline-block;
+	vertical-align: top;
+	margin: 3px;	
+}
+
+.cssIcon h3, .jsIcon h3 {
+	margin-left: 37px;
+	margin-top: 6px;
+	color: #d0d0d0;
+	font-weight: bold;
+	font-size: 14px;
+	font-family: Verdana,Geneva,sans-serif;
+	width: 500px;
+}
+
+.metatagIcon h3 {
+	margin-left: 37px;
+	margin-top: 6px;
+	color: #d0d0d0;
+	font-weight: bold;
+	font-size: 14px;
+	font-family: Verdana,Geneva,sans-serif;
+	width: 750px;
+}
+
+.headCodeIcon h3 {
+	margin-left: 37px;
+	margin-top: 6px;
+	color: #d0d0d0;
+	font-weight: bold;
+	font-size: 14px;
+	font-family: Verdana,Geneva,sans-serif;
+	width: 750px;
+} 
+
+.mockContent {
+	color: #d0d0d0;
+}
+
+.leftProperties .dijitTextBox{
+	width: 85%;
+}
+
+#bodyTemplate {
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+#tableContainer {
+	width: 95%;
+	margin-left: 10px;
+	margin-top: 10px;
+}
+
+tr.spaceUnder > td
+{
+  padding-bottom: 1.2em;
+}
+
+#containerBodyTemplate {
+	margin: 0pt 0pt 0pt 250px;
+}
+
+.titleContainerSpan {
+	border: 1px solid rgb(154, 179, 206);
+	margin: 8px 10px 8px 10px;
+	padding: 2% 7% 4em 2%;
+	font-weight: bold;
+	background-color: white;
+	display: block;
+	text-align: left;
+	vertical-align: text-top;
+}
+
+.titleContainerSpan .removeDiv {
+	float: left;
+	margin: 0pt;
+}
+
+.yui-b-template .titleContainerSpan, #hd-template .titleContainerSpan, #ft-template .titleContainerSpan {
+	width: 88.5%;
+}
+
+.yui-u-template .titleContainerSpan {
+	width: 84%;
+	padding-bottom: 1px;
+}
+
+#yui-b2 .titleContainerSpan {
+	width: 79%;
+}
+
+#yui-b2 .titleContainerSpan h2 {
+	font-size: 18px;
+	text-align: left;
+	padding-left: 1px;
+}
+
+.first .titleContainerSpan {
+	width: 80%;
+	padding-bottom: 1px;
+}
+
+#addFileToTemplate {
+	margin: 10px 10px 0pt 0pt;
+	float: right;
+	
+}
+
+#fileContainerDiv {
+	margin: 10px 10px 0pt 0pt;
+}
+
+.cssSpan {
+	border: 1px dotted rgb(154, 179, 206);
+	background-color: white;
+	display: block;
+	width: auto;
+	margin-bottom: 7px;
+}
+
+.jsSpan {
+	border: 1px dotted rgb(154, 179, 206);
+	background-color: white;
+	display: block;
+	width: auto;
+	margin-bottom: 7px;
+}
+
+.metatagSpan {
+	border: 1px solid rgb(154, 179, 206);
+	background-color: white;
+	display: block;
+	width: auto;
+	margin-bottom: 7px;
+}
+
+.headCodeSpan {
+	border: 1px solid rgb(154, 179, 206);
+	background-color: white;
+	display: block;
+	width: auto;
+	margin-bottom: 7px;
+}
+
+.cssSpan .removeDiv, .jsSpan .removeDiv, .metatagSpan .removeDiv {
+	float: right;
+	margin-top: 7px;
+	text-align: right;
+}
+
+#fileContainerDiv .jsSpan, #fileContainerDiv .cssSpan, #fileContainerDiv .metatagSpan, #fileContainerDiv .headCodeSpan {
+	margin-left: 10px;
+}
+
+#headCode {
+	margin: 10px 5px 10px 5px;
+}
+
+/* *********************************************************************************************************** */
+/* Container Selector */
+/* *********************************************************************************************************** */
+
+.alertContainerSelector {
+	color: red;
+	font-weight: bold;
+	margin: 5px 25px 15px;
+	padding: 10px;
+	width: 230px;
+}
