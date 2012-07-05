@@ -48,8 +48,12 @@ public class ViewTemplatesAction extends DotPortletAction {
 			hosts = perAPI.filterCollection(hosts, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, false, user);
 			if(hosts.size() == 0) {
 				req.setAttribute(WebKeys.TEMPLATE_CAN_ADD, false);
+			    // *********************** GRAZIANO issue-12-dnd-template
+				req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, false);
 			} else {
 				req.setAttribute(WebKeys.TEMPLATE_CAN_ADD, true);
+			    // *********************** GRAZIANO issue-12-dnd-template
+				req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, true);				
 			}
 
 			_viewWebAssets(req, user, Template.class, "template",WebKeys.TEMPLATES_VIEW_COUNT,WebKeys.TEMPLATES_VIEW, WebKeys.TEMPLATE_QUERY, WebKeys.TEMPLATE_SHOW_DELETED, WebKeys.TEMPLATE_HOST_CHANGED);

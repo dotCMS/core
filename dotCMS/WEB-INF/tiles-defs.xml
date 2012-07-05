@@ -658,6 +658,13 @@
 		<put name="content"
 			value="/portlet/ext/templates/container_selector.jsp" />
 	</definition>
+	
+	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
+	<definition name="portlet.ext.templates.design_template" extends="portlet.ext.templates">
+		<put name="content"
+			value="/portlet/ext/templates/design/design_templates.jsp" />
+	</definition>
+	<!-- END GRAZIANO issue-12-dnd-template -->
 
 	<!-- /Template -->
 

@@ -8,6 +8,8 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.validator.ValidatorForm;
 
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.START_COMMENT;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.END_COMMENT;
 import com.liferay.portal.util.Constants;
 
 /** @author Hibernate CodeGenerator */
@@ -43,7 +45,17 @@ public class TemplateForm extends ValidatorForm {
     /** nullable persistent field */
     private String hostId;
     
+    // BEGIN GRAZIANO issue-12-dnd-template
+    private String drawedBody;
     
+    private boolean drawed;
+    
+    private int countAddContainer;
+    
+    private int countContainers;
+    
+    private String headCode;
+    // END GRAZIANO issue-12-dnd-template    
     
     private String owner;  // dotcms 472
     
@@ -147,7 +159,10 @@ public class TemplateForm extends ValidatorForm {
 	 * @return String
 	 */
 	public String getBody() {
-		return body;
+		if(!drawed)
+			return body;
+		else
+			return START_COMMENT+body+END_COMMENT;
 	}
 
 	/**
@@ -157,9 +172,48 @@ public class TemplateForm extends ValidatorForm {
 	public void setBody(String body) {
 		this.body = body;
 	}
-
 	
+	// BEGIN GRAZIANO issue-12-dnd-template
+	public String getDrawedBody() {
+		return drawedBody;
+	}
 
+	public void setDrawedBody(String drawedBody) {
+		this.drawedBody = drawedBody;
+	}
+
+	public boolean isDrawed() {
+		return drawed;
+	}
+
+	public void setDrawed(boolean drawed) {
+		this.drawed = drawed;
+	}
+	
+	public int getCountAddContainer() {
+		return countAddContainer;
+	}
+
+	public void setCountAddContainer(int countAddContainer) {
+		this.countAddContainer = countAddContainer;
+	}
+
+	public int getCountContainers() {
+		return countContainers;
+	}
+
+	public void setCountContainers(int countContainers) {
+		this.countContainers = countContainers;
+	}
+
+	public String getHeadCode() {
+		return headCode;
+	}
+
+	public void setHeadCode(String headCode) {
+		this.headCode = headCode;
+	}	
+	// END GRAZIANO issue-12-dnd-template
 
 	/**
 	 * Returns the footer.
@@ -209,5 +263,4 @@ public class TemplateForm extends ValidatorForm {
 		this.owner = owner;
 	}
 
-    
 }
