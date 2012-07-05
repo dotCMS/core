@@ -3,6 +3,7 @@ package com.dotmarketing.business;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,8 +17,10 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
@@ -49,11 +52,26 @@ public class PermissionAPITest extends TestBase {
                String path="/f"+w+"/f"+x+"/f"+y+"/f"+z;
                Folder folder=APILocator.getFolderAPI().createFolders(path, host, sysuser, false);
                
+               // a page under the folder
                HTMLPage page=new HTMLPage();
                page.setPageUrl("testpage");
                page.setFriendlyName("testpage");
                page.setTitle("testpage");
                APILocator.getHTMLPageAPI().saveHTMLPage(page, tt, folder, sysuser, false);
+               
+               // a file under the folder
+               File file=new File();
+               file.setTitle("testfile.txt");
+               file.setFileName("testfile.txt");
+               java.io.File fdata=java.io.File.createTempFile("tmpfile", "data.txt");
+               FileWriter fw=new FileWriter(fdata);
+               fw.write("test file in path "+path);
+               fw.close();
+               APILocator.getFileAPI().saveFile(file, fdata, folder, sysuser, false);
+               
+               // a structure under the folder
+               Structure structure=new Structure();
+               structure.setDescription("test structure under "+path);
            }
     }
     
@@ -76,7 +94,6 @@ public class PermissionAPITest extends TestBase {
         
         Permission p=new Permission();
         p.setBitPermission(true);
-        p.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
         p.setRoleId(nrole.getId());
         perm.save(p, host, sysuser, false);
@@ -104,7 +121,6 @@ public class PermissionAPITest extends TestBase {
         
         Permission p=new Permission();
         p.setBitPermission(true);
-        p.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
         p.setRoleId(nrole.getId());
         perm.save(p, host, sysuser, false);
@@ -149,14 +165,12 @@ public class PermissionAPITest extends TestBase {
         
         Permission p1=new Permission();
         p1.setBitPermission(true);
-        p1.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         perm.save(p1, f1, sysuser, false);
         
         Permission p2=new Permission();
         p2.setBitPermission(true);
-        p2.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p2.setPermission(PermissionAPI.PERMISSION_WRITE);
         p2.setRoleId(nrole.getId());
         perm.save(p2, f1, sysuser, false);
@@ -210,14 +224,12 @@ public class PermissionAPITest extends TestBase {
         
         Permission p1=new Permission();
         p1.setBitPermission(true);
-        p1.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         perm.save(p1, f, sysuser, false);
         
         Permission p2=new Permission();
         p2.setBitPermission(true);
-        p2.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p2.setPermission(PermissionAPI.PERMISSION_WRITE);
         p2.setRoleId(nrole.getId());
         perm.save(p2, f, sysuser, false);
@@ -247,14 +259,12 @@ public class PermissionAPITest extends TestBase {
         
         Permission p1=new Permission();
         p1.setBitPermission(true);
-        p1.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p1.setPermission(PermissionAPI.PERMISSION_READ);
         p1.setRoleId(nrole.getId());
         perm.save(p1, f, sysuser, false);
         
         Permission p2=new Permission();
         p2.setBitPermission(true);
-        p2.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p2.setPermission(PermissionAPI.PERMISSION_EDIT);
         p2.setRoleId(nrole.getId());
         perm.save(p2, f, sysuser, false);
@@ -292,7 +302,6 @@ public class PermissionAPITest extends TestBase {
 
         Permission p2=new Permission();
         p2.setBitPermission(true);
-        p2.setType(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
         p2.setPermission(PermissionAPI.PERMISSION_EDIT);
         p2.setRoleId(nrole.getId());
         perm.save(p2, f, sysuser, false);
@@ -304,13 +313,72 @@ public class PermissionAPITest extends TestBase {
     }
     
     @Test
-    public void save() {
+    public void save() throws DotStateException, DotDataException, DotSecurityException {
+        Role nrole=new Role();
+        nrole.setName("TestingRole7");
+        nrole.setRoleKey("TestingRole7");
+        nrole.setEditUsers(true);
+        nrole.setEditPermissions(true);
+        nrole.setEditLayouts(true);
+        nrole.setDescription("Testing Role 7");
+        APILocator.getRoleAPI().save(nrole);
         
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", host, sysuser, false);
+        perm.permissionIndividually(host, f, sysuser, false);
+        
+        ArrayList<Permission> permissions=new ArrayList<Permission>(perm.getPermissions(f));
+        
+        Permission p=new Permission();
+        p.setBitPermission(true);
+        p.setPermission(PermissionAPI.PERMISSION_READ);
+        p.setRoleId(nrole.getId());
+        permissions.add(p);
+        perm.save(p, f, sysuser, false);
+        assertSamePermissions(permissions, perm.getPermissions(f));
+        
+        p=new Permission();
+        p.setBitPermission(true);
+        p.setPermission(PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        p.setRoleId(nrole.getId());
+        permissions.add(p);
+        perm.save(p, f, sysuser, false);
+        assertSamePermissions(permissions, perm.getPermissions(f));
+        
+        p=new Permission();
+        p.setBitPermission(true);
+        p.setPermission(PermissionAPI.PERMISSION_EDIT);
+        p.setRoleId(nrole.getId());
+        permissions.add(p);
+        perm.save(p, f, sysuser, false);
+        assertSamePermissions(permissions, perm.getPermissions(f));
+        
+        p=new Permission();
+        p.setBitPermission(true);
+        p.setPermission(PermissionAPI.PERMISSION_PUBLISH);
+        p.setRoleId(nrole.getId());
+        permissions.add(p);
+        perm.save(p, f, sysuser, false);
+        assertSamePermissions(permissions, perm.getPermissions(f));
+        
+        perm.removePermissions(f);
     }
     
     @Test
-    public void resetPermissionsUnder() {
+    public void resetPermissionsUnder() throws DotStateException, DotDataException, DotSecurityException {
+        Folder f1 = APILocator.getFolderAPI().findFolderByPath("/f5/", host, sysuser, false);
+        Folder f2 = APILocator.getFolderAPI().findFolderByPath("/f5/f1", host, sysuser, false);
+        Folder f3 = APILocator.getFolderAPI().findFolderByPath("/f5/f1/f1", host, sysuser, false);
+        Folder f4 = APILocator.getFolderAPI().findFolderByPath("/f5/f1/f1/f1", host, sysuser, false);
         
+        perm.permissionIndividually(host, f4, sysuser, false);
+        perm.permissionIndividually(host, f3, sysuser, false);
+        perm.permissionIndividually(host, f2, sysuser, false);
+        perm.permissionIndividually(host, f1, sysuser, false);
+        
+        assertFalse(perm.isInheritingPermissions(f1));
+        assertFalse(perm.isInheritingPermissions(f2));
+        assertFalse(perm.isInheritingPermissions(f3));
+        assertFalse(perm.isInheritingPermissions(f4));
     }
     
     @Test
