@@ -316,10 +316,13 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 				if(action != null
 						&& ! action.requiresCheckout()
-						&& ! currentContentlet.isLocked()
 						&& APILocator.getContentletAPI().canLock(currentContentlet, user)){
+				    
+				    if(currentContentlet.isLocked())
+				        APILocator.getContentletAPI().unlock(currentContentlet, user, false);
+				    
 						currentContentlet.setModUser(user.getUserId());
-						currentContentlet = APILocator.getWorkflowAPI().fireWorkflowNoCheckin(currentContentlet).getContentlet();
+						currentContentlet = APILocator.getWorkflowAPI().fireWorkflowNoCheckin(currentContentlet,user).getContentlet();
 						contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
 						contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 						SessionMessages.add(req, "message", "Workflow-executed");

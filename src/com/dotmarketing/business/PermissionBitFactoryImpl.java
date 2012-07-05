@@ -3344,12 +3344,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		dc.loadResult();
 
 		permissionCache.remove(permissionable.getPermissionId());
-
-		if(permissionable instanceof Contentlet) {
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			contAPI.refresh((Contentlet)permissionable);
-		}
-
 	}
 
 	@Override

@@ -20,6 +20,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
@@ -38,16 +39,48 @@ public class WidgetResource extends WebResource {
 		String username = params.get(USER);
 		String password = params.get(PASSWORD);
 		User user = null;
+		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		
+		if(params.get(LANGUAGE) != null){
+			try{
+				language= Long.parseLong(params.get(LANGUAGE))	;
+			}
+			catch(Exception e){
+				Logger.error(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+			}
+		}
+		String inode = null;
+		boolean live = true;
+		
+		
 
+		
 		/* Authenticate the User if passed */
 
 		user = authenticateUser(username, password);
 
+		if(user!=null){
+			live=	(params.get(LIVE) == null || ! "false".equals(params.get(LIVE)));
+			inode = params.get(INODE);
+		}
+		
+		if(!UtilMethods.isSet(id) && !UtilMethods.isSet(inode)) {
+			response.getWriter().println("Please pass an id (or inode + user) in via the url");
+			
+			return null;
+		}
+		
 		/* Fetching the widget using id passed */
-
-		if(!UtilMethods.isSet(id)) return null;
-
-		Contentlet widget = APILocator.getContentletAPI().find(id, user, true);
+		Contentlet widget = null;
+		if(UtilMethods.isSet(inode)){
+			widget = APILocator.getContentletAPI().find(inode, user, true);
+		}
+		else{
+			widget = APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true);
+			
+		}
+		
+		
 
 		return parseWidget(request, response, widget);
 

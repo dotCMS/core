@@ -288,7 +288,7 @@
 			'hosts-publish-permission-' + id,
 			'hosts-edit-permissions-permission-' + id,
 			'hosts-virtual-links-permission-' + id,
-			
+
 
 			'folders-view-permission-' + id,
 			'folders-add-children-permission-' + id,
@@ -510,7 +510,9 @@
 					exceptionHandler: applyPermissionChangesFail
 				}
 
-				dijit.byId('savingPermissionsDialog').show();
+				if(dojo.isIE != 9){
+					dijit.byId('savingPermissionsDialog').show();
+				}
 
 				cascadingChanges = cascadeChanges;
 				RoleAjax.saveRolePermission(permissionsRoleId, id, permissionsToSave, cascadeChanges, callbackOptions);

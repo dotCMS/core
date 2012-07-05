@@ -62,7 +62,7 @@
 	String hostId = "";
 	if(form.getHostId()!=null) 
 		hostId = form.getHostId();
-	List<Host> listHosts= (List <Host>) request.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_HOSTS);
+	List<Host> listHosts= (List <Host>) request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_HOSTS);
 	if(!UtilMethods.isSet(hostId)) {
 		if(request.getParameter("host_id") != null) {
 			hostId = request.getParameter("host_id");

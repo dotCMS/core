@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.UUIDGenerator"%>
 <%@ include file="/html/portlet/ext/htmlpages/init.jsp" %>
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
@@ -246,14 +247,14 @@ hostId = request.getParameter("host_id");
 					<input dojoType="dijit.form.CheckBox" type="checkbox" name="publishInode" id="publishInode<%= htmlpage.getInode() %>" value="<%= htmlpage.getInode() %>" onclick="togglePublish()" /> 
 				<% } %>
 			</td>
-			<td>
+			<td <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>>
 				<span class="pageIcon"></span>
 				<%=htmlpage.getTitle() %>
 			</td>
-			<td  nowrap="true"><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage) %></td>
-			<td nowrap><%=htmlpage.getPageUrl() %></td>
-            <td nowrap><%=pathToMe %></td>
-            <td nowrap><%=modDateFormat.format(htmlpage.getModDate()) %></td>
+			<td nowrap="true" <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage) %></td>
+			<td nowrap <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%=htmlpage.getPageUrl() %></td>
+            <td nowrap <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%=pathToMe %></td>
+            <td nowrap <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%=modDateFormat.format(htmlpage.getModDate()) %></td>
         </tr>
         <script language="JavaScript">
             //popup div for the htmlpages

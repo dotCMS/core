@@ -3,14 +3,16 @@ package com.dotmarketing.sitesearch.business;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.search.facet.Facet;
 import org.quartz.SchedulerException;
 
-import com.dotcms.publishing.sitesearch.SiteSearchConfig;
-import com.dotcms.publishing.sitesearch.SiteSearchPublishStatus;
-import com.dotcms.publishing.sitesearch.SiteSearchResult;
-import com.dotcms.publishing.sitesearch.SiteSearchResults;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.ScheduledTask;
 
@@ -41,9 +43,9 @@ public interface SiteSearchAPI {
 
 	void deleteFromIndex(String idx, String docId);
 
-	SiteSearchResults search(String query, String sort, int start, int rows);
+	SiteSearchResults search(String query, int start, int rows);
 	
-	SiteSearchResults search(String indexName, String query, String sort, int start, int rows);
+	SiteSearchResults search(String indexName, String query, int start, int rows);
 
 	ScheduledTask getTask(String taskName) throws SchedulerException;
 	
@@ -56,4 +58,8 @@ public interface SiteSearchAPI {
 	void executeTaskNow(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException;
 
 	SiteSearchResult getFromIndex(String index, String id);
+
+	Map<String, Facet> getFacets(String indexName, String query) throws DotDataException;
+
+    List<String> listClosedIndices();
 }

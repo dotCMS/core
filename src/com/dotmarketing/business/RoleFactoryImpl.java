@@ -504,6 +504,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
 			hu.setParam(rFQN);
 			r = (Role)hu.load();
+			translateFQNFromDB(r);
 			rc.add(r);
 			HibernateUtil.evict(r);
 		}

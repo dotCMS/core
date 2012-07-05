@@ -1266,15 +1266,17 @@
 		TagAjax.addTag(tagName, currentUser.userId, currentUser.inode, showResult);
 	}
 	function showResult(result) {
-		DWRUtil.removeAllRows("tags_table");
+		DWRUtil.removeAllRows("tags_table");	
 		var table = document.getElementById("tags_table");
 		console.log(result);
 		var tags =  result.tags;
 		console.log(tags);
-		if (tags.length > 0) {
+		if (tags.length > 0) {			
 			var row = table.insertRow(table.rows.length);
+			row.setAttribute("bgColor","#EEEEEE");
 			var cell = row.insertCell (row.cells.length);
-			row.innerHTML = '<th colspan=2><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Tag-Name")) %></th>';
+			cell.setAttribute("colspan", "2");
+			cell.innerHTML = '<b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Tag-Name")) %></b>';
 			//cell = row.insertCell (row.cells.length);
 
 			for (var i = 0; i < tags.length; i++) {
@@ -1296,7 +1298,7 @@
 			}
 		}
 		else {
-			var row = table.insertRow(table.rows.length);
+				var row = table.insertRow(table.rows.length);
 				var cell = row.insertCell (row.cells.length);
 				cell.innerHTML = '<center><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Tags-Assigned")) %></b></center>';
 		}

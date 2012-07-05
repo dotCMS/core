@@ -248,13 +248,10 @@ function togglePublish(){
 						<input dojoType="dijit.form.CheckBox" type="checkbox" name="publishInode" id="publishInode<%= link.getInode() %>" value="<%= link.getInode() %>" onclick="togglePublish()" />						
 					<% } %>
 				</td>
-				<td nowrap>
-					<a href="javascript: editLink('<%=parent%>','<%=inode%>','<%=userId%>','<%= referer %>','<%= live %>','<%= working %>','<%= write %>')">
-						<span class="linkIcon"></span>
-						<%=link.getTitle()%>
-					</a>
+				<td nowrap <%if(!link.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=link.getInode()%>&referer=<%=referer%>'"<%} %>>
+						<span class="linkIcon"></span>&nbsp;<%= link.getTitle() %>
 				</td>
-				<td nowrap="true"><%= com.dotmarketing.util.UtilHTML.getStatusIcons(link) %></td>
+				<td nowrap="true" <%if(!link.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=link.getInode()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(link) %></td>
 				<td nowrap>
 					<% if ((link.getLinkType() == null) || (!link.getLinkType().equals(Link.LinkType.CODE.toString()))) { %>
 						<a  href="<%=link.getWorkingURL()%>" target="_blank" ><% if(link.getWorkingURL()!=null){ %><% if(link.getWorkingURL().length() > 45){ %><%= link.getWorkingURL().substring(0,45) + "..." %><% }else{ %><%= link.getWorkingURL() %><% } %><% } %></a>
@@ -262,8 +259,8 @@ function togglePublish(){
 						<%= LanguageUtil.get(pageContext, "Code-Link") %>
 					<% } %>
 				</td>
-				<td nowrap><%=pathToMe%></td>
-				<td nowrap>
+				<td nowrap <%if(!link.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=link.getInode()%>&referer=<%=referer%>'"<%} %>><%=pathToMe%></td>
+				<td nowrap <%if(!link.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&r=<%=UUIDGenerator.generateUuid()%>&inode=<%=link.getInode()%>&referer=<%=referer%>'"<%} %>>
 					<%=modDateFormat.format(link.getModDate())%>
 					<script language="JavaScript">
 						//popup div for the links

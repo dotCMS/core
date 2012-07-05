@@ -3,7 +3,9 @@ package com.dotmarketing.cmis.proxy;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.servlet.http.Cookie;
@@ -16,10 +18,14 @@ import com.liferay.portal.model.User;
 
 //http://jira.dotmarketing.net/browse/DOTCMS-3392
 public class DotInvocationHandler implements InvocationHandler{
-
+    private final Map map;
+    
+    public DotInvocationHandler(Map map) {
+        this.map=map;
+    }
+    
 	public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
-		
 		/*
 		 * Right now the interfaces handled are
 		 * 
@@ -54,7 +60,7 @@ public class DotInvocationHandler implements InvocationHandler{
 				|| method.getName().equalsIgnoreCase("getParameter"))
 				&& args != null 
 				&& args[0]!= null){	
-			return get((String) args[0]);
+			return get(map,(String) args[0]);
 		}
 
 		if(methodName.equalsIgnoreCase("getParameterNames")){	
@@ -73,12 +79,12 @@ public class DotInvocationHandler implements InvocationHandler{
 				|| method.getName().equalsIgnoreCase("setAttribute"))
 				&& args != null 
 				&& args[0]!= null){	
-			return DotRequestProxy.map.put((String)args[0],args[1]);
+			return map.put((String)args[0],args[1]);
 		}
 		
 		if(methodName.equalsIgnoreCase("getSession") || method.getName().equalsIgnoreCase("session")){
 			
-			InvocationHandler ih =  new DotInvocationHandler();
+			InvocationHandler ih =  new DotInvocationHandler(new HashMap());
 			
 			DotSessionProxy session = (DotSessionProxy) Proxy.newProxyInstance(DotSessionProxy.class.getClassLoader(),
 	                new Class[] { DotSessionProxy.class },
@@ -91,7 +97,7 @@ public class DotInvocationHandler implements InvocationHandler{
 		if((methodName.equalsIgnoreCase("addCookie"))
 				&& args != null 
 				&& args[0]!= null){	
-			return DotRequestProxy.map.put("cookie",args[0]);
+			return map.put("cookie",args[0]);
 		}
 		
 		if((methodName.equalsIgnoreCase("getCookies"))){					
@@ -103,17 +109,17 @@ public class DotInvocationHandler implements InvocationHandler{
 		}
 		
 		if((methodName.equalsIgnoreCase("getServerName"))){					
-			com.liferay.portal.model.User user = (User) DotRequestProxy.map.get("user");
-			Host host = (Host) DotRequestProxy.map.get("host");
+			com.liferay.portal.model.User user = (User) map.get("user");
+			Host host = (Host) map.get("host");
 			return host.getHostname();
 		}
 		
 		if((methodName.equalsIgnoreCase("getRequestURI"))){					
-			return (String)DotRequestProxy.map.get("uri");
+			return (String)map.get("uri");
 		}
 
 		if((methodName.equalsIgnoreCase("getRequestURL"))){
-			return new StringBuffer("http://localhost/cmis/file/").append((String)DotRequestProxy.map.get("uri"));			 
+			return new StringBuffer("http://localhost/cmis/file/").append((String)map.get("uri"));			 
 		}
 
 		return new Object();
@@ -129,10 +135,10 @@ public class DotInvocationHandler implements InvocationHandler{
 	}
 	
 	
-	public Object get(String key){
+	public Object get(Map proxy, String key){
 
 		// LANG
-		 if(key.equalsIgnoreCase(WebKeys.HTMLPAGE_LANGUAGE) && !DotRequestProxy.map.containsKey(key))
+		 if(key.equalsIgnoreCase(WebKeys.HTMLPAGE_LANGUAGE) && !proxy.containsKey(key))
 			return APILocator.getLanguageAPI().getDefaultLanguage().getId();
 					
 		//COOKIE
@@ -141,17 +147,17 @@ public class DotInvocationHandler implements InvocationHandler{
 		
 		//HOST_ID , DEFAULT HOST
 		if(key.equalsIgnoreCase("host_id")){
-			com.liferay.portal.model.User user = (User) DotRequestProxy.map.get("user");
-			Host host = (Host) DotRequestProxy.map.get("host");
+			com.liferay.portal.model.User user = (User) proxy.get("user");
+			Host host = (Host) proxy.get("host");
 			return host.getHost();
 		}
 		
 		//USER test@dotcms.org
 		if(key.equalsIgnoreCase(com.dotmarketing.util.WebKeys.CMS_USER)){				
-			com.liferay.portal.model.User user = (User) DotRequestProxy.map.get("user");
+			com.liferay.portal.model.User user = (User) proxy.get("user");
 			return user;
 		}		
 		
-		return DotRequestProxy.map.get((String)key);		
+		return proxy.get((String)key);		
 	}
 }

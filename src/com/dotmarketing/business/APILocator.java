@@ -11,7 +11,7 @@ import com.dotcms.enterprise.cmis.CMISAPI;
 import com.dotcms.enterprise.cmis.CMISAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
-import com.dotcms.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;

@@ -587,6 +587,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 						try {
 							actionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
+							actionletClasses.add(actionlet.getClass());
 						} catch (InstantiationException e) {
 							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
 						} catch (IllegalAccessException e) {
@@ -725,8 +726,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return startTransaction;
     }
 
-	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException{
-		WorkflowProcessor processor = new WorkflowProcessor(contentlet);
+	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
+		WorkflowProcessor processor = new WorkflowProcessor(contentlet, user);
 		if(!processor.inProcess()){
 			return processor;
 		}
@@ -856,9 +857,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
-	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException{
+	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 
-		WorkflowProcessor processor =fireWorkflowPreCheckin(contentlet);
+		WorkflowProcessor processor =fireWorkflowPreCheckin(contentlet, user);
 
 		fireWorkflowPostCheckin(processor);
 		return processor;
@@ -888,11 +889,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException{
     	return wfac.createDefaultScheme();
     }
-    
+
     public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {
     	return wfac.searchAllTasks(searcher);
     }
-    
+
     public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException {
 
 		return wfac.retrieveLastStepAction(taskId);
@@ -931,6 +932,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException {
         return wfac.findExpiredTasks();
     }
-    
-    
+
+
 }

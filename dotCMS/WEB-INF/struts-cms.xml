@@ -31,12 +31,13 @@
 		<action path="/submitContent"  type="com.dotmarketing.cms.content.submit.action.SubmitContentAction" scope="request" validate="false" parameter="dispatch" >
 		</action>
 		
-        <action path="/login"  type="com.dotmarketing.cms.login.action.LoginAction" name="loginForm" scope="request" validate="false"	parameter="dispatch" input="/application/login/login.dot" >
-			<forward name="loginPage" path="/application/login/login.dot" />
-			<forward name="forgotPasswordPage" path="/application/login/forgot_password.dot" />
-			<forward name="challengeQuestionPage" path="/application/login/challenge_question.dot" />
-			<forward name="successPage" path="/application/login/login_successful.dot" />
-			<forward name="resendActivationPage" path="/application/myaccount/resend_activation_email.dot" />		
+        
+<action path="/login"  type="com.dotmarketing.cms.login.action.LoginAction" name="loginForm" scope="request" validate="false"	parameter="dispatch" input="/application/login/login.html" >
+			<forward name="loginPage" path="/application/login/login.html" />
+			<forward name="forgotPasswordPage" path="/application/login/forgot_password.html" />
+			<forward name="challengeQuestionPage" path="/application/login/challenge_question.html" />
+			<forward name="successPage" path="/application/login/login_successful.html" />
+			<forward name="resendActivationPage" path="/application/myaccount/resend_activation_email.html" />		
         </action>
         
         <action path="/logout"   type="com.dotmarketing.cms.login.action.LogoutAction" parameter="dispatch" >
@@ -53,69 +54,80 @@
 			an email with a reset password that contains the acckey encrypted is sent to 
 			the user to return to the site to reset the password
 		 -->
-        <action path="/forgotPassword"  type="com.dotmarketing.cms.forgotpassword.action.ForgotPasswordAction" name="forgotPasswordForm" scope="request" validate="false"	parameter="dispatch" input="/application/login/forgot_password.dot" >
+        
+<action path="/forgotPassword"  type="com.dotmarketing.cms.forgotpassword.action.ForgotPasswordAction" name="forgotPasswordForm" scope="request" validate="false"	parameter="dispatch" input="/application/login/forgot_password.html" >
 			
-			<forward name="forgotPasswordPage" path="/application/login/forgot_password.dot" />
-			<forward name="challengeQuestionPage" path="/application/login/challenge_question.dot" />
-			<forward name="resetPasswordPage" path="/application/login/reset_password.dot" />
+			<forward name="forgotPasswordPage" path="/application/login/forgot_password.html" />
+			<forward name="challengeQuestionPage" path="/application/login/challenge_question.html" />
+			<forward name="resetPasswordPage" path="/application/login/reset_password.html" />
 			
-			<forward name="resendActivationPage" path="/application/myaccount/resend_activation_email.dot" redirect="true" />		
-			<forward name="passwordChangeConfirmationPage" path="/application/login/reset_password_confirmation.dot" redirect="true" />		
-			<forward name="emailSentConfirmationPage" path="/application/login/reset_password_email_sent.dot" redirect="true" />		
-			<forward name="loginPage" path="/application/login/login.dot" />
+			<forward name="resendActivationPage" path="/application/myaccount/resend_activation_email.html" redirect="true" />		
+			<forward name="passwordChangeConfirmationPage" path="/application/login/reset_password_confirmation.html" redirect="true" />		
+			<forward name="emailSentConfirmationPage" path="/application/login/reset_password_email_sent.html" redirect="true" />		
+			<forward name="loginPage" path="/application/login/login.html" />
         </action>
 		<!-- Account Activation - This is used when the accounts are created inactive -->
-		<action path="/activateAccount" type="com.dotmarketing.cms.myaccount.action.AccountActivationAction" scope="request" parameter="dispatch">
-			<forward name="myAccountPage" path="/application/myaccount/my_account.dot" />
-			<forward name="resendActivationPage" path="/application/myaccount/resend_activation_email.dot" />		
+		
+<action path="/activateAccount" type="com.dotmarketing.cms.myaccount.action.AccountActivationAction" scope="request" parameter="dispatch">
+			<forward name="myAccountPage" path="/application/myaccount/my_account.html" />
+			<forward name="resendActivationPage" path="/application/myaccount/resend_activation_email.html" />		
 			<forward name="confirmation" path="/dotCMS/login" redirect="true" />		
-			<forward name="loginPage" path="/application/login/login.dot" />
+			<forward name="loginPage" path="/application/login/login.html" />
 		</action>
 		<!-- Account Activation -->
-       <action path="/myAccount"  type="com.dotmarketing.cms.myaccount.action.MyAccountAction" name="myAccountForm" scope="request" validate="false" parameter="dispatch" input="/application/myaccount/my_account.dot" >
-			<forward name="myAccountPage" path="/application/myaccount/my_account.dot" />
-			<forward name="editUserAddressPage" path="/application/myaccount/edit_user_address.dot" />
-			<forward name="editUserOrganizationPage" path="/application/myaccount/edit_user_organization.dot" />
-			<forward name="editUserCategoriesPage" path="/application/myaccount/edit_user_categories.dot" />
-        </action>
-       <action path="/editInterests"  type="com.dotmarketing.cms.myaccount.action.MyInterestsAction" name="myAccountForm" scope="request" validate="false" parameter="dispatch" input="/application/myaccount/my_interests.dot" >
-			<forward name="myInterestsPage" path="/application/myaccount/my_interests.dot" />
-        </action>
-        <action path="/address"  type="com.dotmarketing.cms.myaccount.action.AddressAction" name="addressForm" scope="request" validate="false"	parameter="dispatch" input="/global/my_account_address.dot" >
-			<forward name="myAccountPage" path="/global/my_account.dot" />
-			<forward name="myAccountAddressPage" path="/global/my_account_address.dot" />
+       
+<action path="/myAccount"  type="com.dotmarketing.cms.myaccount.action.MyAccountAction" name="myAccountForm" scope="request" validate="false" parameter="dispatch" input="/application/myaccount/my_account.html" >
+			<forward name="myAccountPage" path="/application/myaccount/my_account.html" />
+			<forward name="editUserAddressPage" path="/application/myaccount/edit_user_address.html" />
+			<forward name="editUserOrganizationPage" path="/application/myaccount/edit_user_organization.html" />
+			<forward name="editUserCategoriesPage" path="/application/myaccount/edit_user_categories.html" />
         </action>
        
-        <action path="/createAccount"  type="com.dotmarketing.cms.createaccount.action.CreateAccountAction" name="createAccountForm" scope="request" validate="false" parameter="dispatch" input="/global/login.dot">
-			<forward name="createAccount" path="/application/login/login.dot" />
+<action path="/editInterests"  type="com.dotmarketing.cms.myaccount.action.MyInterestsAction" name="myAccountForm" scope="request" validate="false" parameter="dispatch" input="/application/myaccount/my_interests.html" >
+			<forward name="myInterestsPage" path="/application/myaccount/my_interests.html" />
+        </action>
+        
+<action path="/address"  type="com.dotmarketing.cms.myaccount.action.AddressAction" name="addressForm" scope="request" validate="false"	parameter="dispatch" input="/global/my_account_address.html" >
+			<forward name="myAccountPage" path="/global/my_account.html" />
+			<forward name="myAccountAddressPage" path="/global/my_account_address.html" />
+        </action>
+       
+        
+<action path="/createAccount"  type="com.dotmarketing.cms.createaccount.action.CreateAccountAction" name="createAccountForm" scope="request" validate="false" parameter="dispatch" input="/global/login.html">
+			<forward name="createAccount" path="/application/createaccount/create_account.html" />
 			<forward name="myAccountPage" path="/dotCMS/myAccount" redirect="true"/>
         </action>
                 
-        <action path="/subscribe" type="com.dotmarketing.cms.subscribe.action.MailingListsSubscribeAction"  name="mailingListsSubscribeForm" scope="request" validate="false"	parameter="dispatch" input="/application/myaccount/mailinglists_subscription.dot">
-			<forward name="subscribePage" path="/application/myaccount/mailinglists_subscription.dot" />
+        
+<action path="/subscribe" type="com.dotmarketing.cms.subscribe.action.MailingListsSubscribeAction"  name="mailingListsSubscribeForm" scope="request" validate="false"	parameter="dispatch" input="/application/myaccount/mailinglists_subscription.html">
+			<forward name="subscribePage" path="/application/myaccount/mailinglists_subscription.html" />
         </action>
 		<!-- Send Email -->
-		<action path="/submitWebForm" type="com.dotmarketing.cms.webforms.action.SubmitWebFormAction" parameter="dispatch" name="webForm">
+		
+<action path="/submitWebForm" type="com.dotmarketing.cms.webforms.action.SubmitWebFormAction" parameter="dispatch" name="webForm">
 			<forward name="thankYouPage" path="/" />
 		</action>
-		<action path="/sendEmail" type="com.dotmarketing.cms.webforms.action.SubmitWebFormAction" parameter="dispatch" name="webForm">
-			<forward name="thankYouPage" path="/global/thankyou.dot" />
+		
+<action path="/sendEmail" type="com.dotmarketing.cms.webforms.action.SubmitWebFormAction" parameter="dispatch" name="webForm">
+			<forward name="thankYouPage" path="/global/thankyou.html" />
 		</action>
-		<action path="/sendArticleEmail" type="com.dotmarketing.cms.sendtofriend.action.SendArcticleToFriendAction" parameter="dispatch" name="webForm">
-			<forward name="thankYouPage" path="/global/thankyou.dot" />
+		
+<action path="/sendArticleEmail" type="com.dotmarketing.cms.sendtofriend.action.SendArcticleToFriendAction" parameter="dispatch" name="webForm">
+			<forward name="thankYouPage" path="/global/thankyou.html" />
 		</action>
 		<!-- Send Email -->
 		
         
         <!-- CalendarReminder -->
 		<action path="/calendarReminder" type="com.dotmarketing.portlets.calendar.cms.action.CalendarReminderAction" parameter="dispatch" name="calendarReminderForm">
-			<forward name="thankYouPage" path="/home/index.dot" />
+			<forward name="thankYouPage" path="/home/index.html" />
 		</action>
 		
 		<!-- End Calendar Reminder -->
         
         
-        <action path="/webEventComments" forward="/conferences_events/comments_testimonials.dot">
+        
+<action path="/webEventComments" forward="/conferences_events/comments_testimonials.html">
 		</action>
         <!-- User Favorites -->
         <action path="/addFavorites"  type="com.dotmarketing.cms.myaccount.action.MyFavoritesAction" scope="request" parameter="dispatch">

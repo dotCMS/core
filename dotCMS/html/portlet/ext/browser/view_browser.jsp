@@ -8,15 +8,15 @@
 	<span class="exclamation"></span>
 	<span id="messageBox"></span>
 </div>
-	
+
 <div id="errorsTable" style="display: none;">
 	<span class="exclamation-red"></span>
 	<span id="errorBox"></span>
 </div>
 
 
-	
-	
+
+
 <style type="text/css" media="all">
 	@import url(/html/portlet/ext/browser/browser.css);
 </style>
@@ -31,7 +31,7 @@
 <%@ include file="/html/portlet/ext/browser/view_browser_menus_js_inc.jsp"%>
 
 <style type="text/css">
-	#borderContainer{ width: 100%; height: 50%;} 
+	#borderContainer{ width: 100%; height: 50%;}
 	#dijit_layout__Splitter_0{border:1px #eeeeee solid;}
 	#assetListHead{border-bottom: 1px solid silver;margin-bottom:10px;}
 	#assetListHead span{display:block;padding:5px 8px;font-size:85%;font-weight:bold;}
@@ -41,7 +41,7 @@
 <script>
 
 	var browserLoaded = false;
-	
+
 	function  resizeBrowser(){
 		if(browserLoaded) return;
 		browserLoaded=true;
@@ -57,12 +57,14 @@
 	// need the timeout for back buttons
 	setTimeout(resizeBrowser, 50);
 	dojo.addOnLoad(resizeBrowser);
-	
+
+	dojo.require("dojox.form.uploader.plugins.Flash");
+
 </script>
 
  	<div id="addNewDropDownButtonDiv" class="buttonBoxRight">
   	</div>
-  	
+
  	<div class="buttonBoxLeft">
 		<b><%= LanguageUtil.get(pageContext, "Sites-and-Folders") %></b>
   	</div>
@@ -94,10 +96,10 @@
 					<th><a href="javascript: changeContentSort('modDate');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Mod-Date") %></a></th>
 				</tr>
 			</thead>
-			
+
 			<tbody id="assetListBody"></tbody>
-			
-			
+
+
 		<!-- The trash can -->
 			<tr>
 				<td colspan="6" style="height:100px;vertical-align: bottom;">
@@ -110,7 +112,7 @@
 				</td>
 			</tr>
 		<!--  End of the trash can -->
-		
+
 		</table>
 
 		<div id="loadingContentListing" name="loadingContentListing" align="center" style="">
@@ -137,18 +139,18 @@
 	<% } else { %>
 	var cmsAdminUser = false;
 	<% } %>
-	
+
 	var referer = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/browser/view_browser" /></portlet:renderURL>'
 
     debugMessagesEnabled = false;
 
     dojo.addOnLoad(function () {
-    	//Adding the events for the trash can	
+    	//Adding the events for the trash can
     	Droppables.add('trash-TreeREF', { onDrop: function(draggableElem, droppableElem, e) { droppedOnTrash(draggableElem.id.split('-')[0], 'Trash', e) }});
-    		
+
     	Event.observe('trash-TreeREF', 'mouseup', function (e){ trashRefMouseUp(e) });
-    	
-    	//Content Area event	
+
+    	//Content Area event
     	Event.observe('assetListBodyTD', 'mouseup', function (e){ contentAreaRefMouseUp(e) });
         BrowserAjax.getTree( '<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>', initializeTree);
     });
@@ -157,6 +159,6 @@
 
 	<div dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Upload-file(s)")%>" id="addFileDialog" style="width: 700px; height: 430px;"
 			onLoad="removeAddlStyleRef();">
-			
+
 	</div>
 

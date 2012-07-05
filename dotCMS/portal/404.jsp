@@ -77,12 +77,13 @@
 	}
 	
 	// if we have virtual link and page exists, redirect or forward
+	String ep_error_uri = (String)request.getAttribute("javax.servlet.forward.request_uri");
 	if(UtilMethods.isSet(pointer) ){
 		if (pointer.startsWith("/")) {
 			Logger.debug(this, "cms404Page forwarding to relative path: " + pointer);			
-			request.getRequestDispatcher(pointer).forward(request, response);
+			request.getRequestDispatcher(pointer+ "?ep_originatingHost="+ep_originatingHost+"&ep_errorCode="+ep_errorCode+"&ep_error_uri="+ep_error_uri).forward(request, response);
 		} else {
-			pointer = pointer + "?ep_originatingHost="+ep_originatingHost+"&ep_errorCode="+ep_errorCode;
+			pointer = pointer + "?ep_originatingHost="+ep_originatingHost+"&ep_errorCode="+ep_errorCode+"&ep_error_uri="+ep_error_uri;
 			Logger.debug(this, "cms404Page redirecting to absolute path: " + pointer);
 			response.sendRedirect(pointer);
 		}

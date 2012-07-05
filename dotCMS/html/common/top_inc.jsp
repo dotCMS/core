@@ -118,6 +118,7 @@ THIS FILE AND ITS INCLUDES
 		dojo.require("dojox.grid.enhanced.plugins.Menu");
 		dojo.require("dojo.data.ItemFileReadStore");
 		dojo.require("dijit.form.Form");
+		dojo.require("dojo.io.script");
 		
 		dojo.addOnLoad(function () {
 			dojo.global.DWRUtil = dwr.util;

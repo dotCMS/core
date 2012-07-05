@@ -74,35 +74,12 @@ public class MaintenanceUtil {
 		}
 	}
 
-	public static int cleanTreeTable(){
-		final String countSQL = "select count(*) as count from tree t";
-		final String deleteFromSQL ="delete from tree where child not in (select i.inode from inode i)";
-		final String deleteParentFromSQL ="delete from tree where parent not in (select i.inode from inode i)";
-		DotConnect dc = new DotConnect();
-		dc.setSQL(countSQL);
-		List<HashMap<String, String>> result =null;
-		int before = 0;
-		try {
-			result = dc.getResults();
-			before = Integer.parseInt(result.get(0).get("count"));
-			dc.setSQL(deleteFromSQL);
-			dc.getResult();
-			dc.setSQL(deleteParentFromSQL);
-			dc.getResult();
-			dc.setSQL(countSQL);
-			result = dc.getResults();
-		} catch (Exception e) {
-			Logger.error(MaintenanceUtil.class, e.getMessage(), e);
-		}
-		int after = Integer.parseInt(result.get(0).get("count"));
-		return before - after;
-	}
 
 	public static int cleanMultiTreeTable(){
 		final String countSQL = "select count(*) as count from multi_tree t";
-		final String deleteChildFromSQL ="delete from multi_tree where child not in (select i.inode from inode i)";
-		final String deleteParent1FromSQL ="delete from multi_tree where parent1 not in (select i.inode from inode i)";
-		final String deleteParent2FromSQL ="delete from multi_tree where parent2 not in (select i.inode from inode i)";
+		final String deleteChildFromSQL ="delete from multi_tree where child not in (select i.id from identifier i)";
+		final String deleteParent1FromSQL ="delete from multi_tree where parent1 not in (select i.id from identifier i)";
+		final String deleteParent2FromSQL ="delete from multi_tree where parent2 not in (select i.id from identifier i)";
 		DotConnect dc = new DotConnect();
 		dc.setSQL(countSQL);
 		List<HashMap<String, String>> result=null;
