@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/it/commands", //begin v1.x content
 ({
 	'bold': 'Grassetto',
 	'copy': 'Copia',
@@ -47,3 +49,5 @@
 	'systemShortcut': 'Azione "${0}" disponibile sul proprio browser solo mediante i tasti di scelta rapida della tastiera. Utilizzare ${1}.'
 })
 
+//end v1.x content
+);

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/sv/LocalImage", //begin v1.x content
 ({
 	insertImageTitle: "Infoga bild",
 	url: "Bild",
@@ -9,3 +12,5 @@
 	prePopuTextBrowse: " eller bläddra efter en lokal fil."
 })
 
+//end v1.x content
+);

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/th/InsertAnchor", //begin v1.x content
 ({
 	insertAnchor: "แทรกจุดยึด",
 	title: "คุณสมบัติจุดยึด",
@@ -7,3 +10,5 @@
 	cancel: "ยกเลิก"
 })
 
+//end v1.x content
+);

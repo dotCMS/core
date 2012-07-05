@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/sv/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "Infoga tabell",
 	modifyTableTitle: "Ändra tabell",
@@ -28,3 +31,5 @@
 	deleteTableRowLabel: "Ta bort rad",
 	deleteTableColumnLabel: "Ta bort kolumn"
 })
+//end v1.x content
+);

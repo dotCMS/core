@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/en/number", //begin v1.x content
 {
 	"group": ",",
 	"percentSign": "%",
@@ -18,3 +20,5 @@
 	"plusSign": "+",
 	"decimalFormat-short": "000T"
 }
+//end v1.x content
+);

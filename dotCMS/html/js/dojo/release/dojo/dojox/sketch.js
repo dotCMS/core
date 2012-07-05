@@ -1,9 +1,2 @@
-if(!dojo._hasResource["dojox.sketch"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.sketch"] = true;
-dojo.provide("dojox.sketch");
-dojo.require("dojox.xml.DomParser");
-dojo.require("dojox.sketch.UndoStack");
-dojo.require("dojox.sketch.Figure");
-dojo.require("dojox.sketch.Toolbar");
-
-}
+//>>built
+define("dojox/sketch",["dojo/_base/kernel","dojo/_base/lang","./xml/DomParser","./sketch/UndoStack","./sketch/Figure","./sketch/Toolbar"],function(_1){_1.getObject("sketch",true,dojox);return dojox.sketch;});

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/sv/FindReplace", //begin v1.x content
 ({
 	"findLabel": "Sök:",
 	"findTooltip": "Ange den text du vill söka efter",
@@ -8,7 +11,6 @@
 	"matchCaseTooltip": "Matcha skiftläge",
 	"backwards": "Bakåt",
 	"backwardsTooltip": "Sök bakåt efter text",
-	"replaceAll": "Alla förekomster",
 	"replaceAllButton": "Ersätt alla",
 	"replaceAllButtonTooltip": "Ersätt all text",
 	"findButton": "Sök",
@@ -21,3 +23,5 @@
 	"eofDialogTextReplace": "ersattes"
 })
 
+//end v1.x content
+);

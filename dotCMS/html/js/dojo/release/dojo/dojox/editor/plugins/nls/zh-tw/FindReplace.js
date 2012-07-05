@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/zh-tw/FindReplace", //begin v1.x content
 ({
 	"findLabel": "尋找：",
 	"findTooltip": "輸入要尋找的文字",
@@ -8,7 +11,6 @@
 	"matchCaseTooltip": "大小寫相符",
 	"backwards": "向後",
 	"backwardsTooltip": "往回搜尋文字",
-	"replaceAll": "所有出現項目",
 	"replaceAllButton": "全部取代",
 	"replaceAllButtonTooltip": "取代所有文字",
 	"findButton": "尋找",
@@ -20,3 +22,5 @@
 	"eofDialogTextFind": "找到",
 	"eofDialogTextReplace": "已取代"
 })
+//end v1.x content
+);

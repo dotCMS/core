@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/he/FontChoice", //begin v1.x content
 ({
 	fontSize: "גודל",
 	fontName: "גופן",
@@ -25,3 +27,5 @@
 	6: "גדול מאוד",
 	7: "גדול ביותר"
 })
+//end v1.x content
+);

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/kk/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "Бума емлесін тексеру",
 	unfound: "Табылмады",
@@ -15,3 +18,5 @@
 	iMsg: "Емле ұсыныстары жоқ"
 })
 
+//end v1.x content
+);

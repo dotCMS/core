@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/ko/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "필터 지우기",
 	"filterDefDialogTitle": "필터",
@@ -62,8 +65,8 @@
 	"anycolumn": "임의의 컬럼",
 	"statusTipTitleNoFilter": "필터 표시줄",
 	"statusTipTitleHasFilter": "필터",
-	"statusTipRelPre": "일치",
-	"statusTipRelPost": "규칙",
+	"statusTipRelAny": "임의 규칙과 일치.",
+	"statusTipRelAll": "모든 규칙과 일치.",
 	
 	"defaultItemsName": "항목",
 	"filterBarMsgHasFilterTemplate": "${0}/${1} ${2} 표시됨",
@@ -82,6 +85,5 @@
 	"trueLabel": "True",
 	"falseLabel": "False"
 })
-
-
-
+//end v1.x content
+);

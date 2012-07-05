@@ -1,6 +1,2 @@
-if(!dojo._hasResource["dojox.storage"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.storage"] = true;
-dojo.provide("dojox.storage");
-dojo.require("dojox.storage._common");
-
-}
+//>>built
+define(["dijit","dojo","dojox","dojo/require!dojox/storage/_common"],function(_1,_2,_3){_2.provide("dojox.storage");_2.require("dojox.storage._common");});

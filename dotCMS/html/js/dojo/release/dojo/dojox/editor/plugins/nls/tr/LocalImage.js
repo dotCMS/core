@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/tr/LocalImage", //begin v1.x content
 ({
 	insertImageTitle: "Resim Ekle",
 	url: "Resim",
@@ -9,3 +12,5 @@
 	prePopuTextBrowse: " ya da yerel bir dosyaya göz atın."
 })
 
+//end v1.x content
+);

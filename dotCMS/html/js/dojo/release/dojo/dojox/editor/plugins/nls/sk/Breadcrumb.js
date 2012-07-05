@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/sk/Breadcrumb", //begin v1.x content
 ({
 	"nodeActions": "Akcie pre ${nodeName}",
 	"selectContents": "Vybrať obsah",
@@ -8,3 +11,5 @@
 	"moveEnd": "Presunúť kurzor na koniec"
 })
 
+//end v1.x content
+);

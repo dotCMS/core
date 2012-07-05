@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/it/FontChoice", //begin v1.x content
 ({
 	fontSize: "Dimensione",
 	fontName: "Carattere",
@@ -26,3 +28,5 @@
 	7: "xx-large"
 })
 
+//end v1.x content
+);

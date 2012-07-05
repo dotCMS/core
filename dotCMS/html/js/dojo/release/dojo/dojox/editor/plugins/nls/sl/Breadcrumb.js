@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/sl/Breadcrumb", //begin v1.x content
 ({
 	"nodeActions": "Dejanja ${nodeName} ",
 	"selectContents": "Izberi vsebine ",
@@ -8,3 +11,5 @@
 	"moveEnd": "Pomakni kazalko na konec "
 })
 
+//end v1.x content
+);

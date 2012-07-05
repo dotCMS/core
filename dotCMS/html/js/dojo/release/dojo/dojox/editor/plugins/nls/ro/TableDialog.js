@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ro/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "Inserare tabel",
 	modifyTableTitle: "Modificare tabel",
@@ -30,3 +33,5 @@
 })
 	
 
+//end v1.x content
+);

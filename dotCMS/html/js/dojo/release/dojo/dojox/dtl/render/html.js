@@ -1,7 +1,2 @@
-if(!dojo._hasResource["dojox.dtl.render.html"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.dtl.render.html"] = true;
-dojo.provide("dojox.dtl.render.html");
-dojo.require("dojox.dtl.render.dom");
-dojox.dtl.render.html.Render = dojox.dtl.render.dom.Render;
-
-}
+//>>built
+define("dojox/dtl/render/html",["dojo/_base/lang","../render/dom","../_base"],function(_1,_2,dd){_1.getObject("dojox.dtl.render.html",true);dd.render.html.Render=_2.Render;return dojox.dtl.render.html;});

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/da/AutoSave", //begin v1.x content
 ({
 	"saveLabel": "Gem",
 	"saveSettingLabelOn": "Angiv interval for automatisk lagring...",
@@ -12,3 +15,5 @@
 	"saveMessageFail": "Ikke gemt i ${0}"
 })
 
+//end v1.x content
+);
