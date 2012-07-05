@@ -291,11 +291,16 @@ var theme = 'dmundra';
 	    				</div><!-- end .group -->
 
 				#elseif($field.fieldType == 'categories_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+						#set($fieldDefaultValue = "")
 						#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
 	            	    #else
 	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
+	            	    #end
+	            	    
 						#set($fieldAux = $field)
 						#parse('/static/content/category_tab_field_render.vtl')
 
@@ -320,12 +325,16 @@ var theme = 'dmundra';
 
 					<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
 	            	#if($field.fieldType == 'text' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue)
+	            	    #end
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
 	            	    #end
 	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -337,6 +346,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'textarea' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "") 
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -344,6 +354,9 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
+	            	    #end 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -354,12 +367,16 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'wysiwyg' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue )
+	            	    #end
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
 	            	    #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
@@ -372,6 +389,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'tag' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -379,6 +397,9 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue )
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -390,6 +411,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'checkbox' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -397,6 +419,9 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue.split('\|'))
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -408,6 +433,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'radio' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -415,6 +441,9 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue )
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -426,6 +455,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'select' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue=$request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -433,6 +463,9 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue=$!field.defaultValue)
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -444,6 +477,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'multi_select' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $request.getParameterValues("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar))
@@ -451,7 +485,10 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -462,6 +499,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'date' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -469,6 +507,9 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -480,6 +521,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'time' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("${field.velocityVarName}")))
 	            		    #set($temp_currentDate = $UtilMethods.dateToHTMLDate($UtilMethods.getCurrentDate(),'M/d/yyyy'))
 	            		    #set($temp_currentDateTime = $request.getParameter("${field.velocityVarName}"))
@@ -489,6 +531,9 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -500,6 +545,7 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'date_time' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            		    #set($temp_currentDate = $date.toDate('yyyy-MM-dd',$request.getParameter("${field.velocityVarName}Date")))
 	            		    #set($temp_currentDate = $UtilMethods.dateToHTMLDate($temp_currentDate,'M/d/yyyy'))
@@ -510,6 +556,9 @@ var theme = 'dmundra';
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -521,11 +570,15 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'file' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
 	            	    	#set($fieldDefaultValue = "")
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -537,11 +590,15 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'image' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
 	            	    	#set($fieldDefaultValue = "")
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -553,11 +610,15 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'binary' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
 	            	    	#set($fieldDefaultValue = "")
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
 
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
@@ -569,8 +630,9 @@ var theme = 'dmundra';
 	            		#end
 
 	            	#elseif($field.fieldType == 'custom_field' && !($showOnlyRequiredFields && !$field.isRequired()) )
-
+                        
 	            		#if($field.fieldContentlet.contains("text") || $field.fieldContentlet.contains("float") || $field.fieldContentlet.contains("int") )
+		            		#set($fieldDefaultValue = "")
 		            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 		            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -578,6 +640,9 @@ var theme = 'dmundra';
 		            	    #else
 		            	    	#set($fieldDefaultValue = $!field.defaultValue)
 		            	    #end
+		            	    #if(! $fieldDefaultValue)
+                                #set($fieldDefaultValue = "")
+                            #end
 		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            				#parse('/static/content/hidden_field_render.vtl')
 	            		    #else
@@ -588,6 +653,7 @@ var theme = 'dmundra';
 	            			#end
 
 	       	           #elseif ($field.fieldContentlet.contains("date"))
+	       	               #set($fieldDefaultValue = "")
 		            	   #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 		            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
 		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -595,6 +661,9 @@ var theme = 'dmundra';
 		            	    #else
 		            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 		            	    #end
+		            	    #if(! $fieldDefaultValue)
+                                #set($fieldDefaultValue = "")
+                            #end
 		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            				#parse('/static/content/hidden_field_render.vtl')
 	            		    #else
@@ -605,6 +674,7 @@ var theme = 'dmundra';
 	            			#end
 
 	            	   #elseif ($field.fieldContentlet.contains("bool"))
+	            	        #set($fieldDefaultValue = "")
 			            	#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 		            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
 		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -612,7 +682,9 @@ var theme = 'dmundra';
 		            	    #else
 		            	    	#set($fieldDefaultValue = $!field.defaultValue.split('\|'))
 		            	    #end
-
+                            #if(! $fieldDefaultValue)
+                                #set($fieldDefaultValue = "")
+                            #end
 		            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 		            			#parse('/static/content/hidden_field_render.vtl')
 		            		#else
@@ -625,6 +697,7 @@ var theme = 'dmundra';
 	            	    #end
 
 	            	#elseif($field.fieldType == 'category' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("categoryNames")))
 	            	    	#set($fieldDefaultValue = $request.getParameterValues("categories"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)

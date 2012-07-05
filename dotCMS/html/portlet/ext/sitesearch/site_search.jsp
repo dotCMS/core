@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="java.net.URLEncoder"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotmarketing.util.Config"%>
@@ -25,16 +26,46 @@
 <%@page import="com.dotmarketing.quartz.SimpleScheduledTask"%>
 <%@page import="org.quartz.SchedulerException"%>
 <%@page import="org.quartz.SimpleTrigger"%>
-
-
 <%
-
 
 String successMsg = LanguageUtil.get(pageContext, "schedule-site-search-success") ;
 String error = "";
 
 boolean success = false;
+
 %>
+<%if(LicenseUtil.getLevel() < 200){ %>
+	<div class="portlet-wrapper">
+	
+		<div class="subNavCrumbTrail">
+			<ul id="subNavCrumbUl">
+				<li class="lastCrumb">
+					<a href="#" ><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SITESEARCH")%></a>
+				</li>
+
+			</ul>
+			<div class="clear"></div>
+		</div>
+	   <style>
+	       .wrapper{background:url(/html/images/skin/sitesearch-promo.png) no-repeat 0 0;height:600px;margin:0 auto;}
+	       .content{position:fixed;left:50%;top:50%;margin:-200px 0 0 -300px;width:600px;background:#333;opacity:.85;color:#fff;padding:20px 20px 35px 20px;-moz-border-radius: 15px;-webkit-border-radius: 15px;-moz-box-shadow:0px 0px 15px #666;-webkit-box-shadow:0px 0px 15px #666;}
+	       .content h2{font-size:200%;}
+	       .content p{margin:0;}
+	       .content ul{margin:5px 0 25px 15px;padding:0 0 0 10px;list-style-position:outside; list-style:decimal;}
+	       .content li{list-style-position:outside; list-style:disc;}
+	       .content a{color:#fff;}
+	       #mainTabContainer {display:none;}
+	   </style>
+	   <div class="greyBg"></div>
+	   <div class="wrapper">
+	       <div class="content">
+	           <h2><%= LanguageUtil.get(pageContext, "Sitesearch") %></h2>
+	           <p><%= LanguageUtil.get(pageContext, "Sitesearch-Not-Licensed") %></p>
+	       </div>
+	   </div>
+	</div>
+
+<%return;}%>
 
 
 
@@ -346,6 +377,54 @@ function doDeactivateIndex(indexName){
 
 }
 
+function doCloseIndex(indexName){
+    
+    var xhrArgs = {
+    
+        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/closeIndex/indexName/" + indexName,
+
+        handleAs: "text",
+        handle : function(dataOrError, ioArgs) {
+            if (dojo.isString(dataOrError)) {
+                if (dataOrError.indexOf("FAILURE") == 0) {
+                    showDotCMSSystemMessage(dataOrError, true);
+                } else {
+                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Closed")%>", true);
+                    refreshIndexStats();
+                }
+            } else {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+            }
+        }
+    };
+    dojo.xhrPost(xhrArgs);
+
+}
+
+function doOpenIndex(indexName){
+    
+    var xhrArgs = {
+    
+        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/openIndex/indexName/" + indexName,
+
+        handleAs: "text",
+        handle : function(dataOrError, ioArgs) {
+            if (dojo.isString(dataOrError)) {
+                if (dataOrError.indexOf("FAILURE") == 0) {
+                    showDotCMSSystemMessage(dataOrError, true);
+                } else {
+                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Opened")%>", true);
+                    refreshIndexStats();
+                }
+            } else {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+            }
+        }
+    };
+    dojo.xhrPost(xhrArgs);
+
+}
+
 function hideRestoreIndex() {
     dijit.byId("restoreIndexDialog").hide();
 }
@@ -358,8 +437,6 @@ function showRestoreIndexDialog(indexName) {
 	dijit.byId('uploadSubmit').set('disabled',false);
 	dojo.query('#uploadProgress').style({display:"none"});
 	connectUploadEvents();
-	dojo.byId("uploadWarningLive").style.display="none";
-	dojo.byId("uploadWarningWorking").style.display="none";
 	dialog.show();
 }
 
@@ -389,24 +466,6 @@ dojo.ready(function() {
 });
 
 function connectUploadEvents() {
-	var uploader=dijit.byId("restoreIndexUploader");
-	dojo.connect(uploader, "onChange", function(dataArray){
-		 dojo.forEach(dataArray, function(data){
-			    dojo.byId("uploadFileName").innerHTML=data.name;
-			    var uploadName=data.name;
-			    var indexName=dojo.byId("indexToRestore").value;
-			    
-			    if(indexName.indexOf("working")==0 && uploadName.indexOf("working")!=0)
-			    	dojo.byId("uploadWarningWorking").style.display="block";
-			    else
-			    	dojo.byId("uploadWarningWorking").style.display="none";
-			    
-			    if(indexName.indexOf("live")==0 && uploadName.indexOf("live")!=0)
-			    	dojo.byId("uploadWarningLive").style.display="block";
-                else
-                	dojo.byId("uploadWarningLive").style.display="none";
-		 });
-	});
 	dojo.connect(uploader, "onComplete", function(dataArray) {
            hideRestoreIndex();
            showDotCMSSystemMessage("Upload Complete. Index Restores in background");
@@ -501,7 +560,10 @@ function submitSchedule() {
 		return;
 	}
 	
-	
+	if(dojo.query("#sitesearch input[name='langToIndex'][aria-pressed='true']").length==0) {
+		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Choose-a-Language")) %>");
+		return;
+	}
 	
 	if (myForm.validate()) {
 		dojo.xhrPost({
@@ -750,45 +812,50 @@ dojo.addOnLoad (function(){
 			  	}
 		});
    	refreshIndexStats();
-	
-});	
+	resizeBrowser();
+	dojo.connect(window, "onresize", "resizeBrowser");
+});
 
-
+function  resizeBrowser(){
+        var viewport = dijit.getViewport();
+        var viewport_height = viewport.h;
+        
+        var  e =  dojo.byId("indexTabCp");
+        dojo.style(e, "height", viewport_height -210+ "px");
+        
+        var  e =  dojo.byId("indexTestTabCp");
+        dojo.style(e, "height", viewport_height -210+ "px");
+        
+        var  e =  dojo.byId("jobTabCp");
+        dojo.style(e, "height", viewport_height -210+ "px")
+        
+        var  e =  dojo.byId("scheduleTabCp");
+        dojo.style(e, "height", viewport_height -210+ "px")
+        
+        var  e =  dojo.byId("indexStatsCp");
+        dojo.style(e, "height", viewport_height -250+ "px")
+        
+}
 
 
 
 </script>
+
 <style type="text/css">
-	.listingTable {
-		width: 42.5%;
-		font-size: 100%;
-		border-top: 1px solid #d0d0d0;
-	}
-	.trIdxBuilding{
-	background:#F8ECE0;
-	}
-	.trIdxActive{
-	background:#D8F6CE;
-	}
-	.trIdxNothing td{
-	color:#aaaaaa;
-	
-	}
+	.listingTable {width: 42.5%;font-size: 100%;border-top: 1px solid #d0d0d0;}
+	.trIdxBuilding{background:#F8ECE0;}
+	.trIdxActive{background:#D8F6CE;}
+	.trIdxNothing td{color:#aaaaaa;}
 	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
-	 #restoreIndexUploader {
-	   width:200px !important;
-	 }
-	 #uploadProgress {
-	   float: right;
-	   display: none;
-	 }
-	 .dotForm label {
-	   position: absolute; text-align:right; width:6em;
-	 }
-	
-	 .dotForm .dotFormInput {
-	   margin-left: 7em;
-	 }
+	#restoreIndexUploader {width:200px !important;}
+	#uploadProgress {float: right;display: none;}
+	.dotForm label {position: absolute; text-align:right; width:6em;}
+	.dotForm .dotFormInput {margin-left: 7em;}
+	.listingTable td{word-wrap: break-word;}
+	.highlight td {
+	    background: #94BBFF;
+	    color: white !important;
+	}
 </style>
 
 
@@ -812,27 +879,21 @@ dojo.addOnLoad (function(){
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 
 		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Indices") %>">
-			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="min-height:700px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp"></div>
 		</div>
 		
 		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Search") %>">
-			<div dojoType="dojox.layout.ContentPane" id="indexTestCp" style="min-height:700px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="indexTestCp"></div>
 		</div>
 		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>">
-			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp" style="min-height:700px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp"></div>
 		</div>
 		
 		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
-			<div dojoType="dojox.layout.ContentPane" id="scheduleCp" style="min-height:800px"></div>
+			<div dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
 		</div>
 		
-
-		
-		
-		
 	</div>
-	
 
-		
 </div>
 

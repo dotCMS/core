@@ -1,7 +1,7 @@
 <%@page import="com.dotmarketing.util.StringUtils"%>
 <%@page import="java.net.URLDecoder"%>
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchResult"%>
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchResults"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
@@ -41,14 +41,12 @@ String testQuery = (request.getParameter("testQuery") != null)
 
 int testStart = 0;
 int testLimit = 50;
-String testSort = "score";
 
 
 
 
 
-
-SiteSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
+SiteSearchResults results= APILocator.getSiteSearchAPI().search(testIndex, testQuery,  testStart, testLimit);
 
 String myError = (results.getError()!= null && results.getError().indexOf("nested:") > -1) 
 		? results.getError().substring(0, results.getError().indexOf("nested:"))  

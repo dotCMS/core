@@ -33,6 +33,7 @@
     boolean showDeleted = false;
     boolean filterSystemHost = false;
     boolean filterLocked = false;
+    boolean filterUnpublish = false;
     int currpage = 1;
     String orderBy = "modDate desc";
     Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -63,6 +64,7 @@
             showDeleted = (Boolean) lastSearch.get("showDeleted");
             filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
             filterLocked = (Boolean) lastSearch.get("filterLocked");
+            filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
             currpage = (Integer) lastSearch.get("page");
             orderBy = (String) lastSearch.get("orderBy");
         if (fieldsSearch.containsKey("languageId")) {
@@ -319,8 +321,9 @@
 <input type="hidden" name="showDeleted" id="showDeleted" value="">
 <input type="hidden" name="filterSystemHost" id="filterSystemHost" value="">
 <input type="hidden" name="filterLocked" id="filterLocked" value="">
+<input type="hidden" name="filterUnpublish" id="filterUnpublish" value="">
 <input type="hidden" name="currentPage" id="currentPage" value="">
-<input type="hidden" name="currentSortBy" id="currentSortBy" value="">
+<input type="hidden" name="currentSortBy" id="currentSortBy" value="modDate desc">
 <input type="hidden" value="" name="lastModDateFrom"  id="lastModDateFrom" size="10" maxlength="10" readonly="true"/>
 <input type="hidden" value="" name="lastModDateTo"  id="lastModDateTo" size="10" maxlength="10" readonly="true"/>
 <input type="hidden" name="structureVelocityVarNames" id="structureVelocityVarNames" value="<%= structureVelocityVarNames %>">
@@ -448,7 +451,14 @@
                                    </dd>
                                 </dl>
 								<div class="clear"></div>
-
+								
+								<dl>
+                                   <dt><%= LanguageUtil.get(pageContext, "Unpublish only") %>:</dt>
+                                   <dd>
+                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterUnpublishCB" onclick="doSearch(1);" <%=filterUnpublish?"checked=\"checked\"":""%>>
+                                   </dd>
+                               </dl>                               
+                               <div class="clear"></div>
 
                                 <dl id="search_categories_list"></dl>
 								<div class="clear"></div>

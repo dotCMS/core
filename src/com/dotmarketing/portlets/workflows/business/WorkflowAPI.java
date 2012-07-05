@@ -216,11 +216,11 @@ public interface WorkflowAPI {
 	 * @param contentlet
 	 * @throws DotDataException
 	 */
-	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException;
+	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException;
 	public void fireWorkflowPostCheckin(WorkflowProcessor wflow) throws DotDataException,DotWorkflowException;
 
 
-	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet) throws DotDataException,DotWorkflowException, DotContentletValidationException;
+	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException;
 
 
 	public int countTasks(WorkflowSearcher searcher)  throws DotDataException;
@@ -255,4 +255,5 @@ public interface WorkflowAPI {
      * @throws DotSecurityException
      */
     public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException;
+
 }

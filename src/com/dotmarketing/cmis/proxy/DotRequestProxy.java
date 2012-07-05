@@ -1,6 +1,5 @@
 package com.dotmarketing.cmis.proxy;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -10,6 +9,4 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface DotRequestProxy extends HttpServletRequest,Map{
 	
-	public static final Map<String,Object> map = new HashMap<String, Object>();
-
 }

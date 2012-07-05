@@ -1,5 +1,7 @@
 package com.dotmarketing.logConsole.model;
 
+import java.util.List;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotDataException;
@@ -7,12 +9,10 @@ import com.dotmarketing.logConsole.business.ConsoleLogFactory;
 import com.dotmarketing.logConsole.business.ConsoleLogFactoryImpl;
 import com.dotmarketing.util.Logger;
 
-import java.util.Collection;
-
 public class LogMapper {
 
     private static LogMapper instance = null;
-    private Collection<LogMapperRow> logList = null;
+    private List<LogMapperRow> logList = null;
     private LogMapperCache cache = CacheLocator.getLogMapperCache();
     private ConsoleLogFactory consoleLogFactory = new ConsoleLogFactoryImpl();
 
@@ -31,7 +31,7 @@ public class LogMapper {
      * @throws DotCacheException
      * @throws DotDataException
      */
-    public Collection<LogMapperRow> getLogList () throws DotCacheException, DotDataException {
+    public List<LogMapperRow> getLogList () throws DotCacheException, DotDataException {
 
         //First lets try to find them in cache
         logList = cache.get();
@@ -59,7 +59,7 @@ public class LogMapper {
      */
     public boolean isLogEnabled ( String logName ) {
 
-        Collection<LogMapperRow> logMapperRows = null;
+        List<LogMapperRow> logMapperRows = null;
         try {
             //Lets try to find all the logs...
             logMapperRows = getLogList();

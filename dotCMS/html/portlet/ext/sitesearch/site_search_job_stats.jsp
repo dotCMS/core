@@ -1,5 +1,5 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchPublishStatus"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus"%>
 <%@page import="com.dotcms.publishing.PublishStatus"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.quartz.QuartzUtils"%>
@@ -63,18 +63,16 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 			}
 			catch(Exception e){}
 		}
-		String languageStr=(String)task.getProperties().get("langToIndex");
-		if(UtilMethods.isSet(languageStr)) {
-			if(languageStr.equals("default"))
-			    languageStr=LanguageUtil.get(pageContext, "Default");
-			else {
-			    Language lang=APILocator.getLanguageAPI().getLanguage(Long.parseLong(languageStr));
-			    languageStr=lang.getLanguage()+" - "+lang.getCountry();
-			}   
+		String[] languageArr=(String[])task.getProperties().get("langToIndex");
+		String languageStr="";
+		if(UtilMethods.isSet(languageArr)) {
+		    StringBuilder sb=new StringBuilder();
+		    for(int i=0;i<languageArr.length;i++) {
+		        Language lang=APILocator.getLanguageAPI().getLanguage(Long.parseLong(languageArr[i]));
+		        sb.append(lang.getLanguage()).append(" - ").append(lang.getCountry()).append("<br/>");
+		    }
+		    languageStr=sb.toString();   
 		}
-		else
-		    languageStr="";
-		
 		%>
 		<tr style="cursor:pointer;" class="trIdxNothing">
 		

@@ -7,6 +7,7 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserManagerUtil;
@@ -104,13 +105,13 @@ public class UserAPIImpl implements UserAPI {
 		try {
 			user = uf.loadUserById("system");
 		} catch (NoSuchUserException e) {
-			user = createUser("system", "system@dotcmsfakeemail.org");
-			user.setUserId("system");
-			user.setFirstName("system user");
-			user.setLastName("system user");
-			user.setCreateDate(new java.util.Date());
-			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-			uf.saveUser(user);
+		    user = createUser("system", "system@dotcmsfakeemail.org");
+            user.setUserId("system");
+            user.setFirstName("system user");
+            user.setLastName("system user");
+            user.setCreateDate(new java.util.Date());
+            user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
+            uf.saveUser(user);
 		}
 		if(!roleAPI.doesUserHaveRole(user, cmsAdminRole))
 			roleAPI.addRoleToUser(cmsAdminRole.getId(), user);

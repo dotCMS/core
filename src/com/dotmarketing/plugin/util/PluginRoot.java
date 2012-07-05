@@ -1,11 +1,17 @@
 package com.dotmarketing.plugin.util;
 
-import org.apache.log4j.Logger;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
+import org.apache.commons.lang.SystemUtils;
+import org.apache.log4j.Logger;
 
 /**
  * This plugin will allow any file to be overridden or added.
@@ -26,6 +32,8 @@ import java.util.jar.JarFile;
 public class PluginRoot {
 
     private static Logger logger = Logger.getLogger( PluginRoot.class );
+
+    private String[] executableFiles = new String[]{"sh", "bat", "exe"};
 
     public static String ROOT_FOLDER = "ROOT";
     public static String BACKUP_FOLDER = "_original";
@@ -117,8 +125,8 @@ public class PluginRoot {
         for ( String rootFilePath : rootFilesPaths ) {
 
             //Getting the relative path based on the ROOT path, ie: ROOT/tomcat/conf/server.xml --> tomcat/conf/server.xml
-            String relativeFilePath = rootFilePath.replace( ROOT_FOLDER + File.separator, "" );
-            File backUpFile = new File( getAbsoluteBackUpPath( relativeFilePath ) );//The posible back-up path for this file
+            String relativeFilePath = rootFilePath.replace( ROOT_FOLDER + "/", "" );//ZIP/JAR ENTRY FILES MUST HAVE '/' AS SEPARATOR ON ANY PLATFORM
+            File backUpFile = new File( getAbsoluteBackUpPath( relativeFilePath ) );//The possible back-up path for this file
             File originalFile = new File( getAbsolutePath( relativeFilePath ) );//The path of the original file to be override/add it
 
             logger.debug( "----" );
@@ -209,6 +217,7 @@ public class PluginRoot {
      * @param dir
      */
     private void restoreFilesUnder ( File dir ) {
+
         if ( dir.isDirectory() ) {
             String[] children = dir.list();
             for ( String aChildren : children ) {
@@ -253,7 +262,7 @@ public class PluginRoot {
         //Back-up file path
         String backUpFilePath = fileToRestore.getAbsolutePath();
         //Relative path for the files
-        String relativeFilePath = backUpFilePath.substring( backUpFilePath.indexOf( BACKUP_FOLDER ) + ( BACKUP_FOLDER + File.separator ).length() );
+        String relativeFilePath = backUpFilePath.substring( backUpFilePath.indexOf( BACKUP_FOLDER ) + (BACKUP_FOLDER + File.separator).length() );
         //Original path
         String originalPath = getAbsolutePath( relativeFilePath );
 
@@ -303,13 +312,33 @@ public class PluginRoot {
         //For Overwrite the file.
         OutputStream out = new FileOutputStream( destination );
 
-        byte[] buf = new byte[2048];
+        byte[] buf = new byte[1024];
         int len;
-        while ( ( len = inputStream.read( buf ) ) > 0 ) {
+        while ( (len = inputStream.read( buf )) > 0 ) {
             out.write( buf, 0, len );
         }
         inputStream.close();
         out.close();
+
+        //Now, lets try to add specific permissions for some specific type of files
+        String fileExtension = getFileExtension( destination.getName() );
+        try {
+            Collection<String> executables = Arrays.asList( executableFiles );
+            if ( executables.contains( fileExtension ) ) {
+                logger.debug( "Adding execution permissions to file: " + destination.getAbsolutePath() );
+
+                //For linux lets try to do something more...
+                if ( SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_UNIX ) {
+                    Runtime.getRuntime().exec( "chmod +x " + destination.getAbsolutePath() );
+                } else {
+                    destination.setReadable( true );
+                    destination.setWritable( true );
+                    destination.setExecutable( true );
+                }
+            }
+        } catch ( Exception e ) {
+            logger.error( "Error adding permissions to file.", e );
+        }
     }
 
     /**
@@ -366,4 +395,16 @@ public class PluginRoot {
         this.plugins = plugins;
     }
 
+    public static String getFileExtension(String x) {
+        String r = "";
+        try {
+            if (x.lastIndexOf(".") != -1) {
+                return x.substring(x.lastIndexOf(".") + 1).toLowerCase();
+            } else {
+                return r;
+            }
+        } catch (Exception e) {
+            return "ukn";
+        }
+    }
 }

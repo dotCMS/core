@@ -48,9 +48,9 @@
 	WorkflowScheme scheme = new WorkflowScheme();
 	scheme = wapi.findScheme(schemeId);
 	List<WorkflowStep> steps = wapi.findSteps(scheme);
-	
+
 	List<WorkflowActionClass> subActions = wapi.findActionClasses(action);
-	
+
 %>
 <script>
 	dojo.ready(function(){
@@ -58,15 +58,15 @@
 		mainAdmin.resetCrumbTrail();
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=scheme.getName()%><%=(scheme.isArchived()) ? "</strike>" :""%>", stepAdmin.baseJsp  + "?schemeId=<%=schemeId%>");
-		
+
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Step")%> : <%=step.getName()%>", stepAdmin.baseJsp + "?schemeId=<%=schemeId%>");
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=stepId%>" );
-		mainAdmin.refreshCrumbtrail();	
-
-		
+		mainAdmin.refreshCrumbtrail();
 
 
-		
+
+
+
 		var permissionSelect = new dijit.form.FilteringSelect({
             id: "whoCanUseSelect",
             name: "whoCanUseSelect",
@@ -80,10 +80,10 @@
             }
         },
         "actionWhoCanUseSelect");
-		
-		
-		
-		
+
+
+
+
 		var assignSelect = new dijit.form.FilteringSelect({
             id: "actionAssignToSelect",
             name: "actionAssignToSelect",
@@ -101,17 +101,17 @@
             	dijit.byId("actionAssignToSelect").displayedValue="";
 
             }
-            
+
         },
         "actionAssignToSelect");
-		
+
 		function setIconLabel(){
 			//alert(dijit.byId('actionIconSelect').item.value)
 			var x = dojo.attr("showIconSpan", "className",dijit.byId('actionIconSelect').item.value);
-			
+
 			//dijit.byId('actionIconSelect').displayedValue = x;
 		}
-		
+
 		var iconSelect = new dijit.form.FilteringSelect({
             id: "actionIconSelect",
             name: "actionIconSelect",
@@ -128,16 +128,16 @@
             },
             required:false,
             onChange:setIconLabel,
-            
+
         },
         "actionIconSelect");
-		
-		
-		
-		
+
+
+
+
 		//assignSelect._hasBeenBlurred=false;
-		
-		
+
+
 
 		actionAdmin.whoCanUse = new Array();
 		<% Set<Role> roles = APILocator.getPermissionAPI().getReadRoles(action);%>
@@ -146,28 +146,28 @@
 		<% }%>
 
 		actionAdmin.refreshWhoCanUse();
-		
-		
-		
+
+
+
 		actionClassAdmin.actionClasses = new Array(),
 		<%for(WorkflowActionClass subaction : subActions){ %>
 			actionClassAdmin.addToActionClassesArray("<%=subaction.getId()%>", "<%=subaction.getName()%>");
 		<%} %>
-		
+
 		actionClassAdmin.refreshActionClasses();
-		
+
 		//actionAdmin.doChange();
-		
+
 
 	});
 
-	
 
-	
 
-	
-	
-	
+
+
+
+
+
 </script>
 
 
@@ -178,7 +178,7 @@
 		<input type="hidden" name="schemeId"	value="<%=UtilMethods.webifyString(scheme.getId())%>">
 		<input type="hidden" name="whoCanUse"	id="whoCanUse" value="">
 		<input type="hidden" name="actionId"	id="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
-		
+
 		<table border="0">
 			<tr>
 				<td width="50%" valign="top" style="padding:7px;">
@@ -216,7 +216,7 @@
 									<div class="wfWhoCanUseDiv">
 										<table class="listingTable" id="whoCanUseTbl">
 										</table>
-									</div>	
+									</div>
 							</td>
 						</tr>
 					</table>
@@ -228,7 +228,7 @@
 								<%=LanguageUtil.get(pageContext, "What-Action-Does")%>
 							</th>
 						</tr>
-						
+
 						<tr>
 							<td nowrap="true"><%=LanguageUtil.get(pageContext, "Allow-Comments")%>:</td>
 							<td><input type="checkbox" name="actionCommentable"
@@ -259,7 +259,7 @@
 										</td>
 									</tr>
 								</table>
-								
+
 
 							</td>
 						</tr>
@@ -275,26 +275,26 @@
 											<%}%>
 										<% }%>
 								</select>
-							
-							
-							
+
+
+
 							</td>
 						</tr>
 						<tr>
 							<td nowrap="true"><%=LanguageUtil.get(pageContext, "Icon")%>:</td>
-							<td nowrap="nowrap">        
+							<td nowrap="nowrap">
 								<div>
 									<div id="showIconSpan" class="<%=UtilMethods.webifyString(action.getIcon())%>" style="width:16px;height:16px;border:1px solid silver;padding:1px;margin-right:10px;display: inline-block;"></div>
-									
+
 									<input id="actionIconSelect" name="actionIconSelect" />
 								</div>
 							</td>
 						</tr>
-						
+
 						<tr>
 							<td valign="top"><%=LanguageUtil.get(pageContext, "Custom-Code")%>:</td>
-							
-							
+
+
 							<%
 							String textValue = action.getCondition();
 					        if(textValue != null){
@@ -303,25 +303,25 @@
 					            textValue = textValue.replaceAll(">", "&gt;");
 					        }
 					        else{
-					        	textValue="";	
+					        	textValue="";
 					        }
 							%>
-							
-							
+
+
 							<td>
 								<textarea id="actionCondition" style="min-width:300px;min-height:100px;font-family: monospace;" name="actionCondition"><%=textValue %></textarea>
 							</td>
 						</tr>
-			
-						
+
+
 					</table>
 				</td>
 			</tr>
 
-			
-			
-			
-			
+
+
+
+
 		</table>
 	</div>
 
@@ -342,11 +342,11 @@
 		</span>
 		&nbsp; 	&nbsp; 	&nbsp;
 		<%} %>
-	
-	
+
+
 		<span id="saveButtonDiv" class="saveButtonHide">
 			<button dojoType="dijit.form.Button"
-				onClick="actionAdmin.saveAction();" iconClass="saveIcon">
+				onClick="actionAdmin.saveAction('<%=stepId %>');" iconClass="saveIcon">
 				<%=LanguageUtil.get(pageContext, "Save")%>
 			</button>
 		</span>&nbsp;

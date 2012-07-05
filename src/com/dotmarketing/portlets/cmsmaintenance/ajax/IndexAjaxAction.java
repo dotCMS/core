@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -20,17 +21,23 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
+import org.elasticsearch.action.admin.indices.status.IndexStatus;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -38,24 +45,24 @@ import com.liferay.portal.model.User;
 public class IndexAjaxAction extends AjaxAction {
 
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		
-		
-		
-		
+
+
+
+
 		Map<String, String> map = getURIParams();
-		
-		
-		
+
+
+
 		String cmd = map.get("cmd");
 		java.lang.reflect.Method meth = null;
 		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
 		Object arglist[] = new Object[] { request, response };
 		User user = getUser();
-		
-		
-		
-		
-		
+
+
+
+
+
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
@@ -73,8 +80,8 @@ public class IndexAjaxAction extends AjaxAction {
 				}
 			}
 
-			
-			
+
+
 			meth = this.getClass().getMethod(cmd, partypes);
 
 		} catch (Exception e) {
@@ -97,21 +104,25 @@ public class IndexAjaxAction extends AjaxAction {
 		}
 
 	}
-	
+
 	public void restoreIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 	    try {
             FileItemFactory factory = new DiskFileItemFactory();
             ServletFileUpload upload = new ServletFileUpload(factory);
             List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
-            
+
             String indexToRestore=null;
             boolean clearBeforeRestore=false;
+            String aliasToRestore=null;
             File ufile=null;
             for(FileItem it : items) {
-               if(it.getFieldName().equals("indexToRestore")) {
+               if(it.getFieldName().equalsIgnoreCase("indexToRestore")) {
                    indexToRestore=it.getString().trim();
                }
-               else if(it.getFieldName().equals("uploadedfiles[]")) {
+               else if(it.getFieldName().equalsIgnoreCase("aliasToRestore")) {
+                   aliasToRestore=it.getString().trim();
+               }
+               else if(it.getFieldName().equalsIgnoreCase("uploadedfiles[]")) {
                    ufile=File.createTempFile("indexToRestore", "idx");
                    InputStream in=it.getInputStream();
                    FileOutputStream out = new FileOutputStream(ufile);
@@ -119,11 +130,24 @@ public class IndexAjaxAction extends AjaxAction {
                    IOUtils.closeQuietly(out);
                    IOUtils.closeQuietly(in);
                }
-               else if(it.getFieldName().equals("clearBeforeRestore")) {
+               else if(it.getFieldName().equalsIgnoreCase("clearBeforeRestore")) {
                    clearBeforeRestore=true;
                }
             }
-            
+
+            if(LicenseUtil.getLevel()>=200) {
+                if(UtilMethods.isSet(aliasToRestore)) {
+                    String indexName=APILocator.getESIndexAPI()
+                             .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
+                             .get(aliasToRestore);
+                    if(UtilMethods.isSet(indexName))
+                        indexToRestore=indexName;
+                }
+                else if(!UtilMethods.isSet(indexToRestore)) {
+                    indexToRestore=APILocator.getIndiciesAPI().loadIndicies().site_search;
+                }
+            }
+
             if(ufile!=null) {
                 final boolean clear=clearBeforeRestore;
                 final String index=indexToRestore;
@@ -153,10 +177,20 @@ public class IndexAjaxAction extends AjaxAction {
 	public void downloadIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		response.setContentType("application/zip");
+
 		String indexName = map.get("indexName");
-		
-		if(indexName == null)return;
-		
+
+		String indexAlias = map.get("indexAlias");
+		if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel()>=200) {
+		    String indexName1=APILocator.getESIndexAPI()
+                    .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
+                    .get(indexAlias);
+		    if(UtilMethods.isSet(indexName1))
+		        indexName=indexName1;
+		}
+
+		if(!UtilMethods.isSet(indexName))return;
+
 		if(indexName.equalsIgnoreCase("live") || indexName.equalsIgnoreCase("working")){
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 			if(indexName.equalsIgnoreCase("live")){
@@ -166,50 +200,50 @@ public class IndexAjaxAction extends AjaxAction {
 				indexName = info.working;
 			}
 		}
-		
+
 		File f = APILocator.getESIndexAPI().backupIndex(indexName);
 		response.setContentLength((int) f.length());
 		OutputStream out = response.getOutputStream();
 		InputStream in = new FileInputStream(f);
-		
+
 		response.setHeader("Content-Type", "application/zip");
 		response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");
-		
+
 		IOUtils.copyLarge(in, out);
-		
+
 		f.delete();
 		return;
 	}
-	
-	
 
-	
-	
-	
-	
+
+
+
+
+
+
 	public void createIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
-		
+
 		Map<String, String> map = getURIParams();
 		int shards = 0;
-		
+
 		try{
 			shards = Integer.parseInt(map.get("shards"));
 
 		}
 		catch(Exception e){
-			
+
 		}
-		
+
 
 		boolean live = map.get("live") != null;
 		String indexName = map.get("indexName");
 		if(indexName == null)
 		    indexName=ESContentletIndexAPI.timestampFormatter.format(new Date());
-		indexName = (live) ? "live_" + indexName : "working_" + indexName; 
+		indexName = (live) ? "live_" + indexName : "working_" + indexName;
 		APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
 
 	}
-	
+
 	public void clearIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
 		String indexName = map.get("indexName");
@@ -218,17 +252,17 @@ public class IndexAjaxAction extends AjaxAction {
 		APILocator.getESIndexAPI().clearIndex(indexName);
 
 	}
-	
+
 	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
 		String indexName = map.get("indexName");
 		if(indexName == null)return;
 
 		APILocator.getESIndexAPI().delete(indexName);
-		
-		
+
+
 	}
-	
+
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = map.get("indexName");
@@ -249,29 +283,29 @@ public class IndexAjaxAction extends AjaxAction {
 			APILocator.getSiteSearchAPI().deactivateIndex(indexName);
 		}
 		else{
-			
+
 			APILocator.getContentletIndexAPI().deactivateIndex(indexName);
 		}
 	}
-	
+
 	@Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		return;
-		
+
 	}
-	
-	
+
+
 	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = map.get("indexName");
 		int replicas = Integer.parseInt(map.get("replicas"));
 
-		
+
 		APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 
 	}
-	
-	
+
+
 	public void writeError(HttpServletResponse response, String error) throws IOException {
 		String ret = null;
 
@@ -295,9 +329,84 @@ public class IndexAjaxAction extends AjaxAction {
 		response.getWriter().println("FAILURE: " + ret);
 	}
 
-	
-	
-	
-	
-	
+	public void closeIndex(HttpServletRequest request, HttpServletResponse response) {
+	    Map<String, String> map = getURIParams();
+	    String indexName=map.get("indexName");
+
+	    APILocator.getESIndexAPI().closeIndex(indexName);
+	}
+
+	public void openIndex(HttpServletRequest request, HttpServletResponse response) {
+		Map<String, String> map = getURIParams();
+		String indexName=map.get("indexName");
+
+		APILocator.getESIndexAPI().openIndex(indexName);
+	}
+
+	public void getIndexName(HttpServletRequest request, HttpServletResponse response) throws IOException  {
+		Map<String, String> map = getURIParams();
+		String type =map.get("type");
+		String resp = null;
+
+		try {
+			resp =  APILocator.getContentletIndexAPI().getActiveIndexName(type);
+		} catch (DotDataException e) {
+			resp =  e.getMessage();
+		}
+
+		response.getWriter().println(resp);
+	}
+
+	public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		Map<String, String> map = getURIParams();
+		String indexName=map.get("indexName");
+		String resp = null;
+
+		try {
+			resp = APILocator.getESIndexAPI().getIndexStatus(indexName).getStatus();
+		} catch (DotDataException e) {
+			resp = e.getMessage();
+		}
+
+		response.getWriter().println(resp);
+    }
+
+	public void getIndexRecordCount(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		Map<String, String> map = getURIParams();
+		String indexName=map.get("indexName");
+		ESIndexAPI esapi = APILocator.getESIndexAPI();
+		Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
+		IndexStatus status = indexInfo.get(indexName);
+		response.getWriter().println((status !=null && status.getDocs() != null) ? status.getDocs().numDocs(): 0);
+	}
+
+	public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
+		List<String> indices = idxApi.listDotCMSIndices();
+		List<String> inactives = new ArrayList<String>();
+
+		for (String index : indices) {
+			try {
+				if(APILocator.getESIndexAPI().getIndexStatus(index) == ESIndexAPI.Status.INACTIVE) {
+					inactives.add(index);
+				}
+			} catch (DotDataException e) {
+			}
+		}
+
+		response.getWriter().println(inactives);
+	}
+
+	public void stopReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		ReindexThread.stopThread();
+	}
+
+	public void startReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		ReindexThread.stopThread();
+	}
+
+	public void getReindexThreadStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.getWriter().println(ReindexThread.getInstance().isWorking()?"active":"stopped");
+	}
+
 }

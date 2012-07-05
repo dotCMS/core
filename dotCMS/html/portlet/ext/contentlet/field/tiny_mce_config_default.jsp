@@ -1,4 +1,5 @@
 
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.beans.Host"%>
@@ -19,11 +20,11 @@ var tinyMCEProps = {
 			theme : "advanced", 
 			language:'<%= userb.getLanguageId().substring(0,2) %>',
     		plugins : "validation,table,advhr,advimage,advlink,preview,searchreplace,print,paste,directionality,fullscreen,inlinepopups,style,dotimageclipboard,safari,spellchecker",
-    		spellchecker_languages : "+English=en_US,EspaÃ±ol=es_ES",
+    		spellchecker_languages : "+English=en_US,Español=es_ES",
     		spellchecker_rpc_url : "/servlets/jmyspell-spellchecker",
-    		theme_advanced_buttons1_add : "validation,separator,forecolor,fontselect,fontsizeselect",
+    		theme_advanced_buttons1_add : "separator,forecolor,fontselect,fontsizeselect,separator,fullscreen,preview",
     		theme_advanced_buttons1_add_before : "newdocument,separator",
-            theme_advanced_buttons2_add : "fullscreen,preview,dotimageclipboard,spellchecker",
+            theme_advanced_buttons2_add : "dotimageclipboard,separator,spellchecker<%= LicenseUtil.getLevel()>=200 ? ",validation":"" %>",
             theme_advanced_buttons2_add_before: "cut,copy,paste,pastetext,pasteword,separator,search,replace,separator",
             theme_advanced_buttons3_add_before : "tablecontrols,separator",
             theme_advanced_buttons3_add : "flash,advhr,separator,print,separator,ltr,rtl",

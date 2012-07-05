@@ -1,7 +1,7 @@
 <%@page import="com.dotmarketing.util.StringUtils"%>
 <%@page import="java.net.URLDecoder"%>
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchResult"%>
-<%@page import="com.dotcms.publishing.sitesearch.SiteSearchResults"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
@@ -40,13 +40,12 @@ String testQuery = request.getParameter("testQuery");
 
 int testStart = 0;
 int testLimit = 50;
-String testSort = "score";
 
 
 
 SiteSearchResults results= new SiteSearchResults();
 if(testQuery != null && testIndex != null){
-	results = APILocator.getSiteSearchAPI().search(testIndex, testQuery, testSort, testStart, testLimit);
+	results = APILocator.getSiteSearchAPI().search(testIndex, testQuery, testStart, testLimit);
 }
 
 
@@ -121,7 +120,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 		<div class="buttonRow" style="padding:20px;">
 			<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
+						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
 			</select>
 		
@@ -133,7 +132,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 			</button>
 		</div>
 	</div>
-	<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" style="height:700px;overflow: auto;;">
+	<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" >
 	
 	
 		<table class="listingTable" style="width:98%">

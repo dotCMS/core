@@ -568,7 +568,7 @@
 
 #macro (getRating $identifier)
 	#if($pdfExport == false)
-		##getContentMapDetail($identifier)
+		#getContentMapDetail($identifier)
 	    #if($InodeUtils.isSet($identifier))
 			#set ($averageRating = $rating.getAverageRating($identifier))
 

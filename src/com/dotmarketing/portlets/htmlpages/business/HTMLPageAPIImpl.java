@@ -571,7 +571,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		 * TODO: I don't think it will work - jorge.urdaneta
 		 */
 
-		InvocationHandler dotInvocationHandler = new DotInvocationHandler();
+		InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
 
 		DotRequestProxy requestProxy = (DotRequestProxy) Proxy
 				.newProxyInstance(DotRequestProxy.class.getClassLoader(),
@@ -706,6 +706,8 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
 			if(! liveMode ){
 				context.put("PREVIEW_MODE", new Boolean(true));
+			}else{
+				context.put("PREVIEW_MODE", new Boolean(false));
 			}
 			
 			if(UtilMethods.isSet(langId)) {
