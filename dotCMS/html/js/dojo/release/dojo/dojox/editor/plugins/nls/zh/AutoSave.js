@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/zh/AutoSave", //begin v1.x content
 ({
 	"saveLabel": "保存",
 	"saveSettingLabelOn": "设置自动保存时间间隔...",
@@ -11,3 +14,5 @@
 	"saveMessageSuccess": "已保存到 ${0}",
 	"saveMessageFail": "未能保存到 ${0}"
 })
+//end v1.x content
+);

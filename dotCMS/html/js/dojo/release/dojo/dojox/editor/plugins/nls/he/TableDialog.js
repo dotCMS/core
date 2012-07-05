@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/he/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "הוספת טבלה",
 	modifyTableTitle: "שינוי טבלה",
@@ -28,3 +31,5 @@
 	deleteTableRowLabel: "מחיקת שורה",
 	deleteTableColumnLabel: "מחיקת עמודה"
 })
+//end v1.x content
+);

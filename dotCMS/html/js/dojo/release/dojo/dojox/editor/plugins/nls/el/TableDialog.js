@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/el/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "Εισαγωγή πίνακα",
 	modifyTableTitle: "Τροποποίηση πίνακα",
@@ -28,3 +31,5 @@
 	deleteTableRowLabel: "Διαγραφή γραμμής",
 	deleteTableColumnLabel: "Διαγραφή στήλης"
 })
+//end v1.x content
+);

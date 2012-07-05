@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/cs/Breadcrumb", //begin v1.x content
 ({
 	"nodeActions": "Akce uzlu ${nodeName}",
 	"selectContents": "Vybrat obsah",
@@ -8,3 +11,5 @@
 	"moveEnd": "Přesunout ukazatel na konec"
 })
 
+//end v1.x content
+);

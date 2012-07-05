@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/ja/gregorian", //begin v1.x content
 {
 	"field-weekday": "曜日",
 	"dateFormatItem-yQQQ": "yQQQ",
@@ -217,3 +219,5 @@
 	"dateFormatItem-hms": "ah:mm:ss",
 	"dateFormatItem-yyyy": "y年"
 }
+//end v1.x content
+);

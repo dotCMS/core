@@ -44,11 +44,11 @@
   background-color: none;
   background-color: transparent;
   background-color: rgba(171, 214, 255, 0);
-  background-image: url("images/commonHighlight.png");
   background-position: 0 0;
   background-repeat: repeat-x;
   border-color: rgba(118, 157, 192, 0);
   border-width: 0;
+  color: #000000;
   -webkit-transition-property: background-color, border-color;
   -moz-transition-property: background-color, border-color;
   transition-property: background-color, border-color;
@@ -59,36 +59,36 @@
   -moz-transition-timing-function: ease-out;
   transition-timing-function: ease-out;
 }
-.dj_ie6 .claro .dijitTreeRow {
-  background-image: none;
-}
 .claro .dijitTreeRowSelected {
   background-repeat: repeat-x;
   background-color: #cfe5fa;
+  background-image: url("images/commonHighlight.png");
   padding: 3px 0 1px;
   margin: 0;
-  border: solid 1px #769dc0;
+  border: solid 1px #759dc0;
   color: #000000;
 }
 .claro .dijitTreeRowHover {
   background-color: #abd6ff;
+  background-image: url("images/commonHighlight.png");
   padding: 3px 0 1px;
   margin: 0;
-  border: solid 1px #769dc0;
+  border: solid 1px #759dc0;
   color: #000000;
   -webkit-transition-duration: 0.25s;
   -moz-transition-duration: 0.25s;
   transition-duration: 0.25s;
 }
 .claro .dijitTreeRowActive {
-  background-color: #7dbefa;
+  background-color: #7dbdfa;
+  background-image: url("images/commonHighlight.png");
   background-position: 0 -177px;
   padding: 3px 0 1px;
   margin-left: 0;
-  border: solid 1px #769dc0;
+  border: solid 1px #759dc0;
   color: #000000;
 }
-.dj_ie6 .claro .dijitTreeRowActive {
+.dj_ie6 .claro .dijitTreeRow {
   background-image: none;
 }
 .claro .dijitTreeRowFocused {
@@ -96,7 +96,7 @@
 }
 /* expando (open/closed) icon */
 .claro .dijitTreeExpando {
-  background-image: url('images/treeExpandImages.png');
+  background-image: url("images/treeExpandImages.png");
   width: 16px;
   height: 16px;
   background-position: -35px 0;
@@ -104,7 +104,7 @@
 
 }
 .dj_ie6 .claro .dijitTreeExpando {
-  background-image: url('images/treeExpandImages8bit.png');
+  background-image: url("images/treeExpandImages8bit.png");
 }
 .claro .dijitTreeRowHover .dijitTreeExpandoOpened {
   background-position: -53px 0;
@@ -119,7 +119,7 @@
   background-image: none;
 }
 .claro .dijitTreeExpandoLoading {
-  background-image: url('images/loadingAnimation.gif');
+  background-image: url("images/loadingAnimation.gif");
 }
 /* Drag and Drop on TreeNodes
  * Put insert line on dijitTreeContent node so it's aligned w/
@@ -127,8 +127,8 @@
  * though dijitTreeRowNode is the actual "drag object"
  */
 .claro .dijitTreeNode .dojoDndItemBefore .dijitTreeContent {
-  border-top: 2px solid #769dc0;
+  border-top: 2px solid #759dc0;
 }
 .claro .dijitTreeNode .dojoDndItemAfter .dijitTreeContent {
-  border-bottom: 2px solid #769dc0;
+  border-bottom: 2px solid #759dc0;
 }

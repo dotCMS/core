@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/da/Pagination", //begin v1.x content
 ({
 	"descTemplate": "${2} - ${3} af ${1} ${0}",
 	"firstTip": "Første side",
@@ -5,6 +8,7 @@
 	"nextTip": "Næste side",
 	"prevTip": "Forrige side",
 	"itemTitle": "elementer",
+	"singularItemTitle": "element",
 	"pageStepLabelTemplate": "Side ${0}",
 	"pageSizeLabelTemplate": "${0} elementer pr. side",
 	"allItemsLabelTemplate": "Alle elementer",
@@ -13,6 +17,8 @@
 	"dialogIndication": "Angiv sidetallet",
 	"pageCountIndication": " (${0} sider)",
 	"dialogConfirm": "Gå",
-	"dialogCancel": "Annullér"
+	"dialogCancel": "Annullér",
+	"all": "alle"
 })
-
+//end v1.x content
+);

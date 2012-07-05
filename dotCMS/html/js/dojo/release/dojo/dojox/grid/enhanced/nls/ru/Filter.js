@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/ru/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Удалить фильтр",
 	"filterDefDialogTitle": "Фильтр",
@@ -62,8 +65,8 @@
 	"anycolumn": "любой столбец",
 	"statusTipTitleNoFilter": "Панель фильтра",
 	"statusTipTitleHasFilter": "Фильтр",
-	"statusTipRelPre": "Соответствие",
-	"statusTipRelPost": "правила.",
+	"statusTipRelAny": "Соответствует любому из правил.",
+	"statusTipRelAll": "Соответствует всем правилам.",
 	
 	"defaultItemsName": "элементов",
 	"filterBarMsgHasFilterTemplate": "Показано ${0} из ${1} ${2}.",
@@ -82,6 +85,5 @@
 	"trueLabel": "True",
 	"falseLabel": "False"
 })
-
-
-
+//end v1.x content
+);

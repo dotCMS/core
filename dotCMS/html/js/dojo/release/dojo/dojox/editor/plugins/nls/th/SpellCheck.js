@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/th/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "ตรวจสอบการสะกดคำแบบแบตช์",
 	unfound: "ไม่พบ",
@@ -15,3 +18,5 @@
 	iMsg: "ไม่มีการแนะนำการสะกด"
 })
 
+//end v1.x content
+);

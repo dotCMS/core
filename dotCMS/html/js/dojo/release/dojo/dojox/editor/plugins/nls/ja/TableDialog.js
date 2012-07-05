@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ja/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "テーブルの挿入",
 	modifyTableTitle: "テーブルの変更",
@@ -29,3 +32,5 @@
 	deleteTableColumnLabel: "列の削除"
 })
 	
+//end v1.x content
+);

@@ -1,14 +1,2 @@
-if(!dojo._hasResource["dojox.form.DropDownStack"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.form.DropDownStack"] = true;
-dojo.provide("dojox.form.DropDownStack");
-
-dojo.require("dijit.form.Select");
-dojo.require("dojox.form._SelectStackMixin");
-
-dojo.declare("dojox.form.DropDownStack",
-	[ dijit.form.Select, dojox.form._SelectStackMixin ], {
-	// summary: A dropdown-based select stack.
-	
-});
-
-}
+//>>built
+define("dojox/form/DropDownStack",["dijit/form/Select","./_SelectStackMixin","dojo/_base/declare"],function(_1,_2,_3){return _3("dojox.form.DropDownStack",[_1,_2],{});});

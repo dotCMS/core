@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/zh-tw/EnhancedGrid", //begin v1.x content
 ({
 	singleSort: "單一排序",
 	nestedSort: "巢狀排序",
@@ -9,4 +12,6 @@
 	indirectSelectionCheckBox: "第 ${0} 行，多重選項，勾選框",
 	selectAll: "全選"
 })
+//end v1.x content
+);
 

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/atom/widget/nls/th/FeedEntryViewer", //begin v1.x content
 ({
 	displayOptions: "[อ็อพชันการแสดงผล]",
 	title: "ชื่อเรื่อง",
@@ -9,4 +12,5 @@
 	summary: "สรุป",
 	content: "เนื้อหา"
 })
-
+//end v1.x content
+);

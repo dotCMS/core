@@ -1,25 +1,2 @@
-if(!dojo._hasResource["dojox.storage._common"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.storage._common"] = true;
-dojo.provide("dojox.storage._common");
-dojo.require("dojox.storage.Provider");
-dojo.require("dojox.storage.manager");
-
-/*
-  Note: if you are doing Dojo Offline builds you _must_
-  have offlineProfile=true when you run the build script:
-  ./build.sh action=release profile=offline offlineProfile=true
-*/
-dojo.require("dojox.storage.LocalStorageProvider");
-dojo.require("dojox.storage.GearsStorageProvider");
-//>>excludeStart("offlineProfileExclude", kwArgs.dojoxStorageBuildOption == "offline");
-dojo.require("dojox.storage.WhatWGStorageProvider");
-dojo.require("dojox.storage.FlashStorageProvider");
-//>>excludeEnd("offlineProfileExclude");
-dojo.require("dojox.storage.BehaviorStorageProvider");
-dojo.require("dojox.storage.CookieStorageProvider");
-
-// now that we are loaded and registered tell the storage manager to
-// initialize itself
-dojox.storage.manager.initialize();
-
-}
+//>>built
+define(["dijit","dojo","dojox","dojo/require!dojox/storage/Provider,dojox/storage/manager,dojox/storage/LocalStorageProvider,dojox/storage/GearsStorageProvider,dojox/storage/WhatWGStorageProvider,dojox/storage/FlashStorageProvider,dojox/storage/BehaviorStorageProvider,dojox/storage/CookieStorageProvider"],function(_1,_2,_3){_2.provide("dojox.storage._common");_2.require("dojox.storage.Provider");_2.require("dojox.storage.manager");_2.require("dojox.storage.LocalStorageProvider");_2.require("dojox.storage.GearsStorageProvider");_2.require("dojox.storage.WhatWGStorageProvider");_2.require("dojox.storage.FlashStorageProvider");_2.require("dojox.storage.BehaviorStorageProvider");_2.require("dojox.storage.CookieStorageProvider");_3.storage.manager.initialize();});

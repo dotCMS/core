@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/kk/Pagination", //begin v1.x content
 ({
 	"descTemplate": "${1} ${0} элементтің ${2} - ${3} элементі",
 	"firstTip": "Бірінші бет",
@@ -5,6 +8,7 @@
 	"nextTip": "Келесі бет",
 	"prevTip": "Алдыңғы бет",
 	"itemTitle": "элементтер",
+	"singularItemTitle": "элемент",
 	"pageStepLabelTemplate": "Бет ${0}",
 	"pageSizeLabelTemplate": "Бетіне ${0} элемент",
 	"allItemsLabelTemplate": "Барлық элементтер",
@@ -13,6 +17,8 @@
 	"dialogIndication": "Бет нөмірін көрсету",
 	"pageCountIndication": " (${0} бет)",
 	"dialogConfirm": "Өту",
-	"dialogCancel": "Болдырмау"
+	"dialogCancel": "Болдырмау",
+	"all": "барлығы"
 })
-
+//end v1.x content
+);

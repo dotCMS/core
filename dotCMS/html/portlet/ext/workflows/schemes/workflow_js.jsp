@@ -73,12 +73,13 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 			return;
 		}
 		if (myCp) {
-			myCp.destroyRecursive(true);
-		}
-		myCp = new dojox.layout.ContentPane({
+			myCp.attr("content","");//myCp.destroyRecursive(true);
+		}else{
+			myCp = new dojox.layout.ContentPane({
 			id : this.baseDiv
-		}).placeAt("hangWorkflowMainHere");
-
+			}).placeAt("hangWorkflowMainHere");
+		}
+		
 		myCp.attr("href", hashValue);
 		dojo.parser.parse("hangWorkflowMainHere");
 

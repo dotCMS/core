@@ -1,21 +1,2 @@
-if(!dojo._hasResource["dojox.charting.widget.Chart2D"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.charting.widget.Chart2D"] = true;
-dojo.provide("dojox.charting.widget.Chart2D");
-
-dojo.deprecated("dojox.charting.widget.Chart2D", "Use dojo.charting.widget.Chart instead and require all other components explicitly", "2.0");
-
-dojo.require("dojox.charting.widget.Chart");
-
-// require all actions to support references by name
-dojo.require("dojox.charting.action2d.Highlight");
-dojo.require("dojox.charting.action2d.Magnify");
-dojo.require("dojox.charting.action2d.MoveSlice");
-dojo.require("dojox.charting.action2d.Shake");
-dojo.require("dojox.charting.action2d.Tooltip");
-
-// require Chart2D to get compatibility on chart type reference by name
-dojo.require("dojox.charting.Chart2D");
-
-dojox.charting.widget.Chart2D =  dojox.charting.widget.Chart;
-
-}
+//>>built
+define("dojox/charting/widget/Chart2D",["dojo/_base/kernel","./Chart","../Chart2D","../action2d/Highlight","../action2d/Magnify","../action2d/MoveSlice","../action2d/Shake","../action2d/Tooltip"],function(_1,_2){_1.deprecated("dojox.charting.widget.Chart2D","Use dojo.charting.widget.Chart instead and require all other components explicitly","2.0");return dojox.charting.widget.Chart2D=_2;});

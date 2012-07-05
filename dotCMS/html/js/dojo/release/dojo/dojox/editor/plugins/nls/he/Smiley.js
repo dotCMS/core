@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/he/Smiley", //begin v1.x content
 ({
 	smiley: "הוספת רגשון",
 	emoticonSmile: "חיוך",
@@ -20,3 +23,5 @@
 	emoticonCrying: "בוכה"
 })
 
+//end v1.x content
+);

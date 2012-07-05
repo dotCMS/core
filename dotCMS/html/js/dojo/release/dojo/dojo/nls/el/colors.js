@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/nls/el/colors", //begin v1.x content
 ({
 // local representation of all CSS3 named colors, companion to dojo.colors.  To be used where descriptive information
 // is required for each color, such as a palette widget, and not for specifying color programatically.
@@ -145,6 +147,7 @@ tan: "ώχρα",
 teal: "πετρόλ",
 thistle: "μωβ βιολετί",
 tomato: "κόκκινο της ντομάτας",
+transparent: "διαφανές",
 turquoise: "τυρκουάζ",
 violet: "βιολετί",
 wheat: "σταρένιο",
@@ -153,3 +156,5 @@ whitesmoke: "λευκός καπνός",
 yellow: "κίτρινο",
 yellowgreen: "κιτρινοπράσινο"
 })
+//end v1.x content
+);

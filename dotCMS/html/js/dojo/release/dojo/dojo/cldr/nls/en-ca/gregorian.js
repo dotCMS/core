@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/en-ca/gregorian", //begin v1.x content
 {
 	"dateFormatItem-yMMMEd": "EEE, d MMM, y",
 	"dateFormatItem-yyMMM": "MMM-yy",
@@ -15,3 +17,5 @@
 	"dateFormat-long": "d MMMM, y",
 	"dateFormatItem-MMMEd": "E, d MMM"
 }
+//end v1.x content
+);

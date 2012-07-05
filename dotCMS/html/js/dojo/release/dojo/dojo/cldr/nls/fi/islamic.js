@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/fi/islamic", //begin v1.x content
 {
 	"dateFormatItem-yM": "L.yyyy",
 	"dateFormatItem-yyyyMMMEd": "EEE d. MMM y G",
@@ -150,3 +152,5 @@
 		"lauantaina"
 	]
 }
+//end v1.x content
+);

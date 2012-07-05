@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/nls/de/colors", //begin v1.x content
 ({
 // local representation of all CSS3 named colors, companion to dojo.colors.  To be used where descriptive information
 // is required for each color, such as a palette widget, and not for specifying color programatically.
@@ -145,6 +147,7 @@ tan: "Hautfarben",
 teal: "Smaragdgrün",
 thistle: "Distel",
 tomato: "Tomatenrot",
+transparent: "Transparent",
 turquoise: "Türkis",
 violet: "Violett",
 wheat: "Weizen",
@@ -153,3 +156,5 @@ whitesmoke: "Rauchweiß",
 yellow: "Gelb",
 yellowgreen: "Gelbgrün"
 })
+//end v1.x content
+);
