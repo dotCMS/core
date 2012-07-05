@@ -2604,6 +2604,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String showDeleted = req.getParameter("showDeleted");
 			String filterSystemHost = req.getParameter("filterSystemHost");
 			String filterLocked = req.getParameter("filterLocked");
+			String filterUnpublish = req.getParameter("filterUnpublish");
 			String currentSortBy = req.getParameter("currentSortBy");
 			String modDateFrom = req.getParameter("modDateFrom");
 			String modDateTo = req.getParameter("modDateTo");
@@ -2627,7 +2628,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 
 			ContentletAjax contentletAjax = new ContentletAjax();
-			List<Map<String, String>> contentlets = contentletAjax.searchContentletsByUser(structureInode, listFieldsValues, listCategoriesValues, Boolean.parseBoolean(showDeleted), Boolean.parseBoolean(filterSystemHost), Boolean.parseBoolean(filterLocked), 0, currentSortBy, 100000, user, null, modDateFrom, modDateTo);
+			List<Map<String, String>> contentlets = contentletAjax.searchContentletsByUser(structureInode, listFieldsValues, listCategoriesValues, Boolean.parseBoolean(showDeleted), Boolean.parseBoolean(filterSystemHost), Boolean.parseBoolean(filterUnpublish), Boolean.parseBoolean(filterLocked), 0, currentSortBy, 100000, user, null, modDateFrom, modDateTo);
 			return contentlets;
 		} catch (Exception e) {
 			Logger.debug(this, "Error: searchContentlets (EditContentletAction ): "+e);
