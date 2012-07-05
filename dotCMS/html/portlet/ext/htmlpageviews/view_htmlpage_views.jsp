@@ -284,7 +284,7 @@
 		var topUsers = data.topUsers;
 		if(topUsers.length == 0) {
 			dojo.style('topUserActions', { display: "none" });
-			dojo.byId('topUsers').innerHTML =  dojo.string.substitute(topUsersNoRecordsTemplate, { });
+			dojo.place(dojo.string.substitute(topUsersNoRecordsTemplate, { }),'topUsers');
 		} else {
 				
 			var unregisteredCount = 0;
