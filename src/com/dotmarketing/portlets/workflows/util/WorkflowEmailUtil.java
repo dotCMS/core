@@ -91,7 +91,7 @@ public class WorkflowEmailUtil {
 			ctx.put("nextStepResolved", processor.getNextStep().isResolved());
 			ctx.put("nextStepId", processor.getNextStep().getId());
 			ctx.put("nextStepName", processor.getNextStep().getName());
-			ctx.put("workflowTaskTitle", processor.getTask().getTitle());
+			ctx.put("workflowTaskTitle", UtilMethods.isSet(processor.getTask().getTitle())?processor.getTask().getTitle() : processor.getContentlet().getTitle());
 			ctx.put("modDate", processor.getTask().getModDate());
 			ctx.put("structureName", processor.getContentlet().getStructure().getName());
 
