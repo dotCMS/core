@@ -3,16 +3,19 @@
 	<div dojoAttachPoint="dialog" dojoType="dijit.Dialog" style="height: 500px;width: 1000px;">
 		<form dojoAttachPoint="search_form" onsubmit="return false;">
 				<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:450px;" dojoAttachPoint="borderContainer" class="shadowBox headerBox">
-					
+
 					<!-- START Left Column -->
 					<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width:350px;" class="lineRight">
 						<input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
 						<input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
 						<div style="margin:10px 20px;">
-							<b><%= LanguageUtil.get(pageContext, "Search") %>:</b> <span dojoAttachPoint='structureName'></span>							
+							<b><%= LanguageUtil.get(pageContext, "Search") %>:</b> <span dojoAttachPoint='structureName'></span>
 						</div>
 						<div class="sideMenuWrapper" style="height: 400px;overflow: auto;">
 							<input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
+							<div dojoAttachPoint="search_languages_table">
+								<dl><dt><%= LanguageUtil.get(pageContext, "Language") %>: </dt>
+							</div>
 							<div dojoAttachPoint="search_fields_table"></div>
 							<div dojoAttachPoint="search_categories_table">
 								<dl dojoAttachPoint="search_categories_list"></dl>
@@ -22,9 +25,9 @@
 								<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doSearchPage1' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
 								<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_clearSearch' iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Clear-Search") %></button>
 							</div>
-						</div>					
+						</div>
 					 </div>
-					 
+
 					     <!-- START Right Column -->
 					<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
 						<div dojoAttachPoint="contentWrapper" style="overflow:auto;margin-top:36px;">
@@ -44,7 +47,7 @@
 							</div>
 						</div>
 					</div>
-					 
+
 			    </div>
 		</form>
 		<!-- Dynamic Variables/Language specific content from request/session/context -->
