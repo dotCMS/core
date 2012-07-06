@@ -1008,7 +1008,18 @@ function selectAll(id){
 	 s.addRange(r1);
 }
 
-
+function showIndexClusterStatus(indexName) {
+	
+	var dialog = new dijit.Dialog({
+		title: "Index Store",
+		style: "width: 400px;",
+		content: new dojox.layout.ContentPane({
+			href: "/html/portlet/ext/cmsmaintenance/index_cluster_status.jsp?indexName="+indexName
+		})
+	});
+	
+	dialog.show();
+}
 
 
 </script>
