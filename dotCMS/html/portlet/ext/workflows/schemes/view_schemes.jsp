@@ -38,7 +38,7 @@
 
 			&nbsp;&nbsp;&nbsp;
 			<button dojoType="dijit.form.Button"
-				onClick="schemeAdmin.showAddEdit()" iconClass="addIcon">
+				onClick="schemeAdmin.showAddEdit();return false;" iconClass="addIcon">
 				<%=LanguageUtil.get(pageContext, "Add-Workflow-Scheme")%>
 			</button>
 		</div>
