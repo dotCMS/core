@@ -184,9 +184,9 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 		}
 		this.value = fileInfo.identifier;
 		if(fileInfo.type == 'htmlpage')
-			this.labelTextField.value = fileInfo.pageUrl;
+			this.labelTextField.set('value',fileInfo.pageUrl);
 		else
-			this.labelTextField.value = fileInfo.fileName;
+			this.labelTextField.set('value',fileInfo.fileName);
 		this.valueTextField.value = fileInfo.identifier;
 
 		if(this.showInfo) {
@@ -229,7 +229,7 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 		dojo.style(this.infoFileButton.domNode, { display: 'none' });
 		this.value = '';
 		this.fileInfo = null;
-		this.labelTextField.value = '';
+		this.labelTextField.set('value','');
 		this.valueTextField.value = '';
 	},
 	
