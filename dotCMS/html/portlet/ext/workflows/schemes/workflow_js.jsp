@@ -80,6 +80,8 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 			}).placeAt("hangWorkflowMainHere");
 		}
 		
+		var r = Math.floor(Math.random() * 1000000000);
+		hashValue = hashValue + "&rand=" + r;		
 		myCp.attr("href", hashValue);
 		dojo.parser.parse("hangWorkflowMainHere");
 
