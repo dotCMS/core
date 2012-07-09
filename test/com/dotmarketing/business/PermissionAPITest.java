@@ -14,12 +14,18 @@ import org.junit.Test;
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
@@ -69,9 +75,6 @@ public class PermissionAPITest extends TestBase {
                fw.close();
                APILocator.getFileAPI().saveFile(file, fdata, folder, sysuser, false);
                
-               // a structure under the folder
-               Structure structure=new Structure();
-               structure.setDescription("test structure under "+path);
            }
     }
     
@@ -370,6 +373,35 @@ public class PermissionAPITest extends TestBase {
         Folder f3 = APILocator.getFolderAPI().findFolderByPath("/f5/f1/f1", host, sysuser, false);
         Folder f4 = APILocator.getFolderAPI().findFolderByPath("/f5/f1/f1/f1", host, sysuser, false);
         
+        Structure s = new Structure();
+        s.setHost(host.getIdentifier());
+        s.setFolder(f4.getInode());
+        s.setName("test_str_str_str");
+        s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
+        s.setOwner(sysuser.getUserId());
+        s.setVelocityVarName("testtesttest");
+        StructureFactory.saveStructure(s);
+        StructureCache.addStructure(s);
+        
+        Field field = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s, 
+                true, true, true, 3, "", "", "", true, false, true);
+        field.setVelocityVarName("testtext");
+        field.setListed(true);
+        FieldFactory.saveField(field);
+        FieldsCache.addField(field);
+        
+        Contentlet cont1=new Contentlet();
+        cont1.setStructureInode(s.getInode());
+        cont1.setStringProperty(field.getVelocityVarName(), "a test value");
+        cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
+        APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
+        
+        Contentlet cont2=new Contentlet();
+        cont2.setStructureInode(s.getInode());
+        cont2.setStringProperty(field.getVelocityVarName(), "another test value");
+        cont2=APILocator.getContentletAPI().checkin(cont2, sysuser, false);
+        APILocator.getContentletAPI().isInodeIndexed(cont2.getInode());
+        
         perm.permissionIndividually(host, f4, sysuser, false);
         perm.permissionIndividually(host, f3, sysuser, false);
         perm.permissionIndividually(host, f2, sysuser, false);
@@ -379,35 +411,36 @@ public class PermissionAPITest extends TestBase {
         assertFalse(perm.isInheritingPermissions(f2));
         assertFalse(perm.isInheritingPermissions(f3));
         assertFalse(perm.isInheritingPermissions(f4));
+        
+        perm.resetPermissionsUnder(f1);
+        
+        assertTrue(perm.isInheritingPermissions(f2));
+        assertTrue(perm.isInheritingPermissions(f3));
+        assertTrue(perm.isInheritingPermissions(f4));
+        
+        assertTrue(f2.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
+        assertTrue(f3.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
+        assertTrue(f4.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
+        assertTrue(s.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
+        assertTrue(cont1.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
+        assertTrue(cont2.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
+        
+        List<HTMLPage> pages=new ArrayList<HTMLPage>();
+        pages.addAll(APILocator.getFolderAPI().getHTMLPages(f1, sysuser, false));
+        pages.addAll(APILocator.getFolderAPI().getHTMLPages(f2, sysuser, false));
+        pages.addAll(APILocator.getFolderAPI().getHTMLPages(f3, sysuser, false));
+        pages.addAll(APILocator.getFolderAPI().getHTMLPages(f4, sysuser, false));
+        for(HTMLPage p : pages) 
+            assertTrue(p.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
+        
+        List<File> files=new ArrayList<File>();
+        files.addAll(APILocator.getFolderAPI().getFiles(f1, sysuser, false));
+        files.addAll(APILocator.getFolderAPI().getFiles(f2, sysuser, false));
+        files.addAll(APILocator.getFolderAPI().getFiles(f3, sysuser, false));
+        files.addAll(APILocator.getFolderAPI().getFiles(f4, sysuser, false));
+        for(File f : files)
+            assertTrue(f.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
     }
     
-    @Test
-    public void cascadePermissionUnder() {
-        
-    }
     
-    @Test
-    public void resetPermissionReferences() {
-        
-    }
-    
-    @Test
-    public void resetChildrenPermissionReferences() {
-        
-    }
-    
-    @Test
-    public void permissionIndividually() {
-        
-    }
-    
-    @Test
-    public void findParentPermissionable() {
-        
-    }
-    
-    @Test
-    public void isInheritingPermissions() {
-        
-    }
 }
