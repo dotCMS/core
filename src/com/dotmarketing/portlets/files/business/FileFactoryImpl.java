@@ -312,7 +312,7 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 		} else {
 			query.append(" where asset.inode=inode.inode and asset.identifier = identifier.id");
 		}
-		query.append(" and versionInfo.identifier=identifier.id ");
+		query.append(" and versioninfo.identifier=identifier.id ");
 		if (UtilMethods.isSet(hostId)) {
 			query.append(" and identifier.hostId = '").append(hostId).append("'");
 		}
