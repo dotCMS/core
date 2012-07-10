@@ -179,7 +179,6 @@ function deleteSchedule(form) {
 			field.value = dateValue;
 		}
 </script>
-<body>
 <html:form action="/ext/scheduler/edit_scheduler" styleId="fm">
 
 	<div  id="mainTabContainer"  dolayout="false" dojoType="dijit.layout.TabContainer">
@@ -271,11 +270,9 @@ function deleteSchedule(form) {
      String min = (startDateCalendar.get(GregorianCalendar.MINUTE) < 10) ? "0"+startDateCalendar.get(GregorianCalendar.MINUTE) : ""+startDateCalendar.get(GregorianCalendar.MINUTE);
 %>
 							<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveStartDate()?"checked":""  %> id="haveStartDate" name="haveStartDate" onclick="checkDate(this, 'startDate')"/>
-							<input type="text" value="<%= df.format(startDate) %>" onChange="updateDate('startDate');"
-                                            dojoType="dijit.form.DateTextBox" name="startDateDate"
+							<input type="text" value="<%= df.format(startDate) %>" onChange="updateDate('startDate');" dojoType="dijit.form.DateTextBox" name="startDateDate"
                                             id="startDateDate" style="width:150px;" />                                            
-                            <input type="text" id="startDateTime" name="startDateTime"
-                                            value='T<%=hour+":"+min%>:00' onChange="updateDate('startDate');"
+                            <input type="text" id="startDateTime" name="startDateTime" value='T<%=hour+":"+min%>:00' onChange="updateDate('startDate');"
                                             dojoType="dijit.form.TimeTextBox" style="width: 100px;" />  
 							<input type="hidden" name="startDate" value="" id="startDate">
 							<script language="javascript">
@@ -360,11 +357,9 @@ function deleteSchedule(form) {
 
 %>
 						 	<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveEndDate()?"checked":""  %> id="haveEndDate" name="haveEndDate" onclick="checkDate(this, 'endDate')"/>	
-							<input type="text" value="<%= df.format(endDate) %>" onChange="updateDate('endDate');"
-                                            dojoType="dijit.form.DateTextBox" name="endDateDate"
+							<input type="text" value="<%= df.format(endDate) %>" onChange="updateDate('endDate');" dojoType="dijit.form.DateTextBox" name="endDateDate"
                                             id="endDateDate" style="width:150px;" />
-                            <input type="text" id="endDateTime" name="endDateTime"
-                                            value='T<%=hour+":"+min%>:00' onChange="updateDate('endDate');"
+                            <input type="text" id="endDateTime" name="endDateTime" value='T<%=hour+":"+min%>:00' onChange="updateDate('endDate');"
                                             dojoType="dijit.form.TimeTextBox" style="width: 100px;" /> 
 							<input type="hidden" name="endDate" value="" id="endDate">
 							<script language="javascript">
@@ -603,8 +598,7 @@ function deleteSchedule(form) {
 							<dd>
 								<input type="radio" name="every" id="every" dojoType="dijit.form.RadioButton" value="isDate" <%= UtilMethods.isSet(schedulerForm.getEvery()) && schedulerForm.getEvery().equals("isDate") ? "checked" : "" %> >
 								<input type="text" value="<%= df.format(everyDate) %>" onChange="updateDate('everyDate');"
-                                              dojoType="dijit.form.DateTextBox" name="everyDateDate"
-                                              id="everyDateDate" style="width:100px;" />
+                                              dojoType="dijit.form.DateTextBox" name="everyDateDate" id="everyDateDate" style="width:100px;" />
 								<input type="hidden" name="everyDate" value="" id="everyDate">
 								<script language="javascript">
 									dojo.addOnLoad (function(){
@@ -940,5 +934,4 @@ function deleteSchedule(form) {
 	}
 %>
 </html:form>
-</body>	
 </liferay:box>
