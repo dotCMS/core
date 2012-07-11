@@ -9,7 +9,6 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.lucene.queryParser.ParseException;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -408,7 +407,7 @@ public class CommentsWebAPI implements ViewTool {
 				field.setFieldContentlet("date1");
 				field.setFieldType("date_time");
 				field.setStructureInode(commentsStructureInode);
-				field.setIndexed(false);
+				field.setIndexed(true);
 				field.setRequired(false);
 				field.setListed(false);
 				field.setSortOrder(9);
