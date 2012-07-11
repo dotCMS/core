@@ -2,6 +2,12 @@
 To use pass in the  path to languages
 ie.. http://localhost:8080/html/scripts/language_compare.jsp?path=/Users/jasontesser/dev/git/dotcms/dotCMS/WEB-INF/messages/
 --%>
+<%@page import="java.io.FileOutputStream"%>
+<%@page import="java.io.OutputStreamWriter"%>
+<%@page import="java.io.Writer"%>
+<%@page import="java.io.PrintWriter"%>
+<%@page import="java.io.BufferedWriter"%>
+<%@page import="java.io.FileWriter"%>
 <%@page import="org.apache.commons.cli.CommandLine"%>
 <%@page import="java.io.DataInputStream"%>
 <%@page import="java.io.FileInputStream"%>
@@ -30,7 +36,9 @@ ie.. http://localhost:8080/html/scripts/language_compare.jsp?path=/Users/jasonte
 	}
 	String langToDeleteRemovedKeys = request
 			.getParameter("lang_to_delete");
-	String findUnusedKeys = request.getParameter("find_unused");
+	String genUnused = request.getParameter("gen_unused");
+	
+	String removeUnused = request.getParameter("remove_unused");
 
 	File dir = new File(path);
 	List<String> currentKeys = new ArrayList<String>();
@@ -44,19 +52,34 @@ ie.. http://localhost:8080/html/scripts/language_compare.jsp?path=/Users/jasonte
 	pc.load(new File(path + File.separator + "Language.properties"));
 	String x = Config.CONTEXT_PATH;
 	
-	if (UtilMethods.isSet(findUnusedKeys) && findUnusedKeys.equalsIgnoreCase("true")) {
-		File f = new File(x + "usedkeys.txt");
+	FileWriter fw = null;
+	BufferedWriter bw = null;
+	
+	if (UtilMethods.isSet(genUnused) && genUnused.equalsIgnoreCase("true")) {
+		File f = new File(x + "keys.txt");
 		if(f.exists()){
 			f.delete();
 		}
-		f = new File(x + "usedkeys.txt");
+		f = new File(x + "keys.txt");
 		f.createNewFile();
+		
+		File f1 = new File(x + "unsedkeys.txt");
+		if(f1.exists()){
+			f1.delete();
+		}
+		f1 = new File(x + "unsedkeys.txt");
+		f1.createNewFile();
+		
+		fw = new FileWriter(f1.getAbsoluteFile());
+		bw = new BufferedWriter(fw);
 	}
+	
+	
 	Iterator i1 = pc.getKeys();
 	while (i1.hasNext()) {
 		String k = i1.next().toString().trim();
 		currentKeys.add(k);
-		if (UtilMethods.isSet(findUnusedKeys) && findUnusedKeys.equalsIgnoreCase("true")) {
+		if (UtilMethods.isSet(genUnused) && genUnused.equalsIgnoreCase("true")) {
 
 			String[] cmd = {x + "html/scripts/language_compare_helper1.sh" , x , k};
 
@@ -64,22 +87,82 @@ ie.. http://localhost:8080/html/scripts/language_compare.jsp?path=/Users/jasonte
 			Process p = Runtime.getRuntime().exec(cmd);
 			int exitVal = p.waitFor();
 			
-			try {
-				//FileInputStream fstream = new FileInputStream(x + "usedkeys.txt");
-				//DataInputStream in = new DataInputStream(fstream);
-				//BufferedReader br = new BufferedReader(new InputStreamReader(in));
-				//String strLine;
-				//while ((strLine = br.readLine()) != null) {
-					//System.out.println(strLine);
-				//}
-				//in.close();
-			} catch (Exception e) {//Catch exception if any
-				Logger.error(this,"Error: " + e.getMessage(),e);
-			}
 		}
 		//break;
 	}
-
+		
+	if (UtilMethods.isSet(genUnused) && genUnused.equalsIgnoreCase("true")) {
+		try {
+			FileInputStream fstream = new FileInputStream(x + "keys.txt");
+			DataInputStream in = new DataInputStream(fstream);
+			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			String strLine;
+			String currentKey = "";
+			boolean currentKeyUsed = false;
+			while ((strLine = br.readLine()) != null) {
+				if(currentKey.equals("")){
+					currentKey = strLine.replaceAll("---", "");
+					continue;
+				}else if(!strLine.startsWith("---")){
+					currentKeyUsed = true;
+					continue;
+				}else{
+					if(!currentKeyUsed){
+						bw.write(currentKey + System.getProperty("line.separator"));
+					}
+					currentKey = strLine.replaceAll("---", "");
+					currentKeyUsed = false;
+				}
+			}
+			in.close();
+		} catch (Exception e) {//Catch exception if any
+			Logger.error(this,"Error: " + e.getMessage(),e);
+		}
+	
+		if(bw!=null){
+			bw.flush();
+			bw.close();
+		}
+	}
+	
+	
+	if (UtilMethods.isSet(removeUnused) && removeUnused.equalsIgnoreCase("true")) {
+		List<String> keys = new ArrayList<String>();
+		File f1 = new File(x + "unsedkeys.txt");
+		FileInputStream fs = new FileInputStream(f1);
+		DataInputStream i = new DataInputStream(fs);
+		BufferedReader b = new BufferedReader(new InputStreamReader(i));
+		String sline = "";
+		while ((sline = b.readLine()) != null) {
+			keys.add(sline.trim());
+		}
+		
+		for (File f : dir.listFiles()) {
+			if (f.getName().contains("-ext")) {
+				continue;
+			}
+			if (f.isDirectory()) {
+				continue;
+			}
+			File t = new File(dir.getAbsolutePath() + File.separator + "temp_" + f.getName());
+			t.createNewFile();
+			Writer o = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(t), "UTF-8"));
+			
+			FileInputStream fstream = new FileInputStream(f);
+			DataInputStream in = new DataInputStream(fstream);
+			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			String strLine = "";
+			while ((strLine = br.readLine()) != null) {
+				String k = strLine.split("=")[0].trim();
+				if(k.startsWith("javax.portlet") || !keys.contains(k)){
+					o.write(strLine + System.getProperty("line.separator"));
+				}
+			}
+			
+			t.renameTo(f);
+		}
+	}
+	
 	for (File f : dir.listFiles()) {
 		if (f.getName().contains("-ext")) {
 			continue;
@@ -90,7 +173,7 @@ ie.. http://localhost:8080/html/scripts/language_compare.jsp?path=/Users/jasonte
 		if (f.isDirectory()) {
 			continue;
 		}
-
+		
 		files.add(f.getName());
 
 		List<String> keys = new ArrayList<String>();
@@ -135,6 +218,8 @@ ie.. http://localhost:8080/html/scripts/language_compare.jsp?path=/Users/jasonte
 		response.sendRedirect("/html/scripts/language_compare.jsp?path="
 				+ path);
 	}
+	
+	
 %>
 <html>
 	<head>
@@ -142,7 +227,8 @@ ie.. http://localhost:8080/html/scripts/language_compare.jsp?path=/Users/jasonte
 	</head>
 	<body>
 		<h1><a href="/html/scripts/language_compare.jsp?path=<%=path%>&lang_to_delete=all">Remove All Old Keys</a></h1>
-		<h1><a href="/html/scripts/language_compare.jsp?path=<%=path%>&find_unused=true">Find Unused Keys</a></h1>
+		<h1><a href="/html/scripts/language_compare.jsp?path=<%=path%>&gen_unused=true">Generate Unused Keys</a></h1>
+		<h1><a href="/html/scripts/language_compare.jsp?path=<%=path%>&show_unsed=true&remove_unused=true">Remove Unused Keys</a></h1>
 		<%
 			for (String language : files) {
 		%>
