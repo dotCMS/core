@@ -22,7 +22,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -318,7 +317,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					cache.addDefaultScheme(scheme);
 				} catch (final Exception e) {
 					HibernateUtil.rollbackTransaction();
-					throw new DotHibernateException(e.getMessage());
+					Logger.warn(this, e.getMessage(), e);
+					return null;
 				}
 
 			}
