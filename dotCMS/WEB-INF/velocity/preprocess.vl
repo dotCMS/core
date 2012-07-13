@@ -19,3 +19,7 @@
 		#set($URLMapContent = $dotcontent.find($request.getAttribute("com.dotmarketing.wiki.contentlet")))
 	#end
 #end
+
+#if($UtilMethods.isSet($URLMapContent))
+	$request.getSession().setAttribute('REDIRECT_AFTER_LOGIN', $dotcontent.find($URLMapContent.inode).getUrlMap())
+#end
