@@ -10,30 +10,30 @@
 		in your server.xml file.
 		We recommend you set your number of connections to be your max server threads + 10
 	 -->
-	<!-- POSTGRESQL 
+	<!-- POSTGRESQL -->
 	<Resource name="jdbc/dotCMSPool" auth="Container" 
 	        type="javax.sql.DataSource"
 	        driverClassName="org.postgresql.Driver"
 	        url="jdbc:postgresql://localhost/trunk"
-	        username="postgres" password="pevivi9" maxActive="60" maxIdle="5" maxWait="60000"
+	        username="{your db user}" password="{your db password}" maxActive="60" maxIdle="5" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
 		  validationQuery="SELECT 1" testOnBorrow="true" />		  
-	-->
 	
-	<!-- MYSQL UTF8 -->
+	
+	<!-- MYSQL UTF8 
 	<Resource name="jdbc/dotCMSPool" auth="Container"
 		  type="javax.sql.DataSource" driverClassName="com.mysql.jdbc.Driver"
-		  url="jdbc:mysql://localhost:3306/dotcms_2_git?characterEncoding=UTF-8"
-		  username="u_dotcms_git" password="u_dotcms_git" maxActive="60" maxIdle="10" maxWait="60000"
+		  url="jdbc:mysql://localhost:3306/dotcms?characterEncoding=UTF-8"
+		  username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
 		  validationQuery="SELECT 1" testOnBorrow="true"/>
-	
+	-->
 	
 	<!-- Oracle 
 	<Resource name="jdbc/dotCMSPool" auth="Container"
 		  type="javax.sql.DataSource" driverClassName="oracle.jdbc.OracleDriver"
 		  url="jdbc:oracle:thin:@161.27.206.39:1521:dotcmsPSM10g"
-		  username="U_DOTCMS_20_GRA" password="U_DOTCMS_20_GRA" maxActive="60" maxIdle="10" maxWait="60000"
+		  username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
 		  testOnBorrow="true" validationQuery="SELECT 1 from DUAL"/>
 	-->		  
