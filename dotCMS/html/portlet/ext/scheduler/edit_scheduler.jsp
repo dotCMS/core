@@ -21,7 +21,13 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Job")) %>' />
-
+<style>
+.aligncenter{
+	margin-left: auto;
+    margin-right: auto;
+    width: 6em
+}
+</style>
 <script language="Javascript">
 
 function checkDate(element, fieldName) {
@@ -173,10 +179,10 @@ function deleteSchedule(form) {
 			field.value = dateValue;
 		}
 </script>
-
 <html:form action="/ext/scheduler/edit_scheduler" styleId="fm">
-	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
-		<div id="main" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Main") %>">
+
+	<div  id="mainTabContainer"  dolayout="false" dojoType="dijit.layout.TabContainer">
+		  <div id="main" class="aligncenter" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Main") %>">
 			<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
 			<input name="<portlet:namespace />redirect" type="hidden" value="">
 			<input name="referrer" type="hidden" value="">
@@ -222,7 +228,8 @@ function deleteSchedule(form) {
 						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Execute") %>:</b></font>
 					</dt>				
 					<dd>
-						<table cellpadding="0" cellspacing="0">
+						<div id="startDateDiv">
+						
 <%
 	SimpleDateFormat sdf = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE);
 
@@ -234,11 +241,9 @@ function deleteSchedule(form) {
 
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-							<tr>
-							    <td>
-							    	<%= LanguageUtil.get(pageContext, "From1") %>
-							    </td>
-								<td>
+							
+							    	<font><%= LanguageUtil.get(pageContext, "From1") %></font>
+							  
 <%
 	Calendar startDateCalendar = null;
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
@@ -264,20 +269,11 @@ function deleteSchedule(form) {
 	 String hour = (startDateCalendar.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+startDateCalendar.get(GregorianCalendar.HOUR_OF_DAY) : ""+startDateCalendar.get(GregorianCalendar.HOUR_OF_DAY);
      String min = (startDateCalendar.get(GregorianCalendar.MINUTE) < 10) ? "0"+startDateCalendar.get(GregorianCalendar.MINUTE) : ""+startDateCalendar.get(GregorianCalendar.MINUTE);
 %>
-								<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveStartDate()?"checked":""  %> id="haveStartDate" name="haveStartDate" onclick="checkDate(this, 'startDate')"/>
-								</td>
-								<td>
-									<div id="startDateDiv">
-									 <input type="text" value="<%= df.format(startDate) %>" onChange="updateDate('startDate');"
-                                            dojoType="dijit.form.DateTextBox" name="startDateDate"
-                                            id="startDateDate" style="width:100px;" />
-                                            
-                                     <input type="text" id="startDateTime" name="startDateTime"
-                                            value='T<%=hour+":"+min%>:00' onChange="updateDate('startDate');"
-                                            dojoType="dijit.form.TimeTextBox" style="width: 90px;" />       
-									</div>
-								</td>
-							</tr>
+							<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveStartDate()?"checked":""  %> id="haveStartDate" name="haveStartDate" onclick="checkDate(this, 'startDate')"/>
+							<input type="text" value="<%= df.format(startDate) %>" onChange="updateDate('startDate');" dojoType="dijit.form.DateTextBox" name="startDateDate"
+                                            id="startDateDate" style="width:150px;" />                                            
+                            <input type="text" id="startDateTime" name="startDateTime" value='T<%=hour+":"+min%>:00' onChange="updateDate('startDate');"
+                                            dojoType="dijit.form.TimeTextBox" style="width: 100px;" />  
 							<input type="hidden" name="startDate" value="" id="startDate">
 							<script language="javascript">
 							dojo.addOnLoad (function(){
@@ -292,13 +288,10 @@ function deleteSchedule(form) {
 							});
 							</script>
 <%
-	} else {
-%>
-							<tr>
-							    <td>
-							    	<%= LanguageUtil.get(pageContext, "From1") %>
-							    </td>
-								<td>
+	} else {%>
+							
+							    	<font><%= LanguageUtil.get(pageContext, "From1") %></font>							   
+								
 <%
 	if (schedulerForm.isHaveStartDate()) {
 		Calendar startDateCalendar = null;
@@ -324,19 +317,19 @@ function deleteSchedule(form) {
 <%
 	}
 %>
-								</td>
-							</tr>
+						</div>
+					</dd>			
+							
 <%
 	}
 %>
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-							<tr>
-								<td>
-									<%= LanguageUtil.get(pageContext, "To1") %>
-								</td>
-								<td>
+					<dd>
+						<div id="endDateDiv">		
+							<font><%= LanguageUtil.get(pageContext, "To1") %></font>								
+								
 <%
 	Calendar endDateCalendar = null;
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
@@ -363,22 +356,11 @@ function deleteSchedule(form) {
      String min = (endDateCalendar.get(GregorianCalendar.MINUTE) < 10) ? "0"+endDateCalendar.get(GregorianCalendar.MINUTE) : ""+endDateCalendar.get(GregorianCalendar.MINUTE);
 
 %>
-							   <input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveEndDate()?"checked":""  %> id="haveEndDate" name="haveEndDate" onclick="checkDate(this, 'endDate')"/>
-								</td>
-								<td>
-									<div id="endDateDiv">
-									
-									     <input type="text" value="<%= df.format(endDate) %>" onChange="updateDate('endDate');"
-                                            dojoType="dijit.form.DateTextBox" name="endDateDate"
-                                            id="endDateDate" style="width:100px;" />
-                                            
-                                     <input type="text" id="endDateTime" name="endDateTime"
-                                            value='T<%=hour+":"+min%>:00' onChange="updateDate('endDate');"
-                                            dojoType="dijit.form.TimeTextBox" style="width: 90px;" />       
-							
-									</div>
-								</td>
-							</tr>
+						 	<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveEndDate()?"checked":""  %> id="haveEndDate" name="haveEndDate" onclick="checkDate(this, 'endDate')"/>	
+							<input type="text" value="<%= df.format(endDate) %>" onChange="updateDate('endDate');" dojoType="dijit.form.DateTextBox" name="endDateDate"
+                                            id="endDateDate" style="width:150px;" />
+                            <input type="text" id="endDateTime" name="endDateTime" value='T<%=hour+":"+min%>:00' onChange="updateDate('endDate');"
+                                            dojoType="dijit.form.TimeTextBox" style="width: 100px;" /> 
 							<input type="hidden" name="endDate" value="" id="endDate">
 							<script language="javascript">
 							dojo.addOnLoad (function(){
@@ -396,11 +378,8 @@ function deleteSchedule(form) {
 <%
 	} else {
 %>
-							<tr>
-								<td>
-									<%= LanguageUtil.get(pageContext, "To1") %>
-								</td>
-								<td>
+							<font><%= LanguageUtil.get(pageContext, "To1") %></font>
+								
 <%
 	if (schedulerForm.isHaveEndDate()) {
 	Calendar endDateCalendar = null;
@@ -426,13 +405,14 @@ function deleteSchedule(form) {
 <%
 	}
 %>
-								</td>
-							</tr>
+								
 <%
 	}
 %>
-						</table>
+						
+						</div>
 					</dd>
+					
 					<dt>
 						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Class-to-be-executed") %>:</b></font>
 					</dt>				
@@ -453,125 +433,68 @@ function deleteSchedule(form) {
 						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Execute") %>:</b></font>
 					</dt>
 					<dd>
-						<table cellpadding="0" cellspacing="0">
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-							<tr>
-								<!--td-->
-								<td colspan="3">
 <%
 	schedulerForm.setAtInfo(true);
 %>
-									<div style="display: none;">
-									    <input type="checkbox" dojoType="dijit.form.CheckBox" id="atInfo" name="atInfo" />
-									</div>
-								<!--/td>
-								<td colspan="2"-->
-									<font class="bg" size="2">&nbsp;&nbsp;<%= LanguageUtil.get(pageContext, "at") %></font>
-								</td>
-							</tr>
-							<tr>
-								<td>&nbsp;
-									
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<input type="radio" name="at" id="at1" dojoType="dijit.form.RadioButton" value="isTime" <%= UtilMethods.isSet(schedulerForm.getAt()) && schedulerForm.getAt().equals("isTime") ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td>
-									<input type="text" id="atTime" name="atTime"
+						<div style="display: none;">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" id="atInfo" name="atInfo" />
+						</div>
+						<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "at") %></font>
+						<input type="radio" name="at" id="at1" dojoType="dijit.form.RadioButton" value="isTime" <%= UtilMethods.isSet(schedulerForm.getAt()) && schedulerForm.getAt().equals("isTime") ? "checked" : "" %> >
+						<input type="text" id="atTime" name="atTime"
                                            value='T<%=schedulerForm.getAtTimeHour()+":"+(schedulerForm.getAtTimeMinute()<10?"0"+schedulerForm.getAtTimeMinute():schedulerForm.getAtTimeMinute()) + ":00"%>' 
                                            dojoType="dijit.form.TimeTextBox" style="width: 90px;"/>
-                                    
-								</td>
-							</tr>
-							<tr>
-								<td>&nbsp;
-									
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<input type="radio" name="at" id="at" dojoType="dijit.form.RadioButton" value="isBetween" <%= UtilMethods.isSet(schedulerForm.getAt()) && schedulerForm.getAt().equals("isBetween") ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "between") %></font>
-											</td>
-											<td>
-												<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="betweenFromHour" onChange="amPm('betweenFrom');">
-											<%
-												for (int i = 0; i < 24; i++) 
-												{
-													int val = i > 12 ?  i - 12: i;
-													if (val == 0)
-														val = 12;
-											%>
-													<option <%= schedulerForm.getBetweenFromHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-											<%
-												}
-											%>
-												</select>
-											</td>
-											<td>
-												<span id="betweenFromPM"><font class="bg" size="2">AM</font></span>
-												<script language="javascript">
-												dojo.addOnLoad (function(){
-													amPm('betweenFrom');
-												});
-												</script>
-											</td>
-											<td>&nbsp;</td>
-											<td>
-												<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="betweenToHour" onChange="amPm('betweenTo');">
-												<%
-													for (int i = 0; i < 24; i++) 
-													{
-														int val = i > 12 ?  i - 12: i;
-														if (val == 0)
-															val = 12;
-												%>
-													<option <%= schedulerForm.getBetweenToHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-												<%
-													}
-												%>
-												</select>
-											</td>
-											<td>
-												<span id="betweenToPM"><font class="bg" size="2">AM</font></span>
-												<script language="javascript">
-												dojo.addOnLoad (function(){
-													amPm('betweenTo');
-												});
-												</script>
-											</td>
-										</tr>
-									</table>
-								</td>
-							</tr>
+					</dd>	
+					<dd>
+						&nbsp;&nbsp;&nbsp;&nbsp;
+						<input type="radio" name="at" id="at" dojoType="dijit.form.RadioButton" value="isBetween" <%= UtilMethods.isSet(schedulerForm.getAt()) && schedulerForm.getAt().equals("isBetween") ? "checked" : "" %> >
+						<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "between") %></font>
+						<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="betweenFromHour" onChange="amPm('betweenFrom');">
+							<%
+								for(int i = 0; i < 24; i++){
+									int val = i > 12 ?  i - 12: i;
+									if (val == 0)
+										val = 12;
+							%>
+								<option <%= schedulerForm.getBetweenFromHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+							<%
+								}
+							%>
+						</select>
+						<span id="betweenFromPM"><font class="bg" size="2">AM</font></span>
+						<script language="javascript">
+							dojo.addOnLoad (function(){
+								amPm('betweenFrom');
+							});
+						</script>
+						<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="betweenToHour" onChange="amPm('betweenTo');">
+							<%
+								for (int i = 0; i < 24; i++){
+									int val = i > 12 ?  i - 12: i;
+									if (val == 0)
+										val = 12;
+							%>
+								<option <%= schedulerForm.getBetweenToHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+							<%
+								}
+							%>
+						</select>
+						<span id="betweenToPM"><font class="bg" size="2">AM</font></span>
+						<script language="javascript">
+							dojo.addOnLoad (function(){
+								amPm('betweenTo');
+							});
+						</script>
+					</dd>
 				<%
 					} else {
 				%>
-							<tr>
-								<td>
-									<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "at") %></font>
-								</td>
-								<td>
-									&nbsp;&nbsp;&nbsp;
-								</td>
-								<td>
+							<dd>
+								<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "at") %></font>
+							
 <%
 	if (schedulerForm.isAtInfo()) {
 		if (UtilMethods.isSet(schedulerForm.getAt()) && schedulerForm.getAt().equals("isTime")) {
@@ -598,8 +521,8 @@ function deleteSchedule(form) {
 <%
 	}
 %>
-								</td>
-							</tr>
+								
+							</dd>
 <%
 	}
 %>
@@ -607,39 +530,20 @@ function deleteSchedule(form) {
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-							<tr>
-								<td>
+							<dd>
 <%
 	schedulerForm.setEachInfo(true);
 %>
 									<div style="display: none;">
 									    <input type="checkbox" dojoType="dijit.form.CheckBox" id="eachInfo" name="eachInfo"/>
 									</div>
-								</td>
-								<td>&nbsp;
+									<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "each") %> <input type="text" dojoType="dijit.form.TextBox" style="width: 30px;"  class="form-text" name="eachHours" id="eachHours" maxlength="3"  <%= 0 < schedulerForm.getEachHours() ? "value=\"" + schedulerForm.getEachHours() + "\"" : "" %> > <%= LanguageUtil.get(pageContext, "hours-and") %> <input type="text" class="form-text" dojoType="dijit.form.TextBox" style="width: 30px;"  name="eachMinutes" id="eachMinutes" maxlength="3" <%= 0 < schedulerForm.getEachMinutes() ? "value=\"" + schedulerForm.getEachMinutes() + "\"" : "" %> > <%= LanguageUtil.get(pageContext, "minutes") %></font>
 									
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "each") %> <input type="text" dojoType="dijit.form.TextBox" style="width: 30px;"  class="form-text" name="eachHours" id="eachHours" maxlength="3"  <%= 0 < schedulerForm.getEachHours() ? "value=\"" + schedulerForm.getEachHours() + "\"" : "" %> > <%= LanguageUtil.get(pageContext, "hours-and") %> <input type="text" class="form-text" dojoType="dijit.form.TextBox" style="width: 30px;"  name="eachMinutes" id="eachMinutes" maxlength="3" <%= 0 < schedulerForm.getEachMinutes() ? "value=\"" + schedulerForm.getEachMinutes() + "\"" : "" %> > <%= LanguageUtil.get(pageContext, "minutes") %></font>
-											</td>
-										</tr>
-									</table>
-								</td>
-							</tr>
 <%
 	} else {
 %>
-							<tr>
-								<td>
 									<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "each") %></font>
-								</td>
-								<td>
-									&nbsp;&nbsp;&nbsp;
-								</td>
-								<td>
+								
 <%
 	if (schedulerForm.isEachInfo()) {
 		String output = null;
@@ -662,8 +566,8 @@ function deleteSchedule(form) {
 <%
 	}
 %>
-								</td>
-							</tr>
+								
+							</dd>
 <%
 	}
 %>
@@ -687,115 +591,52 @@ function deleteSchedule(form) {
 		if (!schedulerForm.isEveryInfo())
 			schedulerForm.setEvery("");
 %>
-							<tr>
-								<td>
-								    <input type="checkbox" dojoType="dijit.form.CheckBox" id="everyInfo" name="everyInfo" <%= schedulerForm.isEveryInfo()?"checked":"" %>/>
-								</td>
-								<td colspan="2">
-									<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "every") %></font>
-								</td>
-							</tr>
-							<tr>
-								<td>&nbsp;
-									
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<input type="radio" name="every" id="every" dojoType="dijit.form.RadioButton" value="isDate" <%= UtilMethods.isSet(schedulerForm.getEvery()) && schedulerForm.getEvery().equals("isDate") ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td>
-								       <input type="text" value="<%= df.format(everyDate) %>" onChange="updateDate('everyDate');"
-                                              dojoType="dijit.form.DateTextBox" name="everyDateDate"
-                                              id="everyDateDate" style="width:100px;" />
-
-                                    <input type="hidden" name="everyDate" value="" id="everyDate">
-									<script language="javascript">
+							<dd>
+								<input type="checkbox" dojoType="dijit.form.CheckBox" id="everyInfo" name="everyInfo" <%= schedulerForm.isEveryInfo()?"checked":"" %>/>
+								<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "every") %></font>
+							</dd>
+							<dd>
+								<input type="radio" name="every" id="every" dojoType="dijit.form.RadioButton" value="isDate" <%= UtilMethods.isSet(schedulerForm.getEvery()) && schedulerForm.getEvery().equals("isDate") ? "checked" : "" %> >
+								<input type="text" value="<%= df.format(everyDate) %>" onChange="updateDate('everyDate');"
+                                              dojoType="dijit.form.DateTextBox" name="everyDateDate" id="everyDateDate" style="width:100px;" />
+								<input type="hidden" name="everyDate" value="" id="everyDate">
+								<script language="javascript">
 									dojo.addOnLoad (function(){
 										updateDate('everyDate');
 									});
-									</script>
-								</td>
-							</tr>
-							<tr>
-								<td>&nbsp;
-									
-								</td>
-								<td valign="top">
-									<table>
-										<tr>
-											<td>
-												<input type="radio" name="every" id="every1" dojoType="dijit.form.RadioButton" value="isDays" <%= UtilMethods.isSet(schedulerForm.getEvery()) && schedulerForm.getEvery().equals("isDays") ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Mon") %>
-											</td>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Tue") %>
-											</td>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Wed") %>
-											</td>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Thu") %>
-											</td>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Fri") %>
-											</td>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Sat") %>
-											</td>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Sun") %>
-											</td>
-										</tr>
-										<tr>
-											<td>
-												<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay1" value="MON" <%= schedulerForm.isMonday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay2" value="TUE" <%= schedulerForm.isTuesday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay3" value="WED" <%= schedulerForm.isWednesday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay4" value="THU" <%= schedulerForm.isThusday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay5" value="FRI" <%= schedulerForm.isFriday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay6" value="SAT" <%= schedulerForm.isSaturday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay7" value="SUN" <%= schedulerForm.isSunday() ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-							</tr>
+								</script>
+							</dd>
+							<dd>
+								<table>
+									<tr>
+										<td><input type="radio" name="every" id="every1" dojoType="dijit.form.RadioButton" value="isDays" <%= UtilMethods.isSet(schedulerForm.getEvery()) && schedulerForm.getEvery().equals("isDays") ? "checked" : "" %> >&nbsp;</td>
+										<td><%= LanguageUtil.get(pageContext,"Mon") %></td>
+										<td><%= LanguageUtil.get(pageContext,"Tue") %></td>
+										<td><%= LanguageUtil.get(pageContext,"Wed") %></td>
+										<td><%= LanguageUtil.get(pageContext,"Thu") %></td>
+										<td><%= LanguageUtil.get(pageContext,"Fri") %></td>
+										<td><%= LanguageUtil.get(pageContext,"Sat") %></td>
+										<td><%= LanguageUtil.get(pageContext,"Sun") %></td>
+									</tr>
+									<tr>
+										<td>&nbsp;&nbsp;</td>
+										<td>&nbsp;<input dojoType="dijit.form.CheckBox" type="checkbox" name="everyDay" id="everyDay1" value="MON" <%= schedulerForm.isMonday() ? "checked" : "" %> ></td>
+										<td>&nbsp;<input dojoType="dijit.form.CheckBox" type="checkbox" name="everyDay" id="everyDay2" value="TUE" <%= schedulerForm.isTuesday() ? "checked" : "" %> ></td>
+										<td>&nbsp;<input dojoType="dijit.form.CheckBox" type="checkbox" name="everyDay" id="everyDay3" value="WED" <%= schedulerForm.isWednesday() ? "checked" : "" %> ></td>
+										<td>&nbsp;<input dojoType="dijit.form.CheckBox" type="checkbox" name="everyDay" id="everyDay4" value="THU" <%= schedulerForm.isThusday() ? "checked" : "" %> ></td>
+										<td>&nbsp;<input dojoType="dijit.form.CheckBox" type="checkbox" name="everyDay" id="everyDay5" value="FRI" <%= schedulerForm.isFriday() ? "checked" : "" %> ></td>
+										<td>&nbsp;<input dojoType="dijit.form.CheckBox" type="checkbox" name="everyDay" id="everyDay6" value="SAT" <%= schedulerForm.isSaturday() ? "checked" : "" %> ></td>
+										<td>&nbsp;<input dojoType="dijit.form.CheckBox" type="checkbox" name="everyDay" id="everyDay7" value="SUN" <%= schedulerForm.isSunday() ? "checked" : "" %> ></td>
+									</tr>
+								</table>
+							</dd>
+							
 <%
 	} else {
 %>
-							<tr>
-								<td>
-									<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "every") %></font>
-								</td>
-								<td>
-									&nbsp;&nbsp;&nbsp;
-								</td>
-								<td>
+							<dd>
+								<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "every") %></font>
+							
 <%
 	if (schedulerForm.isEveryInfo()) {
 		if (UtilMethods.isSet(schedulerForm.getEvery()) && schedulerForm.getEvery().equals("isDate")) {
@@ -816,61 +657,52 @@ function deleteSchedule(form) {
 		} else {
 			if (UtilMethods.isSet(schedulerForm.getEvery()) && schedulerForm.getEvery().equals("isDays")) {
 %>
-									<table>
-										<tr>
+									
 <%
 	if (schedulerForm.isMonday()) {
 %>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Mon") %>
-											</td>
+									<%= LanguageUtil.get(pageContext, "Mon") %>
+									
 <%
 	}
 	if (schedulerForm.isTuesday()) {
 %>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Tue") %>
-											</td>
+									<%= LanguageUtil.get(pageContext, "Tue") %>
+									
 <%
 	}
 	if (schedulerForm.isWednesday()) {
 %>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Wed") %>
-											</td>
+									<%= LanguageUtil.get(pageContext, "Wed") %>
+									
 <%
 	}
 	if (schedulerForm.isThusday()) {
 %>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Thu") %>
-											</td>
+									<%= LanguageUtil.get(pageContext, "Thu") %>
+									
 <%
 	}
 	if (schedulerForm.isFriday()) {
 %>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Fri") %>
-											</td>
+									<%= LanguageUtil.get(pageContext, "Fri") %>
+									
 <%
 	}
 	if (schedulerForm.isSaturday()) {
 %>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Sat") %>
-											</td>
+									<%= LanguageUtil.get(pageContext, "Sat") %>
+										
 <%
 	}
 	if (schedulerForm.isSunday()) {
 %>
-											<td>
-												<%= LanguageUtil.get(pageContext, "Sun") %>
-											</td>
+									<%= LanguageUtil.get(pageContext, "Sun") %>
+									
 <%
 	}
 %>
-										</tr>
-									</table>
+								</dd>
 <%
 			}
 		}
@@ -880,15 +712,14 @@ function deleteSchedule(form) {
 <%
 	}
 %>
-								</td>
-							</tr>
+							
 <%
 	}
 %>
-						</table>
-					</dd>
+					
 			</dl>
 		</div>
+		
 		<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Parameters") %>">
 <%
 	java.util.Map<String, String> properties = schedulerForm.getMap();

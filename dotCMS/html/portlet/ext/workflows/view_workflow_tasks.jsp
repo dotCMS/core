@@ -287,12 +287,13 @@
 		}
 	<%}%>
 	function resetFilters(){
+		dijit.byId("daysold").setValue("");	
 		var stepId = dijit.byId("stepId");
 		stepId.store= emptyStore;
-		stepId.setValue("");
+		stepId.displayedValue="";
 		var assignedTo = dijit.byId("assignedTo");
 		assignedTo.store= emptyStore;
-		assignedTo.setValue("");
+		assignedTo.displayedValue="";
 		assignedTo.store=assignedToStore;
 		<%if(isAdministrator){%>
 		     disable4AllUsers();
