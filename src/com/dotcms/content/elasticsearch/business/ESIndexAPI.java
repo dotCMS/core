@@ -17,6 +17,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -224,8 +226,14 @@ public class ESIndexAPI {
 			// setting up mapping
 			String mapping=br.readLine();
 			boolean mappingExists=mapping.startsWith(MAPPING_MARKER);
+			String type="content";
 			if(mappingExists) {
-    			
+			    String patternStr = "^"+MAPPING_MARKER+"\\s*\\{\\s*\"(\\w+)\"";
+			    Pattern pattern = Pattern.compile(patternStr);
+			    Matcher matcher = pattern.matcher(mapping);
+			    boolean matchFound = matcher.find();
+			    if (matchFound)
+			        type = matcher.group(1);
 			}
 			
 			// reading content
@@ -249,7 +257,7 @@ public class ESIndexAPI {
         						String id = raw.substring(0, delimidx);
         						String json = raw.substring(delimidx + JSON_RECORD_DELIMITER.length(), raw.length());
         						if (id != null)
-        						    req.add(new IndexRequest(index, "content", id).source(json));
+        						    req.add(new IndexRequest(index, type, id).source(json));
     					    }
     					}
     				    if(req.numberOfActions()>0) {
