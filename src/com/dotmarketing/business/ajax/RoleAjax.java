@@ -52,7 +52,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.CascadePermissionsJob;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -244,8 +243,8 @@ public class RoleAjax {
 			Role parentRole = roleAPI.loadRoleById(parentRoleId);
 			role.setParent(parentRole.getId());
 		}
-		
-		
+
+
 		return roleAPI.save(role).toMap();
 
 	}
@@ -673,18 +672,10 @@ public class RoleAjax {
 	public Map<String, Object> getUserRole(String userId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
 		Map<String, Object> toReturn = new HashMap<String, Object>();
+
 		if(UtilMethods.isSet(userId)){
-			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-			WebContext ctx = WebContextFactory.get();
-			HttpServletRequest request = ctx.getHttpServletRequest();
 			UserAPI userAPI = APILocator.getUserAPI();
-
-			//Retrieving the current user
-			User user = userWebAPI.getLoggedInUser(request);
-			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
-
-			User userForRole = userAPI.loadUserById(userId, user, respectFrontendRoles);
-
+			User userForRole = userAPI.loadUserById(userId);
 			RoleAPI roleAPI = APILocator.getRoleAPI();
 			toReturn = roleAPI.getUserRole(userForRole).toMap();
 		}
