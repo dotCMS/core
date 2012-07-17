@@ -244,8 +244,8 @@ public class RoleAjax {
 			Role parentRole = roleAPI.loadRoleById(parentRoleId);
 			role.setParent(parentRole.getId());
 		}
-		
-		
+
+
 		return roleAPI.save(role).toMap();
 
 	}
@@ -680,10 +680,10 @@ public class RoleAjax {
 			UserAPI userAPI = APILocator.getUserAPI();
 
 			//Retrieving the current user
-			User user = userWebAPI.getLoggedInUser(request);
-			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
+//			User user = userWebAPI.getLoggedInUser(request);
+//			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
 
-			User userForRole = userAPI.loadUserById(userId, user, respectFrontendRoles);
+			User userForRole = userAPI.loadUserById(userId);
 
 			RoleAPI roleAPI = APILocator.getRoleAPI();
 			toReturn = roleAPI.getUserRole(userForRole).toMap();

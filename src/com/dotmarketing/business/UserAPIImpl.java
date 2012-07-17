@@ -51,6 +51,17 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
+	public User loadUserById(String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+		if(!UtilMethods.isSet(userId)){
+			throw new DotDataException("You must specifiy an userId to search for");
+		}
+		User u = uf.loadUserById(userId);
+		if(!UtilMethods.isSet(u)){
+			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
+		}
+		return u;
+	}
+
 	public User loadByUserByEmail(String email, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
 		if(!UtilMethods.isSet(email)){
 			throw new DotDataException("You must specifiy an email to search for");
