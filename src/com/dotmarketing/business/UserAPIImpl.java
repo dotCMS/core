@@ -7,7 +7,6 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserManagerUtil;
@@ -49,6 +48,17 @@ public class UserAPIImpl implements UserAPI {
 		}else{
 			throw new DotSecurityException("The User being passed in doesn't have permission to requested User");
 		}
+	}
+
+	public User loadUserById(String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+		if(!UtilMethods.isSet(userId)){
+			throw new DotDataException("You must specifiy an userId to search for");
+		}
+		User u = uf.loadUserById(userId);
+		if(!UtilMethods.isSet(u)){
+			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
+		}
+		return u;
 	}
 
 	public User loadByUserByEmail(String email, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
