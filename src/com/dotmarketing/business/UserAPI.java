@@ -12,7 +12,7 @@ import com.liferay.portal.model.User;
 /**
  * UserAPI is an API intended to be a helper class for class to get User entities.  Classes within the dotCMS
  * should use this API for user management.  The UserAPI does not do cache management. It delegates this responsibilities
- * to underlying classes.  
+ * to underlying classes.
  * @author Jason Tesser
  * @version 1.9
  * @since 1.6
@@ -28,7 +28,7 @@ public interface UserAPI {
 	public String encryptUserId(java.lang.String userId) throws DotStateException;
 
 	/**
-	 * 
+	 *
 	 * @param userId - UserID being searched for
 	 * @param user - The user who is requesting the user to be returned
 	 * @param respectFrontEndRoles
@@ -36,11 +36,19 @@ public interface UserAPI {
 	 * @throws DotDataException
 	 */
 	public User loadUserById(String userId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, NoSuchUserException;
-	
+
 	/**
-	 * This method finds a User by email, if the user was not found it returns a new user instance 
-	 * ready to be filled and stored. This methods pulls a new userid from liferay counters. 
-	 * If the user is not found it will return a new user. 
+	 *
+	 * @param userId - UserID being searched for
+	 * @return
+	 * @throws DotDataException
+	 */
+	public User loadUserById(String userId) throws DotDataException, DotSecurityException, NoSuchUserException;
+
+	/**
+	 * This method finds a User by email, if the user was not found it returns a new user instance
+	 * ready to be filled and stored. This methods pulls a new userid from liferay counters.
+	 * If the user is not found it will return a new user.
 	 * @param email
 	 * @param user - The user who is requesting the user to be returned
 	 * @param respectFrontEndRoles
@@ -49,7 +57,7 @@ public interface UserAPI {
 	 * @since 1.9
 	 */
 	public User loadByUserByEmail(String email, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, NoSuchUserException;
-	
+
 	/**
 	 * This method return a list of all the existing users in the cms.  It will ALWAYS hit the database
 	 * @param begin
@@ -58,15 +66,15 @@ public interface UserAPI {
 	 * @throws DotDataException
 	 */
 	public  List<User> findAllUsers (int begin, int end) throws DotDataException;
-	
+
 	/**
 	 * This method return a list of all the existing users in the cms.  It will ALWAYS hit the database
 	 * @return
 	 * @throws DotDataException
 	 */
 	public  List<User> findAllUsers () throws DotDataException;
-	
-	/** 
+
+	/**
 	 * This method returns a list of users whose names are like the string passed in.
 	 * This method WILL hit the DB EVERY time
 	 * @param filter compare string
@@ -75,7 +83,7 @@ public interface UserAPI {
 	 * @param user
 	 * @param respectFrontEndRoles
 	 * @return
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 */
 	public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws  DotDataException;
 
@@ -87,25 +95,25 @@ public interface UserAPI {
 	 * @throws DotDataException
 	 */
 	public User createUser(String userId, String email) throws DotDataException, DuplicateUserException;
-	
+
 	/**
 	 * This method return the default user of the system
 	 * @return User
 	 * @version 1.9
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 * @since 1.9
 	 */
 	public User getDefaultUser() throws DotDataException;
-	
+
 	public User getSystemUser() throws DotDataException;
-	
+
 	 /**
-	 * This method return an anonymous user, created to manage the submitContent macro with no user logged in 
+	 * This method return an anonymous user, created to manage the submitContent macro with no user logged in
 	 * @return User
 	 * @throws DotDataException
 	 */
 	public User getAnonymousUser() throws DotDataException;
-	
+
 	/**
 	 * Verify is exists a user with the specified email address
 	 * @param email user email
@@ -114,7 +122,7 @@ public interface UserAPI {
 	 * @since 1.9
 	 */
 	public boolean userExistsWithEmail(String email) throws DotDataException, NoSuchUserException;
-	
+
 	/**
 	 * This Method return the number of user that have a firstname, lastname or email like the filter string.
 	 * For example all amount of user with lastName "Andrews"
@@ -122,10 +130,10 @@ public interface UserAPI {
 	 * @param filter Compare string
 	 * @return long
 	 * @version 1.9
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 */
     public long getCountUsersByNameOrEmail(String filter) throws DotDataException;
-    
+
     /**
      * This method return a a paginated list of user that have a firstname, lastname or email like
      * the compare string passed
@@ -137,7 +145,7 @@ public interface UserAPI {
      * @version 1.9
      */
     public List<User> getUsersByNameOrEmail(String filter,int page,int pageSize) throws DotDataException;
-    
+
     /**
      * This method return a list of users and roles which name are like the compared string passed
 	 * This method will ALWAYS hit DB
@@ -153,7 +161,7 @@ public interface UserAPI {
 	 * @deprecated
      */
     public Map<String, Object> getUsersAnRolesByName(String filter, int start,int limit) throws DotDataException;
-	
+
     /**
      * Save or update in db the user object
      * @param user - User to save
@@ -161,9 +169,9 @@ public interface UserAPI {
      * @param respectFrontEndRoles
      */
     public void save(User userToSave, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, DuplicateUserException;
-    
+
     /**
-     * 
+     *
      * @param userToDelete
      * @param user
      * @param respectFrontEndRoles
@@ -176,15 +184,15 @@ public interface UserAPI {
      * Method that saves a new address and tie it to the user
      * @param user
      * @param ad
-     * @throws DotDataException 
-     * @throws DotSecurityException 
-     * @throws DotRuntimeException 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotRuntimeException
      */
 	public void saveAddress(User userToSaveNewAddress, Address ad, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
 
 	/**
-	 * Load address by id 
-	 * @throws DotSecurityException 
+	 * Load address by id
+	 * @throws DotSecurityException
 	 */
 	public Address loadAddressById(String addressId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
@@ -192,8 +200,8 @@ public interface UserAPI {
 	 * Removes from the system the given address
 	 * @param ad
 	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 * @throws DotRuntimeException 
+	 * @throws DotSecurityException
+	 * @throws DotRuntimeException
 	 */
 	public void deleteAddress(Address ad, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
 
@@ -202,14 +210,14 @@ public interface UserAPI {
 	 * @param user
 	 * @return
 	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 * @throws DotRuntimeException 
+	 * @throws DotSecurityException
+	 * @throws DotRuntimeException
 	 */
 	public List<Address> loadUserAddresses(User userToGetAddresses, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
-	
+
 	/**
 	 * Returns true if the user is a cms admin
-	 * 
+	 *
 	 * @param user
 	 * @return
 	 * @throws DotDataException
@@ -217,5 +225,5 @@ public interface UserAPI {
 	 * @throws DotSecurityException
 	 */
 	public boolean isCMSAdmin(User user) throws DotDataException;
-	
+
 }
