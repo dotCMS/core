@@ -19,9 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -123,10 +121,19 @@ public class PermissionAPITest extends TestBase {
             APILocator.getRoleAPI().save(nrole);
         }
         
-        User user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
-        if(user==null || !UtilMethods.isSet(user.getUserId())) {
-            user=APILocator.getUserAPI().createUser("useruser", "user@fake.org");
-            APILocator.getUserAPI().save(user, sysuser, false);
+        User user=null;
+        try {
+            user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
+        }
+        catch(Exception ex) {
+            user=null;
+        }
+        finally {
+            if(user==null || !UtilMethods.isSet(user.getUserId())) {
+                user=APILocator.getUserAPI().createUser("useruser", "user@fake.org");
+                APILocator.getUserAPI().save(user, sysuser, false);
+                user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
+            }
         }
         
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
@@ -290,10 +297,19 @@ public class PermissionAPITest extends TestBase {
             APILocator.getRoleAPI().save(nrole);
         }
         
-        User user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
-        if(user==null || !UtilMethods.isSet(user.getUserId())) {
-            user=APILocator.getUserAPI().createUser("useruser", "user@fake.org");
-            APILocator.getUserAPI().save(user, sysuser, false);
+        User user=null;
+        try {
+            user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
+        }
+        catch(Exception ex) {
+            user=null;
+        }
+        finally {
+            if(user==null || !UtilMethods.isSet(user.getUserId())) {
+                user=APILocator.getUserAPI().createUser("useruser", "user@fake.org");
+                APILocator.getUserAPI().save(user, sysuser, false);
+                user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
+            }
         }
         
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
@@ -404,56 +420,51 @@ public class PermissionAPITest extends TestBase {
         FieldFactory.saveField(field);
         FieldsCache.addField(field);
         
+        field = new Field("f", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, s,
+                true, true, true, 4, "", "", "", true, false, true);
+        field.setVelocityVarName("f");
+        FieldFactory.saveField(field);
+        FieldsCache.addField(field);
+        
         Contentlet cont1=new Contentlet();
         cont1.setStructureInode(s.getInode());
-        cont1.setStringProperty(field.getVelocityVarName(), "a test value");
+        cont1.setStringProperty("testtext", "a test value");
+        cont1.setHost(host.getIdentifier());
+        cont1.setFolder(f4.getInode());
         cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
         APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
         
         Contentlet cont2=new Contentlet();
         cont2.setStructureInode(s.getInode());
-        cont2.setStringProperty(field.getVelocityVarName(), "another test value");
+        cont2.setStringProperty("testtext", "another test value");
+        cont2.setHost(host.getIdentifier());
+        cont2.setFolder(f4.getInode());
         cont2=APILocator.getContentletAPI().checkin(cont2, sysuser, false);
         APILocator.getContentletAPI().isInodeIndexed(cont2.getInode());
         
+        perm.permissionIndividually(host, cont1, sysuser, false);
+        perm.permissionIndividually(host, cont2, sysuser, false);
         perm.permissionIndividually(host, f4, sysuser, false);
         perm.permissionIndividually(host, f3, sysuser, false);
         perm.permissionIndividually(host, f2, sysuser, false);
         perm.permissionIndividually(host, f1, sysuser, false);
         
+        
         assertFalse(perm.isInheritingPermissions(f1));
         assertFalse(perm.isInheritingPermissions(f2));
         assertFalse(perm.isInheritingPermissions(f3));
         assertFalse(perm.isInheritingPermissions(f4));
+        assertFalse(perm.isInheritingPermissions(cont1));
+        assertFalse(perm.isInheritingPermissions(cont2));
         
         perm.resetPermissionsUnder(f1);
         
         assertTrue(perm.isInheritingPermissions(f2));
         assertTrue(perm.isInheritingPermissions(f3));
         assertTrue(perm.isInheritingPermissions(f4));
+        assertTrue(perm.isInheritingPermissions(cont1));
+        assertTrue(perm.isInheritingPermissions(cont2));
         
-        assertTrue(f2.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
-        assertTrue(f3.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
-        assertTrue(f4.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
-        assertTrue(s.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
-        assertTrue(cont1.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
-        assertTrue(cont2.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
-        
-        List<HTMLPage> pages=new ArrayList<HTMLPage>();
-        pages.addAll(APILocator.getFolderAPI().getHTMLPages(f1, sysuser, false));
-        pages.addAll(APILocator.getFolderAPI().getHTMLPages(f2, sysuser, false));
-        pages.addAll(APILocator.getFolderAPI().getHTMLPages(f3, sysuser, false));
-        pages.addAll(APILocator.getFolderAPI().getHTMLPages(f4, sysuser, false));
-        for(HTMLPage p : pages) 
-            assertTrue(p.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
-        
-        List<File> files=new ArrayList<File>();
-        files.addAll(APILocator.getFolderAPI().getFiles(f1, sysuser, false));
-        files.addAll(APILocator.getFolderAPI().getFiles(f2, sysuser, false));
-        files.addAll(APILocator.getFolderAPI().getFiles(f3, sysuser, false));
-        files.addAll(APILocator.getFolderAPI().getFiles(f4, sysuser, false));
-        for(File f : files)
-            assertTrue(f.getParentPermissionable().getPermissionId().equals(f1.getPermissionId()));
     }
     
     @Test
