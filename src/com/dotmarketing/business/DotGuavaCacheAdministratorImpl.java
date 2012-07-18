@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.cache.Fqn;
 import org.jgroups.Address;
@@ -55,7 +56,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	private Map<String, Cache<String, Object>> groups = new HashMap<String, Cache<String, Object>>();
 	private JChannel channel;
 	private boolean useJgroups = false;
-	private HashMap<String, Boolean> cacheToDisk = new HashMap<String,Boolean>();
+	private ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<String, Boolean>();
 	private HashSet<String> availableCaches = new HashSet<String>();
 	private H2CacheLoader diskCache = null;
 	
@@ -288,7 +289,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		if(diskCache != null){
 			diskCache.resetCannotCacheCache();
 		}
-		cacheToDisk = new HashMap<String,Boolean>();
+		cacheToDisk = new ConcurrentHashMap<String, Boolean>();
 		
 	}
 
