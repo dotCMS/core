@@ -196,11 +196,28 @@ if(errorMessage != null){
 		myDialog.show();
 	}
 
+	dojo.require("dojox.validate.web");
 	function signIn() {
 
 		// set values
 		document.fm.my_account_cmd.value = "auth";
 		document.fm.referer.value = "<%= CTX_PATH %>";
+		
+		var loginTextValue = dojo.byId("loginTextBox").value;
+		
+		<%if(company.getAuthType().equals(Company.AUTH_TYPE_EA)){%>
+			if(!dojox.validate.isEmailAddress(loginTextValue)){
+				dojo.byId("dotLoginMessagesDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "please-enter-a-valid-email-address") %>';
+				return false;
+			}
+		<%}else{%>
+			if((loginTextValue.length == 0)					
+					|| (loginTextValue.indexOf('>') != -1)
+					|| (loginTextValue.indexOf('<') != -1)){
+				dojo.byId("dotLoginMessagesDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "please-enter-a-valid-user-id") %>';
+				return false;
+			}
+		<%}%>
 		dojo.byId("my_account_login").value = dojo.byId("loginTextBox").value;
 		dojo.byId("password").value = dojo.byId("loginPasswordTextBox").value;
 
@@ -275,11 +292,12 @@ function showLanguageSelector(){
 		<%if(session.getAttribute("_dotLoginMessages") != null ){ %>
 		<%String myMessages = (String) session.getAttribute("_dotLoginMessages") ; %>
 		
-			<div class="error-message"><%=myMessages%></div>
+			<div class="error-message" id="dotLoginMessagesDiv"><%=myMessages%></div>
 			
 		<%session.removeAttribute("_dotLoginMessages");  %>
+		<%}else{ %>
+			<div class="error-message" id="dotLoginMessagesDiv"></div>
 		<%} %>
-		
 		<dl>
 			<dt style="width:180px">
 				<label for="loginTextBox">
@@ -309,7 +327,7 @@ function showLanguageSelector(){
 
 		<!-- Button Row --->
 			<div class="buttonRow">
-				<button dojoType="dijit.form.Button" iconClass="loginIcon" tabindex="4"  onClick="signIn();">
+				<button dojoType="dijit.form.Button" iconClass="loginIcon" tabindex="4"  onClick="signIn();return false;">
 					<%= LanguageUtil.get(pageContext, "sign-in") %>
 				</button>
 			</div>
