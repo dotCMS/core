@@ -61,6 +61,10 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		Folder folder = (Folder) APILocator.getFolderAPI().findFolderByPath(folderPath, host, user, false);
 		List returnList = null;
 
+		if(user==null) {
+			user = userAPI.getAnonymousUser();
+		}
+
 		if (Boolean.parseBoolean(searchFolder)) {
 			returnList = APILocator.getFolderAPI().findSubFolders(folder, user, true);
 		}
