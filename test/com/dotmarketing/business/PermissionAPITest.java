@@ -4,7 +4,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -13,6 +15,7 @@ import org.junit.Test;
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.ajax.RoleAjax;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
@@ -26,6 +29,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 public class PermissionAPITest extends TestBase {
@@ -470,6 +475,58 @@ public class PermissionAPITest extends TestBase {
     @Test
     public void permissionIndividually() throws DotStateException, DotDataException, DotSecurityException {
         
+    }
+    
+    /** 
+     * https://github.com/dotCMS/dotCMS/issues/781
+     * @throws DotSecurityException 
+     * @throws DotDataException 
+     * @throws SystemException 
+     * @throws PortalException 
+     */
+    @Test
+    public void issue781() throws DotDataException, DotSecurityException, PortalException, SystemException {
+        Host hh = new Host();
+        hh.setHostname("issue781.demo.dotcms.com");
+        hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        
+        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole7");
+        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
+            nrole=new Role();
+            nrole.setName("TestingRole7");
+            nrole.setRoleKey("TestingRole7");
+            nrole.setEditUsers(true);
+            nrole.setEditPermissions(true);
+            nrole.setEditLayouts(true);
+            nrole.setDescription("Testing Role 7");
+            APILocator.getRoleAPI().save(nrole);
+        }
+        
+        try {
+            Folder f1 = APILocator.getFolderAPI().createFolders("/f1/", hh, sysuser, false);
+            Folder f2 = APILocator.getFolderAPI().createFolders("/f2/", hh, sysuser, false);
+            Folder f3 = APILocator.getFolderAPI().createFolders("/f3/", hh, sysuser, false);
+            Folder f4 = APILocator.getFolderAPI().createFolders("/f4/", hh, sysuser, false);
+            
+            CacheLocator.getPermissionCache().clearCache();
+            
+            // get them into cache
+            perm.getPermissions(f1);
+            perm.getPermissions(f2);
+            
+            Map<String,String> mm=new HashMap<String,String>();
+            mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE));
+            new RoleAjax().saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
+            
+            assertTrue(perm.findParentPermissionable(f4).equals(hh));
+            assertTrue(perm.findParentPermissionable(f3).equals(hh));
+            assertTrue(perm.findParentPermissionable(f2).equals(hh));
+            assertTrue(perm.findParentPermissionable(f1).equals(hh));
+        }
+        finally {
+            APILocator.getHostAPI().archive(hh, sysuser, false);
+            APILocator.getHostAPI().delete(hh, sysuser, false);
+        }
     }
     
 }

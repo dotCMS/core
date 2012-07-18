@@ -1371,7 +1371,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.setSQL(this.deleteSubfolderReferencesSQLOnAdd);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
-						dc.addParam(path);
+						dc.addParam(isHost ? " " : path);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						dc.addParam(path);
@@ -1382,7 +1382,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(permissionable.getPermissionId());
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
-						dc.addParam(path);
+						dc.addParam(isHost ? " " : path);
 						dc.addParam(path + "%");
 						dc.loadResult();
 
@@ -1391,7 +1391,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.setSQL(selectChildrenFolderSQL);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
-						dc.addParam(path);
+						dc.addParam(isHost ? " " : path);
 						idsToClear.addAll(dc.loadResults());
 
 					} else if (p.getType().equals(HTMLPage.class.getCanonicalName())) {
