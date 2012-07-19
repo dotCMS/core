@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,7 +49,7 @@ public class TagAjax {
 	 * @param inode object to tag
 	 * @return a list of all tags assigned to an object
 	 */
-	public static Map<String,Object> addTag(String tagName, String userId, String hostId) {
+	public static Map<String,Object> addTag(String tagNames, String userId, String hostId) {
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
     	List<String> saveTagErrors = new ArrayList<String>();
@@ -57,49 +58,55 @@ public class TagAjax {
     	Tag tag = new Tag();
 
     	hostId=hostId.trim();
+    	
+    	StringTokenizer tagNameToken = new StringTokenizer(tagNames, ",");
+    	if (tagNameToken.hasMoreTokens()) {
+	    	for (; tagNameToken.hasMoreTokens();) {
+	    		String tagName = tagNameToken.nextToken().trim();
 
-        try{
+	    		try{
 
-        	tag = TagFactory.getTag(tagName, userId, hostId);
-        	String tagStorageForHost = "";
-        	Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
+	    			tag = TagFactory.getTag(tagName, userId, hostId);
+	    			String tagStorageForHost = "";
+	    			Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 
-        	if(host==null) {
+	    			if(host==null) {
 
-        		HttpSession session = WebContextFactory.get().getSession();
-        		hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-        		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
-        	}
+	    				HttpSession session = WebContextFactory.get().getSession();
+	    				hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+	    				host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
+	    			}
 
-        	if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
-        		tagStorageForHost = Host.SYSTEM_HOST;
-        	else {
-        		try {
-        			tagStorageForHost = host.getMap().get("tagStorage").toString();
-        		} catch(NullPointerException e) {
-        			tagStorageForHost = Host.SYSTEM_HOST;
-        		}
-        	}
+	    			if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
+	    				tagStorageForHost = Host.SYSTEM_HOST;
+	    			else {
+	    				try {
+	    					tagStorageForHost = host.getMap().get("tagStorage").toString();
+	    				} catch(NullPointerException e) {
+	    					tagStorageForHost = Host.SYSTEM_HOST;
+	    				}
+	    			}
 
-        	if (UtilMethods.isSet(tagStorageForHost)){
-            	if (!tag.getHostId().equals(tagStorageForHost) && tag.getHostId().equals(Host.SYSTEM_HOST)) {
-                	saveTagErrors.add("Global Tag Already Exists");
-                	SessionMessages.clear(req.getSession());
-            	}
+	    			if (UtilMethods.isSet(tagStorageForHost)){
+	    				if (!tag.getHostId().equals(tagStorageForHost) && tag.getHostId().equals(Host.SYSTEM_HOST)) {
+	    					saveTagErrors.add("Global Tag Already Exists");
+	    					SessionMessages.clear(req.getSession());
+	    				}
 
-        	}
+	    			}
 
-        }catch(Exception e){
-        	saveTagErrors.add("There was an error saving the tag");
-        	SessionMessages.clear(req.getSession());
-        }finally{
-        	if(saveTagErrors != null && saveTagErrors.size() > 0){
-        		callbackData.put("saveTagErrors", saveTagErrors);
-        		SessionMessages.clear(req.getSession());
-        	}
+	    		}catch(Exception e){
+	    			saveTagErrors.add("There was an error saving the tag");
+	    			SessionMessages.clear(req.getSession());
+	    		}finally{
+	    			if(saveTagErrors != null && saveTagErrors.size() > 0){
+	    				callbackData.put("saveTagErrors", saveTagErrors);
+	    				SessionMessages.clear(req.getSession());
+	    			}
 
-        }
-
+	    		}
+	    	}
+    	}
 
         callbackData.put("tags", new TagAjax().getTagByUser(userId));
 
@@ -260,7 +267,24 @@ public class TagAjax {
 	 * @return a list of all tags assigned to a user
 	 */
 	public Map<String, List<Tag>> deleteTag(String tagName, String userId) {
+		Tag tag = new Tag();
+		tag = TagFactory.getTag(tagName, userId);
+		String newUserId = "";
+		StringTokenizer userIdToken = new StringTokenizer(tag.getUserId(), ",");
+    	if (userIdToken.hasMoreTokens()) {
+	    	for (; userIdToken.hasMoreTokens();) {
+	    		String userIds = userIdToken.nextToken().trim();
+	    		if(!(userIds.equals(userId))){
+	    			newUserId = userIds+","+newUserId;
+	    		}
+	    	}
+    	}
+    	if(!(newUserId.equals(userId))){
+    		tag.setUserId(newUserId);
+    	}
+    	else{
 		TagFactory.deleteTag(TagFactory.getTag(tagName, userId));
+    	}
 		List<Tag> tags = TagFactory.getTagByUser(userId);
 		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
 		map.put("tags", tags);

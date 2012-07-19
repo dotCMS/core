@@ -61,6 +61,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00905FixAddFolderAfterDelete.class);
 		ret.add(Task00910AddEscalationFields.class);
         ret.add( Task00920AddContentletVersionSystemHost.class );
+        ret.add(Task00925UserIdTypeChange.class);
         return ret;
     }
 

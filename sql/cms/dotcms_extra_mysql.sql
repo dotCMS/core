@@ -571,6 +571,9 @@ ALTER TABLE tag ALTER COLUMN host_id set default 'SYSTEM_HOST';
 alter table tag add constraint tag_tagname_host unique (tagname, host_id);
 alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) references tag (tag_id);
 
+alter table tag modify user_id varchar(9999);
+alter table tag modify user_id longtext;
+
 -- ****** Indicies Data Storage *******
 create table indicies (
   index_name varchar(30) primary key,
