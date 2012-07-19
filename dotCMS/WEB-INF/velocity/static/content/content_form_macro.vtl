@@ -879,7 +879,7 @@ var theme = 'dmundra';
 				#if($UtilMethods.isSet($field.getRegexCheck()))
 					if("$!field.getRegexCheck()" != ""){
 
-			       		if(!validateRegularExpresion(document.getElementById("$field.velocityVarName"), "$regExp", "$field.fieldName")){
+			       		if(!validateRegularExpresion(document.getElementById("$field.velocityVarName"), "$field.getRegexCheck()", "$field.fieldName")){
 							return false;
 						}
 			    	}
