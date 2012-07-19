@@ -57,7 +57,7 @@ function init() {
 	if (elm != null && elm.nodeName == "A")
 		action = "update";
 
-	formObj.insert.value = tinyMCEPopup.getLang(action, 'Insert', true); 
+	formObj.insert.value = tinyMCEPopup.getLang(action, 'Insert', true);
 
 	setPopupControlsDisabled(true);
 
@@ -407,9 +407,16 @@ function insertAction() {
 	// Create new anchor elements
 	if (elm == null) {
 		inst.getDoc().execCommand("unlink", false, null);
-		tinyMCEPopup.execCommand("mceInsertLink", false, "#mce_temp_url#", {skip_undo : 1});
 
-		elementArray = tinymce.grep(inst.dom.select("a"), function(n) {return inst.dom.getAttrib(n, 'href') == '#mce_temp_url#';});
+		if (tinyMCE.isIE){
+			inst.selection.setContent('<a href="http://mce_temp_url/">'+inst.selection.getContent()+'</a>');
+			elementArray = tinymce.grep(inst.dom.select("a"), function(n) {return inst.dom.getAttrib(n, 'href') == 'http://mce_temp_url/';});
+		} else {
+			tinyMCEPopup.execCommand("mceInsertLink", false, "#mce_temp_url#", {skip_undo : 1});
+			elementArray = tinymce.grep(inst.dom.select("a"), function(n) {return inst.dom.getAttrib(n, 'href') == '#mce_temp_url#';});
+		}
+
+
 		for (i=0; i<elementArray.length; i++)
 			setAllAttribs(elm = elementArray[i]);
 	} else
