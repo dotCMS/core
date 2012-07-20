@@ -644,6 +644,9 @@ ALTER TABLE tag add CONSTRAINT [DF_tag_host] DEFAULT 'SYSTEM_HOST' for host_id;
 alter table tag add constraint tag_tagname_host unique (tagname, host_id);
 alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) references tag (tag_id);
 
+drop index tag_user_id_index on tag;
+alter table tag alter column user_id text;
+
 
 -- ****** Indicies Data Storage *******
 create table indicies (

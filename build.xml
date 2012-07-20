@@ -478,21 +478,17 @@
 
 
 	<target name="javadoc" description="creates javadoc for dotCMS">
-		<javadoc maxmemory="1024m" packagenames="com.dotmarketing.*" sourcepath="${src.dir}" excludepackagenames="com.dummy.test.doc-files.*" defaultexcludes="yes" destdir="dotCMS/api" author="true" version="true" use="true" windowtitle="dotCMS API">
-			<doctitle>
-				<![CDATA[
-			<h1>dotCMS 1.9 API Specification</h1>
-			<br>
-				<div align='right'>
-					<FONT size='-1'>
-						<A href='http://jira.dotmarketing.net/browse/DOTCMS' target='_blank'>Submit a bug or feature</A>&nbsp;</FONT>
-				</div>
-			]]>
-			</doctitle>
-			<bottom>
-				<![CDATA[<i>Copyright &#169; 2010 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
-		<tag name="todo" scope="all" description="To do:" />
-	</javadoc>
+                <javadoc maxmemory="1024m" packagenames="com.dotmarketing.*,com.dotcms.*" classpath="lib.app" sourcepath="${src.dir}" excludepackagenames="com.dummy.test.doc-files.*" defaultexcludes="yes" destdir="dotCMS/api" author="true" version="true" use="true" windowtitle="dotCMS API">
+                        <classpath refid="files-classpath" />
+                        <doctitle>
+                                <![CDATA[
+                        <h1>dotCMS 2.1 API Specification</h1>
+                        ]]>
+                        </doctitle>
+                        <bottom>
+                                <![CDATA[<i>Copyright &#169; 2012 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
+                <tag name="todo" scope="all" description="To do:" />
+        </javadoc>
 
 </target>
 

@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
-public class Task00925AddIdentifierIndex extends AbstractJDBCStartupTask {
+public class Task00930AddIdentifierIndex extends AbstractJDBCStartupTask {
     
     private static final String INDEX_SQL = "create index idx_identifier_perm on identifier(asset_type,host_inode)";
 

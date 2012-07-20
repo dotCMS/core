@@ -756,6 +756,11 @@ ALTER table tag MODIFY host_id default 'SYSTEM_HOST';
 alter table tag add constraint tag_tagname_host unique (tagname, host_id);
 alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) references tag (tag_id);
 
+drop index tag_user_id_index;
+alter table tag modify user_id long;
+alter table tag modify user_id CLOB;
+create index tag_user_id_index on tag(user_id) indextype is ctxsys.context;
+
 
 -- ****** Indicies Data Storage *******
 create table indicies (
