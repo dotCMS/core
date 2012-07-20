@@ -86,6 +86,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"		and inode_id = reference_id and permission.permission_type = permission_reference.permission_type" +
 		"	)" +
 		")";
+	/*
+	 Maybe this one
+	 
+	 select permission.* from permission where inode_id = '48190c8c-42c4-46af-8d1a-0cd5db894797'
+     union
+     select permission.* from permission join permission_reference
+       on(inode_id = reference_id and permission.permission_type = permission_reference.permission_type) 
+       where asset_id = '48190c8c-42c4-46af-8d1a-0cd5db894797';
+
+	 * */
 
 	/*
 	 * To load permission references objects based on the reference they are pointing to
@@ -174,9 +184,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The id of the host
 	 */
 	private final String selectChildrenTemplateSQL =
-		"select distinct identifier.id from template, inode, identifier where " +
-		"template.inode = inode.inode and template.identifier = identifier.id and " +
-		"identifier.host_inode = ?";
+		"select id from identifier where identifier.host_inode = ? and asset_type='template' ";
 
 	/*
 	 * To load template identifiers that are children of a host and have inheritable permissions
@@ -184,8 +192,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The id of the host
 	 */
 	private final String selectChildrenTemplateWithIndividualPermissionsSQL =
-		selectChildrenTemplateSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-				"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
+        "where asset_type='template' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
+        "and host_inode = ? ";
 
 	/*
 	 * To remove all permission of templates attached to an specific host
@@ -222,12 +231,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"select permission_reference_seq.NEXTVAL, ":
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		"select nextval('permission_reference_seq'), ") +
-		"identifier.id, ?, '" + Template.class.getCanonicalName() + "'" +
-		"	from identifier where identifier.id in " +
+		"ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"	from identifier ident where ident.id in " +
 		"		(" + selectChildrenTemplateSQL + " and " +
-		"		 template.identifier not in (select inode_id from permission " +
+		"		 identifier.id not in (select inode_id from permission " +
 		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
-		"		 template.identifier not in (select asset_id from permission_reference where " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
 		"			permission_type = '" + Template.class.getCanonicalName() + "'))";
 
 	/*
@@ -236,9 +245,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 */
 	private final String selectChildrenContainerSQL =
-		"select distinct identifier.id from containers, inode, identifier where " +
-		"containers.inode = inode.inode and containers.identifier = identifier.id and " +
-		"identifier.host_inode = ?";
+		"select distinct identifier.id from identifier where " +
+		"identifier.host_inode = ? and asset_type='containers' ";
 
 	/*
 	 * To load container identifiers that are children of a host and have inheritable permissions
@@ -246,8 +254,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 */
 	private final String selectChildrenContainerWithIndividualPermissionsSQL =
-		selectChildrenContainerSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
+        "where asset_type='containers' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
+        "and host_inode = ? ";  
 
 	/*
 	 * To remove all permissions of containers attached to an specific host
@@ -283,12 +292,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"select permission_reference_seq.NEXTVAL, ":
 			"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 			"select nextval('permission_reference_seq'), ") +
-		" identifier.id, ?, '" + Container.class.getCanonicalName() + "'" +
-		"	from identifier where identifier.id in " +
+		" ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+		"	from identifier ident where ident.id in " +
 		"		(" + selectChildrenContainerSQL + " and " +
-		"		 containers.identifier not in (select inode_id from permission " +
+		"		 identifier.id not in (select inode_id from permission " +
 		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
-		"		 containers.identifier not in (select asset_id from permission_reference where " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
 		"			permission_type = '" + Container.class.getCanonicalName() + "'))";
 
 	/**
@@ -304,8 +313,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. Parent folder exact path E.G. '/about/' pass '' if you want all from the host
 	 */
 	private final String selectChildrenFolderSQL =
-		"select distinct folder.inode from folder, inode,identifier where " +
-		"folder.inode = inode.inode and	folder.identifier = identifier.id and identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
+		"select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) where " +
+		"identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
 
 	/*
 	 * To load folder identifiers that are children of a host and have either individual and/or inheritable permissions
@@ -315,7 +324,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. Parent folder exact path E.G. '/about/' pass '' if you want all from the host
 	 */
 	private final String selectChildrenFolderWithDirectPermissionsSQL =
-		selectChildrenFolderSQL + " and exists (select * from permission where inode_id = inode.inode)";
+	     "select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) join permission on (inode_id=folder.inode) where " +
+	     "identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
 
 	/*
 	 * To remove all permissions of sub-folders of a given parent folder
@@ -349,19 +359,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	permission_type = '" + Folder.class.getCanonicalName() + "' and asset_id = folder.inode) " +
 		"and (reference_id in ( " +
 			"select distinct folder.inode " +
-			"from folder, inode,identifier " +
-			"where folder.inode = inode.inode " +
-			"	and folder.identifier = identifier.id and identifier.host_inode = ? " +
+			"from folder join identifier on (folder.identifier = identifier.id) " +
+			"where " +
+			"	identifier.host_inode = ? " +
 			"	and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
 			"	and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 			"	and reference_id = folder.inode" +
 			")" +
-			"OR EXISTS(SELECT c.inode " +
-			"FROM contentlet c JOIN inode i " +
-			"ON  " +
-			"  i.type = 'contentlet' " +
-			"  AND i.inode = c.inode" +
-			"  WHERE c.identifier = reference_id)	" +
+			" OR EXISTS(SELECT c.inode " +
+			" FROM contentlet c  " +
+			" WHERE c.identifier = reference_id " +
 			")";
 
 	/*
@@ -388,8 +395,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from folder where folder.inode in (" +
 		"		" + selectChildrenFolderSQL + " and " +
 		"		folder.inode not in (" +
-		"			select asset_id from permission_reference, folder ref_folder where " +
-		"			reference_id = ref_folder.inode and " +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) where " +
 		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Folder.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		folder.inode not in (" +
@@ -406,9 +412,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenHTMLPageSQL =
-		"select distinct identifier.id from htmlpage join identifier " +
-		" on (htmlpage.identifier = identifier.id) where " +
-		" identifier.host_inode = ? and identifier.parent_path like ?";
+		"select distinct identifier.id from identifier where " +
+		" asset_type='htmlpage' and identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load html pages identifiers that are children of a host and have inheritable permissions
@@ -417,8 +422,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
-		selectChildrenHTMLPageSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
+        " asset_type='htmlpage' and identifier.host_inode = ? and identifier.parent_path like ? " +
+        " and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of html pages of a given parent folder
@@ -484,8 +490,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"	from identifier where identifier.id in (" +
 				"		" + selectChildrenHTMLPageSQL + " and" +
 				"		identifier.id not in (" +
-		        "			select asset_id from permission_reference, folder ref_folder, identifier where ref_folder.identifier=identifier.id and " +
-		        "			reference_id = ref_folder.inode and	"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + HTMLPage.class.getCanonicalName() + "'" +
+		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + HTMLPage.class.getCanonicalName() + "'" +
 				"		) and " +
 				"		identifier.id not in (" +
 				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
@@ -501,9 +508,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenFileSQL =
-		"select distinct identifier.id from file_asset, inode, identifier where " +
-		"file_asset.inode = inode.inode and file_asset.identifier = identifier.id and " +
-		"identifier.host_inode = ? and identifier.parent_path like ?";
+		"select distinct identifier.id from identifier where " +
+		"asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load file identifiers that are children of a host and have inheritable permissions
@@ -512,8 +518,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenFileWithIndividualPermissionsSQL =
-		selectChildrenFileSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
+        "asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ? " +
+        "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of files of a given parent folder
@@ -546,18 +553,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	permission_type = '" + File.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
-		"from folder, inode,identifier " +
-		"where folder.inode = inode.inode " +
-		"and folder.identifier = identifier.id and identifier.host_inode = ? " +
-		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
-		"and reference_id = folder.inode" +
+		" from folder join identifier on (folder.identifier = identifier.id) " +
+		" where " +
+		" identifier.host_inode = ? " +
+		" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+		" and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		" and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
-		"FROM contentlet c JOIN inode i " +
-		"ON  " +
-		"  i.type = 'contentlet' " +
-		"  AND i.inode = c.inode" +
+		" FROM contentlet c " +
 		"  WHERE c.identifier = reference_id)	" +
 		")";
 	/*
