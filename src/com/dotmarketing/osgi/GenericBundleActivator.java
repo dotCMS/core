@@ -1,0 +1,67 @@
+package com.dotmarketing.osgi;
+
+import com.dotmarketing.util.Config;
+import org.osgi.framework.BundleActivator;
+
+import java.beans.IntrospectionException;
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+
+/**
+ * Created by Jonathan Gamba
+ * Date: 7/23/12
+ */
+public abstract class GenericBundleActivator implements BundleActivator {
+
+    /**
+     * Register a bundle library, this library must be a bundle inside the felix load folder.
+     *
+     * @param bundleJarFileName bundle file name
+     * @throws Exception
+     */
+    public void registerBundleLibrary ( String bundleJarFileName ) throws Exception {
+
+        //Felix directories
+        String felixDirectory = Config.CONTEXT.getRealPath( File.separator + "WEB-INF" + File.separator + "felix" );
+        String autoLoadDirectory = felixDirectory + File.separator + "load";
+
+        //Adding the library to the application classpath
+        addFileToClasspath( autoLoadDirectory + File.separator + bundleJarFileName );
+    }
+
+    /**
+     * Adds a file to the classpath.
+     *
+     * @param filePath a String pointing to the file
+     * @throws java.io.IOException
+     */
+    public void addFileToClasspath ( String filePath ) throws Exception {
+
+        File fileToAdd = new File( filePath );
+        addFileToClasspath( fileToAdd );
+    }
+
+    /**
+     * Adds a file to the classpath
+     *
+     * @param toAdd the file to be added
+     * @throws java.io.IOException
+     */
+    public void addFileToClasspath ( File toAdd ) throws Exception {
+
+        addURLToApplicationClassLoader( toAdd.toURI().toURL() );
+    }
+
+    private void addURLToApplicationClassLoader ( URL url ) throws IntrospectionException {
+
+        ClassLoader currentThreadClassLoader = Thread.currentThread().getContextClassLoader();
+
+        // Add the given url to the classpath. -Chain the current thread classloader
+        URLClassLoader urlClassLoader = new URLClassLoader( new URL[]{url}, currentThreadClassLoader );
+
+        // Replace the thread classloader - assumes you have permissions to do so
+        Thread.currentThread().setContextClassLoader( urlClassLoader );
+    }
+
+}
