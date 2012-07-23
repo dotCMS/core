@@ -314,7 +314,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String selectChildrenFolderSQL =
 		"select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) where " +
-		"identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
+		"identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ? ";
 
 	/*
 	 * To load folder identifiers that are children of a host and have either individual and/or inheritable permissions
@@ -368,7 +368,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			")" +
 			" OR EXISTS(SELECT c.inode " +
 			" FROM contentlet c  " +
-			" WHERE c.identifier = reference_id " +
+			" WHERE c.identifier = reference_id)" +
 			")";
 
 	/*
@@ -757,7 +757,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private final String deleteContentReferencesByPathOnAddSQL =
 		"delete from permission_reference where exists (" +
 		"	" + selectChildrenContentByPathSQL + " and " +
-		"permission_type = '" + Contentlet.class.getCanonicalName() + "' and asset_id = contentlet.identifier) " +
+		"permission_type = '" + Contentlet.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
 		"from folder join identifier on (folder.identifier = identifier.id) " +
@@ -817,7 +817,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"		" + selectChildrenContentByPathSQL + " and" +
 		"		identifier.id not in (" +
 		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
-		"                                join identifier on (identifier.id=folder.identifier) " +
+		"                                join identifier on (identifier.id=ref_folder.identifier) " +
 		"			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		identifier.id not in (" +
@@ -884,7 +884,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. The host id
 	 */
 	private final String selectChildrenStructureByPathSQLFolder =
-		"select distinct structure.inode from where ( " +
+		"select distinct structure.inode from structure where ( " +
 		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
 		"            select folder.inode from folder join identifier on(identifier.id=folder.identifier) " +
 		"            where structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
