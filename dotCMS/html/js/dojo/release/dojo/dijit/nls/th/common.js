@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/nls/th/common", //begin v1.x content
 ({
 	buttonOk: "ตกลง",
 	buttonCancel: "ยกเลิก",
@@ -6,3 +8,5 @@
 	itemClose: "ปิด"
 })
 
+//end v1.x content
+);

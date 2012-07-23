@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ca/Smiley", //begin v1.x content
 ({
 	smiley: "Insereix emoticona",
 	emoticonSmile: "somriure",
@@ -17,6 +20,9 @@
 	emoticonYes: "sí",
 	emoticonNo: "no",
 	emoticonAngel: "àngel",
-	emoticonCrying: "plorant"
+	emoticonCrying: "plorant",
+	emoticonHappy: "content"
 })
 
+//end v1.x content
+);

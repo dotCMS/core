@@ -24,7 +24,7 @@ dojo.require("dojox.layout.ContentPane");
 
 	dojo.require("dijit.Dialog");
 
-	assignToDialog = new dijit.Dialog({
+	var assignToDialog = new dijit.Dialog({
 	      id:"assignToDialog"
 	  });
 
@@ -619,6 +619,12 @@ dojo.require("dojox.layout.ContentPane");
     		this.wfActionId=wfId;
 
     		if(assignable || commentable){
+    			
+    			var myCp = dijit.byId("contentletWfCP");
+    			if (myCp) {
+    				myCp.destroyRecursive(true);
+    			}
+    			
     			var dia = dijit.byId("contentletWfDialog");
     			if(dia){
     				dia.destroyRecursive();
@@ -631,11 +637,7 @@ dojo.require("dojox.layout.ContentPane");
     				});
 
 
-
-    			var myCp = dijit.byId("contentletWfCP");
-    			if (myCp) {
-    				myCp.destroyRecursive(true);
-    			}
+  			
 
     			myCp = new dojox.layout.ContentPane({
     				id 			: "contentletWfCP",
@@ -649,7 +651,9 @@ dojo.require("dojox.layout.ContentPane");
 
 
 
-    			myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId + "&inode=" + inode);
+    			var r = Math.floor(Math.random() * 1000000000);
+				var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId + "&inode=" + inode + "&r=" + r;
+    			myCp.attr("href", url);
     			return;
     		}
     		else{

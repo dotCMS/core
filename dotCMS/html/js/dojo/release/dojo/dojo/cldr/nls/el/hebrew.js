@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/el/hebrew", //begin v1.x content
 {
 	"quarters-format-abbr": [
 		"Τ1",
@@ -68,3 +70,5 @@
 		"Σαβ"
 	]
 }
+//end v1.x content
+);

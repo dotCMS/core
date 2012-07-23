@@ -58,7 +58,6 @@ with: var args = {
 ---------------------------- START example dotcms.profile.js ------------------------------
 
 
-
 dependencies = {
 
 	stripConsole: "normal",
@@ -68,9 +67,6 @@ dependencies = {
 			name: "../dojo/dot-dojo.js",
 			dependencies: [
 				"dojo.dojo",
-				"dojox.charting.widget.Chart2D",
-				"dojox.charting.widget.Sparkline",
-				"dojox.charting.widget.Legend",
 				"dijit.Dialog",
 				"dijit.form.Button",
 				"dijit.form.CheckBox",
@@ -93,9 +89,6 @@ dependencies = {
 				"dojo.fx",
 				"dojox.form.DropDownSelect",
 				"dojox.json.query",
-				"dojox.gfx.svg",
-				"dojox.gfx.shape",
-				"dojox.gfx.path",
 				"dojo.data.api.Read",
 				"dojo.data.api.Request",
 				"dojo.data.api.Identity",
@@ -120,9 +113,26 @@ dependencies = {
 				"dojox.grid.Selection",
 				"dijit.nls.loading",
 				"dojox.grid.DataSelection",
-				"dojo.data.ItemFileWriteStore"
-			]
-		}
-	]
+				"dojo.data.ItemFileWriteStore",
+				"dijit.form.NumberTextBox",
+				"dijit.form.Slider",
+				"dijit.form.HorizontalSlider",
+				"dijit.form.VerticalSlider",
+				"dijit.form.HorizontalRule",
+				"dijit.form.VerticalRule",
+				"dijit.form.HorizontalRuleLabels",
+				"dijit.form.VerticalRuleLabels",
+                "dijit.form.ComboBox",
+	            "dijit.TooltipDialog",
+     	     	"dojox.grid.EnhancedGrid",
+     		    "dojox.grid.enhanced.plugins.Menu"
+            ]
+        }
+    ],
+    
+    prefixes: [
+               [ "dijit", "../dijit" ],
+               [ "dojox", "../dojox" ]
+           ]
 
 }

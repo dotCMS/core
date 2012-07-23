@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/hu/LocalImage", //begin v1.x content
 ({
 	insertImageTitle: "Kép beszúrása",
 	url: "Kép",
@@ -9,3 +12,5 @@
 	prePopuTextBrowse: " vagy tallózással válasszon ki egy helyi fájlt."
 })
 
+//end v1.x content
+);

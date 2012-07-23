@@ -95,6 +95,6 @@
 			var posh = senderCoords.y + senderCoords.h;
 		    dojo.style(node, {top: posh+'px' });
 			}});});
-		resetFrameWidth();
+		dojo.ready(resetFrameWidth);
 	</script>
 </html>

@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/th/FontChoice", //begin v1.x content
 ({
 	fontSize: "ขนาด",
 	fontName: "ฟอนต์",
@@ -26,3 +28,5 @@
 	7: "xx-large"
 })
 
+//end v1.x content
+);

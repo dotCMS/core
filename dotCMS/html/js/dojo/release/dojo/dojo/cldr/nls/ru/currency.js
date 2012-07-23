@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/ru/currency", //begin v1.x content
 {
 	"HKD_displayName": "Гонконгский доллар",
 	"CHF_displayName": "Швейцарский франк",
@@ -11,3 +13,5 @@
 	"GBP_displayName": "Английский фунт стерлингов",
 	"EUR_displayName": "Евро"
 }
+//end v1.x content
+);

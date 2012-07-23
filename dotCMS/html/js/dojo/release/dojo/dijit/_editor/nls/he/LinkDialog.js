@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/he/LinkDialog", //begin v1.x content
 ({
 	createLinkTitle: "תכונות קישור",
 	insertImageTitle: "תכונות תמונה",
@@ -11,3 +13,6 @@
 	topWindow: "חלון עליון",
 	newWindow: "חלון חדש"
 })
+//end v1.x content
+);
+

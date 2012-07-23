@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/da/buddhist", //begin v1.x content
 {
 	"dateFormatItem-yM": "M/y G",
 	"dateFormatItem-yQ": "Q y G",
@@ -136,3 +138,5 @@
 		"lørdag"
 	]
 }
+//end v1.x content
+);

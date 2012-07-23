@@ -200,6 +200,15 @@ public class EditStructureAction extends DotPortletAction {
 				structure = StructureFactory.getStructureByInode(inodeString);
 			}
 		}
+		if(!structure.isFixed()){//GIT-780
+			if(structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET
+					&& structure.getVelocityVarName().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
+				
+						structure.setFixed(true);
+						StructureFactory.saveStructure(structure);
+			}
+		}
+		
 		req.setAttribute(WebKeys.Structure.STRUCTURE, structure);
 
 		boolean searchable = false;

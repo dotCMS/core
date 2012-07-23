@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ar/FindReplace", //begin v1.x content
 ({
 	"findLabel": "ايجاد:",
 	"findTooltip": "ادخال نص لايجاد",
@@ -8,7 +11,6 @@
 	"matchCaseTooltip": "مطابقة حالة الحروف",
 	"backwards": "الى الوراء",
 	"backwardsTooltip": "البحث الى الوراء عن نص",
-	"replaceAll": "كل التكرارات",
 	"replaceAllButton": "استبدال كل",
 	"replaceAllButtonTooltip": "استبدال كل النص",
 	"findButton": "ايجاد",
@@ -21,3 +23,5 @@
 	"eofDialogTextReplace": "مستبدل"
 })
 
+//end v1.x content
+);

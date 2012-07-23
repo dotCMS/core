@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/da/latinEntities", //begin v1.x content
 ({
 	/* These are already handled in the default RTE
 		amp:"ampersand",lt:"less-than sign",
@@ -255,3 +258,5 @@
 	euro:"euro sign"
 })
 
+//end v1.x content
+);

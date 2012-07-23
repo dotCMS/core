@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/pt-pt/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "Inserir tabela",
 	modifyTableTitle: "Modificar tabela",
@@ -28,3 +31,5 @@
 	deleteTableRowLabel: "Eliminar linha",
 	deleteTableColumnLabel: "Eliminar coluna"
 })
+//end v1.x content
+);

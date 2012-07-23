@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/nls/ru/colors", //begin v1.x content
 ({
 // local representation of all CSS3 named colors, companion to dojo.colors.  To be used where descriptive information
 // is required for each color, such as a palette widget, and not for specifying color programatically.
@@ -145,6 +147,7 @@ tan: "рыжевато-коричневый",
 teal: "чирок",
 thistle: "чертополох",
 tomato: "помидор",
+transparent: "прозрачный",
 turquoise: "бирюзовый",
 violet: "фиолетовый",
 wheat: "пшеница",
@@ -153,3 +156,5 @@ whitesmoke: "дымчато-белый",
 yellow: "желтый",
 yellowgreen: "желто-зеленый"
 })
+//end v1.x content
+);

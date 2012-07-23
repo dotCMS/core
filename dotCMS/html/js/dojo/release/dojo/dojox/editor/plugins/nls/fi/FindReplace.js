@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/fi/FindReplace", //begin v1.x content
 ({
 	"findLabel": "Etsi:",
 	"findTooltip": "Anna etsittävä teksti",
@@ -8,7 +11,6 @@
 	"matchCaseTooltip": "Sama kirjainkoko",
 	"backwards": "Taaksepäin",
 	"backwardsTooltip": "Etsi tekstiä taaksepäin",
-	"replaceAll": "Kaikki esiintymät",
 	"replaceAllButton": "Korvaa kaikki",
 	"replaceAllButtonTooltip": "Korvaa kaikki teksti",
 	"findButton": "Etsi",
@@ -21,3 +23,5 @@
 	"eofDialogTextReplace": "korvattu"
 })
 
+//end v1.x content
+);

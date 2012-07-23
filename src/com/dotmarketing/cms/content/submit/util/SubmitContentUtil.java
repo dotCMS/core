@@ -297,6 +297,13 @@ public class SubmitContentUtil {
 	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
 		Structure st = StructureCache.getStructureByName(structureName);
+		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
+		for (Field field : fields) {//GIT-763
+			if(field.isRequired() && !parametersName.contains(field.getVelocityVarName())){
+				parametersName.add(field.getVelocityVarName());
+				values.add(new String[]{});
+			}
+		}		
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
 		contentlet.setLanguageId(lAPI.getDefaultLanguage().getId());

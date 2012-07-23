@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/hu/commands", //begin v1.x content
 ({
 	'bold': 'Félkövér',
 	'copy': 'Másolás',
@@ -46,3 +48,5 @@
 	/* Error messages */
 	'systemShortcut': 'A(z) "${0}" művelet a böngészőben csak billentyűparancs használatával érhető el. Használja a következőt: ${1}.'
 })
+//end v1.x content
+);

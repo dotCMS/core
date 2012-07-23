@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/pl/FindReplace", //begin v1.x content
 ({
 	"findLabel": "Znajdź:",
 	"findTooltip": "Wprowadź szukany tekst",
@@ -8,7 +11,6 @@
 	"matchCaseTooltip": "Uwzględnij wielkość liter",
 	"backwards": "Do tyłu",
 	"backwardsTooltip": "Wyszukaj tekst wstecz",
-	"replaceAll": "Wszystkie wystąpienia",
 	"replaceAllButton": "Zastąp wszystkie",
 	"replaceAllButtonTooltip": "Zastąp cały tekst",
 	"findButton": "Znajdź",
@@ -21,3 +23,5 @@
 	"eofDialogTextReplace": "zastąpiono"
 })
 
+//end v1.x content
+);

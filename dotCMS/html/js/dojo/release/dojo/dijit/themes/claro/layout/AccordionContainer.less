@@ -43,15 +43,12 @@
 }
 .claro .dijitAccordionTitle {
 	background-color: transparent;	/* pick up color from dijitAccordionInnerContainer */
-	background-image: url("images/accordion.png");
+	background-image: url("../@{image-layout-accordion}");
 	background-position:0 0;
 	background-repeat:repeat-x;
 	padding: 5px 7px 2px 7px;
 	min-height:17px;
 	color:@unselected-text-color;
-}
-.claro .dijitAccordionTitleHover {
-	color:@hovered-text-color;
 }
 .dj_ie6 .claro .dijitAccordionTitle {
 	background-image: none;
@@ -95,7 +92,7 @@
 
 /* Hovering open or closed pane */
 
-.claro .dijitAccordionInnerContainerHover dijitAccordionTitle {
+.claro .dijitAccordionInnerContainerHover .dijitAccordionTitle {
 	/* both open and closed */
 	color:@hovered-text-color;
 }

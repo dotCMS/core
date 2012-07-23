@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ru/InsertAnchor", //begin v1.x content
 ({
 	insertAnchor: "Вставить метку",
 	title: "Свойства метки",
@@ -7,3 +10,5 @@
 	cancel: "Отменить"
 })
 
+//end v1.x content
+);

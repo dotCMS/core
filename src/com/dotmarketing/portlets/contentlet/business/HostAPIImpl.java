@@ -325,12 +325,11 @@ public class HostAPIImpl implements HostAPI {
 		List<Host> hosts =new ArrayList<Host>();
 
 		String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
-				" where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode and clvi.lang = ? ";
+				" where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
 
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql);
 		dc.addParam(Host.SYSTEM_HOST);
-		dc.addParam(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		@SuppressWarnings("unchecked")
 		List<Map<String,String>> ret = dc.loadResults();
 		for(Map<String,String> m : ret) {

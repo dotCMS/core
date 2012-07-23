@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/zh-tw/LinkDialog", //begin v1.x content
 ({
 	createLinkTitle: "鏈結內容",
 	insertImageTitle: "影像內容",
@@ -12,3 +14,5 @@
 	newWindow: "新視窗"
 })
 
+//end v1.x content
+);

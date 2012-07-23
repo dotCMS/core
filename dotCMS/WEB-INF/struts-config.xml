@@ -619,6 +619,9 @@
       </action>
       <action path="/ext/templates/edit_template" type="com.dotmarketing.portlets.templates.action.EditTemplateAction" name="TemplateForm" scope="request" input="portlet.ext.templates.edit_template" validate="false">
          <forward name="portlet.ext.templates.edit_template" path="portlet.ext.templates.edit_template"></forward>
+         <!-- BEGIN GRAZIANO issue-12-dnd-template -->
+         <forward name="portlet.ext.templates.design_template" path="portlet.ext.templates.design_template"></forward>
+         <!-- END GRAZIANO issue-12-dnd-template -->
          <forward name="portlet.ext.templates.container_selector" path="portlet.ext.templates.container_selector"></forward>
       </action>
       <action path="/ext/templates/publish_templates" type="com.dotmarketing.portlets.templates.action.PublishTemplatesAction">

@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/sk/commands", //begin v1.x content
 ({
 	'bold': 'Tučné písmo',
 	'copy': 'Kopírovať',
@@ -47,3 +49,5 @@
 	'systemShortcut': 'Akcia "${0}" je vo vašom prehliadači dostupná len s použitím klávesovej skratky. Použite ${1}.'
 })
 
+//end v1.x content
+);

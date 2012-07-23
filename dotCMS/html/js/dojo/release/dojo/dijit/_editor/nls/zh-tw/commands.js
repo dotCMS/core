@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/zh-tw/commands", //begin v1.x content
 ({
 	'bold': '粗體',
 	'copy': '複製',
@@ -46,3 +48,5 @@
 	/* Error messages */
 	'systemShortcut': '"${0}" 動作在您的瀏覽器中，只能使用鍵盤快速鍵。請使用 ${1}。'
 })
+//end v1.x content
+);

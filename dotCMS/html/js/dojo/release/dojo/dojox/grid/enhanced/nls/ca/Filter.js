@@ -1,7 +1,9 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/ca/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Netejar el filtre",
 	"filterDefDialogTitle": "Filtre",
-	"incompleteRuleTip": "Aquesta regla no està completa",
 	"ruleTitleTemplate": "Regla ${0}",
 	
 	"conditionEqual": "igual que",
@@ -21,6 +23,7 @@
 	"conditionBefore": "abans",
 	"conditionAfter": "després",
 	"conditionRange": "interval",
+	"conditionIsEmpty": "és buida",
 	
 	"all": "tot",
 	"any": "qualsevol",
@@ -62,8 +65,8 @@
 	"anycolumn": "qualsevol columna",
 	"statusTipTitleNoFilter": "Barra de filtre",
 	"statusTipTitleHasFilter": "Filtre",
-	"statusTipRelPre": "Coincidència",
-	"statusTipRelPost": "regles.",
+	"statusTipRelAny": "Coincideix amb qualsevol regla.",
+	"statusTipRelAll": "Coincideix amb totes les regles.",
 	
 	"defaultItemsName": "elements",
 	"filterBarMsgHasFilterTemplate": "Es mostren ${0} de ${1} ${2}.",
@@ -79,10 +82,8 @@
 	"clearFilterMsg": "Això eliminarà el filtre i mostrarà tots els registres disponibles.",
 	"anyColumnOption": "Qualsevol columna",
 	
-	"trueLabelEditable": "Seleccionat",
 	"trueLabel": "Cert",
 	"falseLabel": "Fals"
 })
-
-
-
+//end v1.x content
+);

@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/th/LinkDialog", //begin v1.x content
 ({
 	createLinkTitle: "คุณสมบัติลิงก์",
 	insertImageTitle: "คุณสมบัติอิมเมจ",
@@ -12,3 +14,5 @@
 	newWindow: "หน้าต่างใหม่"
 })
 
+//end v1.x content
+);

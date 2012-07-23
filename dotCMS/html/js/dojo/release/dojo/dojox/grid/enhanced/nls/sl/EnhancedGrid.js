@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/sl/EnhancedGrid", //begin v1.x content
 ({
 	singleSort: "Enostavno razvrščanje",
 	nestedSort: "Ugnezdeno razvrščanje",
@@ -9,4 +12,6 @@
 	indirectSelectionCheckBox: "Vrstica ${0}, izbira več elementov, okence s potrditvenimi polji",
 	selectAll: "Izberi vse"
 })
+//end v1.x content
+);
 

@@ -1,19 +1,2 @@
-if(!dojo._hasResource["dojox.charting.themes.Ireland"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.charting.themes.Ireland"] = true;
-dojo.provide("dojox.charting.themes.Ireland");
-dojo.require("dojox.charting.Theme");
-
-(function(){
-	var dxc=dojox.charting;
-	dxc.themes.Ireland=new dxc.Theme({
-		colors: [
-			"#abdbcb",
-			"#435a51",
-			"#70998b",
-			"#78d596",
-			"#5f8074"
-		]
-	});
-})();
-
-}
+//>>built
+define("dojox/charting/themes/Ireland",["../Theme","./common"],function(_1,_2){_2.Ireland=new _1({colors:["#abdbcb","#435a51","#70998b","#78d596","#5f8074"]});return _2.Ireland;});
