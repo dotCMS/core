@@ -350,7 +350,7 @@ public class ESIndexAPI {
 	 * @param indexName
 	 * @throws DotStateException
 	 * @throws IOException
-	 * @throws DotDataException 
+	 * @throws DotDataException
 	 */
 	public  void clearIndex(String indexName) throws DotStateException, IOException, DotDataException{
 		if(indexName == null || !indexExists(indexName)){
@@ -364,27 +364,23 @@ public class ESIndexAPI {
 
 		iapi.delete(indexName);
 
-		if(UtilMethods.isSet(indexName) && indexName.indexOf("sitesearch") > 0) {
-		CreateIndexResponse res=createIndex(indexName, shards);
-
-		try {
-		    int w=0;
-		    while(!res.acknowledged() && ++w<100)
-		        Thread.sleep(100);
-		}
-		catch(InterruptedException ex) {
-		    Logger.warn(this, ex.getMessage(), ex);
-		}
-
-		} else {
+		if(UtilMethods.isSet(indexName) && indexName.indexOf("sitesearch") > -1) {
 			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
+		} else {
+			CreateIndexResponse res=createIndex(indexName, shards);
+
+			try {
+				int w=0;
+				while(!res.acknowledged() && ++w<100)
+					Thread.sleep(100);
+			}
+			catch(InterruptedException ex) {
+				Logger.warn(this, ex.getMessage(), ex);
+			}
 		}
 
 		if(UtilMethods.isSet(alias)) {
 		    createAlias(indexName, alias);
-		}
-		if(replicas > 0){
-			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 		}
 	}
 
