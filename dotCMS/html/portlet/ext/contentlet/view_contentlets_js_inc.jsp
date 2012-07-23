@@ -1244,6 +1244,11 @@
                         filterLocked = true;
                 }
                 
+                var filterUnpublish = false;
+                if (document.getElementById("filterUnpublishCB").checked) {
+                       filterUnpublish = true;
+                }
+                
                 var showDeleted = false;
                 if (document.getElementById("showDeletedCB").checked) {
                         showDeleted = true;
@@ -1258,6 +1263,7 @@
                 document.getElementById('currentSortBy').value = currentSortBy;
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
+                document.getElementById('filterUnpublish').value = filterUnpublish;
                 
                 if(isInodeSet(structureInode)){
                         var dateFrom=null;
@@ -1275,7 +1281,7 @@
                                 if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
                                 dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
                         }
-                        ContentletAjax.searchContentlets (structureInode, fieldsValues, categoriesValues, showDeleted, filterSystemHost, filterLocked, currentPage, currentSortBy, dateFrom, dateTo, fillResults);            
+                        ContentletAjax.searchContentlets (structureInode, fieldsValues, categoriesValues, showDeleted, filterSystemHost, filterUnpublish, filterLocked, currentPage, currentSortBy, dateFrom, dateTo, fillResults);            
                 }
 
         }
@@ -1664,6 +1670,13 @@
                         if(filterLockedCB.checked) {
                           filterLockedCB.setValue(false);
                         }
+                }
+                
+                var filterUnpublishCB = dijit.byId("filterUnpublishCB");
+                if(filterUnpublishCB!=null){
+                       if(filterUnpublishCB.checked) {
+                         filterUnpublishCB.setValue(false);
+                       }
                 }
                 
                 dwr.util.removeAllRows("results_table");

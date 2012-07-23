@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/tr/FontChoice", //begin v1.x content
 ({
 	fontSize: "Boyut",
 	fontName: "Yazı Tipi",
@@ -25,3 +27,5 @@
 	6: "x-büyük",
 	7: "xx-büyük"
 })
+//end v1.x content
+);

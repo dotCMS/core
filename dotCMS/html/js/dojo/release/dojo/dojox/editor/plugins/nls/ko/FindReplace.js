@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ko/FindReplace", //begin v1.x content
 ({
 	"findLabel": "찾기:",
 	"findTooltip": "찾을 텍스트 입력",
@@ -8,7 +11,6 @@
 	"matchCaseTooltip": "대소문자 구분",
 	"backwards": "뒤로",
 	"backwardsTooltip": "텍스트 역방향 검색",
-	"replaceAll": "모든 발생",
 	"replaceAllButton": "모두 바꾸기",
 	"replaceAllButtonTooltip": "텍스트 모두 바꾸기",
 	"findButton": "찾기",
@@ -20,3 +22,5 @@
 	"eofDialogTextFind": "찾음",
 	"eofDialogTextReplace": "대체됨"
 })
+//end v1.x content
+);

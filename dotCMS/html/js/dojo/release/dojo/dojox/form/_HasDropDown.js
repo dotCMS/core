@@ -1,10 +1,2 @@
-if(!dojo._hasResource["dojox.form._HasDropDown"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.form._HasDropDown"] = true;
-dojo.deprecated("dojox.form._HasDropDown", "Use dijit._HasDropDown instead", "2.0");
-
-dojo.provide("dojox.form._HasDropDown");
-dojo.require("dijit._HasDropDown");
-
-dojo.setObject("dojox.form._HasDropDown", dijit._HasDropDown);
-
-}
+//>>built
+define("dojox/form/_HasDropDown",["dojo/_base/kernel","dojo/_base/lang","dijit/_HasDropDown"],function(_1,_2){_1.deprecated("dojox.form._HasDropDown","Use dijit._HasDropDown instead","2.0");lang.setObject("dojox.form._HasDropDown",_2);return _2;});

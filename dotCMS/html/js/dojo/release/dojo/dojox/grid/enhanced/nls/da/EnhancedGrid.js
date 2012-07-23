@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/da/EnhancedGrid", //begin v1.x content
 ({
 	singleSort: "Enkelt sortering",
 	nestedSort: "Indlejret sortering",
@@ -9,4 +12,6 @@
 	indirectSelectionCheckBox: "Række ${0}, flere valg, afkrydsningsfelt",
 	selectAll: "Markér alle"
 })
+//end v1.x content
+);
 

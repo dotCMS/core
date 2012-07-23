@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/ru/gregorian", //begin v1.x content
 {
 	"dateFormatItem-yM": "M.y",
 	"field-dayperiod": "AM/PM",
@@ -227,3 +229,5 @@
 		"н.э."
 	]
 }
+//end v1.x content
+);

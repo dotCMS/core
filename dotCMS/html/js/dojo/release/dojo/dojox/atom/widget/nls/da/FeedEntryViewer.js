@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/atom/widget/nls/da/FeedEntryViewer", //begin v1.x content
 ({
 	displayOptions: "[fremvisningsvalg]",
 	title: "Titel",
@@ -9,4 +12,5 @@
 	summary: "Resumé",
 	content: "Indhold"
 })
-
+//end v1.x content
+);

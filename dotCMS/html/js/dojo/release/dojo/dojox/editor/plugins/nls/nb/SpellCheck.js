@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/nb/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "Satsvis stavekontroll",
 	unfound: "Ikke funnet",
@@ -14,3 +17,5 @@
 	iSkipAll: "Hopp over alle slike",
 	iMsg: "Ingen staveforslag"
 })
+//end v1.x content
+);

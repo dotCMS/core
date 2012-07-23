@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/pl/AutoSave", //begin v1.x content
 ({
 	"saveLabel": "Zapisz",
 	"saveSettingLabelOn": "Ustaw odstęp czasu automatycznego zapisywania...",
@@ -12,3 +15,5 @@
 	"saveMessageFail": "Zapisanie nie powiodło się: ${0}"
 })
 
+//end v1.x content
+);

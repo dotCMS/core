@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/da/SpellCheck", //begin v1.x content
 ({
 	widgetLabel: "Bundtvis stavekontrol",
 	unfound: "Ikke fundet",
@@ -15,3 +18,5 @@
 	iMsg: "Ingen forslag til stavning"
 })
 
+//end v1.x content
+);

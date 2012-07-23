@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/pl/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Wyczyść filtr",
 	"filterDefDialogTitle": "Filtr",
@@ -62,8 +65,8 @@
 	"anycolumn": "dowolna kolumna",
 	"statusTipTitleNoFilter": "Pasek filtru",
 	"statusTipTitleHasFilter": "Filtr",
-	"statusTipRelPre": "Dopasuj",
-	"statusTipRelPost": "reguły.",
+	"statusTipRelAny": "Dopasuj do dowolnej z reguł.",
+	"statusTipRelAll": "Dopasuj do wszystkich reguł.",
 	
 	"defaultItemsName": "elementy",
 	"filterBarMsgHasFilterTemplate": "Wyświetlane ${0} z ${1} ${2}.",
@@ -82,6 +85,5 @@
 	"trueLabel": "Prawda",
 	"falseLabel": "Fałsz"
 })
-
-
-
+//end v1.x content
+);

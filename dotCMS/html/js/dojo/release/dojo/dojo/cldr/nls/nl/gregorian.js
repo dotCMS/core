@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/nl/gregorian", //begin v1.x content
 {
 	"months-format-narrow": [
 		"J",
@@ -228,3 +230,5 @@
 	"field-week": "Week",
 	"dateFormat-medium": "d MMM y"
 }
+//end v1.x content
+);

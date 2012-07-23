@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/sk/currency", //begin v1.x content
 {
 	"HKD_displayName": "Hong Kongský dolár",
 	"CHF_displayName": "Švajčiarský frank",
@@ -10,3 +12,5 @@
 	"GBP_displayName": "Britská libra",
 	"EUR_displayName": "Euro"
 }
+//end v1.x content
+);

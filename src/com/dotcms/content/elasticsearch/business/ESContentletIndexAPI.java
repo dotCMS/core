@@ -66,8 +66,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	   return info.working!=null && info.live!=null;
 	}
 
-	
-	
+
+
 	/**
 	 * Inits the indexs
 	 */
@@ -82,10 +82,10 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 		}
 	}
-	
-	
-	
-	
+
+
+
+
 	public synchronized boolean createContentIndex(String indexName) throws ElasticSearchException, IOException {
 		return createContentIndex(indexName, 0);
 	}
@@ -95,7 +95,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		CreateIndexResponse cir = iapi.createIndex(indexName, null, shards);
 		int i = 0;
 		while(!cir.acknowledged()){
-			
+
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -107,19 +107,19 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 				throw new ElasticSearchException("index timed out creating");
 			}
 		}
-		
-		
+
+
 		ClassLoader classLoader = null;
 		URL url = null;
 		classLoader = Thread.currentThread().getContextClassLoader();
 		url = classLoader.getResource("es-content-mapping.json");
         // create actual index
 		String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-			
+
 		mappingAPI.putMapping(indexName, "content", mapping);
-			
-		
-		
+
+
+
 		return true;
 	}
 
@@ -279,7 +279,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                     contentToIndex.add(content);
                     if(deps)
                         contentToIndex.addAll(loadDeps(content));
-                    
+
                     indexContentletList(req, contentToIndex,reindexOnly);
 
                     if(bulk==null && req.numberOfActions()>0)
@@ -460,7 +460,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
     public boolean isDotCMSIndexName(String indexName) {
         return indexName.startsWith(ES_WORKING_INDEX_NAME+"_") || indexName.startsWith(ES_LIVE_INDEX_NAME+"_");
     }
-    
+
     public List<String> listDotCMSClosedIndices() {
         List<String> indexNames=new ArrayList<String>();
         List<String> list=APILocator.getESIndexAPI().getClosedIndexes();
@@ -538,7 +538,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
         APILocator.getIndiciesAPI().point(newinfo);
     }
 
-    
+
 
     public synchronized List<String> getCurrentIndex() throws DotDataException {
         List<String> newIdx = new ArrayList<String>();
@@ -574,10 +574,16 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             return two.compareTo(one);
         }
     }
-    
-    
 
+    public String getActiveIndexName(String type) throws DotDataException {
+        IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+        if(type.equalsIgnoreCase(ES_WORKING_INDEX_NAME)) {
+           return info.working;
+        }
+        else if(type.equalsIgnoreCase(ES_LIVE_INDEX_NAME)) {
+           return info.live;
+        }
+        return null;
+    }
 
-    
-    
 }

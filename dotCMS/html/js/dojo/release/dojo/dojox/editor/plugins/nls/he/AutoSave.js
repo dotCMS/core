@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/he/AutoSave", //begin v1.x content
 ({
 	"saveLabel": "שמירה",
 	"saveSettingLabelOn": "הגדרת מרווח שמירה אוטומטית...‏",
@@ -12,3 +15,5 @@
 	"saveMessageFail": "כשל בשמירה ${0}"
 })
 
+//end v1.x content
+);

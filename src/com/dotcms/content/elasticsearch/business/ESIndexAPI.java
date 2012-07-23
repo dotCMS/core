@@ -17,6 +17,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -75,7 +77,19 @@ public class ESIndexAPI {
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 	private  ESClient esclient = new ESClient();
 	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
-	
+
+	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
+		private final String status;
+
+		Status(String status) {
+			this.status = status;
+		}
+
+		public String getStatus() {
+			return status;
+		}
+	};
+
     /**
      * returns all indicies and status
      * @return
@@ -108,7 +122,7 @@ public class ESIndexAPI {
         if (!indexExists) {
             throw new IOException("Index :" + index + " does not exist");
         }
-	    
+
 		String date = new java.text.SimpleDateFormat("yyyy-MM-dd_hh-mm-ss").format(new Date());
 		if (toFile == null) {
 			toFile = new File(ConfigUtils.getBackupPath());
@@ -117,24 +131,24 @@ public class ESIndexAPI {
 			}
 			toFile = new File(ConfigUtils.getBackupPath() + File.separator + index + "_" + date + ".json");
 		}
-		
+
 		Client client = esclient.getClient();
-		
+
 		BufferedWriter bw = null;
 		try {
 		    ZipOutputStream zipOut=new ZipOutputStream(new FileOutputStream(toFile));
 		    zipOut.setLevel(9);
 		    zipOut.putNextEntry(new ZipEntry(toFile.getName()));
-		    
+
 			bw = new BufferedWriter(
-			        new OutputStreamWriter(zipOut), 500000); // 500K buffer 
-			
-			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING : "content"; 
+			        new OutputStreamWriter(zipOut), 500000); // 500K buffer
+
+			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING : "content";
 	        final String mapping = mappingAPI.getMapping(index, type);
 	        bw.write(MAPPING_MARKER);
 	        bw.write(mapping);
 	        bw.newLine();
-	        
+
 	        // setting up the search for all content
 			SearchResponse scrollResp = client.prepareSearch(index).setSearchType(SearchType.SCAN).setQuery(QueryBuilders.matchAllQuery())
 					.setSize(100).setScroll(TimeValue.timeValueMinutes(2)).execute().actionGet();
@@ -163,7 +177,7 @@ public class ESIndexAPI {
 			}
 		}
 	}
-	
+
 	public boolean optimize(List<String> indexNames) {
 		try {
 			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
@@ -179,7 +193,7 @@ public class ESIndexAPI {
 			throw new ElasticSearchException(e.getMessage());
 		}
 	}
-	
+
 	public boolean delete(String indexName) {
 		try {
 			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
@@ -202,7 +216,7 @@ public class ESIndexAPI {
 		boolean indexExists = indexExists(index);
 
 		Client client = new ESClient().getClient();
-		
+
 		try {
 			if (!indexExists) {
 				final IndicesAdminClient iac = new ESClient().getClient().admin().indices();
@@ -214,33 +228,40 @@ public class ESIndexAPI {
 			zipIn.getNextEntry();
 			br = new BufferedReader(
 			        new InputStreamReader(zipIn),500000);
-			
+
 			// setting number_of_replicas=0 to improve the indexing while restoring
 			// also we restrict the index to the current server
 			moveIndexToLocalNode(index);
-			
+
 			// wait a bit for the changes be made
 			Thread.sleep(1000L);
-			
+
 			// setting up mapping
 			String mapping=br.readLine();
 			boolean mappingExists=mapping.startsWith(MAPPING_MARKER);
+			String type="content";
 			if(mappingExists) {
-    			
+
+			    String patternStr = "^"+MAPPING_MARKER+"\\s*\\{\\s*\"(\\w+)\"";
+			    Pattern pattern = Pattern.compile(patternStr);
+			    Matcher matcher = pattern.matcher(mapping);
+			    boolean matchFound = matcher.find();
+			    if (matchFound)
+			        type = matcher.group(1);
 			}
-			
+
 			// reading content
 			ArrayList<String> jsons = new ArrayList<String>();
-			
+
 			// we recover the line that wasn't a mapping so it should be content
 			if(!mappingExists)
 			    jsons.add(mapping);
-			
+
 			for (int x = 0; x < 10000000; x++) {
-				for (int i = 0; i < 100; i++) 
-					while (br.ready()) 
+				for (int i = 0; i < 100; i++)
+					while (br.ready())
 						jsons.add(br.readLine());
-						
+
 				if (jsons.size() > 0) {
 				    try {
     				    BulkRequestBuilder req = client.prepareBulk();
@@ -250,7 +271,7 @@ public class ESIndexAPI {
         						String id = raw.substring(0, delimidx);
         						String json = raw.substring(delimidx + JSON_RECORD_DELIMITER.length(), raw.length());
         						if (id != null)
-        						    req.add(new IndexRequest(index, "content", id).source(json));
+        						    req.add(new IndexRequest(index, type, id).source(json));
     					    }
     					}
     				    if(req.numberOfActions()>0) {
@@ -272,11 +293,11 @@ public class ESIndexAPI {
 			if (br != null) {
 				br.close();
 			}
-			
+
 			// back to the original configuration for number_of_replicas
 			// also let it go other servers
 			moveIndexBackToCluster(index);
-            
+
             ArrayList<String> list=new ArrayList<String>();
             list.add(index);
             iapi.optimize(list);
@@ -292,7 +313,7 @@ public class ESIndexAPI {
 		return indices.keySet();
 	}
 	/**
-	 * 
+	 *
 	 * @param indexName
 	 * @return
 	 */
@@ -309,12 +330,12 @@ public class ESIndexAPI {
 
 		createIndex(indexName, null, 0);
 	}
-		
+
 	/**
 	 * Creates an index with default settings. If shards<1 then shards will be default
 	 * @param indexName
 	 * @param shards
-	 * @return 
+	 * @return
 	 * @throws DotStateException
 	 * @throws IOException
 	 */
@@ -322,8 +343,8 @@ public class ESIndexAPI {
 
 		return createIndex(indexName, null, shards);
 	}
-	
-	
+
+
 	/**
 	 * deletes and recreates an index
 	 * @param indexName
@@ -339,12 +360,12 @@ public class ESIndexAPI {
 		ClusterIndexHealth cih = map.get(indexName);
 		int shards = cih.getNumberOfShards();
 		int replicas = cih.getNumberOfReplicas();
-		
+
 		String alias=getIndexAlias(indexName);
-		
+
 		iapi.delete(indexName);
 		CreateIndexResponse res=createIndex(indexName, shards);
-		
+
 		try {
 		    int w=0;
 		    while(!res.acknowledged() && ++w<100)
@@ -353,7 +374,7 @@ public class ESIndexAPI {
 		catch(InterruptedException ex) {
 		    Logger.warn(this, ex.getMessage(), ex);
 		}
-		
+
 		if(UtilMethods.isSet(alias)) {
 		    createAlias(indexName, alias);
 		}
@@ -361,7 +382,7 @@ public class ESIndexAPI {
 			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 		}
 	}
-	
+
 	/**
 	 * unclusters an index, including changing the routing to all local
 	 * @param index
@@ -380,7 +401,7 @@ public class ESIndexAPI {
                .endObject().string()
         )).actionGet();
     }
-    
+
 	/**
 	 * clusters an index, including changing the routing
 	 * @param index
@@ -399,9 +420,9 @@ public class ESIndexAPI {
                .endObject().string()
         )).actionGet();
     }
-    
 
-    
+
+
 
     /**
      * Creates a new index.  If settings is null, the getDefaultIndexSettings() will be applied,
@@ -414,9 +435,9 @@ public class ESIndexAPI {
      * @throws IOException
      */
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards) throws ElasticSearchException, IOException {
-		
+
 		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
-		
+
 		if(shards <1){
 			try{
 				shards = Integer.parseInt(System.getProperty("es.index.number_of_shards"));
@@ -427,34 +448,34 @@ public class ESIndexAPI {
 				shards = Config.getIntProperty("es.index.number_of_shards");
 			}catch(Exception e){}
 		}
-		
+
 		if(shards <0){
 			shards=1;
 		}
-		
+
 		//default settings, if null
 		if(settings ==null){
 			settings = getDefaultIndexSettings(shards);
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
-			
-	
+
+
         // create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
 
 		return cirb.execute().actionGet();
-		
+
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticSearchException, IOException {
-		
+
 		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
-		
+
 		if(shards <1){
 			try{
 				shards = Integer.parseInt(System.getProperty("es.index.number_of_shards"));
@@ -465,30 +486,30 @@ public class ESIndexAPI {
 				shards = Config.getIntProperty("es.index.number_of_shards");
 			}catch(Exception e){}
 		}
-		
+
 		if(shards <0){
 			shards=1;
 		}
-		
+
 		//default settings, if null
 		if(settings ==null){
 			settings = getDefaultIndexSettings(shards);
 		}
-		
+
 
         // create actual index
 		iac.prepareCreate(indexName).setSettings(settings).addMapping(type, mapping).execute();
 
 		return null;
-		
+
 	}
-	
-	
-	
-	
+
+
+
+
 	/**
 	 * Returns the json (String) for
-	 * the defualt ES index settings 
+	 * the defualt ES index settings
 	 * @param shards
 	 * @return
 	 * @throws IOException
@@ -506,23 +527,23 @@ public class ESIndexAPI {
             .endObject()
            .endObject()
           .endObject().string();
-		
-		
-	}	
-    
+
+
+	}
+
     /**
      * returns cluster health
      * @return
      */
     public Map<String,ClusterIndexHealth> getClusterHealth() {
         AdminClient client=new ESClient().getClient().admin();
-        
+
         ClusterHealthRequest req = new ClusterHealthRequest();
         ActionFuture<ClusterHealthResponse> chr = client.cluster().health(req);
-        
+
         ClusterHealthResponse res  = chr.actionGet();
         Map<String,ClusterIndexHealth> map  = res.getIndices();
-        
+
         return map;
     }
 	/**
@@ -533,7 +554,7 @@ public class ESIndexAPI {
 	 * @throws DotDataException
 	 */
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
-        
+
 		Map<String,ClusterIndexHealth> idxs = getClusterHealth();
 		ClusterIndexHealth health = idxs.get( indexName);
 		if(health ==null){
@@ -542,37 +563,37 @@ public class ESIndexAPI {
 		int curReplicas = health.getNumberOfReplicas();
 
 		if(curReplicas != replicas){
-			
-			
+
+
 			Map newSettings = new HashMap();
 	        newSettings.put("index.number_of_replicas", replicas+"");
-			
-			
+
+
 			UpdateSettingsRequestBuilder usrb = new ESClient().getClient().admin().indices().prepareUpdateSettings(indexName);
 			usrb.setSettings(newSettings);
-			usrb.execute().actionGet(); 
+			usrb.execute().actionGet();
 		}
     }
-    
-    
-    
+
+
+
     public void putToIndex(String idx, String json, String id){
 	   try{
 		   Client client=new ESClient().getClient();
-		   
+
 		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", id)
 			        .setSource(json)
 			        .execute()
 			        .actionGet();
-		   
+
 		} catch (Exception e) {
 		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
-		
-		
+
+
 		}
 
     }
-    
+
     public void createAlias(String indexName, String alias) {
         try{
             Client client=new ESClient().getClient();
@@ -584,11 +605,11 @@ public class ESIndexAPI {
              throw new RuntimeException(e);
          }
     }
-    
+
     public Map<String,String> getIndexAlias(List<String> indexNames) {
         return getIndexAlias(indexNames.toArray(new String[indexNames.size()]));
     }
-    
+
     public Map<String,String> getIndexAlias(String[] indexNames) {
         Map<String,String> alias=new HashMap<String,String>();
         try{
@@ -599,22 +620,22 @@ public class ESIndexAPI {
                     .filteredIndices(indexNames);
             MetaData md=client.admin().cluster().state(clusterStateRequest)
                                                 .actionGet(30000).state().metaData();
-            
+
             for(IndexMetaData imd : md)
                 for(AliasMetaData amd : imd.aliases().values())
                     alias.put(imd.index(), amd.alias());
-            
+
             return alias;
          } catch (Exception e) {
              Logger.error(ESIndexAPI.class, e.getMessage(), e);
              throw new RuntimeException(e);
          }
     }
-    
+
     public String getIndexAlias(String indexName) {
         return getIndexAlias(new String[]{indexName}).get(indexName);
     }
-    
+
     public Map<String,String> getAliasToIndexMap(List<String> indices) {
         Map<String,String> map=getIndexAlias(indices);
         Map<String,String> mapReverse=new HashMap<String,String>();
@@ -622,17 +643,17 @@ public class ESIndexAPI {
             mapReverse.put(map.get(idx), idx);
         return mapReverse;
     }
-    
+
     public void closeIndex(String indexName) {
         Client client=new ESClient().getClient();
         client.admin().indices().close(new CloseIndexRequest(indexName)).actionGet();
     }
-    
+
     public void openIndex(String indexName) {
         Client client=new ESClient().getClient();
         client.admin().indices().open(new OpenIndexRequest(indexName)).actionGet();
     }
-    
+
     public List<String> getClosedIndexes() {
         Client client=new ESClient().getClient();
         Map<String,IndexMetaData> indexState=client.admin().cluster().prepareState().execute().actionGet()
@@ -644,5 +665,18 @@ public class ESIndexAPI {
                 closeIdx.add(idx);
         }
         return closeIdx;
+    }
+
+    public Status getIndexStatus(String indexName) throws DotDataException {
+    	List<String> currentIdx = iapi.getCurrentIndex();
+		List<String> newIdx =iapi.getNewIndex();
+
+		boolean active =currentIdx.contains(indexName);
+		boolean building =newIdx.contains(indexName);
+
+		if(active) return Status.ACTIVE;
+		else if(building) return Status.PROCESSING;
+		else return Status.INACTIVE;
+
     }
 }

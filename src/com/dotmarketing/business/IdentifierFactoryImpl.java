@@ -378,7 +378,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		    db.addParam(ident.getId());
 		    db.loadResult();
 		    
-			db.setSQL("delete from Permission where inode_id = ?");
+			db.setSQL("delete from permission where inode_id = ?");
 			db.addParam(ident.getInode());
 			db.loadResult();
 

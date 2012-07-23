@@ -29,14 +29,23 @@ djConfig={
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
 <script type="text/javascript">
+dojo.ready(function(){
 var theme = 'dmundra';
 	if(dojo.body()){
 		if(!dojo.hasClass(dojo.body(),theme)){
 	    	    dojo.addClass(dojo.body(),theme);
 		}
 	}
+});
 
 	dojo.require("dojo.parser");
+	dojo.require("dijit.form.TextBox");
+	dojo.require("dijit.form.Textarea");
+	dojo.require("dijit.form.Button");
+	dojo.require("dijit.form.FilteringSelect");
+	dojo.require("dijit.form.CheckBox");
+	dojo.require("dijit.form.DateTextBox");
+	dojo.require("dijit.form.MultiSelect");
 	var DWRUtil = dwr.util;
 </script>
 
@@ -471,7 +480,7 @@ var theme = 'dmundra';
 	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $request.getParameterValues("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar )
 	            	    #else
 	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
@@ -870,7 +879,7 @@ var theme = 'dmundra';
 				#if($UtilMethods.isSet($field.getRegexCheck()))
 					if("$!field.getRegexCheck()" != ""){
 
-			       		if(!validateRegularExpresion(document.getElementById("$field.velocityVarName"), "$regExp", "$field.fieldName")){
+			       		if(!validateRegularExpresion(document.getElementById("$field.velocityVarName"), "$field.getRegexCheck()", "$field.fieldName")){
 							return false;
 						}
 			    	}

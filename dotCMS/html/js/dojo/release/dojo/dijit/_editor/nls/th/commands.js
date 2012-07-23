@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/th/commands", //begin v1.x content
 ({
 	'bold': 'ตัวหนา',
 	'copy': 'คัดลอก',
@@ -47,3 +49,5 @@
 	'systemShortcut': 'การดำเนินการ"${0}" ใช้งานได้เฉพาะกับเบราว์เซอร์ของคุณโดยใช้แป้นพิมพ์ลัด ใช้ ${1}'
 })
 
+//end v1.x content
+);

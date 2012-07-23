@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/el/FontChoice", //begin v1.x content
 ({
 	fontSize: "Μέγεθος",
 	fontName: "Γραμματοσειρά",
@@ -25,3 +27,5 @@
 	6: "x-μεγάλα",
 	7: "xx-μεγάλα"
 })
+//end v1.x content
+);

@@ -19,7 +19,7 @@
 		
 	<div class="fileSelectorControls">
 		<input name="${name}" type="hidden" value="${value}" dojoAttachPoint="valueTextField"/>
-		<input type="text" name="${name}-filename" readonly="readonly" style="width: 250px;" dojoAttachPoint="labelTextField"/>
+		<input type="text" dojoType="dijit.form.TextBox" name="${name}-filename" readonly="readonly" style="width: 250px;float: left;" dojoAttachPoint="labelTextField"/>
 		<button dojoType="dijit.form.Button" dojoAttachEvent="onClick: _browseClicked" type="button" iconClass="browseIcon"><%= LanguageUtil.get(pageContext, "browse")%>...</button>
 		<button dojoType="dijit.form.Button" style="display:none;" dojoAttachEvent="onClick: _removeClicked" 
 			dojoAttachPoint="removeFileButton" iconClass="deleteIcon"><%= LanguageUtil.get(pageContext, "remove")%></button>

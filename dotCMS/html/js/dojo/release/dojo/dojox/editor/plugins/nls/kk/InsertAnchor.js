@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/kk/InsertAnchor", //begin v1.x content
 ({
 	insertAnchor: "Бетбелгі кірістіру",
 	title: "Бетбелгі сипаттары",
@@ -7,3 +10,5 @@
 	cancel: "Болдырмау"
 })
 
+//end v1.x content
+);

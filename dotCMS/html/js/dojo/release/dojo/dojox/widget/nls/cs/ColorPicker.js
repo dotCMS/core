@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/widget/nls/cs/ColorPicker", //begin v1.x content
 ({
 redLabel: "č",
 greenLabel: "z",
@@ -8,4 +11,4 @@ valueLabel: "j", /* aka intensity or brightness */
 huePickerTitle: "Selektor odstínu",
 saturationPickerTitle: "Selektor sytosti"
 })
-
+);

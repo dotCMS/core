@@ -139,12 +139,13 @@
 	
 		
 		if (myCp) {
-			myCp.destroyRecursive(true);
+			dojo.attr(myCp,"content","");
+		}else{
+			myCp = new dojox.layout.ContentPane({
+				id : "workflowTaskListCp"
+			}).placeAt("hangTaskListHere");
 		}
-		myCp = new dojox.layout.ContentPane({
-			id : "workflowTaskListCp"
-		}).placeAt("hangTaskListHere");
-
+		
 
 		myCp.attr("href", url);
 
@@ -248,7 +249,7 @@
 		var myUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme&schemeId=" + schemeId;
 		var stepId = dijit.byId("stepId");
 		stepId.store= emptyStore;
-		stepId.setValue("");
+		//dojo.attr(stepId,"Value","");
 		stepId.store= new dojo.data.ItemFileReadStore({url:myUrl});
 
 	}
@@ -286,12 +287,13 @@
 		}
 	<%}%>
 	function resetFilters(){
+		dijit.byId("daysold").setValue("");	
 		var stepId = dijit.byId("stepId");
 		stepId.store= emptyStore;
-		stepId.setValue("");
+		stepId.displayedValue="";
 		var assignedTo = dijit.byId("assignedTo");
 		assignedTo.store= emptyStore;
-		assignedTo.setValue("");
+		assignedTo.displayedValue="";
 		assignedTo.store=assignedToStore;
 		<%if(isAdministrator){%>
 		     disable4AllUsers();
@@ -528,6 +530,6 @@ bottom="/html/common/box_bottom.jsp">
 
 
 <script type="text/javascript">
-resizeBrowser();
+dojo.ready(resizeBrowser);
 </script>
 

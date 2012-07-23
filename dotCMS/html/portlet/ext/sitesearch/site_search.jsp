@@ -466,9 +466,15 @@ dojo.ready(function() {
 });
 
 function connectUploadEvents() {
+	var uploader=dijit.byId('restoreIndexUploader');
+	dojo.connect(uploader, "onChange", function(dataArray){
+        dojo.forEach(dataArray, function(data){
+               dojo.byId("uploadFileName").innerHTML=data.name;
+        });
+	}); 
 	dojo.connect(uploader, "onComplete", function(dataArray) {
-           hideRestoreIndex();
-           showDotCMSSystemMessage("Upload Complete. Index Restores in background");
+        hideRestoreIndex();
+        showDotCMSSystemMessage("Upload Complete. Index Restores in background");
     });
 }
 

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/ro/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Ştergere filtru",
 	"filterDefDialogTitle": "Filtru",
@@ -15,7 +18,7 @@
 	"conditionEndWith": "se termină cu",
 	"conditionNotContain": "nu conţine",
 	"conditionIsNot": "nu este",
-	"conditionNotStartWith": "nu începe cu ",
+	"conditionNotStartWith": "nu începe cu",
 	"conditionNotEndWith": "nu se termină cu",
 	"conditionBefore": "înaintea",
 	"conditionAfter": "după",
@@ -62,8 +65,8 @@
 	"anycolumn": "orice coloană",
 	"statusTipTitleNoFilter": "Bară de filtru",
 	"statusTipTitleHasFilter": "Filtru",
-	"statusTipRelPre": "Îndeplinire",
-	"statusTipRelPost": "reguli.",
+	"statusTipRelAny": "Potrivire orice regulă.",
+	"statusTipRelAll": "Potrivire toate regulile.",
 	
 	"defaultItemsName": "articole",
 	"filterBarMsgHasFilterTemplate": "${0} din ${1} ${2} afişate.",
@@ -82,6 +85,5 @@
 	"trueLabel": "Adevărat",
 	"falseLabel": "Fals"
 })
-
-
-
+//end v1.x content
+);
