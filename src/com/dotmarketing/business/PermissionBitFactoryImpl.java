@@ -587,9 +587,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from identifier where identifier.id in (" +
 		"		" + selectChildrenFileSQL + " and" +
 		"		identifier.id not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier ii where" +
-		"			reference_id = ref_folder.inode and ii.id=ref_folder.identifier and" +
-		"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		"              join identifier ii on (ii.id=ref_folder.identifier) " +
+		"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		identifier.id not in (" +
 		"			select inode_id from permission where " +
@@ -606,9 +606,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenLinkSQL =
-		"select distinct identifier.id from links, inode, identifier where " +
-		"links.inode = inode.inode and links.identifier = identifier.id and " +
-		"identifier.host_inode = ? and identifier.parent_path like ?";
+		"select distinct identifier.id from identifier where " +
+		"asset_type='links' and identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load link identifiers that are children of a host and have inheritable permissions
@@ -617,8 +616,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenLinkWithIndividualPermissionsSQL =
-		selectChildrenLinkSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
+        "asset_type='links' and identifier.host_inode = ? and identifier.parent_path like ? " +
+        "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of links of a given parent folder
@@ -650,18 +650,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	permission_type = '" + Link.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
-		"from folder, inode,identifier " +
-		"where folder.inode = inode.inode " +
-		"and folder.identifier = identifier.id and identifier.host_inode = ? " +
-		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
-		"and reference_id = folder.inode" +
+		"from folder join identifier on (folder.identifier = identifier.id) " +
+		"where " +
+		" identifier.host_inode = ? " +
+		" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+		" and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		" and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
-		"FROM contentlet c JOIN inode i " +
-		"ON  " +
-		"  i.type = 'contentlet' " +
-		"  AND i.inode = c.inode" +
+		"FROM contentlet c " +
 		"  WHERE c.identifier = reference_id)	" +
 		")";
 
@@ -688,8 +685,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from identifier where identifier.id in (" +
 		"		" + selectChildrenLinkSQL + " and" +
 		"		identifier.id not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier ii where" +
-		"			reference_id = ref_folder.inode and ii.id=ref_folder.identifier and" +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		"            join identifier ii on (ii.id=ref_folder.identifier) where " +
 		"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		identifier.id not in (" +
@@ -707,9 +704,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenContentByPathSQL =
-		"select distinct identifier.id from contentlet, inode, identifier, folder, identifier ffi where " +
-		"contentlet.inode = inode.inode and identifier.id = contentlet.identifier and folder.identifier=ffi.id and  " +
-		"identifier.host_inode = ? and contentlet.identifier <> identifier.host_inode and identifier.parent_path = "+dotFolderPath+"(ffi.parent_path,ffi.asset_name) and "+dotFolderPath+"(ffi.parent_path,ffi.asset_name) like ?";
+        "select distinct identifier.id from identifier where asset_type='contentlet' " +
+        " and identifier.id <> identifier.host_inode and identifier.host_inode = ? " +
+        " and identifier.parent_path like ?";
 
 	/*
 	 * To load content identifiers that are children of a host and have inheritable permissions
@@ -718,8 +715,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenContentWithIndividualPermissionsByPathSQL =
-		selectChildrenContentByPathSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
+        " where asset_type='contentlet' and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' and " +
+        " and identifier.id <> identifier.host_inode and identifier.host_inode = ? " +
+        " and identifier.parent_path like ?";
 
 	/*
 	 * To load content identifiers that are of the type of a structure
@@ -761,19 +760,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"permission_type = '" + Contentlet.class.getCanonicalName() + "' and asset_id = contentlet.identifier) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
-		"from folder, inode,identifier " +
-		"where folder.inode = inode.inode " +
-		"and folder.identifier = identifier.id and identifier.host_inode = ? " +
+		"from folder join identifier on (folder.identifier = identifier.id) " +
+		"where identifier.host_inode = ? " +
 		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
 		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 		"and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
-		"FROM contentlet c JOIN inode i " +
-		"ON  " +
-		"  i.type = 'contentlet' " +
-		"  AND i.inode = c.inode" +
-		"  WHERE c.identifier = reference_id)	" +
+		"FROM contentlet c WHERE c.identifier = reference_id)	" +
 		")";
 
 	/*
@@ -822,9 +816,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from identifier where identifier.id in (" +
 		"		" + selectChildrenContentByPathSQL + " and" +
 		"		identifier.id not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier where" +
-		"			reference_id = ref_folder.inode and identifier.id=folder.identifier and " +
-		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		"                                join identifier on (identifier.id=folder.identifier) " +
+		"			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		identifier.id not in (" +
 		"			select inode_id from permission where " +
@@ -873,8 +867,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. The host id
 	 */
 	private final String selectChildrenStructureByPathSQL =
-		"select distinct structure.inode from structure, inode where structure.inode = inode.inode  and ( " +
-		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(select folder.inode from folder,identifier where identifier.id=folder.identifier and structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
+		"select distinct structure.inode from structure where ( " +
+		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
+		"         select folder.inode from folder join identifier on (identifier.id=folder.identifier) " +
+		"         where structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
 		"(structure.host <> 'SYSTEM_HOST' AND structure.host = ?) OR " +
 		"(structure.host = 'SYSTEM_HOST' AND exists (select inode from contentlet where title = 'System Host' AND inode = ?)))";
 
@@ -888,8 +884,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. The host id
 	 */
 	private final String selectChildrenStructureByPathSQLFolder =
-		"select distinct structure.inode from structure, inode where structure.inode = inode.inode  and ( " +
-		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(select folder.inode from folder,identifier where identifier.id=folder.identifier and structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
+		"select distinct structure.inode from where ( " +
+		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
+		"            select folder.inode from folder join identifier on(identifier.id=folder.identifier) " +
+		"            where structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
 		"(structure.host = 'SYSTEM_HOST' AND exists (select inode from contentlet where title = 'System Host' AND inode = ?)))";
 
 	/*
@@ -906,8 +904,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"delete from permission_reference where exists (" +
 			"	" + selectChildrenStructureByPathSQL + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
-			"select ref_folder.inode from folder ref_folder,identifier ref_ident where ref_folder.identifier = ref_ident.id " +
-			"and ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
+			"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
+			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
 
 
 	/*
@@ -924,30 +922,27 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"delete from permission_reference where exists (" +
 			"	" + selectChildrenStructureByPathSQLFolder + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
-			"select ref_folder.inode from folder ref_folder,identifier ref_ident where ref_folder.identifier = ref_ident.id " +
-			"and ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
+			"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
+			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
 
 
 	private final String deleteStructureReferencesByPathOnAddSQL =
 		"delete from permission_reference where exists(" +
 		"	" + selectChildrenStructureByPathSQL + " and asset_id = structure.inode and " +
 		"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
-		"select ref_folder.inode from folder ref_folder,identifier ref_ident where ref_folder.identifier = ref_ident.id " +
-		"and ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
+		"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
+		"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
-		"from folder, inode,identifier " +
-		"where folder.inode = inode.inode " +
-		"and folder.identifier = identifier.id and identifier.host_inode = ? " +
+		"from folder join identifier on(folder.identifier = identifier.id) " +
+		"where " +
+		"identifier.host_inode = ? " +
 		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
 		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 		"and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
-		"FROM contentlet c JOIN inode i " +
-		"ON  " +
-		"  i.type = 'contentlet' " +
-		"  AND i.inode = c.inode" +
+		"FROM contentlet c " +
 		"  WHERE c.identifier = reference_id)	" +
 		")";
 
@@ -956,22 +951,19 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"delete from permission_reference where exists(" +
 			"	" + selectChildrenStructureByPathSQLFolder + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
-			"select ref_folder.inode from folder ref_folder,identifier ref_ident where ref_folder.identifier = ref_ident.id " +
-			"and ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
+			"select ref_folder.inode from folder ref_folder join identifier ref_ident on(ref_folder.identifier = ref_ident.id) where  " +
+			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
 			"and (reference_id in (" +
 			"select distinct folder.inode " +
-			"from folder, inode,identifier " +
-			"where folder.inode = inode.inode " +
-			"and folder.identifier = identifier.id and identifier.host_inode = ? " +
+			"from folder join identifier on (folder.identifier = identifier.id) " +
+			"where " +
+			"identifier.host_inode = ? " +
 			"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
 			"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 			"and reference_id = folder.inode" +
 			") " +
 			"OR EXISTS(SELECT c.inode " +
-			"FROM contentlet c JOIN inode i " +
-			"ON  " +
-			"  i.type = 'contentlet' " +
-			"  AND i.inode = c.inode" +
+			"FROM contentlet c " +
 			"  WHERE c.identifier = reference_id)	" +
 			")";
 
@@ -1000,8 +992,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from structure where structure.inode in (" +
 		"		" + selectChildrenStructureByPathSQL + " and" +
 		"		structure.inode not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier where" +
-		"			reference_id = ref_folder.inode and ref_folder.identifier=identifier.id and" +
+		"			select asset_id from permission_reference join folder ref_folder on(reference_id = ref_folder.inode) " +
+		"                                join identifier on (ref_folder.identifier=identifier.id) where " +
 		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		structure.inode not in (" +
@@ -1036,8 +1028,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from structure where structure.inode in (" +
 		"		" + selectChildrenStructureByPathSQLFolder + " and" +
 		"		structure.inode not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier where" +
-		"			reference_id = ref_folder.inode and ref_folder.identifier=identifier.id and" +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) " +
+		"                               join identifier on (ref_folder.identifier=identifier.id) where " +
 		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		structure.inode not in (" +
