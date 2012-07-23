@@ -60,6 +60,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
@@ -328,8 +329,9 @@ public class ESIndexAPI {
 	 * @param indexName
 	 * @throws DotStateException
 	 * @throws IOException
+	 * @throws DotDataException 
 	 */
-	public  void clearIndex(String indexName) throws DotStateException, IOException{
+	public  void clearIndex(String indexName) throws DotStateException, IOException, DotDataException{
 		if(indexName == null || !indexExists(indexName)){
 			throw new DotStateException("Index" + indexName + " does not exist");
 		}
@@ -354,6 +356,9 @@ public class ESIndexAPI {
 		
 		if(UtilMethods.isSet(alias)) {
 		    createAlias(indexName, alias);
+		}
+		if(replicas > 0){
+			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 		}
 	}
 	
