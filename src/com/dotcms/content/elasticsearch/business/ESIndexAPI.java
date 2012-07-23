@@ -62,6 +62,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
@@ -357,11 +358,12 @@ public class ESIndexAPI {
 		Map<String, ClusterIndexHealth> map = getClusterHealth();
 		ClusterIndexHealth cih = map.get(indexName);
 		int shards = cih.getNumberOfShards();
-		int replicas = cih.getNumberOfReplicas();
 
 		String alias=getIndexAlias(indexName);
 
 		iapi.delete(indexName);
+
+		if(UtilMethods.isSet(indexName) && indexName.indexOf("sitesearch") > 0) {
 		CreateIndexResponse res=createIndex(indexName, shards);
 
 		try {
@@ -371,6 +373,10 @@ public class ESIndexAPI {
 		}
 		catch(InterruptedException ex) {
 		    Logger.warn(this, ex.getMessage(), ex);
+		}
+
+		} else {
+			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
 		}
 
 		if(UtilMethods.isSet(alias)) {
