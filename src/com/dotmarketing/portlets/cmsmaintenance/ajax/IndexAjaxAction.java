@@ -30,6 +30,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -243,8 +244,8 @@ public class IndexAjaxAction extends AjaxAction {
 		APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
 
 	}
-
-	public void clearIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	
+	public void clearIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotStateException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = map.get("indexName");
 		if(indexName == null)return;
