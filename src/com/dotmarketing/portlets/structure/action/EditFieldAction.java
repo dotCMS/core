@@ -241,21 +241,28 @@ public class EditFieldAction extends DotPortletAction {
 
 			//To validate values entered for decimal/number type check box field
 			//http://jira.dotmarketing.net/browse/DOTCMS-5516
-			if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())&&
-					 (dataType.equals(Field.DataType.FLOAT.toString())||dataType.equals(Field.DataType.INTEGER.toString()))) {
-                		String values = fieldForm.getValues();
-	                  String temp = values.replaceAll("\r\n","|");
-        	            String[] tempVals = StringUtil.split(temp.trim(), "|");
-	                  for(int i=0;i<tempVals.length;i++){
-        	        	  try {
-					Float.parseFloat(tempVals[i]);
+			
+			if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
+				String values = fieldForm.getValues();
+                String temp = values.replaceAll("\r\n","|");
+                String[] tempVals = StringUtil.split(temp.trim(), "|");
+                try {
+    				if(dataType.equals(Field.DataType.FLOAT.toString())){
+    					for(int i=1;i<tempVals.length;i+= 2){
+    						Float.parseFloat(tempVals[i]);
+    					}					
+    				}else if(dataType.equals(Field.DataType.INTEGER.toString())){
+    					for(int i=1;i<tempVals.length;i+= 2){
+    							Integer.parseInt(tempVals[i]);
+    					}
+    				}
+
 				  }catch (Exception e) {
 			          String message = "message.structure.invaliddata";
 				    SessionMessages.add(req, "error", message);
 				    return false;
 				 }
-                       }
-                  }
+			}
 
 			// check if is a new field to add at the botton of the structure
 			// field list
