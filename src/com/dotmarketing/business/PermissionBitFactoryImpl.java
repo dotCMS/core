@@ -77,25 +77,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The permisionable id
 	 */
 
-	private final String loadPermissionHSQL =
-		"select {permission.*} from permission where permission.id in (" +
-		"	select permission.id from permission where inode_id = ?" +
-		"	union" +
-		"	select permission.id from permission where exists (" +
-		"		select * from permission_reference where asset_id = ? " +
-		"		and inode_id = reference_id and permission.permission_type = permission_reference.permission_type" +
-		"	)" +
-		")";
-	/*
-	 Maybe this one
-	 
-	 select permission.* from permission where inode_id = '48190c8c-42c4-46af-8d1a-0cd5db894797'
-     union
-     select permission.* from permission join permission_reference
-       on(inode_id = reference_id and permission.permission_type = permission_reference.permission_type) 
-       where asset_id = '48190c8c-42c4-46af-8d1a-0cd5db894797';
-
-	 * */
+	private final String loadPermissionSQL =
+		" select {permission.*} from permission where inode_id = ? "+
+        " union all "+
+        " select {permission.*} from permission join permission_reference "+
+        "    on (inode_id = reference_id and permission.permission_type = permission_reference.permission_type) "+ 
+        "    where asset_id = ?";
 
 	/*
 	 * To load permission references objects based on the reference they are pointing to
@@ -2371,7 +2358,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 
 		HibernateUtil persistenceService = new HibernateUtil(Permission.class);
-		persistenceService.setSQLQuery(loadPermissionHSQL);
+		persistenceService.setSQLQuery(loadPermissionSQL);
 		persistenceService.setParam(permissionable.getPermissionId());
 		persistenceService.setParam(permissionable.getPermissionId());
 		List<Permission> bitPermissionsList = (List<Permission>) persistenceService.list();
