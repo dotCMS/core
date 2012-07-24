@@ -127,78 +127,8 @@ public class UpdateAgent {
                     map.put( "allowTestingBuilds", "true" );
                 }
 
-                PostMethod method = doGet( url, map );
-                int ret = method.getStatusCode();
-                if ( ret == 200 ) {
-                    // Get the version of the jar.
-                    try {
-                        newMinor = method.getResponseHeader( "Minor-Version" ).getValue();
-                        if ( newMinor.trim().length() > 0 ) {
-                            String[] minorArr = newMinor.split( "_" );
-                            if ( minorArr.length > 1 ) {
-                                logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] + " / " + minorArr[1] );
-                            } else {
-                                logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
-                            }
-                            newVersion = minorArr [0];
-                            logger.info( " " );
-                        } else {
-                            throw new Exception();
-                        }
-                    } catch ( Exception e ) {
-                        logger.debug( Messages.getString( "UpdateAgent.error.no.minor.version" ), e );
-                        throw new UpdateException( Messages.getString( "UpdateAgent.error.no.minor.version" ), UpdateException.ERROR );
-                    }
-
-                    String fileName = "update_" + newMinor + ".zip";
-                    updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
-                    if ( updateFile.exists() ) {
-                        //check md5 of file
-                        String MD5 = null;
-                        boolean hasMD5 = false;
-                        if ( method.getResponseHeader( "Content-MD5" ) != null && !method.getResponseHeader( "Content-MD5" ).equals( "" ) && !method.getResponseHeader( "Content-MD5" ).equals( "null" ) ) {
-                            MD5 = method.getResponseHeader( "Content-MD5" ).getValue();
-                            if ( !MD5.equals( "" ) ) {
-                                hasMD5 = true;
-                            }
-                        }
-                        if ( hasMD5 ) {
-                            String dlMD5 = UpdateUtil.getMD5( updateFile );
-                            logger.debug( Messages.getString( "UpdateAgent.debug.server.md5" ) + MD5 );
-                            logger.debug( Messages.getString( "UpdateAgent.debug.file.md5" ) + dlMD5 );
-
-                            if ( MD5 == null || MD5.length() == 0 || !dlMD5.equals( MD5 ) ) {
-                                logger.fatal( Messages.getString( "UpdateAgent.error.md5.failed" ) );
-                                throw new UpdateException( Messages.getString( "UpdateAgent.error.file.exists" ) + fileName, UpdateException.ERROR );
-                            }
-                        } else {
-                            // file verified, let's use it
-                            logger.info( updateFile.getName() + ": " + Messages.getString( "UpdateAgent.text.md5.verified" ) );
-                        }
-
-                    } else {
-                        //Create the updates directory
-                        if ( !updateFile.getParentFile().exists() ) {
-                            updateFile.getParentFile().mkdirs();
-                        }
-                        // Download the content
-                        download( updateFile, method );
-                    }
-
-                } else {
-                    switch ( ret ) {
-                        case 204:
-                            throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.uptodate" ), UpdateException.SUCCESS );
-                        case 401:
-                            throw new UpdateException( Messages.getString( "UpdateAgent.error.login.failed" ), UpdateException.ERROR );
-                        case 403:
-                            throw new UpdateException( Messages.getString( "UpdateAgent.error.login.failed" ), UpdateException.ERROR );
-                        default:
-                            throw new UpdateException( Messages.getString( "UpdateAgent.error.unexpected.http.code" ) + ret, UpdateException.ERROR );
-                    }
-                }
-
-
+                //Search for the update version
+                searchForVersion( updateFile, map, newVersion, newMinor );
             }
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -261,79 +191,8 @@ public class UpdateAgent {
                         map.put( "allowTestingBuilds", "true" );
                     }
 
-                    PostMethod method = doGet( url, map );
-                    int ret = method.getStatusCode();
-                    if ( ret == 200 ) {
-                        // Get the version of the jar.
-                        try {
-                            newMinor = method.getResponseHeader( "Minor-Version" ).getValue();
-                            if ( newMinor.trim().length() > 0 ) {
-                                String[] minorArr = newMinor.split( "_" );
-                                if ( minorArr.length > 1 ) {
-                                    logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] + " / " + minorArr[1] );
-                                } else {
-                                    logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
-                                }
-                                newVersion = minorArr[0];
-                                logger.info( " " );
-                            } else {
-                                throw new Exception();
-                            }
-                        } catch ( Exception e ) {
-                            logger.debug( Messages.getString( "UpdateAgent.error.no.minor.version" ), e );
-                            throw new UpdateException( Messages.getString( "UpdateAgent.error.no.minor.version" ), UpdateException.ERROR );
-                        }
-
-                        String fileName = "update_" + newVersion + ".zip";
-                        updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
-                        if ( updateFile.exists() ) {
-                            //check md5 of file
-                            String MD5 = null;
-                            boolean hasMD5 = false;
-                            if ( method.getResponseHeader( "Content-MD5" ) != null && !method.getResponseHeader( "Content-MD5" ).equals( "" ) && !method.getResponseHeader( "Content-MD5" ).equals( "null" ) ) {
-                                MD5 = method.getResponseHeader( "Content-MD5" ).getValue();
-                                if ( !MD5.equals( "" ) ) {
-                                    hasMD5 = true;
-                                }
-                            }
-                            if ( hasMD5 ) {
-                                String dlMD5 = UpdateUtil.getMD5( updateFile );
-                                logger.debug( Messages.getString( "UpdateAgent.debug.server.md5" ) + MD5 );
-                                logger.debug( Messages.getString( "UpdateAgent.debug.file.md5" ) + dlMD5 );
-
-                                if ( MD5 == null || MD5.length() == 0 || !dlMD5.equals( MD5 ) ) {
-                                    logger.fatal( Messages.getString( "UpdateAgent.error.md5.failed" ) );
-                                    throw new UpdateException( Messages.getString( "UpdateAgent.error.file.exists" ) + fileName, UpdateException.ERROR );
-                                }
-                            } else {
-                                // file verified, let's use it
-                                logger.info( updateFile.getName() + ": " + Messages.getString( "UpdateAgent.text.md5.verified" ) );
-                            }
-
-                        } else {
-                            //Create the updates directory
-                            if ( !updateFile.getParentFile().exists() ) {
-                                updateFile.getParentFile().mkdirs();
-                            }
-                            // Download the update content, the update servlet will provide an url for the update file
-                            String downloadUrl = method.getResponseHeader( "Download-Link" ).getValue();
-                            download( downloadUrl, updateFile, method );
-                            //download( updateFile, method );
-                        }
-
-                    } else {
-                        switch ( ret ) {
-                            case 204:
-                                throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.uptodate" ), UpdateException.SUCCESS );
-                            case 401:
-                                throw new UpdateException( Messages.getString( "UpdateAgent.error.login.failed" ), UpdateException.ERROR );
-                            case 403:
-                                throw new UpdateException( Messages.getString( "UpdateAgent.error.login.failed" ), UpdateException.ERROR );
-                            default:
-                                throw new UpdateException( Messages.getString( "UpdateAgent.error.unexpected.http.code" ) + ret, UpdateException.ERROR );
-                        }
-                    }
-
+                    //Search for the update version
+                    searchForVersion( updateFile, map, newVersion, newMinor );
                 }
             }
 
@@ -350,7 +209,7 @@ public class UpdateAgent {
                 // Ask for confirmation
                 UpdateUtil.confirm( line, MESSAGES_CONFIRM_TEXT );
 
-                // Execute the update, unziping the download file on the .dotserver/ directory and aplying the required changes in there
+                // Execute the update, unziping the downloaded file on the .dotserver/ directory and applying the required changes in there
                 fileUpdater.doUpdate();
 
                 //Clean up...
@@ -393,6 +252,91 @@ public class UpdateAgent {
             logger.info( " " );
         }
 
+    }
+
+    /**
+     * Search for an update version
+     *
+     * @param updateFile
+     * @param map
+     * @param newVersion
+     * @param newMinor
+     * @throws UpdateException
+     * @throws IOException
+     */
+    private void searchForVersion ( File updateFile, Map<String, String> map, String newVersion, String newMinor ) throws UpdateException, IOException {
+
+        PostMethod method = doGet( url, map );
+        int ret = method.getStatusCode();
+        if ( ret == 200 ) {
+            // Get the version of the jar.
+            try {
+                newMinor = method.getResponseHeader( "Minor-Version" ).getValue();
+                if ( newMinor.trim().length() > 0 ) {
+                    String[] minorArr = newMinor.split( "_" );
+                    if ( minorArr.length > 1 ) {
+                        logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] + " / " + minorArr[1] );
+                    } else {
+                        logger.info( Messages.getString( "UpdateAgent.text.latest.version" ) + minorArr[0] );
+                    }
+                    newVersion = minorArr[0];
+                    logger.info( " " );
+                } else {
+                    throw new Exception();
+                }
+            } catch ( Exception e ) {
+                logger.debug( Messages.getString( "UpdateAgent.error.no.minor.version" ), e );
+                throw new UpdateException( Messages.getString( "UpdateAgent.error.no.minor.version" ), UpdateException.ERROR );
+            }
+
+            String fileName = "update_" + newVersion + ".zip";
+            updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
+            if ( updateFile.exists() ) {
+                //check md5 of file
+                String MD5 = null;
+                boolean hasMD5 = false;
+                if ( method.getResponseHeader( "Content-MD5" ) != null && !method.getResponseHeader( "Content-MD5" ).equals( "" ) && !method.getResponseHeader( "Content-MD5" ).equals( "null" ) ) {
+                    MD5 = method.getResponseHeader( "Content-MD5" ).getValue();
+                    if ( !MD5.equals( "" ) ) {
+                        hasMD5 = true;
+                    }
+                }
+                if ( hasMD5 ) {
+                    String dlMD5 = UpdateUtil.getMD5( updateFile );
+                    logger.debug( Messages.getString( "UpdateAgent.debug.server.md5" ) + MD5 );
+                    logger.debug( Messages.getString( "UpdateAgent.debug.file.md5" ) + dlMD5 );
+
+                    if ( MD5 == null || MD5.length() == 0 || !dlMD5.equals( MD5 ) ) {
+                        logger.fatal( Messages.getString( "UpdateAgent.error.md5.failed" ) );
+                        throw new UpdateException( Messages.getString( "UpdateAgent.error.file.exists" ) + fileName, UpdateException.ERROR );
+                    }
+                } else {
+                    // file verified, let's use it
+                    logger.info( updateFile.getName() + ": " + Messages.getString( "UpdateAgent.text.md5.verified" ) );
+                }
+
+            } else {
+                //Create the updates directory
+                if ( !updateFile.getParentFile().exists() ) {
+                    updateFile.getParentFile().mkdirs();
+                }
+                // Download the update content, the update servlet will provide an url for the update file
+                String downloadUrl = method.getResponseHeader( "Download-Link" ).getValue();
+                download( downloadUrl, updateFile, method );
+            }
+
+        } else {
+            switch ( ret ) {
+                case 204:
+                    throw new UpdateException( Messages.getString( "UpdateAgent.text.dotcms.uptodate" ), UpdateException.SUCCESS );
+                case 401:
+                    throw new UpdateException( Messages.getString( "UpdateAgent.error.login.failed" ), UpdateException.ERROR );
+                case 403:
+                    throw new UpdateException( Messages.getString( "UpdateAgent.error.login.failed" ), UpdateException.ERROR );
+                default:
+                    throw new UpdateException( Messages.getString( "UpdateAgent.error.unexpected.http.code" ) + ret, UpdateException.ERROR );
+            }
+        }
     }
 
     /**
