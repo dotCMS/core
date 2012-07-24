@@ -63,6 +63,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00911CreateDefaultWorkflowSchema.class);
         ret.add( Task00920AddContentletVersionSystemHost.class );
         ret.add(Task00925UserIdTypeChange.class);
+        ret.add(Task00930AddIdentifierIndex.class);
         return ret;
     }
 
