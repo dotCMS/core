@@ -359,6 +359,7 @@ public class ESIndexAPI {
 		Map<String, ClusterIndexHealth> map = getClusterHealth();
 		ClusterIndexHealth cih = map.get(indexName);
 		int shards = cih.getNumberOfShards();
+		int replicas = cih.getNumberOfReplicas();
 
 		String alias=getIndexAlias(indexName);
 
@@ -381,6 +382,10 @@ public class ESIndexAPI {
 
 		if(UtilMethods.isSet(alias)) {
 		    createAlias(indexName, alias);
+		}
+
+		if(replicas > 0){
+			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 		}
 	}
 
