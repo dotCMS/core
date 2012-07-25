@@ -34,6 +34,8 @@ public class UpdateAgent {
     private String proxyUser;
     private String proxyPass;
     private boolean allowTestingBuilds;
+    private String newMinor;
+    private String newVersion;
 
     private String MESSAGES_CONFIRM_TEXT = Messages.getString( "UpdateAgent.text.confirm" );
     private String MESSAGES_HELP_TEXT = Messages.getString( "UpdateAgent.text.help" );
@@ -94,8 +96,8 @@ public class UpdateAgent {
             checkHome( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
             checkRequisites( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
 
-            String newMinor = "";
-            String newVersion = "";
+            newMinor = "";
+            newVersion = "";
             String version = getVersion();
             String minor = UpdateUtil.getBuildVersion( getJarProps() );
             /*SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
@@ -128,7 +130,7 @@ public class UpdateAgent {
                 }
 
                 //Search for the update version
-                searchForVersion( updateFile, map, newVersion, newMinor );
+                updateFile = searchForVersion( map );
             }
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -192,7 +194,7 @@ public class UpdateAgent {
                     }
 
                     //Search for the update version
-                    searchForVersion( updateFile, map, newVersion, newMinor );
+                    updateFile = searchForVersion( map );
                 }
             }
 
@@ -257,14 +259,11 @@ public class UpdateAgent {
     /**
      * Search for an update version
      *
-     * @param updateFile
      * @param map
-     * @param newVersion
-     * @param newMinor
      * @throws UpdateException
      * @throws IOException
      */
-    private void searchForVersion ( File updateFile, Map<String, String> map, String newVersion, String newMinor ) throws UpdateException, IOException {
+    private File searchForVersion ( Map<String, String> map ) throws UpdateException, IOException {
 
         PostMethod method = doGet( url, map );
         int ret = method.getStatusCode();
@@ -290,7 +289,7 @@ public class UpdateAgent {
             }
 
             String fileName = "update_" + newVersion + ".zip";
-            updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
+            File updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
             if ( updateFile.exists() ) {
                 //check md5 of file
                 String MD5 = null;
@@ -324,6 +323,8 @@ public class UpdateAgent {
                 String downloadUrl = method.getResponseHeader( "Download-Link" ).getValue();
                 download( downloadUrl, updateFile, method );
             }
+
+            return updateFile;
 
         } else {
             switch ( ret ) {
