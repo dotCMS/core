@@ -62,6 +62,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00910AddEscalationFields.class);
 		ret.add(Task00911CreateDefaultWorkflowSchema.class);
         ret.add( Task00920AddContentletVersionSystemHost.class );
+        ret.add(Task00922FixdotfolderpathMSSQL.class);
         return ret;
     }
 
