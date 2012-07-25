@@ -336,7 +336,7 @@ function doDeleteContentletsCallback(contentlets){
 	if (contentlets[3]!="")
  	{
  	 	if(contentlets[3].indexOf(",")){
- 	 	 	var contnotfound=contentlets[3].split(',')
+ 	 	 	var contnotfound=contentlets[3].split(',');
  	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[3] +'</br>';
  	 	 	}
  	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[1] +'</br>';
@@ -346,28 +346,83 @@ function doDeleteContentletsCallback(contentlets){
 	document.getElementById("deleteContentletButton").disabled = false;
 }
 
-function doDropAssets(){
-   var form = $('cmsMaintenanceForm');
-   if(!validateDate(form.removeassetsdate)){
-     alert("<%= LanguageUtil.get(pageContext,"Please,-enter-a-valid-date") %>");
-     return false;
-   }
+function doDropAssets() {
 
-  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")){
-	 	$("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
-	 	$("dropAssetsButton").disabled = true;
-		CMSMaintenanceAjax.removeOldVersions(form.removeassetsdate.value, doDropAssetsCallback);
-	}
+    var form = $('cmsMaintenanceForm');
+    if (!validateDate(form.removeassetsdate)) {
+        alert("<%= LanguageUtil.get(pageContext,"Please,-enter-a-valid-date") %>");
+        return false;
+    }
+
+    if (confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")) {
+        $("dropAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></spanstyle>';
+        dijit.byId('dropAssetsButton').attr('disabled', true);
+        CMSMaintenanceAjax.removeOldVersions(form.removeassetsdate.value, doDropAssetsCallback);
+    }
 }
 
 function doDropAssetsCallback(removed){
- 	$("dropAssetsButton").disabled = false;
-	if (removed >= 0)
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b>' + removed + '<%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></font>';
-	else if (removed == -2)
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></font>';
-	else
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></font>';
+
+    dijit.byId('dropAssetsButton').attr('disabled', false);
+    if (removed >= 0)
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></spanstyle>';
+    else if (removed == -2)
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
+    else
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+}
+
+/**
+ * Call to clean assets deleting assets that are no longer in the File asset table and the Contentlet table
+ * where the structure type is <b>File Asset<b/>
+ */
+var doCleanAssets = function () {
+
+    if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation") %>")) {
+        $("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress") %></b></spanstyle>';
+        dijit.byId('cleanAssetsButton').attr('disabled', true);
+
+        CMSMaintenanceAjax.cleanAssets(doCleanAssetsCallback);
+    }
+};
+
+/**
+ * This call will verify the status of the cleanAssets process
+ */
+function doCleanAssetsCallback() {
+    CMSMaintenanceAjax.getCleanAssetsStatus(getCleanAssetsStatusCallback);
+}
+
+/**
+ * Callback for the method call doCleanAssetsCallback who verify the status of the cleanAssets process.
+ * This method will give a feedback to the user about the status of the process
+ * @param status Map with the current progress status
+ */
+function getCleanAssetsStatusCallback(status) {
+
+    if (status['active']) {
+
+        var removed = status['message'];
+        if (removed != null && removed != "null") {
+            document.getElementById("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress.small") %>, ' + removed + ' <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.result") %></b></spanstyle>';
+        }
+
+        if (status['error']) {
+            document.getElementById("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+        }
+
+        setTimeout("doCleanAssetsCallback()", 1000);
+    } else {
+
+        if (status['error']) {
+            document.getElementById("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+        } else {
+            var removed = status['message'];
+            document.getElementById("cleanAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.result") %></b></spanstyle>';
+        }
+
+        dijit.byId('cleanAssetsButton').attr('disabled', false);
+    }
 }
 
 function validateDate(date){
@@ -1333,6 +1388,17 @@ function showIndexClusterStatus(indexName) {
                     <td align="center">
                       <button dojoType="dijit.form.Button" onClick="doDropAssets();"  id="dropAssetsButton" iconClass="dropIcon">
                          <%= LanguageUtil.get(pageContext,"Execute") %>
+                      </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.explanation") %></p>
+                        <div align="center"  id="cleanAssetsMessage">&nbsp;</div>
+                    </td>
+                    <td align="center">
+                      <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
+                         <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
                       </button>
                     </td>
                 </tr>
