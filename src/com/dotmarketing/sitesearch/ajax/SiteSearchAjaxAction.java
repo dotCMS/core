@@ -14,6 +14,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
@@ -84,22 +85,29 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	}
 	
 	
-	public void createSiteSearchIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
+	public void createSiteSearchIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException, DotDataException {
 		
 		Map<String, String> map = getURIParams();
 		int shards = 0;
 		String alias="";
+		boolean def=false;
 		try{
-			shards = Integer.parseInt(map.get("shards"));
-			alias = URLDecoder.decode((String) map.get("alias"), "UTF-8");
+		    if(map.get("shards")!=null)
+		        shards = Integer.parseInt(map.get("shards"));
+		    if(map.get("indexAlias")!=null)
+		        alias = URLDecoder.decode((String) map.get("indexAlias"), "UTF-8");
+		    if(map.get("default")!=null)
+		        def=Boolean.parseBoolean(map.get("default"));
 		}
 		catch(Exception e){
-			
+			Logger.warn(this, e.getMessage(), e);
 		}
 
 		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format(new Date());
 		APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
-
+		
+		if(def)
+		    APILocator.getSiteSearchAPI().activateIndex(indexName);
 	}
 	
 	
