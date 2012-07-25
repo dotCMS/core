@@ -7,8 +7,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
 public class Task00930AddIdentifierIndex extends AbstractJDBCStartupTask {
     
     private static final String INDEX_SQL = 
-    "create index idx_identifier_perm on identifier (asset_type,host_inode);\n"+
-    "create index idx_permission_ptype on permission (permission_type);\n";
+    "create index idx_identifier_perm on identifier (asset_type,host_inode);\n";
 
     @Override
     public boolean forceRun() {
