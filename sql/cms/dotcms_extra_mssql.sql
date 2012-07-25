@@ -661,3 +661,5 @@ create table indicies (
     primary key (log_name)
   );
   
+
+create index idx_identifier_perm on identifier (asset_type,host_inode);

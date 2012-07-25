@@ -62,6 +62,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
@@ -349,8 +350,9 @@ public class ESIndexAPI {
 	 * @param indexName
 	 * @throws DotStateException
 	 * @throws IOException
+	 * @throws DotDataException
 	 */
-	public  void clearIndex(String indexName) throws DotStateException, IOException{
+	public  void clearIndex(String indexName) throws DotStateException, IOException, DotDataException{
 		if(indexName == null || !indexExists(indexName)){
 			throw new DotStateException("Index" + indexName + " does not exist");
 		}
@@ -362,19 +364,28 @@ public class ESIndexAPI {
 		String alias=getIndexAlias(indexName);
 
 		iapi.delete(indexName);
-		CreateIndexResponse res=createIndex(indexName, shards);
 
-		try {
-		    int w=0;
-		    while(!res.acknowledged() && ++w<100)
-		        Thread.sleep(100);
-		}
-		catch(InterruptedException ex) {
-		    Logger.warn(this, ex.getMessage(), ex);
+		if(UtilMethods.isSet(indexName) && indexName.indexOf("sitesearch") > -1) {
+			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
+		} else {
+			CreateIndexResponse res=createIndex(indexName, shards);
+
+			try {
+				int w=0;
+				while(!res.acknowledged() && ++w<100)
+					Thread.sleep(100);
+			}
+			catch(InterruptedException ex) {
+				Logger.warn(this, ex.getMessage(), ex);
+			}
 		}
 
 		if(UtilMethods.isSet(alias)) {
 		    createAlias(indexName, alias);
+		}
+
+		if(replicas > 0){
+			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 		}
 	}
 

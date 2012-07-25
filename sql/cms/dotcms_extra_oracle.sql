@@ -774,3 +774,5 @@ create table indicies (
     description  varchar2(50) not null,
     primary key (log_name)
   );
+
+create index idx_identifier_perm on identifier (asset_type,host_inode);
