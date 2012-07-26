@@ -2021,6 +2021,24 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
+	
+	/* (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int, boolean)
+	 */
+	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,	DotSecurityException, ParseException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		List<Contentlet> c = conAPI.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
+		for(ContentletAPIPostHook post : postHooks){
+			post.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
+		}
+		return c;
+	}	
 
 	public void refreshContentUnderFolder(Folder folder)
 			throws DotReindexStateException {
