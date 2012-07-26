@@ -500,11 +500,9 @@ public abstract class VelocityServlet extends HttpServlet {
 			String trimmedPage = out.toString().trim();
 			response.getWriter().write(trimmedPage);
 			response.getWriter().close();
-			synchronized (key) {
-				String x = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
-				if (x != null) {
-					return;
-				}
+			synchronized (key) {				
+				//CacheLocator.getBlockDirectiveCache().clearCache();
+				CacheLocator.getHTMLPageCache().remove(page);
 				CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
 			}
 		} else {
