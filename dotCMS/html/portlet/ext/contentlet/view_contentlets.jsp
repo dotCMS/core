@@ -64,7 +64,8 @@
             showDeleted = (Boolean) lastSearch.get("showDeleted");
             filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
             filterLocked = (Boolean) lastSearch.get("filterLocked");
-            filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
+            if(lastSearch.get("filterUnpublish")!=null)
+                filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
             currpage = (Integer) lastSearch.get("page");
             orderBy = (String) lastSearch.get("orderBy");
         if (fieldsSearch.containsKey("languageId")) {
