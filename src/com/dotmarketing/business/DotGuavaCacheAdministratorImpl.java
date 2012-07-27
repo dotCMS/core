@@ -624,14 +624,14 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	public void viewAccepted(View new_view) {
 		super.viewAccepted(new_view);
 		Logger.info(this, "Method view: Cluster View is : " + new_view);
-		AdminLogger.log(DotGuavaCacheAdministratorImpl.class, "viewAccepted", "Cluster View is : " + new_view);
+		Logger.info(DotGuavaCacheAdministratorImpl.class, "viewAccepted + Cluster View is : " + new_view);
 	}
 
 	@Override
 	public void suspect(Address mbr) {
 		super.suspect(mbr);
 		Logger.info(this, "Method suspect: There is a suspected member : " + mbr);
-		AdminLogger.log(DotGuavaCacheAdministratorImpl.class, "suspect", "There is a suspected member : " + mbr);
+		Logger.info(DotGuavaCacheAdministratorImpl.class, "suspect + There is a suspected member : " + mbr);
 	}
 
 	public void testCluster() {
