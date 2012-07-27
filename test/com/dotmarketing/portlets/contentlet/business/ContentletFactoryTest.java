@@ -62,7 +62,7 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         assertEquals( contentlets.size(), 5 );
 
         //Validate the integrity of the array
-        Contentlet contentlet = contentletFactory.find( contentlets.iterator().next().getInode() );
+        Contentlet contentlet = contentletFactory.find( contentlets.get( 0 ).getInode() );
 
         //Validations
         assertTrue( contentlet != null && ( contentlet.getInode() != null && !contentlet.getInode().isEmpty() ) );
