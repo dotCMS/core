@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
@@ -18,30 +19,31 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 public class SiteSearchAjaxAction extends IndexAjaxAction {
-	
+
 public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		
-		
-		
-		
+
+
+
+
 		Map<String, String> map = getURIParams();
-		
-		
-		
+
+
+
 		String cmd = map.get("cmd");
 		java.lang.reflect.Method meth = null;
 		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
 		Object arglist[] = new Object[] { request, response };
 		User user = getUser();
-		
-		
-		
-		
-		
+
+
+
+
+
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_SITESEARCH", user)) {
@@ -59,8 +61,8 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 				}
 			}
 
-			
-			
+
+
 			meth = this.getClass().getMethod(cmd, partypes);
 
 		} catch (Exception e) {
@@ -83,10 +85,10 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		}
 
 	}
-	
-	
+
+
 	public void createSiteSearchIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException, DotDataException {
-		
+
 		Map<String, String> map = getURIParams();
 		int shards = 0;
 		String alias="";
@@ -105,16 +107,16 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 
 		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format(new Date());
 		APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
-		
+
 		if(def)
 		    APILocator.getSiteSearchAPI().activateIndex(indexName);
 	}
-	
-	
+
+
 	public void scheduleJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
-		
+
 		Map<String, String[]> map = request.getParameterMap();
-		
+
 		SiteSearchConfig config = new SiteSearchConfig();
 		for(String key : map.keySet()){
 			if(((String[]) map.get(key)).length ==1 && !key.equals("langToIndex")){
@@ -135,11 +137,11 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		} catch (Exception e) {
 			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
 			writeError(response, e.getMessage());
-			
-		} 
+
+		}
 	}
-	
-	
+
+
 	public void scheduleJobNow(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 		try {
 			Map<String, String[]> map = request.getParameterMap();
@@ -153,18 +155,18 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 					config.put(key,map.get(key));
 				}
 			}
-			
+
 			APILocator.getSiteSearchAPI().scheduleTask(config);
 		} catch (Exception e) {
 			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
 			writeError(response, e.getMessage());
-			
-		} 
+
+		}
 	}
-	
-	
-	
-	
+
+
+
+
 	public void deleteJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 		try {
 			Map<String, String> map = getURIParams();
@@ -173,9 +175,23 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		} catch (Exception e) {
 			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
 			writeError(response, e.getMessage());
-			
-		} 
+
+		}
 
 	}
-	
+
+	public void getIndexName(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Map<String, String> map = getURIParams();
+        String indexAlias = map.get("indexAlias");
+        String indexName = "";
+        if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel()>=200) {
+            String indexName1=APILocator.getESIndexAPI()
+                    .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
+                    .get(indexAlias);
+            if(UtilMethods.isSet(indexName1))
+                indexName=indexName1;
+        }
+        response.getWriter().println(indexName);
+    }
+
 }
