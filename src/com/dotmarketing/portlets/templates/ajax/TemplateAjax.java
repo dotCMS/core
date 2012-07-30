@@ -32,6 +32,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 
@@ -72,13 +73,22 @@ public class TemplateAjax {
 
 			if(UtilMethods.isSet(query.get("hostId"))) {
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, start, count));
+				if(fullListTemplates.size() >0 && start==0){
+					Template t = new Template();
+					t.setOwner(user.getUserId());
+					t.setModUser(user.getUserId());
+					t.setInode("0");
+					t.setTitle("--- " + LanguageUtil.get(user, "All-Hosts") +" ---");
+					t.setIdentifier("0");
+					fullListTemplates.add(0,t);
+				}
 			}
 
 			//doesn't currently respect archived
 			if(fullListTemplates.size() ==0){
 
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user,"", filter,true, start, start>0?count:count+1));
-
+				
 			}
 
 
@@ -103,15 +113,15 @@ public class TemplateAjax {
 			}
 		}
 
-		totalTemplates = templateAPI.findTemplatesAssignedTo(host);
+//		totalTemplates = templateAPI.findTemplatesAssignedTo(host);
 //		if(start >= list.size()) start =  list.size() - 1;
 //		if(start < 0)  start  = 0;
 //		if(start + count >= list.size()) count = list.size() - start;
 //		List<Map<String, Object>> templates = list.subList(start, start + count);
 
-		results.put("totalResults", totalTemplates.size());
+		results.put("totalResults", list.size());
 		if(UtilMethods.isSet(query.get("hostId"))) {
-			results.put("totalResults", totalTemplates.size());
+			results.put("totalResults", list.size());
 		}
 		results.put("list", list);
 
