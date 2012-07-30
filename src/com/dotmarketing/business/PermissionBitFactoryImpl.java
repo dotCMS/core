@@ -750,7 +750,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"from folder join identifier on (folder.identifier = identifier.id) " +
 		"where identifier.host_inode = ? " +
 		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		"and permission_type = '"+Contentlet.class.getCanonicalName()+"' " +
 		"and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +

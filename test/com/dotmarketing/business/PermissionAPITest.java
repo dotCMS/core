@@ -575,9 +575,11 @@ public class PermissionAPITest extends TestBase {
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
             APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
             
-            perm.permissionIndividually(hh, f1, sysuser, false);
-            perm.permissionIndividually(hh, f2, sysuser, false);
+            perm.permissionIndividually(perm.findParentPermissionable(f1), f1, sysuser, false);
+            assertTrue(perm.findParentPermissionable(cont1).equals(f1));
             
+            perm.permissionIndividually(perm.findParentPermissionable(f2), f2, sysuser, false);
+            CacheLocator.getPermissionCache().clearCache();
             assertTrue(perm.findParentPermissionable(cont1).equals(f2));
         }
         finally {
