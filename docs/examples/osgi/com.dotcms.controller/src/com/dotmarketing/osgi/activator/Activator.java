@@ -19,8 +19,8 @@ public class Activator extends GenericBundleActivator {
         ServiceReference sRef = context.getServiceReference( HttpService.class.getName() );
         if ( sRef != null ) {
 
-            //Adding the bundle library to the application classpath
-            registerBundleLibrary( "bundle-com.dotcms.controller.lib.jar" );
+            //Publish bundle services
+            publishBundleServices();
 
             HttpService service = (HttpService) context.getService( sRef );
             try {
@@ -35,7 +35,11 @@ public class Activator extends GenericBundleActivator {
     }
 
     public void stop ( BundleContext context ) throws Exception {
+
         CMSFilter.removeExclude( "/dynamic/spring" );
+
+        //Unpublish bundle services
+        unpublishBundleServices();
     }
 
 }
