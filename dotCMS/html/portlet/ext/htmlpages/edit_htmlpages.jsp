@@ -88,7 +88,8 @@ if(!UtilMethods.isSet(htmlpage.getInode())){
 Host host = null;
 
 try {
-	APILocator.getHostAPI().findParentHost(folder, APILocator.getUserAPI().getSystemUser(), false);
+	 APILocator.getHostAPI().findParentHost(folder, APILocator.getUserAPI().getSystemUser(), false);
+	 
 } catch (Exception e) {
 
 }
@@ -96,14 +97,18 @@ try {
 if(host == null || host.getInode() == null){
 	String hostId ="";
 
-	if (session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID) != null)
-		hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
-	else if(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID) != null)
+	if(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID) != null){
 		hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-	else if (request.getParameter("host_id") != null)
+		
+	}else if (session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID) != null){
+		hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
+		
+	}else if (request.getParameter("host_id") != null){
 		hostId = request.getParameter("host_id");
-
+		
+	}
 	host = APILocator.getHostAPI().find(hostId, user, false);
+	
 }
 
 //This variable controls the name of the struts action used when the form is submitted
