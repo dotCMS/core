@@ -19,6 +19,7 @@ import com.dotmarketing.business.ajax.RoleAjax;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -526,6 +527,64 @@ public class PermissionAPITest extends TestBase {
         finally {
             APILocator.getHostAPI().archive(hh, sysuser, false);
             APILocator.getHostAPI().delete(hh, sysuser, false);
+        }
+    }
+    
+    /**
+     * https://github.com/dotCMS/dotCMS/issues/847
+     * @throws DotDataException 
+     * @throws DotSecurityException 
+     * @throws DotHibernateException 
+     */
+    @Test
+    public void issue847() throws DotHibernateException, DotSecurityException, DotDataException {
+        Host hh = new Host();
+        hh.setHostname("issue847.demo.dotcms.com");
+        hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        try {
+            Folder f1 = APILocator.getFolderAPI().createFolders("/hh1/", hh, sysuser, false);
+            Folder f2 = APILocator.getFolderAPI().createFolders("/hh1/hh2/", hh, sysuser, false);
+            
+            Structure s = new Structure();
+            s.setName("structure_issue847");
+            s.setHost(hh.getIdentifier());
+            s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
+            s.setOwner(sysuser.getUserId());
+            s.setVelocityVarName("str847");
+            StructureFactory.saveStructure(s);
+            StructureCache.addStructure(s);
+            
+            Field field = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s, 
+                    true, true, true, 3, "", "", "", true, false, true);
+            field.setVelocityVarName("testtext");
+            field.setListed(true);
+            FieldFactory.saveField(field);
+            FieldsCache.addField(field);
+            
+            field = new Field("f", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, s,
+                    true, true, true, 4, "", "", "", true, false, true);
+            field.setVelocityVarName("f");
+            FieldFactory.saveField(field);
+            FieldsCache.addField(field);
+            
+            Contentlet cont1=new Contentlet();
+            cont1.setStructureInode(s.getInode());
+            cont1.setStringProperty("testtext", "a test value");
+            cont1.setHost(hh.getIdentifier());
+            cont1.setFolder(f2.getInode());
+            cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
+            APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
+            
+            perm.permissionIndividually(perm.findParentPermissionable(f1), f1, sysuser, false);
+            assertTrue(perm.findParentPermissionable(cont1).equals(f1));
+            
+            perm.permissionIndividually(perm.findParentPermissionable(f2), f2, sysuser, false);
+            CacheLocator.getPermissionCache().clearCache();
+            assertTrue(perm.findParentPermissionable(cont1).equals(f2));
+        }
+        finally {
+            APILocator.getHostAPI().archive(hh, sysuser, false);
+            APILocator.getHostAPI().delete(hh, sysuser, false);   
         }
     }
     
