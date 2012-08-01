@@ -172,5 +172,31 @@ public abstract class UserFactory {
 	 * @throws DotDataException
 	 */
 	protected abstract  List<Address> loadUserAddresses(User user) throws DotDataException;
+	
+	/**
+	 * This Method return the number of user that have a firstname, lastname or email like the filter string.
+	 * For example all amount of user with lastName "Andrews"
+	 * @param filter Compare string
+	 * @return long
+	 * @version 1.9
+	 * @throws DotDataException 
+	 */
+	protected abstract long getCountUsersByNameOrEmailOrUserID(String filter)
+			throws DotDataException;
+	/**
+     * This method return a a paginated list of user that have a firstname, lastname or email like
+     * the compare string passed
+	 * This method will ALWAYS hit DB
+     * @param filter compare string
+     * @param page page to display
+     * @param pageSize number of element to show in the page
+     * @return List<User>
+     * @version 1.9
+     */
+	protected abstract List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
+			int pageSize) throws DotDataException;
+	
+	
+	
     
 }
