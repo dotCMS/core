@@ -872,7 +872,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 				@Override
 				public int getUserCount() {
 					try {
-						return new Long(userAPI.getCountUsersByNameOrEmail(filter)).intValue();
+						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(filter)).intValue();
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return 0;
@@ -882,7 +882,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 				@Override
 				public List<User> getUsers() {
 					try {
-						return userAPI.getUsersByNameOrEmail(filter, start, limit);
+						return userAPI.getUsersByNameOrEmailOrUserID(filter, start, limit);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return new ArrayList<User>();
