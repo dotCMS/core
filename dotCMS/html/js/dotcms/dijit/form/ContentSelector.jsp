@@ -1,7 +1,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="${id}">
 	<div dojoAttachPoint="dialog" dojoType="dijit.Dialog" style="height: 500px;width: 1000px;">
-		<form dojoAttachPoint="search_form" onsubmit="return false;">
+		<form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm">
 				<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:450px;" dojoAttachPoint="borderContainer" class="shadowBox headerBox">
 
 					<!-- START Left Column -->
@@ -32,7 +32,7 @@
 					<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
 						<div dojoAttachPoint="contentWrapper" style="overflow:auto;margin-top:36px;">
 				        	<div dojoAttachPoint="matchingResultsDiv" style="display: none"><%= LanguageUtil.get(pageContext, "Results") %></div>
-							<table dojoAttachPoint="results_table" class="listingTable"></table>
+							<table dojoAttachPoint="results_table"  class="listingTable"></table>
 						</div>
 						<div class="yui-g buttonRow">
 							<div class="yui-u first" style="text-align:left;">
@@ -45,6 +45,9 @@
 						             <button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_nextPage' iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "Next") %></button>
 						        </div>
 							</div>
+						</div>
+						<div class="buttonRow" dojoAttachPoint="relateDiv" style="display: none">
+								<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doRelateContent' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Relate") %></button>
 						</div>
 					</div>
 
