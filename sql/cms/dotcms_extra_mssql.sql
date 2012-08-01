@@ -519,8 +519,8 @@ BEGIN
 fetch next from folder_cur_Updated into @ident,@newName
 END;
 
-CREATE FUNCTION dotFolderPath(@parent_path CHAR(255), @asset_name CHAR(255))
-RETURNS CHAR(255)
+CREATE FUNCTION dbo.dotFolderPath(@parent_path varchar(36), @asset_name varchar(36))
+RETURNS varchar(36)
 BEGIN
   IF(@parent_path='/System folder')
   BEGIN
