@@ -53,7 +53,7 @@ public class FixTask00070FixVersionInfo implements FixTask {
                         List<Map<String, Object>> versions = dc.loadObjectResults();
                         String inode=versions.get(0).get("inode").toString();
                         
-                        HibernateUtil hu=new HibernateUtil(UtilMethods.getVersionInfoType(table));
+                        HibernateUtil hu=new HibernateUtil(UtilMethods.getVersionableClass(table));
                         Versionable workingVersion=(Versionable) hu.load(inode);
                         APILocator.getVersionableAPI().setWorking(workingVersion);
                         
