@@ -1,13 +1,13 @@
 package com.dotmarketing.osgi.servlet;
 
+import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.service.HelloWorld;
-import org.osgi.framework.BundleActivator;
+import org.apache.felix.http.api.ExtHttpService;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.osgi.service.http.HttpService;
 import org.osgi.util.tracker.ServiceTracker;
 
-public class Activator implements BundleActivator {
+public class Activator extends GenericBundleActivator {
 
     private ServiceTracker helloWorldServiceTracker;
 
@@ -17,13 +17,17 @@ public class Activator implements BundleActivator {
         //Create new ServiceTracker for HelloWorldService via HelloWorld interface
         helloWorldServiceTracker = new ServiceTracker( context, HelloWorld.class.getName(), null );
 
-        ServiceReference sRef = context.getServiceReference( HttpService.class.getName() );
+        ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
         if ( sRef != null ) {
 
             helloWorldServiceTracker.addingService( sRef );
-            HttpService service = (HttpService) context.getService( sRef );
+            ExtHttpService service = (ExtHttpService) context.getService( sRef );
             try {
+                //Registering a simple test servlet
                 service.registerServlet( "/helloworld", new HelloWorldServlet( helloWorldServiceTracker ), null, null );
+
+                //Registering a simple test filter
+                service.registerFilter( new TestFilter( "testFilter" ), "/helloworld/.*", null, 100, null );
             } catch ( Exception e ) {
                 e.printStackTrace();
             }

@@ -4,6 +4,7 @@ Bundle-SymbolicName: com.dotmarketing.osgi.servlet
 Bundle-Description: Servlet for Hello World
 Bundle-Version: 1.0.0
 Bundle-Activator: com.dotmarketing.osgi.servlet.Activator
+DynamicImport-Package: *
 Import-Package:  org.osgi.framework,
  org.osgi.util.tracker,
  javax.servlet,
