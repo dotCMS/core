@@ -70,7 +70,15 @@ public class ESClient {
 			if(key.startsWith("es.")){
 				// if we already have a key, use it
 				if(System.getProperty(key) == null){
-					System.setProperty(key, Config.getStringProperty(key));
+					if(key.equalsIgnoreCase("es.path.data") || key.equalsIgnoreCase("es.path.work")){
+                        String esPath = Config.getStringProperty(key);
+                        System.setProperty(key, Config.CONTEXT.getRealPath(esPath));
+                    }
+					else{
+                        System.setProperty(key, Config.getStringProperty(key));
+                    }
+
+					//logger.debug( "Copying esdata folder..." );							
 				}
 			}
 		}
