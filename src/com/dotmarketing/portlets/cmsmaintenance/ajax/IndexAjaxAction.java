@@ -173,7 +173,7 @@ public class IndexAjaxAction extends AjaxAction {
 	        throw new IOException(fue);
 	    }
 	}
-	
+
 	private String getIndexNameOrAlias(Map<String, String> map) {
 	    String indexName = map.get("indexName");
 	    String indexAlias = map.get("indexAlias");
@@ -191,7 +191,7 @@ public class IndexAjaxAction extends AjaxAction {
 		Map<String, String> map = getURIParams();
 		response.setContentType("application/zip");
 
-		String indexName = getIndexNameOrAlias(map);
+		String indexName = map.get("indexName");
 
 		if(!UtilMethods.isSet(indexName))return;
 
@@ -247,12 +247,12 @@ public class IndexAjaxAction extends AjaxAction {
 		APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
 
 	}
-	
+
 	public void clearIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotStateException, DotDataException {
 		Map<String, String> map = getURIParams();
-		
-		String indexName = getIndexNameOrAlias(map);
-		
+
+		String indexName = map.get("indexName");
+
 		if(UtilMethods.isSet(indexName))
 		    APILocator.getESIndexAPI().clearIndex(indexName);
 
@@ -260,15 +260,15 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
-		String indexName =getIndexNameOrAlias(map);
+		String indexName = map.get("indexName");
 		if(UtilMethods.isSet(indexName))
 		    APILocator.getESIndexAPI().delete(indexName);
 	}
 
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
-		String indexName = getIndexNameOrAlias(map);
-		
+		String indexName = map.get("indexName");
+
 		if(indexName.startsWith(SiteSearchAPI.ES_SITE_SEARCH_NAME)){
 			APILocator.getSiteSearchAPI().activateIndex(indexName);
 		}
@@ -279,7 +279,7 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 	public void deactivateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
-		String indexName = getIndexNameOrAlias(map);
+		String indexName = map.get("indexName");
 		if(indexName.startsWith(SiteSearchAPI.ES_SITE_SEARCH_NAME)){
 			APILocator.getSiteSearchAPI().deactivateIndex(indexName);
 		}
@@ -298,8 +298,8 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
-		String indexName = getIndexNameOrAlias(map);
-		
+		String indexName = map.get("indexName");
+
 		int replicas = Integer.parseInt(map.get("replicas"));
 
 
@@ -333,14 +333,14 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void closeIndex(HttpServletRequest request, HttpServletResponse response) {
 	    Map<String, String> map = getURIParams();
-	    String indexName=getIndexNameOrAlias(map);
-	    
+	    String indexName = map.get("indexName");
+
 	    APILocator.getESIndexAPI().closeIndex(indexName);
 	}
 
 	public void openIndex(HttpServletRequest request, HttpServletResponse response) {
 		Map<String, String> map = getURIParams();
-		String indexName= getIndexNameOrAlias(map);
+		String indexName = map.get("indexName");
 		APILocator.getESIndexAPI().openIndex(indexName);
 	}
 
@@ -360,7 +360,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		Map<String, String> map = getURIParams();
-		String indexName=getIndexNameOrAlias(map);
+		String indexName = map.get("indexName");
 		String resp = null;
 
 		try {
@@ -374,7 +374,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void getIndexRecordCount(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		Map<String, String> map = getURIParams();
-		String indexName=getIndexNameOrAlias(map);
+		String indexName = map.get("indexName");
 		ESIndexAPI esapi = APILocator.getESIndexAPI();
 		Map<String, IndexStatus> indexInfo = esapi.getIndicesAndStatus();
 		IndexStatus status = indexInfo.get(indexName);
@@ -409,9 +409,5 @@ public class IndexAjaxAction extends AjaxAction {
 	public void getReindexThreadStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.getWriter().println(ReindexThread.getInstance().isWorking()?"active":"stopped");
 	}
-	
-	public void getIndexName(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Map<String, String> map = getURIParams();
-        response.getWriter().println(getIndexNameOrAlias(map));
-    }
+
 }
