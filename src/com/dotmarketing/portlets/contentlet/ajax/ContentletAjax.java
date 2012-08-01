@@ -93,6 +93,21 @@ public class ContentletAjax {
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 	private FormAPI formAPI = APILocator.getFormAPI();
 
+	public List<Map<String, String>> getContentletsData(String inodesStr) {
+		List<Map<String,String>> rows = new ArrayList<Map<String, String>>();
+
+		if(inodesStr == null || !UtilMethods.isSet(inodesStr)) {
+			return rows;
+		}
+
+		String[] inodes =  inodesStr.split(",");
+		for (String inode : inodes) {
+			rows.addAll(getContentletData(inode));
+		}
+
+		return rows;
+	}
+
 	public List<Map<String, String>> getContentletData(String inode) {
 
 		List<Map<String,String>> rows = new ArrayList<Map<String, String>>();
@@ -567,7 +582,7 @@ public class ContentletAjax {
 
 		if(filterLocked)
 			luceneQuery.append("+locked:true ");
-		
+
 		if(filterUnpublish)
 			luceneQuery.append("+live:false ");
 
@@ -1057,7 +1072,7 @@ public class ContentletAjax {
 
 		contentletFormData.put("recurrenceDaysOfWeek", recurrenceDaysOfWeek);
 
-		if(contentletFormData.get("recurrenceOccurs")!=null && 
+		if(contentletFormData.get("recurrenceOccurs")!=null &&
 		        contentletFormData.get("recurrenceOccurs").toString().equals("annually")){
 
 			if(Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString()) &&
