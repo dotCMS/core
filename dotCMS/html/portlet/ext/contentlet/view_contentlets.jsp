@@ -335,9 +335,9 @@
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:400px;" id="borderContainer" class="shadowBox headerBox">
 
 <!-- START Left Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;" class="lineRight">
+        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 350px;overflow-y:auto; overflow-x:hidden;margin:43px 0 0 5px;" class="lineRight" >
 
-                <div id="filterWrapper" style="overflow-y:auto; overflow-x:hidden;margin:43px 0 0 5px;">
+               
 
                         <% List<Structure> readStructs = StructureFactory.getStructuresWithReadPermissions(user, true);  %>
                         <% if((readStructs.size() == 0)){%>
@@ -483,15 +483,14 @@
                                 </button>
                         </div>
 
-                </div>
+                
         </div>
 <!-- END Left Column -->
 
 
 <!-- START Right Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
-
-                <div id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
+                
                         <div id="metaMatchingResultsDiv" style="display:none;padding-top:7px;">
                                 <!-- START Listing Results -->
                                         <input type="hidden" name="referer" value="<%=referer%>">
@@ -525,7 +524,7 @@
                                 </div>
                         <!-- END Pagination -->
                         <div class="clear"></div>
-                </div>
+                
 
                 <%boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
                 <div class="clear"></div>
@@ -582,8 +581,6 @@
     </div>
 <!-- END Right Column -->
 
-</div>
-<!-- END Right Column -->
 
 
 
