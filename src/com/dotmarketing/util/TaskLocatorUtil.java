@@ -26,7 +26,8 @@ public class TaskLocatorUtil {
 		ret.add(FixTask00030DeleteOrphanedAssets.class);
 		ret.add(FixTask00040CheckFileAssetsMimeType.class);
 		ret.add(FixTask00050FixInodesWithoutContentlets.class);
-
+		ret.add(FixTask00060FixAssetType.class);
+		ret.add(FixTask00070FixVersionInfo.class);
 		return ret;
 	}
 
