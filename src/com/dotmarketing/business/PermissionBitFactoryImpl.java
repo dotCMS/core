@@ -2845,7 +2845,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			//Clearing the caches
 			if(idsToClear.size() < 1000) {
 				for(Map<String, String> idToClear: idsToClear) {
-					permissionCache.remove(idToClear.get("inode"));
+				    String ii=idToClear.get("inode");
+				    if(ii==null) ii=idToClear.get("id");
+					permissionCache.remove(ii);
 				}
 			} else {
 				permissionCache.clearCache();
