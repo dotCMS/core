@@ -9,6 +9,7 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 
 <%
+    List<Host> allHosts = APILocator.getHostAPI().findAll(APILocator.getUserAPI().getSystemUser(),true);
 	com.dotmarketing.portlets.virtuallinks.model.VirtualLink vl;
 	if (request.getAttribute(com.dotmarketing.util.WebKeys.VIRTUAL_LINK_EDIT)!=null) {
 		vl = (com.dotmarketing.portlets.virtuallinks.model.VirtualLink) request.getAttribute(com.dotmarketing.util.WebKeys.VIRTUAL_LINK_EDIT);
@@ -17,6 +18,7 @@
 		vl =	com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory.newInstance(); 
 	}
 	VirtualLinkForm vfm = new VirtualLinkForm();
+	
 	if (request.getAttribute("VirtualLinkForm")!=null) {
 		vfm = (VirtualLinkForm) request.getAttribute("VirtualLinkForm");
 	}
@@ -27,6 +29,7 @@
 	com.dotmarketing.beans.Identifier i = com.dotmarketing.business.APILocator.getIdentifierAPI().find(htmlPage);
 	uri = i.getURI();
 	Host host = APILocator.getHostAPI().findParentHost(htmlPage, APILocator.getUserAPI().getSystemUser(), false);
+	
 	
 	if (request.getAttribute("VirtualLinkForm")!=null) {
 		vfm = (VirtualLinkForm) request.getAttribute("VirtualLinkForm");
@@ -154,7 +157,13 @@ function pageSelected(page) {
 				<% if((Boolean)request.getAttribute("isCMSAdministrator")) { %>
 					<option value="0"><%= LanguageUtil.get(pageContext, "All-Hosts") %></OPTION>
 				<% } %>
-					<option value="<%=host.getIdentifier() %>"><%= host.getHostname()%></OPTION>
+				<% for(Host h: allHosts){
+				     if(!h.getIdentifier().equals(Host.SYSTEM_HOST) && h.isLive())
+				%>     <option value="<%=h.getIdentifier() %>" ><%=h.getHostname() %></option>
+				<%
+				   }
+				%>
+								 
 				</select>
 			<% } %>
 		</dd>
