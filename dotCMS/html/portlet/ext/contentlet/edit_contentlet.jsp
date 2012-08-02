@@ -25,7 +25,10 @@
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 
+<script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
+
 <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp" %>
+
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	ContentletAPI conAPI = APILocator.getContentletAPI();
