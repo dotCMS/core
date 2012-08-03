@@ -13,10 +13,8 @@ import java.io.IOException;
 
 public class HelloWorldServlet extends HttpServlet {
 
-
     private static final long serialVersionUID = 42L;
     private ServiceTracker serviceTracker;
-
 
     public HelloWorldServlet ( ServiceTracker serviceTracker ) {
         this.serviceTracker = serviceTracker;

@@ -17,6 +17,7 @@ public class Activator extends GenericBundleActivator {
         //Create new ServiceTracker for HelloWorldService via HelloWorld interface
         helloWorldServiceTracker = new ServiceTracker( context, HelloWorld.class.getName(), null );
 
+        //Service reference to ExtHttpService that will allows to register servlets and filters
         ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
         if ( sRef != null ) {
 
