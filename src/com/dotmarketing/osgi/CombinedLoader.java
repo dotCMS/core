@@ -12,8 +12,15 @@ public class CombinedLoader extends ClassLoader {
 
     private Set<ClassLoader> loaders = new HashSet<ClassLoader>();
 
+    public CombinedLoader ( ClassLoader parent ) {
+        super( parent );
+    }
+
     public void addLoader ( ClassLoader loader ) {
-        loaders.add( loader );
+
+        if ( !loaders.contains( loader ) ) {
+            loaders.add( loader );
+        }
     }
 
     public void addLoader ( Class clazz ) {
@@ -28,7 +35,7 @@ public class CombinedLoader extends ClassLoader {
         loaders.remove( clazz.getClass().getClassLoader() );
     }
 
-    public Class findClass ( String name ) throws ClassNotFoundException {
+    public Class<?> findClass ( String name ) throws ClassNotFoundException {
 
         for ( ClassLoader loader : loaders ) {
             try {
@@ -37,9 +44,25 @@ public class CombinedLoader extends ClassLoader {
                 // Try next
             }
         }
-        throw new ClassNotFoundException( name );
+
+        return super.findClass( name );
     }
 
+    @Override
+    public Class<?> loadClass ( String name ) throws ClassNotFoundException {
+
+        for ( ClassLoader loader : loaders ) {
+            try {
+                return loader.loadClass( name );
+            } catch ( ClassNotFoundException cnfe ) {
+                // Try next
+            }
+        }
+
+        return super.loadClass( name );
+    }
+
+    @Override
     public URL getResource ( String name ) {
 
         for ( ClassLoader loader : loaders ) {
@@ -47,7 +70,8 @@ public class CombinedLoader extends ClassLoader {
             if ( url != null )
                 return url;
         }
-        return null;
+
+        return super.getResource( name );
     }
 
 }
