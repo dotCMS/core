@@ -3,11 +3,13 @@ package com.dotmarketing.business;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,12 +25,16 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -39,6 +45,7 @@ public class PermissionAPITest extends TestBase {
     private static PermissionAPI perm;
     private static Host host;
     private static User sysuser;
+    private static Template tt;
     
     @BeforeClass
     public static void createTestHost() throws Exception {
@@ -50,7 +57,7 @@ public class PermissionAPITest extends TestBase {
         
         perm.permissionIndividually(host.getParentPermissionable(), host, sysuser, false);
         
-        Template tt=new Template();
+        tt=new Template();
         tt.setTitle("testtemplate");
         tt.setBody("<html><head></head><body>en empty template just for test</body></html>");
         APILocator.getTemplateAPI().saveTemplate(tt, host, sysuser, false);
@@ -470,7 +477,6 @@ public class PermissionAPITest extends TestBase {
         assertTrue(perm.isInheritingPermissions(f4));
         assertTrue(perm.isInheritingPermissions(cont1));
         assertTrue(perm.isInheritingPermissions(cont2));
-        
     }
     
     @Test
@@ -538,6 +544,7 @@ public class PermissionAPITest extends TestBase {
      */
     @Test
     public void issue847() throws DotHibernateException, DotSecurityException, DotDataException {
+        Structure s=null;
         Host hh = new Host();
         hh.setHostname("issue847.demo.dotcms.com");
         hh=APILocator.getHostAPI().save(hh, sysuser, false);
@@ -545,7 +552,7 @@ public class PermissionAPITest extends TestBase {
             Folder f1 = APILocator.getFolderAPI().createFolders("/hh1/", hh, sysuser, false);
             Folder f2 = APILocator.getFolderAPI().createFolders("/hh1/hh2/", hh, sysuser, false);
             
-            Structure s = new Structure();
+            s = new Structure();
             s.setName("structure_issue847");
             s.setHost(hh.getIdentifier());
             s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
@@ -584,8 +591,138 @@ public class PermissionAPITest extends TestBase {
         }
         finally {
             APILocator.getHostAPI().archive(hh, sysuser, false);
-            APILocator.getHostAPI().delete(hh, sysuser, false);   
+            APILocator.getHostAPI().delete(hh, sysuser, false);
         }
+    }
+    
+    /**
+     * https://github.com/dotCMS/dotCMS/issues/886
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void issue886() throws Exception {
+        Host hh = new Host();
+        hh.setHostname("issue886.demo.dotcms.com");
+        hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        try {
+            Folder a = APILocator.getFolderAPI().createFolders("/a/", hh, sysuser, false);
+            Folder b = APILocator.getFolderAPI().createFolders("/a/b/", hh, sysuser, false);
+            Folder c = APILocator.getFolderAPI().createFolders("/a/b/c/", hh, sysuser, false);
+            
+            String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+            
+            HTMLPage pa=new HTMLPage();
+            pa.setPageUrl("testpage"+ext);
+            pa.setFriendlyName("testpage"+ext);
+            pa.setTitle("testpage"+ext);
+            APILocator.getHTMLPageAPI().saveHTMLPage(pa, tt, a, sysuser, false);
+            
+            HTMLPage pb=new HTMLPage();
+            pb.setPageUrl("testpage"+ext);
+            pb.setFriendlyName("testpage"+ext);
+            pb.setTitle("testpage"+ext);
+            APILocator.getHTMLPageAPI().saveHTMLPage(pb, tt, b, sysuser, false);
+            
+            HTMLPage pc=new HTMLPage();
+            pc.setPageUrl("testpage"+ext);
+            pc.setFriendlyName("testpage"+ext);
+            pc.setTitle("testpage"+ext);
+            APILocator.getHTMLPageAPI().saveHTMLPage(pc, tt, c, sysuser, false);
+            
+            java.io.File fdata=java.io.File.createTempFile("tmpfile", "data.txt");
+            FileWriter fw=new FileWriter(fdata);
+            fw.write("test file");
+            fw.close();
+            
+            File fa=new File();
+            fa.setTitle("testfile.txt");
+            fa.setFileName("testfile.txt");
+            java.io.File fadata=java.io.File.createTempFile("tmpfile", "fdata.txt");
+            FileUtils.copyFile(fdata, fadata);
+            APILocator.getFileAPI().saveFile(fa, fadata, a, sysuser, false);
+            
+            File fb=new File();
+            fb.setTitle("testfile.txt");
+            fb.setFileName("testfile.txt");
+            java.io.File fbdata=java.io.File.createTempFile("tmpfile", "fdata.txt");
+            FileUtils.copyFile(fdata, fbdata);
+            APILocator.getFileAPI().saveFile(fb, fbdata, b, sysuser, false);
+            
+            File fc=new File();
+            fc.setTitle("testfile.txt");
+            fc.setFileName("testfile.txt");
+            java.io.File fcdata=java.io.File.createTempFile("tmpfile", "fdata.txt");
+            FileUtils.copyFile(fdata, fcdata);
+            APILocator.getFileAPI().saveFile(fc, fcdata, c, sysuser, false);
+            
+            String FileAssetStInode=StructureCache.getStructureByVelocityVarName(
+                    FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
+            
+            Contentlet ca=new Contentlet();
+            ca.setStructureInode(FileAssetStInode);
+            ca.setStringProperty(FileAssetAPI.TITLE_FIELD, "testfileasset.txt");
+            ca.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "testfileasset.txt");
+            java.io.File cadata=java.io.File.createTempFile("tmpfile", "cdata.txt");
+            FileUtils.copyFile(fdata, cadata);
+            ca.setBinary(FileAssetAPI.BINARY_FIELD, cadata);
+            ca.setHost(hh.getIdentifier());
+            ca.setFolder(a.getInode());
+            ca=APILocator.getContentletAPI().checkin(ca, sysuser, false);
+            APILocator.getContentletAPI().isInodeIndexed(ca.getInode());
+            
+            Contentlet cb=new Contentlet();
+            cb.setStructureInode(FileAssetStInode);
+            cb.setStringProperty(FileAssetAPI.TITLE_FIELD, "testfileasset.txt");
+            cb.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "testfileasset.txt");
+            java.io.File cbdata=java.io.File.createTempFile("tmpfile", "cdata.txt");
+            FileUtils.copyFile(fdata, cbdata);
+            cb.setBinary(FileAssetAPI.BINARY_FIELD, cbdata);
+            cb.setHost(hh.getIdentifier());
+            cb.setFolder(b.getInode());
+            cb=APILocator.getContentletAPI().checkin(cb, sysuser, false);
+            APILocator.getContentletAPI().isInodeIndexed(cb.getInode());
+            
+            Contentlet cc=new Contentlet();
+            cc.setStructureInode(FileAssetStInode);
+            cc.setStringProperty(FileAssetAPI.TITLE_FIELD, "testfileasset.txt");
+            cc.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "testfileasset.txt");
+            java.io.File ccdata=java.io.File.createTempFile("tmpfile", "cdata.txt");
+            FileUtils.copyFile(fdata, ccdata);
+            cc.setBinary(FileAssetAPI.BINARY_FIELD, ccdata);
+            cc.setHost(hh.getIdentifier());
+            cc.setFolder(c.getInode());
+            cc=APILocator.getContentletAPI().checkin(cc, sysuser, false);
+            APILocator.getContentletAPI().isInodeIndexed(cc.getInode());
+            
+            // get them into cache
+            perm.getPermissions(a);   perm.getPermissions(ca);
+            perm.getPermissions(b);   perm.getPermissions(cb);
+            perm.getPermissions(c);   perm.getPermissions(cc);
+            perm.getPermissions(fa);  perm.getPermissions(pa);
+            perm.getPermissions(fb);  perm.getPermissions(pb);
+            perm.getPermissions(fc);  perm.getPermissions(pc);
+            
+            // permission individually on folder a
+            perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser, false);
+            
+            // everybody should be inheriting from a
+            assertTrue(perm.findParentPermissionable(fa).equals(a));
+            assertTrue(perm.findParentPermissionable(pa).equals(a));
+            assertTrue(perm.findParentPermissionable(ca).equals(a));
+            assertTrue(perm.findParentPermissionable(b).equals(a));
+            assertTrue(perm.findParentPermissionable(fb).equals(a));
+            assertTrue(perm.findParentPermissionable(pb).equals(a));
+            assertTrue(perm.findParentPermissionable(cb).equals(a));
+            assertTrue(perm.findParentPermissionable(c).equals(a));
+            assertTrue(perm.findParentPermissionable(fc).equals(a));
+            assertTrue(perm.findParentPermissionable(pc).equals(a));
+            assertTrue(perm.findParentPermissionable(cc).equals(a));
+        }
+        finally {
+            APILocator.getHostAPI().archive(hh, sysuser, false);
+            //APILocator.getHostAPI().delete(hh, sysuser, false);   
+        }   
     }
     
 }
