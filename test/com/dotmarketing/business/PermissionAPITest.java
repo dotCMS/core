@@ -638,6 +638,7 @@ public class PermissionAPITest extends TestBase {
             File fa=new File();
             fa.setTitle("testfile.txt");
             fa.setFileName("testfile.txt");
+            fa.setModUser(sysuser.getUserId());
             java.io.File fadata=java.io.File.createTempFile("tmpfile", "fdata.txt");
             FileUtils.copyFile(fdata, fadata);
             APILocator.getFileAPI().saveFile(fa, fadata, a, sysuser, false);
@@ -645,6 +646,7 @@ public class PermissionAPITest extends TestBase {
             File fb=new File();
             fb.setTitle("testfile.txt");
             fb.setFileName("testfile.txt");
+            fb.setModUser(sysuser.getUserId());
             java.io.File fbdata=java.io.File.createTempFile("tmpfile", "fdata.txt");
             FileUtils.copyFile(fdata, fbdata);
             APILocator.getFileAPI().saveFile(fb, fbdata, b, sysuser, false);
@@ -652,6 +654,7 @@ public class PermissionAPITest extends TestBase {
             File fc=new File();
             fc.setTitle("testfile.txt");
             fc.setFileName("testfile.txt");
+            fc.setModUser(sysuser.getUserId());
             java.io.File fcdata=java.io.File.createTempFile("tmpfile", "fdata.txt");
             FileUtils.copyFile(fdata, fcdata);
             APILocator.getFileAPI().saveFile(fc, fcdata, c, sysuser, false);
