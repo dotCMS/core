@@ -2,6 +2,7 @@ package com.dotmarketing.osgi;
 
 import com.dotmarketing.util.Config;
 import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
 
 import java.beans.IntrospectionException;
 import java.io.File;
@@ -17,18 +18,38 @@ public abstract class GenericBundleActivator implements BundleActivator {
     /**
      * Allow to this bundle/elements to be visible and accessible from the host classpath
      */
-    public void publishBundleServices () {
+    public void publishBundleServices ( BundleContext context ) {
 
         //Felix classloader
         ClassLoader felixClassLoader = getFelixClassLoader();
 
         //Create a new class loader where we can "combine" our classloaders
-        CombinedLoader combinedLoader = new CombinedLoader();
-        combinedLoader.addLoader( Thread.currentThread().getContextClassLoader() );
-        combinedLoader.addLoader( felixClassLoader );
+        CombinedLoader combinedLoader;
+        if ( Thread.currentThread().getContextClassLoader() instanceof CombinedLoader ) {
+            combinedLoader = (CombinedLoader) Thread.currentThread().getContextClassLoader();
+            combinedLoader.addLoader( felixClassLoader );
+        } else {
+            combinedLoader = new CombinedLoader( Thread.currentThread().getContextClassLoader() );
+            combinedLoader.addLoader( felixClassLoader );
+        }
+
+        //Force the loading of some classes that may be already loaded on the host classpath but we want to override with the ones on this bundle and we specified
+        String overrideClasses = context.getBundle().getHeaders().get( "Override-Classes" );
+        if ( overrideClasses != null ) {
+            String[] forceOverride = overrideClasses.split( "," );
+            for ( String classToOverride : forceOverride ) {
+                try {
+                    //Just loading the custom implementation will allows to override the one the classloader already had loaded
+                    combinedLoader.loadClass( classToOverride.trim() );
+                } catch ( ClassNotFoundException e ) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
         //Use this new "combined" class loader
         Thread.currentThread().setContextClassLoader( combinedLoader );
+
     }
 
     /**

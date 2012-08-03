@@ -20,7 +20,7 @@ public class Activator extends GenericBundleActivator {
         if ( sRef != null ) {
 
             //Publish bundle services
-            publishBundleServices();
+            publishBundleServices( context );
 
             HttpService service = (HttpService) context.getService( sRef );
             try {
