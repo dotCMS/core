@@ -1,6 +1,6 @@
 package com.dotmarketing.osgi.service;
 
-import org.osgi.framework.BundleActivator;
+import com.dotmarketing.osgi.GenericBundleActivator;
 import org.osgi.framework.BundleContext;
 
 import java.util.Hashtable;
@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * Created by Jonathan Gamba
  * Date: 6/18/12
  */
-public class Activator implements BundleActivator {
+public class Activator extends GenericBundleActivator {
 
     /**
      * Implements BundleActivator.start(). Registers an

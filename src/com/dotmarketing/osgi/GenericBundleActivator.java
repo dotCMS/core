@@ -49,7 +49,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         //Use this new "combined" class loader
         Thread.currentThread().setContextClassLoader( combinedLoader );
-
     }
 
     /**
@@ -110,11 +109,22 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         ClassLoader currentThreadClassLoader = Thread.currentThread().getContextClassLoader();
 
-        // Add the given url to the classpath. -Chain the current thread classloader
-        URLClassLoader urlClassLoader = new URLClassLoader( new URL[]{url}, currentThreadClassLoader );
+        // Create a ClassLoader using the given url
+        URLClassLoader urlClassLoader = new URLClassLoader( new URL[]{url} );
 
-        // Replace the thread classloader - assumes you have permissions to do so
-        Thread.currentThread().setContextClassLoader( urlClassLoader );
+        CombinedLoader combinedLoader;
+        if ( currentThreadClassLoader instanceof CombinedLoader ) {
+            combinedLoader = (CombinedLoader) currentThreadClassLoader;
+            //Chain to the current thread classloader
+            combinedLoader.addLoader( urlClassLoader );
+        } else {
+            combinedLoader = new CombinedLoader( Thread.currentThread().getContextClassLoader() );
+            //Chain to the current thread classloader
+            combinedLoader.addLoader( urlClassLoader );
+        }
+
+        //Use this new "combined" class loader
+        Thread.currentThread().setContextClassLoader( combinedLoader );
     }
 
     private ClassLoader getFelixClassLoader () {

@@ -14,7 +14,6 @@
     <property name="deploy.dir" value="${app.base}/dotCMS/WEB-INF/felix/load"/>
     <property name="build.classes" value="${build.dir}/classes"/>
 
-    <property name="web-inf.dir" value="WEB-INF"/>
     <property name="meta-inf.dir" value="META-INF"/>
     <property name="classpath.dir" value="classpath"/>
     <property name="manifest.file" value="${meta-inf.dir}/MANIFEST.MF"/>
@@ -83,7 +82,6 @@
             <zipfileset dir=".">
                 <exclude name="src/**"/>
                 <exclude name="build/**"/>
-                <exclude name="WEB-INF/**"/>
                 <exclude name="META-INF/**"/>
                 <exclude name="build.xml"/>
             </zipfileset>
