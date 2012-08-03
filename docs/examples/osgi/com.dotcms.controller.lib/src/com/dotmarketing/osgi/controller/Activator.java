@@ -13,7 +13,7 @@ public class Activator extends GenericBundleActivator {
     public void start ( BundleContext context ) throws Exception {
 
         //Publish bundle services
-        publishBundleServices();
+        publishBundleServices( context );
     }
 
     public void stop ( BundleContext context ) throws Exception {
