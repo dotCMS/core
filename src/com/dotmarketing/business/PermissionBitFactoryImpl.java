@@ -1282,7 +1282,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		HostAPI hostAPI = APILocator.getHostAPI();
 		Host systemHost = hostAPI.findSystemHost();
 		DotConnect dc = new DotConnect();
-
+		
+		boolean ran01=false,ran02=false,ran03=false,ran04=false,ran05=false,
+		        ran06=false,ran07=false,ran08=false,ran09=false,ran10=false;
 
 		List<Map<String, Object>> idsToClear = new ArrayList<Map<String, Object>>();
 		List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(permissionable), parentPermissionableId);
@@ -1306,7 +1308,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				// host
 				if (!permissionable.getPermissionId().equals(systemHost.getPermissionId())) {
 
-					if (isHost && p.getType().equals(Template.class.getCanonicalName())) {
+					if (isHost && p.getType().equals(Template.class.getCanonicalName()) && !ran01) {
 						// Find all host templates pointing to the system host
 						// and update their references
 
@@ -1326,8 +1328,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.setSQL(selectChildrenTemplateSQL);
 						dc.addParam(permissionable.getPermissionId());
 						idsToClear.addAll(dc.loadResults());
-
-					} else if (isHost && p.getType().equals(Container.class.getCanonicalName())) {
+						
+						ran01=true;
+					} else if (isHost && p.getType().equals(Container.class.getCanonicalName()) && !ran02) {
 						// Find all host containers pointing to the system host
 						// and update their references
 
@@ -1347,8 +1350,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.setSQL(selectChildrenContainerSQL);
 						dc.addParam(permissionable.getPermissionId());
 						idsToClear.addAll(dc.loadResults());
+						
+						ran02=true;
 
-					}else if (p.getType().equals(Folder.class.getCanonicalName())) {
+					}else if (p.getType().equals(Folder.class.getCanonicalName()) && !ran03) {
 						// Find all subfolders
 						// Removing all references to the system host
 						dc.setSQL(this.deleteSubfolderReferencesSQLOnAdd);
@@ -1376,8 +1381,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path + "%");
 						dc.addParam(isHost ? " " : path);
 						idsToClear.addAll(dc.loadResults());
-
-					} else if (p.getType().equals(HTMLPage.class.getCanonicalName())) {
+						
+						ran03=true;
+					} else if (p.getType().equals(HTMLPage.class.getCanonicalName()) && !ran04) {
 
 						// Update html page references
 
@@ -1410,7 +1416,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path + "%");
 						idsToClear.addAll(dc.loadResults());
 
-					} else if (p.getType().equals(File.class.getCanonicalName())) {
+						ran04=true;
+					} else if (p.getType().equals(File.class.getCanonicalName()) && !ran05) {
 
 						// Find all files to update their references
 
@@ -1444,7 +1451,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path + "%");
 						idsToClear.addAll(dc.loadResults());
 
-					} else if (p.getType().equals(Link.class.getCanonicalName())) {
+						ran05=true;
+					} else if (p.getType().equals(Link.class.getCanonicalName()) && !ran06) {
 						// Find all files to update their references
 
 						// Removing all references to the system host
@@ -1475,8 +1483,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						idsToClear.addAll(dc.loadResults());
+						
+						ran06=true;
 
-					} else if (p.getType().equals(Contentlet.class.getCanonicalName())) {
+					} else if (p.getType().equals(Contentlet.class.getCanonicalName()) && !ran07) {
 						// Find all content
 
 						// Removing all references to the system host
@@ -1507,8 +1517,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						idsToClear.addAll(dc.loadResults());
+						
+						ran07=true;
 
-					} else if (p.getType().equals(Structure.class.getCanonicalName())) {
+					} else if (p.getType().equals(Structure.class.getCanonicalName()) && !ran08) {
 
 						if(isHost){
 							dc.setSQL(this.deleteStructureReferencesByPathOnAddSQL);
@@ -1567,7 +1579,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 							idsToClear.addAll(dc.loadResults());
 
 						}
-
+						ran08=true;
 					}
 				} else {
 					// If the system host we need to force all references of the
@@ -1578,35 +1590,40 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					idsToClear.addAll(dc.loadResults());
 				}
 			} else if(isCategory) {
-				Category cat = (Category) permissionable;
-				CategoryAPI catAPI = APILocator.getCategoryAPI();
-				User systemUser = APILocator.getUserAPI().getSystemUser();
-				try {
-					List<Category> children = catAPI.getCategoryTreeDown(cat, cat, systemUser, false);
-					for(Category child : children) {
-						dc.setSQL(updatePermissionReferenceByAssetIdSQL);
-						dc.addParam(cat.getInode());
-						dc.addParam(Category.class.getCanonicalName());
-						dc.addParam(child.getInode());
-						dc.loadResult();
-						idsToClear.add(child.getMap());
-					}
-				} catch (DotSecurityException e) {
-					Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
-					throw new DotRuntimeException(e.getMessage(), e);
-				}
+			    if(!ran09) {
+    				Category cat = (Category) permissionable;
+    				CategoryAPI catAPI = APILocator.getCategoryAPI();
+    				User systemUser = APILocator.getUserAPI().getSystemUser();
+    				try {
+    					List<Category> children = catAPI.getCategoryTreeDown(cat, cat, systemUser, false);
+    					for(Category child : children) {
+    						dc.setSQL(updatePermissionReferenceByAssetIdSQL);
+    						dc.addParam(cat.getInode());
+    						dc.addParam(Category.class.getCanonicalName());
+    						dc.addParam(child.getInode());
+    						dc.loadResult();
+    						idsToClear.add(child.getMap());
+    					}
+    				} catch (DotSecurityException e) {
+    					Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
+    					throw new DotRuntimeException(e.getMessage(), e);
+    				}
+    				ran09=true;
+			    }
 			} else if (isStructure) {
-
-				// Removing all references to the system host
-				dc.setSQL(this.deleteContentReferencesByStructureSQL);
-				// All the content that belongs to the host
-				dc.addParam(permissionable.getPermissionId());
-				dc.loadResult();
-
-				dc.setSQL(selectChildrenContentByStructureSQL);
-				dc.addParam(permissionable.getPermissionId());
-				idsToClear.addAll(dc.loadResults());
-
+			    if(!ran10) {
+    				// Removing all references to the system host
+    				dc.setSQL(this.deleteContentReferencesByStructureSQL);
+    				// All the content that belongs to the host
+    				dc.addParam(permissionable.getPermissionId());
+    				dc.loadResult();
+    
+    				dc.setSQL(selectChildrenContentByStructureSQL);
+    				dc.addParam(permissionable.getPermissionId());
+    				idsToClear.addAll(dc.loadResults());
+    				
+    				ran10=true;
+			    }
 			}
 
 
