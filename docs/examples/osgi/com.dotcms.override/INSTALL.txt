@@ -1,0 +1,12 @@
+
+INSTALL
+-------
+
+In order to install this bundle:
+
+1) Execute the "build" task of the build.xml ant file to create the bundle jar file.
+2) Execute the "deploy" task of the build.xml ant file in order to move the generated jar by the "build" task inside the Felix OSGI container (dotCMS/felix/load)
+
+To uninstall this bundle:
+
+1) Execute the "undeploy" task of the build.xml ant file in order to remove the bundle jar file from the Felix OSGI container (dotCMS/felix/load)

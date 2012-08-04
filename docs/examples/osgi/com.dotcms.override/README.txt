@@ -2,10 +2,9 @@
 README
 ------
 
-This bundle plugin is an example of how to add Spring support to a bundle plugin, creates
-and registers a simple Spring Controller.
+This bundle plugin is an example of how to override dotcms classes with our bundle plugin.
 
-How to create a bundle plugin with Spring support
+How to create a bundle plugin to override dotcms classes
 -------------------------------------------
 
 --
@@ -18,15 +17,19 @@ Bundle-Name: The name of your bundle
 
 Bundle-SymbolicName: A short an unique name for the bundle
 
-Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.spring.Activator)
+Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.override.Activator)
 
-DynamicImport-Package: *
-    Dynamically add required imports the plugin may need without add them explicitly
+Override-Classes: This is a comma separated list of classes.
+                  In this list there must be the classes we are trying to
+                  override, in order to override any dotcms class is mandatory
+                  to add it to this list because dotcms implementation of the class will be
+                  already loaded by dotcms classloader so if we don't explicit
+                  specify the classes to override the classloader wont try to
+                  load them.
 
 Import-Package: This is a comma separated list of package's name.
                 In this list there must be the packages that you are using inside
                 the bundle plugin and that are exported by the dotCMS runtime.
-                (Note Spring package)
 
 Beware!!!
 ---------
@@ -45,33 +48,21 @@ a plugin can Import the packages to use them inside the OSGI blundle.
 --
 --
 --
-com.dotmarketing.osgi.spring.ExampleController
+com.dotmarketing.util.FileUtil
 -----------------------------------------------
 
-Simple annotated Spring Controller.
-
---
-example-servlet.xml
-----------------------------------------
-
-Standard Spring configuration file where basically we enabled the support for anntotation-driven controllers.
+The com.dotmarketing.util.FileUtil is a utility class in dotcms, for this example
+we are creating our custom com.dotmarketing.util.FileUtil that will override the
+dotcms implementation with ours.
+Our com.dotmarketing.util.FileUtil class will have just one test method that will
+print a message in console if everything is working properly.
 
 --
 Activator
 ---------
 
 This bundle activator extends from com.dotmarketing.osgi.GenericBundleActivator and implements BundleActivator.start().
-Will manually register making use of the class DispatcherServlet our spring configuration file (example-servlet.xml).
+Calls our implementation of the com.dotmarketing.util.FileUtil class.
 
 * PLEASE note the "publishBundleServices( context )" call, this call is MANDATORY (!) as it will allow us to share resources
-  between the bundle and the host container (dotcms) required to a fully Spring integration with dotcms.
-
---
---
---
-Testing
--------
-
-The Spring controller is registered under the url pattern "/spring" can be test it running and assuming your dotcms url is localhost:80880:
-    http://localhost:8080/dynamic/spring/examplecontroller/
-    http://localhost:8080/dynamic/spring/examplecontroller/Testing
+  between the bundle and the host container (dotcms).
