@@ -401,7 +401,10 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
 	
 	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException, ParseException {
 	}
-	
+
+	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException, DotSecurityException, ParseException {
+	}
+
 	public void removeFolderReferences(Folder folder) throws DotDataException{
 	}
 	public void refreshContentUnderHost(Host host) throws DotReindexStateException {

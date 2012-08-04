@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/atom/widget/nls/sk/FeedEntryViewer", //begin v1.x content
 ({
 	displayOptions: "[zobraziť voľby]",
 	title: "Nadpis",
@@ -9,4 +12,5 @@
 	summary: "Súhrn",
 	content: "Obsah"
 })
-
+//end v1.x content
+);

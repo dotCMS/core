@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/nb/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Tøm filter",
 	"filterDefDialogTitle": "Filter",
@@ -62,8 +65,8 @@
 	"anycolumn": "enhver kolonne",
 	"statusTipTitleNoFilter": "Filterlinje",
 	"statusTipTitleHasFilter": "Filter",
-	"statusTipRelPre": "Samsvar med",
-	"statusTipRelPost": "regler.",
+	"statusTipRelAny": "Samsvar med minst en regel.",
+	"statusTipRelAll": "Samsvar med alle regler.",
 	
 	"defaultItemsName": "elementer",
 	"filterBarMsgHasFilterTemplate": "${0} av ${1} ${2} vist.",
@@ -82,6 +85,5 @@
 	"trueLabel": "Sann",
 	"falseLabel": "Usann"
 })
-
-
-
+//end v1.x content
+);

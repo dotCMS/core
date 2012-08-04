@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/pt-pt/Pagination", //begin v1.x content
 ({
 	"descTemplate": "${2} - ${3} de ${1} ${0}",
 	"firstTip": "Primeira página",
@@ -13,6 +16,9 @@
 	"dialogIndication": "Especificar o número de página",
 	"pageCountIndication": " (${0} páginas)",
 	"dialogConfirm": "Ir",
-	"dialogCancel": "Cancelar"
+	"dialogCancel": "Cancelar",
+	"all": "tudo"
 })
+//end v1.x content
+);
 

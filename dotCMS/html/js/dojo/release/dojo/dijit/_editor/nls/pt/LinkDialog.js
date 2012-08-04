@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/pt/LinkDialog", //begin v1.x content
 ({
 	createLinkTitle: "Propriedades de Link",
 	insertImageTitle: "Propriedades de Imagem",
@@ -12,3 +14,5 @@
 	newWindow: "Nova Janela"
 })
 
+//end v1.x content
+);

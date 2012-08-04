@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/ro/buddhist", //begin v1.x content
 {
 	"quarters-format-abbr": [
 		"trim. I",
@@ -116,3 +118,5 @@
 		"Sâ"
 	]
 }
+//end v1.x content
+);

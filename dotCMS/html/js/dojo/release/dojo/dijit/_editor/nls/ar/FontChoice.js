@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/ar/FontChoice", //begin v1.x content
 ({
 	fontSize: "الحجم",
 	fontName: "طاقم طباعة",
@@ -25,3 +27,5 @@
 	6: "كبير جدا",
 	7: "كبير جدا جدا"
 })
+//end v1.x content
+);

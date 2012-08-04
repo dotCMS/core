@@ -599,5 +599,10 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
     public Class getImplementationClass() {
         return DotJBCacheAdministratorImpl.class;
     }
+
+    @Override
+    public DotCacheAdministrator getImplementationObject() {
+        return this;
+    }
 	
 }

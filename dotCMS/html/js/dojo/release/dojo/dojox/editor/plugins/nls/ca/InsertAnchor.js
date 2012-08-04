@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ca/InsertAnchor", //begin v1.x content
 ({
 	insertAnchor: "Insereix una àncora",
 	title: "Propietats de l'àncora",
@@ -7,3 +10,5 @@
 	cancel: "Cancel·la"
 })
 
+//end v1.x content
+);

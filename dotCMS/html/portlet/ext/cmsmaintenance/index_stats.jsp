@@ -166,7 +166,10 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<td align="center"><%=(status !=null) ? status.getShards().size() : "n/a"%></td>
 					<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
 					<td align="center"><%=(status !=null) ? status.getStoreSize(): "n/a"%></td>
-					<td align="center"><div  style='background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
+					<td align="center">
+					          <div onclick="showIndexClusterStatus('<%=x%>')"  style='cursor:pointer;background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'>
+					          </div>
+					</td>
 				</tr>
 			<%} %>
 			

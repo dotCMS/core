@@ -45,6 +45,9 @@ public class PortletURLUtil {
 			try {
 				User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
 				List<Layout>layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
+				if(layouts.size()==0){
+					return null;
+				}
 				Layout layout = layouts.get(0);
 				List<String> portletIds = layout.getPortletIds();
 				portletName = portletIds.get(0);

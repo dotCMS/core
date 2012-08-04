@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/en/islamic", //begin v1.x content
 {
 	"dateFormatItem-yM": "M/y",
 	"dateFormatItem-yyyyMMMEd": "EEE, MMM d, y G",
@@ -161,3 +163,5 @@
 		"Saturday"
 	]
 }
+//end v1.x content
+);

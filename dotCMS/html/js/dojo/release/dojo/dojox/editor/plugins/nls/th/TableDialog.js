@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/th/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "แทรกตาราง",
 	modifyTableTitle: "ปรับเปลี่ยนไขตาราง",
@@ -28,3 +31,5 @@
 	deleteTableRowLabel: "ลบแถว",
 	deleteTableColumnLabel: "ลบคอลัมน์"
 })
+//end v1.x content
+);

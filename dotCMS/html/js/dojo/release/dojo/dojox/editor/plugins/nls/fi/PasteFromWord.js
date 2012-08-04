@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/fi/PasteFromWord", //begin v1.x content
 ({
 	"pasteFromWord": "Liitä Word-ohjelmasta",
 	"paste": "Liitä",
@@ -5,3 +8,5 @@
 	"instructions": "Liitä sisältö Word-tiedostosta alla olevaan tekstikenttään. Kun lisättävä sisältö on mielestäsi valmis, napsauta Liitä-painiketta. Voit peruuttaa lisäyksen napsauttamalla Peruuta-painiketta."
 })
 
+//end v1.x content
+);

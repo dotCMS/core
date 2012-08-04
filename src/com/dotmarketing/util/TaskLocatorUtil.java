@@ -26,7 +26,8 @@ public class TaskLocatorUtil {
 		ret.add(FixTask00030DeleteOrphanedAssets.class);
 		ret.add(FixTask00040CheckFileAssetsMimeType.class);
 		ret.add(FixTask00050FixInodesWithoutContentlets.class);
-
+		ret.add(FixTask00060FixAssetType.class);
+		ret.add(FixTask00070FixVersionInfo.class);
 		return ret;
 	}
 
@@ -60,7 +61,11 @@ public class TaskLocatorUtil {
 		ret.add(Task00900CreateLogConsoleTable.class);
 		ret.add(Task00905FixAddFolderAfterDelete.class);
 		ret.add(Task00910AddEscalationFields.class);
+		ret.add(Task00911CreateDefaultWorkflowSchema.class);
         ret.add( Task00920AddContentletVersionSystemHost.class );
+        ret.add(Task00922FixdotfolderpathMSSQL.class);
+        ret.add(Task00925UserIdTypeChange.class);
+        ret.add(Task00930AddIdentifierIndex.class);
         return ret;
     }
 

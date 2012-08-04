@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/atom/widget/nls/tr/FeedEntryViewer", //begin v1.x content
 ({
 	displayOptions: "[görüntüleme seçenekleri]",
 	title: "Başlık",
@@ -9,3 +12,5 @@
 	summary: "Özet",
 	content: "İçerik"
 })
+//end v1.x content
+);

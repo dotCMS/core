@@ -41,10 +41,11 @@
 	/* rules for the dijit.form.*Button widgets (see also ComboButton section below) */
 	border: 1px solid @button-border-color;
 	padding:2px 4px 4px 4px;
-	background-image: url("images/button.png");
+	background-image: url("../@{image-form-button}");
 	background-position: center top;
 	background-repeat: repeat-x;
 	background-color: @button-background-color;
+	color: @text-color;
 	.border-radius(@button-border-radius);
 	.box-shadow(0 1px 1px rgba(0,0,0,0.15));
 }
@@ -59,7 +60,7 @@
 	width: 15px;
 	height: 15px;
 	margin: 0 auto;
-	background-image:url("images/buttonArrows.png");
+	background-image:url("../@{image-form-button-arrows}");
 	background-repeat:no-repeat;
 	background-position:-51px 53%;
 }
@@ -105,11 +106,12 @@
  	.transition-duration(.2s);
 }
 
-/* checked status */
+/* active, checked status */
 .claro .dijitButtonActive .dijitButtonNode, 
 .claro .dijitDropDownButtonActive .dijitButtonNode,
 .claro .dijitComboButtonActive .dijitButtonNode,
-.claro .dijitToggleButtonActive .dijitButtonNode {
+.claro .dijitToggleButtonActive .dijitButtonNode,
+.claro .dijitStackController .dijitToggleButtonChecked .dijitButtonNode {
 	background-color: @button-pressed-background-color;
 	.box-shadow(0 0 0 rgba(0,0,0,0));
  	.transition-duration(.1s);

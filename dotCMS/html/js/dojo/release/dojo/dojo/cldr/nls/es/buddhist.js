@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/es/buddhist", //begin v1.x content
 {
 	"dateFormatItem-yM": "M/y G",
 	"dateFormatItem-yQ": "Q y G",
@@ -120,3 +122,5 @@
 	],
 	"dateFormatItem-h": "hh a"
 }
+//end v1.x content
+);

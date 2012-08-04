@@ -7,7 +7,6 @@ import java.util.List;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -32,6 +31,18 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	private String selectedimage;
     /** nullable persistent field */
 	private String image;
+	
+	//	*********************** BEGIN GRAZIANO issue-12-dnd-template
+	private Boolean drawed;
+	
+	private String drawedBody;
+	
+	private Integer countAddContainer;
+	
+	private Integer countContainers;
+	
+	private String headCode;
+	//	*********************** END GRAZIANO issue-12-dnd-template
 
 	/** default constructor */
 	public Template() {
@@ -148,6 +159,57 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	 */
 	public void setHeader(String header) {
 		this.header = header;
+	}
+	
+	/**
+	 * Identify the drawed template
+	 * @return
+	 */
+	public Boolean isDrawed() {
+		return drawed;
+	}
+
+	/**
+	 * Sets the boolean for drawed template 
+	 * @param drawed
+	 */
+	public void setDrawed(Boolean drawed) {
+		if(null!=drawed)
+			this.drawed = drawed;
+		else
+			this.drawed = false;
+	}
+		
+	public String getDrawedBody() {
+		return drawedBody;
+	}
+
+	public void setDrawedBody(String drawedBody) {
+		this.drawedBody = drawedBody;
+	}
+
+	public Integer getCountAddContainer() {
+		return countAddContainer;
+	}
+
+	public void setCountAddContainer(Integer countAddContainer) {
+		this.countAddContainer = countAddContainer;
+	}
+
+	public Integer getCountContainers() {
+		return countContainers;
+	}
+
+	public void setCountContainers(Integer countContainers) {
+		this.countContainers = countContainers;
+	}
+
+	public String getHeadCode() {
+		return headCode;
+	}
+
+	public void setHeadCode(String headCode) {
+		this.headCode = headCode;
 	}
 
 	public int compareTo(Object compObject){

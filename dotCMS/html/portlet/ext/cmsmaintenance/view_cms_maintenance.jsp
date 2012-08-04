@@ -966,8 +966,7 @@ function loadUsers() {
 					html+="<td> ";
 					if("<%=session.getId()%>" !=session.sessionId ){
 						html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
-						html+=" <button id='invalidateButtonNode-"+session.sessionId+"' type='button'> ";
-		                html+=" </button>";
+						html+=" <button id='invalidateButtonNode-"+session.sessionId+"'></button>";
 					}
 	                
 					html+=" </td>";
@@ -978,8 +977,17 @@ function loadUsers() {
 
 				for(var i=0;i<sessionList.size();i++) {
                     var session=sessionList[i];
+
+                    var id = "invalidateButton-" + session.sessionId;
+
+                    //Verify if a button widget with this id exist, if it exist we must delete firts before to try to create a new one
+                    var button = dijit.byId(id);
+                    if (button) {
+                        button.destroyRecursive();
+                    }
+
                     new dijit.form.Button({
-                    	id:"invalidateButton-"+session.sessionId,
+                    	id: id,
                         label: "<%= LanguageUtil.get(pageContext,"logged-users-tab-killsession") %>",
                         iconClass: "deleteIcon",
                         "class": "killsessionButton",
@@ -1008,7 +1016,18 @@ function selectAll(id){
 	 s.addRange(r1);
 }
 
-
+function showIndexClusterStatus(indexName) {
+	
+	var dialog = new dijit.Dialog({
+		title: "Index Store",
+		style: "width: 400px;",
+		content: new dojox.layout.ContentPane({
+			href: "/html/portlet/ext/cmsmaintenance/index_cluster_status.jsp?indexName="+indexName
+		})
+	});
+	
+	dialog.show();
+}
 
 
 </script>

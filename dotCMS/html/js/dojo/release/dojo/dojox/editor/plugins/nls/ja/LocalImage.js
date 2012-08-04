@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/ja/LocalImage", //begin v1.x content
 ({
 	insertImageTitle: "イメージの挿入",
 	url: "イメージ",
@@ -8,3 +11,5 @@
 	prePopuTextUrl: "イメージ URL を入力するか、",
 	prePopuTextBrowse: "ローカル・ファイルを参照してください。"
 })
+//end v1.x content
+);

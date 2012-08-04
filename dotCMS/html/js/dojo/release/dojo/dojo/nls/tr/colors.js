@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/nls/tr/colors", //begin v1.x content
 ({
 // local representation of all CSS3 named colors, companion to dojo.colors.  To be used where descriptive information
 // is required for each color, such as a palette widget, and not for specifying color programatically.
@@ -145,6 +147,7 @@ tan: "güneş yanığı",
 teal: "Teal mavi",
 thistle: "devedikeni",
 tomato: "domates",
+transparent: "saydam",
 turquoise: "turkuaz",
 violet: "eflatun",
 wheat: "buğday",
@@ -153,3 +156,5 @@ whitesmoke: "beyaz duman",
 yellow: "sarı",
 yellowgreen: "sarı yeşil"
 })
+//end v1.x content
+);

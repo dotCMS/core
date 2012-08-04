@@ -1,0 +1,259 @@
+@CHARSET "UTF-8";
+
+/* *********************************************************************************************************** */
+/* 	YUI Grid extensions 
+	New ids and classes customized for template design.
+/* *********************************************************************************************************** */
+
+#doc-template,#doc2-template,#doc3-template,#doc4-template,.yui-t1-template,.yui-t2-template,.yui-t3-template,.yui-t4-template,.yui-t5-template,.yui-t6-template,.yui-t7-template{
+	margin:auto;
+	text-align:left;
+	width:57.69em;
+	*width:56.25em
+}
+
+#doc2-template{
+	width:73.076em;
+	*width:71.25em
+}
+
+#doc3-template{
+	margin:auto 10px;
+	width:auto
+}
+
+#doc4-template{
+	width:74.923em;
+	*width:73.05em
+}
+
+.yui-b-template{
+	position:relative
+}
+.yui-b-template{
+	_position:static
+}
+#yui-main-template .yui-b-template{
+	position:static
+}
+#yui-main-template,.yui-g-template .yui-u-template .yui-g-template{
+	width:100%
+}
+.yui-t1-template #yui-main-template,.yui-t2-template #yui-main-template,.yui-t3-template #yui-main-template{
+	float:right;
+	margin-left:-25em
+}
+.yui-t4-template #yui-main-template,.yui-t5-template #yui-main-template,.yui-t6-template #yui-main-template{
+	float:left;
+	margin-right:-25em
+}
+.yui-t1-template .yui-b-template{
+	float:left;
+	width:12.30769em;
+	*width:12.00em
+}
+.yui-t1-template #yui-main-template .yui-b-template{
+	margin-left:13.30769em;
+	*margin-left:13.05em
+}
+.yui-t2-template .yui-b-template{
+	float:left;
+	width:13.8461em;
+	*width:13.50em
+}
+.yui-t2-template #yui-main-template .yui-b-template{
+	margin-left:14.8461em;
+	*margin-left:14.55em
+}
+.yui-t3-template .yui-b-template{
+	float:left;
+	width:23.0769em;
+	*width:22.50em
+}
+.yui-t3-template #yui-main-template .yui-b-template{
+	margin-left:24.0769em;
+	*margin-left:23.62em
+}
+.yui-t4-template .yui-b-template{
+	float:right;
+	width:13.8456em;
+	*width:13.50em
+}
+.yui-t4-template #yui-main-template .yui-b-template{
+	margin-right:14.8456em;
+	*margin-right:14.55em
+}
+.yui-t5-template .yui-b-template{
+	float:right;
+	width:18.4615em;
+	*width:18.00em
+}
+.yui-t5-template #yui-main-template .yui-b-template{
+	margin-right:19.4615em;
+	*margin-right:19.125em
+}
+.yui-t6-template .yui-b-template{
+	float:right;
+	width:23.0769em;
+	*width:22.50em
+}
+.yui-t6-template #yui-main-template .yui-b-template{
+	margin-right:24.0769em;
+	*margin-right:23.62em
+}
+.yui-t7-template #yui-main-template .yui-b-template{
+	display:block;
+	margin:0 0 1em 0
+}
+#yui-main-template .yui-b-template{
+	float:none;
+	width:auto
+}
+.yui-gb-template .yui-u-template,.yui-g-template .yui-gb-template .yui-u-template,.yui-gb-template .yui-g-template,.yui-gb-template .yui-gb-template,.yui-gb-template .yui-gc-template,.yui-gb-template .yui-gd-template,.yui-gb-template .yui-ge-template,.yui-gb-template .yui-gf-template,.yui-gc-template .yui-u-template,.yui-gc-template .yui-g-template,.yui-gd-template .yui-u-template{
+	float:left
+}
+.yui-g-template .yui-u-template,.yui-g-template .yui-g-template,.yui-g-template .yui-gb-template,.yui-g-template .yui-gc-template,.yui-g-template .yui-gd-template,.yui-g-template .yui-ge-template,.yui-g-template .yui-gf-template,.yui-gc-template .yui-u-template,.yui-gd-template .yui-g-template,.yui-g-template .yui-gc-template .yui-u-template,.yui-ge-template .yui-u-template,.yui-ge-template .yui-g-template,.yui-gf-template .yui-g-template,.yui-gf-template .yui-u-template{
+	float:right
+}
+.yui-g-template div.first,.yui-gb-template div.first,.yui-gc-template div.first,.yui-gd-template div.first,.yui-ge-template div.first,.yui-gf-template div.first,.yui-g-template .yui-gc-template div.first,.yui-g-template .yui-ge-template div.first,.yui-gc-template div.first div.first{
+	float:left
+}
+.yui-g-template .yui-u-template,.yui-g-template .yui-g-template,.yui-g-template .yui-gb-template,.yui-g-template .yui-gc-template,.yui-g-template .yui-gd-template,.yui-g-template .yui-ge-template,.yui-g-template .yui-gf-template{
+	width:49.1%
+}
+.yui-gb-template .yui-u-template,.yui-g-template .yui-gb-template .yui-u-template,.yui-gb-template .yui-g-template,.yui-gb-template .yui-gb-template,.yui-gb-template .yui-gc-template,.yui-gb-template .yui-gd-template,.yui-gb-template .yui-ge-template,.yui-gb-template .yui-gf-template,.yui-gc-template .yui-u-template,.yui-gc-template .yui-g-template,.yui-gd-template .yui-u-template{
+	width:32.3%;	
+	margin-left:1.3%
+}
+.yui-gb-template .yui-u-template{
+	*margin-left:1.9%;
+	*width:31.9%
+}
+.yui-gc-template div.first,.yui-gd-template .yui-u-template{
+	width:65%
+}
+.yui-gd-template div.first{
+	width:31%
+}
+.yui-ge-template div.first,.yui-gf-template .yui-u-template{
+	width:72%
+}
+.yui-ge-template .yui-u-template,.yui-gf-template div.first{
+	width:24%
+}
+.yui-g-template .yui-gb-template div.first,.yui-gb-template div.first,.yui-gc-template div.first,.yui-gd-template div.first{
+	margin-left:0.5%
+}
+.yui-g-template .yui-g-template .yui-u-template,.yui-gb-template .yui-g-template .yui-u-template,.yui-gc-template .yui-g-template .yui-u-template,.yui-gd-template .yui-g-template .yui-u-template,.yui-ge-template .yui-g-template .yui-u-template,.yui-gf-template .yui-g-template .yui-u-template{
+	width:49%;
+	*width:48.1%;
+	*margin-left:0
+}
+.yui-g-template .yui-g-template .yui-u-template{
+	width:48.1%
+}
+.yui-g-template .yui-gb-template div.first,.yui-gb-template .yui-gb-template div.first{
+	*margin-right:0;
+	*width:32%;
+	_width:31.7%
+}
+.yui-g-template .yui-gc-template div.first,.yui-gd-template .yui-g-template{
+	width:66%
+}
+.yui-gb-template .yui-g-template div.first{
+	*margin-right:4%;
+	_margin-right:1.3%
+}
+.yui-gb-template .yui-gc-template div.first,.yui-gb-template .yui-gd-template div.first{
+	*margin-right:0
+}
+.yui-gb-template .yui-gb-template .yui-u-template,.yui-gb-template .yui-gc-template .yui-u-template{
+	*margin-left:1.8%;
+	_margin-left:4%
+}
+.yui-g-template .yui-gb-template .yui-u-template{
+	_margin-left:1.0%
+}
+.yui-gb-template .yui-gd-template .yui-u-template{
+	*width:66%;
+	_width:61.2%
+}
+.yui-gb-template .yui-gd-template div.first{
+	*width:31%;
+	_width:29.5%
+}
+.yui-g-template .yui-gc-template .yui-u-template,.yui-gb-template .yui-gc-template .yui-u-template{
+	width:32%;
+	_float:right;
+	margin-right:0;
+	_margin-left:0
+}
+.yui-gb-template .yui-gc-template div.first{
+	width:66%;
+	*float:left;
+	*margin-left:0
+}
+.yui-gb-template .yui-ge-template .yui-u-template,.yui-gb-template .yui-gf-template .yui-u-template{
+	margin:0
+}
+.yui-gb-template .yui-gb-template .yui-u-template{
+	_margin-left:.7%
+}
+.yui-gb-template .yui-g-template div.first,.yui-gb-template .yui-gb-template div.first{
+	*margin-left:0
+}
+.yui-gc-template .yui-g-template .yui-u-template,.yui-gd-template .yui-g-template .yui-u-template{
+	*width:48.1%;
+	*margin-left:0
+}
+.yui-gb-template .yui-gd-template div.first{
+	width:32%
+}
+.yui-g-template .yui-gd-template div.first{
+	_width:29.9%
+}
+.yui-ge-template .yui-g-template{
+	width:24%
+}
+.yui-gf-template .yui-g-template{
+	width:74.2%
+}
+.yui-gb-template .yui-ge-template div.yui-u-template,.yui-gb-template .yui-gf-template div.yui-u-template{
+	float:right
+}
+.yui-gb-template .yui-ge-template div.first,.yui-gb-template .yui-gf-template div.first{
+	float:left
+}
+.yui-gb-template .yui-ge-template .yui-u-template,.yui-gb-template .yui-gf-template div.first{
+	*width:24%;
+	_width:20%
+}
+.yui-gb-template .yui-ge-template div.first,.yui-gb-template .yui-gf-template .yui-u-template{
+	*width:73.5%;
+	_width:65.5%
+}
+.yui-ge-template div.first .yui-gd-template .yui-u-template{
+	width:65%
+}
+.yui-ge-template div.first .yui-gd-template div.first{
+	width:32%
+}
+#hd-template:after,#bd-template:after,#ft-template:after,.yui-g-template:after,.yui-gb-template:after,.yui-gc-template:after,.yui-gd-template:after,.yui-ge-template:after,.yui-gf-template:after{
+	content:"";display:block;clear:both
+}
+#hd-template,#bd-template,#ft-template,.yui-g-template,.yui-gb-template,.yui-gc-template,.yui-gd-template,.yui-ge-template,.yui-gf-template{
+	zoom:1
+}
+
+/* *********************************************************************************************************** */
+/* 	YUI Grid extensions 
+	Alter properties for Edit Mode of the HTMLPage
+/* *********************************************************************************************************** */
+
+#hd-template {
+	min-height: 120px;
+}
+
+.yui-b-template{
+	min-height: 100px;
+}

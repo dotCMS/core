@@ -296,7 +296,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		int top = (page * pageSize);
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
 		    		
-		String sql = "select userid from user_ where (lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
+		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
 				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " +
 				"order by firstName asc,lastname asc";
 		DotConnect dotConnect = new DotConnect();
@@ -324,6 +324,55 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		return users;    		
 	}
 	
+	@Override
+	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
+		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
+		String sql = "select count(*) as count from user_ where " +
+				"lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or " +
+				"lower(emailAddress) like '%" + filter + "%' or " + 
+				DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%'";
+		DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL(sql);
+		return dotConnect.getInt("count");
+	}
+	
+	@Override
+	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
+		List users = new ArrayList(pageSize);
+		if(page==0){
+			page = 1;
+		}
+		int bottom = ((page - 1) * pageSize);
+		int top = (page * pageSize);
+		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
+		    		
+		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
+				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " +
+				"order by firstName asc,lastname asc";
+		DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL(sql);
+		dotConnect.setMaxRows(top);
+		List results = dotConnect.getResults();
+		
+		int lenght = results.size();
+		for(int i = 0;i < lenght;i++)
+		{
+			if(i >= bottom)
+			{
+				if(i < top)
+				{
+					HashMap hash = (HashMap) results.get(i);
+					String userId = (String) hash.get("userid");
+					users.add(loadUserById(userId));
+				}
+				else
+				{
+					break;
+				}
+			}    			
+		}
+		return users;    		
+	}
 	@Override
 	public Map<String, Object> getUsersAnRolesByName(String filter, int start, int limit) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter : "");

@@ -1,44 +1,8 @@
-if(!dojo._hasResource["dojo.NodeList-html"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojo.NodeList-html"] = true;
-dojo.provide("dojo.NodeList-html");
-dojo.require("dojo.html");
+/*
+	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
-
-
-/*=====
-dojo["NodeList-html"] = {
-	// summary: Adds a chainable html method to dojo.query() / Nodelist instances for setting/replacing node content
-};
-=====*/
-
-dojo.extend(dojo.NodeList, {
-	html: function(content, /* Object? */params){
-		//	summary:
-		//		see `dojo.html.set()`. Set the content of all elements of this NodeList
-		//
-		// description:
-		//		Based around `dojo.html.set()`, set the content of the Elements in a
-		//		NodeList to the given content (string/node/nodelist), with optional arguments
-		//		to further tune the set content behavior.
-		//
-		//	example:
-		//	| dojo.query(".thingList").html("<li dojoType='dojo.dnd.Moveable'>1</li><li dojoType='dojo.dnd.Moveable'>2</li><li dojoType='dojo.dnd.Moveable'>3</li>",
-		//	| {
-		//	| 	parseContent: true,
-		//	| 	onBegin: function(){
-		//	| 		this.content = this.content.replace(/([0-9])/g, this.id + ": $1");
-		//	| 		this.inherited("onBegin", arguments);
-		//	| 	}
-		//	| }).removeClass("notdone").addClass("done");
-
-		var dhs = new dojo.html._ContentSetter(params || {});
-		this.forEach(function(elm){
-			dhs.node = elm;
-			dhs.set(content);
-			dhs.tearDown();
-		});
-		return this; // dojo.NodeList
-	}
-});
-
-}
+//>>built
+define("dojo/NodeList-html",["./query","./_base/lang","./html"],function(_1,_2,_3){var _4=_1.NodeList;_2.extend(_4,{html:function(_5,_6){var _7=new _3._ContentSetter(_6||{});this.forEach(function(_8){_7.node=_8;_7.set(_5);_7.tearDown();});return this;}});return _4;});

@@ -33,6 +33,7 @@
     boolean showDeleted = false;
     boolean filterSystemHost = false;
     boolean filterLocked = false;
+    boolean filterUnpublish = false;
     int currpage = 1;
     String orderBy = "modDate desc";
     Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -63,6 +64,8 @@
             showDeleted = (Boolean) lastSearch.get("showDeleted");
             filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
             filterLocked = (Boolean) lastSearch.get("filterLocked");
+            if(lastSearch.get("filterUnpublish")!=null)
+                filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
             currpage = (Integer) lastSearch.get("page");
             orderBy = (String) lastSearch.get("orderBy");
         if (fieldsSearch.containsKey("languageId")) {
@@ -319,6 +322,7 @@
 <input type="hidden" name="showDeleted" id="showDeleted" value="">
 <input type="hidden" name="filterSystemHost" id="filterSystemHost" value="">
 <input type="hidden" name="filterLocked" id="filterLocked" value="">
+<input type="hidden" name="filterUnpublish" id="filterUnpublish" value="">
 <input type="hidden" name="currentPage" id="currentPage" value="">
 <input type="hidden" name="currentSortBy" id="currentSortBy" value="modDate desc">
 <input type="hidden" value="" name="lastModDateFrom"  id="lastModDateFrom" size="10" maxlength="10" readonly="true"/>
@@ -332,9 +336,9 @@
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:400px;" id="borderContainer" class="shadowBox headerBox">
 
 <!-- START Left Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;" class="lineRight">
+        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 350px;overflow-y:auto; overflow-x:hidden;margin:43px 0 0 5px;" class="lineRight" >
 
-                <div id="filterWrapper" style="overflow-y:auto; overflow-x:hidden;margin:43px 0 0 5px;">
+               
 
                         <% List<Structure> readStructs = StructureFactory.getStructuresWithReadPermissions(user, true);  %>
                         <% if((readStructs.size() == 0)){%>
@@ -448,7 +452,14 @@
                                    </dd>
                                 </dl>
 								<div class="clear"></div>
-
+								
+								<dl>
+                                   <dt><%= LanguageUtil.get(pageContext, "Unpublish only") %>:</dt>
+                                   <dd>
+                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterUnpublishCB" onclick="doSearch(1);" <%=filterUnpublish?"checked=\"checked\"":""%>>
+                                   </dd>
+                               </dl>                               
+                               <div class="clear"></div>
 
                                 <dl id="search_categories_list"></dl>
 								<div class="clear"></div>
@@ -473,15 +484,14 @@
                                 </button>
                         </div>
 
-                </div>
+                
         </div>
 <!-- END Left Column -->
 
 
 <!-- START Right Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
-
-                <div id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
+                
                         <div id="metaMatchingResultsDiv" style="display:none;padding-top:7px;">
                                 <!-- START Listing Results -->
                                         <input type="hidden" name="referer" value="<%=referer%>">
@@ -515,7 +525,7 @@
                                 </div>
                         <!-- END Pagination -->
                         <div class="clear"></div>
-                </div>
+                
 
                 <%boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
                 <div class="clear"></div>
@@ -572,8 +582,6 @@
     </div>
 <!-- END Right Column -->
 
-</div>
-<!-- END Right Column -->
 
 
 
@@ -609,5 +617,5 @@
 </div>
 
 <script type="text/javascript">
-resizeBrowser();
+dojo.ready(resizeBrowser);
 </script>

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.cache.Fqn;
 import org.jgroups.Address;
@@ -55,7 +56,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	private Map<String, Cache<String, Object>> groups = new HashMap<String, Cache<String, Object>>();
 	private JChannel channel;
 	private boolean useJgroups = false;
-	private HashMap<String, Boolean> cacheToDisk = new HashMap<String,Boolean>();
+	private ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<String, Boolean>();
 	private HashSet<String> availableCaches = new HashSet<String>();
 	private H2CacheLoader diskCache = null;
 	
@@ -288,7 +289,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		if(diskCache != null){
 			diskCache.resetCannotCacheCache();
 		}
-		cacheToDisk = new HashMap<String,Boolean>();
+		cacheToDisk = new ConcurrentHashMap<String, Boolean>();
 		
 	}
 
@@ -623,14 +624,14 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	public void viewAccepted(View new_view) {
 		super.viewAccepted(new_view);
 		Logger.info(this, "Method view: Cluster View is : " + new_view);
-		AdminLogger.log(DotGuavaCacheAdministratorImpl.class, "viewAccepted", "Cluster View is : " + new_view);
+		Logger.info(DotGuavaCacheAdministratorImpl.class, "viewAccepted + Cluster View is : " + new_view);
 	}
 
 	@Override
 	public void suspect(Address mbr) {
 		super.suspect(mbr);
 		Logger.info(this, "Method suspect: There is a suspected member : " + mbr);
-		AdminLogger.log(DotGuavaCacheAdministratorImpl.class, "suspect", "There is a suspected member : " + mbr);
+		Logger.info(DotGuavaCacheAdministratorImpl.class, "suspect + There is a suspected member : " + mbr);
 	}
 
 	public void testCluster() {
@@ -783,5 +784,12 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
     @Override
     public Class getImplementationClass() {
         return DotGuavaCacheAdministratorImpl.class;
+    }
+
+
+
+    @Override
+    public DotCacheAdministrator getImplementationObject() {
+        return this;
     }
 }

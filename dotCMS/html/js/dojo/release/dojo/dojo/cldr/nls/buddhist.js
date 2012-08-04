@@ -1,4 +1,7 @@
+//>>built
+define("dojo/cldr/nls/buddhist", { root:
 
+//begin v1.x content
 {
 	"months-format-narrow": [
 		"1",
@@ -235,3 +238,31 @@
 	"dateFormatItem-Hms": "HH:mm:ss",
 	"dateFormatItem-hms": "h:mm:ss a"
 }
+//end v1.x content
+,
+	"ar": true,
+	"da": true,
+	"de": true,
+	"el": true,
+	"en": true,
+	"en-gb": true,
+	"es": true,
+	"fi": true,
+	"fr": true,
+	"hu": true,
+	"it": true,
+	"ja": true,
+	"ko": true,
+	"nb": true,
+	"nl": true,
+	"pl": true,
+	"pt": true,
+	"pt-pt": true,
+	"ro": true,
+	"ru": true,
+	"sv": true,
+	"th": true,
+	"tr": true,
+	"zh": true,
+	"zh-hant": true
+});

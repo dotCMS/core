@@ -1142,6 +1142,27 @@ public interface ContentletAPIPostHook {
 	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException, ParseException;
 
 	/**
+	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
+	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.
+	 * The returned list will be filtered with only the contentlets that match the required permission.  You can of course also
+	 * pass permissions to further limit in the lucene query itself
+	 * Searches default langugae if anyLanguage is false, and searches all languages if anyLanguage is true.
+	 * @param luceneQuery
+	 * @param limit
+	 * @param offset
+	 * @param sortBy indexName(previously known as dbColumnName) to order by. Can be null or empty string
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param requiredPermission
+	 * @param anyLanguage
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws ParseException
+	 */
+	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException, DotSecurityException, ParseException;
+	
+	/**
 	 * Reindexes content under a given host + refreshes the content from cache
 	 * @param host
 	 * @throws DotReindexStateException
@@ -1190,5 +1211,5 @@ public interface ContentletAPIPostHook {
 
     public void indexCount(String luceneQuery, User user,
             boolean respectFrontendRoles, long value);
-	
+
 }

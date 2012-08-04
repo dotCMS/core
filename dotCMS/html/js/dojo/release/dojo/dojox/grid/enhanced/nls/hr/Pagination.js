@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/hr/Pagination", //begin v1.x content
 ({
 	"descTemplate": "${2} - ${3} od ${1} ${0}",
 	"firstTip": "Prva stranica",
@@ -5,6 +8,7 @@
 	"nextTip": "Sljedeća stranica",
 	"prevTip": "Prethodna stranica",
 	"itemTitle": "stavke",
+	"singularItemTitle": "stavka",
 	"pageStepLabelTemplate": "Strana ${0}",
 	"pageSizeLabelTemplate": "${0} stavki po stranici",
 	"allItemsLabelTemplate": "Sve stavke",
@@ -13,6 +17,9 @@
 	"dialogIndication": "Navedite broj stranice",
 	"pageCountIndication": " (${0} stranica)",
 	"dialogConfirm": "Idi",
-	"dialogCancel": "Opoziv"
+	"dialogCancel": "Opoziv",
+	"all": "svi"
 })
+//end v1.x content
+);
 

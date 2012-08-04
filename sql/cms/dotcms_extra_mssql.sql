@@ -519,8 +519,8 @@ BEGIN
 fetch next from folder_cur_Updated into @ident,@newName
 END;
 
-CREATE FUNCTION dotFolderPath(@parent_path CHAR(255), @asset_name CHAR(255))
-RETURNS CHAR(255)
+CREATE FUNCTION dbo.dotFolderPath(@parent_path varchar(36), @asset_name varchar(36))
+RETURNS varchar(36)
 BEGIN
   IF(@parent_path='/System folder')
   BEGIN
@@ -644,6 +644,9 @@ ALTER TABLE tag add CONSTRAINT [DF_tag_host] DEFAULT 'SYSTEM_HOST' for host_id;
 alter table tag add constraint tag_tagname_host unique (tagname, host_id);
 alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) references tag (tag_id);
 
+drop index tag_user_id_index on tag;
+alter table tag alter column user_id text;
+
 
 -- ****** Indicies Data Storage *******
 create table indicies (
@@ -658,3 +661,5 @@ create table indicies (
     primary key (log_name)
   );
   
+
+create index idx_identifier_perm on identifier (asset_type,host_inode);
