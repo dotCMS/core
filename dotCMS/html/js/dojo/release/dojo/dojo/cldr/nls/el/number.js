@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/el/number", //begin v1.x content
 {
 	"group": ".",
 	"percentSign": "%",
@@ -15,3 +17,5 @@
 	"currencyFormat": "#,##0.00 ¤",
 	"plusSign": "+"
 }
+//end v1.x content
+);

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/hu/EnhancedGrid", //begin v1.x content
 ({
 	singleSort: "Egyszerű rendezés",
 	nestedSort: "Beágyazott rendezés",
@@ -9,4 +12,6 @@
 	indirectSelectionCheckBox: "${0} sor, több kijelölés, jelölőnégyzet",
 	selectAll: "Összes kijelölése"
 })
+//end v1.x content
+);
 

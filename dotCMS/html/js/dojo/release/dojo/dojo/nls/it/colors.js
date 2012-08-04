@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/nls/it/colors", //begin v1.x content
 ({
 // local representation of all CSS3 named colors, companion to dojo.colors.  To be used where descriptive information
 // is required for each color, such as a palette widget, and not for specifying color programatically.
@@ -145,6 +147,7 @@ tan: "grigio bruno",
 teal: "verde turchese",
 thistle: "rosa cenere",
 tomato: "pomodoro",
+transparent: "trasparente",
 turquoise: "turchese",
 violet: "viola",
 wheat: "sabbia",
@@ -153,3 +156,5 @@ whitesmoke: "bianco fumo",
 yellow: "giallo",
 yellowgreen: "giallo verde"
 })
+//end v1.x content
+);

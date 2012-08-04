@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/he/Breadcrumb", //begin v1.x content
 ({
 	"nodeActions": "פעולות ${nodeName} ",
 	"selectContents": "בחירת תוכן ",
@@ -8,3 +11,5 @@
 	"moveEnd": "העברת הסמן לסוף "
 })
 
+//end v1.x content
+);

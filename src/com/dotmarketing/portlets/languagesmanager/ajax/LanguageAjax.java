@@ -10,16 +10,25 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.struts.Globals;
+import org.directwebremoting.WebContext;
+import org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -30,7 +39,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 public class LanguageAjax {
 
 	public LanguageAPI langAPI = APILocator.getLanguageAPI();
-	
+
 	public List<LanguageKey> getLanguageKeys(String languageCode) {
 		return getLanguageKeys(languageCode, null);
 	}
@@ -38,24 +47,24 @@ public class LanguageAjax {
 	public List<LanguageKey> getLanguageKeys(String languageCode, String countryCode) {
 		return langAPI.getLanguageKeys(languageCode, countryCode);
 	}
-	
+
 	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode,int page) {
 		return getPaginatedLanguageKeys(languageCode, null,page);
 	}
 
 	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode, String countryCode,int page) {
-		
+
 		int keysPerPage = 100;
 		int keyIndex = 1;
 		List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
 		List<Map<String,Object>> keysToShow = new ArrayList<Map<String,Object>>();
-			
+
 	    //Normalizing lists for display
 	    List<LanguageKey> generalKeysList = new LinkedList<LanguageKey>(langAPI.getLanguageKeys(languageCode));
 	    Collections.sort(generalKeysList);
 	    List<LanguageKey> specificKeyList = new LinkedList<LanguageKey>(langAPI.getLanguageKeys(languageCode, countryCode));
 	    Collections.sort(specificKeyList);
-	    
+
 	    for(LanguageKey key: generalKeysList) {
 	    	int pos = Collections.binarySearch(specificKeyList, key);
 	    	if(pos < 0) {
@@ -73,7 +82,7 @@ public class LanguageAjax {
 	    }
 
 	    String alternate = "alternate_1";
-		int idx = 0; 
+		int idx = 0;
 		for(keyIndex = ((page-1) * keysPerPage); (keyIndex <= ((page * keysPerPage)+1) && (keyIndex < generalKeysList.size())); keyIndex++) {
 			LanguageKey generalKey = generalKeysList.get(keyIndex);
 			int pos = Collections.binarySearch(specificKeyList, generalKey);
@@ -82,9 +91,9 @@ public class LanguageAjax {
 				specificKey = specificKeyList.get(pos);
 			else
 				specificKey = new LanguageKey(generalKey.getLanguageCode(), generalKey.getCountryCode(), generalKey.getKey(), "");
-			
-			Map<String,Object> keyMap = new HashMap<String, Object>();				
-			keyMap.put("key", generalKey.getKey());				
+
+			Map<String,Object> keyMap = new HashMap<String, Object>();
+			keyMap.put("key", generalKey.getKey());
 			keyMap.put("generalValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(generalKey.getValue())));
 			keyMap.put("specificValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(specificKey.getValue())));
 			keyMap.put("idx", ""+idx);
@@ -93,11 +102,11 @@ public class LanguageAjax {
 			alternate = alternate.equals("alternate_1")?"alternate_2":"alternate_1";
 			idx++;
 		}
-		
+
 		//Adding the result counters as the first row of the results
 		Map<String, Object> counters = new HashMap<String, Object>();
 		result.add(counters);
-		
+
 		long total = generalKeysList.size();
 		counters.put("total", total);
 		if (page == 0)
@@ -129,13 +138,13 @@ public class LanguageAjax {
 		counters.put("begin", begin);
 		counters.put("end", end);
 		counters.put("totalPages", totalPages);
-		
+
 		result.addAll(keysToShow);
 		return result;
 	}
-	
+
 	public String saveKeys(String languageCode,String countryCode,List<String> keysToAdd,List<String> keysToUpdate,List<String> keysToDelete){
-		
+
 		Map<String, String> generalKeysToAdd = new HashMap<String, String>();
 		Map<String, String> specificKeysToAdd  = new HashMap<String, String>();
 		Map<String, String> generalKeysToUpdate = new HashMap<String, String>();
@@ -143,32 +152,32 @@ public class LanguageAjax {
 		Set<String> deleteKeys = new HashSet<String>();
 		Language lang = langAPI.getLanguage(languageCode, countryCode);
 		String delim = WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR;
-		
+
 		for(String str:keysToAdd){
 			int firstDelimIndex = str.indexOf(delim);
 			int secondDelimIndex = str.indexOf(delim,firstDelimIndex+1);
 			String key = str.substring(0,firstDelimIndex);
 			String generalValue = str.substring(firstDelimIndex+delim.length(),secondDelimIndex);
 			String specificValue = str.substring(secondDelimIndex+delim.length());
-			
+
 			generalKeysToAdd.put(key, generalValue);
-			specificKeysToAdd.put(key, specificValue);			
+			specificKeysToAdd.put(key, specificValue);
 		}
-		
+
 		for(String str:keysToUpdate){
 			int firstDelimIndex = str.indexOf(delim);
 			int secondDelimIndex = str.indexOf(delim,firstDelimIndex+1);
 			String key = str.substring(0,firstDelimIndex);
 			String generalValue = str.substring(firstDelimIndex+delim.length(),secondDelimIndex);
 			String specificValue = str.substring(secondDelimIndex+delim.length());
-			
+
 			generalKeysToUpdate.put(key, generalValue);
-			specificKeysToUpdate.put(key, specificValue);			
-		}		
-		for(String str:keysToDelete){		
+			specificKeysToUpdate.put(key, specificValue);
+		}
+		for(String str:keysToDelete){
 			deleteKeys.add(str);
 		}
-		
+
 		try {
 			langAPI.addLanguageKeys(lang, generalKeysToAdd, specificKeysToAdd);
 			langAPI.updateLanguageKeys(lang, generalKeysToUpdate, specificKeysToUpdate);
@@ -178,11 +187,33 @@ public class LanguageAjax {
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage());
 		}
-		
+
 		try {
 			return LanguageUtil.get(UtilMethods.getDefaultCompany().getCompanyId(), UtilMethods.getDefaultCompany().getLocale(), "message.languagemanager.save");
-		} catch (LanguageException e) {			
+		} catch (LanguageException e) {
 			return "message.languagemanager.save";
 		}
-	}	
+	}
+
+	public List<Map<String, String>> getLanguages() throws LanguageException, DotRuntimeException, PortalException, SystemException {
+		List<Language> languages =  APILocator.getLanguageAPI().getLanguages();
+		ArrayList<Map<String, String>> langList = new ArrayList<Map<String, String>> ();
+		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();
+
+		for (Language language : languages) {
+			Map<String, String> map = new HashMap<String, String>();
+			map.put("title", LanguageUtil.get(uWebAPI.getLoggedInUser(request), "Language") );
+			map.put("languageCode", language.getLanguageCode());
+			map.put("language", language.getLanguage());
+			map.put("countryCode", language.getCountryCode());
+			map.put("country", language.getCountry());
+			map.put("id", Long.toString(language.getId()));
+			langList.add(map);
+		}
+
+		return langList;
+
+	}
 }

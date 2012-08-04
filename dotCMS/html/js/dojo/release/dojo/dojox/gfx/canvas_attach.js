@@ -1,14 +1,2 @@
-if(!dojo._hasResource["dojox.gfx.canvas_attach"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.gfx.canvas_attach"] = true;
-dojo.provide("dojox.gfx.canvas_attach");
-
-dojo.require("dojox.gfx.canvas");
-
-dojo.experimental("dojox.gfx.canvas_attach");
-
-// not implemented
-dojox.gfx.canvas.attachSurface = dojox.gfx.canvas.attachNode = function(){
-	return null;	// for now
-};
-
-}
+//>>built
+define("dojox/gfx/canvas_attach",["dojo/_base/lang","dojo/_base/kernel","dojox/gfx/canvas"],function(_1,_2,_3){_1.getObject("dojox.gfx.canvas_attach",true);_2.experimental("dojox.gfx.canvas_attach");_3.attachSurface=_3.attachNode=function(){return null;};return _3;});

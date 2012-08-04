@@ -480,6 +480,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,DotSecurityException, ParseException {
+    	return searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles, requiredPermission, false);
+    }
+    
+    public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException, ParseException {
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
         contents.setTotalResults(list.getTotalResults());
@@ -494,7 +498,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String[] identifiers=new String[identifierList.size()];
         identifiers=identifierList.toArray(identifiers);
 
-        List<Contentlet> contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
+        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        if(anyLanguage){//GIT-816
+            for(Language lang : APILocator.getLanguageAPI().getLanguages()){
+            	try{
+            		List<Contentlet> langCons = findContentletsByIdentifiers(identifiers, false, lang.getId(), user, respectFrontendRoles);
+            		if(langCons.size() > 0){
+            			contentlets.add(langCons.get(0));
+            			break;
+            		}
+                }catch(DotContentletStateException se){
+                	Logger.debug(this, se.getMessage());
+                }
+            }
+        }else{
+        	contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
+        }
+        
         Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
             map.put(contentlet.getIdentifier(), contentlet);
@@ -919,7 +939,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         try{
-            return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (ParseException e) {
             throw new DotDataException("Unable look up related content",e);
         }
@@ -944,7 +964,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         try{
-            return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (ParseException e) {
             throw new DotDataException("Unable look up related content",e);
         }
@@ -1954,7 +1974,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentlet.setModUser(user.getUserId());
 				// start up workflow
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
-				WorkflowProcessor workflow = wapi.fireWorkflowPreCheckin(contentlet);
+				WorkflowProcessor workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
 
 				workingContentlet = contentlet;
 				if(createNewVersion)

@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/he/currency", //begin v1.x content
 {
 	"HKD_displayName": "דולר הונג קונגי",
 	"CHF_displayName": "פרנק שוויצרי",
@@ -10,3 +12,5 @@
 	"GBP_displayName": "לירה שטרלינג",
 	"EUR_displayName": "אירו"
 }
+//end v1.x content
+);

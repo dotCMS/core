@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/kk/TableDialog", //begin v1.x content
 ({
 	insertTableTitle: "Кесте кірістіру",
 	modifyTableTitle: "Кестені өзгерту",
@@ -30,3 +33,5 @@
 })
 	
 
+//end v1.x content
+);

@@ -1,19 +1,2 @@
-if(!dojo._hasResource["dojox.charting.themes.MiamiNice"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.charting.themes.MiamiNice"] = true;
-dojo.provide("dojox.charting.themes.MiamiNice");
-dojo.require("dojox.charting.Theme");
-
-(function(){
-	var dxc=dojox.charting;
-	dxc.themes.MiamiNice=new dxc.Theme({
-		colors: [
-			"#7f9599",
-			"#45b8cc",
-			"#8ecfb0",
-			"#f8acac",
-			"#cc4482"
-		]
-	});
-})();
-
-}
+//>>built
+define("dojox/charting/themes/MiamiNice",["../Theme","./common"],function(_1,_2){_2.MiamiNice=new _1({colors:["#7f9599","#45b8cc","#8ecfb0","#f8acac","#cc4482"]});return _2.MiamiNice;});

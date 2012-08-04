@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/da/InsertAnchor", //begin v1.x content
 ({
 	insertAnchor: "Indsæt anker",
 	title: "Ankeregenskaber",
@@ -7,3 +10,5 @@
 	cancel: "Annullér"
 })
 
+//end v1.x content
+);

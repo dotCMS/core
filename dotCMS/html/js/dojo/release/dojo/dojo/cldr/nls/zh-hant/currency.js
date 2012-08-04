@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/zh-hant/currency", //begin v1.x content
 {
 	"HKD_displayName": "港幣",
 	"CHF_displayName": "瑞士法郎",
@@ -11,3 +13,5 @@
 	"GBP_displayName": "英鎊",
 	"EUR_displayName": "歐元"
 }
+//end v1.x content
+);

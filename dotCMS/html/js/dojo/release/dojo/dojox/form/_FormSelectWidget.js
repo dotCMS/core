@@ -1,10 +1,2 @@
-if(!dojo._hasResource["dojox.form._FormSelectWidget"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.form._FormSelectWidget"] = true;
-dojo.deprecated("dojox.form._FormSelectWidget", "Use dijit.form._FormSelectWidget instead", "2.0");
-
-dojo.provide("dojox.form._FormSelectWidget");
-dojo.require("dijit.form._FormSelectWidget");
-
-dojo.setObject("dojox.form._FormSelectWidget", dijit.form._FormSelectWidget);
-
-}
+//>>built
+define("dojox/form/_FormSelectWidget",["dojo/_base/kernel","dojo/_base/lang","dijit/form/_FormSelectWidget"],function(_1,_2,_3){_1.deprecated("dojox.form._FormSelectWidget","Use dijit.form._FormSelectWidget instead","2.0");_2.setObject("dojox.form._FormSelectWidget",_3);return _3;});

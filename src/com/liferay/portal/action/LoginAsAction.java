@@ -65,6 +65,13 @@ public class LoginAsAction extends Action {
 		loginAsUserID = loginAsParameter.split("-")[1];
 	
 		User loginAsUser = APILocator.getUserAPI().loadUserById(loginAsUserID,APILocator.getUserAPI().getSystemUser(),false);
+		List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(loginAsUser);
+		if ((layouts == null) || (layouts.size() == 0) || !UtilMethods.isSet(layouts.get(0).getId())) {
+		   req.getSession().setAttribute("portal_login_as_error", "user-without-portlet");
+		   Logger.info(this, "An invalid request to login as a different user was made by " + currentUser.getFullName() + 
+		     " (" + currentUser.getUserId() + "), user dont have layouts. Remote IP: " + req.getRemoteAddr());
+		   return mapping.findForward(Constants.COMMON_REFERER);
+		}
 		if(roleAPI.doesUserHaveRole(loginAsUser, administratorRole) || 
 				roleAPI.doesUserHaveRole(loginAsUser, com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) {
 			String passwordParameter = req.getParameter("portal_login_as_password");
@@ -124,7 +131,7 @@ public class LoginAsAction extends Action {
 				}
 				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 			
-				List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(loginAsUser);
+				//List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(loginAsUser);
 				PortletURLImpl portletURLImp = new PortletURLImpl(req, layouts.get(0).getPortletIds().get(0), layouts.get(0).getId(), false);
 				res.sendRedirect(portletURLImp.toString());
 				return null;

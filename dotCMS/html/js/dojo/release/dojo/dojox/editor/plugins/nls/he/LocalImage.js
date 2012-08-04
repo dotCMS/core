@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/he/LocalImage", //begin v1.x content
 ({
 	insertImageTitle: "הוספת תמונה",
 	url: "תמונה",
@@ -9,3 +12,5 @@
 	prePopuTextBrowse: " או נווטו לקובץ מקומי. "
 })
 
+//end v1.x content
+);

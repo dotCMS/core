@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/ca/Pagination", //begin v1.x content
 ({
 	"descTemplate": "${2} - ${3} de ${1} ${0}",
 	"firstTip": "Primera pàgina",
@@ -5,6 +8,7 @@
 	"nextTip": "Pàgina següent",
 	"prevTip": "Pàgina anterior",
 	"itemTitle": "elements",
+	"singularItemTitle": "element",
 	"pageStepLabelTemplate": "Pàgina ${0}",
 	"pageSizeLabelTemplate": "${0} elements per pàgina",
 	"allItemsLabelTemplate": "Tots els elements",
@@ -13,6 +17,8 @@
 	"dialogIndication": "Especifiqueu el número de pàgina",
 	"pageCountIndication": " (${0} pàgines)",
 	"dialogConfirm": "Vés-hi",
-	"dialogCancel": "Cancel·la"
+	"dialogCancel": "Cancel·la",
+	"all": "tot"
 })
-
+//end v1.x content
+);

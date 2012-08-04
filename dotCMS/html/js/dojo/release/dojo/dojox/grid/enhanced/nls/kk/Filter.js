@@ -1,7 +1,9 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/kk/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Сүзгіні тазалау",
 	"filterDefDialogTitle": "Сүзгі",
-	"incompleteRuleTip": "Бұл ереже толық емес.",
 	"ruleTitleTemplate": "${0} ережесі",
 	
 	"conditionEqual": "тең",
@@ -21,6 +23,7 @@
 	"conditionBefore": "алдында",
 	"conditionAfter": "артында",
 	"conditionRange": "ауқым",
+	"conditionIsEmpty": "– бос",
 	
 	"all": "барлығы",
 	"any": "кез келген",
@@ -62,8 +65,8 @@
 	"anycolumn": "кез келген баған",
 	"statusTipTitleNoFilter": "Сүзгі тақтасы",
 	"statusTipTitleHasFilter": "Сүзгі",
-	"statusTipRelPre": "Сәйкес келу",
-	"statusTipRelPost": "ережелер.",
+	"statusTipRelAny": "Кез келген ережелерді сәйкестендіріңіз.",
+	"statusTipRelAll": "Барлық ережелерді сәйкестендіріңіз.",
 	
 	"defaultItemsName": "элементтер",
 	"filterBarMsgHasFilterTemplate": "${1} ${2} ішінен ${0} көрсетілді.",
@@ -79,10 +82,8 @@
 	"clearFilterMsg": "Бұл сүзгіні жояды және барлық қол жетімді жазбаларды көрсетеді.",
 	"anyColumnOption": "Кез келген баған",
 	
-	"trueLabelEditable": "Белгіленген",
 	"trueLabel": "Шын",
 	"falseLabel": "Жалған"
 })
-
-
-
+//end v1.x content
+);

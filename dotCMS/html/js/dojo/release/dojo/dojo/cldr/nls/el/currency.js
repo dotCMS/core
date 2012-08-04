@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/el/currency", //begin v1.x content
 {
 	"HKD_displayName": "Δολάριο Χονγκ Κονγκ",
 	"CHF_displayName": "Φράγκο Ελβετίας",
@@ -10,3 +12,5 @@
 	"GBP_displayName": "Λίρα Στερλίνα Βρετανίας",
 	"EUR_displayName": "Ευρώ"
 }
+//end v1.x content
+);

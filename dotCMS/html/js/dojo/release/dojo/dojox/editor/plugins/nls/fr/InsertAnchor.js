@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/fr/InsertAnchor", //begin v1.x content
 ({
 	insertAnchor: "Insérer un point d'ancrage",
 	title: "Propriétés du point d'ancrage",
@@ -7,3 +10,5 @@
 	cancel: "Annuler"
 })
 
+//end v1.x content
+);

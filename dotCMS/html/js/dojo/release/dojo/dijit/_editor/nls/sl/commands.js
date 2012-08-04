@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/sl/commands", //begin v1.x content
 ({
 	'bold': 'Krepko',
 	'copy': 'Prekopiraj',
@@ -46,3 +48,5 @@
 	/* Error messages */
 	'systemShortcut': 'Dejanje "${0}" lahko v vašem brskalniku uporabite samo z bližnjico na tipkovnici. Uporabite ${1}.'
 })
+//end v1.x content
+);

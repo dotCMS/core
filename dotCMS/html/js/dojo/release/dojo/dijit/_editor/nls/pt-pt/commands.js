@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/pt-pt/commands", //begin v1.x content
 ({
 	'bold': 'Negrito',
 	'copy': 'Copiar',
@@ -47,3 +49,5 @@
 	'systemShortcut': 'A acção "${0}" apenas está disponível no navegador utilizando um atalho de teclado. Utilize ${1}.'
 })
 
+//end v1.x content
+);

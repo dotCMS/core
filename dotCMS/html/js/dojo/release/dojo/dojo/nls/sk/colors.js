@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/nls/sk/colors", //begin v1.x content
 ({
 // local representation of all CSS3 named colors, companion to dojo.colors.  To be used where descriptive information
 // is required for each color, such as a palette widget, and not for specifying color programatically.
@@ -145,6 +147,7 @@ tan: "žltohnedá",
 teal: "tyrkysová",
 thistle: "bodliaková fialová",
 tomato: "paradajková červená",
+transparent: "priesvitná",
 turquoise: "tyrkysová",
 violet: "fialová",
 wheat: "pšeničná",
@@ -154,3 +157,5 @@ yellow: "žltá",
 yellowgreen: "žltozelená"
 })
 
+//end v1.x content
+);

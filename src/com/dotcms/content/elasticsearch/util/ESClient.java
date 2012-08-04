@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.util;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
+import java.io.File;
 import java.util.Iterator;
 
 import org.elasticsearch.client.Client;
@@ -70,7 +71,18 @@ public class ESClient {
 			if(key.startsWith("es.")){
 				// if we already have a key, use it
 				if(System.getProperty(key) == null){
-					System.setProperty(key, Config.getStringProperty(key));
+					if(key.equalsIgnoreCase("es.path.data") || key.equalsIgnoreCase("es.path.work")){
+                        String esPath = Config.getStringProperty(key);
+                      if( new File(esPath).isAbsolute()){
+                    	  System.setProperty(key,esPath);
+                      }else                    	
+                        System.setProperty(key, Config.CONTEXT.getRealPath(esPath));
+                    }
+					else{
+                        System.setProperty(key, Config.getStringProperty(key));
+                    }
+
+					//logger.debug( "Copying esdata folder..." );							
 				}
 			}
 		}

@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/grid/enhanced/nls/it/Filter", //begin v1.x content
 ({
 	"clearFilterDialogTitle": "Cancella filtro",
 	"filterDefDialogTitle": "Filtro",
@@ -62,8 +65,8 @@
 	"anycolumn": "qualsiasi colonna",
 	"statusTipTitleNoFilter": "Barra di filtro",
 	"statusTipTitleHasFilter": "Filtro",
-	"statusTipRelPre": "Confronta",
-	"statusTipRelPost": "regole.",
+	"statusTipRelAny": "Corrispondenza con qualsiasi regola.",
+	"statusTipRelAll": "Corrispondenza con tutte le regole.",
 	
 	"defaultItemsName": "elementi",
 	"filterBarMsgHasFilterTemplate": "${0} di ${1} ${2} visualizzati.",
@@ -82,6 +85,5 @@
 	"trueLabel": "Vero",
 	"falseLabel": "Falso"
 })
-
-
-
+//end v1.x content
+);

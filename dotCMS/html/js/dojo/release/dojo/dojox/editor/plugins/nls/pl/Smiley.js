@@ -1,3 +1,6 @@
+//>>built
+define(
+"dojox/editor/plugins/nls/pl/Smiley", //begin v1.x content
 ({
 	smiley: "Wstaw emotikon",
 	emoticonSmile: "uśmiech",
@@ -17,6 +20,9 @@
 	emoticonYes: "Tak",
 	emoticonNo: "Nie",
 	emoticonAngel: "anioł",
-	emoticonCrying: "płacz"
+	emoticonCrying: "płacz",
+	emoticonHappy: "radość"
 })
 
+//end v1.x content
+);

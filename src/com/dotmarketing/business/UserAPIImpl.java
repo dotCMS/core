@@ -50,6 +50,17 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
+	public User loadUserById(String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+		if(!UtilMethods.isSet(userId)){
+			throw new DotDataException("You must specifiy an userId to search for");
+		}
+		User u = uf.loadUserById(userId);
+		if(!UtilMethods.isSet(u)){
+			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
+		}
+		return u;
+	}
+
 	public User loadByUserByEmail(String email, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
 		if(!UtilMethods.isSet(email)){
 			throw new DotDataException("You must specifiy an email to search for");
@@ -104,13 +115,13 @@ public class UserAPIImpl implements UserAPI {
 		try {
 			user = uf.loadUserById("system");
 		} catch (NoSuchUserException e) {
-			user = createUser("system", "system@dotcmsfakeemail.org");
-			user.setUserId("system");
-			user.setFirstName("system user");
-			user.setLastName("system user");
-			user.setCreateDate(new java.util.Date());
-			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-			uf.saveUser(user);
+		    user = createUser("system", "system@dotcmsfakeemail.org");
+            user.setUserId("system");
+            user.setFirstName("system user");
+            user.setLastName("system user");
+            user.setCreateDate(new java.util.Date());
+            user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
+            uf.saveUser(user);
 		}
 		if(!roleAPI.doesUserHaveRole(user, cmsAdminRole))
 			roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
@@ -160,6 +171,14 @@ public class UserAPIImpl implements UserAPI {
 
 	public List<User> getUsersByNameOrEmail(String filter, int page, int pageSize) throws DotDataException {
 		return uf.getUsersByNameOrEmail(filter, page, pageSize);
+	}
+	
+	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
+		return uf.getCountUsersByNameOrEmailOrUserID(filter);
+	}
+
+	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
+		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
 	}
 
 	@SuppressWarnings("deprecation")

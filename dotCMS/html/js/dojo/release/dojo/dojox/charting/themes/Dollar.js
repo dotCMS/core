@@ -1,19 +1,2 @@
-if(!dojo._hasResource["dojox.charting.themes.Dollar"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojox.charting.themes.Dollar"] = true;
-dojo.provide("dojox.charting.themes.Dollar");
-dojo.require("dojox.charting.Theme");
-
-(function(){
-	var dxc=dojox.charting;
-	dxc.themes.Dollar=new dxc.Theme({
-		colors: [
-			"#A4CE67",
-            "#739363",
-            "#6B824A",
-            "#343434",
-            "#636563"
-		]
-	});
-})();
-
-}
+//>>built
+define("dojox/charting/themes/Dollar",["../Theme","./common"],function(_1,_2){_2.Dollar=new _1({colors:["#A4CE67","#739363","#6B824A","#343434","#636563"]});return _2.Dollar;});

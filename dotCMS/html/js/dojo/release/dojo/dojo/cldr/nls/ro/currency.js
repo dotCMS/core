@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/ro/currency", //begin v1.x content
 {
 	"HKD_displayName": "dolar Hong Kong",
 	"CHF_displayName": "franc elvețian",
@@ -10,3 +12,5 @@
 	"GBP_displayName": "liră sterlină",
 	"EUR_displayName": "euro"
 }
+//end v1.x content
+);

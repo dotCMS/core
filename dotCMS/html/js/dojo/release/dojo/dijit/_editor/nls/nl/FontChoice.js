@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dijit/_editor/nls/nl/FontChoice", //begin v1.x content
 ({
 	fontSize: "Grootte",
 	fontName: "Lettertype",
@@ -25,3 +27,5 @@
 	6: "x-groot",
 	7: "xx-groot"
 })
+//end v1.x content
+);

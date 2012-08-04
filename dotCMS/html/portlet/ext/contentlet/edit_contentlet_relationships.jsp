@@ -422,22 +422,42 @@
 					if( data == null || (data != null && data.length == 0) ) {
 					  return;
 					}
+
+					var dataNoRep = new Array();
+
+					if(<%= relationJsName %>_Contents.length == 0) {
+						 dataNoRep = data;
+					}
+
 					for (var i = 0; i < <%= relationJsName %>_Contents.length; i++) {
 						var cont = <%= relationJsName %>_Contents[i];
 						var identifier = "";
 						if (cont != null) {
 							identifier = cont['id'];
 						}
-						if (identifier == data[0]['id']) {
-							alert ("This relation already exists!");
-							return;
+
+						var k = 0;
+						for(var j = 0; j < data.length; j++ ) {
+							if (identifier == data[j]['id']) {
+								data.splice(j,1);
+							} else {
+								dataNoRep[k] = data[j];
+								k++;
+							}
 						}
+
 					}
-					data[0]['groupStart'] = true;
-					<%= relationJsName %>RelatedCons.insertNodes(false,data);
-					<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(data);
+
+					for(var i=0; i < dataNoRep.length; i++) {
+						dataNoRep[i]['groupStart'] = true;
+					}
+
+// 					data[0]['groupStart'] = true;
+					<%= relationJsName %>RelatedCons.insertNodes(false,dataNoRep);
+					<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(dataNoRep);
 					renumberRecolorAndReorder<%= relationJsName %>();
 				}
+
 
 				function <%= relationJsName %>_reorder () {
 					var newOrder = new Array();
@@ -820,7 +840,7 @@
 
 			</script>
 
-			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" onContentSelected="callback<%= relationJsName %>" title="" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
+			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" relationJsName="<%= relationJsName %>" onContentSelected="callback<%= relationJsName %>" title="" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
 <%
             counter=counter+100;
             searchCounter+=10000;

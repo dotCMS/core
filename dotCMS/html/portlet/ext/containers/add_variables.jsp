@@ -309,16 +309,7 @@
 							</td>
 						</tr>
 
-						<tr>
-							<td align="center">
-                                 <button dojoType="dijit.form.Button" onClick="addDropdownOptions('<%= field.getIdentifier() %>')">
-                                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
-                                </button>
-							</td>
-							<td>
-								<%= LanguageUtil.get(pageContext, "Selected-Value") %>
-							</td>
-						</tr>
+						
 					
 
 				<%

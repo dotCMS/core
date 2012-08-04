@@ -1,4 +1,6 @@
-
+//>>built
+define(
+"dojo/cldr/nls/he/hebrew", //begin v1.x content
 {
 	"dateFormat-medium": "dd/MM/yyyy",
 	"dateFormatItem-MMMEd": "E, d בMMM",
@@ -120,3 +122,5 @@
 		"שבת"
 	]
 }
+//end v1.x content
+);

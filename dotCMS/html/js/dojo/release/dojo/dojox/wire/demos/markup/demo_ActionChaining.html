@@ -90,7 +90,7 @@
 		trigger="inputField"
 		triggerEvent="onChange">
 		<div dojoType="dojox.wire.ml.Transfer" source="inputField.value" target="data.tempData"></div>
-		<div dojoType="dojox.wire.ml.Invocation" id="targetCopy" object="targetField1"  method="attr" parameters="data.value, data.tempData"></div>
+		<div dojoType="dojox.wire.ml.Invocation" id="targetCopy" object="targetField1"  method="set" parameters="data.value, data.tempData"></div>
 	</div>    
 
 	<!-- 

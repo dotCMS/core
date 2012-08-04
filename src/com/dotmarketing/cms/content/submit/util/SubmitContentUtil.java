@@ -297,6 +297,13 @@ public class SubmitContentUtil {
 	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
 		Structure st = StructureCache.getStructureByName(structureName);
+		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
+		for (Field field : fields) {//GIT-763
+			if(field.isRequired() && !parametersName.contains(field.getVelocityVarName())){
+				parametersName.add(field.getVelocityVarName());
+				values.add(new String[]{});
+			}
+		}		
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
 		contentlet.setLanguageId(lAPI.getDefaultLanguage().getId());
@@ -505,13 +512,6 @@ public class SubmitContentUtil {
 					Host host = (Host)value.get("host");
 					contentlet = addFileToContentlet(contentlet, field,host, uploadedFile, user, title);
 				}
-			}
-			if(autoPublish){//DOTCMS-5188
-				contentlet = conAPI.checkinWithoutVersioning(contentlet, relationships, cats, permissionList, user, true);
-				conAPI.publish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
-			}else{
-				contentlet = conAPI.checkinWithoutVersioning(contentlet, relationships, cats, permissionList, user, true);
-				conAPI.unpublish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
 			}
 		}
 
