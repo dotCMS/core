@@ -181,7 +181,6 @@
 		<filter-name>JBossRulesFilter</filter-name>
 		<url-pattern>*.html</url-pattern>
 	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>JBossRulesFilter</filter-name>
 		<url-pattern>/dotCMS/*</url-pattern>
@@ -608,12 +607,6 @@
          <url-pattern>/servlet/test</url-pattern>
       </servlet-mapping>
 	END OF TEST FRAMEWORK SERVLETS -->
-	<!-- DOTCMS SERVLET-MAPPINGS -->
-	<servlet-mapping>
-        <servlet-name>proxy</servlet-name>
-        <url-pattern>/dynamic/*</url-pattern>
-    </servlet-mapping>
-	<servlet-mapping>
 	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
     <servlet>
     	<description>Provides the drawed template preview functionality</description>
@@ -623,6 +616,10 @@
     </servlet>
     <!-- END GRAZIANO issue-12-dnd-template -->
     <!-- DOTCMS SERVLET-MAPPINGS -->
+    <servlet-mapping>
+        <servlet-name>proxy</servlet-name>
+        <url-pattern>/dynamic/*</url-pattern>
+    </servlet-mapping>
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
       <url-pattern>/spring/*</url-pattern>
@@ -789,7 +786,6 @@
 		<servlet-name>SlideShowServlet</servlet-name>
 		<url-pattern>/dot_slideshow</url-pattern>
 	</servlet-mapping>
-
 <servlet-mapping>
 		<servlet-name>VelocityServlet</servlet-name>
 		<url-pattern>*.html</url-pattern>
@@ -879,17 +875,12 @@
 		<servlet-name>RESTAPI</servlet-name>
 		<url-pattern>/api/*</url-pattern>
 	</servlet-mapping>
-	
-	
 	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
 	<servlet-mapping>
 		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
 		<url-pattern>/servlets/template/design/preview</url-pattern>
 	</servlet-mapping>
 	<!-- END GRAZIANO issue-12-dnd-template -->	
-	
-
-
 
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
