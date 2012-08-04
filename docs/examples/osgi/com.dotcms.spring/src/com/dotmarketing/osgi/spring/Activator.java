@@ -2,9 +2,9 @@ package com.dotmarketing.osgi.spring;
 
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.osgi.GenericBundleActivator;
+import org.apache.felix.http.api.ExtHttpService;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.osgi.service.http.HttpService;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
@@ -16,13 +16,14 @@ public class Activator extends GenericBundleActivator {
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
 
-        ServiceReference sRef = context.getServiceReference( HttpService.class.getName() );
+        //Service reference to ExtHttpService that will allows to register servlets and filters
+        ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
         if ( sRef != null ) {
 
             //Publish bundle services
             publishBundleServices( context );
 
-            HttpService service = (HttpService) context.getService( sRef );
+            ExtHttpService service = (ExtHttpService) context.getService( sRef );
             try {
                 DispatcherServlet ds = new DispatcherServlet();
                 ds.setContextConfigLocation( "spring/example-servlet.xml" );

@@ -2,10 +2,10 @@
 README
 ------
 
-This bundle plugin is an example of how to use services provide by other bundles and
- how to register servlets and filters.
+This bundle plugin is an example of how to add Spring support to a bundle plugin, creates
+and registers a simple Spring Controller.
 
-How to create a bundle plugin using services and registering servlets and filters
+How to create a bundle plugin with Spring support
 -------------------------------------------
 
 --
@@ -18,7 +18,7 @@ Bundle-Name: The name of your bundle
 
 Bundle-SymbolicName: A short an unique name for the bundle
 
-Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.servlet.Activator)
+Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.spring.Activator)
 
 DynamicImport-Package: *
     Dynamically add required imports the plugin may need without add them explicitly
@@ -26,6 +26,7 @@ DynamicImport-Package: *
 Import-Package: This is a comma separated list of package's name.
                 In this list there must be the packages that you are using inside
                 the bundle plugin and that are exported by the dotCMS runtime.
+                (Note Spring package)
 
 Beware!!!
 ---------
@@ -44,25 +45,23 @@ a plugin can Import the packages to use them inside the OSGI blundle.
 --
 --
 --
-com.dotmarketing.osgi.servlet.HelloWorldServlet
+com.dotmarketing.osgi.spring.ExampleController
 -----------------------------------------------
 
-Simple and standard implementation of a HttpServlet that will use
-the HelloWorld service provide by the com.dotcms.service bundle plugin.
+Simple annotated Spring Controller.
 
 --
-com.dotmarketing.osgi.servlet.TestFilter
+example-servlet.xml
 ----------------------------------------
 
-Simple and standard implementation of a Filter
+Standard Spring configuration file where basically we enabled the support for anntotation-driven controllers.
 
 --
 Activator
 ---------
 
 This bundle activator extends from com.dotmarketing.osgi.GenericBundleActivator and implements BundleActivator.start().
-Gets a reference for the HelloWorldService via HelloWorld interface (com.dotcms.service bundle plugin) and register
-our HelloWorldServlet servlet and the TestFilter filter.
+Will manually register making use of the class DispatcherServlet our spring configuration file (example-servlet.xml).
 
 --
 --
@@ -70,9 +69,6 @@ our HelloWorldServlet servlet and the TestFilter filter.
 Testing
 -------
 
-The HelloWorldServlet is registered under the url pattern "/helloworld" can be test it running and assuming your dotcms url is localhost:80880:
-    http://localhost:8080/dynamic/helloworld
-
-The TestFilter filter is registered for the url pattern "/helloworld/.*" can be test it running and assuming your dotcms url is localhost:80880:
-    http://localhost:8080/dynamic/helloworld/
-    http://localhost:8080/dynamic/helloworld/testing.dot
+The Spring controller is registered under the url pattern "/spring" can be test it running and assuming your dotcms url is localhost:80880:
+    http://localhost:8080/dynamic/spring/examplecontroller/
+    http://localhost:8080/dynamic/spring/examplecontroller/Testing
