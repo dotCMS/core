@@ -261,6 +261,20 @@ public class DotConnect {
         maxRows = -1;
         Logger.debug(this, "setSQL: " + x);
     }
+    
+    public void setSQL(String x, int limit) {
+        if(DbConnectionFactory.isMsSql())
+            if(x.startsWith("select distinct"))
+                setSQL(x.replaceFirst("select distinct", "select distinct top "+limit+" "));
+            else
+                setSQL(x.replaceFirst("select", "select top "+limit+" "));
+        else if(DbConnectionFactory.isOracle()) {
+            setSQL("select * from ("+x+") where rownum<="+limit);
+        }
+        else {
+            setSQL(x+" limit "+limit);
+        }
+    }
 
     public String getSQL() {
         return SQL;
