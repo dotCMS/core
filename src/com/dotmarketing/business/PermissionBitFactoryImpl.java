@@ -62,6 +62,8 @@ import com.liferay.portal.model.User;
  * @author David Torres (2009)
 */
 public class PermissionBitFactoryImpl extends PermissionFactory {
+    
+    private static final int MAX_IDS_CLEAR=200;
 
 	private PermissionCache permissionCache;
 	private static final Map<String, Integer> PERMISION_TYPES = new HashMap<String, Integer>();
@@ -1733,9 +1735,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		HibernateUtil hu = new HibernateUtil(PermissionReference.class);
 		hu.setQuery(query);
 		hu.setParam(permissionable.getPermissionId());
+		hu.setMaxResults(MAX_IDS_CLEAR);
 		List<PermissionReference> permissionReferences = hu.list();
 
-		if(permissionReferences.size() < 30) {
+		if(permissionReferences.size() < MAX_IDS_CLEAR) {
 			for(PermissionReference reference : permissionReferences) {
 				permissionCache.remove(reference.getAssetId());
 			}
