@@ -1327,9 +1327,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of templates changed to clear
 						// their caches
-						dc.setSQL(selectChildrenTemplateSQL);
-						dc.addParam(permissionable.getPermissionId());
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenTemplateSQL, MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(permissionable.getPermissionId());
+    						idsToClear.addAll(dc.loadResults());
+						}
 						
 						ran01=true;
 					} else if (isHost && p.getType().equals(Container.class.getCanonicalName()) && !ran02) {
@@ -1349,9 +1351,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of container changed to clear
 						// their caches
-						dc.setSQL(selectChildrenContainerSQL);
-						dc.addParam(permissionable.getPermissionId());
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenContainerSQL,MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(permissionable.getPermissionId());
+    						idsToClear.addAll(dc.loadResults());
+						}
 						
 						ran02=true;
 
@@ -1378,11 +1382,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of container changed to clear
 						// their caches
-						dc.setSQL(selectChildrenFolderSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						dc.addParam(isHost ? " " : path);
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenFolderSQL,MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						dc.addParam(isHost ? " " : path);
+    						idsToClear.addAll(dc.loadResults());
+						}
 						
 						ran03=true;
 					} else if (p.getType().equals(HTMLPage.class.getCanonicalName()) && !ran04) {
@@ -1413,10 +1419,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of pages changed to clear their
 						// caches
-						dc.setSQL(selectChildrenHTMLPageSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenHTMLPageSQL,MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						idsToClear.addAll(dc.loadResults());
+						}
 
 						ran04=true;
 					} else if (p.getType().equals(File.class.getCanonicalName()) && !ran05) {
@@ -1448,11 +1456,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of files changed to clear their
 						// caches
-						dc.setSQL(selectChildrenFileSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						idsToClear.addAll(dc.loadResults());
-
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenFileSQL,MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						idsToClear.addAll(dc.loadResults());
+						}
 						ran05=true;
 					} else if (p.getType().equals(Link.class.getCanonicalName()) && !ran06) {
 						// Find all files to update their references
@@ -1481,10 +1490,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of links changed to clear their
 						// caches
-						dc.setSQL(selectChildrenLinkSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenLinkSQL, MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						idsToClear.addAll(dc.loadResults());
+						}
 						
 						ran06=true;
 
@@ -1515,10 +1526,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of links changed to clear their
 						// caches
-						dc.setSQL(selectChildrenContentByPathSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenContentByPathSQL, MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						idsToClear.addAll(dc.loadResults());
+						}
 						
 						ran07=true;
 
@@ -1548,11 +1561,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 							// Retrieving the list of structures changed to clear
 							// their caches
-							dc.setSQL(this.selectChildrenStructureByPathSQL);
-							dc.addParam(path + "%");
-							dc.addParam(parentHost.getPermissionId());
-							dc.addParam(parentHost.getPermissionId());
-							idsToClear.addAll(dc.loadResults());
+							if(idsToClear.size()<MAX_IDS_CLEAR) {
+    							dc.setSQL(this.selectChildrenStructureByPathSQL, MAX_IDS_CLEAR-idsToClear.size());
+    							dc.addParam(path + "%");
+    							dc.addParam(parentHost.getPermissionId());
+    							dc.addParam(parentHost.getPermissionId());
+    							idsToClear.addAll(dc.loadResults());
+							}
 						}else{
 							dc.setSQL(this.deleteStructureReferencesByPathOnAddSQLFolder);
 							dc.addParam(path + "%");
@@ -1575,10 +1590,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 							// Retrieving the list of structures changed to clear
 							// their caches
-							dc.setSQL(this.selectChildrenStructureByPathSQLFolder);
-							dc.addParam(path + "%");
-							dc.addParam(parentHost.getPermissionId());
-							idsToClear.addAll(dc.loadResults());
+							if(idsToClear.size()<MAX_IDS_CLEAR) {
+    							dc.setSQL(this.selectChildrenStructureByPathSQLFolder, MAX_IDS_CLEAR-idsToClear.size());
+    							dc.addParam(path + "%");
+    							dc.addParam(parentHost.getPermissionId());
+    							idsToClear.addAll(dc.loadResults());
+							}
 
 						}
 						ran08=true;
@@ -1586,10 +1603,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				} else {
 					// If the system host we need to force all references of the
 					// type of the permissionable
-					dc.setSQL(selectPermissionReferenceSQL);
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(p.getType());
-					idsToClear.addAll(dc.loadResults());
+				    if(idsToClear.size()<MAX_IDS_CLEAR) {
+    					dc.setSQL(selectPermissionReferenceSQL, MAX_IDS_CLEAR-idsToClear.size());
+    					dc.addParam(permissionable.getPermissionId());
+    					dc.addParam(p.getType());
+    					idsToClear.addAll(dc.loadResults());
+				    }
 				}
 			} else if(isCategory) {
 			    if(!ran09) {
@@ -1620,10 +1639,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     				dc.addParam(permissionable.getPermissionId());
     				dc.loadResult();
     
-    				dc.setSQL(selectChildrenContentByStructureSQL);
-    				dc.addParam(permissionable.getPermissionId());
-    				idsToClear.addAll(dc.loadResults());
-    				
+    				if(idsToClear.size()<MAX_IDS_CLEAR) {
+        				dc.setSQL(selectChildrenContentByStructureSQL, MAX_IDS_CLEAR-idsToClear.size());
+        				dc.addParam(permissionable.getPermissionId());
+        				idsToClear.addAll(dc.loadResults());
+    				}
     				ran10=true;
 			    }
 			}
@@ -1632,7 +1652,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 
 		//Clearing the caches
-		if(idsToClear.size() < 30) {
+		if(idsToClear.size() < MAX_IDS_CLEAR) {
 			for(Map<String, Object> idToClear: idsToClear) {
 				String inode = (String)(idToClear.get("inode") != null?idToClear.get("inode"):idToClear.get("asset_id"));
 				if(inode==null) inode=(String)idToClear.get("id");
