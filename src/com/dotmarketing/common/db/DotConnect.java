@@ -264,7 +264,10 @@ public class DotConnect {
     
     public void setSQL(String x, int limit) {
         if(DbConnectionFactory.isMsSql())
-            setSQL(x.replaceFirst("select", "select top "+limit+" "));
+            if(x.startsWith("select distinct"))
+                setSQL(x.replaceFirst("select distinct", "select distinct top "+limit+" "));
+            else
+                setSQL(x.replaceFirst("select", "select top "+limit+" "));
         else if(DbConnectionFactory.isOracle()) {
             setSQL("select * from ("+x+") where rownum<="+limit);
         }
