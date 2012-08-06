@@ -172,6 +172,14 @@ public class UserAPIImpl implements UserAPI {
 	public List<User> getUsersByNameOrEmail(String filter, int page, int pageSize) throws DotDataException {
 		return uf.getUsersByNameOrEmail(filter, page, pageSize);
 	}
+	
+	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
+		return uf.getCountUsersByNameOrEmailOrUserID(filter);
+	}
+
+	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
+		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
+	}
 
 	@SuppressWarnings("deprecation")
 	public Map<String, Object> getUsersAnRolesByName(String filter, int start, int limit) throws DotDataException {
