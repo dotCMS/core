@@ -53,7 +53,7 @@ public class ContainerAjax {
 	}
 
 	public Map<String, Object> fetchContainers (Map<String, String> query, Map<String, String> queryOptions, int start, int count,
-			List<String> sort, boolean drawed) throws PortalException, SystemException, DotDataException, DotSecurityException {
+			List<String> sort) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = userWebAPI.getLoggedInUser(req);
 		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
