@@ -84,6 +84,7 @@ public class ImportExportUtil {
     private File userXML;
     private File rolesLayoutsXML;
     private File layoutsPortletsXML;
+    private File pluginPropertyXML;
     private File logMapperRowXML;
     private List<File> dashboardUserPreferencesXMLs = new ArrayList<File>();
     private List<File> analyticSummary404XMLs = new ArrayList<File>();
@@ -263,6 +264,8 @@ public class ImportExportUtil {
                 usersRolesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.business.PortletsLayouts_")){
                 layoutsPortletsXML = new File(_importFile.getPath());
+            }else if(_importFile.getName().contains("com.dotmarketing.plugin.model.PluginProperty_")){
+                pluginPropertyXML = new File(_importFile.getPath());
             }else if(_importFile.getName().endsWith( "LogsMappers.xml" )){
                 logMapperRowXML = new File(_importFile.getPath());
             }else if(_importFile.getName().contains("com.dotmarketing.beans.Tree_")){
@@ -422,6 +425,11 @@ public class ImportExportUtil {
             doXMLFileImport(layoutsPortletsXML, out);
         } catch (Exception e) {
             Logger.error(this, "Unable to load " + layoutsPortletsXML.getName() + " : " + e.getMessage(), e);
+        }
+        try{
+            doXMLFileImport(pluginPropertyXML, out);
+        } catch (Exception e) {
+            Logger.error(this, "Unable to load " + pluginPropertyXML.getName() + " : " + e.getMessage(), e);
         }
         try {
             doXMLFileImport( logMapperRowXML, out );
