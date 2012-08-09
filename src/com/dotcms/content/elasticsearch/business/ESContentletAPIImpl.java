@@ -482,12 +482,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,DotSecurityException, ParseException {
     	return searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles, requiredPermission, false);
     }
-    
+
     public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException, ParseException {
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
         contents.setTotalResults(list.getTotalResults());
-        
+
         List<String> identifierList = new ArrayList<String>();
         for(ContentletSearch conwrap: list){
             String ident=conwrap.getIdentifier();
@@ -504,7 +504,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	try{
             		List<Contentlet> langCons = findContentletsByIdentifiers(identifiers, false, lang.getId(), user, respectFrontendRoles);
             		if(langCons.size() > 0){
-            			contentlets.add(langCons.get(0));
+            			contentlets.addAll(langCons);
             			break;
             		}
                 }catch(DotContentletStateException se){
@@ -514,7 +514,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }else{
         	contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         }
-        
+
         Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
             map.put(contentlet.getIdentifier(), contentlet);
