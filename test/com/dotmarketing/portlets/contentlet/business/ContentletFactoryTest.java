@@ -62,7 +62,21 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         assertEquals( contentlets.size(), 5 );
 
         //Validate the integrity of the array
-        String inode = contentlets.iterator().next().getInode();
+        Contentlet foundContentlet = null;
+        for ( Contentlet contentlet : contentlets ) {
+
+            //TODO: We need to verify for null because the findAllCurrent CAN return null objects, this could happen because the index can return inodes that are not into the db....
+            if ( contentlet != null ) {
+                foundContentlet = contentlet;
+                break;
+            }
+        }
+
+        //Validations
+        assertNotNull( foundContentlet );
+
+        //Search for one of the objects we found
+        String inode = foundContentlet.getInode();
         Contentlet contentlet = contentletFactory.find(inode);
 
         //Validations
