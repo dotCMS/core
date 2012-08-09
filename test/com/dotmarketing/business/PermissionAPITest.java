@@ -23,6 +23,7 @@ import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.WebAssetFactory.AssetType;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -728,4 +729,85 @@ public class PermissionAPITest extends TestBase {
         }   
     }
     
+    @Test
+    public void issue560() throws Exception {
+        Host hh = new Host();
+        hh.setHostname("issue560.demo.dotcms.com");
+        hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        
+        Role nrole1=APILocator.getRoleAPI().loadRoleByKey("TestingRole8");
+        if(nrole1==null || !UtilMethods.isSet(nrole1.getId())) {
+            nrole1=new Role();
+            nrole1.setName("TestingRole8");
+            nrole1.setRoleKey("TestingRole8");
+            nrole1.setEditUsers(true);
+            nrole1.setEditPermissions(true);
+            nrole1.setEditLayouts(true);
+            nrole1.setDescription("Testing Role 8");
+            APILocator.getRoleAPI().save(nrole1);
+        }
+        
+        Role nrole2=APILocator.getRoleAPI().loadRoleByKey("TestingRole9");
+        if(nrole2==null || !UtilMethods.isSet(nrole2.getId())) {
+            nrole2=new Role();
+            nrole2.setName("TestingRole9");
+            nrole2.setRoleKey("TestingRole9");
+            nrole2.setEditUsers(true);
+            nrole2.setEditPermissions(true);
+            nrole2.setEditLayouts(true);
+            nrole2.setDescription("Testing Role 9");
+            APILocator.getRoleAPI().save(nrole2);
+        }
+        
+        try {
+            Folder a = APILocator.getFolderAPI().createFolders("/a/", hh, sysuser, false);
+            perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser, false);
+            
+            Structure s = new Structure();
+            s.setHost(hh.getIdentifier());
+            s.setFolder(a.getInode());
+            s.setName("issue560");
+            s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
+            s.setOwner(sysuser.getUserId());
+            s.setVelocityVarName("issue560");
+            StructureFactory.saveStructure(s);
+            StructureCache.addStructure(s);
+            
+            Field field = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s, 
+                    true, true, true, 3, "", "", "", true, false, true);
+            field.setVelocityVarName("testtext");
+            field.setListed(true);
+            FieldFactory.saveField(field);
+            FieldsCache.addField(field);
+            
+            Map<String,String> mm=new HashMap<String,String>();
+            mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN));
+            mm.put("structures", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
+            mm.put("content", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
+            mm.put("pages", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
+            new RoleAjax().saveRolePermission(nrole1.getId(), a.getInode(), mm, false);
+            
+            Contentlet cont1=new Contentlet();
+            cont1.setStructureInode(s.getInode());
+            cont1.setStringProperty("testtext", "a test value");            
+            cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
+            APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
+            
+            perm.getPermissions(cont1); // to cache
+            
+            new RoleAjax().saveRolePermission(nrole2.getId(), a.getInode(), mm, false);
+            
+            boolean found1=false,found2=false;
+            for(Permission p : perm.getPermissions(cont1)) {
+                found1 = found1 || p.getRoleId().equals(nrole1.getId());
+                found2 = found2 || p.getRoleId().equals(nrole2.getId());
+            }
+            
+            assertTrue(found1);
+            assertTrue(found2);
+        }
+        finally {
+            APILocator.getHostAPI().archive(hh, sysuser, false);   
+        } 
+    }
 }
