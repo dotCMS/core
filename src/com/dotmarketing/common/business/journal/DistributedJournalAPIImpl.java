@@ -3,10 +3,12 @@
  */
 package com.dotmarketing.common.business.journal;
 
+import java.sql.Connection;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -73,7 +75,11 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	}
 
 	public long recordsLeftToIndexForServer() throws DotDataException {
-		return distFac.recordsLeftToIndexForServer();
+	    return recordsLeftToIndexForServer(DbConnectionFactory.getConnection());
+	}
+	
+	public long recordsLeftToIndexForServer(Connection conn) throws DotDataException {
+		return distFac.recordsLeftToIndexForServer(conn);
 	}
 	
 	public void deleteLikeJournalRecords(IndexJournal<T> ijournal) throws DotDataException {
