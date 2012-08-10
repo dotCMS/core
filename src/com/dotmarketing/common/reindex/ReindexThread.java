@@ -80,18 +80,19 @@ public class ReindexThread extends Thread {
 					    fillRemoteQ();
 					
 					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation()) {
-					    HibernateUtil.startTransaction();
+					    Connection conn=DbConnectionFactory.getDataSource().getConnection();
 					    try{
-    					    lockCluster();
+					        conn.setAutoCommit(false);
+    					    lockCluster(conn);
     					    
-    					    if(ESReindexationProcessStatus.inFullReindexation()) {
-    					        if(jAPI.recordsLeftToIndexForServer()==0) {
+    					    if(ESReindexationProcessStatus.inFullReindexation(conn)) {
+    					        if(jAPI.recordsLeftToIndexForServer(conn)==0) {
     					            Logger.info(this, "Running Reindex Switchover");
     					            
     					            // wait a bit while all records gets flushed to index
                                     Thread.sleep(2000L);
                                     
-    					            indexAPI.fullReindexSwitchover();
+    					            indexAPI.fullReindexSwitchover(conn);
     					            
     					            // wait a bit while elasticsearch flushes it state
     	                            Thread.sleep(2000L);
@@ -99,8 +100,21 @@ public class ReindexThread extends Thread {
     					    }
 					    
 					    }finally{
-					    	unlockCluster();
-					    	HibernateUtil.commitTransaction();
+					        try {
+					            unlockCluster(conn);
+					        }
+					        finally {
+					            try {
+					                conn.commit();
+					            }
+					            catch(Exception ex) {
+					                Logger.warn(this, ex.getMessage(), ex);
+					                conn.rollback();
+					            }
+					            finally {
+					                conn.close();
+					            }
+					        }
 					    }
 					}    
 					
@@ -165,9 +179,12 @@ public class ReindexThread extends Thread {
 	}
 
 	public void unlockCluster() throws DotDataException {
+	    unlockCluster(DbConnectionFactory.getConnection());
+	}
+	
+	public void unlockCluster(Connection lockConn) throws DotDataException {
 	    try {
             if(DbConnectionFactory.isMySql()) {
-                Connection lockConn=DbConnectionFactory.getConnection();
                 Statement smt=lockConn.createStatement();
                 smt.executeUpdate("unlock tables");
                 smt.close();
@@ -178,7 +195,11 @@ public class ReindexThread extends Thread {
         }
     }
 
-    public void lockCluster() throws DotDataException {
+	public void lockCluster() throws DotDataException {
+	    lockCluster(DbConnectionFactory.getConnection());
+	}
+	
+    public void lockCluster(Connection conn) throws DotDataException {
         try {
             String lock=null;
             /* this isn't working. A race condition might come
@@ -199,7 +220,6 @@ public class ReindexThread extends Thread {
             else if(DbConnectionFactory.isPostgres())
                 lock="lock table dist_reindex_journal";
             
-            Connection conn=DbConnectionFactory.getConnection();
             Statement smt=conn.createStatement();
             smt.execute(lock);
             smt.close();
