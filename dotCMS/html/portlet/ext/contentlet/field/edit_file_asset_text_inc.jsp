@@ -8,6 +8,8 @@
 <script language="JavaScript">
     var codeMirrorEditor;
     var iAmOpen = false;
+    var editorText;
+    var saveOrCancel = false;
   	function codeMirrorAreaParser(parser,file){
 
       codeMirrorEditor = CodeMirror.fromTextArea("file_text", {
@@ -31,12 +33,13 @@
   		}
   		iAmOpen = true;
 		 codeMirrorEditor.setCode(file.text);
+		 editorText= codeMirrorEditor.getCode();
 	 }
  
 	dojo.declare("dotcms.file.EditTextManager", null, {
 
 		fileInode: '',
-	  	
+		
 		editText: function (fileInode) {
 		    this.fileInode = fileInode;
 			FileAssetAjax.getWorkingTextFile(this.fileInode, dojo.hitch(this, this.loadTextCallback));
@@ -71,9 +74,11 @@
 					break;
 			}
 			debugger
-			codeMirrorAreaParser(parser, file);
-			dijit.byId('editTextDialog').show();
-			dijit.byId('editTextButton').setAttribute('disabled',false);		 
+			codeMirrorAreaParser(parser, file);			
+			dijit.byId('editTextDialog').show();	
+			
+			dijit.byId('editTextButton').setAttribute('disabled',false);	
+			
 		},
 
 
@@ -93,7 +98,9 @@
 		},
 		
 		close: function() {
-			var editorText= codeMirrorEditor.getCode();
+			if(saveOrCancel){
+				editorText= codeMirrorEditor.getCode();
+			}
 			if (dojo.isIE) {//DOTCMS-5038
     			var node = dojo.query('.CodeMirror-wrapping')[0];
     			node.parentNode.removeChild(node);
@@ -101,7 +108,8 @@
 				dojo.query('.CodeMirror-wrapping')[0].remove();
 			}
 			dojo.query('#file_text').style({display:''});
-			dojo.query('#file_text')[0].value=editorText;
+			dojo.query('#file_text')[0].value=editorText;	
+			saveOrCancel = false;
 			dijit.byId('editTextDialog').hide();
 		}
 		
@@ -109,7 +117,7 @@
 
 	var editTextManager = new dotcms.file.EditTextManager();
 	function saveText(){
-
+		saveOrCancel = true;
 		dijit.byId('editTextButton').setAttribute('disabled',true);
 		editTextManager.save();
 		
