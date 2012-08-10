@@ -1357,7 +1357,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		List<Folder> folderList=dh.list();
 		Collections.sort(folderList,new Comparator<Folder>() {
 		    public int compare(Folder o1, Folder o2) {
-		        return o1.getTitle().compareToIgnoreCase(o2.getTitle());
+		        return o1.getName().compareToIgnoreCase(o2.getName());
 		    }
         });
 		return folderList;
