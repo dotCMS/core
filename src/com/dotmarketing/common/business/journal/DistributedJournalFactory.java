@@ -1,5 +1,6 @@
 package com.dotmarketing.common.business.journal;
 
+import java.sql.Connection;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
@@ -116,6 +117,7 @@ public abstract class DistributedJournalFactory<T> {
 	protected abstract boolean areRecordsLeftToIndex() throws DotDataException;
 
 	protected abstract long recordsLeftToIndexForServer() throws DotDataException;
+	protected abstract long recordsLeftToIndexForServer(Connection conn) throws DotDataException;
 	
 	/**
 	 * @return the serverId
