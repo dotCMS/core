@@ -1,5 +1,6 @@
 package com.dotmarketing.common.business.journal;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,6 +73,7 @@ public interface DistributedJournalAPI<T> {
 	 * @throws DotDataException
 	 */
 	public long recordsLeftToIndexForServer() throws DotDataException;
+	public long recordsLeftToIndexForServer(Connection conn) throws DotDataException;
 	
 	/**
 	 * Will determine if either the process table or journal table have any records left for the local server to index

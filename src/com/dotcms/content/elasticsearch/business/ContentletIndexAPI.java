@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -43,6 +44,7 @@ public interface ContentletIndexAPI {
 	 * @return
 	 */
 	public void fullReindexSwitchover();
+	public void fullReindexSwitchover(Connection conn);
 
 	public boolean delete(String indexName);
 

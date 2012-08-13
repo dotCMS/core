@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.util;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -8,6 +9,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 
@@ -15,7 +17,11 @@ public class ESReindexationProcessStatus implements Serializable {
     private static final ESContentletIndexAPI indexAPI=new ESContentletIndexAPI();
     
     public synchronized static boolean inFullReindexation () throws DotDataException {
-        return indexAPI.isInFullReindex();
+        return inFullReindexation(DbConnectionFactory.getConnection());
+    }
+    
+    public synchronized static boolean inFullReindexation (Connection conn) throws DotDataException {
+        return indexAPI.isInFullReindex(conn);
     }
     
     public synchronized static int getContentCountToIndex() throws DotDataException {

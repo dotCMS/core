@@ -472,12 +472,16 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             }
         }
     }
+    
+    protected long recordsLeftToIndexForServer() throws DotDataException {
+        return recordsLeftToIndexForServer(DbConnectionFactory.getConnection());
+    }
 
     @Override
-    protected long recordsLeftToIndexForServer() throws DotDataException {
+    protected long recordsLeftToIndexForServer(Connection conn) throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as count from dist_reindex_journal");
-        List<Map<String, String>> results = results = dc.loadResults();
+        List<Map<String, String>> results = results = dc.loadResults(conn);
         String c = results.get(0).get("count");
         return Long.parseLong(c);
     }
