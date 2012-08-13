@@ -96,8 +96,8 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		try{
 		    if(map.get("shards")!=null)
 		        shards = Integer.parseInt(map.get("shards"));
-		    if(map.get("indexAlias")!=null)
-		        alias = URLDecoder.decode((String) map.get("indexAlias"), "UTF-8");
+		    alias = UtilMethods.isSet(map.get("indexAlias"))?URLDecoder.decode((String) map.get("indexAlias"), "UTF-8"):
+		    	UtilMethods.isSet(map.get("alias"))?URLDecoder.decode((String) map.get("alias"), "UTF-8"):"";
 		    if(map.get("default")!=null)
 		        def=Boolean.parseBoolean(map.get("default"));
 		}
