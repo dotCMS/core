@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -197,22 +199,30 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else
 	        return initIndex();
 	}
-
+	
 	public boolean isInFullReindex() throws DotDataException {
-	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+	    return isInFullReindex(DbConnectionFactory.getConnection());
+	}
+	
+	public boolean isInFullReindex(Connection conn) throws DotDataException {
+	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies(conn);
 	    return info.reindex_working!=null && info.reindex_live!=null;
 	}
 
+	public synchronized void fullReindexSwitchover() {
+	    fullReindexSwitchover(DbConnectionFactory.getConnection());
+	}
+	
 	/**
 	 * This will drop old index and will point read aliases to new index.
 	 * This method should be called after call to {@link #setUpFullReindex()}
 	 * @return
 	 */
-	public synchronized void fullReindexSwitchover() {
+	public synchronized void fullReindexSwitchover(Connection conn) {
     	try {
     	    if(!isInFullReindex()) return;
 
-            IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+            IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies(conn);
 
             Logger.info(this, "Executing switchover from old index ["
                    +info.working+","+info.live+"] and new index ["
@@ -224,7 +234,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             IndiciesInfo newinfo=new IndiciesInfo();
             newinfo.working=info.reindex_working;
             newinfo.live=info.reindex_live;
-            APILocator.getIndiciesAPI().point(newinfo);
+            APILocator.getIndiciesAPI().point(conn,newinfo);
 
             iapi.moveIndexBackToCluster(newinfo.working);
             iapi.moveIndexBackToCluster(newinfo.live);
