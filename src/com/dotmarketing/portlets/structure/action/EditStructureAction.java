@@ -253,7 +253,13 @@ public class EditStructureAction extends DotPortletAction {
 
 			// Checking permissions
 			_checkWritePermissions(structure, user, httpReq);
-
+			
+			// Validating structure type
+			
+			if (structureForm.getStructureType()< 1 ){
+                throw new DotDataException(LanguageUtil.get(user, "structure-type-is-required"));
+                
+			}
 			// Check if another structure with the same name exist
 			String auxStructureName = structureForm.getName();
 			auxStructureName = (auxStructureName != null ? auxStructureName.trim() : "");
