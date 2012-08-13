@@ -9,6 +9,7 @@
 <script type="text/javascript" src="/dwr/util.js"></script>
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/ContainerAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/BrowserAjax.js'></script>
