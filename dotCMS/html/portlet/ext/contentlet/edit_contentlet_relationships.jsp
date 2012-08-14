@@ -840,7 +840,7 @@
 
 			</script>
 
-			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" relationJsName="<%= relationJsName %>" onContentSelected="callback<%= relationJsName %>" title="" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
+			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" relationJsName="<%= relationJsName %>" multiple="true" onContentSelected="callback<%= relationJsName %>" title="" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
 <%
             counter=counter+100;
             searchCounter+=10000;
