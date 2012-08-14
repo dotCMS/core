@@ -23,7 +23,6 @@ import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.WebAssetFactory.AssetType;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -759,11 +758,13 @@ public class PermissionAPITest extends TestBase {
             APILocator.getRoleAPI().save(nrole2);
         }
         
+        Structure s=null;
+        Contentlet cont1=null;
         try {
             Folder a = APILocator.getFolderAPI().createFolders("/a/", hh, sysuser, false);
             perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser, false);
-            
-            Structure s = new Structure();
+        
+            s = new Structure();
             s.setHost(hh.getIdentifier());
             s.setFolder(a.getInode());
             s.setName("issue560");
@@ -780,14 +781,16 @@ public class PermissionAPITest extends TestBase {
             FieldFactory.saveField(field);
             FieldsCache.addField(field);
             
+            
             Map<String,String> mm=new HashMap<String,String>();
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN));
             mm.put("structures", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
             mm.put("content", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
             mm.put("pages", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
+            mm.put("folders", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN));
             new RoleAjax().saveRolePermission(nrole1.getId(), a.getInode(), mm, false);
             
-            Contentlet cont1=new Contentlet();
+            cont1=new Contentlet();
             cont1.setStructureInode(s.getInode());
             cont1.setStringProperty("testtext", "a test value");            
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
@@ -807,6 +810,11 @@ public class PermissionAPITest extends TestBase {
             assertTrue(found2);
         }
         finally {
+            if(cont1!=null)
+                APILocator.getContentletAPI().delete(cont1, sysuser, false);
+            if(s!=null) 
+                StructureFactory.deleteStructure(s);
+            
             APILocator.getHostAPI().archive(hh, sysuser, false);   
         } 
     }
