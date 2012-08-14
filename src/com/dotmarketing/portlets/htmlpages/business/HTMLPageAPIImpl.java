@@ -731,25 +731,9 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			ve.getTemplate(vTempalate)
 					.merge(context, out);
 
-		} catch (PortalException e1) {
+		} catch (Exception e1) {
 			Logger.error(this, e1.getMessage(), e1);
-		} catch (SystemException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-		} catch (DotSecurityException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-		} catch (IOException e) {
-			Logger.error(this, e.getMessage(), e);
-		} catch (ResourceNotFoundException e) {
-			Logger.error(this, e.getMessage(), e);
-		} catch (ParseErrorException e) {
-			Logger.error(this, e.getMessage(), e);
-		} catch (MethodInvocationException e) {
-			Logger.error(this, e.getMessage(), e);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}finally{
+		} finally {
 			context = null;
 			VelocityServlet.velocityCtx.remove();
 		}
