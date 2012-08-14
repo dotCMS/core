@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -1594,7 +1595,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     							dc.setSQL(this.selectChildrenStructureByPathSQLFolder, MAX_IDS_CLEAR-idsToClear.size());
     							dc.addParam(path + "%");
     							dc.addParam(parentHost.getPermissionId());
-    							idsToClear.addAll(dc.loadResults());
+    							List<Map<String,Object>> sts=dc.loadResults();
+                                idsToClear.addAll(sts);
+                                
+                                Iterator<Map<String,Object>> it = sts.iterator();
+                                while(it.hasNext() && (MAX_IDS_CLEAR-idsToClear.size())>0) {
+                                   dc.setSQL(this.selectChildrenContentByStructureSQL,MAX_IDS_CLEAR-idsToClear.size());
+                                   dc.addParam(it.next().get("inode"));
+                                   idsToClear.addAll(dc.loadResults());
+                                }
 							}
 
 						}
