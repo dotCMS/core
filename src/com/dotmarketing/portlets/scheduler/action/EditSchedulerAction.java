@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -16,11 +17,13 @@ import javax.portlet.PortletConfig;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.quartz.Trigger;
 
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.scheduler.struts.SchedulerForm;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
@@ -248,16 +251,23 @@ public class EditSchedulerAction extends DotPortletAction {
 	}
 	
 	private CronScheduledTask _retrieveScheduledJob(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
-		SchedulerForm schedulerForm = (SchedulerForm) form;
-		
+		SchedulerForm schedulerForm = (SchedulerForm) form;		
 		try{
-			if (UtilMethods.isSet(schedulerForm.getJobGroup()))
-				return (CronScheduledTask) QuartzUtils.getStandardScheduledTask(schedulerForm.getJobName(), schedulerForm.getJobGroup()).get(0);
-			else
-				return (CronScheduledTask) QuartzUtils.getStandardScheduledTask(req.getParameter("name"), req.getParameter("group")).get(0);
+			if (UtilMethods.isSet(schedulerForm.getJobGroup())){
+				if(!QuartzUtils.getStandardScheduledTask(schedulerForm.getJobName(), schedulerForm.getJobGroup()).isEmpty()){
+					return (CronScheduledTask) QuartzUtils.getStandardScheduledTask(schedulerForm.getJobName(), schedulerForm.getJobGroup()).get(0);
+				}
+			}
+			else{
+				if(!QuartzUtils.getStandardScheduledTask(req.getParameter("name"), req.getParameter("group")).isEmpty()){
+					return (CronScheduledTask) QuartzUtils.getStandardScheduledTask(req.getParameter("name"), req.getParameter("group")).get(0);
+				}
+			}
 		}catch(ArrayIndexOutOfBoundsException e){
 			return null;
 		}
+		return null;
+		
 	}
 
 	public static boolean _saveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception {

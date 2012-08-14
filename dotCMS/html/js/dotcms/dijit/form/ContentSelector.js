@@ -56,7 +56,7 @@ dojo.require("dijit.layout.BorderContainer");
 dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", "dijit/form/ContentSelector.jsp"),
-//	selectButtonTemplate: '<button id="{buttonInode}" class="resultButton" dojoType="dijit.form.Button">SELECT</button>',
+	selectButtonTemplate: '<button id="{buttonInode}" class="resultButton" dojoType="dijit.form.Button">SELECT</button>',
 	checkBoxTemplate: '<input value="{buttonInode}"  class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
@@ -84,6 +84,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	matchResultsTextValue: '',
 	contentletLanguageId: '',
 	relationJsName: '',
+	multiple: 'false',
 
 	postCreate: function () {
 		StructureAjax.getStructureDetails(this.structureInode,dojo.hitch(this, this._structureDetailsCallback));
@@ -630,7 +631,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_fillResultsTable: function (headers, data) {
 
-		this.relateDiv.style.display = "";
+		if(this.multiple=='true') {
+			this.relateDiv.style.display = "";
+		}
 
 		var table = this.results_table;
 
@@ -656,7 +659,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			}
 			var cellData = data[i];
 			var cell = row.insertCell (row.cells.length);
-			cell.innerHTML = this._checkButton(cellData);
+
+			if(this.multiple=='true') {
+				cell.innerHTML = this._checkButton(cellData);
+			} else {
+				cell.innerHTML = this._selectButton(cellData);
+			}
+
 			for (var j = 0; j < this.headers.length; j++) {
 				var header = this.headers[j];
 				var cell = row.insertCell (row.cells.length);
@@ -720,6 +729,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		return "<a class=\"beta\" id=\"" + fieldContentlet + "header" +	"\""
 		+ " href=\"#\"><b>" + fieldName + "</b></a>";
 	},
+
+	_selectButton: function (data) {
+			var inode = data["inode"];
+			var buttonInode = this.searchCounter+inode;
+			var button = dojo.replace(this.selectButtonTemplate,{buttonInode:buttonInode});
+			return button;
+		},
 
 	_checkButton: function (data) {
 		var inode = data["inode"];
