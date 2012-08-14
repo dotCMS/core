@@ -16,7 +16,11 @@
 		#getContentMapDetailByIdentifier($request.getAttribute("com.dotmarketing.wiki.contentlet"))
 		#set($URLMapContent = $content)
 	#else
-		#set($URLMapContent = $dotcontent.find($request.getAttribute("com.dotmarketing.wiki.contentlet")))
+	   #if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.inode")))
+	        #set($URLMapContent = $dotcontent.find($request.getAttribute("com.dotmarketing.wiki.contentlet.inode")))
+	   #else
+		    #set($URLMapContent = $dotcontent.find($request.getAttribute("com.dotmarketing.wiki.contentlet")))
+	   #end
 	#end
 #end
 
