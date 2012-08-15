@@ -92,17 +92,8 @@ public class URLMapFilter implements Filter {
 		Host host;
 		try {
 			host = whostAPI.getCurrentHost(request);
-		} catch (PortalException e) {
-			Logger.error(this, "Unable to retrieve current request host for URI " + uri);
-			throw new ServletException(e.getMessage(), e);
-		} catch (SystemException e) {
-			Logger.error(this, "Unable to retrieve current request host for URI  " + uri);
-			throw new ServletException(e.getMessage(), e);
-		} catch (DotDataException e) {
-			Logger.error(this, "Unable to retrieve current request host for URI  " + uri);
-			throw new ServletException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(this, "Unable to retrieve current request host for URI  " + uri);
+		} catch (Exception e) {
+			Logger.warn(this, "Unable to retrieve current request host for URI " + uri);
 			throw new ServletException(e.getMessage(), e);
 		}
 
@@ -156,11 +147,7 @@ public class URLMapFilter implements Filter {
 			User user = null;
 			try {
 				user = wuserAPI.getLoggedInUser(request);
-			} catch (DotRuntimeException e1) {
-				Logger.error(URLMapFilter.class, e1.getMessage(), e1);
-			} catch (PortalException e1) {
-				Logger.error(URLMapFilter.class, e1.getMessage(), e1);
-			} catch (SystemException e1) {
+			} catch (Exception e1) {
 				Logger.error(URLMapFilter.class, e1.getMessage(), e1);
 			}
 	
