@@ -884,6 +884,7 @@ public class ImportUtil {
 
             //Creating/updating content
             boolean isNew = false;
+            Long existingMultilingualLanguage = null;//For multilingual batch imports we need the language of an existing contentlet if there is any
             if ( contentlets.size() == 0 ) {
                 counters.setNewContentCounter( counters.getNewContentCounter() + 1 );
                 isNew = true;
@@ -914,8 +915,9 @@ public class ImportUtil {
 								newCont.setLanguageId(language);
 								multilingualContentlets.add(newCont);
 
-								lastIdentifier = contentlet.getIdentifier();
-							}
+                                existingMultilingualLanguage = contentlet.getLanguageId();
+                                lastIdentifier = contentlet.getIdentifier();
+                            }
 						}
 					}
 
@@ -1027,10 +1029,19 @@ public class ImportUtil {
 						categoriesToRetain.addAll(catAPI.getChildren(cat,false, user, false));
 					}
 
-					Contentlet workingCont = conAPI.findContentletByIdentifier(cont.getIdentifier(), false,langAPI.getDefaultLanguage().getId() , user, false);
-					categoriesOnWorkingContent = catAPI.getParents(workingCont, user, false);
+                    /*
+                     We need to verify that we are not trying to save a contentlet that have as language the default language because that mean that
+                     contentlet for that default language couldn't exist, we are just saving it after all....
+                      */
+                    Long languageId = langAPI.getDefaultLanguage().getId();
+                    if ( languageId.equals( language ) && existingMultilingualLanguage != null ) {
+                        languageId = existingMultilingualLanguage;//Using the language another an existing contentlet with the same identifier
+                    }
 
-					for(Category existingCat : categoriesOnWorkingContent){
+                    Contentlet workingCont = conAPI.findContentletByIdentifier( cont.getIdentifier(), false, languageId, user, false );
+                    categoriesOnWorkingContent = catAPI.getParents( workingCont, user, false );
+
+                    for(Category existingCat : categoriesOnWorkingContent){
 						for(Category retainCat :categoriesToRetain){
 							if(existingCat.compareTo(retainCat) == 0){
 								categories.add(existingCat);
