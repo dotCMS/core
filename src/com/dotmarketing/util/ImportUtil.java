@@ -141,53 +141,50 @@ public class ImportUtil {
 						try {
 							lines++;
 							Logger.debug(ImportUtil.class, "Line " + lines + ": (" + csvreader.getRawRecord() + ").");
-							//Importing a line
-							if (0 < language) {
-//								results.get("identifiers").add(csvLine[0]);
-								importLine(csvLine, st, preview, isMultilingual, user, results, lineNumber, language, headers, keyFields, choosenKeyField,
-                                        counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, false );
-                            } else {
 
+                            //Importing a line
+                            Long languageToImport = language;
+                            if ( language == -1 ) {
                                 dotCMSLanguage = langAPI.getLanguage( csvLine[languageCodeHeaderColumn], csvLine[countryCodeHeaderColumn] );
+                                languageToImport = dotCMSLanguage.getId();
+                            }
 
-                                if ( 0 < dotCMSLanguage.getId() ) {
-//									results.get("identifiers").add(csvLine[0]);
+                            if ( languageToImport != -1 ) {
 
-                                    /*
-                                     Verifies if there was already a record with the same keys.
-                                     Useful to know if we have batch uploads with the same keys, mostly visible for batch content uploads with multiple languages
-                                     */
-                                    boolean multilingualBatchInsert = true;
-                                    if ( keyFields != null && !keyFields.isEmpty() ) {
+                                /*
+                                Verifies if there was already imported a record with the same keys.
+                                Useful to know if we have batch uploads with the same keys, mostly visible for batch content uploads with multiple languages
+                                */
+                                boolean sameKeyBatchInsert = true;
+                                if ( keyFields != null && !keyFields.isEmpty() ) {
 
-                                        for ( Integer column : keyFields.keySet() ) {
+                                    for ( Integer column : keyFields.keySet() ) {
 
-                                            Field keyField = keyFields.get( column );
-                                            if ( !counters.matchKey( keyField.getFieldName(), csvLine[column] ) ) {
-                                                multilingualBatchInsert = false;
-                                                break;
-                                            }
+                                        Field keyField = keyFields.get( column );
+                                        if ( !counters.matchKey( keyField.getFieldName(), csvLine[column] ) ) {
+                                            sameKeyBatchInsert = false;
+                                            break;
                                         }
                                     }
-
-                                    //Importing content record...
-                                    importLine( csvLine, st, preview, isMultilingual, user, results, lineNumber, dotCMSLanguage.getId(), headers, keyFields, choosenKeyField,
-                                            counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, multilingualBatchInsert );
-
-                                    //Storing the record keys we just imported for a later use...
-                                    if ( keyFields != null && !keyFields.isEmpty() ) {
-
-                                        for ( Integer column : keyFields.keySet() ) {
-
-                                            Field keyField = keyFields.get( column );
-                                            counters.addKey( keyField.getFieldName(), csvLine[column] );
-                                        }
-                                    }
-
-                                } else {
-                                    results.get( "errors" ).add( LanguageUtil.get( user, "Line--" ) + lineNumber + LanguageUtil.get( user, "Locale-not-found-for-languageCode" ) + " ='" + csvLine[languageCodeHeaderColumn] + "' countryCode='" + csvLine[countryCodeHeaderColumn] + "'" );
-                                    errors++;
                                 }
+
+                                //Importing content record...
+                                importLine( csvLine, st, preview, isMultilingual, user, results, lineNumber, languageToImport, headers, keyFields, choosenKeyField,
+                                        counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert );
+
+                                //Storing the record keys we just imported for a later reference...
+                                if ( keyFields != null && !keyFields.isEmpty() ) {
+
+                                    for ( Integer column : keyFields.keySet() ) {
+
+                                        Field keyField = keyFields.get( column );
+                                        counters.addKey( keyField.getFieldName(), csvLine[column] );
+                                    }
+                                }
+
+                            } else {
+                                results.get( "errors" ).add( LanguageUtil.get( user, "Line--" ) + lineNumber + LanguageUtil.get( user, "Locale-not-found-for-languageCode" ) + " ='" + csvLine[languageCodeHeaderColumn] + "' countryCode='" + csvLine[countryCodeHeaderColumn] + "'" );
+                                errors++;
                             }
 
                             if ( !preview && (lineNumber % commitGranularity == 0) ) {
@@ -448,13 +445,14 @@ public class ImportUtil {
      * @param relationships
      * @param onlyChild
      * @param onlyParent
-     * @param multilingualBatchInsert Indicates if there is a batch content upload with multiple records and the same key, mostly used for content with multiple languages
+     * @param sameKeyBatchInsert Indicates if the keys for this row had been use them in this batch upload, help us to see if there is a batch content upload with multiple records
+     *                           and the same key, mostly used for content with multiple languages.
      * @throws DotRuntimeException
      */
     private static void importLine ( String[] line, Structure structure, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
                                      HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
                                      HashSet<String> keyContentUpdated, List<Permission> structurePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships, HashMap<Integer, Boolean> onlyChild, HashMap<Integer, Boolean> onlyParent,
-                                     boolean multilingualBatchInsert ) throws DotRuntimeException {
+                                     boolean sameKeyBatchInsert ) throws DotRuntimeException {
 
         try {
 
@@ -846,13 +844,14 @@ public class ImportUtil {
                 if ( !preview ) {//Don't do unnecessary calls if it is not required
 
                     /*
-                   We must use an alternative search for cases when we have multilingual inserts for new records, the search above
+                   We must use an alternative search for cases when we are using the same key for batch uploads,
+                   for example if we have multilingual inserts for new records, the search above (searchIndex)
                    can manage multilingual inserts for already stored records but not for the case when the new record and its multilingual records
                    came in the same import file. They are new, we will not find them in the index.
                     */
-                    if ( isMultilingual && multilingualBatchInsert && contentlets.isEmpty() ) {
+                    if ( sameKeyBatchInsert && contentlets.isEmpty() ) {
 
-                        //Searching for all the contentles of this structure
+                        //Searching for all the contentlets of this structure
                         List<Contentlet> foundContentlets = conAPI.findByStructure( structure, user, true, 0, -1 );
 
                         for ( Contentlet contentlet : foundContentlets ) {
