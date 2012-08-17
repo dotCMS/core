@@ -1,13 +1,16 @@
 package com.dotmarketing.quartz;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
@@ -458,9 +461,9 @@ public class QuartzUtils {
 		jobDetail.setDescription(job.getJobDescription());
 		jobDetail.setJobDataMap(dataMap);
 		jobDetail.setDurability(job.getDurability());
-
+		
 		if (job instanceof CronScheduledTask) {
-			trigger = new CronTrigger(triggerName, triggerGroup, jobName, jobGroup, startDate, endDate, ((CronScheduledTask) job).getCronExpression());
+			trigger = new CronTrigger(triggerName, triggerGroup, jobName, jobGroup, startDate, endDate, ((CronScheduledTask) job).getCronExpression());			
 		} else {
 			trigger = new SimpleTrigger(triggerName, triggerGroup, jobName, jobGroup, startDate, endDate, ((SimpleScheduledTask) job).getRepeatCount(),
 					((SimpleScheduledTask) job).getRepeatInterval());
