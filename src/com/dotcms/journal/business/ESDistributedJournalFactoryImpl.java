@@ -247,7 +247,20 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         sql.append(')');
         
         dc.setSQL(sql.toString());
-        dc.loadResult();
+        Connection con = null;
+		try {
+			con = DbConnectionFactory.getDataSource().getConnection();
+			con.setAutoCommit(true);
+			dc.loadResult(con);
+		} catch (SQLException e) {
+			Logger.error(ESDistributedJournalFactoryImpl.class,e.getMessage(),e);
+		}finally{
+			try {
+				con.close();
+			} catch (SQLException e) {
+				Logger.error(ESDistributedJournalFactoryImpl.class,e.getMessage(),e);
+			}
+		}
     }
 
     @Override
