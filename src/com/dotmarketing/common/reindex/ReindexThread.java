@@ -155,13 +155,18 @@ public class ReindexThread extends Thread {
 					try {
 						HibernateUtil.closeSession();
 						try{
-							DbConnectionFactory.getConnection().close();
+							DbConnectionFactory.closeConnection();
 						}catch (Exception e) {
 							Logger.debug(this, "Unable to close connection : " + e.getMessage(),e);
 						}
 						
 					} catch (DotHibernateException e) {
 						Logger.error(this, e.getMessage(), e);
+						try{
+							DbConnectionFactory.closeConnection();
+						}catch (Exception e1) {
+							Logger.debug(this, "Unable to close connection : " + e1.getMessage(),e1);
+						}
 					}
 				}
 				
