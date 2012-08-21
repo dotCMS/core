@@ -1,17 +1,8 @@
 package com.dotmarketing.listeners;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.main.AutoProcessor;
@@ -20,9 +11,16 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 
 public class OsgiFelixListener implements ServletContextListener {
 
@@ -77,7 +75,9 @@ public class OsgiFelixListener implements ServletContextListener {
         
         // Create host activator;
         List<BundleActivator> list = new ArrayList<BundleActivator>();
-        list.add(HostActivator.instance());
+        HostActivator hostActivator = HostActivator.instance();
+        hostActivator.setServletContext( context.getServletContext() );
+        list.add( hostActivator );
         configProps.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, list);
         
         configProps.put("felix.fileinstall.dir", autoLoadDir);
@@ -95,7 +95,7 @@ public class OsgiFelixListener implements ServletContextListener {
             
             // (10) Start the framework.
             m_fwk.start();
-            Logger.info(this, "osgi felix framework started");
+            Logger.info( this, "osgi felix framework started" );
         }
         catch (Exception ex)
         {
@@ -103,7 +103,7 @@ public class OsgiFelixListener implements ServletContextListener {
             throw new RuntimeException(ex);
         }
     }
-    
+
     private static FrameworkFactory getFrameworkFactory() throws Exception {
         URL url = Main.class.getClassLoader().getResource(
         	"META-INF/services/org.osgi.framework.launch.FrameworkFactory");
