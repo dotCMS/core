@@ -618,7 +618,7 @@
     <!-- DOTCMS SERVLET-MAPPINGS -->
     <servlet-mapping>
         <servlet-name>proxy</servlet-name>
-        <url-pattern>/dynamic/*</url-pattern>
+        <url-pattern>/app/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
