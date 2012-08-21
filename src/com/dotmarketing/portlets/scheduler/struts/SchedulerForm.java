@@ -55,11 +55,13 @@ public class SchedulerForm extends ValidatorForm {
     
     private String everyDate;
     private String atTime;
+    private String cronExpression="";
     
     
     
 
 
+	
 	private Map map;
 /*    private String type;
     private boolean schedulerEditable;
@@ -401,4 +403,11 @@ public class SchedulerForm extends ValidatorForm {
 		this.atTime = atTime;
 	}
 	
+	public String getCronExpression() {
+		return cronExpression;
+	}
+
+	public void setCronExpression(String cronExpression) {
+		this.cronExpression = cronExpression;
+	}
 }
