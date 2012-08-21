@@ -105,7 +105,7 @@ public class FileAssetConverter {
 						Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
 						java.io.File assetFile = APILocator.getFileAPI().getAssetIOFile(file);
 						if(assetFile!=null && assetFile.exists()){
-							java.io.File tempUserFolder = new java.io.File(Config.CONTEXT.getRealPath(Constants.TEMP_BINARY_PATH) + java.io.File.separator + APILocator.getUserAPI().getSystemUser().getUserId() + 
+							java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + APILocator.getUserAPI().getSystemUser().getUserId() + 
 									java.io.File.separator + fieldVar.getFieldContentlet());
 							if (!tempUserFolder.exists())
 								tempUserFolder.mkdirs();

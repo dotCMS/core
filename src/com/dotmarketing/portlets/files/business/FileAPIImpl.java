@@ -724,6 +724,18 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
         }
     }
     
+    public String getRealAssetPathTmpBinary() {
+        String assetpath=getRealAssetPath();
+        java.io.File adir=new java.io.File(assetpath);
+        if(!adir.isDirectory())
+            adir.mkdir();
+        String path=assetpath+java.io.File.separator+"tmp_upload";
+        java.io.File dir=new java.io.File(path);
+        if(!dir.isDirectory())
+            dir.mkdir();
+        return path;
+    }
+    
     public boolean isLegacyFilesSupported(){//DOTCMS-6905
     	boolean isLegacyFilesSupported = false;
 		try{
