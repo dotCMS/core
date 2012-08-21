@@ -18,6 +18,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
@@ -54,7 +55,7 @@ public class AjaxFileUploadServlet extends HttpServlet {
 		String fieldName = request.getParameter("fieldName");
 		String fileName = request.getParameter("fileName");
 
-		File tempUserFolder = new File(Config.CONTEXT.getRealPath(Constants.TEMP_BINARY_PATH) + File.separator + userId + File.separator + fieldName);
+		File tempUserFolder = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + userId + File.separator + fieldName);
 		File file = new File(tempUserFolder.getAbsolutePath() + File.separator + fileName);
 		if(file.exists()) {
 			FileInputStream fis = new FileInputStream(file);
@@ -115,7 +116,7 @@ public class AjaxFileUploadServlet extends HttpServlet {
 					}
 					fileName = ContentletUtil.sanitizeFileName(fileName);
 
-					File tempUserFolder = new File(Config.CONTEXT.getRealPath(Constants.TEMP_BINARY_PATH) + File.separator + userId + 
+					File tempUserFolder = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + userId + 
 							File.separator + fieldName);
 					if (!tempUserFolder.exists())
 						tempUserFolder.mkdirs();

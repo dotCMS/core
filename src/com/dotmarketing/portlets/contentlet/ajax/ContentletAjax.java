@@ -1012,8 +1012,7 @@ public class ContentletAjax {
 				File binaryFile = null;
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
 					binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
-					binaryFile = new File(Config.CONTEXT
-							.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+					binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()  
 							+ File.separator + user.getUserId() + File.separator + elementName
 							+ File.separator + binaryFileValue);
 					if(binaryFile.exists()) {
@@ -1021,8 +1020,7 @@ public class ContentletAjax {
     					    // https://github.com/dotCMS/dotCMS/issues/35
     					    // making a copy just in case the transaction fails so
     					    // we can have the file for possible next attempts
-                            File acopyFolder=new File(Config.CONTEXT
-                                    .getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+                            File acopyFolder=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
                                     + File.separator + user.getUserId() + File.separator + elementName
                                     + File.separator + UUIDGenerator.generateUuid());
                             if(!acopyFolder.exists())
@@ -1051,8 +1049,7 @@ public class ContentletAjax {
 												File binFile = conAPI.getBinaryFile(sessData[0].trim(), sessData[1].trim(), user);
 												if(binFile != null) {
 													String fieldValue = binFile.getName();
-													File destFile = new java.io.File(Config.CONTEXT
-															.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+													File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
 															+ java.io.File.separator + user.getUserId()
 															+ java.io.File.separator + fieldValue);
 
