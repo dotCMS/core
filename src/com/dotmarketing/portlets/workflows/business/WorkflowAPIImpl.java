@@ -775,24 +775,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			processor.getContentlet().setStringProperty("wfActionId", processor.getAction().getId());
 
 
-
-
-
-
-			List<WorkflowActionClass> actionClasses = processor.getActionClasses();
-			if(actionClasses != null){
-				for(WorkflowActionClass actionClass : actionClasses){
-					WorkFlowActionlet actionlet= actionClass.getActionlet();
-					Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
-					actionlet.executeAction(processor, params);
-
-					//if we should stop processing further actionlets
-					if(actionlet.stopProcessing()){
-						break;
-					}
-				}
-			}
-
+			
 			WorkflowTask task = processor.getTask();
 				if(task != null){
 				Role r = APILocator.getRoleAPI().getUserRole(processor.getUser());
@@ -820,6 +803,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					saveComment(comment);
 				}
 			}
+				
+				List<WorkflowActionClass> actionClasses = processor.getActionClasses();
+				if(actionClasses != null){
+					for(WorkflowActionClass actionClass : actionClasses){
+						WorkFlowActionlet actionlet= actionClass.getActionlet();
+						Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+						actionlet.executeAction(processor, params);
+
+						//if we should stop processing further actionlets
+						if(actionlet.stopProcessing()){
+							break;
+						}
+					}
+				}
+
 		}catch(Exception e){
 			if(local){
 				HibernateUtil.rollbackTransaction();
