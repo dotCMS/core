@@ -2210,8 +2210,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 			                		// what happens is we never clean up the temp directory
 			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
-			                		if(delMe.exists() && delMe.getAbsolutePath().contains(Config.CONTEXT
-											.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+			                		if(delMe.exists() && delMe.getAbsolutePath().contains(
+			                		        APILocator.getFileAPI().getRealAssetPathTmpBinary()
 											+ java.io.File.separator + user.getUserId()
 											+ java.io.File.separator  ) ){
 			                			delMe.delete();
@@ -3494,7 +3494,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
         java.io.File srcFile;
-        java.io.File destFile = new java.io.File(Config.CONTEXT.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH) + java.io.File.separator + user.getUserId());
+        java.io.File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId());
         if (!destFile.exists())
             destFile.mkdirs();
 
@@ -3515,7 +3515,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         }else{
                             fieldValue=srcFile.getName();
                         }
-                        destFile = new java.io.File(Config.CONTEXT.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH) + java.io.File.separator + user.getUserId() + java.io.File.separator + fieldValue);
+                        destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + java.io.File.separator + fieldValue);
                         if (!destFile.exists())
                             destFile.createNewFile();
 

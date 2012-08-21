@@ -15,6 +15,7 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
@@ -88,7 +89,7 @@ public class BinaryCleanupJob implements Job {
 	}
 
 	private File getTempBinaryDir() throws IOException{
-		String binaryPath = Config.CONTEXT.getRealPath(Constants.TEMP_BINARY_PATH);
+		String binaryPath = APILocator.getFileAPI().getRealAssetPathTmpBinary();
 		return new File(binaryPath);
 	}
 }

@@ -831,7 +831,7 @@ public class DotWebdavHelper {
 				fileAsset.setStructureInode(folder.getDefaultFileType());
 				fileAsset.setFolder(folder.getInode());
 				if (currentData != null) {
-					java.io.File tempUserFolder = new java.io.File(Config.CONTEXT.getRealPath(Constants.TEMP_BINARY_PATH) + java.io.File.separator + user.getUserId() + 
+					java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + 
 							java.io.File.separator + fieldVar.getFieldContentlet());
 					if (!tempUserFolder.exists())
 						tempUserFolder.mkdirs();
