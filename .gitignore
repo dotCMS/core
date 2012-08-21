@@ -20,9 +20,7 @@ sql/cms/dotcms_mysql.sql
 sql/cms/dotcms_oracle.sql
 sql/cms/dotcms_postgresql.sql
 
-dotCMS/WEB-INF/binary
-dotCMS/WEB-INF/binary/load
-dotCMS/WEB-INF/binary/felix-cache
+dotCMS/WEB-INF/felix/felix-cache
 
 dotCMS/html/js/tinymce/jscripts/tiny_mce/*.gz
 
