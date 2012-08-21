@@ -585,6 +585,7 @@ public class CMSFilter implements Filter {
          //http://jira.dotmarketing.net/browse/DOTCMS-6753
          set.add("/JSONTagsServlet");
          set.add("/spring");
+         set.add("/dynamic");
          set.add("/api");
 
          //Load exclusions from plugins
@@ -616,6 +617,23 @@ public class CMSFilter implements Filter {
         }
     }
 
+    public static void addExclude(String URLPattern){
+    	if(excludeList== null){
+    		buildExcludeList();
+    	}
+    	synchronized(excludeList){
+    		excludeList.add(URLPattern);
+    	}
+    }
+
+	public static void removeExclude(String URLPattern){
+		if(excludeList!= null){
+			synchronized(excludeList){
+				excludeList.remove(URLPattern);
+			}
+    	}
+    }
+    
     public static boolean excludeURI(String uri) {
         if (uri.trim().equals("/c")
         		|| uri.trim().startsWith("/c/")
