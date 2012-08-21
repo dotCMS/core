@@ -78,6 +78,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -926,6 +927,7 @@ public class ContentletAjax {
         } catch (DotHibernateException e1) {
             Logger.warn(this, e1.getMessage(),e1);
         }
+	    
 
 		int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
 		String newInode = "";
@@ -940,6 +942,7 @@ public class ContentletAjax {
 		List<String> saveContentErrors = new ArrayList<String>();
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		Config.CONTEXT.setAttribute("WEB_SERVER_HTTP_PORT", Integer.toString(req.getServerPort()));
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 
 		// get the struts_action from the form data
