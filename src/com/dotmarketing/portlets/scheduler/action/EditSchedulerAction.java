@@ -400,8 +400,12 @@ public class EditSchedulerAction extends DotPortletAction {
 				}
 			}
 
-		
-		String cronExpression = cronSecondsField + " " + cronMinutesField + " " + cronHoursField + " " + cronDaysOfMonthField + " " + cronMonthsField + " " + cronDaysOfWeekField + " " + cronYearsField;
+		String cronExpression = "";
+		if(req.getParameter("cronExpression")!=null){
+			cronExpression = req.getParameter("cronExpression");
+		}else{
+			cronExpression =  cronSecondsField + " " + cronMinutesField + " " + cronHoursField + " " + cronDaysOfMonthField + " " + cronMonthsField + " " + cronDaysOfWeekField + " " + cronYearsField;
+		}	
 
 		CronScheduledTask job = new CronScheduledTask();
 		job.setJobName(schedulerForm.getJobName());
@@ -460,6 +464,8 @@ public class EditSchedulerAction extends DotPortletAction {
 			} else {
 				schedulerForm.setHaveEndDate(false);
 			}
+			
+			schedulerForm.setCronExpression(scheduler.getCronExpression());
 			
 			StringTokenizer cronExpressionTokens = new StringTokenizer(scheduler.getCronExpression());
 			String token;
