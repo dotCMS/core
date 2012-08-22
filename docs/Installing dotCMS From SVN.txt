@@ -1,5 +1,0 @@
-See:
-
-http://www.dotcms.org/documentation/InstallingFromSVN 
-
-for the latest doc
