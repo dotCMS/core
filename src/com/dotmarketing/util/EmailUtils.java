@@ -288,7 +288,7 @@ public class EmailUtils {
 
 		String alphanumericMsgId = messageId.replaceAll("[^a-zA-Z0-9]", "");
 
-		File tempEmailDir = new File(Config.CONTEXT.getRealPath(Constants.TEMP_BINARY_PATH) + File.separator + "email" );
+		File tempEmailDir = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + "email" );
 
 		File messageFolder = new File(tempEmailDir.getPath() + File.separator + alphanumericMsgId);
 		if(!messageFolder.exists())
