@@ -74,18 +74,11 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 		    languageStr=sb.toString();   
 		}
 		%>
-		<tr style="cursor:pointer;" class="trIdxNothing">
+		<tr style="cursor:pointer;" class="trIdxNothing" jobName="<%= task.getJobName() %>">
 		
-			 <td nowrap valign="top" align="center">
-				<%if(ssapi.isTaskRunning(task.getJobName())){ %>
-					<%SiteSearchPublishStatus ps = ssapi.getTaskProgress(task.getJobName()); %>
-
-					<div dojoType="dijit.ProgressBar" progress="<%=(ps.getCurrentProgress() + ps.getBundleErrors())%>" style="width:100px" id="<%=task.getJobName().hashCode()%> %>" maximum="<%=ps.getTotalBundleWork()%>"></div>
-
-				
-				<%} else{%>
-					<span class="deleteIcon" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span>
-				<%} %>
+			 <td nowrap valign="top" align="center" class="progress">
+				<span class="deleteIcon hidden" onclick="deleteJob('<%=URLEncoder.encode(task.getJobName(),"UTF-8")%>')"></span>
+				<div class="pb hidden" dojoType="dijit.ProgressBar" progress="0" style="width:100px" id="<%=task.getJobName().hashCode()%> %>" maximum="0"></div>
 		   	</td>
 			<td nowrap valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getJobName() %></td>
 			<td valign="top" onclick="showJobSchedulePane('<%=URLEncoder.encode(task.getJobName(),"UTF-8") %>')"><%=task.getProperties().get("indexAlias")%></td>
@@ -141,3 +134,6 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 		</tr>
 	<%} %>
 </table>
+<script>
+jobsProgressUpdate();
+</script>
