@@ -11,8 +11,7 @@
 <%@ page import="com.liferay.portal.util.WebKeys" %>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.liferay.portal.model.Company"%>
-<%@page import="com.dotmarketing.util.CompanyUtils"%>
- 
+<%@page import="com.dotmarketing.util.CompanyUtils"%> 
 <%try{		
 	Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 	Host defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(WebAPILocator.getUserWebAPI().getSystemUser(),false);
