@@ -159,7 +159,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
 			if( x != null){
 				binaryFile = new java.io.File(x);
 				if(binaryFile != null && binaryFile.exists() && binaryFile.length()>0){
-					java.io.File tempUserFolder = new java.io.File(Config.CONTEXT.getRealPath(Constants.TEMP_BINARY_PATH) + java.io.File.separator + userId + 
+					java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + userId + 
 							java.io.File.separator + fieldId);
 					if (!tempUserFolder.exists())
 						tempUserFolder.mkdirs();

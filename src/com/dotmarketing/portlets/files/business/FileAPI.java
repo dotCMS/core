@@ -247,8 +247,9 @@ public interface FileAPI {
      */
     public  String getRealAssetPath();
 	 
-    String getRealAssetPath(Inode inode);
-    String getRealAssetPath(String inode, String ext);
+    public String getRealAssetPath(Inode inode);
+    public String getRealAssetPath(String inode, String ext);
+    public String getRealAssetPathTmpBinary(); 
     
     /**
      * 
