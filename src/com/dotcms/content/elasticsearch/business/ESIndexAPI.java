@@ -602,10 +602,13 @@ public class ESIndexAPI {
 
     public void createAlias(String indexName, String alias) {
         try{
-            Client client=new ESClient().getClient();
-            IndicesAliasesRequest req=new IndicesAliasesRequest();
-            req.addAlias(indexName, alias);
-            client.admin().indices().aliases(req).actionGet(30000L);
+            // checking for existing alias
+            if(getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices()).get(alias)==null) {
+                Client client=new ESClient().getClient();
+                IndicesAliasesRequest req=new IndicesAliasesRequest();
+                req.addAlias(indexName, alias);
+                client.admin().indices().aliases(req).actionGet(30000L);
+            }
          } catch (Exception e) {
              Logger.error(ESIndexAPI.class, e.getMessage(), e);
              throw new RuntimeException(e);
