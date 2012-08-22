@@ -571,6 +571,11 @@ function submitSchedule() {
 		return;
 	}
 	
+	if(/^\s*$/.test(dojo.byId("indexAlias").value)) {
+		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
+        return;
+	}
+	
 	if (myForm.validate()) {
 		dojo.xhrPost({
 			form : "sitesearch",
