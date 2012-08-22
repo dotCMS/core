@@ -7,9 +7,21 @@
 <%@ page import="com.dotmarketing.business.CacheLocator"%>
 <%@ page import="com.dotmarketing.util.Logger"%>
 <%@ page import="com.dotmarketing.db.DbConnectionFactory"%>
+<%@ page import="com.liferay.portal.util.ImageKey" %>
+<%@ page import="com.liferay.portal.util.WebKeys" %>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.liferay.portal.model.Company"%>
+<%@page import="com.dotmarketing.util.CompanyUtils"%>
+
 <%try{		
 	Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-		
+	Host defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(WebAPILocator.getUserWebAPI().getSystemUser(),false);
+	Company company = CompanyUtils.getDefaultCompany();
+	String portalUrl =  company.getPortalURL();
+	String IMAGE_PATH = (String) application.getAttribute(WebKeys.IMAGE_PATH);
+	String defaultImage =  IMAGE_PATH+"/company_logo?img_id="+company.getCompanyId()+"&key="+ImageKey.get(company.getCompanyId());
+	
+	
 	String ep_originatingHost = host.getHostname();
 	String ep_errorCode = "401";
 	
@@ -110,8 +122,8 @@
 
 <html>
 <head>
-		<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
-	<title>dotCMS: 401 Not Authorized</title>
+		<link rel="shortcut icon" href="http://<%=defaultHost.getHostname()%>/home/favicon.ico"" type="image/x-icon">
+	<title><%= LanguageUtil.get(pageContext,"401-page-title") %></title>
 
 	<style type="text/css">
 		body{
@@ -149,20 +161,19 @@
 </head>
 <body>
 <div id="main">
-			<div id="logo">
-		<a href="http://dotcms.com"><img src="/html/images/skin/logo.gif" width="140"  hspace="10" border="0" alt="dotCMS content management system" title="dotCMS content management system"  /></a>
-			</div>
+	<div id="logo">
+		<a href="http://<%=portalUrl%>/"><img src="<%=defaultImage%>" width="140"  hspace="10" border="0" alt="<%=LanguageUtil.get(pageContext,"401-image-title")%>" title="<%=LanguageUtil.get(pageContext,"401-image-title")%>"  /></a>
+	</div>
 	<div id="text">
 	
-		<h1>Not Authorized (401 error)</h1>
+		<h1><%= LanguageUtil.get(pageContext,"401-title") %></h1>
 		
-		<p>The page or file you were looking for requires authorization. 
-		<BR/>Please make sure that you have the proper roles required to view this asset. </p>
-		<p>If the problem persists, you can always return to the <a href="/">home page</a>.</p>
+		<p><%= LanguageUtil.get(pageContext,"401-body1") %></p>
+		<p><%= LanguageUtil.get(pageContext,"401-body2") %></p>
 	</div>
 </div>
 <br clear="all"/>&nbsp;<br clear="all"/>
-<div id="footer">&copy; <script>var d = new Date();document.write(d.getFullYear());</script>, <a href="http://dotcms.com">DM Web, Corp.</a></div>
+<div id="footer">&copy; <script>var d = new Date();document.write(d.getFullYear());</script>, <a href="http://<%=portalUrl%>"><%= LanguageUtil.get(pageContext,"401-copywright") %></a></div>
 
 
 </body>
