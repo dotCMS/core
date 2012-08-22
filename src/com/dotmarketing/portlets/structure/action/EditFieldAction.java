@@ -241,24 +241,34 @@ public class EditFieldAction extends DotPortletAction {
 
 			//To validate values entered for decimal/number type check box field
 			//http://jira.dotmarketing.net/browse/DOTCMS-5516
-			
+
 			if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
 				String values = fieldForm.getValues();
                 String temp = values.replaceAll("\r\n","|");
                 String[] tempVals = StringUtil.split(temp.trim(), "|");
                 try {
     				if(dataType.equals(Field.DataType.FLOAT.toString())){
+    					if(values.indexOf("\r\n") > -1) {
+    						SessionMessages.add(req, "error", "message.structure.invaliddatatype");
+    					    return false;
+    					}
+
     					for(int i=1;i<tempVals.length;i+= 2){
     						Float.parseFloat(tempVals[i]);
-    					}					
+    					}
     				}else if(dataType.equals(Field.DataType.INTEGER.toString())){
+    					if(values.indexOf("\r\n") > -1) {
+    						SessionMessages.add(req, "error", "message.structure.invaliddatatype");
+    					    return false;
+    					}
+
     					for(int i=1;i<tempVals.length;i+= 2){
     							Integer.parseInt(tempVals[i]);
     					}
     				}
 
 				  }catch (Exception e) {
-			          String message = "message.structure.invaliddata";
+  			          String message = "message.structure.invaliddata";
 				    SessionMessages.add(req, "error", message);
 				    return false;
 				 }
@@ -415,7 +425,7 @@ public class EditFieldAction extends DotPortletAction {
 
 			// saves this field
 			FieldFactory.saveField(field);
-			
+
 			ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
 				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 
@@ -503,10 +513,10 @@ public class EditFieldAction extends DotPortletAction {
 			// Call the commit method to avoid a deadlock
 			HibernateUtil.commitTransaction();
 			FieldsCache.removeFields(structure);
-			
+
 			ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
 				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
-			
+
 			StructureCache.removeStructure(structure);
 			StructureServices.removeStructureFile(structure);
 
@@ -550,10 +560,10 @@ public class EditFieldAction extends DotPortletAction {
 			//VirtualLinksCache.clearCache();
 			String message = "message.structure.reorderfield";
 			SessionMessages.add(req, "message", message);
-			
+
 			//AdminLogger.log(EditFieldAction.class, "_saveField", "Added field " + field.getFieldName() + " to " + structure.getName() + " Structure.", user);
-		    
-		    
+
+
 		} catch (Exception ex) {
 			Logger.error(EditFieldAction.class, ex.toString());
 		}
@@ -585,7 +595,7 @@ public class EditFieldAction extends DotPortletAction {
 	    return true;
 
 	}
-	
+
 	public String hostNameUtil(ActionRequest req) {
 
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
