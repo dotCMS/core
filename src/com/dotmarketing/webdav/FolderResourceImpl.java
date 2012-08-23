@@ -3,28 +3,7 @@
  */
 package com.dotmarketing.webdav;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.CollectionResource;
-import com.bradmcevoy.http.FolderResource;
-import com.bradmcevoy.http.LockInfo;
-import com.bradmcevoy.http.LockResult;
-import com.bradmcevoy.http.LockTimeout;
-import com.bradmcevoy.http.LockToken;
-import com.bradmcevoy.http.LockableResource;
-import com.bradmcevoy.http.LockingCollectionResource;
-import com.bradmcevoy.http.MakeCollectionableResource;
-import com.bradmcevoy.http.Range;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.*;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.beans.Host;
@@ -40,6 +19,11 @@ import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.io.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jason Tesser
@@ -143,8 +127,8 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 	public List<? extends Resource> getChildren() {
 		List<Resource> children;
 		try {
-			children = dotDavHelper.getChildrenOfFolder(folder, isAutoPub);
-		} catch (IOException e) {
+            children = dotDavHelper.getChildrenOfFolder( folder, this.user, isAutoPub );
+        } catch (IOException e) {
 			Logger.error(FolderResourceImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
@@ -465,5 +449,15 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 		return lock(timeout, lockInfo).getLockToken();
 	}
 
-	
+    public User getUser () {
+        return user;
+    }
+
+    public void setUser ( User user ) {
+
+        if ( user != null ) {
+            this.user = user;
+        }
+    }
+
 }
