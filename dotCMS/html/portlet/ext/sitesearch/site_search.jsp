@@ -571,6 +571,11 @@ function submitSchedule() {
 		return;
 	}
 	
+	if(/^\s*$/.test(dojo.byId("indexAlias").value)) {
+		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
+        return;
+	}
+	
 	if (myForm.validate()) {
 		dojo.xhrPost({
 			form : "sitesearch",
@@ -820,7 +825,60 @@ dojo.addOnLoad (function(){
    	refreshIndexStats();
 	resizeBrowser();
 	dojo.connect(window, "onresize", "resizeBrowser");
+	enableJobsProgressUpdate();
 });
+
+function enableJobsProgressUpdate() {
+	setInterval(function() {
+		var tab =dijit.byId("mainTabContainer");
+		selectedTab = tab.selectedChildWidget;
+		if(selectedTab.id =="jobTabCp")
+		    jobsProgressUpdate();
+	},5000);
+}
+
+function jobsProgressUpdate() {
+	
+	var xhrArgs = {
+       url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/getJobProgress/" ,
+       handleAs: "json",
+       load : function(dataOrError, ioArgs) {
+           if (dojo.isString(dataOrError) && dataOrError.indexOf("FAILURE") == 0) {
+               showDotCMSSystemMessage(dataOrError, true);
+           } else {
+        	   var refresh=false;
+        	   if(dojo.query("div.pb").length!=dataOrError.length) 
+        		   refresh=true;
+        	   else
+                 dataOrError.each(function(p) {
+            	   if(!refresh) {
+	            	   if(dojo.query("tr[jobname='"+p.jobname+"']").length) {
+	            		   if(p.progress!=-1) {
+	            			   // job in progress. Lets show the progress bar
+	            			   dojo.query("tr[jobname='"+p.jobname+"'] .deleteIcon").addClass("hidden");
+	            			   dojo.query("tr[jobname='"+p.jobname+"'] .pb").removeClass("hidden");
+	            			   dijit.byNode(dojo.query("tr[jobname='"+p.jobname+"'] .pb")[0]).set("value",p.progress);
+	            			   dijit.byNode(dojo.query("tr[jobname='"+p.jobname+"'] .pb")[0]).set("maximum",p.max);
+	            		   }
+	            		   else {
+	            			   // job not running. Lets show the delete icon
+	            			   dojo.query("tr[jobname='"+p.jobname+"'] .deleteIcon").removeClass("hidden");
+	                           dojo.query("tr[jobname='"+p.jobname+"'] .pb").addClass("hidden");
+	            		   }
+	            	   }
+	            	   else {
+	            		   // we don't know that job. Lets refresh the whole thing
+	            		   refresh=true;
+	            	   }
+            	   }
+                 });
+               if(refresh)
+            	   refreshJobStats();
+           }
+       }
+    };
+    dojo.xhrPost(xhrArgs);
+}
 
 function  resizeBrowser(){
         var viewport = dijit.getViewport();
@@ -861,6 +919,9 @@ function  resizeBrowser(){
 	.highlight td {
 	    background: #94BBFF;
 	    color: white !important;
+	}
+	.hidden {
+	   display: none;
 	}
 </style>
 

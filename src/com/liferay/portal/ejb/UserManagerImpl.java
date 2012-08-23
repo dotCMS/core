@@ -406,6 +406,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
 		String adminName = company.getAdminName();
+		String cName = "";
 
 		StringBuffer body = new StringBuffer();
 		body.append("Your new password is -- ");
@@ -414,12 +415,12 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		body.append(company.getPortalURL()).append(".\n\n");
 		body.append("Please use ").append(emailAddress);
 		body.append(" as your login.");
-
+		
 		try {
 			Mailer m = new Mailer();
 			m.setToEmail(emailAddress);
 			m.setToName(user.getFullName());
-			m.setSubject(company.getName() + " Password Assistance");
+			m.setSubject("dotCMS Password Assistance");
 			m.setHTMLBody(body.toString());
 			m.setFromName(company.getName());
 			m.setFromEmail(company.getEmailAddress());
