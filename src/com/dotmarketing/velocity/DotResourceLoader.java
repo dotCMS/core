@@ -154,13 +154,13 @@ public class DotResourceLoader extends ResourceLoader {
 	               throw new ResourceNotFoundException("cannot find resource");
 	            }
 
-	            log.debug("DotResourceLoader:\targ0:" + arg0);
+	            Logger.debug(this, "Thread " + Thread.currentThread().getId() + ":" + Thread.currentThread().getName() + " VelocityKey " + arg0 + " Time " + timer);
 
 	            if (isACMSVelocityFile(arg0)) {
 	            	result = new BufferedInputStream(generateStream(arg0));
 	            }else{
 	            	boolean serveFile = false;
-	            	log.debug("DotResourceLoader:\targ0:" + arg0);
+	            	Logger.debug(this, "Not a CMS Velocity File : " + arg0);
 
 	            	java.io.File f=null;
 	            	String lookingFor="";
@@ -218,7 +218,7 @@ public class DotResourceLoader extends ResourceLoader {
 			}
         }
 
-        log.trace(String.format("=>>>>>>>>>>>> time consumed for resource %s: %d ms\n", arg0, System.currentTimeMillis() - timer));
+        Logger.debug(this,"Thread " + Thread.currentThread().getId() + ":" + Thread.currentThread().getName() + " VelocityKey " + arg0 + " Time " + System.currentTimeMillis() + String.format(" time consumed for resource %s: %d ms\n", arg0, System.currentTimeMillis() - timer));
         return result;
     }
 
