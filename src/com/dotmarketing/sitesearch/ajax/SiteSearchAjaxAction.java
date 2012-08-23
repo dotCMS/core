@@ -13,10 +13,12 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -193,5 +195,27 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         }
         response.getWriter().println(indexName);
     }
+	
+	public void getJobProgress(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        Map<String, String> map = getURIParams();
+        StringBuilder json = new StringBuilder();
+        SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
+        json.append("[");
+        for(ScheduledTask task : ssapi.getTasks()){
+            int progress=-1, max=-1;
+            if(ssapi.isTaskRunning(task.getJobName())){ 
+                SiteSearchPublishStatus ps = ssapi.getTaskProgress(task.getJobName());
+                progress=ps.getCurrentProgress() + ps.getBundleErrors();
+                max=ps.getTotalBundleWork();
+            }
+            json.append("{jobname:'").append(task.getJobName()).append("'")
+                .append(",progress:").append(progress).append(",max:").append(max)
+                .append("},");
+        }
+        json.append("]");
+        
+        response.setContentType("application/json");
+        response.getWriter().println(json.toString());
+	}
 
 }
