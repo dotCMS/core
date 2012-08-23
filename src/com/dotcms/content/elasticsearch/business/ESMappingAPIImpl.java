@@ -347,7 +347,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	@SuppressWarnings("unchecked")
 	protected void loadPermissions(Contentlet con, Map<String,String> m) throws DotDataException {
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        List<Permission> permissions = permissionAPI.getPermissions(con, false, false, true);
+        List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
         StringBuilder permissionsSt = new StringBuilder();
         boolean ownerCanRead = false;
         boolean ownerCanWrite = false;
