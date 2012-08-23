@@ -60,6 +60,7 @@ import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.ejb.UserManagerUtil;
+import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -278,6 +279,16 @@ public class LoginAction extends Action {
 	private void _sendPassword(HttpServletRequest req) throws Exception {
 		String emailAddress = ParamUtil.getString(
 			req, "my_account_email_address");
+		String userId = emailAddress;
+
+		Company company = PortalUtil.getCompany(req);
+
+		if (company.getAuthType().equals(Company.AUTH_TYPE_ID)) {			
+			User user = UserLocalManagerUtil.getUserById(userId);
+			emailAddress = user.getEmailAddress();
+		}
+		
+		 
 
 		UserManagerUtil.sendPassword(
 			PortalUtil.getCompanyId(req), emailAddress);
