@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -750,5 +752,30 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			}
 		}
 		return isLegacyFilesSupported;
+    }
+
+    @Override
+    public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException {
+        String condition = " mod_date < ? and not exists (select * from fileasset_version_info "+
+                " where working_inode=file_asset.inode or live_inode=file_asset.inode)";
+        
+        String inodesToDelete = "select inode from file_asset where "+condition;
+        DotConnect dc = new DotConnect();
+        dc.setSQL(inodesToDelete);
+        dc.addParam(assetsOlderThan);
+        for(Map<String,Object> inodeMap : dc.loadObjectResults()) {
+            String inode=inodeMap.get("inode").toString();
+            java.io.File fileFolderPath = new java.io.File(
+                    APILocator.getFileAPI().getRealAssetPath() + 
+                    java.io.File.separator + inode.substring(0, 1) +
+                    java.io.File.separator + inode.substring(1, 2));
+            for(java.io.File ff : fileFolderPath.listFiles())
+                if(ff.getName().startsWith(inode) && UtilMethods.isImage(ff.getName()))
+                    if(FileUtils.deleteQuietly(ff))
+                        Logger.info(this, "deleting old file "+ff.getAbsolutePath());
+                    else
+                        Logger.info(this, "can't delete old file "+ff.getAbsolutePath());
+        }
+        return deleteOldVersions(assetsOlderThan,"file_asset");
     }
 }

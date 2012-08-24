@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.containers.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -133,6 +134,8 @@ public interface ContainerAPI {
 	 */
     List<Container> findContainersForStructure(String structureInode)
             throws DotDataException;
+
+    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 	
 	
 }

@@ -261,11 +261,10 @@ public abstract class ContentletFactory {
 	/**
 	 * 
 	 * @param deleteFrom
-	 * @param offset
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract int deleteOldContent(Date deleteFrom, int offset) throws DotDataException;
+	protected abstract int deleteOldContent(Date deleteFrom) throws DotDataException;
 	
 	/**
 	 * 
