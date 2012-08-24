@@ -639,11 +639,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         int after = Integer.parseInt(result.get(0).get("count"));
 
         int deleted=before - after;
-
-        if(deleted>0)
-            cc.clearCache();
-        
-        MaintenanceUtil.cleanMultiTreeTable();
         
         // deleting orphan binary files
         java.io.File assets=new java.io.File(APILocator.getFileAPI().getRealAssetsRootPath());
