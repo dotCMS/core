@@ -1189,11 +1189,10 @@ public interface ContentletAPI {
    /**
     * 
     * @param deleteFrom
-    * @param offset
     * @return
     * @throws DotDataException
     */
-	public int deleteOldContent(Date deleteFrom, int offset) throws DotDataException;
+	public int deleteOldContent(Date deleteFrom) throws DotDataException;
 	
 	/**
 

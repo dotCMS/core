@@ -14,6 +14,7 @@ import java.util.StringTokenizer;
 import net.sf.hibernate.ObjectNotFoundException;
 
 import org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.io.FileUtils;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -604,7 +605,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected int deleteOldContent(Date deleteFrom, int offset) throws DotDataException {
+	protected int deleteOldContent(Date deleteFrom) throws DotDataException {
 	    ContentletCache cc = CacheLocator.getContentletCache();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(deleteFrom);
@@ -628,9 +629,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.setSQL(deleteContentletSQL);
         dc.addParam(date);
         dc.loadResult();
-
-        MaintenanceUtil.cleanMultiTreeTable();
-
+        
+        String deleteOrphanInodes="delete from inode where type='contentlet' and inode not in (select inode from contentlet)";
+        dc.setSQL(deleteOrphanInodes);
+        dc.loadResult();
+        
         dc.setSQL(countSQL);
         result = dc.loadResults();
         int after = Integer.parseInt(result.get(0).get("count"));
@@ -639,7 +642,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         if(deleted>0)
             cc.clearCache();
-
+        
+        MaintenanceUtil.cleanMultiTreeTable();
+        
+        // deleting orphan binary files
+        java.io.File assets=new java.io.File(APILocator.getFileAPI().getRealAssetsRootPath());
+        for(java.io.File ff1 : assets.listFiles()) 
+            if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$")) 
+                for(java.io.File ff2 : ff1.listFiles()) 
+                    if(ff2.isDirectory() && ff2.getName().length()==1 && ff2.getName().matches("^[a-f0-9]$"))
+                        for(java.io.File ff3 : ff2.listFiles())
+                            try {
+                                if(ff3.isDirectory()) {
+                                    Contentlet con=find(ff3.getName());
+                                    if(con==null || !UtilMethods.isSet(con.getIdentifier()))
+                                        if(!FileUtils.deleteQuietly(ff3))
+                                            Logger.warn(this, "can't delete "+ff3.getAbsolutePath());
+                                }
+                            }
+                            catch(Exception ex) {
+                                Logger.warn(this, ex.getMessage());
+                            }
+                            
+        
         return deleted;
 	}
 

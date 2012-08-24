@@ -899,10 +899,9 @@ public interface ContentletAPIPostHook {
    /**
     * 
     * @param deleteFrom
-    * @param offset
     * @return
     * @param returnValue - value returned by primary API Method */
-	public void deleteOldContent(Date deleteFrom, int offset,int returnValue);
+	public void deleteOldContent(Date deleteFrom,int returnValue);
 	
 	/**
 
