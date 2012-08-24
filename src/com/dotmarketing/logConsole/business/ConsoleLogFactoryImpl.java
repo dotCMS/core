@@ -1,6 +1,7 @@
 package com.dotmarketing.logConsole.business;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.logConsole.model.LogMapperRow;
@@ -75,7 +76,18 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
         try {
 
             db.setSQL( ConsoleLoggerSQL.UPDATE_LOGGING_CRITERIA );
-            db.addParam( r.getEnabled() );
+
+            Boolean enabled = r.getEnabled();
+            if ( DbConnectionFactory.isPostgres() ) {
+                db.addParam( enabled ? 1 : 0 );
+            } else if ( DbConnectionFactory.isMsSql() ) {
+                db.addParam( enabled ? 1 : 0 );
+            } else if ( DbConnectionFactory.isMySql() ) {
+                db.addParam( enabled );
+            } else if ( DbConnectionFactory.isOracle() ) {
+                db.addParam( enabled ? 1 : 0 );
+            }
+
             db.addParam( r.getLog_name() );
             db.loadResult();
 
