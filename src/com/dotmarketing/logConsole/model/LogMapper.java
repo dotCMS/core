@@ -70,7 +70,7 @@ public class LogMapper {
         if ( logMapperRows != null ) {
 
             for ( LogMapperRow mapperRow : logMapperRows ) {
-                if ( logName.equals( mapperRow.getLog_name() ) && mapperRow.getEnabled() ) {
+                if ( logName.equalsIgnoreCase( mapperRow.getLog_name() ) && mapperRow.getEnabled() ) {
                     return true;
                 }
             }
