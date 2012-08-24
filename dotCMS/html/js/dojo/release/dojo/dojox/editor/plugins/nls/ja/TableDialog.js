@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ja/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ja/TableDialog", ({
 	insertTableTitle: "テーブルの挿入",
 	modifyTableTitle: "テーブルの変更",
 	rows: "行:",
@@ -12,7 +10,7 @@ define(
 	tableWidth: "テーブル幅:",
 	backgroundColor: "背景色:",
 	borderColor: "ボーダーの色:",
-	borderThickness: "ボーダーの太さ",
+	borderThickness: "ボーダーの太さ:",
 	percent: "パーセント",
 	pixels: "ピクセル",
 	"default": "デフォルト",
@@ -22,8 +20,7 @@ define(
 	buttonSet: "設定", // translated elsewhere?
 	buttonInsert: "挿入",
 	buttonCancel: "キャンセル",
-
-	selectTableLabel: "テーブルの選択",
+	selectTableLabel: "表の選択",
 	insertTableRowBeforeLabel: "前に行を追加",
 	insertTableRowAfterLabel: "後ろに行を追加",
 	insertTableColumnBeforeLabel: "前に列を追加",
@@ -31,6 +28,4 @@ define(
 	deleteTableRowLabel: "行の削除",
 	deleteTableColumnLabel: "列の削除"
 })
-	
-//end v1.x content
 );

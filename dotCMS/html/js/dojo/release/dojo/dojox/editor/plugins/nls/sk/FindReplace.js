@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sk/FindReplace", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sk/FindReplace", ({
 	"findLabel": "Hľadať:",
 	"findTooltip": "Zadajte text na nájdenie",
 	"replaceLabel": "Nahradiť s:",
@@ -22,6 +20,4 @@ define(
 	"eofDialogTextFind": "nájdený",
 	"eofDialogTextReplace": "nahradený"
 })
-
-//end v1.x content
 );

@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojo/cldr/nls/en-gb/number", //begin v1.x content
 {

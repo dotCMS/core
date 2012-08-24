@@ -1,2 +1,58 @@
-//>>built
-define("dojox/mvc/Bind",["dojo/_base/lang","dojo/_base/array"],function(_1,_2){var _3=_1.getObject("dojox.mvc",true);return _1.mixin(_3,{bind:function(_4,_5,_6,_7,_8,_9){var _a;return _4.watch(_5,function(_b,_c,_d){_a=_1.isFunction(_8)?_8(_d):_d;if(!_9||_a!=_6.get(_7)){_6.set(_7,_a);}});},bindInputs:function(_e,_f){var _10=[];_2.forEach(_e,function(h){_10.push(h.watch("value",_f));});return _10;}});});
+define("dojox/mvc/Bind", [
+	"dojo/_base/lang",
+	"dojo/_base/array"
+], function(lang, array){
+	var mvc = lang.getObject("dojox.mvc", true);
+
+	return lang.mixin(mvc, {
+		bind: function(/*dojo/Stateful*/ source, /*String*/ sourceProp,
+					/*dojo/Stateful*/ target, /*String*/ targetProp,
+					/*Function?*/ func, /*Boolean?*/ bindOnlyIfUnequal){
+			// summary:
+			//		Bind the specified property of the target to the specified
+			//		property of the source with the supplied transformation.
+			// source:
+			//		The source dojo/Stateful object for the bind.
+			// sourceProp:
+			//		The name of the source's property whose change triggers the bind.
+			// target:
+			//		The target dojo/Stateful object for the bind whose
+			//		property will be updated with the result of the function.
+			// targetProp:
+			//		The name of the target's property to be updated with the
+			//		result of the function.
+			// func:
+			//		The optional calculation to be performed to obtain the target
+			//		property value.
+			// bindOnlyIfUnequal:
+			//		Whether the bind notification should happen only if the old and
+			//		new values are unequal (optional, defaults to false).
+			var convertedValue;
+			return source.watch(sourceProp, function(prop, oldValue, newValue){
+				convertedValue = lang.isFunction(func) ? func(newValue) : newValue;
+				if(!bindOnlyIfUnequal || convertedValue != target.get(targetProp)){
+					target.set(targetProp, convertedValue);
+				}
+			});
+		},
+
+		bindInputs: function(/*dojo/Stateful[]*/ sourceBindArray, /*Function*/ func){
+			// summary:
+			//		Bind the values at the sources specified in the first argument
+			//		array such that a composing function in the second argument is
+			//		called when any of the values changes.
+			// sourceBindArray:
+			//		The array of dojo/Stateful objects to watch values changes on.
+			// func:
+			//		The composing function that is called when any of the source
+			//		values changes.
+			// tags:
+			//		protected
+			var watchHandles = [];
+			array.forEach(sourceBindArray, function(h){
+				watchHandles.push(h.watch("value", func));
+			});
+			return watchHandles;
+		}
+	});
+});

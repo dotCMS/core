@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/pt-pt/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/pt-pt/Preview", ({
 	"preview": "Pré-visualizar"
 })
-
-//end v1.x content
 );

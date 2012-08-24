@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/el/Breadcrumb", //begin v1.x content
-({
+"dojox/editor/plugins/nls/el/Breadcrumb", ({
 	"nodeActions": "${nodeName} - Ενέργειες",
 	"selectContents": "Επιλογή περιεχομένων",
 	"selectElement": "Επιλογή στοιχείου",
@@ -10,6 +8,4 @@ define(
 	"moveStart": "Μετακίνηση δρομέα στην αρχή",
 	"moveEnd": "Μετακίνηση δρομέα στο τέλος"
 })
-
-//end v1.x content
 );

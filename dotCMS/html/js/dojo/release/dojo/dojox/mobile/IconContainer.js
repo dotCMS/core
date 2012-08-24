@@ -1,2 +1,166 @@
-//>>built
-define("dojox/mobile/IconContainer",["dojo/_base/array","dojo/_base/declare","dojo/_base/window","dojo/dom-construct","dojo/dom-style","dijit/registry","dijit/_Contained","dijit/_Container","dijit/_WidgetBase","./IconItem","./Heading","./View"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_a,_b,_c){return _2("dojox.mobile.IconContainer",[_9,_8,_7],{defaultIcon:"",transition:"below",pressedIconOpacity:0.4,iconBase:"",iconPos:"",back:"Home",label:"My Application",single:false,buildRendering:function(){this.domNode=this.containerNode=this.srcNodeRef||_3.doc.createElement("UL");this.domNode.className="mblIconContainer";var t=this._terminator=_4.create("LI");t.className="mblIconItemTerminator";t.innerHTML="&nbsp;";this.domNode.appendChild(t);},_setupSubNodes:function(ul){_1.forEach(this.getChildren(),function(w){ul.appendChild(w.subNode);});},startup:function(){if(this._started){return;}if(this.transition==="below"){this._setupSubNodes(this.domNode);}else{var _d=this.appView=new _c({id:this.id+"_mblApplView"});var _e=this;_d.onAfterTransitionIn=function(_f,dir,_10,_11,_12){_e._opening._open_1();};_d.domNode.style.visibility="hidden";var _13=_d._heading=new _b({back:this._cv?this._cv(this.back):this.back,label:this._cv?this._cv(this.label):this.label,moveTo:this.domNode.parentNode.id,transition:this.transition});_d.addChild(_13);var ul=_d._ul=_3.doc.createElement("UL");ul.className="mblIconContainer";ul.style.marginTop="0px";this._setupSubNodes(ul);_d.domNode.appendChild(ul);var _14;for(var w=this.getParent();w;w=w.getParent()){if(w instanceof _c){_14=w.domNode.parentNode;break;}}if(!_14){_14=_3.body();}_14.appendChild(_d.domNode);_d.startup();}this.inherited(arguments);},closeAll:function(){var len=this.domNode.childNodes.length,_15,w;for(var i=0;i<len;i++){var _15=this.domNode.childNodes[i];if(_15.nodeType!==1){continue;}if(_15===this._terminator){break;}var w=_6.byNode(_15);w.containerNode.parentNode.style.display="none";_5.set(w.iconNode,"opacity",1);}},addChild:function(_16,_17){var _18=this.getChildren();if(typeof _17!=="number"||_17>_18.length){_17=_18.length;}var idx=_17;var _19=this.containerNode;if(idx>0){_19=_18[idx-1].domNode;idx="after";}_4.place(_16.domNode,_19,idx);_16.transition=this.transition;if(this.transition==="below"){for(var i=0,_19=this._terminator;i<_17;i++){_19=_19.nextSibling;}_4.place(_16.subNode,_19,"after");}else{_4.place(_16.subNode,this.appView._ul,_17);}_16.inheritParams();_16._setIconAttr(_16.icon);if(this._started&&!_16._started){_16.startup();}},removeChild:function(_1a){if(typeof _1a==="number"){_1a=this.getChildren()[_1a];}if(_1a){this.inherited(arguments);if(this.transition==="below"){this.containerNode.removeChild(_1a.subNode);}else{this.appView._ul.removeChild(_1a.subNode);}}}});});
+define("dojox/mobile/IconContainer", [
+	"dojo/_base/array",
+	"dojo/_base/declare",
+	"dojo/_base/lang",
+	"dojo/_base/window",
+	"dojo/dom-construct",
+	"dijit/_Contained",
+	"dijit/_Container",
+	"dijit/_WidgetBase",
+	"./IconItem", // to load IconItem for you (no direct references)
+	"./Heading",
+	"./View"
+], function(array, declare, lang, win, domConstruct, Contained, Container, WidgetBase, IconItem, Heading, View){
+
+	// module:
+	//		dojox/mobile/IconContainer
+
+	return declare("dojox.mobile.IconContainer", [WidgetBase, Container, Contained],{
+		// summary:
+		//		A container widget which can hold multiple icons.
+		// description:
+		//		IconContainer is a container widget which can hold multiple
+		//		icons. Each icon represents an application component.
+
+		// defaultIcon: String
+		//		The default fallback icon, which is displayed only when the
+		//		specified icon has failed to load.
+		defaultIcon: "",
+
+		// transition: String
+		//		A type of animated transition effect. You can choose from the
+		//		standard transition types, "slide", "fade", "flip", or from the
+		//		extended transition types, "cover", "coverv", "dissolve",
+		//		"reveal", "revealv", "scaleIn", "scaleOut", "slidev",
+		//		"swirl", "zoomIn", "zoomOut", "cube", and "swap". If "none" is
+		//		specified, transition occurs immediately without animation. If
+		//		"below" is specified, the application contents are displayed
+		//		below the icons.
+		transition: "below",
+
+		// pressedIconOpacity: Number
+		//		The opacity of the pressed icon image.
+		pressedIconOpacity: 0.4,
+
+		// iconBase: String
+		//		The default icon path for child items.
+		iconBase: "",
+
+		// iconPos: String
+		//		The default icon position for child items.
+		iconPos: "",
+
+		// back: String
+		//		A label for the navigational control.
+		back: "Home",
+
+		// label: String
+		//		A title text of the heading.
+		label: "My Application",
+
+		// single: Boolean
+		//		If true, only one icon content can be opened at a time.
+		single: false,
+
+		// editable: Boolean
+		//		If true, the icons can be removed or re-ordered. You can enter
+		//		into edit mode by pressing on a child IconItem until it starts shaking.
+		editable: false,
+
+		// tag: String
+		//		A name of html tag to create as domNode.
+		tag: "ul",
+
+		/* internal properties */	
+		baseClass: "mblIconContainer",
+		editableMixinClass: "dojox/mobile/_EditableIconMixin",
+		iconItemPaneContainerClass: "dojox/mobile/Container",
+		iconItemPaneContainerProps: null,
+		iconItemPaneClass: "dojox/mobile/_IconItemPane",
+		iconItemPaneProps: null,
+
+		buildRendering: function(){
+			this.domNode = this.containerNode = this.srcNodeRef || domConstruct.create(this.tag);
+			// _terminator is used to apply the clear:both style to terminate floating icons.
+			this._terminator = domConstruct.create(this.tag === "ul" ? "li" : "div",
+				{className:"mblIconItemTerminator"}, this.domNode);
+			this.inherited(arguments);
+		},
+
+		postCreate: function(){
+			if(this.editable && !this.startEdit){ // if editable is true but editableMixinClass is not inherited
+				require([this.editableMixinClass], lang.hitch(this, function(module){
+					declare.safeMixin(this, new module());
+					this.set("editable", this.editable);
+				}));
+			}
+		},
+
+		startup: function(){
+			if(this._started){ return; }
+
+			require([this.iconItemPaneContainerClass], lang.hitch(this, function(module){
+				this.paneContainerWidget = new module(this.iconItemPaneContainerProps);
+				if(this.transition === "below"){
+					domConstruct.place(this.paneContainerWidget.domNode, this.domNode, "after");
+				}else{
+					var view = this.appView = new View({id:this.id+"_mblApplView"});
+					var _this = this;
+					view.onAfterTransitionIn = function(moveTo, dir, transition, context, method){
+						_this._opening._open_1();
+					};
+					view.domNode.style.visibility = "hidden";
+					var heading = view._heading
+						= new Heading({back: this._cv ? this._cv(this.back) : this.back,
+										label: this._cv ? this._cv(this.label) : this.label,
+										moveTo: this.domNode.parentNode.id,
+										transition: this.transition == "zoomIn" ? "zoomOut" : this.transition});
+					view.addChild(heading);
+					view.addChild(this.paneContainerWidget);
+
+					var target;
+					for(var w = this.getParent(); w; w = w.getParent()){
+						if(w instanceof View){
+							target = w.domNode.parentNode;
+							break;
+						}
+					}
+					if(!target){ target = win.body(); }
+					target.appendChild(view.domNode);
+
+					view.startup();
+				}
+			}));
+
+			this.inherited(arguments);
+		},
+
+		closeAll: function(){
+			// summary:
+			//		Closes all the icon items.
+			array.forEach(this.getChildren(), function(w){
+				w.close(true); // disables closing animation
+			}, this);
+		},
+
+		addChild: function(widget, /*Number?*/insertIndex){
+			this.inherited(arguments);
+			this.domNode.appendChild(this._terminator); // to ensure that _terminator is always the last node
+		},
+
+		removeChild: function(/*Widget|Number*/widget){
+			var index = (typeof widget == "number") ? widget : widget.getIndexInParent();
+			this.paneContainerWidget.removeChild(index);
+			this.inherited(arguments);
+		},	
+
+		_setLabelAttr: function(/*String*/text){
+			// tags:
+			//		private
+			if(!this.appView){ return; }
+			this.label = text;
+			var s = this._cv ? this._cv(text) : text;
+			this.appView._heading.set("label", s);
+		}
+	});
+});

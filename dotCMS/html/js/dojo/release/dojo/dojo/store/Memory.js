@@ -1,8 +1,164 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/store/Memory", ["../_base/declare", "./util/QueryResults", "./util/SimpleQueryEngine" /*=====, "./api/Store" =====*/],
+function(declare, QueryResults, SimpleQueryEngine /*=====, Store =====*/){
 
-//>>built
-define("dojo/store/Memory",["../_base/declare","./util/QueryResults","./util/SimpleQueryEngine"],function(_1,_2,_3){return _1("dojo.store.Memory",null,{constructor:function(_4){for(var i in _4){this[i]=_4[i];}this.setData(this.data||[]);},data:null,idProperty:"id",index:null,queryEngine:_3,get:function(id){return this.data[this.index[id]];},getIdentity:function(_5){return _5[this.idProperty];},put:function(_6,_7){var _8=this.data,_9=this.index,_a=this.idProperty;var id=(_7&&"id" in _7)?_7.id:_a in _6?_6[_a]:Math.random();if(id in _9){if(_7&&_7.overwrite===false){throw new Error("Object already exists");}_8[_9[id]]=_6;}else{_9[id]=_8.push(_6)-1;}return id;},add:function(_b,_c){(_c=_c||{}).overwrite=false;return this.put(_b,_c);},remove:function(id){var _d=this.index;var _e=this.data;if(id in _d){_e.splice(_d[id],1);this.setData(_e);return true;}},query:function(_f,_10){return _2(this.queryEngine(_f,_10)(this.data));},setData:function(_11){if(_11.items){this.idProperty=_11.identifier;_11=this.data=_11.items;}else{this.data=_11;}this.index={};for(var i=0,l=_11.length;i<l;i++){this.index[_11[i][this.idProperty]]=i;}}});});
+// module:
+//		dojo/store/Memory
+
+// No base class, but for purposes of documentation, the base class is dojo/store/api/Store
+var base = null;
+/*===== base = Store; =====*/
+
+return declare("dojo.store.Memory", base, {
+	// summary:
+	//		This is a basic in-memory object store. It implements dojo/store/api/Store.
+	constructor: function(options){
+		// summary:
+		//		Creates a memory object store.
+		// options: dojo/store/Memory
+		//		This provides any configuration information that will be mixed into the store.
+		//		This should generally include the data property to provide the starting set of data.
+		for(var i in options){
+			this[i] = options[i];
+		}
+		this.setData(this.data || []);
+	},
+	// data: Array
+	//		The array of all the objects in the memory store
+	data:null,
+
+	// idProperty: String
+	//		Indicates the property to use as the identity property. The values of this
+	//		property should be unique.
+	idProperty: "id",
+
+	// index: Object
+	//		An index of data indices into the data array by id
+	index:null,
+
+	// queryEngine: Function
+	//		Defines the query engine to use for querying the data store
+	queryEngine: SimpleQueryEngine,
+	get: function(id){
+		// summary:
+		//		Retrieves an object by its identity
+		// id: Number
+		//		The identity to use to lookup the object
+		// returns: Object
+		//		The object in the store that matches the given id.
+		return this.data[this.index[id]];
+	},
+	getIdentity: function(object){
+		// summary:
+		//		Returns an object's identity
+		// object: Object
+		//		The object to get the identity from
+		// returns: Number
+		return object[this.idProperty];
+	},
+	put: function(object, options){
+		// summary:
+		//		Stores an object
+		// object: Object
+		//		The object to store.
+		// options: Store.PutDirectives??
+		//		Additional metadata for storing the data.  Includes an "id"
+		//		property if a specific id is to be used.
+		// returns: Number
+		var data = this.data,
+			index = this.index,
+			idProperty = this.idProperty;
+		var id = object[idProperty] = (options && "id" in options) ? options.id : idProperty in object ? object[idProperty] : Math.random();
+		if(id in index){
+			// object exists
+			if(options && options.overwrite === false){
+				throw new Error("Object already exists");
+			}
+			// replace the entry in data
+			data[index[id]] = object;
+		}else{
+			// add the new object
+			index[id] = data.push(object) - 1;
+		}
+		return id;
+	},
+	add: function(object, options){
+		// summary:
+		//		Creates an object, throws an error if the object already exists
+		// object: Object
+		//		The object to store.
+		// options: Store.PutDirectives??
+		//		Additional metadata for storing the data.  Includes an "id"
+		//		property if a specific id is to be used.
+		// returns: Number
+		(options = options || {}).overwrite = false;
+		// call put with overwrite being false
+		return this.put(object, options);
+	},
+	remove: function(id){
+		// summary:
+		//		Deletes an object by its identity
+		// id: Number
+		//		The identity to use to delete the object
+		// returns: Boolean
+		//		Returns true if an object was removed, falsy (undefined) if no object matched the id
+		var index = this.index;
+		var data = this.data;
+		if(id in index){
+			data.splice(index[id], 1);
+			// now we have to reindex
+			this.setData(data);
+			return true;
+		}
+	},
+	query: function(query, options){
+		// summary:
+		//		Queries the store for objects.
+		// query: Object
+		//		The query to use for retrieving objects from the store.
+		// options: Store.QueryOptions?
+		//		The optional arguments to apply to the resultset.
+		// returns: Store.QueryResults
+		//		The results of the query, extended with iterative methods.
+		//
+		// example:
+		//		Given the following store:
+		//
+		// 	|	var store = new Memory({
+		// 	|		data: [
+		// 	|			{id: 1, name: "one", prime: false },
+		//	|			{id: 2, name: "two", even: true, prime: true},
+		//	|			{id: 3, name: "three", prime: true},
+		//	|			{id: 4, name: "four", even: true, prime: false},
+		//	|			{id: 5, name: "five", prime: true}
+		//	|		]
+		//	|	});
+		//
+		//	...find all items where "prime" is true:
+		//
+		//	|	var results = store.query({ prime: true });
+		//
+		//	...or find all items where "even" is true:
+		//
+		//	|	var results = store.query({ even: true });
+		return QueryResults(this.queryEngine(query, options)(this.data));
+	},
+	setData: function(data){
+		// summary:
+		//		Sets the given data as the source for this store, and indexes it
+		// data: Object[]
+		//		An array of objects to use as the source of data.
+		if(data.items){
+			// just for convenience with the data format IFRS expects
+			this.idProperty = data.identifier;
+			data = this.data = data.items;
+		}else{
+			this.data = data;
+		}
+		this.index = {};
+		for(var i = 0, l = data.length; i < l; i++){
+			this.index[data[i][this.idProperty]] = i;
+		}
+	}
+});
+
+});

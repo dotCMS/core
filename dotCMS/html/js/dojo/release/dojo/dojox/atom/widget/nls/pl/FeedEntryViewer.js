@@ -1,16 +1,13 @@
-//>>built
 define(
-"dojox/atom/widget/nls/pl/FeedEntryViewer", //begin v1.x content
-({
+"dojox/atom/widget/nls/pl/FeedEntryViewer", ({
 	displayOptions: "[opcje wyświetlania]",
 	title: "Tytuł",
 	authors: "Autorzy",
 	contributors: "Kontrybutorzy",
-	id: "Identyfikator",
+	id: "ID",
 	close: "[zamknij]",
 	updated: "Zaktualizowano",
 	summary: "Podsumowanie",
 	content: "Treść"
 })
-//end v1.x content
 );

@@ -1,2 +1,224 @@
-//>>built
-define("dojox/charting/axis2d/Invisible",["dojo/_base/lang","dojo/_base/declare","./Base","../scaler/linear","dojox/gfx","dojox/lang/utils","dojox/lang/functional","dojo/string"],function(_1,_2,_3,_4,g,du,df,_5){var _6=du.merge,_7=4,_8=45;return _2("dojox.charting.axis2d.Invisible",_3,{defaultParams:{vertical:false,fixUpper:"none",fixLower:"none",natural:false,leftBottom:true,includeZero:false,fixed:true,majorLabels:true,minorTicks:true,minorLabels:true,microTicks:false,rotation:0},optionalParams:{min:0,max:1,from:0,to:1,majorTickStep:4,minorTickStep:2,microTickStep:1,labels:[],labelFunc:null,maxLabelSize:0,maxLabelCharCount:0,trailingSymbol:null},constructor:function(_9,_a){this.opt=_1.clone(this.defaultParams);du.updateWithObject(this.opt,_a);du.updateWithPattern(this.opt,_a,this.optionalParams);},dependOnData:function(){return !("min" in this.opt)||!("max" in this.opt);},clear:function(){delete this.scaler;delete this.ticks;this.dirty=true;return this;},initialized:function(){return "scaler" in this&&!(this.dirty&&this.dependOnData());},setWindow:function(_b,_c){this.scale=_b;this.offset=_c;return this.clear();},getWindowScale:function(){return "scale" in this?this.scale:1;},getWindowOffset:function(){return "offset" in this?this.offset:0;},_groupLabelWidth:function(_d,_e,_f){if(!_d.length){return 0;}if(_1.isObject(_d[0])){_d=df.map(_d,function(_10){return _10.text;});}if(_f){_d=df.map(_d,function(_11){return _1.trim(_11).length==0?"":_11.substring(0,_f)+this.trailingSymbol;},this);}var s=_d.join("<br>");return g._base._getTextBox(s,{font:_e}).w||0;},calculate:function(min,max,_12,_13){if(this.initialized()){return this;}var o=this.opt;this.labels="labels" in o?o.labels:_13;this.scaler=_4.buildScaler(min,max,_12,o);var tsb=this.scaler.bounds;if("scale" in this){o.from=tsb.lower+this.offset;o.to=(tsb.upper-tsb.lower)/this.scale+o.from;if(!isFinite(o.from)||isNaN(o.from)||!isFinite(o.to)||isNaN(o.to)||o.to-o.from>=tsb.upper-tsb.lower){delete o.from;delete o.to;delete this.scale;delete this.offset;}else{if(o.from<tsb.lower){o.to+=tsb.lower-o.from;o.from=tsb.lower;}else{if(o.to>tsb.upper){o.from+=tsb.upper-o.to;o.to=tsb.upper;}}this.offset=o.from-tsb.lower;}this.scaler=_4.buildScaler(min,max,_12,o);tsb=this.scaler.bounds;if(this.scale==1&&this.offset==0){delete this.scale;delete this.offset;}}var ta=this.chart.theme.axis,_14=0,_15=o.rotation%360,_16=o.font||(ta.majorTick&&ta.majorTick.font)||(ta.tick&&ta.tick.font),_17=_16?g.normalizedLength(g.splitFontString(_16).size):0,_18=Math.abs(Math.cos(_15*Math.PI/180)),_19=Math.abs(Math.sin(_15*Math.PI/180));if(_15<0){_15+=360;}if(_17){if(this.vertical?_15!=0&&_15!=180:_15!=90&&_15!=270){if(this.labels){_14=this._groupLabelWidth(this.labels,_16,o.maxLabelCharCount);}else{var _1a=Math.ceil(Math.log(Math.max(Math.abs(tsb.from),Math.abs(tsb.to)))/Math.LN10),t=[];if(tsb.from<0||tsb.to<0){t.push("-");}t.push(_5.rep("9",_1a));var _1b=Math.floor(Math.log(tsb.to-tsb.from)/Math.LN10);if(_1b>0){t.push(".");t.push(_5.rep("9",_1b));}_14=g._base._getTextBox(t.join(""),{font:_16}).w;}_14=o.maxLabelSize?Math.min(o.maxLabelSize,_14):_14;}else{_14=_17;}switch(_15){case 0:case 90:case 180:case 270:break;default:var _1c=Math.sqrt(_14*_14+_17*_17),_1d=this.vertical?_17*_18+_14*_19:_14*_18+_17*_19;_14=Math.min(_1c,_1d);break;}}this.scaler.minMinorStep=_14+_7;this.ticks=_4.buildTicks(this.scaler,o);return this;},getScaler:function(){return this.scaler;},getTicks:function(){return this.ticks;}});});
+define("dojox/charting/axis2d/Invisible", ["dojo/_base/lang", "dojo/_base/declare", "./Base", "../scaler/linear",
+	"dojox/gfx", "dojox/lang/utils"],
+	function(lang, declare, Base, lin, g, du){
+
+/*=====
+	var __InvisibleAxisCtorArgs = {
+		// summary:
+		//		Optional arguments used in the definition of an invisible axis.
+		// vertical: Boolean?
+		//		A flag that says whether an axis is vertical (i.e. y axis) or horizontal. Default is false (horizontal).
+		// fixUpper: String?
+		//		Align the greatest value on the axis with the specified tick level. Options are "major", "minor", "micro", or "none".  Defaults to "none".
+		// fixLower: String?
+		//		Align the smallest value on the axis with the specified tick level. Options are "major", "minor", "micro", or "none".  Defaults to "none".
+		// natural: Boolean?
+		//		Ensure tick marks are made on "natural" numbers. Defaults to false.
+		// leftBottom: Boolean?
+		//		The position of a vertical axis; if true, will be placed against the left-bottom corner of the chart.  Defaults to true.
+		// includeZero: Boolean?
+		//		Include 0 on the axis rendering.  Default is false.
+		// fixed: Boolean?
+		//		Force all axis labels to be fixed numbers.  Default is true.
+		// min: Number?
+		//		The smallest value on an axis. Default is 0.
+		// max: Number?
+		//		The largest value on an axis. Default is 1.
+		// from: Number?
+		//		Force the chart to render data visible from this value. Default is 0.
+		// to: Number?
+		//		Force the chart to render data visible to this value. Default is 1.
+		// majorTickStep: Number?
+		//		The amount to skip before a major tick is drawn. When not set the major ticks step is computed from
+		//		the data range.
+		// minorTickStep: Number?
+		//		The amount to skip before a minor tick is drawn. When not set the minor ticks step is computed from
+		//		the data range.
+		// microTickStep: Number?
+		//		The amount to skip before a micro tick is drawn. When not set the micro ticks step is computed from
+	};
+=====*/
+
+	return declare("dojox.charting.axis2d.Invisible", Base, {
+		// summary:
+		//		A axis object used in dojox.charting.  You can use that axis if you want the axis to be invisible.
+		//		See dojox.charting.Chart.addAxis for details.
+		//
+		// defaultParams: Object
+		//		The default parameters used to define any axis.
+		// optionalParams: Object
+		//		Any optional parameters needed to define an axis.
+
+		/*
+		// TODO: the documentation tools need these to be pre-defined in order to pick them up
+		//	correctly, but the code here is partially predicated on whether or not the properties
+		//	actually exist.  For now, we will leave these undocumented but in the code for later. -- TRT
+
+		// opt: Object
+		//		The actual options used to define this axis, created at initialization.
+		// scaler: Object
+		//		The calculated helper object to tell charts how to draw an axis and any data.
+		// ticks: Object
+		//		The calculated tick object that helps a chart draw the scaling on an axis.
+		// dirty: Boolean
+		//		The state of the axis (whether it needs to be redrawn or not)
+		// scale: Number
+		//		The current scale of the axis.
+		// offset: Number
+		//		The current offset of the axis.
+
+		opt: null,
+		scaler: null,
+		ticks: null,
+		dirty: true,
+		scale: 1,
+		offset: 0,
+		*/
+		defaultParams: {
+			vertical:    false,		// true for vertical axis
+			fixUpper:    "none",	// align the upper on ticks: "major", "minor", "micro", "none"
+			fixLower:    "none",	// align the lower on ticks: "major", "minor", "micro", "none"
+			natural:     false,		// all tick marks should be made on natural numbers
+			leftBottom:  true,		// position of the axis, used with "vertical"
+			includeZero: false,		// 0 should be included
+			fixed:       true		// all labels are fixed numbers
+		},
+		optionalParams: {
+			min:			0,	// minimal value on this axis
+			max:			1,	// maximal value on this axis
+			from:			0,	// visible from this value
+			to:				1,	// visible to this value
+			majorTickStep:	4,	// major tick step
+			minorTickStep:	2,	// minor tick step
+			microTickStep:	1	// micro tick step
+		},
+
+		constructor: function(chart, kwArgs){
+			// summary:
+			//		The constructor for an invisible axis.
+			// chart: dojox/charting/Chart
+			//		The chart the axis belongs to.
+			// kwArgs: __InvisibleAxisCtorArgs?
+			//		Any optional keyword arguments to be used to define this axis.
+			this.opt = lang.clone(this.defaultParams);
+            du.updateWithObject(this.opt, kwArgs);
+			du.updateWithPattern(this.opt, kwArgs, this.optionalParams);
+		},
+		dependOnData: function(){
+			// summary:
+			//		Find out whether or not the axis options depend on the data in the axis.
+			return !("min" in this.opt) || !("max" in this.opt);	//	Boolean
+		},
+		clear: function(){
+			// summary:
+			//		Clear out all calculated properties on this axis;
+			// returns: dojox/charting/axis2d/Invisible
+			//		The reference to the axis for functional chaining.
+			delete this.scaler;
+			delete this.ticks;
+			this.dirty = true;
+			return this;	//	dojox/charting/axis2d/Invisible
+		},
+		initialized: function(){
+			// summary:
+			//		Finds out if this axis has been initialized or not.
+			// returns: Boolean
+			//		Whether a scaler has been calculated and if the axis is not dirty.
+			return "scaler" in this && !(this.dirty && this.dependOnData());
+		},
+		setWindow: function(scale, offset){
+			// summary:
+			//		Set the drawing "window" for the axis.
+			// scale: Number
+			//		The new scale for the axis.
+			// offset: Number
+			//		The new offset for the axis.
+			// returns: dojox/charting/axis2d/Invisible
+			//		The reference to the axis for functional chaining.
+			this.scale  = scale;
+			this.offset = offset;
+			return this.clear();	//	dojox/charting/axis2d/Invisible
+		},
+		getWindowScale: function(){
+			// summary:
+			//		Get the current windowing scale of the axis.
+			return "scale" in this ? this.scale : 1;	//	Number
+		},
+		getWindowOffset: function(){
+			// summary:
+			//		Get the current windowing offset for the axis.
+			return "offset" in this ? this.offset : 0;	//	Number
+		},
+		calculate: function(min, max, span){
+			// summary:
+			//		Perform all calculations needed to render this axis.
+			// min: Number
+			//		The smallest value represented on this axis.
+			// max: Number
+			//		The largest value represented on this axis.
+			// span: Number
+			//		The span in pixels over which axis calculations are made.
+			// returns: dojox/charting/axis2d/Invisible
+			//		The reference to the axis for functional chaining.
+			if(this.initialized()){
+				return this;
+			}
+			var o = this.opt;
+			// we used to have a 4th function parameter to reach labels but
+			// nobody was calling it with 4 parameters.
+			this.labels = o.labels;
+			this.scaler = lin.buildScaler(min, max, span, o);
+			// store the absolute major tick start, this will be useful when dropping a label every n labels
+			// TODO: if o.lower then it does not work
+			var tsb = this.scaler.bounds;
+			if("scale" in this){
+				// calculate new range
+				o.from = tsb.lower + this.offset;
+				o.to   = (tsb.upper - tsb.lower) / this.scale + o.from;
+				// make sure that bounds are correct
+				if( !isFinite(o.from) ||
+					isNaN(o.from) ||
+					!isFinite(o.to) ||
+					isNaN(o.to) ||
+					o.to - o.from >= tsb.upper - tsb.lower
+				){
+					// any error --- remove from/to bounds
+					delete o.from;
+					delete o.to;
+					delete this.scale;
+					delete this.offset;
+				}else{
+					// shift the window, if we are out of bounds
+					if(o.from < tsb.lower){
+						o.to += tsb.lower - o.from;
+						o.from = tsb.lower;
+					}else if(o.to > tsb.upper){
+						o.from += tsb.upper - o.to;
+						o.to = tsb.upper;
+					}
+					// update the offset
+					this.offset = o.from - tsb.lower;
+				}
+				// re-calculate the scaler
+				this.scaler = lin.buildScaler(min, max, span, o);
+				tsb = this.scaler.bounds;
+				// cleanup
+				if(this.scale == 1 && this.offset == 0){
+					delete this.scale;
+					delete this.offset;
+				}
+			}
+			return this;	//	dojox/charting/axis2d/Invisible
+		},
+		getScaler: function(){
+			// summary:
+			//		Get the pre-calculated scaler object.
+			return this.scaler;	//	Object
+		},
+		getTicks: function(){
+			// summary:
+			//		Get the pre-calculated ticks object.
+			return this.ticks;	//	Object
+		}
+	});
+});

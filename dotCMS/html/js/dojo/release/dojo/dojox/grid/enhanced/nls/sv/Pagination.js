@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/sv/Pagination", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/sv/Pagination", ({
 	"descTemplate": "${2} - ${3} av ${1} ${0}",
 	"firstTip": "Första sidan",
 	"lastTip": "Sista sidan",
@@ -18,7 +16,6 @@ define(
 	"pageCountIndication": " (${0} sidor)",
 	"dialogConfirm": "Gå",
 	"dialogCancel": "Avbryt",
-	"all": "alla"
+	"all": "Alla"
 })
-//end v1.x content
 );

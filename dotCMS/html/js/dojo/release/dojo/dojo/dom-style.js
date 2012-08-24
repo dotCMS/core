@@ -1,8 +1,306 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/dom-style", ["./sniff", "./dom"], function(has, dom){
+	// module:
+	//		dojo/dom-style
 
-//>>built
-define("dojo/dom-style",["./_base/sniff","./dom"],function(_1,_2){var _3,_4={};if(_1("webkit")){_3=function(_5){var s;if(_5.nodeType==1){var dv=_5.ownerDocument.defaultView;s=dv.getComputedStyle(_5,null);if(!s&&_5.style){_5.style.display="";s=dv.getComputedStyle(_5,null);}}return s||{};};}else{if(_1("ie")&&(_1("ie")<9||_1("quirks"))){_3=function(_6){return _6.nodeType==1?_6.currentStyle:{};};}else{_3=function(_7){return _7.nodeType==1?_7.ownerDocument.defaultView.getComputedStyle(_7,null):{};};}}_4.getComputedStyle=_3;var _8;if(!_1("ie")){_8=function(_9,_a){return parseFloat(_a)||0;};}else{_8=function(_b,_c){if(!_c){return 0;}if(_c=="medium"){return 4;}if(_c.slice&&_c.slice(-2)=="px"){return parseFloat(_c);}var s=_b.style,rs=_b.runtimeStyle,cs=_b.currentStyle,_d=s.left,_e=rs.left;rs.left=cs.left;try{s.left=_c;_c=s.pixelLeft;}catch(e){_c=0;}s.left=_d;rs.left=_e;return _c;};}_4.toPixelValue=_8;var _f="DXImageTransform.Microsoft.Alpha";var af=function(n,f){try{return n.filters.item(_f);}catch(e){return f?{}:null;}};var _10=_1("ie")<9||(_1("ie")&&_1("quirks"))?function(_11){try{return af(_11).Opacity/100;}catch(e){return 1;}}:function(_12){return _3(_12).opacity;};var _13=_1("ie")<9||(_1("ie")&&_1("quirks"))?function(_14,_15){var ov=_15*100,_16=_15==1;_14.style.zoom=_16?"":1;if(!af(_14)){if(_16){return _15;}_14.style.filter+=" progid:"+_f+"(Opacity="+ov+")";}else{af(_14,1).Opacity=ov;}af(_14,1).Enabled=!_16;if(_14.tagName.toLowerCase()=="tr"){for(var td=_14.firstChild;td;td=td.nextSibling){if(td.tagName.toLowerCase()=="td"){_13(td,_15);}}}return _15;}:function(_17,_18){return _17.style.opacity=_18;};var _19={left:true,top:true};var _1a=/margin|padding|width|height|max|min|offset/;function _1b(_1c,_1d,_1e){_1d=_1d.toLowerCase();if(_1("ie")){if(_1e=="auto"){if(_1d=="height"){return _1c.offsetHeight;}if(_1d=="width"){return _1c.offsetWidth;}}if(_1d=="fontweight"){switch(_1e){case 700:return "bold";case 400:default:return "normal";}}}if(!(_1d in _19)){_19[_1d]=_1a.test(_1d);}return _19[_1d]?_8(_1c,_1e):_1e;};var _1f=_1("ie")?"styleFloat":"cssFloat",_20={"cssFloat":_1f,"styleFloat":_1f,"float":_1f};_4.get=function getStyle(_21,_22){var n=_2.byId(_21),l=arguments.length,op=(_22=="opacity");if(l==2&&op){return _10(n);}_22=_20[_22]||_22;var s=_4.getComputedStyle(n);return (l==1)?s:_1b(n,_22,s[_22]||n.style[_22]);};_4.set=function setStyle(_23,_24,_25){var n=_2.byId(_23),l=arguments.length,op=(_24=="opacity");_24=_20[_24]||_24;if(l==3){return op?_13(n,_25):n.style[_24]=_25;}for(var x in _24){_4.set(_23,x,_24[x]);}return _4.getComputedStyle(n);};return _4;});
+	// =============================
+	// Style Functions
+	// =============================
+
+	// getComputedStyle drives most of the style code.
+	// Wherever possible, reuse the returned object.
+	//
+	// API functions below that need to access computed styles accept an
+	// optional computedStyle parameter.
+	// If this parameter is omitted, the functions will call getComputedStyle themselves.
+	// This way, calling code can access computedStyle once, and then pass the reference to
+	// multiple API functions.
+
+	// Although we normally eschew argument validation at this
+	// level, here we test argument 'node' for (duck)type,
+	// by testing nodeType, ecause 'document' is the 'parentNode' of 'body'
+	// it is frequently sent to this function even
+	// though it is not Element.
+	var getComputedStyle, style = {
+		// summary:
+		//		This module defines the core dojo DOM style API.
+	};
+	if(has("webkit")){
+		getComputedStyle = function(/*DomNode*/ node){
+			var s;
+			if(node.nodeType == 1){
+				var dv = node.ownerDocument.defaultView;
+				s = dv.getComputedStyle(node, null);
+				if(!s && node.style){
+					node.style.display = "";
+					s = dv.getComputedStyle(node, null);
+				}
+			}
+			return s || {};
+		};
+	}else if(has("ie") && (has("ie") < 9 || has("quirks"))){
+		getComputedStyle = function(node){
+			// IE (as of 7) doesn't expose Element like sane browsers
+			// currentStyle can be null on IE8!
+			return node.nodeType == 1 /* ELEMENT_NODE*/ && node.currentStyle ? node.currentStyle : {};
+		};
+	}else{
+		getComputedStyle = function(node){
+			return node.nodeType == 1 /* ELEMENT_NODE*/ ?
+				node.ownerDocument.defaultView.getComputedStyle(node, null) : {};
+		};
+	}
+	style.getComputedStyle = getComputedStyle;
+	/*=====
+	style.getComputedStyle = function(node){
+		// summary:
+		//		Returns a "computed style" object.
+		//
+		// description:
+		//		Gets a "computed style" object which can be used to gather
+		//		information about the current state of the rendered node.
+		//
+		//		Note that this may behave differently on different browsers.
+		//		Values may have different formats and value encodings across
+		//		browsers.
+		//
+		//		Note also that this method is expensive.  Wherever possible,
+		//		reuse the returned object.
+		//
+		//		Use the dojo.style() method for more consistent (pixelized)
+		//		return values.
+		//
+		// node: DOMNode
+		//		A reference to a DOM node. Does NOT support taking an
+		//		ID string for speed reasons.
+		// example:
+		//	|	dojo.getComputedStyle(dojo.byId('foo')).borderWidth;
+		//
+		// example:
+		//		Reusing the returned object, avoiding multiple lookups:
+		//	|	var cs = dojo.getComputedStyle(dojo.byId("someNode"));
+		//	|	var w = cs.width, h = cs.height;
+		return; // CSS2Properties
+	};
+	=====*/
+
+	var toPixel;
+	if(!has("ie")){
+		toPixel = function(element, value){
+			// style values can be floats, client code may want
+			// to round for integer pixels.
+			return parseFloat(value) || 0;
+		};
+	}else{
+		toPixel = function(element, avalue){
+			if(!avalue){ return 0; }
+			// on IE7, medium is usually 4 pixels
+			if(avalue == "medium"){ return 4; }
+			// style values can be floats, client code may
+			// want to round this value for integer pixels.
+			if(avalue.slice && avalue.slice(-2) == 'px'){ return parseFloat(avalue); }
+			var s = element.style, rs = element.runtimeStyle, cs = element.currentStyle,
+				sLeft = s.left, rsLeft = rs.left;
+			rs.left = cs.left;
+			try{
+				// 'avalue' may be incompatible with style.left, which can cause IE to throw
+				// this has been observed for border widths using "thin", "medium", "thick" constants
+				// those particular constants could be trapped by a lookup
+				// but perhaps there are more
+				s.left = avalue;
+				avalue = s.pixelLeft;
+			}catch(e){
+				avalue = 0;
+			}
+			s.left = sLeft;
+			rs.left = rsLeft;
+			return avalue;
+		};
+	}
+	style.toPixelValue = toPixel;
+	/*=====
+	style.toPixelValue = function(node, value){
+		// summary:
+		//		converts style value to pixels on IE or return a numeric value.
+		// node: DOMNode
+		// value: String
+		// returns: Number
+	};
+	=====*/
+
+	// FIXME: there opacity quirks on FF that we haven't ported over. Hrm.
+
+	var astr = "DXImageTransform.Microsoft.Alpha";
+	var af = function(n, f){
+		try{
+			return n.filters.item(astr);
+		}catch(e){
+			return f ? {} : null;
+		}
+	};
+
+	var _getOpacity =
+		has("ie") < 9 || (has("ie") && has("quirks")) ? function(node){
+			try{
+				return af(node).Opacity / 100; // Number
+			}catch(e){
+				return 1; // Number
+			}
+		} :
+		function(node){
+			return getComputedStyle(node).opacity;
+		};
+
+	var _setOpacity =
+		has("ie") < 9 || (has("ie") && has("quirks")) ? function(/*DomNode*/ node, /*Number*/ opacity){
+			var ov = opacity * 100, opaque = opacity == 1;
+			node.style.zoom = opaque ? "" : 1;
+
+			if(!af(node)){
+				if(opaque){
+					return opacity;
+				}
+				node.style.filter += " progid:" + astr + "(Opacity=" + ov + ")";
+			}else{
+				af(node, 1).Opacity = ov;
+			}
+
+			// on IE7 Alpha(Filter opacity=100) makes text look fuzzy so disable it altogether (bug #2661),
+			//but still update the opacity value so we can get a correct reading if it is read later.
+			af(node, 1).Enabled = !opaque;
+
+			if(node.tagName.toLowerCase() == "tr"){
+				for(var td = node.firstChild; td; td = td.nextSibling){
+					if(td.tagName.toLowerCase() == "td"){
+						_setOpacity(td, opacity);
+					}
+				}
+			}
+			return opacity;
+		} :
+		function(node, opacity){
+			return node.style.opacity = opacity;
+		};
+
+	var _pixelNamesCache = {
+		left: true, top: true
+	};
+	var _pixelRegExp = /margin|padding|width|height|max|min|offset/; // |border
+	function _toStyleValue(node, type, value){
+		//TODO: should we really be doing string case conversion here? Should we cache it? Need to profile!
+		type = type.toLowerCase();
+		if(has("ie")){
+			if(value == "auto"){
+				if(type == "height"){ return node.offsetHeight; }
+				if(type == "width"){ return node.offsetWidth; }
+			}
+			if(type == "fontweight"){
+				switch(value){
+					case 700: return "bold";
+					case 400:
+					default: return "normal";
+				}
+			}
+		}
+		if(!(type in _pixelNamesCache)){
+			_pixelNamesCache[type] = _pixelRegExp.test(type);
+		}
+		return _pixelNamesCache[type] ? toPixel(node, value) : value;
+	}
+
+	var _floatStyle = has("ie") ? "styleFloat" : "cssFloat",
+		_floatAliases = {"cssFloat": _floatStyle, "styleFloat": _floatStyle, "float": _floatStyle};
+
+	// public API
+
+	style.get = function getStyle(/*DOMNode|String*/ node, /*String?*/ name){
+		// summary:
+		//		Accesses styles on a node.
+		// description:
+		//		Getting the style value uses the computed style for the node, so the value
+		//		will be a calculated value, not just the immediate node.style value.
+		//		Also when getting values, use specific style names,
+		//		like "borderBottomWidth" instead of "border" since compound values like
+		//		"border" are not necessarily reflected as expected.
+		//		If you want to get node dimensions, use `dojo.marginBox()`,
+		//		`dojo.contentBox()` or `dojo.position()`.
+		// node: DOMNode|String
+		//		id or reference to node to get style for
+		// name: String?
+		//		the style property to get
+		// example:
+		//		Passing only an ID or node returns the computed style object of
+		//		the node:
+		//	|	dojo.getStyle("thinger");
+		// example:
+		//		Passing a node and a style property returns the current
+		//		normalized, computed value for that property:
+		//	|	dojo.getStyle("thinger", "opacity"); // 1 by default
+
+		var n = dom.byId(node), l = arguments.length, op = (name == "opacity");
+		if(l == 2 && op){
+			return _getOpacity(n);
+		}
+		name = _floatAliases[name] || name;
+		var s = style.getComputedStyle(n);
+		return (l == 1) ? s : _toStyleValue(n, name, s[name] || n.style[name]); /* CSS2Properties||String||Number */
+	};
+
+	style.set = function setStyle(/*DOMNode|String*/ node, /*String|Object*/ name, /*String?*/ value){
+		// summary:
+		//		Sets styles on a node.
+		// node: DOMNode|String
+		//		id or reference to node to set style for
+		// name: String|Object
+		//		the style property to set in DOM-accessor format
+		//		("borderWidth", not "border-width") or an object with key/value
+		//		pairs suitable for setting each property.
+		// value: String?
+		//		If passed, sets value on the node for style, handling
+		//		cross-browser concerns.  When setting a pixel value,
+		//		be sure to include "px" in the value. For instance, top: "200px".
+		//		Otherwise, in some cases, some browsers will not apply the style.
+		//
+		// example:
+		//		Passing a node, a style property, and a value changes the
+		//		current display of the node and returns the new computed value
+		//	|	dojo.setStyle("thinger", "opacity", 0.5); // == 0.5
+		//
+		// example:
+		//		Passing a node, an object-style style property sets each of the values in turn and returns the computed style object of the node:
+		//	|	dojo.setStyle("thinger", {
+		//	|		"opacity": 0.5,
+		//	|		"border": "3px solid black",
+		//	|		"height": "300px"
+		//	|	});
+		//
+		// example:
+		//		When the CSS style property is hyphenated, the JavaScript property is camelCased.
+		//		font-size becomes fontSize, and so on.
+		//	|	dojo.setStyle("thinger",{
+		//	|		fontSize:"14pt",
+		//	|		letterSpacing:"1.2em"
+		//	|	});
+		//
+		// example:
+		//		dojo/NodeList implements .style() using the same syntax, omitting the "node" parameter, calling
+		//		dojo.style() on every element of the list. See: `dojo.query()` and `dojo/NodeList`
+		//	|	dojo.query(".someClassName").style("visibility","hidden");
+		//	|	// or
+		//	|	dojo.query("#baz > div").style({
+		//	|		opacity:0.75,
+		//	|		fontSize:"13pt"
+		//	|	});
+
+		var n = dom.byId(node), l = arguments.length, op = (name == "opacity");
+		name = _floatAliases[name] || name;
+		if(l == 3){
+			return op ? _setOpacity(n, value) : n.style[name] = value; // Number
+		}
+		for(var x in name){
+			style.set(node, x, name[x]);
+		}
+		return style.getComputedStyle(n);
+	};
+
+	return style;
+});

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/fi/LinkDialog", //begin v1.x content
-({
+"dijit/_editor/nls/fi/LinkDialog", ({
 	createLinkTitle: "Linkin ominaisuudet",
 	insertImageTitle: "Kuvan ominaisuudet",
 	url: "URL-osoite:",
@@ -13,6 +11,4 @@ define(
 	topWindow: "Päällimmäinen ikkuna",
 	newWindow: "Uusi ikkuna"
 })
-
-//end v1.x content
 );

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/hr/Pagination", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/hr/Pagination", ({
 	"descTemplate": "${2} - ${3} od ${1} ${0}",
 	"firstTip": "Prva stranica",
 	"lastTip": "Zadnja stranica",
@@ -18,8 +16,6 @@ define(
 	"pageCountIndication": " (${0} stranica)",
 	"dialogConfirm": "Idi",
 	"dialogCancel": "Opoziv",
-	"all": "svi"
+	"all": "Sve"
 })
-//end v1.x content
 );
-

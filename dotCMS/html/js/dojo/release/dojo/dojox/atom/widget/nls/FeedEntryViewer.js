@@ -1,4 +1,3 @@
-//>>built
 define("dojox/atom/widget/nls/FeedEntryViewer", { root:
 //begin v1.x content
 ({

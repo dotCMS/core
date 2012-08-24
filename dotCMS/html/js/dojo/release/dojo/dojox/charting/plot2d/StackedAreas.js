@@ -1,2 +1,14 @@
-//>>built
-define("dojox/charting/plot2d/StackedAreas",["dojo/_base/declare","./Stacked"],function(_1,_2){return _1("dojox.charting.plot2d.StackedAreas",_2,{constructor:function(){this.opt.lines=true;this.opt.areas=true;}});});
+define("dojox/charting/plot2d/StackedAreas", ["dojo/_base/declare", "./Stacked"], function(declare, Stacked){
+
+	return declare("dojox.charting.plot2d.StackedAreas", Stacked, {
+		// summary:
+		//		A convenience object to set up a stacked area plot.
+		constructor: function(){
+			// summary:
+			//		Force our Stacked plotter to include both lines and areas.
+			this.opt.lines = true;
+			this.opt.areas = true;
+		}
+	});
+});
+

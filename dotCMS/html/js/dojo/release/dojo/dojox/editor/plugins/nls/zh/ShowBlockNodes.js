@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh/ShowBlockNodes", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh/ShowBlockNodes", ({
 	"showBlockNodes": "显示 HTML 块元素"
 })
-
-//end v1.x content
 );

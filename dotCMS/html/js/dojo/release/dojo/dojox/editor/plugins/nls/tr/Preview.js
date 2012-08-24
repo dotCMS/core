@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/tr/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/tr/Preview", ({
 	"preview": "Önizleme"
 })
-
-//end v1.x content
 );

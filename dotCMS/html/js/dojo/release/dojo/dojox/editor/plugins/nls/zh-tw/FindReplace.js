@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh-tw/FindReplace", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh-tw/FindReplace", ({
 	"findLabel": "尋找：",
 	"findTooltip": "輸入要尋找的文字",
 	"replaceLabel": "取代為：",
@@ -22,5 +20,4 @@ define(
 	"eofDialogTextFind": "找到",
 	"eofDialogTextReplace": "已取代"
 })
-//end v1.x content
 );

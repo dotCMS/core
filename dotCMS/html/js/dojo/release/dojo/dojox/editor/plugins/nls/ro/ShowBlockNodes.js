@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ro/ShowBlockNodes", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ro/ShowBlockNodes", ({
 	"showBlockNodes": "Afişare bloc elemente HTML"
 })
-
-//end v1.x content
 );

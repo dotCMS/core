@@ -1,2 +1,433 @@
-//>>built
-define("dojox/data/FileStore",["dojo/_base/declare","dojo/_base/lang","dojo/_base/window","dojo/_base/json","dojo/_base/xhr"],function(_1,_2,_3,_4,_5){return _1("dojox.data.FileStore",null,{constructor:function(_6){if(_6&&_6.label){this.label=_6.label;}if(_6&&_6.url){this.url=_6.url;}if(_6&&_6.options){if(_2.isArray(_6.options)){this.options=_6.options;}else{if(_2.isString(_6.options)){this.options=_6.options.split(",");}}}if(_6&&_6.pathAsQueryParam){this.pathAsQueryParam=true;}if(_6&&"urlPreventCache" in _6){this.urlPreventCache=_6.urlPreventCache?true:false;}},url:"",_storeRef:"_S",label:"name",_identifier:"path",_attributes:["children","directory","name","path","modified","size","parentDir"],pathSeparator:"/",options:[],failOk:false,urlPreventCache:true,_assertIsItem:function(_7){if(!this.isItem(_7)){throw new Error("dojox.data.FileStore: a function was passed an item argument that was not an item");}},_assertIsAttribute:function(_8){if(typeof _8!=="string"){throw new Error("dojox.data.FileStore: a function was passed an attribute argument that was not an attribute name string");}},pathAsQueryParam:false,getFeatures:function(){return {"dojo.data.api.Read":true,"dojo.data.api.Identity":true};},getValue:function(_9,_a,_b){var _c=this.getValues(_9,_a);if(_c&&_c.length>0){return _c[0];}return _b;},getAttributes:function(_d){return this._attributes;},hasAttribute:function(_e,_f){this._assertIsItem(_e);this._assertIsAttribute(_f);return (_f in _e);},getIdentity:function(_10){return this.getValue(_10,this._identifier);},getIdentityAttributes:function(_11){return [this._identifier];},isItemLoaded:function(_12){var _13=this.isItem(_12);if(_13&&typeof _12._loaded=="boolean"&&!_12._loaded){_13=false;}return _13;},loadItem:function(_14){var _15=_14.item;var _16=this;var _17=_14.scope||_3.global;var _18={};if(this.options.length>0){_18.options=_4.toJson(this.options);}if(this.pathAsQueryParam){_18.path=_15.parentPath+this.pathSeparator+_15.name;}var _19={url:this.pathAsQueryParam?this.url:this.url+"/"+_15.parentPath+"/"+_15.name,handleAs:"json-comment-optional",content:_18,preventCache:this.urlPreventCache,failOk:this.failOk};var _1a=_5.get(_19);_1a.addErrback(function(_1b){if(_14.onError){_14.onError.call(_17,_1b);}});_1a.addCallback(function(_1c){delete _15.parentPath;delete _15._loaded;_2.mixin(_15,_1c);_16._processItem(_15);if(_14.onItem){_14.onItem.call(_17,_15);}});},getLabel:function(_1d){return this.getValue(_1d,this.label);},getLabelAttributes:function(_1e){return [this.label];},containsValue:function(_1f,_20,_21){var _22=this.getValues(_1f,_20);for(var i=0;i<_22.length;i++){if(_22[i]==_21){return true;}}return false;},getValues:function(_23,_24){this._assertIsItem(_23);this._assertIsAttribute(_24);var _25=_23[_24];if(typeof _25!=="undefined"&&!_2.isArray(_25)){_25=[_25];}else{if(typeof _25==="undefined"){_25=[];}}return _25;},isItem:function(_26){if(_26&&_26[this._storeRef]===this){return true;}return false;},close:function(_27){},fetch:function(_28){_28=_28||{};if(!_28.store){_28.store=this;}var _29=this;var _2a=_28.scope||_3.global;var _2b={};if(_28.query){_2b.query=_4.toJson(_28.query);}if(_28.sort){_2b.sort=_4.toJson(_28.sort);}if(_28.queryOptions){_2b.queryOptions=_4.toJson(_28.queryOptions);}if(typeof _28.start=="number"){_2b.start=""+_28.start;}if(typeof _28.count=="number"){_2b.count=""+_28.count;}if(this.options.length>0){_2b.options=_4.toJson(this.options);}var _2c={url:this.url,preventCache:this.urlPreventCache,failOk:this.failOk,handleAs:"json-comment-optional",content:_2b};var _2d=_5.get(_2c);_2d.addCallback(function(_2e){_29._processResult(_2e,_28);});_2d.addErrback(function(_2f){if(_28.onError){_28.onError.call(_2a,_2f,_28);}});},fetchItemByIdentity:function(_30){var _31=_30.identity;var _32=this;var _33=_30.scope||_3.global;var _34={};if(this.options.length>0){_34.options=_4.toJson(this.options);}if(this.pathAsQueryParam){_34.path=_31;}var _35={url:this.pathAsQueryParam?this.url:this.url+"/"+_31,handleAs:"json-comment-optional",content:_34,preventCache:this.urlPreventCache,failOk:this.failOk};var _36=_5.get(_35);_36.addErrback(function(_37){if(_30.onError){_30.onError.call(_33,_37);}});_36.addCallback(function(_38){var _39=_32._processItem(_38);if(_30.onItem){_30.onItem.call(_33,_39);}});},_processResult:function(_3a,_3b){var _3c=_3b.scope||_3.global;try{if(_3a.pathSeparator){this.pathSeparator=_3a.pathSeparator;}if(_3b.onBegin){_3b.onBegin.call(_3c,_3a.total,_3b);}var _3d=this._processItemArray(_3a.items);if(_3b.onItem){var i;for(i=0;i<_3d.length;i++){_3b.onItem.call(_3c,_3d[i],_3b);}_3d=null;}if(_3b.onComplete){_3b.onComplete.call(_3c,_3d,_3b);}}catch(e){if(_3b.onError){_3b.onError.call(_3c,e,_3b);}else{}}},_processItemArray:function(_3e){var i;for(i=0;i<_3e.length;i++){this._processItem(_3e[i]);}return _3e;},_processItem:function(_3f){if(!_3f){return null;}_3f[this._storeRef]=this;if(_3f.children&&_3f.directory){if(_2.isArray(_3f.children)){var _40=_3f.children;var i;for(i=0;i<_40.length;i++){var _41=_40[i];if(_2.isObject(_41)){_40[i]=this._processItem(_41);}else{_40[i]={name:_41,_loaded:false,parentPath:_3f.path};_40[i][this._storeRef]=this;}}}else{delete _3f.children;}}return _3f;}});});
+define("dojox/data/FileStore", ["dojo/_base/declare", "dojo/_base/lang", "dojo/_base/kernel", "dojo/_base/json", "dojo/_base/xhr"],
+  function(declare, lang, kernel, jsonUtil, xhr) {
+
+return declare("dojox.data.FileStore", null, {
+	constructor: function(/*Object*/args){
+		// summary:
+		//		A simple store that provides a datastore interface to a filesystem.
+		// description:
+		//		A simple store that provides a datastore interface to a filesystem.  It takes a few parameters
+		//		for initialization:
+		//
+		//		- url:	The URL of the service which provides the file store serverside implementation.
+		//		- label:	The attribute of the file to use as the human-readable text.  Default is 'name'.
+		//
+		//		The purpose of this store is to represent a file as a datastore item.  The
+		//		datastore item by default has the following attributes that can be examined on it.
+		//
+		//		- directory:	Boolean indicating if the file item represents a directory.
+		//		- name:	The filename with no path informatiom.
+		//		- path:	The file complete file path including name, relative to the location the
+		//			file service scans from
+		//		- size:	The size of the file, in bytes.
+		//		- parentDir:	The parent directory path.
+		//		- children:	Any child files contained by a directory file item.
+		//
+		//		Note that the store's server call pattern is RESTlike.
+		//
+		//		The store also supports the passing of configurable options to the back end service, such as
+		//		expanding all child files (no lazy load), displaying hidden files, displaying only directories, and so on.
+		//		These are defined through a comma-separated list in declarative, or through setting the options array in programmatic.
+		//		example:	options="expand,dirsOnly,showHiddenFiles"
+		if(args && args.label){
+			this.label = args.label;
+		}
+		if(args && args.url){
+			this.url = args.url;
+		}
+		if(args && args.options){
+			if(lang.isArray(args.options)){
+				this.options = args.options;
+			}else{
+				if(lang.isString(args.options)){
+					this.options = args.options.split(",");
+				}
+			}
+		}
+		if(args && args.pathAsQueryParam){
+			this.pathAsQueryParam = true;
+		}
+		if(args && "urlPreventCache" in args){
+			this.urlPreventCache = args.urlPreventCache?true:false;
+		}
+	},
+
+	// url: [public] string
+	//		The URL to the file path service.
+	url: "",
+	
+	// _storeRef: [private] string
+	//		Internal variable used to denote an item came from this store instance.
+	_storeRef: "_S",
+
+	// label: [public] string
+	//		Default attribute to use to represent the item as a user-readable
+	//		string.  Public, so users can change it.
+	label: "name",
+
+	// _identifier: [private] string
+	//		Default attribute to use to represent the item's identifier.
+	//		Path should always be unique in the store instance.
+	_identifier: "path",
+
+	// _attributes: [private] string
+	//		Internal variable of attributes all file items should have.
+	_attributes: ["children", "directory", "name", "path", "modified", "size", "parentDir"],
+	
+	// pathSeparator: [public] string
+	//		The path separator to use when chaining requests for children
+	//		Can be overriden by the server on initial load
+	pathSeparator: "/",
+
+	// options: [public] array
+	//		Array of options to always send when doing requests.
+	//		Back end service controls this, like 'dirsOnly', 'showHiddenFiles', 'expandChildren', etc.
+	options: [],
+
+	// failOk: [public] boolean
+	//		Flag to pass on to xhr functions to check if we are OK to fail the call silently
+	failOk: false,
+
+	// urlPreventCache: [public] string
+	//		Flag to dennote if preventCache should be passed to xhrGet.
+	urlPreventCache: true,
+
+	_assertIsItem: function(/* item */ item){
+		// summary:
+		//		This function tests whether the item passed in is indeed an item in the store.
+		// item:
+		//		The item to test for being contained by the store.
+		if(!this.isItem(item)){
+			throw new Error("dojox.data.FileStore: a function was passed an item argument that was not an item");
+		}
+	},
+
+	_assertIsAttribute: function(/* attribute-name-string */ attribute){
+		// summary:
+		//		This function tests whether the item passed in is indeed a valid 'attribute' like type for the store.
+		// attribute:
+		//		The attribute to test for being contained by the store.
+		if(typeof attribute !== "string"){
+			throw new Error("dojox.data.FileStore: a function was passed an attribute argument that was not an attribute name string");
+		}
+	},
+
+	pathAsQueryParam: false, //Function to switch between REST style URL lookups and passing the path to specific items as a query param: 'path'.
+
+	getFeatures: function(){
+		// summary:
+		//		See dojo/data/api/Read.getFeatures()
+		return {
+			'dojo.data.api.Read': true, 'dojo.data.api.Identity':true
+		};
+	},
+
+	getValue: function(item, attribute, defaultValue){
+		// summary:
+		//		See dojo/data/api/Read.getValue()
+		var values = this.getValues(item, attribute);
+		if(values && values.length > 0){
+			return values[0];
+		}
+		return defaultValue;
+	},
+
+	getAttributes: function(item){
+		// summary:
+		//		See dojo/data/api/Read.getAttributes()
+		return this._attributes;
+	},
+
+	hasAttribute: function(item, attribute){
+		// summary:
+		//		See dojo/data/api/Read.hasAttribute()
+		this._assertIsItem(item);
+		this._assertIsAttribute(attribute);
+		return (attribute in item);
+	},
+	
+	getIdentity: function(/* item */ item){
+		// summary:
+		//		See dojo/data/api/Identity.getIdentity()
+		return this.getValue(item, this._identifier);
+	},
+	
+	getIdentityAttributes: function(item){
+		// summary:
+		//		See dojo/data/api/Read.getLabelAttributes()
+		return [this._identifier];
+	},
+
+
+	isItemLoaded: function(item){
+		// summary:
+		//		See dojo/data/api/Read.isItemLoaded()
+		var loaded = this.isItem(item);
+		if(loaded && typeof item._loaded == "boolean" && !item._loaded){
+			loaded = false;
+		}
+		return loaded;
+	},
+
+	loadItem: function(keywordArgs){
+		// summary:
+		//		See dojo/data/api/Read.loadItem()
+		var item = keywordArgs.item;
+		var self = this;
+		var scope = keywordArgs.scope || kernel.global;
+
+		var content = {};
+
+		if(this.options.length > 0){
+			content.options = jsonUtil.toJson(this.options);
+		}
+
+		if(this.pathAsQueryParam){
+			content.path = item.parentPath + this.pathSeparator + item.name;
+		}
+		var xhrData = {
+			url: this.pathAsQueryParam? this.url : this.url + "/" + item.parentPath + "/" + item.name,
+			handleAs: "json-comment-optional",
+			content: content,
+			preventCache: this.urlPreventCache,
+			failOk: this.failOk
+		};
+
+		var deferred = xhr.get(xhrData);
+		deferred.addErrback(function(error){
+				if(keywordArgs.onError){
+					keywordArgs.onError.call(scope, error);
+				}
+		});
+		
+		deferred.addCallback(function(data){
+			delete item.parentPath;
+			delete item._loaded;
+			lang.mixin(item, data);
+			self._processItem(item);
+			if(keywordArgs.onItem){
+				keywordArgs.onItem.call(scope, item);
+			}
+		});
+	},
+
+	getLabel: function(item){
+		// summary:
+		//		See dojo/data/api/Read.getLabel()
+		return this.getValue(item,this.label);
+	},
+	
+	getLabelAttributes: function(item){
+		// summary:
+		//		See dojo/data/api/Read.getLabelAttributes()
+		return [this.label];
+	},
+	
+	containsValue: function(item, attribute, value){
+		// summary:
+		//		See dojo/data/api/Read.containsValue()
+		var values = this.getValues(item,attribute);
+		for(var i = 0; i < values.length; i++){
+			if(values[i] == value){
+				return true;
+			}
+		}
+		return false;
+	},
+
+	getValues: function(item, attribute){
+		// summary:
+		//		See dojo/data/api/Read.getValue()
+		this._assertIsItem(item);
+		this._assertIsAttribute(attribute);
+		
+		var value = item[attribute];
+		if(typeof value !== "undefined" && !lang.isArray(value)){
+			value = [value];
+		}else if(typeof value === "undefined"){
+			value = [];
+		}
+		return value;
+	},
+
+	isItem: function(item){
+		// summary:
+		//		See dojo/data/api/Read.isItem()
+		if(item && item[this._storeRef] === this){
+			return true;
+		}
+		return false;
+	},
+	
+	close: function(request){
+		// summary:
+		//		See dojo/data/api/Read.close()
+	},
+
+	fetch: function(request){
+		// summary:
+		//		Fetch  items that match to a query
+		// request:
+		//		A request object
+
+		request = request || {};
+		if(!request.store){
+			request.store = this;
+		}
+		var self = this;
+		var scope = request.scope || kernel.global;
+
+		//Generate what will be sent over.
+		var reqParams = {};
+		if(request.query){
+			reqParams.query = jsonUtil.toJson(request.query);
+		}
+
+		if(request.sort){
+			reqParams.sort = jsonUtil.toJson(request.sort);
+		}
+
+		if(request.queryOptions){
+			reqParams.queryOptions = jsonUtil.toJson(request.queryOptions);
+		}
+
+		if(typeof request.start == "number"){
+			reqParams.start = "" + request.start;
+		}
+		if(typeof request.count == "number"){
+			reqParams.count = "" + request.count;
+		}
+
+		if(this.options.length > 0){
+			reqParams.options = jsonUtil.toJson(this.options);
+		}
+
+		var getArgs = {
+			url: this.url,
+			preventCache: this.urlPreventCache,
+			failOk: this.failOk,
+			handleAs: "json-comment-optional",
+			content: reqParams
+		};
+
+
+		var deferred = xhr.get(getArgs);
+
+		deferred.addCallback(function(data){self._processResult(data, request);});
+		deferred.addErrback(function(error){
+			if(request.onError){
+				request.onError.call(scope, error, request);
+			}
+		});
+	},
+
+	fetchItemByIdentity: function(keywordArgs){
+		// summary:
+		//		See dojo/data/api/Read.loadItem()
+		var path = keywordArgs.identity;
+		var self = this;
+		var scope = keywordArgs.scope || kernel.global;
+
+		var content = {};
+
+		if(this.options.length > 0){
+			content.options = jsonUtil.toJson(this.options);
+		}
+
+		if(this.pathAsQueryParam){
+			content.path = path;
+		}
+		var xhrData = {
+			url: this.pathAsQueryParam? this.url : this.url + "/" + path,
+			handleAs: "json-comment-optional",
+			content: content,
+			preventCache: this.urlPreventCache,
+			failOk: this.failOk
+		};
+
+		var deferred = xhr.get(xhrData);
+		deferred.addErrback(function(error){
+				if(keywordArgs.onError){
+					keywordArgs.onError.call(scope, error);
+				}
+		});
+		
+		deferred.addCallback(function(data){
+			var item = self._processItem(data);
+			if(keywordArgs.onItem){
+				keywordArgs.onItem.call(scope, item);
+			}
+		});
+	},
+
+	_processResult: function(data, request){
+		var scope = request.scope || kernel.global;
+		try{
+			//If the data contains a path separator, set ours
+			if(data.pathSeparator){
+				this.pathSeparator = data.pathSeparator;
+			}
+			//Invoke the onBegin handler, if any, to return the
+			//size of the dataset as indicated by the service.
+			if(request.onBegin){
+				request.onBegin.call(scope, data.total, request);
+			}
+			//Now process all the returned items thro
+			var items = this._processItemArray(data.items);
+			if(request.onItem){
+				var i;
+				for(i = 0; i < items.length; i++){
+					request.onItem.call(scope, items[i], request);
+				}
+				items = null;
+			}
+			if(request.onComplete){
+				request.onComplete.call(scope, items, request);
+			}
+		}catch (e){
+			if(request.onError){
+				request.onError.call(scope, e, request);
+			}else{
+				console.log(e);
+			}
+		}
+	},
+	
+	_processItemArray: function(itemArray){
+		// summary:
+		//		Internal function for processing an array of items for return.
+		var i;
+		for(i = 0; i < itemArray.length; i++){
+			this._processItem(itemArray[i]);
+		}
+		return itemArray;
+	},
+	
+	_processItem: function(item){
+		// summary:
+		//		Internal function for processing an item returned from the store.
+		//		It sets up the store ref as well as sets up the attributes necessary
+		//		to invoke a lazy load on a child, if there are any.
+		if(!item){return null;}
+		item[this._storeRef] = this;
+		if(item.children && item.directory){
+			if(lang.isArray(item.children)){
+				var children = item.children;
+				var i;
+				for(i = 0; i < children.length; i++ ){
+					var name = children[i];
+					if(lang.isObject(name)){
+						children[i] = this._processItem(name);
+					}else{
+						children[i] = {name: name, _loaded: false, parentPath: item.path};
+						children[i][this._storeRef] = this;
+					}
+				}
+			}else{
+				delete item.children;
+			}
+		}
+		return item;
+	}
+});
+});

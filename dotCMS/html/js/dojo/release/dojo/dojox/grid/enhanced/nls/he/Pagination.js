@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/he/Pagination", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/he/Pagination", ({
 	"descTemplate": "${2} - ${3} מתוך ${1} ${0}",
 	"firstTip": "עמוד ראשון",
 	"lastTip": "עמוד אחרון",
@@ -19,6 +17,4 @@ define(
 	"dialogCancel": "ביטול",
 	"all": "הכל"
 })
-//end v1.x content
 );
-

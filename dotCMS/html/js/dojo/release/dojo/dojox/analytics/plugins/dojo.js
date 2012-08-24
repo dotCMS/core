@@ -1,2 +1,21 @@
-//>>built
-define("dojox/analytics/plugins/dojo",["dojo/_base/lang","../_base","dojo/_base/config","dojo/ready"],function(_1,_2,_3,_4){var _5=_1.getObject("dojox.analytics.plugins",true);return (_5.dojo=new (function(){this.addData=_1.hitch(_2,"addData","dojo");_4(_1.hitch(this,function(){var _6={};for(var i in dojo){if((i=="version")||((!(typeof dojo[i]=="object"||typeof dojo[i]=="function"))&&(i[0]!="_"))){_6[i]=dojo[i];}}if(_3){_6.djConfig=_3;}this.addData(_6);}));})());});
+define("dojox/analytics/plugins/dojo", ["dojo/_base/lang","../_base", "dojo/_base/config", "dojo/ready"
+], function(lang, dxa, config, ready){
+	var plugins = lang.getObject("dojox.analytics.plugins", true);
+
+	return (plugins.dojo = new (function(){
+		// summary:
+		//		plugin to have analyitcs return the base info dojo collects
+		this.addData = lang.hitch(dxa, "addData", "dojo");
+		ready(lang.hitch(this, function(){
+			var data = {};
+			for(var i in dojo){
+				if((i == "version") || ((!(typeof dojo[i] == "object" || typeof dojo[i] == "function")) && (i[0] != "_"))){
+					data[i] = dojo[i];
+				}
+			}
+
+			if(config){data.djConfig = config}
+			this.addData(data);
+		}));
+	})());
+});

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/az/FontChoice", //begin v1.x content
-({
+"dijit/_editor/nls/az/FontChoice", ({
 	"1" : "xx-kiçik",
 	"2" : "x-kiçik",
 	"formatBlock" : "Format",
@@ -24,5 +22,4 @@ define(
 	"cursive" : "Əl yazısı",
 	"noFormat" : "Heç biri"
 })
-//end v1.x content
 );

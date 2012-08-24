@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/pt-pt/FindReplace", //begin v1.x content
-({
+"dojox/editor/plugins/nls/pt-pt/FindReplace", ({
 	"findLabel": "Localizar:",
 	"findTooltip": "Introduzir texto a localizar",
 	"replaceLabel": "Substituir por:",
@@ -22,6 +20,4 @@ define(
 	"eofDialogTextFind": "localizado",
 	"eofDialogTextReplace": "substituído"
 })
-
-//end v1.x content
 );
