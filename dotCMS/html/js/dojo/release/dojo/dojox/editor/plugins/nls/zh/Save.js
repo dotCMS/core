@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh/Save", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh/Save", ({
 	"save": "保存"
 })
-
-//end v1.x content
 );

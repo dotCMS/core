@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh/Breadcrumb", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh/Breadcrumb", ({
 	"nodeActions": "${nodeName} 操作",
 	"selectContents": "选择内容",
 	"selectElement": "选择元素",
@@ -10,6 +8,4 @@ define(
 	"moveStart": "将光标移至开头",
 	"moveEnd": "将光标移至结尾"
 })
-
-//end v1.x content
 );

@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/kk/Wizard", //begin v1.x content
-({
+"dojox/widget/nls/kk/Wizard", ({
 next: "Келесі",
 previous: "Алдыңғы",
-done: "Орындалған"
+done: "Дайын"
 })
-//end v1.x content
 );

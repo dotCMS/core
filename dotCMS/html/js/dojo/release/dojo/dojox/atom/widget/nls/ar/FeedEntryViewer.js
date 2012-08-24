@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/atom/widget/nls/ar/FeedEntryViewer", //begin v1.x content
-({
+"dojox/atom/widget/nls/ar/FeedEntryViewer", ({
 	displayOptions: "[اختيارات العرض]",
 	title: "العنوان",
 	authors: "المؤلفين",
@@ -12,5 +10,4 @@ define(
 	summary: "الملخص",
 	content: "المحتويات"
 })
-//end v1.x content
 );

@@ -1,2 +1,30 @@
-//>>built
-define("dojox/mobile/_base",["./common","./View","./Heading","./RoundRect","./RoundRectCategory","./EdgeToEdgeCategory","./RoundRectList","./EdgeToEdgeList","./ListItem","./Switch","./ToolBarButton","./ProgressIndicator"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_a,_b,_c){return _1;});
+define("dojox/mobile/_base", [
+	"./common",
+	"./View",
+	"./Heading",
+	"./RoundRect",
+	"./RoundRectCategory",
+	"./EdgeToEdgeCategory",
+	"./RoundRectList",
+	"./EdgeToEdgeList",
+	"./ListItem",
+	"./Container",
+	"./Pane",
+	"./Switch",
+	"./ToolBarButton",
+	"./ProgressIndicator"
+], function(common, View, Heading, RoundRect, RoundRectCategory, EdgeToEdgeCategory, RoundRectList, EdgeToEdgeList, ListItem, Switch, ToolBarButton, ProgressIndicator){
+	// module:
+	//		dojox/mobile/_base
+
+	/*=====
+	return {
+		// summary:
+		//		Includes the basic dojox/mobile modules: common, View, Heading, 
+		//		RoundRect, RoundRectCategory, EdgeToEdgeCategory, RoundRectList,
+		//		EdgeToEdgeList, ListItem, Container, Pane, Switch, ToolBarButton, 
+		//		and ProgressIndicator.
+	};
+	=====*/
+	return common;
+});

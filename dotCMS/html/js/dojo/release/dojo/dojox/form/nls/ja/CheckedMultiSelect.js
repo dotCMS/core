@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/form/nls/ja/CheckedMultiSelect", ({
 	invalidMessage: "少なくとも 1 つの項目を選択しなければなりません。",

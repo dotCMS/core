@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/el/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/el/AutoSave", ({
 	"saveLabel": "Αποθήκευση",
 	"saveSettingLabelOn": "Ορισμός διαστήματος αυτόματης αποθήκευσης...",
 	"saveSettingLabelOff": "Απενεργοποίηση αυτόματης αποθήκευσης",
@@ -14,6 +12,4 @@ define(
 	"saveMessageSuccess": "Αποθηκεύτηκε στις ${0}",
 	"saveMessageFail": "Απέτυχε η αποθήκευση στις ${0}"
 })
-
-//end v1.x content
 );

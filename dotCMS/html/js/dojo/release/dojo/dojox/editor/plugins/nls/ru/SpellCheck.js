@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ru/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ru/SpellCheck", ({
 	widgetLabel: "Проверка орфографии",
 	unfound: "Не найдено",
 	skip: "Пропустить",
@@ -11,12 +9,10 @@ define(
 	replace: "Заменить",
 	replaceWith: "Заменить на",
 	replaceAll: "Заменить все",
-	cancel: "Отменить",
+	cancel: "Отмена",
 	msg: "Ошибок не найдено",
 	iSkip: "Пропустить это",
-	iSkipAll: "Пропусть все схожие",
+	iSkipAll: "Пропустить все схожие",
 	iMsg: "Нет вариантов написания"
 })
-
-//end v1.x content
 );

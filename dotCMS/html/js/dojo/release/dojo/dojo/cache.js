@@ -1,8 +1,7 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/cache", ["./_base/kernel", "./text"], function(dojo){
+	// module:
+	//		dojo/cache
 
-//>>built
-define("dojo/cache",["./_base/kernel","./text"],function(_1,_2){return _1.cache;});
+	// dojo.cache is defined in dojo/text
+	return dojo.cache;
+});

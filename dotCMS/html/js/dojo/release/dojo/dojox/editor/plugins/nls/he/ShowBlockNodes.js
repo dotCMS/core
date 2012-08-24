@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/he/ShowBlockNodes", //begin v1.x content
-({
+"dojox/editor/plugins/nls/he/ShowBlockNodes", ({
 	"showBlockNodes": "הצגת מרכיבי Block של HTML "
 })
-
-//end v1.x content
 );

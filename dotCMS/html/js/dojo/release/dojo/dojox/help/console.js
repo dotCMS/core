@@ -1,2 +1,79 @@
-//>>built
-define(["dijit","dojo","dojox","dojo/require!dojox/help/_base"],function(_1,_2,_3){_2.provide("dojox.help.console");_2.require("dojox.help._base");_2.mixin(_3.help,{_plainText:function(_4){return _4.replace(/(<[^>]*>|&[^;]{2,6};)/g,"");},_displayLocated:function(_5){var _6={};_2.forEach(_5,function(_7){_6[_7[0]]=_2.isMoz?{toString:function(){return "Click to view";},item:_7[1]}:_7[1];});},_displayHelp:function(_8,_9){if(_8){var _a="Help for: "+_9.name;var _b="";for(var i=0;i<_a.length;i++){_b+="=";}}else{if(!_9){}else{var _c=false;for(var _d in _9){var _e=_9[_d];if(_d=="returns"&&_9.type!="Function"&&_9.type!="Constructor"){continue;}if(_e&&(!_2.isArray(_e)||_e.length)){_c=true;_e=_2.isString(_e)?_3.help._plainText(_e):_e;if(_d=="returns"){var _f=_2.map(_e.types||[],"return item.title;").join("|");if(_e.summary){if(_f){_f+=": ";}_f+=_3.help._plainText(_e.summary);}}else{if(_d=="parameters"){for(var j=0,_10;_10=_e[j];j++){var _11=_2.map(_10.types,"return item.title").join("|");var _12="";if(_10.optional){_12+="Optional. ";}if(_10.repating){_12+="Repeating. ";}_12+=_3.help._plainText(_10.summary);if(_12){_12="  - "+_12;for(var k=0;k<_10.name.length;k++){_12=" "+_12;}}}}else{}}}}if(!_c){}}}}});_3.help.init();});
+// wrapped by build app
+define("dojox/help/console", ["dijit","dojo","dojox","dojo/require!dojox/help/_base"], function(dijit,dojo,dojox){
+dojo.provide("dojox.help.console");
+dojo.require("dojox.help._base");
+
+dojo.mixin(dojox.help, {
+	_plainText: function(str){
+		return str.replace(/(<[^>]*>|&[^;]{2,6};)/g, '');
+	},
+	_displayLocated: function(located){
+		var obj = {};
+		dojo.forEach(located, function(item){ obj[item[0]] = dojo.isMoz ? { toString: function(){ return "Click to view"; }, item: item[1] } : item[1]; });
+		console.dir(obj);
+	},
+	_displayHelp: function(loading, obj){
+		if(loading){
+			var message = "Help for: " + obj.name;
+			console.log(message);
+			var underline = "";
+			for(var i = 0; i < message.length; i++){
+				underline += "=";
+			}
+			console.log(underline);
+		}else if(!obj){
+			console.log("No documentation for this object");
+		}else{
+			var anything = false;
+			for(var attribute in obj){
+				var value = obj[attribute];
+				if(attribute == "returns" && obj.type != "Function" && obj.type != "Constructor"){
+					continue;
+				}
+				if(value && (!dojo.isArray(value) || value.length)){
+					anything = true;
+					console.info(attribute.toUpperCase());
+					value = dojo.isString(value) ? dojox.help._plainText(value) : value;
+					if(attribute == "returns"){
+						var returns = dojo.map(value.types || [], "return item.title;").join("|");
+						if(value.summary){
+							if(returns){
+								returns += ": ";
+							}
+							returns += dojox.help._plainText(value.summary);
+						}
+						console.log(returns || "Uknown");
+					}else if(attribute == "parameters"){
+						for(var j = 0, parameter; parameter = value[j]; j++){
+							var type = dojo.map(parameter.types, "return item.title").join("|");
+							console.log((type) ? (parameter.name + ": " + type) : parameter.name);
+							var summary = "";
+							if(parameter.optional){
+								summary += "Optional. ";
+							}
+							if(parameter.repating){
+								summary += "Repeating. ";
+							}
+							summary += dojox.help._plainText(parameter.summary);
+							if(summary){
+								summary = "  - " + summary;
+								for(var k = 0; k < parameter.name.length; k++){
+									summary = " " + summary;
+								}
+								console.log(summary);
+							}
+						}
+					}else{
+						console.log(value);
+					}
+				}
+			}
+			if(!anything){
+				console.log("No documentation for this object");
+			}
+		}
+	}
+});
+
+dojox.help.init();
+});

@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/fr/PageBreak", //begin v1.x content
-({
+"dojox/editor/plugins/nls/fr/PageBreak", ({
 	"pageBreak": "Saut de page"
 })
-
-//end v1.x content
 );

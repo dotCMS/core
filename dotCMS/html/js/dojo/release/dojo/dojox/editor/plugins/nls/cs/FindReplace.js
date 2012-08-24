@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/cs/FindReplace", //begin v1.x content
-({
+"dojox/editor/plugins/nls/cs/FindReplace", ({
 	"findLabel": "Najít:",
 	"findTooltip": "Zadejte hledaný text.",
 	"replaceLabel": "Nahrazující řetězec:",
@@ -22,5 +20,4 @@ define(
 	"eofDialogTextFind": "byl nalezen",
 	"eofDialogTextReplace": "byl nahrazen"
 })
-//end v1.x content
 );

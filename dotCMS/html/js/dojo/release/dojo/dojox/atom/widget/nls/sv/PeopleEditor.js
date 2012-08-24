@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/atom/widget/nls/sv/PeopleEditor", //begin v1.x content
-({
+"dojox/atom/widget/nls/sv/PeopleEditor", ({
 	add: "Lägg till",
 	addAuthor: "Lägg till författare",
 	addContributor: "Lägg till medverkande"
 })
-//end v1.x content
 );

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/kk/Pagination", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/kk/Pagination", ({
 	"descTemplate": "${1} ${0} элементтің ${2} - ${3} элементі",
 	"firstTip": "Бірінші бет",
 	"lastTip": "Соңғы бет",
@@ -18,7 +16,6 @@ define(
 	"pageCountIndication": " (${0} бет)",
 	"dialogConfirm": "Өту",
 	"dialogCancel": "Болдырмау",
-	"all": "барлығы"
+	"all": "Барлығы"
 })
-//end v1.x content
 );

@@ -1,14 +1,12 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ja/FindReplace", //begin v1.x content
-({
-	"findLabel": "検索内容:",
+"dojox/editor/plugins/nls/ja/FindReplace", ({
+	"findLabel": "検索:",
 	"findTooltip": "検索するテキストを入力",
-	"replaceLabel": "次で置換:",
+	"replaceLabel": "置換後:",
 	"replaceTooltip": "置換するテキストを入力",
-	"findReplace": "検索/置換の切り替え",
+	"findReplace": "検索と置換",
 	"matchCase": "大/小文字の区別",
-	"matchCaseTooltip": "大/小文字を区別",
+	"matchCaseTooltip": "大/小文字の区別",
 	"backwards": "後方",
 	"backwardsTooltip": "テキストを後方検索",
 	"replaceAllButton": "すべてを置換",
@@ -22,5 +20,4 @@ define(
 	"eofDialogTextFind": "見つかりました",
 	"eofDialogTextReplace": "置換されました"
 })
-//end v1.x content
 );

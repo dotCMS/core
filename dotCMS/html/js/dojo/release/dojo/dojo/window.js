@@ -1,8 +1,168 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/window", ["./_base/lang", "./sniff", "./_base/window", "./dom", "./dom-geometry", "./dom-style"],
+	function(lang, has, baseWindow, dom, geom, style){
 
-//>>built
-define("dojo/window",["./_base/lang","./_base/sniff","./_base/window","./dom","./dom-geometry","./dom-style"],function(_1,_2,_3,_4,_5,_6){var _7=_1.getObject("dojo.window",true);_7.getBox=function(){var _8=(_3.doc.compatMode=="BackCompat")?_3.body():_3.doc.documentElement,_9=_5.docScroll(),w,h;if(_2("touch")){var _a=_3.doc.parentWindow||_3.doc.defaultView;w=_a.innerWidth||_8.clientWidth;h=_a.innerHeight||_8.clientHeight;}else{w=_8.clientWidth;h=_8.clientHeight;}return {l:_9.x,t:_9.y,w:w,h:h};};_7.get=function(_b){if(_2("ie")&&_7!==document.parentWindow){_b.parentWindow.execScript("document._parentWindow = window;","Javascript");var _c=_b._parentWindow;_b._parentWindow=null;return _c;}return _b.parentWindow||_b.defaultView;};_7.scrollIntoView=function(_d,_e){try{_d=_4.byId(_d);var _f=_d.ownerDocument||_3.doc,_10=_f.body||_3.body(),_11=_f.documentElement||_10.parentNode,_12=_2("ie"),_13=_2("webkit");if((!(_2("mozilla")||_12||_13||_2("opera"))||_d==_10||_d==_11)&&(typeof _d.scrollIntoView!="undefined")){_d.scrollIntoView(false);return;}var _14=_f.compatMode=="BackCompat",_15=(_12>=9&&_d.ownerDocument.parentWindow.frameElement)?((_11.clientHeight>0&&_11.clientWidth>0&&(_10.clientHeight==0||_10.clientWidth==0||_10.clientHeight>_11.clientHeight||_10.clientWidth>_11.clientWidth))?_11:_10):(_14?_10:_11),_16=_13?_10:_15,_17=_15.clientWidth,_18=_15.clientHeight,rtl=!_5.isBodyLtr(),_19=_e||_5.position(_d),el=_d.parentNode,_1a=function(el){return ((_12<=6||(_12&&_14))?false:(_6.get(el,"position").toLowerCase()=="fixed"));};if(_1a(_d)){return;}while(el){if(el==_10){el=_16;}var _1b=_5.position(el),_1c=_1a(el);if(el==_16){_1b.w=_17;_1b.h=_18;if(_16==_11&&_12&&rtl){_1b.x+=_16.offsetWidth-_1b.w;}if(_1b.x<0||!_12){_1b.x=0;}if(_1b.y<0||!_12){_1b.y=0;}}else{var pb=_5.getPadBorderExtents(el);_1b.w-=pb.w;_1b.h-=pb.h;_1b.x+=pb.l;_1b.y+=pb.t;var _1d=el.clientWidth,_1e=_1b.w-_1d;if(_1d>0&&_1e>0){_1b.w=_1d;_1b.x+=(rtl&&(_12||el.clientLeft>pb.l))?_1e:0;}_1d=el.clientHeight;_1e=_1b.h-_1d;if(_1d>0&&_1e>0){_1b.h=_1d;}}if(_1c){if(_1b.y<0){_1b.h+=_1b.y;_1b.y=0;}if(_1b.x<0){_1b.w+=_1b.x;_1b.x=0;}if(_1b.y+_1b.h>_18){_1b.h=_18-_1b.y;}if(_1b.x+_1b.w>_17){_1b.w=_17-_1b.x;}}var l=_19.x-_1b.x,t=_19.y-Math.max(_1b.y,0),r=l+_19.w-_1b.w,bot=t+_19.h-_1b.h;if(r*l>0){var s=Math[l<0?"max":"min"](l,r);if(rtl&&((_12==8&&!_14)||_12>=9)){s=-s;}_19.x+=el.scrollLeft;el.scrollLeft+=s;_19.x-=el.scrollLeft;}if(bot*t>0){_19.y+=el.scrollTop;el.scrollTop+=Math[t<0?"max":"min"](t,bot);_19.y-=el.scrollTop;}el=(el!=_16)&&!_1c&&el.parentNode;}}catch(error){console.error("scrollIntoView: "+error);_d.scrollIntoView(false);}};return _7;});
+	// module:
+	//		dojo/window
+
+	var window = {
+		// summary:
+		//		TODOC
+
+		getBox: function(/*Document?*/ doc){
+			// summary:
+			//		Returns the dimensions and scroll position of the viewable area of a browser window
+
+			doc = doc || baseWindow.doc;
+
+			var
+				scrollRoot = (doc.compatMode == 'BackCompat') ? baseWindow.body(doc) : doc.documentElement,
+				// get scroll position
+				scroll = geom.docScroll(doc), // scrollRoot.scrollTop/Left should work
+				w, h;
+
+			if(has("touch")){ // if(scrollbars not supported)
+				var uiWindow = window.get(doc);   // use UI window, not dojo.global window
+				// on mobile, scrollRoot.clientHeight <= uiWindow.innerHeight <= scrollRoot.offsetHeight, return uiWindow.innerHeight
+				w = uiWindow.innerWidth || scrollRoot.clientWidth; // || scrollRoot.clientXXX probably never evaluated
+				h = uiWindow.innerHeight || scrollRoot.clientHeight;
+			}else{
+				// on desktops, scrollRoot.clientHeight <= scrollRoot.offsetHeight <= uiWindow.innerHeight, return scrollRoot.clientHeight
+				// uiWindow.innerWidth/Height includes the scrollbar and cannot be used
+				w = scrollRoot.clientWidth;
+				h = scrollRoot.clientHeight;
+			}
+			return {
+				l: scroll.x,
+				t: scroll.y,
+				w: w,
+				h: h
+			};
+		},
+
+		get: function(/*Document*/ doc){
+			// summary:
+			//		Get window object associated with document doc.
+			// doc:
+			//		The document to get the associated window for.
+
+			// In some IE versions (at least 6.0), document.parentWindow does not return a
+			// reference to the real window object (maybe a copy), so we must fix it as well
+			// We use IE specific execScript to attach the real window reference to
+			// document._parentWindow for later use
+			if(has("ie") && window !== document.parentWindow){
+				/*
+				In IE 6, only the variable "window" can be used to connect events (others
+				may be only copies).
+				*/
+				doc.parentWindow.execScript("document._parentWindow = window;", "Javascript");
+				//to prevent memory leak, unset it after use
+				//another possibility is to add an onUnload handler which seems overkill to me (liucougar)
+				var win = doc._parentWindow;
+				doc._parentWindow = null;
+				return win;	//	Window
+			}
+
+			return doc.parentWindow || doc.defaultView;	//	Window
+		},
+
+		scrollIntoView: function(/*DomNode*/ node, /*Object?*/ pos){
+			// summary:
+			//		Scroll the passed node into view, if it is not already.
+
+			// don't rely on node.scrollIntoView working just because the function is there
+
+			try{ // catch unexpected/unrecreatable errors (#7808) since we can recover using a semi-acceptable native method
+				node = dom.byId(node);
+				var doc = node.ownerDocument || baseWindow.doc,	// TODO: why baseWindow.doc?  Isn't node.ownerDocument always defined?
+					body = baseWindow.body(doc),
+					html = doc.documentElement || body.parentNode,
+					isIE = has("ie"), isWK = has("webkit");
+				// if an untested browser, then use the native method
+				if((!(has("mozilla") || isIE || isWK || has("opera")) || node == body || node == html) && (typeof node.scrollIntoView != "undefined")){
+					node.scrollIntoView(false); // short-circuit to native if possible
+					return;
+				}
+				var backCompat = doc.compatMode == 'BackCompat',
+					clientAreaRoot = (isIE >= 9 && "frameElement" in node.ownerDocument.parentWindow)
+						? ((html.clientHeight > 0 && html.clientWidth > 0 && (body.clientHeight == 0 || body.clientWidth == 0 || body.clientHeight > html.clientHeight || body.clientWidth > html.clientWidth)) ? html : body)
+						: (backCompat ? body : html),
+					scrollRoot = isWK ? body : clientAreaRoot,
+					rootWidth = clientAreaRoot.clientWidth,
+					rootHeight = clientAreaRoot.clientHeight,
+					rtl = !geom.isBodyLtr(doc),
+					nodePos = pos || geom.position(node),
+					el = node.parentNode,
+					isFixed = function(el){
+						return ((isIE <= 6 || (isIE && backCompat))? false : (style.get(el, 'position').toLowerCase() == "fixed"));
+					};
+				if(isFixed(node)){ return; } // nothing to do
+
+				while(el){
+					if(el == body){ el = scrollRoot; }
+					var elPos = geom.position(el),
+						fixedPos = isFixed(el);
+
+					if(el == scrollRoot){
+						elPos.w = rootWidth; elPos.h = rootHeight;
+						if(scrollRoot == html && isIE && rtl){ elPos.x += scrollRoot.offsetWidth-elPos.w; } // IE workaround where scrollbar causes negative x
+						if(elPos.x < 0 || !isIE){ elPos.x = 0; } // IE can have values > 0
+						if(elPos.y < 0 || !isIE){ elPos.y = 0; }
+					}else{
+						var pb = geom.getPadBorderExtents(el);
+						elPos.w -= pb.w; elPos.h -= pb.h; elPos.x += pb.l; elPos.y += pb.t;
+						var clientSize = el.clientWidth,
+							scrollBarSize = elPos.w - clientSize;
+						if(clientSize > 0 && scrollBarSize > 0){
+							elPos.w = clientSize;
+							elPos.x += (rtl && (isIE || el.clientLeft > pb.l/*Chrome*/)) ? scrollBarSize : 0;
+						}
+						clientSize = el.clientHeight;
+						scrollBarSize = elPos.h - clientSize;
+						if(clientSize > 0 && scrollBarSize > 0){
+							elPos.h = clientSize;
+						}
+					}
+					if(fixedPos){ // bounded by viewport, not parents
+						if(elPos.y < 0){
+							elPos.h += elPos.y; elPos.y = 0;
+						}
+						if(elPos.x < 0){
+							elPos.w += elPos.x; elPos.x = 0;
+						}
+						if(elPos.y + elPos.h > rootHeight){
+							elPos.h = rootHeight - elPos.y;
+						}
+						if(elPos.x + elPos.w > rootWidth){
+							elPos.w = rootWidth - elPos.x;
+						}
+					}
+					// calculate overflow in all 4 directions
+					var l = nodePos.x - elPos.x, // beyond left: < 0
+						t = nodePos.y - Math.max(elPos.y, 0), // beyond top: < 0
+						r = l + nodePos.w - elPos.w, // beyond right: > 0
+						bot = t + nodePos.h - elPos.h; // beyond bottom: > 0
+					if(r * l > 0){
+						var s = Math[l < 0? "max" : "min"](l, r);
+						if(rtl && ((isIE == 8 && !backCompat) || isIE >= 9)){ s = -s; }
+						nodePos.x += el.scrollLeft;
+						el.scrollLeft += s;
+						nodePos.x -= el.scrollLeft;
+					}
+					if(bot * t > 0){
+						nodePos.y += el.scrollTop;
+						el.scrollTop += Math[t < 0? "max" : "min"](t, bot);
+						nodePos.y -= el.scrollTop;
+					}
+					el = (el != scrollRoot) && !fixedPos && el.parentNode;
+				}
+			}catch(error){
+				console.error('scrollIntoView: ' + error);
+				node.scrollIntoView(false);
+			}
+		}
+	};
+
+	 1  && lang.setObject("dojo.window", window);
+
+	return window;
+});

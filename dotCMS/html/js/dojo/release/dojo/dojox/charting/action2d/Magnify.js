@@ -1,2 +1,118 @@
-//>>built
-define("dojox/charting/action2d/Magnify",["dojo/_base/connect","dojo/_base/declare","./PlotAction","dojox/gfx/matrix","dojox/gfx/fx","dojo/fx","dojo/fx/easing"],function(_1,_2,_3,m,gf,df,_4){var _5=2;return _2("dojox.charting.action2d.Magnify",_3,{defaultParams:{duration:400,easing:_4.backOut,scale:_5},optionalParams:{},constructor:function(_6,_7,_8){this.scale=_8&&typeof _8.scale=="number"?_8.scale:_5;this.connect();},process:function(o){if(!o.shape||!(o.type in this.overOutEvents)||!("cx" in o)||!("cy" in o)){return;}var _9=o.run.name,_a=o.index,_b=[],_c,_d,_e;if(_9 in this.anim){_c=this.anim[_9][_a];}else{this.anim[_9]={};}if(_c){_c.action.stop(true);}else{this.anim[_9][_a]=_c={};}if(o.type=="onmouseover"){_d=m.identity;_e=this.scale;}else{_d=m.scaleAt(this.scale,o.cx,o.cy);_e=1/this.scale;}var _f={shape:o.shape,duration:this.duration,easing:this.easing,transform:[{name:"scaleAt",start:[1,o.cx,o.cy],end:[_e,o.cx,o.cy]},_d]};if(o.shape){_b.push(gf.animateTransform(_f));}if(o.oultine){_f.shape=o.outline;_b.push(gf.animateTransform(_f));}if(o.shadow){_f.shape=o.shadow;_b.push(gf.animateTransform(_f));}if(!_b.length){delete this.anim[_9][_a];return;}_c.action=df.combine(_b);if(o.type=="onmouseout"){_1.connect(_c.action,"onEnd",this,function(){if(this.anim[_9]){delete this.anim[_9][_a];}});}_c.action.play();}});});
+define("dojox/charting/action2d/Magnify", ["dojo/_base/connect", "dojo/_base/declare", 
+	"./PlotAction", "dojox/gfx/matrix", 
+	"dojox/gfx/fx", "dojo/fx", "dojo/fx/easing"], 
+	function(Hub, declare, PlotAction, m, gf, df, dfe){
+
+	/*=====
+	var __MagnifyCtorArgs = {
+		// summary:
+		//		Additional arguments for magnifying actions.
+		// duration: Number?
+		//		The amount of time in milliseconds for an animation to last.  Default is 400.
+		// easing: dojo/fx/easing/*?
+		//		An easing object (see dojo.fx.easing) for use in an animation.  The
+		//		default is dojo.fx.easing.backOut.
+		// scale: Number?
+		//		The amount to magnify the given object to.  Default is 2.
+	};
+	=====*/
+	
+	var DEFAULT_SCALE = 2;
+
+	return declare("dojox.charting.action2d.Magnify", PlotAction, {
+		// summary:
+		//		Create an action that magnifies the object the action is applied to.
+
+		// the data description block for the widget parser
+		defaultParams: {
+			duration: 400,	// duration of the action in ms
+			easing:   dfe.backOut,	// easing for the action
+			scale:    DEFAULT_SCALE	// scale of magnification
+		},
+		optionalParams: {},	// no optional parameters
+
+		constructor: function(chart, plot, kwArgs){
+			// summary:
+			//		Create the magnifying action.
+			// chart: dojox/charting/Chart
+			//		The chart this action belongs to.
+			// plot: String?
+			//		The plot to apply the action to. If not passed, "default" is assumed.
+			// kwArgs: __MagnifyCtorArgs?
+			//		Optional keyword arguments for this action.
+
+			// process optional named parameters
+			this.scale = kwArgs && typeof kwArgs.scale == "number" ? kwArgs.scale : DEFAULT_SCALE;
+
+			this.connect();
+		},
+
+		process: function(o){
+			// summary:
+			//		Process the action on the given object.
+			// o: dojox/gfx/shape.Shape
+			//		The object on which to process the magnifying action.
+			if(!o.shape || !(o.type in this.overOutEvents) ||
+				!("cx" in o) || !("cy" in o)){ return; }
+
+			var runName = o.run.name, index = o.index, vector = [], anim, init, scale;
+
+			if(runName in this.anim){
+				anim = this.anim[runName][index];
+			}else{
+				this.anim[runName] = {};
+			}
+
+			if(anim){
+				anim.action.stop(true);
+			}else{
+				this.anim[runName][index] = anim = {};
+			}
+
+			if(o.type == "onmouseover"){
+				init  = m.identity;
+				scale = this.scale;
+			}else{
+				init  = m.scaleAt(this.scale, o.cx, o.cy);
+				scale = 1 / this.scale;
+			}
+
+			var kwArgs = {
+				shape:    o.shape,
+				duration: this.duration,
+				easing:   this.easing,
+				transform: [
+					{name: "scaleAt", start: [1, o.cx, o.cy], end: [scale, o.cx, o.cy]},
+					init
+				]
+			};
+			if(o.shape){
+				vector.push(gf.animateTransform(kwArgs));
+			}
+			if(o.outline){
+				kwArgs.shape = o.outline;
+				vector.push(gf.animateTransform(kwArgs));
+			}
+			if(o.shadow){
+				kwArgs.shape = o.shadow;
+				vector.push(gf.animateTransform(kwArgs));
+			}
+
+			if(!vector.length){
+				delete this.anim[runName][index];
+				return;
+			}
+
+			anim.action = df.combine(vector);
+			if(o.type == "onmouseout"){
+				Hub.connect(anim.action, "onEnd", this, function(){
+					if(this.anim[runName]){
+						delete this.anim[runName][index];
+					}
+				});
+			}
+			anim.action.play();
+		}
+	});
+	
+});

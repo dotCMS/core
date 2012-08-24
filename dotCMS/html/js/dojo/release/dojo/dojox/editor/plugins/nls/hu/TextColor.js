@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/hu/TextColor", //begin v1.x content
-({
+"dojox/editor/plugins/nls/hu/TextColor", ({
 	"setButtonText": "Beállítás",
 	"cancelButtonText": "Mégse"
 })
-
-//end v1.x content
 );

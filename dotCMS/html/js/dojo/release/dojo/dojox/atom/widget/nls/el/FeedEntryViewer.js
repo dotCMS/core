@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/atom/widget/nls/el/FeedEntryViewer", //begin v1.x content
-({
+"dojox/atom/widget/nls/el/FeedEntryViewer", ({
 	displayOptions: "[επιλογές παρουσίασης]",
 	title: "Τίτλος",
 	authors: "Συντάκτες",
@@ -12,5 +10,4 @@ define(
 	summary: "Περίληψη",
 	content: "Περιεχόμενο"
 })
-//end v1.x content
 );

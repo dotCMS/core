@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/he/Filter", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/he/Filter", ({
 	"clearFilterDialogTitle": "ניקוי מסנן",
 	"filterDefDialogTitle": "מסנן",
 	"ruleTitleTemplate": "כלל ${0}",
@@ -83,8 +81,4 @@ define(
 	"trueLabel": "True",
 	"falseLabel": "False"
 })
-//end v1.x content
 );
-
-
-

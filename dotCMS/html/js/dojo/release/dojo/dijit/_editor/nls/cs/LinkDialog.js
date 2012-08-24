@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/cs/LinkDialog", //begin v1.x content
-({
+"dijit/_editor/nls/cs/LinkDialog", ({
 	createLinkTitle: "Vlastnosti odkazu",
 	insertImageTitle: "Vlastnosti obrázku",
 	url: "Adresa URL:",
@@ -13,6 +11,4 @@ define(
 	topWindow: "Okno nejvyšší úrovně",
 	newWindow: "Nové okno"
 })
-
-//end v1.x content
 );
