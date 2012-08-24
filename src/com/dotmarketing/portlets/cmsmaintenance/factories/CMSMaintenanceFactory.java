@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Date;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceAction;
@@ -65,8 +66,9 @@ public class CMSMaintenanceFactory {
 			Logger.info(CMSMaintenanceFactory.class, "Removed "+ auxCount+ " File Assets");
 
 			Logger.info(CMSMaintenanceFactory.class, "Finished removing old asset versions, removed "+counter+" assets");
-
-
+			
+			if(counter>0)
+			    CacheLocator.getCacheAdministrator().flushAll();
 		}catch(Exception ex){
 			try {
 				HibernateUtil.rollbackTransaction();
