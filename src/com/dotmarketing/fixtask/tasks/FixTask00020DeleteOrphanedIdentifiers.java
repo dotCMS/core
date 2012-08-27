@@ -54,6 +54,13 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
                                 "OR (asset_type='containers' and id not in(select identifier from containers)) " +
                                 "OR (asset_type='template' and id not in(select identifier from template)) ";
 		
+		String fixHTMLPAGE="update identifier set asset_type='htmlpage' where id in (select identifier from htmlpage)";
+		String fixFILES="update identifier set asset_type='file_asset' where id in (select identifier from file_asset)";
+		String fixCONTENT="update identifier set asset_type='contentlet' where id in (select identifier from contentlet)";
+		String fixCONTAINERS="update identifier set asset_type='containers' where id in (select identifier from containers)";
+		String fixTEMPLATES="update identifier set asset_type='template' where id in (select identifier from template)";
+		String fixLINKS="update identifier set asset_type='links' where id in (select identifier from links)";
+		
 		String treesToDelete = "SELECT * from tree where child IN (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
         					   "OR child in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
         					   "OR child in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
@@ -94,6 +101,20 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 			int error=0;
 		    try {
 				DotConnect dc = new DotConnect();
+				
+				dc.setSQL(fixLINKS);
+				dc.loadResult();
+				dc.setSQL(fixTEMPLATES);
+				dc.loadResult();
+				dc.setSQL(fixCONTAINERS);
+				dc.loadResult();
+				dc.setSQL(fixCONTENT);
+				dc.loadResult();
+				dc.setSQL(fixFILES);
+				dc.loadResult();
+				dc.setSQL(fixHTMLPAGE);
+				dc.loadResult();				
+				
 				dc.setSQL(treesToDelete);
 				modifiedData = dc.loadResults();
 				total = total + dc.getResults().size();
