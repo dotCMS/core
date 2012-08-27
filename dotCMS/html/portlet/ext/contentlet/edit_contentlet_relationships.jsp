@@ -665,9 +665,9 @@
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					referer += "<portlet:param name='cmd' value='edit' />";
-					referer += "<portlet:param name='inode' value='<%=contentletInode%>' />";
+					referer += "<portlet:param name='cmd' value='edit' />";					
 					referer += "</portlet:actionURL>";
+					referer += "&inode="+'<%=contentletInode%>';
 					referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
 					referer += "&relend=true";
 					referer += "&referer=" + '<%=java.net.URLDecoder.decode(referer, "UTF-8")%>';
