@@ -61,11 +61,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 
 				final String countSQL = "select count(*) as count from "
 						+ asset + " t";
-				final String selectTreeIdentsSQl = "select at.inode as inode, i.inode as ident from inode ie, identifier i, "
-						+ asset
-						+ " at, tree t "
-						+ "where at.inode = t.child and i.inode = t.parent and at.inode = ie.inode and ie.identifier is null";
-				final String updateIdentsSQL = "update inode set identifier = ? where inode = ?";
+				
 				final String selectNullIdentsSQL = "select i.inode as inode from inode i, "
 						+ asset
 						+ " at where at.inode = i.inode and at.identifier is null";
