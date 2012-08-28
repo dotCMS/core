@@ -14,8 +14,6 @@
 
 
 #set($categ = $categories.getChildrenCategories("${fieldAux.values.trim()}"))
-<input type="hidden" name="${fieldAux.velocityVarName}Names" id="${fieldAux.velocityVarName}Names" value=""/>
-<input type="hidden" name="${fieldAux.velocityVarName}" id="${fieldAux.velocityVarName}" value=""/>
 
 <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="select${fieldAux.velocityVarName}Inode" id="select${fieldAux.velocityVarName}Inode" autocomplete="false"  invalidMessage="Invalid category name"  onChange='updateCategoriesList("${fieldAux.velocityVarName}" , "${fieldAux.velocityVarName}Names", "select${fieldAux.velocityVarName}Inode")'>   
 <option value=""></option>
@@ -27,5 +25,20 @@
 <span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 <br/>
 <div dojoType="dijit.layout.ContentPane" name="${fieldAux.velocityVarName}categoriesbox" id="${fieldAux.velocityVarName}categoriesbox" class="boxer" hasShadow="true">
- <div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist"> No categories selected</div>
+ 	#if($fieldDefaultValue == [])
+		<div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist"> No categories selected</div>
+		 #set($selectedCatName = '')
+	#else
+		<div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist">
+			#foreach($defaultSelectedCats in $fieldDefaultValue)
+				 $defaultSelectedCats.categoryName <br/>
+				 #set($selectedCatName = $defaultSelectedCats.categoryName)
+				 #set($selectedCatInode = $defaultSelectedCats.inode)
+			#end
+				
+		</div>  	
+	#end
+ 
 </div>
+<input type="hidden" name="${fieldAux.velocityVarName}Names" id="${fieldAux.velocityVarName}Names" value="$selectedCatName"/>
+<input type="hidden" name="${fieldAux.velocityVarName}" id="${fieldAux.velocityVarName}" value="$selectedCatInode"/>
