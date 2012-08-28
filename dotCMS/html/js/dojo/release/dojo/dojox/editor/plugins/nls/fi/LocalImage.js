@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/fi/LocalImage", //begin v1.x content
-({
+"dojox/editor/plugins/nls/fi/LocalImage", ({
 	insertImageTitle: "Lisää kuva",
 	url: "Kuva",
 	browse: "Selaa...",
@@ -11,6 +9,4 @@ define(
 	prePopuTextUrl: "Anna kuvan URL-osoite",
 	prePopuTextBrowse: " tai selaa paikalliseen tiedostoon."
 })
-
-//end v1.x content
 );

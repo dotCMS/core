@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/he/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/he/TableDialog", ({
 	insertTableTitle: "הוספת טבלה",
 	modifyTableTitle: "שינוי טבלה",
 	rows: "שורות:",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "הגדרה", // translated elsewhere?
 	buttonInsert: "הוספה",
 	buttonCancel: "ביטול",
-
 	selectTableLabel: "בחירת טבלה",
 	insertTableRowBeforeLabel: "הוספת שורה לפני",
 	insertTableRowAfterLabel: "הוספת שורה אחרי",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "מחיקת שורה",
 	deleteTableColumnLabel: "מחיקת עמודה"
 })
-//end v1.x content
 );

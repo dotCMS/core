@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/th/Smiley", //begin v1.x content
-({
+"dojox/editor/plugins/nls/th/Smiley", ({
 	smiley: "แทรกไอคอนแสดงอารมณ์",
 	emoticonSmile: "ยิ้ม",
 	emoticonLaughing: "หัวเราะ",
@@ -14,15 +12,13 @@ define(
 	emoticonFrown: "หน้าบึ้ง",
 	emoticonShy: "อาย",
 	emoticonGoofy: "โง่",
-	emoticonOops: "oops",
+	emoticonOops: "อุ๊ปส์",
 	emoticonTongue: "แลบลิ้น",
 	emoticonIdea: "ความคิด",
 	emoticonYes: "ใช่",
 	emoticonNo: "ไม่ใช่",
-	emoticonAngel: "โมโห",
+	emoticonAngel: "เทวดา",
 	emoticonCrying: "ร้องไห้",
 	emoticonHappy: "มีความสุข"
 })
-
-//end v1.x content
 );

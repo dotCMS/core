@@ -1,2 +1,159 @@
-//>>built
-define("dojox/mobile/FixedSplitter",["dojo/_base/array","dojo/_base/declare","dojo/_base/window","dojo/dom-class","dojo/dom-geometry","dijit/_Contained","dijit/_Container","dijit/_WidgetBase","./FixedSplitterPane"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9){return _2("dojox.mobile.FixedSplitter",[_8,_7,_6],{orientation:"H",buildRendering:function(){this.domNode=this.containerNode=this.srcNodeRef?this.srcNodeRef:_3.doc.createElement("DIV");_4.add(this.domNode,"mblFixedSpliter");},startup:function(){if(this._started){return;}var _a=_1.filter(this.domNode.childNodes,function(_b){return _b.nodeType==1;});_1.forEach(_a,function(_c){_4.add(_c,"mblFixedSplitterPane"+this.orientation);},this);this.inherited(arguments);var _d=this;setTimeout(function(){var _e=_d.getParent&&_d.getParent();if(!_e||!_e.resize){_d.resize();}},0);},resize:function(){this.layout();},layout:function(){var sz=this.orientation=="H"?"w":"h";var _f=_1.filter(this.domNode.childNodes,function(_10){return _10.nodeType==1;});var _11=0;for(var i=0;i<_f.length;i++){_5.setMarginBox(_f[i],this.orientation=="H"?{l:_11}:{t:_11});if(i<_f.length-1){_11+=_5.getMarginBox(_f[i])[sz];}}var h;if(this.orientation=="V"){if(this.domNode.parentNode.tagName=="BODY"){if(_1.filter(_3.body().childNodes,function(_12){return _12.nodeType==1;}).length==1){h=(_3.global.innerHeight||_3.doc.documentElement.clientHeight);}}}var l=(h||_5.getMarginBox(this.domNode)[sz])-_11;var _13={};_13[sz]=l;_5.setMarginBox(_f[_f.length-1],_13);_1.forEach(this.getChildren(),function(_14){if(_14.resize){_14.resize();}});},addChild:function(_15,_16){_4.add(_15.domNode,"mblFixedSplitterPane"+this.orientation);this.inherited(arguments);}});});
+define("dojox/mobile/FixedSplitter", [
+	"dojo/_base/array",
+	"dojo/_base/declare",
+	"dojo/_base/window",
+	"dojo/dom-class",
+	"dojo/dom-geometry",
+	"dijit/_Contained",
+	"dijit/_Container",
+	"dijit/_WidgetBase"
+], function(array, declare, win, domClass, domGeometry, Contained, Container, WidgetBase){
+
+	// module:
+	//		dojox/mobile/FixedSplitter
+
+	return declare("dojox.mobile.FixedSplitter", [WidgetBase, Container, Contained], {
+		// summary:
+		//		A layout container that splits the window horizontally or
+		//		vertically.
+		// description:
+		//		FixedSplitter is a very simple container widget that layouts its
+		//		child DOM nodes side by side either horizontally or
+		//		vertically. An example usage of this widget would be to realize
+		//		the split view on iPad. There is no visual splitter between the
+		//		children, and there is no function to resize the child panes
+		//		with drag-and-drop. If you need a visual splitter, you can
+		//		specify a border of a child DOM node with CSS.
+		//
+		//		FixedSplitter has no knowledge of its child widgets.
+		//		dojox/mobile/Container (formerly known as FixedSplitterPane),
+		//		dojox/mobile/Pane, or dojox/mobile/ContentPane can be used as a
+		//		child widget of FixedSplitter.
+		//
+		//		- Use dojox/mobile/Container if your content consists of ONLY
+		//		  Dojo widgets.
+		//		- Use dojox/mobile/Pane if your content is an inline HTML
+		//		  fragment (may or may not include Dojo widgets).
+		//		- Use dojox/mobile/ContentPane if your content is an external
+		//		  HTML fragment (may or may not include Dojo widgets).
+		//
+		// example:
+		//	|	<div data-dojo-type="dojox.mobile.FixedSplitter" orientation="H">
+		//	|		<div data-dojo-type="dojox.mobile.Pane"
+		//	|			style="width:200px;border-right:1px solid black;">
+		//	|			pane #1 (width=200px)
+		//	|		</div>
+		//	|		<div data-dojo-type="dojox.mobile.Pane">
+		//	|			pane #2
+		//	|		</div>
+		//	|	</div>
+
+		// orientation: String
+		//		The direction of split. If "H" is specified, panes are split
+		//		horizontally. If "V" is specified, panes are split vertically.
+		orientation: "H",
+
+		// variablePane: Number
+		//		The index of a pane that fills the remainig space.
+		//		If -1, the last child pane fills the remaining space.
+		variablePane: -1,
+
+		// screenSizeAware: Boolean
+		//		If true, dynamically load a screen-size-aware module.
+		screenSizeAware: false,
+
+		// screenSizeAwareClass: String
+		//		A screen-size-aware module to load.
+		screenSizeAwareClass: "dojox/mobile/ScreenSizeAware",
+
+		/* internal properties */
+		
+		// baseClass: String
+		//		The name of the CSS class of this widget.
+		baseClass: "mblFixedSplitter",
+
+		startup: function(){
+			if(this._started){ return; }
+			domClass.add(this.domNode, this.baseClass + this.orientation);
+
+			var parent = this.getParent(), f;
+			if(!parent || !parent.resize){ // top level widget
+				var _this = this;
+				f = function(){
+					setTimeout(function(){
+						_this.resize();
+					}, 0);
+				};
+			}
+
+			if(this.screenSizeAware){
+				require([this.screenSizeAwareClass], function(module){
+					module.getInstance();
+					f && f();
+				});
+			}else{
+				f && f();
+			}
+
+			this.inherited(arguments);
+		},
+
+		resize: function(){
+			var wh = this.orientation === "H" ? "w" : "h", // width/height
+				tl = this.orientation === "H" ? "l" : "t", // top/left
+				props1 = {}, props2 = {},
+				i, c, h,
+				a = [], offset = 0, total = 0,
+				children = array.filter(this.domNode.childNodes, function(node){ return node.nodeType == 1; }),
+				idx = this.variablePane == -1 ? children.length - 1 : this.variablePane;
+			for(i = 0; i < children.length; i++){
+				if(i != idx){
+					a[i] = domGeometry.getMarginBox(children[i])[wh];
+					total += a[i];
+				}
+			}
+
+			if(this.orientation == "V"){
+				if(this.domNode.parentNode.tagName == "BODY"){
+					if(array.filter(win.body().childNodes, function(node){ return node.nodeType == 1; }).length == 1){
+						h = (win.global.innerHeight||win.doc.documentElement.clientHeight);
+					}
+				}
+			}
+			var l = (h || domGeometry.getMarginBox(this.domNode)[wh]) - total;
+			props2[wh] = a[idx] = l;
+			c = children[idx];
+			domGeometry.setMarginBox(c, props2);
+			c.style[this.orientation === "H" ? "height" : "width"] = "";
+
+			for(i = 0; i < children.length; i++){
+				c = children[i];
+				props1[tl] = offset;
+				domGeometry.setMarginBox(c, props1);
+				c.style[this.orientation === "H" ? "top" : "left"] = "";
+				offset += a[i];
+			}
+
+			array.forEach(this.getChildren(), function(child){
+				if(child.resize){ child.resize(); }
+			});
+		},
+
+		_setOrientationAttr: function(/*String*/orientation){
+			// summary:
+			//		Sets the direction of split.
+			// description:
+			//		The value must be either "H" or "V".
+			//		If "H" is specified, panes are split horizontally.
+			//		If "V" is specified, panes are split vertically.
+			// tags:
+			//		private
+			var s = this.baseClass;
+			domClass.replace(this.domNode, s + orientation, s + this.orientation);
+			this.orientation = orientation;
+			if(this._started){
+				this.resize();
+			}
+		}
+	});
+});

@@ -1,2 +1,154 @@
-//>>built
-define("dojox/gfx3d/scheduler",["dojo/_base/lang","dojo/_base/array","dojo/_base/declare","./_base","./vector"],function(_1,_2,_3,_4,_5){_4.scheduler={zOrder:function(_6,_7){_7=_7?_7:_4.scheduler.order;_6.sort(function(a,b){return _7(b)-_7(a);});return _6;},bsp:function(_8,_9){_9=_9?_9:_4.scheduler.outline;var p=new _4.scheduler.BinarySearchTree(_8[0],_9);_2.forEach(_8.slice(1),function(_a){p.add(_a,_9);});return p.iterate(_9);},order:function(it){return it.getZOrder();},outline:function(it){return it.getOutline();}};var _b=_3("dojox.gfx3d.scheduler.BinarySearchTree",null,{constructor:function(_c,_d){this.plus=null;this.minus=null;this.object=_c;var o=_d(_c);this.orient=o[0];this.normal=_5.normalize(o);},add:function(_e,_f){var _10=0.5,o=_f(_e),v=_5,n=this.normal,a=this.orient,_b=_4.scheduler.BinarySearchTree;if(_2.every(o,function(_11){return Math.floor(_10+v.dotProduct(n,v.substract(_11,a)))<=0;})){if(this.minus){this.minus.add(_e,_f);}else{this.minus=new _b(_e,_f);}}else{if(_2.every(o,function(_12){return Math.floor(_10+v.dotProduct(n,v.substract(_12,a)))>=0;})){if(this.plus){this.plus.add(_e,_f);}else{this.plus=new _b(_e,_f);}}else{throw "The case: polygon cross siblings' plate is not implemented yet";}}},iterate:function(_13){var _14=0.5;var v=_5;var _15=[];var _16=null;var _17={x:0,y:0,z:-10000};if(Math.floor(_14+v.dotProduct(this.normal,v.substract(_17,this.orient)))<=0){_16=[this.plus,this.minus];}else{_16=[this.minus,this.plus];}if(_16[0]){_15=_15.concat(_16[0].iterate());}_15.push(this.object);if(_16[1]){_15=_15.concat(_16[1].iterate());}return _15;}});_4.drawer={conservative:function(_18,_19,_1a){_2.forEach(this.objects,function(_1b){_1b.destroy();});_2.forEach(_19,function(_1c){_1c.draw(_1a.lighting);});},chart:function(_1d,_1e,_1f){_2.forEach(this.todos,function(_20){_20.draw(_1f.lighting);});}};var api={scheduler:_4.scheduler,drawer:_4.drawer,BinarySearchTree:_b};return api;});
+define("dojox/gfx3d/scheduler", [
+	"dojo/_base/lang",
+	"dojo/_base/array",	// dojo.forEach, dojo.every
+	"dojo/_base/declare",	// declare
+	"./_base",
+	"./vector"
+], function(lang, arrayUtil, declare, gfx3d, vectorUtil){
+
+gfx3d.scheduler = {
+	zOrder: function(buffer, order){
+		order = order ? order : gfx3d.scheduler.order;
+		buffer.sort(function(a, b){
+			return order(b) - order(a);
+		});
+		return buffer;
+	},
+
+	bsp: function(buffer, outline){
+		// console.debug("BSP scheduler");
+		outline = outline ? outline : gfx3d.scheduler.outline;
+		var p = new gfx3d.scheduler.BinarySearchTree(buffer[0], outline);
+		arrayUtil.forEach(buffer.slice(1), function(item){ p.add(item, outline); });
+		return p.iterate(outline);
+	},
+
+	// default implementation
+	order: function(it){
+		return it.getZOrder();
+	},
+
+	outline: function(it){
+		return it.getOutline();
+	}
+};
+
+var BST = declare("dojox.gfx3d.scheduler.BinarySearchTree", null, {
+	constructor: function(obj, outline){
+		// summary:
+		//		build the binary search tree, using binary space partition algorithm.
+		//		The idea is for any polygon, for example, (a, b, c), the space is divided by
+		//		the plane into two space: plus and minus.
+		//		
+		//		for any arbitrary vertex p, if(p - a) dotProduct n = 0, p is inside the plane,
+		//		> 0, p is in the plus space, vice versa for minus space.
+		//		n is the normal vector that is perpendicular the plate, defined as:
+		// |		n = ( b - a) crossProduct ( c - a )
+		//		
+		//		in this implementation, n is declared as normal, ,a is declared as orient.
+		// obj: dojox.gfx3d.Object
+		this.plus = null;
+		this.minus = null;
+		this.object = obj;
+
+		var o = outline(obj);
+		this.orient = o[0];
+		this.normal = vectorUtil.normalize(o);
+	},
+
+	add: function(obj, outline){
+		var epsilon = 0.5,
+			o = outline(obj),
+			v = vectorUtil,
+			n = this.normal,
+			a = this.orient,
+			BST = gfx3d.scheduler.BinarySearchTree;
+
+		if(
+			arrayUtil.every(o, function(item){
+				return Math.floor(epsilon + v.dotProduct(n, v.substract(item, a))) <= 0;
+			})
+		){
+			if(this.minus){
+				this.minus.add(obj, outline);
+			}else{
+				this.minus = new BST(obj, outline);
+			}
+		}else if(
+			arrayUtil.every(o, function(item){
+				return Math.floor(epsilon + v.dotProduct(n, v.substract(item, a))) >= 0;
+			})
+		){
+			if(this.plus){
+				this.plus.add(obj, outline);
+			} else {
+				this.plus = new BST(obj, outline);
+			}
+		}else{
+			/*
+			arrayUtil.forEach(o, function(item){
+				console.debug(v.dotProduct(n, v.substract(item, a)));
+			});
+			*/
+			throw "The case: polygon cross siblings' plate is not implemented yet";
+		}
+	},
+
+	iterate: function(outline){
+		var epsilon = 0.5;
+		var v = vectorUtil;
+		var sorted = [];
+		var subs = null;
+		// FIXME: using Infinity here?
+		var view = {x: 0, y: 0, z: -10000};
+		if(Math.floor( epsilon + v.dotProduct(this.normal, v.substract(view, this.orient))) <= 0){
+			subs = [this.plus, this.minus];
+		}else{
+			subs = [this.minus, this.plus];
+		}
+
+		if(subs[0]){
+			sorted = sorted.concat(subs[0].iterate());
+		}
+
+		sorted.push(this.object);
+
+		if(subs[1]){
+			sorted = sorted.concat(subs[1].iterate());
+		}
+		return sorted;
+	}
+
+});
+
+gfx3d.drawer = {
+	conservative: function(todos, objects, viewport){
+		// console.debug('conservative draw');
+		arrayUtil.forEach(this.objects, function(item){
+			item.destroy();
+		});
+		arrayUtil.forEach(objects, function(item){
+			item.draw(viewport.lighting);
+		});
+	},
+	chart: function(todos, objects, viewport){
+		// NOTE: ondemand may require the todos' objects to use setShape
+		// to redraw themselves to maintain the z-order.
+
+		// console.debug('chart draw');
+		arrayUtil.forEach(this.todos, function(item){
+			item.draw(viewport.lighting);
+		});
+	}
+	// More aggressive optimization may re-order the DOM nodes using the order
+	// of objects, and only elements of todos call setShape.
+};
+
+var api = { 
+	scheduler: gfx3d.scheduler,
+	drawer: gfx3d.drawer,
+	BinarySearchTree: BST
+};
+
+return api;
+});

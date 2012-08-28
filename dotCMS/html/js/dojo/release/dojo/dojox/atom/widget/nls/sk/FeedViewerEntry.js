@@ -1,8 +1,5 @@
-//>>built
 define(
-"dojox/atom/widget/nls/sk/FeedViewerEntry", //begin v1.x content
-({
-	deleteButton: "[Vymazať]"
+"dojox/atom/widget/nls/sk/FeedViewerEntry", ({
+	deleteButton: "[Odstrániť]"
 })
-//end v1.x content
 );

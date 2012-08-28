@@ -1,2 +1,10 @@
-//>>built
-define("dijit/_base/typematic",["../typematic"],function(){});
+define("dijit/_base/typematic", ["../typematic"], function(){
+
+	/*=====
+	return {
+		// summary:
+		//		Deprecated, for back-compat, just loads top level module
+	};
+	=====*/
+
+});

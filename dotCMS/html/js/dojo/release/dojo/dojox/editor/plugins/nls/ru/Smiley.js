@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ru/Smiley", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ru/Smiley", ({
 	smiley: "Вставить значок настроения",
 	emoticonSmile: "улыбка",
 	emoticonLaughing: "смех",
@@ -21,8 +19,6 @@ define(
 	emoticonNo: "нет",
 	emoticonAngel: "ангел",
 	emoticonCrying: "плачь",
-	emoticonHappy: "счастлив"
+	emoticonHappy: "счастье"
 })
-
-//end v1.x content
 );

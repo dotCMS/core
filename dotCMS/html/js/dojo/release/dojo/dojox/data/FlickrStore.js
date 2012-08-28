@@ -1,2 +1,284 @@
-//>>built
-define("dojox/data/FlickrStore",["dojo/_base/lang","dojo/_base/declare","dojo/_base/array","dojo/data/util/simpleFetch","dojo/io/script","dojo/_base/connect","dojo/date/stamp","dojo/AdapterRegistry"],function(_1,_2,_3,_4,_5,_6,_7,_8){var _9=_2("dojox.data.FlickrStore",null,{constructor:function(_a){if(_a&&_a.label){this.label=_a.label;}if(_a&&"urlPreventCache" in _a){this.urlPreventCache=_a.urlPreventCache?true:false;}},_storeRef:"_S",label:"title",urlPreventCache:true,_assertIsItem:function(_b){if(!this.isItem(_b)){throw new Error("dojox.data.FlickrStore: a function was passed an item argument that was not an item");}},_assertIsAttribute:function(_c){if(typeof _c!=="string"){throw new Error("dojox.data.FlickrStore: a function was passed an attribute argument that was not an attribute name string");}},getFeatures:function(){return {"dojo.data.api.Read":true};},getValue:function(_d,_e,_f){var _10=this.getValues(_d,_e);if(_10&&_10.length>0){return _10[0];}return _f;},getAttributes:function(_11){return ["title","description","author","datePublished","dateTaken","imageUrl","imageUrlSmall","imageUrlMedium","tags","link"];},hasAttribute:function(_12,_13){var v=this.getValue(_12,_13);if(v||v===""||v===false){return true;}return false;},isItemLoaded:function(_14){return this.isItem(_14);},loadItem:function(_15){},getLabel:function(_16){return this.getValue(_16,this.label);},getLabelAttributes:function(_17){return [this.label];},containsValue:function(_18,_19,_1a){var _1b=this.getValues(_18,_19);for(var i=0;i<_1b.length;i++){if(_1b[i]===_1a){return true;}}return false;},getValues:function(_1c,_1d){this._assertIsItem(_1c);this._assertIsAttribute(_1d);var u=_1.hitch(this,"_unescapeHtml");var s=_1.hitch(_7,"fromISOString");switch(_1d){case "title":return [u(_1c.title)];case "author":return [u(_1c.author)];case "datePublished":return [s(_1c.published)];case "dateTaken":return [s(_1c.date_taken)];case "imageUrlSmall":return [_1c.media.m.replace(/_m\./,"_s.")];case "imageUrl":return [_1c.media.m.replace(/_m\./,".")];case "imageUrlMedium":return [_1c.media.m];case "link":return [_1c.link];case "tags":return _1c.tags.split(" ");case "description":return [u(_1c.description)];default:return [];}},isItem:function(_1e){if(_1e&&_1e[this._storeRef]===this){return true;}return false;},close:function(_1f){},_fetchItems:function(_20,_21,_22){var rq=_20.query=_20.query||{};var _23={format:"json",tagmode:"any"};_3.forEach(["tags","tagmode","lang","id","ids"],function(i){if(rq[i]){_23[i]=rq[i];}});_23.id=rq.id||rq.userid||rq.groupid;if(rq.userids){_23.ids=rq.userids;}var _24=null;var _25={url:dojox.data.FlickrStore.urlRegistry.match(_20),preventCache:this.urlPreventCache,content:_23};var _26=_1.hitch(this,function(_27){if(!!_24){_6.disconnect(_24);}_21(this._processFlickrData(_27),_20);});_24=_6.connect("jsonFlickrFeed",_26);var _28=_5.get(_25);_28.addErrback(function(_29){_6.disconnect(_24);_22(_29,_20);});},_processFlickrData:function(_2a){var _2b=[];if(_2a.items){_2b=_2a.items;for(var i=0;i<_2a.items.length;i++){var _2c=_2a.items[i];_2c[this._storeRef]=this;}}return _2b;},_unescapeHtml:function(str){return str.replace(/&amp;/gm,"&").replace(/&lt;/gm,"<").replace(/&gt;/gm,">").replace(/&quot;/gm,"\"").replace(/&#39;/gm,"'");}});_1.extend(_9,_4);var _2d="http://api.flickr.com/services/feeds/";var reg=_9.urlRegistry=new _8(true);reg.register("group pool",function(_2e){return !!_2e.query["groupid"];},_2d+"groups_pool.gne");reg.register("default",function(_2f){return true;},_2d+"photos_public.gne");if(!_30){var _30=function(_31){};}return _9;});
+define("dojox/data/FlickrStore", ["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/array", "dojo/data/util/simpleFetch", "dojo/io/script", 
+		"dojo/_base/connect", "dojo/date/stamp", "dojo/AdapterRegistry"], 
+  function(lang, declare, array, simpleFetch, scriptIO, connect, dateStamp, AdapterRegistry) {
+
+var FlickrStore = declare("dojox.data.FlickrStore", null, {
+	constructor: function(/*Object*/args){
+		// summary:
+		//		Initializer for the FlickrStore store.
+		// description:
+		//		The FlickrStore is a Datastore interface to one of the basic services
+		//		of the Flickr service, the public photo feed.  This does not provide
+		//		access to all the services of Flickr.
+		//		This store cannot do * and ? filtering as the flickr service
+		//		provides no interface for wildcards.
+		if(args && args.label){
+			this.label = args.label;
+		}
+		if(args && "urlPreventCache" in args){
+			this.urlPreventCache = args.urlPreventCache?true:false;
+		}
+	},
+
+	_storeRef: "_S",
+
+	label: "title",
+
+	//Flag to allor control of if cache prevention is enabled or not.
+	urlPreventCache: true,
+
+	_assertIsItem: function(/* item */ item){
+		// summary:
+		//		This function tests whether the item passed in is indeed an item in the store.
+		// item:
+		//		The item to test for being contained by the store.
+		if(!this.isItem(item)){
+			throw new Error("dojox.data.FlickrStore: a function was passed an item argument that was not an item");
+		}
+	},
+
+	_assertIsAttribute: function(/* attribute-name-string */ attribute){
+		// summary:
+		//		This function tests whether the item passed in is indeed a valid 'attribute' like type for the store.
+		// attribute:
+		//		The attribute to test for being contained by the store.
+		if(typeof attribute !== "string"){
+			throw new Error("dojox.data.FlickrStore: a function was passed an attribute argument that was not an attribute name string");
+		}
+	},
+
+	getFeatures: function(){
+		// summary:
+		//		See dojo/data/api/Read.getFeatures()
+		return {
+			'dojo.data.api.Read': true
+		};
+	},
+
+	getValue: function(item, attribute, defaultValue){
+		// summary:
+		//		See dojo/data/api/Read.getValue()
+		var values = this.getValues(item, attribute);
+		if(values && values.length > 0){
+			return values[0];
+		}
+		return defaultValue;
+	},
+
+	getAttributes: function(item){
+		// summary:
+		//		See dojo/data/api/Read.getAttributes()
+		return [
+			"title", "description", "author", "datePublished", "dateTaken",
+			"imageUrl", "imageUrlSmall", "imageUrlMedium", "tags", "link"
+		];
+	},
+
+	hasAttribute: function(item, attribute){
+		// summary:
+		//		See dojo/data/api/Read.hasAttributes()
+		var v = this.getValue(item,attribute);
+		if(v || v === "" || v === false){
+			return true;
+		}
+		return false;
+	},
+
+	isItemLoaded: function(item){
+		// summary:
+		//		See dojo/data/api/Read.isItemLoaded()
+		return this.isItem(item);
+	},
+
+	loadItem: function(keywordArgs){
+		// summary:
+		//		See dojo/data/api/Read.loadItem()
+	},
+
+	getLabel: function(item){
+		// summary:
+		//		See dojo/data/api/Read.getLabel()
+		return this.getValue(item,this.label);
+	},
+	
+	getLabelAttributes: function(item){
+		// summary:
+		//		See dojo/data/api/Read.getLabelAttributes()
+		return [this.label];
+	},
+
+	containsValue: function(item, attribute, value){
+		// summary:
+		//		See dojo/data/api/Read.containsValue()
+		var values = this.getValues(item,attribute);
+		for(var i = 0; i < values.length; i++){
+			if(values[i] === value){
+				return true;
+			}
+		}
+		return false;
+	},
+
+	getValues: function(item, attribute){
+		// summary:
+		//		See dojo/data/api/Read.getValue()
+
+		this._assertIsItem(item);
+		this._assertIsAttribute(attribute);
+		var u = lang.hitch(this, "_unescapeHtml");
+		var s = lang.hitch(dateStamp, "fromISOString");
+		switch(attribute){
+			case "title":
+				return [ u(item.title) ];
+			case "author":
+				return [ u(item.author) ];
+			case "datePublished":
+				return [ s(item.published) ];
+			case "dateTaken":
+				return [ s(item.date_taken) ];
+			case "imageUrlSmall":
+				return [ item.media.m.replace(/_m\./, "_s.") ];
+			case "imageUrl":
+				return [ item.media.m.replace(/_m\./, ".") ];
+			case "imageUrlMedium":
+				return [ item.media.m ];
+			case "link":
+				return [ item.link ];
+			case "tags":
+				return item.tags.split(" ");
+			case "description":
+				return [ u(item.description) ];
+			default:
+				return [];
+		}
+	},
+
+	isItem: function(item){
+		// summary:
+		//		See dojo/data/api/Read.isItem()
+		if(item && item[this._storeRef] === this){
+			return true;
+		}
+		return false;
+	},
+	
+	close: function(request){
+		// summary:
+		//		See dojo/data/api/Read.close()
+	},
+
+	_fetchItems: function(request, fetchHandler, errorHandler){
+		// summary:
+		//		Fetch flickr items that match to a query
+		// request:
+		//		A request object
+		// fetchHandler:
+		//		A function to call for fetched items
+		// errorHandler:
+		//		A function to call on error
+
+		var rq = request.query = request.query || {};
+
+		//Build up the content to send the request for.
+		var content = {
+			format: "json",
+			tagmode:"any"
+		};
+
+		array.forEach(
+			[ "tags", "tagmode", "lang", "id", "ids" ],
+			function(i){
+				if(rq[i]){ content[i] = rq[i]; }
+			}
+		);
+
+		content.id = rq.id || rq.userid || rq.groupid;
+
+		if(rq.userids){
+			content.ids = rq.userids;
+		}
+
+		//Linking this up to Flickr is a PAIN!
+		var handle = null;
+		var getArgs = {
+			url: dojox.data.FlickrStore.urlRegistry.match(request),
+			preventCache: this.urlPreventCache,
+			content: content
+		};
+		var myHandler = lang.hitch(this, function(data){
+			if(!!handle){
+				connect.disconnect(handle);
+			}
+
+			//Process the items...
+			fetchHandler(this._processFlickrData(data), request);
+		});
+		handle = connect.connect("jsonFlickrFeed", myHandler);
+		var deferred = scriptIO.get(getArgs);
+		
+		//We only set up the errback, because the callback isn't ever really used because we have
+		//to link to the jsonFlickrFeed function....
+		deferred.addErrback(function(error){
+			connect.disconnect(handle);
+			errorHandler(error, request);
+		});
+	},
+
+	_processFlickrData: function(data){
+		var items = [];
+		if(data.items){
+			items = data.items;
+			//Add on the store ref so that isItem can work.
+			for(var i = 0; i < data.items.length; i++){
+				var item = data.items[i];
+				item[this._storeRef] = this;
+			}
+		}
+		return items;
+	},
+
+	_unescapeHtml: function(/*String*/ str){
+		// summary:
+		//		Utility function to un-escape XML special characters in an
+		//		HTML string.
+		// str: String.
+		//		The string to un-escape
+		// returns:
+		//		HTML String converted back to the normal text (unescaped)
+		//		characters (<,>,&, ", etc,).
+
+		//TODO:
+		//		Check to see if theres already compatible escape() in
+		//		dojo.string or dojo.html
+		return	str.replace(/&amp;/gm, "&").
+					replace(/&lt;/gm, "<").
+					replace(/&gt;/gm, ">").
+					replace(/&quot;/gm, "\"").
+					replace(/&#39;/gm, "'");
+	}
+});
+
+lang.extend(FlickrStore, simpleFetch);
+
+var feedsUrl = "http://api.flickr.com/services/feeds/";
+
+var reg = FlickrStore.urlRegistry = new AdapterRegistry(true);
+
+reg.register("group pool",
+	function(request){ return !!request.query["groupid"]; },
+	feedsUrl+"groups_pool.gne"
+);
+
+reg.register("default",
+	function(request){ return true; },
+	feedsUrl+"photos_public.gne"
+);
+
+//We have to define this because of how the Flickr API works.
+//This somewhat stinks, but what can you do?
+if(!jsonFlickrFeed){
+	var jsonFlickrFeed = function(data){};
+}
+
+return FlickrStore;
+});

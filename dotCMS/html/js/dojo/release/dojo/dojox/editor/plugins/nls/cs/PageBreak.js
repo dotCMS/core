@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/cs/PageBreak", //begin v1.x content
-({
+"dojox/editor/plugins/nls/cs/PageBreak", ({
 	"pageBreak": "Zalomení stránky"
 })
-
-//end v1.x content
 );

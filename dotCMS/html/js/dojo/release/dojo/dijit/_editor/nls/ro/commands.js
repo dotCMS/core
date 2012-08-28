@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/ro/commands", //begin v1.x content
-({
+"dijit/_editor/nls/ro/commands", ({
 	'bold': 'Aldin',
 	'copy': 'Copiere',
 	'cut': 'Tăiere',
@@ -46,7 +44,8 @@ define(
 	"print": "Tipărire",
 	"newPage": "Pagină nouă",
 	/* Error messages */
-	'systemShortcut': 'Acţiunea "${0}" este disponibilă în browser doar utilizând o comandă rapidă de la tastatură. Utilizaţi ${1}.'
+	'systemShortcut': 'Acţiunea "${0}" este disponibilă în browser doar utilizând o comandă rapidă de la tastatură. Utilizaţi ${1}.',
+	'ctrlKey':'ctrl+${0}',
+	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })
-//end v1.x content
 );

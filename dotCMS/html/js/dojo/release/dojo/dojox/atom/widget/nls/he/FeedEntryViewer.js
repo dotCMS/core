@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/atom/widget/nls/he/FeedEntryViewer", //begin v1.x content
-({
+"dojox/atom/widget/nls/he/FeedEntryViewer", ({
 	displayOptions: "[אפשרויות הצגה]",
 	title: "כותרת",
 	authors: "מחברים",
@@ -12,5 +10,4 @@ define(
 	summary: "סיכום",
 	content: "תוכן"
 })
-//end v1.x content
 );

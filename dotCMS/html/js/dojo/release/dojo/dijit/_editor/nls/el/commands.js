@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/el/commands", //begin v1.x content
-({
+"dijit/_editor/nls/el/commands", ({
 	'bold': 'Έντονα',
 	'copy': 'Αντιγραφή',
 	'cut': 'Αποκοπή',
@@ -46,8 +44,8 @@ define(
 	"print": "Εκτύπωση",
 	"newPage": "Νέα σελίδα",
 	/* Error messages */
-	'systemShortcut': 'Σε αυτό το πρόγραμμα πλοήγησης, η ενέργεια "${0}" είναι διαθέσιμη μόνο με τη χρήση μιας συντόμευσης πληκτρολογίου. Χρησιμοποιήστε τη συντόμευση ${1}.'
+	'systemShortcut': 'Σε αυτό το πρόγραμμα πλοήγησης, η ενέργεια "${0}" είναι διαθέσιμη μόνο με τη χρήση μιας συντόμευσης πληκτρολογίου. Χρησιμοποιήστε τη συντόμευση ${1}.',
+	'ctrlKey':'ctrl+${0}',
+	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })
-
-//end v1.x content
 );

@@ -1,10 +1,6 @@
-//>>built
 define(
-"dijit/form/nls/sk/ComboBox", //begin v1.x content
-({
-		previousMessage: "Predchádzajúce voľby",
-		nextMessage: "Ďalšie voľby"
+"dijit/form/nls/sk/ComboBox", ({
+		previousMessage: "Predchádzajúce možnosti",
+		nextMessage: "Viac možností"
 })
-
-//end v1.x content
 );

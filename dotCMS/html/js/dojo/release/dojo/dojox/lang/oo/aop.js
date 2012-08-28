@@ -1,2 +1,84 @@
-//>>built
-define(["dijit","dojo","dojox","dojo/require!dojox/lang/oo/Decorator,dojox/lang/oo/general"],function(_1,_2,_3){_2.provide("dojox.lang.oo.aop");_2.require("dojox.lang.oo.Decorator");_2.require("dojox.lang.oo.general");(function(){var oo=_3.lang.oo,md=oo.makeDecorator,_4=oo.general,_5=oo.aop,_6=_2.isFunction;_5.before=_4.before;_5.around=_4.wrap;_5.afterReturning=md(function(_7,_8,_9){return _6(_9)?function(){var _a=_9.apply(this,arguments);_8.call(this,_a);return _a;}:function(){_8.call(this);};});_5.afterThrowing=md(function(_b,_c,_d){return _6(_d)?function(){var _e;try{_e=_d.apply(this,arguments);}catch(e){_c.call(this,e);throw e;}return _e;}:_d;});_5.after=md(function(_f,_10,_11){return _6(_11)?function(){var ret;try{ret=_11.apply(this,arguments);}finally{_10.call(this);}return ret;}:function(){_10.call(this);};});})();});
+// wrapped by build app
+define("dojox/lang/oo/aop", ["dijit","dojo","dojox","dojo/require!dojox/lang/oo/Decorator,dojox/lang/oo/general"], function(dijit,dojo,dojox){
+dojo.provide("dojox.lang.oo.aop");
+
+dojo.require("dojox.lang.oo.Decorator");
+dojo.require("dojox.lang.oo.general");
+
+(function(){
+	var oo = dojox.lang.oo, md = oo.makeDecorator, oog = oo.general, ooa = oo.aop,
+		isF = dojo.isFunction;
+
+	// five decorators implementing light-weight AOP weaving
+
+	// reuse existing decorators
+	ooa.before = oog.before;
+	ooa.around = oog.wrap;
+
+	/*=====
+	ooa.before = md(function(name, newValue, oldValue){
+		// summary:
+		//		creates a "before" advise, by calling new function
+		//		before the old one
+
+		// dummy body
+	});
+
+	ooa.around = md(function(name, newValue, oldValue){
+		// summary:
+		//		creates an "around" advise,
+		//		the previous value is passed as a first argument and can be null,
+		//		arguments are passed as a second argument
+
+		// dummy body
+	});
+	=====*/
+
+
+	ooa.afterReturning = md(function(name, newValue, oldValue){
+		// summary:
+		//		creates an "afterReturning" advise,
+		//		the returned value is passed as the only argument
+		return isF(oldValue) ?
+			function(){
+				var ret = oldValue.apply(this, arguments);
+				newValue.call(this, ret);
+				return ret;
+			} : function(){ newValue.call(this); };
+	});
+
+	ooa.afterThrowing = md(function(name, newValue, oldValue){
+		// summary:
+		//		creates an "afterThrowing" advise,
+		//		the exception is passed as the only argument
+		return isF(oldValue) ?
+			function(){
+				var ret;
+				try{
+					ret = oldValue.apply(this, arguments);
+				}catch(e){
+					newValue.call(this, e);
+					throw e;
+				}
+				return ret;
+			} : oldValue;
+	});
+
+	ooa.after = md(function(name, newValue, oldValue){
+		// summary:
+		//		creates an "after" advise,
+		//		it takes no arguments
+		return isF(oldValue) ?
+			function(){
+				var ret;
+				try{
+					ret = oldValue.apply(this, arguments);
+				}finally{
+					newValue.call(this);
+				}
+				return ret;
+			} : function(){ newValue.call(this); }
+	});
+})();
+
+});

@@ -1,2 +1,36 @@
-//>>built
-define(["dijit","dojo","dojox"],function(_1,_2,_3){_2.provide("dojox.lang.aspect.timer");(function(){var _4=_3.lang.aspect,_5=0;var _6=function(_7){this.name=_7||("DojoAopTimer #"+ ++_5);this.inCall=0;};_2.extend(_6,{before:function(){if(!(this.inCall++)){}},after:function(){if(!--this.inCall){}}});_4.timer=function(_8){return new _6(_8);};})();});
+// wrapped by build app
+define("dojox/lang/aspect/timer", ["dijit","dojo","dojox"], function(dijit,dojo,dojox){
+dojo.provide("dojox.lang.aspect.timer");
+
+(function(){
+	var aop = dojox.lang.aspect,
+		uniqueNumber = 0;
+	
+	var Timer = function(name){
+		this.name = name || ("DojoAopTimer #" + ++uniqueNumber);
+		this.inCall = 0;
+	};
+	dojo.extend(Timer, {
+		before: function(/*arguments*/){
+			if(!(this.inCall++)){
+				console.time(this.name);
+			}
+		},
+		after: function(/*excp*/){
+			if(!--this.inCall){
+				console.timeEnd(this.name);
+			}
+		}
+	});
+	
+	aop.timer = function(/*String?*/ name){
+		// summary:
+		//		Returns an object, which can be used to time calls to methods.
+		//
+		// name:
+		//		The optional unique name of the timer.
+
+		return new Timer(name);	// Object
+	};
+})();
+});

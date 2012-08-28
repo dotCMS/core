@@ -1,4 +1,3 @@
-//>>built
 define("dojox/widget/nls/Wizard", { root:
 //begin v1.x content
 ({

@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojo/cldr/nls/en-ca/currency", //begin v1.x content
 {

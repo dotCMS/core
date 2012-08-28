@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sv/CollapsibleToolbar", //begin v1.x content
-({
-	"collapse": "Komprimera redigerarverktygsfältet",
-	"expand": "Expandera redigerarverktygsfältet"
+"dojox/editor/plugins/nls/sv/CollapsibleToolbar", ({
+	"collapse": "Komprimera redigeringsverktygsfältet",
+	"expand": "Expandera redigeringsverktygsfältet"
 })
-
-//end v1.x content
 );

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/he/FindReplace", //begin v1.x content
-({
+"dojox/editor/plugins/nls/he/FindReplace", ({
 	"findLabel": "חיפוש: ",
 	"findTooltip": "ציינו תמליל לחיפוש",
 	"replaceLabel": "החלפה עם: ",
@@ -22,6 +20,4 @@ define(
 	"eofDialogTextFind": "נמצאו",
 	"eofDialogTextReplace": "הוחלפו "
 })
-
-//end v1.x content
 );

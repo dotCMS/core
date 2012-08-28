@@ -1,8 +1,6 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/da/Pagination", //begin v1.x content
-({
-	"descTemplate": "${2} - ${3} af ${1} ${0}",
+"dojox/grid/enhanced/nls/da/Pagination", ({
+	"descTemplate": "${2}-${3} af ${1} ${0}",
 	"firstTip": "Første side",
 	"lastTip": "Sidste side",
 	"nextTip": "Næste side",
@@ -14,11 +12,10 @@ define(
 	"allItemsLabelTemplate": "Alle elementer",
 	"gotoButtonTitle": "Gå til en bestemt side",
 	"dialogTitle": "Gå til side",
-	"dialogIndication": "Angiv sidetallet",
+	"dialogIndication": "Angiv sidenummeret",
 	"pageCountIndication": " (${0} sider)",
-	"dialogConfirm": "Gå",
+	"dialogConfirm": "Udfør",
 	"dialogCancel": "Annullér",
-	"all": "alle"
+	"all": "Alle"
 })
-//end v1.x content
 );

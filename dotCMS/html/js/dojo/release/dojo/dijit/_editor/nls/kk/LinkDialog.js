@@ -1,10 +1,8 @@
-//>>built
 define(
-"dijit/_editor/nls/kk/LinkDialog", //begin v1.x content
-({
+"dijit/_editor/nls/kk/LinkDialog", ({
 	createLinkTitle: "Сілтеме сипаттары",
 	insertImageTitle: "Сурет сипаттары",
-	url: "URL мекенжайы:",
+	url: "URL:",
 	text: "Сипаттама:",
 	target: "Мақсат:",
 	set: "Орнату",
@@ -13,5 +11,4 @@ define(
 	topWindow: "Ең жоғарғы терезе",
 	newWindow: "Жаңа терезе"
 })
-//end v1.x content
 );

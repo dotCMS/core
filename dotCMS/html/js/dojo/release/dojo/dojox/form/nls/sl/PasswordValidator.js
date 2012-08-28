@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/form/nls/sl/PasswordValidator", //begin v1.x content
-({
+"dojox/form/nls/sl/PasswordValidator", ({
         nomatchMessage: "Gesli se ne ujemata.",
-		badPasswordMessage: "Neveljavno geslo."
+	badPasswordMessage: "Neveljavno geslo."
 })
-
-//end v1.x content
 );

@@ -1,9 +1,6 @@
-//>>built
 define(
-"dojox/form/nls/cs/PasswordValidator", //begin v1.x content
-({
+"dojox/form/nls/cs/PasswordValidator", ({
         nomatchMessage: "Hesla se neshodují.",
-		badPasswordMessage: "Neplatné heslo."
+	badPasswordMessage: "Neplatné heslo."
 })
-//end v1.x content
 );

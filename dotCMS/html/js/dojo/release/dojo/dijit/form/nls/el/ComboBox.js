@@ -1,9 +1,6 @@
-//>>built
 define(
-"dijit/form/nls/el/ComboBox", //begin v1.x content
-({
+"dijit/form/nls/el/ComboBox", ({
 		previousMessage: "Προηγούμενες επιλογές",
 		nextMessage: "Περισσότερες επιλογές"
 })
-//end v1.x content
 );

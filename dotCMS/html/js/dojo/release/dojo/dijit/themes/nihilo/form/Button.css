@@ -16,13 +16,12 @@
 	background: #fff url("../images/buttonEnabled.png") repeat-x top left;
 }
 
-.nihilo .dijitSelect .dijitButtonContents {
-	border-right: none;
-}
-
 .nihilo .dijitButtonText {
 	text-align: center;
 	padding: 0 0.3em;
+}
+.nihilo .dijitInputField {
+	padding: 0; /* set padding:0 for .nihilo .dijitSelect .dijitButtonText but with a low priority rule that can be easily trumped by the user */
 }
 
 .nihilo .dijitComboBox .dijitButtonNode {
