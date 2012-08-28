@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ru/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ru/TableDialog", ({
 	insertTableTitle: "Вставить таблицу",
 	modifyTableTitle: "Изменить таблицу",
 	rows: "Строк:",
@@ -12,7 +10,7 @@ define(
 	tableWidth: "Ширина таблицы:",
 	backgroundColor: "Цвет фона:",
 	borderColor: "Цвет рамки:",
-	borderThickness: "Толщина рамки",
+	borderThickness: "Толщина рамки:",
 	percent: "процентов",
 	pixels: "пикселов",
 	"default": "по умолчанию",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "Задать", // translated elsewhere?
 	buttonInsert: "Вставить",
 	buttonCancel: "Отмена",
-
 	selectTableLabel: "Выбрать таблицу",
 	insertTableRowBeforeLabel: "Добавить строку перед",
 	insertTableRowAfterLabel: "Добавить строку после",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "Удалить строку",
 	deleteTableColumnLabel: "Удалить столбец"
 })
-//end v1.x content
 );

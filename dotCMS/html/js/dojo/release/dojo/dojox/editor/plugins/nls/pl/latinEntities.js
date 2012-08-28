@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/pl/latinEntities", //begin v1.x content
-({
+"dojox/editor/plugins/nls/pl/latinEntities", ({
 	/* These are already handled in the default RTE
 		amp:"ampersand",lt:"less-than sign",
 		gt:"greater-than sign",
@@ -103,7 +101,6 @@ define(
 	yacute:"łacińska mała litera y z akcentem ostrym",
 	thorn:"łacińska mała litera thorn",
 	yuml:"łacińska mała litera y z diarezą",
-
 // Greek Characters and Symbols
 	fnof:"łacińska mała litera f z haczykiem\nfunkcja\nfloren",
 	Alpha:"grecka wielka litera alfa",
@@ -180,7 +177,7 @@ define(
 	rArr:"podwójna strzałka w prawo",
 	dArr:"podwójna strzałka w dół",
 	hArr:"podwójna strzałka w lewo i w prawo",
-	forall:"dla każdego",
+	forall:"for all",
 	part:"pochodna cząstkowa",
 	exist:"istnieje",
 	empty:"zbiór pusty\nzbiór miary zero\nśrednica",
@@ -195,7 +192,7 @@ define(
 	radic:"pierwiastek kwadratowy\nznak pierwiastka",
 	prop:"proporcjonalnie do",
 	infin:"nieskończoność",
-	ang:"kąt",
+	ang:"angle",
 	and:"iloczyn logiczny\nklin",
 	or:"suma logiczna\nlitera v",
 	cap:"część wspólna zbiorów\nczepek",
@@ -204,7 +201,7 @@ define(
 	sim:"operator tylda\nzmienia się w granicach\nokoło",
 	cong:"równa się w przybliżeniu",
 	asymp:"prawie równa się\nasymptotyczne do",
-	ne:"nie równa się",
+	ne:"różne od",
 	equiv:"takie same jak",
 	le:"mniejsze niż lub równe",
 	ge:"większe niż lub równe",
@@ -257,6 +254,4 @@ define(
 	rsaquo:"pojedynczy prawy cudzysłów trójkątny",
 	euro:"znak euro"
 })
-
-//end v1.x content
 );

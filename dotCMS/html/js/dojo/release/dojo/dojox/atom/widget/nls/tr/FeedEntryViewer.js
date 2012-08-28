@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/atom/widget/nls/tr/FeedEntryViewer", //begin v1.x content
-({
+"dojox/atom/widget/nls/tr/FeedEntryViewer", ({
 	displayOptions: "[görüntüleme seçenekleri]",
 	title: "Başlık",
 	authors: "Yazarlar",
@@ -12,5 +10,4 @@ define(
 	summary: "Özet",
 	content: "İçerik"
 })
-//end v1.x content
 );

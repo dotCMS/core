@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/form/nls/nl/PasswordValidator", //begin v1.x content
-({
+"dojox/form/nls/nl/PasswordValidator", ({
         nomatchMessage: "Wachtwoorden komen niet overeen.",
-		badPasswordMessage: "Ongeldig wachtwoord."
+	badPasswordMessage: "Ongeldig wachtwoord."
 })
-
-//end v1.x content
 );

@@ -1,2 +1,76 @@
-//>>built
-define("dojox/geo/charting/_base",["dojo/_base/lang","dojo/_base/array","../../main","dojo/_base/html","dojo/dom-geometry","dojox/gfx/matrix","dijit/Tooltip","dojo/_base/NodeList","dojo/NodeList-traverse"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9){var _a=_1.getObject("geo.charting",true,_3);_a.showTooltip=function(_b,_c,_d){var _e=_a._normalizeArround(_c);return _7.show(_b,_e,_d);};_a.hideTooltip=function(_f){return _7.hide(_f);};_a._normalizeArround=function(_10){var _11=_a._getRealBBox(_10);var _12=_10._getRealMatrix()||{xx:1,xy:0,yx:0,yy:1,dx:0,dy:0};var _13=_6.multiplyPoint(_12,_11.x,_11.y);var _14=_a._getGfxContainer(_10);_10.x=_5.position(_14,true).x+_13.x,_10.y=_5.position(_14,true).y+_13.y,_10.w=_11.width*_12.xx,_10.h=_11.height*_12.yy;return _10;};_a._getGfxContainer=function(_15){if(_15.surface){return (new _8(_15.surface.rawNode)).parents("div")[0];}else{return (new _8(_15.rawNode)).parents("div")[0];}};_a._getRealBBox=function(_16){var _17=_16.getBoundingBox();if(!_17){var _18=_16.children;_17=_1.clone(_a._getRealBBox(_18[0]));_2.forEach(_18,function(_19){var _1a=_a._getRealBBox(_19);_17.x=Math.min(_17.x,_1a.x);_17.y=Math.min(_17.y,_1a.y);_17.endX=Math.max(_17.x+_17.width,_1a.x+_1a.width);_17.endY=Math.max(_17.y+_17.height,_1a.y+_1a.height);});_17.width=_17.endX-_17.x;_17.height=_17.endY-_17.y;}return _17;};});
+define("dojox/geo/charting/_base", [
+	"dojo/_base/lang",
+	"dojo/_base/array",
+	"../../main",
+	"dojo/_base/html",
+	"dojo/dom-geometry",
+	"dojox/gfx/matrix",
+	"dijit/Tooltip",
+	"dojo/_base/NodeList",
+	"dojo/NodeList-traverse"
+], function(lang, arr, dojox, html, domGeom, matrix, Tooltip, NodeList, NodeListTraverse){
+	var dgc = lang.getObject("geo.charting", true, dojox); 
+
+	dgc.showTooltip = function(/*String*/innerHTML, /*dojox/gfx/shape.Shape*/ gfxObject, /*String[]?*/ positions){
+		// summary:
+		//		Show a Tooltip displaying the given HTML message around the given gfx shape.
+		// innerHTML: String
+		//		The message to display as a HTML string.
+		// gfxObject: dojox/gfx/shape.Shape
+		//		The gfx shape around which the tooltip will be placed.
+		// position: String[]?
+		//		The tooltip position.
+		var arroundNode = dgc._normalizeArround(gfxObject);
+		return Tooltip.show(innerHTML, arroundNode, positions);
+	};
+
+	dgc.hideTooltip = function( /*dojox/gfx/shape.Shape*/gfxObject){
+		// summary:
+		//		Hides the tooltip displayed around the given shape.
+		// gfxObject: dojox.gfx.shape.Shape
+		//		A gfx shape.
+		return Tooltip.hide(gfxObject);
+	};
+
+	dgc._normalizeArround = function(gfxObject){
+		var bbox = dgc._getRealBBox(gfxObject);
+		//var bbox = gfxObject.getBoundingBox();
+		//get the real screen coords for gfx object
+		var realMatrix = gfxObject._getRealMatrix() || {xx:1,xy:0,yx:0,yy:1,dx:0,dy:0};
+		var point = matrix.multiplyPoint(realMatrix, bbox.x, bbox.y);
+		var gfxDomContainer = dgc._getGfxContainer(gfxObject);
+		gfxObject.x = domGeom.position(gfxDomContainer,true).x + point.x,
+		gfxObject.y = domGeom.position(gfxDomContainer,true).y + point.y,
+		gfxObject.w = bbox.width * realMatrix.xx,
+		gfxObject.h = bbox.height * realMatrix.yy
+		return gfxObject;
+	};
+
+	dgc._getGfxContainer = function(gfxObject){
+		if(gfxObject.surface){
+			return (new NodeList(gfxObject.surface.rawNode)).parents("div")[0];
+		}else{
+			return (new NodeList(gfxObject.rawNode)).parents("div")[0];
+		}
+	};
+
+	dgc._getRealBBox = function(gfxObject){
+		var bboxObject = gfxObject.getBoundingBox();
+		if(!bboxObject){//the gfx object is group
+			var shapes = gfxObject.children;
+			bboxObject = lang.clone(dgc._getRealBBox(shapes[0]));
+			arr.forEach(shapes, function(item){
+				var nextBBox = dgc._getRealBBox(item);
+				bboxObject.x = Math.min(bboxObject.x, nextBBox.x);
+				bboxObject.y = Math.min(bboxObject.y, nextBBox.y);
+				bboxObject.endX = Math.max(bboxObject.x + bboxObject.width, nextBBox.x + nextBBox.width);
+				bboxObject.endY = Math.max(bboxObject.y + bboxObject.height, nextBBox.y + nextBBox.height);
+			});
+			bboxObject.width = bboxObject.endX - bboxObject.x;
+			bboxObject.height = bboxObject.endY - bboxObject.y;
+		}
+		return bboxObject;
+	};
+	
+	return dgc;
+});

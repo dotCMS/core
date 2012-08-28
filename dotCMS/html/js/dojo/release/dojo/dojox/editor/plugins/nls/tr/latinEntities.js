@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/tr/latinEntities", //begin v1.x content
-({
+"dojox/editor/plugins/nls/tr/latinEntities", ({
 	/* These are already handled in the default RTE
 		amp:"ampersand",lt:"less-than sign",
 		gt:"greater-than sign",
@@ -103,9 +101,8 @@ define(
 	yacute:"Vurgu imiyle Latince küçük harf y",
 	thorn:"Latince küçük harf thorn",
 	yuml:"Umlaut imiyle Latince küçük harf y",
-
 // Greek Characters and Symbols
-	fnof:"Kanca imiyle Latince küçük f\nfonksiyon\nflorin",
+	fnof:"Kanca imiyle Latince küçük f\nişlev\nflorin",
 	Alpha:"Yunanca büyük harf alpha",
 	Beta:"Yunanca büyük harf beta",
 	Gamma:"Yunanca büyük harf gamma",
@@ -257,6 +254,4 @@ define(
 	rsaquo:"sağ açılı tek tırnak işareti",
 	euro:"euro işareti"
 })
-
-//end v1.x content
 );

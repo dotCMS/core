@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/editor/plugins/nls/hr/AutoSave", ({
 	"saveLabel": "Spremi",

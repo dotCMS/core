@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/el/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/el/Preview", ({
 	"preview": "Προεπισκόπηση"
 })
-
-//end v1.x content
 );

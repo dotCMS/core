@@ -1,2 +1,165 @@
-//>>built
-define("dojox/geo/charting/KeyboardInteractionSupport",["dojo/_base/lang","dojo/_base/declare","dojo/_base/event","dojo/_base/connect","dojo/_base/html","dojo/dom","dojox/lang/functional","dojo/keys"],function(_1,_2,_3,_4,_5,_6,_7,_8){return _2("dojox.geo.charting.KeyboardInteractionSupport",null,{_map:null,_zoomEnabled:false,constructor:function(_9,_a){this._map=_9;if(_a){this._zoomEnabled=_a.enableZoom;}},connect:function(){var _b=_6.byId(this._map.container);_5.attr(_b,{tabindex:0,role:"presentation","aria-label":"map"});this._keydownListener=_4.connect(_b,"keydown",this,"keydownHandler");this._onFocusListener=_4.connect(_b,"focus",this,"onFocus");this._onBlurListener=_4.connect(_b,"blur",this,"onBlur");},disconnect:function(){_4.disconnect(this._keydownListener);this._keydownListener=null;_4.disconnect(this._onFocusListener);this._onFocusListener=null;_4.disconnect(this._onBlurListener);this._onBlurListener=null;},keydownHandler:function(e){switch(e.keyCode){case _8.LEFT_ARROW:this._directTo(-1,-1,1,-1);break;case _8.RIGHT_ARROW:this._directTo(-1,-1,-1,1);break;case _8.UP_ARROW:this._directTo(1,-1,-1,-1);break;case _8.DOWN_ARROW:this._directTo(-1,1,-1,-1);break;case _8.SPACE:if(this._map.selectedFeature&&!this._map.selectedFeature._isZoomIn&&this._zoomEnabled){this._map.selectedFeature._zoomIn();}break;case _8.ESCAPE:if(this._map.selectedFeature&&this._map.selectedFeature._isZoomIn&&this._zoomEnabled){this._map.selectedFeature._zoomOut();}break;default:return;}_3.stop(e);},onFocus:function(e){if(this._map.selectedFeature||this._map.focused){return;}this._map.focused=true;var _c,_d=false;if(this._map.lastSelectedFeature){_c=this._map.lastSelectedFeature;}else{var _e=this._map.getMapCenter(),_f=Infinity;_7.forIn(this._map.mapObj.features,function(_10){var _11=Math.sqrt(Math.pow(_10._center[0]-_e.x,2)+Math.pow(_10._center[1]-_e.y,2));if(_11<_f){_f=_11;_c=_10;}});_d=true;}if(_c){if(_d){_c._onclickHandler(null);}else{}this._map.mapObj.marker.show(_c.id);}},onBlur:function(){this._map.lastSelectedFeature=this._map.selectedFeature;},_directTo:function(up,_12,_13,_14){var _15=this._map.selectedFeature,_16=_15._center[0],_17=_15._center[1],_18=Infinity,_19=null;_7.forIn(this._map.mapObj.features,function(_1a){var _1b=Math.abs(_16-_1a._center[0]),_1c=Math.abs(_17-_1a._center[1]),_1d=_1b+_1c;if((up-_12)*(_17-_1a._center[1])>0){if(_1b<_1c&&_18>_1d){_18=_1d;_19=_1a;}}if((_13-_14)*(_16-_1a._center[0])>0){if(_1b>_1c&&_18>_1d){_18=_1d;_19=_1a;}}});if(_19){this._map.mapObj.marker.hide();_19._onclickHandler(null);this._map.mapObj.marker.show(_19.id);}}});});
+define("dojox/geo/charting/KeyboardInteractionSupport", [
+	"dojo/_base/lang",
+	"dojo/_base/declare",
+	"dojo/_base/event",
+	"dojo/_base/connect",
+	"dojo/_base/html",
+	"dojo/dom",
+	"dojox/lang/functional",
+	"dojo/keys"
+], function(lang, declare, event, connect, html, dom, functional, keys){
+
+	return declare("dojox.geo.charting.KeyboardInteractionSupport", null, {
+		// summary:
+		//		class to handle keyboard interactions on a dojox.geo.charting.Map component.
+		//
+		//		The sections on the leading edge should receive the focus in response to a TAB event.
+		//		Then use cursor keys to the peer sections. The cursor event should go the adjacent section
+		//		in that direction. With the focus, the section zooms in upon SPACE. The map should zoom out
+		//		on ESC. Finally, while it has the focus, the map should lose the focus on TAB.
+		// tags:
+		//		private
+		_map: null,
+		_zoomEnabled: false,
+
+		constructor: function(/*dojox/geo/charting/Map*/ map, /*Object?*/ options){
+			// summary:
+			//		Constructs a new _KeyboardInteractionSupport instance
+			// map: dojox/geo/charting/Map
+			//		the Map component this class provides touch navigation for.
+			// options: Object?
+			//		An object defining additional configuration properties. Currently,
+			//		only the enableZoom property of this object is taken into account to enable/disable
+			//		the Map zooming capability.
+			this._map = map;
+			if(options){
+				this._zoomEnabled = options.enableZoom;
+			}
+		},
+		connect: function(){
+			// summary:
+			//		connects this keyboard support class to the Map component
+			var container = dom.byId(this._map.container);
+			//	tab accessing enable
+			html.attr(container, {
+				tabindex: 0,
+				role: "presentation",
+				"aria-label": "map"
+			});
+			// install listeners
+			this._keydownListener = connect.connect(container, "keydown", this, "keydownHandler");
+			this._onFocusListener = connect.connect(container, "focus", this, "onFocus");
+			this._onBlurListener = connect.connect(container, "blur", this, "onBlur");
+		},
+		disconnect: function(){
+			// summary:
+			//		disconnects any installed listeners
+			connect.disconnect(this._keydownListener);
+			this._keydownListener = null;
+			connect.disconnect(this._onFocusListener);
+			this._onFocusListener = null;
+			connect.disconnect(this._onBlurListener);
+			this._onBlurListener = null
+		},
+		keydownHandler: function(/*KeyboardEvent*/e){
+			// summary:
+			//		Handles a keydown event.
+			// e: KeyboardEvent
+			//		An event.
+			switch(e.keyCode){
+				case keys.LEFT_ARROW:
+					this._directTo(-1,-1,1,-1);
+					break;
+				case keys.RIGHT_ARROW:
+					this._directTo(-1,-1,-1,1);
+					break;
+				case keys.UP_ARROW:
+					this._directTo(1,-1,-1,-1);
+					break;
+				case keys.DOWN_ARROW:
+					this._directTo(-1,1,-1,-1);
+					break;
+				case keys.SPACE:
+					if(this._map.selectedFeature && !this._map.selectedFeature._isZoomIn && this._zoomEnabled){
+						this._map.selectedFeature._zoomIn();
+					}
+					break;
+				case keys.ESCAPE:
+					if(this._map.selectedFeature && this._map.selectedFeature._isZoomIn && this._zoomEnabled){
+						this._map.selectedFeature._zoomOut();
+					}
+					break;
+				default:
+					return;
+			}
+			event.stop(e);
+		},
+		onFocus: function(e){
+			// summary:
+			//		Handles the onFocus event.
+			// e: Event
+			//		An event.
+
+			// select the leading region at the map center
+			if(this._map.selectedFeature || this._map.focused){return;}
+			this._map.focused = true;
+			var leadingRegion,
+				needClick = false;
+			if(this._map.lastSelectedFeature){
+				leadingRegion = this._map.lastSelectedFeature;
+			}else{
+				var mapCenter = this._map.getMapCenter(),
+					minDistance = Infinity;
+				// find the region most closing to the map center
+				functional.forIn(this._map.mapObj.features, function(feature){
+					var distance = Math.sqrt(Math.pow(feature._center[0] - mapCenter.x, 2) + Math.pow(feature._center[1] - mapCenter.y, 2));
+					if(distance < minDistance){
+						minDistance = distance;
+						leadingRegion = feature;
+					}
+				});
+				needClick = true;
+			}
+			if(leadingRegion){
+				if(needClick){
+					leadingRegion._onclickHandler(null);
+				}
+				this._map.mapObj.marker.show(leadingRegion.id);
+			}
+		},
+		onBlur: function(){
+			// summary:
+			//		Handles the onBlur event.
+			this._map.lastSelectedFeature = this._map.selectedFeature;
+		},
+		_directTo: function(up, down, left, right){
+			var currentSelected = this._map.selectedFeature,
+			centerX = currentSelected._center[0],
+			centerY = currentSelected._center[1],
+			minMargin = Infinity,
+			nextSelected = null;
+			functional.forIn(this._map.mapObj.features, function(feature){
+				var paddingX = Math.abs(centerX - feature._center[0]),
+				paddingY = Math.abs(centerY - feature._center[1]),
+				paddingSum = paddingX + paddingY;
+				if((up - down) * (centerY - feature._center[1]) > 0){
+					if(paddingX < paddingY && minMargin > paddingSum){
+						minMargin = paddingSum;
+						nextSelected = feature;
+					}
+				}
+				if((left - right) * (centerX - feature._center[0]) > 0){
+					if(paddingX > paddingY && minMargin > paddingSum){
+						minMargin = paddingSum;
+						nextSelected = feature;
+					}
+				}
+			});
+			if(nextSelected){
+				this._map.mapObj.marker.hide();
+				nextSelected._onclickHandler(null);
+				this._map.mapObj.marker.show(nextSelected.id);
+			}
+		}
+	});
+});

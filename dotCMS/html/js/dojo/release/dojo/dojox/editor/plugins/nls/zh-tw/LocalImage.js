@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh-tw/LocalImage", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh-tw/LocalImage", ({
 	insertImageTitle: "插入影像",
 	url: "影像",
 	browse: "瀏覽...",
@@ -11,5 +9,4 @@ define(
 	prePopuTextUrl: "輸入影像 URL",
 	prePopuTextBrowse: " 或瀏覽本端檔案。"
 })
-//end v1.x content
 );

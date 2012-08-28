@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/es/LinkDialog", //begin v1.x content
-({
+"dijit/_editor/nls/es/LinkDialog", ({
 	createLinkTitle: "Propiedades del enlace",
 	insertImageTitle: "Propiedades de la imagen",
 	url: "URL:",
@@ -13,6 +11,4 @@ define(
 	topWindow: "Ventana superior",
 	newWindow: "Nueva ventana"
 })
-
-//end v1.x content
 );

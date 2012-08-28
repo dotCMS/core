@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh/Smiley", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh/Smiley", ({
 	smiley: "插入表情图标",
 	emoticonSmile: "微笑",
 	emoticonLaughing: "大笑",
@@ -14,7 +12,7 @@ define(
 	emoticonFrown: "皱眉",
 	emoticonShy: "害羞",
 	emoticonGoofy: "傻了",
-	emoticonOops: "oops",
+	emoticonOops: "惊讶",
 	emoticonTongue: "吐舌",
 	emoticonIdea: "思考",
 	emoticonYes: "点头",
@@ -23,6 +21,4 @@ define(
 	emoticonCrying: "哭泣",
 	emoticonHappy: "高兴"
 })
-
-//end v1.x content
 );

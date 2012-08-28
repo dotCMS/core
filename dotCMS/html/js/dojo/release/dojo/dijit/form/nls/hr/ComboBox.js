@@ -1,4 +1,3 @@
-//>>built
 define(
 "dijit/form/nls/hr/ComboBox", ({
 		previousMessage: "Prethodni izbori",

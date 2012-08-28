@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ru/FindReplace", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ru/FindReplace", ({
 	"findLabel": "Найти:",
 	"findTooltip": "Введите текст для поиска",
 	"replaceLabel": "Заменить на:",
@@ -22,6 +20,4 @@ define(
 	"eofDialogTextFind": "найдено",
 	"eofDialogTextReplace": "заменено"
 })
-
-//end v1.x content
 );

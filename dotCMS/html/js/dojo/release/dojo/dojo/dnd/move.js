@@ -1,8 +1,147 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/dnd/move", [
+	"../_base/declare",
+	"../dom-geometry", "../dom-style",
+	"./common", "./Mover", "./Moveable"
+], function(declare, domGeom, domStyle, dnd, Mover, Moveable){
 
-//>>built
-define("dojo/dnd/move",["../main","./Mover","./Moveable"],function(_1){_1.declare("dojo.dnd.move.constrainedMoveable",_1.dnd.Moveable,{constraints:function(){},within:false,constructor:function(_2,_3){if(!_3){_3={};}this.constraints=_3.constraints;this.within=_3.within;},onFirstMove:function(_4){var c=this.constraintBox=this.constraints.call(this,_4);c.r=c.l+c.w;c.b=c.t+c.h;if(this.within){var mb=_1._getMarginSize(_4.node);c.r-=mb.w;c.b-=mb.h;}},onMove:function(_5,_6){var c=this.constraintBox,s=_5.node.style;this.onMoving(_5,_6);_6.l=_6.l<c.l?c.l:c.r<_6.l?c.r:_6.l;_6.t=_6.t<c.t?c.t:c.b<_6.t?c.b:_6.t;s.left=_6.l+"px";s.top=_6.t+"px";this.onMoved(_5,_6);}});_1.declare("dojo.dnd.move.boxConstrainedMoveable",_1.dnd.move.constrainedMoveable,{box:{},constructor:function(_7,_8){var _9=_8&&_8.box;this.constraints=function(){return _9;};}});_1.declare("dojo.dnd.move.parentConstrainedMoveable",_1.dnd.move.constrainedMoveable,{area:"content",constructor:function(_a,_b){var _c=_b&&_b.area;this.constraints=function(){var n=this.node.parentNode,s=_1.getComputedStyle(n),mb=_1._getMarginBox(n,s);if(_c=="margin"){return mb;}var t=_1._getMarginExtents(n,s);mb.l+=t.l,mb.t+=t.t,mb.w-=t.w,mb.h-=t.h;if(_c=="border"){return mb;}t=_1._getBorderExtents(n,s);mb.l+=t.l,mb.t+=t.t,mb.w-=t.w,mb.h-=t.h;if(_c=="padding"){return mb;}t=_1._getPadExtents(n,s);mb.l+=t.l,mb.t+=t.t,mb.w-=t.w,mb.h-=t.h;return mb;};}});_1.dnd.constrainedMover=_1.dnd.move.constrainedMover;_1.dnd.boxConstrainedMover=_1.dnd.move.boxConstrainedMover;_1.dnd.parentConstrainedMover=_1.dnd.move.parentConstrainedMover;return _1.dnd.move;});
+// module:
+//		dojo/dnd/move
+
+/*=====
+var __constrainedMoveableArgs = declare([Moveable.__MoveableArgs], {
+	// constraints: Function
+	//		Calculates a constraint box.
+	//		It is called in a context of the moveable object.
+	constraints: function(){},
+
+	// within: Boolean
+	//		restrict move within boundaries.
+	within: false
+});
+=====*/
+
+var constrainedMoveable = declare("dojo.dnd.move.constrainedMoveable", Moveable, {
+	// object attributes (for markup)
+	constraints: function(){},
+	within: false,
+
+	constructor: function(node, params){
+		// summary:
+		//		an object that makes a node moveable
+		// node: Node
+		//		a node (or node's id) to be moved
+		// params: __constrainedMoveableArgs?
+		//		an optional object with additional parameters;
+		//		the rest is passed to the base class
+		if(!params){ params = {}; }
+		this.constraints = params.constraints;
+		this.within = params.within;
+	},
+	onFirstMove: function(/*Mover*/ mover){
+		// summary:
+		//		called during the very first move notification;
+		//		can be used to initialize coordinates, can be overwritten.
+		var c = this.constraintBox = this.constraints.call(this, mover);
+		c.r = c.l + c.w;
+		c.b = c.t + c.h;
+		if(this.within){
+			var mb = domGeom.getMarginSize(mover.node);
+			c.r -= mb.w;
+			c.b -= mb.h;
+		}
+	},
+	onMove: function(/*Mover*/ mover, /*Object*/ leftTop){
+		// summary:
+		//		called during every move notification;
+		//		should actually move the node; can be overwritten.
+		var c = this.constraintBox, s = mover.node.style;
+		this.onMoving(mover, leftTop);
+		leftTop.l = leftTop.l < c.l ? c.l : c.r < leftTop.l ? c.r : leftTop.l;
+		leftTop.t = leftTop.t < c.t ? c.t : c.b < leftTop.t ? c.b : leftTop.t;
+		s.left = leftTop.l + "px";
+		s.top  = leftTop.t + "px";
+		this.onMoved(mover, leftTop);
+	}
+});
+
+/*=====
+var __boxConstrainedMoveableArgs = declare([__constrainedMoveableArgs], {
+	// box: Object
+	//		a constraint box
+	box: {}
+});
+=====*/
+
+var boxConstrainedMoveable = declare("dojo.dnd.move.boxConstrainedMoveable", constrainedMoveable, {
+	// box:
+	//		object attributes (for markup)
+	box: {},
+
+	constructor: function(node, params){
+		// summary:
+		//		an object, which makes a node moveable
+		// node: Node
+		//		a node (or node's id) to be moved
+		// params: __boxConstrainedMoveableArgs?
+		//		an optional object with parameters
+		var box = params && params.box;
+		this.constraints = function(){ return box; };
+	}
+});
+
+/*=====
+var __parentConstrainedMoveableArgs = declare( [__constrainedMoveableArgs], {
+	// area: String
+	//		A parent's area to restrict the move.
+	//		Can be "margin", "border", "padding", or "content".
+	area: ""
+});
+=====*/
+
+var parentConstrainedMoveable = declare("dnd.move.parentConstrainedMoveable", constrainedMoveable, {
+	// area:
+	//		object attributes (for markup)
+	area: "content",
+
+	constructor: function(node, params){
+		// summary:
+		//		an object, which makes a node moveable
+		// node: Node
+		//		a node (or node's id) to be moved
+		// params: __parentConstrainedMoveableArgs?
+		//		an optional object with parameters
+		var area = params && params.area;
+		this.constraints = function(){
+			var n = this.node.parentNode,
+				s = domStyle.getComputedStyle(n),
+				mb = domGeom.getMarginBox(n, s);
+			if(area == "margin"){
+				return mb;	// Object
+			}
+			var t = domGeom.getMarginExtents(n, s);
+			mb.l += t.l, mb.t += t.t, mb.w -= t.w, mb.h -= t.h;
+			if(area == "border"){
+				return mb;	// Object
+			}
+			t = domGeom.getBorderExtents(n, s);
+			mb.l += t.l, mb.t += t.t, mb.w -= t.w, mb.h -= t.h;
+			if(area == "padding"){
+				return mb;	// Object
+			}
+			t = domGeom.getPadExtents(n, s);
+			mb.l += t.l, mb.t += t.t, mb.w -= t.w, mb.h -= t.h;
+			return mb;	// Object
+		};
+	}
+});
+
+
+return {
+	// summary:
+	//		TODOC
+	constrainedMoveable: constrainedMoveable,
+	boxConstrainedMoveable: boxConstrainedMoveable,
+	parentConstrainedMoveable: parentConstrainedMoveable
+};
+
+});

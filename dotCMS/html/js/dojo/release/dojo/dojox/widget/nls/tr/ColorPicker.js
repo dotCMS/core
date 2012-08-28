@@ -1,13 +1,12 @@
-//>>built
 define(
-"dojox/widget/nls/tr/ColorPicker", //begin v1.x content
-({
+"dojox/widget/nls/tr/ColorPicker", ({
 redLabel: "k",
 greenLabel: "y",
 blueLabel: "m",
 hueLabel: "t",
 saturationLabel: "d",
 valueLabel: "d", /* aka intensity or brightness */
+degLabel: "\u00B0",
 hexLabel: "onaltılı",
 huePickerTitle: "Ton Seçici",
 saturationPickerTitle: "Doygunluk Seçici"

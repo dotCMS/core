@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ar/LocalImage", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ar/LocalImage", ({
 	insertImageTitle: "ادراج صورة",
 	url: "صورة",
 	browse: "استعراض...",
@@ -11,6 +9,4 @@ define(
 	prePopuTextUrl: "ادخل عنوان URL لصورة",
 	prePopuTextBrowse: " أو تصفح الى ملف محلي."
 })
-
-//end v1.x content
 );
