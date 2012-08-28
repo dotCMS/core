@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/pt-pt/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/pt-pt/TableDialog", ({
 	insertTableTitle: "Inserir tabela",
 	modifyTableTitle: "Modificar tabela",
 	rows: "Linhas:",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "Definir", // translated elsewhere?
 	buttonInsert: "Inserir",
 	buttonCancel: "Cancelar",
-
 	selectTableLabel: "Seleccionar tabela",
 	insertTableRowBeforeLabel: "Adicionar linha antes",
 	insertTableRowAfterLabel: "Adicionar linha depois",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "Eliminar linha",
 	deleteTableColumnLabel: "Eliminar coluna"
 })
-//end v1.x content
 );

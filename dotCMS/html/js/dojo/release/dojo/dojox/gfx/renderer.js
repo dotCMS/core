@@ -1,2 +1,88 @@
-//>>built
-define("dojox/gfx/renderer",["./_base","dojo/_base/lang","dojo/_base/sniff","dojo/_base/window","dojo/_base/config"],function(g,_1,_2,_3,_4){var _5=null;return {load:function(id,_6,_7){if(_5&&id!="force"){_7(_5);return;}var _8=_4.forceGfxRenderer,_9=!_8&&(_1.isString(_4.gfxRenderer)?_4.gfxRenderer:"svg,vml,canvas,silverlight").split(","),_a,_b;while(!_8&&_9.length){switch(_9.shift()){case "svg":if("SVGAngle" in _3.global){_8="svg";}break;case "vml":if(_2("ie")){_8="vml";}break;case "silverlight":try{if(_2("ie")){_a=new ActiveXObject("AgControl.AgControl");if(_a&&_a.IsVersionSupported("1.0")){_b=true;}}else{if(navigator.plugins["Silverlight Plug-In"]){_b=true;}}}catch(e){_b=false;}finally{_a=null;}if(_b){_8="silverlight";}break;case "canvas":if(_3.global.CanvasRenderingContext2D){_8="canvas";}break;}}if(_8==="canvas"&&_4.canvasEvents!==false){_8="canvasWithEvents";}if(_4.isDebug){}function _c(){_6(["dojox/gfx/"+_8],function(_d){g.renderer=_8;_5=_d;_7(_d);});};if(_8=="svg"&&typeof window.svgweb!="undefined"){window.svgweb.addOnLoad(_c);}else{_c();}}};});
+define("dojox/gfx/renderer", ["./_base","dojo/_base/lang", "dojo/_base/sniff", "dojo/_base/window", "dojo/_base/config"],
+  function(g, lang, has, win, config){
+  //>> noBuildResolver
+	var currentRenderer = null;
+	return {
+		// summary:
+		//		This module is an AMD loader plugin that loads the appropriate graphics renderer
+		//		implementation based on detected environment and current configuration settings.
+		
+		load: function(id, require, load){
+			// tags:
+			//      private
+			if(currentRenderer && id != "force"){
+				load(currentRenderer);
+				return;
+			}
+			var renderer = config.forceGfxRenderer,
+				renderers = !renderer && (lang.isString(config.gfxRenderer) ?
+					config.gfxRenderer : "svg,vml,canvas,silverlight").split(","),
+				silverlightObject, silverlightFlag;
+
+			while(!renderer && renderers.length){
+				switch(renderers.shift()){
+					case "svg":
+						// the next test is from https://github.com/phiggins42/has.js
+						if("SVGAngle" in win.global){
+							renderer = "svg";
+						}
+						break;
+					case "vml":
+						if(has("ie")){
+							renderer = "vml";
+						}
+						break;
+					case "silverlight":
+						try{
+							if(has("ie")){
+								silverlightObject = new ActiveXObject("AgControl.AgControl");
+								if(silverlightObject && silverlightObject.IsVersionSupported("1.0")){
+									silverlightFlag = true;
+								}
+							}else{
+								if(navigator.plugins["Silverlight Plug-In"]){
+									silverlightFlag = true;
+								}
+							}
+						}catch(e){
+							silverlightFlag = false;
+						}finally{
+							silverlightObject = null;
+						}
+						if(silverlightFlag){
+							renderer = "silverlight";
+						}
+						break;
+					case "canvas":
+						if(win.global.CanvasRenderingContext2D){
+							renderer = "canvas";
+						}
+						break;
+				}
+			}
+
+			if (renderer === 'canvas' && config.canvasEvents !== false) {
+				renderer = "canvasWithEvents";
+			}
+
+			if(config.isDebug){
+				console.log("gfx renderer = " + renderer);
+			}
+
+			function loadRenderer(){
+				require(["dojox/gfx/" + renderer], function(module){
+					g.renderer = renderer;
+					// memorize the renderer module
+					currentRenderer = module;
+					// now load it
+					load(module);
+				});
+			}
+			if(renderer == "svg" && typeof window.svgweb != "undefined"){
+				window.svgweb.addOnLoad(loadRenderer);
+			}else{
+				loadRenderer();
+			}
+		}
+	};
+});

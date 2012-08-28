@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ar/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ar/TableDialog", ({
 	insertTableTitle: "‏ادراج جدول‏",
 	modifyTableTitle: "تعديل جدول",
 	rows: "الصفوف:",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "تحديد", // translated elsewhere?
 	buttonInsert: "‏ادراج‏",
 	buttonCancel: "الغاء",
-
 	selectTableLabel: "تحديد جدول",
 	insertTableRowBeforeLabel: "اضافة صف قبل",
 	insertTableRowAfterLabel: "اضافة صف بعد",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "حذف صف",
 	deleteTableColumnLabel: "حذف عمود"
 })
-//end v1.x content
 );

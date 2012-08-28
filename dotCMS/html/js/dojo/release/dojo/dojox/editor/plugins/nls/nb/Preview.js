@@ -1,8 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nb/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nb/Preview", ({
 	"preview": "Forhåndsvis"
 })
-//end v1.x content
 );

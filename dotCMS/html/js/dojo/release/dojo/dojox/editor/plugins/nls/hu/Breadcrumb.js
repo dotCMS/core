@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/hu/Breadcrumb", //begin v1.x content
-({
+"dojox/editor/plugins/nls/hu/Breadcrumb", ({
 	"nodeActions": "${nodeName} műveletek",
 	"selectContents": "Tartalom kiválasztása",
 	"selectElement": "Elem kiválasztása",
@@ -10,6 +8,4 @@ define(
 	"moveStart": "Kurzor mozgatása az elejére",
 	"moveEnd": "Kurzor mozgatása a végére"
 })
-
-//end v1.x content
 );

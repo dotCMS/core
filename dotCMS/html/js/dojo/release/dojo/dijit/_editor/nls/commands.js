@@ -1,4 +1,3 @@
-//>>built
 define("dijit/_editor/nls/commands", { root:
 //begin v1.x content
 ({

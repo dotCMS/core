@@ -1,24 +1,19 @@
-//>>built
 define(
-"dijit/_editor/nls/da/FontChoice", //begin v1.x content
-({
+"dijit/_editor/nls/da/FontChoice", ({
 	fontSize: "Størrelse",
 	fontName: "Skrifttype",
 	formatBlock: "Format",
-
 	serif: "serif",
 	"sans-serif": "sans-serif",
 	monospace: "monospace",
 	cursive: "kursiv",
 	fantasy: "fantasy",
-
 	noFormat: "Ingen",
 	p: "Afsnit",
 	h1: "Overskrift",
 	h2: "Underoverskrift",
 	h3: "Underunderoverskrift",
 	pre: "Forudformateret",
-
 	1: "xx-small",
 	2: "x-small",
 	3: "small",
@@ -27,5 +22,4 @@ define(
 	6: "x-large",
 	7: "xx-large"
 })
-//end v1.x content
 );

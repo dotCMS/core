@@ -1,4 +1,3 @@
-//>>built
 define("dojox/editor/plugins/nls/Smiley", { root:
 //begin v1.x content
 ({
@@ -23,8 +22,8 @@ define("dojox/editor/plugins/nls/Smiley", { root:
 	emoticonCrying: "crying",
 	emoticonHappy: "happy"
 })
-,
 //end v1.x content
+,
 "zh": true,
 "zh-tw": true,
 "tr": true,

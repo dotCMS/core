@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ca/Smiley", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ca/Smiley", ({
 	smiley: "Insereix emoticona",
 	emoticonSmile: "somriure",
 	emoticonLaughing: "rient",
@@ -23,6 +21,4 @@ define(
 	emoticonCrying: "plorant",
 	emoticonHappy: "content"
 })
-
-//end v1.x content
 );

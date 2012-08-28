@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nb/latinEntities", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nb/latinEntities", ({
 	/* These are already handled in the default RTE
 		amp:"ampersand",lt:"less-than sign",
 		gt:"greater-than sign",
@@ -103,7 +101,6 @@ define(
 	yacute:"Liten bokstav y med aigu",
 	thorn:"Liten bokstav thorn",
 	yuml:"Liten bokstav y med dieresis",
-
 // Greek Characters and Symbols
 	fnof:"Liten bokstav f med krok\nfunksjon\nflorin",
 	Alpha:"Gresk stor bokstav alfa",
@@ -252,10 +249,9 @@ define(
 	bdquo:"double low-9 quotation mark",
 	dagger:"dolk",
 	Dagger:"dobbelt dolk",
-	permil:"per mille sign",
+	permil:"promilletegn",
 	lsaquo:"single left-pointing angle quotation mark",
 	rsaquo:"single right-pointing angle quotation mark",
 	euro:"euro-tegn"
 })
-//end v1.x content
 );

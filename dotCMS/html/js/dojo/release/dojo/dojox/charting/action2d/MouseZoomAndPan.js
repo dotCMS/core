@@ -1,2 +1,236 @@
-//>>built
-define("dojox/charting/action2d/MouseZoomAndPan",["dojo/_base/html","dojo/_base/declare","dojo/_base/window","dojo/_base/array","dojo/_base/event","dojo/_base/connect","./ChartAction","dojo/_base/sniff","dojo/dom-prop","dojo/keys"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_a){var _b=_8("mozilla")?-3:120;var _c={none:function(_d){return !_d.ctrlKey&&!_d.altKey&&!_d.shiftKey;},ctrl:function(_e){return _e.ctrlKey&&!_e.altKey&&!_e.shiftKey;},alt:function(_f){return !_f.ctrlKey&&_f.altKey&&!_f.shiftKey;},shift:function(_10){return !_10.ctrlKey&&!_10.altKey&&_10.shiftKey;}};return _2("dojox.charting.action2d.MouseZoomAndPan",_7,{defaultParams:{axis:"x",scaleFactor:1.2,maxScale:100,enableScroll:true,enableDoubleClickZoom:true,enableKeyZoom:true,keyZoomModifier:"ctrl"},optionalParams:{},constructor:function(_11,_12,_13){this._listeners=[{eventName:!_8("mozilla")?"onmousewheel":"DOMMouseScroll",methodName:"onMouseWheel"}];if(!_13){_13={};}this.axis=_13.axis?_13.axis:"x";this.scaleFactor=_13.scaleFactor?_13.scaleFactor:1.2;this.maxScale=_13.maxScale?_13.maxScale:100;this.enableScroll=_13.enableScroll!=undefined?_13.enableScroll:true;this.enableDoubleClickZoom=_13.enableDoubleClickZoom!=undefined?_13.enableDoubleClickZoom:true;this.enableKeyZoom=_13.enableKeyZoom!=undefined?_13.enableKeyZoom:true;this.keyZoomModifier=_13.keyZoomModifier?_13.keyZoomModifier:"ctrl";if(this.enableScroll){this._listeners.push({eventName:"onmousedown",methodName:"onMouseDown"});}if(this.enableDoubleClickZoom){this._listeners.push({eventName:"ondblclick",methodName:"onDoubleClick"});}if(this.enableKeyZoom){this._listeners.push({eventName:"keypress",methodName:"onKeyPress"});}this._handles=[];this.connect();},_disconnectHandles:function(){if(_8("ie")){this.chart.node.releaseCapture();}_4.forEach(this._handles,_6.disconnect);this._handles=[];},connect:function(){this.inherited(arguments);if(this.enableKeyZoom){_9.set(this.chart.node,"tabindex","0");}},disconnect:function(){this.inherited(arguments);if(this.enableKeyZoom){_9.set(this.chart.node,"tabindex","-1");}this._disconnectHandles();},onMouseDown:function(_14){var _15=this.chart,_16=_15.getAxis(this.axis);if(!_16.vertical){this._startCoord=_14.pageX;}else{this._startCoord=_14.pageY;}this._startOffset=_16.getWindowOffset();this._isPanning=true;if(_8("ie")){this._handles.push(_6.connect(this.chart.node,"onmousemove",this,"onMouseMove"));this._handles.push(_6.connect(this.chart.node,"onmouseup",this,"onMouseUp"));this.chart.node.setCapture();}else{this._handles.push(_6.connect(_3.doc,"onmousemove",this,"onMouseMove"));this._handles.push(_6.connect(_3.doc,"onmouseup",this,"onMouseUp"));}_15.node.focus();_5.stop(_14);},onMouseMove:function(_17){if(this._isPanning){var _18=this.chart,_19=_18.getAxis(this.axis);var _1a=_19.vertical?(this._startCoord-_17.pageY):(_17.pageX-this._startCoord);var _1b=_19.getScaler().bounds,s=_1b.span/(_1b.upper-_1b.lower);var _1c=_19.getWindowScale();_18.setAxisWindow(this.axis,_1c,this._startOffset-_1a/s/_1c);_18.render();}},onMouseUp:function(_1d){this._isPanning=false;this._disconnectHandles();},onMouseWheel:function(_1e){var _1f=_1e[(_8("mozilla")?"detail":"wheelDelta")]/_b;if(_1f>-1&&_1f<0){_1f=-1;}else{if(_1f>0&&_1f<1){_1f=1;}}this._onZoom(_1f,_1e);},onKeyPress:function(_20){if(_c[this.keyZoomModifier](_20)){if(_20.keyChar=="+"||_20.keyCode==_a.NUMPAD_PLUS){this._onZoom(1,_20);}else{if(_20.keyChar=="-"||_20.keyCode==_a.NUMPAD_MINUS){this._onZoom(-1,_20);}}}},onDoubleClick:function(_21){var _22=this.chart,_23=_22.getAxis(this.axis);var _24=1/this.scaleFactor;if(_23.getWindowScale()==1){var _25=_23.getScaler(),_26=_25.bounds.from,end=_25.bounds.to,_27=(_26+end)/2,_28=this.plot.toData({x:_21.pageX,y:_21.pageY})[this.axis],_29=_24*(_26-_27)+_28,_2a=_24*(end-_27)+_28;_22.zoomIn(this.axis,[_29,_2a]);}else{_22.setAxisWindow(this.axis,1,0);_22.render();}_5.stop(_21);},_onZoom:function(_2b,_2c){var _2d=(_2b<0?Math.abs(_2b)*this.scaleFactor:1/(Math.abs(_2b)*this.scaleFactor));var _2e=this.chart,_2f=_2e.getAxis(this.axis);var _30=_2f.getWindowScale();if(_30/_2d>this.maxScale){return;}var _31=_2f.getScaler(),_32=_31.bounds.from,end=_31.bounds.to;var _33=(_2c.type=="keypress")?(_32+end)/2:this.plot.toData({x:_2c.pageX,y:_2c.pageY})[this.axis];var _34=_2d*(_32-_33)+_33,_35=_2d*(end-_33)+_33;_2e.zoomIn(this.axis,[_34,_35]);_5.stop(_2c);}});});
+define("dojox/charting/action2d/MouseZoomAndPan", ["dojo/_base/declare", "dojo/_base/window", "dojo/_base/array", "dojo/_base/event",
+	"dojo/_base/connect", "dojo/mouse", "./ChartAction", "dojo/_base/sniff", "dojo/dom-prop", "dojo/keys"],
+	function(declare, win, arr, eventUtil, connect, mouse, ChartAction, has, domProp, keys){
+
+	/*=====
+	var __MouseZoomAndPanCtorArgs = {
+		// summary:
+		//		Additional arguments for mouse zoom and pan actions.
+		// axis: String?
+		//		Target axis name for this action.  Default is "x".
+		// scaleFactor: Number?
+		//		The scale factor applied on mouse wheel zoom.  Default is 1.2.
+		// maxScale: Number?
+		//		The max scale factor accepted by this chart action.  Default is 100.
+		// enableScroll: Boolean?
+		//		Whether mouse drag gesture should scroll the chart.  Default is true.
+		// enableDoubleClickZoom: Boolean?
+		//		Whether a double click gesture should toggle between fit and zoom on the chart.  Default is true.
+		// enableKeyZoom: Boolean?
+		//		Whether a keyZoomModifier + + or keyZoomModifier + - key press should zoom in our out on the chart.  Default is true.
+		// keyZoomModifier: String?
+		//		Which keyboard modifier should used for keyboard zoom in and out. This should be one of "alt", "ctrl", "shift" or "none" for no modifier. Default is "ctrl".
+	};
+	=====*/
+
+	var sUnit = has("mozilla") ? 3 : 120;
+	var keyTests = {
+		none: function(event){
+			return !event.ctrlKey && !event.altKey && !event.shiftKey;
+		},
+		ctrl: function(event){
+			return event.ctrlKey && !event.altKey && !event.shiftKey;
+		},
+		alt: function(event){
+			return !event.ctrlKey && event.altKey && !event.shiftKey;
+		},
+		shift: function(event){
+			return !event.ctrlKey && !event.altKey && event.shiftKey;
+		}
+	};
+
+	return declare("dojox.charting.action2d.MouseZoomAndPan", ChartAction, {
+		// summary:
+		//		Create an mouse zoom and pan action.
+		//		You can zoom in or out the data window with mouse wheel. You can scroll using mouse drag gesture. 
+		//		You can toggle between zoom and fit view using double click on the chart.
+
+		// the data description block for the widget parser
+		defaultParams: {
+			axis: "x",
+			scaleFactor: 1.2,	
+			maxScale: 100,
+			enableScroll: true,
+			enableDoubleClickZoom: true,
+			enableKeyZoom: true,
+			keyZoomModifier: "ctrl"
+		},
+		optionalParams: {}, // no optional parameters
+		
+		constructor: function(chart, plot, kwArgs){
+			// summary:
+			//		Create an mouse zoom and pan action and connect it.
+			// chart: dojox/charting/Chart
+			//		The chart this action applies to.
+			// kwArgs: __MouseZoomAndPanCtorArgs?
+			//		Optional arguments for the chart action.
+			this._listeners = [{eventName: mouse.wheel, methodName: "onMouseWheel"}];
+			if(!kwArgs){ kwArgs = {}; }
+			this.axis = kwArgs.axis ? kwArgs.axis : "x";
+			this.scaleFactor = kwArgs.scaleFactor ? kwArgs.scaleFactor : 1.2;
+			this.maxScale = kwArgs.maxScale ? kwArgs.maxScale : 100;
+			this.enableScroll = kwArgs.enableScroll != undefined ? kwArgs.enableScroll : true;
+			this.enableDoubleClickZoom = kwArgs.enableDoubleClickZoom != undefined ? kwArgs.enableDoubleClickZoom : true;
+			this.enableKeyZoom = kwArgs.enableKeyZoom != undefined ? kwArgs.enableKeyZoom : true;
+			this.keyZoomModifier = kwArgs.keyZoomModifier ? kwArgs.keyZoomModifier : "ctrl";
+			if(this.enableScroll){
+				this._listeners.push({eventName: "onmousedown", methodName: "onMouseDown"});
+			}
+			if(this.enableDoubleClickZoom){
+				this._listeners.push({eventName: "ondblclick", methodName: "onDoubleClick"});
+			}
+			if(this.enableKeyZoom){
+				this._listeners.push({eventName: "keypress", methodName: "onKeyPress"});				
+			}
+			this._handles = [];
+			this.connect();
+		},
+		
+		_disconnectHandles: function(){
+			if(has("ie")){
+				this.chart.node.releaseCapture();
+			}
+			arr.forEach(this._handles, connect.disconnect);
+			this._handles = [];
+		},
+		
+		connect: function(){
+			// summary:
+			//		Connect this action to the chart.
+			this.inherited(arguments);
+			if(this.enableKeyZoom){
+				// we want to be able to get focus to receive key events 
+				domProp.set(this.chart.node, "tabindex", "0");
+				// if one doesn't want a focus border he can do something like
+				// dojo.style(this.chart.node, "outline", "none");
+			}
+		},
+		
+		disconnect: function(){
+			// summary:
+			//		Disconnect this action from the chart.
+			this.inherited(arguments);
+			if(this.enableKeyZoom){
+				// we don't need anymore to be able to get focus to receive key events 
+				domProp.set(this.chart.node, "tabindex", "-1");
+			}
+			// in case we disconnect before the end of the action
+			this._disconnectHandles();
+		},
+	
+		onMouseDown: function(event){
+			// summary:
+			//		Called when mouse is down on the chart.
+			var chart = this.chart, axis = chart.getAxis(this.axis);
+			if(!axis.vertical){
+				this._startCoord = event.pageX;
+			}else{
+				this._startCoord = event.pageY;
+			}
+			this._startOffset = axis.getWindowOffset();
+			this._isPanning = true;
+			// we now want to capture mouse move events everywhere to avoid
+			// stop scrolling when going out of the chart window
+			if(has("ie")){
+				this._handles.push(connect.connect(this.chart.node, "onmousemove", this, "onMouseMove"));
+				this._handles.push(connect.connect(this.chart.node, "onmouseup", this, "onMouseUp"));
+				this.chart.node.setCapture();
+			}else{
+				this._handles.push(connect.connect(win.doc, "onmousemove", this, "onMouseMove"));
+				this._handles.push(connect.connect(win.doc, "onmouseup", this, "onMouseUp"));
+			}
+			chart.node.focus();
+			// prevent the browser from trying the drag on the "image"
+			eventUtil.stop(event);
+		},
+	
+		onMouseMove: function(event){
+			// summary:
+			//		Called when mouse is moved on the chart.
+			if(this._isPanning){
+				var chart = this.chart, axis = chart.getAxis(this.axis);
+				var delta = axis.vertical?(this._startCoord- event.pageY):(event.pageX - this._startCoord);
+				
+				var bounds = axis.getScaler().bounds,
+					s = bounds.span / (bounds.upper - bounds.lower);
+		
+				var scale = axis.getWindowScale();
+		
+				chart.setAxisWindow(this.axis, scale, this._startOffset - delta / s / scale);
+				chart.render();
+			}
+		},
+	
+		onMouseUp: function(event){
+			// summary:
+			//		Called when mouse is up on the chart.
+			this._isPanning = false;
+			this._disconnectHandles();
+		},
+		
+		onMouseWheel: function(event){
+			// summary:
+			//		Called when mouse wheel is used on the chart.
+			var scroll = event.wheelDelta / sUnit;
+			// on Mozilla the sUnit might actually not always be 3
+			// make sure we never have -1 < scroll < 1
+			if(scroll > -1 && scroll < 0){
+				scroll = -1;
+			}else if(scroll > 0 && scroll < 1){
+				scroll = 1;
+			}
+ 			this._onZoom(scroll, event);
+		},
+		
+		onKeyPress: function(event){
+			// summary:
+			//		Called when a key is pressed on the chart.
+			if(keyTests[this.keyZoomModifier](event)){
+				if(event.keyChar == "+" || event.keyCode == keys.NUMPAD_PLUS){
+					this._onZoom(1, event);
+				}else if(event.keyChar == "-" || event.keyCode == keys.NUMPAD_MINUS){
+					this._onZoom(-1, event);					
+				}
+			} 
+		},
+		
+		onDoubleClick: function(event){
+			// summary:
+			//		Called when the mouse is double is double clicked on the chart. Toggle between zoom and fit chart.
+			var chart = this.chart, axis = chart.getAxis(this.axis);
+			var scale = 1 / this.scaleFactor;
+			// are we fit?
+			if(axis.getWindowScale()==1){
+				// fit => zoom
+				var scaler = axis.getScaler(), start = scaler.bounds.from, end = scaler.bounds.to, 
+				oldMiddle = (start + end) / 2, newMiddle = this.plot.toData({x: event.pageX, y: event.pageY})[this.axis], 
+				newStart = scale * (start - oldMiddle) + newMiddle, newEnd = scale * (end - oldMiddle) + newMiddle;
+				chart.zoomIn(this.axis, [newStart, newEnd]);
+			}else{
+				// non fit => fit
+				chart.setAxisWindow(this.axis, 1, 0);
+				chart.render();
+			}
+			eventUtil.stop(event);
+		},
+		
+		_onZoom: function(scroll, event){
+			var scale = (scroll < 0 ? Math.abs(scroll)*this.scaleFactor : 
+				1 / (Math.abs(scroll)*this.scaleFactor));
+			var chart = this.chart, axis = chart.getAxis(this.axis);
+			// after wheel reset event position exactly if we could start a new scroll action
+			var cscale = axis.getWindowScale();
+			if(cscale / scale > this.maxScale){
+				return;
+			}
+			var scaler = axis.getScaler(), start = scaler.bounds.from, end = scaler.bounds.to;
+			// keep mouse pointer as transformation center if available otherwise center
+			var middle = (event.type == "keypress") ? (start + end) / 2 :
+				this.plot.toData({x: event.pageX, y: event.pageY})[this.axis];
+			var newStart = scale * (start - middle) + middle, newEnd = scale * (end - middle) + middle;
+			chart.zoomIn(this.axis, [newStart, newEnd]);
+			// do not scroll browser
+			eventUtil.stop(event);
+		}
+	});		
+});

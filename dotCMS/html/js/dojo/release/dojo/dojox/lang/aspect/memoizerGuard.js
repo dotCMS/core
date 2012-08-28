@@ -1,2 +1,36 @@
-//>>built
-define(["dijit","dojo","dojox"],function(_1,_2,_3){_2.provide("dojox.lang.aspect.memoizerGuard");(function(){var _4=_3.lang.aspect,_5=function(_6){var _7=_4.getContext().instance,t;if(!(t=_7.__memoizerCache)){return;}if(arguments.length==0){delete _7.__memoizerCache;}else{if(_2.isArray(_6)){_2.forEach(_6,function(m){delete t[m];});}else{delete t[_6];}}};_4.memoizerGuard=function(_8){return {after:function(){_5(_8);}};};})();});
+// wrapped by build app
+define("dojox/lang/aspect/memoizerGuard", ["dijit","dojo","dojox"], function(dijit,dojo,dojox){
+dojo.provide("dojox.lang.aspect.memoizerGuard");
+
+(function(){
+	var aop = dojox.lang.aspect,
+		reset = function(/*String|Array?*/ method){
+			var that = aop.getContext().instance, t;
+			if(!(t = that.__memoizerCache)){ return; }
+			if(arguments.length == 0){
+				delete that.__memoizerCache;
+			}else if(dojo.isArray(method)){
+				dojo.forEach(method, function(m){ delete t[m]; });
+			}else{
+				delete t[method];
+			}
+		};
+
+
+	aop.memoizerGuard = function(/*String|Array?*/ method){
+		// summary:
+		//		Invalidates the memoizer's cache (see dojox.lang.aspect.memoizer)
+		//		after calling certain methods.
+		//
+		// method:
+		//		Optional method's name to be guarded: only cache for
+		//		this method will be invalidated on call. Can be a string
+		//		or an array of method names. If omitted the whole cache
+		//		will be invalidated.
+
+		return {	// Object
+			after: function(){ reset(method); }
+		};
+	};
+})();
+});

@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ru/InsertEntity", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ru/InsertEntity", ({
 	insertEntity: "Вставить символ"
 })
-
-//end v1.x content
 );

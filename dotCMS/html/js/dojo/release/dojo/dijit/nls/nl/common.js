@@ -1,11 +1,8 @@
-//>>built
 define(
-"dijit/nls/nl/common", //begin v1.x content
-({
+"dijit/nls/nl/common", ({
 	buttonOk: "OK",
 	buttonCancel: "Annuleren",
 	buttonSave: "Opslaan",
 	itemClose: "Sluiten"
 })
-//end v1.x content
 );

@@ -1,2 +1,190 @@
-//>>built
-define(["dijit","dojo","dojox"],function(_1,_2,_3){_2.provide("dojox.drawing.plugins.drawing.Silverlight");_3.drawing.plugins.drawing.Silverlight=_3.drawing.util.oo.declare(function(_4){if(_3.gfx.renderer!="silverlight"){return;}this.mouse=_4.mouse;this.stencils=_4.stencils;this.anchors=_4.anchors;this.canvas=_4.canvas;this.util=_4.util;_2.connect(this.stencils,"register",this,function(_5){var c1,c2,c3,c4,c5,_6=this;var _7=function(){c1=_5.container.connect("onmousedown",function(_8){_8.superTarget=_5;_6.mouse.down(_8);});};_7();c2=_2.connect(_5,"setTransform",this,function(){});c3=_2.connect(_5,"onBeforeRender",function(){});c4=_2.connect(_5,"onRender",this,function(){});c5=_2.connect(_5,"destroy",this,function(){_2.forEach([c1,c2,c3,c4,c5],_2.disconnect,_2);});});_2.connect(this.anchors,"onAddAnchor",this,function(_9){var c1=_9.shape.connect("onmousedown",this.mouse,function(_a){_a.superTarget=_9;this.down(_a);});var c2=_2.connect(_9,"disconnectMouse",this,function(){_2.disconnect(c1);_2.disconnect(c2);});});this.mouse._down=function(_b){var _c=this._getXY(_b);var x=_c.x-this.origin.x;var y=_c.y-this.origin.y;x*=this.zoom;y*=this.zoom;this.origin.startx=x;this.origin.starty=y;this._lastx=x;this._lasty=y;this.drawingType=this.util.attr(_b,"drawingType")||"";var id=this._getId(_b);var _d={x:x,y:y,id:id};this.onDown(_d);this._clickTime=new Date().getTime();if(this._lastClickTime){if(this._clickTime-this._lastClickTime<this.doublClickSpeed){var _e=this.eventName("doubleClick");console.warn("DOUBLE CLICK",_e,_d);this._broadcastEvent(_e,_d);}else{}}this._lastClickTime=this._clickTime;};this.mouse.down=function(_f){clearTimeout(this.__downInv);if(this.util.attr(_f,"drawingType")=="surface"){this.__downInv=setTimeout(_2.hitch(this,function(){this._down(_f);}),500);return;}this._down(_f);};this.mouse._getXY=function(evt){if(evt.pageX){return {x:evt.pageX,y:evt.pageY,cancelBubble:true};}for(var nm in evt){}if(evt.x!==undefined){return {x:evt.x+this.origin.x,y:evt.y+this.origin.y};}else{return {x:evt.pageX,y:evt.pageY};}};this.mouse._getId=function(evt){return this.util.attr(evt,"id");};this.util.attr=function(_10,_11,_12,_13){if(!_10){return false;}try{var t;if(_10.superTarget){t=_10.superTarget;}else{if(_10.superClass){t=_10.superClass;}else{if(_10.target){t=_10.target;}else{t=_10;}}}if(_12!==undefined){_10[_11]=_12;return _12;}if(t.tagName){if(_11=="drawingType"&&t.tagName.toLowerCase()=="object"){return "surface";}var r=_2.attr(t,_11);}var r=t[_11];return r;}catch(e){if(!_13){}return false;}};},{});});
+// wrapped by build app
+define("dojox/drawing/plugins/drawing/Silverlight", ["dijit","dojo","dojox"], function(dijit,dojo,dojox){
+dojo.provide("dojox.drawing.plugins.drawing.Silverlight");
+
+dojox.drawing.plugins.drawing.Silverlight = dojox.drawing.util.oo.declare(
+	//	WARNING: This is not completely implemented. For the most
+	//	part, DojoX Drawing does not support Silverlight. This class
+	//	was created in an attempt for support, but there were too many
+	//	obstacles and not enough time. The basic functionality is here
+	//	and there's a good head start if anyone elase wishes to pick up
+	//	where I left off.
+
+	function(options){
+		// summary:
+		//		The constructor is the only method in this class.
+		//		What is happening here is other methods in other
+		//		classes are being overridden to adapt to Silverlight.
+
+		if(dojox.gfx.renderer != "silverlight"){ return; }
+		this.mouse = options.mouse;
+		this.stencils = options.stencils;
+		this.anchors = options.anchors;
+		this.canvas = options.canvas;
+		this.util = options.util;
+		
+		dojo.connect(this.stencils, "register", this, function(item){
+			var c1, c2, c3, c4, c5, self = this;
+			var conMouse = function(){
+				//console.info("------connect shape", item.id)
+				
+				// Connect to PARENT (SL Canvas) , not SHAPE
+				c1 = item.container.connect("onmousedown", function(evt){
+					//console.info("----------------------------------SHAPE DOWN", item.container)
+					evt.superTarget = item;
+					self.mouse.down(evt);
+				});
+			};
+			conMouse();
+			
+			c2 = dojo.connect(item, "setTransform", this, function(){
+				//dojo.disconnect(c1);
+			});
+			
+			c3 = dojo.connect(item, "onBeforeRender", function(){
+				//dojo.disconnect(c1);
+			});
+			
+			
+			c4 = dojo.connect(item, "onRender", this, function(){
+				//conMouse();
+			});
+			
+			c5 = dojo.connect(item, "destroy", this, function(){
+				dojo.forEach([c1,c2,c3,c4,c5], dojo.disconnect, dojo);
+			});
+		});
+		
+		dojo.connect(this.anchors, "onAddAnchor", this, function(anchor){
+			var c1 = anchor.shape.connect("onmousedown", this.mouse, function(evt){
+				evt.superTarget = anchor;
+				this.down(evt)
+			});
+			var c2 = dojo.connect(anchor, "disconnectMouse", this, function(){
+				dojo.disconnect(c1);
+				dojo.disconnect(c2);
+			});
+			
+		});
+		
+		
+		this.mouse._down = function(evt){
+			var dim = this._getXY(evt);
+			var x = dim.x - this.origin.x;
+			var y = dim.y - this.origin.y;
+			
+			x*= this.zoom;
+			y*= this.zoom;
+			
+			this.origin.startx = x;
+			this.origin.starty = y;
+			this._lastx = x;
+			this._lasty = y;
+			
+			this.drawingType = this.util.attr(evt, "drawingType") || "";
+			var id = this._getId(evt);
+			var obj = {x:x,y:y, id:id};
+			console.log(" > > > id:", id, "drawingType:", this.drawingType, "evt:", evt)
+		
+			this.onDown(obj);
+			
+			this._clickTime = new Date().getTime();
+			if(this._lastClickTime){
+				if(this._clickTime-this._lastClickTime<this.doublClickSpeed){
+					var dnm = this.eventName("doubleClick");
+					console.warn("DOUBLE CLICK", dnm, obj);
+					this._broadcastEvent(dnm, obj);
+				}else{
+					//console.log("    slow:", this._clickTime-this._lastClickTime)
+				}
+			}
+			this._lastClickTime = this._clickTime;
+			
+			// throws errors in IE silverlight. Oddness.
+			//dojo.stopEvent(evt);
+		};
+		
+		this.mouse.down = function(evt){
+			clearTimeout(this.__downInv);
+			if(this.util.attr(evt, "drawingType")=="surface"){
+				this.__downInv = setTimeout(dojo.hitch(this, function(){
+					this._down(evt);
+				}),500);
+				return;
+			}
+			this._down(evt);
+		};
+		
+		this.mouse._getXY =  function(evt){
+			
+			if(evt.pageX){
+				return {x:evt.pageX, y:evt.pageY, cancelBubble:true};
+			}
+			console.log("EVT", evt)
+			//console.log("EVT", evt.pageX)
+			for(var nm in evt){
+				//console.log("..."+nm+"="+evt[nm]);
+			}
+			console.log("EVTX", evt.x)
+			if(evt.x !== undefined){
+				return {
+					x:evt.x + this.origin.x,
+					y:evt.y + this.origin.y
+				};
+			}else{
+				return {x:evt.pageX, y:evt.pageY};
+			}
+		};
+		
+		this.mouse._getId = function(evt){
+			return this.util.attr(evt, "id");
+		};
+		
+		this.util.attr = function(/* Object */ elem, /* property */ prop, /* ? value */ value, squelchErrors){
+			if(!elem){ return false; }
+			try{
+				
+				var t;
+				if(elem.superTarget){
+					t = elem.superTarget;
+				}else if(elem.superClass){
+					t = elem.superClass;
+				}else if(elem.target){
+					t = elem.target;
+				}else{
+					t = elem;
+				}
+				
+				if(value!==undefined){
+					elem[prop] = value;
+					return value;
+				}
+				
+				if(t.tagName){
+					if(prop=="drawingType" && t.tagName.toLowerCase()=="object"){
+						return "surface";
+					}
+					var r =  dojo.attr(t, prop);
+				}
+				var r = t[prop];
+				return r
+			
+				
+			}catch(e){
+				if(!squelchErrors){
+					// For debugging only. These errors actually cause more errors in IE's console
+					//console.error("BAD ATTR: prop:", prop, "el:", elem)
+					//console.error(e)
+					//console.trace();
+				}
+				return false;
+			}
+		}
+	},
+	{
+		// summary:
+		//		"Plugin" to allow the Silverlight plugin to work
+		//		with DojoX Drawing.
+	}
+);
+});

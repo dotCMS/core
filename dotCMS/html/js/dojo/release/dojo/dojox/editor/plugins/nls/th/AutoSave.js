@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/th/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/th/AutoSave", ({
 	"saveLabel": "บันทึก",
 	"saveSettingLabelOn": "ตั้งช่วงเวลาบันทึกอัตโนมัติ...",
 	"saveSettingLabelOff": "ปิดบันทึกอัตโนมัติ",
@@ -14,6 +12,4 @@ define(
 	"saveMessageSuccess": "ถูกบันทึกเมื่อ ${0}",
 	"saveMessageFail": "ล้มเหลวในการบันทึกเมื่อ ${0}"
 })
-
-//end v1.x content
 );

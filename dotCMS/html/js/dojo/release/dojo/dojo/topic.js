@@ -1,8 +1,38 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/topic", ["./Evented"], function(Evented){
 
-//>>built
-define("dojo/topic",["./Evented"],function(_1){var _2=new _1;return {publish:function(_3,_4){return _2.emit.apply(_2,arguments);},subscribe:function(_5,_6){return _2.on.apply(_2,arguments);}};});
+	// module:
+	//		dojo/topic
+
+	var hub = new Evented;
+	return {
+		// summary:
+		//		Pubsub hub.
+		// example:
+		//		| 	topic.subscribe("some/topic", function(event){
+		//		|	... do something with event
+		//		|	});
+		//		|	topic.publish("some/topic", {name:"some event", ...});
+
+		publish: function(topic, event){
+			// summary:
+			//		Publishes a message to a topic on the pub/sub hub. All arguments after
+			//		the first will be passed to the subscribers, so any number of arguments
+			//		can be provided (not just event).
+			// topic: String
+			//		The name of the topic to publish to
+			// event: Object
+			//		An event to distribute to the topic listeners
+			return hub.emit.apply(hub, arguments);
+		},
+
+		subscribe: function(topic, listener){
+			// summary:
+			//		Subscribes to a topic on the pub/sub hub
+			// topic: String
+			//		The topic to subscribe to
+			// listener: Function
+			//		A function to call when a message is published to the given topic
+			return hub.on.apply(hub, arguments);
+		}
+	};
+});

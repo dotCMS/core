@@ -1,4 +1,3 @@
-//>>built
 define("dijit/nls/loading", { root:
 //begin v1.x content
 ({

@@ -1,2 +1,10 @@
-//>>built
-define(["dijit","dojo","dojox","dojo/require!dojox/gauges/_Gauge"],function(_1,_2,_3){_2.provide("dojox.widget.gauge._Gauge");_2.require("dojox.gauges._Gauge");_3.widget.gauge._Gauge=_3.gauges._Gauge;_3.widget.gauge.Range=_3.gauges.Range;_3.widget.gauge._indicator=_3.gauges._indicator;});
+// wrapped by build app
+define("dojox/widget/gauge/_Gauge", ["dijit","dojo","dojox","dojo/require!dojox/gauges/_Gauge"], function(dijit,dojo,dojox){
+dojo.provide("dojox.widget.gauge._Gauge");
+dojo.require("dojox.gauges._Gauge");
+
+dojox.widget.gauge._Gauge = dojox.gauges._Gauge;
+dojox.widget.gauge.Range = dojox.gauges.Range;
+dojox.widget.gauge._indicator = dojox.gauges._indicator;
+
+});

@@ -1,8 +1,97 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/domReady", ['./has'], function(has){
+	var global = this,
+		doc = document,
+		readyStates = { 'loaded': 1, 'complete': 1 },
+		fixReadyState = typeof doc.readyState != "string",
+		ready = !!readyStates[doc.readyState];
 
-//>>built
-define("dojo/domReady",["./has"],function(_1){var _2=this,_3=document,_4={"loaded":1,"complete":1},_5=typeof _3.readyState!="string",_6=!!_4[_3.readyState];if(_5){_3.readyState="loading";}if(!_6){var _7=[],_8=[],_9=function(_a){_a=_a||_2.event;if(_6||(_a.type=="readystatechange"&&!_4[_3.readyState])){return;}_6=1;if(_5){_3.readyState="complete";}while(_7.length){(_7.shift())();}},on=function(_b,_c){_b.addEventListener(_c,_9,false);_7.push(function(){_b.removeEventListener(_c,_9,false);});};if(!_1("dom-addeventlistener")){on=function(_d,_e){_e="on"+_e;_d.attachEvent(_e,_9);_7.push(function(){_d.detachEvent(_e,_9);});};var _f=_3.createElement("div");try{if(_f.doScroll&&_2.frameElement===null){_8.push(function(){try{_f.doScroll("left");return 1;}catch(e){}});}}catch(e){}}on(_3,"DOMContentLoaded");on(_2,"load");if("onreadystatechange" in _3){on(_3,"readystatechange");}else{if(!_5){_8.push(function(){return _4[_3.readyState];});}}if(_8.length){var _10=function(){if(_6){return;}var i=_8.length;while(i--){if(_8[i]()){_9("poller");return;}}setTimeout(_10,30);};_10();}}function _11(_12){if(_6){_12(1);}else{_7.push(_12);}};_11.load=function(id,req,_13){_11(_13);};return _11;});
+	// For FF <= 3.5
+	if(fixReadyState){ doc.readyState = "loading"; }
+
+	if(!ready){
+		var readyQ = [], tests = [],
+			detectReady = function(evt){
+				evt = evt || global.event;
+				if(ready || (evt.type == "readystatechange" && !readyStates[doc.readyState])){ return; }
+				ready = 1;
+
+				// For FF <= 3.5
+				if(fixReadyState){ doc.readyState = "complete"; }
+
+				while(readyQ.length){
+					(readyQ.shift())(doc);
+				}
+			},
+			on = function(node, event){
+				node.addEventListener(event, detectReady, false);
+				readyQ.push(function(){ node.removeEventListener(event, detectReady, false); });
+			};
+
+		if(!has("dom-addeventlistener")){
+			on = function(node, event){
+				event = "on" + event;
+				node.attachEvent(event, detectReady);
+				readyQ.push(function(){ node.detachEvent(event, detectReady); });
+			};
+
+			var div = doc.createElement("div");
+			try{
+				if(div.doScroll && global.frameElement === null){
+					// the doScroll test is only useful if we're in the top-most frame
+					tests.push(function(){
+						// Derived with permission from Diego Perini's IEContentLoaded
+						// http://javascript.nwbox.com/IEContentLoaded/
+						try{
+							div.doScroll("left");
+							return 1;
+						}catch(e){}
+					});
+				}
+			}catch(e){}
+		}
+
+		on(doc, "DOMContentLoaded");
+		on(global, "load");
+
+		if("onreadystatechange" in doc){
+			on(doc, "readystatechange");
+		}else if(!fixReadyState){
+			// if the ready state property exists and there's
+			// no readystatechange event, poll for the state
+			// to change
+			tests.push(function(){
+				return readyStates[doc.readyState];
+			});
+		}
+
+		if(tests.length){
+			var poller = function(){
+				if(ready){ return; }
+				var i = tests.length;
+				while(i--){
+					if(tests[i]()){
+						detectReady("poller");
+						return;
+					}
+				}
+				setTimeout(poller, 30);
+			};
+			poller();
+		}
+	}
+
+	function domReady(callback){
+		// summary:
+		//		Plugin to delay require()/define() callback from firing until the DOM has finished loading.
+		if(ready){
+			callback(doc);
+		}else{
+			readyQ.push(callback);
+		}
+	}
+	domReady.load = function(id, req, load){
+		domReady(load);
+	};
+
+	return domReady;
+});

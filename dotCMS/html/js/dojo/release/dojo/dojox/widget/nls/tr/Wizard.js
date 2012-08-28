@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/tr/Wizard", //begin v1.x content
-({
+"dojox/widget/nls/tr/Wizard", ({
 next: "İleri",
 previous: "Geri",
 done: "Bitti"
 })
-//end v1.x content
 );
