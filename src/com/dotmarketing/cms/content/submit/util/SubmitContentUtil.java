@@ -312,6 +312,9 @@ public class SubmitContentUtil {
 			String fieldname = parametersName.get(i);
 			String[] fieldValue = values.get(i);
 			setField(st, contentlet, fieldname, fieldValue);
+			//To Update Content
+			if(fieldname.equalsIgnoreCase("contentIdentifier"))
+				contentlet.setIdentifier(VelocityUtil.cleanVelocity(values.get(i)[0]));
 		}
 
 		return contentlet;
@@ -541,6 +544,8 @@ public class SubmitContentUtil {
 		}
 		return false;
 	}
+
+
 
 
 

@@ -1,1 +1,36 @@
-<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+
+
+
+#if(!$UtilMethods.isSet($fieldDefaultValue.getName()))
+	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+
+#else
+	## Edit content
+	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+	
+	<div id="${fieldAux.velocityVarName}Container" >
+		
+		#if($UtilMethods.isImage($fieldDefaultValue.getName()))
+			#set($showDim=300)
+			  $fieldDefaultValue.getName()   <button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>                
+			<div style="position:relative;">
+                        <img src="/contentAsset/image/$contentMap.get('inode')/${fieldAux.velocityVarName}/?byInode=1&filter=Thumbnail&thumbnail_w=$showDim&thumbnail_h=$showDim"
+                                class="thumbnailDiv thumbnailDiv${fieldAux.velocityVarName}"
+                                onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
+                                onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
+                                onclick="dijit.byId('fileDia${fieldAux.velocityVarName}').show()">
+    		</div>
+		#else
+			<div id="${fieldAux.velocityVarName}ThumbnailSliderWrapper">
+        	 	<a class="bg" href="javascript: serveFile('','${fieldAux.inode}','fileAsset');"
+    	      	id="${fieldAux.velocityVarName}BinaryFile">$fieldDefaultValue.getName()</a>
+         		<br/>
+         		<button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>
+    		</div>	
+		#end
+			
+    </div>
+	 
+#end
+
+	            	    
