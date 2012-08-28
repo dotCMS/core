@@ -5,7 +5,7 @@ import com.dotmarketing.logConsole.model.LogMapper;
 
 public class ActivityLogger {
 
-    private static String filename = "dotcms-userActivity.log";
+    private static String filename = "dotcms-useractivity.log";
 
     public static synchronized void logInfo ( Class cl, String action, String msg, String host ) {
 
