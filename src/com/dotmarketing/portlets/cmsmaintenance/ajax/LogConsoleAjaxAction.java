@@ -71,10 +71,10 @@ public class LogConsoleAjaxAction extends IndexAjaxAction {
                         //Compare to see if this log was selected in the UI by the client
                         if ( logMapperRow.getLog_name().equals( selectedLog ) ) {
 
-                            if ( logMapperRow.getEnabled() == 1 ) {
-                                logMapperRow.setEnabled( 0 );
+                            if ( logMapperRow.getEnabled() ) {
+                                logMapperRow.setEnabled( false );
                             } else {
-                                logMapperRow.setEnabled( 1 );
+                                logMapperRow.setEnabled( true );
                             }
                         }
                     }
