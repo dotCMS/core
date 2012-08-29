@@ -524,72 +524,98 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 		return null;
 	}
 
-
-
+    /**
+     * Copy a file into the given host
+     *
+     * @param file File to be copied
+     * @param host Destination host
+     * @return true if copy success, false otherwise
+     */
+    public File copyFile ( File file, Host host ) throws DotDataException, IOException {
+        return copyFile(file, null, host);
+    }
 
     /**
      * Copy a file into the given directory
      *
-     * @param file
-     *            File to be copied
-     * @param parent
-     *            Destination Folder
+     * @param file   File to be copied
+     * @param parent Destination Folder
+     * @return true if copy success, false otherwise
+     */
+    public File copyFile ( File file, Folder parent ) throws DotDataException, IOException {
+        return copyFile(file, parent, null);
+    }
+
+    /**
+     * Copy a file into the given directory OR host
+     *
+     * @param file   File to be copied
+     * @param parent Destination Folder
+     * @param parent Destination host
      * @return true if copy success, false otherwise
      * @throws IOException
      * @throws DotHibernateException
      */
-    public  File copyFile(File file, Folder parent) throws DotDataException, IOException {
+    public File copyFile ( File file, Folder parent, Host host ) throws DotDataException, IOException {
 
         File newFile = new File();
 
-        newFile.copy(file);
+        newFile.copy( file );
 
         // gets filename before extension
-        String fileName = com.dotmarketing.util.UtilMethods.getFileName(file.getFileName());
+        String fileName = com.dotmarketing.util.UtilMethods.getFileName( file.getFileName() );
         // gets file extension
-        String fileExtension = com.dotmarketing.util.UtilMethods.getFileExtension(file.getFileName());
+        String fileExtension = com.dotmarketing.util.UtilMethods.getFileExtension( file.getFileName() );
 
-        // Setting file name
-        if (fileNameExists(parent, file.getFileName())) {
-            // adds "copy" word to the filename
-            newFile.setFileName(fileName + "_copy." + fileExtension);
-            newFile.setFriendlyName(file.getFriendlyName() + " (COPY) ");
+        Boolean fileNameExists;
+        if (parent != null) {
+            fileNameExists = fileNameExists( parent, file.getFileName() );
         } else {
-            newFile.setFileName(fileName + "." + fileExtension);
+            fileNameExists = fileNameExists( APILocator.getFolderAPI().findSystemFolder(), file.getFileName() );
         }
 
-    	Identifier identifier = APILocator.getIdentifierAPI().createNew(newFile, parent);
-		newFile.setIdentifier(identifier.getInode());
+        // Setting file name
+        if ( fileNameExists ) {
+            // adds "copy" word to the filename
+            newFile.setFileName( fileName + "_copy." + fileExtension );
+            newFile.setFriendlyName( file.getFriendlyName() + " (COPY) " );
+        } else {
+            newFile.setFileName( fileName + "." + fileExtension );
+        }
+
+        Identifier identifier;
+        if ( parent != null ) {
+            identifier = APILocator.getIdentifierAPI().createNew( newFile, parent );
+        } else {
+            identifier = APILocator.getIdentifierAPI().createNew( newFile, host );
+        }
+        newFile.setIdentifier( identifier.getInode() );
 
         // persists the webasset
-        HibernateUtil.saveOrUpdate(newFile);
+        HibernateUtil.saveOrUpdate( newFile );
 
-        saveFileData(file, newFile,null);
+        saveFileData( file, newFile, null );
 
-        Logger.debug(FileFactory.class, "identifier=" + identifier.getURI());
+        Logger.debug( FileFactory.class, "identifier=" + identifier.getURI() );
 
-        WorkingCache.removeAssetFromCache(newFile);
-        WorkingCache.addToWorkingAssetToCache(newFile);
+        WorkingCache.removeAssetFromCache( newFile );
+        WorkingCache.addToWorkingAssetToCache( newFile );
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
         try {
-			APILocator.getVersionableAPI().setWorking(newFile);
-			if (file.isLive()) 
-				APILocator.getVersionableAPI().setLive(newFile);
-		} catch (DotStateException e) {
-			Logger.error(this, e.getMessage());
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage());
-		}
+            APILocator.getVersionableAPI().setWorking( newFile );
+            if ( file.isLive() )
+                APILocator.getVersionableAPI().setLive( newFile );
+        } catch ( DotStateException e ) {
+            Logger.error( this, e.getMessage() );
+        } catch ( DotSecurityException e ) {
+            Logger.error( this, e.getMessage() );
+        }
         // Copy permissions
-        permissionAPI.copyPermissions(file, newFile);
-
+        permissionAPI.copyPermissions( file, newFile );
 
         return newFile;
-
-
     }
-
 
     public  java.io.File getAssetIOFile (File file) throws IOException {
 
