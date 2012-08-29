@@ -544,7 +544,7 @@ public class BrowserAjax {
     }
 
     /**
-     * Copies a given inode refernce to a given folder
+     * Copies a given inode reference to a given folder
      *
      * @param inode     Contentlet inode
      * @param newFolder This could be the inode of a folder or a host
@@ -605,47 +605,86 @@ public class BrowserAjax {
 
         File file = (File) InodeFactory.getInode( inode, File.class );
         // CHECK THE FOLDER PATTERN		//DOTCMS-6017
-        if ( UtilMethods.isSet( file.getFileName() ) && !folderAPI.matchFilter( parent, file.getFileName() ) ) {
+        if ( UtilMethods.isSet( file.getFileName() ) && (parent != null && !folderAPI.matchFilter( parent, file.getFileName() )) ) {
             return "message.file_asset.error.filename.filters";
         }
 
         // Checking permissions
-        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ||
-                !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) )
+        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
             return "File-failed-to-copy-check-you-have-the-required-permissions";
+        }
 
-        APILocator.getFileAPI().copyFile( file, parent, user, false );
+        if ( parent != null ) {
+            APILocator.getFileAPI().copyFile( file, parent, user, false );
+        } else {
+            APILocator.getFileAPI().copyFile( file, host, user, false );
+        }
         return "File-copied";
     }
 
+    /**
+     * Moves a given inode reference to a given folder
+     *
+     * @param inode  Contentlet inode
+     * @param folder This could be the inode of a folder or a host
+     * @return true if success, false otherwise
+     * @throws Exception
+     */
     public boolean moveFile ( String inode, String folder ) throws Exception {
 
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser( req );
 
+        //Contentlet file identifier
         Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
+
         // gets folder parent
-        Folder parent = APILocator.getFolderAPI().find( folder, user, false );
-        if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ||
-                !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) )
-            throw new DotRuntimeException( "The user doesn't have the required permissions." );
-        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
-            Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
-            return APILocator.getFileAssetAPI().moveFile( cont, parent, user, false );
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( folder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
         }
+
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( folder, user, false );
+        }
+
+        // Checking permissions
+        if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        }
+
+        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
+
+            //Getting the contentlet file
+            Contentlet contentlet = APILocator.getContentletAPI().find( inode, user, false );
+
+            if ( parent != null ) {
+                return APILocator.getFileAssetAPI().moveFile( contentlet, parent, user, false );
+            } else {
+                return APILocator.getFileAssetAPI().moveFile( contentlet, host, user, false );
+            }
+        }
+
         File file = (File) InodeFactory.getInode( inode, File.class );
 
         // Checking permissions
-        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ||
-                !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) )
+        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
             throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        }
 
-        boolean ret = APILocator.getFileAPI().moveFile( file, parent, user, false );
-
-        return ret;
-
+        if ( parent != null ) {
+            return APILocator.getFileAPI().moveFile( file, parent, user, false );
+        } else {
+            return APILocator.getFileAPI().moveFile( file, host, user, false );
+        }
     }
-
 
     public Map<String, Object> renameHTMLPage (String inode, String newName) throws Exception {
 
