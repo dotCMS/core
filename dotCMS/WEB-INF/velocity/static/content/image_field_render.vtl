@@ -11,6 +11,7 @@
 	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="imageField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 	
 	<div id="${fieldAux.velocityVarName}Container" >
+		<input type="hidden" id="${fieldAux.velocityVarName}oldImageInode" name="${fieldAux.velocityVarName}oldImageInode" value="$contentMap.get(${fieldAux.velocityVarName}).getIdentifier()" />
 		$fieldDefaultValue.getFileName()  <button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>
 		#set($showDim = 300)
 		<div style="position:relative;width:$showDimpx;">

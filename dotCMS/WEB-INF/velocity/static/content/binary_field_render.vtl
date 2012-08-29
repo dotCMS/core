@@ -7,9 +7,8 @@
 #else
 	## Edit content
 	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
-	
 	<div id="${fieldAux.velocityVarName}Container" >
-		
+		<input type="hidden" id="${fieldAux.velocityVarName}oldBinaryInode" name="${fieldAux.velocityVarName}oldBinaryInode" value="$contentMap.get('inode')" />
 		#if($UtilMethods.isImage($fieldDefaultValue.getName()))
 			#set($showDim=300)
 			  $fieldDefaultValue.getName()   <button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>                
@@ -22,7 +21,7 @@
     		</div>
 		#else
 			<div id="${fieldAux.velocityVarName}ThumbnailSliderWrapper">
-        	 	<a class="bg" href="javascript: serveFile('','${fieldAux.inode}','fileAsset');"
+        	 	<a class="bg" href="javascript: serveFile('','$contentMap.get('inode')','binaryFile');"
     	      	id="${fieldAux.velocityVarName}BinaryFile">$fieldDefaultValue.getName()</a>
          		<br/>
          		<button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>

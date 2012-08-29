@@ -6,9 +6,9 @@
 #else
 	## Edit content
 	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
-	
 	<div id="${fieldAux.velocityVarName}Container" >
-		<a class="bg" href="javascript: serveFile('','$contentMap.get('inode')','fileAsset');"  id="${fieldAux.velocityVarName}BinaryFile">$fieldDefaultValue.getFileName()</a>
+		<input type="hidden" id="${fieldAux.velocityVarName}oldFileInode" name="${fieldAux.velocityVarName}oldFileInode" value="$contentMap.get(${fieldAux.velocityVarName}).getIdentifier()" />
+		<a class="bg" href="javascript: serveFile('','$contentMap.get(${fieldAux.velocityVarName}).getInode()','fileAsset');"  id="${fieldAux.velocityVarName}BinaryFile">$fieldDefaultValue.getFileName()</a>
 			<button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>
 	</div>
 #end
