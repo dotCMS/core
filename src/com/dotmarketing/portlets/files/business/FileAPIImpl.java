@@ -545,23 +545,34 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 		return ffac.findFiles(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
 
-	public File copyFile(File file, Folder parent, User user, boolean respectFrontendRoles) throws IOException, DotSecurityException,
-			DotDataException {
+    public File copyFile ( File file, Host host, User user, boolean respectFrontendRoles ) throws IOException, DotSecurityException, DotDataException {
+        return copyFile( file, host, null, user, respectFrontendRoles );
+    }
 
-		if(!isLegacyFilesSupported()){
-			throw new DotStateException("File Assets have been disabled.");
-		}
-		
-		if (!permissionAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-		return ffac.copyFile(file, parent);
+    public File copyFile ( File file, Folder parent, User user, boolean respectFrontendRoles ) throws IOException, DotSecurityException, DotDataException {
+        return copyFile( file, null, parent, user, respectFrontendRoles );
+    }
 
-	}
+    public File copyFile ( File file, Host host, Folder parent, User user, boolean respectFrontendRoles ) throws IOException, DotSecurityException, DotDataException {
 
+        if ( !isLegacyFilesSupported() ) {
+            throw new DotStateException( "File Assets have been disabled." );
+        }
+
+        if ( !permissionAPI.doesUserHavePermission( file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        }
+
+        if ( parent != null ) {
+            return ffac.copyFile( file, parent );
+        } else {
+            return ffac.copyFile( file, host );
+        }
+    }
 
 	public boolean renameFile(File file, String newName, User user, boolean respectFrontendRoles) throws DotStateException,
 			DotDataException, DotSecurityException {

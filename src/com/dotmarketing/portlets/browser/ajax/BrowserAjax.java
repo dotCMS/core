@@ -1,22 +1,5 @@
 package com.dotmarketing.portlets.browser.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-
-import org.directwebremoting.WebContext;
-import org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -31,11 +14,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -66,6 +45,15 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import org.directwebremoting.WebContext;
+import org.directwebremoting.WebContextFactory;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+
+import static com.dotmarketing.business.PermissionAPI.*;
 
 /**
  *
@@ -555,70 +543,106 @@ public class BrowserAjax {
     	return result;
     }
 
-    public String copyFile (String inode, String newFolder) throws Exception {
+    /**
+     * Copies a given inode refernce to a given folder
+     *
+     * @param inode     Contentlet inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return Confirmation message
+     * @throws Exception
+     */
+    public String copyFile ( String inode, String newFolder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
+
+        //Contentlet file identifier
+        Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
 
         // gets folder parent
-    	Folder parent = APILocator.getFolderAPI().find(newFolder, user, false);
-        Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(id, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			return "File-failed-to-copy-check-you-have-the-required-permissions";
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( newFolder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-    	if(id!=null && id.getAssetType().equals("contentlet")){
-    		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
-    		if (UtilMethods.isSet(fa.getFileName()) && !folderAPI.matchFilter(parent, fa.getFileName())) {
-    			return "message.file_asset.error.filename.filters";
-    		}
-    		APILocator.getContentletAPI().copyContentlet(cont, parent, user, false);
-    		return "File-copied";
-    	}
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( newFolder, user, false );
+        }
 
-    	File file = (File) InodeFactory.getInode(inode, File.class);
-		// CHECK THE FOLDER PATTERN		//DOTCMS-6017
-		if (UtilMethods.isSet(file.getFileName()) && !folderAPI.matchFilter(parent, file.getFileName())) {
-			return "message.file_asset.error.filename.filters";
-		}
+        // Checking permissions
+        String permissionsError = "File-failed-to-copy-check-you-have-the-required-permissions";
+        if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
+            return permissionsError;
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            return permissionsError;
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            return permissionsError;
+        }
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(file, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			return "File-failed-to-copy-check-you-have-the-required-permissions";
+        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
 
-		APILocator.getFileAPI().copyFile(file, parent, user, false);
-		return "File-copied";
+            //Getting the contentlet file
+            Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
 
+            if ( parent != null ) {
+
+                FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet( cont );
+                if ( UtilMethods.isSet( fileAsset.getFileName() ) && !folderAPI.matchFilter( parent, fileAsset.getFileName() ) ) {
+                    return "message.file_asset.error.filename.filters";
+                }
+            }
+
+            if ( parent != null ) {
+                APILocator.getContentletAPI().copyContentlet( cont, parent, user, false );
+            } else {
+                APILocator.getContentletAPI().copyContentlet( cont, host, user, false );
+            }
+            return "File-copied";
+        }
+
+        File file = (File) InodeFactory.getInode( inode, File.class );
+        // CHECK THE FOLDER PATTERN		//DOTCMS-6017
+        if ( UtilMethods.isSet( file.getFileName() ) && !folderAPI.matchFilter( parent, file.getFileName() ) ) {
+            return "message.file_asset.error.filename.filters";
+        }
+
+        // Checking permissions
+        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ||
+                !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) )
+            return "File-failed-to-copy-check-you-have-the-required-permissions";
+
+        APILocator.getFileAPI().copyFile( file, parent, user, false );
+        return "File-copied";
     }
 
-    public boolean moveFile (String inode, String folder) throws Exception {
+    public boolean moveFile ( String inode, String folder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
-        Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
+        Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
         // gets folder parent
-        Folder parent =APILocator.getFolderAPI().find(folder, user, false);
-        if (!permissionAPI.doesUserHavePermission(id, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
-    	if(id!=null && id.getAssetType().equals("contentlet")){
-    		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		return APILocator.getFileAssetAPI().moveFile(cont, parent, user, false);
-    	}
-    	File file = (File) InodeFactory.getInode(inode, File.class);
+        Folder parent = APILocator.getFolderAPI().find( folder, user, false );
+        if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ||
+                !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) )
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
+            Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
+            return APILocator.getFileAssetAPI().moveFile( cont, parent, user, false );
+        }
+        File file = (File) InodeFactory.getInode( inode, File.class );
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(file, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
+        // Checking permissions
+        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ||
+                !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) )
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
 
-		boolean ret = APILocator.getFileAPI().moveFile(file, parent, user, false);
+        boolean ret = APILocator.getFileAPI().moveFile( file, parent, user, false );
 
-		return ret;
+        return ret;
 
     }
 

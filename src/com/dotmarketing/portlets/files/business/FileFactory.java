@@ -110,17 +110,24 @@ public interface FileFactory {
 	 */
 	List<File> findFiles(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
+    /**
+     * Copy a file into the given host
+     *
+     * @param file File to be copied
+     * @param host Destination host
+     * @return true if copy success, false otherwise
+     */
+    public File copyFile ( File file, Host host ) throws DotDataException, IOException;
 
     /**
      * Copy a file into the given directory
-     * 
-     * @param file
-     *            File to be copied
-     * @param parent
-     *            Destination Folder
+     *
+     * @param file   File to be copied
+     * @param parent Destination Folder
      * @return true if copy success, false otherwise
      */
-    public  File copyFile(File file, Folder parent)  throws DotDataException, IOException;
+    public File copyFile ( File file, Folder parent ) throws DotDataException, IOException;
+
     /**
      * gets the io.File handle for the file
      * @param file
