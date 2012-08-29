@@ -20,7 +20,7 @@ public class Task00905FixAddFolderAfterDelete extends AbstractJDBCStartupTask {
     public String getMySQLScript() {
         return "DROP TRIGGER IF EXISTS folder_identifier_check;\n"+
                 "CREATE TRIGGER folder_identifier_check AFTER DELETE\n"+
-                "on Folder\n"+
+                "on folder\n"+
                 "FOR EACH ROW\n"+
                 "BEGIN\n"+
                 "DECLARE tableName VARCHAR(20);\n"+
