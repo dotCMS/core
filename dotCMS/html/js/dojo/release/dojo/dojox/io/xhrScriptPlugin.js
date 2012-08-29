@@ -1,2 +1,36 @@
-//>>built
-define("dojox/io/xhrScriptPlugin",["dojo/_base/kernel","dojo/_base/window","dojo/io/script","dojox/io/xhrPlugins","dojox/io/scriptFrame"],function(_1,_2,_3,_4,_5){_1.getObject("io.xhrScriptPlugin",true,dojox);dojox.io.xhrScriptPlugin=function(_6,_7,_8){_4.register("script",function(_9,_a){return _a.sync!==true&&(_9=="GET"||_8)&&(_a.url.substring(0,_6.length)==_6);},function(_b,_c,_d){var _e=function(){_c.callbackParamName=_7;if(_1.body()){_c.frameDoc="frame"+Math.random();}return _3.get(_c);};return (_8?_8(_e,true):_e)(_b,_c,_d);});};return dojox.io.xhrScriptPlugin;});
+define("dojox/io/xhrScriptPlugin", ["dojo/_base/kernel", "dojo/_base/window", "dojo/io/script", "dojox/io/xhrPlugins", "dojox/io/scriptFrame"], function(dojo, window, script, xhrPlugins, scriptFrame){
+dojo.getObject("io.xhrScriptPlugin", true, dojox);
+
+dojox.io.xhrScriptPlugin = function(/*String*/url, /*String*/callbackParamName, /*Function?*/httpAdapter){
+	// summary:
+	//		Adds the script transport (JSONP) as an XHR plugin for the given site. See
+	//		dojox.io.script for more information on the transport. Note, that JSONP
+	//		is *not* a secure transport, by loading data from a third-party site using JSONP
+	//		the site has full access to your JavaScript environment.
+	// url:
+	//		Url prefix of the site which can handle JSONP requests.
+	// httpAdapter:
+	//		This allows for adapting HTTP requests that could not otherwise be
+	//		sent with JSONP, so you can use a convention for headers and PUT/DELETE methods.
+	xhrPlugins.register(
+		"script",
+		function(method,args){
+			 return args.sync !== true &&
+				(method == "GET" || httpAdapter) &&
+				(args.url.substring(0,url.length) == url);
+		},
+		function(method,args,hasBody){
+			var send = function(){
+				args.callbackParamName = callbackParamName;
+				if(dojo.body()){
+					args.frameDoc = "frame" + Math.random();
+				}
+				return script.get(args);
+			};
+			return (httpAdapter ? httpAdapter(send, true) : send)(method, args, hasBody); // use the JSONP transport
+		}
+	);
+};
+
+return dojox.io.xhrScriptPlugin;
+});

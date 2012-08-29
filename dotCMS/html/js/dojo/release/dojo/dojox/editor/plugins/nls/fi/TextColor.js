@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/fi/TextColor", //begin v1.x content
-({
+"dojox/editor/plugins/nls/fi/TextColor", ({
 	"setButtonText": "Aseta",
 	"cancelButtonText": "Peruuta"
 })
-
-//end v1.x content
 );

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nb/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nb/AutoSave", ({
 	"saveLabel": "Lagre",
 	"saveSettingLabelOn": "Angi intervall for automatisk lagring...",
 	"saveSettingLabelOff": "Slå av automatisk lagring",
@@ -14,5 +12,4 @@ define(
 	"saveMessageSuccess": "Lagret klokken ${0}",
 	"saveMessageFail": "Mislykket lagring klokken ${0}"
 })
-//end v1.x content
 );

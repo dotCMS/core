@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/az/commands", //begin v1.x content
-({
+"dijit/_editor/nls/az/commands", ({
 	"removeFormat" : "Formatı Sil",
 	"copy" :"Köçür",
 	"paste" :"Yapışdır",
@@ -49,5 +47,4 @@ define(
 	"appleKey" : "⌘${0}",
 	"ctrlKey" : "ctrl+${0}"
 })
-//end v1.x content
 );

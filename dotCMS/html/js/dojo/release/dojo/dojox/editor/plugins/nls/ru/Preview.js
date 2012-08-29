@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ru/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ru/Preview", ({
 	"preview": "Предварительный просмотр"
 })
-
-//end v1.x content
 );

@@ -1,2 +1,135 @@
-//>>built
-define("dijit/form/_ListBase",["dojo/_base/declare","dojo/window"],function(_1,_2){return _1("dijit.form._ListBase",null,{selected:null,_getTarget:function(_3){var _4=_3.target;var _5=this.containerNode;if(_4==_5||_4==this.domNode){return null;}while(_4&&_4.parentNode!=_5){_4=_4.parentNode;}return _4;},selectFirstNode:function(){var _6=this.containerNode.firstChild;while(_6&&_6.style.display=="none"){_6=_6.nextSibling;}this._setSelectedAttr(_6);},selectLastNode:function(){var _7=this.containerNode.lastChild;while(_7&&_7.style.display=="none"){_7=_7.previousSibling;}this._setSelectedAttr(_7);},selectNextNode:function(){var _8=this._getSelectedAttr();if(!_8){this.selectFirstNode();}else{var _9=_8.nextSibling;while(_9&&_9.style.display=="none"){_9=_9.nextSibling;}if(!_9){this.selectFirstNode();}else{this._setSelectedAttr(_9);}}},selectPreviousNode:function(){var _a=this._getSelectedAttr();if(!_a){this.selectLastNode();}else{var _b=_a.previousSibling;while(_b&&_b.style.display=="none"){_b=_b.previousSibling;}if(!_b){this.selectLastNode();}else{this._setSelectedAttr(_b);}}},_setSelectedAttr:function(_c){if(this.selected!=_c){var _d=this._getSelectedAttr();if(_d){this.onDeselect(_d);this.selected=null;}if(_c&&_c.parentNode==this.containerNode){this.selected=_c;_2.scrollIntoView(_c);this.onSelect(_c);}}else{if(_c){this.onSelect(_c);}}},_getSelectedAttr:function(){var v=this.selected;return (v&&v.parentNode==this.containerNode)?v:(this.selected=null);}});});
+define("dijit/form/_ListBase", [
+	"dojo/_base/declare",	// declare
+	"dojo/on",
+	"dojo/window" // winUtils.scrollIntoView
+], function(declare, on, winUtils){
+
+// module:
+//		dijit/form/_ListBase
+
+return declare( "dijit.form._ListBase", null, {
+	// summary:
+	//		Focus-less menu to handle UI events consistently
+	//		Abstract methods that must be defined externally:
+	//
+	//		- onSelect: item is active (mousedown but not yet mouseup, or keyboard arrow selected but no Enter)
+	//		- onDeselect:  cancels onSelect
+	// tags:
+	//		private
+
+	// selected: DOMNode
+	//		currently selected node
+	selected: null,
+
+	_listConnect: function(/*String|Function*/ eventType, /*String*/ callbackFuncName){
+		// summary:
+		//		Connects 'containerNode' to specified method of this object
+		//		and automatically registers for 'disconnect' on widget destroy.
+		// description:
+		//		Provide widget-specific analog to 'connect'.
+		//		The callback function is called with the normal event object,
+		//		but also a second parameter is passed that indicates which list item
+		//		actually received the event.
+		// returns:
+		//		A handle that can be passed to `disconnect` in order to disconnect
+		//		before the widget is destroyed.
+		// tags:
+		//		private
+
+		var self = this;
+		return self.own(on(self.containerNode,
+			on.selector(
+				function(eventTarget, selector, target){
+					return eventTarget.parentNode == target;
+				},
+				eventType
+			),
+			function(evt){
+				evt.preventDefault();
+				self[callbackFuncName](evt, this);
+			}
+		));
+	},
+
+	selectFirstNode: function(){
+		// summary:
+		//		Select the first displayed item in the list.
+		var first = this.containerNode.firstChild;
+		while(first && first.style.display == "none"){
+			first = first.nextSibling;
+		}
+		this._setSelectedAttr(first);
+	},
+
+	selectLastNode: function(){
+		// summary:
+		//		Select the last displayed item in the list
+		var last = this.containerNode.lastChild;
+		while(last && last.style.display == "none"){
+			last = last.previousSibling;
+		}
+		this._setSelectedAttr(last);
+	},
+
+	selectNextNode: function(){
+		// summary:
+		//		Select the item just below the current selection.
+		//		If nothing selected, select first node.
+		var selectedNode = this.selected;
+		if(!selectedNode){
+			this.selectFirstNode();
+		}else{
+			var next = selectedNode.nextSibling;
+			while(next && next.style.display == "none"){
+				next = next.nextSibling;
+			}
+			if(!next){
+				this.selectFirstNode();
+			}else{
+				this._setSelectedAttr(next);
+			}
+		}
+	},
+
+	selectPreviousNode: function(){
+		// summary:
+		//		Select the item just above the current selection.
+		//		If nothing selected, select last node (if
+		//		you select Previous and try to keep scrolling up the list).
+		var selectedNode = this.selected;
+		if(!selectedNode){
+			this.selectLastNode();
+		}else{
+			var prev = selectedNode.previousSibling;
+			while(prev && prev.style.display == "none"){
+				prev = prev.previousSibling;
+			}
+			if(!prev){
+				this.selectLastNode();
+			}else{
+				this._setSelectedAttr(prev);
+			}
+		}
+	},
+
+	_setSelectedAttr: function(/*DomNode*/ node){
+		// summary:
+		//		Does the actual select.
+		if(this.selected != node){
+			var selectedNode = this.selected;
+			if(selectedNode){
+				this.onDeselect(selectedNode);
+				this.selected = null;
+			}
+			if(node){
+				this.selected = node;
+				winUtils.scrollIntoView(node);
+				this.onSelect(node);
+			}
+		}else if(node){
+			this.onSelect(node);
+		}
+	}
+});
+
+});

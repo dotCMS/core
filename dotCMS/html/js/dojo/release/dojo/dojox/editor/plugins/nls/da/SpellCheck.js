@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/da/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/da/SpellCheck", ({
 	widgetLabel: "Bundtvis stavekontrol",
 	unfound: "Ikke fundet",
 	skip: "Spring over",
@@ -17,6 +15,4 @@ define(
 	iSkipAll: "Spring alle disse over",
 	iMsg: "Ingen forslag til stavning"
 })
-
-//end v1.x content
 );

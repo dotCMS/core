@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/de/commands", //begin v1.x content
-({
+"dijit/_editor/nls/de/commands", ({
 	'bold': 'Fett',
 	'copy': 'Kopieren',
 	'cut': 'Ausschneiden',
@@ -17,7 +15,7 @@ define(
 	'justifyRight': 'Rechtsbündig',
 	'outdent': 'Ausrücken',
 	'paste': 'Einfügen',
-	'redo': 'Wiederherstellen',
+	'redo': 'Wiederholen',
 	'removeFormat': 'Formatierung entfernen',
 	'selectAll': 'Alles auswählen',
 	'strikethrough': 'Durchgestrichen',
@@ -27,7 +25,7 @@ define(
 	'undo': 'Rückgängig',
 	'unlink': 'Link entfernen',
 	'createLink': 'Link erstellen',
-	'toggleDir': 'Wechselrichtung',
+	'toggleDir': 'Richtung wechseln',
 	'insertImage': 'Grafik einfügen',
 	'insertTable': 'Tabelle einfügen/bearbeiten',
 	'toggleTableBorder': 'Tabellenumrandung ein-/ausschalten',
@@ -40,15 +38,14 @@ define(
 	'formatBlock': 'Absatzstil',
 	'fontSize': 'Schriftgröße',
 	'fontName': 'Schriftartname',
-	'tabIndent': 'Tabulatoreinrückung',
+	'tabIndent': 'Registerkarteneinrückung',
 	"fullScreen": "Gesamtanzeige",
 	"viewSource": "HTML-Quelle",
 	"print": "Drucken",
 	"newPage": "Neue Seite",
 	/* Error messages */
-	'systemShortcut': 'Die Aktion "${0}" ist nur über einen Direktaufruf in Ihrem Browser verfügbar. Verwenden Sie ${1}.',
-	'ctrlKey':'Strg+${0}'
+	'systemShortcut': 'Die Aktion "${0}" ist im Browser nur über einen Tastaturkurzbefehl verfügbar. Verwenden Sie ${1}.',
+	'ctrlKey':'Strg+${0}',
+	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })
-
-//end v1.x content
 );

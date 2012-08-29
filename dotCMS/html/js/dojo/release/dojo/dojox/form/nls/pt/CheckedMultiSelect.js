@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/form/nls/pt/CheckedMultiSelect", ({
 	invalidMessage: "Ao menos um item deve ser selecionado.",

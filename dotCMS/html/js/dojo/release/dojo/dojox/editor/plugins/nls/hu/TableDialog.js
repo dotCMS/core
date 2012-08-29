@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/hu/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/hu/TableDialog", ({
 	insertTableTitle: "Táblázat beszúrása",
 	modifyTableTitle: "Táblázat módosítása",
 	rows: "Sorok:",
@@ -12,7 +10,7 @@ define(
 	tableWidth: "Táblázat szélessége:",
 	backgroundColor: "Háttérszín:",
 	borderColor: "Szegélyszín:",
-	borderThickness: "Szegély vastagsága",
+	borderThickness: "Szegélyvastagság:",
 	percent: "százalék",
 	pixels: "képpont",
 	"default": "alapértelmezett",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "Beállítás", // translated elsewhere?
 	buttonInsert: "Beszúrás",
 	buttonCancel: "Mégse",
-
 	selectTableLabel: "Táblázat kijelölése",
 	insertTableRowBeforeLabel: "Sor hozzáadása előtte",
 	insertTableRowAfterLabel: "Sor hozzáadása utána",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "Sor törlése",
 	deleteTableColumnLabel: "Oszlop törlése"
 })
-//end v1.x content
 );

@@ -1,4 +1,3 @@
-//>>built
 define(
 "dijit/nls/hr/common", ({
 	buttonOk: "OK",

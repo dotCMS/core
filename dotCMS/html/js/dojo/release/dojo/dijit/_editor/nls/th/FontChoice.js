@@ -1,24 +1,19 @@
-//>>built
 define(
-"dijit/_editor/nls/th/FontChoice", //begin v1.x content
-({
+"dijit/_editor/nls/th/FontChoice", ({
 	fontSize: "ขนาด",
 	fontName: "ฟอนต์",
 	formatBlock: "รูปแบบ",
-
 	serif: "serif",
 	"sans-serif": "sans-serif",
 	monospace: "monospace",
 	cursive: "cursive",
 	fantasy: "fantasy",
-
 	noFormat: "ไม่มี",
 	p: "ย่อหน้า",
 	h1: "ส่วนหัว",
 	h2: "ส่วนหัวย่อย",
 	h3: "ส่วนย่อยของส่วนหัวย่อย",
 	pre: "การกำหนดรูปแบบล่วงหน้า",
-
 	1: "xx-small",
 	2: "x-small",
 	3: "small",
@@ -27,6 +22,4 @@ define(
 	6: "x-large",
 	7: "xx-large"
 })
-
-//end v1.x content
 );

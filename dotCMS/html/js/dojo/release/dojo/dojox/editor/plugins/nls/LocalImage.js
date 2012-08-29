@@ -1,4 +1,3 @@
-//>>built
 define("dojox/editor/plugins/nls/LocalImage", { root:
 //begin v1.x content
 ({
@@ -11,8 +10,8 @@ define("dojox/editor/plugins/nls/LocalImage", { root:
 	prePopuTextUrl: "Enter an image URL",
 	prePopuTextBrowse: " or browse to a local file."
 })
-,
 //end v1.x content
+,
 "zh": true,
 "zh-tw": true,
 "tr": true,

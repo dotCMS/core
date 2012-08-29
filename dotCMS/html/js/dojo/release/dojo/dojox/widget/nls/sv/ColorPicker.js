@@ -1,11 +1,14 @@
-//>>built
 define(
-"dojox/widget/nls/sv/ColorPicker", //begin v1.x content
-({
+"dojox/widget/nls/sv/ColorPicker", ({
+redLabel: "r",
+greenLabel: "g",
+blueLabel: "b",
 hueLabel: "n",
 saturationLabel: "m",
-valueLabel: "l", /* aka intensity or brightness */
-huePickerTitle: "Välj färgton",
-saturationPickerTitle: "Välj mättnad"
+valueLabel: "k", /* aka intensity or brightness */
+degLabel: "\u00B0",
+hexLabel: "hex",
+huePickerTitle: "Nyans",
+saturationPickerTitle: "Mättnad"
 })
 );

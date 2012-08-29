@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nl/PageBreak", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nl/PageBreak", ({
 	"pageBreak": "Paginaeinde"
 })
-
-//end v1.x content
 );

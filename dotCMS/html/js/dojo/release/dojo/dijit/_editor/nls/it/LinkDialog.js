@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/it/LinkDialog", //begin v1.x content
-({
+"dijit/_editor/nls/it/LinkDialog", ({
 	createLinkTitle: "Proprietà collegamento",
 	insertImageTitle: "Proprietà immagine",
 	url: "URL:",
@@ -9,10 +7,8 @@ define(
 	target: "Destinazione:",
 	set: "Imposta",
 	currentWindow: "Finestra corrente",
-	parentWindow: "Finestra parent",
-	topWindow: "Finestra in primo piano",
+	parentWindow: "Finestra padre",
+	topWindow: "Finestra superiore",
 	newWindow: "Nuova finestra"
 })
-
-//end v1.x content
 );

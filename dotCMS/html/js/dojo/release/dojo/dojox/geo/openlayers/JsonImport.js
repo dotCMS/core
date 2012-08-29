@@ -1,2 +1,158 @@
-//>>built
-define("dojox/geo/openlayers/JsonImport",["dojo/_base/kernel","dojo/_base/declare","dojo/_base/xhr","dojo/_base/lang","dojo/_base/array","dojox/geo/openlayers/LineString","dojox/geo/openlayers/Collection","dojo/data/ItemFileReadStore","dojox/geo/openlayers/GeometryFeature"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9){return _2("dojox.geo.openlayers.JsonImport",null,{constructor:function(_a){this._params=_a;},loadData:function(){var p=this._params;_3.get({url:p.url,handleAs:"json",sync:true,load:_4.hitch(this,this._gotData),error:_4.hitch(this,this._loadError)});},_gotData:function(_b){var nf=this._params.nextFeature;if(!_4.isFunction(nf)){return;}var _c=_b.layerExtent;var _d=_c[0];var _e=_c[1];var _f=_d+_c[2];var lry=_e+_c[3];var _10=_b.layerExtentLL;var x1=_10[0];var y1=_10[1];var x2=x1+_10[2];var y2=y1+_10[3];var _11=x1;var _12=y2;var _13=x2;var _14=y1;var _15=_b.features;for(var f in _15){var o=_15[f];var s=o["shape"];var gf=null;if(_4.isArray(s[0])){var a=new Array();_5.forEach(s,function(_16){var ls=this._makeGeometry(_16,_d,_e,_f,lry,_11,_12,_13,_14);a.push(ls);},this);var g=new _7(a);gf=new _9(g);nf.call(this,gf);}else{gf=this._makeFeature(s,_d,_e,_f,lry,_11,_12,_13,_14);nf.call(this,gf);}}var _17=this._params.complete;if(_4.isFunction(_17)){_17.call(this,_17);}},_makeGeometry:function(s,ulx,uly,lrx,lry,_18,_19,_1a,_1b){var a=[];var k=0;for(var i=0;i<s.length-1;i+=2){var x=s[i];var y=s[i+1];k=(x-ulx)/(lrx-ulx);var px=k*(_1a-_18)+_18;k=(y-uly)/(lry-uly);var py=k*(_1b-_19)+_19;a.push({x:px,y:py});}var ls=new _6(a);return ls;},_makeFeature:function(s,ulx,uly,lrx,lry,_1c,_1d,_1e,_1f){var ls=this._makeGeometry(s,ulx,uly,lrx,lry,_1c,_1d,_1e,_1f);var gf=new _9(ls);return gf;},_loadError:function(){var f=this._params.error;if(_4.isFunction(f)){f.apply(this,parameters);}}});});
+define("dojox/geo/openlayers/JsonImport", [
+	"dojo/_base/declare",
+	"dojo/_base/xhr",
+	"dojo/_base/lang",
+	"dojo/_base/array",
+	"./LineString",
+	"./Collection",
+	"./GeometryFeature"
+], function(declare, xhr, lang, array, LineString, Collection, GeometryFeature){
+
+	/*=====
+	dojox.geo.openlayers.__JsonImportArgs = {
+		// summary:
+		//		The keyword arguments that can be passed in a JsonImport constructor.
+		// url: String
+		//		The url pointing to the JSON file to load.
+		// nextFeature: function
+		//		The function called each time a feature is read. The function is called with a GeometryFeature as argument.
+		// error: function
+		//		Error callback called if something fails.
+	};
+	=====*/
+
+	return declare("dojox.geo.openlayers.JsonImport", null, {
+		// summary:
+		//		Class to load JSON formated ShapeFile as output of the JSon Custom Map Converter.
+		// description:
+		//		This class loads JSON formated ShapeFile produced by the JSon Custom Map Converter.
+		//		When loading the JSON file, it calls a iterator function each time a feature is read.
+		//		This iterator function is provided as parameter to the constructor.
+		//
+		constructor : function(params){
+			// summary:
+			//		Construct a new JSON importer.
+			// params: dojox.geo.openlayers.__JsonImportArgs
+			//		The parameters to initialize this JsonImport instance.
+			this._params = params;
+		},
+
+		loadData: function(){
+			// summary:
+			//		Triggers the loading.
+			var p = this._params;
+			xhr.get({
+				url: p.url,
+				handleAs: "json",
+				sync: true,
+				load: lang.hitch(this, this._gotData),
+				error: lang.hitch(this, this._loadError)
+			});
+		},
+
+		_gotData: function(/* Object */items){
+			// summary:
+			//		Called when loading is complete.
+			// tags:
+			//		private
+			var nf = this._params.nextFeature;
+			if(!lang.isFunction(nf)){
+				return;
+			}
+
+			var extent = items.layerExtent;
+			var ulx = extent[0];
+			var uly = extent[1];
+			var lrx = ulx + extent[2];
+			var lry = uly + extent[3];
+
+			var extentLL = items.layerExtentLL;
+			var x1 = extentLL[0];
+			var y1 = extentLL[1];
+			var x2 = x1 + extentLL[2];
+			var y2 = y1 + extentLL[3];
+
+			var ulxLL = x1;
+			var ulyLL = y2;
+			var lrxLL = x2;
+			var lryLL = y1;
+
+			var features = items.features;
+
+			for( var f in features){
+				var o = features[f];
+				var s = o["shape"];
+				var gf = null;
+				if(lang.isArray(s[0])){
+
+					var a = new Array();
+					array.forEach(s, function(item){
+						var ls = this._makeGeometry(item, ulx, uly, lrx, lry, ulxLL, ulyLL, lrxLL, lryLL);
+						a.push(ls);
+					}, this);
+					var g = new Collection(a);
+					gf = new GeometryFeature(g);
+					nf.call(this, gf);
+
+				}else{
+					gf = this._makeFeature(s, ulx, uly, lrx, lry, ulxLL, ulyLL, lrxLL, lryLL);
+					nf.call(this, gf);
+				}
+			}
+			var complete = this._params.complete;
+			if(lang.isFunction(complete)){
+				complete.call(this, complete);
+			}
+		},
+
+		_makeGeometry: function(/* Array */s, /* Float */ulx, /* Float */uly, /* Float */lrx, /* Float */
+		lry, /* Float */ulxLL, /* Float */ulyLL, /* Float */lrxLL, /* Float */lryLL){
+			// summary:
+			//		Make a geometry with the specified points.
+			// tags:
+			//		private
+			var a = [];
+			var k = 0.0;
+			for( var i = 0; i < s.length - 1; i += 2){
+				var x = s[i];
+				var y = s[i + 1];
+
+				k = (x - ulx) / (lrx - ulx);
+				var px = k * (lrxLL - ulxLL) + ulxLL;
+
+				k = (y - uly) / (lry - uly);
+				var py = k * (lryLL - ulyLL) + ulyLL;
+
+				a.push({
+					x: px,
+					y: py
+				});
+
+			}
+			var ls = new LineString(a);
+			return ls; // LineString
+		},
+
+		_makeFeature: function(/* Array */s, /* Float */ulx, /* Float */uly, /* Float */lrx, /* Float */
+		lry, /* Float */ulxLL, /* Float */ulyLL, /* Float */lrxLL, /* Float */lryLL){
+			// summary:
+			//		Make a GeometryFeature with the specified points.
+			// tags:
+			//		private
+			var ls = this._makeGeometry(s, ulx, uly, lrx, lry, ulxLL, ulyLL, lrxLL, lryLL);
+			var gf = new GeometryFeature(ls);
+			return gf;
+		},
+
+		_loadError: function(){
+			// summary:
+			//		Called when an error occurs. Calls the error function is provided in the parameters.
+			// tags:
+			//		private
+			var f = this._params.error;
+			if(lang.isFunction(f)){
+				f.apply(this, parameters);
+			}
+		}
+	});
+});

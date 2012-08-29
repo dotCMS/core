@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/th/PageBreak", //begin v1.x content
-({
+"dojox/editor/plugins/nls/th/PageBreak", ({
 	"pageBreak": "เส้นกั้นหน้า"
 })
-
-//end v1.x content
 );

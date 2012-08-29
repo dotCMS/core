@@ -1,2 +1,481 @@
-//>>built
-define("dojox/grid/cells/_base",["dojo/_base/kernel","dojo/_base/declare","dojo/_base/lang","dojo/_base/event","dojo/_base/connect","dojo/_base/array","dojo/_base/sniff","dojo/dom","dojo/dom-attr","dojo/dom-construct","dijit/_Widget","../util"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_a,_b,_c){var _d=_2("dojox.grid._DeferredTextWidget",_b,{deferred:null,_destroyOnRemove:true,postCreate:function(){if(this.deferred){this.deferred.addBoth(_3.hitch(this,function(_e){if(this.domNode){this.domNode.innerHTML=_e;}}));}}});var _f=function(_10){try{_c.fire(_10,"focus");_c.fire(_10,"select");}catch(e){}};var _11=function(){setTimeout(_3.hitch.apply(_1,arguments),0);};var _12=_2("dojox.grid.cells._Base",null,{styles:"",classes:"",editable:false,alwaysEditing:false,formatter:null,defaultValue:"...",value:null,hidden:false,noresize:false,draggable:true,_valueProp:"value",_formatPending:false,constructor:function(_13){this._props=_13||{};_3.mixin(this,_13);if(this.draggable===undefined){this.draggable=true;}},_defaultFormat:function(_14,_15){var s=this.grid.formatterScope||this;var f=this.formatter;if(f&&s&&typeof f=="string"){f=this.formatter=s[f];}var v=(_14!=this.defaultValue&&f)?f.apply(s,_15):_14;if(typeof v=="undefined"){return this.defaultValue;}if(v&&v.addBoth){v=new _d({deferred:v},_a.create("span",{innerHTML:this.defaultValue}));}if(v&&v.declaredClass&&v.startup){return "<div class='dojoxGridStubNode' linkWidget='"+v.id+"' cellIdx='"+this.index+"'>"+this.defaultValue+"</div>";}return v;},format:function(_16,_17){var f,i=this.grid.edit.info,d=this.get?this.get(_16,_17):(this.value||this.defaultValue);d=(d&&d.replace&&this.grid.escapeHTMLInData)?d.replace(/&/g,"&amp;").replace(/</g,"&lt;"):d;if(this.editable&&(this.alwaysEditing||(i.rowIndex==_16&&i.cell==this))){return this.formatEditing(d,_16);}else{return this._defaultFormat(d,[d,_16,this]);}},formatEditing:function(_18,_19){},getNode:function(_1a){return this.view.getCellNode(_1a,this.index);},getHeaderNode:function(){return this.view.getHeaderCellNode(this.index);},getEditNode:function(_1b){return (this.getNode(_1b)||0).firstChild||0;},canResize:function(){var uw=this.unitWidth;return uw&&(uw!=="auto");},isFlex:function(){var uw=this.unitWidth;return uw&&_3.isString(uw)&&(uw=="auto"||uw.slice(-1)=="%");},applyEdit:function(_1c,_1d){this.grid.edit.applyCellEdit(_1c,this,_1d);},cancelEdit:function(_1e){this.grid.doCancelEdit(_1e);},_onEditBlur:function(_1f){if(this.grid.edit.isEditCell(_1f,this.index)){this.grid.edit.apply();}},registerOnBlur:function(_20,_21){if(this.commitOnBlur){_5.connect(_20,"onblur",function(e){setTimeout(_3.hitch(this,"_onEditBlur",_21),250);});}},needFormatNode:function(_22,_23){this._formatPending=true;_11(this,"_formatNode",_22,_23);},cancelFormatNode:function(){this._formatPending=false;},_formatNode:function(_24,_25){if(this._formatPending){this._formatPending=false;if(!_7("ie")){_8.setSelectable(this.grid.domNode,true);}this.formatNode(this.getEditNode(_25),_24,_25);}},formatNode:function(_26,_27,_28){if(_7("ie")){_11(this,"focus",_28,_26);}else{this.focus(_28,_26);}},dispatchEvent:function(m,e){if(m in this){return this[m](e);}},getValue:function(_29){return this.getEditNode(_29)[this._valueProp];},setValue:function(_2a,_2b){var n=this.getEditNode(_2a);if(n){n[this._valueProp]=_2b;}},focus:function(_2c,_2d){_f(_2d||this.getEditNode(_2c));},save:function(_2e){this.value=this.value||this.getValue(_2e);},restore:function(_2f){this.setValue(_2f,this.value);},_finish:function(_30){_8.setSelectable(this.grid.domNode,false);this.cancelFormatNode();},apply:function(_31){this.applyEdit(this.getValue(_31),_31);this._finish(_31);},cancel:function(_32){this.cancelEdit(_32);this._finish(_32);}});_12.markupFactory=function(_33,_34){var _35=_3.trim(_9.get(_33,"formatter")||"");if(_35){_34.formatter=_3.getObject(_35)||_35;}var get=_3.trim(_9.get(_33,"get")||"");if(get){_34.get=_3.getObject(get);}var _36=function(_37,_38,_39){var _3a=_3.trim(_9.get(_33,_37)||"");if(_3a){_38[_39||_37]=!(_3a.toLowerCase()=="false");}};_36("sortDesc",_34);_36("editable",_34);_36("alwaysEditing",_34);_36("noresize",_34);_36("draggable",_34);var _3b=_3.trim(_9.get(_33,"loadingText")||_9.get(_33,"defaultValue")||"");if(_3b){_34.defaultValue=_3b;}var _3c=function(_3d,_3e,_3f){var _40=_3.trim(_9.get(_33,_3d)||"")||undefined;if(_40){_3e[_3f||_3d]=_40;}};_3c("styles",_34);_3c("headerStyles",_34);_3c("cellStyles",_34);_3c("classes",_34);_3c("headerClasses",_34);_3c("cellClasses",_34);};var _41=_2("dojox.grid.cells.Cell",_12,{constructor:function(){this.keyFilter=this.keyFilter;},keyFilter:null,formatEditing:function(_42,_43){this.needFormatNode(_42,_43);return "<input class=\"dojoxGridInput\" type=\"text\" value=\""+_42+"\">";},formatNode:function(_44,_45,_46){this.inherited(arguments);this.registerOnBlur(_44,_46);},doKey:function(e){if(this.keyFilter){var key=String.fromCharCode(e.charCode);if(key.search(this.keyFilter)==-1){_4.stop(e);}}},_finish:function(_47){this.inherited(arguments);var n=this.getEditNode(_47);try{_c.fire(n,"blur");}catch(e){}}});_41.markupFactory=function(_48,_49){_12.markupFactory(_48,_49);var _4a=_3.trim(_9.get(_48,"keyFilter")||"");if(_4a){_49.keyFilter=new RegExp(_4a);}};var _4b=_2("dojox.grid.cells.RowIndex",_41,{name:"Row",postscript:function(){this.editable=false;},get:function(_4c){return _4c+1;}});_4b.markupFactory=function(_4d,_4e){_41.markupFactory(_4d,_4e);};var _4f=_2("dojox.grid.cells.Select",_41,{options:null,values:null,returnIndex:-1,constructor:function(_50){this.values=this.values||this.options;},formatEditing:function(_51,_52){this.needFormatNode(_51,_52);var h=["<select class=\"dojoxGridSelect\">"];for(var i=0,o,v;((o=this.options[i])!==undefined)&&((v=this.values[i])!==undefined);i++){v=v.replace?v.replace(/&/g,"&amp;").replace(/</g,"&lt;"):v;o=o.replace?o.replace(/&/g,"&amp;").replace(/</g,"&lt;"):o;h.push("<option",(_51==v?" selected":"")," value=\""+v+"\"",">",o,"</option>");}h.push("</select>");return h.join("");},_defaultFormat:function(_53,_54){var v=this.inherited(arguments);if(!this.formatter&&this.values&&this.options){var i=_6.indexOf(this.values,v);if(i>=0){v=this.options[i];}}return v;},getValue:function(_55){var n=this.getEditNode(_55);if(n){var i=n.selectedIndex,o=n.options[i];return this.returnIndex>-1?i:o.value||o.innerHTML;}}});_4f.markupFactory=function(_56,_57){_41.markupFactory(_56,_57);var _58=_3.trim(_9.get(_56,"options")||"");if(_58){var o=_58.split(",");if(o[0]!=_58){_57.options=o;}}var _59=_3.trim(_9.get(_56,"values")||"");if(_59){var v=_59.split(",");if(v[0]!=_59){_57.values=v;}}};var _5a=_2("dojox.grid.cells.AlwaysEdit",_41,{alwaysEditing:true,_formatNode:function(_5b,_5c){this.formatNode(this.getEditNode(_5c),_5b,_5c);},applyStaticValue:function(_5d){var e=this.grid.edit;e.applyCellEdit(this.getValue(_5d),this,_5d);e.start(this,_5d,true);}});_5a.markupFactory=function(_5e,_5f){_41.markupFactory(_5e,_5f);};var _60=_2("dojox.grid.cells.Bool",_5a,{_valueProp:"checked",formatEditing:function(_61,_62){return "<input class=\"dojoxGridInput\" type=\"checkbox\""+(_61?" checked=\"checked\"":"")+" style=\"width: auto\" />";},doclick:function(e){if(e.target.tagName=="INPUT"){this.applyStaticValue(e.rowIndex);}}});_60.markupFactory=function(_63,_64){_5a.markupFactory(_63,_64);};return _12;});
+define("dojox/grid/cells/_base", [
+	"dojo/_base/kernel",
+	"dojo/_base/declare",
+	"dojo/_base/lang",
+	"dojo/_base/event",
+	"dojo/_base/connect",
+	"dojo/_base/array",
+	"dojo/_base/sniff",
+	"dojo/dom",
+	"dojo/dom-attr",
+	"dojo/dom-construct",
+	"dijit/_Widget",
+	"../util"
+], function(dojo, declare, lang, event, connect, array, has, dom, domAttr, domConstruct, _Widget, util){
+
+	var _DeferredTextWidget = declare("dojox.grid._DeferredTextWidget", _Widget, {
+		deferred: null,
+		_destroyOnRemove: true,
+		postCreate: function(){
+			if(this.deferred){
+				this.deferred.addBoth(lang.hitch(this, function(text){
+					if(this.domNode){
+						this.domNode.innerHTML = text;
+					}
+				}));
+			}
+		}
+	});
+
+	var focusSelectNode = function(inNode){
+		try{
+			util.fire(inNode, "focus");
+			util.fire(inNode, "select");
+		}catch(e){// IE sux bad
+		}
+	};
+	
+	var whenIdle = function(/*inContext, inMethod, args ...*/){
+		setTimeout(lang.hitch.apply(dojo, arguments), 0);
+	};
+
+	var BaseCell = declare("dojox.grid.cells._Base", null, {
+		// summary:
+		//		Represents a grid cell and contains information about column options and methods
+		//		for retrieving cell related information.
+		//		Each column in a grid layout has a cell object and most events and many methods
+		//		provide access to these objects.
+		styles: '',
+		classes: '',
+		editable: false,
+		alwaysEditing: false,
+		formatter: null,
+		defaultValue: '...',
+		value: null,
+		hidden: false,
+		noresize: false,
+		draggable: true,
+		//private
+		_valueProp: "value",
+		_formatPending: false,
+
+		constructor: function(inProps){
+			this._props = inProps || {};
+			lang.mixin(this, inProps);
+			if(this.draggable === undefined){
+				this.draggable = true;
+			}
+		},
+
+		_defaultFormat: function(inValue, callArgs){
+			var s = this.grid.formatterScope || this;
+			var f = this.formatter;
+			if(f && s && typeof f == "string"){
+				f = this.formatter = s[f];
+			}
+			var v = (inValue != this.defaultValue && f) ? f.apply(s, callArgs) : inValue;
+			if(typeof v == "undefined"){
+				return this.defaultValue;
+			}
+			if(v && v.addBoth){
+				// Check if it's a deferred
+				v = new _DeferredTextWidget({deferred: v},
+									domConstruct.create("span", {innerHTML: this.defaultValue}));
+			}
+			if(v && v.declaredClass && v.startup){
+				return "<div class='dojoxGridStubNode' linkWidget='" +
+						v.id +
+						"' cellIdx='" +
+						this.index +
+						"'>" +
+						this.defaultValue +
+						"</div>";
+			}
+			return v;
+		},
+		
+		// data source
+		format: function(inRowIndex, inItem){
+			// summary:
+			//		provides the html for a given grid cell.
+			// inRowIndex: int
+			//		grid row index
+			// returns:
+			//		html for a given grid cell
+			var f, i=this.grid.edit.info, d=this.get ? this.get(inRowIndex, inItem) : (this.value || this.defaultValue);
+			d = (d && d.replace && this.grid.escapeHTMLInData) ? d.replace(/&/g, '&amp;').replace(/</g, '&lt;') : d;
+			if(this.editable && (this.alwaysEditing || (i.rowIndex==inRowIndex && i.cell==this))){
+				return this.formatEditing(d, inRowIndex);
+			}else{
+				return this._defaultFormat(d, [d, inRowIndex, this]);
+			}
+		},
+		formatEditing: function(inDatum, inRowIndex){
+			// summary:
+			//		formats the cell for editing
+			// inDatum: anything
+			//		cell data to edit
+			// inRowIndex: int
+			//		grid row index
+			// returns:
+			//		string of html to place in grid cell
+		},
+		// utility
+		getNode: function(inRowIndex){
+			// summary:
+			//		gets the dom node for a given grid cell.
+			// inRowIndex: int
+			//		grid row index
+			// returns:
+			//		dom node for a given grid cell
+			return this.view.getCellNode(inRowIndex, this.index);
+		},
+		getHeaderNode: function(){
+			return this.view.getHeaderCellNode(this.index);
+		},
+		getEditNode: function(inRowIndex){
+			return (this.getNode(inRowIndex) || 0).firstChild || 0;
+		},
+		canResize: function(){
+			var uw = this.unitWidth;
+			return uw && (uw!=='auto');
+		},
+		isFlex: function(){
+			var uw = this.unitWidth;
+			return uw && lang.isString(uw) && (uw=='auto' || uw.slice(-1)=='%');
+		},
+		// edit support
+		applyEdit: function(inValue, inRowIndex){
+			if(this.getNode(inRowIndex)){
+				this.grid.edit.applyCellEdit(inValue, this, inRowIndex);
+			}
+		},
+		cancelEdit: function(inRowIndex){
+			this.grid.doCancelEdit(inRowIndex);
+		},
+		_onEditBlur: function(inRowIndex){
+			if(this.grid.edit.isEditCell(inRowIndex, this.index)){
+				//console.log('editor onblur', e);
+				this.grid.edit.apply();
+			}
+		},
+		registerOnBlur: function(inNode, inRowIndex){
+			if(this.commitOnBlur){
+				connect.connect(inNode, "onblur", function(e){
+					// hack: if editor still thinks this editor is current some ms after it blurs, assume we've focused away from grid
+					setTimeout(lang.hitch(this, "_onEditBlur", inRowIndex), 250);
+				});
+			}
+		},
+		//protected
+		needFormatNode: function(inDatum, inRowIndex){
+			this._formatPending = true;
+			whenIdle(this, "_formatNode", inDatum, inRowIndex);
+		},
+		cancelFormatNode: function(){
+			this._formatPending = false;
+		},
+		//private
+		_formatNode: function(inDatum, inRowIndex){
+			if(this._formatPending){
+				this._formatPending = false;
+				// make cell selectable
+				if(!has('ie')){
+					dom.setSelectable(this.grid.domNode, true);
+				}
+				this.formatNode(this.getEditNode(inRowIndex), inDatum, inRowIndex);
+			}
+		},
+		//protected
+		formatNode: function(inNode, inDatum, inRowIndex){
+			// summary:
+			//		format the editing dom node. Use when editor is a widget.
+			// inNode: dom node
+			//		dom node for the editor
+			// inDatum: anything
+			//		cell data to edit
+			// inRowIndex: int
+			//		grid row index
+			if(has('ie')){
+				// IE sux bad
+				whenIdle(this, "focus", inRowIndex, inNode);
+			}else{
+				this.focus(inRowIndex, inNode);
+			}
+		},
+		dispatchEvent: function(m, e){
+			if(m in this){
+				return this[m](e);
+			}
+		},
+		//public
+		getValue: function(inRowIndex){
+			// summary:
+			//		returns value entered into editor
+			// inRowIndex: int
+			//		grid row index
+			// returns:
+			//		value of editor
+			return this.getEditNode(inRowIndex)[this._valueProp];
+		},
+		setValue: function(inRowIndex, inValue){
+			// summary:
+			//		set the value of the grid editor
+			// inRowIndex: int
+			//		grid row index
+			// inValue: anything
+			//		value of editor
+			var n = this.getEditNode(inRowIndex);
+			if(n){
+				n[this._valueProp] = inValue;
+			}
+		},
+		focus: function(inRowIndex, inNode){
+			// summary:
+			//		focus the grid editor
+			// inRowIndex: int
+			//		grid row index
+			// inNode: dom node
+			//		editor node
+			focusSelectNode(inNode || this.getEditNode(inRowIndex));
+		},
+		save: function(inRowIndex){
+			// summary:
+			//		save editor state
+			// inRowIndex: int
+			//		grid row index
+			this.value = this.value || this.getValue(inRowIndex);
+			//console.log("save", this.value, inCell.index, inRowIndex);
+		},
+		restore: function(inRowIndex){
+			// summary:
+			//		restore editor state
+			// inRowIndex: int
+			//		grid row index
+			this.setValue(inRowIndex, this.value);
+			//console.log("restore", this.value, inCell.index, inRowIndex);
+		},
+		//protected
+		_finish: function(inRowIndex){
+			// summary:
+			//		called when editing is completed to clean up editor
+			// inRowIndex: int
+			//		grid row index
+			dom.setSelectable(this.grid.domNode, false);
+			this.cancelFormatNode();
+		},
+		//public
+		apply: function(inRowIndex){
+			// summary:
+			//		apply edit from cell editor
+			// inRowIndex: int
+			//		grid row index
+			this.applyEdit(this.getValue(inRowIndex), inRowIndex);
+			this._finish(inRowIndex);
+		},
+		cancel: function(inRowIndex){
+			// summary:
+			//		cancel cell edit
+			// inRowIndex: int
+			//		grid row index
+			this.cancelEdit(inRowIndex);
+			this._finish(inRowIndex);
+		}
+	});
+	BaseCell.markupFactory = function(node, cellDef){
+		var formatter = lang.trim(domAttr.get(node, "formatter")||"");
+		if(formatter){
+			cellDef.formatter = lang.getObject(formatter)||formatter;
+		}
+		var get = lang.trim(domAttr.get(node, "get")||"");
+		if(get){
+			cellDef.get = lang.getObject(get);
+		}
+		var getBoolAttr = function(attr, cell, cellAttr){
+			var value = lang.trim(domAttr.get(node, attr)||"");
+			if(value){ cell[cellAttr||attr] = !(value.toLowerCase()=="false"); }
+		};
+		getBoolAttr("sortDesc", cellDef);
+		getBoolAttr("editable", cellDef);
+		getBoolAttr("alwaysEditing", cellDef);
+		getBoolAttr("noresize", cellDef);
+		getBoolAttr("draggable", cellDef);
+
+		var value = lang.trim(domAttr.get(node, "loadingText")||domAttr.get(node, "defaultValue")||"");
+		if(value){
+			cellDef.defaultValue = value;
+		}
+
+		var getStrAttr = function(attr, cell, cellAttr){
+			var value = lang.trim(domAttr.get(node, attr)||"")||undefined;
+			if(value){ cell[cellAttr||attr] = value; }
+		};
+		getStrAttr("styles", cellDef);
+		getStrAttr("headerStyles", cellDef);
+		getStrAttr("cellStyles", cellDef);
+		getStrAttr("classes", cellDef);
+		getStrAttr("headerClasses", cellDef);
+		getStrAttr("cellClasses", cellDef);
+	};
+
+	var Cell = declare("dojox.grid.cells.Cell", BaseCell, {
+		// summary:
+		//		grid cell that provides a standard text input box upon editing
+		constructor: function(){
+			this.keyFilter = this.keyFilter;
+		},
+		// keyFilter: RegExp
+		//		optional regex for disallowing keypresses
+		keyFilter: null,
+		formatEditing: function(inDatum, inRowIndex){
+			this.needFormatNode(inDatum, inRowIndex);
+			return '<input class="dojoxGridInput" type="text" value="' + inDatum + '">';
+		},
+		formatNode: function(inNode, inDatum, inRowIndex){
+			this.inherited(arguments);
+			// FIXME: feels too specific for this interface
+			this.registerOnBlur(inNode, inRowIndex);
+		},
+		doKey: function(e){
+			if(this.keyFilter){
+				var key = String.fromCharCode(e.charCode);
+				if(key.search(this.keyFilter) == -1){
+					event.stop(e);
+				}
+			}
+		},
+		_finish: function(inRowIndex){
+			this.inherited(arguments);
+			var n = this.getEditNode(inRowIndex);
+			try{
+				util.fire(n, "blur");
+			}catch(e){}
+		}
+	});
+	Cell.markupFactory = function(node, cellDef){
+		BaseCell.markupFactory(node, cellDef);
+		var keyFilter = lang.trim(domAttr.get(node, "keyFilter")||"");
+		if(keyFilter){
+			cellDef.keyFilter = new RegExp(keyFilter);
+		}
+	};
+
+	var RowIndex = declare("dojox.grid.cells.RowIndex", Cell, {
+		name: 'Row',
+
+		postscript: function(){
+			this.editable = false;
+		},
+		get: function(inRowIndex){
+			return inRowIndex + 1;
+		}
+	});
+	RowIndex.markupFactory = function(node, cellDef){
+		Cell.markupFactory(node, cellDef);
+	};
+
+	var Select = declare("dojox.grid.cells.Select", Cell, {
+		// summary:
+		//		grid cell that provides a standard select for editing
+
+		// options: Array
+		//		text of each item
+		options: null,
+
+		// values: Array
+		//		value for each item
+		values: null,
+
+		// returnIndex: Integer
+		//		editor returns only the index of the selected option and not the value
+		returnIndex: -1,
+
+		constructor: function(inCell){
+			this.values = this.values || this.options;
+		},
+		formatEditing: function(inDatum, inRowIndex){
+			this.needFormatNode(inDatum, inRowIndex);
+			var h = [ '<select class="dojoxGridSelect">' ];
+			for (var i=0, o, v; ((o=this.options[i]) !== undefined)&&((v=this.values[i]) !== undefined); i++){
+				v = v.replace ? v.replace(/&/g, '&amp;').replace(/</g, '&lt;') : v;
+				o = o.replace ? o.replace(/&/g, '&amp;').replace(/</g, '&lt;') : o;
+				h.push("<option", (inDatum==v ? ' selected' : ''), ' value="' + v + '"', ">", o, "</option>");
+			}
+			h.push('</select>');
+			return h.join('');
+		},
+		_defaultFormat: function(inValue, callArgs){
+			var v = this.inherited(arguments);
+			// when 'values' and 'options' both provided and there is no cutomized formatter,
+			// then we use 'options' as label in order to be consistent
+			if(!this.formatter && this.values && this.options){
+				var i = array.indexOf(this.values, v);
+				if(i >= 0){
+					v = this.options[i];
+				}
+			}
+			return v;
+		},
+		getValue: function(inRowIndex){
+			var n = this.getEditNode(inRowIndex);
+			if(n){
+				var i = n.selectedIndex, o = n.options[i];
+				return this.returnIndex > -1 ? i : o.value || o.innerHTML;
+			}
+		}
+	});
+	Select.markupFactory = function(node, cell){
+		Cell.markupFactory(node, cell);
+		var options = lang.trim(domAttr.get(node, "options")||"");
+		if(options){
+			var o = options.split(',');
+			if(o[0] != options){
+				cell.options = o;
+			}
+		}
+		var values = lang.trim(domAttr.get(node, "values")||"");
+		if(values){
+			var v = values.split(',');
+			if(v[0] != values){
+				cell.values = v;
+			}
+		}
+	};
+
+	var AlwaysEdit = declare("dojox.grid.cells.AlwaysEdit", Cell, {
+		// summary:
+		//		grid cell that is always in an editable state, regardless of grid editing state
+		alwaysEditing: true,
+		_formatNode: function(inDatum, inRowIndex){
+			this.formatNode(this.getEditNode(inRowIndex), inDatum, inRowIndex);
+		},
+		applyStaticValue: function(inRowIndex){
+			var e = this.grid.edit;
+			e.applyCellEdit(this.getValue(inRowIndex), this, inRowIndex);
+			e.start(this, inRowIndex, true);
+		}
+	});
+	AlwaysEdit.markupFactory = function(node, cell){
+		Cell.markupFactory(node, cell);
+	};
+
+	var Bool = declare("dojox.grid.cells.Bool", AlwaysEdit, {
+		// summary:
+		//		grid cell that provides a standard checkbox that is always on for editing
+		_valueProp: "checked",
+		formatEditing: function(inDatum, inRowIndex){
+			return '<input class="dojoxGridInput" type="checkbox"' + (inDatum ? ' checked="checked"' : '') + ' style="width: auto" />';
+		},
+		doclick: function(e){
+			if(e.target.tagName == 'INPUT'){
+				this.applyStaticValue(e.rowIndex);
+			}
+		}
+	});
+	Bool.markupFactory = function(node, cell){
+		AlwaysEdit.markupFactory(node, cell);
+	};
+
+	return BaseCell;
+
+});

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nb/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nb/TableDialog", ({
 	insertTableTitle: "Sett inn tabell",
 	modifyTableTitle: "Endre tabell",
 	rows: "Rader:",
@@ -12,7 +10,7 @@ define(
 	tableWidth: "Tabellbredde:",
 	backgroundColor: "Bakgrunnsfarge:",
 	borderColor: "Kantlinjefarge:",
-	borderThickness: "Kanttykkelse",
+	borderThickness: "Kantlinjetykkelse:",
 	percent: "prosent",
 	pixels: "piksler",
 	"default": "standard",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "Definer", // translated elsewhere?
 	buttonInsert: "Sett inn",
 	buttonCancel: "Avbryt",
-
 	selectTableLabel: "Velg tabell",
 	insertTableRowBeforeLabel: "Legg til rad foran",
 	insertTableRowAfterLabel: "Legg til rad etter",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "Slett rad",
 	deleteTableColumnLabel: "Slett kolonne"
 })
-//end v1.x content
 );

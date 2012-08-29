@@ -26,12 +26,12 @@
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.category")) %>'
 		},{
 			id: 'checkbox',
-			displayName: '<%= LanguageUtil.get(pageContext, "Checkbox") %>', 
+			displayName: '<%= LanguageUtil.get(pageContext, "Checkbox") %>',
 			label: '<span class="checkBoxIcon"></span> <%= LanguageUtil.get(pageContext, "Checkbox") %>',
 			imageurl: '/html/images/icons/ui-check-box.png',
-			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','defaultText','hintText','userSearchable','indexed','dataTypeRow','radioText','radioDecimal','radioNumber'],
+			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','defaultText','hintText','userSearchable','indexed','dataTypeRow','radioText'],
 			dataType:'text',
-			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.checkbox")) %>'	
+			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.checkbox")) %>'
 		},{
 			id: 'constant',
 			displayName: '<%= LanguageUtil.get(pageContext, "Constant-Field") %>',
@@ -73,7 +73,7 @@
 			dataType:'text',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.file")) %>'
 		},{
-		
+
 			id: 'hidden',
 			displayName: '<%= LanguageUtil.get(pageContext, "Hidden-Field") %>',
 			label: '<span class="tabIcon"></span> <%= LanguageUtil.get(pageContext, "Hidden-Field") %>',
@@ -82,7 +82,7 @@
 			dataType:'constant',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.hidden")) %>'
 		},{
-		
+
 			id: 'host or folder',
 			displayName: '<%= LanguageUtil.get(pageContext, "Host-Folder") %>',
 			label: '<span class="folderGlobeIcon"></span> <%= LanguageUtil.get(pageContext, "Host-Folder") %>',
@@ -106,7 +106,7 @@
 			show:['elementSelect','displayType','labelRow'],
 			dataType:'section_divider',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.line_divider")) %>'
-			
+
 		},{
 			id: 'multi_select',
 			displayName: '<%= LanguageUtil.get(pageContext, "Multi-Select") %>',
@@ -207,5 +207,5 @@
 
 
 
-		]				
+		]
 	};

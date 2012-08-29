@@ -1,2 +1,104 @@
-//>>built
-define(["dijit","dojo","dojox"],function(_1,_2,_3){_2.provide("dojox.drawing.annotations.Angle");_3.drawing.annotations.Angle=_3.drawing.util.oo.declare(function(_4){this.stencil=_4.stencil;this.util=_4.stencil.util;this.mouse=_4.stencil.mouse;this.stencil.connectMult([["onDrag",this,"showAngle"],["onUp",this,"hideAngle"],["onTransformBegin",this,"showAngle"],["onTransform",this,"showAngle"],["onTransformEnd",this,"hideAngle"]]);},{type:"dojox.drawing.tools.custom",angle:0,showAngle:function(){if(!this.stencil.selected&&this.stencil.created){return;}if(this.stencil.getRadius()<this.stencil.minimumSize){this.hideAngle();return;}var _5=this.getAngleNode();var d=this.stencil.pointsToData();var pt=_3.drawing.util.positioning.angle({x:d.x1,y:d.y1},{x:d.x2,y:d.y2});var sc=this.mouse.scrollOffset();var mx=this.stencil.getTransform();var dx=mx.dx/this.mouse.zoom;var dy=mx.dy/this.mouse.zoom;pt.x/=this.mouse.zoom;pt.y/=this.mouse.zoom;var x=this.stencil._offX+pt.x-sc.left+dx;var y=this.stencil._offY+pt.y-sc.top+dy;_2.style(_5,{left:x+"px",top:y+"px",align:pt.align});var _6=this.stencil.getAngle();if(this.stencil.style.zAxis&&this.stencil.shortType=="vector"){_5.innerHTML=this.stencil.data.cosphi>0?"out of":"into";}else{if(this.stencil.shortType=="line"){_5.innerHTML=this.stencil.style.zAxis?"out of":Math.ceil(_6%180);}else{_5.innerHTML=Math.ceil(_6);}}},getAngleNode:function(){if(!this._angleNode){this._angleNode=_2.create("span",null,_2.body());_2.addClass(this._angleNode,"textAnnotation");_2.style(this._angleNode,"opacity",1);}return this._angleNode;},hideAngle:function(){if(this._angleNode&&_2.style(this._angleNode,"opacity")>0.9){_2.fadeOut({node:this._angleNode,duration:500,onEnd:function(_7){_2.destroy(_7);}}).play();this._angleNode=null;}}});});
+define("dojox/drawing/annotations/Angle", ["dojo", "../util/oo", "../util/positioning"], 
+function(dojo, oo, positioning){
+
+//dojox.drawing.annotations.Angle = 
+return oo.declare(
+	function(/*Object*/ options){
+		// options: Object
+		//		One key value: the stencil that called this.
+
+		this.stencil = options.stencil;
+		this.util = options.stencil.util;
+		this.mouse = options.stencil.mouse;
+
+		this.stencil.connectMult([
+			["onDrag", this, "showAngle"],
+			["onUp", this, "hideAngle"],
+			["onTransformBegin", this, "showAngle"],
+			["onTransform", this, "showAngle"],
+			["onTransformEnd", this, "hideAngle"]
+		]);
+	},
+	{
+		// summary:
+		//		When initiated, an HTML box will hover near the Stencil,
+		//		displaying it's angle while drawn or modified. Currently
+		//		only works with Vector, Line, Arrow, and Axes.
+		// description:
+		//		Annotation is positioned with dojox.drawing.util.positioning.angle
+		//		That method should be overwritten for custom placement.
+		//		Called internally.
+
+		type:"dojox.drawing.tools.custom",
+		angle:0,
+
+		showAngle: function(){
+			// summary:
+			//		Called to display angle
+
+			if(!this.stencil.selected && this.stencil.created){ return; }
+			if(this.stencil.getRadius() < this.stencil.minimumSize){
+				this.hideAngle();
+				return;
+			}
+			var node = this.getAngleNode();
+			var d = this.stencil.pointsToData();
+			var pt = positioning.angle({x:d.x1,y:d.y1},{x:d.x2,y:d.y2});
+			var sc = this.mouse.scrollOffset();
+			var mx = this.stencil.getTransform();
+			var dx = mx.dx / this.mouse.zoom;
+			var dy = mx.dy / this.mouse.zoom;
+			pt.x /= this.mouse.zoom;
+			pt.y /= this.mouse.zoom;
+
+			// adding _offX & _offY since this is HTML
+			// and we are from the page corner, not
+			// the canvas corner
+			var x = this.stencil._offX + pt.x - sc.left + dx;
+			var y = this.stencil._offY + pt.y - sc.top + dy;
+			dojo.style(node, {
+				left:  	x + "px",
+				top: 	y + "px",
+				align:pt.align
+			});
+
+			var angle=this.stencil.getAngle();
+			if(this.stencil.style.zAxis && this.stencil.shortType=="vector"){
+			  node.innerHTML = this.stencil.data.cosphi > 0 ? "out of" : "into";
+			}else if(this.stencil.shortType=="line"){
+			  node.innerHTML = this.stencil.style.zAxis?"out of":Math.ceil(angle%180);
+			}else{
+			  node.innerHTML = Math.ceil(angle);
+			}
+		},
+
+		getAngleNode: function(){
+			// summary:
+			//		Gets or creates HTMLNode used for display
+			if(!this._angleNode){
+				this._angleNode = dojo.create("span", null, dojo.body());
+				dojo.addClass(this._angleNode, "textAnnotation");
+				dojo.style(this._angleNode, "opacity", 1);
+			}
+			return this._angleNode; //HTMLNode
+		},
+
+		hideAngle: function(){
+			// summary:
+			//		Turns display off.
+
+			if(this._angleNode && dojo.style(this._angleNode, "opacity")>0.9){
+
+				dojo.fadeOut({node:this._angleNode,
+					duration:500,
+					onEnd: function(node){
+						dojo.destroy(node);
+					}
+				}).play();
+				this._angleNode = null;
+			}
+
+		}
+	}
+);
+});

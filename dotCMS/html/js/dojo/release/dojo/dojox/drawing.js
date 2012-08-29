@@ -1,2 +1,9 @@
-//>>built
-define(["dijit","dojo","dojox","dojo/require!dojox/drawing/_base"],function(_1,_2,_3){_2.provide("dojox.drawing");_2.require("dojox.drawing._base");});
+define("dojox/drawing", ['./drawing/_base'],function(){
+	/*=====
+	 return {
+	 // summary:
+	 //		Deprecated.  Should require dojox/drawing modules directly rather than trying to access them through
+	 //		this module.
+	 };
+	 =====*/
+});

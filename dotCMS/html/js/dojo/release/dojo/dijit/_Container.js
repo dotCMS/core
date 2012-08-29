@@ -1,2 +1,94 @@
-//>>built
-define("dijit/_Container",["dojo/_base/array","dojo/_base/declare","dojo/dom-construct","./registry"],function(_1,_2,_3,_4){return _2("dijit._Container",null,{buildRendering:function(){this.inherited(arguments);if(!this.containerNode){this.containerNode=this.domNode;}},addChild:function(_5,_6){var _7=this.containerNode;if(_6&&typeof _6=="number"){var _8=this.getChildren();if(_8&&_8.length>=_6){_7=_8[_6-1].domNode;_6="after";}}_3.place(_5.domNode,_7,_6);if(this._started&&!_5._started){_5.startup();}},removeChild:function(_9){if(typeof _9=="number"){_9=this.getChildren()[_9];}if(_9){var _a=_9.domNode;if(_a&&_a.parentNode){_a.parentNode.removeChild(_a);}}},hasChildren:function(){return this.getChildren().length>0;},_getSiblingOfChild:function(_b,_c){var _d=_b.domNode,_e=(_c>0?"nextSibling":"previousSibling");do{_d=_d[_e];}while(_d&&(_d.nodeType!=1||!_4.byNode(_d)));return _d&&_4.byNode(_d);},getIndexOfChild:function(_f){return _1.indexOf(this.getChildren(),_f);}});});
+define("dijit/_Container", [
+	"dojo/_base/array", // array.forEach array.indexOf
+	"dojo/_base/declare", // declare
+	"dojo/dom-construct" // domConstruct.place
+], function(array, declare, domConstruct){
+
+	// module:
+	//		dijit/_Container
+
+	return declare("dijit._Container", null, {
+		// summary:
+		//		Mixin for widgets that contain HTML and/or a set of widget children.
+
+		buildRendering: function(){
+			this.inherited(arguments);
+			if(!this.containerNode){
+				// all widgets with descendants must set containerNode
+				this.containerNode = this.domNode;
+			}
+		},
+
+		addChild: function(/*dijit/_WidgetBase*/ widget, /*int?*/ insertIndex){
+			// summary:
+			//		Makes the given widget a child of this widget.
+			// description:
+			//		Inserts specified child widget's dom node as a child of this widget's
+			//		container node, and possibly does other processing (such as layout).
+			//
+			//		Functionality is undefined if this widget contains anything besides
+			//		a list of child widgets (ie, if it contains arbitrary non-widget HTML).
+
+			var refNode = this.containerNode;
+			if(insertIndex && typeof insertIndex == "number"){
+				var children = this.getChildren();
+				if(children && children.length >= insertIndex){
+					refNode = children[insertIndex-1].domNode;
+					insertIndex = "after";
+				}
+			}
+			domConstruct.place(widget.domNode, refNode, insertIndex);
+
+			// If I've been started but the child widget hasn't been started,
+			// start it now.  Make sure to do this after widget has been
+			// inserted into the DOM tree, so it can see that it's being controlled by me,
+			// so it doesn't try to size itself.
+			if(this._started && !widget._started){
+				widget.startup();
+			}
+		},
+
+		removeChild: function(/*Widget|int*/ widget){
+			// summary:
+			//		Removes the passed widget instance from this widget but does
+			//		not destroy it.  You can also pass in an integer indicating
+			//		the index within the container to remove (ie, removeChild(5) removes the sixth widget).
+
+			if(typeof widget == "number"){
+				widget = this.getChildren()[widget];
+			}
+
+			if(widget){
+				var node = widget.domNode;
+				if(node && node.parentNode){
+					node.parentNode.removeChild(node); // detach but don't destroy
+				}
+			}
+		},
+
+		hasChildren: function(){
+			// summary:
+			//		Returns true if widget has child widgets, i.e. if this.containerNode contains widgets.
+			return this.getChildren().length > 0;	// Boolean
+		},
+
+		_getSiblingOfChild: function(/*dijit/_WidgetBase*/ child, /*int*/ dir){
+			// summary:
+			//		Get the next or previous widget sibling of child
+			// dir:
+			//		if 1, get the next sibling
+			//		if -1, get the previous sibling
+			// tags:
+			//		private
+			var children = this.getChildren(),
+				idx = array.indexOf(this.getChildren(), child);	// int
+			return children[idx + dir];
+		},
+
+		getIndexOfChild: function(/*dijit/_WidgetBase*/ child){
+			// summary:
+			//		Gets the index of the child in this container or -1 if not found
+			return array.indexOf(this.getChildren(), child);	// int
+		}
+	});
+});

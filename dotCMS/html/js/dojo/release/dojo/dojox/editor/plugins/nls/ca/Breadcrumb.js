@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ca/Breadcrumb", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ca/Breadcrumb", ({
 	"nodeActions": "${nodeName} - Accions",
 	"selectContents": "Selecciona contingut",
 	"selectElement": "Selecciona element",
@@ -10,6 +8,4 @@ define(
 	"moveStart": "Mou el cursor a l'inici",
 	"moveEnd": "Mou el cursor al final"
 })
-
-//end v1.x content
 );

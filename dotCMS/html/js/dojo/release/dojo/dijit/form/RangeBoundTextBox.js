@@ -1,2 +1,134 @@
-//>>built
-define("dijit/form/RangeBoundTextBox",["dojo/_base/declare","dojo/i18n","./MappedTextBox"],function(_1,_2,_3){return _1("dijit.form.RangeBoundTextBox",_3,{rangeMessage:"",rangeCheck:function(_4,_5){return ("min" in _5?(this.compare(_4,_5.min)>=0):true)&&("max" in _5?(this.compare(_4,_5.max)<=0):true);},isInRange:function(){return this.rangeCheck(this.get("value"),this.constraints);},_isDefinitelyOutOfRange:function(){var _6=this.get("value");var _7=false;var _8=false;if("min" in this.constraints){var _9=this.constraints.min;_9=this.compare(_6,((typeof _9=="number")&&_9>=0&&_6!=0)?0:_9);_7=(typeof _9=="number")&&_9<0;}if("max" in this.constraints){var _a=this.constraints.max;_a=this.compare(_6,((typeof _a!="number")||_a>0)?_a:0);_8=(typeof _a=="number")&&_a>0;}return _7||_8;},_isValidSubset:function(){return this.inherited(arguments)&&!this._isDefinitelyOutOfRange();},isValid:function(_b){return this.inherited(arguments)&&((this._isEmpty(this.textbox.value)&&!this.required)||this.isInRange(_b));},getErrorMessage:function(_c){var v=this.get("value");if(v!==null&&v!==""&&v!==undefined&&(typeof v!="number"||!isNaN(v))&&!this.isInRange(_c)){return this.rangeMessage;}return this.inherited(arguments);},postMixInProperties:function(){this.inherited(arguments);if(!this.rangeMessage){this.messages=_2.getLocalization("dijit.form","validate",this.lang);this.rangeMessage=this.messages.rangeMessage;}},_setConstraintsAttr:function(_d){this.inherited(arguments);if(this.focusNode){if(this.constraints.min!==undefined){this.focusNode.setAttribute("aria-valuemin",this.constraints.min);}else{this.focusNode.removeAttribute("aria-valuemin");}if(this.constraints.max!==undefined){this.focusNode.setAttribute("aria-valuemax",this.constraints.max);}else{this.focusNode.removeAttribute("aria-valuemax");}}},_setValueAttr:function(_e,_f){this.focusNode.setAttribute("aria-valuenow",_e);this.inherited(arguments);},applyTextDir:function(){}});});
+define("dijit/form/RangeBoundTextBox", [
+	"dojo/_base/declare", // declare
+	"dojo/i18n", // i18n.getLocalization
+	"./MappedTextBox"
+], function(declare, i18n, MappedTextBox){
+
+	// module:
+	//		dijit/form/RangeBoundTextBox
+
+
+	var RangeBoundTextBox = declare("dijit.form.RangeBoundTextBox", MappedTextBox, {
+		// summary:
+		//		Base class for textbox form widgets which defines a range of valid values.
+
+		// rangeMessage: String
+		//		The message to display if value is out-of-range
+		rangeMessage: "",
+
+		/*=====
+		// constraints: RangeBoundTextBox.__Constraints
+		constraints: {},
+		======*/
+
+		rangeCheck: function(/*Number*/ primitive, /*dijit/form/RangeBoundTextBox.__Constraints*/ constraints){
+			// summary:
+			//		Overridable function used to validate the range of the numeric input value.
+			// tags:
+			//		protected
+			return	("min" in constraints? (this.compare(primitive,constraints.min) >= 0) : true) &&
+				("max" in constraints? (this.compare(primitive,constraints.max) <= 0) : true); // Boolean
+		},
+
+		isInRange: function(/*Boolean*/ /*===== isFocused =====*/){
+			// summary:
+			//		Tests if the value is in the min/max range specified in constraints
+			// tags:
+			//		protected
+			return this.rangeCheck(this.get('value'), this.constraints);
+		},
+
+		_isDefinitelyOutOfRange: function(){
+			// summary:
+			//		Returns true if the value is out of range and will remain
+			//		out of range even if the user types more characters
+			var val = this.get('value');
+			if(val == null){ return false; } // not yet valid enough to compare to
+			var outOfRange = false;
+			if("min" in this.constraints){
+				var min = this.constraints.min;
+				outOfRange = this.compare(val, ((typeof min == "number") && min >= 0 && val != 0) ? 0 : min) < 0;
+			}
+			if(!outOfRange && ("max" in this.constraints)){
+				var max = this.constraints.max;
+				outOfRange = this.compare(val, ((typeof max != "number") || max > 0) ? max : 0) > 0;
+			}
+			return outOfRange;
+		},
+
+		_isValidSubset: function(){
+			// summary:
+			//		Overrides `dijit/form/ValidationTextBox._isValidSubset()`.
+			//		Returns true if the input is syntactically valid, and either within
+			//		range or could be made in range by more typing.
+			return this.inherited(arguments) && !this._isDefinitelyOutOfRange();
+		},
+
+		isValid: function(/*Boolean*/ isFocused){
+			// Overrides dijit/form/ValidationTextBox.isValid() to check that the value is also in range.
+			return this.inherited(arguments) &&
+				((this._isEmpty(this.textbox.value) && !this.required) || this.isInRange(isFocused)); // Boolean
+		},
+
+		getErrorMessage: function(/*Boolean*/ isFocused){
+			// Overrides dijit/form/ValidationTextBox.getErrorMessage() to print "out of range" message if appropriate
+			var v = this.get('value');
+			if(v != null /* and !undefined */ && v !== '' && (typeof v != "number" || !isNaN(v)) && !this.isInRange(isFocused)){ // don't check isInRange w/o a real value
+				return this.rangeMessage; // String
+			}
+			return this.inherited(arguments);
+		},
+
+		postMixInProperties: function(){
+			this.inherited(arguments);
+			if(!this.rangeMessage){
+				this.messages = i18n.getLocalization("dijit.form", "validate", this.lang);
+				this.rangeMessage = this.messages.rangeMessage;
+			}
+		},
+
+		_setConstraintsAttr: function(/*Object*/ constraints){
+			this.inherited(arguments);
+			if(this.focusNode){ // not set when called from postMixInProperties
+				if(this.constraints.min !== undefined){
+					this.focusNode.setAttribute("aria-valuemin", this.constraints.min);
+				}else{
+					this.focusNode.removeAttribute("aria-valuemin");
+				}
+				if(this.constraints.max !== undefined){
+					this.focusNode.setAttribute("aria-valuemax", this.constraints.max);
+				}else{
+					this.focusNode.removeAttribute("aria-valuemax");
+				}
+			}
+		},
+
+		_setValueAttr: function(/*Number*/ value, /*Boolean?*/ priorityChange){
+			// summary:
+			//		Hook so set('value', ...) works.
+
+			this.focusNode.setAttribute("aria-valuenow", value);
+			this.inherited(arguments);
+		},
+
+		applyTextDir: function(/*===== element, text =====*/){
+			// summary:
+			//		The function overridden in the _BidiSupport module,
+			//		originally used for setting element.dir according to this.textDir.
+			//		In this case does nothing.
+			// element: Object
+			// text: String
+			// tags:
+			//		protected.
+		}
+	});
+	/*=====
+	RangeBoundTextBox.__Constraints = declare(null, {
+		// min: Number
+		//		Minimum signed value.  Default is -Infinity
+		// max: Number
+		//		Maximum signed value.  Default is +Infinity
+	});
+	=====*/
+	return RangeBoundTextBox;
+});

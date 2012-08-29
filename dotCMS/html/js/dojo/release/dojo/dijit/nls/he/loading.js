@@ -1,9 +1,6 @@
-//>>built
 define(
-"dijit/nls/he/loading", //begin v1.x content
-({
+"dijit/nls/he/loading", ({
 	loadingState: "טעינה...‏",
 	errorState: "אירעה שגיאה"
 })
-//end v1.x content
 );

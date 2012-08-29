@@ -1,8 +1,605 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/dom-geometry", ["./sniff", "./_base/window","./dom", "./dom-style"],
+		function(has, win, dom, style){
+	// module:
+	//		dojo/dom-geometry
 
-//>>built
-define("dojo/dom-geometry",["./_base/sniff","./_base/window","./dom","./dom-style"],function(_1,_2,_3,_4){var _5={};_5.boxModel="content-box";if(_1("ie")){_5.boxModel=document.compatMode=="BackCompat"?"border-box":"content-box";}_5.getPadExtents=function getPadExtents(_6,_7){_6=_3.byId(_6);var s=_7||_4.getComputedStyle(_6),px=_4.toPixelValue,l=px(_6,s.paddingLeft),t=px(_6,s.paddingTop),r=px(_6,s.paddingRight),b=px(_6,s.paddingBottom);return {l:l,t:t,r:r,b:b,w:l+r,h:t+b};};var _8="none";_5.getBorderExtents=function getBorderExtents(_9,_a){_9=_3.byId(_9);var px=_4.toPixelValue,s=_a||_4.getComputedStyle(_9),l=s.borderLeftStyle!=_8?px(_9,s.borderLeftWidth):0,t=s.borderTopStyle!=_8?px(_9,s.borderTopWidth):0,r=s.borderRightStyle!=_8?px(_9,s.borderRightWidth):0,b=s.borderBottomStyle!=_8?px(_9,s.borderBottomWidth):0;return {l:l,t:t,r:r,b:b,w:l+r,h:t+b};};_5.getPadBorderExtents=function getPadBorderExtents(_b,_c){_b=_3.byId(_b);var s=_c||_4.getComputedStyle(_b),p=_5.getPadExtents(_b,s),b=_5.getBorderExtents(_b,s);return {l:p.l+b.l,t:p.t+b.t,r:p.r+b.r,b:p.b+b.b,w:p.w+b.w,h:p.h+b.h};};_5.getMarginExtents=function getMarginExtents(_d,_e){_d=_3.byId(_d);var s=_e||_4.getComputedStyle(_d),px=_4.toPixelValue,l=px(_d,s.marginLeft),t=px(_d,s.marginTop),r=px(_d,s.marginRight),b=px(_d,s.marginBottom);if(_1("webkit")&&(s.position!="absolute")){r=l;}return {l:l,t:t,r:r,b:b,w:l+r,h:t+b};};_5.getMarginBox=function getMarginBox(_f,_10){_f=_3.byId(_f);var s=_10||_4.getComputedStyle(_f),me=_5.getMarginExtents(_f,s),l=_f.offsetLeft-me.l,t=_f.offsetTop-me.t,p=_f.parentNode,px=_4.toPixelValue,pcs;if(_1("mozilla")){var sl=parseFloat(s.left),st=parseFloat(s.top);if(!isNaN(sl)&&!isNaN(st)){l=sl,t=st;}else{if(p&&p.style){pcs=_4.getComputedStyle(p);if(pcs.overflow!="visible"){l+=pcs.borderLeftStyle!=_8?px(_f,pcs.borderLeftWidth):0;t+=pcs.borderTopStyle!=_8?px(_f,pcs.borderTopWidth):0;}}}}else{if(_1("opera")||(_1("ie")==8&&!_1("quirks"))){if(p){pcs=_4.getComputedStyle(p);l-=pcs.borderLeftStyle!=_8?px(_f,pcs.borderLeftWidth):0;t-=pcs.borderTopStyle!=_8?px(_f,pcs.borderTopWidth):0;}}}return {l:l,t:t,w:_f.offsetWidth+me.w,h:_f.offsetHeight+me.h};};_5.getContentBox=function getContentBox(_11,_12){_11=_3.byId(_11);var s=_12||_4.getComputedStyle(_11),w=_11.clientWidth,h,pe=_5.getPadExtents(_11,s),be=_5.getBorderExtents(_11,s);if(!w){w=_11.offsetWidth;h=_11.offsetHeight;}else{h=_11.clientHeight;be.w=be.h=0;}if(_1("opera")){pe.l+=be.l;pe.t+=be.t;}return {l:pe.l,t:pe.t,w:w-pe.w-be.w,h:h-pe.h-be.h};};function _13(_14,l,t,w,h,u){u=u||"px";var s=_14.style;if(!isNaN(l)){s.left=l+u;}if(!isNaN(t)){s.top=t+u;}if(w>=0){s.width=w+u;}if(h>=0){s.height=h+u;}};function _15(_16){return _16.tagName.toLowerCase()=="button"||_16.tagName.toLowerCase()=="input"&&(_16.getAttribute("type")||"").toLowerCase()=="button";};function _17(_18){return _5.boxModel=="border-box"||_18.tagName.toLowerCase()=="table"||_15(_18);};_5.setContentSize=function setContentSize(_19,box,_1a){_19=_3.byId(_19);var w=box.w,h=box.h;if(_17(_19)){var pb=_5.getPadBorderExtents(_19,_1a);if(w>=0){w+=pb.w;}if(h>=0){h+=pb.h;}}_13(_19,NaN,NaN,w,h);};var _1b={l:0,t:0,w:0,h:0};_5.setMarginBox=function setMarginBox(_1c,box,_1d){_1c=_3.byId(_1c);var s=_1d||_4.getComputedStyle(_1c),w=box.w,h=box.h,pb=_17(_1c)?_1b:_5.getPadBorderExtents(_1c,s),mb=_5.getMarginExtents(_1c,s);if(_1("webkit")){if(_15(_1c)){var ns=_1c.style;if(w>=0&&!ns.width){ns.width="4px";}if(h>=0&&!ns.height){ns.height="4px";}}}if(w>=0){w=Math.max(w-pb.w-mb.w,0);}if(h>=0){h=Math.max(h-pb.h-mb.h,0);}_13(_1c,box.l,box.t,w,h);};_5.isBodyLtr=function isBodyLtr(){return (_2.body().dir||_2.doc.documentElement.dir||"ltr").toLowerCase()=="ltr";};_5.docScroll=function docScroll(){var _1e=_2.doc.parentWindow||_2.doc.defaultView;return "pageXOffset" in _1e?{x:_1e.pageXOffset,y:_1e.pageYOffset}:(_1e=_1("quirks")?_2.body():_2.doc.documentElement,{x:_5.fixIeBiDiScrollLeft(_1e.scrollLeft||0),y:_1e.scrollTop||0});};_5.getIeDocumentElementOffset=function getIeDocumentElementOffset(){var de=_2.doc.documentElement;if(_1("ie")<8){var r=de.getBoundingClientRect(),l=r.left,t=r.top;if(_1("ie")<7){l+=de.clientLeft;t+=de.clientTop;}return {x:l<0?0:l,y:t<0?0:t};}else{return {x:0,y:0};}};_5.fixIeBiDiScrollLeft=function fixIeBiDiScrollLeft(_1f){var ie=_1("ie");if(ie&&!_5.isBodyLtr()){var qk=_1("quirks"),de=qk?_2.body():_2.doc.documentElement;if(ie==6&&!qk&&_2.global.frameElement&&de.scrollHeight>de.clientHeight){_1f+=de.clientLeft;}return (ie<8||qk)?(_1f+de.clientWidth-de.scrollWidth):-_1f;}return _1f;};_5.position=function(_20,_21){_20=_3.byId(_20);var db=_2.body(),dh=db.parentNode,ret=_20.getBoundingClientRect();ret={x:ret.left,y:ret.top,w:ret.right-ret.left,h:ret.bottom-ret.top};if(_1("ie")){var _22=_5.getIeDocumentElementOffset();ret.x-=_22.x+(_1("quirks")?db.clientLeft+db.offsetLeft:0);ret.y-=_22.y+(_1("quirks")?db.clientTop+db.offsetTop:0);}else{if(_1("ff")==3){var cs=_4.getComputedStyle(dh),px=_4.toPixelValue;ret.x-=px(dh,cs.marginLeft)+px(dh,cs.borderLeftWidth);ret.y-=px(dh,cs.marginTop)+px(dh,cs.borderTopWidth);}}if(_21){var _23=_5.docScroll();ret.x+=_23.x;ret.y+=_23.y;}return ret;};_5.getMarginSize=function getMarginSize(_24,_25){_24=_3.byId(_24);var me=_5.getMarginExtents(_24,_25||_4.getComputedStyle(_24));var _26=_24.getBoundingClientRect();return {w:(_26.right-_26.left)+me.w,h:(_26.bottom-_26.top)+me.h};};_5.normalizeEvent=function(_27){if(!("layerX" in _27)){_27.layerX=_27.offsetX;_27.layerY=_27.offsetY;}if(!_1("dom-addeventlistener")){var se=_27.target;var doc=(se&&se.ownerDocument)||document;var _28=_1("quirks")?doc.body:doc.documentElement;var _29=_5.getIeDocumentElementOffset();_27.pageX=_27.clientX+_5.fixIeBiDiScrollLeft(_28.scrollLeft||0)-_29.x;_27.pageY=_27.clientY+(_28.scrollTop||0)-_29.y;}};return _5;});
+	// the result object
+	var geom = {
+		// summary:
+		//		This module defines the core dojo DOM geometry API.
+	};
+
+	// Box functions will assume this model.
+	// On IE/Opera, BORDER_BOX will be set if the primary document is in quirks mode.
+	// Can be set to change behavior of box setters.
+
+	// can be either:
+	//	"border-box"
+	//	"content-box" (default)
+	geom.boxModel = "content-box";
+
+	// We punt per-node box mode testing completely.
+	// If anybody cares, we can provide an additional (optional) unit
+	// that overrides existing code to include per-node box sensitivity.
+
+	// Opera documentation claims that Opera 9 uses border-box in BackCompat mode.
+	// but experiments (Opera 9.10.8679 on Windows Vista) indicate that it actually continues to use content-box.
+	// IIRC, earlier versions of Opera did in fact use border-box.
+	// Opera guys, this is really confusing. Opera being broken in quirks mode is not our fault.
+
+	if(has("ie") /*|| has("opera")*/){
+		// client code may have to adjust if compatMode varies across iframes
+		geom.boxModel = document.compatMode == "BackCompat" ? "border-box" : "content-box";
+	}
+
+	geom.getPadExtents = function getPadExtents(/*DomNode*/ node, /*Object*/ computedStyle){
+		// summary:
+		//		Returns object with special values specifically useful for node
+		//		fitting.
+		// description:
+		//		Returns an object with `w`, `h`, `l`, `t` properties:
+		//	|		l/t/r/b = left/top/right/bottom padding (respectively)
+		//	|		w = the total of the left and right padding
+		//	|		h = the total of the top and bottom padding
+		//		If 'node' has position, l/t forms the origin for child nodes.
+		//		The w/h are used for calculating boxes.
+		//		Normally application code will not need to invoke this
+		//		directly, and will use the ...box... functions instead.
+		// node: DOMNode
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		node = dom.byId(node);
+		var s = computedStyle || style.getComputedStyle(node), px = style.toPixelValue,
+			l = px(node, s.paddingLeft), t = px(node, s.paddingTop), r = px(node, s.paddingRight), b = px(node, s.paddingBottom);
+		return {l: l, t: t, r: r, b: b, w: l + r, h: t + b};
+	};
+
+	var none = "none";
+
+	geom.getBorderExtents = function getBorderExtents(/*DomNode*/ node, /*Object*/ computedStyle){
+		// summary:
+		//		returns an object with properties useful for noting the border
+		//		dimensions.
+		// description:
+		//		- l/t/r/b = the sum of left/top/right/bottom border (respectively)
+		//		- w = the sum of the left and right border
+		//		- h = the sum of the top and bottom border
+		//
+		//		The w/h are used for calculating boxes.
+		//		Normally application code will not need to invoke this
+		//		directly, and will use the ...box... functions instead.
+		// node: DOMNode
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		node = dom.byId(node);
+		var px = style.toPixelValue, s = computedStyle || style.getComputedStyle(node),
+			l = s.borderLeftStyle != none ? px(node, s.borderLeftWidth) : 0,
+			t = s.borderTopStyle != none ? px(node, s.borderTopWidth) : 0,
+			r = s.borderRightStyle != none ? px(node, s.borderRightWidth) : 0,
+			b = s.borderBottomStyle != none ? px(node, s.borderBottomWidth) : 0;
+		return {l: l, t: t, r: r, b: b, w: l + r, h: t + b};
+	};
+
+	geom.getPadBorderExtents = function getPadBorderExtents(/*DomNode*/ node, /*Object*/ computedStyle){
+		// summary:
+		//		Returns object with properties useful for box fitting with
+		//		regards to padding.
+		// description:
+		//		- l/t/r/b = the sum of left/top/right/bottom padding and left/top/right/bottom border (respectively)
+		//		- w = the sum of the left and right padding and border
+		//		- h = the sum of the top and bottom padding and border
+		//
+		//		The w/h are used for calculating boxes.
+		//		Normally application code will not need to invoke this
+		//		directly, and will use the ...box... functions instead.
+		// node: DOMNode
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		node = dom.byId(node);
+		var s = computedStyle || style.getComputedStyle(node),
+			p = geom.getPadExtents(node, s),
+			b = geom.getBorderExtents(node, s);
+		return {
+			l: p.l + b.l,
+			t: p.t + b.t,
+			r: p.r + b.r,
+			b: p.b + b.b,
+			w: p.w + b.w,
+			h: p.h + b.h
+		};
+	};
+
+	geom.getMarginExtents = function getMarginExtents(node, computedStyle){
+		// summary:
+		//		returns object with properties useful for box fitting with
+		//		regards to box margins (i.e., the outer-box).
+		//
+		//		- l/t = marginLeft, marginTop, respectively
+		//		- w = total width, margin inclusive
+		//		- h = total height, margin inclusive
+		//
+		//		The w/h are used for calculating boxes.
+		//		Normally application code will not need to invoke this
+		//		directly, and will use the ...box... functions instead.
+		// node: DOMNode
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		node = dom.byId(node);
+		var s = computedStyle || style.getComputedStyle(node), px = style.toPixelValue,
+			l = px(node, s.marginLeft), t = px(node, s.marginTop), r = px(node, s.marginRight), b = px(node, s.marginBottom);
+		return {l: l, t: t, r: r, b: b, w: l + r, h: t + b};
+	};
+
+	// Box getters work in any box context because offsetWidth/clientWidth
+	// are invariant wrt box context
+	//
+	// They do *not* work for display: inline objects that have padding styles
+	// because the user agent ignores padding (it's bogus styling in any case)
+	//
+	// Be careful with IMGs because they are inline or block depending on
+	// browser and browser mode.
+
+	// Although it would be easier to read, there are not separate versions of
+	// _getMarginBox for each browser because:
+	// 1. the branching is not expensive
+	// 2. factoring the shared code wastes cycles (function call overhead)
+	// 3. duplicating the shared code wastes bytes
+
+	geom.getMarginBox = function getMarginBox(/*DomNode*/ node, /*Object*/ computedStyle){
+		// summary:
+		//		returns an object that encodes the width, height, left and top
+		//		positions of the node's margin box.
+		// node: DOMNode
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		node = dom.byId(node);
+		var s = computedStyle || style.getComputedStyle(node), me = geom.getMarginExtents(node, s),
+			l = node.offsetLeft - me.l, t = node.offsetTop - me.t, p = node.parentNode, px = style.toPixelValue, pcs;
+		if(has("mozilla")){
+			// Mozilla:
+			// If offsetParent has a computed overflow != visible, the offsetLeft is decreased
+			// by the parent's border.
+			// We don't want to compute the parent's style, so instead we examine node's
+			// computed left/top which is more stable.
+			var sl = parseFloat(s.left), st = parseFloat(s.top);
+			if(!isNaN(sl) && !isNaN(st)){
+				l = sl;
+				t = st;
+			}else{
+				// If child's computed left/top are not parseable as a number (e.g. "auto"), we
+				// have no choice but to examine the parent's computed style.
+				if(p && p.style){
+					pcs = style.getComputedStyle(p);
+					if(pcs.overflow != "visible"){
+						l += pcs.borderLeftStyle != none ? px(node, pcs.borderLeftWidth) : 0;
+						t += pcs.borderTopStyle != none ? px(node, pcs.borderTopWidth) : 0;
+					}
+				}
+			}
+		}else if(has("opera") || (has("ie") == 8 && !has("quirks"))){
+			// On Opera and IE 8, offsetLeft/Top includes the parent's border
+			if(p){
+				pcs = style.getComputedStyle(p);
+				l -= pcs.borderLeftStyle != none ? px(node, pcs.borderLeftWidth) : 0;
+				t -= pcs.borderTopStyle != none ? px(node, pcs.borderTopWidth) : 0;
+			}
+		}
+		return {l: l, t: t, w: node.offsetWidth + me.w, h: node.offsetHeight + me.h};
+	};
+
+	geom.getContentBox = function getContentBox(node, computedStyle){
+		// summary:
+		//		Returns an object that encodes the width, height, left and top
+		//		positions of the node's content box, irrespective of the
+		//		current box model.
+		// node: DOMNode
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		// clientWidth/Height are important since the automatically account for scrollbars
+		// fallback to offsetWidth/Height for special cases (see #3378)
+		node = dom.byId(node);
+		var s = computedStyle || style.getComputedStyle(node), w = node.clientWidth, h,
+			pe = geom.getPadExtents(node, s), be = geom.getBorderExtents(node, s);
+		if(!w){
+			w = node.offsetWidth;
+			h = node.offsetHeight;
+		}else{
+			h = node.clientHeight;
+			be.w = be.h = 0;
+		}
+		// On Opera, offsetLeft includes the parent's border
+		if(has("opera")){
+			pe.l += be.l;
+			pe.t += be.t;
+		}
+		return {l: pe.l, t: pe.t, w: w - pe.w - be.w, h: h - pe.h - be.h};
+	};
+
+	// Box setters depend on box context because interpretation of width/height styles
+	// vary wrt box context.
+	//
+	// The value of boxModel is used to determine box context.
+	// boxModel can be set directly to change behavior.
+	//
+	// Beware of display: inline objects that have padding styles
+	// because the user agent ignores padding (it's a bogus setup anyway)
+	//
+	// Be careful with IMGs because they are inline or block depending on
+	// browser and browser mode.
+	//
+	// Elements other than DIV may have special quirks, like built-in
+	// margins or padding, or values not detectable via computedStyle.
+	// In particular, margins on TABLE do not seems to appear
+	// at all in computedStyle on Mozilla.
+
+	function setBox(/*DomNode*/ node, /*Number?*/ l, /*Number?*/ t, /*Number?*/ w, /*Number?*/ h, /*String?*/ u){
+		// summary:
+		//		sets width/height/left/top in the current (native) box-model
+		//		dimensions. Uses the unit passed in u.
+		// node:
+		//		DOM Node reference. Id string not supported for performance
+		//		reasons.
+		// l:
+		//		left offset from parent.
+		// t:
+		//		top offset from parent.
+		// w:
+		//		width in current box model.
+		// h:
+		//		width in current box model.
+		// u:
+		//		unit measure to use for other measures. Defaults to "px".
+		u = u || "px";
+		var s = node.style;
+		if(!isNaN(l)){
+			s.left = l + u;
+		}
+		if(!isNaN(t)){
+			s.top = t + u;
+		}
+		if(w >= 0){
+			s.width = w + u;
+		}
+		if(h >= 0){
+			s.height = h + u;
+		}
+	}
+
+	function isButtonTag(/*DomNode*/ node){
+		// summary:
+		//		True if the node is BUTTON or INPUT.type="button".
+		return node.tagName.toLowerCase() == "button" ||
+			node.tagName.toLowerCase() == "input" && (node.getAttribute("type") || "").toLowerCase() == "button"; // boolean
+	}
+
+	function usesBorderBox(/*DomNode*/ node){
+		// summary:
+		//		True if the node uses border-box layout.
+
+		// We could test the computed style of node to see if a particular box
+		// has been specified, but there are details and we choose not to bother.
+
+		// TABLE and BUTTON (and INPUT type=button) are always border-box by default.
+		// If you have assigned a different box to either one via CSS then
+		// box functions will break.
+
+		return geom.boxModel == "border-box" || node.tagName.toLowerCase() == "table" || isButtonTag(node); // boolean
+	}
+
+	geom.setContentSize = function setContentSize(/*DomNode*/ node, /*Object*/ box, /*Object*/ computedStyle){
+		// summary:
+		//		Sets the size of the node's contents, irrespective of margins,
+		//		padding, or borders.
+		// node: DOMNode
+		// box: Object
+		//		hash with optional "w", and "h" properties for "width", and "height"
+		//		respectively. All specified properties should have numeric values in whole pixels.
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		node = dom.byId(node);
+		var w = box.w, h = box.h;
+		if(usesBorderBox(node)){
+			var pb = geom.getPadBorderExtents(node, computedStyle);
+			if(w >= 0){
+				w += pb.w;
+			}
+			if(h >= 0){
+				h += pb.h;
+			}
+		}
+		setBox(node, NaN, NaN, w, h);
+	};
+
+	var nilExtents = {l: 0, t: 0, w: 0, h: 0};
+
+	geom.setMarginBox = function setMarginBox(/*DomNode*/ node, /*Object*/ box, /*Object*/ computedStyle){
+		// summary:
+		//		sets the size of the node's margin box and placement
+		//		(left/top), irrespective of box model. Think of it as a
+		//		passthrough to setBox that handles box-model vagaries for
+		//		you.
+		// node: DOMNode
+		// box: Object
+		//		hash with optional "l", "t", "w", and "h" properties for "left", "right", "width", and "height"
+		//		respectively. All specified properties should have numeric values in whole pixels.
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		node = dom.byId(node);
+		var s = computedStyle || style.getComputedStyle(node), w = box.w, h = box.h,
+		// Some elements have special padding, margin, and box-model settings.
+		// To use box functions you may need to set padding, margin explicitly.
+		// Controlling box-model is harder, in a pinch you might set dojo/dom-geometry.boxModel.
+			pb = usesBorderBox(node) ? nilExtents : geom.getPadBorderExtents(node, s),
+			mb = geom.getMarginExtents(node, s);
+		if(has("webkit")){
+			// on Safari (3.1.2), button nodes with no explicit size have a default margin
+			// setting an explicit size eliminates the margin.
+			// We have to swizzle the width to get correct margin reading.
+			if(isButtonTag(node)){
+				var ns = node.style;
+				if(w >= 0 && !ns.width){
+					ns.width = "4px";
+				}
+				if(h >= 0 && !ns.height){
+					ns.height = "4px";
+				}
+			}
+		}
+		if(w >= 0){
+			w = Math.max(w - pb.w - mb.w, 0);
+		}
+		if(h >= 0){
+			h = Math.max(h - pb.h - mb.h, 0);
+		}
+		setBox(node, box.l, box.t, w, h);
+	};
+
+	// =============================
+	// Positioning
+	// =============================
+
+	geom.isBodyLtr = function isBodyLtr(/*Document?*/ doc){
+		// summary:
+		//		Returns true if the current language is left-to-right, and false otherwise.
+		// doc: Document?
+		//		Optional document to query.   If unspecified, use win.doc.
+		// returns: Boolean
+
+		doc = doc || win.doc;
+		return (win.body(doc).dir || doc.documentElement.dir || "ltr").toLowerCase() == "ltr"; // Boolean
+	};
+
+	geom.docScroll = function docScroll(/*Document?*/ doc){
+		// summary:
+		//		Returns an object with {node, x, y} with corresponding offsets.
+		// doc: Document?
+		//		Optional document to query.   If unspecified, use win.doc.
+		// returns: Object
+
+		doc = doc || win.doc;
+		var node = win.doc.parentWindow || win.doc.defaultView;   // use UI window, not dojo.global window.   TODO: use dojo/window::get() except for circular dependency problem
+		return "pageXOffset" in node ? {x: node.pageXOffset, y: node.pageYOffset } :
+			(node = has("quirks") ? win.body(doc) : doc.documentElement) &&
+				{x: geom.fixIeBiDiScrollLeft(node.scrollLeft || 0, doc), y: node.scrollTop || 0 };
+	};
+
+	if(has("ie")){
+		geom.getIeDocumentElementOffset = function getIeDocumentElementOffset(/*Document?*/ doc){
+			// summary:
+			//		returns the offset in x and y from the document body to the
+			//		visual edge of the page for IE
+			// doc: Document?
+			//		Optional document to query.   If unspecified, use win.doc.
+			// description:
+			//		The following values in IE contain an offset:
+			//	|		event.clientX
+			//	|		event.clientY
+			//	|		node.getBoundingClientRect().left
+			//	|		node.getBoundingClientRect().top
+			//		But other position related values do not contain this offset,
+			//		such as node.offsetLeft, node.offsetTop, node.style.left and
+			//		node.style.top. The offset is always (2, 2) in LTR direction.
+			//		When the body is in RTL direction, the offset counts the width
+			//		of left scroll bar's width.  This function computes the actual
+			//		offset.
+
+			//NOTE: assumes we're being called in an IE browser
+
+			doc = doc || win.doc;
+			var de = doc.documentElement; // only deal with HTML element here, position() handles body/quirks
+
+			if(has("ie") < 8){
+				var r = de.getBoundingClientRect(), // works well for IE6+
+					l = r.left, t = r.top;
+				if(has("ie") < 7){
+					l += de.clientLeft;	// scrollbar size in strict/RTL, or,
+					t += de.clientTop;	// HTML border size in strict
+				}
+				return {
+					x: l < 0 ? 0 : l, // FRAME element border size can lead to inaccurate negative values
+					y: t < 0 ? 0 : t
+				};
+			}else{
+				return {
+					x: 0,
+					y: 0
+				};
+			}
+		};
+	}
+
+	geom.fixIeBiDiScrollLeft = function fixIeBiDiScrollLeft(/*Integer*/ scrollLeft, /*Document?*/ doc){
+		// summary:
+		//		In RTL direction, scrollLeft should be a negative value, but IE
+		//		returns a positive one. All codes using documentElement.scrollLeft
+		//		must call this function to fix this error, otherwise the position
+		//		will offset to right when there is a horizontal scrollbar.
+		// scrollLeft: Number
+		// doc: Document?
+		//		Optional document to query.   If unspecified, use win.doc.
+		// returns: Number
+
+		// In RTL direction, scrollLeft should be a negative value, but IE
+		// returns a positive one. All codes using documentElement.scrollLeft
+		// must call this function to fix this error, otherwise the position
+		// will offset to right when there is a horizontal scrollbar.
+
+		doc = doc || win.doc;
+		var ie = has("ie");
+		if(ie && !geom.isBodyLtr(doc)){
+			var qk = has("quirks"),
+				de = qk ? win.body(doc) : doc.documentElement,
+				pwin = win.global;	// TODO: use winUtils.get(doc) after resolving circular dependency b/w dom-geometry.js and dojo/window.js
+			if(ie == 6 && !qk && pwin.frameElement && de.scrollHeight > de.clientHeight){
+				scrollLeft += de.clientLeft; // workaround ie6+strict+rtl+iframe+vertical-scrollbar bug where clientWidth is too small by clientLeft pixels
+			}
+			return (ie < 8 || qk) ? (scrollLeft + de.clientWidth - de.scrollWidth) : -scrollLeft; // Integer
+		}
+		return scrollLeft; // Integer
+	};
+
+	geom.position = function(/*DomNode*/ node, /*Boolean?*/ includeScroll){
+		// summary:
+		//		Gets the position and size of the passed element relative to
+		//		the viewport (if includeScroll==false), or relative to the
+		//		document root (if includeScroll==true).
+		//
+		// description:
+		//		Returns an object of the form:
+		//		`{ x: 100, y: 300, w: 20, h: 15 }`.
+		//		If includeScroll==true, the x and y values will include any
+		//		document offsets that may affect the position relative to the
+		//		viewport.
+		//		Uses the border-box model (inclusive of border and padding but
+		//		not margin).  Does not act as a setter.
+		// node: DOMNode|String
+		// includeScroll: Boolean?
+		// returns: Object
+
+		node = dom.byId(node);
+		var	db = win.body(node.ownerDocument),
+			ret = node.getBoundingClientRect();
+		ret = {x: ret.left, y: ret.top, w: ret.right - ret.left, h: ret.bottom - ret.top};
+
+		if(has("ie")){
+			// On IE there's a 2px offset that we need to adjust for, see dojo.getIeDocumentElementOffset()
+			var offset = geom.getIeDocumentElementOffset(node.ownerDocument);
+
+			// fixes the position in IE, quirks mode
+			ret.x -= offset.x + (has("quirks") ? db.clientLeft + db.offsetLeft : 0);
+			ret.y -= offset.y + (has("quirks") ? db.clientTop + db.offsetTop : 0);
+		}
+
+		// account for document scrolling
+		// if offsetParent is used, ret value already includes scroll position
+		// so we may have to actually remove that value if !includeScroll
+		if(includeScroll){
+			var scroll = geom.docScroll(node.ownerDocument);
+			ret.x += scroll.x;
+			ret.y += scroll.y;
+		}
+
+		return ret; // Object
+	};
+
+	// random "private" functions wildly used throughout the toolkit
+
+	geom.getMarginSize = function getMarginSize(/*DomNode*/ node, /*Object*/ computedStyle){
+		// summary:
+		//		returns an object that encodes the width and height of
+		//		the node's margin box
+		// node: DOMNode|String
+		// computedStyle: Object?
+		//		This parameter accepts computed styles object.
+		//		If this parameter is omitted, the functions will call
+		//		dojo.getComputedStyle to get one. It is a better way, calling
+		//		dojo.computedStyle once, and then pass the reference to this
+		//		computedStyle parameter. Wherever possible, reuse the returned
+		//		object of dojo/dom-style.getComputedStyle().
+
+		node = dom.byId(node);
+		var me = geom.getMarginExtents(node, computedStyle || style.getComputedStyle(node));
+		var size = node.getBoundingClientRect();
+		return {
+			w: (size.right - size.left) + me.w,
+			h: (size.bottom - size.top) + me.h
+		};
+	};
+
+	geom.normalizeEvent = function(event){
+		// summary:
+		//		Normalizes the geometry of a DOM event, normalizing the pageX, pageY,
+		//		offsetX, offsetY, layerX, and layerX properties
+		// event: Object
+		if(!("layerX" in event)){
+			event.layerX = event.offsetX;
+			event.layerY = event.offsetY;
+		}
+		if(!has("dom-addeventlistener")){
+			// old IE version
+			// FIXME: scroll position query is duped from dojo.html to
+			// avoid dependency on that entire module. Now that HTML is in
+			// Base, we should convert back to something similar there.
+			var se = event.target;
+			var doc = (se && se.ownerDocument) || document;
+			// DO NOT replace the following to use dojo.body(), in IE, document.documentElement should be used
+			// here rather than document.body
+			var docBody = has("quirks") ? doc.body : doc.documentElement;
+			var offset = geom.getIeDocumentElementOffset(doc);
+			event.pageX = event.clientX + geom.fixIeBiDiScrollLeft(docBody.scrollLeft || 0, doc) - offset.x;
+			event.pageY = event.clientY + (docBody.scrollTop || 0) - offset.y;
+		}
+	};
+
+	// TODO: evaluate separate getters/setters for position and sizes?
+
+	return geom;
+});

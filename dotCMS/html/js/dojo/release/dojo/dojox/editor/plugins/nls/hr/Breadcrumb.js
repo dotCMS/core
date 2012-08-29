@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/editor/plugins/nls/hr/Breadcrumb", ({
 	"nodeActions": "${nodeName} Akcije",

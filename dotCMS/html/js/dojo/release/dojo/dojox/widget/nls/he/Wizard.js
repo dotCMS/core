@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/he/Wizard", //begin v1.x content
-({
+"dojox/widget/nls/he/Wizard", ({
 next: "הבא",
 previous: "הקודם",
 done: "סיום"
 })
-//end v1.x content
 );
