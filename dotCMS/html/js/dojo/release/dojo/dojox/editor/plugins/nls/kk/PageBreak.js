@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/kk/PageBreak", //begin v1.x content
-({
+"dojox/editor/plugins/nls/kk/PageBreak", ({
 	"pageBreak": "Бет үзілімі"
 })
-
-//end v1.x content
 );

@@ -1,4 +1,3 @@
-//>>built
 define("dojox/atom/widget/nls/PeopleEditor", { root:
 //begin v1.x content
 ({

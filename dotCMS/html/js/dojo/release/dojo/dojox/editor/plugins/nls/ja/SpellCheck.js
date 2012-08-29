@@ -1,9 +1,7 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ja/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ja/SpellCheck", ({
 	widgetLabel: "一括スペル・チェック",
-	unfound: "見つかりません",
+	unfound: "未検出",
 	skip: "スキップ",
 	skipAll: "すべてをスキップ",
 	toDic: "辞書に追加",
@@ -17,5 +15,4 @@ define(
 	iSkipAll: "これと類似のものをスキップ",
 	iMsg: "スペルの修正候補はありません"
 })
-//end v1.x content
 );

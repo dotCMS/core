@@ -1,2 +1,630 @@
-//>>built
-define("dojox/layout/GridContainer",["dojo/_base/kernel","dojo/_base/array","dojo/_base/connect","dojo/_base/declare","dojo/_base/html","dojo/_base/lang","dojo/_base/window","dojo/ready","dojox/layout/GridContainerLite"],function(_1){return _1.declare("dojox.layout.GridContainer",dojox.layout.GridContainerLite,{hasResizableColumns:true,liveResizeColumns:false,minColWidth:20,minChildWidth:150,mode:"right",isRightFixed:false,isLeftFixed:false,startup:function(){this.inherited(arguments);if(this.hasResizableColumns){for(var i=0;i<this._grid.length-1;i++){this._createGrip(i);}if(!this.getParent()){_1.ready(_1.hitch(this,"_placeGrips"));}}},resizeChildAfterDrop:function(_2,_3,_4){if(this.inherited(arguments)){this._placeGrips();}},onShow:function(){this.inherited(arguments);this._placeGrips();},resize:function(){this.inherited(arguments);if(this._isShown()&&this.hasResizableColumns){this._placeGrips();}},_createGrip:function(_5){var _6=this._grid[_5],_7=_1.create("div",{"class":"gridContainerGrip"},this.domNode);_6.grip=_7;_6.gripHandler=[this.connect(_7,"onmouseover",function(e){var _8=false;for(var i=0;i<this._grid.length-1;i++){if(_1.hasClass(this._grid[i].grip,"gridContainerGripShow")){_8=true;break;}}if(!_8){_1.removeClass(e.target,"gridContainerGrip");_1.addClass(e.target,"gridContainerGripShow");}})[0],this.connect(_7,"onmouseout",function(e){if(!this._isResized){_1.removeClass(e.target,"gridContainerGripShow");_1.addClass(e.target,"gridContainerGrip");}})[0],this.connect(_7,"onmousedown","_resizeColumnOn")[0],this.connect(_7,"ondblclick","_onGripDbClick")[0]];},_placeGrips:function(){var _9,_a,_b=0,_c;var _d=this.domNode.style.overflowY;_1.forEach(this._grid,function(_e){if(_e.grip){_c=_e.grip;if(!_9){_9=_c.offsetWidth/2;}_b+=_1.marginBox(_e.node).w;_1.style(_c,"left",(_b-_9)+"px");if(!_a){_a=_1.contentBox(this.gridNode).h;}if(_a>0){_1.style(_c,"height",_a+"px");}}},this);},_onGripDbClick:function(){this._updateColumnsWidth(this._dragManager);this.resize();},_resizeColumnOn:function(e){this._activeGrip=e.target;this._initX=e.pageX;e.preventDefault();_1.body().style.cursor="ew-resize";this._isResized=true;var _f=[];var _10;var i;for(i=0;i<this._grid.length;i++){_f[i]=_1.contentBox(this._grid[i].node).w;}this._oldTabSize=_f;for(i=0;i<this._grid.length;i++){_10=this._grid[i];if(this._activeGrip==_10.grip){this._currentColumn=_10.node;this._currentColumnWidth=_f[i];this._nextColumn=this._grid[i+1].node;this._nextColumnWidth=_f[i+1];}_10.node.style.width=_f[i]+"px";}var _11=function(_12,_13){var _14=0;var _15=0;_1.forEach(_12,function(_16){if(_16.nodeType==1){var _17=_1.getComputedStyle(_16);var _18=(_1.isIE)?_13:parseInt(_17.minWidth);_15=_18+parseInt(_17.marginLeft)+parseInt(_17.marginRight);if(_14<_15){_14=_15;}}});return _14;};var _19=_11(this._currentColumn.childNodes,this.minChildWidth);var _1a=_11(this._nextColumn.childNodes,this.minChildWidth);var _1b=Math.round((_1.marginBox(this.gridContainerTable).w*this.minColWidth)/100);this._currentMinCol=_19;this._nextMinCol=_1a;if(_1b>this._currentMinCol){this._currentMinCol=_1b;}if(_1b>this._nextMinCol){this._nextMinCol=_1b;}this._connectResizeColumnMove=_1.connect(_1.doc,"onmousemove",this,"_resizeColumnMove");this._connectOnGripMouseUp=_1.connect(_1.doc,"onmouseup",this,"_onGripMouseUp");},_onGripMouseUp:function(){_1.body().style.cursor="default";_1.disconnect(this._connectResizeColumnMove);_1.disconnect(this._connectOnGripMouseUp);this._connectOnGripMouseUp=this._connectResizeColumnMove=null;if(this._activeGrip){_1.removeClass(this._activeGrip,"gridContainerGripShow");_1.addClass(this._activeGrip,"gridContainerGrip");}this._isResized=false;},_resizeColumnMove:function(e){e.preventDefault();if(!this._connectResizeColumnOff){_1.disconnect(this._connectOnGripMouseUp);this._connectOnGripMouseUp=null;this._connectResizeColumnOff=_1.connect(_1.doc,"onmouseup",this,"_resizeColumnOff");}var d=e.pageX-this._initX;if(d==0){return;}if(!(this._currentColumnWidth+d<this._currentMinCol||this._nextColumnWidth-d<this._nextMinCol)){this._currentColumnWidth+=d;this._nextColumnWidth-=d;this._initX=e.pageX;this._activeGrip.style.left=parseInt(this._activeGrip.style.left)+d+"px";if(this.liveResizeColumns){this._currentColumn.style["width"]=this._currentColumnWidth+"px";this._nextColumn.style["width"]=this._nextColumnWidth+"px";this.resize();}}},_resizeColumnOff:function(e){_1.body().style.cursor="default";_1.disconnect(this._connectResizeColumnMove);_1.disconnect(this._connectResizeColumnOff);this._connectResizeColumnOff=this._connectResizeColumnMove=null;if(!this.liveResizeColumns){this._currentColumn.style["width"]=this._currentColumnWidth+"px";this._nextColumn.style["width"]=this._nextColumnWidth+"px";}var _1c=[],_1d=[],_1e=this.gridContainerTable.clientWidth,_1f,_20=false,i;for(i=0;i<this._grid.length;i++){_1f=this._grid[i].node;if(_1.isIE){_1c[i]=_1.marginBox(_1f).w;_1d[i]=_1.contentBox(_1f).w;}else{_1c[i]=_1.contentBox(_1f).w;_1d=_1c;}}for(i=0;i<_1d.length;i++){if(_1d[i]!=this._oldTabSize[i]){_20=true;break;}}if(_20){var mul=_1.isIE?100:10000;for(i=0;i<this._grid.length;i++){this._grid[i].node.style.width=Math.round((100*mul*_1c[i])/_1e)/mul+"%";}this.resize();}if(this._activeGrip){_1.removeClass(this._activeGrip,"gridContainerGripShow");_1.addClass(this._activeGrip,"gridContainerGrip");}this._isResized=false;},setColumns:function(_21){var z,j;if(_21>0){var _22=this._grid.length,_23=_22-_21;if(_23>0){var _24=[],_25,_26,end,_27;if(this.mode=="right"){end=(this.isLeftFixed&&_22>0)?1:0;_26=(this.isRightFixed)?_22-2:_22-1;for(z=_26;z>=end;z--){_27=0;_25=this._grid[z].node;for(j=0;j<_25.childNodes.length;j++){if(_25.childNodes[j].nodeType==1&&!(_25.childNodes[j].id=="")){_27++;break;}}if(_27==0){_24[_24.length]=z;}if(_24.length>=_23){this._deleteColumn(_24);break;}}if(_24.length<_23){_1.publish("/dojox/layout/gridContainer/noEmptyColumn",[this]);}}else{_26=(this.isLeftFixed&&_22>0)?1:0;end=(this.isRightFixed)?_22-1:_22;for(z=_26;z<end;z++){_27=0;_25=this._grid[z].node;for(j=0;j<_25.childNodes.length;j++){if(_25.childNodes[j].nodeType==1&&!(_25.childNodes[j].id=="")){_27++;break;}}if(_27==0){_24[_24.length]=z;}if(_24.length>=_23){this._deleteColumn(_24);break;}}if(_24.length<_23){_1.publish("/dojox/layout/gridContainer/noEmptyColumn",[this]);}}}else{if(_23<0){this._addColumn(Math.abs(_23));}}if(this.hasResizableColumns){this._placeGrips();}}},_addColumn:function(_28){var _29=this._grid,_2a,_2b,_2c,_2d,_2e=(this.mode=="right"),_2f=this.acceptTypes.join(","),m=this._dragManager;if(this.hasResizableColumns&&((!this.isRightFixed&&_2e)||(this.isLeftFixed&&!_2e&&this.nbZones==1))){this._createGrip(_29.length-1);}for(var i=0;i<_28;i++){_2b=_1.create("td",{"class":"gridContainerZone dojoxDndArea","accept":_2f,"id":this.id+"_dz"+this.nbZones});_2d=_29.length;if(_2e){if(this.isRightFixed){_2c=_2d-1;_29.splice(_2c,0,{"node":_29[_2c].node.parentNode.insertBefore(_2b,_29[_2c].node)});}else{_2c=_2d;_29.push({"node":this.gridNode.appendChild(_2b)});}}else{if(this.isLeftFixed){_2c=(_2d==1)?0:1;this._grid.splice(1,0,{"node":this._grid[_2c].node.parentNode.appendChild(_2b,this._grid[_2c].node)});_2c=1;}else{_2c=_2d-this.nbZones;this._grid.splice(_2c,0,{"node":_29[_2c].node.parentNode.insertBefore(_2b,_29[_2c].node)});}}if(this.hasResizableColumns){if((!_2e&&this.nbZones!=1)||(!_2e&&this.nbZones==1&&!this.isLeftFixed)||(_2e&&i<_28-1)||(_2e&&i==_28-1&&this.isRightFixed)){this._createGrip(_2c);}}m.registerByNode(_29[_2c].node);this.nbZones++;}this._updateColumnsWidth(m);},_deleteColumn:function(_30){var _31,_32,_33,_34=0,_35=_30.length,m=this._dragManager;for(var i=0;i<_35;i++){_33=(this.mode=="right")?_30[i]:_30[i]-_34;_32=this._grid[_33];if(this.hasResizableColumns&&_32.grip){_1.forEach(_32.gripHandler,function(_36){_1.disconnect(_36);});_1.destroy(this.domNode.removeChild(_32.grip));_32.grip=null;}m.unregister(_32.node);_1.destroy(this.gridNode.removeChild(_32.node));this._grid.splice(_33,1);this.nbZones--;_34++;}var _37=this._grid[this.nbZones-1];if(_37.grip){_1.forEach(_37.gripHandler,_1.disconnect);_1.destroy(this.domNode.removeChild(_37.grip));_37.grip=null;}this._updateColumnsWidth(m);},_updateColumnsWidth:function(_38){this.inherited(arguments);_38._dropMode.updateAreas(_38._areaList);},destroy:function(){_1.unsubscribe(this._dropHandler);this.inherited(arguments);}});});
+define("dojox/layout/GridContainer", [
+	"dojo/_base/kernel",
+	"dojo/_base/declare", // declare 
+	"dojo/_base/array",
+	"dojo/_base/connect",
+	"dojo/_base/sniff",
+	"dojo/dom-class",
+	"dojo/dom-style",
+	"dojo/dom-geometry",
+	"dojo/dom-construct",
+	"dojo/_base/lang",
+	"dojo/_base/window",
+	"dojo/ready",	// dojo.ready
+	"dojox/layout/GridContainerLite"
+],function(dojo, declare, array, connect, has, domClass, domStyle, geom, domConstruct, lang, win, ready, GridContainerLite){
+	return declare(
+		"dojox.layout.GridContainer",
+		GridContainerLite,
+	{
+		// summary:
+		//		A grid containing any kind of objects and acting like web portals.
+		//
+		// description:
+		//		This component inherits of all features of gridContainerLite plus :
+		//
+		//		- Resize colums
+		//		- Add / remove columns
+		//		- Fix columns at left or at right.
+		// example:
+		// 	|	<div dojoType="dojox.layout.GridContainer" nbZones="3" isAutoOrganized="true">
+		// 	|		<div dojoType="dijit.layout.ContentPane">Content Pane 1 : Drag Me !</div>
+		// 	|		<div dojoType="dijit.layout.ContentPane">Content Pane 2 : Drag Me !</div>
+		// 	|		<div dojoType="dijit.layout.ContentPane">Content Pane 3 : Drag Me !</div>
+		// 	|	</div>
+		//
+		// example:
+		// 	|	dojo.ready(function(){
+		// 	|		var cpane1 = new dijit.layout.ContentPane({ title:"cpane1", content: "Content Pane 1 : Drag Me !" }),
+		// 	|			cpane2 = new dijit.layout.ContentPane({ title:"cpane2", content: "Content Pane 2 : Drag Me !" }),
+		// 	|			cpane3 = new dijit.layout.ContentPane({ title:"cpane3", content: "Content Pane 3 : Drag Me !" });
+		// 	|
+		// 	|		var widget = new dojox.layout.GridContainer({
+		// 	|			nbZones: 3,
+		// 	|			isAutoOrganized: true
+		// 	|		}, dojo.byId("idNode"));
+		// 	|		widget.addChild(cpane1, 0, 0);
+		// 	|		widget.addChild(cpane2, 1, 0);
+		// 	|		widget.addChild(cpane3, 2, 1);
+		// 	|		widget.startup();
+		// 	|	});
+
+		// hasResizableColumns: Boolean
+		//		Allow or not resizing of columns by a grip handle.
+		hasResizableColumns: true,
+
+		// liveResizeColumns: Boolean
+		//		Specifies whether columns resize as you drag (true) or only upon mouseup (false)
+		liveResizeColumns : false,
+
+		// minColWidth: Integer
+		//		Minimum column width in percentage.
+		minColWidth: 20,
+
+		// minChildWidth: Integer
+		//		Minimum children width in pixel (only used for IE6 which doesn't handle min-width css property)
+		minChildWidth: 150,
+
+		// mode: String
+		//		Location to add/remove columns, must be set to 'left' or 'right' (default).
+		mode: "right",
+
+		// isRightFixed: Boolean
+		//		Define if the last right column is fixed.
+		//		Used when you add or remove columns by calling setColumns method.
+		isRightFixed: false,
+
+		// isLeftFixed: Boolean
+		//		Define if the last left column is fixed.
+		//		Used when you add or remove columns by calling setColumns method.
+		isLeftFixed: false,
+
+		startup: function(){
+			// summary:
+			//		Call the startup of GridContainerLite and place grips
+			//		if user has chosen the hasResizableColumns attribute to true.
+
+			//console.log("dojox.layout.GridContainer ::: startup");
+			this.inherited(arguments);
+			if(this.hasResizableColumns){
+				for(var i = 0; i < this._grid.length - 1; i++){
+					this._createGrip(i);
+				}
+				// If widget has a container parent, grips will be placed
+				// by method onShow.
+				if(!this.getParent()){
+					// Fix IE7 :
+					//		The CSS property height:100% for the grip
+					//		doesn't work anytime. It's necessary to wait
+					//		the end of loading before to place grips.
+					ready(lang.hitch(this, "_placeGrips"));
+				}
+			}
+		},
+
+		resizeChildAfterDrop : function(/*Node*/node, /*Object*/targetArea, /*Integer*/indexChild){
+			// summary:
+			//		Call when a child is dropped.
+			// description:
+			//		Allow to resize and put grips
+			// node:
+			//		domNode of dropped widget.
+			// targetArea:
+			//		AreaManager Object containing information of targetArea
+			// indexChild:
+			//		Index where the dropped widget has been placed
+
+			if(this.inherited(arguments)){
+				this._placeGrips();
+			}
+		},
+
+		onShow: function(){
+			// summary:
+			//		Place grips in the right place when the GridContainer becomes visible.
+
+			//console.log("dojox.layout.GridContainer ::: onShow");
+			this.inherited(arguments);
+			this._placeGrips();
+		},
+
+		resize: function(){
+			// summary:
+			//		Resize the GridContainer widget and columns.
+			//		Replace grips if it's necessary.
+			// tags:
+			//		callback
+
+			//console.log("dojox.layout.GridContainer ::: resize");
+			this.inherited(arguments);
+			// Fix IE6 :
+			//		IE6 calls method resize itself.
+			//		If the GridContainer is not visible at this time,
+			//		the method _placeGrips can return a negative value with
+			//		contentBox method. (see method _placeGrip() with Fix Ie6 for the height)
+			if(this._isShown() && this.hasResizableColumns){
+				this._placeGrips();
+			}
+		},
+
+		_createGrip: function(/*Integer*/ index){
+			// summary:
+			//		Create a grip for a specific zone.
+			// index:
+			//		index where the grip has to be created.
+			// tags:
+			//		protected
+
+			//console.log("dojox.layout.GridContainer ::: _createGrip");
+			var dropZone = this._grid[index],
+				grip = domConstruct.create("div", { 'class': "gridContainerGrip" }, this.domNode);
+			dropZone.grip = grip;
+			dropZone.gripHandler = [
+				this.connect(grip, "onmouseover", function(e){
+					var gridContainerGripShow = false;
+					for(var i = 0; i < this._grid.length - 1; i++){
+						if(domClass.contains(this._grid[i].grip, "gridContainerGripShow")){
+							gridContainerGripShow = true;
+							break;
+						}
+					}
+					if(!gridContainerGripShow){
+						domClass.replace(e.target, "gridContainerGripShow", "gridContainerGrip");
+					}
+				})[0],
+				this.connect(grip, "onmouseout", function(e){
+					if(!this._isResized){
+						domClass.replace(e.target, "gridContainerGrip", "gridContainerGripShow");
+					}
+				})[0],
+				this.connect(grip, "onmousedown", "_resizeColumnOn")[0],
+				this.connect(grip, "ondblclick", "_onGripDbClick")[0]
+			];
+		},
+
+		_placeGrips: function(){
+			// summary:
+			//		Define the position of a grip and place it on page.
+			// tags:
+			//		protected
+
+			//console.log("dojox.layout.GridContainer ::: _placeGrips");
+			var gripWidth, height, left = 0, grip;
+			//var scroll = this.domNode.style.overflowY;
+
+			array.forEach(this._grid, function(dropZone){
+				if(dropZone.grip){
+					grip = dropZone.grip;
+					if(!gripWidth){
+						gripWidth = grip.offsetWidth / 2;
+					}
+
+					left += geom.getMarginBox(dropZone.node).w;
+
+					domStyle.set(grip, "left", (left - gripWidth) + "px");
+					//if(dojo.isIE == 6){ do it fot all navigators
+					if(!height){
+						height = geom.getContentBox(this.gridNode).h;
+					}
+					if(height > 0){
+						domStyle.set(grip, "height", height + "px");
+					}
+					//}
+				}
+			}, this);
+		},
+
+		_onGripDbClick: function(){
+			// summary:
+			//		Called when a double click is catch. Resize all columns with the same width.
+			//		The method resize of children have to be called.
+			// tags:
+			//		callback protected
+
+			//console.log("dojox.layout.GridContainer ::: _onGripDbClick");
+			this._updateColumnsWidth(this._dragManager);
+			this.resize();
+		},
+
+		_resizeColumnOn: function(/*Event*/e){
+			// summary:
+			//		Connect events to listen the resize action.
+			//		Change the type of width columns (% to px).
+			//		Calculate the minwidth according to the children.
+			// tags:
+			//		callback
+
+			//console.log("dojox.layout.GridContainer ::: _resizeColumnOn", e);
+			this._activeGrip = e.target;
+			this._initX = e.pageX;
+			e.preventDefault();
+
+			win.body().style.cursor = "ew-resize";
+
+			this._isResized = true;
+
+			var tabSize = [];
+			var grid;
+			var i;
+
+			for(i = 0; i < this._grid.length; i++){
+				tabSize[i] = geom.getContentBox(this._grid[i].node).w;
+			}
+
+			this._oldTabSize = tabSize;
+
+			for(i = 0; i < this._grid.length; i++){
+				grid = this._grid[i];
+				if(this._activeGrip == grid.grip){
+					this._currentColumn = grid.node;
+					this._currentColumnWidth = tabSize[i];
+					this._nextColumn = this._grid[i + 1].node;
+					this._nextColumnWidth = tabSize[i + 1];
+				}
+				grid.node.style.width = tabSize[i] + "px";
+			}
+
+			// calculate the minWidh of all children for current and next column
+			var calculateChildMinWidth = function(childNodes, minChild){
+				var width = 0;
+				var childMinWidth = 0;
+
+				array.forEach(childNodes, function(child){
+					if(child.nodeType == 1){
+						var objectStyle = domStyle.getComputedStyle(child);
+						var minWidth = (has("ie")) ? minChild : parseInt(objectStyle.minWidth);
+
+						childMinWidth = minWidth +
+									parseInt(objectStyle.marginLeft) +
+									parseInt(objectStyle.marginRight);
+
+						if(width < childMinWidth){
+							width = childMinWidth;
+						}
+					}
+				});
+				return width;
+			};
+			var currentColumnMinWidth = calculateChildMinWidth(this._currentColumn.childNodes, this.minChildWidth);
+
+			var nextColumnMinWidth = calculateChildMinWidth(this._nextColumn.childNodes, this.minChildWidth);
+
+			var minPix = Math.round((geom.getMarginBox(this.gridContainerTable).w * this.minColWidth) / 100);
+
+			this._currentMinCol = currentColumnMinWidth;
+			this._nextMinCol = nextColumnMinWidth;
+
+			if(minPix > this._currentMinCol){
+				this._currentMinCol = minPix;
+			}
+			if(minPix > this._nextMinCol){
+				this._nextMinCol = minPix;
+			}
+			this._connectResizeColumnMove = connect.connect(win.doc, "onmousemove", this, "_resizeColumnMove");
+			this._connectOnGripMouseUp = connect.connect(win.doc, "onmouseup", this, "_onGripMouseUp");
+		},
+
+		_onGripMouseUp: function(){
+			// summary:
+			//		Call on the onMouseUp only if the reiszeColumnMove was not called.
+			// tags:
+			//		callback
+
+			//console.log(dojox.layout.GridContainer ::: _onGripMouseUp");
+			win.body().style.cursor = "default";
+
+			connect.disconnect(this._connectResizeColumnMove);
+			connect.disconnect(this._connectOnGripMouseUp);
+
+			this._connectOnGripMouseUp = this._connectResizeColumnMove = null;
+
+			if(this._activeGrip){
+				domClass.replace(this._activeGrip, "gridContainerGrip", "gridContainerGripShow");
+			}
+
+			this._isResized = false;
+		},
+
+		_resizeColumnMove: function(/*Event*/e){
+			// summary:
+			//		Change columns size.
+			// tags:
+			//		callback
+
+			//console.log("dojox.layout.GridContainer ::: _resizeColumnMove");
+			e.preventDefault();
+			if(!this._connectResizeColumnOff){
+				connect.disconnect(this._connectOnGripMouseUp);
+				this._connectOnGripMouseUp = null;
+				this._connectResizeColumnOff = connect.connect(win.doc, "onmouseup", this, "_resizeColumnOff");
+			}
+
+			var d = e.pageX - this._initX;
+			if(d == 0){ return; }
+
+			if(!(this._currentColumnWidth + d < this._currentMinCol ||
+					this._nextColumnWidth - d < this._nextMinCol)){
+
+				this._currentColumnWidth += d;
+				this._nextColumnWidth -= d;
+				this._initX = e.pageX;
+				this._activeGrip.style.left = parseInt(this._activeGrip.style.left) + d + "px";
+
+				if(this.liveResizeColumns){
+					this._currentColumn.style["width"] = this._currentColumnWidth + "px";
+					this._nextColumn.style["width"] = this._nextColumnWidth + "px";
+					this.resize();
+				}
+			}
+		},
+
+		_resizeColumnOff: function(/*Event*/e){
+			// summary:
+			//		Disconnect resize events.
+			//		Change the type of width columns (px to %).
+			// tags:
+			//		callback
+
+			//console.log("dojox.layout.GridContainer ::: _resizeColumnOff");
+			win.body().style.cursor = "default";
+
+			connect.disconnect(this._connectResizeColumnMove);
+			connect.disconnect(this._connectResizeColumnOff);
+
+			this._connectResizeColumnOff = this._connectResizeColumnMove = null;
+
+			if(!this.liveResizeColumns){
+				this._currentColumn.style["width"] = this._currentColumnWidth + "px";
+				this._nextColumn.style["width"] = this._nextColumnWidth + "px";
+				//this.resize();
+			}
+
+			var tabSize = [],
+				testSize = [],
+				tabWidth = this.gridContainerTable.clientWidth,
+				node,
+				update = false,
+				i;
+
+			for(i = 0; i < this._grid.length; i++){
+				node = this._grid[i].node;
+				if(has("ie")){
+					tabSize[i] = geom.getMarginBox(node).w;
+					testSize[i] = geom.getContentBox(node).w;
+				}
+				else{
+					tabSize[i] = geom.getContentBox(node).w;
+					testSize = tabSize;
+				}
+			}
+
+			for(i = 0; i < testSize.length; i++){
+				if(testSize[i] != this._oldTabSize[i]){
+					update = true;
+					break;
+				}
+			}
+
+			if(update){
+				var mul = has("ie") ? 100 : 10000;
+				for(i = 0; i < this._grid.length; i++){
+					this._grid[i].node.style.width = Math.round((100 * mul * tabSize[i]) / tabWidth) / mul + "%";
+				}
+				this.resize();
+			}
+
+			if(this._activeGrip){
+				domClass.replace(this._activeGrip, "gridContainerGrip", "gridContainerGripShow");
+			}
+
+			this._isResized = false;
+		},
+
+		setColumns: function(/*Integer*/nbColumns){
+			// summary:
+			//		Set the number of columns.
+			// nbColumns:
+			//		Number of columns
+
+			//console.log("dojox.layout.GridContainer ::: setColumns");
+			var z, j;
+			if(nbColumns > 0){
+				var length = this._grid.length,
+					delta = length - nbColumns;
+				if(delta > 0){
+					var count = [], zone, start, end, nbChildren;
+					// Check if right or left columns are fixed
+					// Columns are not taken in account and can't be deleted
+					if(this.mode == "right"){
+						end = (this.isLeftFixed && length > 0) ? 1 : 0;
+						start = (this.isRightFixed) ? length - 2 : length - 1
+						for(z = start; z >= end; z--){
+							nbChildren = 0;
+							zone = this._grid[z].node;
+							for(j = 0; j < zone.childNodes.length; j++){
+								if(zone.childNodes[j].nodeType == 1 && !(zone.childNodes[j].id == "")){
+									nbChildren++;
+									break;
+								}
+							}
+							if(nbChildren == 0){ count[count.length] = z; }
+							if(count.length >= delta){
+								this._deleteColumn(count);
+								break;
+							}
+						}
+						if(count.length < delta){
+							connect.publish("/dojox/layout/gridContainer/noEmptyColumn", [this]);
+						}
+					}
+					else{ // mode = "left"
+						start = (this.isLeftFixed && length > 0) ? 1 : 0;
+						end = (this.isRightFixed) ? length - 1 : length;
+						for(z = start; z < end; z++){
+							nbChildren = 0;
+							zone = this._grid[z].node;
+							for(j = 0; j < zone.childNodes.length; j++){
+								if(zone.childNodes[j].nodeType == 1 && !(zone.childNodes[j].id == "")){
+									nbChildren++;
+									break;
+								}
+							}
+							if(nbChildren == 0){ count[count.length] = z; }
+							if(count.length >= delta){
+								this._deleteColumn(count);
+								break;
+							}
+						}
+						if(count.length < delta){
+							//Not enough empty columns
+							connect.publish("/dojox/layout/gridContainer/noEmptyColumn", [this]);
+						}
+					}
+				}
+				else{
+					if(delta < 0){ this._addColumn(Math.abs(delta)); }
+				}
+				if(this.hasResizableColumns){ this._placeGrips(); }
+			}
+		},
+
+		_addColumn: function(/*Integer*/nbColumns){
+			// summary:
+			//		Add some columns.
+			// nbColumns:
+			//		Number of column to added
+			// tags:
+			//		private
+
+			//console.log("dojox.layout.GridContainer ::: _addColumn");
+			var grid = this._grid,
+				dropZone,
+				node,
+				index,
+				length,
+				isRightMode = (this.mode == "right"),
+				accept = this.acceptTypes.join(","),
+				m = this._dragManager;
+
+			//Add a grip to the last column
+			if(this.hasResizableColumns && ((!this.isRightFixed && isRightMode)
+				|| (this.isLeftFixed && !isRightMode && this.nbZones == 1) )){
+				this._createGrip(grid.length - 1);
+			}
+
+			for(var i = 0; i < nbColumns; i++){
+				// Fix CODEX defect #53025 :
+				//		Apply acceptType attribute on each new column.
+				node = domConstruct.create("td", {
+					'class': "gridContainerZone dojoxDndArea" ,
+					'accept': accept,
+					'id': this.id + "_dz" + this.nbZones
+				});
+
+				length = grid.length;
+
+				if(isRightMode){
+					if(this.isRightFixed){
+						index = length - 1;
+						grid.splice(index, 0, {
+							'node': grid[index].node.parentNode.insertBefore(node, grid[index].node)
+						});
+					}
+					else{
+						index = length;
+						grid.push({ 'node': this.gridNode.appendChild(node) });
+					}
+				}
+				else{
+					if(this.isLeftFixed){
+						index = (length == 1) ? 0 : 1;
+						this._grid.splice(1, 0, {
+							'node': this._grid[index].node.parentNode.appendChild(node, this._grid[index].node)
+						});
+						index = 1;
+					}
+					else{
+						index = length - this.nbZones;
+						this._grid.splice(index, 0, {
+							'node': grid[index].node.parentNode.insertBefore(node, grid[index].node)
+						});
+					}
+				}
+				if(this.hasResizableColumns){
+					//Add a grip to resize columns
+					if((!isRightMode && this.nbZones != 1) ||
+							(!isRightMode && this.nbZones == 1 && !this.isLeftFixed) ||
+								(isRightMode && i < nbColumns-1) ||
+									(isRightMode && i == nbColumns-1 && this.isRightFixed)){
+						this._createGrip(index);
+					}
+				}
+				// register tnbZoneshe new area into the areaManager
+				m.registerByNode(grid[index].node);
+				this.nbZones++;
+			}
+			this._updateColumnsWidth(m);
+		},
+
+		_deleteColumn: function(/*Array*/indices){
+			// summary:
+			//		Remove some columns with indices passed as an array.
+			// indices:
+			//		Column index array
+			// tags:
+			//		private
+
+			//console.log("dojox.layout.GridContainer ::: _deleteColumn");
+			var child, grid, index,
+				nbDelZones = 0,
+				length = indices.length,
+				m = this._dragManager;
+			for(var i = 0; i < length; i++){
+				index = (this.mode == "right") ? indices[i] : indices[i] - nbDelZones;
+				grid = this._grid[index];
+
+				if(this.hasResizableColumns && grid.grip){
+					array.forEach(grid.gripHandler, function(handler){
+						connect.disconnect(handler);
+					});
+					domConstruct.destroy(this.domNode.removeChild(grid.grip));
+					grid.grip = null;
+				}
+
+				m.unregister(grid.node);
+				domConstruct.destroy(this.gridNode.removeChild(grid.node));
+				this._grid.splice(index, 1);
+				this.nbZones--;
+				nbDelZones++;
+			}
+
+			// last grip
+			var lastGrid = this._grid[this.nbZones-1];
+			if(lastGrid.grip){
+				array.forEach(lastGrid.gripHandler, connect.disconnect);
+				domConstruct.destroy(this.domNode.removeChild(lastGrid.grip));
+				lastGrid.grip = null;
+			}
+
+			this._updateColumnsWidth(m);
+		},
+
+		_updateColumnsWidth: function(/*Object*/ manager){
+			// summary:
+			//		Update the columns width.
+			// manager:
+			//		dojox.mdnd.AreaManager singleton
+			// tags:
+			//		private
+
+			//console.log("dojox.layout.GridContainer ::: _updateColumnsWidth");
+			this.inherited(arguments);
+			manager._dropMode.updateAreas(manager._areaList);
+		},
+
+		destroy: function(){
+			connect.unsubscribe(this._dropHandler);
+			this.inherited(arguments);
+		}
+	});
+});

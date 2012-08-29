@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/widget/nls/hr/ColorPicker", ({
 redLabel: "r",

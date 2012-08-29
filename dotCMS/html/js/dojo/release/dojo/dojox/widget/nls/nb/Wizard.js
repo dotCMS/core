@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/nb/Wizard", //begin v1.x content
-({
+"dojox/widget/nls/nb/Wizard", ({
 next: "Neste",
 previous: "Forrige",
 done: "Ferdig"
 })
-//end v1.x content
 );

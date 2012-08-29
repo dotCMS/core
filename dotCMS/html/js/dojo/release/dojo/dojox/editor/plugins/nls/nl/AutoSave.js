@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nl/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nl/AutoSave", ({
 	"saveLabel": "Opslaan",
 	"saveSettingLabelOn": "Interval voor automatisch opslaan instellen...",
 	"saveSettingLabelOff": "Automatisch opslaan uitschakelen",
@@ -11,9 +9,7 @@ define(
 	"saveSettingdialogParamLabel": "min",
 	"saveSettingdialogButtonOk": "Interval instellen",
 	"saveSettingdialogButtonCancel": "Annuleren",
-	"saveMessageSuccess": "Opgeslagen op ${0}",
-	"saveMessageFail": "Opslaan mislukt op ${0}"
+	"saveMessageSuccess": "Opgeslagen om ${0}",
+	"saveMessageFail": "Opslaan mislukt om ${0}"
 })
-
-//end v1.x content
 );

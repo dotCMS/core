@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sl/Smiley", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sl/Smiley", ({
 	smiley: "Vstavi čustveni simbol",
 	emoticonSmile: "smeško",
 	emoticonLaughing: "smeško z odprtimi usti",
@@ -23,6 +21,4 @@ define(
 	emoticonCrying: "smeško joka",
 	emoticonHappy: "smeško je vesel"
 })
-
-//end v1.x content
 );

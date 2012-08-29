@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sl/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sl/TableDialog", ({
 	insertTableTitle: "Vstavi tabelo",
 	modifyTableTitle: "Spremeni tabelo",
 	rows: "Vrstice:",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "Nastavi", // translated elsewhere?
 	buttonInsert: "Vstavi",
 	buttonCancel: "Prekliči",
-
 	selectTableLabel: "Izberi tabelo",
 	insertTableRowBeforeLabel: "Dodaj vrstico pred",
 	insertTableRowAfterLabel: "Dodaj vrstico za",
@@ -31,7 +28,4 @@ define(
 	deleteTableRowLabel: "Izbriši vrstico",
 	deleteTableColumnLabel: "Izbriši stolpec"
 })
-	
-
-//end v1.x content
 );

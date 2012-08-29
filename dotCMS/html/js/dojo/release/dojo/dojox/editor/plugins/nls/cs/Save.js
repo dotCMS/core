@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/cs/Save", //begin v1.x content
-({
+"dojox/editor/plugins/nls/cs/Save", ({
 	"save": "Uložit"
 })
-
-//end v1.x content
 );

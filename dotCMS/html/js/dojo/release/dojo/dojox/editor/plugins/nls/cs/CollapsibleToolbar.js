@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/cs/CollapsibleToolbar", //begin v1.x content
-({
+"dojox/editor/plugins/nls/cs/CollapsibleToolbar", ({
 	"collapse": "Sbalit panel nástrojů editoru",
 	"expand": "Rozbalit panel nástrojů editoru"
 })
-
-//end v1.x content
 );

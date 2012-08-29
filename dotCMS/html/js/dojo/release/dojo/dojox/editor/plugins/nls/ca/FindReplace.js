@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ca/FindReplace", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ca/FindReplace", ({
 	"findLabel": "Cerca:",
 	"findTooltip": "Especifiqueu el text que voleu trobar",
 	"replaceLabel": "Substitueix per:",
@@ -22,6 +20,4 @@ define(
 	"eofDialogTextFind": "trobat",
 	"eofDialogTextReplace": "substituït"
 })
-
-//end v1.x content
 );

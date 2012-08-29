@@ -699,5 +699,9 @@ create table indicies (
     description  varchar(50) NOT null,
     primary key (log_name)
   );
+
+  insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-userActivity.log','Log Users action on pages, structures, documents.');
+  insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
+  insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
   
 create index idx_identifier_perm on identifier (asset_type,host_inode);

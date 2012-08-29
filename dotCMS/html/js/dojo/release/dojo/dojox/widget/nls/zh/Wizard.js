@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/zh/Wizard", //begin v1.x content
-({
-next: "下一步",
-previous: "上一步",
+"dojox/widget/nls/zh/Wizard", ({
+next: "下一个",
+previous: "上一个",
 done: "完成"
 })
-//end v1.x content
 );

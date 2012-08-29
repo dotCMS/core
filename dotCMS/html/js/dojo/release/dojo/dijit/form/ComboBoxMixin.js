@@ -1,2 +1,143 @@
-//>>built
-require({cache:{"url:dijit/form/templates/DropDownBox.html":"<div class=\"dijit dijitReset dijitInline dijitLeft\"\n\tid=\"widget_${id}\"\n\trole=\"combobox\"\n\t><div class='dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitArrowButtonContainer'\n\t\tdata-dojo-attach-point=\"_buttonNode, _popupStateNode\" role=\"presentation\"\n\t\t><input class=\"dijitReset dijitInputField dijitArrowButtonInner\" value=\"&#9660; \" type=\"text\" tabIndex=\"-1\" readonly=\"readonly\" role=\"presentation\"\n\t\t\t${_buttonInputDisabled}\n\t/></div\n\t><div class='dijitReset dijitValidationContainer'\n\t\t><input class=\"dijitReset dijitInputField dijitValidationIcon dijitValidationInner\" value=\"&#935; \" type=\"text\" tabIndex=\"-1\" readonly=\"readonly\" role=\"presentation\"\n\t/></div\n\t><div class=\"dijitReset dijitInputField dijitInputContainer\"\n\t\t><input class='dijitReset dijitInputInner' ${!nameAttrSetting} type=\"text\" autocomplete=\"off\"\n\t\t\tdata-dojo-attach-point=\"textbox,focusNode\" role=\"textbox\" aria-haspopup=\"true\"\n\t/></div\n></div>\n"}});define("dijit/form/ComboBoxMixin",["dojo/_base/declare","dojo/_base/Deferred","dojo/_base/kernel","dojo/_base/lang","dojo/store/util/QueryResults","./_AutoCompleterMixin","./_ComboBoxMenu","../_HasDropDown","dojo/text!./templates/DropDownBox.html"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9){return _1("dijit.form.ComboBoxMixin",[_8,_6],{dropDownClass:_7,hasDownArrow:true,templateString:_9,baseClass:"dijitTextBox dijitComboBox",cssStateNodes:{"_buttonNode":"dijitDownArrowButton"},_setHasDownArrowAttr:function(_a){this._set("hasDownArrow",_a);this._buttonNode.style.display=_a?"":"none";},_showResultList:function(){this.displayMessage("");this.inherited(arguments);},_setStoreAttr:function(_b){if(!_b.get){_4.mixin(_b,{_oldAPI:true,get:function(id){var _c=new _2();this.fetchItemByIdentity({identity:id,onItem:function(_d){_c.resolve(_d);},onError:function(_e){_c.reject(_e);}});return _c.promise;},query:function(_f,_10){var _11=new _2(function(){_12.abort&&_12.abort();});var _12=this.fetch(_4.mixin({query:_f,onBegin:function(_13){_11.total=_13;},onComplete:function(_14){_11.resolve(_14);},onError:function(_15){_11.reject(_15);}},_10));return _5(_11);}});}this._set("store",_b);},postMixInProperties:function(){if(this.params.store){this._setStoreAttr(this.params.store);}this.inherited(arguments);if(!this.params.store){var _16=this.declaredClass;_4.mixin(this.store,{getValue:function(_17,_18){_3.deprecated(_16+".store.getValue(item, attr) is deprecated for builtin store.  Use item.attr directly","","2.0");return _17[_18];},getLabel:function(_19){_3.deprecated(_16+".store.getLabel(item) is deprecated for builtin store.  Use item.label directly","","2.0");return _19.name;},fetch:function(_1a){_3.deprecated(_16+".store.fetch() is deprecated for builtin store.","Use store.query()","2.0");var _1b=["dojo/data/ObjectStore"];require(_1b,_4.hitch(this,function(_1c){new _1c({objectStore:this}).fetch(_1a);}));}});}}});});
+require({cache:{
+'url:dijit/form/templates/DropDownBox.html':"<div class=\"dijit dijitReset dijitInline dijitLeft\"\n\tid=\"widget_${id}\"\n\trole=\"combobox\"\n\t><div class='dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitArrowButtonContainer'\n\t\tdata-dojo-attach-point=\"_buttonNode, _popupStateNode\" role=\"presentation\"\n\t\t><input class=\"dijitReset dijitInputField dijitArrowButtonInner\" value=\"&#9660; \" type=\"text\" tabIndex=\"-1\" readonly=\"readonly\" role=\"presentation\"\n\t\t\t${_buttonInputDisabled}\n\t/></div\n\t><div class='dijitReset dijitValidationContainer'\n\t\t><input class=\"dijitReset dijitInputField dijitValidationIcon dijitValidationInner\" value=\"&#935; \" type=\"text\" tabIndex=\"-1\" readonly=\"readonly\" role=\"presentation\"\n\t/></div\n\t><div class=\"dijitReset dijitInputField dijitInputContainer\"\n\t\t><input class='dijitReset dijitInputInner' ${!nameAttrSetting} type=\"text\" autocomplete=\"off\"\n\t\t\tdata-dojo-attach-point=\"textbox,focusNode\" role=\"textbox\" aria-haspopup=\"true\"\n\t/></div\n></div>\n"}});
+define("dijit/form/ComboBoxMixin", [
+	"dojo/_base/declare", // declare
+	"dojo/_base/Deferred",
+	"dojo/_base/kernel", // kernel.deprecated
+	"dojo/_base/lang", // lang.mixin
+	"dojo/store/util/QueryResults",
+	"./_AutoCompleterMixin",
+	"./_ComboBoxMenu",
+	"../_HasDropDown",
+	"dojo/text!./templates/DropDownBox.html"
+], function(declare, Deferred, kernel, lang, QueryResults, _AutoCompleterMixin, _ComboBoxMenu, _HasDropDown, template){
+
+
+	// module:
+	//		dijit/form/ComboBoxMixin
+
+	return declare("dijit.form.ComboBoxMixin", [_HasDropDown, _AutoCompleterMixin], {
+		// summary:
+		//		Provides main functionality of ComboBox widget
+
+		// dropDownClass: [protected extension] Function String
+		//		Dropdown widget class used to select a date/time.
+		//		Subclasses should specify this.
+		dropDownClass: _ComboBoxMenu,
+
+		// hasDownArrow: Boolean
+		//		Set this textbox to have a down arrow button, to display the drop down list.
+		//		Defaults to true.
+		hasDownArrow: true,
+
+		templateString: template,
+
+		baseClass: "dijitTextBox dijitComboBox",
+
+		/*=====
+		// store: [const] dojo/store/api/Store|dojo/data/api/Read
+		//		Reference to data provider object used by this ComboBox.
+		//
+		//		Should be dojo/store/api/Store, but dojo/data/api/Read supported
+		//		for backwards compatibility.
+		store: null,
+		=====*/
+
+		// Set classes like dijitDownArrowButtonHover depending on
+		// mouse action over button node
+		cssStateNodes: {
+			"_buttonNode": "dijitDownArrowButton"
+		},
+
+		_setHasDownArrowAttr: function(/*Boolean*/ val){
+			this._set("hasDownArrow", val);
+			this._buttonNode.style.display = val ? "" : "none";
+		},
+
+		_showResultList: function(){
+			// hide the tooltip
+			this.displayMessage("");
+			this.inherited(arguments);
+		},
+
+		_setStoreAttr: function(store){
+			// For backwards-compatibility, accept dojo.data store in addition to dojo/store/api/Store.  Remove in 2.0.
+			if(!store.get){
+				lang.mixin(store, {
+					_oldAPI: true,
+					get: function(id){
+						// summary:
+						//		Retrieves an object by it's identity. This will trigger a fetchItemByIdentity.
+						//		Like dojo/store/DataStore.get() except returns native item.
+						var deferred = new Deferred();
+						this.fetchItemByIdentity({
+							identity: id,
+							onItem: function(object){
+								deferred.resolve(object);
+							},
+							onError: function(error){
+								deferred.reject(error);
+							}
+						});
+						return deferred.promise;
+					},
+					query: function(query, options){
+						// summary:
+						//		Queries the store for objects.   Like dojo/store/DataStore.query()
+						//		except returned Deferred contains array of native items.
+						var deferred = new Deferred(function(){ fetchHandle.abort && fetchHandle.abort(); });
+						deferred.total = new Deferred();
+						var fetchHandle = this.fetch(lang.mixin({
+							query: query,
+							onBegin: function(count){
+								deferred.total.resolve(count);
+							},
+							onComplete: function(results){
+								deferred.resolve(results);
+							},
+							onError: function(error){
+								deferred.reject(error);
+							}
+						}, options));
+						return QueryResults(deferred);
+					}
+				});
+			}
+			this._set("store", store);
+		},
+
+		postMixInProperties: function(){
+			// Since _setValueAttr() depends on this.store, _setStoreAttr() needs to execute first.
+			// Unfortunately, without special code, it ends up executing second.
+			var store = this.params.store || this.store;
+			if(store){
+				this._setStoreAttr(store);
+			}
+
+			this.inherited(arguments);
+
+			// User may try to access this.store.getValue() etc.  in a custom labelFunc() function.
+			// It's not available with the new data store for handling inline <option> tags, so add it.
+			if(!this.params.store && !this.store._oldAPI){
+				var clazz = this.declaredClass;
+				lang.mixin(this.store, {
+					getValue: function(item, attr){
+						kernel.deprecated(clazz + ".store.getValue(item, attr) is deprecated for builtin store.  Use item.attr directly", "", "2.0");
+						return item[attr];
+					},
+					getLabel: function(item){
+						kernel.deprecated(clazz + ".store.getLabel(item) is deprecated for builtin store.  Use item.label directly", "", "2.0");
+						return item.name;
+					},
+					fetch: function(args){
+						kernel.deprecated(clazz + ".store.fetch() is deprecated for builtin store.", "Use store.query()", "2.0");
+						var shim = ["dojo/data/ObjectStore"];	// indirection so it doesn't get rolled into a build
+						require(shim, lang.hitch(this, function(ObjectStore){
+							new ObjectStore({objectStore: this}).fetch(args);
+						}));
+					}
+				});
+			}
+		}
+	});
+});

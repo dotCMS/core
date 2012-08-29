@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/atom/widget/nls/fr/FeedEntryViewer", //begin v1.x content
-({
+"dojox/atom/widget/nls/fr/FeedEntryViewer", ({
 	displayOptions: "[options d'affichage]",
 	title: "Titre",
 	authors: "Auteurs",
@@ -12,5 +10,4 @@ define(
 	summary: "Récapitulatif",
 	content: "Contenu"
 })
-//end v1.x content
 );

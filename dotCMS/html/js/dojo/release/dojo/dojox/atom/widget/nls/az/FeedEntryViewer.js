@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/atom/widget/nls/az/FeedEntryViewer", //begin v1.x content
-({
+"dojox/atom/widget/nls/az/FeedEntryViewer", ({
 	"close" : "[çıx]",
 	"title" : "Başlıq",
 	"authors" : "Yazıçılar",
@@ -12,5 +10,4 @@ define(
 	"displayOptions" : "[göstərmə seçimləri]",
 	"id" : "Şəxsiyyət"
 })
-//end v1.x content
 );

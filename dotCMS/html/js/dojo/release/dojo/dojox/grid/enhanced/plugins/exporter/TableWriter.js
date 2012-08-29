@@ -1,2 +1,159 @@
-//>>built
-define("dojox/grid/enhanced/plugins/exporter/TableWriter",["dojo/_base/declare","dojo/_base/array","dojo/dom-geometry","./_ExportWriter","../Exporter"],function(_1,_2,_3,_4,_5){_5.registerWriter("table","dojox.grid.enhanced.plugins.exporter.TableWriter");return _1("dojox.grid.enhanced.plugins.exporter.TableWriter",_4,{constructor:function(_6){this._viewTables=[];this._tableAttrs=_6||{};},_getTableAttrs:function(_7){var _8=this._tableAttrs[_7]||"";if(_8&&_8[0]!=" "){_8=" "+_8;}return _8;},_getRowClass:function(_9){return _9.isHeader?" grid_header":[" grid_row grid_row_",_9.rowIdx+1,_9.rowIdx%2?" grid_even_row":" grid_odd_row"].join("");},_getColumnClass:function(_a){var _b=_a.cell.index+_a.colOffset+1;return [" grid_column grid_column_",_b,_b%2?" grid_odd_column":" grid_even_column"].join("");},beforeView:function(_c){var _d=_c.viewIdx,_e=this._viewTables[_d],_f,_10=_3.getMarginBox(_c.view.contentNode).w;if(!_e){var _11=0;for(var i=0;i<_d;++i){_11+=this._viewTables[i]._width;}_e=this._viewTables[_d]=["<div class=\"grid_view\" style=\"position: absolute; top: 0; ",_3.isBodyLtr()?"left":"right",":",_11,"px;\">"];}_e._width=_10;if(_c.isHeader){_f=_3.getContentBox(_c.view.headerContentNode).h;}else{var _12=_c.grid.getRowNode(_c.rowIdx);if(_12){_f=_3.getContentBox(_12).h;}else{_f=_c.grid.scroller.averageRowHeight;}}_e.push("<table class=\"",this._getRowClass(_c),"\" style=\"table-layout:fixed; height:",_f,"px; width:",_10,"px;\" ","border=\"0\" cellspacing=\"0\" cellpadding=\"0\" ",this._getTableAttrs("table"),"><tbody ",this._getTableAttrs("tbody"),">");return true;},afterView:function(_13){this._viewTables[_13.viewIdx].push("</tbody></table>");},beforeSubrow:function(_14){this._viewTables[_14.viewIdx].push("<tr",this._getTableAttrs("tr"),">");return true;},afterSubrow:function(_15){this._viewTables[_15.viewIdx].push("</tr>");},handleCell:function(_16){var _17=_16.cell;if(_17.hidden||_2.indexOf(_16.spCols,_17.index)>=0){return;}var _18=_16.isHeader?"th":"td",_19=[_17.colSpan?" colspan=\""+_17.colSpan+"\"":"",_17.rowSpan?" rowspan=\""+_17.rowSpan+"\"":""," style=\"width: ",_3.getContentBox(_17.getHeaderNode()).w,"px;\"",this._getTableAttrs(_18)," class=\"",this._getColumnClass(_16),"\""].join(""),_1a=this._viewTables[_16.viewIdx];_1a.push("<",_18,_19,">");if(_16.isHeader){_1a.push(_17.name||_17.field);}else{_1a.push(this._getExportDataForCell(_16.rowIdx,_16.row,_17,_16.grid));}_1a.push("</",_18,">");},afterContent:function(){_2.forEach(this._viewTables,function(_1b){_1b.push("</div>");});},toString:function(){var _1c=_2.map(this._viewTables,function(_1d){return _1d.join("");}).join("");return ["<div style=\"position: relative;\">",_1c,"</div>"].join("");}});});
+define("dojox/grid/enhanced/plugins/exporter/TableWriter", [
+	"dojo/_base/declare",
+	"dojo/_base/array",
+	"dojo/dom-geometry",
+	"./_ExportWriter",
+	"../Exporter"
+], function(declare, array, domGeometry, _ExportWriter, Exporter){
+
+Exporter.registerWriter("table", "dojox.grid.enhanced.plugins.exporter.TableWriter");
+	
+return declare("dojox.grid.enhanced.plugins.exporter.TableWriter", _ExportWriter, {
+	// summary:
+	//		Export grid to HTML table format. Primarily used by Printer plugin.
+	constructor: function(/* object? */writerArgs){
+		// summary:
+		//		The generated table only defines the col/rowspan, height and width of
+		//		all the cells in the style attribute, no other attributes
+		//		(like border, cellspacing, etc.) are used.
+		//		Users can define these attributes in the writerArgs object, like:
+		//		{table:"border='border'",thead:"cellspacing='3'"}
+		this._viewTables = [];
+		this._tableAttrs = writerArgs || {};
+	},
+
+	_getTableAttrs: function(/* string */tagName){
+		// summary:
+		//		Get html attribute string for the given kind of tag.
+		// tags:
+		//		private
+		// tagName: string
+		//		An html tag name
+		// returns:
+		//		The well formatted attributes for the given html table.tag
+		var attrs = this._tableAttrs[tagName] || '';
+		//To ensure the attribute list starts with a space
+		if(attrs && attrs[0] != ' '){
+			attrs = ' ' + attrs;
+		}
+		return attrs;	//String
+	},
+
+	_getRowClass: function(/* object */arg_obj){
+		// summary:
+		//		Get CSS class string for a row
+		// tags:
+		//		private
+		return arg_obj.isHeader ? " grid_header" : [//String
+			" grid_row grid_row_",
+			arg_obj.rowIdx + 1,
+			arg_obj.rowIdx % 2 ? " grid_even_row" : " grid_odd_row"
+		].join('');
+	},
+
+	_getColumnClass: function(/* object */arg_obj){
+		// summary:
+		//		Get CSS class string for a column
+		// tags:
+		//		private
+		var col_idx = arg_obj.cell.index + arg_obj.colOffset + 1;
+		return [" grid_column grid_column_", col_idx,//String
+				col_idx % 2 ? " grid_odd_column" : " grid_even_column"].join('');
+	},
+
+	beforeView: function(/* object */arg_obj){
+		// summary:
+		//		Overrided from _ExportWriter
+		var viewIdx = arg_obj.viewIdx,
+			table = this._viewTables[viewIdx],
+			height, width = domGeometry.getMarginBox(arg_obj.view.contentNode).w;
+		if(!table){
+			var left = 0;
+			for(var i = 0; i < viewIdx; ++i){
+				left += this._viewTables[i]._width;
+			}
+			table = this._viewTables[viewIdx] = ['<div class="grid_view" style="position: absolute; top: 0; ',
+				domGeometry.isBodyLtr() ? 'left' : 'right', ':', left,
+				'px;">'];
+		}
+		table._width = width;
+		if(arg_obj.isHeader){
+			height = domGeometry.getContentBox(arg_obj.view.headerContentNode).h;
+		}else{
+			var rowNode = arg_obj.grid.getRowNode(arg_obj.rowIdx);
+			if(rowNode){
+				height = domGeometry.getContentBox(rowNode).h;
+			}else{
+				//This row has not been loaded from store, so we should estimate it's height.
+				height = arg_obj.grid.scroller.averageRowHeight;
+			}
+		}
+		table.push('<table class="', this._getRowClass(arg_obj), 
+			'" style="table-layout:fixed; height:', height, 'px; width:', width, 'px;" ', 
+			'border="0" cellspacing="0" cellpadding="0" ',
+			this._getTableAttrs("table"),
+			'><tbody ', this._getTableAttrs('tbody'), '>');
+		return true;	//Boolean
+	},
+
+	afterView: function(/* object */arg_obj){
+		// summary:
+		//		Overrided from _ExportWriter
+		this._viewTables[arg_obj.viewIdx].push('</tbody></table>');
+	},
+
+	beforeSubrow: function(/* object */arg_obj){
+		// summary:
+		//		Overrided from _ExportWriter
+		this._viewTables[arg_obj.viewIdx].push('<tr', this._getTableAttrs('tr'), '>');
+		return true;	//Boolean
+	},
+
+	afterSubrow: function(/* object */arg_obj){
+		// summary:
+		//		Overrided from _ExportWriter
+		this._viewTables[arg_obj.viewIdx].push('</tr>');
+	},
+
+	handleCell: function(/* object */arg_obj){
+		// summary:
+		//		Overrided from _ExportWriter
+		var cell = arg_obj.cell;
+		if(cell.hidden || array.indexOf(arg_obj.spCols, cell.index) >= 0){
+			//We are not interested in indirect selectors and row indexes.
+			return;
+		}
+		var cellTagName = arg_obj.isHeader ? 'th' : 'td',
+			attrs = [cell.colSpan ? ' colspan="' + cell.colSpan + '"' : '',
+					cell.rowSpan ? ' rowspan="' + cell.rowSpan + '"' : '',
+					' style="width: ', domGeometry.getContentBox(cell.getHeaderNode()).w, 'px;"',
+					this._getTableAttrs(cellTagName),
+					' class="', this._getColumnClass(arg_obj), '"'].join(''),
+			table = this._viewTables[arg_obj.viewIdx];
+		table.push('<', cellTagName, attrs, '>');
+		if(arg_obj.isHeader){
+			table.push(cell.name || cell.field);
+		} else{
+			table.push(this._getExportDataForCell(arg_obj.rowIdx, arg_obj.row, cell, arg_obj.grid));
+		}
+		table.push('</', cellTagName, '>');
+	},
+
+	afterContent: function(){
+		// summary:
+		//		Overrided from _ExportWriter
+		array.forEach(this._viewTables, function(table){
+			table.push('</div>');
+		});
+	},
+
+	toString: function(){
+		// summary:
+		//		Overrided from _ExportWriter
+		var viewsHTML = array.map(this._viewTables, function(table){	//String
+			return table.join('');
+		}).join('');
+		return ['<div style="position: relative;">', viewsHTML, '</div>'].join('');
+	}
+});
+});

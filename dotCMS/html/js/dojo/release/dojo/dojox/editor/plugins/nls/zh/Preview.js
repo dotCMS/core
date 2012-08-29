@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh/Preview", ({
 	"preview": "预览"
 })
-
-//end v1.x content
 );

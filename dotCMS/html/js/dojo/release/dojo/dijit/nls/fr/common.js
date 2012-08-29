@@ -1,11 +1,8 @@
-//>>built
 define(
-"dijit/nls/fr/common", //begin v1.x content
-({
+"dijit/nls/fr/common", ({
 	buttonOk: "OK",
 	buttonCancel: "Annuler",
-	buttonSave: "Sauvegarder",
+	buttonSave: "Enregistrer",
 	itemClose: "Fermer"
 })
-//end v1.x content
 );

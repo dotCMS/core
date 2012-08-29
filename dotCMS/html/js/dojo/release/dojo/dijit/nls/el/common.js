@@ -1,11 +1,8 @@
-//>>built
 define(
-"dijit/nls/el/common", //begin v1.x content
-({
+"dijit/nls/el/common", ({
 	buttonOk: "ΟΚ",
 	buttonCancel: "Ακύρωση",
 	buttonSave: "Αποθήκευση",
 	itemClose: "Κλείσιμο"
 })
-//end v1.x content
 );

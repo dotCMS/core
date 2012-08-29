@@ -1,14 +1,12 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/pt/FindReplace", //begin v1.x content
-({
+"dojox/editor/plugins/nls/pt/FindReplace", ({
 	"findLabel": "Localizar:",
 	"findTooltip": "Inserir texto a ser localizado",
 	"replaceLabel": "Substituir por:",
 	"replaceTooltip": "Inserir texto a ser substituído por",
 	"findReplace": "Localizar e Substituir",
-	"matchCase": "Coincidir maiúscula/minúscula",
-	"matchCaseTooltip": "Coincidir maiúscula/minúscula",
+	"matchCase": "Diferenciar maiúsculas/minúsculas",
+	"matchCaseTooltip": "Diferenciar maiúsculas/minúsculas",
 	"backwards": "Retroceder",
 	"backwardsTooltip": "Procurar texto para trás",
 	"replaceAllButton": "Substituir Todos",
@@ -22,5 +20,4 @@ define(
 	"eofDialogTextFind": "localizado",
 	"eofDialogTextReplace": "substituído"
 })
-//end v1.x content
 );

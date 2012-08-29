@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/es/Wizard", //begin v1.x content
-({
+"dojox/widget/nls/es/Wizard", ({
 next: "Siguiente",
 previous: "Anterior",
 done: "Terminado"
 })
-//end v1.x content
 );

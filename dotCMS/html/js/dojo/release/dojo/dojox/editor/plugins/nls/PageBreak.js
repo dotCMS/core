@@ -1,11 +1,10 @@
-//>>built
 define("dojox/editor/plugins/nls/PageBreak", { root:
 //begin v1.x content
 ({
 	"pageBreak": "Page Break"
 })
-,
 //end v1.x content
+,
 "zh": true,
 "zh-tw": true,
 "tr": true,

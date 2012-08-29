@@ -1,27 +1,23 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/da/FindReplace", //begin v1.x content
-({
-	"findLabel": "Søg efter:",
-	"findTooltip": "Indtast tekst, der skal søges efter",
+"dojox/editor/plugins/nls/da/FindReplace", ({
+	"findLabel": "Søg:",
+	"findTooltip": "Indtast tekst, du vil søge efter",
 	"replaceLabel": "Erstat med:",
-	"replaceTooltip": "Indtast tekst, der skal erstattes med",
+	"replaceTooltip": "Indtast tekst, du vil erstatte med",
 	"findReplace": "Søg og erstat",
-	"matchCase": "Store/små bogstaver",
-	"matchCaseTooltip": "Store/små bogstaver",
-	"backwards": "Tilbage",
-	"backwardsTooltip": "Søg baglæns efter tekst",
+	"matchCase": "Forskel på store og små bogstaver",
+	"matchCaseTooltip": "Forskel på store og små bogstaver",
+	"backwards": "Baglæns",
+	"backwardsTooltip": "Søg baglæns i teksten",
 	"replaceAllButton": "Erstat alle",
-	"replaceAllButtonTooltip": "Erstat alle forekomster i teksten",
+	"replaceAllButtonTooltip": "Erstat i hele teksten",
 	"findButton": "Søg",
 	"findButtonTooltip": "Find teksten",
 	"replaceButton": "Erstat",
 	"replaceButtonTooltip": "Erstat teksten",
-	"replaceDialogText": "Erstattet ${0} forekomster.",
+	"replaceDialogText": "${0} forekomster erstattet.",
 	"eofDialogText": "Sidste forekomst ${0}",
 	"eofDialogTextFind": "fundet",
 	"eofDialogTextReplace": "erstattet"
 })
-
-//end v1.x content
 );

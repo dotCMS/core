@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/form/nls/ro/PasswordValidator", //begin v1.x content
-({
-        nomatchMessage: "Parolele nu se potrivesc. ",
-		badPasswordMessage: "Parola nu este validă. "
+"dojox/form/nls/ro/PasswordValidator", ({
+        nomatchMessage: "Parolele nu se potrivesc.",
+	badPasswordMessage: "Parolă invalidă."
 })
-
-//end v1.x content
 );

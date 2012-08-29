@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nl/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nl/SpellCheck", ({
 	widgetLabel: "Groepsgewijze spellingcontrole",
 	unfound: "Niet gevonden",
 	skip: "Overslaan",
@@ -17,6 +15,4 @@ define(
 	iSkipAll: "Al deze overslaan",
 	iMsg: "Geen spellingsuggesties"
 })
-
-//end v1.x content
 );

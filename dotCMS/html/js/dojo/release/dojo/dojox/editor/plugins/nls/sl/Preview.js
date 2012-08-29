@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sl/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sl/Preview", ({
 	"preview": "Predogled "
 })
-
-//end v1.x content
 );

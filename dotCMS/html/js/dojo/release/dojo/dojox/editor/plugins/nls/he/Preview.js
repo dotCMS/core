@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/he/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/he/Preview", ({
 	"preview": "תצוגה מקדימה"
 })
-
-//end v1.x content
 );

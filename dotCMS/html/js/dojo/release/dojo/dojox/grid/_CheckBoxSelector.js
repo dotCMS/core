@@ -1,2 +1,3 @@
-//>>built
-define("dojox/grid/_CheckBoxSelector",["../main","./_Selector"],function(_1){return _1.grid._CheckBoxSelector;});
+define("dojox/grid/_CheckBoxSelector", ["../main", "./_Selector"], function(dojox){
+	return dojox.grid._CheckBoxSelector;
+});

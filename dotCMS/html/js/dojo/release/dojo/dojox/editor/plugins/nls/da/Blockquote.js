@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/da/Blockquote", //begin v1.x content
-({
-	"blockquote": "Citat"
+"dojox/editor/plugins/nls/da/Blockquote", ({
+	"blockquote": "Blokanførselstegn"
 })
-
-//end v1.x content
 );
