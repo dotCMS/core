@@ -57,7 +57,8 @@ var theme = 'dmundra';
 #set($contentMap = $dotcontent.find($contentletInode))
 #if($UtilMethods.isSet($contentMap))
 	#set($structure = $contentMap.getStructure())
-	#set($contentId = $contentMap.get('identifier'))		
+	#set($contentId = $contentMap.get('inode'))
+	#set($contentIdentifier = $contentMap.get('identifier'))				
 #else
 	#set($structure = $structures.findStructure($structureName))
 #end
@@ -173,7 +174,8 @@ var theme = 'dmundra';
 		<input type="hidden" name="options" value="$crypt.crypt($options)" />
 		<input type="hidden" name="structure" value="$structure.inode" />
 		<input type="hidden" id="referrer" name="referrer" value="$contentFormReferer" />
-		<input type="hidden" id="contentIdentifier" name="contentIdentifier" value="$contentId" />
+		<input type="hidden" id="contentInode" name="contentInode" value="$contentId" />
+		<input type="hidden" id="contentIdentifier" name="contentIdentifier" value="$contentIdentifier" />
 		<input type="hidden" name="userId" value="$!user.userId" />
 		#if($UtilMethods.isSet($contentFormReturnPageOverride))
 			<input type="hidden" name="formReturnPageOverride" value="$contentFormReturnPageOverride" />
@@ -590,10 +592,12 @@ var theme = 'dmundra';
 
 	            	#elseif($field.fieldType == 'file' && !($showOnlyRequiredFields && !$field.isRequired()) )
 	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
-	            	    	#set($fieldDefaultValue = "")
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
 	            	    #if(! $fieldDefaultValue)
                             #set($fieldDefaultValue = "")
@@ -610,10 +614,12 @@ var theme = 'dmundra';
 
 	            	#elseif($field.fieldType == 'image' && !($showOnlyRequiredFields && !$field.isRequired()) )
 	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
-	            	    	#set($fieldDefaultValue = "")
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
 	            	    #if(! $fieldDefaultValue)
                             #set($fieldDefaultValue = "")
@@ -630,10 +636,12 @@ var theme = 'dmundra';
 
 	            	#elseif($field.fieldType == 'binary' && !($showOnlyRequiredFields && !$field.isRequired()) )
 	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
-	            	    	#set($fieldDefaultValue = "")
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
 	            	    #if(! $fieldDefaultValue)
                             #set($fieldDefaultValue = "")
