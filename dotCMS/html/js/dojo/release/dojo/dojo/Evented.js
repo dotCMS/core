@@ -1,8 +1,35 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/Evented", ["./aspect", "./on"], function(aspect, on){
+	// module:
+	//		dojo/Evented
 
-//>>built
-define("dojo/Evented",["./aspect","./on"],function(_1,on){"use strict";var _2=_1.after;function _3(){};_3.prototype={on:function(_4,_5){return on.parse(this,_4,_5,function(_6,_7){return _2(_6,"on"+_7,_5,true);});},emit:function(_8,_9){var _a=[this];_a.push.apply(_a,arguments);return on.emit.apply(on,_a);}};return _3;});
+ 	"use strict";
+ 	var after = aspect.after;
+	function Evented(){
+		// summary:
+		//		A class that can be used as a mixin or base class,
+		//		to add on() and emit() methods to a class
+		//		for listening for events and emitting events:
+		//
+		//		|	define(["dojo/Evented"], function(Evented){
+		//		|		var EventedWidget = dojo.declare([Evented, dijit._Widget], {...});
+		//		|		widget = new EventedWidget();
+		//		|		widget.on("open", function(event){
+		//		|		... do something with event
+		//		|	 });
+		//		|
+		//		|	widget.emit("open", {name:"some event", ...});
+	}
+	Evented.prototype = {
+		on: function(type, listener){
+			return on.parse(this, type, listener, function(target, type){
+				return after(target, 'on' + type, listener, true);
+			});
+		},
+		emit: function(type, event){
+			var args = [this];
+			args.push.apply(args, arguments);
+			return on.emit.apply(on, args);
+		}
+	};
+	return Evented;
+});

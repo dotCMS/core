@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh-tw/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh-tw/SpellCheck", ({
 	widgetLabel: "批次拼字檢查",
 	unfound: "找不到",
 	skip: "跳過",
@@ -17,5 +15,4 @@ define(
 	iSkipAll: "跳過所有如此項的項目",
 	iMsg: "沒有拼字建議"
 })
-//end v1.x content
 );

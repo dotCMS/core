@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/sk/Wizard", //begin v1.x content
-({
-next: "Ďalej",
-previous: "Späť",
+"dojox/widget/nls/sk/Wizard", ({
+next: "Nasledujúci",
+previous: "Predchádzajúci",
 done: "Hotovo"
 })
-//end v1.x content
 );

@@ -1,2 +1,143 @@
-//>>built
-define("dojox/calc/toFrac",["dojo/_base/lang","dojox/calc/_Executor"],function(_1,_2){var _3;function _4(){var _5=[5,6,7,10,11,13,14,15,17,19,21,22,23,26,29,30,31,33,34,35,37,38,39,41,42,43,46,47,51,53,55,57,58,59,61,62,65,66,67,69,70,71,73,74,77,78,79,82,83,85,86,87,89,91,93,94,95,97];_3={"1":1,"√(2)":Math.sqrt(2),"√(3)":Math.sqrt(3),"pi":Math.PI};for(var i in _5){var n=_5[i];_3["√("+n+")"]=Math.sqrt(n);}_3["√(pi)"]=Math.sqrt(Math.PI);};function _6(_7){function _8(_9){var _a=Math.floor(1/_9);var _b=_2.approx(1/_a);if(_b==_9){return {n:1,d:_a};}var _c=_a+1;_b=_2.approx(1/_c);if(_b==_9){return {n:1,d:_c};}if(_a>=50){return null;}var _d=_a+_c;_b=_2.approx(2/_d);if(_b==_9){return {n:2,d:_d};}if(_a>=34){return null;}var _e=_9<_b;var _f=_d*2+(_e?1:-1);_b=_2.approx(4/_f);if(_b==_9){return {n:4,d:_f};}var _10=_9<_b;if((_e&&!_10)||(!_e&&_10)){var _11=(_d+_f)>>1;_b=_2.approx(3/_11);if(_b==_9){return {n:3,d:_11};}}if(_a>=20){return null;}var _12=_d+_a*2;var _13=_12+2;for(var _14=5;_12<=100;_14++){_12+=_a;_13+=_c;var _15=_e?((_13+_12+1)>>1):_12;var _16=_e?_13:((_13+_12-1)>>1);_15=_10?((_15+_16)>>1):_15;_16=_10?_16:((_15+_16)>>1);for(var _17=_15;_17<=_16;_17++){if(_14&1==0&&_17&1==0){continue;}_b=_2.approx(_14/_17);if(_b==_9){return {n:_14,d:_17};}if(_b<_9){break;}}}return null;};_7=Math.abs(_7);for(var mt in _3){var _18=_3[mt];var _19=_7/_18;var _1a=Math.floor(_19);_19=_2.approx(_19-_1a);if(_19==0){return {mt:mt,m:_18,n:_1a,d:1};}else{var a=_8(_19);if(!a){continue;}return {mt:mt,m:_18,n:(_1a*a.d+a.n),d:a.d};}}return null;};_4();return _1.mixin(_2,{toFrac:function(_1b){var f=_6(_1b);return f?((_1b<0?"-":"")+(f.m==1?"":(f.n==1?"":(f.n+"*")))+(f.m==1?f.n:f.mt)+((f.d==1?"":"/"+f.d))):_1b;},pow:function(_1c,_1d){function _1e(n){return Math.floor(n)==n;};if(_1c>0||_1e(_1d)){return Math.pow(_1c,_1d);}else{var f=_6(_1d);if(_1c>=0){return (f&&f.m==1)?Math.pow(Math.pow(_1c,1/f.d),_1d<0?-f.n:f.n):Math.pow(_1c,_1d);}else{return (f&&f.d&1)?Math.pow(Math.pow(-Math.pow(-_1c,1/f.d),_1d<0?-f.n:f.n),f.m):NaN;}}}});});
+define("dojox/calc/toFrac", [
+	"dojo/_base/lang",
+	"dojox/calc/_Executor"
+], function(lang, calc) {
+
+	var multiples;
+
+	function _fracHashInit(){
+		var sqrts = [
+			5,6,7,10,11,13,14,15,17,19,21,22,23,26,29,
+			30,31,33,34,35,37,38,39,41,42,43,46,47,51,53,55,57,58,59,
+			61,62,65,66,67,69,70,71,73,74,77,78,79,82,83,85,86,87,89,91,93,94,95,97
+		];
+		multiples = { "1":1, "\u221A(2)":Math.sqrt(2), "\u221A(3)":Math.sqrt(3), "pi":Math.PI };
+		// populate the rest of the multiples array
+		for(var i in sqrts){
+			var n = sqrts[i];
+			multiples["\u221A("+n+")"] = Math.sqrt(n);
+		}
+		multiples["\u221A(pi)"] = Math.sqrt(Math.PI);
+	}
+
+	function _fracLookup(number){
+		function findSimpleFraction(fraction){
+			var denom1Low = Math.floor(1 / fraction);
+			// fraction <= 1/denom1Low 
+			var quotient = calc.approx(1 / denom1Low);
+			if(quotient == fraction){ return { n:1, d:denom1Low }; }
+			var denom1High = denom1Low + 1;
+			// 1/denom1High <= fraction < 1/denom1Low 
+			quotient = calc.approx(1 / denom1High);
+			if(quotient == fraction){ return { n:1, d:denom1High }; }
+			if(denom1Low >= 50){ return null; } // only 1's in the numerator beyond this point
+			// 1/denom1High < fraction < 1/denom1Low 
+			var denom2 = denom1Low + denom1High;
+			quotient = calc.approx(2 / denom2);
+			// 1/denom1High < 2/(denom1Low+denom1High) < 1/denom1Low 
+			if(quotient == fraction){ return { n:2, d:denom2 }; }
+			if(denom1Low >= 34){ return null; } // only 1's and 2's in the numerator beyond this point
+			var less2 = fraction < quotient;
+			// if less2
+			//	1/denom1High < fraction < 2/(denom1Low+denom1High)
+			// else
+			//	2/(denom1Low+denom1High) < fraction < 1/denom1Low
+			var denom4 = denom2 * 2 + (less2 ? 1 : -1);
+			quotient = calc.approx(4 / denom4);
+			// 1/denom1High < 4/(2*denom1Low+2*denom1High+1) < 2/(denom1Low+denom1High) < 4/(2*denom1Low+2*denom1High-1) < 1/denom1Low 
+			if(quotient == fraction){ return { n:4, d:denom4 }; }
+			var less4 = fraction < quotient;
+			// we've already checked for 1, 2 and 4, but now see if we need to check for 3 in the numerator
+			if((less2 && !less4) || (!less2 && less4)){
+				var denom3 = (denom2 + denom4) >> 1;
+				quotient = calc.approx(3 / denom3);
+				// 1/denom1High < 4/(2*denom1Low+2*denom1High+1) < 3/((3*denom1Low+3*denom1High+1)/2) < 2/(denom1Low+denom1High) < 3/((3*denom1Low+3*denom1High-1)/2) < 4/(2*denom1Low+2*denom1High-1) < 1/denom1Low 
+				if(quotient == fraction){ return { n:3, d:denom3 }; }
+			}
+			if(denom1Low >= 20){ return null; } // only 1's, 2's, 3's, and 4's in the numerator beyond this point
+			// if less2
+			// 	if less4
+			//		1/denom1High < fraction < 4/(2*denom1Low+2*denom1High+1)
+			//	else
+			//		4/(2*denom1Low+2*denom1High+1) < fraction < 2/(denom1Low+denom1High)
+			// else
+			// 	if less4
+			//		2/(denom1Low+denom1High) < fraction < 4/(2*denom1Low+2*denom1High-1)
+			//	else
+			//		4/(2*denom1Low+2*denom1High-1) < fraction < 1/denom1Low
+			var smallestDenom = denom2 + denom1Low * 2;
+			var largestDenom = smallestDenom + 2;
+			for(var numerator = 5; smallestDenom <= 100; numerator++){ // start with 5 in the numerator
+				smallestDenom += denom1Low;
+				largestDenom += denom1High;
+				var startDenom = less2 ? ((largestDenom + smallestDenom + 1) >> 1) : smallestDenom;
+				var stopDenom = less2 ? largestDenom : ((largestDenom + smallestDenom - 1) >> 1);
+				startDenom = less4 ? ((startDenom + stopDenom) >> 1) : startDenom;
+				stopDenom = less4 ? stopDenom : ((startDenom + stopDenom) >> 1);
+				for(var thisDenom = startDenom; thisDenom <= stopDenom; thisDenom++){
+					if(numerator & 1 == 0 && thisDenom & 1 == 0){ continue; } // skip where n and d are both even
+					quotient = calc.approx(numerator / thisDenom);
+					if(quotient == fraction){ return { n:numerator, d:thisDenom }; }
+					if(quotient < fraction){ break; } // stop since the values will just get smaller
+				}
+			}
+			return null;
+		}
+		number = Math.abs(number);
+		for(var mt in multiples){
+			var multiple = multiples[mt];
+			var simpleFraction = number / multiple;
+			var wholeNumber = Math.floor(simpleFraction);
+			simpleFraction = calc.approx(simpleFraction - wholeNumber);
+			if(simpleFraction == 0){
+				return { mt:mt, m:multiple, n:wholeNumber, d:1 };
+			}else{
+				var a = findSimpleFraction(simpleFraction);
+				if(!a){ continue; }
+				return { mt:mt, m:multiple, n:(wholeNumber * a.d + a.n), d:a.d };
+			}
+		}
+		return null;
+	}
+
+	// make the hash
+	_fracHashInit();
+
+	// add toFrac to the calculator
+	return lang.mixin(calc, {
+		toFrac: function(number){// get a string fraction for a decimal with a set range of numbers, based on the hash
+			var f = _fracLookup(number);
+			return f ? ((number < 0 ? '-' : '') + (f.m == 1 ? '' : (f.n == 1 ? '' : (f.n + '*'))) + (f.m == 1 ? f.n : f.mt) + ((f.d == 1 ? '' : '/' + f.d))) : number;
+			//return f ? ((number < 0 ? '-' : '') + (f.m == 1 ? '' : (f.n == 1 ? '' : (f.n + '*'))) + (f.m == 1 ? f.n : f.mt) + '/' + f.d) : number;
+		},
+		pow: function(base, exponent){// pow benefits from toFrac because it can overcome many of the limitations set before the standard Math.pow
+			// summary:
+			//		Computes base ^ exponent
+
+			//	Wrapper to Math.pow(base, exponent) to handle (-27) ^ (1/3)
+			function isInt(n){
+				return Math.floor(n) == n;
+			}
+
+			if(base>0||isInt(exponent)){
+				return Math.pow(base, exponent);
+			}else{
+				var f = _fracLookup(exponent);
+				if(base >= 0){
+					return (f && f.m == 1)
+						? Math.pow(Math.pow(base, 1 / f.d), exponent < 0 ? -f.n : f.n) // 32 ^ (2/5) is much more accurate if done as (32 ^ (1/5)) ^ 2
+						: Math.pow(base, exponent);
+				}else{	// e.g. (1/3) root of -27 = -3, 1 / exponent must be an odd integer for a negative base
+					return (f && f.d & 1) ? Math.pow(Math.pow(-Math.pow(-base, 1 / f.d), exponent < 0 ? -f.n : f.n), f.m) : NaN;
+				}
+			}
+		}
+	});
+/*
+	function reduceError(number){
+		var f = _fracLookup(number);
+		if(!f){ f = _fracLookup(number); }
+		return f ? ((number < 0 ? -1 : 1) * f.n * f.m / f.d) : number;
+	}
+*/
+});

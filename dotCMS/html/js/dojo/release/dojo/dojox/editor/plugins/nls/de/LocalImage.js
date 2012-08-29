@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/de/LocalImage", //begin v1.x content
-({
+"dojox/editor/plugins/nls/de/LocalImage", ({
 	insertImageTitle: "Grafik einfügen",
 	url: "Grafik",
 	browse: "Durchsuchen...",
@@ -11,6 +9,4 @@ define(
 	prePopuTextUrl: "Geben Sie eine gültige Grafik-URL ein",
 	prePopuTextBrowse: "oder blättern Sie zu einer lokalen Datei."
 })
-
-//end v1.x content
 );

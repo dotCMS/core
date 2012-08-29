@@ -1,2 +1,9 @@
-//>>built
-define("dojox/gfx",["dojo/_base/lang","./gfx/_base","./gfx/renderer!"],function(_1,_2,_3){_2.switchTo(_3);return _2;});
+define("dojox/gfx", ["dojo/_base/lang", "./gfx/_base", "./gfx/renderer!"], 
+  function(lang, gfxBase, renderer){
+	// module:
+	//		dojox/gfx
+	// summary:
+	//		This the root of the Dojo Graphics package
+	gfxBase.switchTo(renderer);
+	return gfxBase;
+});

@@ -1,2 +1,9 @@
-//>>built
-define(["dijit","dojo","dojox","dojo/require!dojox/storage/_common"],function(_1,_2,_3){_2.provide("dojox.storage");_2.require("dojox.storage._common");});
+define("dojox/storage", ['./storage/_common'],function(){
+	/*=====
+	 return {
+	 // summary:
+	 //		Deprecated.  Should require dojox/storage modules directly rather than trying to access them through
+	 //		this module.
+	 };
+	 =====*/
+});

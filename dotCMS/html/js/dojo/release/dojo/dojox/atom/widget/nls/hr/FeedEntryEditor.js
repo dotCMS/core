@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/atom/widget/nls/hr/FeedEntryEditor", ({
 	doNew: "[novo]",

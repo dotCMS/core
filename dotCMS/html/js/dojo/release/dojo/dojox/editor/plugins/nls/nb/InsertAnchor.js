@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nb/InsertAnchor", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nb/InsertAnchor", ({
 	insertAnchor: "Sett inn anker",
 	title: "Ankeregenskaper",
 	anchor: "Navn:",
@@ -9,5 +7,4 @@ define(
 	set: "Definer",
 	cancel: "Avbryt"
 })
-//end v1.x content
 );

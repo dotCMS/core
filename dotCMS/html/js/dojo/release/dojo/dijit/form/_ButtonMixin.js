@@ -1,2 +1,84 @@
-//>>built
-define("dijit/form/_ButtonMixin",["dojo/_base/declare","dojo/dom","dojo/_base/event","../registry"],function(_1,_2,_3,_4){return _1("dijit.form._ButtonMixin",null,{label:"",type:"button",_onClick:function(e){if(this.disabled){_3.stop(e);return false;}var _5=this.onClick(e)===false;if(!_5&&this.type=="submit"&&!(this.valueNode||this.focusNode).form){for(var _6=this.domNode;_6.parentNode;_6=_6.parentNode){var _7=_4.byNode(_6);if(_7&&typeof _7._onSubmit=="function"){_7._onSubmit(e);_5=true;break;}}}if(_5){e.preventDefault();}return !_5;},postCreate:function(){this.inherited(arguments);_2.setSelectable(this.focusNode,false);},onClick:function(){return true;},_setLabelAttr:function(_8){this._set("label",_8);(this.containerNode||this.focusNode).innerHTML=_8;}});});
+define("dijit/form/_ButtonMixin", [
+	"dojo/_base/declare", // declare
+	"dojo/dom", // dom.setSelectable
+	"dojo/_base/event", // event.stop
+	"../registry"		// registry.byNode
+], function(declare, dom, event, registry){
+
+// module:
+//		dijit/form/_ButtonMixin
+
+return declare("dijit.form._ButtonMixin", null, {
+	// summary:
+	//		A mixin to add a thin standard API wrapper to a normal HTML button
+	// description:
+	//		A label should always be specified (through innerHTML) or the label attribute.
+	//
+	//		Attach points:
+	//
+	//		- focusNode (required): this node receives focus
+	//		- valueNode (optional): this node's value gets submitted with FORM elements
+	//		- containerNode (optional): this node gets the innerHTML assignment for label
+	// example:
+	// |	<button data-dojo-type="dijit/form/Button" onClick="...">Hello world</button>
+	// example:
+	// |	var button1 = new Button({label: "hello world", onClick: foo});
+	// |	dojo.body().appendChild(button1.domNode);
+
+	// label: HTML String
+	//		Content to display in button.
+	label: "",
+
+	// type: [const] String
+	//		Type of button (submit, reset, button, checkbox, radio)
+	type: "button",
+
+	_onClick: function(/*Event*/ e){
+		// summary:
+		//		Internal function to handle click actions
+		if(this.disabled){
+			event.stop(e);
+			return false;
+		}
+		var preventDefault = this.onClick(e) === false; // user click actions
+		if(!preventDefault && this.type == "submit" && !(this.valueNode||this.focusNode).form){ // see if a non-form widget needs to be signalled
+			for(var node=this.domNode; node.parentNode; node=node.parentNode){
+				var widget=registry.byNode(node);
+				if(widget && typeof widget._onSubmit == "function"){
+					widget._onSubmit(e);
+					preventDefault = true;
+					break;
+				}
+			}
+		}
+		if(preventDefault){
+			e.preventDefault();
+		}
+		return !preventDefault;
+	},
+
+	postCreate: function(){
+		this.inherited(arguments);
+		dom.setSelectable(this.focusNode, false);
+	},
+
+	onClick: function(/*Event*/ /*===== e =====*/){
+		// summary:
+		//		Callback for when button is clicked.
+		//		If type="submit", return true to perform submit, or false to cancel it.
+		// type:
+		//		callback
+		return true;		// Boolean
+	},
+
+	_setLabelAttr: function(/*String*/ content){
+		// summary:
+		//		Hook for set('label', ...) to work.
+		// description:
+		//		Set the label (text) of the button; takes an HTML string.
+		this._set("label", content);
+		(this.containerNode||this.focusNode).innerHTML = content;
+	}
+});
+
+});

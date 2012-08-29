@@ -1,4 +1,3 @@
-//>>built
 define(
 "dijit/form/nls/hr/validate", ({
 	invalidMessage: "Unesena vrijednost nije važeća.",

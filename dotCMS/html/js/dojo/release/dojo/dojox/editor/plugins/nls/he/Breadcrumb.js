@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/he/Breadcrumb", //begin v1.x content
-({
+"dojox/editor/plugins/nls/he/Breadcrumb", ({
 	"nodeActions": "פעולות ${nodeName} ",
 	"selectContents": "בחירת תוכן ",
 	"selectElement": "בחירת מרכיב ",
@@ -10,6 +8,4 @@ define(
 	"moveStart": "העברת הסמן להתחלה ",
 	"moveEnd": "העברת הסמן לסוף "
 })
-
-//end v1.x content
 );

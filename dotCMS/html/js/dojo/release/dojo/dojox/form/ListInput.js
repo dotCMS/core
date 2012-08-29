@@ -1,2 +1,1019 @@
-//>>built
-define("dojox/form/ListInput",["dojo/_base/kernel","dojo/_base/lang","dojo/_base/array","dojo/_base/json","dojo/_base/fx","dojo/_base/window","dojo/_base/connect","dojo/dom-class","dojo/dom-style","dojo/dom-construct","dojo/dom-geometry","dojo/keys","dijit/_Widget","dijit/_TemplatedMixin","dijit/form/_FormValueWidget","dijit/form/ValidationTextBox","dijit/InlineEditBox","dojo/i18n!dijit/nls/common","dojo/_base/declare"],function(_1,_2,_3,_4,fx,_5,_6,_7,_8,_9,_a,_b,_c,_d,_e,_f,_10,_11,_12){_1.experimental("dojox.form.ListInput");var _13=_12("dojox.form.ListInput",[_e],{constructor:function(){this._items=[];if(!_2.isArray(this.delimiter)){this.delimiter=[this.delimiter];}var r="("+this.delimiter.join("|")+")?";this.regExp="^"+this.regExp+r+"$";},inputClass:"dojox.form._ListInputInputBox",inputHandler:"onChange",inputProperties:{minWidth:50},submitOnlyValidValue:true,useOnBlur:true,readOnlyInput:false,maxItems:null,showCloseButtonWhenValid:true,showCloseButtonWhenInvalid:true,regExp:".*",delimiter:",",constraints:{},baseClass:"dojoxListInput",type:"select",value:"",templateString:"<div dojoAttachPoint=\"focusNode\" class=\"dijit dijitReset dijitLeft dojoxListInput\"><select dojoAttachpoint=\"_selectNode\" multiple=\"multiple\" class=\"dijitHidden\" ${!nameAttrSetting}></select><ul dojoAttachPoint=\"_listInput\"><li dojoAttachEvent=\"onclick: _onClick\" class=\"dijitInputField dojoxListInputNode dijitHidden\" dojoAttachPoint=\"_inputNode\"></li></ul></div>",useAnim:true,duration:500,easingIn:null,easingOut:null,readOnlyItem:false,useArrowForEdit:true,_items:null,_lastAddedItem:null,_currentItem:null,_input:null,_count:0,postCreate:function(){this.inherited(arguments);this._createInputBox();},_setReadOnlyInputAttr:function(_14){if(!this._started){return this._createInputBox();}this.readOnlyInput=_14;this._createInputBox();},_setReadOnlyItemAttr:function(_15){if(!this._started){return;}for(var i in this._items){this._items[i].set("readOnlyItem",_15);}},_createInputBox:function(){_7.toggle(this._inputNode,"dijitHidden",this.readOnlyInput);if(this.readOnlyInput){return;}if(this._input){return;}if(this.inputHandler===null){console.warn("you must add some handler to connect to input field");return false;}if(_2.isString(this.inputHandler)){this.inputHandler=this.inputHandler.split(",");}if(_2.isString(this.inputProperties)){this.inputProperties=_4.fromJson(this.inputProperties);}var _16=_2.getObject(this.inputClass,false);this.inputProperties.regExp=this.regExpGen(this.constraints);this._input=new _16(this.inputProperties);this._input.startup();this._inputNode.appendChild(this._input.domNode);_3.forEach(this.inputHandler,function(_17){this.connect(this._input,_2.trim(_17),"_onHandler");},this);this.connect(this._input,"onKeyDown","_inputOnKeyDown");this.connect(this._input,"onBlur","_inputOnBlur");},compare:function(_18,_19){_18=_18.join(",");_19=_19.join(",");if(_18>_19){return 1;}else{if(_18<_19){return -1;}else{return 0;}}},add:function(_1a){if(this._count>=this.maxItems&&this.maxItems!==null){return;}this._lastValueReported=this._getValues();if(!_2.isArray(_1a)){_1a=[_1a];}for(var i in _1a){var _1b=_1a[i];if(_1b===""||typeof _1b!="string"){continue;}this._count++;var re=new RegExp(this.regExpGen(this.constraints));this._lastAddedItem=new _1c({"index":this._items.length,readOnlyItem:this.readOnlyItem,value:_1b,regExp:this.regExpGen(this.constraints)});this._lastAddedItem.startup();this._testItem(this._lastAddedItem,_1b);this._lastAddedItem.onClose=_2.hitch(this,"_onItemClose",this._lastAddedItem);this._lastAddedItem.onChange=_2.hitch(this,"_onItemChange",this._lastAddedItem);this._lastAddedItem.onEdit=_2.hitch(this,"_onItemEdit",this._lastAddedItem);this._lastAddedItem.onKeyDown=_2.hitch(this,"_onItemKeyDown",this._lastAddedItem);if(this.useAnim){_8.set(this._lastAddedItem.domNode,{opacity:0,display:""});}this._placeItem(this._lastAddedItem.domNode);if(this.useAnim){var _1d=fx.fadeIn({node:this._lastAddedItem.domNode,duration:this.duration,easing:this.easingIn}).play();}this._items[this._lastAddedItem.index]=this._lastAddedItem;if(this._onChangeActive&&this.intermediateChanges){this.onChange(_1b);}if(this._count>=this.maxItems&&this.maxItems!==null){break;}}this._updateValues();if(this._lastValueReported.length==0){this._lastValueReported=this.value;}if(!this.readOnlyInput){this._input.set("value","");}if(this._onChangeActive){this.onChange(this.value);}this._setReadOnlyWhenMaxItemsReached();},_setReadOnlyWhenMaxItemsReached:function(){this.set("readOnlyInput",(this._count>=this.maxItems&&this.maxItems!==null));},_setSelectNode:function(){this._selectNode.options.length=0;var _1e=this.submitOnlyValidValue?this.get("MatchedValue"):this.value;if(!_2.isArray(_1e)){return;}_3.forEach(_1e,function(_1f){this._selectNode.options[this._selectNode.options.length]=new Option(_1f,_1f,true,true);},this);},_placeItem:function(_20){_9.place(_20,this._inputNode,"before");},_getCursorPos:function(_21){if(typeof _21.selectionStart!="undefined"){return _21.selectionStart;}try{_21.focus();}catch(e){}var _22=_21.createTextRange();_22.moveToBookmark(_5.doc.selection.createRange().getBookmark());_22.moveEnd("character",_21.value.length);try{return _21.value.length-_22.text.length;}finally{_22=null;}},_onItemClose:function(_23){if(this.disabled){return;}if(this.useAnim){var _24=fx.fadeOut({node:_23.domNode,duration:this.duration,easing:this.easingOut,onEnd:_2.hitch(this,"_destroyItem",_23)}).play();}else{this._destroyItem(_23);}},_onItemKeyDown:function(_25,e){if(this.readOnlyItem||!this.useArrowForEdit){return;}if(e.keyCode==_b.LEFT_ARROW&&this._getCursorPos(e.target)==0){this._editBefore(_25);}else{if(e.keyCode==_b.RIGHT_ARROW&&this._getCursorPos(e.target)==e.target.value.length){this._editAfter(_25);}}},_editBefore:function(_26){this._currentItem=this._getPreviousItem(_26);if(this._currentItem!==null){this._currentItem.edit();}},_editAfter:function(_27){this._currentItem=this._getNextItem(_27);if(this._currentItem!==null){this._currentItem.edit();}if(!this.readOnlyInput){if(this._currentItem===null){this._focusInput();}}},_onItemChange:function(_28,_29){_29=_29||_28.get("value");this._testItem(_28,_29);this._updateValues();},_onItemEdit:function(_2a){_7.remove(_2a.domNode,["dijitError",this.baseClass+"Match",this.baseClass+"Mismatch"]);},_testItem:function(_2b,_2c){var re=new RegExp(this.regExpGen(this.constraints));var _2d=(""+_2c).match(re);_7.remove(_2b.domNode,this.baseClass+(!_2d?"Match":"Mismatch"));_7.add(_2b.domNode,this.baseClass+(_2d?"Match":"Mismatch"));_7.toggle(_2b.domNode,"dijitError",!_2d);if((this.showCloseButtonWhenValid&&_2d)||(this.showCloseButtonWhenInvalid&&!_2d)){_7.add(_2b.domNode,this.baseClass+"Closable");}else{_7.remove(_2b.domNode,this.baseClass+"Closable");}},_getValueAttr:function(){return this.value;},_setValueAttr:function(_2e){this._destroyAllItems();this.add(this._parseValue(_2e));},_parseValue:function(_2f){if(typeof _2f=="string"){if(_2.isString(this.delimiter)){this.delimiter=[this.delimiter];}var re=new RegExp("^.*("+this.delimiter.join("|")+").*");if(_2f.match(re)){re=new RegExp(this.delimiter.join("|"));return _2f.split(re);}}return _2f;},regExpGen:function(_30){return this.regExp;},_setDisabledAttr:function(_31){if(!this.readOnlyItem){for(var i in this._items){this._items[i].set("disabled",_31);}}if(!this.readOnlyInput){this._input.set("disabled",_31);}this.inherited(arguments);},_onHandler:function(_32){var _33=this._parseValue(_32);if(_2.isArray(_33)){this.add(_33);}},_onClick:function(e){this._focusInput();},_focusInput:function(){if(!this.readOnlyInput&&this._input.focus){this._input.focus();}},_inputOnKeyDown:function(e){this._currentItem=null;var val=this._input.get("value");if(e.keyCode==_b.BACKSPACE&&val==""&&this.get("lastItem")){this._destroyItem(this.get("lastItem"));}else{if(e.keyCode==_b.ENTER&&val!=""){this.add(val);}else{if(e.keyCode==_b.LEFT_ARROW&&this._getCursorPos(this._input.focusNode)==0&&!this.readOnlyItem&&this.useArrowForEdit){this._editBefore();}}}},_inputOnBlur:function(){var val=this._input.get("value");if(this.useOnBlur&&val!=""){this.add(val);}},_getMatchedValueAttr:function(){return this._getValues(_2.hitch(this,this._matchValidator));},_getMismatchedValueAttr:function(){return this._getValues(_2.hitch(this,this._mismatchValidator));},_getValues:function(_34){var _35=[];_34=_34||this._nullValidator;for(var i in this._items){var _36=this._items[i];if(_36===null){continue;}var _37=_36.get("value");if(_34(_37)){_35.push(_37);}}return _35;},_nullValidator:function(_38){return true;},_matchValidator:function(_39){var re=new RegExp(this.regExpGen(this.constraints));return _39.match(re);},_mismatchValidator:function(_3a){var re=new RegExp(this.regExpGen(this.constraints));return !(_3a.match(re));},_getLastItemAttr:function(){return this._getSomeItem();},_getSomeItem:function(_3b,_3c){_3b=_3b||false;_3c=_3c||"last";var _3d=null;var _3e=-1;for(var i in this._items){if(this._items[i]===null){continue;}if(_3c=="before"&&this._items[i]===_3b){break;}_3d=this._items[i];if(_3c=="first"||_3e==0){_3e=1;break;}if(_3c=="after"&&this._items[i]===_3b){_3e=0;}}if(_3c=="after"&&_3e==0){_3d=null;}return _3d;},_getPreviousItem:function(_3f){return this._getSomeItem(_3f,"before");},_getNextItem:function(_40){return this._getSomeItem(_40,"after");},_destroyItem:function(_41,_42){this._items[_41.index]=null;_41.destroy();this._count--;if(_42!==false){this._updateValues();this._setReadOnlyWhenMaxItemsReached();}},_updateValues:function(){this.value=this._getValues();this._setSelectNode();},_destroyAllItems:function(){for(var i in this._items){if(this._items[i]==null){continue;}this._destroyItem(this._items[i],false);}this._items=[];this._count=0;this.value=null;this._setSelectNode();this._setReadOnlyWhenMaxItemsReached();},destroy:function(){this._destroyAllItems();this._lastAddedItem=null;if(!this._input){this._input.destroy();}this.inherited(arguments);}});var _1c=_12("dojox.form._ListInputInputItem",[_c,_d],{templateString:"<li class=\"dijit dijitReset dijitLeft dojoxListInputItem\" dojoAttachEvent=\"onclick: onClick\" ><span dojoAttachPoint=\"labelNode\"></span></li>",closeButtonNode:null,readOnlyItem:true,baseClass:"dojoxListInputItem",value:"",regExp:".*",_editBox:null,_handleKeyDown:null,attributeMap:{value:{node:"labelNode",type:"innerHTML"}},postMixInProperties:function(){var _43=_11;_2.mixin(this,_43);this.inherited(arguments);},postCreate:function(){this.inherited(arguments);this.closeButtonNode=_9.create("span",{"class":"dijitButtonNode dijitDialogCloseIcon",title:this.itemClose,onclick:_2.hitch(this,"onClose"),onmouseenter:_2.hitch(this,"_onCloseEnter"),onmouseleave:_2.hitch(this,"_onCloseLeave")},this.domNode);_9.create("span",{"class":"closeText",title:this.itemClose,innerHTML:"x"},this.closeButtonNode);},startup:function(){this.inherited(arguments);this._createInlineEditBox();},_setReadOnlyItemAttr:function(_44){this.readOnlyItem=_44;if(!_44){this._createInlineEditBox();}else{if(this._editBox){this._editBox.set("disabled",true);}}},_createInlineEditBox:function(){if(this.readOnlyItem){return;}if(!this._started){return;}if(this._editBox){this._editBox.set("disabled",false);return;}this._editBox=new _10({value:this.value,editor:"dijit.form.ValidationTextBox",editorParams:{regExp:this.regExp}},this.labelNode);this.connect(this._editBox,"edit","_onEdit");this.connect(this._editBox,"onChange","_onCloseEdit");this.connect(this._editBox,"onCancel","_onCloseEdit");},edit:function(){if(!this.readOnlyItem){this._editBox.edit();}},_onCloseEdit:function(_45){_7.remove(this.closeButtonNode,this.baseClass+"Edited");_6.disconnect(this._handleKeyDown);this.onChange(_45);},_onEdit:function(){_7.add(this.closeButtonNode,this.baseClass+"Edited");this._handleKeyDown=_6.connect(this._editBox.editWidget,"_onKeyPress",this,"onKeyDown");this.onEdit();},_setDisabledAttr:function(_46){if(!this.readOnlyItem){this._editBox.set("disabled",_46);}},_getValueAttr:function(){return (!this.readOnlyItem&&this._started?this._editBox.get("value"):this.value);},destroy:function(){if(this._editBox){this._editBox.destroy();}this.inherited(arguments);},_onCloseEnter:function(){_7.add(this.closeButtonNode,"dijitDialogCloseIcon-hover");},_onCloseLeave:function(){_7.remove(this.closeButtonNode,"dijitDialogCloseIcon-hover");},onClose:function(){},onEdit:function(){},onClick:function(){},onChange:function(_47){},onKeyDown:function(_48){}});var _49=_12("dojox.form._ListInputInputBox",[_f],{minWidth:50,intermediateChanges:true,regExp:".*",_sizer:null,onChange:function(_4a){this.inherited(arguments);if(this._sizer===null){this._sizer=_9.create("div",{style:{position:"absolute",left:"-10000px",top:"-10000px"}},_5.body());}this._sizer.innerHTML=_4a;var w=_a.getContentBox(this._sizer).w+this.minWidth;_a.setContentSize(this.domNode,{w:w});},destroy:function(){_9.destroy(this._sizer);this.inherited(arguments);}});return _13;});
+define("dojox/form/ListInput", [
+	"dojo/_base/kernel",
+	"dojo/_base/lang",
+	"dojo/_base/array",
+	"dojo/_base/json",
+	"dojo/_base/fx",
+	"dojo/_base/window",
+	"dojo/_base/connect",
+	"dojo/dom-class",
+	"dojo/dom-style",
+	"dojo/dom-construct",
+	"dojo/dom-geometry",
+	"dojo/keys",
+	"dijit/_Widget",
+	"dijit/_TemplatedMixin",
+	"dijit/form/_FormValueWidget",
+	"dijit/form/ValidationTextBox",
+	"dijit/InlineEditBox",
+	"dojo/i18n!dijit/nls/common",
+	"dojo/_base/declare"
+], function(kernel, lang, array, jsonUtil, fx, win, connect, domClass, domStyle, domConstruct, domGeometry, keys, Widget, TemplatedMixin, FormValueWidget, ValidationTextBox, InlineEditBox, i18nCommon, declare){
+kernel.experimental("dojox.form.ListInput");
+
+/*=====
+var __Constraints = {
+	 // locale: String
+	 //		locale used for validation, picks up value from this widget's lang attribute
+	 // _flags_: anything
+	 //		various flags passed to pattern function
+};
+=====*/
+
+var ListInput = declare("dojox.form.ListInput", [FormValueWidget],
+	{
+	// summary:
+	//		An automatic list maker
+	// description:
+	//		you can add value to list with add method.
+	//		you can only remove by clicking close button
+
+	constructor: function(){
+		this._items = [];
+
+
+		if(!lang.isArray(this.delimiter)){
+			this.delimiter=[this.delimiter];
+		}
+		var r="("+this.delimiter.join("|")+")?";
+		this.regExp="^"+this.regExp+r+"$";
+	},
+
+	// inputClass: String
+	//		Class which will be used to create the input box. You can implements yours.
+	//		It must be a widget, focusNode or domNode must have "onkeydown" event
+	//		It must have .attr("value") to get value
+	//		It also must implement an (or more) handler for the "onChange" method
+	inputClass: "dojox.form._ListInputInputBox",
+
+	// inputHandler: String|Array
+	//		The widget will connect on all handler to check input value
+	//		You can use comma separated list
+	inputHandler: "onChange",
+
+	// inputProperties: String|Object
+	//		Properties used to create input box
+	//		If String, it must be a valid JSON
+	inputProperties: {
+		minWidth:50
+	},
+
+	// submitOnlyValidValue: Boolean
+	//		If true, only valid value will be submitted with form
+	submitOnlyValidValue:true,
+
+	// useOnBlur: Boolean
+	//		If true, onBlur event do a validate (like pressing ENTER)
+	useOnBlur:true,
+
+	// readOnlyInput: Boolean
+	//		if false, the list will be editable
+	//		Can only be set when instantiate
+	readOnlyInput: false,
+
+	// maxItems: Int
+	//		Specify max item the list can have
+	//		null = infinity
+	maxItems: null,
+
+	// showCloseButtonWhenValid: Boolean
+	//		if true, a close button will be added on valid item
+	showCloseButtonWhenValid: true,
+
+	// showCloseButtonWhenInvalid: Boolean
+	//		if true, a close button will be added on invalid item
+	showCloseButtonWhenInvalid: true,
+
+	// regExp: [extension protected] String
+	//		regular expression string used to validate the input
+	//		Do not specify both regExp and regExpGen
+	regExp: ".*", //"[a-zA-Z.-_]+@[a-zA-Z.-_]+.[a-zA-Z]+",
+
+	// delimiter: String|Array
+	//		delimiter for the string. Every match will be splitted.
+	//		The string can contain only one delimiter.
+	delimiter: ",",
+
+	// constraints: __Constraints
+	//		user-defined object needed to pass parameters to the validator functions
+	constraints: {},
+
+	baseClass:"dojoxListInput",
+
+	type: "select",
+
+	value: "",
+
+	templateString: "<div dojoAttachPoint=\"focusNode\" class=\"dijit dijitReset dijitLeft dojoxListInput\"><select dojoAttachpoint=\"_selectNode\" multiple=\"multiple\" class=\"dijitHidden\" ${!nameAttrSetting}></select><ul dojoAttachPoint=\"_listInput\"><li dojoAttachEvent=\"onclick: _onClick\" class=\"dijitInputField dojoxListInputNode dijitHidden\" dojoAttachPoint=\"_inputNode\"></li></ul></div>",
+
+	// useAnim: Boolean
+	//		If true, then item will use an animation to show hide itself
+	useAnim: true,
+
+	// duration: Integer
+	//		Animation duration
+	duration: 500,
+
+	// easingIn: function
+	//		function used to easing on fadeIn end
+	easingIn: null,
+
+	// easingOut: function
+	//		function used to easing on fadeOut end
+	easingOut: null,
+
+	// readOnlyItem: Boolean
+	//		If true, items can be edited
+	//		Can only be set when instantiate
+	readOnlyItem: false,
+
+	// useArrowForEdit: Boolean
+	//		If true, arraow left and right can be used for editing
+	//		Can only be set when instantiate
+	useArrowForEdit: true,
+
+	// _items: Array
+	//		Array of widget.
+	//		Contain all reference to _ListInputInputItem
+	_items: null,
+
+	// _lastAddedItem: Widget
+	//		Contain a reference to the last created item
+	_lastAddedItem: null,
+
+	// _currentItem: Widget
+	//		Widget currently in edition
+	_currentItem: null,
+
+	// _input: Widget
+	//		Widget use for input box
+	_input: null,
+
+	// _count: Int
+	//		Count items
+	_count: 0,
+
+	postCreate: function(){
+		// summary:
+		//		If closeButton is used, add a class
+		this.inherited(arguments);
+		this._createInputBox();
+	},
+
+	_setReadOnlyInputAttr: function(/*Boolean*/ value){
+		// summary:
+		//		Change status and if needed, create the inputbox
+		// tags:
+		//		private
+		if(!this._started){ return this._createInputBox(); }
+		this.readOnlyInput = value;
+		this._createInputBox();
+	},
+
+	_setReadOnlyItemAttr: function(/*Boolean*/ value){
+		// summary:
+		//		set read only items
+		// tags:
+		//		private
+		if(!this._started){ return; }
+		for(var i in this._items){
+			this._items[i].set("readOnlyItem", value);
+		}
+	},
+
+	_createInputBox: function(){
+		// summary:
+		//		Create the input box
+		// tags:
+		//		private
+		domClass.toggle(this._inputNode, "dijitHidden", this.readOnlyInput);
+		if(this.readOnlyInput){ return; }
+		if(this._input){ return; }
+
+		if(this.inputHandler === null){
+			console.warn("you must add some handler to connect to input field");
+			return false;
+		}
+		if(lang.isString(this.inputHandler)){
+			this.inputHandler = this.inputHandler.split(",");
+		}
+		if(lang.isString(this.inputProperties)){
+			this.inputProperties = jsonUtil.fromJson(this.inputProperties);
+		}
+
+
+		var input = lang.getObject(this.inputClass, false);
+
+		this.inputProperties.regExp = this.regExpGen(this.constraints);
+
+		this._input = new input(this.inputProperties);
+		this._input.startup();
+		this._inputNode.appendChild(this._input.domNode);
+		array.forEach(this.inputHandler, function(handler){
+			this.connect(this._input,lang.trim(handler),"_onHandler");
+		},this);
+
+		this.connect(this._input, "onKeyDown", "_inputOnKeyDown");
+		this.connect(this._input, "onBlur", "_inputOnBlur");
+	},
+
+	compare: function(/*Array*/ val1, /*Array*/ val2){
+		// summary:
+		//		Compare 2 values (as returned by attr('value') for this widget).
+		// tags:
+		//		protected
+		val1 = val1.join(",");
+		val2 = val2.join(",");
+		if(val1 > val2){
+			return 1;
+		}else if(val1 < val2){
+			return -1;
+		}else{
+			return 0;
+		}
+	},
+
+	add: function(/*String|Array*/ values){
+		// summary:
+		//		Create new list element
+		if(this._count>=this.maxItems && this.maxItems !== null){return;}
+		this._lastValueReported = this._getValues();
+
+		if(!lang.isArray(values)){
+			values = [values];
+		}
+
+		for(var i in values){
+			var value=values[i];
+			if(value === "" || typeof value != "string"){
+				continue;
+			}
+			this._count++;
+			var re = new RegExp(this.regExpGen(this.constraints));
+
+			this._lastAddedItem = new _ListInputInputItem({
+				"index" : this._items.length,
+				readOnlyItem : this.readOnlyItem,
+				value : value,
+				regExp: this.regExpGen(this.constraints)
+			});
+			this._lastAddedItem.startup();
+
+			this._testItem(this._lastAddedItem,value);
+
+			this._lastAddedItem.onClose = lang.hitch(this,"_onItemClose",this._lastAddedItem);
+			this._lastAddedItem.onChange = lang.hitch(this,"_onItemChange",this._lastAddedItem);
+			this._lastAddedItem.onEdit = lang.hitch(this,"_onItemEdit",this._lastAddedItem);
+			this._lastAddedItem.onKeyDown = lang.hitch(this,"_onItemKeyDown",this._lastAddedItem);
+
+			if(this.useAnim){
+				domStyle.set(this._lastAddedItem.domNode, {opacity:0, display:""});
+			}
+
+			this._placeItem(this._lastAddedItem.domNode);
+
+			if(this.useAnim){
+				var anim = fx.fadeIn({
+					node : this._lastAddedItem.domNode,
+					duration : this.duration,
+					easing : this.easingIn
+				}).play();
+			}
+
+			this._items[this._lastAddedItem.index] = this._lastAddedItem;
+
+			if(this._onChangeActive && this.intermediateChanges){ this.onChange(value); }
+
+			if(this._count>=this.maxItems && this.maxItems !== null){
+				break;
+			}
+		}
+
+		this._updateValues();
+		if(this._lastValueReported.length==0){
+			this._lastValueReported = this.value;
+		}
+
+		if(!this.readOnlyInput){
+			this._input.set("value", "");
+		}
+
+		if(this._onChangeActive){ this.onChange(this.value); }
+
+		this._setReadOnlyWhenMaxItemsReached();
+	},
+
+	_setReadOnlyWhenMaxItemsReached: function(){
+		// summary:
+		//		set input to readonly when max is reached
+		// tags:
+		//		private
+		this.set("readOnlyInput",(this._count>=this.maxItems && this.maxItems !== null));
+	},
+
+	_setSelectNode: function(){
+		// summary:
+		//		put all item in the select (for a submit)
+		// tags:
+		//		private
+		this._selectNode.options.length = 0;
+
+		var values=this.submitOnlyValidValue?this.get("MatchedValue"):this.value;
+
+		if(!lang.isArray(values)){
+			return;
+		}
+		array.forEach(values,function(item){
+			this._selectNode.options[this._selectNode.options.length]=new Option(item,item,true,true);
+		},this);
+	},
+
+	_placeItem: function(/*DomNode*/ node){
+		// summary:
+		//		Place item in the list
+		// tags:
+		//		private
+		domConstruct.place(node,this._inputNode, "before");
+	},
+
+	_getCursorPos: function(/*DomNode*/ node){
+		// summary:
+		//		get current cursor pos
+		// tags:
+		//		private
+		if(typeof node.selectionStart != 'undefined'){
+			return node.selectionStart;
+		}
+
+		// IE Support
+		try{ node.focus(); }catch(e){}
+		var range = node.createTextRange();
+		range.moveToBookmark(win.doc.selection.createRange().getBookmark());
+		range.moveEnd('character', node.value.length);
+		try{
+			return node.value.length - range.text.length;
+		}finally{ range=null; }
+	},
+
+	_onItemClose: function(/*dijit/_Widget*/ item){
+		// summary:
+		//		Destroy a list element when close button is clicked
+		// tags:
+		//		private
+		if(this.disabled){ return; }
+
+		if(this.useAnim){
+			var anim = fx.fadeOut({
+				node : item.domNode,
+				duration : this.duration,
+				easing : this.easingOut,
+				onEnd : lang.hitch(this, "_destroyItem", item)
+			}).play();
+		}else{
+			this._destroyItem(item);
+		}
+	},
+
+	_onItemKeyDown:  function(/*dijit/_Widget*/ item, /*Event*/ e){
+		// summary:
+		//		Call when item get a keypress
+		// tags:
+		//		private
+		if(this.readOnlyItem || !this.useArrowForEdit){ return; }
+
+		if(e.keyCode == keys.LEFT_ARROW && this._getCursorPos(e.target)==0){
+			this._editBefore(item);
+		}else if(e.keyCode == keys.RIGHT_ARROW && this._getCursorPos(e.target)==e.target.value.length){
+			this._editAfter(item);
+		}
+	},
+
+	_editBefore: function(/*widget*/ item){
+		// summary:
+		//		move trough items
+		// tags:
+		//		private
+		this._currentItem = this._getPreviousItem(item);
+		if(this._currentItem !== null){
+			this._currentItem.edit();
+		}
+	},
+	_editAfter: function(/*widget*/ item){
+		// summary:
+		//		move trough items
+		// tags:
+		//		private
+		this._currentItem = this._getNextItem(item);
+		if(this._currentItem !== null){
+			this._currentItem.edit();
+		}
+
+		if(!this.readOnlyInput){
+			if(this._currentItem === null){
+				//no more item ?
+				//so edit input (if available)
+				this._focusInput();
+			}
+		}
+	},
+
+	_onItemChange: function(/*dijit/_Widget*/ item, /*String*/ value){
+		// summary:
+		//		Call when item value change
+		// tags:
+		//		private
+
+		value = value || item.get("value");
+
+		//revalidate content
+		this._testItem(item,value);
+
+		//update value
+		this._updateValues();
+	},
+
+	_onItemEdit: function(/*dijit/_Widget*/ item){
+		// summary:
+		//		Call when item is edited
+		// tags:
+		//		private
+		domClass.remove(item.domNode,["dijitError", this.baseClass + "Match", this.baseClass + "Mismatch"]);
+	},
+
+	_testItem: function(/*Object*/ item, /*String*/ value){
+		// summary:
+		//		Change class of item (match, mismatch)
+		// tags:
+		//		private
+		var re = new RegExp(this.regExpGen(this.constraints));
+		var match = ('' + value).match(re);
+
+		domClass.remove(item.domNode, this.baseClass + (!match ? "Match" : "Mismatch"));
+		domClass.add(item.domNode, this.baseClass + (match ? "Match" : "Mismatch"));
+		domClass.toggle(item.domNode, "dijitError", !match);
+
+		if((this.showCloseButtonWhenValid && match) ||
+			(this.showCloseButtonWhenInvalid && !match)){
+			domClass.add(item.domNode,this.baseClass+"Closable");
+		}else {
+			domClass.remove(item.domNode,this.baseClass+"Closable");
+		}
+	},
+
+	_getValueAttr: function(){
+		// summary:
+		//		get all value in then list and return an array
+		// tags:
+		//		private
+		return this.value;
+	},
+
+	_setValueAttr: function(/*Array|String*/ newValue){
+		// summary:
+		//		Hook so attr('value', value) works.
+		// description:
+		//		Sets the value of the widget.
+		//		If the value has changed, then fire onChange event, unless priorityChange
+		//		is specified as null (or false?)
+		this._destroyAllItems();
+
+		this.add(this._parseValue(newValue));
+	},
+
+	_parseValue: function(/*String*/ newValue){
+		// summary:
+		//		search for delimiters and split if needed
+		// tags:
+		//		private
+		if(typeof newValue == "string"){
+			if(lang.isString(this.delimiter)){
+				this.delimiter = [this.delimiter];
+			}
+			var re = new RegExp("^.*("+this.delimiter.join("|")+").*");
+			if(newValue.match(re)){
+				re = new RegExp(this.delimiter.join("|"));
+				return newValue.split(re);
+			}
+		}
+		return newValue;
+	},
+
+	regExpGen: function(/*__Constraints*/ constraints){
+		// summary:
+		//		Overridable function used to generate regExp when dependent on constraints.
+		//		Do not specify both regExp and regExpGen.
+		// tags:
+		//		extension protected
+		return this.regExp;     // String
+	},
+
+	_setDisabledAttr: function(/*Boolean*/ value){
+		// summary:
+		//		also enable/disable editable items
+		// tags:
+		//		private
+		if(!this.readOnlyItem){
+			for(var i in this._items){
+				this._items[i].set("disabled", value);
+			}
+		}
+
+		if(!this.readOnlyInput){
+			this._input.set("disabled", value);
+		}
+		this.inherited(arguments);
+	},
+
+	_onHandler: function(/*String*/ value){
+		// summary:
+		//		When handlers of input are fired, this method check input value and (if needed) modify it
+		// tags:
+		//		private
+		var parsedValue = this._parseValue(value);
+		if(lang.isArray(parsedValue)){
+			this.add(parsedValue);
+		}
+	},
+
+	_onClick:  function(/*Event*/ e){
+		// summary:
+		//		give focus to inputbox
+		// tags:
+		//		private
+		this._focusInput();
+	},
+
+	_focusInput: function(){
+		// summary:
+		//		give focus to input
+		// tags:
+		//		private
+		if(!this.readOnlyInput && this._input.focus){
+			this._input.focus();
+		}
+	},
+
+	_inputOnKeyDown: function(/*Event*/ e){
+		// summary:
+		//		Used to add keyboard interactivity
+		// tags:
+		//		private
+		this._currentItem = null;
+		var val = this._input.get("value");
+
+		if(e.keyCode == keys.BACKSPACE && val == "" && this.get("lastItem")){
+			this._destroyItem(this.get("lastItem"));
+		}else if(e.keyCode == keys.ENTER && val != ""){
+			this.add(val);
+		}else if(e.keyCode == keys.LEFT_ARROW && this._getCursorPos(this._input.focusNode) == 0 &&
+			!this.readOnlyItem && this.useArrowForEdit){
+				this._editBefore();
+		}
+	},
+
+	_inputOnBlur: function(){
+		// summary:
+		//		Remove focus class and act like pressing ENTER key
+		// tags:
+		//		private
+		var val = this._input.get('value');
+		if(this.useOnBlur && val != ""){
+			this.add(val);
+		}
+	},
+
+	_getMatchedValueAttr: function(){
+		// summary:
+		//		get value that match regexp in then list and return an array
+		// tags:
+		//		private
+		return this._getValues(lang.hitch(this,this._matchValidator));
+	},
+
+	_getMismatchedValueAttr: function(){
+		// summary:
+		//		get value that mismatch regexp in then list and return an array
+		// tags:
+		//		private
+		return this._getValues(lang.hitch(this,this._mismatchValidator));
+	},
+
+	_getValues: function(/*Function*/ validator){
+		// summary:
+		//		return values with comparator constraint
+		// tags:
+		//		private
+		var value = [];
+		validator = validator||this._nullValidator;
+		for(var i in this._items){
+			var item = this._items[i];
+			if(item === null){
+				continue;
+			}
+			var itemValue = item.get("value");
+			if(validator(itemValue)){
+				value.push(itemValue);
+			}
+		}
+		return value;
+	},
+
+	_nullValidator: function(/*String*/ itemValue){
+		// summary:
+		//		return true or false
+		// tags:
+		//		private
+		return true;
+	},
+	_matchValidator: function(/*String*/ itemValue){
+		// summary:
+		//		return true or false
+		// tags:
+		//		private
+		var re = new RegExp(this.regExpGen(this.constraints));
+		return itemValue.match(re);
+	},
+	_mismatchValidator: function(/*String*/ itemValue){
+		// summary:
+		//		return true or false
+		// tags:
+		//		private
+		var re = new RegExp(this.regExpGen(this.constraints));
+		return !(itemValue.match(re));
+	},
+
+	_getLastItemAttr: function(){
+		// summary:
+		//		return the last item in list
+		// tags:
+		//		private
+		return this._getSomeItem();
+	},
+	_getSomeItem: function(/*dijit/_Widget*/ item, /*String*/ position){
+		// summary:
+		//		return the item before the one in params
+		// tags:
+		//		private
+		item=item||false;
+		position=position||"last";
+
+		var lastItem = null;
+		var stop=-1;
+		for(var i in this._items){
+			if(this._items[i] === null){ continue; }
+
+			if(position=="before" && this._items[i] === item){
+				break;
+			}
+
+			lastItem = this._items[i];
+
+			if(position=="first" ||stop==0){
+				stop=1;
+				break;
+			}
+			if(position=="after" && this._items[i] === item){
+				stop=0;
+			}
+		}
+		if(position=="after" && stop==0){
+			lastItem = null;
+		}
+		return lastItem;
+	},
+	_getPreviousItem: function(/*dijit/_Widget*/ item){
+		// summary:
+		//		return the item before the one in params
+		// tags:
+		//		private
+		return this._getSomeItem(item,"before");
+	},
+	_getNextItem: function(/*dijit._Widget*/ item){
+		// summary:
+		//		return the item before the one in params
+		// tags:
+		//		private
+		return this._getSomeItem(item,"after");
+	},
+
+	_destroyItem: function(/*dijit/_Widget*/ item, /*Boolean?*/ updateValue){
+		// summary:
+		//		destroy an item
+		// tags:
+		//		private
+		this._items[item.index] = null;
+		item.destroy();
+		this._count--;
+		if(updateValue!==false){
+			this._updateValues();
+			this._setReadOnlyWhenMaxItemsReached();
+		}
+	},
+
+	_updateValues: function(){
+		// summary:
+		//		update this.value and the select node
+		// tags:
+		//		private
+		this.value = this._getValues();
+		this._setSelectNode();
+	},
+
+	_destroyAllItems: function(){
+		// summary:
+		//		destroy all items
+		// tags:
+		//		private
+		for(var i in this._items){
+			if(this._items[i]==null){ continue; }
+			this._destroyItem(this._items[i],false);
+		}
+		this._items = [];
+		this._count = 0;
+		this.value = null;
+		this._setSelectNode();
+		this._setReadOnlyWhenMaxItemsReached();
+	},
+
+	destroy: function(){
+		// summary:
+		//		Destroy all widget
+		this._destroyAllItems();
+		this._lastAddedItem = null;
+
+		if(!this._input){
+			this._input.destroy();
+		}
+
+		this.inherited(arguments);
+	}
+});
+
+var _ListInputInputItem = declare("dojox.form._ListInputInputItem", [Widget, TemplatedMixin],
+	{
+	// summary:
+	//		Item created by ListInputInput when delimiter is found
+	// description:
+	//		Simple `<li>` with close button added to ListInputInput when delimiter is found
+
+	templateString: "<li class=\"dijit dijitReset dijitLeft dojoxListInputItem\" dojoAttachEvent=\"onclick: onClick\" ><span dojoAttachPoint=\"labelNode\"></span></li>",
+
+	// closeButtonNode: domNode
+	//		ref to the close button node
+	closeButtonNode: null,
+
+	// readOnlyItem: Boolean
+	//		if true, item is editable
+	readOnlyItem: true,
+
+	baseClass:"dojoxListInputItem",
+
+	// value: String
+	//		value of item
+	value: "",
+
+	// regExp: [extension protected] String
+	//		regular expression string used to validate the input
+	//		Do not specify both regExp and regExpGen
+	regExp: ".*",
+
+	// _editBox: Widget
+	//		inline edit box
+	_editBox: null,
+
+	// _handleKeyDown: handle
+	//		handle for the keyDown connect
+	_handleKeyDown: null,
+
+	attributeMap: {
+		value: { node: "labelNode", type: "innerHTML" }
+	},
+
+	postMixInProperties: function(){
+		var _nlsResources = i18nCommon;
+		lang.mixin(this, _nlsResources);
+		this.inherited(arguments);
+	},
+
+	postCreate: function(){
+		// summary:
+		//		Create the close button if needed
+		this.inherited(arguments);
+
+		this.closeButtonNode = domConstruct.create("span",{
+			"class" : "dijitButtonNode dijitDialogCloseIcon",
+			title : this.itemClose,
+			onclick: lang.hitch(this, "onClose"),
+			onmouseenter: lang.hitch(this, "_onCloseEnter"),
+			onmouseleave: lang.hitch(this, "_onCloseLeave")
+		}, this.domNode);
+
+		domConstruct.create("span",{
+			"class" : "closeText",
+			title : this.itemClose,
+			innerHTML : "x"
+		}, this.closeButtonNode);
+	},
+
+	startup: function(){
+		// summary:
+		//		add the edit box
+		this.inherited(arguments);
+		this._createInlineEditBox();
+	},
+
+	_setReadOnlyItemAttr: function(/*Boolean*/ value){
+		// summary:
+		//		change the readonly state
+		// tags:
+		//		private
+		this.readOnlyItem = value;
+		if(!value){
+			this._createInlineEditBox();
+		}else if(this._editBox){
+			this._editBox.set("disabled", true);
+		}
+	},
+
+	_createInlineEditBox: function(){
+		// summary:
+		//		create the inline editbox if needed
+		// tags:
+		//		private
+		if(this.readOnlyItem){ return; }
+		if(!this._started){ return; }
+		if(this._editBox){
+			this._editBox.set("disabled",false);
+			return;
+		}
+		this._editBox = new InlineEditBox({
+			value:this.value,
+			editor: "dijit.form.ValidationTextBox",
+			editorParams:{
+				regExp:this.regExp
+			}
+		},this.labelNode);
+		this.connect(this._editBox,"edit","_onEdit");
+		this.connect(this._editBox,"onChange","_onCloseEdit");
+		this.connect(this._editBox,"onCancel","_onCloseEdit");
+	},
+
+	edit: function(){
+		// summary:
+		//		enter inline editbox in edit mode
+		if(!this.readOnlyItem){
+			this._editBox.edit();
+		}
+	},
+
+	_onCloseEdit: function(/*String*/ value){
+		// summary:
+		//		call when inline editor close himself
+		// tags:
+		//		private
+		domClass.remove(this.closeButtonNode,this.baseClass + "Edited");
+		connect.disconnect(this._handleKeyDown);
+		this.onChange(value);
+	},
+
+	_onEdit: function(){
+		// summary:
+		//		call when inline editor start editing
+		// tags:
+		//		private
+		domClass.add(this.closeButtonNode,this.baseClass + "Edited");
+		this._handleKeyDown = connect.connect(this._editBox.editWidget,"_onKeyPress",this,"onKeyDown");
+		this.onEdit();
+	},
+
+	_setDisabledAttr: function(/*Boolean*/ value){
+		// summary:
+		//		disable inline edit box
+		// tags:
+		//		private
+		if(!this.readOnlyItem){
+			this._editBox.set("disabled", value);
+		}
+	},
+
+	_getValueAttr: function(){
+		// summary:
+		//		return value
+		// tags:
+		//		private
+		return (!this.readOnlyItem && this._started ? this._editBox.get("value") : this.value);
+	},
+
+	destroy: function(){
+		// summary:
+		//		Destroy the inline editbox
+		if(this._editBox){
+			this._editBox.destroy();
+		}
+		this.inherited(arguments);
+	},
+
+	_onCloseEnter: function(){
+		// summary:
+		//		Called when user hovers over close icon
+		// tags:
+		//		private
+		domClass.add(this.closeButtonNode, "dijitDialogCloseIcon-hover");
+	},
+
+	_onCloseLeave: function(){
+		// summary:
+		//		Called when user stops hovering over close icon
+		// tags:
+		//		private
+		domClass.remove(this.closeButtonNode, "dijitDialogCloseIcon-hover");
+	},
+
+	onClose: function(){
+		// summary:
+		//		callback when close button is clicked
+	},
+
+	onEdit: function(){
+		// summary:
+		//		callback when widget come in edition
+	},
+
+	onClick: function(){
+		// summary:
+		//		callback when widget is click
+	},
+
+	onChange: function(/*String*/ value){
+		// summary:
+		//		callback when widget change its content
+	},
+
+
+	onKeyDown: function(/*String*/ value){
+		// summary:
+		//		callback when widget get a KeyDown
+	}
+});
+var _ListInputInputBox = declare("dojox.form._ListInputInputBox", [ValidationTextBox],
+	{
+	// summary:
+	//		auto-sized text box
+	// description:
+	//		Auto sized textbox based on dijit.form.TextBox
+
+	// minWidth: Integer
+	//		Min width of the input box
+	minWidth:50,
+
+	// intermediateChanges: Boolean
+	//		Fires onChange for each value change or only on demand
+	//		Force to true in order to get onChanged called
+	intermediateChanges:true,
+
+	// regExp: [extension protected] String
+	//		regular expression string used to validate the input
+	//		Do not specify both regExp and regExpGen
+	regExp: ".*",
+
+	// _sizer: DomNode
+	//		Used to get size of textbox content
+	_sizer:null,
+
+	onChange: function(/*String*/ value){
+		// summary:
+		//		compute content width
+		this.inherited(arguments);
+		if(this._sizer === null){
+			this._sizer = domConstruct.create("div",{
+				style : {
+					position : "absolute",
+					left : "-10000px",
+					top : "-10000px"
+				}
+			},win.body());
+		}
+		this._sizer.innerHTML = value;
+		var w = domGeometry.getContentBox(this._sizer).w + this.minWidth;
+		domGeometry.setContentSize(this.domNode,{ w : w });
+	},
+
+	destroy: function(){
+		// summary:
+		//		destroy the widget
+		domConstruct.destroy(this._sizer);
+		this.inherited(arguments);
+	}
+});
+return ListInput;
+});

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nl/latinEntities", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nl/latinEntities", ({
 	/* These are already handled in the default RTE
 		amp:"ampersand",lt:"less-than sign",
 		gt:"greater-than sign",
@@ -103,7 +101,6 @@ define(
 	yacute:"kleine letter y met accent aigu",
 	thorn:"kleine letter thorn",
 	yuml:"kleine letter y met trema",
-
 // Greek Characters and Symbols
 	fnof:"cursieve f\nfunctie\ngulden",
 	Alpha:"Griekse hoofdletter alpha",
@@ -257,6 +254,4 @@ define(
 	rsaquo:"enkele rechtswijzend aanhalingsteken",
 	euro:"euro"
 })
-
-//end v1.x content
 );

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ja/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ja/AutoSave", ({
 	"saveLabel": "保存",
 	"saveSettingLabelOn": "自動保存間隔の設定...",
 	"saveSettingLabelOff": "自動保存をオフにする",
@@ -14,5 +12,4 @@ define(
 	"saveMessageSuccess": "${0} に保存されました",
 	"saveMessageFail": "${0} に保存に失敗しました"
 })
-//end v1.x content
 );

@@ -1,11 +1,8 @@
-//>>built
 define(
-"dojox/atom/widget/nls/ja/FeedEntryEditor", //begin v1.x content
-({
+"dojox/atom/widget/nls/ja/FeedEntryEditor", ({
 	doNew: "[新規]",
 	edit: "[編集]",
 	save: "[保存]",
 	cancel: "[キャンセル]"
 })
-//end v1.x content
 );

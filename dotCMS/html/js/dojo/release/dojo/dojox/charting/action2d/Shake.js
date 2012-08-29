@@ -1,2 +1,110 @@
-//>>built
-define("dojox/charting/action2d/Shake",["dojo/_base/connect","dojo/_base/declare","./PlotAction","dojo/fx","dojo/fx/easing","dojox/gfx/matrix","dojox/gfx/fx"],function(_1,_2,_3,df,_4,m,gf){var _5=3;return _2("dojox.charting.action2d.Shake",_3,{defaultParams:{duration:400,easing:_4.backOut,shiftX:_5,shiftY:_5},optionalParams:{},constructor:function(_6,_7,_8){if(!_8){_8={};}this.shiftX=typeof _8.shiftX=="number"?_8.shiftX:_5;this.shiftY=typeof _8.shiftY=="number"?_8.shiftY:_5;this.connect();},process:function(o){if(!o.shape||!(o.type in this.overOutEvents)){return;}var _9=o.run.name,_a=o.index,_b=[],_c,_d=o.type=="onmouseover"?this.shiftX:-this.shiftX,_e=o.type=="onmouseover"?this.shiftY:-this.shiftY;if(_9 in this.anim){_c=this.anim[_9][_a];}else{this.anim[_9]={};}if(_c){_c.action.stop(true);}else{this.anim[_9][_a]=_c={};}var _f={shape:o.shape,duration:this.duration,easing:this.easing,transform:[{name:"translate",start:[this.shiftX,this.shiftY],end:[0,0]},m.identity]};if(o.shape){_b.push(gf.animateTransform(_f));}if(o.oultine){_f.shape=o.outline;_b.push(gf.animateTransform(_f));}if(o.shadow){_f.shape=o.shadow;_b.push(gf.animateTransform(_f));}if(!_b.length){delete this.anim[_9][_a];return;}_c.action=df.combine(_b);if(o.type=="onmouseout"){_1.connect(_c.action,"onEnd",this,function(){if(this.anim[_9]){delete this.anim[_9][_a];}});}_c.action.play();}});});
+define("dojox/charting/action2d/Shake", ["dojo/_base/connect", "dojo/_base/declare", "./PlotAction", 
+	"dojo/fx", "dojo/fx/easing", "dojox/gfx/matrix", "dojox/gfx/fx"], 
+	function(hub, declare, PlotAction, df, dfe, m, gf){
+
+	/*=====
+	var __ShakeCtorArgs = {
+			// summary:
+			//		Additional arguments for shaking actions.
+			// duration: Number?
+			//		The amount of time in milliseconds for an animation to last.  Default is 400.
+			// easing: dojo/fx/easing/*?
+			//		An easing object (see dojo.fx.easing) for use in an animation.  The
+			//		default is dojo.fx.easing.backOut.
+			// shift: Number?
+			//		The amount in pixels to shift the pie slice.  Default is 3.
+	};
+	=====*/
+
+	var DEFAULT_SHIFT = 3;
+
+	return declare("dojox.charting.action2d.Shake", PlotAction, {
+		// summary:
+		//		Create a shaking action for use on an element in a chart.
+
+		// the data description block for the widget parser
+		defaultParams: {
+			duration: 400,	// duration of the action in ms
+			easing:   dfe.backOut,	// easing for the action
+			shiftX:   DEFAULT_SHIFT,	// shift of the element along the X axis
+			shiftY:   DEFAULT_SHIFT		// shift of the element along the Y axis
+		},
+		optionalParams: {},	// no optional parameters
+
+		constructor: function(chart, plot, kwArgs){
+			// summary:
+			//		Create the shaking action and connect it to the plot.
+			// chart: dojox/charting/Chart
+			//		The chart this action belongs to.
+			// plot: String?
+			//		The plot this action is attached to.  If not passed, "default" is assumed.
+			// kwArgs: __ShakeCtorArgs?
+			//		Optional keyword arguments object for setting parameters.
+			if(!kwArgs){ kwArgs = {}; }
+			this.shiftX = typeof kwArgs.shiftX == "number" ? kwArgs.shiftX : DEFAULT_SHIFT;
+			this.shiftY = typeof kwArgs.shiftY == "number" ? kwArgs.shiftY : DEFAULT_SHIFT;
+
+			this.connect();
+		},
+
+		process: function(o){
+			// summary:
+			//		Process the action on the given object.
+			// o: dojox/gfx/shape.Shape
+			//		The object on which to process the slice moving action.
+			if(!o.shape || !(o.type in this.overOutEvents)){ return; }
+
+			var runName = o.run.name, index = o.index, vector = [], anim,
+				shiftX = o.type == "onmouseover" ? this.shiftX : -this.shiftX,
+				shiftY = o.type == "onmouseover" ? this.shiftY : -this.shiftY;
+
+			if(runName in this.anim){
+				anim = this.anim[runName][index];
+			}else{
+				this.anim[runName] = {};
+			}
+
+			if(anim){
+				anim.action.stop(true);
+			}else{
+				this.anim[runName][index] = anim = {};
+			}
+
+			var kwArgs = {
+				shape:     o.shape,
+				duration:  this.duration,
+				easing:    this.easing,
+				transform: [
+					{name: "translate", start: [this.shiftX, this.shiftY], end: [0, 0]},
+					m.identity
+				]
+			};
+			if(o.shape){
+				vector.push(gf.animateTransform(kwArgs));
+			}
+			if(o.oultine){
+				kwArgs.shape = o.outline;
+				vector.push(gf.animateTransform(kwArgs));
+			}
+			if(o.shadow){
+				kwArgs.shape = o.shadow;
+				vector.push(gf.animateTransform(kwArgs));
+			}
+
+			if(!vector.length){
+				delete this.anim[runName][index];
+				return;
+			}
+
+			anim.action = df.combine(vector);
+			if(o.type == "onmouseout"){
+				hub.connect(anim.action, "onEnd", this, function(){
+					if(this.anim[runName]){
+						delete this.anim[runName][index];
+					}
+				});
+			}
+			anim.action.play();
+		}
+	});
+});

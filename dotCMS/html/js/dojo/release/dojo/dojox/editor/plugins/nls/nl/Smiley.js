@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/nl/Smiley", //begin v1.x content
-({
+"dojox/editor/plugins/nls/nl/Smiley", ({
 	smiley: "Emoticon invoegen",
 	emoticonSmile: "glimlach",
 	emoticonLaughing: "lach",
@@ -21,8 +19,6 @@ define(
 	emoticonNo: "nee",
 	emoticonAngel: "engel",
 	emoticonCrying: "bedroefd",
-	emoticonHappy: "vrolijk"
+	emoticonHappy: "blij"
 })
-
-//end v1.x content
 );

@@ -152,7 +152,7 @@
 	</div>
 
 
-		<table border="0" class="listingTable" id="<%= relationJsName %>Table" style="margin-bottom:30px;">
+		<table border="0" class="listingTable"  style="margin-bottom:30px;">
 				<thead>
 					<tr class="beta">
 					<th width="20"><B><font class="beta" size="2"></font></B></th>
@@ -522,12 +522,11 @@
 
 					var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					href += "<portlet:param name='cmd' value='new' />";
-
-					href += "<portlet:param name='inode' value='' />";
+					href += "<portlet:param name='cmd' value='new' />";					
 					href += "</portlet:actionURL>";
 
-					//href += "&_EXT_11_selectedStructure=" + structureInode ;
+					//href += "&_EXT_11_selectedStructure=" + structureInode ; 
+					href += "&inode" + "";
 					href += "&selectedStructure=" + structureInode ;
 					href += "&lang=" + '<%= languageId %>';
 					href += "&relwith=" +'<%=contentletInode%>';
@@ -665,9 +664,9 @@
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					referer += "<portlet:param name='cmd' value='edit' />";
-					referer += "<portlet:param name='inode' value='<%=contentletInode%>' />";
+					referer += "<portlet:param name='cmd' value='edit' />";					
 					referer += "</portlet:actionURL>";
+					referer += "&inode="+'<%=contentletInode%>';
 					referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
 					referer += "&relend=true";
 					referer += "&referer=" + '<%=java.net.URLDecoder.decode(referer, "UTF-8")%>';
@@ -861,6 +860,19 @@
 				  }
 				);
 			<%}%>
+			function toggleCheckbox(id){				
+				var chk = document.getElementById(id);
+				var elems = chk.getElementsByTagName ("input");				
+				var len = elems.length;	
+				
+				for ( var i = 0; i < len; i++ ){
+					if (elems[i].checked){
+						dijit.byId(elems[i].id).set("checked",false);
+				    }else{
+				    	dijit.byId(elems[i].id).set("checked",true);
+				    }				
+				}
+			}
 			</script>
 <%
 	} else {

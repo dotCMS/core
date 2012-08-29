@@ -1,11 +1,8 @@
-//>>built
 define(
-"dojox/atom/widget/nls/nb/FeedEntryEditor", //begin v1.x content
-({
+"dojox/atom/widget/nls/nb/FeedEntryEditor", ({
 	doNew: "[ny(tt)]",
 	edit: "[rediger]",
 	save: "[lagre]",
 	cancel: "[avbryt]"
 })
-//end v1.x content
 );

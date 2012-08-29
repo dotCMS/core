@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/hu/InsertAnchor", //begin v1.x content
-({
+"dojox/editor/plugins/nls/hu/InsertAnchor", ({
 	insertAnchor: "Horgony beszúrása",
 	title: "Horgony tulajdonságai",
 	anchor: "Név:",
@@ -9,6 +7,4 @@ define(
 	set: "Beállítás",
 	cancel: "Mégse"
 })
-
-//end v1.x content
 );

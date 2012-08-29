@@ -1,9 +1,7 @@
-//>>built
 define(
 "dojox/widget/nls/fr/FilePicker", ({
-name: "Nom",
-path: "Chemin",
-size: "Taille (en octets)"
+	name: "Nom",
+	path: "Chemin",
+	size: "Taille (en octets)"
 })
-
 );

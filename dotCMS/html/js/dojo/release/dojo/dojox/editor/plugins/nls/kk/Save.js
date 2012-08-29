@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/kk/Save", //begin v1.x content
-({
+"dojox/editor/plugins/nls/kk/Save", ({
 	"save": "Сақтау"
 })
-
-//end v1.x content
 );
