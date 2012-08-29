@@ -769,12 +769,14 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
                     APILocator.getFileAPI().getRealAssetPath() + 
                     java.io.File.separator + inode.substring(0, 1) +
                     java.io.File.separator + inode.substring(1, 2));
-            for(java.io.File ff : fileFolderPath.listFiles())
-                if(ff.getName().startsWith(inode) && UtilMethods.isImage(ff.getName()))
-                    if(FileUtils.deleteQuietly(ff))
-                        Logger.info(this, "deleting old file "+ff.getAbsolutePath());
-                    else
-                        Logger.info(this, "can't delete old file "+ff.getAbsolutePath());
+            if(fileFolderPath.exists() && fileFolderPath.isDirectory()) {
+                for(java.io.File ff : fileFolderPath.listFiles())
+                    if(ff.getName().startsWith(inode) && UtilMethods.isImage(ff.getName()))
+                        if(FileUtils.deleteQuietly(ff))
+                            Logger.info(this, "deleting old file "+ff.getAbsolutePath());
+                        else
+                            Logger.info(this, "can't delete old file "+ff.getAbsolutePath());
+            }
         }
         return deleteOldVersions(assetsOlderThan,"file_asset");
     }
