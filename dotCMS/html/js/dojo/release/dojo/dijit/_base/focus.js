@@ -1,2 +1,323 @@
-//>>built
-define("dijit/_base/focus",["dojo/_base/array","dojo/dom","dojo/_base/lang","dojo/topic","dojo/_base/window","../focus",".."],function(_1,_2,_3,_4,_5,_6,_7){_3.mixin(_7,{_curFocus:null,_prevFocus:null,isCollapsed:function(){return _7.getBookmark().isCollapsed;},getBookmark:function(){var bm,rg,tg,_8=_5.doc.selection,cf=_6.curNode;if(_5.global.getSelection){_8=_5.global.getSelection();if(_8){if(_8.isCollapsed){tg=cf?cf.tagName:"";if(tg){tg=tg.toLowerCase();if(tg=="textarea"||(tg=="input"&&(!cf.type||cf.type.toLowerCase()=="text"))){_8={start:cf.selectionStart,end:cf.selectionEnd,node:cf,pRange:true};return {isCollapsed:(_8.end<=_8.start),mark:_8};}}bm={isCollapsed:true};if(_8.rangeCount){bm.mark=_8.getRangeAt(0).cloneRange();}}else{rg=_8.getRangeAt(0);bm={isCollapsed:false,mark:rg.cloneRange()};}}}else{if(_8){tg=cf?cf.tagName:"";tg=tg.toLowerCase();if(cf&&tg&&(tg=="button"||tg=="textarea"||tg=="input")){if(_8.type&&_8.type.toLowerCase()=="none"){return {isCollapsed:true,mark:null};}else{rg=_8.createRange();return {isCollapsed:rg.text&&rg.text.length?false:true,mark:{range:rg,pRange:true}};}}bm={};try{rg=_8.createRange();bm.isCollapsed=!(_8.type=="Text"?rg.htmlText.length:rg.length);}catch(e){bm.isCollapsed=true;return bm;}if(_8.type.toUpperCase()=="CONTROL"){if(rg.length){bm.mark=[];var i=0,_9=rg.length;while(i<_9){bm.mark.push(rg.item(i++));}}else{bm.isCollapsed=true;bm.mark=null;}}else{bm.mark=rg.getBookmark();}}else{console.warn("No idea how to store the current selection for this browser!");}}return bm;},moveToBookmark:function(_a){var _b=_5.doc,_c=_a.mark;if(_c){if(_5.global.getSelection){var _d=_5.global.getSelection();if(_d&&_d.removeAllRanges){if(_c.pRange){var n=_c.node;n.selectionStart=_c.start;n.selectionEnd=_c.end;}else{_d.removeAllRanges();_d.addRange(_c);}}else{console.warn("No idea how to restore selection for this browser!");}}else{if(_b.selection&&_c){var rg;if(_c.pRange){rg=_c.range;}else{if(_3.isArray(_c)){rg=_b.body.createControlRange();_1.forEach(_c,function(n){rg.addElement(n);});}else{rg=_b.body.createTextRange();rg.moveToBookmark(_c);}}rg.select();}}}},getFocus:function(_e,_f){var _10=!_6.curNode||(_e&&_2.isDescendant(_6.curNode,_e.domNode))?_7._prevFocus:_6.curNode;return {node:_10,bookmark:_10&&(_10==_6.curNode)&&_5.withGlobal(_f||_5.global,_7.getBookmark),openedForWindow:_f};},_activeStack:[],registerIframe:function(_11){return _6.registerIframe(_11);},unregisterIframe:function(_12){_12&&_12.remove();},registerWin:function(_13,_14){return _6.registerWin(_13,_14);},unregisterWin:function(_15){_15&&_15.remove();}});_6.focus=function(_16){if(!_16){return;}var _17="node" in _16?_16.node:_16,_18=_16.bookmark,_19=_16.openedForWindow,_1a=_18?_18.isCollapsed:false;if(_17){var _1b=(_17.tagName.toLowerCase()=="iframe")?_17.contentWindow:_17;if(_1b&&_1b.focus){try{_1b.focus();}catch(e){}}_6._onFocusNode(_17);}if(_18&&_5.withGlobal(_19||_5.global,_7.isCollapsed)&&!_1a){if(_19){_19.focus();}try{_5.withGlobal(_19||_5.global,_7.moveToBookmark,null,[_18]);}catch(e2){}}};_6.watch("curNode",function(_1c,_1d,_1e){_7._curFocus=_1e;_7._prevFocus=_1d;if(_1e){_4.publish("focusNode",_1e);}});_6.watch("activeStack",function(_1f,_20,_21){_7._activeStack=_21;});_6.on("widget-blur",function(_22,by){_4.publish("widgetBlur",_22,by);});_6.on("widget-focus",function(_23,by){_4.publish("widgetFocus",_23,by);});return _7;});
+define("dijit/_base/focus", [
+	"dojo/_base/array", // array.forEach
+	"dojo/dom", // dom.isDescendant
+	"dojo/_base/lang", // lang.isArray
+	"dojo/topic", // publish
+	"dojo/_base/window", // win.doc win.doc.selection win.global win.global.getSelection win.withGlobal
+	"../focus",
+	"../main"	// for exporting symbols to dijit
+], function(array, dom, lang, topic, win, focus, dijit){
+
+	// module:
+	//		dijit/_base/focus
+
+	var exports = {
+		// summary:
+		//		Deprecated module to monitor currently focused node and stack of currently focused widgets.
+		//		New code should access dijit/focus directly.
+
+		// _curFocus: DomNode
+		//		Currently focused item on screen
+		_curFocus: null,
+
+		// _prevFocus: DomNode
+		//		Previously focused item on screen
+		_prevFocus: null,
+
+		isCollapsed: function(){
+			// summary:
+			//		Returns true if there is no text selected
+			return dijit.getBookmark().isCollapsed;
+		},
+
+		getBookmark: function(){
+			// summary:
+			//		Retrieves a bookmark that can be used with moveToBookmark to return to the same range
+			var bm, rg, tg, sel = win.doc.selection, cf = focus.curNode;
+
+			if(win.global.getSelection){
+				//W3C Range API for selections.
+				sel = win.global.getSelection();
+				if(sel){
+					if(sel.isCollapsed){
+						tg = cf? cf.tagName : "";
+						if(tg){
+							//Create a fake rangelike item to restore selections.
+							tg = tg.toLowerCase();
+							if(tg == "textarea" ||
+									(tg == "input" && (!cf.type || cf.type.toLowerCase() == "text"))){
+								sel = {
+									start: cf.selectionStart,
+									end: cf.selectionEnd,
+									node: cf,
+									pRange: true
+								};
+								return {isCollapsed: (sel.end <= sel.start), mark: sel}; //Object.
+							}
+						}
+						bm = {isCollapsed:true};
+						if(sel.rangeCount){
+							bm.mark = sel.getRangeAt(0).cloneRange();
+						}
+					}else{
+						rg = sel.getRangeAt(0);
+						bm = {isCollapsed: false, mark: rg.cloneRange()};
+					}
+				}
+			}else if(sel){
+				// If the current focus was a input of some sort and no selection, don't bother saving
+				// a native bookmark.  This is because it causes issues with dialog/page selection restore.
+				// So, we need to create psuedo bookmarks to work with.
+				tg = cf ? cf.tagName : "";
+				tg = tg.toLowerCase();
+				if(cf && tg && (tg == "button" || tg == "textarea" || tg == "input")){
+					if(sel.type && sel.type.toLowerCase() == "none"){
+						return {
+							isCollapsed: true,
+							mark: null
+						}
+					}else{
+						rg = sel.createRange();
+						return {
+							isCollapsed: rg.text && rg.text.length?false:true,
+							mark: {
+								range: rg,
+								pRange: true
+							}
+						};
+					}
+				}
+				bm = {};
+
+				//'IE' way for selections.
+				try{
+					// createRange() throws exception when dojo in iframe
+					//and nothing selected, see #9632
+					rg = sel.createRange();
+					bm.isCollapsed = !(sel.type == 'Text' ? rg.htmlText.length : rg.length);
+				}catch(e){
+					bm.isCollapsed = true;
+					return bm;
+				}
+				if(sel.type.toUpperCase() == 'CONTROL'){
+					if(rg.length){
+						bm.mark=[];
+						var i=0,len=rg.length;
+						while(i<len){
+							bm.mark.push(rg.item(i++));
+						}
+					}else{
+						bm.isCollapsed = true;
+						bm.mark = null;
+					}
+				}else{
+					bm.mark = rg.getBookmark();
+				}
+			}else{
+				console.warn("No idea how to store the current selection for this browser!");
+			}
+			return bm; // Object
+		},
+
+		moveToBookmark: function(/*Object*/ bookmark){
+			// summary:
+			//		Moves current selection to a bookmark
+			// bookmark:
+			//		This should be a returned object from dijit.getBookmark()
+
+			var _doc = win.doc,
+				mark = bookmark.mark;
+			if(mark){
+				if(win.global.getSelection){
+					//W3C Rangi API (FF, WebKit, Opera, etc)
+					var sel = win.global.getSelection();
+					if(sel && sel.removeAllRanges){
+						if(mark.pRange){
+							var n = mark.node;
+							n.selectionStart = mark.start;
+							n.selectionEnd = mark.end;
+						}else{
+							sel.removeAllRanges();
+							sel.addRange(mark);
+						}
+					}else{
+						console.warn("No idea how to restore selection for this browser!");
+					}
+				}else if(_doc.selection && mark){
+					//'IE' way.
+					var rg;
+					if(mark.pRange){
+						rg = mark.range;
+					}else if(lang.isArray(mark)){
+						rg = _doc.body.createControlRange();
+						//rg.addElement does not have call/apply method, so can not call it directly
+						//rg is not available in "range.addElement(item)", so can't use that either
+						array.forEach(mark, function(n){
+							rg.addElement(n);
+						});
+					}else{
+						rg = _doc.body.createTextRange();
+						rg.moveToBookmark(mark);
+					}
+					rg.select();
+				}
+			}
+		},
+
+		getFocus: function(/*Widget?*/ menu, /*Window?*/ openedForWindow){
+			// summary:
+			//		Called as getFocus(), this returns an Object showing the current focus
+			//		and selected text.
+			//
+			//		Called as getFocus(widget), where widget is a (widget representing) a button
+			//		that was just pressed, it returns where focus was before that button
+			//		was pressed.   (Pressing the button may have either shifted focus to the button,
+			//		or removed focus altogether.)   In this case the selected text is not returned,
+			//		since it can't be accurately determined.
+			//
+			// menu: dijit/_WidgetBase|{domNode: DomNode} structure
+			//		The button that was just pressed.  If focus has disappeared or moved
+			//		to this button, returns the previous focus.  In this case the bookmark
+			//		information is already lost, and null is returned.
+			//
+			// openedForWindow:
+			//		iframe in which menu was opened
+			//
+			// returns:
+			//		A handle to restore focus/selection, to be passed to `dijit.focus`
+			var node = !focus.curNode || (menu && dom.isDescendant(focus.curNode, menu.domNode)) ? dijit._prevFocus : focus.curNode;
+			return {
+				node: node,
+				bookmark: node && (node == focus.curNode) && win.withGlobal(openedForWindow || win.global, dijit.getBookmark),
+				openedForWindow: openedForWindow
+			}; // Object
+		},
+
+		// _activeStack: dijit/_WidgetBase[]
+		//		List of currently active widgets (focused widget and it's ancestors)
+		_activeStack: [],
+
+		registerIframe: function(/*DomNode*/ iframe){
+			// summary:
+			//		Registers listeners on the specified iframe so that any click
+			//		or focus event on that iframe (or anything in it) is reported
+			//		as a focus/click event on the `<iframe>` itself.
+			// description:
+			//		Currently only used by editor.
+			// returns:
+			//		Handle to pass to unregisterIframe()
+			return focus.registerIframe(iframe);
+		},
+
+		unregisterIframe: function(/*Object*/ handle){
+			// summary:
+			//		Unregisters listeners on the specified iframe created by registerIframe.
+			//		After calling be sure to delete or null out the handle itself.
+			// handle:
+			//		Handle returned by registerIframe()
+
+			handle && handle.remove();
+		},
+
+		registerWin: function(/*Window?*/targetWindow, /*DomNode?*/ effectiveNode){
+			// summary:
+			//		Registers listeners on the specified window (either the main
+			//		window or an iframe's window) to detect when the user has clicked somewhere
+			//		or focused somewhere.
+			// description:
+			//		Users should call registerIframe() instead of this method.
+			// targetWindow:
+			//		If specified this is the window associated with the iframe,
+			//		i.e. iframe.contentWindow.
+			// effectiveNode:
+			//		If specified, report any focus events inside targetWindow as
+			//		an event on effectiveNode, rather than on evt.target.
+			// returns:
+			//		Handle to pass to unregisterWin()
+
+			return focus.registerWin(targetWindow, effectiveNode);
+		},
+
+		unregisterWin: function(/*Handle*/ handle){
+			// summary:
+			//		Unregisters listeners on the specified window (either the main
+			//		window or an iframe's window) according to handle returned from registerWin().
+			//		After calling be sure to delete or null out the handle itself.
+
+			handle && handle.remove();
+		}
+	};
+
+	// Override focus singleton's focus function so that dijit.focus()
+	// has backwards compatible behavior of restoring selection (although
+	// probably no one is using that).
+	focus.focus = function(/*Object|DomNode */ handle){
+		// summary:
+		//		Sets the focused node and the selection according to argument.
+		//		To set focus to an iframe's content, pass in the iframe itself.
+		// handle:
+		//		object returned by get(), or a DomNode
+
+		if(!handle){ return; }
+
+		var node = "node" in handle ? handle.node : handle,		// because handle is either DomNode or a composite object
+			bookmark = handle.bookmark,
+			openedForWindow = handle.openedForWindow,
+			collapsed = bookmark ? bookmark.isCollapsed : false;
+
+		// Set the focus
+		// Note that for iframe's we need to use the <iframe> to follow the parentNode chain,
+		// but we need to set focus to iframe.contentWindow
+		if(node){
+			var focusNode = (node.tagName.toLowerCase() == "iframe") ? node.contentWindow : node;
+			if(focusNode && focusNode.focus){
+				try{
+					// Gecko throws sometimes if setting focus is impossible,
+					// node not displayed or something like that
+					focusNode.focus();
+				}catch(e){/*quiet*/}
+			}
+			focus._onFocusNode(node);
+		}
+
+		// set the selection
+		// do not need to restore if current selection is not empty
+		// (use keyboard to select a menu item) or if previous selection was collapsed
+		// as it may cause focus shift (Esp in IE).
+		if(bookmark && win.withGlobal(openedForWindow || win.global, dijit.isCollapsed) && !collapsed){
+			if(openedForWindow){
+				openedForWindow.focus();
+			}
+			try{
+				win.withGlobal(openedForWindow || win.global, dijit.moveToBookmark, null, [bookmark]);
+			}catch(e2){
+				/*squelch IE internal error, see http://trac.dojotoolkit.org/ticket/1984 */
+			}
+		}
+	};
+
+	// For back compatibility, monitor changes to focused node and active widget stack,
+	// publishing events and copying changes from focus manager variables into dijit (top level) variables
+	focus.watch("curNode", function(name, oldVal, newVal){
+		dijit._curFocus = newVal;
+		dijit._prevFocus = oldVal;
+		if(newVal){
+			topic.publish("focusNode", newVal);	// publish
+		}
+	});
+	focus.watch("activeStack", function(name, oldVal, newVal){
+		dijit._activeStack = newVal;
+	});
+
+	focus.on("widget-blur", function(widget, by){
+		topic.publish("widgetBlur", widget, by);	// publish
+	});
+	focus.on("widget-focus", function(widget, by){
+		topic.publish("widgetFocus", widget, by);	// publish
+	});
+
+	lang.mixin(dijit, exports);
+
+	/*===== return exports; =====*/
+	return dijit;	// for back compat :-(
+});

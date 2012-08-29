@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/kk/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/kk/AutoSave", ({
 	"saveLabel": "Сақтау",
 	"saveSettingLabelOn": "Автосақтау аралығын орнату...",
 	"saveSettingLabelOff": "Автосақтауды өшіру",
@@ -14,6 +12,4 @@ define(
 	"saveMessageSuccess": "${0} сақталды",
 	"saveMessageFail": "${0} сақталмады"
 })
-
-//end v1.x content
 );

@@ -1,8 +1,544 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/data/ObjectStore", ["../_base/lang", "../Evented", "../_base/declare", "../_base/Deferred", "../_base/array", 
+	"../_base/connect", "../regexp"
+], function(lang, Evented, declare, Deferred, array, connect, regexp){
 
-//>>built
-define("dojo/data/ObjectStore",["../_base/lang","../Evented","../_base/declare","../_base/Deferred","../_base/array","../_base/connect","../regexp"],function(_1,_2,_3,_4,_5,_6,_7){return _3("dojo.data.ObjectStore",[_2],{objectStore:null,constructor:function(_8){_1.mixin(this,_8);},labelProperty:"label",getValue:function(_9,_a,_b){return typeof _9.get==="function"?_9.get(_a):_a in _9?_9[_a]:_b;},getValues:function(_c,_d){var _e=this.getValue(_c,_d);return _e instanceof Array?_e:_e===undefined?[]:[_e];},getAttributes:function(_f){var res=[];for(var i in _f){if(_f.hasOwnProperty(i)&&!(i.charAt(0)=="_"&&i.charAt(1)=="_")){res.push(i);}}return res;},hasAttribute:function(_10,_11){return _11 in _10;},containsValue:function(_12,_13,_14){return _5.indexOf(this.getValues(_12,_13),_14)>-1;},isItem:function(_15){return (typeof _15=="object")&&_15&&!(_15 instanceof Date);},isItemLoaded:function(_16){return _16&&typeof _16.load!=="function";},loadItem:function(_17){var _18;if(typeof _17.item.load==="function"){_4.when(_17.item.load(),function(_19){_18=_19;var _1a=_19 instanceof Error?_17.onError:_17.onItem;if(_1a){_1a.call(_17.scope,_19);}});}else{if(_17.onItem){_17.onItem.call(_17.scope,_17.item);}}return _18;},close:function(_1b){return _1b&&_1b.abort&&_1b.abort();},fetch:function(_1c){_1c=_1.delegate(_1c,_1c&&_1c.queryOptions);var _1d=this;var _1e=_1c.scope||_1d;var _1f=_1c.query;if(typeof _1f=="object"){_1f=_1.delegate(_1f);for(var i in _1f){var _20=_1f[i];if(typeof _20=="string"){_1f[i]=RegExp("^"+_7.escapeString(_20,"*?").replace(/\*/g,".*").replace(/\?/g,".")+"$",_1c.ignoreCase?"mi":"m");_1f[i].toString=(function(_21){return function(){return _21;};})(_20);}}}var _22=this.objectStore.query(_1f,_1c);_4.when(_22.total,function(_23){_4.when(_22,function(_24){if(_1c.onBegin){_1c.onBegin.call(_1e,_23||_24.length,_1c);}if(_1c.onItem){for(var i=0;i<_24.length;i++){_1c.onItem.call(_1e,_24[i],_1c);}}if(_1c.onComplete){_1c.onComplete.call(_1e,_1c.onItem?null:_24,_1c);}return _24;},_25);},_25);function _25(_26){if(_1c.onError){_1c.onError.call(_1e,_26,_1c);}};_1c.abort=function(){if(_22.cancel){_22.cancel();}};if(_22.observe){if(this.observing){this.observing.cancel();}this.observing=_22.observe(function(_27,_28,_29){if(_5.indexOf(_1d._dirtyObjects,_27)==-1){if(_28==-1){_1d.onNew(_27);}else{if(_29==-1){_1d.onDelete(_27);}else{for(var i in _27){if(i!=_1d.objectStore.idProperty){_1d.onSet(_27,i,null,_27[i]);}}}}}},true);}this.onFetch(_22);_1c.store=this;return _1c;},getFeatures:function(){return {"dojo.data.api.Read":!!this.objectStore.get,"dojo.data.api.Identity":true,"dojo.data.api.Write":!!this.objectStore.put,"dojo.data.api.Notification":true};},getLabel:function(_2a){if(this.isItem(_2a)){return this.getValue(_2a,this.labelProperty);}return undefined;},getLabelAttributes:function(_2b){return [this.labelProperty];},getIdentity:function(_2c){return this.objectStore.getIdentity?this.objectStore.getIdentity(_2c):_2c[this.objectStore.idProperty||"id"];},getIdentityAttributes:function(_2d){return [this.objectStore.idProperty];},fetchItemByIdentity:function(_2e){var _2f;_4.when(this.objectStore.get(_2e.identity),function(_30){_2f=_30;_2e.onItem.call(_2e.scope,_30);},function(_31){_2e.onError.call(_2e.scope,_31);});return _2f;},newItem:function(_32,_33){if(_33){var _34=this.getValue(_33.parent,_33.attribute,[]);_34=_34.concat([_32]);_32.__parent=_34;this.setValue(_33.parent,_33.attribute,_34);}this._dirtyObjects.push({object:_32,save:true});this.onNew(_32);return _32;},deleteItem:function(_35){this.changing(_35,true);this.onDelete(_35);},setValue:function(_36,_37,_38){var old=_36[_37];this.changing(_36);_36[_37]=_38;this.onSet(_36,_37,old,_38);},setValues:function(_39,_3a,_3b){if(!_1.isArray(_3b)){throw new Error("setValues expects to be passed an Array object as its value");}this.setValue(_39,_3a,_3b);},unsetAttribute:function(_3c,_3d){this.changing(_3c);var old=_3c[_3d];delete _3c[_3d];this.onSet(_3c,_3d,old,undefined);},_dirtyObjects:[],changing:function(_3e,_3f){_3e.__isDirty=true;for(var i=0;i<this._dirtyObjects.length;i++){var _40=this._dirtyObjects[i];if(_3e==_40.object){if(_3f){_40.object=false;if(!this._saveNotNeeded){_40.save=true;}}return;}}var old=_3e instanceof Array?[]:{};for(i in _3e){if(_3e.hasOwnProperty(i)){old[i]=_3e[i];}}this._dirtyObjects.push({object:!_3f&&_3e,old:old,save:!this._saveNotNeeded});},save:function(_41){_41=_41||{};var _42,_43=[];var _44=[];var _45=this;var _46=this._dirtyObjects;var _47=_46.length;try{_6.connect(_41,"onError",function(){if(_41.revertOnError!==false){var _48=_46;_46=_44;_45.revert();_45._dirtyObjects=_48;}else{_45._dirtyObjects=_46.concat(_44);}});if(this.objectStore.transaction){var _49=this.objectStore.transaction();}for(var i=0;i<_46.length;i++){var _4a=_46[i];var _4b=_4a.object;var old=_4a.old;delete _4b.__isDirty;if(_4b){_42=this.objectStore.put(_4b,{overwrite:!!old});}else{if(typeof old!="undefined"){_42=this.objectStore.remove(this.getIdentity(old));}}_44.push(_4a);_46.splice(i--,1);_4.when(_42,function(_4c){if(!(--_47)){if(_41.onComplete){_41.onComplete.call(_41.scope,_43);}}},function(_4d){_47=-1;_41.onError.call(_41.scope,_4d);});}if(_49){_49.commit();}}catch(e){_41.onError.call(_41.scope,value);}},revert:function(_4e){var _4f=this._dirtyObjects;for(var i=_4f.length;i>0;){i--;var _50=_4f[i];var _51=_50.object;var old=_50.old;if(_51&&old){for(var j in old){if(old.hasOwnProperty(j)&&_51[j]!==old[j]){this.onSet(_51,j,_51[j],old[j]);_51[j]=old[j];}}for(j in _51){if(!old.hasOwnProperty(j)){this.onSet(_51,j,_51[j]);delete _51[j];}}}else{if(!old){this.onDelete(_51);}else{this.onNew(old);}}delete (_51||old).__isDirty;_4f.splice(i,1);}},isDirty:function(_52){if(!_52){return !!this._dirtyObjects.length;}return _52.__isDirty;},onSet:function(){},onNew:function(){},onDelete:function(){},onFetch:function(_53){}});});
+// module:
+//		dojo/data/ObjectStore
+
+function convertRegex(character){
+	return character == '*' ? '.*' : character == '?' ? '.' : character; 
+}
+return declare("dojo.data.ObjectStore", [Evented],{
+		// summary:
+		//		A Dojo Data implementation that wraps Dojo object stores for backwards
+		//		compatibility.
+
+		objectStore: null,
+		constructor: function(options){
+			// options:
+			//		The configuration information to pass into the data store.
+			//
+			//		- options.objectStore:
+			//
+			//		The object store to use as the source provider for this data store
+			
+			this._dirtyObjects = [];
+			if(options.labelAttribute){
+				// accept the old labelAttribute to make it easier to switch from old data stores
+				options.labelProperty = options.labelAttribute; 
+			}
+			lang.mixin(this, options);
+		},
+		labelProperty: "label",
+
+		getValue: function(/*Object*/ item, /*String*/property, /*value?*/defaultValue){
+			// summary:
+			//		Gets the value of an item's 'property'
+			// item:
+			//		The item to get the value from
+			// property:
+			//		property to look up value for
+			// defaultValue:
+			//		the default value
+
+			return typeof item.get === "function" ? item.get(property) :
+				property in item ?
+					item[property] : defaultValue;
+		},
+		getValues: function(item, property){
+			// summary:
+			//		Gets the value of an item's 'property' and returns
+			//		it. If this value is an array it is just returned,
+			//		if not, the value is added to an array and that is returned.
+			// item: Object
+			// property: String
+			//		property to look up value for
+
+			var val = this.getValue(item,property);
+			return val instanceof Array ? val : val === undefined ? [] : [val];
+		},
+
+		getAttributes: function(item){
+			// summary:
+			//		Gets the available attributes of an item's 'property' and returns
+			//		it as an array.
+			// item: Object
+
+			var res = [];
+			for(var i in item){
+				if(item.hasOwnProperty(i) && !(i.charAt(0) == '_' && i.charAt(1) == '_')){
+					res.push(i);
+				}
+			}
+			return res;
+		},
+
+		hasAttribute: function(item,attribute){
+			// summary:
+			//		Checks to see if item has attribute
+			// item: Object
+			//		The item to check
+			// attribute: String
+			//		The attribute to check
+			return attribute in item;
+		},
+
+		containsValue: function(item, attribute, value){
+			// summary:
+			//		Checks to see if 'item' has 'value' at 'attribute'
+			// item: Object
+			//		The item to check
+			// attribute: String
+			//		The attribute to check
+			// value: Anything
+			//		The value to look for
+			return array.indexOf(this.getValues(item,attribute),value) > -1;
+		},
+
+
+		isItem: function(item){
+			// summary:
+			//		Checks to see if the argument is an item
+			// item: Object
+			//		The item to check
+
+			// we have no way of determining if it belongs, we just have object returned from
+			// service queries
+			return (typeof item == 'object') && item && !(item instanceof Date);
+		},
+
+		isItemLoaded: function(item){
+			// summary:
+			//		Checks to see if the item is loaded.
+			// item: Object
+			//		The item to check
+
+			return item && typeof item.load !== "function";
+		},
+
+		loadItem: function(args){
+			// summary:
+			//		Loads an item and calls the callback handler. Note, that this will call the callback
+			//		handler even if the item is loaded. Consequently, you can use loadItem to ensure
+			//		that an item is loaded is situations when the item may or may not be loaded yet.
+			//		If you access a value directly through property access, you can use this to load
+			//		a lazy value as well (doesn't need to be an item).
+			// args: Object
+			//		See dojo/data/api/Read.fetch()
+			// example:
+			//	|	store.loadItem({
+			//	|		item: item, // this item may or may not be loaded
+			//	|		onItem: function(item){
+			//	|			// do something with the item
+			//	|		}
+			//	|	});
+
+			var item;
+			if(typeof args.item.load === "function"){
+				Deferred.when(args.item.load(), function(result){
+					item = result; // in synchronous mode this can allow loadItem to return the value
+					var func = result instanceof Error ? args.onError : args.onItem;
+					if(func){
+						func.call(args.scope, result);
+					}
+				});
+			}else if(args.onItem){
+				// even if it is already loaded, we will use call the callback, this makes it easier to
+				// use when it is not known if the item is loaded (you can always safely call loadItem).
+				args.onItem.call(args.scope, args.item);
+			}
+			return item;
+		},
+		close: function(request){
+			// summary:
+			// 		See dojo/data/api/Read.close()
+			return request && request.abort && request.abort();
+		},
+		fetch: function(args){
+			// summary:
+			//		See dojo/data/api/Read.fetch()
+
+			args = lang.delegate(args, args && args.queryOptions);
+			var self = this;
+			var scope = args.scope || self;
+			var query = args.query;
+			if(typeof query == "object"){ // can be null, but that is ignore by for-in
+				query = lang.delegate(query); // don't modify the original
+				for(var i in query){
+					// find any strings and convert them to regular expressions for wildcard support
+					var required = query[i];
+					if(typeof required == "string"){
+						query[i] = RegExp("^" + regexp.escapeString(required, "*?\\").replace(/\\.|\*|\?/g, convertRegex) + "$", args.ignoreCase ? "mi" : "m");
+						query[i].toString = (function(original){
+							return function(){
+								return original;
+							};
+						})(required);
+					}
+				}
+			}
+
+			var results = this.objectStore.query(query, args);
+			Deferred.when(results.total, function(totalCount){
+				Deferred.when(results, function(results){
+					if(args.onBegin){
+						args.onBegin.call(scope, totalCount || results.length, args);
+					}
+					if(args.onItem){
+						for(var i=0; i<results.length;i++){
+							args.onItem.call(scope, results[i], args);
+						}
+					}
+					if(args.onComplete){
+						args.onComplete.call(scope, args.onItem ? null : results, args);
+					}
+					return results;
+				}, errorHandler);
+			}, errorHandler);
+			function errorHandler(error){
+				if(args.onError){
+					args.onError.call(scope, error, args);
+				}
+			}
+			args.abort = function(){
+				// abort the request
+				if(results.cancel){
+					results.cancel();
+				}
+			};
+			if(results.observe){
+				if(this.observing){
+					// if we were previously observing, cancel the last time to avoid multiple notifications. Just the best we can do for the impedance mismatch between APIs
+					this.observing.cancel();
+				}
+				this.observing = results.observe(function(object, removedFrom, insertedInto){
+					if(array.indexOf(self._dirtyObjects, object) == -1){
+						if(removedFrom == -1){
+							self.onNew(object);
+						}
+						else if(insertedInto == -1){
+							self.onDelete(object);
+						}
+						else{
+							for(var i in object){
+								if(i != self.objectStore.idProperty){
+									self.onSet(object, i, null, object[i]);
+								}
+							}
+						}
+					}
+				}, true);
+			}
+			this.onFetch(results);
+			args.store = this;
+			return args;
+		},
+		getFeatures: function(){
+			// summary:
+			//		return the store feature set
+
+			return {
+				"dojo.data.api.Read": !!this.objectStore.get,
+				"dojo.data.api.Identity": true,
+				"dojo.data.api.Write": !!this.objectStore.put,
+				"dojo.data.api.Notification": true
+			};
+		},
+
+		getLabel: function(/* dojo/data/api/Item */ item){
+			// summary:
+			//		See dojo/data/api/Read.getLabel()
+			if(this.isItem(item)){
+				return this.getValue(item,this.labelProperty); //String
+			}
+			return undefined; //undefined
+		},
+
+		getLabelAttributes: function(/* dojo/data/api/Item */ item){
+			// summary:
+			//		See dojo/data/api/Read.getLabelAttributes()
+			return [this.labelProperty]; //array
+		},
+
+		//Identity API Support
+
+
+		getIdentity: function(item){
+			// summary:
+			//		returns the identity of the given item
+			//		See dojo/data/api/Read.getIdentity()
+			return this.objectStore.getIdentity ? this.objectStore.getIdentity(item) : item[this.objectStore.idProperty || "id"];
+		},
+
+		getIdentityAttributes: function(item){
+			// summary:
+			//		returns the attributes which are used to make up the
+			//		identity of an item.	Basically returns this.objectStore.idProperty
+			//		See dojo/data/api/Read.getIdentityAttributes()
+
+			return [this.objectStore.idProperty];
+		},
+
+		fetchItemByIdentity: function(args){
+			// summary:
+			//		fetch an item by its identity, by looking in our index of what we have loaded
+			var item;
+			Deferred.when(this.objectStore.get(args.identity),
+				function(result){
+					item = result;
+					args.onItem.call(args.scope, result);
+				},
+				function(error){
+					args.onError.call(args.scope, error);
+				}
+			);
+			return item;
+		},
+
+		newItem: function(data, parentInfo){
+			// summary:
+			//		adds a new item to the store at the specified point.
+			//		Takes two parameters, data, and options.
+			// data: Object
+			//		The data to be added in as an item.
+			// data: Object
+			//		See dojo/data/api/Write.newItem()
+					
+			if(parentInfo){
+				// get the previous value or any empty array
+				var values = this.getValue(parentInfo.parent,parentInfo.attribute,[]);
+				// set the new value
+				values = values.concat([data]);
+				data.__parent = values;
+				this.setValue(parentInfo.parent, parentInfo.attribute, values);
+			}
+			this._dirtyObjects.push({object:data, save: true});
+			this.onNew(data);
+			return data;
+		},
+		deleteItem: function(item){
+			// summary:
+			//		deletes item and any references to that item from the store.
+			// item:
+			//		item to delete
+
+			// If the desire is to delete only one reference, unsetAttribute or
+			// setValue is the way to go.
+			this.changing(item, true);
+
+			this.onDelete(item);
+		},
+		setValue: function(item, attribute, value){
+			// summary:
+			//		sets 'attribute' on 'item' to 'value'
+			//		See dojo/data/api/Write.setValue()
+			
+			var old = item[attribute];
+			this.changing(item);
+			item[attribute]=value;
+			this.onSet(item,attribute,old,value);
+		},
+		setValues: function(item, attribute, values){
+			// summary:
+			//		sets 'attribute' on 'item' to 'value' value
+			//		must be an array.
+			//		See dojo/data/api/Write.setValues()
+
+			if(!lang.isArray(values)){
+				throw new Error("setValues expects to be passed an Array object as its value");
+			}
+			this.setValue(item,attribute,values);
+		},
+
+		unsetAttribute: function(item, attribute){
+			// summary:
+			//		unsets 'attribute' on 'item'
+			//		See dojo/data/api/Write.unsetAttribute()
+
+			this.changing(item);
+			var old = item[attribute];
+			delete item[attribute];
+			this.onSet(item,attribute,old,undefined);
+		},
+
+		changing: function(object,_deleting){
+			// summary:
+			//		adds an object to the list of dirty objects.  This object
+			//		contains a reference to the object itself as well as a
+			//		cloned and trimmed version of old object for use with
+			//		revert.
+			// object: Object
+			//		Indicates that the given object is changing and should be marked as 
+			// 		dirty for the next save
+			// _deleting: [private] Boolean
+			
+			object.__isDirty = true;
+			//if an object is already in the list of dirty objects, don't add it again
+			//or it will overwrite the premodification data set.
+			for(var i=0; i<this._dirtyObjects.length; i++){
+				var dirty = this._dirtyObjects[i];
+				if(object==dirty.object){
+					if(_deleting){
+						// we are deleting, no object is an indicator of deletiong
+						dirty.object = false;
+						if(!this._saveNotNeeded){
+							dirty.save = true;
+						}
+					}
+					return;
+				}
+			}
+			var old = object instanceof Array ? [] : {};
+			for(i in object){
+				if(object.hasOwnProperty(i)){
+					old[i] = object[i];
+				}
+			}
+			this._dirtyObjects.push({object: !_deleting && object, old: old, save: !this._saveNotNeeded});
+		},
+
+		save: function(kwArgs){
+			// summary:
+			//		Saves the dirty data using object store provider. See dojo/data/api/Write for API.
+			// kwArgs:
+			//		- kwArgs.global:
+			//		  This will cause the save to commit the dirty data for all
+			//		  ObjectStores as a single transaction.
+			//
+			//		- kwArgs.revertOnError:
+			//		  This will cause the changes to be reverted if there is an
+			//		  error on the save. By default a revert is executed unless
+			//		  a value of false is provide for this parameter.
+			//
+			//		- kwArgs.onError:
+			//		  Called when an error occurs in the commit
+			//
+			//		- kwArgs.onComplete:
+			//		  Called when an the save/commit is completed
+
+			kwArgs = kwArgs || {};
+			var result, actions = [];
+			var savingObjects = [];
+			var self = this;
+			var dirtyObjects = this._dirtyObjects;
+			var left = dirtyObjects.length;// this is how many changes are remaining to be received from the server
+			try{
+				connect.connect(kwArgs,"onError",function(){
+					if(kwArgs.revertOnError !== false){
+						var postCommitDirtyObjects = dirtyObjects;
+						dirtyObjects = savingObjects;
+						self.revert(); // revert if there was an error
+						self._dirtyObjects = postCommitDirtyObjects;
+					}
+					else{
+						self._dirtyObjects = dirtyObjects.concat(savingObjects);
+					}
+				});
+				if(this.objectStore.transaction){
+					var transaction = this.objectStore.transaction();
+				}
+				for(var i = 0; i < dirtyObjects.length; i++){
+					var dirty = dirtyObjects[i];
+					var object = dirty.object;
+					var old = dirty.old;
+					delete object.__isDirty;
+					if(object){
+						result = this.objectStore.put(object, {overwrite: !!old});
+					}
+					else if(typeof old != "undefined"){
+						result = this.objectStore.remove(this.getIdentity(old));
+					}
+					savingObjects.push(dirty);
+					dirtyObjects.splice(i--,1);
+					Deferred.when(result, function(value){
+						if(!(--left)){
+							if(kwArgs.onComplete){
+								kwArgs.onComplete.call(kwArgs.scope, actions);
+							}
+						}
+					},function(value){
+
+						// on an error we want to revert, first we want to separate any changes that were made since the commit
+						left = -1; // first make sure that success isn't called
+						kwArgs.onError.call(kwArgs.scope, value);
+					});
+
+				}
+				if(transaction){
+					transaction.commit();
+				}
+			}catch(e){
+				kwArgs.onError.call(kwArgs.scope, value);
+			}
+		},
+
+		revert: function(){
+			// summary:
+			//		returns any modified data to its original state prior to a save();
+
+			var dirtyObjects = this._dirtyObjects;
+			for(var i = dirtyObjects.length; i > 0;){
+				i--;
+				var dirty = dirtyObjects[i];
+				var object = dirty.object;
+				var old = dirty.old;
+				if(object && old){
+					// changed
+					for(var j in old){
+						if(old.hasOwnProperty(j) && object[j] !== old[j]){
+							this.onSet(object, j, object[j], old[j]);
+							object[j] = old[j];
+						}
+					}
+					for(j in object){
+						if(!old.hasOwnProperty(j)){
+							this.onSet(object, j, object[j]);
+							delete object[j];
+						}
+					}
+				}else if(!old){
+					// was an addition, remove it
+					this.onDelete(object);
+				}else{
+					// was a deletion, we will add it back
+					this.onNew(old);
+				}
+				delete (object || old).__isDirty;
+				dirtyObjects.splice(i, 1);
+			}
+
+		},
+		isDirty: function(item){
+			// summary:
+			//		returns true if the item is marked as dirty or true if there are any dirty items
+			// item: Object
+			//		The item to check
+			if(!item){
+				return !!this._dirtyObjects.length;
+			}
+			return item.__isDirty;
+		},
+
+		// Notification Support
+
+		onSet: function(){
+			// summary:
+			// 		See dojo/data/api/Notification.onSet()
+		},
+		onNew: function(){
+			// summary:
+			// 		See dojo/data/api/Notification.onNew()
+		},
+		onDelete:	function(){
+			// summary:
+			// 		See dojo/data/api/Notification.onDelete()
+		},
+		// an extra to get result sets
+		onFetch: function(results){
+			// summary:
+			// 		Called when a fetch occurs			
+		}
+
+	}
+);
+});

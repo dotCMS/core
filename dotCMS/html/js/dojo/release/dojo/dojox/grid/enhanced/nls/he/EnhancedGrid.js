@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/he/EnhancedGrid", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/he/EnhancedGrid", ({
 	singleSort: "מיון יחיד",
 	nestedSort: "מיון מקונן",
 	ascending: "עולה",
@@ -12,6 +10,4 @@ define(
 	indirectSelectionCheckBox: "שורה ${0}, בחירה מרובה, תיבת סימון",
 	selectAll: "בחירת הכל"
 })
-//end v1.x content
 );
-

@@ -1,8 +1,136 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/ready", ["./_base/kernel", "./has", "require", "./domReady", "./_base/lang"], function(dojo, has, require, domReady, lang){
+	// module:
+	//		dojo/ready
+	// note:
+	//		This module should be unnecessary in dojo 2.0
 
-//>>built
-define("dojo/ready",["./_base/kernel","./has","require","./domReady","./_base/lang"],function(_1,_2,_3,_4,_5){var _6=0,_7,_8=[],_9=0,_a=function(){_6=1;_1._postLoad=_1.config.afterOnLoad=true;if(_8.length){_7(_b);}},_b=function(){if(_6&&!_9&&_8.length){_9=1;var f=_8.shift();try{f();}finally{_9=0;}_9=0;if(_8.length){_7(_b);}}};if(1){_3.on("idle",_b);_7=function(){if(_3.idle()){_b();}};}else{_7=function(){_3.ready(_b);};}var _c=_1.ready=_1.addOnLoad=function(_d,_e,_f){var _10=_5._toArray(arguments);if(typeof _d!="number"){_f=_e;_e=_d;_d=1000;}else{_10.shift();}_f=_f?_5.hitch.apply(_1,_10):function(){_e();};_f.priority=_d;for(var i=0;i<_8.length&&_d>=_8[i].priority;i++){}_8.splice(i,0,_f);_7();};true||_2.add("dojo-config-addOnLoad",1);if(1){var dca=_1.config.addOnLoad;if(dca){_c[(_5.isArray(dca)?"apply":"call")](_1,dca);}}if(1&&_1.config.parseOnLoad&&!_1.isAsync){_c(99,function(){if(!_1.parser){_1.deprecated("Add explicit require(['dojo/parser']);","","2.0");_3(["dojo/parser"]);}});}if(1){_4(_a);}else{_a();}return _c;});
+	var
+		// truthy if DOMContentLoaded or better (e.g., window.onload fired) has been achieved
+		isDomReady = 0,
+
+		// a function to call to cause onLoad to be called when all requested modules have been loaded
+		requestCompleteSignal,
+
+		// The queue of functions waiting to execute as soon as dojo.ready conditions satisfied
+		loadQ = [],
+
+		// prevent recursion in onLoad
+		onLoadRecursiveGuard = 0,
+
+		handleDomReady = function(){
+			isDomReady = 1;
+			dojo._postLoad = dojo.config.afterOnLoad = true;
+			if(loadQ.length){
+				requestCompleteSignal(onLoad);
+			}
+		},
+
+		// run the next function queued with dojo.ready
+		onLoad = function(){
+			if(isDomReady && !onLoadRecursiveGuard && loadQ.length){
+				//guard against recursions into this function
+				onLoadRecursiveGuard = 1;
+				var f = loadQ.shift();
+					try{
+						f();
+					}
+						// FIXME: signal the error via require.on
+					finally{
+						onLoadRecursiveGuard = 0;
+					}
+				onLoadRecursiveGuard = 0;
+				if(loadQ.length){
+					requestCompleteSignal(onLoad);
+				}
+			}
+		};
+
+	require.on("idle", onLoad);
+	requestCompleteSignal = function(){
+		if(require.idle()){
+			onLoad();
+		} // else do nothing, onLoad will be called with the next idle signal
+	};
+
+	var ready = dojo.ready = dojo.addOnLoad = function(priority, context, callback){
+		// summary:
+		//		Add a function to execute on DOM content loaded and all requested modules have arrived and been evaluated.
+		//		In most cases, the `domReady` plug-in should suffice and this method should not be needed.
+		// priority: Integer?
+		//		The order in which to exec this callback relative to other callbacks, defaults to 1000
+		// context: Object?|Function
+		//		The context in which to run execute callback, or a callback if not using context
+		// callback: Function?
+		//		The function to execute.
+		//
+		// example:
+		//	Simple DOM and Modules ready syntax
+		//	|	require(["dojo/ready"], function(ready){
+		//	|		ready(function(){ alert("Dom ready!"); });
+		//	|	});
+		//
+		// example:
+		//	Using a priority
+		//	|	require(["dojo/ready"], function(ready){
+		//	|		ready(2, function(){ alert("low priority ready!"); })
+		//	|	});
+		//
+		// example:
+		//	Using context
+		//	|	require(["dojo/ready"], function(ready){
+		//	|		ready(foo, function(){
+		//	|			// in here, this == foo
+		//	|		});
+		//	|	});
+		//
+		// example:
+		//	Using dojo/hitch style args:
+		//	|	require(["dojo/ready"], function(ready){
+		//	|		var foo = { dojoReady: function(){ console.warn(this, "dojo dom and modules ready."); } };
+		//	|		ready(foo, "dojoReady");
+		//	|	});
+
+		var hitchArgs = lang._toArray(arguments);
+		if(typeof priority != "number"){
+			callback = context;
+			context = priority;
+			priority = 1000;
+		}else{
+			hitchArgs.shift();
+		}
+		callback = callback ?
+			lang.hitch.apply(dojo, hitchArgs) :
+			function(){
+				context();
+			};
+		callback.priority = priority;
+		for(var i = 0; i < loadQ.length && priority >= loadQ[i].priority; i++){}
+		loadQ.splice(i, 0, callback);
+		requestCompleteSignal();
+	};
+
+	 1 || has.add("dojo-config-addOnLoad", 1);
+	if( 1 ){
+		var dca = dojo.config.addOnLoad;
+		if(dca){
+			ready[(lang.isArray(dca) ? "apply" : "call")](dojo, dca);
+		}
+	}
+
+	if( 1  && dojo.config.parseOnLoad && !dojo.isAsync){
+		ready(99, function(){
+			if(!dojo.parser){
+				dojo.deprecated("Add explicit require(['dojo/parser']);", "", "2.0");
+				require(["dojo/parser"]);
+			}
+		});
+	}
+
+	if( 1 ){
+		domReady(handleDomReady);
+	}else{
+		handleDomReady();
+	}
+
+	return ready;
+});

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sl/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sl/AutoSave", ({
 	"saveLabel": "Shrani",
 	"saveSettingLabelOn": "Nastavi interval za samodejno shranjevanje ... ",
 	"saveSettingLabelOff": "Izključi samodejno shranjevanje ",
@@ -14,6 +12,4 @@ define(
 	"saveMessageSuccess": "Shranjeno ob ${0}",
 	"saveMessageFail": "Shranjevanje ob ${0} ni uspelo "
 })
-
-//end v1.x content
 );

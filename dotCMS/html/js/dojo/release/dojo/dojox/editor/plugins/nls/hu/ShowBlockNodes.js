@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/hu/ShowBlockNodes", //begin v1.x content
-({
+"dojox/editor/plugins/nls/hu/ShowBlockNodes", ({
 	"showBlockNodes": "HTML blokk elemek megjelenítése"
 })
-
-//end v1.x content
 );

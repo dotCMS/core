@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/atom/widget/nls/ja/FeedEntryViewer", //begin v1.x content
-({
+"dojox/atom/widget/nls/ja/FeedEntryViewer", ({
 	displayOptions: "[表示オプション]",
 	title: "タイトル",
 	authors: "作成者",
@@ -12,5 +10,4 @@ define(
 	summary: "要約",
 	content: "内容"
 })
-//end v1.x content
 );

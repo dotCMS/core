@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/tr/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/tr/AutoSave", ({
 	"saveLabel": "Kaydet",
 	"saveSettingLabelOn": "Otomatik Kaydetme Aralığını Ayarla...",
 	"saveSettingLabelOff": "Otomatik Kaydetmeyi Kapat",
@@ -14,6 +12,4 @@ define(
 	"saveMessageSuccess": "${0} konumuna kaydedildi",
 	"saveMessageFail": "${0} konumuna kaydedilemedi"
 })
-
-//end v1.x content
 );

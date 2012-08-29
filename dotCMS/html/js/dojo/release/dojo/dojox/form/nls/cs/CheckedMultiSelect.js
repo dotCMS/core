@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/form/nls/cs/CheckedMultiSelect", ({
 	invalidMessage: "Je třeba vybrat alespoň jednu položku.",

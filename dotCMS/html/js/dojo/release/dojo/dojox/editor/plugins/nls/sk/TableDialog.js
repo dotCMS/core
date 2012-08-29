@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sk/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sk/TableDialog", ({
 	insertTableTitle: "Vložiť tabuľku",
 	modifyTableTitle: "Upraviť tabuľku",
 	rows: "Riadky:",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "Nastaviť", // translated elsewhere?
 	buttonInsert: "Vložiť",
 	buttonCancel: "Zrušiť",
-
 	selectTableLabel: "Vybrať tabuľku",
 	insertTableRowBeforeLabel: "Pridať riadok pred",
 	insertTableRowAfterLabel: "Pridať riadok za",
@@ -31,7 +28,4 @@ define(
 	deleteTableRowLabel: "Vymazať riadok",
 	deleteTableColumnLabel: "Vymazať stĺpec"
 })
-	
-
-//end v1.x content
 );

@@ -1,9 +1,6 @@
-//>>built
 define(
-"dojox/form/nls/ca/PasswordValidator", //begin v1.x content
-({
+"dojox/form/nls/ca/PasswordValidator", ({
         nomatchMessage: "Les contrasenyes no coincideixen",
-		badPasswordMessage: "La contrasenya no és correcta"
+	badPasswordMessage: "La contrasenya no és correcta"
 })
-//end v1.x content
 );

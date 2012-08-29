@@ -1,2 +1,584 @@
-//>>built
-define("dijit/layout/SplitContainer",["dojo/_base/array","dojo/cookie","dojo/_base/declare","dojo/dom","dojo/dom-class","dojo/dom-construct","dojo/dom-geometry","dojo/dom-style","dojo/_base/event","dojo/_base/kernel","dojo/_base/lang","dojo/on","dojo/_base/sniff","dojo/_base/window","../registry","../_WidgetBase","./_LayoutWidget"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_a,_b,on,_c,_d,_e,_f,_10){_b.extend(_f,{sizeMin:10,sizeShare:10});return _3("dijit.layout.SplitContainer",_10,{constructor:function(){_a.deprecated("dijit.layout.SplitContainer is deprecated","use BorderContainer with splitter instead",2);},activeSizing:false,sizerWidth:7,orientation:"horizontal",persist:true,baseClass:"dijitSplitContainer",postMixInProperties:function(){this.inherited("postMixInProperties",arguments);this.isHorizontal=(this.orientation=="horizontal");},postCreate:function(){this.inherited(arguments);this.sizers=[];if(_c("mozilla")){this.domNode.style.overflow="-moz-scrollbars-none";}if(typeof this.sizerWidth=="object"){try{this.sizerWidth=parseInt(this.sizerWidth.toString());}catch(e){this.sizerWidth=7;}}var _11=_d.doc.createElement("div");this.virtualSizer=_11;_11.style.position="relative";_11.style.zIndex=10;_11.className=this.isHorizontal?"dijitSplitContainerVirtualSizerH":"dijitSplitContainerVirtualSizerV";this.domNode.appendChild(_11);_4.setSelectable(_11,false);},destroy:function(){delete this.virtualSizer;if(this._ownconnects){var h;while(h=this._ownconnects.pop()){h.remove();}}this.inherited(arguments);},startup:function(){if(this._started){return;}_1.forEach(this.getChildren(),function(_12,i,_13){this._setupChild(_12);if(i<_13.length-1){this._addSizer();}},this);if(this.persist){this._restoreState();}this.inherited(arguments);},_setupChild:function(_14){this.inherited(arguments);_14.domNode.style.position="absolute";_5.add(_14.domNode,"dijitSplitPane");},_onSizerMouseDown:function(e){if(e.target.id){for(var i=0;i<this.sizers.length;i++){if(this.sizers[i].id==e.target.id){break;}}if(i<this.sizers.length){this.beginSizing(e,i);}}},_addSizer:function(_15){_15=_15===undefined?this.sizers.length:_15;var _16=_d.doc.createElement("div");_16.id=_e.getUniqueId("dijit_layout_SplitterContainer_Splitter");this.sizers.splice(_15,0,_16);this.domNode.appendChild(_16);_16.className=this.isHorizontal?"dijitSplitContainerSizerH":"dijitSplitContainerSizerV";var _17=_d.doc.createElement("div");_17.className="thumb";_16.appendChild(_17);this.connect(_16,"onmousedown","_onSizerMouseDown");_4.setSelectable(_16,false);},removeChild:function(_18){if(this.sizers.length){var i=_1.indexOf(this.getChildren(),_18);if(i!=-1){if(i==this.sizers.length){i--;}_6.destroy(this.sizers[i]);this.sizers.splice(i,1);}}this.inherited(arguments);if(this._started){this.layout();}},addChild:function(_19,_1a){this.inherited(arguments);if(this._started){var _1b=this.getChildren();if(_1b.length>1){this._addSizer(_1a);}this.layout();}},layout:function(){this.paneWidth=this._contentBox.w;this.paneHeight=this._contentBox.h;var _1c=this.getChildren();if(!_1c.length){return;}var _1d=this.isHorizontal?this.paneWidth:this.paneHeight;if(_1c.length>1){_1d-=this.sizerWidth*(_1c.length-1);}var _1e=0;_1.forEach(_1c,function(_1f){_1e+=_1f.sizeShare;});var _20=_1d/_1e;var _21=0;_1.forEach(_1c.slice(0,_1c.length-1),function(_22){var _23=Math.round(_20*_22.sizeShare);_22.sizeActual=_23;_21+=_23;});_1c[_1c.length-1].sizeActual=_1d-_21;this._checkSizes();var pos=0;var _24=_1c[0].sizeActual;this._movePanel(_1c[0],pos,_24);_1c[0].position=pos;pos+=_24;if(!this.sizers){return;}_1.some(_1c.slice(1),function(_25,i){if(!this.sizers[i]){return true;}this._moveSlider(this.sizers[i],pos,this.sizerWidth);this.sizers[i].position=pos;pos+=this.sizerWidth;_24=_25.sizeActual;this._movePanel(_25,pos,_24);_25.position=pos;pos+=_24;},this);},_movePanel:function(_26,pos,_27){var box;if(this.isHorizontal){_26.domNode.style.left=pos+"px";_26.domNode.style.top=0;box={w:_27,h:this.paneHeight};if(_26.resize){_26.resize(box);}else{_7.setMarginBox(_26.domNode,box);}}else{_26.domNode.style.left=0;_26.domNode.style.top=pos+"px";box={w:this.paneWidth,h:_27};if(_26.resize){_26.resize(box);}else{_7.setMarginBox(_26.domNode,box);}}},_moveSlider:function(_28,pos,_29){if(this.isHorizontal){_28.style.left=pos+"px";_28.style.top=0;_7.setMarginBox(_28,{w:_29,h:this.paneHeight});}else{_28.style.left=0;_28.style.top=pos+"px";_7.setMarginBox(_28,{w:this.paneWidth,h:_29});}},_growPane:function(_2a,_2b){if(_2a>0){if(_2b.sizeActual>_2b.sizeMin){if((_2b.sizeActual-_2b.sizeMin)>_2a){_2b.sizeActual=_2b.sizeActual-_2a;_2a=0;}else{_2a-=_2b.sizeActual-_2b.sizeMin;_2b.sizeActual=_2b.sizeMin;}}}return _2a;},_checkSizes:function(){var _2c=0;var _2d=0;var _2e=this.getChildren();_1.forEach(_2e,function(_2f){_2d+=_2f.sizeActual;_2c+=_2f.sizeMin;});if(_2c<=_2d){var _30=0;_1.forEach(_2e,function(_31){if(_31.sizeActual<_31.sizeMin){_30+=_31.sizeMin-_31.sizeActual;_31.sizeActual=_31.sizeMin;}});if(_30>0){var _32=this.isDraggingLeft?_2e.reverse():_2e;_1.forEach(_32,function(_33){_30=this._growPane(_30,_33);},this);}}else{_1.forEach(_2e,function(_34){_34.sizeActual=Math.round(_2d*(_34.sizeMin/_2c));});}},beginSizing:function(e,i){var _35=this.getChildren();this.paneBefore=_35[i];this.paneAfter=_35[i+1];this.isSizing=true;this.sizingSplitter=this.sizers[i];if(!this.cover){this.cover=_6.create("div",{style:{position:"absolute",zIndex:5,top:0,left:0,width:"100%",height:"100%"}},this.domNode);}else{this.cover.style.zIndex=5;}this.sizingSplitter.style.zIndex=6;this.originPos=_7.position(_35[0].domNode,true);var _36,_37;if(this.isHorizontal){_36=e.layerX||e.offsetX||0;_37=e.pageX;this.originPos=this.originPos.x;}else{_36=e.layerY||e.offsetY||0;_37=e.pageY;this.originPos=this.originPos.y;}this.startPoint=this.lastPoint=_37;this.screenToClientOffset=_37-_36;this.dragOffset=this.lastPoint-this.paneBefore.sizeActual-this.originPos-this.paneBefore.position;if(!this.activeSizing){this._showSizingLine();}this._ownconnects=[on(_d.doc.documentElement,"mousemove",_b.hitch(this,"changeSizing")),on(_d.doc.documentElement,"mouseup",_b.hitch(this,"endSizing"))];_9.stop(e);},changeSizing:function(e){if(!this.isSizing){return;}this.lastPoint=this.isHorizontal?e.pageX:e.pageY;this.movePoint();if(this.activeSizing){this._updateSize();}else{this._moveSizingLine();}_9.stop(e);},endSizing:function(){if(!this.isSizing){return;}if(this.cover){this.cover.style.zIndex=-1;}if(!this.activeSizing){this._hideSizingLine();}this._updateSize();this.isSizing=false;if(this.persist){this._saveState(this);}var h;while(h=this._ownconnects.pop()){h.remove();}},movePoint:function(){var p=this.lastPoint-this.screenToClientOffset;var a=p-this.dragOffset;a=this.legaliseSplitPoint(a);p=a+this.dragOffset;this.lastPoint=p+this.screenToClientOffset;},legaliseSplitPoint:function(a){a+=this.sizingSplitter.position;this.isDraggingLeft=!!(a>0);if(!this.activeSizing){var min=this.paneBefore.position+this.paneBefore.sizeMin;if(a<min){a=min;}var max=this.paneAfter.position+(this.paneAfter.sizeActual-(this.sizerWidth+this.paneAfter.sizeMin));if(a>max){a=max;}}a-=this.sizingSplitter.position;this._checkSizes();return a;},_updateSize:function(){var pos=this.lastPoint-this.dragOffset-this.originPos;var _38=this.paneBefore.position;var _39=this.paneAfter.position+this.paneAfter.sizeActual;this.paneBefore.sizeActual=pos-_38;this.paneAfter.position=pos+this.sizerWidth;this.paneAfter.sizeActual=_39-this.paneAfter.position;_1.forEach(this.getChildren(),function(_3a){_3a.sizeShare=_3a.sizeActual;});if(this._started){this.layout();}},_showSizingLine:function(){this._moveSizingLine();_7.setMarginBox(this.virtualSizer,this.isHorizontal?{w:this.sizerWidth,h:this.paneHeight}:{w:this.paneWidth,h:this.sizerWidth});this.virtualSizer.style.display="block";},_hideSizingLine:function(){this.virtualSizer.style.display="none";},_moveSizingLine:function(){var pos=(this.lastPoint-this.startPoint)+this.sizingSplitter.position;_8.set(this.virtualSizer,(this.isHorizontal?"left":"top"),pos+"px");},_getCookieName:function(i){return this.id+"_"+i;},_restoreState:function(){_1.forEach(this.getChildren(),function(_3b,i){var _3c=this._getCookieName(i);var _3d=_2(_3c);if(_3d){var pos=parseInt(_3d);if(typeof pos=="number"){_3b.sizeShare=pos;}}},this);},_saveState:function(){if(!this.persist){return;}_1.forEach(this.getChildren(),function(_3e,i){_2(this._getCookieName(i),_3e.sizeShare,{expires:365});},this);}});});
+define("dijit/layout/SplitContainer", [
+	"dojo/_base/array", // array.forEach array.indexOf array.some
+	"dojo/cookie", // cookie
+	"dojo/_base/declare", // declare
+	"dojo/dom", // dom.setSelectable
+	"dojo/dom-class", // domClass.add
+	"dojo/dom-construct", // domConstruct.create domConstruct.destroy
+	"dojo/dom-geometry", // domGeometry.marginBox domGeometry.position
+	"dojo/dom-style", // domStyle.style
+	"dojo/_base/event", // event.stop
+	"dojo/_base/kernel", // kernel.deprecated
+	"dojo/_base/lang", // lang.extend lang.hitch
+	"dojo/on",
+	"dojo/sniff", // has("mozilla")
+	"../registry",	// registry.getUniqueId()
+	"../_WidgetBase",
+	"./_LayoutWidget"
+], function(array, cookie, declare, dom, domClass, domConstruct, domGeometry, domStyle,
+			event, kernel, lang, on, has, registry, _WidgetBase, _LayoutWidget){
+
+// module:
+//		dijit/layout/SplitContainer
+
+//
+// FIXME: make it prettier
+// FIXME: active dragging upwards doesn't always shift other bars (direction calculation is wrong in this case)
+// FIXME: sizeWidth should be a CSS attribute (at 7 because css wants it to be 7 until we fix to css)
+//
+
+var SplitContainer = declare("dijit.layout.SplitContainer", _LayoutWidget, {
+	// summary:
+	//		Deprecated.  Use `dijit/layout/BorderContainer` instead.
+	// description:
+	//		A Container widget with sizing handles in-between each child.
+	//		Contains multiple children widgets, all of which are displayed side by side
+	//		(either horizontally or vertically); there's a bar between each of the children,
+	//		and you can adjust the relative size of each child by dragging the bars.
+	//
+	//		You must specify a size (width and height) for the SplitContainer.
+	//
+	//		See `SplitContainer.ChildWidgetProperties` for details on the properties that can be set on
+	//		children of a `SplitContainer`.
+	// tags:
+	//		deprecated
+
+	constructor: function(){
+		kernel.deprecated("dijit.layout.SplitContainer is deprecated", "use BorderContainer with splitter instead", 2.0);
+	},
+
+	// activeSizing: Boolean
+	//		If true, the children's size changes as you drag the bar;
+	//		otherwise, the sizes don't change until you drop the bar (by mouse-up)
+	activeSizing: false,
+
+	// sizerWidth: Integer
+	//		Size in pixels of the bar between each child
+	sizerWidth: 7,
+
+	// orientation: String
+	//		either 'horizontal' or vertical; indicates whether the children are
+	//		arranged side-by-side or up/down.
+	orientation: 'horizontal',
+
+	// persist: Boolean
+	//		Save splitter positions in a cookie
+	persist: true,
+
+	baseClass: "dijitSplitContainer",
+
+	postMixInProperties: function(){
+		this.inherited("postMixInProperties",arguments);
+		this.isHorizontal = (this.orientation == 'horizontal');
+	},
+
+	postCreate: function(){
+		this.inherited(arguments);
+		this.sizers = [];
+
+		// overflow has to be explicitly hidden for splitContainers using gekko (trac #1435)
+		// to keep other combined css classes from inadvertantly making the overflow visible
+		if(has("mozilla")){
+			this.domNode.style.overflow = '-moz-scrollbars-none'; // hidden doesn't work
+		}
+
+		// create the fake dragger
+		if(typeof this.sizerWidth == "object"){
+			try{ //FIXME: do this without a try/catch
+				this.sizerWidth = parseInt(this.sizerWidth.toString());
+			}catch(e){ this.sizerWidth = 7; }
+		}
+		var sizer = this.ownerDocument.createElement('div');
+		this.virtualSizer = sizer;
+		sizer.style.position = 'relative';
+
+		// #1681: work around the dreaded 'quirky percentages in IE' layout bug
+		// If the splitcontainer's dimensions are specified in percentages, it
+		// will be resized when the virtualsizer is displayed in _showSizingLine
+		// (typically expanding its bounds unnecessarily). This happens because
+		// we use position: relative for .dijitSplitContainer.
+		// The workaround: instead of changing the display style attribute,
+		// switch to changing the zIndex (bring to front/move to back)
+
+		sizer.style.zIndex = 10;
+		sizer.className = this.isHorizontal ? 'dijitSplitContainerVirtualSizerH' : 'dijitSplitContainerVirtualSizerV';
+		this.domNode.appendChild(sizer);
+		dom.setSelectable(sizer, false);
+	},
+
+	destroy: function(){
+		delete this.virtualSizer;
+		if(this._ownconnects){
+			var h;
+			while(h = this._ownconnects.pop()){ h.remove(); }
+		}
+		this.inherited(arguments);
+	},
+	startup: function(){
+		if(this._started){ return; }
+
+		array.forEach(this.getChildren(), function(child, i, children){
+			// attach the children and create the draggers
+			this._setupChild(child);
+
+			if(i < children.length-1){
+				this._addSizer();
+			}
+		}, this);
+
+		if(this.persist){
+			this._restoreState();
+		}
+
+		this.inherited(arguments);
+	},
+
+	_setupChild: function(/*dijit/_WidgetBase*/ child){
+		this.inherited(arguments);
+		child.domNode.style.position = "absolute";
+		domClass.add(child.domNode, "dijitSplitPane");
+	},
+
+	_onSizerMouseDown: function(e){
+		if(e.target.id){
+			for(var i=0;i<this.sizers.length;i++){
+				if(this.sizers[i].id == e.target.id){
+					break;
+				}
+			}
+			if(i<this.sizers.length){
+				this.beginSizing(e,i);
+			}
+		}
+	},
+	_addSizer: function(index){
+		index = index === undefined ? this.sizers.length : index;
+
+		// TODO: use a template for this!!!
+		var sizer = this.ownerDocument.createElement('div');
+		sizer.id=registry.getUniqueId('dijit_layout_SplitterContainer_Splitter');
+		this.sizers.splice(index,0,sizer);
+		this.domNode.appendChild(sizer);
+
+		sizer.className = this.isHorizontal ? 'dijitSplitContainerSizerH' : 'dijitSplitContainerSizerV';
+
+		// add the thumb div
+		var thumb = this.ownerDocument.createElement('div');
+		thumb.className = 'thumb';
+		sizer.appendChild(thumb);
+
+		// FIXME: are you serious? why aren't we using mover start/stop combo?
+		this.connect(sizer, "onmousedown", '_onSizerMouseDown');
+
+		dom.setSelectable(sizer, false);
+	},
+
+	removeChild: function(widget){
+		// summary:
+		//		Remove sizer, but only if widget is really our child and
+		//		we have at least one sizer to throw away
+		if(this.sizers.length){
+			var i = array.indexOf(this.getChildren(), widget);
+			if(i != -1){
+				if(i == this.sizers.length){
+					i--;
+				}
+				domConstruct.destroy(this.sizers[i]);
+				this.sizers.splice(i,1);
+			}
+		}
+
+		// Remove widget and repaint
+		this.inherited(arguments);
+		if(this._started){
+			this.layout();
+		}
+	},
+
+	addChild: function(/*dijit/_WidgetBase*/ child, /*Integer?*/ insertIndex){
+		// summary:
+		//		Add a child widget to the container
+		// child:
+		//		a widget to add
+		// insertIndex:
+		//		postion in the "stack" to add the child widget
+
+		this.inherited(arguments);
+
+		if(this._started){
+			// Do the stuff that startup() does for each widget
+			var children = this.getChildren();
+			if(children.length > 1){
+				this._addSizer(insertIndex);
+			}
+
+			// and then reposition (ie, shrink) every pane to make room for the new guy
+			this.layout();
+		}
+	},
+
+	layout: function(){
+		// summary:
+		//		Do layout of panels
+
+		// base class defines this._contentBox on initial creation and also
+		// on resize
+		this.paneWidth = this._contentBox.w;
+		this.paneHeight = this._contentBox.h;
+
+		var children = this.getChildren();
+		if(!children.length){ return; }
+
+		//
+		// calculate space
+		//
+
+		var space = this.isHorizontal ? this.paneWidth : this.paneHeight;
+		if(children.length > 1){
+			space -= this.sizerWidth * (children.length - 1);
+		}
+
+		//
+		// calculate total of SizeShare values
+		//
+		var outOf = 0;
+		array.forEach(children, function(child){
+			outOf += child.sizeShare;
+		});
+
+		//
+		// work out actual pixels per sizeshare unit
+		//
+		var pixPerUnit = space / outOf;
+
+		//
+		// set the SizeActual member of each pane
+		//
+		var totalSize = 0;
+		array.forEach(children.slice(0, children.length - 1), function(child){
+			var size = Math.round(pixPerUnit * child.sizeShare);
+			child.sizeActual = size;
+			totalSize += size;
+		});
+
+		children[children.length-1].sizeActual = space - totalSize;
+
+		//
+		// make sure the sizes are ok
+		//
+		this._checkSizes();
+
+		//
+		// now loop, positioning each pane and letting children resize themselves
+		//
+
+		var pos = 0;
+		var size = children[0].sizeActual;
+		this._movePanel(children[0], pos, size);
+		children[0].position = pos;
+		pos += size;
+
+		// if we don't have any sizers, our layout method hasn't been called yet
+		// so bail until we are called..TODO: REVISIT: need to change the startup
+		// algorithm to guaranteed the ordering of calls to layout method
+		if(!this.sizers){
+			return;
+		}
+
+		array.some(children.slice(1), function(child, i){
+			// error-checking
+			if(!this.sizers[i]){
+				return true;
+			}
+			// first we position the sizing handle before this pane
+			this._moveSlider(this.sizers[i], pos, this.sizerWidth);
+			this.sizers[i].position = pos;
+			pos += this.sizerWidth;
+
+			size = child.sizeActual;
+			this._movePanel(child, pos, size);
+			child.position = pos;
+			pos += size;
+		}, this);
+	},
+
+	_movePanel: function(panel, pos, size){
+		var box;
+		if(this.isHorizontal){
+			panel.domNode.style.left = pos + 'px';	// TODO: resize() takes l and t parameters too, don't need to set manually
+			panel.domNode.style.top = 0;
+			box = {w: size, h: this.paneHeight};
+			if(panel.resize){
+				panel.resize(box);
+			}else{
+				domGeometry.setMarginBox(panel.domNode, box);
+			}
+		}else{
+			panel.domNode.style.left = 0;	// TODO: resize() takes l and t parameters too, don't need to set manually
+			panel.domNode.style.top = pos + 'px';
+			box = {w: this.paneWidth, h: size};
+			if(panel.resize){
+				panel.resize(box);
+			}else{
+				domGeometry.setMarginBox(panel.domNode, box);
+			}
+		}
+	},
+
+	_moveSlider: function(slider, pos, size){
+		if(this.isHorizontal){
+			slider.style.left = pos + 'px';
+			slider.style.top = 0;
+			domGeometry.setMarginBox(slider, { w: size, h: this.paneHeight });
+		}else{
+			slider.style.left = 0;
+			slider.style.top = pos + 'px';
+			domGeometry.setMarginBox(slider, { w: this.paneWidth, h: size });
+		}
+	},
+
+	_growPane: function(growth, pane){
+		if(growth > 0){
+			if(pane.sizeActual > pane.sizeMin){
+				if((pane.sizeActual - pane.sizeMin) > growth){
+
+					// stick all the growth in this pane
+					pane.sizeActual = pane.sizeActual - growth;
+					growth = 0;
+				}else{
+					// put as much growth in here as we can
+					growth -= pane.sizeActual - pane.sizeMin;
+					pane.sizeActual = pane.sizeMin;
+				}
+			}
+		}
+		return growth;
+	},
+
+	_checkSizes: function(){
+
+		var totalMinSize = 0;
+		var totalSize = 0;
+		var children = this.getChildren();
+
+		array.forEach(children, function(child){
+			totalSize += child.sizeActual;
+			totalMinSize += child.sizeMin;
+		});
+
+		// only make adjustments if we have enough space for all the minimums
+
+		if(totalMinSize <= totalSize){
+
+			var growth = 0;
+
+			array.forEach(children, function(child){
+				if(child.sizeActual < child.sizeMin){
+					growth += child.sizeMin - child.sizeActual;
+					child.sizeActual = child.sizeMin;
+				}
+			});
+
+			if(growth > 0){
+				var list = this.isDraggingLeft ? children.reverse() : children;
+				array.forEach(list, function(child){
+					growth = this._growPane(growth, child);
+				}, this);
+			}
+		}else{
+			array.forEach(children, function(child){
+				child.sizeActual = Math.round(totalSize * (child.sizeMin / totalMinSize));
+			});
+		}
+	},
+
+	beginSizing: function(e, i){
+		// summary:
+		//		Begin dragging the splitter between child[i] and child[i+1]
+
+		var children = this.getChildren();
+
+		this.paneBefore = children[i];
+		this.paneAfter = children[i+1];
+
+		this.paneBefore.sizeBeforeDrag = this.paneBefore.sizeActual;
+		this.paneAfter.sizeBeforeDrag = this.paneAfter.sizeActual;
+		this.paneAfter.positionBeforeDrag = this.paneAfter.position;
+
+		this.isSizing = true;
+		this.sizingSplitter = this.sizers[i];
+		this.sizingSplitter.positionBeforeDrag = domStyle.get(this.sizingSplitter,(this.isHorizontal ? "left" : "top"));
+
+		if(!this.cover){
+			this.cover = domConstruct.create('div', {
+				style: {
+					position:'absolute',
+					zIndex:5,
+					top: 0,
+					left: 0,
+					width: "100%",
+					height: "100%"
+				}
+			}, this.domNode);
+		}else{
+			this.cover.style.zIndex = 5;
+		}
+		this.sizingSplitter.style.zIndex = 6;
+
+		// startPoint is the e.pageX or e.pageY at start of drag
+		this.startPoint = this.lastPoint = (this.isHorizontal ? e.pageX : e.pageY);
+
+		// Calculate maximum to the left or right that splitter is allowed to be dragged
+		// minDelta is negative to indicate left/upward drag where end.pageX < start.pageX.
+		this.maxDelta = this.paneAfter.sizeActual - this.paneAfter.sizeMin;
+		this.minDelta = -1 * (this.paneBefore.sizeActual - this.paneBefore.sizeMin);
+
+		if(!this.activeSizing){
+			this._showSizingLine();
+		}
+
+		// attach mouse events
+		this._ownconnects = [
+			on(this.ownerDocument.documentElement, "mousemove", lang.hitch(this, "changeSizing")),
+			on(this.ownerDocument.documentElement, "mouseup", lang.hitch(this, "endSizing"))
+		];
+
+		event.stop(e);
+	},
+
+	changeSizing: function(e){
+		// summary:
+		//		Called on mousemove while dragging the splitter
+
+		if(!this.isSizing){ return; }
+
+		// lastPoint is the most recent e.pageX or e.pageY during the drag
+		this.lastPoint = this.isHorizontal ? e.pageX : e.pageY;
+		var delta = Math.max(Math.min(this.lastPoint - this.startPoint, this.maxDelta), this.minDelta);
+
+		if(this.activeSizing){
+			this._updateSize(delta);
+		}else{
+			this._moveSizingLine(delta);
+		}
+		event.stop(e);
+	},
+
+	endSizing: function(){
+		if(!this.isSizing){ return; }
+		if(this.cover){
+			this.cover.style.zIndex = -1;
+		}
+		if(!this.activeSizing){
+			this._hideSizingLine();
+		}
+
+		var delta = Math.max(Math.min(this.lastPoint - this.startPoint, this.maxDelta), this.minDelta);
+		this._updateSize(delta);
+
+		this.isSizing = false;
+
+		if(this.persist){
+			this._saveState(this);
+		}
+
+		var h;
+		while(h = this._ownconnects.pop()){ h.remove(); }
+	},
+
+	_updateSize: function(/*Number*/ delta){
+		// summary:
+		//		Resets sizes of panes before and after splitter being dragged.
+		//		Called during a drag, for active sizing, or at the end of a drag otherwise.
+		// delta: Number
+		//		Change in slider position compared to start of drag.   But note that
+		//		this function may be called multiple times during drag.
+
+		this.paneBefore.sizeActual = this.paneBefore.sizeBeforeDrag + delta;
+		this.paneAfter.position	= this.paneAfter.positionBeforeDrag + delta;
+		this.paneAfter.sizeActual = this.paneAfter.sizeBeforeDrag - delta;
+
+		array.forEach(this.getChildren(), function(child){
+			child.sizeShare = child.sizeActual;
+		});
+
+		if(this._started){
+			this.layout();
+		}
+	},
+
+	_showSizingLine: function(){
+		// summary:
+		//		Show virtual splitter, for non-active resizing
+
+		this._moveSizingLine(0);
+
+		domGeometry.setMarginBox(this.virtualSizer,
+			this.isHorizontal ? { w: this.sizerWidth, h: this.paneHeight } : { w: this.paneWidth, h: this.sizerWidth });
+
+		this.virtualSizer.style.display = 'block';
+	},
+
+	_hideSizingLine: function(){
+		this.virtualSizer.style.display = 'none';
+	},
+
+	_moveSizingLine: function(/*Number*/ delta){
+		// summary:
+		//		Called for non-active resizing, to move the virtual splitter without adjusting the size of the panes
+		var pos = delta + this.sizingSplitter.positionBeforeDrag;
+		domStyle.set(this.virtualSizer,(this.isHorizontal ? "left" : "top"),pos+"px");
+	},
+
+	_getCookieName: function(i){
+		return this.id + "_" + i;
+	},
+
+	_restoreState: function(){
+		array.forEach(this.getChildren(), function(child, i){
+			var cookieName = this._getCookieName(i);
+			var cookieValue = cookie(cookieName);
+			if(cookieValue){
+				var pos = parseInt(cookieValue);
+				if(typeof pos == "number"){
+					child.sizeShare = pos;
+				}
+			}
+		}, this);
+	},
+
+	_saveState: function(){
+		if(!this.persist){
+			return;
+		}
+		array.forEach(this.getChildren(), function(child, i){
+			cookie(this._getCookieName(i), child.sizeShare, {expires:365});
+		}, this);
+	}
+});
+
+SplitContainer.ChildWidgetProperties = {
+	// summary:
+	//		These properties can be specified for the children of a SplitContainer.
+
+	// sizeMin: [deprecated] Integer
+	//		Minimum size (width or height) of a child of a SplitContainer.
+	//		The value is relative to other children's sizeShare properties.
+	sizeMin: 10,
+
+	// sizeShare: [deprecated] Integer
+	//		Size (width or height) of a child of a SplitContainer.
+	//		The value is relative to other children's sizeShare properties.
+	//		For example, if there are two children and each has sizeShare=10, then
+	//		each takes up 50% of the available space.
+	sizeShare: 10
+};
+
+// Since any widget can be specified as a SplitContainer child, mix them
+// into the base widget class.  (This is a hack, but it's effective.)
+// This is for the benefit of the parser.   Remove for 2.0.  Also, hide from doc viewer.
+lang.extend(_WidgetBase, /*===== {} || =====*/ SplitContainer.ChildWidgetProperties);
+
+return SplitContainer;
+
+});

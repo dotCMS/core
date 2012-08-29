@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/th/Save", //begin v1.x content
-({
+"dojox/editor/plugins/nls/th/Save", ({
 	"save": "บันทึก"
 })
-
-//end v1.x content
 );

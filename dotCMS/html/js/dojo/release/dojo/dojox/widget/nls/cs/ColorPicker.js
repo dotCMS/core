@@ -1,13 +1,13 @@
-//>>built
 define(
-"dojox/widget/nls/cs/ColorPicker", //begin v1.x content
-({
+"dojox/widget/nls/cs/ColorPicker", ({
 redLabel: "č",
 greenLabel: "z",
 blueLabel: "m",
 hueLabel: "o",
 saturationLabel: "n",
 valueLabel: "j", /* aka intensity or brightness */
+degLabel: "\u00B0",
+hexLabel: "hex",
 huePickerTitle: "Selektor odstínu",
 saturationPickerTitle: "Selektor sytosti"
 })

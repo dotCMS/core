@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/pt/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/pt/TableDialog", ({
 	insertTableTitle: "Inserir Tabela",
 	modifyTableTitle: "Modificar Tabela",
 	rows: "Linhas:",
@@ -12,17 +10,16 @@ define(
 	tableWidth: "Largura da Tabela:",
 	backgroundColor: "Cor do Plano de Fundo:",
 	borderColor: "Cor da Borda:",
-	borderThickness: "Grossura da Borda",
+	borderThickness: "Espessura da Borda:",
 	percent: "percentual",
 	pixels: "pixels",
-	"default": "default",
+	"default": "padrão",
 	left: "esquerda",
 	center: "centro",
 	right: "direita",
 	buttonSet: "Configurar", // translated elsewhere?
 	buttonInsert: "Inserir",
 	buttonCancel: "Cancelar",
-
 	selectTableLabel: "Selecionar Tabela",
 	insertTableRowBeforeLabel: "Incluir Linha Antes",
 	insertTableRowAfterLabel: "Incluir Linha Depois",
@@ -31,6 +28,4 @@ define(
 	deleteTableRowLabel: "Excluir Linha",
 	deleteTableColumnLabel: "Excluir Coluna"
 })
-	
-//end v1.x content
 );

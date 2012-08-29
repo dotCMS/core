@@ -1,2 +1,11 @@
-//>>built
-define("dojox/uuid",["dojox/uuid/_base"],function(_1){return _1;});
+define("dojox/uuid", ['dojox/uuid/_base'], function(uuid){
+
+	/*=====
+	 return {
+	 // summary:
+	 //		Deprecated.  Should require dojox/uuid modules directly rather than trying to access them through
+	 //		this module.
+	 };
+	 =====*/
+	return uuid;
+});

@@ -1,2 +1,450 @@
-//>>built
-define("dijit/_editor/plugins/FullScreen",["dojo/aspect","dojo/_base/declare","dojo/dom-class","dojo/dom-geometry","dojo/dom-style","dojo/_base/event","dojo/i18n","dojo/keys","dojo/_base/lang","dojo/on","dojo/_base/sniff","dojo/_base/window","dojo/window","../../focus","../_Plugin","../../form/ToggleButton","../../registry","dojo/i18n!../nls/commands"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,on,_a,_b,_c,_d,_e,_f,_10){var _11=_2("dijit._editor.plugins.FullScreen",_e,{zIndex:500,_origState:null,_origiFrameState:null,_resizeHandle:null,isFullscreen:false,toggle:function(){this.button.set("checked",!this.button.get("checked"));},_initButton:function(){var _12=_7.getLocalization("dijit._editor","commands"),_13=this.editor;this.button=new _f({label:_12["fullScreen"],dir:_13.dir,lang:_13.lang,showLabel:false,iconClass:this.iconClassPrefix+" "+this.iconClassPrefix+"FullScreen",tabIndex:"-1",onChange:_9.hitch(this,"_setFullScreen")});},setEditor:function(_14){this.editor=_14;this._initButton();this.editor.addKeyHandler(_8.F11,true,true,_9.hitch(this,function(e){this.toggle();_6.stop(e);setTimeout(_9.hitch(this,function(){this.editor.focus();}),250);return true;}));this.connect(this.editor.domNode,"onkeydown","_containFocus");},_containFocus:function(e){if(this.isFullscreen){var ed=this.editor;if(!ed.isTabIndent&&ed._fullscreen_oldOnKeyDown&&e.keyCode===_8.TAB){var f=_d.curNode;var avn=this._getAltViewNode();if(f==ed.iframe||(avn&&f===avn)){setTimeout(_9.hitch(this,function(){ed.toolbar.focus();}),10);}else{if(avn&&_5.get(ed.iframe,"display")==="none"){setTimeout(_9.hitch(this,function(){_d.focus(avn);}),10);}else{setTimeout(_9.hitch(this,function(){ed.focus();}),10);}}_6.stop(e);}else{if(ed._fullscreen_oldOnKeyDown){ed._fullscreen_oldOnKeyDown(e);}}}},_resizeEditor:function(){var vp=_c.getBox();_4.setMarginBox(this.editor.domNode,{w:vp.w,h:vp.h});var _15=this.editor.getHeaderHeight();var _16=this.editor.getFooterHeight();var _17=_4.getPadBorderExtents(this.editor.domNode);var _18=_4.getPadBorderExtents(this.editor.iframe.parentNode);var _19=_4.getMarginExtents(this.editor.iframe.parentNode);var _1a=vp.h-(_15+_17.h+_16);_4.setMarginBox(this.editor.iframe.parentNode,{h:_1a,w:vp.w});_4.setMarginBox(this.editor.iframe,{h:_1a-(_18.h+_19.h)});},_getAltViewNode:function(){},_setFullScreen:function(_1b){var vp=_c.getBox();var ed=this.editor;var _1c=_b.body();var _1d=ed.domNode.parentNode;this.isFullscreen=_1b;if(_1b){while(_1d&&_1d!==_b.body()){_3.add(_1d,"dijitForceStatic");_1d=_1d.parentNode;}this._editorResizeHolder=this.editor.resize;ed.resize=function(){};ed._fullscreen_oldOnKeyDown=ed.onKeyDown;ed.onKeyDown=_9.hitch(this,this._containFocus);this._origState={};this._origiFrameState={};var _1e=ed.domNode,_1f=_1e&&_1e.style||{};this._origState={width:_1f.width||"",height:_1f.height||"",top:_5.get(_1e,"top")||"",left:_5.get(_1e,"left")||"",position:_5.get(_1e,"position")||"static",marginBox:_4.getMarginBox(ed.domNode)};var _20=ed.iframe,_21=_20&&_20.style||{};var bc=_5.get(ed.iframe,"backgroundColor");this._origiFrameState={backgroundColor:bc||"transparent",width:_21.width||"auto",height:_21.height||"auto",zIndex:_21.zIndex||""};_5.set(ed.domNode,{position:"absolute",top:"0px",left:"0px",zIndex:this.zIndex,width:vp.w+"px",height:vp.h+"px"});_5.set(ed.iframe,{height:"100%",width:"100%",zIndex:this.zIndex,backgroundColor:bc!=="transparent"&&bc!=="rgba(0, 0, 0, 0)"?bc:"white"});_5.set(ed.iframe.parentNode,{height:"95%",width:"100%"});if(_1c.style&&_1c.style.overflow){this._oldOverflow=_5.get(_1c,"overflow");}else{this._oldOverflow="";}if(_a("ie")&&!_a("quirks")){if(_1c.parentNode&&_1c.parentNode.style&&_1c.parentNode.style.overflow){this._oldBodyParentOverflow=_1c.parentNode.style.overflow;}else{try{this._oldBodyParentOverflow=_5.get(_1c.parentNode,"overflow");}catch(e){this._oldBodyParentOverflow="scroll";}}_5.set(_1c.parentNode,"overflow","hidden");}_5.set(_1c,"overflow","hidden");var _22=function(){var vp=_c.getBox();if("_prevW" in this&&"_prevH" in this){if(vp.w===this._prevW&&vp.h===this._prevH){return;}}else{this._prevW=vp.w;this._prevH=vp.h;}if(this._resizer){clearTimeout(this._resizer);delete this._resizer;}this._resizer=setTimeout(_9.hitch(this,function(){delete this._resizer;this._resizeEditor();}),10);};this._resizeHandle=on(window,"resize",_9.hitch(this,_22));this._resizeHandle2=_1.after(ed,"onResize",_9.hitch(this,function(){if(this._resizer){clearTimeout(this._resizer);delete this._resizer;}this._resizer=setTimeout(_9.hitch(this,function(){delete this._resizer;this._resizeEditor();}),10);}));this._resizeEditor();var dn=this.editor.toolbar.domNode;setTimeout(function(){_c.scrollIntoView(dn);},250);}else{if(this._resizeHandle){this._resizeHandle.remove();this._resizeHandle=null;}if(this._resizeHandle2){this._resizeHandle2.remove();this._resizeHandle2=null;}if(this._rst){clearTimeout(this._rst);this._rst=null;}while(_1d&&_1d!==_b.body()){_3.remove(_1d,"dijitForceStatic");_1d=_1d.parentNode;}if(this._editorResizeHolder){this.editor.resize=this._editorResizeHolder;}if(!this._origState&&!this._origiFrameState){return;}if(ed._fullscreen_oldOnKeyDown){ed.onKeyDown=ed._fullscreen_oldOnKeyDown;delete ed._fullscreen_oldOnKeyDown;}var _23=this;setTimeout(function(){var mb=_23._origState.marginBox;var oh=_23._origState.height;if(_a("ie")&&!_a("quirks")){_1c.parentNode.style.overflow=_23._oldBodyParentOverflow;delete _23._oldBodyParentOverflow;}_5.set(_1c,"overflow",_23._oldOverflow);delete _23._oldOverflow;_5.set(ed.domNode,_23._origState);_5.set(ed.iframe.parentNode,{height:"",width:""});_5.set(ed.iframe,_23._origiFrameState);delete _23._origState;delete _23._origiFrameState;var _24=_10.getEnclosingWidget(ed.domNode.parentNode);if(_24&&_24.resize){_24.resize();}else{if(!oh||oh.indexOf("%")<0){setTimeout(_9.hitch(this,function(){ed.resize({h:mb.h});}),0);}}_c.scrollIntoView(_23.editor.toolbar.domNode);},100);}},updateState:function(){this.button.set("disabled",this.get("disabled"));},destroy:function(){if(this._resizeHandle){this._resizeHandle.remove();this._resizeHandle=null;}if(this._resizeHandle2){this._resizeHandle2.remove();this._resizeHandle2=null;}if(this._resizer){clearTimeout(this._resizer);this._resizer=null;}this.inherited(arguments);}});_e.registry["fullScreen"]=_e.registry["fullscreen"]=function(_25){return new _11({zIndex:("zIndex" in _25)?_25.zIndex:500});};return _11;});
+define("dijit/_editor/plugins/FullScreen", [
+	"dojo/aspect",
+	"dojo/_base/declare", // declare
+	"dojo/dom-class", // domClass.add domClass.remove
+	"dojo/dom-geometry",
+	"dojo/dom-style",
+	"dojo/_base/event", // event.stop
+	"dojo/i18n", // i18n.getLocalization
+	"dojo/keys", // keys.F11 keys.TAB
+	"dojo/_base/lang", // lang.hitch
+	"dojo/on", // on()
+	"dojo/sniff", // has("ie"), has("quirks")
+	"dojo/_base/window", // win.body
+	"dojo/window", // winUtils.getBox winUtils.scrollIntoView
+	"../../focus",			// focus.focus(), focus.curNode
+	"../_Plugin",
+	"../../form/ToggleButton",
+	"../../registry", // registry.getEnclosingWidget()
+	"dojo/i18n!../nls/commands"
+], function(aspect, declare, domClass, domGeometry, domStyle, event, i18n, keys, lang, on, has, win, winUtils,
+			focus, _Plugin, ToggleButton, registry){
+
+
+// module:
+//		dijit/_editor/plugins/FullScreen
+
+
+var FullScreen = declare("dijit._editor.plugins.FullScreen",_Plugin,{
+	// summary:
+	//		This plugin provides FullScreen capability to the editor.  When
+	//		toggled on, it will render the editor into the full window and
+	//		overlay everything.  It also binds to the hotkey: CTRL-SHIFT-F11
+	//		for toggling fullscreen mode.
+
+	// zIndex: [public] Number
+	//		zIndex value used for overlaying the full page.
+	//		default is 500.
+	zIndex: 500,
+
+	// _origState: [private] Object
+	//		The original view state of the editor.
+	_origState: null,
+
+	// _origiFrameState: [private] Object
+	//		The original view state of the iframe of the editor.
+	_origiFrameState: null,
+
+	// _resizeHandle: [private] Object
+	//		Connection point used for handling resize when window resizes.
+	_resizeHandle: null,
+
+	// isFullscreen: [const] boolean
+	//		Read-Only variable used to denote of the editor is in fullscreen mode or not.
+	isFullscreen: false,
+
+	toggle: function(){
+		// summary:
+		//		Function to allow programmatic toggling of the view.
+		this.button.set("checked", !this.button.get("checked"));
+	},
+
+	_initButton: function(){
+		// summary:
+		//		Over-ride for creation of the resize button.
+		var strings = i18n.getLocalization("dijit._editor", "commands"),
+			editor = this.editor;
+		this.button = new ToggleButton({
+			label: strings["fullScreen"],
+			ownerDocument: editor.ownerDocument,
+			dir: editor.dir,
+			lang: editor.lang,
+			showLabel: false,
+			iconClass: this.iconClassPrefix + " " + this.iconClassPrefix + "FullScreen",
+			tabIndex: "-1",
+			onChange: lang.hitch(this, "_setFullScreen")
+		});
+	},
+
+	setEditor: function(editor){
+		// summary:
+		//		Over-ride for the setting of the editor.
+		// editor: Object
+		//		The editor to configure for this plugin to use.
+		this.editor = editor;
+		this._initButton();
+
+		this.editor.addKeyHandler(keys.F11, true, true, lang.hitch(this, function(e){
+			// Enable the CTRL-SHIFT-F11 hotkey for fullscreen mode.
+			this.toggle();
+			event.stop(e);
+			setTimeout(lang.hitch(this, function(){this.editor.focus();}), 250);
+			return true;
+		}));
+		this.connect(this.editor.domNode, "onkeydown", "_containFocus");
+	},
+
+	_containFocus: function(e){
+		// summary:
+		//		When in Full Screen mode, it's good to try and retain focus in the editor
+		//		so this function is intended to try and constrain the TAB key.
+		// e: Event
+		//		The key event.
+		// tags:
+		//		private
+		if(this.isFullscreen){
+			var ed = this.editor;
+			if(!ed.isTabIndent &&
+				ed._fullscreen_oldOnKeyDown &&
+				e.keyCode === keys.TAB){
+				// If we're in fullscreen mode, we want to take over how tab moves focus a bit.
+				// to keep it within the editor since it's hiding the rest of the page.
+				// IE hates changing focus IN the event handler, so need to put calls
+				// in a timeout.  Gotta love IE.
+				// Also need to check for alternate view nodes if present and active.
+				var f = focus.curNode;
+				var avn = this._getAltViewNode();
+				if(f == ed.iframe ||
+					(avn && f === avn)){
+					setTimeout(lang.hitch(this, function(){
+						ed.toolbar.focus();
+					}), 10);
+				}else{
+					if(avn && domStyle.get(ed.iframe, "display") === "none"){
+						setTimeout(lang.hitch(this, function(){
+							focus.focus(avn);
+						}), 10);
+					}else{
+						setTimeout(lang.hitch(this, function(){
+							ed.focus();
+						}), 10);
+					}
+				}
+				event.stop(e);
+			}else if(ed._fullscreen_oldOnKeyDown){
+				// Only call up when it's a different function.  Traps corner case event issue
+				// on IE which caused stack overflow on handler cleanup.
+				ed._fullscreen_oldOnKeyDown(e);
+			}
+		}
+	},
+
+	_resizeEditor: function(){
+		// summary:
+		//		Function to handle resizing the editor as the viewport
+		//		resizes (window scaled)
+		// tags:
+		//		private
+		var vp = winUtils.getBox(this.editor.ownerDocument);
+		domGeometry.setMarginBox(this.editor.domNode, {
+			w: vp.w,
+			h: vp.h
+		});
+
+		//Adjust the internal heights too, as they can be a bit off.
+		var hHeight = this.editor.getHeaderHeight();
+		var fHeight = this.editor.getFooterHeight();
+		var extents = domGeometry.getPadBorderExtents(this.editor.domNode);
+		var fcpExtents = domGeometry.getPadBorderExtents(this.editor.iframe.parentNode);
+		var fcmExtents = domGeometry.getMarginExtents(this.editor.iframe.parentNode);
+
+		var cHeight = vp.h - (hHeight + extents.h + fHeight);
+		domGeometry.setMarginBox(this.editor.iframe.parentNode, {
+			h: cHeight,
+			w: vp.w
+		});
+		domGeometry.setMarginBox(this.editor.iframe, {
+			h: cHeight - (fcpExtents.h + fcmExtents.h)
+		});
+	},
+
+	_getAltViewNode: function(){
+		// summary:
+		//		This function is intended as a hook point for setting an
+		//		alternate view node for when in full screen mode and the
+		//		editable iframe is hidden.
+		// tags:
+		//		protected.
+	},
+
+	_setFullScreen: function(full){
+		// summary:
+		//		Function to handle toggling between full screen and
+		//		regular view.
+		// tags:
+		//		private
+
+		//Alias this for shorter code.
+		var ed = this.editor;
+		var body = ed.ownerDocumentBody;
+		var editorParent = ed.domNode.parentNode;
+
+		var vp = winUtils.getBox(ed.ownerDocument);
+
+		this.isFullscreen = full;
+
+		if(full){
+			//Parent classes can royally screw up this plugin, so we
+			//have to set everything to position static.
+			while(editorParent && editorParent !== body){
+				domClass.add(editorParent, "dijitForceStatic");
+				editorParent = editorParent.parentNode;
+			}
+
+			// Save off the resize function.  We want to kill its behavior.
+			this._editorResizeHolder = this.editor.resize;
+			ed.resize = function(){} ;
+
+			// Try to constrain focus control.
+			ed._fullscreen_oldOnKeyDown = ed.onKeyDown;
+			ed.onKeyDown = lang.hitch(this, this._containFocus);
+
+			this._origState = {};
+			this._origiFrameState = {};
+
+			// Store the basic editor state we have to restore later.
+			// Not using domStyle.get here, had problems, didn't
+			// give me stuff like 100%, gave me pixel calculated values.
+			// Need the exact original values.
+			var domNode = ed.domNode,
+				rawStyle = domNode && domNode.style || {};
+			this._origState = {
+				width: rawStyle.width || "",
+				height: rawStyle.height || "",
+				top: domStyle.get(domNode, "top") || "",
+				left: domStyle.get(domNode, "left") || "",
+				position: domStyle.get(domNode, "position") || "static",
+				marginBox: domGeometry.getMarginBox(ed.domNode)
+			};
+
+			// Store the iframe state we have to restore later.
+			// Not using domStyle.get here, had problems, didn't
+			// give me stuff like 100%, gave me pixel calculated values.
+			// Need the exact original values.
+			var iframe = ed.iframe,
+				iframeStyle = iframe && iframe.style || {};
+
+			var bc = domStyle.get(ed.iframe, "backgroundColor");
+			this._origiFrameState = {
+				backgroundColor: bc || "transparent",
+				width: iframeStyle.width || "auto",
+				height: iframeStyle.height || "auto",
+				zIndex: iframeStyle.zIndex || ""
+			};
+
+			// Okay, size everything.
+			domStyle.set(ed.domNode, {
+				position: "absolute",
+				top: "0px",
+				left: "0px",
+				zIndex: this.zIndex,
+				width: vp.w + "px",
+				height: vp.h + "px"
+			});
+
+			domStyle.set(ed.iframe, {
+				height: "100%",
+				width: "100%",
+				zIndex: this.zIndex,
+				backgroundColor: bc !== "transparent" &&
+					bc !== "rgba(0, 0, 0, 0)"?bc:"white"
+			});
+
+			domStyle.set(ed.iframe.parentNode, {
+				height: "95%",
+				width: "100%"
+			});
+
+			// Store the overflow state we have to restore later.
+			// IE had issues, so have to check that it's defined.  Ugh.
+			if(body.style && body.style.overflow){
+				this._oldOverflow = domStyle.get(body, "overflow");
+			}else{
+				this._oldOverflow = "";
+			}
+
+			if(has("ie") && !has("quirks")){
+				// IE will put scrollbars in anyway, html (parent of body)
+				// also controls them in standards mode, so we have to
+				// remove them, argh.
+				if(body.parentNode &&
+					body.parentNode.style &&
+					body.parentNode.style.overflow){
+					this._oldBodyParentOverflow = body.parentNode.style.overflow;
+				}else{
+					try{
+						this._oldBodyParentOverflow = domStyle.get(body.parentNode, "overflow");
+					}catch(e){
+						this._oldBodyParentOverflow = "scroll";
+					}
+				}
+				domStyle.set(body.parentNode, "overflow", "hidden");
+			}
+			domStyle.set(body, "overflow", "hidden");
+
+			var resizer = function(){
+				// function to handle resize events.
+				// Will check current VP and only resize if
+				// different.
+				var vp = winUtils.getBox(ed.ownerDocument);
+				if("_prevW" in this && "_prevH" in this){
+					// No actual size change, ignore.
+					if(vp.w === this._prevW && vp.h === this._prevH){
+						return;
+					}
+				}else{
+					this._prevW = vp.w;
+					this._prevH = vp.h;
+				}
+				if(this._resizer){
+					clearTimeout(this._resizer);
+					delete this._resizer;
+				}
+				// Timeout it to help avoid spamming resize on IE.
+				// Works for all browsers.
+				this._resizer = setTimeout(lang.hitch(this, function(){
+					delete this._resizer;
+					this._resizeEditor();
+				}), 10);
+			};
+			this._resizeHandle = on(window, "resize", lang.hitch(this, resizer));
+
+			// Also monitor for direct calls to resize and adapt editor.
+			this._resizeHandle2 = aspect.after(ed, "onResize", lang.hitch(this, function(){
+				if(this._resizer){
+					clearTimeout(this._resizer);
+					delete this._resizer;
+				}
+				this._resizer = setTimeout(lang.hitch(this, function(){
+					delete this._resizer;
+					this._resizeEditor();
+				}), 10);
+			}));
+
+			// Call it once to work around IE glitchiness.  Safe for other browsers too.
+			this._resizeEditor();
+			var dn = this.editor.toolbar.domNode;
+			setTimeout(function(){winUtils.scrollIntoView(dn);}, 250);
+		}else{
+			if(this._resizeHandle){
+				// Cleanup resizing listeners
+				this._resizeHandle.remove();
+				this._resizeHandle = null;
+			}
+			if(this._resizeHandle2){
+				// Cleanup resizing listeners
+				this._resizeHandle2.remove();
+				this._resizeHandle2 = null;
+			}
+			if(this._rst){
+				clearTimeout(this._rst);
+				this._rst = null;
+			}
+
+			//Remove all position static class assigns.
+			while(editorParent && editorParent !== body){
+				domClass.remove(editorParent, "dijitForceStatic");
+				editorParent = editorParent.parentNode;
+			}
+
+			// Restore resize function
+			if(this._editorResizeHolder){
+				this.editor.resize = this._editorResizeHolder;
+			}
+
+			if(!this._origState && !this._origiFrameState){
+				// If we actually didn't toggle, then don't do anything.
+				return;
+			}
+			if(ed._fullscreen_oldOnKeyDown){
+				ed.onKeyDown = ed._fullscreen_oldOnKeyDown;
+				delete ed._fullscreen_oldOnKeyDown;
+			}
+
+			// Add a timeout to make sure we don't have a resize firing in the
+			// background at the time of minimize.
+			var self = this;
+			setTimeout(function(){
+				// Restore all the editor state.
+				var mb = self._origState.marginBox;
+				var oh = self._origState.height;
+				if(has("ie") && !has("quirks")){
+					body.parentNode.style.overflow = self._oldBodyParentOverflow;
+					delete self._oldBodyParentOverflow;
+				}
+				domStyle.set(body, "overflow", self._oldOverflow);
+				delete self._oldOverflow;
+
+				domStyle.set(ed.domNode, self._origState);
+				domStyle.set(ed.iframe.parentNode, {
+					height: "",
+					width: ""
+				});
+				domStyle.set(ed.iframe, self._origiFrameState);
+				delete self._origState;
+				delete self._origiFrameState;
+				// In case it is contained in a layout and the layout changed size,
+				// go ahead and call resize.
+				var pWidget = registry.getEnclosingWidget(ed.domNode.parentNode);
+				if(pWidget && pWidget.resize){
+					pWidget.resize();
+				}else{
+					if(!oh || oh.indexOf("%") < 0){
+						// Resize if the original size wasn't set
+						// or wasn't in percent.  Timeout is to avoid
+						// an IE crash in unit testing.
+						setTimeout(lang.hitch(this, function(){ed.resize({h: mb.h});}), 0);
+					}
+				}
+				winUtils.scrollIntoView(self.editor.toolbar.domNode);
+			}, 100);
+		}
+	},
+
+	updateState: function(){
+		// summary:
+		//		Over-ride for button state control for disabled to work.
+		this.button.set("disabled", this.get("disabled"));
+	},
+
+	destroy: function(){
+		// summary:
+		//		Over-ride to ensure the resize handle gets cleaned up.
+		if(this._resizeHandle){
+			// Cleanup resizing listeners
+			this._resizeHandle.remove();
+			this._resizeHandle = null;
+		}
+		if(this._resizeHandle2){
+			// Cleanup resizing listeners
+			this._resizeHandle2.remove();
+			this._resizeHandle2 = null;
+		}
+		if(this._resizer){
+			clearTimeout(this._resizer);
+			this._resizer = null;
+		}
+		this.inherited(arguments);
+	}
+});
+
+// Register this plugin.
+// For back-compat accept "fullscreen" (all lowercase) too, remove in 2.0
+_Plugin.registry["fullScreen"] = _Plugin.registry["fullscreen"] = function(args){
+	return new FullScreen({
+		zIndex: ("zIndex" in args)?args.zIndex:500
+	});
+};
+
+return FullScreen;
+});

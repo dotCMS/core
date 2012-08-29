@@ -1,0 +1,451 @@
+Build started: Wed Aug 22 2012 11:48:33 GMT-0430 (VET)
+Build application version: 1.7.0dev (23930)
+Messages:
+info(100) Assumed module uses legacy loader API.
+	module: dojox/mobile/app/_FormWidget
+	module: dojox/jsonPath/query
+	module: dojox/data/demos/widgets/PicasaViewList
+	module: dojox/lang/oo/mixin
+	module: dojox/wire/XmlWire
+	module: dojox/xmpp/sasl
+	module: dojox/lang/oo/general
+	module: dojox/secure/capability
+	module: dojox/mobile/app/_event
+	module: dojox/storage/manager
+	module: dojox/widget/gauge/AnalogArcIndicator
+	module: dojox/layout/BorderContainer
+	module: dojox/layout/dnd/PlottedDnd
+	module: dojox/lang/async/timeout
+	module: dojox/wire/CompositeWire
+	module: dojox/secure/fromJson
+	module: dojox/wire/ml/XmlHandler
+	module: dojox/data/demos/widgets/FlickrViewList
+	module: dojox/lang/aspect/profiler
+	module: dojox/widget/FilePicker
+	module: dojox/mobile/app/_base
+	module: dojox/widget/gauge/AnalogArrowIndicator
+	module: dojox/lang/async
+	module: dojox/lang/aspect/timer
+	module: dojox/lang/oo/rearrange
+	module: dojox/mobile/app/_Widget
+	module: dojox/socket/Reconnect
+	module: dojox/wire/ml/Data
+	module: dojox/xmpp/TransportSession
+	module: dojox/lang/typed
+	module: dojox/wire/ml/Invocation
+	module: dojox/widget/gauge/AnalogNeedleIndicator
+	module: dojox/xmpp/ChatService
+	module: dojox/wire/TreeAdapter
+	module: dojox/xmpp/PresenceService
+	module: dojox/lang/aspect/tracer
+	module: dojox/wire/DataWire
+	module: dojox/widget/SortList
+	module: dojox/mobile/app/compat
+	module: dojox/data/restListener
+	module: dojox/xmpp/RosterService
+	module: dojox/drawing/plugins/drawing/Silverlight
+	module: dojox/widget/DocTester
+	module: dojox/storage/Provider
+	module: dojox/lang/observable
+	module: dojox/data/ItemExplorer
+	module: dojox/help/console
+	module: dojox/lang/oo/Decorator
+	module: dojox/secure/DOM
+	module: dojox/wire/ml/JsonHandler
+	module: dojox/widget/DataPresentation
+	module: dojox/widget/FeedPortlet
+	module: dojox/lang/async/topic
+	module: dojox/widget/RollingList
+	module: dojox/flash/_base
+	module: dojox/widget/gauge/BarIndicator
+	module: dojox/image/SlideShow
+	module: dojox/lang/aspect/memoizer
+	module: dojox/data/demos/widgets/FileView
+	module: dojox/xmpp/xmppSession
+	module: dojox/image/Gallery
+	module: dojox/storage/AirDBStorageProvider
+	module: dojox/widget/Iterator
+	module: dojox/storage/AirEncryptedLocalStorageProvider
+	module: dojox/layout/ext-dijit/layout/StackContainer-touch
+	module: dojox/lang/functional/listcomp
+	module: dojox/lang/functional/binrec
+	module: dojox/rails
+	module: dojox/wire/ml/DataStore
+	module: dojox/mobile/app/ImageView
+	module: dojox/widget/BarGauge
+	module: dojox/lang/functional/util
+	module: dojox/storage/BehaviorStorageProvider
+	module: dojox/lang/aspect/memoizerGuard
+	module: dojox/mobile/app/TextBox
+	module: dojox/lang/async/event
+	module: dojox/wire/ml/Action
+	module: dojox/storage/GearsStorageProvider
+	module: dojox/help/_base
+	module: dojox/mobile/app/ListSelector
+	module: dojox/lang/oo/aop
+	module: dojox/lang/functional/tailrec
+	module: dojox/wire/demos/TableContainer
+	module: dojox/sql/_crypto
+	module: dojox/lang/aspect
+	module: dojox/mobile/app/ImageThumbView
+	module: dojox/mobile/app/SceneAssistant
+	module: dojox/lang/aspect/counter
+	module: dojox/layout/dnd/Avatar
+	module: dojox/xmpp/util
+	module: dojox/wire/ml/Transfer
+	module: dojox/widget/Loader
+	module: dojox/storage/LocalStorageProvider
+	module: dojox/wire/TextAdapter
+	module: dojox/storage/AirFileStorageProvider
+	module: dojox/lang/functional/curry
+	module: dojox/storage/CookieStorageProvider
+	module: dojox/lang/functional/linrec
+	module: dojox/xmpp/widget/ChatSession
+	module: dojox/storage/WhatWGStorageProvider
+	module: dojox/data/demos/widgets/PicasaView
+	module: dojox/wire/ml/util
+	module: dojox/widget/AnalogGauge
+	module: dojox/lang/aspect/cflow
+	module: dojox/xmpp/bosh
+	module: dojox/widget/gauge/_Gauge
+	module: dojox/data/demos/stores/LazyLoadJSIStore
+	module: dojox/wire/Wire
+	module: dojox/wire/_base
+	module: dojox/editor/plugins/ResizeTableColumn
+	module: dojox/lang/functional/numrec
+	module: dojox/mobile/app/List
+	module: dojox/secure/sandbox
+	module: dojox/wire/ml/RestHandler
+	module: dojox/sql/_base
+	module: dojox/wire/TableAdapter
+	module: dojox/editor/plugins/SpellCheck
+	module: dojox/storage/_common
+	module: dojox/jq
+	module: dojox/wire/demos/WidgetRepeater
+	module: dojox/mobile/app/StageController
+	module: dojox/widget/DynamicTooltip
+	module: dojox/data/StoreExplorer
+	module: dojox/xmpp/UserService
+	module: dojox/lang/functional/zip
+	module: dojox/mobile/app/SceneController
+	module: dojox/lang/functional/multirec
+	module: dojox/wire/ml/Service
+	module: dojox/robot/recorder
+	module: dojox/mobile/app/AlertDialog
+	module: dojox/storage/FlashStorageProvider
+	module: dojox/lang/docs
+	module: dojox/lang/oo/Filter
+	module: dojox/image/ThumbnailPicker
+info(102) Optimizing module
+	module: dojo/dojo
+	module: dojo/dot-dojo
+info(107) Package Version:
+	package: dijit; version: 1.8.0
+	package: dojox; version: 1.8.0
+	package: dojo; version: 1.8.0
+warn(216) dojo/has plugin resource could not be resolved during build-time.
+	plugin resource id: touch?dojox/gesture/tap; reference module id: dojox/treemap/DrillDownUp
+	plugin resource id: dojo-parser?:dojo/_base/window; reference module id: dojox/mvc/parserExtension
+	plugin resource id: dojo-mobile-parser?:dojo/parser; reference module id: dojox/mvc/parserExtension
+	plugin resource id: dojo-parser?:dojox/mobile/parser; reference module id: dojox/mvc/parserExtension
+	plugin resource id: dojo-firebug?./_firebug/firebug; reference module id: dojo/main
+	plugin resource id: dom-addeventlistener?:./aspect; reference module id: dojo/on
+	plugin resource id: host-browser?dom-addeventlistener?:../on:; reference module id: dojo/request/watch
+warn(224) A plugin dependency was encountered but there was no build-time plugin resolver.
+	module: dojox/mobile/TimePicker; plugin: dojox/mobile/_PickerChooser
+	module: dojox/mobile/DatePicker; plugin: dojox/mobile/_PickerChooser
+	module: dojo/request/node; plugin: dojo/node
+	module: dojo/request/node; plugin: dojo/node
+	module: dojo/request/node; plugin: dojo/node
+	module: dojo/request/node; plugin: dojo/node
+	module: dojo/request; plugin: dojo/request/default
+	module: dojo/request/registry; plugin: dojo/request/default
+Layer Contents:
+dojo/dot-dojo:
+	dijit/form/nls/validate
+	dijit/templates/CheckedMenuItem.html
+	dijit/form/TextBox
+	dojox/grid/DataGrid
+	dijit/_base/scroll
+	dijit/_TemplatedMixin
+	dojox/grid/_FocusManager
+	dojox/grid/EnhancedGrid
+	dijit/_CssStateMixin
+	dijit/DialogUnderlay
+	dijit/layout/ScrollingTabController
+	dijit/place
+	dojo/data/api/Identity
+	dijit/_HasDropDown
+	dijit/tree/TreeStoreModel
+	dojo/dnd/Selector
+	dijit/form/Slider
+	dijit/_MenuBase
+	dijit/focus
+	dojo/i18n
+	dijit/hccss
+	dijit/tree/ForestStoreModel
+	dojox/html/metrics
+	dijit/layout/templates/AccordionButton.html
+	dijit/TitlePane
+	dijit/form/_ComboBoxMenuMixin
+	dojo/parser
+	dijit/form/_SearchMixin
+	dojox/grid/_RowSelector
+	dijit/form/templates/DropDownButton.html
+	dojo/dnd/Manager
+	dijit/form/ToggleButton
+	dojo/date/stamp
+	dijit/form/Textarea
+	dojo/Stateful
+	dijit/form/DateTextBox
+	dijit/layout/AccordionContainer
+	dijit/templates/Calendar.html
+	dijit/form/_AutoCompleterMixin
+	dojox/grid/Selection
+	dijit/layout/templates/_ScrollingTabControllerButton.html
+	dijit/form/MappedTextBox
+	dijit/form/ComboBoxMixin
+	dijit/form/_TextBoxMixin
+	dijit/form/SimpleTextarea
+	dijit/layout/templates/_TabButton.html
+	dijit/_base/window
+	dijit/PopupMenuItem
+	dojo/hccss
+	dijit/form/templates/HorizontalSlider.html
+	dijit/main
+	dojox/grid/enhanced/_PluginManager
+	dijit/_OnDijitClickMixin
+	dojo/dnd/autoscroll
+	dojo/data/ItemFileWriteStore
+	dijit/templates/TreeNode.html
+	dojo/dnd/TimedMoveable
+	dojox/grid/enhanced/_Events
+	dijit/form/_ListMouseMixin
+	dijit/templates/Tree.html
+	dojo/cookie
+	dojo/cache
+	dijit/form/templates/DropDownBox.html
+	dijit/ProgressBar
+	dojox/grid/_ViewManager
+	dijit/_base/popup
+	dijit/form/NumberTextBox
+	dijit/form/templates/Button.html
+	dojo/_base/url
+	dojox/main
+	dojox/grid/enhanced/plugins/Menu
+	dojo/text
+	dijit/templates/MenuItem.html
+	dijit/form/templates/CheckBox.html
+	dojo/cldr/nls/gregorian
+	dijit/form/templates/VerticalSlider.html
+	dojo/uacss
+	dijit/Tooltip
+	dojo/string
+	dijit/templates/MenuSeparator.html
+	dijit/layout/AccordionPane
+	dijit/form/VerticalSlider
+	dijit/dijit
+	dijit/form/DropDownButton
+	dijit/form/_FormValueMixin
+	dijit/form/_FormWidgetMixin
+	dijit/a11yclick
+	dijit/templates/ProgressBar.html
+	dojox/grid/cells
+	dojox/grid/enhanced/_FocusManager
+	dojo/date
+	dijit/Destroyable
+	dojox/grid/_Layout
+	dijit/layout/_ContentPaneResizeMixin
+	dijit/form/RangeBoundTextBox
+	dijit/WidgetSet
+	dijit/nls/loading
+	dojo/dnd/Moveable
+	dojox/form/DropDownSelect
+	dijit/TooltipDialog
+	dojo/store/util/SimpleQueryEngine
+	dijit/form/_ExpandingTextAreaMixin
+	dojo/cldr/nls/number
+	dojo/data/api/Read
+	dojox/grid/_View
+	dijit/typematic
+	dijit/MenuItem
+	dijit/layout/TabController
+	dojo/cldr/supplemental
+	dijit/layout/_LayoutWidget
+	dijit/popup
+	dijit/_base/manager
+	dijit/layout/StackController
+	dojox/grid/enhanced/plugins/_SelectionPreserver
+	dojox/grid/_RowManager
+	dijit/templates/TooltipDialog.html
+	dojo/dnd/Mover
+	dijit/form/HorizontalRule
+	dijit/layout/TabContainer
+	dijit/BackgroundIframe
+	dijit/templates/Menu.html
+	dojo/dnd/Avatar
+	dijit/form/Button
+	dijit/layout/templates/TabContainer.html
+	dojo/dnd/move
+	dijit/_WidgetBase
+	dijit/layout/_TabContainerBase
+	dijit/form/Form
+	dojo/store/Memory
+	dijit/templates/Tooltip.html
+	dojox/grid/_Grid
+	dijit/_base/sniff
+	dojox/grid/enhanced/nls/EnhancedGrid
+	dojox/grid/resources/_Grid.html
+	dijit/layout/StackContainer
+	dojo/regexp
+	dijit/form/ComboBox
+	dijit/form/_FormMixin
+	dijit/DropDownMenu
+	dojo/data/util/simpleFetch
+	dijit/Menu
+	dijit/form/_CheckBoxMixin
+	dijit/layout/ContentPane
+	dijit/form/templates/ValidationTextBox.html
+	dijit/form/templates/TextBox.html
+	dijit/layout/utils
+	dijit/_KeyNavContainer
+	dijit/_Contained
+	dojox/json/query
+	dijit/form/DataList
+	dijit/templates/Dialog.html
+	dijit/form/CheckBox
+	dijit/tree/_dndSelector
+	dijit/_Container
+	dojo/data/ItemFileReadStore
+	dojo/dnd/Source
+	dojo/html
+	dijit/templates/TitlePane.html
+	dijit/form/ValidationTextBox
+	dijit/layout/BorderContainer
+	dijit/_base
+	dijit/_base/typematic
+	dojo/window
+	dojo/number
+	dijit/_FocusMixin
+	dojo/data/util/filter
+	dijit/_WidgetsInTemplateMixin
+	dijit/form/HorizontalRuleLabels
+	dojox/grid/_Builder
+	dijit/form/FilteringSelect
+	dojox/grid/_EditManager
+	dojo/data/util/sorter
+	dijit/form/_ButtonMixin
+	dijit/registry
+	dojo/date/locale
+	dijit/tree/_dndContainer
+	dojox/grid/resources/View.html
+	dijit/_base/wai
+	dijit/form/VerticalRule
+	dojox/grid/enhanced/_Plugin
+	dijit/form/_FormSelectWidget
+	dijit/form/Select
+	dojo/store/util/QueryResults
+	dijit/form/_ListBase
+	dijit/form/_FormWidget
+	dojo/DeferredList
+	dojo/dnd/common
+	dijit/CalendarLite
+	dojox/grid/_Events
+	dijit/CheckedMenuItem
+	dijit/Viewport
+	dijit/form/VerticalRuleLabels
+	dijit/_base/place
+	dijit/MenuSeparator
+	dojox/grid/util
+	dijit/form/_ComboBoxMenu
+	dojo/data/api/Request
+	dijit/layout/templates/ScrollingTabController.html
+	dojox/grid/cells/_base
+	dijit/Dialog
+	dijit/form/MultiSelect
+	dijit/form/_DateTimeTextBox
+	dijit/_base/focus
+	dijit/a11y
+	dojox/grid/_Scroller
+	dijit/Calendar
+	dijit/form/_ToggleButtonMixin
+	dojo/dnd/Container
+	dijit/_Widget
+	dojo/touch
+	dijit/form/templates/Select.html
+	dojox/grid/DataSelection
+	dojo/dot-dojo
+	dijit/form/nls/ComboBox
+	dojo/fx
+	dojox/grid/_SelectionPreserver
+	dijit/_DialogMixin
+	dijit/nls/common
+	dijit/Tree
+	dijit/form/HorizontalSlider
+	dijit/form/_FormValueWidget
+
+dojo/dojo:
+	dojo/_base/fx
+	dojo/dom-form
+	dojo/promise/tracer
+	dojo/errors/RequestError
+	dojo/_base/html
+	dojo/_base/kernel
+	dojo/io-query
+	dojo/_base/Deferred
+	dojo/NodeList-dom
+	dojo/query
+	dojo/has
+	dojo/_base/loader
+	dojo/json
+	dojo/_base/declare
+	dojo/dom
+	dojo/_base/browser
+	dojo/errors/RequestTimeoutError
+	dojo/dom-style
+	dojo/dom-geometry
+	dojo/dom-prop
+	dojo/when
+	dojo/dom-attr
+	dojo/dom-construct
+	dojo/request/xhr
+	dojo/keys
+	dojo/domReady
+	dojo/_base/lang
+	dojo/Evented
+	dojo/request/util
+	dojo/mouse
+	dojo/topic
+	dojo/_base/xhr
+	dojo/dojo
+	dojo/_base/unload
+	dojo/Deferred
+	dojo/_base/NodeList
+	dojo/_base/Color
+	dojo/promise/instrumentation
+	dojo/selector/_loader
+	dojo/promise/Promise
+	dojo/request/watch
+	dojo/on
+	dojo/_base/sniff
+	dojo/errors/create
+	dojo/_base/array
+	dojo/_base/json
+	dojo/_base/window
+	dojo/dom-class
+	dojo/_base/config
+	dojo/_base/event
+	dojo/main
+	dojo/sniff
+	dojo/request/handlers
+	dojo/ready
+	dojo/aspect
+	dojo/_base/connect
+	dojo/errors/CancelError
+
+
+
+Process finished normally
+	errors: 0
+	warnings: 15
+	build time: 91.833 seconds

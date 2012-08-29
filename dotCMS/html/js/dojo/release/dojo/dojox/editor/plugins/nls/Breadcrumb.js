@@ -1,4 +1,3 @@
-//>>built
 define("dojox/editor/plugins/nls/Breadcrumb", { root:
 //begin v1.x content
 ({
@@ -10,8 +9,8 @@ define("dojox/editor/plugins/nls/Breadcrumb", { root:
 	"moveStart": "Move cursor to start",
 	"moveEnd": "Move cursor to end"
 })
-,
 //end v1.x content
+,
 "zh": true,
 "zh-tw": true,
 "tr": true,

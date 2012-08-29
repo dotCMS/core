@@ -1,4 +1,3 @@
-//>>built
 define("dijit/form/nls/ComboBox", { root:
 //begin v1.x content
 ({

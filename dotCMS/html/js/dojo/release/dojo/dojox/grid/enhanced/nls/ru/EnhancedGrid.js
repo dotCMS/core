@@ -1,17 +1,13 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/ru/EnhancedGrid", //begin v1.x content
-({
-	singleSort: "Простая сортировка",
+"dojox/grid/enhanced/nls/ru/EnhancedGrid", ({
+	singleSort: "Однократная сортировка",
 	nestedSort: "Вложенная сортировка",
-	ascending: "По возрастанию",
-	descending: "По убыванию",
+	ascending: "Сортировка по возрастанию",
+	descending: "Сортировка по убыванию",
 	sortingState: "${0} - ${1}",
 	unsorted: "Не сортировать этот столбец",
-	indirectSelectionRadio: "Строка ${0}, один выбор, радиокнопка",
-	indirectSelectionCheckBox: "Строка ${0}, несколько выборов, переключатель",
+	indirectSelectionRadio: "Строка ${0}, единственный выбор, радиокнопка",
+	indirectSelectionCheckBox: "Строка ${0}, множественный выбор, флажок",
 	selectAll: "Выбрать все"
 })
-//end v1.x content
 );
-
