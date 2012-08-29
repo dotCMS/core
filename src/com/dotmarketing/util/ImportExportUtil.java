@@ -1300,7 +1300,7 @@ public class ImportExportUtil {
                     LogMapperRow logMapperRow = ( LogMapperRow ) l.get( j );
                     DotConnect dc = new DotConnect();
                     dc.setSQL( "insert into log_mapper values (?,?,?)" );
-                    dc.addParam( logMapperRow.getEnabled() );
+                    dc.addParam( logMapperRow.getEnabled() ? 1 : 0 );
                     dc.addParam( logMapperRow.getLog_name() );
                     dc.addParam( logMapperRow.getDescription() );
                     dc.getResults();
