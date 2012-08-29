@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -820,4 +821,10 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		return htmlPageFactory.movePage(page, parent);
 
 	}
+
+
+    @Override
+    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
+        return deleteOldVersions(assetsOlderThan,"htmlpage");
+    }
 }

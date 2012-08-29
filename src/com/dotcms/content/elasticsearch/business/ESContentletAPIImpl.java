@@ -3258,12 +3258,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentRelationships;
     }
 
-    public int deleteOldContent(Date deleteFrom, int offset) throws DotDataException {
+    public int deleteOldContent(Date deleteFrom) throws DotDataException {
         int results = 0;
         if(deleteFrom == null){
             throw new DotDataException("Date to delete from must not be null");
         }
-        results = conFac.deleteOldContent(deleteFrom, offset);
+        results = conFac.deleteOldContent(deleteFrom);
         return results;
     }
 
