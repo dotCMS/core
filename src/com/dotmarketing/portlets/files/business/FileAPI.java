@@ -223,6 +223,7 @@ public interface FileAPI {
 	
     public  boolean moveFile(File file, Folder parent, User user, boolean respectFrontEndRoles) throws DotStateException, DotDataException, DotSecurityException ;
 
+    public  boolean moveFile(File file, Host host, User user, boolean respectFrontEndRoles) throws DotStateException, DotDataException, DotSecurityException ;
 
     void publishFile(File file, User user, boolean respectFrontendRoles) throws WebAssetException, DotSecurityException, DotDataException ;
     

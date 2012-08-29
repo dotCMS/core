@@ -139,11 +139,25 @@ public interface FileFactory {
 
 	
 	public  boolean renameFile (File file, String newName) throws DotStateException, DotDataException, DotSecurityException;
-	
-    public  boolean moveFile(File file, Folder parent) throws DotStateException, DotDataException, DotSecurityException ;
-    
-    
-    
+
+    /**
+     * Moves a file into the given directory
+     *
+     * @param file   File to be copied
+     * @param parent Destination Folder
+     * @return true if copy success, false otherwise
+     */
+    public Boolean moveFile(File file, Folder parent) throws DotStateException, DotDataException, DotSecurityException ;
+
+    /**
+     * Moves a file into the given host
+     *
+     * @param file File to be copied
+     * @param host Destination host
+     * @return true if copy success, false otherwise
+     */
+    public Boolean moveFile(File file, Host host) throws DotStateException, DotDataException, DotSecurityException ;
+
     void publishFile(File file) throws WebAssetException, DotSecurityException, DotDataException ;
     
     public File getFileByURI(String uri, Host host, boolean live) throws DotDataException, DotSecurityException ;

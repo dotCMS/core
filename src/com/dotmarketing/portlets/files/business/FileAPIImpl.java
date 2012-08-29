@@ -587,20 +587,33 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 		return ffac.renameFile(file, newName);
 	}
 
-	public boolean moveFile(File file, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException,
-			DotSecurityException {
+	public boolean moveFile(File file, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
+        return moveFile(file, parent, null, user, respectFrontendRoles);
+    }
+
+	public boolean moveFile(File file, Host host, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
+        return moveFile(file, null, host, user, respectFrontendRoles);
+    }
+
+	public boolean moveFile(File file, Folder parent, Host host, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
+
 		if(!isLegacyFilesSupported()){
 			throw new DotStateException("File Assets have been disabled.");
 		}
-		
-		if (!permissionAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-		return ffac.moveFile(file, parent);
 
+        if ( !permissionAPI.doesUserHavePermission( file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        }
+
+        if ( parent != null ) {
+            return ffac.moveFile(file, parent);
+        } else {
+            return ffac.moveFile( file, host );
+        }
 	}
 
 	public void publishFile(File file, User user, boolean respectFrontendRoles) throws WebAssetException, DotSecurityException,
