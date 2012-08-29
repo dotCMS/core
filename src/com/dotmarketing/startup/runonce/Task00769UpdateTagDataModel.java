@@ -57,6 +57,9 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 			DotConnect dc = new DotConnect();
 			DbConnectionFactory.getConnection().setAutoCommit(true);
 			
+			if(DbConnectionFactory.isPostgres())
+			    dc.executeStatement("set standard_conforming_strings = off");
+			
 			String replaceStr;
 			if(DbConnectionFactory.isOracle()) {
 			    replaceStr="translate(translate(translate(tagname,CHR(10),' '),CHR(13),' '),CHR(09),' ')";
