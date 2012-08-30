@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.containers.business;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +27,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -296,4 +295,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
 	    return containerFactory.findContainersForStructure(structureInode);
 	}
+
+    @Override
+    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
+        return deleteOldVersions(assetsOlderThan,"containers");
+    }
 }
