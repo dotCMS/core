@@ -25,15 +25,21 @@
 <span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 <br/>
 <div dojoType="dijit.layout.ContentPane" name="${fieldAux.velocityVarName}categoriesbox" id="${fieldAux.velocityVarName}categoriesbox" class="boxer" hasShadow="true">
+ 	#set($selectedCatName = '')
  	#if($fieldDefaultValue == [])
 		<div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist"> No categories selected</div>
-		 #set($selectedCatName = '')
 	#else
 		<div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist">
 			#foreach($defaultSelectedCats in $fieldDefaultValue)
 				 $defaultSelectedCats.categoryName <br/>
-				 #set($selectedCatName = $defaultSelectedCats.categoryName)
-				 #set($selectedCatInode = $defaultSelectedCats.inode)
+				 #if(!$UtilMethods.isSet($selectedCatName))
+				 	#set($selectedCatName = $defaultSelectedCats.categoryName)
+				 	#set($selectedCatInode = $defaultSelectedCats.inode)
+				 #else
+				 	#set($selectedCatName = "$selectedCatName,$defaultSelectedCats.categoryName")
+				 	#set($selectedCatInode = "$selectedCatInode,$defaultSelectedCats.inode")
+				 #end
+				 
 			#end
 				
 		</div>  	
