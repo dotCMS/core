@@ -11,6 +11,7 @@ function submitContent(tabName){
 		document.getElementById('submitContentForm').submit();		
 	}
 }
+
 function updateTabCounter(tabname){
     tabsRequiredList[tabname]=tabsRequiredList[tabname]+1;
 }
@@ -972,5 +973,21 @@ function clearCategoriesList(inode, name){
 	dojo.byId(inode+'categorieslist').innerHTML = '';
 	var buffer='No categories selected ';
 	dojo.byId(inode+'categorieslist').innerHTML = buffer;
+}
+
+
+
+function serveFile(doStuff,conInode,velVarNm){
+
+    if(doStuff != ''){
+    window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+    }else{
+    window.open('/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+    }
+}
+
+function removeFile(fileInode){
+	dojo.empty(fileInode+"Container");
+	dojo.style(fileInode, "visibility", "visible");
 }
 
