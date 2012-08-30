@@ -402,96 +402,120 @@ public class BrowserAjax {
     	return result;
     }
 
-	// Copy action
-	public boolean copyFolder(String inode, String newFolder) throws Exception {
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+    /**
+     * Copies a given inode folder/host reference into another given folder
+     *
+     * @param inode     folder inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return Confirmation message
+     * @throws Exception
+     */
+    public boolean copyFolder ( String inode, String newFolder ) throws Exception {
+
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
+
         UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+        HostAPI hostAPI = APILocator.getHostAPI();
 
+        //Searching for the folder to copy
+        Folder folder = APILocator.getFolderAPI().find( inode, user, false );
 
-    	Folder folder = APILocator.getFolderAPI().find(inode, user, false);
+        if ( !folderAPI.exists( newFolder ) ) {
 
-		// Checking permissions
+            Host parentHost = hostAPI.find( newFolder, user, !userWebAPI.isLoggedToBackend( req ) );
 
-		if (!folderAPI.exists(newFolder)) {
-			HostAPI hostAPI = APILocator.getHostAPI();
+            if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
+                throw new DotRuntimeException( "The user doesn't have the required permissions." );
+            }
 
-			Host parentHost = (Host) hostAPI.find(newFolder, user, !userWebAPI.isLoggedToBackend(req));
+            folderAPI.copy( folder, parentHost, user, false );
+        } else {
 
-			if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user) ||
-					!permissionAPI.doesUserHavePermission(parentHost, PERMISSION_WRITE, user))
-				throw new DotRuntimeException("The user doesn't have the required permissions.");
-			folderAPI.copy(folder, parentHost, user, false);
-		} else {
-			Folder parentFolder = APILocator.getFolderAPI().find(newFolder, user, false);
+            Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
 
-			if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_WRITE, user) ||
-					!permissionAPI.doesUserHavePermission(parentFolder, PERMISSION_WRITE, user))
-				throw new DotRuntimeException("The user doesn't have the required permissions.");
+            if ( !permissionAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
+                throw new DotRuntimeException( "The user doesn't have the required permissions." );
+            }
 
-			if (parentFolder.getInode().equalsIgnoreCase(folder.getInode())) {
-				//Trying to move a folder over itself
-				return false;
-			}
-			if (folderAPI.isChildFolder(parentFolder, folder)) {
-				//Trying to move a folder over one of its children
-				return false;
-			}
-            folderAPI.copy(folder, parentFolder, user, false);
-		}
-		return true;
-	}
+            if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
+                //Trying to move a folder over itself
+                return false;
+            }
+            if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
+                //Trying to move a folder over one of its children
+                return false;
+            }
 
-	// Move action
-	public boolean moveFolder(String inode, String newFolder) throws Exception {
+            folderAPI.copy( folder, parentFolder, user, false );
+        }
 
-		HibernateUtil.startTransaction();
+        return true;
+    }
 
-		try {
-			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-	        User user = getUser(req);
-	        boolean respectFrontendRoles = !userAPI.isLoggedToBackend(req);
+    /**
+     * Moves a given inode folder/host reference into another given folder
+     *
+     * @param inode     folder inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return Confirmation message
+     * @throws Exception
+     */
+    public boolean moveFolder ( String inode, String newFolder ) throws Exception {
 
-	    	Folder folder = APILocator.getFolderAPI().find(inode, user, false);
+        HibernateUtil.startTransaction();
 
-			if (!folderAPI.exists(newFolder)) {
-				Host parentHost = hostAPI.find(newFolder, user, respectFrontendRoles);
+        try {
+            HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+            User user = getUser( req );
 
-				if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user) ||
-						!permissionAPI.doesUserHavePermission(parentHost, PERMISSION_WRITE, user))
-					throw new DotRuntimeException("The user doesn't have the required permissions.");
+            boolean respectFrontendRoles = !userAPI.isLoggedToBackend( req );
 
-				if (!folderAPI.move(folder, parentHost,user,respectFrontendRoles)){
-					//A folder with the same name already exists on the destination
-					return false;
-				}
-			} else {
-				Folder parentFolder = APILocator.getFolderAPI().find(newFolder, user, false);
+            //Searching for the folder to move
+            Folder folder = APILocator.getFolderAPI().find( inode, user, false );
 
-				if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user) ||
-						!permissionAPI.doesUserHavePermission(parentFolder, PERMISSION_WRITE, user))
-					throw new DotRuntimeException("The user doesn't have the required permissions.");
+            if ( !folderAPI.exists( newFolder ) ) {
 
-				if (parentFolder.getInode().equalsIgnoreCase(folder.getInode())) {
-					//Trying to move a folder over itself
-					return false;
-				}
-				if (folderAPI.isChildFolder(parentFolder, folder)) {
-					//Trying to move a folder over one of its children
-					return false;
-				}
-				if (!folderAPI.move(folder, parentFolder,user,respectFrontendRoles)) {
-					//A folder with the same name already exists on the destination
-					return false;
-				}
-			}
-		} catch (Exception e) {
-			HibernateUtil.rollbackTransaction();
-		} finally {
-			HibernateUtil.commitTransaction();
-		}
-		return true;
-	}
+                Host parentHost = hostAPI.find( newFolder, user, respectFrontendRoles );
+
+                if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
+                    throw new DotRuntimeException( "The user doesn't have the required permissions." );
+                }
+
+                if ( !folderAPI.move( folder, parentHost, user, respectFrontendRoles ) ) {
+                    //A folder with the same name already exists on the destination
+                    return false;
+                }
+            } else {
+
+                Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
+
+                if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
+                    throw new DotRuntimeException( "The user doesn't have the required permissions." );
+                }
+
+                if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
+                    //Trying to move a folder over itself
+                    return false;
+                }
+                if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
+                    //Trying to move a folder over one of its children
+                    return false;
+                }
+
+                if ( !folderAPI.move( folder, parentFolder, user, respectFrontendRoles ) ) {
+                    //A folder with the same name already exists on the destination
+                    return false;
+                }
+            }
+        } catch ( Exception e ) {
+            HibernateUtil.rollbackTransaction();
+        } finally {
+            HibernateUtil.commitTransaction();
+        }
+
+        return true;
+    }
 
     public Map<String, Object> renameFile (String inode, String newName) throws Exception {
 
