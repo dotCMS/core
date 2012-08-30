@@ -405,56 +405,55 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	}
 
-	@SuppressWarnings("unchecked")
-	private void copy(Folder folder, Host destination, Hashtable copiedObjects) throws DotDataException, DotSecurityException, DotStateException, IOException {
+    @SuppressWarnings ("unchecked")
+    private void copy ( Folder folder, Host destination, Hashtable copiedObjects ) throws DotDataException, DotSecurityException, DotStateException, IOException {
 
-		boolean rename = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, folder.getName());
+        boolean rename = APILocator.getHostAPI().doesHostContainsFolder( destination, folder.getName() );
 
-		Folder newFolder = new Folder();
-		newFolder.copy(folder);
-		newFolder.setName(folder.getName());
-		while (rename) {
-			newFolder.setName(newFolder.getName() + "_copy");
-			rename = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, newFolder.getName());
-		}
+        Folder newFolder = new Folder();
+        newFolder.copy( folder );
+        newFolder.setName( folder.getName() );
+        while ( rename ) {
+            newFolder.setName( newFolder.getName() + "_copy" );
+            rename = APILocator.getHostAPI().doesHostContainsFolder( destination, newFolder.getName() );
+        }
 
-		//newFolder.setPath("/" + newFolder.getName() + "/");
-		newFolder.setHostId(destination.getIdentifier());
-		Identifier parentId=APILocator.getIdentifierAPI().find(destination.getIdentifier());
-		Identifier newFolderId = createIdentifierForFolder(newFolder, parentId.getPath());
-		newFolder.setIdentifier(newFolderId.getId());
+        newFolder.setHostId( destination.getIdentifier() );
 
-		save(newFolder);
+        Identifier newFolderId = createIdentifierForFolder( newFolder, null );
+        newFolder.setIdentifier( newFolderId.getId() );
 
-		saveCopiedFolder(folder, newFolder, copiedObjects);
-	}
+        save( newFolder );
 
-	@SuppressWarnings("unchecked")
-	private void copy(Folder folder, Folder destination, Hashtable copiedObjects) throws DotDataException, DotStateException, DotSecurityException, IOException {
+        saveCopiedFolder( folder, newFolder, copiedObjects );
+    }
 
-		boolean rename = folderContains(folder.getName(), (Folder) destination);
+    @SuppressWarnings ("unchecked")
+    private void copy ( Folder folder, Folder destination, Hashtable copiedObjects ) throws DotDataException, DotStateException, DotSecurityException, IOException {
 
-		Folder newFolder = new Folder();
-		newFolder.copy(folder);
-		newFolder.setName(folder.getName());
-		while (rename) {
-			newFolder.setName(newFolder.getName() + "_copy");
-			rename = folderContains(newFolder.getName(), (Folder) destination);
-		}
+        boolean rename = folderContains( folder.getName(), destination );
 
-		//newFolder.setPath(((Folder) destination).getPath() + newFolder.getName() + "/");
-		newFolder.setHostId(((Folder) destination).getHostId());
-		Identifier parentId=APILocator.getIdentifierAPI().find(destination.getIdentifier());
-		Identifier newFolderId = createIdentifierForFolder(newFolder, parentId.getPath());
-		newFolder.setIdentifier(newFolderId.getId());
+        Folder newFolder = new Folder();
+        newFolder.copy( folder );
+        newFolder.setName( folder.getName() );
+        while ( rename ) {
+            newFolder.setName( newFolder.getName() + "_copy" );
+            rename = folderContains( newFolder.getName(), (Folder) destination );
+        }
 
-		save(newFolder);
+        //newFolder.setPath(((Folder) destination).getPath() + newFolder.getName() + "/");
+        newFolder.setHostId( destination.getHostId() );
+        Identifier parentId = APILocator.getIdentifierAPI().find( destination.getIdentifier() );
+        Identifier newFolderId = createIdentifierForFolder( newFolder, parentId.getPath() );
+        newFolder.setIdentifier( newFolderId.getId() );
 
-		// TreeFactory.saveTree(new Tree(destination.getInode(),
-		// newFolder.getInode()));
+        save( newFolder );
 
-		saveCopiedFolder(folder, newFolder, copiedObjects);
-	}
+        // TreeFactory.saveTree(new Tree(destination.getInode(),
+        // newFolder.getInode()));
+
+        saveCopiedFolder( folder, newFolder, copiedObjects );
+    }
 
 	private void saveCopiedFolder(Folder source, Folder newFolder, Hashtable copiedObjects) throws DotDataException, DotStateException, DotSecurityException, IOException {
 		User systemUser = APILocator.getUserAPI().getSystemUser();
