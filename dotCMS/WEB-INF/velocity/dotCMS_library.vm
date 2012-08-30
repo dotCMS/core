@@ -1532,11 +1532,27 @@ Has 2 option variables id and value which can be set.
  Macro to submit content from frontend
 *#
 #macro(submitContent $structureNameAux)
+   #set($action = '')
    #set($structureName = $structureNameAux)
    #if ($UtilMethods.isSet($submitContentSrc))
       #dotParse($submitContentSrc)
    #else
       $velutil.mergeTemplate('/static/content/content_form_macro.vtl')
+   #end
+#end
+
+
+#*
+ Macro to Edit submit content from frontend
+*#
+#macro(submitContentEdit $contentletInode)
+   #set($action = 'editContent')
+   #set($contentletInode = $contentletInode)
+   #if ($UtilMethods.isSet($submitContentSrc))
+      #dotParse($submitContentSrc)
+   #else
+      $velutil.mergeTemplate('/static/content/content_form_macro.vtl')
+      
    #end
 #end
 

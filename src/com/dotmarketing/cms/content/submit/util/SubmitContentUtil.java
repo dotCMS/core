@@ -1,5 +1,6 @@
 package com.dotmarketing.cms.content.submit.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -27,6 +28,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -297,12 +299,20 @@ public class SubmitContentUtil {
 	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
 		Structure st = StructureCache.getStructureByName(structureName);
+		String contentletInode = null;
+		Field fileField = new Field(),imageField=new Field(),binaryField=new Field();
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		for (Field field : fields) {//GIT-763
 			if(field.isRequired() && !parametersName.contains(field.getVelocityVarName())){
 				parametersName.add(field.getVelocityVarName());
 				values.add(new String[]{});
 			}
+			if(parametersName.contains(field.getVelocityVarName()+"oldFileInode"))
+				fileField =field;
+			else if(parametersName.contains(field.getVelocityVarName()+"oldImageInode"))
+				imageField= field;
+			else if(parametersName.contains(field.getVelocityVarName()+"oldBinaryInode"))
+				binaryField= field;
 		}		
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
@@ -312,6 +322,33 @@ public class SubmitContentUtil {
 			String fieldname = parametersName.get(i);
 			String[] fieldValue = values.get(i);
 			setField(st, contentlet, fieldname, fieldValue);
+			//To Update Content
+			if(fieldname.equalsIgnoreCase("contentIdentifier"))
+				contentlet.setIdentifier(VelocityUtil.cleanVelocity(values.get(i)[0]));
+			else if(fieldname.equalsIgnoreCase("contentInode"))
+				contentletInode = VelocityUtil.cleanVelocity(values.get(i)[0]);
+			else if(fieldname.equalsIgnoreCase(fileField.getVelocityVarName()+"oldFileInode")){
+				if(UtilMethods.isSet(VelocityUtil.cleanVelocity(values.get(i)[0]))){
+					APILocator.getContentletAPI().setContentletProperty(contentlet, fileField, VelocityUtil.cleanVelocity(values.get(i)[0]));
+				}
+			}
+			else if(fieldname.equalsIgnoreCase(imageField.getVelocityVarName()+"oldImageInode")){
+				if(UtilMethods.isSet(VelocityUtil.cleanVelocity(values.get(i)[0]))){
+					APILocator.getContentletAPI().setContentletProperty(contentlet, imageField, VelocityUtil.cleanVelocity(values.get(i)[0]));
+				}
+			}
+			else if(fieldname.equalsIgnoreCase(binaryField.getVelocityVarName()+"oldBinaryInode")){
+				if(UtilMethods.isSet(VelocityUtil.cleanVelocity(values.get(i)[0]))){
+					User user = APILocator.getUserAPI().getSystemUser();
+					try {
+						File newFile = APILocator.getContentletAPI().getBinaryFile(contentletInode, binaryField.getVelocityVarName(), user);
+						contentlet.setBinary(binaryField.getVelocityVarName(), newFile);
+					} catch (Exception e) {
+						Logger.debug(SubmitContentUtil.class, e.getMessage());
+					} 
+				}
+			}
+				
 		}
 
 		return contentlet;
@@ -541,6 +578,8 @@ public class SubmitContentUtil {
 		}
 		return false;
 	}
+
+
 
 
 
