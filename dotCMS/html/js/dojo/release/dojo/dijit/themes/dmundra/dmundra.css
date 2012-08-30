@@ -69,9 +69,13 @@
 .dmundra .dijitTab {
 	line-height:normal;
 	margin-right:4px;
-	padding:10px;
+	padding-left:10px;
+	padding-right:10px;
+	padding-top:5px;
+	padding-bottom:6px;
 	border:1px solid #ccc;
 	background:#e2e2e2 url(images/tabEnabled.png) repeat-x 0 -2px;
+
 }
 .dmundra .dijitTabInnerDiv {
 	padding:6px 15px 5px 9px;
