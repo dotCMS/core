@@ -130,7 +130,7 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts;
 		try {
-			hosts = hostAPI.findAll(APILocator.getUserAPI().getSystemUser(), false);
+			hosts = hostAPI.findAll(user, false);
 			hosts.remove(APILocator.getHostAPI().findSystemHost());
 		} catch (DotDataException e) {
 			Logger.error(WebdavRootResourceImpl.class, e.getMessage(), e);
