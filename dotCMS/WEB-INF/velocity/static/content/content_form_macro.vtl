@@ -54,6 +54,7 @@ var theme = 'dmundra';
 #end
 #parse($errorMessagesPath)
 #set($contentId='')
+#set($contentIdentifier='')
 #set($contentMap = $dotcontent.find($contentletInode))
 #if($UtilMethods.isSet($contentMap))
 	#set($structure = $contentMap.getStructure())
@@ -181,11 +182,11 @@ var theme = 'dmundra';
 			<input type="hidden" name="formReturnPageOverride" value="$contentFormReturnPageOverride" />
 		#end
 		#set($tabCount = 0)
-		#set($titleField =$structures.findFieldByVarName($structure, "formTitle"))
+		#set($titleField = $structures.findFieldByVarName($structure, "formTitle"))
 		#set($firstField = $fields.get(0))
 		#set($firstTabId = "contentTab")
 		#set($firstFieldSetId = "contentFieldSet")
-		#if(${titleField.values} != '' )
+		#if($UtilMethods.isSet(${titleField.values}))
 			#set($firstTabName = "${titleField.values}")
 			#set($submitTabName = "${titleField.values}")
 		#else
