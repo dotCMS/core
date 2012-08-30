@@ -198,7 +198,7 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		List<Folder> folders = new ArrayList<Folder>();
 		try {
-			folders = folderAPI.findSubFolders(host,APILocator.getUserAPI().getSystemUser(),false);
+			folders = folderAPI.findSubFolders(host,user,false);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);
