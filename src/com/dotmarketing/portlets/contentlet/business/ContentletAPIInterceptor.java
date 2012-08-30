@@ -528,17 +528,17 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#deleteOldContent(java.util.Date, int)
 	 */
-	public int deleteOldContent(Date deleteFrom, int offset) throws DotDataException {
+	public int deleteOldContent(Date deleteFrom) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.deleteOldContent(deleteFrom, offset);
+			boolean preResult = pre.deleteOldContent(deleteFrom);
 			if(!preResult){
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		int c = conAPI.deleteOldContent(deleteFrom, offset);
+		int c = conAPI.deleteOldContent(deleteFrom);
 		for(ContentletAPIPostHook post : postHooks){
-			post.deleteOldContent(deleteFrom, offset,c);
+			post.deleteOldContent(deleteFrom,c);
 		}
 		return c;
 	}
