@@ -2,7 +2,9 @@ package com.dotmarketing.sitesearch.ajax;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -217,5 +219,34 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         response.setContentType("application/json");
         response.getWriter().println(json.toString());
 	}
+	
+	@Override
+    public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	    try {
+    	    Map<String, String> map = getURIParams();
+    	    String indexName = getIndexNameOrAlias(map);
+    	    response.setContentType("text/plain");
+            response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().site_search.equals(indexName) ? "default" : "inactive");
+	    }
+	    catch(Exception ex) {
+	        throw new RuntimeException(ex);
+	    }
+    }
+	
+	@Override
+    public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	    try {
+            String defaultIndex=APILocator.getIndiciesAPI().loadIndicies().site_search;
+            List<String> ret=new ArrayList<String>();
+            for(String ii : APILocator.getSiteSearchAPI().listIndices())
+                if(!defaultIndex.equals(ii))
+                    ret.add(ii);
+            response.setContentType("text/plain");
+            response.getWriter().println(ret);
+	    }
+	    catch(Exception ex) {
+	        throw new RuntimeException(ex);
+	    }
+    }
 
 }
