@@ -3,8 +3,29 @@
  */
 package com.dotmarketing.webdav;
 
-import com.bradmcevoy.http.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import com.bradmcevoy.http.Auth;
+import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.FolderResource;
+import com.bradmcevoy.http.LockInfo;
+import com.bradmcevoy.http.LockResult;
+import com.bradmcevoy.http.LockTimeout;
+import com.bradmcevoy.http.LockToken;
+import com.bradmcevoy.http.LockableResource;
+import com.bradmcevoy.http.LockingCollectionResource;
+import com.bradmcevoy.http.MakeCollectionableResource;
+import com.bradmcevoy.http.Range;
+import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
+import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -19,11 +40,6 @@ import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.io.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author Jason Tesser
@@ -56,7 +72,7 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 		if(dotDavHelper.isTempResource(newName)){
 			Host host;
 			try {
-				host = hostAPI.find(folder.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+				host = hostAPI.find(folder.getHostId(), user, false);
 				folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
 			} catch (DotDataException e) {
 				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
@@ -243,7 +259,7 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 		String folderPath = "";
 		Host host;
 		try {
-			host = hostAPI.find(folder.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+			host = hostAPI.find(folder.getHostId(), user, false);
 			folderPath = APILocator.getIdentifierAPI().find(folder).getPath(); 
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
@@ -347,7 +363,7 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 				Host host;
 				String folderPath = "";
 				try {
-					host = hostAPI.find(fr.getFolder().getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+					host = hostAPI.find(fr.getFolder().getHostId(), user, false);
 					folderPath = APILocator.getIdentifierAPI().find(fr.getFolder()).getPath();
 				} catch (DotDataException e) {
 					Logger.error(FolderResourceImpl.class, e.getMessage(), e);
