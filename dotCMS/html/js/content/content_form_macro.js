@@ -1,17 +1,26 @@
 //Display Tabs
 var tabsList = new Array();
+var customErrorMessages = new Array();
 var tabsRequiredList = new Array();
 var currentTabIdx=0;
 var enabledWYSIWYG = new Array();
 var lastTabId = '';
+var errorFieldName='';
 
 function submitContent(tabName){
+	dijit.byId("buttonSubmitButton").setAttribute('disabled', true);
+	errorFieldName='';
 	var isValid = checkTabFields(tabName); 
-	if(isValid){		
-		document.getElementById('submitContentForm').submit();		
+	if(isValid){	
+		document.getElementById('submitContentForm').submit();	
+	}else{
+		dijit.byId("buttonSubmitButton").setAttribute('disabled', false);
+		if(errorFieldName != null && errorFieldName != ''){
+			document.getElementById(errorFieldName).focus();	
+		}
+		return false;	
 	}
 }
-
 function updateTabCounter(tabname){
     tabsRequiredList[tabname]=tabsRequiredList[tabname]+1;
 }
@@ -37,6 +46,7 @@ function showNextTab(){
 function displayTab(tabName, newIdx){
     var visitedTab = 0;
     var newTabIndex = 1;
+    errorFieldName='';
 	for(var tabsIndex=0; tabsIndex < tabsList.length ; tabsIndex++){
 	    var divName = tabsList[tabsIndex]; 
 	    var divNameButton = 'tabButton'+tabsIndex; 
@@ -61,14 +71,18 @@ function displayTab(tabName, newIdx){
 			dojo.byId('submitButton').style.display='';
 		}else {
 		    dojo.byId('tabButton'+newTabIndex).style.display='';
-			dojo.byId('submitButton').style.display='none';
+			dojo.byId('submitButton').style.display='none';			
 		}
+		window.scrollTo(0,0);
 	}else{
 		
 		dojo.byId(lastDivName).style.display='';
 		dojo.byId(lastDivName+'Tab').className = 'alpha';
 		dojo.byId('tabButton'+visitedTab).style.display='';
 		dojo.byId('submitButton').style.display='none';
+		if(errorFieldName != null && errorFieldName != ''){
+			document.getElementById(errorFieldName).focus();	
+		}		
 	}
 	var lastTabClass = document.getElementById(lastTabId).className;
 	lastTabClass = lastTabClass + ' last';
@@ -589,12 +603,13 @@ function dateValid(element, text){
                 good = false;
         }
         if(! good){
+        	if(customErrorMessages[element.name] != ''){
+    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+    		}else{
         	 document.getElementById('alert'+element.name).innerHTML = text + " is a not a valid date";
-                    try{
-                    	element.focus();
-                    }catch(e){}
-                    
-                    return false;
+    		}
+            errorFieldName=element.id;
+            return false;
         }else{
         	 document.getElementById('alert'+element.name).innerHTML = "";
         }
@@ -613,11 +628,13 @@ function lengthValid(element, len, text) {
 
 	if (element.value.length < len)
   	{
+		if(customErrorMessages[element.name] != ''){
+			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+		}else{
 		 document.getElementById('alert'+element.name).innerHTML ="Please enter a valid " + text + ".";
-		try{
-           element.focus();
-        }catch(e){}
-		return false;
+		}
+		errorFieldName=element.id;
+        return false;
 	}else{
 		 document.getElementById('alert'+element.name).innerHTML = "";
     }
@@ -626,16 +643,38 @@ function lengthValid(element, len, text) {
 	
 }
 
+function lengthValidCustomField(element, len, text) {
+
+    text = Trim(text);
+
+	if (element.value.length < len)
+  	{
+		if(customErrorMessages[element.name] != ''){
+			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+		}else{
+		 document.getElementById('alert'+element.name).innerHTML ="Please enter a valid " + text + ".";
+		}
+		errorFieldName="customAlert"+element.id;
+        return false;
+	}else{
+		 document.getElementById('alert'+element.name).innerHTML = "";
+    }
+
+	return true;
+	
+}
 //function to validate select drop-downs
 function selectValid(element, text) {
     text = Trim(text);
     try{
     	if(element.getValue() == ""){
+    		if(customErrorMessages[element.name] != ''){
+    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+    		}else{
     		 document.getElementById('alert'+element.attr('name')).innerHTML ="Please select a " + text + ".";
-    		try{
-			element.focus();
-    		}catch(e){}
-			return false;
+    		}
+    		errorFieldName=element.id;
+    		return false;
         }else{
         	 document.getElementById('alert'+element.attr('name')).innerHTML = "";
         }
@@ -648,12 +687,14 @@ function selectValid(element, text) {
 //function to validate numerical fields
 function numberValid(element, text) {
     text = Trim(text);
-	if (isNaN(element.value))
+	if(element.value == '' || isNaN(element.value))
   	{
+		if(customErrorMessages[element.name] != ''){
+			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+		}else{
  	  	 document.getElementById('alert'+element.name).innerHTML ="Please enter a valid " + text + ".";
-		try{
-        	element.focus();
-        }catch(e){}
+		}
+		errorFieldName=element.id;
 		return false;
 	}else{
        	 document.getElementById('alert'+element.name).innerHTML = "";
@@ -694,10 +735,12 @@ function emailValid(element, text) {
 
 
         if(!good){
+        	if(customErrorMessages[element.name] != ''){
+    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+    		}else{
              document.getElementById('alert'+element.name).innerHTML ="Please enter a valid " + text + ".";
-            try{
-        		element.focus();
-        	}catch(e){}
+    		}
+        	errorFieldName=element.id;
             return false;
         }else{
         	 document.getElementById('alert'+element.name).innerHTML = "";
@@ -720,10 +763,12 @@ function radioValid(element, radios, text) {
 	}
 	if (varChecked==false)
   	{
- 	  	 document.getElementById('alert'+element[0].name).innerHTML ="Please select " + text + ".";
-		try{
-			element[0].focus();
-		}catch(e){}
+		if(customErrorMessages[element[0].name] != ''){
+			document.getElementById('alert'+element[0].name).innerHTML = text+" "+customErrorMessages[element[0].name];
+		}else{
+ 	  	 	document.getElementById('alert'+element[0].name).innerHTML ="Please select " + text + ".";
+		}
+		errorFieldName=element[0].id;
 		return false;
 	}else{
       	 document.getElementById('alert'+element[0].name).innerHTML = "";
@@ -748,10 +793,12 @@ function checkboxValid(element, checkboxesLength, requiredNumber,text) {
 	}
 	if (varChecked < requiredNumber)
   	{
+		if(customErrorMessages[element[0].name] != ''){
+			document.getElementById('alert'+element[0].name).innerHTML = text+" "+customErrorMessages[element[0].name];
+		}else{
  	  	 document.getElementById('alert'+element[0].name).innerHTML = "Please select at least " + requiredNumber + " " + text + ".";
-		try{
-			element[0].focus();
-		}catch(e){}
+		}
+		errorFieldName=element[0].id;
 		return false;
 	}else{
          document.getElementById('alert'+element[0].name).innerHTML = "";
@@ -765,10 +812,12 @@ function otherboxValid(otherradio,otherfield,len,text) {
     text = Trim(text);
 	if (otherradio.checked && (otherfield.value.length<len))
   	{
+		if(customErrorMessages[element.name] != ''){
+			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+		}else{
  	  	 document.getElementById('alert'+element.name).innerHTML = "Please specify the " + text + ".";
- 	  	try{
-			otherfield.focus();
-		}catch(e){}
+		}
+		errorFieldName=otherfield.id;
 		return false;
 	}else{
        	 document.getElementById('alert'+element.name).innerHTML = "";
@@ -794,10 +843,12 @@ function lengthValidText(element, len, text) {
 	 value = Trim(element.value);
 	 if (value.length < len)
 	{
-		  document.getElementById('alert'+element.name).innerHTML = text + " field is required.";
-		try{
-		element.focus();
-		}catch(e){}
+		if(customErrorMessages[element.name] != ''){
+			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+		}else{
+			document.getElementById('alert'+element.name).innerHTML = text + " field is required.";
+		}
+		errorFieldName=element.id;
 		return false;
 	}else{
 		 document.getElementById('alert'+element.name).innerHTML = "";
@@ -829,17 +880,23 @@ function expDateValid(element, text){
 			good = false;
         }
         if(! good){
+        	if(customErrorMessages[element.name] != ''){
+    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+    		}else{
              document.getElementById('alert'+element.name).innerHTML = text + " is a not a valid date";
-            element.focus();
+    		}
+        	errorFieldName=element.id;
             return false;
         }
         today = new Date();
 		expiry = new Date(year + 2000, month);
         if (today.getTime() > expiry.getTime()) {
-            document.getElementById('alert'+element.name).innerHTML = text + " is an expired date";
-           try{
-            element.focus();
-            }catch(e){}
+        	if(customErrorMessages[element.name] != ''){
+    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+    		}else{
+    			document.getElementById('alert'+element.name).innerHTML = text + " is an expired date";
+    		}
+        	errorFieldName=element.id;
             return false;
         }else{
         	 document.getElementById('alert'+element.name).innerHTML = "";
@@ -867,13 +924,22 @@ function expDateValidString(element, text){
 			good = false;
         }
         if(! good){
+        	if(customErrorMessages[element.name] != ''){
+    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+    		}else{
              document.getElementById('alert'+element.name).innerHTML =  text + " is a not a valid date";
+    		}
+        	errorFieldName=element.id;
             return false;
         }
         today = new Date();
 		expiry = new Date(year + 2000, month);
         if (today.getTime() > expiry.getTime()) {
-             document.getElementById('alert'+element.name).innerHTML = text + " is an expired date";
+        	if(customErrorMessages[element.name] != ''){
+    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+    		}else{
+    			document.getElementById('alert'+element.name).innerHTML = text + " is an expired date";
+    		}
             return false;
         }else{
         	 document.getElementById('alert'+element.name).innerHTML = "";
@@ -896,22 +962,57 @@ function validateRegularExpresion(element, regexpression, text){
 	        	 document.getElementById('alert'+element.name).innerHTML = "";
 	            return true;
 	        }else{
+	        	if(customErrorMessages[element.name] != ''){
+	    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+	    		}else{
 	        	 document.getElementById('alert'+element.name).innerHTML = text + " doesn\'t comply the specified format";
+	    		}
+	        	errorFieldName=element.id;
 	            return false;
 	        }
 		}catch(e){
-			 document.getElementById('alert'+element.name).innerHTML = e;
-			return true;
-			//return false;
-		}
-        
-        
+			document.getElementById('alert'+element.name).innerHTML = e;
+			return false;
+		}        
+}
+
+function validateRegularExpresionNotHTML(element, regexpression, text){
+		if(regexpression.indexOf('^') == -1)
+			regexpression = '^'+regexpression;
+			
+		if(regexpression.indexOf('$') == -1)
+			regexpression = regexpression+'$';
+		try{	
+			
+			var pattern = new RegExp(regexpression);
+	        
+	        if(pattern.test(element.value)) {
+	        	if(customErrorMessages[element.name] != ''){
+	    			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+	    		}else{
+	    			document.getElementById('alert'+element.name).innerHTML = text + " doesn\'t comply the specified format";
+	    		}
+	        	errorFieldName=element.id;
+	            return false;
+	        }else{
+	        	document.getElementById('alert'+element.name).innerHTML = "";
+	            return true;
+	        }
+		}catch(e){
+			document.getElementById('alert'+element.name).innerHTML = e;
+			return false;
+		}        
 }
 
 function categoryValid( varName, text){
 	
 	if(dojo.byId(varName).value == ""){
-		 document.getElementById('alert'+varName).innerHTML = " The category is required";
+		if(customErrorMessages[varName] != ''){
+			document.getElementById('alert'+varName).innerHTML = text+" "+customErrorMessages[varName];
+		}else{
+		    document.getElementById('alert'+varName).innerHTML = " The category is required";
+		}
+		errorFieldName=varName;
 		return false;
 	}else{
 		 document.getElementById('alert'+varName).innerHTML = "";
@@ -921,7 +1022,12 @@ function categoryValid( varName, text){
 
 function fileValid(element, text){
 	if(element.value.length == 0){
-		 document.getElementById('alert'+element.name).innerHTML = text+" is required";
+		if(customErrorMessages[element.name] != ''){
+			document.getElementById('alert'+element.name).innerHTML = text+" "+customErrorMessages[element.name];
+		}else{
+			document.getElementById('alert'+element.name).innerHTML = text+" is required";
+		}
+		errorFieldName=element.id;
 		return false;
 	}else{
 		 document.getElementById('alert'+element.name).innerHTML = "";
@@ -974,20 +1080,3 @@ function clearCategoriesList(inode, name){
 	var buffer='No categories selected ';
 	dojo.byId(inode+'categorieslist').innerHTML = buffer;
 }
-
-
-
-function serveFile(doStuff,conInode,velVarNm){
-
-    if(doStuff != ''){
-    window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-    }else{
-    window.open('/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-    }
-}
-
-function removeFile(fileInode){
-	dojo.empty(fileInode+"Container");
-	dojo.style(fileInode, "visibility", "visible");
-}
-
