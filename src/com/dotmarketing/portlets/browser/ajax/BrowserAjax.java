@@ -819,7 +819,11 @@ public class BrowserAjax {
             throw new DotRuntimeException( permissionsError );
         }
 
-        return HTMLPageFactory.moveHTMLPage( page, parent );
+        if ( parent != null ) {
+            return HTMLPageFactory.moveHTMLPage( page, parent );
+        } else {
+            return HTMLPageFactory.moveHTMLPage( page, host );
+        }
     }
 
     public Map<String, Object> renameLink (String inode, String newName) throws Exception {
