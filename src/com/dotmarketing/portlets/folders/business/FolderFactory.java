@@ -125,6 +125,10 @@ public abstract class FolderFactory {
 	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond) throws DotStateException,DotDataException{
 		return null;
 	}
+
+    protected List<Treeable> getChildrenClass(Host host, Class clazz, ChildrenCondition cond) throws DotStateException,DotDataException{
+		return null;
+	}
 	
 	abstract boolean updateIdentifierUrl(Folder folder, Folder destination) throws DotDataException, DotSecurityException;
 
