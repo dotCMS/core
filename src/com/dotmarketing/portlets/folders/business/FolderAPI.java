@@ -201,11 +201,40 @@ import com.liferay.portal.model.User;
 	public abstract List<HTMLPage> getHTMLPages(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException, DotSecurityException;
 
+    /**
+	 * Gets a list of 'working' HTMLPages under a given host
+	 *
+	 * @param host
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @return
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 */
+	public abstract List<HTMLPage> getHTMLPages(Host host, User user, boolean respectFrontEndPermissions) throws DotStateException,
+			DotDataException, DotSecurityException;
+
 	public  List<HTMLPage> getHTMLPages(Folder parent, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions) throws DotStateException,
             DotDataException, DotSecurityException;
-	
-	
-	/**
+
+    /**
+     * Gets a list of HTMLPages under a given host
+     *
+     * @param host
+     * @param working
+     * @param deleted
+     * @param user
+     * @param respectFrontEndPermissions
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public List<HTMLPage> getHTMLPages ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException,
+            DotDataException, DotSecurityException;
+
+
+    /**
 	 * Gets a list of 'working' Links under given folder
 	 * 
 	 * @param parent

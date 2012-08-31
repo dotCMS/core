@@ -51,7 +51,7 @@ public class HTMLPageFactory {
 	private static HostAPI hostAPI = APILocator.getHostAPI();
 
 	/**
-	 * @param permissionAPI the permissionAPI to set
+	 * @param permissionAPIRef the permissionAPI to set
 	 */
 	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
@@ -140,6 +140,18 @@ public class HTMLPageFactory {
 		}
 		return false;
 	}
+
+    public static boolean existsPageName ( Host host, String pageName ) throws DotStateException, DotDataException, DotSecurityException {
+
+        List<HTMLPage> pages = APILocator.getFolderAPI().getHTMLPages( host, APILocator.getUserAPI().getSystemUser(), false );
+        for ( HTMLPage htmlpage : pages ) {
+            if ( pageName.equalsIgnoreCase( htmlpage.getPageUrl() ) ) {
+                Logger.debug( HTMLPageFactory.class, "existsFileName=" + htmlpage.getInode() );
+                return (InodeUtils.isSet( htmlpage.getInode() ));
+            }
+        }
+        return false;
+    }
 
 	public static HTMLPage getWorkingHTMLPageByPath(String path, Host host) throws DotStateException, DotDataException, DotSecurityException{
 	   
@@ -248,70 +260,85 @@ public class HTMLPageFactory {
         return true;
 	
 	}
-	
-	@SuppressWarnings("deprecation")
-	public static HTMLPage copyHTMLPage (HTMLPage currentHTMLPage, Folder parent) throws DotDataException, DotStateException, DotSecurityException {
-		
-		if (!currentHTMLPage.isWorking()) {
-			Identifier id = APILocator.getIdentifierAPI().find(currentHTMLPage);
-			currentHTMLPage = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id,APILocator.getUserAPI().getSystemUser(),false);
-		}
-		Folder currentParentFolder = APILocator.getFolderAPI().findParentFolder(currentHTMLPage, APILocator.getUserAPI().getSystemUser(),false);
-		
-	    Logger.debug(HTMLPageFactory.class, "Copying HTMLPage: " + currentHTMLPage.getURI(currentParentFolder) + " to: " + APILocator.getIdentifierAPI().find(parent).getPath());
 
-	    //gets the new information for the template from the request object
-		HTMLPage newHTMLPage = new HTMLPage();
+    public static HTMLPage copyHTMLPage ( HTMLPage currentHTMLPage, Host host ) throws DotDataException, DotStateException, DotSecurityException {
+        return copyHTMLPage(currentHTMLPage, null, host);
+    }
 
-		newHTMLPage.copy(currentHTMLPage);
+    public static HTMLPage copyHTMLPage ( HTMLPage currentHTMLPage, Folder parent ) throws DotDataException, DotStateException, DotSecurityException {
+        return copyHTMLPage(currentHTMLPage, parent, null);
+    }
 
-		//gets page url before extension
-		String pageURL = com.dotmarketing.util.UtilMethods
-				.getFileName(currentHTMLPage.getPageUrl());
-		//gets file extension
-		String fileExtension = com.dotmarketing.util.UtilMethods
-				.getFileExtension(currentHTMLPage.getPageUrl());
-		
-		boolean isCopy = false;
-		while (HTMLPageFactory.existsPageName(parent, pageURL + "." + fileExtension)) {
-			pageURL = pageURL + "_copy";
-			isCopy = true;
-		}
-		
-		newHTMLPage.setPageUrl(pageURL + "." + fileExtension);
-		
-		if (isCopy)
-			newHTMLPage.setFriendlyName(currentHTMLPage.getFriendlyName() + " (COPY)");
-		
-		//gets current template from html page and attach it to the new page
-		Template currentTemplate = HTMLPageFactory.getHTMLPageTemplate(currentHTMLPage);
-		newHTMLPage.setTemplateId(currentTemplate.getIdentifier());
-		
-		//persists the webasset
-		HibernateUtil.saveOrUpdate(newHTMLPage);
+    @SuppressWarnings ("deprecation")
+    private static HTMLPage copyHTMLPage ( HTMLPage currentHTMLPage, Folder parent, Host host ) throws DotDataException, DotStateException, DotSecurityException {
 
-		//Add the new page to the folder
-		//parent.addChild(newHTMLPage);
+        if ( !currentHTMLPage.isWorking() ) {
+            Identifier id = APILocator.getIdentifierAPI().find( currentHTMLPage );
+            currentHTMLPage = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion( id, APILocator.getUserAPI().getSystemUser(), false );
+        }
 
-		//creates new identifier for this webasset and persists it
-		Identifier newIdent = APILocator.getIdentifierAPI().createNew(newHTMLPage, parent);
-		newHTMLPage.setIdentifier(newIdent.getId());
-		
-		WorkingCache.removeAssetFromCache(newHTMLPage);
-		WorkingCache.addToWorkingAssetToCache(newHTMLPage);
-		LiveCache.removeAssetFromCache(newHTMLPage);
-		LiveCache.addToLiveAssetToCache(newHTMLPage);
-		
-		APILocator.getVersionableAPI().setWorking(newHTMLPage);
-		if (currentHTMLPage.isLive()) 
-			APILocator.getVersionableAPI().setLive(newHTMLPage);
-		//Copy permissions
-		permissionAPI.copyPermissions(currentHTMLPage, newHTMLPage);
-		
-		return newHTMLPage;
-	}
-	
-	
+        //gets the new information for the template from the request object
+        HTMLPage newHTMLPage = new HTMLPage();
+        //Copy the current page
+        newHTMLPage.copy( currentHTMLPage );
+
+        //gets page url before extension
+        String pageURL = com.dotmarketing.util.UtilMethods.getFileName( currentHTMLPage.getPageUrl() );
+        //gets file extension
+        String fileExtension = com.dotmarketing.util.UtilMethods.getFileExtension( currentHTMLPage.getPageUrl() );
+
+        Boolean existPageName;
+        if ( parent != null ) {
+            existPageName = HTMLPageFactory.existsPageName( parent, pageURL + "." + fileExtension );
+        } else {
+            existPageName = HTMLPageFactory.existsPageName( host, pageURL + "." + fileExtension );
+        }
+
+        boolean isCopy = false;
+        if ( existPageName ) {
+            pageURL = pageURL + "_copy";
+            isCopy = true;
+        }
+
+        newHTMLPage.setPageUrl( pageURL + "." + fileExtension );
+
+        if ( isCopy )
+            newHTMLPage.setFriendlyName( currentHTMLPage.getFriendlyName() + " (COPY)" );
+
+        //gets current template from html page and attach it to the new page
+        Template currentTemplate = HTMLPageFactory.getHTMLPageTemplate( currentHTMLPage );
+        newHTMLPage.setTemplateId( currentTemplate.getIdentifier() );
+
+        //persists the webasset
+        HibernateUtil.saveOrUpdate( newHTMLPage );
+
+        //Add the new page to the folder
+        //parent.addChild(newHTMLPage);
+
+        //creates new identifier for this webasset and persists it
+        Identifier newIdent;
+        if ( parent != null ) {
+            newIdent = APILocator.getIdentifierAPI().createNew( newHTMLPage, parent );
+        } else {
+            newIdent = APILocator.getIdentifierAPI().createNew( newHTMLPage, host );
+        }
+        newHTMLPage.setIdentifier( newIdent.getId() );
+
+        WorkingCache.removeAssetFromCache( newHTMLPage );
+        WorkingCache.addToWorkingAssetToCache( newHTMLPage );
+        LiveCache.removeAssetFromCache( newHTMLPage );
+        LiveCache.addToLiveAssetToCache( newHTMLPage );
+
+        APILocator.getVersionableAPI().setWorking( newHTMLPage );
+        if ( currentHTMLPage.isLive() )
+            APILocator.getVersionableAPI().setLive( newHTMLPage );
+
+        //Copy permissions
+        permissionAPI.copyPermissions( currentHTMLPage, newHTMLPage );
+
+        return newHTMLPage;
+    }
+
     @SuppressWarnings({ "unchecked", "deprecation" })
 	public static boolean renameHTMLPage (HTMLPage page, String newName, User user) throws Exception {
 

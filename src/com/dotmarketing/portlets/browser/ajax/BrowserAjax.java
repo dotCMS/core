@@ -734,44 +734,92 @@ public class BrowserAjax {
     	return result;
     }
 
-    public boolean copyHTMLPage (String inode, String newFolder) throws Exception {
+    /**
+     * Copies a given inode HTMLPage to a given folder
+     *
+     * @param inode     HTMLPage inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return Confirmation message
+     * @throws Exception
+     */
+    public boolean copyHTMLPage ( String inode, String newFolder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
-    	HTMLPage page = (HTMLPage) InodeFactory.getInode(inode, HTMLPage.class);
+        HTMLPage page = (HTMLPage) InodeFactory.getInode( inode, HTMLPage.class );
 
         // gets folder parent
-		Folder parent = APILocator.getFolderAPI().find(newFolder, user, false);
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( newFolder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( newFolder, user, false );
+        }
 
-		HTMLPageFactory.copyHTMLPage(page, parent);
+        // Checking permissions
+        String permissionsError = "The user doesn't have the required permissions.";
+        if ( !permissionAPI.doesUserHavePermission( page, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        }
 
-		return true;
+        if ( parent != null ) {
+            HTMLPageFactory.copyHTMLPage( page, parent );
+        } else {
+            HTMLPageFactory.copyHTMLPage( page, host );
+        }
 
+        return true;
     }
 
-    public boolean moveHTMLPage (String inode, String folder) throws Exception {
+    /**
+     * Moves a given inode HTMLPage to a given folder
+     *
+     * @param inode     HTMLPage inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return Confirmation message
+     * @throws Exception
+     */
+    public boolean moveHTMLPage ( String inode, String newFolder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
-    	HTMLPage page = (HTMLPage) InodeFactory.getInode(inode, HTMLPage.class);
+        HTMLPage page = (HTMLPage) InodeFactory.getInode( inode, HTMLPage.class );
 
         // gets folder parent
-		Folder parent = APILocator.getFolderAPI().find(folder, user, false);
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( newFolder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( newFolder, user, false );
+        }
 
-		return HTMLPageFactory.moveHTMLPage(page, parent);
+        // Checking permissions
+        String permissionsError = "The user doesn't have the required permissions.";
+        if ( !permissionAPI.doesUserHavePermission( page, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        }
 
+        return HTMLPageFactory.moveHTMLPage( page, parent );
     }
 
     public Map<String, Object> renameLink (String inode, String newName) throws Exception {

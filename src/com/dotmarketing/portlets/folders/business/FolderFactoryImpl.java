@@ -1393,84 +1393,96 @@ public class FolderFactoryImpl extends FolderFactory {
 		return getChildrenClass(parent, clazz, null, null, 0, 1000);
 	}
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond) throws DotStateException, DotDataException {
-		return getChildrenClass(parent, clazz, cond, null, 0, 1000);
-	}
+    protected List<Treeable> getChildrenClass ( Host host, Class clazz, ChildrenCondition cond ) throws DotStateException, DotDataException {
+        Identifier identifier = APILocator.getIdentifierAPI().find( host.getIdentifier() );
+        return getChildrenClass( identifier, clazz, cond, null, 0, 1000 );
+    }
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition condition, String orderby) throws DotStateException,
-			DotDataException {
-		return getChildrenClass(parent, clazz, condition, orderby, 0, 1000);
-	}
+    protected List<Treeable> getChildrenClass ( Folder parent, Class clazz, ChildrenCondition cond ) throws DotStateException, DotDataException {
+        return getChildrenClass( parent, clazz, cond, null, 0, 1000 );
+    }
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond, String orderBy, int offset, int limit)
-			throws DotStateException, DotDataException {
+    protected List<Treeable> getChildrenClass ( Folder parent, Class clazz, ChildrenCondition condition, String orderby ) throws DotStateException,
+            DotDataException {
+        return getChildrenClass( parent, clazz, condition, orderby, 0, 1000 );
+    }
 
-		Identifier id = APILocator.getIdentifierAPI().find(parent.getIdentifier());
+    protected List<Treeable> getChildrenClass ( Folder parent, Class clazz, ChildrenCondition cond, String orderBy, int offset, int limit ) throws DotStateException, DotDataException {
+        Identifier identifier = APILocator.getIdentifierAPI().find( parent.getIdentifier() );
+        return getChildrenClass( identifier, clazz, cond, orderBy, offset, limit );
+    }
 
-		String tableName = null;
+    protected List<Treeable> getChildrenClass ( Identifier identifier, Class clazz, ChildrenCondition cond, String orderBy, int offset, int limit ) throws DotStateException, DotDataException {
 
-		try {
-			Object obj;
-			obj = clazz.newInstance();
+        String tableName;
 
-			if (obj instanceof Treeable) {
-				tableName = ((Treeable) obj).getType();
-			} else {
-				throw new DotStateException("Unable to getType for child asset");
-			}
-		} catch (InstantiationException e) {
-			throw new DotStateException("Unable to getType for child asset");
-		} catch (IllegalAccessException e) {
-			throw new DotStateException("Unable to getType for child asset");
-		}
+        try {
+            Object obj;
+            obj = clazz.newInstance();
 
-		String versionTable=UtilMethods.getVersionInfoTableName(tableName);
+            if ( obj instanceof Treeable ) {
+                tableName = ((Treeable) obj).getType();
+            } else {
+                throw new DotStateException( "Unable to getType for child asset" );
+            }
+        } catch ( InstantiationException e ) {
+            throw new DotStateException( "Unable to getType for child asset" );
+        } catch ( IllegalAccessException e ) {
+            throw new DotStateException( "Unable to getType for child asset" );
+        }
 
-		HibernateUtil dh = new HibernateUtil(clazz);
-		String sql = "SELECT {" + tableName + ".*} " + " from " + tableName + " " + tableName + ",  inode " + tableName
-				+ "_1_, identifier " + tableName + "_2_ ";
+        String versionTable = UtilMethods.getVersionInfoTableName( tableName );
 
-		if(cond!=null && versionTable!=null && (cond.deleted!=null || cond.working!=null || cond.live!=null))
-		    sql+=", "+versionTable;
+        HibernateUtil dh = new HibernateUtil( clazz );
+        String sql = "SELECT {" + tableName + ".*} " + " from " + tableName + " " + tableName + ",  inode " + tableName
+                + "_1_, identifier " + tableName + "_2_ ";
 
-		sql+=" where " + tableName + "_2_.parent_path = ? " + " and " + tableName
-				+ ".identifier = " + tableName + "_2_.id " + " and " + tableName + "_1_.inode = " + tableName + ".inode " + " and ";
+        if ( cond != null && versionTable != null && (cond.deleted != null || cond.working != null || cond.live != null) )
+            sql += ", " + versionTable;
 
-		if(cond!=null && cond.deleted!=null)
-		    if(versionTable!=null)
-		        sql+=versionTable+".deleted="+((cond.deleted)?DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse())+" and ";
-		    else
-		        sql+=" deleted="+((cond.deleted)?DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse())+" and ";
+        sql += " where " + tableName + "_2_.parent_path = ? " + " and " + tableName
+                + ".identifier = " + tableName + "_2_.id " + " and " + tableName + "_1_.inode = " + tableName + ".inode " + " and ";
 
-		if(cond!=null && cond.working!=null)
-		    if(versionTable!=null)
-		        sql+=versionTable+".working_inode"+(cond.working ? "=":"<>")+tableName+"_1_.inode and ";
-		    else
-		        sql+=" working="+((cond.working)?DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse())+" and ";
-
-		if(cond!=null && cond.live!=null)
-		    if(versionTable!=null)
-                sql+=versionTable+".live_inode"+(cond.live ? "=":"<>")+tableName+"_1_.inode and ";
+        if ( cond != null && cond.deleted != null )
+            if ( versionTable != null )
+                sql += versionTable + ".deleted=" + ((cond.deleted) ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse()) + " and ";
             else
-                sql+=" live="+((cond.live)?DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse())+" and ";
+                sql += " deleted=" + ((cond.deleted) ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse()) + " and ";
 
-		sql+= tableName + "_1_.type = '" + tableName + "' " + " and " + tableName + "_2_.host_inode = ? ";
+        if ( cond != null && cond.working != null )
+            if ( versionTable != null )
+                sql += versionTable + ".working_inode" + (cond.working ? "=" : "<>") + tableName + "_1_.inode and ";
+            else
+                sql += " working=" + ((cond.working) ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse()) + " and ";
 
-		if(cond!=null && cond.showOnMenu!=null)
-		    sql+=" and "+tableName+".show_on_menu="+(cond.showOnMenu ? DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse());
+        if ( cond != null && cond.live != null )
+            if ( versionTable != null )
+                sql += versionTable + ".live_inode" + (cond.live ? "=" : "<>") + tableName + "_1_.inode and ";
+            else
+                sql += " live=" + ((cond.live) ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse()) + " and ";
 
-		if (orderBy != null) {
-			sql = sql + " order by " + orderBy;
-		}
-		dh.setSQLQuery(sql);
-		dh.setFirstResult(offset);
-		dh.setMaxResults(limit);
-		dh.setParam(id.getURI()+'/');
-		dh.setParam(id.getHostId());
-		return dh.list();
+        sql += tableName + "_1_.type = '" + tableName + "' " + " and " + tableName + "_2_.host_inode = ? ";
 
-	}
+        if ( cond != null && cond.showOnMenu != null )
+            sql += " and " + tableName + ".show_on_menu=" + (cond.showOnMenu ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse());
 
+        if ( orderBy != null ) {
+            sql = sql + " order by " + orderBy;
+        }
+
+        dh.setSQLQuery( sql );
+        dh.setFirstResult( offset );
+        dh.setMaxResults( limit );
+        if ( identifier.getHostId().equals( Host.SYSTEM_HOST ) ) {
+            dh.setParam( "/" );
+            dh.setParam( identifier.getId() );
+        } else {
+            dh.setParam( identifier.getURI() + "/" );
+            dh.setParam( identifier.getHostId() );
+        }
+
+        return dh.list();
+    }
 
 	private class InternalCounter
 	{

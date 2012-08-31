@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
@@ -66,7 +67,7 @@ public class BrowserAPI {
 
 		Folder f = null;
 		try{
-			f = (Folder) APILocator.getFolderAPI().find(folderId, usr, false);
+			f = APILocator.getFolderAPI().find(folderId, usr, false);
 		}catch(Exception e){
 
 		}
@@ -136,8 +137,49 @@ public class BrowserAPI {
         List<Versionable> files = new ArrayList<Versionable>();
         PermissionAPI  perAPI = APILocator.getPermissionAPI();
 		try {
-			if(f==null){
-				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByHost(APILocator.getHostAPI().find(folderId, userAPI.getSystemUser(),false), userAPI.getSystemUser(),false));
+
+            if ( f == null ) {
+
+                //Getting the parent host
+                Host host = APILocator.getHostAPI().find( folderId, usr, false );
+
+                //Getting the files directly under the host
+                files.addAll( APILocator.getFileAssetAPI().findFileAssetsByHost( host, usr, false ) );
+
+                //Getting the html pages directly under the host
+                List<HTMLPage> pages = new ArrayList<HTMLPage>();
+                try {
+                    pages.addAll( folderAPI.getHTMLPages( host, usr, false ) );
+                    if ( showArchived )
+                        pages.addAll( folderAPI.getHTMLPages( host, true, showArchived, usr, false ) );
+
+                } catch ( Exception e1 ) {
+                    Logger.error( this, "Could not load HTMLPages : ", e1 );
+                }
+
+                for ( HTMLPage page : pages ) {
+                    List<Integer> permissions = new ArrayList<Integer>();
+                    try {
+                        permissions = permissionAPI.getPermissionIdsFromRoles( page, roles, usr );
+                    } catch ( DotDataException e ) {
+                        Logger.error( this, "Could not load permissions : ", e );
+                    }
+                    if ( permissions.contains( PERMISSION_READ ) ) {
+                        Map<String, Object> pageMap = page.getMap();
+                        pageMap.put( "mimeType", "application/dotpage" );
+                        pageMap.put( "permissions", permissions );
+                        pageMap.put( "name", page.getPageUrl() );
+                        pageMap.put( "description", page.getFriendlyName() );
+                        pageMap.put( "extension", "page" );
+                        try {
+                            pageMap.put( "pageURI", page.getURI() );
+                        } catch ( Exception e ) {
+                            Logger.error( this, "Could not get URI : ", e );
+                        }
+                        returnList.add( pageMap );
+                    }
+                }
+
 			}else{
 				files.addAll(folderAPI.getFiles(f,userAPI.getSystemUser(),false, cond));
 				if(showArchived){
