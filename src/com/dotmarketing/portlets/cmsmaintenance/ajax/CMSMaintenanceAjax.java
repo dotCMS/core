@@ -213,7 +213,6 @@ public class CMSMaintenanceAjax {
 
     public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException {
         	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
-        	MaintenanceUtil.deleteAssetsWithNoInode();
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
     }
 
