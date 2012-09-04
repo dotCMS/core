@@ -29,13 +29,21 @@ djConfig={
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
 <script type="text/javascript">
-var theme = 'dmundra';
+ dojo.ready(function(){
+    var theme = 'dmundra';
 	if(dojo.body()){
 		if(!dojo.hasClass(dojo.body(),theme)){
 	    	    dojo.addClass(dojo.body(),theme);
 		}
 	}
-
+ });
+    dojo.require("dijit.form.TextBox");
+    dojo.require("dijit.form.Textarea");
+    dojo.require("dijit.form.Button");
+    dojo.require("dijit.form.FilteringSelect");
+    dojo.require("dijit.form.CheckBox");
+    dojo.require("dijit.form.DateTextBox");
+    dojo.require("dijit.form.MultiSelect");
 	dojo.require("dojo.parser");
 	var DWRUtil = dwr.util;
 </script>
