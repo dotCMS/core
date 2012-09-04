@@ -238,12 +238,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			container.setStructureInode(structure.getInode());
 			//TreeFactory.saveTree(new Tree(structure.getInode(), container.getInode()));
 
+		container.setModUser(user.getUserId());
+		container.setModDate(new Date());
+		
 		// it saves or updates the asset
 		if (identifier != null) {
 			createAsset(container, userId, identifier, false);
 			container = (Container) saveAsset(container, identifier, user, false);
 		} else {
-			createAsset(container, userId);
+			Identifier ident=APILocator.getIdentifierAPI().createNew(container, host);
+			container = (Container) saveAsset(container, ident, user, false);
 		}
 		
 		// Get templates of the old version so you can update the working
