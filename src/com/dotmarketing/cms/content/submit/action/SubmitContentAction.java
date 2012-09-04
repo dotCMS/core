@@ -566,9 +566,7 @@ public class SubmitContentAction extends DispatchAction{
 			if (!isEmptyFile) {
 				fileName = uploadRequest.getFileName(binaryFieldName);
 
-				File tempUserFolder = new java.io.File(
-						Config.CONTEXT
-								.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+				File tempUserFolder = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
 								+ java.io.File.separator + user.getUserId());
 				if (!tempUserFolder.exists())
 					tempUserFolder.mkdirs();
