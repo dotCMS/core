@@ -1,2 +1,113 @@
-//>>built
-define(["dijit","dojo","dojox","dojo/require!dojox/mobile/compat"],function(_1,_2,_3){_2.provide("dojox.mobile.app.compat");_2.require("dojox.mobile.compat");_2.extend(_3.mobile.app.AlertDialog,{_doTransition:function(_4){var h=_2.marginBox(this.domNode.firstChild).h;var _5=this.controller.getWindowSize().h;var _6=_5-h;var _7=_5;var _8=_2.fx.slideTo({node:this.domNode,duration:400,top:{start:_4<0?_6:_7,end:_4<0?_7:_6}});var _9=_2[_4<0?"fadeOut":"fadeIn"]({node:this.mask,duration:400});var _a=_2.fx.combine([_8,_9]);var _b=this;_2.connect(_a,"onEnd",this,function(){if(_4<0){_b.domNode.style.display="none";_2.destroy(_b.domNode);_2.destroy(_b.mask);}});_a.play();}});_2.extend(_3.mobile.app.List,{deleteRow:function(){var _c=this._selectedRow;_2.style(_c,{visibility:"hidden",minHeight:"0px"});_2.removeClass(_c,"hold");var _d=_2.contentBox(_c).h;_2.animateProperty({node:_c,duration:800,properties:{height:{start:_d,end:1},paddingTop:{end:0},paddingBottom:{end:0}},onEnd:this._postDeleteAnim}).play();}});if(_3.mobile.app.ImageView&&!_2.create("canvas").getContext){_2.extend(_3.mobile.app.ImageView,{buildRendering:function(){this.domNode.innerHTML="ImageView widget is not supported on this browser."+"Please try again with a modern browser, e.g. "+"Safari, Chrome or Firefox";this.canvas={};},postCreate:function(){}});}if(_3.mobile.app.ImageThumbView){_2.extend(_3.mobile.app.ImageThumbView,{place:function(_e,x,y){_2.style(_e,{top:y+"px",left:x+"px",visibility:"visible"});}});}});
+// wrapped by build app
+define("dojox/mobile/app/compat", ["dijit","dojo","dojox","dojo/require!dojox/mobile/compat"], function(dijit,dojo,dojox){
+dojo.provide("dojox.mobile.app.compat");
+dojo.require("dojox.mobile.compat");
+
+// summary:
+//		CSS3 compatibility module for apps
+// description:
+//		This module provides support for some of the CSS3 features to djMobile
+//		for non-CSS3 browsers, such as IE or Firefox.
+//		If you load this module, it directly replaces some of the methods of
+//		djMobile instead of subclassing. This way, html pages remains the same
+//		regardless of whether this compatibility module is used or not.
+//		Recommended usage is as follows. the code below loads dojox.mobile.compat
+//		only when isWebKit is true.
+//
+//		dojo.require("dojox.mobile");
+//		dojo.requireIf(!dojo.isWebKit, "dojox.mobile.appCompat");
+
+dojo.extend(dojox.mobile.app.AlertDialog, {
+	_doTransition: function(dir){
+		console.log("in _doTransition and this = ", this);
+
+		var h = dojo.marginBox(this.domNode.firstChild).h;
+
+		var bodyHeight = this.controller.getWindowSize().h;
+	
+		var high = bodyHeight - h;
+		var low = bodyHeight;
+
+		var anim1 = dojo.fx.slideTo({
+			node: this.domNode,
+			duration: 400,
+			top: {start: dir < 0 ? high : low, end: dir < 0 ? low: high}
+		});
+
+		var anim2 = dojo[dir < 0 ? "fadeOut" : "fadeIn"]({
+			node: this.mask,
+			duration: 400
+		});
+	
+		var anim = dojo.fx.combine([anim1, anim2]);
+	
+		var _this = this;
+
+		dojo.connect(anim, "onEnd", this, function(){
+			if(dir < 0){
+				_this.domNode.style.display = "none";
+				dojo.destroy(_this.domNode);
+				dojo.destroy(_this.mask);
+			}
+		});
+		anim.play();
+	}
+});
+
+dojo.extend(dojox.mobile.app.List, {
+	deleteRow: function(){
+		console.log("deleteRow in compat mode", row);
+	
+		var row = this._selectedRow;
+		// First make the row invisible
+		// Put it back where it came from
+		dojo.style(row, {
+			visibility: "hidden",
+			minHeight: "0px"
+		});
+		dojo.removeClass(row, "hold");
+	
+	
+		// Animate reducing it's height to zero, then delete the data from the
+		// array
+		var height = dojo.contentBox(row).h;
+		dojo.animateProperty({
+				node: row,
+				duration: 800,
+				properties: {
+				height: {start: height, end: 1},
+				paddingTop: {end: 0},
+				paddingBottom: {end: 0}
+			},
+			onEnd: this._postDeleteAnim
+		}).play();
+	}
+});
+
+if(dojox.mobile.app.ImageView && !dojo.create("canvas").getContext){
+	dojo.extend(dojox.mobile.app.ImageView, {
+		buildRendering: function(){
+			this.domNode.innerHTML =
+				"ImageView widget is not supported on this browser."
+				+ "Please try again with a modern browser, e.g. "
+				+ "Safari, Chrome or Firefox";
+			this.canvas = {};
+		},
+		
+		postCreate: function(){}
+	});
+}
+
+if(dojox.mobile.app.ImageThumbView){
+	dojo.extend(dojox.mobile.app.ImageThumbView, {
+		place: function(node, x, y){
+			dojo.style(node, {
+				top: y + "px",
+				left: x + "px",
+				visibility: "visible"
+			});
+		}
+	})
+}
+
+});

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/tr/Breadcrumb", //begin v1.x content
-({
+"dojox/editor/plugins/nls/tr/Breadcrumb", ({
 	"nodeActions": "${nodeName} Eylemleri",
 	"selectContents": "İçindekileri seç",
 	"selectElement": "Öğeyi seç",
@@ -10,6 +8,4 @@ define(
 	"moveStart": "İmleci başa taşı",
 	"moveEnd": "İmleci sona taşı"
 })
-
-//end v1.x content
 );

@@ -1,8 +1,77 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/data/util/filter", ["../../_base/lang"], function(lang){
+	// module:
+	//		dojo/data/util/filter
+	// summary:
+	//		TODOC
 
-//>>built
-define("dojo/data/util/filter",["dojo/_base/lang"],function(_1){var _2=_1.getObject("dojo.data.util.filter",true);_2.patternToRegExp=function(_3,_4){var _5="^";var c=null;for(var i=0;i<_3.length;i++){c=_3.charAt(i);switch(c){case "\\":_5+=c;i++;_5+=_3.charAt(i);break;case "*":_5+=".*";break;case "?":_5+=".";break;case "$":case "^":case "/":case "+":case ".":case "|":case "(":case ")":case "{":case "}":case "[":case "]":_5+="\\";default:_5+=c;}}_5+="$";if(_4){return new RegExp(_5,"mi");}else{return new RegExp(_5,"m");}};return _2;});
+var filter = {};
+lang.setObject("dojo.data.util.filter", filter);
+
+filter.patternToRegExp = function(/*String*/pattern, /*boolean?*/ ignoreCase){
+	// summary:
+	//		Helper function to convert a simple pattern to a regular expression for matching.
+	// description:
+	//		Returns a regular expression object that conforms to the defined conversion rules.
+	//		For example:
+	//
+	//		- ca*   -> /^ca.*$/
+	//		- *ca*  -> /^.*ca.*$/
+	//		- *c\*a*  -> /^.*c\*a.*$/
+	//		- *c\*a?*  -> /^.*c\*a..*$/
+	//
+	//		and so on.
+	// pattern: string
+	//		A simple matching pattern to convert that follows basic rules:
+	//
+	//		- * Means match anything, so ca* means match anything starting with ca
+	//		- ? Means match single character.  So, b?b will match to bob and bab, and so on.
+	//		- \ is an escape character.  So for example, \* means do not treat * as a match, but literal character *.
+	//
+	//		To use a \ as a character in the string, it must be escaped.  So in the pattern it should be
+	//		represented by \\ to be treated as an ordinary \ character instead of an escape.
+	// ignoreCase:
+	//		An optional flag to indicate if the pattern matching should be treated as case-sensitive or not when comparing
+	//		By default, it is assumed case sensitive.
+
+	var rxp = "^";
+	var c = null;
+	for(var i = 0; i < pattern.length; i++){
+		c = pattern.charAt(i);
+		switch(c){
+			case '\\':
+				rxp += c;
+				i++;
+				rxp += pattern.charAt(i);
+				break;
+			case '*':
+				rxp += ".*"; break;
+			case '?':
+				rxp += "."; break;
+			case '$':
+			case '^':
+			case '/':
+			case '+':
+			case '.':
+			case '|':
+			case '(':
+			case ')':
+			case '{':
+			case '}':
+			case '[':
+			case ']':
+				rxp += "\\"; //fallthrough
+			default:
+				rxp += c;
+		}
+	}
+	rxp += "$";
+	if(ignoreCase){
+		return new RegExp(rxp,"mi"); //RegExp
+	}else{
+		return new RegExp(rxp,"m"); //RegExp
+	}
+
+};
+
+return filter;
+});

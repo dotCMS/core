@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ru/LocalImage", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ru/LocalImage", ({
 	insertImageTitle: "Вставить изображение",
 	url: "Изображение",
 	browse: "Обзор...",
@@ -11,6 +9,4 @@ define(
 	prePopuTextUrl: "Введите URL изображения",
 	prePopuTextBrowse: " или выберите локальный файл."
 })
-
-//end v1.x content
 );

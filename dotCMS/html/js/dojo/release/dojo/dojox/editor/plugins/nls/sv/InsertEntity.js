@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sv/InsertEntity", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sv/InsertEntity", ({
 	insertEntity: "Infoga symbol"
 })
-
-//end v1.x content
 );

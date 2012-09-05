@@ -1,2 +1,26 @@
-//>>built
-define("dojox/geo/openlayers/Point",["dojo/_base/kernel","dojo/_base/declare","dojox/geo/openlayers/Geometry"],function(_1,_2,_3){return _2("dojox.geo.openlayers.Point",_3,{setPoint:function(p){this.coordinates=p;},getPoint:function(){return this.coordinates;}});});
+define("dojox/geo/openlayers/Point", [
+	"dojo/_base/declare",
+	"./Geometry"
+], function(declare, Geometry){
+
+	return declare("dojox.geo.openlayers.Point", Geometry, {
+		// summary:
+		//		A Point geometry handles description of points to be rendered in a GfxLayer
+
+		setPoint: function(p){
+			// summary:
+			//		Sets the point for this geometry.
+			// p: Object
+			//		The point geometry expressed as a {x, y} object.
+			this.coordinates = p;
+		},
+
+		getPoint: function(){
+			// summary:
+			//		Gets the point defining this geometry.
+			// returns:
+			//		The point defining this geometry.
+			return this.coordinates; // Object
+		}
+	});
+});

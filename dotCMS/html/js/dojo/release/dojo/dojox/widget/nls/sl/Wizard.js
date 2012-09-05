@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/sl/Wizard", //begin v1.x content
-({
+"dojox/widget/nls/sl/Wizard", ({
 next: "Naprej",
-previous: "Nazaj",
+previous: "Prejšnji",
 done: "Opravljeno"
 })
-//end v1.x content
 );

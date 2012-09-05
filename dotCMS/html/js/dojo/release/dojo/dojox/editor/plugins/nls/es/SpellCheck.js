@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/es/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/es/SpellCheck", ({
 	widgetLabel: "Corrector ortográfico por lotes",
 	unfound: "No encontrado",
 	skip: "Saltar",
@@ -17,6 +15,4 @@ define(
 	iSkipAll: "Saltar todos los casos como este",
 	iMsg: "No hay sugerencias de ortografía"
 })
-
-//end v1.x content
 );

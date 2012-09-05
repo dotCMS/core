@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/ar/LinkDialog", //begin v1.x content
-({
+"dijit/_editor/nls/ar/LinkDialog", ({
 	createLinkTitle: "خصائص الوصلة",
 	insertImageTitle: "خصائص الصورة",
 	url: "‏عنوان URL:‏",
@@ -13,6 +11,4 @@ define(
 	topWindow: "النافذة العلوية",
 	newWindow: "‏نافذة جديدة‏"
 })
-
-//end v1.x content
 );

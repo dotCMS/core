@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/ja/Pagination", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/ja/Pagination", ({
 	"descTemplate": "${2} - ${3}/${1} ${0}",
 	"firstTip": "最初のページ",
 	"lastTip": "最後のページ",
@@ -13,12 +11,11 @@ define(
 	"pageSizeLabelTemplate": "ページ当たり ${0} 項目",
 	"allItemsLabelTemplate": "すべての項目",
 	"gotoButtonTitle": "特定のページに移動",
-	"dialogTitle": "ページの移動",
-	"dialogIndication": "ページ番号を指定してください",
+	"dialogTitle": "ページに移動",
+	"dialogIndication": "ページ番号の指定",
 	"pageCountIndication": " (${0} ページ)",
-	"dialogConfirm": "実行",
+	"dialogConfirm": "移動",
 	"dialogCancel": "キャンセル",
 	"all": "すべて"
 })
-//end v1.x content
 );

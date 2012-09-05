@@ -1,2 +1,637 @@
-//>>built
-define("dojox/mobile/View",["dojo/_base/kernel","dojo/_base/array","dojo/_base/config","dojo/_base/connect","dojo/_base/declare","dojo/_base/lang","dojo/_base/sniff","dojo/_base/window","dojo/_base/Deferred","dojo/dom","dojo/dom-class","dojo/dom-geometry","dojo/dom-style","dijit/registry","dijit/_Contained","dijit/_Container","dijit/_WidgetBase","./ViewController","./transition"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_a,_b,_c,_d,_e,_f,_10,_11,_12,_13){var dm=_6.getObject("dojox.mobile",true);return _5("dojox.mobile.View",[_11,_10,_f],{selected:false,keepScrollPos:true,constructor:function(_14,_15){if(_15){_a.byId(_15).style.visibility="hidden";}this._aw=_7("android")>=2.2&&_7("android")<3;},buildRendering:function(){this.domNode=this.containerNode=this.srcNodeRef||_8.doc.createElement("DIV");this.domNode.className="mblView";this.connect(this.domNode,"webkitAnimationEnd","onAnimationEnd");this.connect(this.domNode,"webkitAnimationStart","onAnimationStart");if(!_3["mblCSS3Transition"]){this.connect(this.domNode,"webkitTransitionEnd","onAnimationEnd");}var id=location.href.match(/#(\w+)([^\w=]|$)/)?RegExp.$1:null;this._visible=this.selected&&!id||this.id==id;if(this.selected){dm._defaultView=this;}},startup:function(){if(this._started){return;}var _16=[];var _17=this.domNode.parentNode.childNodes;var _18=false;for(var i=0;i<_17.length;i++){var c=_17[i];if(c.nodeType===1&&_b.contains(c,"mblView")){_16.push(c);_18=_18||_e.byNode(c)._visible;}}var _19=this._visible;if(_16.length===1||(!_18&&_16[0]===this.domNode)){_19=true;}var _1a=this;setTimeout(function(){if(!_19){_1a.domNode.style.display="none";}else{dm.currentView=_1a;_1a.onStartView();_4.publish("/dojox/mobile/startView",[_1a]);}if(_1a.domNode.style.visibility!="visible"){_1a.domNode.style.visibility="visible";}var _1b=_1a.getParent&&_1a.getParent();if(!_1b||!_1b.resize){_1a.resize();}},_7("ie")?100:0);this.inherited(arguments);},resize:function(){_2.forEach(this.getChildren(),function(_1c){if(_1c.resize){_1c.resize();}});},onStartView:function(){},onBeforeTransitionIn:function(_1d,dir,_1e,_1f,_20){},onAfterTransitionIn:function(_21,dir,_22,_23,_24){},onBeforeTransitionOut:function(_25,dir,_26,_27,_28){},onAfterTransitionOut:function(_29,dir,_2a,_2b,_2c){},_saveState:function(_2d,dir,_2e,_2f,_30){this._context=_2f;this._method=_30;if(_2e=="none"){_2e=null;}this._moveTo=_2d;this._dir=dir;this._transition=_2e;this._arguments=_6._toArray(arguments);this._args=[];if(_2f||_30){for(var i=5;i<arguments.length;i++){this._args.push(arguments[i]);}}},_fixViewState:function(_31){var _32=this.domNode.parentNode.childNodes;for(var i=0;i<_32.length;i++){var n=_32[i];if(n.nodeType===1&&_b.contains(n,"mblView")){n.className="mblView";}}_31.className="mblView";},convertToId:function(_33){if(typeof (_33)=="string"){_33.match(/^#?([^&?]+)/);return RegExp.$1;}return _33;},performTransition:function(_34,dir,_35,_36,_37){if(_34==="#"){return;}if(_1.hash){if(typeof (_34)=="string"&&_34.charAt(0)=="#"&&!dm._params){dm._params=[];for(var i=0;i<arguments.length;i++){dm._params.push(arguments[i]);}_1.hash(_34);return;}}this._saveState.apply(this,arguments);var _38;if(_34){_38=this.convertToId(_34);}else{if(!this._dummyNode){this._dummyNode=_8.doc.createElement("DIV");_8.body().appendChild(this._dummyNode);}_38=this._dummyNode;}var _39=this.domNode;var _3a=_39.offsetTop;_38=this.toNode=_a.byId(_38);if(!_38){return;}_38.style.visibility=this._aw?"visible":"hidden";_38.style.display="";this._fixViewState(_38);var _3b=_e.byNode(_38);if(_3b){if(_3["mblAlwaysResizeOnTransition"]||!_3b._resized){dm.resizeAll(null,_3b);_3b._resized=true;}if(_35&&_35!="none"){_3b.containerNode.style.paddingTop=_3a+"px";}_3b.movedFrom=_39.id;}this.onBeforeTransitionOut.apply(this,arguments);_4.publish("/dojox/mobile/beforeTransitionOut",[this].concat(_6._toArray(arguments)));if(_3b){if(this.keepScrollPos&&!this.getParent()){var _3c=_8.body().scrollTop||_8.doc.documentElement.scrollTop||_8.global.pageYOffset||0;_39._scrollTop=_3c;var _3d=(dir==1)?0:(_38._scrollTop||0);_38.style.top="0px";if(_3c>1||_3d!==0){_39.style.top=_3d-_3c+"px";if(_3["mblHideAddressBar"]!==false){setTimeout(function(){_8.global.scrollTo(0,(_3d||1));},0);}}}else{_38.style.top="0px";}_3b.onBeforeTransitionIn.apply(_3b,arguments);_4.publish("/dojox/mobile/beforeTransitionIn",[_3b].concat(_6._toArray(arguments)));}if(!this._aw){_38.style.display="none";_38.style.visibility="visible";}if(dm._iw&&dm.scrollable){var ss=dm.getScreenSize();_8.body().appendChild(dm._iwBgCover);_d.set(dm._iwBgCover,{position:"absolute",top:"0px",left:"0px",height:(ss.h+1)+"px",width:ss.w+"px",backgroundColor:_d.get(_8.body(),"background-color"),zIndex:-10000,display:""});_d.set(_38,{position:"absolute",zIndex:-10001,visibility:"visible",display:""});setTimeout(_6.hitch(this,function(){this._doTransition(_39,_38,_35,dir);}),80);}else{this._doTransition(_39,_38,_35,dir);}},_toCls:function(s){return "mbl"+s.charAt(0).toUpperCase()+s.substring(1);},_doTransition:function(_3e,_3f,_40,dir){var rev=(dir==-1)?" mblReverse":"";if(dm._iw&&dm.scrollable){_d.set(_3f,{position:"",zIndex:""});_8.body().removeChild(dm._iwBgCover);}else{if(!this._aw){_3f.style.display="";}}if(!_40||_40=="none"){this.domNode.style.display="none";this.invokeCallback();}else{if(_3["mblCSS3Transition"]){_9.when(_13,_6.hitch(this,function(_41){var _42=_d.get(_3f,"position");_d.set(_3f,"position","absolute");_9.when(_41(_3e,_3f,{transition:_40,reverse:(dir===-1)?true:false}),_6.hitch(this,function(){_d.set(_3f,"position",_42);this.invokeCallback();}));}));}else{var s=this._toCls(_40);_b.add(_3e,s+" mblOut"+rev);_b.add(_3f,s+" mblIn"+rev);setTimeout(function(){_b.add(_3e,"mblTransition");_b.add(_3f,"mblTransition");},100);var _43="50% 50%";var _44="50% 50%";var _45,_46,_47;if(_40.indexOf("swirl")!=-1||_40.indexOf("zoom")!=-1){if(this.keepScrollPos&&!this.getParent()){_45=_8.body().scrollTop||_8.doc.documentElement.scrollTop||_8.global.pageYOffset||0;}else{_45=-_c.position(_3e,true).y;}_47=_8.global.innerHeight/2+_45;_43="50% "+_47+"px";_44="50% "+_47+"px";}else{if(_40.indexOf("scale")!=-1){var _48=_c.position(_3e,true);_46=((this.clickedPosX!==undefined)?this.clickedPosX:_8.global.innerWidth/2)-_48.x;if(this.keepScrollPos&&!this.getParent()){_45=_8.body().scrollTop||_8.doc.documentElement.scrollTop||_8.global.pageYOffset||0;}else{_45=-_48.y;}_47=((this.clickedPosY!==undefined)?this.clickedPosY:_8.global.innerHeight/2)+_45;_43=_46+"px "+_47+"px";_44=_46+"px "+_47+"px";}}_d.set(_3e,{webkitTransformOrigin:_43});_d.set(_3f,{webkitTransformOrigin:_44});}}dm.currentView=_e.byNode(_3f);},onAnimationStart:function(e){},onAnimationEnd:function(e){var _49=e.animationName||e.target.className;if(_49.indexOf("Out")===-1&&_49.indexOf("In")===-1&&_49.indexOf("Shrink")===-1){return;}var _4a=false;if(_b.contains(this.domNode,"mblOut")){_4a=true;this.domNode.style.display="none";_b.remove(this.domNode,[this._toCls(this._transition),"mblIn","mblOut","mblReverse"]);}else{this.containerNode.style.paddingTop="";}_d.set(this.domNode,{webkitTransformOrigin:""});if(_49.indexOf("Shrink")!==-1){var li=e.target;li.style.display="none";_b.remove(li,"mblCloseContent");}if(_4a){this.invokeCallback();}this.domNode&&(this.domNode.className="mblView");this.clickedPosX=this.clickedPosY=undefined;},invokeCallback:function(){this.onAfterTransitionOut.apply(this,this._arguments);_4.publish("/dojox/mobile/afterTransitionOut",[this].concat(this._arguments));var _4b=_e.byNode(this.toNode);if(_4b){_4b.onAfterTransitionIn.apply(_4b,this._arguments);_4.publish("/dojox/mobile/afterTransitionIn",[_4b].concat(this._arguments));_4b.movedFrom=undefined;}var c=this._context,m=this._method;if(!c&&!m){return;}if(!m){m=c;c=null;}c=c||_8.global;if(typeof (m)=="string"){c[m].apply(c,this._args);}else{m.apply(c,this._args);}},getShowingView:function(){var _4c=this.domNode.parentNode.childNodes;for(var i=0;i<_4c.length;i++){var n=_4c[i];if(n.nodeType===1&&_b.contains(n,"mblView")&&_d.get(n,"display")!=="none"){return _e.byNode(n);}}return null;},show:function(){var _4d=this.getShowingView();if(_4d){_4d.domNode.style.display="none";}this.domNode.style.display="";dm.currentView=this;}});});
+define("dojox/mobile/View", [
+	"dojo/_base/array",
+	"dojo/_base/config",
+	"dojo/_base/connect",
+	"dojo/_base/declare",
+	"dojo/_base/lang",
+	"dojo/_base/sniff",
+	"dojo/_base/window",
+	"dojo/_base/Deferred",
+	"dojo/dom",
+	"dojo/dom-class",
+	"dojo/dom-construct",
+	"dojo/dom-geometry",
+	"dojo/dom-style",
+	"dijit/registry",
+	"dijit/_Contained",
+	"dijit/_Container",
+	"dijit/_WidgetBase",
+	"./ViewController", // to load ViewController for you (no direct references)
+	"./common",
+	"./transition",
+	"./viewRegistry"
+], function(array, config, connect, declare, lang, has, win, Deferred, dom, domClass, domConstruct, domGeometry, domStyle, registry, Contained, Container, WidgetBase, ViewController, common, transitDeferred, viewRegistry){
+
+	// module:
+	//		dojox/mobile/View
+
+	var dm = lang.getObject("dojox.mobile", true);
+
+	return declare("dojox.mobile.View", [WidgetBase, Container, Contained], {
+		// summary:
+		//		A widget that represents a view that occupies the full screen
+		// description:
+		//		View acts as a container for any HTML and/or widgets. An entire
+		//		HTML page can have multiple View widgets and the user can
+		//		navigate through the views back and forth without page
+		//		transitions.
+
+		// selected: Boolean
+		//		If true, the view is displayed at startup time.
+		selected: false,
+
+		// keepScrollPos: Boolean
+		//		If true, the scroll position is kept when transition occurs between views.
+		keepScrollPos: true,
+
+		// tag: String
+		//		A name of the HTML tag to create as domNode.
+		tag: "div",
+
+		/* internal properties */
+		baseClass: "mblView",
+
+		constructor: function(/*Object*/params, /*DomNode?*/node){
+			// summary:
+			//		Creates a new instance of the class.
+			// params:
+			//		Contains the parameters.
+			// node:
+			//		The DOM node. If none is specified, it is automatically created. 
+			if(node){
+				dom.byId(node).style.visibility = "hidden";
+			}
+		},
+
+		destroy: function(){
+			viewRegistry.remove(this.id);
+			this.inherited(arguments);
+		},
+
+		buildRendering: function(){
+			this.domNode = this.containerNode = this.srcNodeRef || domConstruct.create(this.tag);
+
+			this._animEndHandle = this.connect(this.domNode, "webkitAnimationEnd", "onAnimationEnd");
+			this._animStartHandle = this.connect(this.domNode, "webkitAnimationStart", "onAnimationStart");
+			if(!config['mblCSS3Transition']){
+				this._transEndHandle = this.connect(this.domNode, "webkitTransitionEnd", "onAnimationEnd");
+			}
+			if(has('mblAndroid3Workaround')){
+				// workaround for the screen flicker issue on Android 3.x/4.0
+				// applying "-webkit-transform-style:preserve-3d" to domNode can avoid
+				// transition animation flicker
+				domStyle.set(this.domNode, "webkitTransformStyle", "preserve-3d");
+			}
+
+			viewRegistry.add(this);
+			this.inherited(arguments);
+		},
+
+		startup: function(){
+			if(this._started){ return; }
+
+			// Determine which view among the siblings should be visible.
+			// Priority:
+			//	 1. fragment id in the url (ex. #view1,view2)
+			//	 2. this.selected
+			//	 3. the first view
+			if(this._visible === undefined){
+				var views = this.getSiblingViews();
+				var ids = location.hash && location.hash.substring(1).split(/,/);
+				var fragView, selectedView, firstView;
+				array.forEach(views, function(v, i){
+					if(array.indexOf(ids, v.id) !== -1){ fragView = v; }
+					if(i == 0){ firstView = v; }
+					if(v.selected){ selectedView = v; }
+					v._visible = false;
+				}, this);
+				(fragView || selectedView || firstView)._visible = true;
+			}
+			if(this._visible){
+				// The 2nd arg is not to hide its sibling views so that they can be
+				// correctly initialized.
+				this.show(true, true);
+
+				this.onStartView();
+				connect.publish("/dojox/mobile/startView", [this]);
+			}
+
+			if(this.domNode.style.visibility != "visible"){ // this check is to avoid screen flickers
+				this.domNode.style.visibility = "visible";
+			}
+
+			// Need to call inherited first - so that child widgets get started
+			// up correctly
+			this.inherited(arguments);
+
+			var parent = this.getParent();
+			if(!parent || !parent.resize){ // top level widget
+				this.resize();
+			}
+
+			if(!this._visible){
+				// hide() should be called last so that child widgets can be
+				// initialized while they are visible.
+				this.hide();
+			}
+		},
+
+		resize: function(){
+			// summary:
+			//		Calls resize() of each child widget.
+			array.forEach(this.getChildren(), function(child){
+				if(child.resize){ child.resize(); }
+			});
+		},
+
+		onStartView: function(){
+			// summary:
+			//		Stub function to connect to from your application.
+			// description:
+			//		Called only when this view is shown at startup time.
+		},
+
+		onBeforeTransitionIn: function(moveTo, dir, transition, context, method){
+			// summary:
+			//		Stub function to connect to from your application.
+			// description:
+			//		Called before the arriving transition occurs.
+		},
+
+		onAfterTransitionIn: function(moveTo, dir, transition, context, method){
+			// summary:
+			//		Stub function to connect to from your application.
+			// description:
+			//		Called after the arriving transition occurs.
+		},
+
+		onBeforeTransitionOut: function(moveTo, dir, transition, context, method){
+			// summary:
+			//		Stub function to connect to from your application.
+			// description:
+			//		Called before the leaving transition occurs.
+		},
+
+		onAfterTransitionOut: function(moveTo, dir, transition, context, method){
+			// summary:
+			//		Stub function to connect to from your application.
+			// description:
+			//		Called after the leaving transition occurs.
+		},
+
+		_clearClasses: function(/*DomNode*/node){
+			// summary:
+			//		Clean up the domNode classes that were added while making a transition.
+			// description:
+			//		Remove all the "mbl" prefixed classes except mbl*View.
+			if(!node){ return; }
+			var classes = [];
+			array.forEach(lang.trim(node.className||"").split(/\s+/), function(c){
+				if(c.match(/^mbl\w*View$/) || c.indexOf("mbl") === -1){
+					classes.push(c);
+				}
+			}, this);
+			node.className = classes.join(' ');
+		},
+
+		_fixViewState: function(/*DomNode*/toNode){
+			// summary:
+			//		Sanity check for view transition states.
+			// description:
+			//		Sometimes uninitialization of Views fails after making view transition,
+			//		and that results in failure of subsequent view transitions.
+			//		This function does the uninitialization for all the sibling views.
+			var nodes = this.domNode.parentNode.childNodes;
+			for(var i = 0; i < nodes.length; i++){
+				var n = nodes[i];
+				if(n.nodeType === 1 && domClass.contains(n, "mblView")){
+					this._clearClasses(n);
+				}
+			}
+			this._clearClasses(toNode); // just in case toNode is a sibling of an ancestor.
+		},
+
+		convertToId: function(moveTo){
+			if(typeof(moveTo) == "string"){
+				// removes a leading hash mark (#) and params if exists
+				// ex. "#bar&myParam=0003" -> "bar"
+				return moveTo.replace(/^#?([^&?]+).*/, "$1");
+			}
+			return moveTo;
+		},
+
+		_isBookmarkable: function(detail){
+			return detail.moveTo && (config['mblForceBookmarkable'] || detail.moveTo.charAt(0) === '#') && !detail.hashchange;
+		},
+
+		performTransition: function(/*String*/moveTo, /*Number*/transitionDir, /*String*/transition,
+									/*Object|null*/context, /*String|Function*/method /*...*/){
+			// summary:
+			//		Function to perform the various types of view transitions, such as fade, slide, and flip.
+			// moveTo: String
+			//		The id of the transition destination view which resides in
+			//		the current page.
+			//		If the value has a hash sign ('#') before the id
+			//		(e.g. #view1) and the dojo/hash module is loaded by the user
+			//		application, the view transition updates the hash in the
+			//		browser URL so that the user can bookmark the destination
+			//		view. In this case, the user can also use the browser's
+			//		back/forward button to navigate through the views in the
+			//		browser history.
+			//		If null, transitions to a blank view.
+			//		If '#', returns immediately without transition.
+			// transitionDir: Number
+			//		The transition direction. If 1, transition forward. If -1, transition backward.
+			//		For example, the slide transition slides the view from right to left when transitionDir == 1,
+			//		and from left to right when transitionDir == -1.
+			// transition: String
+			//		A type of animated transition effect. You can choose from
+			//		the standard transition types, "slide", "fade", "flip", or
+			//		from the extended transition types, "cover", "coverv",
+			//		"dissolve", "reveal", "revealv", "scaleIn", "scaleOut",
+			//		"slidev", "swirl", "zoomIn", "zoomOut", "cube", and
+			//		"swap". If "none" is specified, transition occurs
+			//		immediately without animation.
+			// context: Object
+			//		The object that the callback function will receive as "this".
+			// method: String|Function
+			//		A callback function that is called when the transition has finished.
+			//		A function reference, or name of a function in context.
+			// tags:
+			//		public
+			//
+			// example:
+			//		Transition backward to a view whose id is "foo" with the slide animation.
+			//	|	performTransition("foo", -1, "slide");
+			//
+			// example:
+			//		Transition forward to a blank view, and then open another page.
+			//	|	performTransition(null, 1, "slide", null, function(){location.href = href;});
+
+			// normalize the arg
+			var detail, optArgs;
+			if(moveTo && typeof(moveTo) === "object"){
+				detail = moveTo;
+				optArgs = transitionDir; // array
+			}else{
+				detail = {
+					moveTo: moveTo,
+					transitionDir: transitionDir,
+					transition: transition,
+					context: context,
+					method: method
+				};
+				optArgs = [];
+				for(var i = 5; i < arguments.length; i++){
+					optArgs.push(arguments[i]);
+				}
+			}
+
+			// save the parameters
+			this._detail = detail;
+			this._optArgs = optArgs;
+			this._arguments = [
+				detail.moveTo,
+				detail.transitionDir,
+				detail.transition,
+				detail.context,
+				detail.method
+			];
+
+			if(detail.moveTo === "#"){ return; }
+			var toNode;
+			if(detail.moveTo){
+				toNode = this.convertToId(detail.moveTo);
+			}else{
+				if(!this._dummyNode){
+					this._dummyNode = win.doc.createElement("div");
+					win.body().appendChild(this._dummyNode);
+				}
+				toNode = this._dummyNode;
+			}
+
+			if(this.addTransitionInfo && typeof(detail.moveTo) == "string" && this._isBookmarkable(detail)){
+				this.addTransitionInfo(this.id, detail.moveTo, {transitionDir:detail.transitionDir, transition:detail.transition});
+			}
+
+			var fromNode = this.domNode;
+			var fromTop = fromNode.offsetTop;
+			toNode = this.toNode = dom.byId(toNode);
+			if(!toNode){ console.log("dojox/mobile/View.performTransition: destination view not found: "+detail.moveTo); return; }
+			toNode.style.visibility = "hidden";
+			toNode.style.display = "";
+			this._fixViewState(toNode);
+			var toWidget = registry.byNode(toNode);
+			if(toWidget){
+				// Now that the target view became visible, it's time to run resize()
+				if(config["mblAlwaysResizeOnTransition"] || !toWidget._resized){
+					common.resizeAll(null, toWidget);
+					toWidget._resized = true;
+				}
+
+				if(detail.transition && detail.transition != "none"){
+					// Temporarily add padding to align with the fromNode while transition
+					toWidget.containerNode.style.paddingTop = fromTop + "px";
+				}
+
+				toWidget.load && toWidget.load(); // for ContentView
+
+				toWidget.movedFrom = fromNode.id;
+			}
+			if(has('mblAndroidWorkaround') && !config['mblCSS3Transition']
+					&& detail.transition && detail.transition != "none"){
+				// workaround for the screen flicker issue on Android 2.2/2.3
+				// apply "-webkit-transform-style:preserve-3d" to both toNode and fromNode
+				// to make them 3d-transition-ready state just before transition animation
+				domStyle.set(toNode, "webkitTransformStyle", "preserve-3d");
+				domStyle.set(fromNode, "webkitTransformStyle", "preserve-3d");
+				// show toNode offscreen to avoid flicker when switching "display" and "visibility" styles
+				domClass.add(toNode, "mblAndroidWorkaround");
+			}
+
+			this.onBeforeTransitionOut.apply(this, this._arguments);
+			connect.publish("/dojox/mobile/beforeTransitionOut", [this].concat(lang._toArray(this._arguments)));
+			if(toWidget){
+				// perform view transition keeping the scroll position
+				if(this.keepScrollPos && !this.getParent()){
+					var scrollTop = win.body().scrollTop || win.doc.documentElement.scrollTop || win.global.pageYOffset || 0;
+					fromNode._scrollTop = scrollTop;
+					var toTop = (detail.transitionDir == 1) ? 0 : (toNode._scrollTop || 0);
+					toNode.style.top = "0px";
+					if(scrollTop > 1 || toTop !== 0){
+						fromNode.style.top = toTop - scrollTop + "px";
+						if(config["mblHideAddressBar"] !== false){
+							setTimeout(function(){ // iPhone needs setTimeout
+								win.global.scrollTo(0, (toTop || 1));
+							}, 0);
+						}
+					}
+				}else{
+					toNode.style.top = "0px";
+				}
+				toWidget.onBeforeTransitionIn.apply(toWidget, this._arguments);
+				connect.publish("/dojox/mobile/beforeTransitionIn", [toWidget].concat(lang._toArray(this._arguments)));
+			}
+			toNode.style.display = "none";
+			toNode.style.visibility = "visible";
+
+			common.fromView = this;
+			common.toView = toWidget;
+
+			this._doTransition(fromNode, toNode, detail.transition, detail.transitionDir);
+		},
+
+		_toCls: function(s){
+			// convert from transition name to corresponding class name
+			// ex. "slide" -> "mblSlide"
+			return "mbl"+s.charAt(0).toUpperCase() + s.substring(1);
+		},
+
+		_doTransition: function(fromNode, toNode, transition, transitionDir){
+			var rev = (transitionDir == -1) ? " mblReverse" : "";
+			toNode.style.display = "";
+			if(!transition || transition == "none"){
+				this.domNode.style.display = "none";
+				this.invokeCallback();
+			}else if(config['mblCSS3Transition']){
+				//get dojox/css3/transit first
+				Deferred.when(transitDeferred, lang.hitch(this, function(transit){
+					//follow the style of .mblView.mblIn in View.css
+					//need to set the toNode to absolute position
+					var toPosition = domStyle.get(toNode, "position");
+					domStyle.set(toNode, "position", "absolute");
+					Deferred.when(transit(fromNode, toNode, {transition: transition, reverse: (transitionDir===-1)?true:false}),lang.hitch(this,function(){
+						domStyle.set(toNode, "position", toPosition);
+						this.invokeCallback();
+					}));
+				}));
+			}else{
+				if(transition.indexOf("cube") != -1){
+					if(has('ipad')){
+						domStyle.set(toNode.parentNode, {webkitPerspective:1600});
+					}else if(has('iphone')){
+						domStyle.set(toNode.parentNode, {webkitPerspective:800});
+					}
+				}
+				var s = this._toCls(transition);
+				if(has('mblAndroidWorkaround')){
+					// workaround for the screen flicker issue on Android 2.2
+					// applying transition css classes just after setting toNode.style.display = ""
+					// causes flicker, so wait for a while using setTimeout
+					setTimeout(function(){
+						domClass.add(fromNode, s + " mblOut" + rev);
+						domClass.add(toNode, s + " mblIn" + rev);
+						domClass.remove(toNode, "mblAndroidWorkaround"); // remove offscreen style
+						setTimeout(function(){
+							domClass.add(fromNode, "mblTransition");
+							domClass.add(toNode, "mblTransition");
+						}, 30); // 30 = 100 - 70, to make total delay equal to 100ms
+					}, 70); // 70ms is experiential value
+				}else{
+					domClass.add(fromNode, s + " mblOut" + rev);
+					domClass.add(toNode, s + " mblIn" + rev);
+					setTimeout(function(){
+						domClass.add(fromNode, "mblTransition");
+						domClass.add(toNode, "mblTransition");
+					}, 100);
+				}
+				// set transform origin
+				var fromOrigin = "50% 50%";
+				var toOrigin = "50% 50%";
+				var scrollTop, posX, posY;
+				if(transition.indexOf("swirl") != -1 || transition.indexOf("zoom") != -1){
+					if(this.keepScrollPos && !this.getParent()){
+						scrollTop = win.body().scrollTop || win.doc.documentElement.scrollTop || win.global.pageYOffset || 0;
+					}else{
+						scrollTop = -domGeometry.position(fromNode, true).y;
+					}
+					posY = win.global.innerHeight / 2 + scrollTop;
+					fromOrigin = "50% " + posY + "px";
+					toOrigin = "50% " + posY + "px";
+				}else if(transition.indexOf("scale") != -1){
+					var viewPos = domGeometry.position(fromNode, true);
+					posX = ((this.clickedPosX !== undefined) ? this.clickedPosX : win.global.innerWidth / 2) - viewPos.x;
+					if(this.keepScrollPos && !this.getParent()){
+						scrollTop = win.body().scrollTop || win.doc.documentElement.scrollTop || win.global.pageYOffset || 0;
+					}else{
+						scrollTop = -viewPos.y;
+					}
+					posY = ((this.clickedPosY !== undefined) ? this.clickedPosY : win.global.innerHeight / 2) + scrollTop;
+					fromOrigin = posX + "px " + posY + "px";
+					toOrigin = posX + "px " + posY + "px";
+				}
+				domStyle.set(fromNode, {webkitTransformOrigin:fromOrigin});
+				domStyle.set(toNode, {webkitTransformOrigin:toOrigin});
+			}
+		},
+
+		onAnimationStart: function(e){
+			// summary:
+			//		A handler that is called when transition animation starts.
+		},
+
+		onAnimationEnd: function(e){
+			// summary:
+			//		A handler that is called after transition animation ends.
+			var name = e.animationName || e.target.className;
+			if(name.indexOf("Out") === -1 &&
+				name.indexOf("In") === -1 &&
+				name.indexOf("Shrink") === -1){ return; }
+			var isOut = false;
+			if(domClass.contains(this.domNode, "mblOut")){
+				isOut = true;
+				this.domNode.style.display = "none";
+				domClass.remove(this.domNode, [this._toCls(this._detail.transition), "mblIn", "mblOut", "mblReverse"]);
+			}else{
+				// Reset the temporary padding
+				this.containerNode.style.paddingTop = "";
+			}
+			domStyle.set(this.domNode, {webkitTransformOrigin:""});
+			if(name.indexOf("Shrink") !== -1){
+				var li = e.target;
+				li.style.display = "none";
+				domClass.remove(li, "mblCloseContent");
+
+				// If target is placed inside scrollable, need to call onTouchEnd
+				// to adjust scroll position
+				var p = viewRegistry.getEnclosingScrollable(this.domNode);
+				p && p.onTouchEnd();
+			}
+			if(isOut){
+				this.invokeCallback();
+			}
+			this._clearClasses(this.domNode);
+
+			// clear the clicked position
+			this.clickedPosX = this.clickedPosY = undefined;
+
+			if(name.indexOf("Cube") !== -1 &&
+				name.indexOf("In") !== -1 && has('iphone')){
+				this.domNode.parentNode.style.webkitPerspective = "";
+			}
+		},
+
+		invokeCallback: function(){
+			// summary:
+			//		A function to be called after performing a transition to
+			//		call a specified callback.
+			this.onAfterTransitionOut.apply(this, this._arguments);
+			connect.publish("/dojox/mobile/afterTransitionOut", [this].concat(this._arguments));
+			var toWidget = registry.byNode(this.toNode);
+			if(toWidget){
+				toWidget.onAfterTransitionIn.apply(toWidget, this._arguments);
+				connect.publish("/dojox/mobile/afterTransitionIn", [toWidget].concat(this._arguments));
+				toWidget.movedFrom = undefined;
+				if(this.setFragIds && this._isBookmarkable(this._detail)){
+					this.setFragIds(toWidget); // setFragIds is defined in bookmarkable.js
+				}
+			}
+			if(has('mblAndroidWorkaround')){
+				// workaround for the screen flicker issue on Android 2.2/2.3
+				// remove "-webkit-transform-style" style after transition finished
+				// to avoid side effects such as input field auto-scrolling issue
+				// use setTimeout to avoid flicker in case of ScrollableView
+				setTimeout(lang.hitch(this, function(){
+					if(toWidget){ domStyle.set(this.toNode, "webkitTransformStyle", ""); }
+					domStyle.set(this.domNode, "webkitTransformStyle", "");
+				}), 0);
+			}
+
+			var c = this._detail.context, m = this._detail.method;
+			if(!c && !m){ return; }
+			if(!m){
+				m = c;
+				c = null;
+			}
+			c = c || win.global;
+			if(typeof(m) == "string"){
+				c[m].apply(c, this._optArgs);
+			}else if(typeof(m) == "function"){
+				m.apply(c, this._optArgs);
+			}
+		},
+
+		isVisible: function(/*Boolean?*/checkAncestors){
+			// summary:
+			//		Return true if this view is visible
+			// checkAncestors:
+			//		If true, in addition to its own visibility, also checks the
+			//		ancestors visibility to see if the view is actually being
+			//		shown or not.
+			var visible = function(node){
+				return domStyle.get(node, "display") !== "none";
+			};
+			if(checkAncestors){
+				for(var n = this.domNode; n.tagName !== "BODY"; n = n.parentNode){
+					if(!visible(n)){ return false; }
+				}
+				return true;
+			}else{
+				return visible(this.domNode);
+			}
+		},
+
+		getShowingView: function(){
+			// summary:
+			//		Find the currently showing view from my sibling views.
+			// description:
+			//		Note that depending on the ancestor views' visibility,
+			//		the found view may not be actually shown.
+			var nodes = this.domNode.parentNode.childNodes;
+			for(var i = 0; i < nodes.length; i++){
+				var n = nodes[i];
+				if(n.nodeType === 1 && domClass.contains(n, "mblView") && n.style.display !== "none"){
+					return registry.byNode(n);
+				}
+			}
+			return null;
+		},
+
+		getSiblingViews: function(){
+			// summary:
+			//		Returns an array of the sibling views.
+			if(!this.domNode.parentNode){ return [this]; }
+			return array.map(array.filter(this.domNode.parentNode.childNodes,
+				function(n){ return n.nodeType === 1 && domClass.contains(n, "mblView"); }),
+				function(n){ return registry.byNode(n); });
+		},
+
+		show: function(/*Boolean?*/noEvent, /*Boolean?*/doNotHideOthers){
+			// summary:
+			//		Shows this view without a transition animation.
+			var out = this.getShowingView();
+			if(!noEvent){
+				if(out){
+					out.onBeforeTransitionOut(out.id);
+					connect.publish("/dojox/mobile/beforeTransitionOut", [out, out.id]);
+				}
+				this.onBeforeTransitionIn(this.id);
+				connect.publish("/dojox/mobile/beforeTransitionIn", [this, this.id]);
+			}
+
+			if(doNotHideOthers){
+				this.domNode.style.display = "";
+			}else{
+				array.forEach(this.getSiblingViews(), function(v){
+					v.domNode.style.display = (v === this) ? "" : "none";
+				}, this);
+			}
+			this.load && this.load(); // for ContentView
+
+			if(!noEvent){
+				if(out){
+					out.onAfterTransitionOut(out.id);
+					connect.publish("/dojox/mobile/afterTransitionOut", [out, out.id]);
+				}
+				this.onAfterTransitionIn(this.id);
+				connect.publish("/dojox/mobile/afterTransitionIn", [this, this.id]);
+			}
+		},
+
+		hide: function(){
+			// summary:
+			//		Hides this view without a transition animation.
+			this.domNode.style.display = "none";
+		}
+	});
+});

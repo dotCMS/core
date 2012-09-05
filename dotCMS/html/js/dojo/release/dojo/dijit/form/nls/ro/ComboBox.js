@@ -1,10 +1,6 @@
-//>>built
 define(
-"dijit/form/nls/ro/ComboBox", //begin v1.x content
-({
+"dijit/form/nls/ro/ComboBox", ({
 		previousMessage: "Alegeri anterioare",
 		nextMessage: "Mai multe alegeri"
 })
-
-//end v1.x content
 );

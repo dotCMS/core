@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ca/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ca/SpellCheck", ({
 	widgetLabel: "Correcció ortogràfica per lots",
 	unfound: "No trobat",
 	skip: "Salta",
@@ -17,6 +15,4 @@ define(
 	iSkipAll: "Saltar tots els que són com aquest",
 	iMsg: "No hi ha suggeriments ortogràfics"
 })
-
-//end v1.x content
 );

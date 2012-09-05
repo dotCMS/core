@@ -1,2 +1,223 @@
-//>>built
-define("dijit/form/_FormWidgetMixin",["dojo/_base/array","dojo/_base/declare","dojo/dom-attr","dojo/dom-style","dojo/_base/lang","dojo/mouse","dojo/_base/sniff","dojo/_base/window","dojo/window","../a11y"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_a){return _2("dijit.form._FormWidgetMixin",null,{name:"",alt:"",value:"",type:"text",tabIndex:"0",_setTabIndexAttr:"focusNode",disabled:false,intermediateChanges:false,scrollOnFocus:true,_setIdAttr:"focusNode",postCreate:function(){this.inherited(arguments);this.connect(this.domNode,"onmousedown","_onMouseDown");},_setDisabledAttr:function(_b){this._set("disabled",_b);_3.set(this.focusNode,"disabled",_b);if(this.valueNode){_3.set(this.valueNode,"disabled",_b);}this.focusNode.setAttribute("aria-disabled",_b);if(_b){this._set("hovering",false);this._set("active",false);var _c="tabIndex" in this.attributeMap?this.attributeMap.tabIndex:("_setTabIndexAttr" in this)?this._setTabIndexAttr:"focusNode";_1.forEach(_5.isArray(_c)?_c:[_c],function(_d){var _e=this[_d];if(_7("webkit")||_a.hasDefaultTabStop(_e)){_e.setAttribute("tabIndex","-1");}else{_e.removeAttribute("tabIndex");}},this);}else{if(this.tabIndex!=""){this.set("tabIndex",this.tabIndex);}}},_onFocus:function(e){if(this.scrollOnFocus){_9.scrollIntoView(this.domNode);}this.inherited(arguments);},isFocusable:function(){return !this.disabled&&this.focusNode&&(_4.get(this.domNode,"display")!="none");},focus:function(){if(!this.disabled&&this.focusNode.focus){try{this.focusNode.focus();}catch(e){}}},compare:function(_f,_10){if(typeof _f=="number"&&typeof _10=="number"){return (isNaN(_f)&&isNaN(_10))?0:_f-_10;}else{if(_f>_10){return 1;}else{if(_f<_10){return -1;}else{return 0;}}}},onChange:function(){},_onChangeActive:false,_handleOnChange:function(_11,_12){if(this._lastValueReported==undefined&&(_12===null||!this._onChangeActive)){this._resetValue=this._lastValueReported=_11;}this._pendingOnChange=this._pendingOnChange||(typeof _11!=typeof this._lastValueReported)||(this.compare(_11,this._lastValueReported)!=0);if((this.intermediateChanges||_12||_12===undefined)&&this._pendingOnChange){this._lastValueReported=_11;this._pendingOnChange=false;if(this._onChangeActive){if(this._onChangeHandle){clearTimeout(this._onChangeHandle);}this._onChangeHandle=setTimeout(_5.hitch(this,function(){this._onChangeHandle=null;this.onChange(_11);}),0);}}},create:function(){this.inherited(arguments);this._onChangeActive=true;},destroy:function(){if(this._onChangeHandle){clearTimeout(this._onChangeHandle);this.onChange(this._lastValueReported);}this.inherited(arguments);},_onMouseDown:function(e){if((!this.focused||!_7("ie"))&&!e.ctrlKey&&_6.isLeft(e)&&this.isFocusable()){var _13=this.connect(_8.body(),"onmouseup",function(){if(this.isFocusable()){this.focus();}this.disconnect(_13);});}}});});
+define("dijit/form/_FormWidgetMixin", [
+	"dojo/_base/array", // array.forEach
+	"dojo/_base/declare", // declare
+	"dojo/dom-attr", // domAttr.set
+	"dojo/dom-style", // domStyle.get
+	"dojo/_base/lang", // lang.hitch lang.isArray
+	"dojo/mouse", // mouse.isLeft
+	"dojo/sniff", // has("webkit")
+	"dojo/window", // winUtils.scrollIntoView
+	"../a11y"	// a11y.hasDefaultTabStop
+], function(array, declare, domAttr, domStyle, lang, mouse, has, winUtils, a11y){
+
+// module:
+//		dijit/form/_FormWidgetMixin
+
+return declare("dijit.form._FormWidgetMixin", null, {
+	// summary:
+	//		Mixin for widgets corresponding to native HTML elements such as `<checkbox>` or `<button>`,
+	//		which can be children of a `<form>` node or a `dijit/form/Form` widget.
+	//
+	// description:
+	//		Represents a single HTML element.
+	//		All these widgets should have these attributes just like native HTML input elements.
+	//		You can set them during widget construction or afterwards, via `dijit/_WidgetBase.set()`.
+	//
+	//		They also share some common methods.
+
+	// name: [const] String
+	//		Name used when submitting form; same as "name" attribute or plain HTML elements
+	name: "",
+
+	// alt: String
+	//		Corresponds to the native HTML `<input>` element's attribute.
+	alt: "",
+
+	// value: String
+	//		Corresponds to the native HTML `<input>` element's attribute.
+	value: "",
+
+	// type: [const] String
+	//		Corresponds to the native HTML `<input>` element's attribute.
+	type: "text",
+
+	// tabIndex: String
+	//		Order fields are traversed when user hits the tab key
+	tabIndex: "0",
+	_setTabIndexAttr: "focusNode",	// force copy even when tabIndex default value, needed since Button is <span>
+
+	// disabled: Boolean
+	//		Should this widget respond to user input?
+	//		In markup, this is specified as "disabled='disabled'", or just "disabled".
+	disabled: false,
+
+	// intermediateChanges: Boolean
+	//		Fires onChange for each value change or only on demand
+	intermediateChanges: false,
+
+	// scrollOnFocus: Boolean
+	//		On focus, should this widget scroll into view?
+	scrollOnFocus: true,
+
+	// Override _WidgetBase mapping id to this.domNode, needs to be on focusNode so <label> etc.
+	// works with screen reader
+	_setIdAttr: "focusNode",
+
+	_setDisabledAttr: function(/*Boolean*/ value){
+		this._set("disabled", value);
+		domAttr.set(this.focusNode, 'disabled', value);
+		if(this.valueNode){
+			domAttr.set(this.valueNode, 'disabled', value);
+		}
+		this.focusNode.setAttribute("aria-disabled", value ? "true" : "false");
+
+		if(value){
+			// reset these, because after the domNode is disabled, we can no longer receive
+			// mouse related events, see #4200
+			this._set("hovering", false);
+			this._set("active", false);
+
+			// clear tab stop(s) on this widget's focusable node(s)  (ComboBox has two focusable nodes)
+			var attachPointNames = "tabIndex" in this.attributeMap ? this.attributeMap.tabIndex :
+				("_setTabIndexAttr" in this) ? this._setTabIndexAttr : "focusNode";
+			array.forEach(lang.isArray(attachPointNames) ? attachPointNames : [attachPointNames], function(attachPointName){
+				var node = this[attachPointName];
+				// complex code because tabIndex=-1 on a <div> doesn't work on FF
+				if(has("webkit") || a11y.hasDefaultTabStop(node)){	// see #11064 about webkit bug
+					node.setAttribute('tabIndex', "-1");
+				}else{
+					node.removeAttribute('tabIndex');
+				}
+			}, this);
+		}else{
+			if(this.tabIndex != ""){
+				this.set('tabIndex', this.tabIndex);
+			}
+		}
+	},
+
+	_onFocus: function(/*String*/ by){
+		// If user clicks on the widget, even if the mouse is released outside of it,
+		// this widget's focusNode should get focus (to mimic native browser hehavior).
+		// Browsers often need help to make sure the focus via mouse actually gets to the focusNode.
+		if(by == "mouse" && this.isFocusable()){
+			// IE exhibits strange scrolling behavior when refocusing a node so only do it when !focused.
+			var focusConnector = this.connect(this.focusNode, "onfocus", function(){
+				this.disconnect(mouseUpConnector);
+				this.disconnect(focusConnector);
+			});
+			// Set a global event to handle mouseup, so it fires properly
+			// even if the cursor leaves this.domNode before the mouse up event.
+			var mouseUpConnector = this.connect(this.ownerDocumentBody, "onmouseup", function(){
+				this.disconnect(mouseUpConnector);
+				this.disconnect(focusConnector);
+				// if here, then the mousedown did not focus the focusNode as the default action
+				if(this.focused){
+					this.focus();
+				}
+			});
+		}
+		if(this.scrollOnFocus){
+			this.defer(function(){ winUtils.scrollIntoView(this.domNode); }); // without defer, the input caret position can change on mouse click
+		}
+		this.inherited(arguments);
+	},
+
+	isFocusable: function(){
+		// summary:
+		//		Tells if this widget is focusable or not.  Used internally by dijit.
+		// tags:
+		//		protected
+		return !this.disabled && this.focusNode && (domStyle.get(this.domNode, "display") != "none");
+	},
+
+	focus: function(){
+		// summary:
+		//		Put focus on this widget
+		if(!this.disabled && this.focusNode.focus){
+			try{ this.focusNode.focus(); }catch(e){}/*squelch errors from hidden nodes*/
+		}
+	},
+
+	compare: function(/*anything*/ val1, /*anything*/ val2){
+		// summary:
+		//		Compare 2 values (as returned by get('value') for this widget).
+		// tags:
+		//		protected
+		if(typeof val1 == "number" && typeof val2 == "number"){
+			return (isNaN(val1) && isNaN(val2)) ? 0 : val1 - val2;
+		}else if(val1 > val2){
+			return 1;
+		}else if(val1 < val2){
+			return -1;
+		}else{
+			return 0;
+		}
+	},
+
+	onChange: function(/*===== newValue =====*/){
+		// summary:
+		//		Callback when this widget's value is changed.
+		// tags:
+		//		callback
+	},
+
+	// _onChangeActive: [private] Boolean
+	//		Indicates that changes to the value should call onChange() callback.
+	//		This is false during widget initialization, to avoid calling onChange()
+	//		when the initial value is set.
+	_onChangeActive: false,
+
+	_handleOnChange: function(/*anything*/ newValue, /*Boolean?*/ priorityChange){
+		// summary:
+		//		Called when the value of the widget is set.  Calls onChange() if appropriate
+		// newValue:
+		//		the new value
+		// priorityChange:
+		//		For a slider, for example, dragging the slider is priorityChange==false,
+		//		but on mouse up, it's priorityChange==true.  If intermediateChanges==false,
+		//		onChange is only called form priorityChange=true events.
+		// tags:
+		//		private
+		if(this._lastValueReported == undefined && (priorityChange === null || !this._onChangeActive)){
+			// this block executes not for a change, but during initialization,
+			// and is used to store away the original value (or for ToggleButton, the original checked state)
+			this._resetValue = this._lastValueReported = newValue;
+		}
+		this._pendingOnChange = this._pendingOnChange
+			|| (typeof newValue != typeof this._lastValueReported)
+			|| (this.compare(newValue, this._lastValueReported) != 0);
+		if((this.intermediateChanges || priorityChange || priorityChange === undefined) && this._pendingOnChange){
+			this._lastValueReported = newValue;
+			this._pendingOnChange = false;
+			if(this._onChangeActive){
+				if(this._onChangeHandle){
+					this._onChangeHandle.remove();
+				}
+				// defer allows hidden value processing to run and
+				// also the onChange handler can safely adjust focus, etc
+				this._onChangeHandle = this.defer(
+					function(){
+						this._onChangeHandle = null;
+						this.onChange(newValue);
+					}); // try to collapse multiple onChange's fired faster than can be processed
+			}
+		}
+	},
+
+	create: function(){
+		// Overrides _Widget.create()
+		this.inherited(arguments);
+		this._onChangeActive = true;
+	},
+
+	destroy: function(){
+		if(this._onChangeHandle){ // destroy called before last onChange has fired
+			this._onChangeHandle.remove();
+			this.onChange(this._lastValueReported);
+		}
+		this.inherited(arguments);
+	}
+});
+
+});

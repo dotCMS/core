@@ -1,2 +1,46 @@
-//>>built
-define("dojox/dtl/filter/logic",["dojo/_base/lang","../_base"],function(_1,dd){_1.getObject("dojox.dtl.filter.logic",true);_1.mixin(dd.filter.logic,{default_:function(_2,_3){return _2||_3||"";},default_if_none:function(_4,_5){return (_4===null)?_5||"":_4||"";},divisibleby:function(_6,_7){return (parseInt(_6,10)%parseInt(_7,10))===0;},_yesno:/\s*,\s*/g,yesno:function(_8,_9){if(!_9){_9="yes,no,maybe";}var _a=_9.split(dojox.dtl.filter.logic._yesno);if(_a.length<2){return _8;}if(_8){return _a[0];}if((!_8&&_8!==null)||_a.length<3){return _a[1];}return _a[2];}});return dojox.dtl.filter.logic;});
+define("dojox/dtl/filter/logic", [
+	"dojo/_base/lang",
+	"../_base"
+], function(lang,dd){
+
+	lang.getObject("dojox.dtl.filter.logic", true);
+
+	lang.mixin(dd.filter.logic, {
+		default_: function(value, arg){
+			// summary:
+			//		If value is unavailable, use given default
+			return value || arg || "";
+		},
+		default_if_none: function(value, arg){
+			// summary:
+			//		If value is null, use given default
+			return (value === null) ? arg || "" : value || "";
+		},
+		divisibleby: function(value, arg){
+			// summary:
+			//		Returns true if the value is divisible by the argument"
+			return (parseInt(value, 10) % parseInt(arg, 10)) === 0;
+		},
+		_yesno: /\s*,\s*/g,
+		yesno: function(value, arg){
+			// summary:
+			//		arg being a comma-delimited string, value of true/false/none
+			//		chooses the appropriate item from the string
+			if(!arg){
+				arg = 'yes,no,maybe';
+			}
+			var parts = arg.split(dojox.dtl.filter.logic._yesno);
+			if(parts.length < 2){
+				return value;
+			}
+			if(value){
+				return parts[0];
+			}
+			if((!value && value !== null) || parts.length < 3){
+				return parts[1];
+			}
+			return parts[2];
+		}
+	});
+	return dojox.dtl.filter.logic;
+});

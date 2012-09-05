@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/fi/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/fi/Preview", ({
 	"preview": "Esikatselu"
 })
-
-//end v1.x content
 );

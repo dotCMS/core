@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.links.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -130,5 +132,10 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 			DotDataException {
 		return menuLinkFactory.findLinks(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
+
+    @Override
+    public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException {
+        return deleteOldVersions(assetsOlderThan,"links");
+    }
 
 }

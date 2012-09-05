@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ru/latinEntities", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ru/latinEntities", ({
 	/* These are already handled in the default RTE
 		amp:"ampersand",lt:"less-than sign",
 		gt:"greater-than sign",
@@ -103,7 +101,6 @@ define(
 	yacute:"латинская строчная буква y с акутом",
 	thorn:"латинская строчная буква thorn",
 	yuml:"латинская строчная буква y с тремой",
-
 // Greek Characters and Symbols
 	fnof:"латинская строчная буква f с хвостиком\nфункция\nфлорин",
 	Alpha:"греческая прописная буква альфа",
@@ -257,6 +254,4 @@ define(
 	rsaquo:"одинарная правая угловая кавычка",
 	euro:"символ евро"
 })
-
-//end v1.x content
 );

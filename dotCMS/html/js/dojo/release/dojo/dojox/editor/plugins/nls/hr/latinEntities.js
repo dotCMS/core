@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/editor/plugins/nls/hr/latinEntities", ({
 	/* These are already handled in the default RTE
@@ -21,7 +20,7 @@ define(
 	not:"znak ne",
 	shy:"meka crtica\ndiskrecijska crtica",
 	reg:"znak za registrirano\nznak za registrirani zaštitni znak",
-	macr:"makron\nprored makrona\nnadvučeno\nAPL crta iznad",
+	macr:"makron\nprored makrona\ncrta iznad\nAPL traka iznad",
 	deg:"znak stupnja",
 	plusmn:"znak plus-minus\nplus-ili-minus znak",
 	sup2:"superskript dva\nsuperskript broj dva\nkvadriran",
@@ -160,7 +159,7 @@ define(
 	hellip:"vodoravne tri točkice\ntri točkice",
 	prime:"prost\nminute\nstopalo",
 	Prime:"dvostruko prost\nsekunde\ninči",
-	oline:"nadvučeno\nprored crtice iznad",
+	oline:"crta iznad\nprored crtice iznad",
 	frasl:"kosa crta razlomka",
 	weierp:"skriptno veliko slovo P\nnadskup\nWeierstrass p",
 	image:"veliko slovo I gotskog pisma\nzamišljeni dio",

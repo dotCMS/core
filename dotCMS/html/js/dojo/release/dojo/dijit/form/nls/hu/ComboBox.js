@@ -1,9 +1,6 @@
-//>>built
 define(
-"dijit/form/nls/hu/ComboBox", //begin v1.x content
-({
+"dijit/form/nls/hu/ComboBox", ({
 		previousMessage: "Előző menüpontok",
 		nextMessage: "További menüpontok"
 })
-//end v1.x content
 );

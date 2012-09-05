@@ -101,8 +101,8 @@ public class HTMLPageFactory {
 		List<HTMLPage> list =null;
 		try {
 		    dh.setQuery(
-		            "from inode in class com.dotmarketing.portlets.htmlpages.model.HTMLPage html, "+HTMLPageVersionInfo.class.getName()+" vv " +
-		            "where type='htmlpage' and identifier=vv.identifier and vv.live_inode=inode and vv.deleted="+DbConnectionFactory.getDBFalse());
+		            "select html from com.dotmarketing.portlets.htmlpages.model.HTMLPage html, "+HTMLPageVersionInfo.class.getName()+" vv " +
+		            "where type='htmlpage' and html.identifier=vv.identifier and vv.liveInode=html.inode and vv.deleted="+DbConnectionFactory.getDBFalse());
 		    list = dh.list();
 		} catch (DotHibernateException e) {
 			Logger.error(HTMLPageFactory.class, e.getMessage(), e);	
