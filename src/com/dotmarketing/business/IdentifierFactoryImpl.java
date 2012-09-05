@@ -308,6 +308,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 identifier.setAssetName( uri );
             } else if ( versionable instanceof HTMLPage ) {
                 identifier.setURI( '/' + ((HTMLPage) versionable).getPageUrl() );
+            } else if ( versionable instanceof Link ) {
+                identifier.setURI( '/' + versionable.getInode() );
             } else {
                 identifier.setURI( uri );
             }
