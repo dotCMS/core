@@ -1393,6 +1393,11 @@ public class FolderFactoryImpl extends FolderFactory {
 		return getChildrenClass(parent, clazz, null, null, 0, 1000);
 	}
 
+    protected List<Treeable> getChildrenClass ( Host host, Class clazz ) throws DotStateException, DotDataException {
+        Identifier identifier = APILocator.getIdentifierAPI().find( host.getIdentifier() );
+        return getChildrenClass( identifier, clazz, null, null, 0, 1000 );
+    }
+
     protected List<Treeable> getChildrenClass ( Host host, Class clazz, ChildrenCondition cond ) throws DotStateException, DotDataException {
         Identifier identifier = APILocator.getIdentifierAPI().find( host.getIdentifier() );
         return getChildrenClass( identifier, clazz, cond, null, 0, 1000 );

@@ -235,20 +235,36 @@ import com.liferay.portal.model.User;
 
 
     /**
-	 * Gets a list of 'working' Links under given folder
-	 * 
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 */
-	public abstract List<Link> getLinks(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
-			DotDataException, DotSecurityException;
-	
-	public  List<Link> getLinks(Folder parent, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions) throws DotStateException,
-    DotDataException, DotSecurityException;
+     * Gets a list of 'working' Links under given folder
+     *
+     * @param parent
+     * @param user
+     * @param respectFrontEndPermissions
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    public abstract List<Link> getLinks ( Folder parent, User user, boolean respectFrontEndPermissions ) throws DotStateException,
+            DotDataException, DotSecurityException;
+
+    /**
+     * Gets a list of 'working' Links under given host
+     *
+     * @param host
+     * @param user
+     * @param respectFrontEndPermissions
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    public abstract List<Link> getLinks ( Host host, User user, boolean respectFrontEndPermissions ) throws DotStateException,
+            DotDataException, DotSecurityException;
+
+    public List<Link> getLinks ( Folder parent, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException,
+            DotDataException, DotSecurityException;
+
+    public List<Link> getLinks ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException,
+            DotDataException, DotSecurityException;
 
 
 	/**
