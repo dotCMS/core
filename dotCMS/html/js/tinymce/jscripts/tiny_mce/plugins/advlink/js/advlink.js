@@ -54,10 +54,17 @@ function init() {
 		document.getElementById('popupurl').style.width = '180px';
 
 	elm = inst.dom.getParent(elm, "A");
+	if (elm == null) {
+		var prospect = inst.dom.create("p", null, inst.selection.getContent());
+		if (prospect.childNodes.length === 1) {
+			elm = prospect.firstChild;
+		}
+	}
+
 	if (elm != null && elm.nodeName == "A")
 		action = "update";
 
-	formObj.insert.value = tinyMCEPopup.getLang(action, 'Insert', true);
+	formObj.insert.value = tinyMCEPopup.getLang(action, 'Insert', true); 
 
 	setPopupControlsDisabled(true);
 
@@ -407,16 +414,9 @@ function insertAction() {
 	// Create new anchor elements
 	if (elm == null) {
 		inst.getDoc().execCommand("unlink", false, null);
+		tinyMCEPopup.execCommand("mceInsertLink", false, "#mce_temp_url#", {skip_undo : 1});
 
-		if (tinyMCE.isIE){
-			inst.selection.setContent('<a href="http://mce_temp_url/">'+inst.selection.getContent()+'</a>');
-			elementArray = tinymce.grep(inst.dom.select("a"), function(n) {return inst.dom.getAttrib(n, 'href') == 'http://mce_temp_url/';});
-		} else {
-			tinyMCEPopup.execCommand("mceInsertLink", false, "#mce_temp_url#", {skip_undo : 1});
-			elementArray = tinymce.grep(inst.dom.select("a"), function(n) {return inst.dom.getAttrib(n, 'href') == '#mce_temp_url#';});
-		}
-
-
+		elementArray = tinymce.grep(inst.dom.select("a"), function(n) {return inst.dom.getAttrib(n, 'href') == '#mce_temp_url#';});
 		for (i=0; i<elementArray.length; i++)
 			setAllAttribs(elm = elementArray[i]);
 	} else
@@ -488,7 +488,7 @@ function getLinkListHTML(elm_id, target_form_element, onchange_func) {
 	var html = "";
 
 	html += '<select id="' + elm_id + '" name="' + elm_id + '"';
-	html += ' class="mceLinkList" onfoc2us="tinyMCE.addSelectAccessibility(event, this, window);" onchange="this.form.' + target_form_element + '.value=';
+	html += ' class="mceLinkList" onchange="this.form.' + target_form_element + '.value=';
 	html += 'this.options[this.selectedIndex].value;';
 
 	if (typeof(onchange_func) != "undefined")
@@ -510,7 +510,7 @@ function getTargetListHTML(elm_id, target_form_element) {
 	var targets = tinyMCEPopup.getParam('theme_advanced_link_targets', '').split(';');
 	var html = '';
 
-	html += '<select id="' + elm_id + '" name="' + elm_id + '" onf2ocus="tinyMCE.addSelectAccessibility(event, this, window);" onchange="this.form.' + target_form_element + '.value=';
+	html += '<select id="' + elm_id + '" name="' + elm_id + '" onchange="this.form.' + target_form_element + '.value=';
 	html += 'this.options[this.selectedIndex].value;">';
 	html += '<option value="_self">' + tinyMCEPopup.getLang('advlink_dlg.target_same') + '</option>';
 	html += '<option value="_blank">' + tinyMCEPopup.getLang('advlink_dlg.target_blank') + ' (_blank)</option>';

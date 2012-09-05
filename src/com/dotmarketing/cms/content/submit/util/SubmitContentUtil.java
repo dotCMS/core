@@ -16,6 +16,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -30,8 +31,10 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
@@ -53,6 +56,9 @@ import com.liferay.util.FileUtil;
  */
 public class SubmitContentUtil {
 
+	public static final String errorFieldVariable = "errorFieldMessage";
+	private static FieldAPI fieldAPI = APILocator.getFieldAPI();
+	private static UserAPI userAPI = APILocator.getUserAPI();
 	private static ContentletAPI conAPI = APILocator.getContentletAPI();
 	@SuppressWarnings("unchecked")
 	private static PermissionAPI perAPI = APILocator.getPermissionAPI();
@@ -297,13 +303,6 @@ public class SubmitContentUtil {
 	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
 		Structure st = StructureCache.getStructureByName(structureName);
-		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
-		for (Field field : fields) {//GIT-763
-			if(field.isRequired() && !parametersName.contains(field.getVelocityVarName())){
-				parametersName.add(field.getVelocityVarName());
-				values.add(new String[]{});
-			}
-		}		
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
 		contentlet.setLanguageId(lAPI.getDefaultLanguage().getId());
@@ -513,6 +512,13 @@ public class SubmitContentUtil {
 					contentlet = addFileToContentlet(contentlet, field,host, uploadedFile, user, title);
 				}
 			}
+			if(autoPublish){//DOTCMS-5188
+				contentlet = conAPI.checkinWithoutVersioning(contentlet, relationships, cats, permissionList, user, true);
+				conAPI.publish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
+			}else{
+				contentlet = conAPI.checkinWithoutVersioning(contentlet, relationships, cats, permissionList, user, true);
+				conAPI.unpublish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
+			}
 		}
 
 
@@ -542,6 +548,24 @@ public class SubmitContentUtil {
 		return false;
 	}
 
-
+	/**
+	 * Get the specified field message. If the field attribute exist
+	 * @param field Field
+	 * @param fieldAttribute Name of the field attribute
+	 * @return String
+	 * @throws DotSecurityException 
+	 * @throws DotDataException 
+	 */
+	public static String getCustomizedFieldErrorMessage(Field field, String fieldAttribute) throws DotDataException, DotSecurityException{
+		String errorMessage = null;
+		List<FieldVariable> fieldVariables = fieldAPI.getFieldVariablesForField(field.getInode(), userAPI.getSystemUser(), false);		
+		for(FieldVariable fv : fieldVariables){
+			if(fv.getKey().equals(fieldAttribute)){
+				errorMessage = fv.getValue();
+				break;
+			}
+		}
+		return errorMessage;
+	}
 
 }

@@ -5,11 +5,8 @@
 				dojoAttachEvent='onclick:showHideHostFolderList'>
 				<input class="dijitReset dijitInputField dijitArrowButtonInner" value="&#9660;" type="text" tabindex="-1" readonly="readonly" role="presentation">
 			</div>
-			<div class="dijitReset dijitValidationContainer">
-			<input class="dijitReset dijitInputField dijitValidationIcon dijitValidationInner" value="&Chi;" type="text" tabindex="-1" readonly="readonly" role="presentation">
-			</div>
 			<div class="dijitReset dijitInputField dijitInputContainer">
-				<input type="text" class="dijitReset" dojoAttachPoint="hostFolderSelectedName" 
+				<input type="text" class="dijitReset" dojoAttachPoint="hostFolderSelectedName"
 					autocomplete="off" id="${id}-hostFolderSelect" dojoAttachEvent='onfocus:_onHostFolderTextFieldFocus, onblur:_onHostFolderTextFieldBlur, onkeydown:_onHostFolderTextFieldKeyDown' tabindex="0" value="" />
 				<input type="hidden" id="${id}" name="${name}" dojoAttachPoint="hostFolderSelectedId" value="${value}" />
 			</div>
