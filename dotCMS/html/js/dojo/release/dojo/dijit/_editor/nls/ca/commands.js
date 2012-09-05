@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/ca/commands", //begin v1.x content
-({
+"dijit/_editor/nls/ca/commands", ({
 	'bold': 'Negreta',
 	'copy': 'Copia',
 	'cut': 'Retalla',
@@ -47,7 +45,7 @@ define(
 	"newPage": "Pàgina nova",
 	/* Error messages */
 	'systemShortcut': 'L\'acció "${0}" és l\'única disponible al navegador utilitzant una drecera del teclat. Utilitzeu ${1}.',
-	'ctrlKey':'control+${0}'
+	'ctrlKey':'control+${0}',
+	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })
-//end v1.x content
 );

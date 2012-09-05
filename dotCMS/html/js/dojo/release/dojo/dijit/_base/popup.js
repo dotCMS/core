@@ -1,2 +1,58 @@
-//>>built
-define("dijit/_base/popup",["dojo/dom-class","../popup","../BackgroundIframe"],function(_1,_2){var _3=_2._createWrapper;_2._createWrapper=function(_4){if(!_4.declaredClass){_4={_popupWrapper:(_4.parentNode&&_1.contains(_4.parentNode,"dijitPopup"))?_4.parentNode:null,domNode:_4,destroy:function(){}};}return _3.call(this,_4);};var _5=_2.open;_2.open=function(_6){if(_6.orient&&typeof _6.orient!="string"&&!("length" in _6.orient)){var _7=[];for(var _8 in _6.orient){_7.push({aroundCorner:_8,corner:_6.orient[_8]});}_6.orient=_7;}return _5.call(this,_6);};return _2;});
+define("dijit/_base/popup", [
+	"dojo/dom-class", // domClass.contains
+	"dojo/_base/window",
+	"../popup",
+	"../BackgroundIframe"	// just loading for back-compat, in case client code is referencing it
+], function(domClass, win, popup){
+
+// module:
+//		dijit/_base/popup
+
+/*=====
+return {
+	// summary:
+	//		Deprecated.   Old module for popups, new code should use dijit/popup directly.
+};
+=====*/
+
+
+// Hack support for old API passing in node instead of a widget (to various methods)
+var origCreateWrapper = popup._createWrapper;
+popup._createWrapper = function(widget){
+	if(!widget.declaredClass){
+		// make fake widget to pass to new API
+		widget = {
+			_popupWrapper: (widget.parentNode && domClass.contains(widget.parentNode, "dijitPopup")) ?
+				widget.parentNode : null,
+			domNode: widget,
+			destroy: function(){},
+			ownerDocument: widget.ownerDocument,
+			ownerDocumentBody: win.body(widget.ownerDocument)
+		};
+	}
+	return origCreateWrapper.call(this, widget);
+};
+
+// Support old format of orient parameter
+var origOpen = popup.open;
+popup.open = function(/*__OpenArgs*/ args){
+	// Convert old hash structure (ex: {"BL": "TL", ...}) of orient to format compatible w/new popup.open() API.
+	// Don't do conversion for:
+	//		- null parameter (that means to use the default positioning)
+	//		- "R" or "L" strings used to indicate positioning for context menus (when there is no around node)
+	//		- new format, ex: ["below", "above"]
+	//		- return value from deprecated dijit.getPopupAroundAlignment() method,
+	//			ex: ["below", "above"]
+	if(args.orient && typeof args.orient != "string" && !("length" in args.orient)){
+		var ary = [];
+		for(var key in args.orient){
+			ary.push({aroundCorner: key, corner: args.orient[key]});
+		}
+		args.orient = ary;
+	}
+
+	return origOpen.call(this, args);
+};
+
+return popup;
+});

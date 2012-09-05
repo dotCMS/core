@@ -1,2 +1,954 @@
-//>>built
-define("dojox/gfx/silverlight",["dojo/_base/kernel","dojo/_base/lang","dojo/_base/declare","dojo/_base/Color","dojo/_base/array","dojo/dom-geometry","dojo/dom","dojo/_base/sniff","./_base","./shape","./path"],function(_1,_2,_3,_4,_5,_6,_7,_8,g,gs,_9){var sl=g.silverlight={};_1.experimental("dojox.gfx.silverlight");var _a={solid:"none",shortdash:[4,1],shortdot:[1,1],shortdashdot:[4,1,1,1],shortdashdotdot:[4,1,1,1,1,1],dot:[1,3],dash:[4,3],longdash:[8,3],dashdot:[4,3,1,3],longdashdot:[8,3,1,3],longdashdotdot:[8,3,1,3,1,3]},_b={normal:400,bold:700},_c={butt:"Flat",round:"Round",square:"Square"},_d={bevel:"Bevel",round:"Round"},_e={serif:"Times New Roman",times:"Times New Roman","sans-serif":"Arial",helvetica:"Arial",monotone:"Courier New",courier:"Courier New"};function _f(_10){var c=g.normalizeColor(_10),t=c.toHex(),a=Math.round(c.a*255);a=(a<0?0:a>255?255:a).toString(16);return "#"+(a.length<2?"0"+a:a)+t.slice(1);};_3("dojox.gfx.silverlight.Shape",gs.Shape,{setFill:function(_11){var p=this.rawNode.getHost().content,r=this.rawNode,f;if(!_11){this.fillStyle=null;this._setFillAttr(null);return this;}if(typeof (_11)=="object"&&"type" in _11){switch(_11.type){case "linear":this.fillStyle=f=g.makeParameters(g.defaultLinearGradient,_11);var lgb=p.createFromXaml("<LinearGradientBrush/>");lgb.mappingMode="Absolute";lgb.startPoint=f.x1+","+f.y1;lgb.endPoint=f.x2+","+f.y2;_5.forEach(f.colors,function(c){var t=p.createFromXaml("<GradientStop/>");t.offset=c.offset;t.color=_f(c.color);lgb.gradientStops.add(t);});this._setFillAttr(lgb);break;case "radial":this.fillStyle=f=g.makeParameters(g.defaultRadialGradient,_11);var rgb=p.createFromXaml("<RadialGradientBrush/>"),c=g.matrix.multiplyPoint(g.matrix.invert(this._getAdjustedMatrix()),f.cx,f.cy),pt=c.x+","+c.y;rgb.mappingMode="Absolute";rgb.gradientOrigin=pt;rgb.center=pt;rgb.radiusX=rgb.radiusY=f.r;_5.forEach(f.colors,function(c){var t=p.createFromXaml("<GradientStop/>");t.offset=c.offset;t.color=_f(c.color);rgb.gradientStops.add(t);});this._setFillAttr(rgb);break;case "pattern":this.fillStyle=null;this._setFillAttr(null);break;}return this;}this.fillStyle=f=g.normalizeColor(_11);var scb=p.createFromXaml("<SolidColorBrush/>");scb.color=f.toHex();scb.opacity=f.a;this._setFillAttr(scb);return this;},_setFillAttr:function(f){this.rawNode.fill=f;},setStroke:function(_12){var p=this.rawNode.getHost().content,r=this.rawNode;if(!_12){this.strokeStyle=null;r.stroke=null;return this;}if(typeof _12=="string"||_2.isArray(_12)||_12 instanceof _4){_12={color:_12};}var s=this.strokeStyle=g.makeParameters(g.defaultStroke,_12);s.color=g.normalizeColor(s.color);if(s){var scb=p.createFromXaml("<SolidColorBrush/>");scb.color=s.color.toHex();scb.opacity=s.color.a;r.stroke=scb;r.strokeThickness=s.width;r.strokeStartLineCap=r.strokeEndLineCap=r.strokeDashCap=_c[s.cap];if(typeof s.join=="number"){r.strokeLineJoin="Miter";r.strokeMiterLimit=s.join;}else{r.strokeLineJoin=_d[s.join];}var da=s.style.toLowerCase();if(da in _a){da=_a[da];}if(da instanceof Array){da=_2.clone(da);var i;if(s.cap!="butt"){for(i=0;i<da.length;i+=2){--da[i];if(da[i]<1){da[i]=1;}}for(i=1;i<da.length;i+=2){++da[i];}}r.strokeDashArray=da.join(",");}else{r.strokeDashArray=null;}}return this;},_getParentSurface:function(){var _13=this.parent;for(;_13&&!(_13 instanceof g.Surface);_13=_13.parent){}return _13;},_applyTransform:function(){var tm=this._getAdjustedMatrix(),r=this.rawNode;if(tm){var p=this.rawNode.getHost().content,mt=p.createFromXaml("<MatrixTransform/>"),mm=p.createFromXaml("<Matrix/>");mm.m11=tm.xx;mm.m21=tm.xy;mm.m12=tm.yx;mm.m22=tm.yy;mm.offsetX=tm.dx;mm.offsetY=tm.dy;mt.matrix=mm;r.renderTransform=mt;}else{r.renderTransform=null;}return this;},setRawNode:function(_14){_14.fill=null;_14.stroke=null;this.rawNode=_14;this.rawNode.tag=this.getUID();},_moveToFront:function(){var c=this.parent.rawNode.children,r=this.rawNode;c.remove(r);c.add(r);return this;},_moveToBack:function(){var c=this.parent.rawNode.children,r=this.rawNode;c.remove(r);c.insert(0,r);return this;},_getAdjustedMatrix:function(){return this.matrix;}});_3("dojox.gfx.silverlight.Group",sl.Shape,{constructor:function(){gs.Container._init.call(this);},setRawNode:function(_15){this.rawNode=_15;this.rawNode.tag=this.getUID();}});sl.Group.nodeType="Canvas";_3("dojox.gfx.silverlight.Rect",[sl.Shape,gs.Rect],{setShape:function(_16){this.shape=g.makeParameters(this.shape,_16);this.bbox=null;var r=this.rawNode,n=this.shape;r.width=n.width;r.height=n.height;r.radiusX=r.radiusY=n.r;return this._applyTransform();},_getAdjustedMatrix:function(){var _17=this.matrix,s=this.shape,_18={dx:s.x,dy:s.y};return new g.Matrix2D(_17?[_17,_18]:_18);}});sl.Rect.nodeType="Rectangle";_3("dojox.gfx.silverlight.Ellipse",[sl.Shape,gs.Ellipse],{setShape:function(_19){this.shape=g.makeParameters(this.shape,_19);this.bbox=null;var r=this.rawNode,n=this.shape;r.width=2*n.rx;r.height=2*n.ry;return this._applyTransform();},_getAdjustedMatrix:function(){var _1a=this.matrix,s=this.shape,_1b={dx:s.cx-s.rx,dy:s.cy-s.ry};return new g.Matrix2D(_1a?[_1a,_1b]:_1b);}});sl.Ellipse.nodeType="Ellipse";_3("dojox.gfx.silverlight.Circle",[sl.Shape,gs.Circle],{setShape:function(_1c){this.shape=g.makeParameters(this.shape,_1c);this.bbox=null;var r=this.rawNode,n=this.shape;r.width=r.height=2*n.r;return this._applyTransform();},_getAdjustedMatrix:function(){var _1d=this.matrix,s=this.shape,_1e={dx:s.cx-s.r,dy:s.cy-s.r};return new g.Matrix2D(_1d?[_1d,_1e]:_1e);}});sl.Circle.nodeType="Ellipse";_3("dojox.gfx.silverlight.Line",[sl.Shape,gs.Line],{setShape:function(_1f){this.shape=g.makeParameters(this.shape,_1f);this.bbox=null;var r=this.rawNode,n=this.shape;r.x1=n.x1;r.y1=n.y1;r.x2=n.x2;r.y2=n.y2;return this;}});sl.Line.nodeType="Line";_3("dojox.gfx.silverlight.Polyline",[sl.Shape,gs.Polyline],{setShape:function(_20,_21){if(_20&&_20 instanceof Array){this.shape=g.makeParameters(this.shape,{points:_20});if(_21&&this.shape.points.length){this.shape.points.push(this.shape.points[0]);}}else{this.shape=g.makeParameters(this.shape,_20);}this.bbox=null;this._normalizePoints();var p=this.shape.points,rp=[];for(var i=0;i<p.length;++i){rp.push(p[i].x,p[i].y);}this.rawNode.points=rp.join(",");return this;}});sl.Polyline.nodeType="Polyline";_3("dojox.gfx.silverlight.Image",[sl.Shape,gs.Image],{setShape:function(_22){this.shape=g.makeParameters(this.shape,_22);this.bbox=null;var r=this.rawNode,n=this.shape;r.width=n.width;r.height=n.height;r.source=n.src;return this._applyTransform();},_getAdjustedMatrix:function(){var _23=this.matrix,s=this.shape,_24={dx:s.x,dy:s.y};return new g.Matrix2D(_23?[_23,_24]:_24);},setRawNode:function(_25){this.rawNode=_25;this.rawNode.tag=this.getUID();}});sl.Image.nodeType="Image";_3("dojox.gfx.silverlight.Text",[sl.Shape,gs.Text],{setShape:function(_26){this.shape=g.makeParameters(this.shape,_26);this.bbox=null;var r=this.rawNode,s=this.shape;r.text=s.text;r.textDecorations=s.decoration==="underline"?"Underline":"None";r["Canvas.Left"]=-10000;r["Canvas.Top"]=-10000;if(!this._delay){this._delay=window.setTimeout(_2.hitch(this,"_delayAlignment"),10);}return this;},_delayAlignment:function(){var r=this.rawNode,s=this.shape,w,h;try{w=r.actualWidth;h=r.actualHeight;}catch(e){return;}var x=s.x,y=s.y-h*0.75;switch(s.align){case "middle":x-=w/2;break;case "end":x-=w;break;}this._delta={dx:x,dy:y};r["Canvas.Left"]=0;r["Canvas.Top"]=0;this._applyTransform();delete this._delay;},_getAdjustedMatrix:function(){var _27=this.matrix,_28=this._delta,x;if(_27){x=_28?[_27,_28]:_27;}else{x=_28?_28:{};}return new g.Matrix2D(x);},setStroke:function(){return this;},_setFillAttr:function(f){this.rawNode.foreground=f;},setRawNode:function(_29){this.rawNode=_29;this.rawNode.tag=this.getUID();},getTextWidth:function(){return this.rawNode.actualWidth;}});sl.Text.nodeType="TextBlock";_3("dojox.gfx.silverlight.Path",[sl.Shape,_9.Path],{_updateWithSegment:function(_2a){this.inherited(arguments);var p=this.shape.path;if(typeof (p)=="string"){this.rawNode.data=p?p:null;}},setShape:function(_2b){this.inherited(arguments);var p=this.shape.path;this.rawNode.data=p?p:null;return this;}});sl.Path.nodeType="Path";_3("dojox.gfx.silverlight.TextPath",[sl.Shape,_9.TextPath],{_updateWithSegment:function(_2c){},setShape:function(_2d){},_setText:function(){}});sl.TextPath.nodeType="text";var _2e={},_2f=new Function;_3("dojox.gfx.silverlight.Surface",gs.Surface,{constructor:function(){gs.Container._init.call(this);},destroy:function(){window[this._onLoadName]=_2f;delete _2e[this._nodeName];this.inherited(arguments);},setDimensions:function(_30,_31){this.width=g.normalizedLength(_30);this.height=g.normalizedLength(_31);var p=this.rawNode&&this.rawNode.getHost();if(p){p.width=_30;p.height=_31;}return this;},getDimensions:function(){var p=this.rawNode&&this.rawNode.getHost();var t=p?{width:p.content.actualWidth,height:p.content.actualHeight}:null;if(t.width<=0){t.width=this.width;}if(t.height<=0){t.height=this.height;}return t;}});sl.createSurface=function(_32,_33,_34){if(!_33&&!_34){var pos=_6.position(_32);_33=_33||pos.w;_34=_34||pos.h;}if(typeof _33=="number"){_33=_33+"px";}if(typeof _34=="number"){_34=_34+"px";}var s=new sl.Surface();_32=_7.byId(_32);s._parent=_32;s._nodeName=g._base._getUniqueId();var t=_32.ownerDocument.createElement("script");t.type="text/xaml";t.id=g._base._getUniqueId();t.text="<?xml version='1.0'?><Canvas xmlns='http://schemas.microsoft.com/client/2007' Name='"+s._nodeName+"'/>";_32.parentNode.insertBefore(t,_32);s._nodes.push(t);var obj,_35=g._base._getUniqueId(),_36="__"+g._base._getUniqueId()+"_onLoad";s._onLoadName=_36;window[_36]=function(_37){if(!s.rawNode){s.rawNode=_7.byId(_35).content.root;_2e[s._nodeName]=_32;s.onLoad(s);}};if(_8("safari")){obj="<embed type='application/x-silverlight' id='"+_35+"' width='"+_33+"' height='"+_34+" background='transparent'"+" source='#"+t.id+"'"+" windowless='true'"+" maxFramerate='60'"+" onLoad='"+_36+"'"+" onError='__dojoSilverlightError'"+" /><iframe style='visibility:hidden;height:0;width:0'/>";}else{obj="<object type='application/x-silverlight' data='data:application/x-silverlight,' id='"+_35+"' width='"+_33+"' height='"+_34+"'>"+"<param name='background' value='transparent' />"+"<param name='source' value='#"+t.id+"' />"+"<param name='windowless' value='true' />"+"<param name='maxFramerate' value='60' />"+"<param name='onLoad' value='"+_36+"' />"+"<param name='onError' value='__dojoSilverlightError' />"+"</object>";}_32.innerHTML=obj;var _38=_7.byId(_35);if(_38.content&&_38.content.root){s.rawNode=_38.content.root;_2e[s._nodeName]=_32;}else{s.rawNode=null;s.isLoaded=false;}s._nodes.push(_38);s.width=g.normalizedLength(_33);s.height=g.normalizedLength(_34);return s;};__dojoSilverlightError=function(_39,err){var t="Silverlight Error:\n"+"Code: "+err.ErrorCode+"\n"+"Type: "+err.ErrorType+"\n"+"Message: "+err.ErrorMessage+"\n";switch(err.ErrorType){case "ParserError":t+="XamlFile: "+err.xamlFile+"\n"+"Line: "+err.lineNumber+"\n"+"Position: "+err.charPosition+"\n";break;case "RuntimeError":t+="MethodName: "+err.methodName+"\n";if(err.lineNumber!=0){t+="Line: "+err.lineNumber+"\n"+"Position: "+err.charPosition+"\n";}break;}};var _3a={_setFont:function(){var f=this.fontStyle,r=this.rawNode,t=f.family.toLowerCase();r.fontStyle=f.style=="italic"?"Italic":"Normal";r.fontWeight=f.weight in _b?_b[f.weight]:f.weight;r.fontSize=g.normalizedLength(f.size);r.fontFamily=t in _e?_e[t]:f.family;if(!this._delay){this._delay=window.setTimeout(_2.hitch(this,"_delayAlignment"),10);}}};var C=gs.Container,_3b={add:function(_3c){if(this!=_3c.getParent()){C.add.apply(this,arguments);this.rawNode.children.add(_3c.rawNode);}return this;},remove:function(_3d,_3e){if(this==_3d.getParent()){var _3f=_3d.rawNode.getParent();if(_3f){_3f.children.remove(_3d.rawNode);}C.remove.apply(this,arguments);}return this;},clear:function(){this.rawNode.children.clear();return C.clear.apply(this,arguments);},_moveChildToFront:C._moveChildToFront,_moveChildToBack:C._moveChildToBack};var _40={createObject:function(_41,_42){if(!this.rawNode){return null;}var _43=new _41();var _44=this.rawNode.getHost().content.createFromXaml("<"+_41.nodeType+"/>");_43.setRawNode(_44);_43.setShape(_42);this.add(_43);return _43;}};_2.extend(sl.Text,_3a);_2.extend(sl.Group,_3b);_2.extend(sl.Group,gs.Creator);_2.extend(sl.Group,_40);_2.extend(sl.Surface,_3b);_2.extend(sl.Surface,gs.Creator);_2.extend(sl.Surface,_40);function _45(s,a){var ev={target:s,currentTarget:s,preventDefault:function(){},stopPropagation:function(){}};try{if(a.source){ev.target=a.source;var _46=ev.target.tag;ev.gfxTarget=gs.byId(_46);}}catch(e){}if(a){try{ev.ctrlKey=a.ctrl;ev.shiftKey=a.shift;var p=a.getPosition(null);ev.x=ev.offsetX=ev.layerX=p.x;ev.y=ev.offsetY=ev.layerY=p.y;var _47=_2e[s.getHost().content.root.name];var t=_6.position(_47);ev.clientX=t.x+p.x;ev.clientY=t.y+p.y;}catch(e){}}return ev;};function _48(s,a){var ev={keyCode:a.platformKeyCode,ctrlKey:a.ctrl,shiftKey:a.shift};try{if(a.source){ev.target=a.source;ev.gfxTarget=gs.byId(ev.target.tag);}}catch(e){}return ev;};var _49={onclick:{name:"MouseLeftButtonUp",fix:_45},onmouseenter:{name:"MouseEnter",fix:_45},onmouseleave:{name:"MouseLeave",fix:_45},onmouseover:{name:"MouseEnter",fix:_45},onmouseout:{name:"MouseLeave",fix:_45},onmousedown:{name:"MouseLeftButtonDown",fix:_45},onmouseup:{name:"MouseLeftButtonUp",fix:_45},onmousemove:{name:"MouseMove",fix:_45},onkeydown:{name:"KeyDown",fix:_48},onkeyup:{name:"KeyUp",fix:_48}};var _4a={connect:function(_4b,_4c,_4d){var _4e,n=_4b in _49?_49[_4b]:{name:_4b,fix:function(){return {};}};if(arguments.length>2){_4e=this.getEventSource().addEventListener(n.name,function(s,a){_2.hitch(_4c,_4d)(n.fix(s,a));});}else{_4e=this.getEventSource().addEventListener(n.name,function(s,a){_4c(n.fix(s,a));});}return {name:n.name,token:_4e};},disconnect:function(_4f){try{this.getEventSource().removeEventListener(_4f.name,_4f.token);}catch(e){}}};_2.extend(sl.Shape,_4a);_2.extend(sl.Surface,_4a);g.equalSources=function(a,b){return a&&b&&a.equals(b);};return sl;});
+define("dojox/gfx/silverlight", ["dojo/_base/kernel", "dojo/_base/lang", "dojo/_base/declare", "dojo/_base/Color", 
+		"dojo/_base/array", "dojo/dom-geometry", "dojo/dom", "dojo/_base/sniff", 
+		"./_base", "./shape", "./path"], 
+  function(kernel,lang,declare,color,arr,domGeom,dom,has,g,gs,pathLib){
+	var sl = g.silverlight = {
+		// summary:
+		//		This the graphics rendering bridge for the Microsoft Silverlight plugin.
+		//		Silverlight is a faster implementation on IE6-8 than the default 2d graphics, VML
+	};
+	kernel.experimental("dojox.gfx.silverlight");
+
+	var dasharray = {
+			solid:				"none",
+			shortdash:			[4, 1],
+			shortdot:			[1, 1],
+			shortdashdot:		[4, 1, 1, 1],
+			shortdashdotdot:	[4, 1, 1, 1, 1, 1],
+			dot:				[1, 3],
+			dash:				[4, 3],
+			longdash:			[8, 3],
+			dashdot:			[4, 3, 1, 3],
+			longdashdot:		[8, 3, 1, 3],
+			longdashdotdot:		[8, 3, 1, 3, 1, 3]
+		},
+		fontweight = {
+			normal: 400,
+			bold:   700
+		},
+		caps  = {butt: "Flat", round: "Round", square: "Square"},
+		joins = {bevel: "Bevel", round: "Round"},
+		fonts = {
+			serif: "Times New Roman",
+			times: "Times New Roman",
+			"sans-serif": "Arial",
+			helvetica: "Arial",
+			monotone: "Courier New",
+			courier: "Courier New"
+		};
+
+	function hexColor(/*String|Array|dojo/Color*/ color){
+		// summary:
+		//		converts a color object to a Silverlight hex color string (#aarrggbb)
+		var c = g.normalizeColor(color),
+			t = c.toHex(), a = Math.round(c.a * 255);
+		a = (a < 0 ? 0 : a > 255 ? 255 : a).toString(16);
+		return "#" + (a.length < 2 ? "0" + a : a) + t.slice(1);	// String
+	}
+
+	sl.Shape = declare("dojox.gfx.silverlight.Shape", gs.Shape, {
+		// summary:
+		//		Silverlight-specific implementation of dojox/gfx/shape.Shape methods
+
+		destroy: function(){
+			this.rawNode = null;
+			gs.Shape.prototype.destroy.apply(this, arguments);
+		},
+
+		setFill: function(fill){
+			// summary:
+			//		sets a fill object (Silverlight)
+			// fill: Object
+			//		a fill object
+			//		(see dojox/gfx.defaultLinearGradient,
+			//		dojox/gfx.defaultRadialGradient,
+			//		dojox/gfx.defaultPattern,
+			//		or dojo/_base/Color)
+
+			var p = this.rawNode.getHost().content, r = this.rawNode, f;
+			if(!fill){
+				// don't fill
+				this.fillStyle = null;
+				this._setFillAttr(null);
+				return this;	// self
+			}
+			if(typeof(fill) == "object" && "type" in fill){
+				// gradient
+				switch(fill.type){
+					case "linear":
+						this.fillStyle = f = g.makeParameters(g.defaultLinearGradient, fill);
+						var lgb = p.createFromXaml("<LinearGradientBrush/>");
+						lgb.mappingMode = "Absolute";
+						lgb.startPoint = f.x1 + "," + f.y1;
+						lgb.endPoint = f.x2 + "," + f.y2;
+						arr.forEach(f.colors, function(c){
+							var t = p.createFromXaml("<GradientStop/>");
+							t.offset = c.offset;
+							t.color = hexColor(c.color);
+							lgb.gradientStops.add(t);
+						});
+						this._setFillAttr(lgb);
+						break;
+					case "radial":
+						this.fillStyle = f = g.makeParameters(g.defaultRadialGradient, fill);
+						var rgb = p.createFromXaml("<RadialGradientBrush/>"),
+							c = g.matrix.multiplyPoint(g.matrix.invert(this._getAdjustedMatrix()), f.cx, f.cy),
+							pt = c.x + "," + c.y;
+						rgb.mappingMode = "Absolute";
+						rgb.gradientOrigin = pt;
+						rgb.center = pt;
+						rgb.radiusX = rgb.radiusY = f.r;
+						arr.forEach(f.colors, function(c){
+							var t = p.createFromXaml("<GradientStop/>");
+							t.offset = c.offset;
+							t.color = hexColor(c.color);
+							rgb.gradientStops.add(t);
+						});
+						this._setFillAttr(rgb);
+						break;
+					case "pattern":
+						// don't fill: Silverlight doesn't define TileBrush for some reason
+						this.fillStyle = null;
+						this._setFillAttr(null);
+						break;
+				}
+				return this;	// self
+			}
+			// color object
+			this.fillStyle = f = g.normalizeColor(fill);
+			var scb = p.createFromXaml("<SolidColorBrush/>");
+			scb.color = f.toHex();
+			scb.opacity = f.a;
+			this._setFillAttr(scb);
+			return this;	// self
+		},
+		_setFillAttr: function(f){
+			this.rawNode.fill = f;
+		},
+
+		setStroke: function(stroke){
+			// summary:
+			//		sets a stroke object (Silverlight)
+			// stroke: Object
+			//		a stroke object
+			//		(see dojox/gfx.defaultStroke)
+
+			var p = this.rawNode.getHost().content, r = this.rawNode;
+			if(!stroke){
+				// don't stroke
+				this.strokeStyle = null;
+				r.stroke = null;
+				return this;
+			}
+			// normalize the stroke
+			if(typeof stroke == "string" || lang.isArray(stroke) || stroke instanceof color){
+				stroke = {color: stroke};
+			}
+			var s = this.strokeStyle = g.makeParameters(g.defaultStroke, stroke);
+			s.color = g.normalizeColor(s.color);
+			// generate attributes
+			if(s){
+				var scb = p.createFromXaml("<SolidColorBrush/>");
+				scb.color = s.color.toHex();
+				scb.opacity = s.color.a;
+				r.stroke = scb;
+				r.strokeThickness = s.width;
+				r.strokeStartLineCap = r.strokeEndLineCap = r.strokeDashCap =
+					caps[s.cap];
+				if(typeof s.join == "number"){
+					r.strokeLineJoin = "Miter";
+					r.strokeMiterLimit = s.join;
+				}else{
+					r.strokeLineJoin = joins[s.join];
+				}
+				var da = s.style.toLowerCase();
+				if(da in dasharray){ da = dasharray[da]; }
+				if(da instanceof Array){
+					da = lang.clone(da);
+					var i;
+					/*
+					for(var i = 0; i < da.length; ++i){
+						da[i] *= s.width;
+					}
+					*/
+					if(s.cap != "butt"){
+						for(i = 0; i < da.length; i += 2){
+							//da[i] -= s.width;
+							--da[i]
+							if(da[i] < 1){ da[i] = 1; }
+						}
+						for(i = 1; i < da.length; i += 2){
+							//da[i] += s.width;
+							++da[i];
+						}
+					}
+					r.strokeDashArray = da.join(",");
+				}else{
+					r.strokeDashArray = null;
+				}
+			}
+			return this;	// self
+		},
+
+		_getParentSurface: function(){
+			var surface = this.parent;
+			for(; surface && !(surface instanceof g.Surface); surface = surface.parent);
+			return surface;
+		},
+
+		_applyTransform: function() {
+			var tm = this._getAdjustedMatrix(), r = this.rawNode;
+			if(tm){
+				var p = this.rawNode.getHost().content,
+					mt = p.createFromXaml("<MatrixTransform/>"),
+					mm = p.createFromXaml("<Matrix/>");
+				mm.m11 = tm.xx;
+				mm.m21 = tm.xy;
+				mm.m12 = tm.yx;
+				mm.m22 = tm.yy;
+				mm.offsetX = tm.dx;
+				mm.offsetY = tm.dy;
+				mt.matrix = mm;
+				r.renderTransform = mt;
+			}else{
+				r.renderTransform = null;
+			}
+			return this;
+		},
+
+		setRawNode: function(rawNode){
+			// summary:
+			//		assigns and clears the underlying node that will represent this
+			//		shape. Once set, transforms, gradients, etc, can be applied.
+			//		(no fill & stroke by default)
+			rawNode.fill = null;
+			rawNode.stroke = null;
+			this.rawNode = rawNode;
+			this.rawNode.tag = this.getUID();						
+		},
+
+		// move family
+
+		_moveToFront: function(){
+			// summary:
+			//		moves a shape to front of its parent's list of shapes (Silverlight)
+			var c = this.parent.rawNode.children, r = this.rawNode;
+			c.remove(r);
+			c.add(r);
+			return this;	// self
+		},
+		_moveToBack: function(){
+			// summary:
+			//		moves a shape to back of its parent's list of shapes (Silverlight)
+			var c = this.parent.rawNode.children, r = this.rawNode;
+			c.remove(r);
+			c.insert(0, r);
+			return this;	// self
+		},
+
+		_getAdjustedMatrix: function(){
+			// summary:
+			//		returns the adjusted ("real") transformation matrix
+			return this.matrix;	// dojox/gfx/matrix.Matrix2D
+		},
+		
+		setClip: function(clip){
+			// summary:
+			//		sets the clipping area of this shape.
+			// description:
+			//		This method overrides the dojox/gfx/shape.Shape.setClip() method.
+			// clip: Object
+			//		an object that defines the clipping geometry, or null to remove clip.
+			this.inherited(arguments);
+			var r = this.rawNode;
+			if(clip){
+				var clipType = clip ? "width" in clip ? "rect" : 
+								"cx" in clip ? "ellipse" : 
+								"points" in clip ? "polyline" : "d" in clip ? "path" : null : null;
+				if(clip && !clipType){
+					return this;
+				}
+				var bbox = this.getBoundingBox() || {x:0, y:0, width:0, height:0};
+				var clipT = "1,0,0,1,"+(-bbox.x)+","+(-bbox.y);
+				switch(clipType){
+					case "rect":
+						r.clip = r.getHost().content.createFromXaml("<RectangleGeometry/>");
+						r.clip.rect = clip.x+","+clip.y+","+clip.width+","+clip.height;
+						r.clip.transform = clipT;
+						break;
+					case "ellipse":
+						r.clip = r.getHost().content.createFromXaml("<EllipseGeometry/>");
+						r.clip.center = clip.cx+","+clip.cy;
+						r.clip.radiusX = clip.rx;
+						r.clip.radiusY = clip.ry;
+						r.clip.transform = "1,0,0,1,"+(-bbox.x)+","+(-bbox.y);
+						break;
+					case "polyline":
+						if(clip.points.length>2){
+							var line, plinegroup = r.getHost().content.createFromXaml("<PathGeometry/>"),
+								pfigure = r.getHost().content.createFromXaml("<PathFigure/>");
+							pfigure.StartPoint = clip.points[0]+","+clip.points[1];
+							for (var i=2; i<=clip.points.length-2;i=i+2){
+								line = r.getHost().content.createFromXaml("<LineSegment/>");
+								line.Point = clip.points[i]+","+clip.points[i+1];
+								pfigure.segments.add(line);
+							}
+							plinegroup.figures.add(pfigure);
+							plinegroup.transform = "1,0,0,1,"+(-bbox.x)+","+(-bbox.y);
+							r.clip = plinegroup;
+						}
+						break;
+					case "path":
+						// missing JS api
+						break;
+				}
+			}else{
+				r.clip = null;
+			}
+			return this;
+		}
+	});
+
+	sl.Group = declare("dojox.gfx.silverlight.Group", sl.Shape, {
+		// summary:
+		//		a group shape (Silverlight), which can be used
+		//		to logically group shapes (e.g, to propagate matricies)
+		constructor: function(){
+			gs.Container._init.call(this);
+		},
+		setRawNode: function(rawNode){
+			// summary:
+			//		sets a raw Silverlight node to be used by this shape
+			// rawNode: Node
+			//		a Sliverlight node
+			this.rawNode = rawNode;
+			this.rawNode.tag = this.getUID();						
+			
+		},
+		destroy: function(){
+			// summary:
+			//		Releases all internal resources owned by this shape. Once this method has been called,
+			//		the instance is considered disposed and should not be used anymore.
+			this.clear(true);
+			// avoid this.inherited
+			sl.Shape.prototype.destroy.apply(this, arguments);
+		}
+	});
+	sl.Group.nodeType = "Canvas";
+
+	sl.Rect = declare("dojox.gfx.silverlight.Rect", [sl.Shape, gs.Rect], {
+		// summary:
+		//		a rectangle shape (Silverlight)
+		setShape: function(newShape){
+			// summary:
+			//		sets a rectangle shape object (Silverlight)
+			// newShape: Object
+			//		a rectangle shape object
+			this.shape = g.makeParameters(this.shape, newShape);
+			this.bbox = null;
+			var r = this.rawNode, n = this.shape;
+			r.width   = n.width;
+			r.height  = n.height;
+			r.radiusX = r.radiusY = n.r;
+			return this._applyTransform();	// self
+		},
+		_getAdjustedMatrix: function(){
+			// summary:
+			//		returns the adjusted ("real") transformation matrix
+			var matrix = this.matrix, s = this.shape, delta = {dx: s.x, dy: s.y};
+			return new g.Matrix2D(matrix ? [matrix, delta] : delta);	// dojox/gfx/matrix.Matrix2D
+		}
+	});
+	sl.Rect.nodeType = "Rectangle";
+
+	sl.Ellipse = declare("dojox.gfx.silverlight.Ellipse", [sl.Shape, gs.Ellipse], {
+		// summary:
+		//		an ellipse shape (Silverlight)
+		setShape: function(newShape){
+			// summary:
+			//		sets an ellipse shape object (Silverlight)
+			// newShape: Object
+			//		an ellipse shape object
+			this.shape = g.makeParameters(this.shape, newShape);
+			this.bbox = null;
+			var r = this.rawNode, n = this.shape;
+			r.width  = 2 * n.rx;
+			r.height = 2 * n.ry;
+			return this._applyTransform();	// self
+		},
+		_getAdjustedMatrix: function(){
+			// summary:
+			//		returns the adjusted ("real") transformation matrix
+			var matrix = this.matrix, s = this.shape, delta = {dx: s.cx - s.rx, dy: s.cy - s.ry};
+			return new g.Matrix2D(matrix ? [matrix, delta] : delta);	// dojox/gfx/matrix.Matrix2D
+		}
+	});
+	sl.Ellipse.nodeType = "Ellipse";
+
+	sl.Circle = declare("dojox.gfx.silverlight.Circle", [sl.Shape, gs.Circle], {
+		// summary:
+		//		a circle shape (Silverlight)
+		setShape: function(newShape){
+			// summary:
+			//		sets a circle shape object (Silverlight)
+			// newShape: Object
+			//		a circle shape object
+			this.shape = g.makeParameters(this.shape, newShape);
+			this.bbox = null;
+			var r = this.rawNode, n = this.shape;
+			r.width = r.height = 2 * n.r;
+			return this._applyTransform();	// self
+		},
+		_getAdjustedMatrix: function(){
+			// summary:
+			//		returns the adjusted ("real") transformation matrix
+			var matrix = this.matrix, s = this.shape, delta = {dx: s.cx - s.r, dy: s.cy - s.r};
+			return new g.Matrix2D(matrix ? [matrix, delta] : delta);	// dojox/gfx/matrix.Matrix2D
+		}
+	});
+	sl.Circle.nodeType = "Ellipse";
+
+	sl.Line = declare("dojox.gfx.silverlight.Line", [sl.Shape, gs.Line], {
+		// summary:
+		//		a line shape (Silverlight)
+		setShape: function(newShape){
+			// summary:
+			//		sets a line shape object (Silverlight)
+			// newShape: Object
+			//		a line shape object
+			this.shape = g.makeParameters(this.shape, newShape);
+			this.bbox = null;
+			var r = this.rawNode, n = this.shape;
+			r.x1 = n.x1; r.y1 = n.y1; r.x2 = n.x2; r.y2 = n.y2;
+			return this;	// self
+		}
+	});
+	sl.Line.nodeType = "Line";
+
+	sl.Polyline = declare("dojox.gfx.silverlight.Polyline", [sl.Shape, gs.Polyline], {
+		// summary:
+		//		a polyline/polygon shape (Silverlight)
+		setShape: function(points, closed){
+			// summary:
+			//		sets a polyline/polygon shape object (Silverlight)
+			// points: Object|Array
+			//		a polyline/polygon shape object, or an array of points
+			if(points && points instanceof Array){
+				this.shape = g.makeParameters(this.shape, {points: points});
+				if(closed && this.shape.points.length){
+					this.shape.points.push(this.shape.points[0]);
+				}
+			}else{
+				this.shape = g.makeParameters(this.shape, points);
+			}
+			this.bbox = null;
+			this._normalizePoints();
+			var p = this.shape.points, rp = [];
+			for(var i = 0; i < p.length; ++i){
+				rp.push(p[i].x, p[i].y);
+			}
+			this.rawNode.points = rp.join(",");
+			return this;	// self
+		}
+	});
+	sl.Polyline.nodeType = "Polyline";
+
+	sl.Image = declare("dojox.gfx.silverlight.Image", [sl.Shape, gs.Image], {
+		// summary:
+		//		an image (Silverlight)
+		setShape: function(newShape){
+			// summary:
+			//		sets an image shape object (Silverlight)
+			// newShape: Object
+			//		an image shape object
+			this.shape = g.makeParameters(this.shape, newShape);
+			this.bbox = null;
+			var r = this.rawNode, n = this.shape;
+			r.width  = n.width;
+			r.height = n.height;
+			r.source = n.src;
+			return this._applyTransform();	// self
+		},
+		_getAdjustedMatrix: function(){
+			// summary:
+			//		returns the adjusted ("real") transformation matrix
+			var matrix = this.matrix, s = this.shape, delta = {dx: s.x, dy: s.y};
+			return new g.Matrix2D(matrix ? [matrix, delta] : delta);	// dojox/gfx/matrix.Matrix2D
+		},
+		setRawNode: function(rawNode){
+			// summary:
+			//		assigns and clears the underlying node that will represent this
+			//		shape. Once set, transforms, gradients, etc, can be applied.
+			//		(no fill & stroke by default)
+			this.rawNode = rawNode;
+			this.rawNode.tag = this.getUID();						
+		}
+	});
+	sl.Image.nodeType = "Image";
+
+	sl.Text = declare("dojox.gfx.silverlight.Text", [sl.Shape, gs.Text], {
+		// summary:
+		//		an anchored text (Silverlight)
+		setShape: function(newShape){
+			// summary:
+			//		sets a text shape object (Silverlight)
+			// newShape: Object
+			//		a text shape object
+			this.shape = g.makeParameters(this.shape, newShape);
+			this.bbox = null;
+			var r = this.rawNode, s = this.shape;
+			r.text = "" + s.text; // #14522
+			r.textDecorations = s.decoration === "underline" ? "Underline" : "None";
+			r["Canvas.Left"] = -10000;
+			r["Canvas.Top"]  = -10000;
+			if(!this._delay){
+				this._delay = window.setTimeout(lang.hitch(this, "_delayAlignment"), 10);
+			}
+			return this;	// self
+		},
+		_delayAlignment: function(){
+			// handle alignment
+			var r = this.rawNode, s = this.shape, w, h;
+			try{
+				w = r.actualWidth;
+				h = r.actualHeight;
+			}catch(e){
+				// bail out if the node is hidden
+				return;
+			}
+			var x = s.x, y = s.y - h * 0.75;
+			switch(s.align){
+				case "middle":
+					x -= w / 2;
+					break;
+				case "end":
+					x -= w;
+					break;
+			}
+			this._delta = {dx: x, dy: y};
+			r["Canvas.Left"] = 0;
+			r["Canvas.Top"]  = 0;
+			this._applyTransform();
+			delete this._delay;
+		},
+		_getAdjustedMatrix: function(){
+			// summary:
+			//		returns the adjusted ("real") transformation matrix
+			var matrix = this.matrix, delta = this._delta, x;
+			if(matrix){
+				x = delta ? [matrix, delta] : matrix;
+			}else{
+				x = delta ? delta : {};
+			}
+			return new g.Matrix2D(x);
+		},
+		setStroke: function(){
+			// summary:
+			//		ignore setting a stroke style
+			return this;	// self
+		},
+		_setFillAttr: function(f){
+			this.rawNode.foreground = f;
+		},
+		setRawNode: function(rawNode){
+			// summary:
+			//		assigns and clears the underlying node that will represent this
+			//		shape. Once set, transforms, gradients, etc, can be applied.
+			//		(no fill & stroke by default)
+			this.rawNode = rawNode;
+			this.rawNode.tag = this.getUID();						
+		},
+		getTextWidth: function(){
+			// summary:
+			//		get the text width in pixels
+			return this.rawNode.actualWidth;
+		}
+	});
+	sl.Text.nodeType = "TextBlock";
+
+	sl.Path = declare("dojox.gfx.silverlight.Path", [sl.Shape, pathLib.Path], {
+		// summary:
+		//		a path shape (Silverlight)
+		_updateWithSegment: function(segment){
+			// summary:
+			//		updates the bounding box of path with new segment
+			// segment: Object
+			//		a segment
+			this.inherited(arguments);
+			var p = this.shape.path;
+			if(typeof(p) == "string"){
+				this.rawNode.data = p ? p : null;
+			}
+		},
+		setShape: function(newShape){
+			// summary:
+			//		forms a path using a shape (Silverlight)
+			// newShape: Object
+			//		an SVG path string or a path object (see dojox/gfx.defaultPath)
+			this.inherited(arguments);
+			var p = this.shape.path;
+			this.rawNode.data = p ? p : null;
+			return this;	// self
+		}
+	});
+	sl.Path.nodeType = "Path";
+
+	sl.TextPath = declare("dojox.gfx.silverlight.TextPath", [sl.Shape, pathLib.TextPath], {
+		// summary:
+		//		a textpath shape (Silverlight)
+		_updateWithSegment: function(segment){
+			// summary:
+			//		updates the bounding box of path with new segment
+			// segment: Object
+			//		a segment
+		},
+		setShape: function(newShape){
+			// summary:
+			//		forms a path using a shape (Silverlight)
+			// newShape: Object
+			//		an SVG path string or a path object (see dojox/gfx.defaultPath)
+		},
+		_setText: function(){
+		}
+	});
+	sl.TextPath.nodeType = "text";
+
+	var surfaces = {}, nullFunc = new Function;
+
+	sl.Surface = declare("dojox.gfx.silverlight.Surface", gs.Surface, {
+		// summary:
+		//		a surface object to be used for drawings (Silverlight)
+		constructor: function(){
+			gs.Container._init.call(this);
+		},
+		destroy: function(){
+			window[this._onLoadName] = nullFunc;
+			delete surfaces[this._nodeName];
+			this.inherited(arguments);
+		},
+		setDimensions: function(width, height){
+			// summary:
+			//		sets the width and height of the rawNode
+			// width: String
+			//		width of surface, e.g., "100px"
+			// height: String
+			//		height of surface, e.g., "100px"
+			this.width  = g.normalizedLength(width);	// in pixels
+			this.height = g.normalizedLength(height);	// in pixels
+			var p = this.rawNode && this.rawNode.getHost();
+			if(p){
+				p.width = width;
+				p.height = height;
+			}
+			return this;	// self
+		},
+		getDimensions: function(){
+			// summary:
+			//		returns an object with properties "width" and "height"
+			var p = this.rawNode && this.rawNode.getHost();
+			var t = p ? {width: p.content.actualWidth, height: p.content.actualHeight} : null;
+			if(t.width  <= 0){ t.width  = this.width; }
+			if(t.height <= 0){ t.height = this.height; }
+			return t;	// Object
+		}
+	});
+
+	sl.createSurface = function(parentNode, width, height){
+		// summary:
+		//		creates a surface (Silverlight)
+		// parentNode: Node
+		//		a parent node
+		// width: String
+		//		width of surface, e.g., "100px"
+		// height: String
+		//		height of surface, e.g., "100px"
+
+		if(!width && !height){
+			var pos = domGeom.position(parentNode);
+			width  = width  || pos.w;
+			height = height || pos.h;
+		}
+		if(typeof width == "number"){
+			width = width + "px";
+		}
+		if(typeof height == "number"){
+			height = height + "px";
+		}
+
+		var s = new sl.Surface();
+		parentNode = dom.byId(parentNode);
+		s._parent = parentNode;
+		s._nodeName = g._base._getUniqueId();
+
+		// create an empty canvas
+		var t = parentNode.ownerDocument.createElement("script");
+		t.type = "text/xaml";
+		t.id = g._base._getUniqueId();
+		t.text = "<?xml version='1.0'?><Canvas xmlns='http://schemas.microsoft.com/client/2007' Name='" +
+			s._nodeName + "'/>";
+		parentNode.parentNode.insertBefore(t, parentNode);
+		s._nodes.push(t);
+
+		// build the object
+		var obj, pluginName = g._base._getUniqueId(),
+			onLoadName = "__" + g._base._getUniqueId() + "_onLoad";
+		s._onLoadName = onLoadName;
+		window[onLoadName] = function(sender){
+			if(!s.rawNode){
+				s.rawNode = dom.byId(pluginName).content.root;
+				// register the plugin with its parent node
+				surfaces[s._nodeName] = parentNode;
+				s.onLoad(s);
+			}
+		};
+		if(has("safari")){
+			obj = "<embed type='application/x-silverlight' id='" +
+			pluginName + "' width='" + width + "' height='" + height +
+			" background='transparent'" +
+			" source='#" + t.id + "'" +
+			" windowless='true'" +
+			" maxFramerate='60'" +
+			" onLoad='" + onLoadName + "'" +
+			" onError='__dojoSilverlightError'" +
+			" /><iframe style='visibility:hidden;height:0;width:0'/>";
+		}else{
+			obj = "<object type='application/x-silverlight' data='data:application/x-silverlight,' id='" +
+			pluginName + "' width='" + width + "' height='" + height + "'>" +
+			"<param name='background' value='transparent' />" +
+			"<param name='source' value='#" + t.id + "' />" +
+			"<param name='windowless' value='true' />" +
+			"<param name='maxFramerate' value='60' />" +
+			"<param name='onLoad' value='" + onLoadName + "' />" +
+			"<param name='onError' value='__dojoSilverlightError' />" +
+			"</object>";
+		}
+		parentNode.innerHTML = obj;
+
+		var pluginNode = dom.byId(pluginName);
+		if(pluginNode.content && pluginNode.content.root){
+			// the plugin was created synchronously
+			s.rawNode = pluginNode.content.root;
+			// register the plugin with its parent node
+			surfaces[s._nodeName] = parentNode;
+		}else{
+			// the plugin is being created asynchronously
+			s.rawNode = null;
+			s.isLoaded = false;
+		}
+		s._nodes.push(pluginNode);
+
+		s.width  = g.normalizedLength(width);	// in pixels
+		s.height = g.normalizedLength(height);	// in pixels
+
+		return s;	// dojox/gfx.Surface
+	};
+
+	// the function below is meant to be global, it is called from
+	// the Silverlight's error handler
+	__dojoSilverlightError = function(sender, err){
+		var t = "Silverlight Error:\n" +
+			"Code: " + err.ErrorCode + "\n" +
+			"Type: " + err.ErrorType + "\n" +
+			"Message: " + err.ErrorMessage + "\n";
+		switch(err.ErrorType){
+			case "ParserError":
+				t += "XamlFile: " + err.xamlFile + "\n" +
+					"Line: " + err.lineNumber + "\n" +
+					"Position: " + err.charPosition + "\n";
+				break;
+			case "RuntimeError":
+				t += "MethodName: " + err.methodName + "\n";
+				if(err.lineNumber != 0){
+					t +=
+						"Line: " + err.lineNumber + "\n" +
+						"Position: " + err.charPosition + "\n";
+				}
+				break;
+		}
+	};
+
+	// Extenders
+
+	var Font = {
+		_setFont: function(){
+			// summary:
+			//		sets a font object (Silverlight)
+			var f = this.fontStyle, r = this.rawNode, t = f.family.toLowerCase();
+			r.fontStyle = f.style == "italic" ? "Italic" : "Normal";
+			r.fontWeight = f.weight in fontweight ? fontweight[f.weight] : f.weight;
+			r.fontSize = g.normalizedLength(f.size);
+			r.fontFamily = t in fonts ? fonts[t] : f.family;
+
+			// update the transform
+			if(!this._delay){
+				this._delay = window.setTimeout(lang.hitch(this, "_delayAlignment"), 10);
+			}
+		}
+	};
+
+	var C = gs.Container, Container = {
+		add: function(shape){
+			// summary:
+			//		adds a shape to a group/surface
+			// shape: dojox/gfx/shape.Shape
+			//		a Silverlight shape object
+			if(this != shape.getParent()){
+				C.add.apply(this, arguments);
+				this.rawNode.children.add(shape.rawNode);
+			}
+			return this;	// self
+		},
+		remove: function(shape, silently){
+			// summary:
+			//		remove a shape from a group/surface
+			// shape: dojox/gfx/shape.Shape
+			//		a Silverlight shape object
+			// silently: Boolean?
+			//		if true, regenerate a picture
+			if(this == shape.getParent()){
+				var parent = shape.rawNode.getParent();
+				if(parent){
+					parent.children.remove(shape.rawNode);
+				}
+				C.remove.apply(this, arguments);
+			}
+			return this;	// self
+		},
+		clear: function(){
+			// summary:
+			//		removes all shapes from a group/surface
+			this.rawNode.children.clear();
+			return C.clear.apply(this, arguments);
+		},
+		getBoundingBox: C.getBoundingBox,
+		_moveChildToFront: C._moveChildToFront,
+		_moveChildToBack:  C._moveChildToBack
+	};
+
+	var Creator = {
+		createObject: function(shapeType, rawShape){
+			// summary:
+			//		creates an instance of the passed shapeType class
+			// shapeType: Function
+			//		a class constructor to create an instance of
+			// rawShape: Object
+			//		properties to be passed in to the classes "setShape" method
+			if(!this.rawNode){ return null; }
+			var shape = new shapeType();
+			var node = this.rawNode.getHost().content.createFromXaml("<" + shapeType.nodeType + "/>");
+			shape.setRawNode(node);
+			shape.setShape(rawShape);
+			this.add(shape);
+			return shape;	// dojox/gfx/shape.Shape
+		}
+	};
+
+	lang.extend(sl.Text, Font);
+	//dojo.extend(sl.TextPath, Font);
+
+	lang.extend(sl.Group, Container);
+	lang.extend(sl.Group, gs.Creator);
+	lang.extend(sl.Group, Creator);
+
+	lang.extend(sl.Surface, Container);
+	lang.extend(sl.Surface, gs.Creator);
+	lang.extend(sl.Surface, Creator);
+
+	function mouseFix(s, a){
+		var ev = {target: s, currentTarget: s, preventDefault: function(){}, stopPropagation: function(){}};
+		try{
+			if(a.source){
+				// support silverlight 2.0
+				ev.target = a.source;
+				var gfxId = ev.target.tag;				
+				ev.gfxTarget = gs.byId(gfxId);
+			}
+		}catch(e){
+			// a.source does not exist in 1.0
+		}
+	
+		if(a){
+			try{
+				ev.ctrlKey = a.ctrl;
+				ev.shiftKey = a.shift;
+				var p = a.getPosition(null);
+				ev.x = ev.offsetX = ev.layerX = p.x;
+				ev.y = ev.offsetY = ev.layerY = p.y;
+				// calculate clientX and clientY
+				var parent = surfaces[s.getHost().content.root.name];
+				var t = domGeom.position(parent);
+				ev.clientX = t.x + p.x;
+				ev.clientY = t.y + p.y;
+			}catch(e){
+				// squelch bugs in MouseLeave's implementation
+			}
+		}
+		return ev;
+	}
+	
+	function keyFix(s, a){
+		var ev = {
+			keyCode:  a.platformKeyCode,
+			ctrlKey:  a.ctrl,
+			shiftKey: a.shift
+		};
+		try{
+			if(a.source){
+				// source is defined from Silverlight 2+
+				ev.target = a.source;
+				ev.gfxTarget = gs.byId(ev.target.tag);
+			}
+		}catch(e){
+			// a.source does not exist in 1.0
+		}
+		return ev;
+	}
+	
+	var eventNames = {
+		onclick:		{name: "MouseLeftButtonUp", fix: mouseFix},
+		onmouseenter:	{name: "MouseEnter", fix: mouseFix},
+		onmouseleave:	{name: "MouseLeave", fix: mouseFix},
+		onmouseover:	{name: "MouseEnter", fix: mouseFix},
+		onmouseout:		{name: "MouseLeave", fix: mouseFix},
+		onmousedown:	{name: "MouseLeftButtonDown", fix: mouseFix},
+		onmouseup:		{name: "MouseLeftButtonUp", fix: mouseFix},
+		onmousemove:	{name: "MouseMove", fix: mouseFix},
+		onkeydown:		{name: "KeyDown", fix: keyFix},
+		onkeyup:		{name: "KeyUp", fix: keyFix}
+	};
+	
+	var eventsProcessing = {
+		connect: function(name, object, method){
+			var token, n = name in eventNames ? eventNames[name] :
+				{name: name, fix: function(){ return {}; }};
+			if(arguments.length > 2){
+				token = this.getEventSource().addEventListener(n.name,
+					function(s, a){ lang.hitch(object, method)(n.fix(s, a)); });
+			}else{
+				token = this.getEventSource().addEventListener(n.name,
+					function(s, a){ object(n.fix(s, a)); });
+			}
+			return {name: n.name, token: token};
+		},
+		disconnect: function(token){
+			try{
+				this.getEventSource().removeEventListener(token.name, token.token);
+			}catch(e){
+				// bail out if the node is hidden
+			}
+		}
+	};
+	
+	lang.extend(sl.Shape, eventsProcessing);
+	lang.extend(sl.Surface, eventsProcessing);
+	
+	// patch dojox/gfx
+	g.equalSources = function(a, b){
+		// summary:
+		//		compares event sources, returns true if they are equal
+		return a && b && a.equals(b);
+	};
+	
+	return sl;
+});
+

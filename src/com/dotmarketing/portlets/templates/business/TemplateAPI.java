@@ -1,9 +1,11 @@
 package com.dotmarketing.portlets.templates.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -189,5 +191,7 @@ public interface TemplateAPI {
 	public void associateContainers( List<Container> containerIdentifiers,Template template) throws DotHibernateException;
 
 	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws PortalException, SystemException, DotDataException, DotSecurityException;
+
+    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
 }

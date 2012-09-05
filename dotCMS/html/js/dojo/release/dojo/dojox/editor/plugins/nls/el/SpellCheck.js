@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/el/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/el/SpellCheck", ({
 	widgetLabel: "Συνολικός ορθογραφικός έλεγχος",
 	unfound: "Δεν εντοπίστηκε",
 	skip: "Παράλειψη",
@@ -17,6 +15,4 @@ define(
 	iSkipAll: "Παράλειψη όλων των όμοιων",
 	iMsg: "Δεν υπάρχουν προτάσεις ορθογραφίας"
 })
-
-//end v1.x content
 );

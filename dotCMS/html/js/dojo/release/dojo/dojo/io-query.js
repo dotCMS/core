@@ -1,8 +1,97 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/io-query", ["./_base/lang"], function(lang){
 
-//>>built
-define("dojo/io-query",["./_base/lang"],function(_1){var _2={};function _3(_4){var _5=encodeURIComponent,_6=[];for(var _7 in _4){var _8=_4[_7];if(_8!=_2[_7]){var _9=_5(_7)+"=";if(_1.isArray(_8)){for(var i=0,l=_8.length;i<l;++i){_6.push(_9+_5(_8[i]));}}else{_6.push(_9+_5(_8));}}}return _6.join("&");};function _a(_b){var _c=decodeURIComponent,qp=_b.split("&"),_d={},_e,_f;for(var i=0,l=qp.length,_10;i<l;++i){_10=qp[i];if(_10.length){var s=_10.indexOf("=");if(s<0){_e=_c(_10);_f="";}else{_e=_c(_10.slice(0,s));_f=_c(_10.slice(s+1));}if(typeof _d[_e]=="string"){_d[_e]=[_d[_e]];}if(_1.isArray(_d[_e])){_d[_e].push(_f);}else{_d[_e]=_f;}}}return _d;};return {objectToQuery:_3,queryToObject:_a};});
+// module:
+//		dojo/io-query
+
+var backstop = {};
+
+return {
+// summary:
+//		This module defines query string processing functions.
+
+	objectToQuery: function objectToQuery(/*Object*/ map){
+		// summary:
+        //		takes a name/value mapping object and returns a string representing
+        //		a URL-encoded version of that object.
+        // example:
+        //		this object:
+        //
+        //	|	{
+        //	|		blah: "blah",
+        //	|		multi: [
+        //	|			"thud",
+        //	|			"thonk"
+        //	|		]
+        //	|	};
+        //
+        //		yields the following query string:
+        //
+        //	|	"blah=blah&multi=thud&multi=thonk"
+
+        // FIXME: need to implement encodeAscii!!
+        var enc = encodeURIComponent, pairs = [];
+        for(var name in map){
+            var value = map[name];
+            if(value != backstop[name]){
+                var assign = enc(name) + "=";
+                if(lang.isArray(value)){
+                    for(var i = 0, l = value.length; i < l; ++i){
+                        pairs.push(assign + enc(value[i]));
+                    }
+                }else{
+                    pairs.push(assign + enc(value));
+                }
+            }
+        }
+        return pairs.join("&"); // String
+    },
+
+	queryToObject: function queryToObject(/*String*/ str){
+        // summary:
+        //		Create an object representing a de-serialized query section of a
+        //		URL. Query keys with multiple values are returned in an array.
+        //
+        // example:
+        //		This string:
+        //
+        //	|		"foo=bar&foo=baz&thinger=%20spaces%20=blah&zonk=blarg&"
+        //
+        //		results in this object structure:
+        //
+        //	|		{
+        //	|			foo: [ "bar", "baz" ],
+        //	|			thinger: " spaces =blah",
+        //	|			zonk: "blarg"
+        //	|		}
+        //
+        //		Note that spaces and other urlencoded entities are correctly
+        //		handled.
+
+        // FIXME: should we grab the URL string if we're not passed one?
+        var dec = decodeURIComponent, qp = str.split("&"), ret = {}, name, val;
+        for(var i = 0, l = qp.length, item; i < l; ++i){
+            item = qp[i];
+            if(item.length){
+                var s = item.indexOf("=");
+                if(s < 0){
+                    name = dec(item);
+                    val = "";
+                }else{
+                    name = dec(item.slice(0, s));
+                    val  = dec(item.slice(s + 1));
+                }
+                if(typeof ret[name] == "string"){ // inline'd type check
+                    ret[name] = [ret[name]];
+                }
+
+                if(lang.isArray(ret[name])){
+                    ret[name].push(val);
+                }else{
+                    ret[name] = val;
+                }
+            }
+        }
+        return ret; // Object
+    }
+};
+});

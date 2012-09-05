@@ -905,10 +905,9 @@ public interface ContentletAPIPreHook {
    /**
     * 
     * @param deleteFrom
-    * @param offset
     * @return
     */
-	public boolean deleteOldContent(Date deleteFrom, int offset);
+	public boolean deleteOldContent(Date deleteFrom);
 	
 	/**
 

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/th/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/th/SpellCheck", ({
 	widgetLabel: "ตรวจสอบการสะกดคำแบบแบตช์",
 	unfound: "ไม่พบ",
 	skip: "ข้าม",
@@ -11,12 +9,10 @@ define(
 	replace: "แทนที่",
 	replaceWith: "แทนที่ด้วย",
 	replaceAll: "แทนที่ทั้งหมด",
-	cancel: "Cancel",
+	cancel: "ยกเลิก",
 	msg: "ไม่พบคำที่สะกดผิด",
 	iSkip: "ข้ามนี้",
 	iSkipAll: "ข้ามที่เหมือนนี้",
 	iMsg: "ไม่มีการแนะนำการสะกด"
 })
-
-//end v1.x content
 );

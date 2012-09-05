@@ -176,7 +176,12 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user + " does not have permission to read " + host.getInode());
 		}
 
-		return ffac.findFoldersByHost(host);
+		List<Folder> full = ffac.findFoldersByHost(host);
+		List<Folder> ret = new ArrayList<Folder>(full.size());
+		for(Folder ff : full) 
+		    if(papi.doesUserHavePermission(ff, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions))
+		        ret.add(ff);
+		return ret;
 	}
 
 	/**

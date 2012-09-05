@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/atom/widget/nls/hr/FeedEntryViewer", ({
 	displayOptions: "[opcije prikaza]",

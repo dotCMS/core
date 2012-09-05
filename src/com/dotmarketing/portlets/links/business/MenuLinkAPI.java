@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.links.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -101,6 +103,7 @@ public interface MenuLinkAPI {
 	 * @throws DotDataException
 	 */
 	public List<Link> findLinks(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
-	
+
+    public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException;
 	
 }

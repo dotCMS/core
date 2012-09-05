@@ -4,7 +4,10 @@
 package com.dotmarketing.business;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.dotmarketing.beans.Host;
@@ -16,7 +19,9 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.cache.WorkingCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -395,5 +400,53 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	@SuppressWarnings("unchecked")
 	public int getCountAssetsPerConditionWithPermission(String hostId, String condition, Class c, String parent, User user) {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
+	}
+	
+	public int deleteOldVersions(Date olderThan, String assetType) throws DotDataException, DotHibernateException {
+	    Calendar calendar = Calendar.getInstance();
+        calendar.setTime(olderThan);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date date = calendar.getTime();
+        DotConnect dc = new DotConnect();
+
+        String countSQL = ("select count(*) as count from "+ assetType);
+        dc.setSQL(countSQL);
+        List<Map<String, String>> result = dc.loadResults();
+        int before = Integer.parseInt(result.get(0).get("count"));
+        String versionInfoTable = UtilMethods.getVersionInfoTableName(assetType);
+        
+        String condition = " mod_date < ? and not exists (select * from "+versionInfoTable+
+                " where working_inode="+assetType+".inode or live_inode="+assetType+".inode)";
+        
+        String inodesToDelete = "select inode from "+assetType+" where "+condition;
+        
+        String treeChildDelete = "delete from tree where child in ("+inodesToDelete+")";
+        dc.setSQL(treeChildDelete);
+        dc.addParam(date);
+        dc.loadResult();
+        
+        String treeParentDelete = "delete from tree where parent in ("+inodesToDelete+")";
+        dc.setSQL(treeParentDelete);
+        dc.addParam(date);
+        dc.loadResult();
+        
+        String deleteContentletSQL = "delete from "+assetType+" where  "+condition;
+        dc.setSQL(deleteContentletSQL);
+        dc.addParam(date);
+        dc.loadResult();
+       
+        String deleteInodesSQL = "delete from inode where type=? and inode not in (select inode from "+assetType+")";
+        dc.setSQL(deleteInodesSQL);
+        dc.addParam(assetType);
+        dc.loadResult();
+        
+        dc.setSQL(countSQL);
+        result = dc.loadResults();
+        int after = Integer.parseInt(result.get(0).get("count"));
+        
+	    return before-after;
 	}
 }

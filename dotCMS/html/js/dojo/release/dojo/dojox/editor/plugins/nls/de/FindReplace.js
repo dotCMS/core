@@ -1,12 +1,10 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/de/FindReplace", //begin v1.x content
-({
-	"findLabel": "Suchbegriff:",
+"dojox/editor/plugins/nls/de/FindReplace", ({
+	"findLabel": "Suchen:",
 	"findTooltip": "Text zum Suchen eingeben",
 	"replaceLabel": "Ersetzen durch:",
 	"replaceTooltip": "Text zum Ersetzen eingeben",
-	"findReplace": "Suchen/Ersetzen",
+	"findReplace": "Suchen und ersetzen",
 	"matchCase": "Groß- und Kleinschreibung abgleichen",
 	"matchCaseTooltip": "Groß- und Kleinschreibung abgleichen",
 	"backwards": "Zurück",
@@ -17,11 +15,9 @@ define(
 	"findButtonTooltip": "Text suchen",
 	"replaceButton": "Ersetzen",
 	"replaceButtonTooltip": "Text ersetzen",
-	"replaceDialogText": "Es wurden ${0} Vorkommen ersetzt.",
+	"replaceDialogText": "${0} Vorkommen ersetzt.",
 	"eofDialogText": "Letztes Vorkommen ${0}",
 	"eofDialogTextFind": "gefunden",
 	"eofDialogTextReplace": "ersetzt"
 })
-
-//end v1.x content
 );

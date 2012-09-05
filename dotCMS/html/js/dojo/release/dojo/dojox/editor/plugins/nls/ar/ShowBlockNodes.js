@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ar/ShowBlockNodes", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ar/ShowBlockNodes", ({
 	"showBlockNodes": "عرض عناصر كتلة HTML"
 })
-
-//end v1.x content
 );

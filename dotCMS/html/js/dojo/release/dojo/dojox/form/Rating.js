@@ -1,2 +1,118 @@
-//>>built
-define("dojox/form/Rating",["dojo/_base/declare","dojo/_base/lang","dojo/dom-attr","dojo/dom-class","dojo/string","dojo/query","dijit/form/_FormWidget"],function(_1,_2,_3,_4,_5,_6,_7){return _1("dojox.form.Rating",_7,{templateString:null,numStars:3,value:0,constructor:function(_8){_2.mixin(this,_8);var _9="<div dojoAttachPoint=\"domNode\" class=\"dojoxRating dijitInline\">"+"<input type=\"hidden\" value=\"0\" dojoAttachPoint=\"focusNode\" /><ul>${stars}</ul>"+"</div>";var _a="<li class=\"dojoxRatingStar dijitInline\" dojoAttachEvent=\"onclick:onStarClick,onmouseover:_onMouse,onmouseout:_onMouse\" value=\"${value}\"></li>";var _b="";for(var i=0;i<this.numStars;i++){_b+=_5.substitute(_a,{value:i+1});}this.templateString=_5.substitute(_9,{stars:_b});},postCreate:function(){this.inherited(arguments);this._renderStars(this.value);},_onMouse:function(_c){if(this.hovering){var _d=+_3.get(_c.target,"value");this.onMouseOver(_c,_d);this._renderStars(_d,true);}else{this._renderStars(this.value);}},_renderStars:function(_e,_f){_6(".dojoxRatingStar",this.domNode).forEach(function(_10,i){if(i+1>_e){_4.remove(_10,"dojoxRatingStarHover");_4.remove(_10,"dojoxRatingStarChecked");}else{_4.remove(_10,"dojoxRatingStar"+(_f?"Checked":"Hover"));_4.add(_10,"dojoxRatingStar"+(_f?"Hover":"Checked"));}});},onStarClick:function(evt){var _11=+_3.get(evt.target,"value");this.setAttribute("value",_11==this.value?0:_11);this._renderStars(this.value);this.onChange(this.value);},onMouseOver:function(){},setAttribute:function(key,_12){this.set(key,_12);if(key=="value"){this._renderStars(this.value);this.onChange(this.value);}}});});
+define("dojox/form/Rating", [
+	"dojo/_base/declare",
+	"dojo/_base/lang",
+	"dojo/dom-attr",
+	"dojo/dom-class",
+	"dojo/mouse",
+	"dojo/on",
+	"dojo/string",
+	"dojo/query",
+	"dijit/form/_FormWidget"
+], function(declare, lang, domAttr, domClass, mouse, on, string, query, FormWidget){
+
+
+	return declare("dojox.form.Rating", FormWidget, {
+		// summary:
+		//		A widget for rating using stars.
+
+		/*=====
+		// required: Boolean
+		//		TODO: Can be true or false, default is false.
+		required: false,
+		=====*/
+
+		templateString: null,
+
+		// numStars: Integer|Float
+		//		The number of stars to show, default is 3.
+		numStars: 3,
+
+		// value: Integer|Float
+		//		The current value of the Rating
+		value: 0,
+
+		buildRendering: function(/*Object*/ params){
+			// summary:
+			//		Build the templateString. The number of stars is given by this.numStars,
+			//		which is normally an attribute to the widget node.
+
+			// The focusNode is normally used to store the value, i dont know if that is right here, but seems standard for _FormWidgets
+			var tpl = '<div dojoAttachPoint="domNode" class="dojoxRating dijitInline">' +
+				'<input type="hidden" value="0" dojoAttachPoint="focusNode" /><ul data-dojo-attach-point="list">${stars}</ul>' +
+				'</div>';
+			// The value-attribute is used to "read" the value for processing in the widget class
+			var starTpl = '<li class="dojoxRatingStar dijitInline" value="${value}"></li>';
+			var rendered = "";
+			for(var i = 0; i < this.numStars; i++){
+				rendered += string.substitute(starTpl, {value:i + 1});
+			}
+			this.templateString = string.substitute(tpl, {stars:rendered});
+
+			this.inherited(arguments);
+		},
+
+		postCreate: function(){
+			this.inherited(arguments);
+			this._renderStars(this.value);
+			this.own(
+				// Fire when mouse is moved over one of the stars.
+				on(this.list, on.selector(".dojoxRatingStar", "mouseover"), lang.hitch(this, "_onMouse")),
+				on(this.list, on.selector(".dojoxRatingStar", "click"), lang.hitch(this, "onStarClick")),
+				on(this.list, mouse.leave, lang.hitch(this, function(){
+					// go from hover display back to dormant display
+					this._renderStars(this.value);
+				}))
+			);
+		},
+
+		_onMouse: function(evt){
+			// summary:
+			//		Called when mouse is moved over one of the stars
+			var hoverValue = +domAttr.get(evt.target, "value");
+			this._renderStars(hoverValue, true);
+			this.onMouseOver(evt, hoverValue);
+		},
+
+		_renderStars: function(value, hover){
+			// summary:
+			//		Render the stars depending on the value.
+			query(".dojoxRatingStar", this.domNode).forEach(function(star, i){
+				if(i + 1 > value){
+					domClass.remove(star, "dojoxRatingStarHover");
+					domClass.remove(star, "dojoxRatingStarChecked");
+				}else{
+					domClass.remove(star, "dojoxRatingStar" + (hover ? "Checked" : "Hover"));
+					domClass.add(star, "dojoxRatingStar" + (hover ? "Hover" : "Checked"));
+				}
+			});
+		},
+
+		onStarClick: function(/*Event*/ evt){
+			// summary:
+			//		Connect on this method to get noticed when a star was clicked.
+			// example:
+			//	|	connect(widget, "onStarClick", function(event){ ... })
+			var newVal = +domAttr.get(evt.target, "value");
+			this.setAttribute("value", newVal == this.value ? 0 : newVal);
+			this._renderStars(this.value);
+			this.onChange(this.value); // Do I have to call this by hand?
+		},
+
+		onMouseOver: function(/*=====evt, value=====*/ ){
+			// summary:
+			//		Connect here, the value is passed to this function as the second parameter!
+		},
+
+		setAttribute: function(/*String*/ key, /*Number*/ value){
+			// summary:
+			//		Deprecated.   Use set("value", ...) instead.
+			this.set(key, value);
+		},
+
+		_setValueAttr: function(val){
+			this._set("value", val);
+			this._renderStars(val);
+			this.onChange(val); // Do I really have to call this by hand? :-(
+		}
+	});
+});

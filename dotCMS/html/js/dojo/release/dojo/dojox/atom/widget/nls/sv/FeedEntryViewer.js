@@ -1,16 +1,13 @@
-//>>built
 define(
-"dojox/atom/widget/nls/sv/FeedEntryViewer", //begin v1.x content
-({
-	displayOptions: "[Visningsalternativ]",
-	title: "Rubrik",
+"dojox/atom/widget/nls/sv/FeedEntryViewer", ({
+	displayOptions: "[visningsalternativ]",
+	title: "Namn",
 	authors: "Författare",
 	contributors: "Medverkande",
 	id: "ID",
-	close: "[Stäng]",
+	close: "[stäng]",
 	updated: "Uppdaterat",
-	summary: "Sammanfattning",
+	summary: "Översikt",
 	content: "Innehåll"
 })
-//end v1.x content
 );

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -375,5 +376,7 @@ public interface HTMLPageAPI {
      */
 	public List<HTMLPage> findHtmlPages(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 	
-	public boolean movePage(HTMLPage page, Folder parent, User user,boolean respectFrontendRoles) throws DotStateException,	DotDataException, DotSecurityException;	
+	public boolean movePage(HTMLPage page, Folder parent, User user,boolean respectFrontendRoles) throws DotStateException,	DotDataException, DotSecurityException;
+
+    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;	
 }

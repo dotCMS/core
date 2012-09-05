@@ -1,2 +1,106 @@
-//>>built
-define("dojox/mobile/_DataListMixin",["dojo/_base/array","dojo/_base/connect","dojo/_base/declare","dojo/_base/lang","dijit/registry","./ListItem"],function(_1,_2,_3,_4,_5,_6){return _3("dojox.mobile._DataListMixin",null,{store:null,query:null,queryOptions:null,buildRendering:function(){this.inherited(arguments);if(!this.store){return;}var _7=this.store;this.store=null;this.setStore(_7,this.query,this.queryOptions);},setStore:function(_8,_9,_a){if(_8===this.store){return;}this.store=_8;this.query=_9;this.queryOptions=_a;if(_8&&_8.getFeatures()["dojo.data.api.Notification"]){_1.forEach(this._conn||[],_2.disconnect);this._conn=[_2.connect(_8,"onSet",this,"onSet"),_2.connect(_8,"onNew",this,"onNew"),_2.connect(_8,"onDelete",this,"onDelete")];}this.refresh();},refresh:function(){if(!this.store){return;}this.store.fetch({query:this.query,queryOptions:this.queryOptions,onComplete:_4.hitch(this,"onComplete"),onError:_4.hitch(this,"onError")});},createListItem:function(_b){var _c={};var _d=this.store.getLabelAttributes(_b);var _e=_d?_d[0]:null;_1.forEach(this.store.getAttributes(_b),function(_f){if(_f===_e){_c["label"]=this.store.getLabel(_b);}else{_c[_f]=this.store.getValue(_b,_f);}},this);var w=new _6(_c);_b._widgetId=w.id;return w;},generateList:function(_10,_11){_1.forEach(this.getChildren(),function(_12){_12.destroyRecursive();});_1.forEach(_10,function(_13,_14){this.addChild(this.createListItem(_13));},this);},onComplete:function(_15,_16){this.generateList(_15,_16);},onError:function(_17,_18){},onSet:function(_19,_1a,_1b,_1c){},onNew:function(_1d,_1e){this.addChild(this.createListItem(_1d));},onDelete:function(_1f){_5.byId(_1f._widgetId).destroyRecursive();}});});
+define("dojox/mobile/_DataListMixin", [
+	"dojo/_base/array",
+	"dojo/_base/declare",
+	"dijit/registry",
+	"./_DataMixin",
+	"./ListItem"
+], function(array, declare, registry, DataMixin, ListItem){
+
+	// module:
+	//		dojox/mobile/_DataListMixin
+
+	return declare("dojox.mobile._DataListMixin", DataMixin, {
+		// summary:
+		//		Mixin for widgets to generate the list items corresponding to
+		//		the data provider object.
+		// description:
+		//		By mixing this class into the widgets, the list item nodes are
+		//		generated as the child nodes of the widget and automatically
+		//		re-generated whenever the corresponding data items are modified.
+
+		// append: Boolean
+		//		If true, refresh() does not clear the existing items.
+		append: false,
+
+		// itemMap: Object
+		//		An optional parameter mapping field names from the store to ItemList name.
+		// example:
+		//	|	itemMap:{text:'label', profile_image_url:'icon' }
+		itemMap: null,
+
+		buildRendering: function(){
+			this.inherited(arguments);
+			if(!this.store){ return; }
+			var store = this.store;
+			this.store = null;
+			this.setStore(store, this.query, this.queryOptions);
+		},
+
+		createListItem: function(/*Object*/item){
+			// summary:
+			//		Creates a list item widget.
+			var attr = {};
+			var arr = this.store.getLabelAttributes(item);
+			var labelAttr = arr ? arr[0] : null;
+			array.forEach(this.store.getAttributes(item), function(name){
+				if(name === labelAttr){
+					attr["label"] = this.store.getLabel(item);
+				}else{
+					attr[(this.itemMap && this.itemMap[name]) || name] = this.store.getValue(item, name);
+				}
+			}, this);
+			var w = new ListItem(attr);
+			item._widgetId = w.id;
+			return w;
+		},
+
+		generateList: function(/*Array*/items, /*Object*/dataObject){
+			// summary:
+			//		Given the data, generates a list of items.
+			if(!this.append){
+				array.forEach(this.getChildren(), function(child){
+					child.destroyRecursive();
+				});
+			}
+			array.forEach(items, function(item, index){
+				this.addChild(this.createListItem(item));
+			}, this);
+		},
+
+		onComplete: function(/*Array*/items, /*Object*/request){
+			// summary:
+			//		An handler that is called after the fetch completes.
+			this.generateList(items, request);
+		},
+
+		onError: function(/*Object*/errorData, /*Object*/request){
+			// summary:
+			//		An error handler.
+		},
+
+		onSet: function(/*Object*/item, /*String*/attribute, /*Object|Array*/oldValue, /*Object|Array*/newValue){
+			// summary:
+			//		See dojo/data/api/Notification.onSet().
+		},
+
+		onNew: function(/*Object*/newItem, /*Object?*/parentInfo){
+			// summary:
+			//		See dojo/data/api/Notification.onNew().
+			this.addChild(this.createListItem(newItem));
+		},
+
+		onDelete: function(/*Object*/deletedItem){
+			// summary:
+			//		See dojo/data/api/Notification.onDelete().
+			registry.byId(deletedItem._widgetId).destroyRecursive();
+		},
+
+		onStoreClose: function(/*Object?*/request){
+			// summary:
+			//		Refresh list on close.
+			if(this.store.clearOnClose){
+				this.refresh();
+			}
+		}
+	});
+});

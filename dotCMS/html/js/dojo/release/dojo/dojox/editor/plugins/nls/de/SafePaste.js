@@ -1,6 +1,5 @@
-//>>built
 define(
 "dojox/editor/plugins/nls/de/SafePaste", ({
-	"instructions": "Direktes Einfügen ist inaktiviert. Fügen Sie Inhalte in diesen Dialog mithilfe der Standardsteuerelemente ein, die im Browser über die Tastatur oder über die Menüs zum Einfügen zur Verfügung stehen. Wenn der einzufügende Inhalt korrekt ist, drücken Sie die Einfügetaste. Zum Abbrechen der Einfügeoperation drücken Sie die Abbruchtaste."
+	"instructions": "Direktes Einfügen ist inaktiviert. Fügen Sie Inhalt in diesem Dialog über Tastaturbefehle oder Menüeinträge für Einfügeoperationen Ihres Standardbrowsers ein. Wenn Sie mit dem einzufügenden Inhalt zufrieden sind, klicken Sie auf die Schaltfläche Einfügen. Wenn Sie das Einfügen des Inhalts abbrechen möchten, klicken Sie auf die Schaltfläche Abbrechen."
 })
 );

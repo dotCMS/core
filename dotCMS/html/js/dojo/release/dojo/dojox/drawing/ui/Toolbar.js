@@ -1,2 +1,282 @@
-//>>built
-define(["dijit","dojo","dojox","dojo/require!dojox/drawing/library/icons"],function(_1,_2,_3){_2.provide("dojox.drawing.ui.Toolbar");_2.require("dojox.drawing.library.icons");_2.declare("dojox.drawing.ui.Toolbar",[],{constructor:function(_4,_5){this.util=_3.drawing.util.common;if(_4.drawing){this.toolDrawing=_4.drawing;this.drawing=this.toolDrawing;this.width=this.toolDrawing.width;this.height=this.toolDrawing.height;this.strSelected=_4.selected;this.strTools=_4.tools;this.strPlugs=_4.plugs;this._mixprops(["padding","margin","size","radius"],_4);this.addBack();this.orient=_4.orient?_4.orient:false;}else{var _6=_2.marginBox(_5);this.width=_6.w;this.height=_6.h;this.strSelected=_2.attr(_5,"selected");this.strTools=_2.attr(_5,"tools");this.strPlugs=_2.attr(_5,"plugs");this._mixprops(["padding","margin","size","radius"],_5);this.toolDrawing=new _3.drawing.Drawing({mode:"ui"},_5);this.orient=_2.attr(_5,"orient");}this.horizontal=this.orient?this.orient=="H":this.width>this.height;if(this.toolDrawing.ready){this.makeButtons();if(!this.strSelected&&this.drawing.defaults.clickMode){this.drawing.mouse.setCursor("default");}}else{var c=_2.connect(this.toolDrawing,"onSurfaceReady",this,function(){_2.disconnect(c);this.drawing=_3.drawing.getRegistered("drawing",_2.attr(_5,"drawingId"));this.makeButtons();if(!this.strSelected&&this.drawing.defaults.clickMode){var c=_2.connect(this.drawing,"onSurfaceReady",this,function(){_2.disconnect(c);this.drawing.mouse.setCursor("default");});}});}},padding:10,margin:5,size:30,radius:3,toolPlugGap:20,strSelected:"",strTools:"",strPlugs:"",makeButtons:function(){this.buttons=[];this.plugins=[];var x=this.padding,y=this.padding,w=this.size,h=this.size,r=this.radius,g=this.margin,_7=_3.drawing.library.icons,s={place:"BR",size:2,mult:4};if(this.strTools){var _8=[];var _9=_3.drawing.getRegistered("tool");var _a={};for(var nm in _9){var _b=this.util.abbr(nm);_a[_b]=_9[nm];if(this.strTools=="all"){_8.push(_b);var _c=_3.drawing.getRegistered("tool",nm);if(_c.secondary){_8.push(_c.secondary.name);}}}if(this.strTools!="all"){var _d=this.strTools.split(",");_2.forEach(_d,function(_e){_e=_2.trim(_e);_8.push(_e);var _f=_3.drawing.getRegistered("tool",_a[_e].name);if(_f.secondary){_8.push(_f.secondary.name);}},this);}_2.forEach(_8,function(t){t=_2.trim(t);var _10=false;if(t.indexOf("Secondary")>-1){var _11=t.substring(0,t.indexOf("Secondary"));var sec=_3.drawing.getRegistered("tool",_a[_11].name).secondary;var _12=sec.label;this[t]=sec.funct;if(sec.setup){_2.hitch(this,sec.setup)();}var btn=this.toolDrawing.addUI("button",{data:{x:x,y:y,width:w,height:h/2,r:r},toolType:t,secondary:true,text:_12,shadow:s,scope:this,callback:this[t]});if(sec.postSetup){_2.hitch(this,sec.postSetup,btn)();}_10=true;}else{var btn=this.toolDrawing.addUI("button",{data:{x:x,y:y,width:w,height:h,r:r},toolType:t,icon:_7[t],shadow:s,scope:this,callback:"onToolClick"});}_3.drawing.register(btn,"button");this.buttons.push(btn);if(this.strSelected==t){btn.select();this.selected=btn;this.drawing.setTool(btn.toolType);}if(this.horizontal){x+=h+g;}else{var _13=_10?h/2+g:h+g;y+=_13;}},this);}if(this.horizontal){x+=this.toolPlugGap;}else{y+=this.toolPlugGap;}if(this.strPlugs){var _14=[];var _15=_3.drawing.getRegistered("plugin");var _16={};for(var nm in _15){var _17=this.util.abbr(nm);_16[_17]=_15[nm];if(this.strPlugs=="all"){_14.push(_17);}}if(this.strPlugs!="all"){_14=this.strPlugs.split(",");_2.map(_14,function(p){return _2.trim(p);});}_2.forEach(_14,function(p){var t=_2.trim(p);if(_16[p].button!=false){var btn=this.toolDrawing.addUI("button",{data:{x:x,y:y,width:w,height:h,r:r},toolType:t,icon:_7[t],shadow:s,scope:this,callback:"onPlugClick"});_3.drawing.register(btn,"button");this.plugins.push(btn);if(this.horizontal){x+=h+g;}else{y+=h+g;}}var _18={};_16[p].button==false?_18={name:this.drawing.stencilTypeMap[p]}:_18={name:this.drawing.stencilTypeMap[p],options:{button:btn}};this.drawing.addPlugin(_18);},this);}_2.connect(this.drawing,"onRenderStencil",this,"onRenderStencil");},onRenderStencil:function(_19){if(this.drawing.defaults.clickMode){this.drawing.mouse.setCursor("default");this.selected&&this.selected.deselect();this.selected=null;}},addTool:function(){},addPlugin:function(){},addBack:function(){this.toolDrawing.addUI("rect",{data:{x:0,y:0,width:this.width,height:this.size+(this.padding*2),fill:"#ffffff",borderWidth:0}});},onToolClick:function(_1a){if(this.drawing.defaults.clickMode){this.drawing.mouse.setCursor("crosshair");}_2.forEach(this.buttons,function(b){if(b.id==_1a.id){b.select();this.selected=b;this.drawing.setTool(_1a.toolType);}else{if(!b.secondary){b.deselect();}}},this);},onPlugClick:function(_1b){},_mixprops:function(_1c,_1d){_2.forEach(_1c,function(p){this[p]=_1d.tagName?_2.attr(_1d,p)===null?this[p]:_2.attr(_1d,p):_1d[p]===undefined?this[p]:_1d[p];},this);}});});
+define("dojox/drawing/ui/Toolbar", ["dojo", "../library/icons", "../util/common", "../Drawing", "../manager/_registry"], 
+function(dojo, icons, utilCommon, Drawing, registry){
+
+return dojo.declare("dojox.drawing.ui.Toolbar", [], {
+	// summary:
+	//		A Toolbar used for holding buttons; typically representing the Stencils
+	//		used for a DojoX Drawing.
+	// description:
+	//		Creates a GFX-based toolbar that holds GFX-based buttons. Can be either created
+	//		within the actual drawing or within a separate DOM element. When within the
+	//		drawing, the toolbar will cover a portion of the drawing; hence the option.
+	//
+	//		A Toolbar can be created programmatically or in markup. Currently markup is as
+	//		a separate DOM element and programmatic is within the drawing.
+	// example:
+	//		|	dojo.connect(myDrawing, "onSurfaceReady", function(){
+	//		|		new dojox.drawing.ui.Toolbar({
+	//		|			drawing:myDrawing,
+	//		|			tools:"all",
+	//		|			plugs:"all",
+	//		|			selected:"ellipse"
+	//		|		});
+	//		|	});
+	//
+	//		| <div dojoType="dojox.drawing.ui.Toolbar" id="gfxToolbarNode" drawingId="drawingNode"
+	//		|		class="gfxToolbar" tools="all" plugs="all" selected="ellipse" orient="H"></div>
+
+
+	constructor: function(props, node){
+		//console.warn("GFX Toolbar:", props, node)
+		
+		// no mixin. painful.
+		if(props.drawing){
+			// programmatic
+			this.toolDrawing = props.drawing;
+			this.drawing = this.toolDrawing;
+			this.width = this.toolDrawing.width;
+			this.height = this.toolDrawing.height;
+			this.strSelected = props.selected;
+			this.strTools = props.tools;
+			this.strPlugs = props.plugs;
+			this._mixprops(["padding", "margin", "size", "radius"], props);
+			this.addBack();
+			this.orient = props.orient ? props.orient : false;
+		}else{
+			// markup
+			var box = dojo.marginBox(node);
+			this.width = box.w;
+			this.height = box.h;
+			this.strSelected = dojo.attr(node, "selected");
+			this.strTools = dojo.attr(node, "tools");
+			this.strPlugs = dojo.attr(node, "plugs");
+			this._mixprops(["padding", "margin", "size", "radius"], node);
+			this.toolDrawing = new Drawing({mode:"ui"}, node);
+			this.orient = dojo.attr(node, "orient");
+		}
+		
+		this.horizontal = this.orient ? this.orient == "H" : this.width > this.height;
+		console.log("this.hor: ",this.horizontal," orient: ",this.orient);
+		if(this.toolDrawing.ready){
+			this.makeButtons();
+			if(!this.strSelected && this.drawing.defaults.clickMode){ this.drawing.mouse.setCursor('default'); };
+		}else{
+			var c = dojo.connect(this.toolDrawing, "onSurfaceReady", this, function(){
+				//console.log("TB built")
+				dojo.disconnect(c);
+				this.drawing = registry.getRegistered("drawing", dojo.attr(node, "drawingId"));
+				this.makeButtons();
+				if(!this.strSelected && this.drawing.defaults.clickMode){
+					var c = dojo.connect(this.drawing, "onSurfaceReady", this, function(){
+					dojo.disconnect(c);
+					this.drawing.mouse.setCursor('default');
+					});
+				}
+			});
+		}
+		
+	},
+	
+	// padding:Number
+	//		The amount of spce between the top and left of the toolbar and the buttons.
+	padding:10,
+	// margin: Number
+	//		The space between each button.
+	margin:5,
+	// size: Number
+	//		The width and height of the button
+	size:30,
+	// radius: Number
+	//		The size of the button's rounded corner
+	radius:3,
+
+	// toolPlugGap: number
+	//		The distance between the tool buttons and plug buttons
+	toolPlugGap:20,
+	
+	// strSelected: String
+	//		The button that should be selected at startup.
+	strSelected:"",
+
+	// strTools: String
+	//		A comma delineated list of the Stencil-tools to include in the Toolbar.
+	//		If "all" is used, all registered tools are included.
+	strTools:"",
+
+	// strPlugs: String
+	//		A comma delineated list of the plugins to include in the Toolbar.
+	//		If "all" is used, all registered plugins are included.
+	strPlugs:"",
+	
+	makeButtons: function(){
+		// summary:
+		//		Internal. create buttons.
+		this.buttons = [];
+		this.plugins = [];
+	
+		var x = this.padding, y = this.padding, w = this.size, h = this.size, r = this.radius, g = this.margin,
+				 sym = icons,
+				 s = {place:"BR", size:2, mult:4};
+				 
+		if(this.strTools){
+			var toolAr = [];
+			var tools = registry.getRegistered("tool");
+			var toolMap = {};
+			for(var nm in tools){
+				var tool = utilCommon.abbr(nm);
+				toolMap[tool] = tools[nm];
+				if(this.strTools=="all"){
+					toolAr.push(tool);
+					var details = registry.getRegistered("tool",nm);
+					if(details.secondary){
+						toolAr.push(details.secondary.name);
+					}
+				}
+			}
+			if(this.strTools!="all"){
+				var toolTmp = this.strTools.split(",");
+				dojo.forEach(toolTmp, function(tool){
+					tool = dojo.trim(tool);
+					toolAr.push(tool);
+					var details = registry.getRegistered("tool",toolMap[tool].name);
+					if(details.secondary){
+						toolAr.push(details.secondary.name);
+					}
+				}, this);
+				//dojo.map(toolAr, function(t){ return dojo.trim(t); });
+			}
+			
+			dojo.forEach(toolAr, function(t){
+				t = dojo.trim(t);
+				var secondary = false;
+				if(t.indexOf("Secondary")>-1){
+					var prim = t.substring(0,t.indexOf("Secondary"));
+					var sec = registry.getRegistered("tool",toolMap[prim].name).secondary;
+					var label = sec.label;
+					this[t] = sec.funct;
+					if(sec.setup){ dojo.hitch(this, sec.setup)(); };
+					var btn = this.toolDrawing.addUI("button", {data:{x:x, y:y, width:w, height:h/2, r:r}, toolType:t, secondary:true, text:label, shadow:s, scope:this, callback:this[t]});
+					if(sec.postSetup){ dojo.hitch(this, sec.postSetup, btn)(); };
+					secondary = true;
+				} else {
+					var btn = this.toolDrawing.addUI("button", {data:{x:x, y:y, width:w, height:h, r:r}, toolType:t, icon:sym[t], shadow:s, scope:this, callback:"onToolClick"});
+				}
+				registry.register(btn, "button");
+				this.buttons.push(btn);
+				if(this.strSelected==t){
+					btn.select();
+					this.selected = btn;
+					this.drawing.setTool(btn.toolType);
+				}
+				if(this.horizontal){
+					x += h + g;
+				}else{
+					var space = secondary ? h/2 + g : h + g;
+					y += space;
+				}
+			}, this);
+		}
+		
+		if(this.horizontal){
+			x += this.toolPlugGap;
+		}else{
+			y += this.toolPlugGap;
+		}
+		
+		if(this.strPlugs){
+			var plugAr = [];
+			var plugs = registry.getRegistered("plugin");
+			var plugMap = {};
+			for(var nm in plugs){
+				var abbr = utilCommon.abbr(nm);
+				plugMap[abbr] = plugs[nm];
+				if(this.strPlugs=="all"){ plugAr.push(abbr); }
+			}
+			if(this.strPlugs!="all"){
+				plugAr = this.strPlugs.split(",");
+				dojo.map(plugAr, function(p){ return dojo.trim(p); });
+			}
+			
+			dojo.forEach(plugAr, function(p){
+				var t = dojo.trim(p);
+				//console.log("   plugin:", p);
+				if(plugMap[p].button != false){
+					var btn = this.toolDrawing.addUI("button", {data:{x:x, y:y, width:w, height:h, r:r}, toolType:t, icon:sym[t], shadow:s, scope:this, callback:"onPlugClick"});
+					registry.register(btn, "button");
+					this.plugins.push(btn);
+					
+					if(this.horizontal){
+						x += h + g;
+					}else{
+						y += h + g;
+					}
+				}
+				
+				var addPlug = {}
+				plugMap[p].button == false ? addPlug = {name:this.drawing.stencilTypeMap[p]} : addPlug = {name:this.drawing.stencilTypeMap[p], options:{button:btn}};
+				this.drawing.addPlugin(addPlug);
+			}, this);
+		}
+		
+		dojo.connect(this.drawing, "onRenderStencil", this, "onRenderStencil");
+	},
+	
+	onRenderStencil: function(/* Object */stencil){
+		// summary:
+		//		Stencil render event.
+		if(this.drawing.defaults.clickMode){
+			this.drawing.mouse.setCursor("default");
+			this.selected && this.selected.deselect();
+			this.selected = null;
+		}
+
+	},
+	
+	addTool: function(){
+		// TODO: add button here
+	},
+	
+	addPlugin: function(){
+		// TODO: add button here
+	},
+	
+	addBack: function(){
+		// summary:
+		//		Internal. Adds the back, behind the toolbar.
+		this.toolDrawing.addUI("rect", {data:{x:0, y:0, width:this.width, height:this.size + (this.padding*2), fill:"#ffffff", borderWidth:0}});
+	},
+	
+	onToolClick: function(/*Object*/button){
+		// summary:
+		//		Tool click event. May be connected to.
+
+		if(this.drawing.defaults.clickMode){ this.drawing.mouse.setCursor("crosshair"); }
+		dojo.forEach(this.buttons, function(b){
+			if(b.id==button.id){
+				b.select();
+				this.selected = b;
+				this.drawing.setTool(button.toolType)
+			}else{
+				if(!b.secondary){ b.deselect(); }
+			}
+		},this)
+	},
+	
+	onPlugClick: function(/*Object*/button){
+		// summary:
+		//		Plugin click event. May be connected to.
+	},
+	
+	_mixprops: function(/*Array*/ props, /*Object|Node*/ objNode){
+		// summary:
+		//		Internally used for mixing in props from an object or
+		//		from a dom node.
+		dojo.forEach(props, function(p){
+			this[p] = objNode.tagName
+				? dojo.attr(objNode, p)===null ? this[p] : dojo.attr(objNode, p)
+				: objNode[p]===undefined ? this[p] : objNode[p];
+		}, this);
+	}
+	
+});
+});

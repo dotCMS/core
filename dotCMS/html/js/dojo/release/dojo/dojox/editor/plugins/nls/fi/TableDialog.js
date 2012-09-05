@@ -1,28 +1,25 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/fi/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/fi/TableDialog", ({
 	insertTableTitle: "Lisää taulukko",
 	modifyTableTitle: "Muokkaa taulukkoa",
 	rows: "Rivit:",
 	columns: "Sarakkeet:",
-	align: "Tasaus:",
+	align: "Tasaa:",
 	cellPadding: "Solun täyttö:",
 	cellSpacing: "Solujen väli:",
 	tableWidth: "Taulukon leveys:",
 	backgroundColor: "Taustaväri:",
 	borderColor: "Kehyksen väri:",
-	borderThickness: "Kehyksen paksuus",
+	borderThickness: "Kehyksen paksuus:",
 	percent: "prosenttia",
-	pixels: "kuvapistettä",
-	"default": "oletus",
+	pixels: "pikseliä",
+	"default": "oletusarvo",
 	left: "vasen",
 	center: "keskitetty",
 	right: "oikea",
 	buttonSet: "Aseta", // translated elsewhere?
 	buttonInsert: "Lisää",
 	buttonCancel: "Peruuta",
-
 	selectTableLabel: "Valitse taulukko",
 	insertTableRowBeforeLabel: "Lisää rivi ennen",
 	insertTableRowAfterLabel: "Lisää rivi jälkeen",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "Poista rivi",
 	deleteTableColumnLabel: "Poista sarake"
 })
-//end v1.x content
 );

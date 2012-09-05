@@ -1,4 +1,3 @@
-//>>built
 define("dojox/form/nls/CheckedMultiSelect", { root:
 //begin v1.x content
 ({

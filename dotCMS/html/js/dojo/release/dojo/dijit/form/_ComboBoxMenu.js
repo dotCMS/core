@@ -1,2 +1,131 @@
-//>>built
-define("dijit/form/_ComboBoxMenu",["dojo/_base/declare","dojo/dom-class","dojo/dom-construct","dojo/dom-style","dojo/keys","../_WidgetBase","../_TemplatedMixin","./_ComboBoxMenuMixin","./_ListMouseMixin"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9){return _1("dijit.form._ComboBoxMenu",[_6,_7,_9,_8],{templateString:"<div class='dijitReset dijitMenu' data-dojo-attach-point='containerNode' style='overflow: auto; overflow-x: hidden;'>"+"<div class='dijitMenuItem dijitMenuPreviousButton' data-dojo-attach-point='previousButton' role='option'></div>"+"<div class='dijitMenuItem dijitMenuNextButton' data-dojo-attach-point='nextButton' role='option'></div>"+"</div>",baseClass:"dijitComboBoxMenu",postCreate:function(){this.inherited(arguments);if(!this.isLeftToRight()){_2.add(this.previousButton,"dijitMenuItemRtl");_2.add(this.nextButton,"dijitMenuItemRtl");}},_createMenuItem:function(){return _3.create("div",{"class":"dijitReset dijitMenuItem"+(this.isLeftToRight()?"":" dijitMenuItemRtl"),role:"option"});},onHover:function(_a){_2.add(_a,"dijitMenuItemHover");},onUnhover:function(_b){_2.remove(_b,"dijitMenuItemHover");},onSelect:function(_c){_2.add(_c,"dijitMenuItemSelected");},onDeselect:function(_d){_2.remove(_d,"dijitMenuItemSelected");},_page:function(up){var _e=0;var _f=this.domNode.scrollTop;var _10=_4.get(this.domNode,"height");if(!this.getHighlightedOption()){this.selectNextNode();}while(_e<_10){var _11=this.getHighlightedOption();if(up){if(!_11.previousSibling||_11.previousSibling.style.display=="none"){break;}this.selectPreviousNode();}else{if(!_11.nextSibling||_11.nextSibling.style.display=="none"){break;}this.selectNextNode();}var _12=this.domNode.scrollTop;_e+=(_12-_f)*(up?-1:1);_f=_12;}},handleKey:function(evt){switch(evt.charOrCode){case _5.DOWN_ARROW:this.selectNextNode();return false;case _5.PAGE_DOWN:this._page(false);return false;case _5.UP_ARROW:this.selectPreviousNode();return false;case _5.PAGE_UP:this._page(true);return false;default:return true;}}});});
+define("dijit/form/_ComboBoxMenu", [
+	"dojo/_base/declare", // declare
+	"dojo/dom-class", // domClass.add domClass.remove
+	"dojo/dom-style", // domStyle.get
+	"dojo/keys", // keys.DOWN_ARROW keys.PAGE_DOWN keys.PAGE_UP keys.UP_ARROW
+	"../_WidgetBase",
+	"../_TemplatedMixin",
+	"./_ComboBoxMenuMixin",
+	"./_ListMouseMixin"
+], function(declare, domClass, domStyle, keys,
+			_WidgetBase, _TemplatedMixin, _ComboBoxMenuMixin, _ListMouseMixin){
+
+
+	// module:
+	//		dijit/form/_ComboBoxMenu
+
+	return declare("dijit.form._ComboBoxMenu",[_WidgetBase, _TemplatedMixin, _ListMouseMixin, _ComboBoxMenuMixin], {
+		// summary:
+		//		Focus-less menu for internal use in `dijit/form/ComboBox`
+		//		Abstract methods that must be defined externally:
+		//
+		//		- onChange: item was explicitly chosen (mousedown somewhere on the menu and mouseup somewhere on the menu)
+		//		- onPage: next(1) or previous(-1) button pressed
+		// tags:
+		//		private
+
+		templateString: "<div class='dijitReset dijitMenu' data-dojo-attach-point='containerNode' style='overflow: auto; overflow-x: hidden;'>"
+				+"<div class='dijitMenuItem dijitMenuPreviousButton' data-dojo-attach-point='previousButton' role='option'></div>"
+				+"<div class='dijitMenuItem dijitMenuNextButton' data-dojo-attach-point='nextButton' role='option'></div>"
+				+"</div>",
+
+		baseClass: "dijitComboBoxMenu",
+
+		postCreate: function(){
+			this.inherited(arguments);
+			if(!this.isLeftToRight()){
+				domClass.add(this.previousButton, "dijitMenuItemRtl");
+				domClass.add(this.nextButton, "dijitMenuItemRtl");
+			}
+		},
+
+		_createMenuItem: function(){
+			// note: not using domConstruct.create() because need to specify document
+			var item = this.ownerDocument.createElement("div");
+			item.className = "dijitReset dijitMenuItem" +(this.isLeftToRight() ? "" : " dijitMenuItemRtl");
+			item.setAttribute("role", "option");
+			return item;
+		},
+
+		onHover: function(/*DomNode*/ node){
+			// summary:
+			//		Add hover CSS
+			domClass.add(node, "dijitMenuItemHover");
+		},
+
+		onUnhover: function(/*DomNode*/ node){
+			// summary:
+			//		Remove hover CSS
+			domClass.remove(node, "dijitMenuItemHover");
+		},
+
+		onSelect: function(/*DomNode*/ node){
+			// summary:
+			//		Add selected CSS
+			domClass.add(node, "dijitMenuItemSelected");
+		},
+
+		onDeselect: function(/*DomNode*/ node){
+			// summary:
+			//		Remove selected CSS
+			domClass.remove(node, "dijitMenuItemSelected");
+		},
+
+		_page: function(/*Boolean*/ up){
+			// summary:
+			//		Handles page-up and page-down keypresses
+
+			var scrollamount = 0;
+			var oldscroll = this.domNode.scrollTop;
+			var height = domStyle.get(this.domNode, "height");
+			// if no item is highlighted, highlight the first option
+			if(!this.getHighlightedOption()){
+				this.selectNextNode();
+			}
+			while(scrollamount<height){
+				var highlighted_option = this.getHighlightedOption();
+				if(up){
+					// stop at option 1
+					if(!highlighted_option.previousSibling ||
+						highlighted_option.previousSibling.style.display == "none"){
+						break;
+					}
+					this.selectPreviousNode();
+				}else{
+					// stop at last option
+					if(!highlighted_option.nextSibling ||
+						highlighted_option.nextSibling.style.display == "none"){
+						break;
+					}
+					this.selectNextNode();
+				}
+				// going backwards
+				var newscroll = this.domNode.scrollTop;
+				scrollamount += (newscroll-oldscroll)*(up ? -1:1);
+				oldscroll = newscroll;
+			}
+		},
+
+		handleKey: function(evt){
+			// summary:
+			//		Handle keystroke event forwarded from ComboBox, returning false if it's
+			//		a keystroke I recognize and process, true otherwise.
+			switch(evt.keyCode){
+				case keys.DOWN_ARROW:
+					this.selectNextNode();
+					return false;
+				case keys.PAGE_DOWN:
+					this._page(false);
+					return false;
+				case keys.UP_ARROW:
+					this.selectPreviousNode();
+					return false;
+				case keys.PAGE_UP:
+					this._page(true);
+					return false;
+				default:
+					return true;
+			}
+		}
+	});
+});

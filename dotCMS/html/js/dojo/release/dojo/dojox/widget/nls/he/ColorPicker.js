@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/widget/nls/he/ColorPicker", //begin v1.x content
-({
+"dojox/widget/nls/he/ColorPicker", ({
 redLabel: "א",
 greenLabel: "י",
 blueLabel: "כ",

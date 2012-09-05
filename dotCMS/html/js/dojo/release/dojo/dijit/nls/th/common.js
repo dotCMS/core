@@ -1,12 +1,8 @@
-//>>built
 define(
-"dijit/nls/th/common", //begin v1.x content
-({
+"dijit/nls/th/common", ({
 	buttonOk: "ตกลง",
 	buttonCancel: "ยกเลิก",
 	buttonSave: "บันทึก",
 	itemClose: "ปิด"
 })
-
-//end v1.x content
 );

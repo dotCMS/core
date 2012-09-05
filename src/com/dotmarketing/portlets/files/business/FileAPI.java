@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.files.business;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -258,4 +259,7 @@ public interface FileAPI {
      * @return true/false based on the support configured for Old Files 
      */
     public boolean isLegacyFilesSupported();
+
+
+    public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException;
 }

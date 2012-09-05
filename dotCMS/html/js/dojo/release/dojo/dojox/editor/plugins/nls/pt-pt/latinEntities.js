@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/pt-pt/latinEntities", //begin v1.x content
-({
+"dojox/editor/plugins/nls/pt-pt/latinEntities", ({
 	/* These are already handled in the default RTE
 		amp:"ampersand",lt:"less-than sign",
 		gt:"greater-than sign",
@@ -103,7 +101,6 @@ define(
 	yacute:"Latim - Letra minúscula y com acento agudo",
 	thorn:"Latim - Letra minúscula islandesa thorn",
 	yuml:"Latim - Letra minúscula y com trema",
-
 // Greek Characters and Symbols
 	fnof:"Latim - Letra minúscula f com gancho\nfunção\nflorim",
 	Alpha:"Grego - Letra maiúscula alfa",
@@ -257,6 +254,4 @@ define(
 	rsaquo:"plica direita em ângulo",
 	euro:"símbolo do euro"
 })
-
-//end v1.x content
 );

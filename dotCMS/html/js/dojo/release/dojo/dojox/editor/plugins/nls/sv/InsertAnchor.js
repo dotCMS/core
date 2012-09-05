@@ -1,14 +1,10 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sv/InsertAnchor", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sv/InsertAnchor", ({
 	insertAnchor: "Infoga ankare",
-	title: "Egenskaper för ankare",
+	title: "Ankaregenskaper",
 	anchor: "Namn:",
 	text: "Beskrivning:",
-	set: "Ange",
+	set: "Använd",
 	cancel: "Avbryt"
 })
-
-//end v1.x content
 );

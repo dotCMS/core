@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/editor/plugins/nls/hr/SpellCheck", ({
 	widgetLabel: "Provjera pravopisa paketa",
@@ -11,7 +10,7 @@ define(
 	replaceWith: "Zamijeni s",
 	replaceAll: "Zamijeni sve",
 	cancel: "Opoziv",
-	msg: "Nisu nađene pogreške u pisanju",
+	msg: "Nisu nađene greške u pisanju",
 	iSkip: "Preskoči ovo",
 	iSkipAll: "Preskoči sve poput ovog",
 	iMsg: "Nema prijedloga pravopisa"

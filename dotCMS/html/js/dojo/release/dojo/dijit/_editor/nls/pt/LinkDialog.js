@@ -1,18 +1,14 @@
-//>>built
 define(
-"dijit/_editor/nls/pt/LinkDialog", //begin v1.x content
-({
+"dijit/_editor/nls/pt/LinkDialog", ({
 	createLinkTitle: "Propriedades de Link",
 	insertImageTitle: "Propriedades de Imagem",
 	url: "URL:",
 	text: "Descrição:",
 	target: "Destino:",
-	set: "Definir",
+	set: "Configurar",
 	currentWindow: "Janela Atual",
 	parentWindow: "Janela Pai",
 	topWindow: "Primeira Janela",
 	newWindow: "Nova Janela"
 })
-
-//end v1.x content
 );

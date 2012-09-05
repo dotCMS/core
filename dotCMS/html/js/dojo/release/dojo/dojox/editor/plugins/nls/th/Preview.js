@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/th/Preview", //begin v1.x content
-({
+"dojox/editor/plugins/nls/th/Preview", ({
 	"preview": "แสดงตัวอย่าง"
 })
-
-//end v1.x content
 );

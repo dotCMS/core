@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh-tw/Smiley", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh-tw/Smiley", ({
 	smiley: "插入表情符號",
 	emoticonSmile: "微笑",
 	emoticonLaughing: "大笑",
@@ -21,8 +19,6 @@ define(
 	emoticonNo: "不對",
 	emoticonAngel: "守護神",
 	emoticonCrying: "哭泣",
-	emoticonHappy: "歡樂派對"
+	emoticonHappy: "快樂"
 })
-
-//end v1.x content
 );

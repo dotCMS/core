@@ -1,2 +1,15 @@
-//>>built
-define("dojox/mobile",[".","dojo/_base/lang","dojox/mobile/_base"],function(_1,_2,_3){_2.getObject("mobile",true,_1);return _1.mobile;});
+define("dojox/mobile", [
+	".",
+	"dojo/_base/lang",
+	"dojox/mobile/_base"
+], function(dojox, lang, base){
+	lang.getObject("mobile", true, dojox);
+	/*=====
+	return {
+		// summary:
+		//		Deprecated.  Should require dojox/mobile classes directly rather than trying to access them through
+		//		this module.
+	};
+	=====*/
+	return dojox.mobile;
+});
