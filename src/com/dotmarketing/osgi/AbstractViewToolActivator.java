@@ -49,7 +49,7 @@ public class AbstractViewToolActivator implements BundleActivator, ServiceListen
 	
 	private void doRegister() {
 		
-		ServiceReference<?> serviceRefSelected = context.getServiceReference(PrimitiveToolboxManager.class.getName());
+		ServiceReference serviceRefSelected = context.getServiceReference(PrimitiveToolboxManager.class.getName());
 
 		if ( serviceRefSelected == null )
 			return;
