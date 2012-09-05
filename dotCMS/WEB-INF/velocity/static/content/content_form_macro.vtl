@@ -29,22 +29,23 @@ djConfig={
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
 <script type="text/javascript">
- dojo.ready(function(){
-    var theme = 'dmundra';
+dojo.ready(function(){
+var theme = 'dmundra';
 	if(dojo.body()){
 		if(!dojo.hasClass(dojo.body(),theme)){
 	    	    dojo.addClass(dojo.body(),theme);
 		}
 	}
- });
-    dojo.require("dijit.form.TextBox");
-    dojo.require("dijit.form.Textarea");
-    dojo.require("dijit.form.Button");
-    dojo.require("dijit.form.FilteringSelect");
-    dojo.require("dijit.form.CheckBox");
-    dojo.require("dijit.form.DateTextBox");
-    dojo.require("dijit.form.MultiSelect");
+});
+
 	dojo.require("dojo.parser");
+	dojo.require("dijit.form.TextBox");
+	dojo.require("dijit.form.Textarea");
+	dojo.require("dijit.form.Button");
+	dojo.require("dijit.form.FilteringSelect");
+	dojo.require("dijit.form.CheckBox");
+	dojo.require("dijit.form.DateTextBox");
+	dojo.require("dijit.form.MultiSelect");
 	var DWRUtil = dwr.util;
 </script>
 
@@ -52,8 +53,25 @@ djConfig={
 	#set($errorMessagesPath = 'static/content/error_messages.vtl')
 #end
 #parse($errorMessagesPath)
+#set($contentId='')
+#set($contentIdentifier='')
+#set($contentMap = $dotcontent.find($contentletInode))
+#if($UtilMethods.isSet($contentMap))
+	#set($structure = $contentMap.getStructure())
+	#set($contentId = $contentMap.get('inode'))
+	#set($contentIdentifier = $contentMap.get('identifier'))				
+#else
+	#set($structure = $structures.findStructure($structureName))
+#end
 
-#set($structure = $structures.findStructure($structureName))
+#if($action == 'editContent')
+	#set($_hasEditPermissionOnContent = $contents.doesUserHasPermission($contentMap.get('inode'), 2))
+	#set($_showField = false)
+#else
+	#set($_hasEditPermissionOnContent = true)
+	#set($_showField = true)
+#end
+
 #if(!$UtilMethods.isSet($structure) || !$UtilMethods.isSet($structure.getInode()))
 	#set($structure = $structures.findStructureByName($structureName))
 #end
@@ -117,7 +135,7 @@ djConfig={
 	</div>
 </div>
 
-#elseif($structures.haveEditPermision($structure, null) || ($UtilMethods.isSet($user) && $structures.haveEditPermision($structure, $user)))
+#elseif(($structures.haveEditPermision($structure, null) || ($UtilMethods.isSet($user) && $structures.haveEditPermision($structure, $user))) && $_hasEditPermissionOnContent)
 
 	#if($UtilMethods.isSet($contentAutoPublish))
 		#set($options = "${options}contentAutoPublish=${contentAutoPublish};")
@@ -157,16 +175,18 @@ djConfig={
 		<input type="hidden" name="options" value="$crypt.crypt($options)" />
 		<input type="hidden" name="structure" value="$structure.inode" />
 		<input type="hidden" id="referrer" name="referrer" value="$contentFormReferer" />
+		<input type="hidden" id="contentInode" name="contentInode" value="$contentId" />
+		<input type="hidden" id="contentIdentifier" name="contentIdentifier" value="$contentIdentifier" />
 		<input type="hidden" name="userId" value="$!user.userId" />
 		#if($UtilMethods.isSet($contentFormReturnPageOverride))
 			<input type="hidden" name="formReturnPageOverride" value="$contentFormReturnPageOverride" />
 		#end
 		#set($tabCount = 0)
-		#set($titleField =$structures.findFieldByVarName($structure, "formTitle"))
+		#set($titleField = $structures.findFieldByVarName($structure, "formTitle"))
 		#set($firstField = $fields.get(0))
 		#set($firstTabId = "contentTab")
 		#set($firstFieldSetId = "contentFieldSet")
-		#if(${titleField.values} != '' )
+		#if($UtilMethods.isSet(${titleField.values}))
 			#set($firstTabName = "${titleField.values}")
 			#set($submitTabName = "${titleField.values}")
 		#else
@@ -290,11 +310,16 @@ djConfig={
 	    				</div><!-- end .group -->
 
 				#elseif($field.fieldType == 'categories_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+						#set($fieldDefaultValue = "")
 						#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
 	            	    #else
 	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
+	            	    #end
+	            	    
 						#set($fieldAux = $field)
 						#parse('/static/content/category_tab_field_render.vtl')
 
@@ -319,6 +344,7 @@ djConfig={
 
 					<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
 	            	#if($field.fieldType == 'text' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -326,6 +352,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
+	            	    #end
+	            	    #if($action == 'editContent')
+	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+	            	    #end	
 	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -336,6 +368,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'textarea' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "") 
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -343,6 +376,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
+	            	    #end
+	            	    #if($action == 'editContent') 
+	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+	            	    #end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -353,6 +392,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'wysiwyg' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -360,7 +400,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue )
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
+	            	    #end
+	            	    #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -371,6 +416,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'tag' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -378,7 +424,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue )
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -389,6 +440,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'checkbox' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -396,7 +448,13 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue.split('\|'))
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectedValues())
+						#end							
+						#set($fieldAux = $field)
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -407,6 +465,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'radio' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -414,7 +473,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $!field.defaultValue )
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectValue())
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -425,6 +489,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'select' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue=$request.getParameter("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -432,7 +497,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue=$!field.defaultValue)
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectValue())
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -443,6 +513,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'multi_select' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $request.getParameterValues("$field.velocityVarName"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -450,7 +521,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+                        	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectedValues())
+                        #end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -461,6 +537,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'date' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -468,7 +545,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -479,6 +561,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'time' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("${field.velocityVarName}")))
 	            		    #set($temp_currentDate = $UtilMethods.dateToHTMLDate($UtilMethods.getCurrentDate(),'M/d/yyyy'))
 	            		    #set($temp_currentDateTime = $request.getParameter("${field.velocityVarName}"))
@@ -488,7 +571,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -499,6 +587,7 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'date_time' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 	            		    #set($temp_currentDate = $date.toDate('yyyy-MM-dd',$request.getParameter("${field.velocityVarName}Date")))
 	            		    #set($temp_currentDate = $UtilMethods.dateToHTMLDate($temp_currentDate,'M/d/yyyy'))
@@ -509,7 +598,12 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -520,12 +614,20 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'file' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    #set($fieldDefaultValue = "")
+	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
-	            	    	#set($fieldDefaultValue = "")
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -536,12 +638,20 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'image' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    #set($fieldDefaultValue = "")
+	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
-	            	    	#set($fieldDefaultValue = "")
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -552,12 +662,20 @@ djConfig={
 	            		#end
 
 	            	#elseif($field.fieldType == 'binary' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            		#if($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    #set($fieldDefaultValue = "")
+	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
 	            	    #else
-	            	    	#set($fieldDefaultValue = "")
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
 	            	    #end
-
+	            	    #if(! $fieldDefaultValue)
+                            #set($fieldDefaultValue = "")
+                        #end
+                        #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
 	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -567,26 +685,76 @@ djConfig={
 					        </script>
 	            		#end
 
-	            	#elseif($field.fieldType == 'custom_field' && !($showOnlyRequiredFields && !$field.isRequired()) )
-
-	            			#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	#elseif($field.fieldType == 'custom_field' && !($showOnlyRequiredFields && !$field.isRequired()) && $_showField)
+                        
+	            		#if($field.fieldContentlet.contains("text") || $field.fieldContentlet.contains("float") || $field.fieldContentlet.contains("int") )
+		            		#set($fieldDefaultValue = "")
+		            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
 		            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
 		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 		            	    	#set($fieldDefaultValue = $tempVelocityVar)
 		            	    #else
 		            	    	#set($fieldDefaultValue = $!field.defaultValue)
 		            	    #end
+		            	    #if(! $fieldDefaultValue)
+                                #set($fieldDefaultValue = "")
+                            #end
 		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            				#parse('/static/content/hidden_field_render.vtl')
 	            		    #else
-	            				#parse('/static/content/custom_field_render.vtl')
+	            				#parse('/static/content/text_field_render.vtl')
 	            				<script language="javascript">
 					        		updateTabCounter("$currentTab");
 					        	</script>
 	            			#end
-	            			
-	            	
+
+	       	           #elseif ($field.fieldContentlet.contains("date"))
+	       	               #set($fieldDefaultValue = "")
+		            	   #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+		            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
+		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+		            	    	#set($fieldDefaultValue = $tempVelocityVar)
+		            	    #else
+		            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
+		            	    #end
+		            	    #if(! $fieldDefaultValue)
+                                #set($fieldDefaultValue = "")
+                            #end
+                            #set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            				#parse('/static/content/hidden_field_render.vtl')
+	            		    #else
+	            				#parse('/static/content/date_field_render.vtl')
+	            				<script language="javascript">
+					        		updateTabCounter("$currentTab");
+					        	</script>
+	            			#end
+
+	            	   #elseif ($field.fieldContentlet.contains("bool"))
+	            	        #set($fieldDefaultValue = "")
+			            	#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+		            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
+		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+		            	    	#set($fieldDefaultValue = $tempVelocityVar)
+		            	    #else
+		            	    	#set($fieldDefaultValue = $!field.defaultValue.split('\|'))
+		            	    #end
+                            #if(! $fieldDefaultValue)
+                                #set($fieldDefaultValue = "")
+                            #end
+		            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+		            			#parse('/static/content/hidden_field_render.vtl')
+		            		#else
+		            			#parse('/static/content/checkbox_field_render.vtl')
+		            			<script language="javascript">
+						        	updateTabCounter("$currentTab");
+						        </script>
+		            		#end
+
+	            	    #end
+
 	            	#elseif($field.fieldType == 'category' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            		#set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("categoryNames")))
 	            	    	#set($fieldDefaultValue = $request.getParameterValues("categories"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
@@ -594,7 +762,10 @@ djConfig={
 	            	    #else
 	            	    	#set($fieldDefaultValue = [])
 	            	    #end
-
+	            	    #if($action == 'editContent')
+							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+						#end	
+						#set($fieldAux = $field)
 	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
@@ -652,9 +823,9 @@ djConfig={
 		<div id="tabButton$tabCount" ></div>
 		<div id="submitButton" class="submitButton" #if($tabCount > 0) style="display:none" #end>
 		   #if($tabCount > 0)
-		    <button dojoType="dijit.form.Button" type="button" onclick="showPreviousTab();" >$text.get('org.dotcms.frontend.content.submission.previous')</button>
+		    <button dojoType="dijit.form.Button" onclick="showPreviousTab();" >$text.get('org.dotcms.frontend.content.submission.previous')</button>
 		   #end
-		   <button dojoType="dijit.form.Button" id="buttonSubmitButton" type="button" onclick="submitContent('$submitTabName');">$text.get('org.dotcms.frontend.content.submission.save')</button>
+		   <button dojoType="dijit.form.Button" onclick="submitContent('$submitTabName');">$text.get('org.dotcms.frontend.content.submission.save')</button>
 	    </div>
 	</form>
 	<div style="clear:both"></div>
@@ -696,16 +867,10 @@ djConfig={
 			#else
 
 				#if($field.isRequired())
-					#set($customErrorMessages ="")
-					#set($customErrorMessages = $submitcontenttool.getFieldVariableValue($structure.getVelocityVarName(), $field.velocityVarName, "errorFieldMessage"))
-					#if(!$UtilMethods.isSet($customErrorMessages))
-						#set($customErrorMessages ="")
-					#end
-					
+
 					#if("$field.getFieldType().toUpperCase()"=="TEXT")
-						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
 				    	#if($field.getFieldContentlet().indexOf('integer') != -1 || $field.getFieldContentlet().indexOf('float') != -1)
-				    	    if(!numberValid(document.getElementById("$field.velocityVarName"), "$field.fieldName")){
+				    		if(!numberValid(document.getElementById("$field.velocityVarName"), "$field.fieldName")){
 								return false;
 							}
 				    	#else
@@ -717,14 +882,12 @@ djConfig={
 					#end
 
 					#if("$field.getFieldType().toUpperCase()"=="CATEGORY")
-					    customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
 						if(!categoryValid("$field.velocityVarName", "$field.fieldName")){
 			               	return false;
 			            }
 			        #end
 
 					#if("$field.getFieldType().toUpperCase()"=="RADIO")
-					    customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
 						radios = eval("document.submitContentForm.${field.velocityVarName}");
 			       		radiosLength = radios.length;
 			       		if(!radioValid(radios,radiosLength,"$field.fieldName")){
@@ -733,7 +896,7 @@ djConfig={
 					#end
 
 					#if("$field.getFieldType().toUpperCase()"=="CHECKBOX")
-						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
+
 						checkboxes = eval("document.submitContentForm.${field.velocityVarName}");
 					 	requiredNumber = (checkboxes[0].getAttribute("requiredNumber")!= undefined) ? checkboxes[0].getAttribute("requiredNumber") : 1;
 			        	prettyText = "$field.fieldName";
@@ -747,65 +910,39 @@ djConfig={
 						if(isWYSIWYGEnabled("$field.velocityVarName")){
 				    		tinyMCE.triggerSave(false,false);
 				    	}
-						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
+
 						requiredLength = (document.getElementById("$field.velocityVarName").getAttribute("requiredLength")!= undefined) ? document.getElementById("$field.velocityVarName").getAttribute("requiredLength") : 1;
 						if(!lengthValidText(document.getElementById("$field.velocityVarName"), requiredLength , "$field.fieldName")){
 							return false;
 						}
 					#end
 					#if("$field.getFieldType().toUpperCase()"=="TAG")
-						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
 						requiredLength = (document.getElementById("tags").getAttribute("requiredLength")!= undefined) ? document.getElementById("$field.velocityVarName").getAttribute("requiredLength") : 1;
 						if(!lengthValidText(document.getElementById("tags"), requiredLength , "$field.fieldName")){
 							return false;
 						}
 					#end
 					#if("$field.getFieldType().toUpperCase()"=="CATEGORY_TAB" || "$field.getFieldType().toUpperCase()"=="SELECT" || "$field.getFieldType().toUpperCase()"=="MULTI_SELECT")
-						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
 						if(!selectValid(dijit.byId("${field.velocityVarName}"), "$field.fieldName")){
 			        		return false;
 			        	}
 					#end
 
-					#if("$field.getFieldType().toUpperCase()"=="BINARY" || "$field.getFieldType().toUpperCase()"=="FILE" || "$field.getFieldType().toUpperCase()"=="IMAGE")
-						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
+					#if("$field.getFieldType().toUpperCase()"=="FILE" || "$field.getFieldType().toUpperCase()"=="IMAGE")
 						if(!fileValid(document.getElementById("$field.velocityVarName"),"$field.fieldName")){
 							return false
-						}
-					#end
-					
-					#if("$field.getFieldType().toUpperCase()"=="CUSTOM_FIELD")
-						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
-						requiredLength = (document.getElementById("$field.velocityVarName").getAttribute("requiredLength")!= undefined) ? document.getElementById("$field.velocityVarName").getAttribute("requiredLength") : 1;
-						if(!lengthValidCustomField(document.getElementById("$field.velocityVarName"), requiredLength , "$field.fieldName")){
-							return false;
 						}
 					#end
 				#end
 
 
 				#if($UtilMethods.isSet($field.getRegexCheck()))
-					#set($customErrorMessage = $secureformtool.getFieldVariableValue($structure.getVelocityVarName(), $field.velocityVarName, "errorFieldMessage"))
-					#if($UtilMethods.isSet($customErrorMessage))
-						customErrorMessages["$field.velocityVarName"]="$customErrorMessage";
-						#set($customErrorMessage ="")
-					#else
-						customErrorMessages["$field.velocityVarName"]="";
-					#end
-					
-					#set($regExp = $field.getRegexCheck())
-					if("$!regExp" != ""){
-						#if($regExp.equals("[^(<[.\n]+>)]*"))
-							#set($regExp = $regExp.replaceAll("\(","").replaceAll("\)",""))
-							if(!validateRegularExpresionNotHTML(document.getElementById("$field.velocityVarName"), "$UtilMethods.makeJavaSafe($regExp)", "$field.fieldName")){
-							return false;
-						}	
-						#else
-			       		if(!validateRegularExpresion(document.getElementById("$field.velocityVarName"), "$UtilMethods.makeJavaSafe($regExp)", "$field.fieldName")){
+					if("$!field.getRegexCheck()" != ""){
+
+			       		if(!validateRegularExpresion(document.getElementById("$field.velocityVarName"), "$field.getRegexCheck()", "$field.fieldName")){
 							return false;
 						}
-						#end	
-					}
+			    	}
 				#end
 			#end
     	#end
@@ -838,6 +975,16 @@ djConfig={
 		document.getElementById('captcha-image').innerHTML = "<img width='200' height='50'  src='/Captcha.jpg?r=" + rand + "'>";
 	}
 
+
+
 updateTabList();
+
+
+
+
+
+
+
+
 
 </script>
