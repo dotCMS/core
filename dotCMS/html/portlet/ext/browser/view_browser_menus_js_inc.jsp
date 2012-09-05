@@ -38,8 +38,10 @@
 
 
 	function showHostPopUp(host, cmsAdminUser, origReferer, e) {
+
 		var referer = encodeURIComponent(origReferer);
 		if($('context_menu_popup_'+objId) == null) {
+
 			var objId = host.identifier;
 			var objInode = host.inode;
 			var read = hasReadPermissions(host.permissions);
@@ -117,11 +119,25 @@
 				new Insertion.Bottom ('popups', strHTML);
 
             if (isInodeSet(markedForCut) || isInodeSet(markedForCopy)) {
-                if($(objId + '-PasteREF') != null)
-                    Element.show(objId + '-PasteREF');
+                if ($(objId + '-PasteREF') != null) {
+
+                    var asset;
+                    if (isInodeSet(markedForCut)) {
+                        asset = inodes[markedForCut];
+                    } else {
+                        asset = inodes[markedForCopy];
+                    }
+
+                    if (asset.type == 'folder' || asset.type == 'file_asset') {
+                        Element.show(objId + '-PasteREF');
+                    } else {
+                        Element.hide(objId + '-PasteREF');
+                    }
+                }
             } else {
-                if($(objId + '-PasteREF') != null)
+                if ($(objId + '-PasteREF') != null) {
                     Element.hide(objId + '-PasteREF');
+                }
             }
 		}
 
