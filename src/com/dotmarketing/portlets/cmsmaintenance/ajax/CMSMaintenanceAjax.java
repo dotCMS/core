@@ -48,6 +48,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.logConsole.model.LogMapperRow;
+import com.dotmarketing.plugin.model.Plugin;
+import com.dotmarketing.plugin.model.PluginProperty;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
@@ -342,7 +344,8 @@ public class CMSMaintenanceAjax {
 				while (it.hasNext()) {
 					Map.Entry pairs = (Map.Entry) it.next();
 					Class x = (Class) pairs.getKey();
-					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x.equals(ClickstreamRequest.class))
+					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x.equals(ClickstreamRequest.class) 
+					        && !x.equals(Plugin.class) && !x.equals(PluginProperty.class))
 						_tablesToDump.add(x);
 
 				}

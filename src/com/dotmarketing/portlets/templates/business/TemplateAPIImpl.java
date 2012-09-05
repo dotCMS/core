@@ -18,6 +18,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BaseWebAssetAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
@@ -457,4 +458,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 		return result;
 	}
+
+    @Override
+    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
+        return deleteOldVersions(assetsOlderThan,"template");
+    }
 }

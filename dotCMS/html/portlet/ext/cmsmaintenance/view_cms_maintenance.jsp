@@ -347,8 +347,9 @@ function doDeleteContentletsCallback(contentlets){
 }
 
 function doDropAssets(){
-   var form = $('cmsMaintenanceForm');
-   if(!validateDate(form.removeassetsdate)){
+   var dateInput = dijit.byId('removeassetsdate');
+      
+   if(dateInput.get('value')==null || !dateInput.validate()){
      alert("<%= LanguageUtil.get(pageContext,"Please,-enter-a-valid-date") %>");
      return false;
    }
@@ -356,7 +357,8 @@ function doDropAssets(){
   if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")){
 	 	$("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
 	 	$("dropAssetsButton").disabled = true;
-		CMSMaintenanceAjax.removeOldVersions(form.removeassetsdate.value, doDropAssetsCallback);
+	 	var dateStr=dojo.date.locale.format(dijit.byId("removeassetsdate").get('value'),{selector: "date", datePattern:"MM/dd/yyyy"});
+		CMSMaintenanceAjax.removeOldVersions(dateStr, doDropAssetsCallback);
 	}
 }
 
@@ -368,33 +370,6 @@ function doDropAssetsCallback(removed){
 	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></font>';
 	else
 	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></font>';
-}
-
-function validateDate(date){
-
-  if(date == null || date.value==''){
-  	return false;
-  }
-
-  var dateStr = date.value;
-  var datearr = dateStr.split("/");
-
-  var month= datearr[0];
-  if(parseInt(month) > 12){
-  	return false;
-  }
-
-  var day= datearr[1];
-  if(parseInt(day) > 31){
-  	return false;
-  }
-
-  var year= datearr[2];
-  if(parseInt(year) > 9999 || parseInt(year) < 1900  ){
-  	return false;
-  }
-
-  return true;
 }
 
 

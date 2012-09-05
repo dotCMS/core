@@ -106,7 +106,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	hide: function () {
 		this._clearSearch();
 		this.dialog.hide();
-	},
+	},	
 
 	_structureDetailsCallback: function (structure) {
 		this.structureName.innerHTML = structure['name'];
@@ -421,7 +421,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_doRelateContent: function () {
-		var checkedNodes = dojo.query('input:checked', 'searchForm');
+		var checkedNodes = dojo.query('input:checked');
 		var inodes = new Array();
 
 		dojo.forEach(checkedNodes,function(node, i) {
@@ -628,7 +628,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		}
 
 	},
-
+	
+	
 	_fillResultsTable: function (headers, data) {
 
 		if(this.multiple=='true') {
@@ -649,17 +650,17 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			var cell = row.insertCell (row.cells.length);
 			cell.innerHTML = this._getHeader (header);
 			cell.setAttribute("class","beta");
-			cell.setAttribute("className","beta");
+			cell.setAttribute("className","beta");			
 		}
 		//Filling data
 		for (var i = 0; i < data.length; i++) {
-			var row = table.insertRow(table.rows.length);
+			var row = table.insertRow(table.rows.length);			
 			if (i % 2 == 1){
 				// row.setAttribute("bgcolor","#EEEEEE");
 			}
 			var cellData = data[i];
 			var cell = row.insertCell (row.cells.length);
-
+			cell.setAttribute("id",i);
 			if(this.multiple=='true') {
 				cell.innerHTML = this._checkButton(cellData);
 			} else {
@@ -669,6 +670,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			for (var j = 0; j < this.headers.length; j++) {
 				var header = this.headers[j];
 				var cell = row.insertCell (row.cells.length);
+				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
 				var value = cellData[header["fieldVelocityVarName"]];
 				if (value != null)
 					cell.innerHTML = value;

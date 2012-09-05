@@ -1,5 +1,16 @@
 #*
 <input dojoType="dijit.form.TextBox" type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 *#
+#if(!$UtilMethods.isSet($fieldDefaultValue.getFileName()))
+	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+#else
+	## Edit content
+	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+	<div id="${fieldAux.velocityVarName}Container" >
+		<input type="hidden" id="${fieldAux.velocityVarName}oldFileInode" name="${fieldAux.velocityVarName}oldFileInode" value="$contentMap.get(${fieldAux.velocityVarName}).getIdentifier()" />
+		<a class="bg" href="javascript: serveFile('','$contentMap.get(${fieldAux.velocityVarName}).getInode()','fileAsset');"  id="${fieldAux.velocityVarName}BinaryFile">$fieldDefaultValue.getFileName()</a>
+			<button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>
+	</div>
+#end
 
-<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+

@@ -2,4 +2,31 @@
 <input dojoType="dijit.form.TextBox" type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="imageField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 *#
 
-<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="imageField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+
+#if(!$UtilMethods.isSet($fieldDefaultValue.getFileName()))
+	
+	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="imageField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+#else
+	## Edit content
+	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="imageField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+	
+	<div id="${fieldAux.velocityVarName}Container" >
+		<input type="hidden" id="${fieldAux.velocityVarName}oldImageInode" name="${fieldAux.velocityVarName}oldImageInode" value="$contentMap.get(${fieldAux.velocityVarName}).getIdentifier()" />
+		$fieldDefaultValue.getFileName()  <button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>
+		#set($showDim = 300)
+		<div style="position:relative;width:$showDimpx;">
+            <img src="$fieldDefaultValue.getURI()" width="300" height="300"
+                 class="thumbnailDiv thumbnailDiv${fieldAux.velocityVarName}"
+                 onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
+                 onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
+                 onclick="dijit.byId('fileDia${fieldAux.velocityVarName}').show()">
+    	</div>
+	</div>
+	
+
+#end
+
+
+
+
+

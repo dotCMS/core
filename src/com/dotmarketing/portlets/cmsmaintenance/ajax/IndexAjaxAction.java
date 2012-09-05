@@ -174,7 +174,7 @@ public class IndexAjaxAction extends AjaxAction {
 	    }
 	}
 
-	private String getIndexNameOrAlias(Map<String, String> map) {
+	protected String getIndexNameOrAlias(Map<String, String> map) {
 	    String indexName = map.get("indexName");
 	    String indexAlias = map.get("indexAlias");
         if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel()>=200) {

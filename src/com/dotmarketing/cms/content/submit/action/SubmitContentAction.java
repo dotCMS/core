@@ -24,7 +24,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.content.submit.util.CaptchaUtil;
 import com.dotmarketing.cms.content.submit.util.SubmitContentUtil;
@@ -191,10 +190,10 @@ public class SubmitContentAction extends DispatchAction{
 				String fieldTypeStr = field!=null?field.getFieldType():"";
 				Field.FieldType fieldType =  Field.FieldType.getFieldType(fieldTypeStr);
 				String[] fieldValues = request.getParameterValues(parameterName);
-				StringBuilder value = new StringBuilder();
+				String value = "";
 				if(fieldValues.length>1){
 					for(String val:fieldValues){
-						value.append(",").append(val);
+						value+=","+val;
 					}
 					parameters.put(parameterName,value.substring(1));
 				}else{
@@ -343,7 +342,7 @@ public class SubmitContentAction extends DispatchAction{
 			//http://jira.dotmarketing.net/browse/DOTCMS-3463
 			Map <String, Object> tempBinaryValues= new HashMap <String, Object>();
 			fileFields = StructureFactory.getFilesFieldsList(st, parametersfileName, filevalues);
-			List <Field> catfields = FieldsCache.getFieldsByStructureInode(st.getInode());
+			List <Field> catfields = st.getFields();
 			for(Field field:catfields){
 				Map <String, Object> binaryvalues= new HashMap <String, Object>();
 				if (field.getFieldType().equals("binary"))
@@ -459,29 +458,40 @@ public class SubmitContentAction extends DispatchAction{
 			HibernateUtil.rollbackTransaction();
 			Logger.debug(this, ve.getMessage());
 
-			if(ve.hasRequiredErrors()){
+			if(ve.hasRequiredErrors()){ 
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
 				for (Field errorField : reqs) {
-					errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", errorField.getFieldName()));
+					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
+					if(UtilMethods.isSet(customizedMessage)){
+						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+					}else{
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", errorField.getFieldName()));
+					}
 				}
 			}
 			if(ve.hasLengthErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
 				for (Field errorField : reqs) {
-					errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.maxlength", errorField.getFieldName(),"255"));
+					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
+					if(UtilMethods.isSet(customizedMessage)){
+						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+					}else{
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.maxlength", errorField.getFieldName(),"255"));
+					}
 				}
 			}
 			if(ve.hasPatternErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
 				for (Field errorField : reqs) {
-					errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.format", errorField.getFieldName()));
+					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
+					if(UtilMethods.isSet(customizedMessage)){
+						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+					}else{
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.format", errorField.getFieldName()));
+					}
 				}
 			}
-			if(ve.hasRelationshipErrors()){
-				//need to update message to support multiple relationship validation errors
-				errors.add(Globals.ERROR_KEY, new ActionMessage("message.relationship.required", "relationships"));
-			}
-
+			
 			if(ve.hasRelationshipErrors()){
 				//need to update message to support multiple relationship validation errors
 				errors.add(Globals.ERROR_KEY, new ActionMessage("message.relationship.required", "relationships"));
@@ -490,13 +500,23 @@ public class SubmitContentAction extends DispatchAction{
 			if(ve.hasUniqueErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_UNIQUE);
 				for (Field errorField : reqs) {
-					errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.unique", errorField.getFieldName()));
+					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
+					if(UtilMethods.isSet(customizedMessage)){
+						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+					}else{
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.unique", errorField.getFieldName()));
+					}
 				}
 			}
 			if(ve.hasBadTypeErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
 				for (Field errorField : reqs) {
-					errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.invalid.image", errorField.getFieldName()));
+					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
+					if(UtilMethods.isSet(customizedMessage)){
+						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+					}else{
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.invalid.image", errorField.getFieldName()));
+					}
 				}
 			}
 			//errors.add(Globals.ERROR_KEY, new ActionMessage("error.invalid.field",e.getMessage()));
@@ -546,8 +566,7 @@ public class SubmitContentAction extends DispatchAction{
 			if (!isEmptyFile) {
 				fileName = uploadRequest.getFileName(binaryFieldName);
 
-				File tempUserFolder = new java.io.File(
-				        APILocator.getFileAPI().getRealAssetPathTmpBinary()
+				File tempUserFolder = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
 								+ java.io.File.separator + user.getUserId());
 				if (!tempUserFolder.exists())
 					tempUserFolder.mkdirs();
