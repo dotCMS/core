@@ -64,7 +64,7 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
             db.loadResult();
 
         } catch ( final Exception e ) {
-            Logger.debug( this.getClass(), e.getMessage(), e );
+            Logger.error( this.getClass(), e.getMessage(), e );
         }
 
         return (List<LogMapperRow>) this.convertListToObjects( db.loadObjectResults(), LogMapperRow.class );
@@ -92,7 +92,7 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
             db.loadResult();
 
         } catch ( final Exception e ) {
-            Logger.debug( this.getClass(), e.getMessage(), e );
+            Logger.error( this.getClass(), e.getMessage(), e );
         } finally {
             HibernateUtil.commitTransaction();
         }
