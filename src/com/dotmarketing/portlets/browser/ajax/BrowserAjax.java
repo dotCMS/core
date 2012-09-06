@@ -1,22 +1,5 @@
 package com.dotmarketing.portlets.browser.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-
-import org.directwebremoting.WebContext;
-import org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -31,11 +14,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -66,6 +45,15 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import org.directwebremoting.WebContext;
+import org.directwebremoting.WebContextFactory;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+
+import static com.dotmarketing.business.PermissionAPI.*;
 
 /**
  *
@@ -414,96 +402,120 @@ public class BrowserAjax {
     	return result;
     }
 
-	// Copy action
-	public boolean copyFolder(String inode, String newFolder) throws Exception {
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+    /**
+     * Copies a given inode folder/host reference into another given folder
+     *
+     * @param inode     folder inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return Confirmation message
+     * @throws Exception
+     */
+    public boolean copyFolder ( String inode, String newFolder ) throws Exception {
+
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
+
         UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+        HostAPI hostAPI = APILocator.getHostAPI();
 
+        //Searching for the folder to copy
+        Folder folder = APILocator.getFolderAPI().find( inode, user, false );
 
-    	Folder folder = APILocator.getFolderAPI().find(inode, user, false);
+        if ( !folderAPI.exists( newFolder ) ) {
 
-		// Checking permissions
+            Host parentHost = hostAPI.find( newFolder, user, !userWebAPI.isLoggedToBackend( req ) );
 
-		if (!folderAPI.exists(newFolder)) {
-			HostAPI hostAPI = APILocator.getHostAPI();
+            if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
+                throw new DotRuntimeException( "The user doesn't have the required permissions." );
+            }
 
-			Host parentHost = (Host) hostAPI.find(newFolder, user, !userWebAPI.isLoggedToBackend(req));
+            folderAPI.copy( folder, parentHost, user, false );
+        } else {
 
-			if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user) ||
-					!permissionAPI.doesUserHavePermission(parentHost, PERMISSION_WRITE, user))
-				throw new DotRuntimeException("The user doesn't have the required permissions.");
-			folderAPI.copy(folder, parentHost, user, false);
-		} else {
-			Folder parentFolder = APILocator.getFolderAPI().find(newFolder, user, false);
+            Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
 
-			if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_WRITE, user) ||
-					!permissionAPI.doesUserHavePermission(parentFolder, PERMISSION_WRITE, user))
-				throw new DotRuntimeException("The user doesn't have the required permissions.");
+            if ( !permissionAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
+                throw new DotRuntimeException( "The user doesn't have the required permissions." );
+            }
 
-			if (parentFolder.getInode().equalsIgnoreCase(folder.getInode())) {
-				//Trying to move a folder over itself
-				return false;
-			}
-			if (folderAPI.isChildFolder(parentFolder, folder)) {
-				//Trying to move a folder over one of its children
-				return false;
-			}
-            folderAPI.copy(folder, parentFolder, user, false);
-		}
-		return true;
-	}
+            if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
+                //Trying to move a folder over itself
+                return false;
+            }
+            if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
+                //Trying to move a folder over one of its children
+                return false;
+            }
 
-	// Move action
-	public boolean moveFolder(String inode, String newFolder) throws Exception {
+            folderAPI.copy( folder, parentFolder, user, false );
+        }
 
-		HibernateUtil.startTransaction();
+        return true;
+    }
 
-		try {
-			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-	        User user = getUser(req);
-	        boolean respectFrontendRoles = !userAPI.isLoggedToBackend(req);
+    /**
+     * Moves a given inode folder/host reference into another given folder
+     *
+     * @param inode     folder inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return Confirmation message
+     * @throws Exception
+     */
+    public boolean moveFolder ( String inode, String newFolder ) throws Exception {
 
-	    	Folder folder = APILocator.getFolderAPI().find(inode, user, false);
+        HibernateUtil.startTransaction();
 
-			if (!folderAPI.exists(newFolder)) {
-				Host parentHost = hostAPI.find(newFolder, user, respectFrontendRoles);
+        try {
+            HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+            User user = getUser( req );
 
-				if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user) ||
-						!permissionAPI.doesUserHavePermission(parentHost, PERMISSION_WRITE, user))
-					throw new DotRuntimeException("The user doesn't have the required permissions.");
+            boolean respectFrontendRoles = !userAPI.isLoggedToBackend( req );
 
-				if (!folderAPI.move(folder, parentHost,user,respectFrontendRoles)){
-					//A folder with the same name already exists on the destination
-					return false;
-				}
-			} else {
-				Folder parentFolder = APILocator.getFolderAPI().find(newFolder, user, false);
+            //Searching for the folder to move
+            Folder folder = APILocator.getFolderAPI().find( inode, user, false );
 
-				if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user) ||
-						!permissionAPI.doesUserHavePermission(parentFolder, PERMISSION_WRITE, user))
-					throw new DotRuntimeException("The user doesn't have the required permissions.");
+            if ( !folderAPI.exists( newFolder ) ) {
 
-				if (parentFolder.getInode().equalsIgnoreCase(folder.getInode())) {
-					//Trying to move a folder over itself
-					return false;
-				}
-				if (folderAPI.isChildFolder(parentFolder, folder)) {
-					//Trying to move a folder over one of its children
-					return false;
-				}
-				if (!folderAPI.move(folder, parentFolder,user,respectFrontendRoles)) {
-					//A folder with the same name already exists on the destination
-					return false;
-				}
-			}
-		} catch (Exception e) {
-			HibernateUtil.rollbackTransaction();
-		} finally {
-			HibernateUtil.commitTransaction();
-		}
-		return true;
-	}
+                Host parentHost = hostAPI.find( newFolder, user, respectFrontendRoles );
+
+                if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
+                    throw new DotRuntimeException( "The user doesn't have the required permissions." );
+                }
+
+                if ( !folderAPI.move( folder, parentHost, user, respectFrontendRoles ) ) {
+                    //A folder with the same name already exists on the destination
+                    return false;
+                }
+            } else {
+
+                Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
+
+                if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
+                    throw new DotRuntimeException( "The user doesn't have the required permissions." );
+                }
+
+                if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
+                    //Trying to move a folder over itself
+                    return false;
+                }
+                if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
+                    //Trying to move a folder over one of its children
+                    return false;
+                }
+
+                if ( !folderAPI.move( folder, parentFolder, user, respectFrontendRoles ) ) {
+                    //A folder with the same name already exists on the destination
+                    return false;
+                }
+            }
+        } catch ( Exception e ) {
+            HibernateUtil.rollbackTransaction();
+        } finally {
+            HibernateUtil.commitTransaction();
+        }
+
+        return true;
+    }
 
     public Map<String, Object> renameFile (String inode, String newName) throws Exception {
 
@@ -555,73 +567,148 @@ public class BrowserAjax {
     	return result;
     }
 
-    public String copyFile (String inode, String newFolder) throws Exception {
+    /**
+     * Copies a given inode reference to a given folder
+     *
+     * @param inode     Contentlet inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return Confirmation message
+     * @throws Exception
+     */
+    public String copyFile ( String inode, String newFolder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
+
+        //Contentlet file identifier
+        Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
 
         // gets folder parent
-    	Folder parent = APILocator.getFolderAPI().find(newFolder, user, false);
-        Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(id, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			return "File-failed-to-copy-check-you-have-the-required-permissions";
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( newFolder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-    	if(id!=null && id.getAssetType().equals("contentlet")){
-    		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
-    		if (UtilMethods.isSet(fa.getFileName()) && !folderAPI.matchFilter(parent, fa.getFileName())) {
-    			return "message.file_asset.error.filename.filters";
-    		}
-    		APILocator.getContentletAPI().copyContentlet(cont, parent, user, false);
-    		return "File-copied";
-    	}
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( newFolder, user, false );
+        }
 
-    	File file = (File) InodeFactory.getInode(inode, File.class);
-		// CHECK THE FOLDER PATTERN		//DOTCMS-6017
-		if (UtilMethods.isSet(file.getFileName()) && !folderAPI.matchFilter(parent, file.getFileName())) {
-			return "message.file_asset.error.filename.filters";
-		}
+        // Checking permissions
+        String permissionsError = "File-failed-to-copy-check-you-have-the-required-permissions";
+        if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
+            return permissionsError;
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            return permissionsError;
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            return permissionsError;
+        }
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(file, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			return "File-failed-to-copy-check-you-have-the-required-permissions";
+        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
 
-		APILocator.getFileAPI().copyFile(file, parent, user, false);
-		return "File-copied";
+            //Getting the contentlet file
+            Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
 
+            if ( parent != null ) {
+
+                FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet( cont );
+                if ( UtilMethods.isSet( fileAsset.getFileName() ) && !folderAPI.matchFilter( parent, fileAsset.getFileName() ) ) {
+                    return "message.file_asset.error.filename.filters";
+                }
+            }
+
+            if ( parent != null ) {
+                APILocator.getContentletAPI().copyContentlet( cont, parent, user, false );
+            } else {
+                APILocator.getContentletAPI().copyContentlet( cont, host, user, false );
+            }
+            return "File-copied";
+        }
+
+        File file = (File) InodeFactory.getInode( inode, File.class );
+        // CHECK THE FOLDER PATTERN		//DOTCMS-6017
+        if ( UtilMethods.isSet( file.getFileName() ) && (parent != null && !folderAPI.matchFilter( parent, file.getFileName() )) ) {
+            return "message.file_asset.error.filename.filters";
+        }
+
+        // Checking permissions
+        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
+            return "File-failed-to-copy-check-you-have-the-required-permissions";
+        }
+
+        if ( parent != null ) {
+            APILocator.getFileAPI().copyFile( file, parent, user, false );
+        } else {
+            APILocator.getFileAPI().copyFile( file, host, user, false );
+        }
+        return "File-copied";
     }
 
-    public boolean moveFile (String inode, String folder) throws Exception {
+    /**
+     * Moves a given inode reference to a given folder
+     *
+     * @param inode  Contentlet inode
+     * @param folder This could be the inode of a folder or a host
+     * @return true if success, false otherwise
+     * @throws Exception
+     */
+    public boolean moveFile ( String inode, String folder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
-        Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
+        //Contentlet file identifier
+        Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
+
         // gets folder parent
-        Folder parent =APILocator.getFolderAPI().find(folder, user, false);
-        if (!permissionAPI.doesUserHavePermission(id, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
-    	if(id!=null && id.getAssetType().equals("contentlet")){
-    		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		return APILocator.getFileAssetAPI().moveFile(cont, parent, user, false);
-    	}
-    	File file = (File) InodeFactory.getInode(inode, File.class);
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( folder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(file, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( folder, user, false );
+        }
 
-		boolean ret = APILocator.getFileAPI().moveFile(file, parent, user, false);
+        // Checking permissions
+        if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        }
 
-		return ret;
+        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
 
+            //Getting the contentlet file
+            Contentlet contentlet = APILocator.getContentletAPI().find( inode, user, false );
+
+            if ( parent != null ) {
+                return APILocator.getFileAssetAPI().moveFile( contentlet, parent, user, false );
+            } else {
+                return APILocator.getFileAssetAPI().moveFile( contentlet, host, user, false );
+            }
+        }
+
+        File file = (File) InodeFactory.getInode( inode, File.class );
+
+        // Checking permissions
+        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        }
+
+        if ( parent != null ) {
+            return APILocator.getFileAPI().moveFile( file, parent, user, false );
+        } else {
+            return APILocator.getFileAPI().moveFile( file, host, user, false );
+        }
     }
-
 
     public Map<String, Object> renameHTMLPage (String inode, String newName) throws Exception {
 
@@ -647,44 +734,96 @@ public class BrowserAjax {
     	return result;
     }
 
-    public boolean copyHTMLPage (String inode, String newFolder) throws Exception {
+    /**
+     * Copies a given inode HTMLPage to a given folder
+     *
+     * @param inode     HTMLPage inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return true if success, false otherwise
+     * @throws Exception
+     */
+    public boolean copyHTMLPage ( String inode, String newFolder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
-    	HTMLPage page = (HTMLPage) InodeFactory.getInode(inode, HTMLPage.class);
+        HTMLPage page = (HTMLPage) InodeFactory.getInode( inode, HTMLPage.class );
 
         // gets folder parent
-		Folder parent = APILocator.getFolderAPI().find(newFolder, user, false);
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( newFolder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( newFolder, user, false );
+        }
 
-		HTMLPageFactory.copyHTMLPage(page, parent);
+        // Checking permissions
+        String permissionsError = "The user doesn't have the required permissions.";
+        if ( !permissionAPI.doesUserHavePermission( page, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        }
 
-		return true;
+        if ( parent != null ) {
+            HTMLPageFactory.copyHTMLPage( page, parent );
+        } else {
+            HTMLPageFactory.copyHTMLPage( page, host );
+        }
 
+        return true;
     }
 
-    public boolean moveHTMLPage (String inode, String folder) throws Exception {
+    /**
+     * Moves a given inode HTMLPage to a given folder
+     *
+     * @param inode     HTMLPage inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return true if success, false otherwise
+     * @throws Exception
+     */
+    public boolean moveHTMLPage ( String inode, String newFolder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
-    	HTMLPage page = (HTMLPage) InodeFactory.getInode(inode, HTMLPage.class);
+        HTMLPage page = (HTMLPage) InodeFactory.getInode( inode, HTMLPage.class );
 
         // gets folder parent
-		Folder parent = APILocator.getFolderAPI().find(folder, user, false);
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( newFolder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( newFolder, user, false );
+        }
 
-		return HTMLPageFactory.moveHTMLPage(page, parent);
+        // Checking permissions
+        String permissionsError = "The user doesn't have the required permissions.";
+        if ( !permissionAPI.doesUserHavePermission( page, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        }
 
+        if ( parent != null ) {
+            return HTMLPageFactory.moveHTMLPage( page, parent );
+        } else {
+            return HTMLPageFactory.moveHTMLPage( page, host );
+        }
     }
 
     public Map<String, Object> renameLink (String inode, String newName) throws Exception {
@@ -717,43 +856,96 @@ public class BrowserAjax {
     	return result;
     }
 
-    public boolean copyLink (String inode, String newFolder) throws Exception {
+    /**
+     * Copies a given inode Link to a given folder
+     *
+     * @param inode     Link inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return true if success, false otherwise
+     * @throws Exception
+     */
+    public boolean copyLink ( String inode, String newFolder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
-    	Link link = (Link) InodeFactory.getInode(inode, Link.class);
+        Link link = (Link) InodeFactory.getInode( inode, Link.class );
 
         // gets folder parent
-		Folder parent = APILocator.getFolderAPI().find(newFolder, user, false);
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( newFolder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(link, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( newFolder, user, false );
+        }
 
-		LinkFactory.copyLink(link, parent);
+        // Checking permissions
+        String permissionsError = "The user doesn't have the required permissions.";
+        if ( !permissionAPI.doesUserHavePermission( link, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        }
 
-		return true;
+        if ( parent != null ) {
+            LinkFactory.copyLink( link, parent );
+        } else {
+            LinkFactory.copyLink( link, host );
+        }
 
+        return true;
     }
 
-    public boolean moveLink (String inode, String folder) throws Exception {
+    /**
+     * Moves a given inode Link to a given folder
+     *
+     * @param inode     Link inode
+     * @param newFolder This could be the inode of a folder or a host
+     * @return true if success, false otherwise
+     * @throws Exception
+     */
+    public boolean moveLink ( String inode, String newFolder ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
-    	Link link = (Link) InodeFactory.getInode(inode, Link.class);
+        Link link = (Link) InodeFactory.getInode( inode, Link.class );
 
         // gets folder parent
-		Folder parent = APILocator.getFolderAPI().find(folder, user, false);
-		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(link, PERMISSION_WRITE, user) ||
-				!permissionAPI.doesUserHavePermission(parent, PERMISSION_WRITE, user))
-			throw new DotRuntimeException("The user doesn't have the required permissions.");
+        Folder parent = null;
+        try {
+            parent = APILocator.getFolderAPI().find( newFolder, user, false );
+        } catch ( Exception ignored ) {
+            //Probably what we have here is a host
+        }
 
-		return LinkFactory.moveLink(link, parent);
+        Host host = null;
+        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+            host = APILocator.getHostAPI().find( newFolder, user, false );
+        }
 
+        // Checking permissions
+        String permissionsError = "The user doesn't have the required permissions.";
+        if ( !permissionAPI.doesUserHavePermission( link, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+            throw new DotRuntimeException( permissionsError );
+        }
+
+        if ( parent != null ) {
+            return LinkFactory.moveLink( link, parent );
+        } else {
+            return LinkFactory.moveLink( link, host );
+        }
     }
 
     public boolean publishAsset (String inode) throws WebAssetException, Exception {
