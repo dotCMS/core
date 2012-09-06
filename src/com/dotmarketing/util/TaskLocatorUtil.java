@@ -66,6 +66,7 @@ public class TaskLocatorUtil {
         ret.add(Task00922FixdotfolderpathMSSQL.class);
         ret.add(Task00925UserIdTypeChange.class);
         ret.add(Task00930AddIdentifierIndex.class);
+        ret.add(Task00935LogConsoleTableData.class);
         return ret;
     }
 
