@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.io.FileUtils;
-
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -34,6 +26,13 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class is a bridge impl that will support the older
@@ -280,36 +279,68 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 
-	public  boolean moveFile (Contentlet fileAssetCont, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException  {
-		boolean isfileAssetContLive = false;
-		Identifier id = APILocator.getIdentifierAPI().find(fileAssetCont);
-		if(id!=null && InodeUtils.isSet(id.getId())){
-			FileAsset fa = fromContentlet(fileAssetCont);
-			if(fa.isLive())
-				isfileAssetContLive = true;
+    public boolean moveFile ( Contentlet fileAssetCont, Host host, User user, boolean respectFrontendRoles ) throws DotStateException, DotDataException, DotSecurityException {
+        return moveFile( fileAssetCont, null, host, user, respectFrontendRoles );
+    }
 
-			Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
-			Folder oldParent = APILocator.getFolderAPI().findFolderByPath(id.getParentPath(), host, user, respectFrontendRoles);
-			if(!fileNameExists(host, parent, fa.getFileName(), id.getId())){
-				fileAssetCont.setInode(null);
-				fileAssetCont.setFolder(parent.getInode());
-				fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, respectFrontendRoles);
-				if(isfileAssetContLive)
-					 APILocator.getVersionableAPI().setLive(fileAssetCont);
+    public  boolean moveFile (Contentlet fileAssetCont, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException  {
+        return moveFile( fileAssetCont, parent, null, user, respectFrontendRoles );
+    }
 
-				LiveCache.removeAssetFromCache(fileAssetCont);
-				LiveCache.addToLiveAssetToCache(fileAssetCont);
-				WorkingCache.removeAssetFromCache(fileAssetCont);
-				WorkingCache.addToWorkingAssetToCache(fileAssetCont);
-				RefreshMenus.deleteMenu(oldParent,parent);
-				CacheLocator.getIdentifierCache().removeFromCacheByVersionable(fileAssetCont);
-				return true;
-			}
-		}
-		return false;
-	}
+    private boolean moveFile ( Contentlet fileAssetCont, Folder parent, Host host, User user, boolean respectFrontendRoles ) throws DotStateException, DotDataException, DotSecurityException {
 
-	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder,
+        boolean isfileAssetContLive = false;
+
+        //Getting the contentlet identifier
+        Identifier id = APILocator.getIdentifierAPI().find( fileAssetCont );
+        if ( id != null && InodeUtils.isSet( id.getId() ) ) {
+
+            FileAsset fa = fromContentlet( fileAssetCont );
+            if ( fa.isLive() )
+                isfileAssetContLive = true;
+
+            if ( host == null ) {
+                host = APILocator.getHostAPI().find( id.getHostId(), user, respectFrontendRoles );
+            }
+
+            //Verify if the file already exist
+            Boolean fileNameExists;
+            if ( parent != null ) {
+                fileNameExists = fileNameExists( host, parent, fa.getFileName(), id.getId() );
+            } else {
+                fileNameExists = fileNameExists( host, APILocator.getFolderAPI().findSystemFolder(), fa.getFileName(), id.getId() );
+            }
+
+            if ( !fileNameExists ) {
+
+                Folder oldParent = APILocator.getFolderAPI().findFolderByPath( id.getParentPath(), host, user, respectFrontendRoles );
+
+                fileAssetCont.setInode( null );
+                fileAssetCont.setHost( host != null ? host.getIdentifier() : (parent != null ? parent.getHostId() : fileAssetCont.getHost()) );
+                fileAssetCont.setFolder( parent != null ? parent.getInode() : null );
+                fileAssetCont = APILocator.getContentletAPI().checkin( fileAssetCont, user, respectFrontendRoles );
+                if ( isfileAssetContLive )
+                    APILocator.getVersionableAPI().setLive( fileAssetCont );
+
+                LiveCache.removeAssetFromCache( fileAssetCont );
+                LiveCache.addToLiveAssetToCache( fileAssetCont );
+                WorkingCache.removeAssetFromCache( fileAssetCont );
+                WorkingCache.addToWorkingAssetToCache( fileAssetCont );
+                if ( parent != null ) {
+                    RefreshMenus.deleteMenu( oldParent, parent );
+                } else {
+                    RefreshMenus.deleteMenu( oldParent );
+                }
+                CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public List<FileAsset> findFileAssetsByFolder(Folder parentFolder,
 			String sortBy, boolean live, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 		List<FileAsset> assets = null;

@@ -38,8 +38,10 @@
 
 
 	function showHostPopUp(host, cmsAdminUser, origReferer, e) {
+
 		var referer = encodeURIComponent(origReferer);
 		if($('context_menu_popup_'+objId) == null) {
+
 			var objId = host.identifier;
 			var objInode = host.inode;
 			var read = hasReadPermissions(host.permissions);
@@ -97,6 +99,15 @@
 				}
 			}
 
+            if (write) {
+                strHTML += '<div class="pop_divider" ></div>';
+
+                strHTML += '<a id="' + objId + '-PasteREF" href="javascript: pasteToFolder(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+                strHTML += '<span class="pasteIcon"></span>';
+                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Paste")) %>';
+                strHTML += '</a>';
+            }
+
 			strHTML += '<div class="pop_divider" ></div>';
 			strHTML += '<a class="contextPopupMenu" href="javascript: hidePopUp(\'context_menu_popup_'+objId+'\');">';
 			strHTML += '<span class="closeIcon"></span>';
@@ -106,6 +117,28 @@
 			strHTML += '</div>';
 			if(!document.getElementById('context_menu_popup_'+host.identifier))
 				new Insertion.Bottom ('popups', strHTML);
+
+            if (isInodeSet(markedForCut) || isInodeSet(markedForCopy)) {
+                if ($(objId + '-PasteREF') != null) {
+
+                    var asset;
+                    if (isInodeSet(markedForCut)) {
+                        asset = inodes[markedForCut];
+                    } else {
+                        asset = inodes[markedForCopy];
+                    }
+
+                    if (asset.type == 'folder' || asset.type == 'file_asset') {
+                        Element.show(objId + '-PasteREF');
+                    } else {
+                        Element.hide(objId + '-PasteREF');
+                    }
+                }
+            } else {
+                if ($(objId + '-PasteREF') != null) {
+                    Element.hide(objId + '-PasteREF');
+                }
+            }
 		}
 
 		showPopUp('context_menu_popup_'+objId, e);
