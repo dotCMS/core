@@ -825,7 +825,7 @@ var theme = 'dmundra';
 		   #if($tabCount > 0)
 		    <button dojoType="dijit.form.Button" onclick="showPreviousTab();" >$text.get('org.dotcms.frontend.content.submission.previous')</button>
 		   #end
-		   <button dojoType="dijit.form.Button" onclick="submitContent('$submitTabName');">$text.get('org.dotcms.frontend.content.submission.save')</button>
+		   <button dojoType="dijit.form.Button" id="buttonSubmitButton" onclick="submitContent('$submitTabName');">$text.get('org.dotcms.frontend.content.submission.save')</button>
 	    </div>
 	</form>
 	<div style="clear:both"></div>
