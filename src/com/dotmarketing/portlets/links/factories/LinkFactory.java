@@ -337,114 +337,173 @@ public class LinkFactory {
     		return ((Link) link);	
     	}
     }
-    
-    public static Link copyLink (Link currentLink, Folder parent) throws DotDataException, DotStateException, DotSecurityException {
-    	
-        Link newLink = new Link();
 
-        newLink.copy(currentLink);
-        
-        if (existsLinkWithTitleInFolder(currentLink.getTitle(), parent)) {
-            newLink.setFriendlyName(currentLink.getFriendlyName() + " (COPY) ");
-            newLink.setTitle(currentLink.getTitle() + " (COPY) ");
+    public static Link copyLink ( Link currentLink, Folder parent ) throws DotDataException, DotStateException, DotSecurityException {
+        return copyLink( currentLink, parent, null );
+    }
+
+    public static Link copyLink ( Link currentLink, Host host ) throws DotDataException, DotStateException, DotSecurityException {
+        return copyLink( currentLink, null, host );
+    }
+
+    private static Link copyLink ( Link currentLink, Folder parent, Host host ) throws DotDataException, DotStateException, DotSecurityException {
+
+        Link newLink = new Link();
+        newLink.copy( currentLink );
+
+        //First lets verify if already exist
+        Boolean exist;
+        if ( parent != null ) {
+            exist = existsLinkWithTitleInFolder( currentLink.getTitle(), parent );
         } else {
-            newLink.setFriendlyName(currentLink.getFriendlyName());
-            newLink.setTitle(currentLink.getTitle());
+            exist = existsLinkWithTitleInFolder( currentLink.getTitle(), host );
         }
-        newLink.setProtocal(currentLink.getProtocal());
-        newLink.setLinkCode(currentLink.getLinkCode());
-        newLink.setLinkType(currentLink.getLinkType());
-        
+
+        if ( exist ) {
+            newLink.setFriendlyName( currentLink.getFriendlyName() + " (COPY) " );
+            newLink.setTitle( currentLink.getTitle() + " (COPY) " );
+        } else {
+            newLink.setFriendlyName( currentLink.getFriendlyName() );
+            newLink.setTitle( currentLink.getTitle() );
+        }
+        newLink.setProtocal( currentLink.getProtocal() );
+        newLink.setLinkCode( currentLink.getLinkCode() );
+        newLink.setLinkType( currentLink.getLinkType() );
+
         //persists the webasset
-        HibernateUtil.saveOrUpdate(newLink);
+        HibernateUtil.saveOrUpdate( newLink );
 
         //adding to the parent folder
         //parent.addChild(newLink);
 
         //creates new identifier for this webasset and persists it
-        Identifier newIdent = com.dotmarketing.business.APILocator.getIdentifierAPI().createNew(newLink, parent);
-        newLink.setIdentifier(newIdent.getId());
+        Identifier newIdent;
+        if ( parent != null ) {
+            newIdent = APILocator.getIdentifierAPI().createNew( newLink, parent );
+        } else {
+            newIdent = APILocator.getIdentifierAPI().createNew( newLink, host );
+        }
 
-        APILocator.getVersionableAPI().setWorking(newLink);
-        if (currentLink.isLive()) 
-			APILocator.getVersionableAPI().setLive(newLink);
-        
-		//Copy permissions
-        permissionAPI.copyPermissions(currentLink, newLink);
-		
-		return newLink;
+        newLink.setIdentifier( newIdent.getId() );
 
+        APILocator.getVersionableAPI().setWorking( newLink );
+        if ( currentLink.isLive() ) {
+            APILocator.getVersionableAPI().setLive( newLink );
+        }
+
+        //Copy permissions
+        permissionAPI.copyPermissions( currentLink, newLink );
+
+        return newLink;
+    }
+
+    public static boolean moveLink ( Link currentLink, Folder parent ) throws DotStateException, DotDataException, DotSecurityException {
+        return moveLink( currentLink, parent, null );
+    }
+
+    public static boolean moveLink ( Link currentLink, Host host ) throws DotStateException, DotDataException, DotSecurityException {
+        return moveLink( currentLink, null, host );
     }
 
     /**
      * Method used to move a link from folder
+     *
      * @param currentLink link to move
-     * @param parent new parent folder
-     * @return true if the move succeced, false if another link with the same name exists on the destination
-     * @throws DotDataException 
-     * @throws DotStateException 
-     * @throws DotSecurityException 
+     * @param parent
+     * @param host
+     * @return true if the move succeeded, false if another link with the same name exists on the destination
+     * @throws DotDataException
+     * @throws DotStateException
+     * @throws DotSecurityException
      */
-	public static boolean moveLink(Link currentLink, Folder parent) throws DotStateException, DotDataException, DotSecurityException {
-		
-		if (existsLinkWithTitleInFolder(currentLink.getTitle(), parent))
-			return false;
-		
-		Identifier identifier = com.dotmarketing.business.APILocator.getIdentifierAPI().find(currentLink);
-		
-		// gets working container
-		WebAsset workingWebAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier, APILocator.getUserAPI().getSystemUser(),false);
-		// gets live container
-		WebAsset liveWebAsset = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
+    private static boolean moveLink ( Link currentLink, Folder parent, Host host ) throws DotStateException, DotDataException, DotSecurityException {
 
-		// gets old parent
-		Folder oldParent = APILocator.getFolderAPI().findParentFolder(workingWebAsset,APILocator.getUserAPI().getSystemUser(),false);
-		/*oldParent.deleteChild(workingWebAsset);
-		if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-			oldParent.deleteChild(liveWebAsset);
-		}
+        //First lets verify if already exist
+        Boolean exist;
+        if ( parent != null ) {
+            exist = existsLinkWithTitleInFolder( currentLink.getTitle(), parent );
+        } else {
+            exist = existsLinkWithTitleInFolder( currentLink.getTitle(), host );
+        }
 
-		// Adding to new parent
-		parent.addChild(workingWebAsset);
-		if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-			parent.addChild(liveWebAsset);
-		}*/
+        if ( exist ) {
+            return false;
+        }
 
-		// gets identifier for this webasset and changes the uri and
-		// persists it
-    	Host newHost;
-		try {
-	    	User systemUser = APILocator.getUserAPI().getSystemUser();
-	    	newHost = hostAPI.findParentHost(parent, systemUser, false);
-		} catch (DotDataException e) {
-			Logger.error(LinkFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(LinkFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-		
-		identifier.setHostId(newHost.getIdentifier());
-		identifier.setURI(workingWebAsset.getURI(parent));
-		//HibernateUtil.saveOrUpdate(identifier);
-		APILocator.getIdentifierAPI().save(identifier);
-		
-		//Refresh the menus
-		RefreshMenus.deleteMenu(oldParent,parent);
-		
-		return true;
-		
-	}
-	
-	private static boolean existsLinkWithTitleInFolder(String title, Folder parent) throws DotStateException, DotDataException, DotSecurityException {
-		List<Link> links = APILocator.getFolderAPI().getLinks(parent, APILocator.getUserAPI().getSystemUser(),false);
-		for(Link link :links){
-			if(title.equalsIgnoreCase(link.getTitle())){
-				return (InodeUtils.isSet(link.getInode()));
-			}
-		}
-		return false;
-	}
+        //Link identifier
+        Identifier identifier = com.dotmarketing.business.APILocator.getIdentifierAPI().find( currentLink );
+
+        // gets working container
+        WebAsset workingWebAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion( identifier, APILocator.getUserAPI().getSystemUser(), false );
+
+        // gets old parent
+        Folder oldParent = APILocator.getFolderAPI().findParentFolder( workingWebAsset, APILocator.getUserAPI().getSystemUser(), false );
+        /*oldParent.deleteChild(workingWebAsset);
+          if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
+              oldParent.deleteChild(liveWebAsset);
+          }
+
+          // Adding to new parent
+          parent.addChild(workingWebAsset);
+          if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
+              parent.addChild(liveWebAsset);
+          }*/
+
+        if ( parent != null ) {
+
+            Host newHost;
+            try {
+                User systemUser = APILocator.getUserAPI().getSystemUser();
+                newHost = hostAPI.findParentHost( parent, systemUser, false );
+            } catch ( DotDataException e ) {
+                Logger.error( LinkFactory.class, e.getMessage(), e );
+                throw new DotRuntimeException( e.getMessage(), e );
+            } catch ( DotSecurityException e ) {
+                Logger.error( LinkFactory.class, e.getMessage(), e );
+                throw new DotRuntimeException( e.getMessage(), e );
+            }
+
+            identifier.setHostId( newHost.getIdentifier() );
+            identifier.setURI( workingWebAsset.getURI( parent ) );
+        } else {
+            identifier.setHostId( host.getIdentifier() );
+            identifier.setURI( '/' + currentLink.getInode() );
+        }
+
+        //HibernateUtil.saveOrUpdate(identifier);
+        APILocator.getIdentifierAPI().save( identifier );
+
+        //Refresh the menus
+        if ( parent != null ) {
+            RefreshMenus.deleteMenu( oldParent, parent );
+        } else {
+            RefreshMenus.deleteMenu( oldParent );
+        }
+
+        return true;
+    }
+
+    private static boolean existsLinkWithTitleInFolder ( String title, Folder parent ) throws DotStateException, DotDataException, DotSecurityException {
+
+        List<Link> links = APILocator.getFolderAPI().getLinks( parent, APILocator.getUserAPI().getSystemUser(), false );
+        for ( Link link : links ) {
+            if ( title.equalsIgnoreCase( link.getTitle() ) ) {
+                return (InodeUtils.isSet( link.getInode() ));
+            }
+        }
+        return false;
+    }
+
+    private static boolean existsLinkWithTitleInFolder ( String title, Host host ) throws DotStateException, DotDataException, DotSecurityException {
+
+        List<Link> links = APILocator.getFolderAPI().getLinks( host, APILocator.getUserAPI().getSystemUser(), false );
+        for ( Link link : links ) {
+            if ( title.equalsIgnoreCase( link.getTitle() ) ) {
+                return (InodeUtils.isSet( link.getInode() ));
+            }
+        }
+        return false;
+    }
 	
     public static boolean renameLink (Link link, String newName, User user) throws Exception {
 
