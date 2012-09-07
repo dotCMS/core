@@ -347,14 +347,25 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    List<String> depsIdentifiers=mappingAPI.dependenciesLeftToReindex(content);
         for(String ident : depsIdentifiers) {
             // get working and live version for all languages based on the identifier
-            String sql = "select distinct inode from contentlet join contentlet_version_info " +
-                    " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
+//            String sql = "select distinct inode from contentlet join contentlet_version_info " +
+//                    " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
+            String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
+    	    
             DotConnect dc = new DotConnect();
             dc.setSQL(sql);
             dc.addParam(ident);
             List<Map<String,String>> ret = dc.loadResults();
+            List<String> inodes = new ArrayList<String>(); 
             for(Map<String,String> m : ret) {
-                String inode=m.get("inode");
+            	String workingInode = m.get("working_inode");
+            	String liveInode = m.get("live_inode");
+            	inodes.add(workingInode);
+            	if(UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)){
+            		inodes.add(liveInode);
+            	}
+            }
+            
+            for(String inode : inodes) {
                 Contentlet con=APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false);
                 contentToIndex.add(con);
             }
