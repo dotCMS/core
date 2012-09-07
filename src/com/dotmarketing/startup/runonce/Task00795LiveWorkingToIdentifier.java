@@ -65,7 +65,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         "   deleted bool not null,\n"+
         "   lang int8 not null,\n"+
         "   working_inode char(36) not null,\n"+
-        "   live_inode char(36),\n"+
+        "   live_inode varchar(36),\n"+
         "   primary key (identifier, lang)\n"+
         ")");
         dc.executeStatement(
