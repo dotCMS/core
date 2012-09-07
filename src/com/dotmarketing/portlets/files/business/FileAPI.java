@@ -218,11 +218,13 @@ public interface FileAPI {
 	
     public  File copyFile(File file, Folder parent, User user, boolean respectFrontEndRoles) throws IOException, DotSecurityException,DotDataException ;
 
+    public  File copyFile(File file, Host host, User user, boolean respectFrontEndRoles) throws IOException, DotSecurityException,DotDataException ;
 
 	public  boolean renameFile (File file, String newName, User user, boolean respectFrontEndRoles)  throws DotStateException, DotDataException, DotSecurityException ;
 	
     public  boolean moveFile(File file, Folder parent, User user, boolean respectFrontEndRoles) throws DotStateException, DotDataException, DotSecurityException ;
 
+    public  boolean moveFile(File file, Host host, User user, boolean respectFrontEndRoles) throws DotStateException, DotDataException, DotSecurityException ;
 
     void publishFile(File file, User user, boolean respectFrontendRoles) throws WebAssetException, DotSecurityException, DotDataException ;
     
