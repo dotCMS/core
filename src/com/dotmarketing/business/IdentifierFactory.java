@@ -111,6 +111,14 @@ public abstract class IdentifierFactory {
 
 	abstract protected Identifier createNewIdentifier(Versionable webasset, Folder folder) throws DotDataException ;
 
+    /**
+     * Creates a new Identifier for a given versionable asset under a given Host
+     *
+     * @param versionable
+     * @param host
+     * @return
+     * @throws DotDataException
+     */
 	abstract protected Identifier createNewIdentifier(Versionable versionable, Host host) throws DotDataException;
 
 	abstract protected List<Identifier> loadAllIdentifiers() throws DotHibernateException;

@@ -405,56 +405,55 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	}
 
-	@SuppressWarnings("unchecked")
-	private void copy(Folder folder, Host destination, Hashtable copiedObjects) throws DotDataException, DotSecurityException, DotStateException, IOException {
+    @SuppressWarnings ("unchecked")
+    private void copy ( Folder folder, Host destination, Hashtable copiedObjects ) throws DotDataException, DotSecurityException, DotStateException, IOException {
 
-		boolean rename = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, folder.getName());
+        boolean rename = APILocator.getHostAPI().doesHostContainsFolder( destination, folder.getName() );
 
-		Folder newFolder = new Folder();
-		newFolder.copy(folder);
-		newFolder.setName(folder.getName());
-		while (rename) {
-			newFolder.setName(newFolder.getName() + "_copy");
-			rename = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, newFolder.getName());
-		}
+        Folder newFolder = new Folder();
+        newFolder.copy( folder );
+        newFolder.setName( folder.getName() );
+        while ( rename ) {
+            newFolder.setName( newFolder.getName() + "_copy" );
+            rename = APILocator.getHostAPI().doesHostContainsFolder( destination, newFolder.getName() );
+        }
 
-		//newFolder.setPath("/" + newFolder.getName() + "/");
-		newFolder.setHostId(destination.getIdentifier());
-		Identifier parentId=APILocator.getIdentifierAPI().find(destination.getIdentifier());
-		Identifier newFolderId = createIdentifierForFolder(newFolder, parentId.getPath());
-		newFolder.setIdentifier(newFolderId.getId());
+        newFolder.setHostId( destination.getIdentifier() );
 
-		save(newFolder);
+        Identifier newFolderId = createIdentifierForFolder( newFolder, null );
+        newFolder.setIdentifier( newFolderId.getId() );
 
-		saveCopiedFolder(folder, newFolder, copiedObjects);
-	}
+        save( newFolder );
 
-	@SuppressWarnings("unchecked")
-	private void copy(Folder folder, Folder destination, Hashtable copiedObjects) throws DotDataException, DotStateException, DotSecurityException, IOException {
+        saveCopiedFolder( folder, newFolder, copiedObjects );
+    }
 
-		boolean rename = folderContains(folder.getName(), (Folder) destination);
+    @SuppressWarnings ("unchecked")
+    private void copy ( Folder folder, Folder destination, Hashtable copiedObjects ) throws DotDataException, DotStateException, DotSecurityException, IOException {
 
-		Folder newFolder = new Folder();
-		newFolder.copy(folder);
-		newFolder.setName(folder.getName());
-		while (rename) {
-			newFolder.setName(newFolder.getName() + "_copy");
-			rename = folderContains(newFolder.getName(), (Folder) destination);
-		}
+        boolean rename = folderContains( folder.getName(), destination );
 
-		//newFolder.setPath(((Folder) destination).getPath() + newFolder.getName() + "/");
-		newFolder.setHostId(((Folder) destination).getHostId());
-		Identifier parentId=APILocator.getIdentifierAPI().find(destination.getIdentifier());
-		Identifier newFolderId = createIdentifierForFolder(newFolder, parentId.getPath());
-		newFolder.setIdentifier(newFolderId.getId());
+        Folder newFolder = new Folder();
+        newFolder.copy( folder );
+        newFolder.setName( folder.getName() );
+        while ( rename ) {
+            newFolder.setName( newFolder.getName() + "_copy" );
+            rename = folderContains( newFolder.getName(), (Folder) destination );
+        }
 
-		save(newFolder);
+        //newFolder.setPath(((Folder) destination).getPath() + newFolder.getName() + "/");
+        newFolder.setHostId( destination.getHostId() );
+        Identifier parentId = APILocator.getIdentifierAPI().find( destination.getIdentifier() );
+        Identifier newFolderId = createIdentifierForFolder( newFolder, parentId.getPath() );
+        newFolder.setIdentifier( newFolderId.getId() );
 
-		// TreeFactory.saveTree(new Tree(destination.getInode(),
-		// newFolder.getInode()));
+        save( newFolder );
 
-		saveCopiedFolder(folder, newFolder, copiedObjects);
-	}
+        // TreeFactory.saveTree(new Tree(destination.getInode(),
+        // newFolder.getInode()));
+
+        saveCopiedFolder( folder, newFolder, copiedObjects );
+    }
 
 	private void saveCopiedFolder(Folder source, Folder newFolder, Hashtable copiedObjects) throws DotDataException, DotStateException, DotSecurityException, IOException {
 		User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -1394,84 +1393,101 @@ public class FolderFactoryImpl extends FolderFactory {
 		return getChildrenClass(parent, clazz, null, null, 0, 1000);
 	}
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond) throws DotStateException, DotDataException {
-		return getChildrenClass(parent, clazz, cond, null, 0, 1000);
-	}
+    protected List<Treeable> getChildrenClass ( Host host, Class clazz ) throws DotStateException, DotDataException {
+        Identifier identifier = APILocator.getIdentifierAPI().find( host.getIdentifier() );
+        return getChildrenClass( identifier, clazz, null, null, 0, 1000 );
+    }
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition condition, String orderby) throws DotStateException,
-			DotDataException {
-		return getChildrenClass(parent, clazz, condition, orderby, 0, 1000);
-	}
+    protected List<Treeable> getChildrenClass ( Host host, Class clazz, ChildrenCondition cond ) throws DotStateException, DotDataException {
+        Identifier identifier = APILocator.getIdentifierAPI().find( host.getIdentifier() );
+        return getChildrenClass( identifier, clazz, cond, null, 0, 1000 );
+    }
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond, String orderBy, int offset, int limit)
-			throws DotStateException, DotDataException {
+    protected List<Treeable> getChildrenClass ( Folder parent, Class clazz, ChildrenCondition cond ) throws DotStateException, DotDataException {
+        return getChildrenClass( parent, clazz, cond, null, 0, 1000 );
+    }
 
-		Identifier id = APILocator.getIdentifierAPI().find(parent.getIdentifier());
+    protected List<Treeable> getChildrenClass ( Folder parent, Class clazz, ChildrenCondition condition, String orderby ) throws DotStateException,
+            DotDataException {
+        return getChildrenClass( parent, clazz, condition, orderby, 0, 1000 );
+    }
 
-		String tableName = null;
+    protected List<Treeable> getChildrenClass ( Folder parent, Class clazz, ChildrenCondition cond, String orderBy, int offset, int limit ) throws DotStateException, DotDataException {
+        Identifier identifier = APILocator.getIdentifierAPI().find( parent.getIdentifier() );
+        return getChildrenClass( identifier, clazz, cond, orderBy, offset, limit );
+    }
 
-		try {
-			Object obj;
-			obj = clazz.newInstance();
+    protected List<Treeable> getChildrenClass ( Identifier identifier, Class clazz, ChildrenCondition cond, String orderBy, int offset, int limit ) throws DotStateException, DotDataException {
 
-			if (obj instanceof Treeable) {
-				tableName = ((Treeable) obj).getType();
-			} else {
-				throw new DotStateException("Unable to getType for child asset");
-			}
-		} catch (InstantiationException e) {
-			throw new DotStateException("Unable to getType for child asset");
-		} catch (IllegalAccessException e) {
-			throw new DotStateException("Unable to getType for child asset");
-		}
+        String tableName;
 
-		String versionTable=UtilMethods.getVersionInfoTableName(tableName);
+        try {
+            Object obj;
+            obj = clazz.newInstance();
 
-		HibernateUtil dh = new HibernateUtil(clazz);
-		String sql = "SELECT {" + tableName + ".*} " + " from " + tableName + " " + tableName + ",  inode " + tableName
-				+ "_1_, identifier " + tableName + "_2_ ";
+            if ( obj instanceof Treeable ) {
+                tableName = ((Treeable) obj).getType();
+            } else {
+                throw new DotStateException( "Unable to getType for child asset" );
+            }
+        } catch ( InstantiationException e ) {
+            throw new DotStateException( "Unable to getType for child asset" );
+        } catch ( IllegalAccessException e ) {
+            throw new DotStateException( "Unable to getType for child asset" );
+        }
 
-		if(cond!=null && versionTable!=null && (cond.deleted!=null || cond.working!=null || cond.live!=null))
-		    sql+=", "+versionTable;
+        String versionTable = UtilMethods.getVersionInfoTableName( tableName );
 
-		sql+=" where " + tableName + "_2_.parent_path = ? " + " and " + tableName
-				+ ".identifier = " + tableName + "_2_.id " + " and " + tableName + "_1_.inode = " + tableName + ".inode " + " and ";
+        HibernateUtil dh = new HibernateUtil( clazz );
+        String sql = "SELECT {" + tableName + ".*} " + " from " + tableName + " " + tableName + ",  inode " + tableName
+                + "_1_, identifier " + tableName + "_2_ ";
 
-		if(cond!=null && cond.deleted!=null)
-		    if(versionTable!=null)
-		        sql+=versionTable+".deleted="+((cond.deleted)?DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse())+" and ";
-		    else
-		        sql+=" deleted="+((cond.deleted)?DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse())+" and ";
+        if ( cond != null && versionTable != null && (cond.deleted != null || cond.working != null || cond.live != null) )
+            sql += ", " + versionTable;
 
-		if(cond!=null && cond.working!=null)
-		    if(versionTable!=null)
-		        sql+=versionTable+".working_inode"+(cond.working ? "=":"<>")+tableName+"_1_.inode and ";
-		    else
-		        sql+=" working="+((cond.working)?DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse())+" and ";
+        sql += " where " + tableName + "_2_.parent_path = ? " + " and " + tableName
+                + ".identifier = " + tableName + "_2_.id " + " and " + tableName + "_1_.inode = " + tableName + ".inode " + " and ";
 
-		if(cond!=null && cond.live!=null)
-		    if(versionTable!=null)
-                sql+=versionTable+".live_inode"+(cond.live ? "=":"<>")+tableName+"_1_.inode and ";
+        if ( cond != null && cond.deleted != null )
+            if ( versionTable != null )
+                sql += versionTable + ".deleted=" + ((cond.deleted) ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse()) + " and ";
             else
-                sql+=" live="+((cond.live)?DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse())+" and ";
+                sql += " deleted=" + ((cond.deleted) ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse()) + " and ";
 
-		sql+= tableName + "_1_.type = '" + tableName + "' " + " and " + tableName + "_2_.host_inode = ? ";
+        if ( cond != null && cond.working != null )
+            if ( versionTable != null )
+                sql += versionTable + ".working_inode" + (cond.working ? "=" : "<>") + tableName + "_1_.inode and ";
+            else
+                sql += " working=" + ((cond.working) ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse()) + " and ";
 
-		if(cond!=null && cond.showOnMenu!=null)
-		    sql+=" and "+tableName+".show_on_menu="+(cond.showOnMenu ? DbConnectionFactory.getDBTrue():DbConnectionFactory.getDBFalse());
+        if ( cond != null && cond.live != null )
+            if ( versionTable != null )
+                sql += versionTable + ".live_inode" + (cond.live ? "=" : "<>") + tableName + "_1_.inode and ";
+            else
+                sql += " live=" + ((cond.live) ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse()) + " and ";
 
-		if (orderBy != null) {
-			sql = sql + " order by " + orderBy;
-		}
-		dh.setSQLQuery(sql);
-		dh.setFirstResult(offset);
-		dh.setMaxResults(limit);
-		dh.setParam(id.getURI()+'/');
-		dh.setParam(id.getHostId());
-		return dh.list();
+        sql += tableName + "_1_.type = '" + tableName + "' " + " and " + tableName + "_2_.host_inode = ? ";
 
-	}
+        if ( cond != null && cond.showOnMenu != null )
+            sql += " and " + tableName + ".show_on_menu=" + (cond.showOnMenu ? DbConnectionFactory.getDBTrue() : DbConnectionFactory.getDBFalse());
 
+        if ( orderBy != null ) {
+            sql = sql + " order by " + orderBy;
+        }
+
+        dh.setSQLQuery( sql );
+        dh.setFirstResult( offset );
+        dh.setMaxResults( limit );
+        if ( identifier.getHostId().equals( Host.SYSTEM_HOST ) ) {
+            dh.setParam( "/" );
+            dh.setParam( identifier.getId() );
+        } else {
+            dh.setParam( identifier.getURI() + "/" );
+            dh.setParam( identifier.getHostId() );
+        }
+
+        return dh.list();
+    }
 
 	private class InternalCounter
 	{

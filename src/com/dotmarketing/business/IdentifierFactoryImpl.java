@@ -271,48 +271,64 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return identifier;
 	}
 
-	protected Identifier createNewIdentifier(Versionable versionable, Host host) throws DotDataException {
-		String uuid=null;
+    /**
+     * Creates a new Identifier for a given versionable asset under a given Host
+     *
+     * @param versionable
+     * @param host
+     * @return
+     * @throws DotDataException
+     */
+    protected Identifier createNewIdentifier ( Versionable versionable, Host host ) throws DotDataException {
 
-		Identifier identifier = new Identifier();
-		if(versionable instanceof Folder) {
-			identifier.setAssetType("folder");
-			identifier.setAssetName(((Folder) versionable).getName());
-			identifier.setParentPath("/");
-		}
-		else {
-			String uri = versionable.getVersionType() + "." + versionable.getInode();
-			uuid=UUIDGenerator.generateUuid();
-			identifier.setId(uuid);
-			if(versionable instanceof Contentlet &&
-		        ((Contentlet)versionable).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-			    // special case when it is a file asset as contentlet
-			    Contentlet cont=(Contentlet)versionable;
-				try {
-					uri = cont.getBinary(FileAssetAPI.BINARY_FIELD)!=null?cont.getBinary(FileAssetAPI.BINARY_FIELD).getName():"";
-				} catch (IOException e) {
-					throw new DotDataException(e.getMessage(), e);
-				}
-				identifier.setAssetType("contentlet");
-				identifier.setParentPath("/");
-				identifier.setAssetName(uri);
-			}else{
-				identifier.setURI(uri);
-			}
-			identifier.setId(null);
-		}
+        String uuid = null;
+        Identifier identifier = new Identifier();
 
-		identifier.setHostId(host != null ? host.getIdentifier() : null);
+        if ( versionable instanceof Folder ) {
+            identifier.setAssetType( "folder" );
+            identifier.setAssetName( ((Folder) versionable).getName() );
+            identifier.setParentPath( "/" );
+        } else {
 
-		if(uuid!=null)
-			HibernateUtil.saveWithPrimaryKey(identifier, uuid);
-		else
-			saveIdentifier(identifier);
+            String uri = versionable.getVersionType() + "." + versionable.getInode();
+            uuid = UUIDGenerator.generateUuid();
+            identifier.setId( uuid );
 
-		versionable.setVersionId(identifier.getId());
+            if ( versionable instanceof Contentlet && ((Contentlet) versionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
 
-		return identifier;
-	}
+                // special case when it is a file asset as contentlet
+                Contentlet cont = (Contentlet) versionable;
+                try {
+                    uri = cont.getBinary( FileAssetAPI.BINARY_FIELD ) != null ? cont.getBinary( FileAssetAPI.BINARY_FIELD ).getName() : "";
+                } catch ( IOException e ) {
+                    throw new DotDataException( e.getMessage(), e );
+                }
+                identifier.setAssetType( "contentlet" );
+                identifier.setParentPath( "/" );
+                identifier.setAssetName( uri );
+            } else if ( versionable instanceof HTMLPage ) {
+                identifier.setURI( '/' + ((HTMLPage) versionable).getPageUrl() );
+            } else if ( versionable instanceof Link ) {
+                identifier.setURI( '/' + versionable.getInode() );
+            } else {
+                identifier.setURI( uri );
+            }
+
+            identifier.setId( null );
+        }
+
+        identifier.setHostId( host != null ? host.getIdentifier() : null );
+
+        if ( uuid != null ) {
+            HibernateUtil.saveWithPrimaryKey( identifier, uuid );
+        } else {
+            saveIdentifier( identifier );
+        }
+
+        versionable.setVersionId( identifier.getId() );
+
+        return identifier;
+    }
 
 	@SuppressWarnings("unchecked")
 	protected List<Identifier> loadAllIdentifiers() throws DotHibernateException {

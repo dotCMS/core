@@ -524,72 +524,98 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 		return null;
 	}
 
-
-
+    /**
+     * Copy a file into the given host
+     *
+     * @param file File to be copied
+     * @param host Destination host
+     * @return true if copy success, false otherwise
+     */
+    public File copyFile ( File file, Host host ) throws DotDataException, IOException {
+        return copyFile(file, null, host);
+    }
 
     /**
      * Copy a file into the given directory
      *
-     * @param file
-     *            File to be copied
-     * @param parent
-     *            Destination Folder
+     * @param file   File to be copied
+     * @param parent Destination Folder
+     * @return true if copy success, false otherwise
+     */
+    public File copyFile ( File file, Folder parent ) throws DotDataException, IOException {
+        return copyFile(file, parent, null);
+    }
+
+    /**
+     * Copy a file into the given directory OR host
+     *
+     * @param file   File to be copied
+     * @param parent Destination Folder
+     * @param host Destination host
      * @return true if copy success, false otherwise
      * @throws IOException
      * @throws DotHibernateException
      */
-    public  File copyFile(File file, Folder parent) throws DotDataException, IOException {
+    private File copyFile ( File file, Folder parent, Host host ) throws DotDataException, IOException {
 
         File newFile = new File();
 
-        newFile.copy(file);
+        newFile.copy( file );
 
         // gets filename before extension
-        String fileName = com.dotmarketing.util.UtilMethods.getFileName(file.getFileName());
+        String fileName = com.dotmarketing.util.UtilMethods.getFileName( file.getFileName() );
         // gets file extension
-        String fileExtension = com.dotmarketing.util.UtilMethods.getFileExtension(file.getFileName());
+        String fileExtension = com.dotmarketing.util.UtilMethods.getFileExtension( file.getFileName() );
 
-        // Setting file name
-        if (fileNameExists(parent, file.getFileName())) {
-            // adds "copy" word to the filename
-            newFile.setFileName(fileName + "_copy." + fileExtension);
-            newFile.setFriendlyName(file.getFriendlyName() + " (COPY) ");
+        Boolean fileNameExists;
+        if (parent != null) {
+            fileNameExists = fileNameExists( parent, file.getFileName() );
         } else {
-            newFile.setFileName(fileName + "." + fileExtension);
+            fileNameExists = fileNameExists( APILocator.getFolderAPI().findSystemFolder(), file.getFileName() );
         }
 
-    	Identifier identifier = APILocator.getIdentifierAPI().createNew(newFile, parent);
-		newFile.setIdentifier(identifier.getInode());
+        // Setting file name
+        if ( fileNameExists ) {
+            // adds "copy" word to the filename
+            newFile.setFileName( fileName + "_copy." + fileExtension );
+            newFile.setFriendlyName( file.getFriendlyName() + " (COPY) " );
+        } else {
+            newFile.setFileName( fileName + "." + fileExtension );
+        }
+
+        Identifier identifier;
+        if ( parent != null ) {
+            identifier = APILocator.getIdentifierAPI().createNew( newFile, parent );
+        } else {
+            identifier = APILocator.getIdentifierAPI().createNew( newFile, host );
+        }
+        newFile.setIdentifier( identifier.getInode() );
 
         // persists the webasset
-        HibernateUtil.saveOrUpdate(newFile);
+        HibernateUtil.saveOrUpdate( newFile );
 
-        saveFileData(file, newFile,null);
+        saveFileData( file, newFile, null );
 
-        Logger.debug(FileFactory.class, "identifier=" + identifier.getURI());
+        Logger.debug( FileFactory.class, "identifier=" + identifier.getURI() );
 
-        WorkingCache.removeAssetFromCache(newFile);
-        WorkingCache.addToWorkingAssetToCache(newFile);
+        WorkingCache.removeAssetFromCache( newFile );
+        WorkingCache.addToWorkingAssetToCache( newFile );
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
         try {
-			APILocator.getVersionableAPI().setWorking(newFile);
-			if (file.isLive()) 
-				APILocator.getVersionableAPI().setLive(newFile);
-		} catch (DotStateException e) {
-			Logger.error(this, e.getMessage());
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage());
-		}
+            APILocator.getVersionableAPI().setWorking( newFile );
+            if ( file.isLive() )
+                APILocator.getVersionableAPI().setLive( newFile );
+        } catch ( DotStateException e ) {
+            Logger.error( this, e.getMessage() );
+        } catch ( DotSecurityException e ) {
+            Logger.error( this, e.getMessage() );
+        }
         // Copy permissions
-        permissionAPI.copyPermissions(file, newFile);
-
+        permissionAPI.copyPermissions( file, newFile );
 
         return newFile;
-
-
     }
-
 
     public  java.io.File getAssetIOFile (File file) throws IOException {
 
@@ -702,95 +728,124 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 
     }
 
-	   /**
-     * Move a file into the given directory
+    /**
+     * Moves a file into the given host
      *
-     * @param file
-     *            File to be moved
-     * @param parent
-     *            Destination Folder
+     * @param file File to be copied
+     * @param host Destination host
+     * @return true if copy success, false otherwise
+     */
+    public Boolean moveFile ( File file, Host host ) throws DotStateException, DotDataException, DotSecurityException {
+        return moveFile( file, null, host );
+    }
+
+    /**
+     * Moves a file into the given directory
+     *
+     * @param file   File to be copied
+     * @param parent Destination Folder
+     * @return true if copy success, false otherwise
+     */
+    public Boolean moveFile ( File file, Folder parent ) throws DotStateException, DotDataException, DotSecurityException {
+        return moveFile( file, parent, null );
+    }
+
+    /**
+     * Moves a file into the given directory OR host
+     *
+     * @param file   File to be moved
+     * @param parent Destination Folder
+     * @param host   Destination Host
      * @return true if move success, false otherwise
      * @throws DotDataException
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    public  boolean moveFile(File file, Folder parent) throws DotStateException, DotDataException, DotSecurityException {
+    private Boolean moveFile ( File file, Folder parent, Host host ) throws DotStateException, DotDataException, DotSecurityException {
 
-		Identifier identifier = com.dotmarketing.business.APILocator.getIdentifierAPI().find(file);
+        HostAPI hostAPI = APILocator.getHostAPI();
 
-		// gets working container
-		File workingWebAsset = (File) APILocator.getVersionableAPI().findWorkingVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
-		// gets live container
-		File liveWebAsset = (File) APILocator.getVersionableAPI().findLiveVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
+        //Find file identifier
+        Identifier identifier = com.dotmarketing.business.APILocator.getIdentifierAPI().find( file );
 
-		// checks if another identifer with the same name exists in the same
-		// folder
-		if (fileNameExists(parent, file.getFileName())) {
-			return false;
-		}
+        // gets working container
+        File workingWebAsset = (File) APILocator.getVersionableAPI().findWorkingVersion( identifier, APILocator.getUserAPI().getSystemUser(), false );
+        // gets live container
+        File liveWebAsset = (File) APILocator.getVersionableAPI().findLiveVersion( identifier, APILocator.getUserAPI().getSystemUser(), false );
 
-		// assets cache
-		if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-			LiveCache.removeAssetFromCache(liveWebAsset);
-		}
-		WorkingCache.removeAssetFromCache(workingWebAsset);
+        // checks if another identifer with the same name exists in the same
+        Boolean fileNameExists;
+        if ( parent != null ) {
+            fileNameExists = fileNameExists( parent, file.getFileName() );
+        } else {
+            fileNameExists = fileNameExists( APILocator.getFolderAPI().findSystemFolder(), file.getFileName() );
+        }
+        if ( fileNameExists ) {
+            return false;
+        }
 
-		// gets old parent
-		Folder oldParent = APILocator.getFolderAPI().findParentFolder(workingWebAsset, APILocator.getUserAPI().getSystemUser(), false);
+        // assets cache
+        if ( (liveWebAsset != null) && (InodeUtils.isSet( liveWebAsset.getInode() )) ) {
+            LiveCache.removeAssetFromCache( liveWebAsset );
+        }
+        WorkingCache.removeAssetFromCache( workingWebAsset );
 
-		/*oldParent.deleteChild(workingWebAsset);
-		if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-			oldParent.deleteChild(liveWebAsset);
-		}
-		//add new Parent
-		parent.addChild(workingWebAsset);
-		if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-			parent.addChild(liveWebAsset);
-		}*/
+        // gets old parent
+        Folder oldParent = APILocator.getFolderAPI().findParentFolder( workingWebAsset, APILocator.getUserAPI().getSystemUser(), false );
 
-		// gets identifier for this webasset and changes the uri and
-		// persists it
-		HostAPI hostAPI = APILocator.getHostAPI();
-		User systemUser;
-		Host newHost;
-		try {
-			systemUser = APILocator.getUserAPI().getSystemUser();
-			newHost = hostAPI.findParentHost(parent, systemUser, false);
-		} catch (DotDataException e) {
-			Logger.error(FileFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
+        /*oldParent.deleteChild(workingWebAsset);
+          if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
+              oldParent.deleteChild(liveWebAsset);
+          }
+          //add new Parent
+          parent.addChild(workingWebAsset);
+          if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
+              parent.addChild(liveWebAsset);
+          }*/
 
-		} catch (DotSecurityException e) {
-			Logger.error(FileFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-		identifier.setHostId(newHost.getIdentifier());
-		identifier.setURI(workingWebAsset.getURI(parent));
-		//HibernateUtil.saveOrUpdate(identifier);
-		APILocator.getIdentifierAPI().save(identifier);
+        // gets identifier for this webasset and changes the uri and persists it
+        User systemUser;
+        try {
+            systemUser = APILocator.getUserAPI().getSystemUser();
+            if ( host == null ) {
+                host = hostAPI.findParentHost( parent, systemUser, false );
+            }
+        } catch ( DotDataException e ) {
+            Logger.error( FileFactory.class, e.getMessage(), e );
+            throw new DotRuntimeException( e.getMessage(), e );
 
-		if(UtilMethods.isSet(liveWebAsset))
-			CacheLocator.getIdentifierCache().removeFromCacheByVersionable(liveWebAsset);
+        } catch ( DotSecurityException e ) {
+            Logger.error( FileFactory.class, e.getMessage(), e );
+            throw new DotRuntimeException( e.getMessage(), e );
+        }
+        identifier.setHostId( host.getIdentifier() );
+        identifier.setURI( parent != null ? workingWebAsset.getURI( parent ) : workingWebAsset.getURI() );
+        //HibernateUtil.saveOrUpdate(identifier);
+        APILocator.getIdentifierAPI().save( identifier );
+
+        if ( UtilMethods.isSet( liveWebAsset ) )
+            CacheLocator.getIdentifierCache().removeFromCacheByVersionable( liveWebAsset );
 //		IdentifierCache.addAssetToIdentifierCache(liveWebAsset);
 
-		// Add to Preview and Live Cache
-		if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-			LiveCache.removeAssetFromCache(liveWebAsset);
-			LiveCache.addToLiveAssetToCache(liveWebAsset);
-		}
-		WorkingCache.removeAssetFromCache(workingWebAsset);
-		WorkingCache.addToWorkingAssetToCache(workingWebAsset);
+        // Add to Preview and Live Cache
+        if ( (liveWebAsset != null) && (InodeUtils.isSet( liveWebAsset.getInode() )) ) {
+            LiveCache.removeAssetFromCache( liveWebAsset );
+            LiveCache.addToLiveAssetToCache( liveWebAsset );
+        }
+        WorkingCache.removeAssetFromCache( workingWebAsset );
+        WorkingCache.addToWorkingAssetToCache( workingWebAsset );
 
-        if (file.isShowOnMenu()) {
-        	//existing folder with different show on menu ... need to regenerate menu
-            //RefreshMenus.deleteMenus();
-        	RefreshMenus.deleteMenu(oldParent,parent);
+        if ( file.isShowOnMenu() ) {
+            //existing folder with different show on menu ... need to regenerate menu
+            if ( parent != null ) {
+                RefreshMenus.deleteMenu( oldParent, parent );
+            } else {
+                RefreshMenus.deleteMenu( oldParent );
+            }
         }
 
         return true;
-
     }
-
 
 	public  void publishFile(File file) throws WebAssetException, DotSecurityException, DotDataException {
 
