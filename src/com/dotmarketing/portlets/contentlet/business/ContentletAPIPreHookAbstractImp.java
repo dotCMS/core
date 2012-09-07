@@ -556,4 +556,8 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 		return true;
 	}
 
+	public boolean deleteOldContent(Date deleteFrom) {
+		return true;
+	}
+	
 }
