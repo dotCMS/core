@@ -27,6 +27,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class ReindexThread extends Thread {
 
@@ -320,22 +321,27 @@ public class ReindexThread extends Thread {
 	private void writeDocumentToIndex(BulkRequestBuilder bulk, IndexJournal<String> idx) throws DotDataException, DotSecurityException {
 	    Logger.debug(this, "Indexing document "+idx.getIdentToIndex());
 	    System.setProperty("IN_FULL_REINDEX", "true");
-	    String sql = "select distinct inode from contentlet join contentlet_version_info " +
-                " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
+//	    String sql = "select distinct inode from contentlet join contentlet_version_info " +
+//                " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
+	    
+	    String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
 	    
         DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(idx.getIdentToIndex());
         List<Map<String,String>> ret = dc.loadResults();
+        List<String> inodes = new ArrayList<String>(); 
         for(Map<String,String> m : ret) {
-        	
-        	try {
-				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				Logger.error(ReindexThread.class,e.getMessage(),e);
-			}			
-			
-            String inode=m.get("inode");
+        	String workingInode = m.get("working_inode");
+        	String liveInode = m.get("live_inode");
+        	inodes.add(workingInode);
+        	if(UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)){
+        		inodes.add(liveInode);
+        	}
+        }
+        
+        for(String inode : inodes) {
+        				
             Contentlet con = FactoryLocator.getContentletFactory().convertFatContentletToContentlet(
                     (com.dotmarketing.portlets.contentlet.business.Contentlet)
                         HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode));
