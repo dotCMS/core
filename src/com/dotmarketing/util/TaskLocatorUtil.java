@@ -67,6 +67,7 @@ public class TaskLocatorUtil {
         ret.add(Task00925UserIdTypeChange.class);
         ret.add(Task00930AddIdentifierIndex.class);
         ret.add(Task00935LogConsoleTableData.class);
+        ret.add(Task00940AlterTemplateTable.class);
         return ret;
     }
 
