@@ -26,10 +26,16 @@
 	if(UtilMethods.isSet(inode)){
 		hostContentlet = conAPI.find(inode,user,false);
 		hostContentletForm = (ContentletForm) request.getAttribute("ContentletForm");
-	    Structure structure = hostContentletForm.getStructure();
-		if(structure.getVelocityVarName().equals("Host")) {	
-			_crumbHost = hostContentlet.getIdentifier();
-			request.setAttribute("_crumbHost",_crumbHost);
+		try{
+		    Structure structure = hostContentletForm.getStructure();
+			if(structure.getVelocityVarName().equals("Host")) {	
+				_crumbHost = hostContentlet.getIdentifier();
+				request.setAttribute("_crumbHost",_crumbHost);
+				
+			}
+		}
+		catch(Exception e){
+			// no host here in the request
 			
 		}
 	}
