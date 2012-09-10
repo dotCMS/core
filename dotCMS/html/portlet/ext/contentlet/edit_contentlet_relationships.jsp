@@ -150,8 +150,7 @@
 			<div id="<%= relationJsName %>relateMenu"></div>
 		</div>
 	</div>
-
-
+	
 		<table border="0" class="listingTable"  style="margin-bottom:30px;">
 				<thead>
 					<tr class="beta">
@@ -183,7 +182,7 @@
 					<%
 						if(langs.size() > 1) {
 					%>
-						<th width="40"><B><font class="beta" size="2"></font></B></th>
+						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 200 %>px;"><B><font class="beta" size="2"></font></B></th>
 					<%
 						}else{
 					%>
@@ -226,6 +225,64 @@
 				   	if(parent && RelationshipFactory.isSameStructureRelationship(rel, targetStructure)){
 			        	//continue;
 			        }
+				   	
+				   	
+				   	
+				   	
+					/**********   GIT 1057     *******/
+					
+					ContentletAPI contentletAPI = APILocator.getContentletAPI();
+					Contentlet languageContentlet = null;
+				    %>
+				    var cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings = new Array();
+				    <%
+					for(Language lang : langs){
+						try{
+							languageContentlet = null;
+							languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), true, lang.getId(), user, false);
+						}catch (Exception e) {
+							try{
+							languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), false, lang.getId(), user, false);
+							}catch (Exception e1) {	}
+						}
+					    %>
+					    var cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling = new Array();
+					    <%
+					    if((languageContentlet == null) || (!UtilMethods.isSet(languageContentlet.getInode()))){
+					    	%>
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langCode'] = '<%=langAPI.getLanguageCodeAndCountry(lang.getId(),null)%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langName'] = '<%=lang.getLanguage() %>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langId'] = '<%=lang.getId() %>';
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['inode'] = '';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['parent'] = '<%=parent %>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['working'] = 'false';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['live'] = 'false';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['deleted'] = 'true';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['locked'] = 'false';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['siblingInode'] = '<%=cont.getInode()%>';
+							
+						    <%
+					    }else{
+					    	%>
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langCode'] = '<%=langAPI.getLanguageCodeAndCountry(lang.getId(),null)%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langName'] = '<%=lang.getLanguage() %>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langId'] = '<%=lang.getId() %>';
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['inode'] = '<%=languageContentlet.getInode()%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['parent'] = '<%=parent %>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['working'] = '<%=String.valueOf(languageContentlet.isWorking())%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['live'] = '<%=String.valueOf(languageContentlet.isLive())%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['deleted'] = '<%=String.valueOf(languageContentlet.isArchived())%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['locked'] = '<%=Boolean.valueOf(languageContentlet.isLocked() && ! languageContentlet.getModUser().equals(user.getUserId()))%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['siblingInode'] = '<%=cont.getInode()%>';
+						    <%
+					    }
+					    %>
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings[cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings.length] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling;
+					    <%
+					    
+					}
+					
+				/**********   GIT 1057     *******/							 				   	
 
 					String languageCode;
 					String languageName;
@@ -241,7 +298,7 @@
 				cont['live'] = '<%=String.valueOf(cont.isLive())%>';
 				cont['deleted'] = '<%=String.valueOf(cont.isArchived())%>';
 				cont['locked'] = '<%=Boolean.valueOf(cont.isLocked() && ! cont.getModUser().equals(user.getUserId()))%>';
-
+				cont['siblings'] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings;
 
 		<%
 					for (Field f : targetFields) {
@@ -294,22 +351,63 @@
 				function <%= relationJsName %>_lang(o) {
 					var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
 					var lang = '';
-					var result = '&nbsp;';
-
+					var result = '';
+					var anchorValue = "";
+		
 					if (o != null) {
-					  langImg = o['langCode'];
-					  langName = o['langName'];
-					  result = '';
-					    result = '<img style="vertical-align: middle;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">';
+						result = result + "<table><tbody><tr>"
+						
+						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
+																								
+							result = result + '<td style="border:0">';
+							langImg = o['siblings'][sibIndex]['langCode'];
+							langName = o['siblings'][sibIndex]['langName'];
+							
+							if(o['siblings'][sibIndex]['live'] == 'true'){
+																								
+								anchorValue = "";
+								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
+									anchorValue = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+					 			}
+					 			else{
+					 				anchorValue =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">";
+					 			}
+								
+								result = result +'&nbsp;&nbsp;' + anchorValue + '<img style="vertical-align: middle; border: solid 2px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
+								
+							}else if(o['siblings'][sibIndex]['working'] == 'true'){
+								
+								anchorValue = "";
+								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
+									anchorValue = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+					 			}
+					 			else{
+					 				anchorValue =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">";
+					 			}
+								
+								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FF1919; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
+								
+							}else{
+								
+								anchorValue = "";
+								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
+									anchorValue = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+					 			}
+					 			else{
+					 				anchorValue =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">";
+					 			}
+								
+								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
+								
+							}
+							
+							result = result + "</td>";
+							if((sibIndex+1)%6 == 0){
+								result = result + "</tr><tr>";
+							}
+						}
+						result = result + "</tr></tbody></table>";
 					}
-
-					if(contentletLangCode != o['langCode']){
-						  langImg = '<%=langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
-						  langName = '<%=langAPI.getLanguage(contentlet.getLanguageId()).getLanguage()%>';
-						  result = '';
-  					    result = '<img style="vertical-align: middle;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">';
-					}
-
 					return result;
 				}
 
@@ -365,7 +463,7 @@
 	 		function <%= functionName %> (o) {
 				var value = "";
 				if (o != null && o['locked'] == "false"){
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "');\"" + ">" + o['<%=fieldName%>'] + "</a>";
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['<%=fieldName%>'] + "</a>";
 	 			}
 	 			else{
 	 				value =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">" + o['<%=fieldName%>'] + "</a>";
@@ -624,8 +722,8 @@
 					<%
 					if(langs.size() > 1) {
 					%>	// displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-						var langTD = document.createElement("td");
-						langTD.innerHTML = <%= relationJsName %>_status(item) + "&nbsp;" + <%= relationJsName %>_lang(item);
+						var langTD = document.createElement("td");					
+						langTD.innerHTML = "&nbsp;" + <%= relationJsName %>_lang(item);
 						tr.appendChild(langTD);
 					<%
 					}else{
@@ -659,8 +757,9 @@
 
 				dojo.addOnLoad(<%= relationJsName %>init);
 
+
 				// to edit a related content, with proper referer
-				function <%= relationJsName %>editRelatedContent(inode){
+				function <%= relationJsName %>editRelatedContent(inode, siblingInode, langId){
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
@@ -679,6 +778,10 @@
 					href += "<portlet:param name='cmd' value='edit' />";
 					href += "</portlet:actionURL>";
 					href += "&inode="+inode;
+					if(inode == ''){
+						href += "&sibbling=" + siblingInode;
+						href += "&lang=" + langId;
+					}			
 					href += "&referer=" + escape(referer);
 					document.location.href = href;
 				}
@@ -687,7 +790,7 @@
 		 		function <%= relationJsName %>editAction (o) {
 					var value = "";
 					if (o != null && o['locked'] == "false"){
-						value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "');\"" + "><span class=\"editIcon\"></span></a>";
+						value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + "><span class=\"editIcon\"></span></a>";
 		 			}
 		 			else{
 		 				value =   '<a class="beta" href="javascript:alert(\'This content is locked\');"><span class="editIcon"></span></a>';
