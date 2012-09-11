@@ -1688,8 +1688,13 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	public void addPreHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
-		if(o instanceof ContentletAPIPreHook){
-			preHooks.add((ContentletAPIPreHook)o);
+        addPreHook( o );
+    }
+
+    public void addPreHook ( Object preHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+
+        if ( preHook instanceof ContentletAPIPreHook ) {
+            preHooks.add( (ContentletAPIPreHook) preHook );
 		}else {
 			throw new InstantiationException("This hook must implement ContentletAPIPrehook");
 		}
@@ -1706,8 +1711,13 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	
 	public void addPostHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
-		if(o instanceof ContentletAPIPostHook){
-			postHooks.add((ContentletAPIPostHook)o);
+        addPostHook( o );
+    }
+
+    public void addPostHook ( Object postHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+
+        if ( postHook instanceof ContentletAPIPostHook ) {
+            postHooks.add( (ContentletAPIPostHook) postHook );
 		}else {
 			throw new InstantiationException("This hook must implement ContentletAPIPosthook");
 		}		
