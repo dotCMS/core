@@ -3686,54 +3686,89 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public String getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-        String result = null;
-        if (InodeUtils.isSet(contentlet.getStructureInode())) {
-            Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
-            if (UtilMethods.isSet(structure.getUrlMapPattern())) {
-                List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
-                String urlMapField;
-                String urlMapFieldValue;
-                String testResult = structure.getUrlMapPattern();
-                for (RegExMatch match: matches) {
-                    urlMapField = match.getMatch();
-                    urlMapFieldValue = contentlet.getStringProperty(urlMapField.substring(1, (urlMapField.length() - 1)));
-                    urlMapField = urlMapField.replaceFirst("\\{", "\\\\{");
-                    urlMapField = urlMapField.replaceFirst("\\}", "\\\\}");
-                    if(urlMapFieldValue !=null ){
-                    	result = testResult.replaceAll(urlMapField, urlMapFieldValue);
-                    }
+       
+    	
+    	// no structure, no inode, no workee
+        if (!InodeUtils.isSet(contentlet.getInode()) || !InodeUtils.isSet(contentlet.getStructureInode())) {
+        	return null;
+        }
+    	
+    	final String CONTENTLET_URL_MAP_FOR_CONTENT = "URL_MAP_FOR_CONTENT";
+    	final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
+    	String result = (String) contentlet.getMap().get(CONTENTLET_URL_MAP_FOR_CONTENT);
+    	if(result != null){
+        	if(CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result) ){
+        		return null;
+        	}
+    		return result;
+    	}
 
+    	
 
+        
+        // if there is no detail page, return
+        Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        if(!UtilMethods.isSet(structure.getDetailPage())) {
+        	return null;	
+        }
+        
+        
+      
+
+        Identifier id = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+        Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles); 
+        
+        // File assets send their path
+        // if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
+        // 	result = id.getPath();
+        // }
+        
+        // URL MAPPed
+       if (UtilMethods.isSet(structure.getUrlMapPattern())) {
+            List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
+            String urlMapField;
+            String urlMapFieldValue;
+            result = structure.getUrlMapPattern();
+            for (RegExMatch match: matches) {
+                urlMapField = match.getMatch();
+                urlMapFieldValue = contentlet.getStringProperty(urlMapField.substring(1, (urlMapField.length() - 1)));
+                urlMapField = urlMapField.replaceFirst("\\{", "\\\\{");
+                urlMapField = urlMapField.replaceFirst("\\}", "\\\\}");
+                if (UtilMethods.isSet(urlMapFieldValue)){
+                	result = result.replaceAll(urlMapField, urlMapFieldValue);
+                }
+                else{
+                	result = result.replaceAll(urlMapField, "");
                 }
             }
-            if (result == null && UtilMethods.isSet(structure.getDetailPage())) {
-            	HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
-            	if(p != null && UtilMethods.isSet(p.getIdentifier())){
-            		result = p.getURI() + "?id=" + contentlet.getInode();
-            	}
-
-
-            }
-            Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, respectFrontendRoles);
-            if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles) {
-
-            	if(result == null || result.indexOf("?") <0){
-
-            		result = result + "?host_id=" + host.getIdentifier();
-            	}
-            	else{
-            		result = result + "&host_id=" + host.getIdentifier();
-            	}
-            }
         }
-
-        if(result ==null && contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-            	//Host h = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-            	Identifier id = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-            	result = id.getPath();
-
+        
+        // or Detail page with id=uuid
+        else{
+            HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
+        	if(p != null && UtilMethods.isSet(p.getIdentifier())){
+        		result = p.getURI() + "?id=" + contentlet.getInode();
+        	}
         }
+        
+        // we send the host of the content, not the detail page (is this right?)
+        if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles && result !=null) {
+        	if(result.indexOf("?") <0){
+        		result = result + "?host_id=" + host.getIdentifier();
+        	}
+        	else{
+        		result = result + "&host_id=" + host.getIdentifier();
+        	}
+        }
+        
 
+
+
+        
+    	if(result == null){
+    		result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
+    	}
+        contentlet.setStringProperty(CONTENTLET_URL_MAP_FOR_CONTENT, result);
 
 
 
