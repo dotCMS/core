@@ -25,7 +25,8 @@ public interface Interceptor {
 	
 	/**
 	 * Adds a hook to the end of the chain
-	 * @throws ClassNotFoundException 
+     *
+	 * @throws ClassNotFoundException
 	 * @throws IllegalAccessException 
 	 * @throws InstantiationException 
 	 */
@@ -33,12 +34,31 @@ public interface Interceptor {
 	
 	/**
 	 * Adds a hook to the end of the chain
-	 * @throws ClassNotFoundException 
+     *
+	 * @throws ClassNotFoundException
 	 * @throws IllegalAccessException 
 	 * @throws InstantiationException 
 	 */
+    public void addPostHook ( Object postHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException;
+
+    /**
+     * Adds a hook to the end of the chain
+     *
+     * @throws ClassNotFoundException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     */
 	public void addPreHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException;
 	
+	/**
+     * Adds a hook to the end of the chain
+     *
+     * @throws ClassNotFoundException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     */
+    public void addPreHook ( Object preHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException;
+
 	/**
 	 * Adds a hook to the list at the specified index
 	 * @throws ClassNotFoundException 
