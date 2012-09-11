@@ -79,9 +79,9 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 			id : this.baseDiv
 			}).placeAt("hangWorkflowMainHere");
 		}
-		
+
 		var r = Math.floor(Math.random() * 1000000000);
-		hashValue = hashValue + "&rand=" + r;		
+		hashValue = hashValue + "&rand=" + r;
 		myCp.attr("href", hashValue);
 		dojo.parser.parse("hangWorkflowMainHere");
 
@@ -396,7 +396,8 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		}
 		dia = new dijit.Dialog({
 			id			:	"stepEditDia",
-			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Step")%>"
+			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Step")%>",
+			style: "height : 280px"
 			});
 
 		var myCp = dijit.byId("stepEditCp");

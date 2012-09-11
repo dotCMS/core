@@ -21,7 +21,7 @@
 <style type="text/css">
 <%= step.isEnableEscalation() ? "#stepEditDia{height:370px;} #stepEditDia .escalation-row{display:table-row;}" : "" %>
 </style>
-<div dojoType="dijit.form.Form" id="addEditStepForm" jsId="addEditStepForm"
+<div dojoType="dijit.form.Form" id="addEditStepForm" jsId="addEditStepForm" style="height: 310px"
       encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax"
       method="POST">
 
