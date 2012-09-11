@@ -226,7 +226,7 @@ public class CMSMaintenanceAjax {
         cleanAssetsThread.start();
 
         //Return the initial process status
-        return processStatus.getStatusMap();
+        return processStatus.buildStatusMap();
     }
 
     /**
@@ -241,7 +241,7 @@ public class CMSMaintenanceAjax {
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
 
         //Return its current running status
-        return processStatus.getStatusMap();
+        return processStatus.buildStatusMap();
     }
 
     public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {

@@ -25,7 +25,7 @@ public class CleanAssetsThread extends Thread {
         private int currentFiles=0;
         private int deleted=0;
         private boolean running=false;
-        private String status;
+        private String status="";
         
         public int getDeleted() {
             return deleted;
@@ -57,7 +57,7 @@ public class CleanAssetsThread extends Thread {
         public void setCurrentFiles(int currentFiles) {
             this.currentFiles = currentFiles;
         }
-        public Map getStatusMap()  {
+        public Map buildStatusMap()  {
             try {
                 return BeanUtils.describe(this);
             } catch (Exception e) {
@@ -120,7 +120,7 @@ public class CleanAssetsThread extends Thread {
      *
      */
     @SuppressWarnings ("unchecked")
-    synchronized void deleteAssetsWithNoInode () throws DotDataException {
+    void deleteAssetsWithNoInode () throws DotDataException {
 
         //Assest folder path
         String assetsPath = APILocator.getFileAPI().getRealAssetsRootPath();
