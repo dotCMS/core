@@ -2,6 +2,8 @@ package com.dotmarketing.osgi;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
@@ -24,7 +26,9 @@ import java.util.Collection;
 public abstract class GenericBundleActivator implements BundleActivator {
 
     private PrimitiveToolboxManager toolboxManager;
+    private WorkflowAPIOsgiService workflowOsgiService;
     private Collection<ToolInfo> viewTools;
+    private Collection<WorkFlowActionlet> actionlets;
 
     /**
      * Allow to this bundle/elements to be visible and accessible from the host classpath
@@ -140,6 +144,45 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
     private ClassLoader getFelixClassLoader () {
         return this.getClass().getClassLoader();
+    }
+
+    /**
+     * Register a WorkFlowActionlet service
+     *
+     * @param context
+     * @param actionlet
+     */
+    @SuppressWarnings ("unchecked")
+    public void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
+
+        ServiceReference serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
+        if ( serviceRefSelected == null ) {
+            return;
+        }
+
+        if ( actionlets == null ) {
+            actionlets = new ArrayList<WorkFlowActionlet>();
+        }
+
+        this.workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
+        this.workflowOsgiService.addActionlet( actionlet.getClass() );
+        actionlets.add( actionlet );
+
+        Logger.info( this, "Added actionlet: " + actionlet.getName() );
+    }
+
+    /**
+     * Unregister the registered WorkFlowActionlet services
+     */
+    public void unregisterActionlets () {
+
+        if ( this.workflowOsgiService != null ) {
+            for ( WorkFlowActionlet actionlet : actionlets ) {
+
+                this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
+                Logger.info( this, "Removed actionlet: " + actionlet.getName() );
+            }
+        }
     }
 
     /**

@@ -76,7 +76,7 @@
         <jar jarfile="${jar.file}" manifest="${manifest.file}">
             <metainf dir="${meta-inf.dir}" />
             <fileset dir="${build.classes}"/>
-            <zipfileset dir="lib" prefix="lib"/>
+            <!--<zipfileset dir="lib" prefix="lib"/>-->
             <!--<zipfileset dir="${web-inf.dir}" prefix="${web-inf.dir}"/>-->
 
             <zipfileset dir=".">
