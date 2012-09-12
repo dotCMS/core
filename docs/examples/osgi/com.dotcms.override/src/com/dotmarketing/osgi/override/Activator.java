@@ -1,4 +1,4 @@
-package com.dotmarketing.osgi.hook;
+package com.dotmarketing.osgi.override;
 
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.util.FileUtil;
