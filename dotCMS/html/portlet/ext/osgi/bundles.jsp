@@ -39,7 +39,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 
 <div id="uploadOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%>" style="display: none;">
 	<div style="padding:30px 15px;">
-		<form id="addBundle" name="addBundle" encType="multipart/form-data">
+		<form id="addBundle" name="addBundle" enctype="multipart/form-data" method="post">
 			<input type="hidden" name="cmd" value="add">
 			<div>
 				<!-- <input name="bundleUpload" multiple="false" type="file" data-dojo-type="dojox.form.Uploader" label="Select Bundle" id="bundleUpload" showProgress="true"/>&nbsp;&nbsp;&nbsp; -->

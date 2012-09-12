@@ -3193,24 +3193,6 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_DISCOUNTCODE</portlet-name>
-		<display-name>Discount Code</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<init-param>
-			<name>view-action</name>
-			<value>/ext/discountcode/view_discountcode</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>CMS Administrator</role-name>
-		</security-role-ref>
-	</portlet>
-
-	<portlet>
 		<portlet-name>EXT_CONTENTRATINGS</portlet-name>
 		<display-name>Content Ratings</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
