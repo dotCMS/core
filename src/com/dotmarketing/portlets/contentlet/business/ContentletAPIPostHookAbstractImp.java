@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.lucene.queryParser.ParseException;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -27,6 +19,13 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+import org.apache.lucene.queryParser.ParseException;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Armando Siem
@@ -407,6 +406,7 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
 
 	public void removeFolderReferences(Folder folder) throws DotDataException{
 	}
+
 	public void refreshContentUnderHost(Host host) throws DotReindexStateException {
 
 
@@ -423,4 +423,20 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
 	public void findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException{
 		
 	}
+
+    public void copyContentlet ( Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles, Contentlet returnValue ) {
+    }
+
+    public void deleteOldContent ( Date deleteFrom, int returnValue ) {
+    }
+
+    public void searchIndexCount ( String luceneQuery, User user, boolean respectFrontendRoles, long c ) {
+    }
+
+    public void loadField ( String inode, Field field, Object value ) {
+    }
+
+    public void indexCount ( String luceneQuery, User user, boolean respectFrontendRoles, long value ) {
+    }
+
 }
