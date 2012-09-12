@@ -818,4 +818,34 @@ public class PermissionAPITest extends TestBase {
             APILocator.getHostAPI().archive(hh, sysuser, false);   
         } 
     }
+    
+    @Test
+    public void issue1073() throws Exception {
+    
+        Folder m1 = APILocator.getFolderAPI().createFolders("/m1/", host, sysuser, false);
+        Folder m2 = APILocator.getFolderAPI().createFolders("/m1/m2/", host, sysuser, false);
+        Folder m3 = APILocator.getFolderAPI().createFolders("/m1/m2/m3/", host, sysuser, false);
+        
+        perm.permissionIndividually(perm.findParentPermissionable(m1), m1, sysuser, false);
+        perm.permissionIndividually(perm.findParentPermissionable(m2), m2, sysuser, false);
+        perm.permissionIndividually(perm.findParentPermissionable(m3), m3, sysuser, false);
+        
+        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole");
+        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
+            nrole=new Role();
+            nrole.setName("TestingRole");
+            nrole.setRoleKey("TestingRole");
+            nrole.setEditUsers(true);
+            nrole.setEditPermissions(true);
+            nrole.setEditLayouts(true);
+            nrole.setDescription("Testing Role");
+            APILocator.getRoleAPI().save(nrole);
+        }
+        
+        Permission p=new Permission(m1.getInode(),nrole.getId(),PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,false);
+        perm.save(p, m1, sysuser, false);
+        
+        perm.cascadePermissionUnder(m1, nrole);
+            
+    }
 }
