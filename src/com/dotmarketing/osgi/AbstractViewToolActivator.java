@@ -12,6 +12,12 @@ import org.osgi.framework.ServiceReference;
 
 import com.dotmarketing.util.Logger;
 
+/**
+ * @see GenericBundleActivator
+ * @see GenericBundleActivator#registerViewToolService(org.osgi.framework.BundleContext, org.apache.velocity.tools.view.ToolInfo)
+ * @deprecated Class initially used to register ViewTool objects from and OSGI plugin, now you should use the {@link GenericBundleActivator} class instead of this class
+ *             to register those ViewTool objects using the method {@link GenericBundleActivator#registerViewToolService(org.osgi.framework.BundleContext, org.apache.velocity.tools.view.ToolInfo)}.
+ */
 public class AbstractViewToolActivator implements BundleActivator, ServiceListener {
 	
 	private PrimitiveToolboxManager tm;

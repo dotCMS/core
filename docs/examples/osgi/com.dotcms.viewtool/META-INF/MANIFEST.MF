@@ -10,4 +10,3 @@ Import-Package:  org.osgi.service.http,
  org.apache.velocity.tools,
  org.apache.velocity.tools.view,
  org.apache.velocity.tools.view.tools
-Provide-Package: com.dotmarketing.osgi.viewtools
