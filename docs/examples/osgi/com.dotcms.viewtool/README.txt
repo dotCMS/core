@@ -2,30 +2,29 @@
 README
 ------
 
-How to add a ViewTool OSGI plugin
----------------------------------
+This bundle plugin is an example of how to add dotcms hooks classes with our bundle plugin.
 
-In order to add a ViewTool OSGI plugin, you must write the META-INF/MANIFEST
+How to create a bundle plugin for dotcms hook classes
+-------------------------------------------
+
+--
+In order to create this OSGI plugin, you must write the META-INF/MANIFEST
 to be inserted into OSGI jar.
 
 In this MANIFEST you must specify (see template plugin):
 
-Bundle-Name: The name of your view tool
+Bundle-Name: The name of your bundle
 
-Bundle-Activator: The main activator (it must be a subclass of 
-com.dotmarketing.osgi.AbstractViewToolActivator to automatize 
-the whole process)
+Bundle-SymbolicName: A short an unique name for the bundle
 
-Bundle-SymbolicName: A short name for the ViewTool
+Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.viewtools.Activator)
+
+DynamicImport-Package: *
+    Dynamically add required imports the plugin may need without add them explicitly
 
 Import-Package: This is a comma separated list of package's name.
-In this list there must be the packages that you are using inside
-the ViewTool plugin and that are exported by the dotCMS runtime.
-
-In this example you will find the package:
-- com.dotmarketing.osgi.viewtools.view for interface ToolInfo
-- com.dotmarketing.osgi.viewtools.view.tools for interface ViewTool
-- com.dotmarketing.osgi for the AbstractViewToolActivator
+                In this list there must be the packages that you are using inside
+                the bundle plugin and that are exported by the dotCMS runtime.
 
 Beware!!!
 ---------
@@ -35,16 +34,23 @@ and export directive must be bidirectional.
 
 The DotCMS must declare the set of packages that will be available
 to the OSGI plugins by changing the property:
-org.osgi.framework.system.packages.extra
-inside the Felix configuration file dotCMS/felix/config/config.properties
+felix.org.osgi.framework.system.packages.extra
+inside the configuration file src-conf/dotmarketing-config.properties
 
-Only after that exported packages are defined in this list, 
-a plugin can Import the pacakges to use them inside the OSGI ViewTool.
+Only after that exported packages are defined in this list,
+a plugin can Import the packages to use them inside the OSGI blundle.
 
-Notice
-------
+--
+--
+--
+com.dotmarketing.osgi.actionlet.MyActionlet
+-----------------------------------------------
 
-It is suggested to export/import only interfaces that are shared between
-dotCMS core and the ViewTool plugin
+Implementation of a WorkFlowActionlet object.
 
+--
+Activator
+---------
 
+This bundle activator extends from com.dotmarketing.osgi.GenericBundleActivator and implements BundleActivator.start().
+This activator will allow you to register the WorkFlowActionlet object using the GenericBundleActivator.registerActionlet method
