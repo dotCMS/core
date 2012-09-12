@@ -36,10 +36,20 @@ public class DotCMSAPIInterceptor implements DotCMSAPI, Interceptor {
 
 	}
 
+    public void addPostHook ( Object postHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        // TODO Auto-generated method stub
+
+    }
+
 	public void addPreHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		// TODO Auto-generated method stub
 
 	}
+
+    public void addPreHook ( Object preHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        // TODO Auto-generated method stub
+
+    }
 
 	public void addPreHook(String className, int indexToAddAt) throws InstantiationException, IllegalAccessException,
 			ClassNotFoundException {
