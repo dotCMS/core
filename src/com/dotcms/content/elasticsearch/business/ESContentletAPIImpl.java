@@ -2209,7 +2209,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		FileUtil.move(incomingFile, newFile);
 
 			                		// what happens is we never clean up the temp directory
-			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
+			                		// answer: this happends --> https://github.com/dotCMS/dotCMS/issues/1071
+			                		// there is a quarz job to clean that
+			                		/*java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
 			                		if(delMe.exists() && delMe.getAbsolutePath().contains(
 			                		        APILocator.getFileAPI().getRealAssetPathTmpBinary()
 											+ java.io.File.separator + user.getUserId()
@@ -2217,7 +2219,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                			delMe.delete();
 			                			delMe = incomingFile.getParentFile().getParentFile();
 			                			FileUtil.deltree(delMe);
-			                		}
+			                		}*/
 
 			                	}
 			                	else if (oldFile.exists()) {
