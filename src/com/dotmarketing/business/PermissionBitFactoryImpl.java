@@ -706,7 +706,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String selectChildrenContentWithIndividualPermissionsByPathSQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
-        " where asset_type='contentlet' and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' and " +
+        " where asset_type='contentlet' and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
         " and identifier.id <> identifier.host_inode and identifier.host_inode = ? " +
         " and identifier.parent_path like ?";
 
@@ -1060,7 +1060,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. The host id
 	 */
 	private final String selectChildrenStructureWithIndividualPermissionsByPathSQL =
-		selectChildrenStructureByPathSQL + " and exists (select * from permission where inode_id = inode.inode and " +
+		selectChildrenStructureByPathSQL + " and exists (select * from permission where inode_id = structure.inode and " +
 		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
 
 
