@@ -297,7 +297,7 @@ var editButtonRow="editEventButtonRow";
 
 			<!-- START Left Column -->
 			<div class="buttonRow-left lineRight" id="editEventButtonRow">
-				<div class="basic-prop">
+				<div class="gradient2">
 					<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
 				</div>
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
