@@ -26,6 +26,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -41,6 +42,8 @@ public class ReindexThread extends Thread {
 	private boolean work = false;
 	private int sleep = 100;
 	private int delay = 7500;
+	private boolean reindexSleepDuringIndex = false;
+	private int reindexSleepDuringIndexTime = 0;
 
 	private void finish() {
 		work = false;
@@ -128,6 +131,13 @@ public class ReindexThread extends Thread {
     					    IndexJournal<String> idx = remoteQ.removeFirst();
     				        writeDocumentToIndex(bulk,idx);
     				        recordsToDelete.add(idx);
+    				        if(reindexSleepDuringIndex){
+	    				        try {
+	    							Thread.sleep(delay);
+	    						} catch (InterruptedException e) {
+	    							Logger.error(this, e.getMessage(), e);
+	    						}
+    				        }
 						}
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
@@ -276,6 +286,11 @@ public class ReindexThread extends Thread {
 		if (instance == null) {
 			instance = new ReindexThread();
 			instance.start();
+			int i = Config.getIntProperty("REINDEX_SLEEP_DURING_INDEX", 0);
+			if(i>0){
+				instance.setReindexSleepDuringIndex(true);
+				instance.setReindexSleepDuringIndexTime(i);
+			}
 		}
 
 	}
@@ -382,5 +397,33 @@ public class ReindexThread extends Thread {
 	    indexAPI.fullReindexAbort();
 	    unpause();
 	    HibernateUtil.commitTransaction();
+	}
+
+	/**
+	 * @return the reindexSleepDuringIndex
+	 */
+	public boolean isReindexSleepDuringIndex() {
+		return reindexSleepDuringIndex;
+	}
+
+	/**
+	 * @param reindexSleepDuringIndex the reindexSleepDuringIndex to set
+	 */
+	public void setReindexSleepDuringIndex(boolean reindexSleepDuringIndex) {
+		this.reindexSleepDuringIndex = reindexSleepDuringIndex;
+	}
+
+	/**
+	 * @return the reindexSleepDuringIndexTime
+	 */
+	public int getReindexSleepDuringIndexTime() {
+		return reindexSleepDuringIndexTime;
+	}
+
+	/**
+	 * @param reindexSleepDuringIndexTime the reindexSleepDuringIndexTime to set
+	 */
+	public void setReindexSleepDuringIndexTime(int reindexSleepDuringIndexTime) {
+		this.reindexSleepDuringIndexTime = reindexSleepDuringIndexTime;
 	}
 }
