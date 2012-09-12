@@ -1,6 +1,7 @@
 dojo.provide("dotcms.dojo.data.DWRReadStore");
 
 dojo.require("dojo.data.api.Read");
+dojo.require("dojo.data.api.Request");
 dojo.require("dojo.data.api.Identity");
 
 dojo.declare("dotcms.dojo.data.DWRReadStore", null, {
