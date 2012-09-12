@@ -73,5 +73,5 @@ Testing
 -------
 
 The Spring controller is registered under the url pattern "/spring" can be test it running and assuming your dotcms url is localhost:80880:
-    http://localhost:8080/dynamic/spring/examplecontroller/
-    http://localhost:8080/dynamic/spring/examplecontroller/Testing
+    http://localhost:8080/app/spring/examplecontroller/
+    http://localhost:8080/app/spring/examplecontroller/Testing

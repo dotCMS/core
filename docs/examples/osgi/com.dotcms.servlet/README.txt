@@ -74,5 +74,5 @@ The HelloWorldServlet is registered under the url pattern "/helloworld" can be t
     http://localhost:8080/dynamic/helloworld
 
 The TestFilter filter is registered for the url pattern "/helloworld/.*" can be test it running and assuming your dotcms url is localhost:80880:
-    http://localhost:8080/dynamic/helloworld/
-    http://localhost:8080/dynamic/helloworld/testing.dot
+    http://localhost:8080/app/helloworld/
+    http://localhost:8080/app/helloworld/testing.dot

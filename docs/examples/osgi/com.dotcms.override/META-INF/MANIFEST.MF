@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
-Bundle-Name: Example Spring controller
+Bundle-Name: Example Override class
 Bundle-Description: Static.Manifest
 Bundle-ManifestVersion: 2
-Bundle-SymbolicName: overrideclassesosgi
+Bundle-SymbolicName: overrideClassesOSGI
 Bundle-Version: 2.5.1
 Bundle-Activator: com.dotmarketing.osgi.override.Activator
 Override-Classes: com.dotmarketing.util.FileUtil
