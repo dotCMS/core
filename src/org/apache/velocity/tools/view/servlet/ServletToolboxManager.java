@@ -400,19 +400,63 @@ public class ServletToolboxManager extends XMLToolboxManager
         return toolbox;
     }
 
-    public void removeTool(ToolInfo info) 
-    {
-    	ToolInfo toRemove = null;
-        Iterator i = requestToolInfo.iterator();
-        while(i.hasNext())
-        {
-            ToolInfo info_ = (ToolInfo)i.next();
-        	if ( compare(info, info_) ) {
-        		toRemove = info_;
-        	}
+    public void removeTool ( ToolInfo info ) {
+
+        ToolInfo toRemove;
+
+        if ( info instanceof ServletToolInfo ) {
+
+            ServletToolInfo servletToolInfo = (ServletToolInfo) info;
+
+            if ( ViewContext.REQUEST.equalsIgnoreCase( servletToolInfo.getScope() ) ) {
+
+                toRemove = searchAndCompare( requestToolInfo, servletToolInfo );
+            } else if ( ViewContext.SESSION.equalsIgnoreCase( servletToolInfo.getScope() ) ) {
+
+                toRemove = searchAndCompare( sessionToolInfo, servletToolInfo );
+                if ( toRemove != null ) {
+                    sessionToolInfo.remove( toRemove );
+                }
+                return;
+            } else if ( ViewContext.APPLICATION.equalsIgnoreCase( servletToolInfo.getScope() ) ) {
+
+                appTools.remove( servletToolInfo.getKey() );
+                return;
+            } else {
+
+                //default is request scope
+                toRemove = searchAndCompare( requestToolInfo, servletToolInfo );
+            }
+
+        } else {
+            //default is request scope
+            toRemove = searchAndCompare( requestToolInfo, info );
         }
-        if ( toRemove != null )
-        	requestToolInfo.remove(toRemove);
+
+        if ( toRemove != null ) {
+            requestToolInfo.remove( toRemove );
+        }
+    }
+
+    /**
+     * Utility method to verify if a given collection contains a given ToolInfo object.
+     *
+     * @param toolInfoCollection
+     * @param info
+     * @return Found object
+     */
+    private ToolInfo searchAndCompare ( ArrayList toolInfoCollection, ToolInfo info ) {
+
+        ToolInfo toRemove = null;
+        Iterator i = toolInfoCollection.iterator();
+        while ( i.hasNext() ) {
+            ToolInfo info_ = (ToolInfo) i.next();
+            if ( compare( info, info_ ) ) {
+                toRemove = info_;
+            }
+        }
+
+        return toRemove;
     }
 
     /**
