@@ -176,11 +176,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     public void unregisterActionlets () {
 
-        if ( this.workflowOsgiService != null ) {
+        if ( this.workflowOsgiService != null && actionlets != null ) {
             for ( WorkFlowActionlet actionlet : actionlets ) {
 
                 this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
-                Logger.info( this, "Removed actionlet: " + actionlet.getName() );
+                Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName() );
             }
         }
     }
@@ -224,7 +224,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     public void unregisterViewToolServices () {
 
-        if ( this.toolboxManager != null ) {
+        if ( this.toolboxManager != null && viewTools != null ) {
             for ( ToolInfo toolInfo : viewTools ) {
 
                 this.toolboxManager.removeTool( toolInfo );
@@ -255,6 +255,17 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
         interceptor.addPostHook( postHook );
+    }
+
+    /**
+     * Utility method to unregister all the possible services and/or tools registered by this activator class.
+     * Some how we have to try to clean up anything added on the deploy if this bundle.
+     */
+    public void unregisterServices () {
+
+        unregisterActionlets();
+        unregisterViewToolServices();
+        unpublishBundleServices();
     }
 
 }
