@@ -355,11 +355,11 @@
 					var anchorValue = "";
 		
 					if (o != null) {
-						result = result + "<table><tbody><tr>"
+						result = result + "<table width=\"100%\" class=\"relationLanguageFlag\"><tbody><tr>"
 						
 						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
 																								
-							result = result + '<td style="border:0">';
+							result = result + '<td  class=\"relationLanguageFlag\">';
 							langImg = o['siblings'][sibIndex]['langCode'];
 							langName = o['siblings'][sibIndex]['langName'];
 							
@@ -367,10 +367,10 @@
 																								
 								anchorValue = "";
 								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
-									anchorValue = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
 					 			else{
-					 				anchorValue =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">";
+					 				anchorValue =   "<a href=\"javascript:alert('This content is locked');\">";
 					 			}
 								
 								result = result +'&nbsp;&nbsp;' + anchorValue + '<img style="vertical-align: middle; border: solid 2px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
@@ -379,10 +379,10 @@
 								
 								anchorValue = "";
 								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
-									anchorValue = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
 					 			else{
-					 				anchorValue =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">";
+					 				anchorValue =   "<a  href=\"javascript:alert('This content is locked');\">";
 					 			}
 								
 								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FF1919; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
@@ -391,10 +391,10 @@
 								
 								anchorValue = "";
 								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
-									anchorValue = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
 					 			else{
-					 				anchorValue =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">";
+					 				anchorValue =   "<a  href=\"javascript:alert('This content is locked');\">";
 					 			}
 								
 								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
@@ -516,7 +516,35 @@
 				}
 
 				//Invoked when a contentlet is selected to fill the contentlet data in the table
-				function <%= relationJsName %>_addRelationshipCallback(data){
+				function <%= relationJsName %>_addRelationshipCallback(selectedData){
+					var data = new Array();
+					var dataToRelate = new Array();
+					
+					// Eliminating existing relations
+					for (var indexJ = 0; indexJ < selectedData.length; indexJ++) {
+						var relationExists = false;
+						for (var indexI = 0; indexI < <%= relationJsName %>_Contents.length; indexI++) {
+							if(selectedData[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
+								relationExists = true;
+							}
+						}
+						if(!relationExists){
+							dataToRelate[dataToRelate.length] = selectedData[indexJ];
+						}
+					}
+					
+					// Eliminating mulitple contentlets for same identifier
+					for (var indexK = 0; indexK < dataToRelate.length; indexK++) {
+						var doesIdentifierExists = false;
+						for (var indexL = 0; indexL < data.length; indexL++) {
+							if(dataToRelate[indexK]['id'] == data[indexL]['id'])
+								doesIdentifierExists = true;
+						}
+						if(!doesIdentifierExists)
+							data[data.length] = dataToRelate[indexK];
+					}				
+					
+					
 					if( data == null || (data != null && data.length == 0) ) {
 					  return;
 					}
@@ -555,6 +583,7 @@
 					<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(dataNoRep);
 					renumberRecolorAndReorder<%= relationJsName %>();
 				}
+
 
 
 				function <%= relationJsName %>_reorder () {
@@ -723,7 +752,7 @@
 					if(langs.size() > 1) {
 					%>	// displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
 						var langTD = document.createElement("td");					
-						langTD.innerHTML = "&nbsp;" + <%= relationJsName %>_lang(item);
+						langTD.innerHTML = <%= relationJsName %>_lang(item);
 						tr.appendChild(langTD);
 					<%
 					}else{
