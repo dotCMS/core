@@ -33,6 +33,14 @@ public class TreeFactory {
 		}
 	}
 
+	public static Tree getTree(Tree object) {
+		try {
+			return (Tree) new HibernateUtil(Tree.class).load(Tree.class, object);
+		} catch (Exception e) {
+			return new Tree();
+		}
+	}
+	
 	public static Tree getTree(Inode parent, Inode child) {
 		String relationType = "child";
 		return getTree(parent, child, relationType);
