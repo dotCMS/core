@@ -4,8 +4,9 @@ Bundle-Activator: com.dotmarketing.osgi.viewtools.Activator
 Bundle-SymbolicName: Osgi View Tool
 Bundle-Version: 1.0.0
 Bundle-RequiredExecutionEnvironment: OSGi/Minimum-1.0
-Import-Package: com.dotmarketing.osgi,
+DynamicImport-Package: *
+Import-Package:  org.osgi.service.http,
+ org.apache.felix.http.api,
  org.apache.velocity.tools,
  org.apache.velocity.tools.view,
  org.apache.velocity.tools.view.tools
-Provide-Package: com.dotmarketing.osgi.viewtools
