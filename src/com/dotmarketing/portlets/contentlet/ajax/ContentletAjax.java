@@ -94,8 +94,8 @@ public class ContentletAjax {
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 	private FormAPI formAPI = APILocator.getFormAPI();
 
-	public List<Map<String, String>> getContentletsData(String inodesStr) {
-		List<Map<String,String>> rows = new ArrayList<Map<String, String>>();
+	public List<Map<String, Object>> getContentletsData(String inodesStr) {
+		List<Map<String,Object>> rows = new ArrayList<Map<String, Object>>();
 
 		if(inodesStr == null || !UtilMethods.isSet(inodesStr)) {
 			return rows;
@@ -103,78 +103,84 @@ public class ContentletAjax {
 
 		String[] inodes =  inodesStr.split(",");
 		for (String inode : inodes) {
-			rows.addAll(getContentletData(inode));
+			Map<String, Object> contenletData = getContentletData(inode);
+			if(contenletData != null)
+				rows.add(contenletData);
 		}
 
 		return rows;
 	}
 
-	public List<Map<String, String>> getContentletData(String inode) {
+	public Map<String, Object> getContentletData(String inode) {
 
-		List<Map<String,String>> rows = new ArrayList<Map<String, String>>();
+		Map<String,Object> result = new HashMap<String, Object>();
 
 		try {
 
 			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
-			List<Contentlet> contentletList = conAPI.getAllLanguages(firstContentlet, firstContentlet.isLive(), currentUser, true);
-			Structure targetStructure = firstContentlet.getStructure();
+			Contentlet contentlet = null;
+			
+			try{// This is to avoid non-inode strings from throwing exception
+				contentlet = conAPI.find(inode, currentUser, true);
+			}catch(Exception e){
+				Logger.debug(this, e.getMessage());
+			}
+			if(contentlet == null || !UtilMethods.isSet(contentlet.getInode()))
+				return null;
+			
+			Structure targetStructure = contentlet.getStructure();
 			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
 
-			String identifier = String.valueOf(firstContentlet.getIdentifier());
+			String identifier = String.valueOf(contentlet.getIdentifier());				
 
-			for( Contentlet cont : contentletList ) {
-				Map<String, String> map = new HashMap<String, String>();
+			boolean hasListedFields = false;
 
-				boolean hasListedFields = false;
-
-				for (Field f : targetFields) {
-					if (f.isIndexed() || f.isListed()) {
-						hasListedFields = true;
-						String fieldName = f.getFieldName();
-						Object fieldValueObj = "";
-						try{
-							fieldValueObj = conAPI.getFieldValue(cont, f);
-						}catch (Exception e) {
-							Logger.error(ContentletAjax.class, "Unable to get value for field", e);
-						}
-						String fieldValue = "";
-						if (fieldValueObj instanceof java.util.Date) {
-							if (fieldValueObj != null)
-								fieldValue = modDateFormat.format(fieldValueObj);
-						} else if (fieldValueObj instanceof java.sql.Timestamp) {
-							if (fieldValueObj != null) {
-								java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp) fieldValueObj).getTime());
-								fieldValue = modDateFormat.format(fieldDate);
-							}
-						} else {
-							if (fieldValueObj != null)
-								fieldValue = fieldValueObj.toString();
-						}
-						map.put(fieldName, fieldValue);
+			for (Field f : targetFields) {
+				
+				if (f.isIndexed() || f.isListed()) {
+					hasListedFields = true;
+					String fieldName = f.getFieldName();
+					Object fieldValueObj = "";
+					try{
+						fieldValueObj = conAPI.getFieldValue(contentlet, f);
+					}catch (Exception e) {
+						Logger.error(ContentletAjax.class, "Unable to get value for field", e);
 					}
+					String fieldValue = "";
+					if (fieldValueObj instanceof java.util.Date) {
+						if (fieldValueObj != null)
+							fieldValue = modDateFormat.format(fieldValueObj);
+					} else if (fieldValueObj instanceof java.sql.Timestamp) {
+						if (fieldValueObj != null) {
+							java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp) fieldValueObj).getTime());
+							fieldValue = modDateFormat.format(fieldDate);
+						}
+					} else {
+						if (fieldValueObj != null)
+							fieldValue = fieldValueObj.toString();
+					}
+					result.put(fieldName, fieldValue);
 				}
-				if( !hasListedFields ) {
-					map.put("identifier", identifier);
-				}
-
-				map.put("inode", String.valueOf(cont.getInode()));
-				map.put("working", String.valueOf(cont.isWorking()));
-				map.put("live", String.valueOf(cont.isLive()));
-				map.put("deleted", String.valueOf(cont.isArchived()));
-				map.put("locked", String.valueOf(cont.isLocked()));
-				map.put("id", identifier); // Duplicates value for identifier key in map so that UI does not get broken
-				Language language = langAPI.getLanguage(cont.getLanguageId());
-				String languageCode = langAPI.getLanguageCodeAndCountry(cont.getLanguageId(),null);
-				String languageName =  language.getLanguage();
-				map.put("langCode", languageCode);
-				map.put("langName", languageName);
-				map.put("hasListedFields", Boolean.toString(hasListedFields) );
-
-				rows.add(map);
+			}
+			if( !hasListedFields ) {
+				result.put("identifier", identifier);
 			}
 
+			result.put("inode", String.valueOf(contentlet.getInode()));
+			result.put("working", String.valueOf(contentlet.isWorking()));
+			result.put("live", String.valueOf(contentlet.isLive()));
+			result.put("deleted", String.valueOf(contentlet.isArchived()));
+			result.put("locked", String.valueOf(contentlet.isLocked()));
+			result.put("id", identifier); // Duplicates value for identifier key in map so that UI does not get broken
+			Language language = langAPI.getLanguage(contentlet.getLanguageId());
+			String languageCode = langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null);
+			String languageName =  language.getLanguage();
+			result.put("langCode", languageCode);
+			result.put("langName", languageName);
+			result.put("langId", language.getId()+"");
+			result.put("hasListedFields", Boolean.toString(hasListedFields) );
+			result.put("siblings", getContentSiblingsData(inode));
 
 		} catch (DotDataException e) {
 			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
@@ -186,8 +192,143 @@ public class ContentletAjax {
 			Logger.error(this, "Security exception.", e);
 		}
 
-		return rows;
+		return result;
 	}
+	
+	private List<Map<String, String>> getContentSiblingsData(String inode) {//GIT-1057
+
+		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+		
+		try {
+
+			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+			
+			Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
+			
+			List<Map<String,String>> contentletList = new ArrayList<Map<String,String>>();
+			
+			LanguageAPI langAPI = APILocator.getLanguageAPI();
+			ContentletAPI contentletAPI = APILocator.getContentletAPI();
+			List<Language> langs = langAPI.getLanguages();			
+			Contentlet languageContentlet = null;
+			
+			String identifier = String.valueOf(firstContentlet.getIdentifier());
+			
+			Structure targetStructure = firstContentlet.getStructure();
+			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
+			
+			boolean parent = false;
+			try{
+		        parent = firstContentlet.getBoolProperty("dotCMSParentOnTree") ;
+		    }
+		    catch(Exception e){
+
+		    }
+			
+			for(Language lang : langs){
+				
+				Map<String, String> contentDetails = new HashMap<String, String>();
+				try{
+					languageContentlet = null;
+					languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), true, lang.getId(), currentUser, false);
+				}catch (Exception e) {
+					try{
+					languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), false, lang.getId(), currentUser, false);
+					}catch (Exception e1) {	}
+				}
+				
+				boolean hasListedFields = false;
+				
+				if((languageContentlet == null) || (!UtilMethods.isSet(languageContentlet.getInode()))){
+					
+					contentDetails.put( "langCode" , langAPI.getLanguageCodeAndCountry(lang.getId(),null));
+					contentDetails.put("langName", lang.getLanguage());
+					contentDetails.put("langId", lang.getId()+"");
+			    	contentDetails.put("inode", "");
+					contentDetails.put("parent", parent+"");
+					contentDetails.put("working", "false");
+					contentDetails.put("live", "false");
+					contentDetails.put("deleted", "true");
+					contentDetails.put("locked", "false");
+					contentDetails.put("siblingInode", firstContentlet.getInode());
+					
+					for (Field f : targetFields) {
+						if (f.isIndexed() || f.isListed()) {
+							hasListedFields = true;
+							String fieldName = f.getFieldName();
+							String fieldValue = "";
+							contentDetails.put(fieldName, fieldValue);
+						}
+					}
+					if( !hasListedFields ) {
+						contentDetails.put("identifier", identifier);
+					}
+					
+					
+				}else{
+					
+					contentDetails.put( "langCode" , langAPI.getLanguageCodeAndCountry(lang.getId(),null));
+					contentDetails.put("langName", lang.getLanguage());
+					contentDetails.put("langId", lang.getId()+"");
+			    	contentDetails.put("inode", languageContentlet.getInode());
+					contentDetails.put("parent", parent+"");
+					contentDetails.put("working", languageContentlet.isWorking()+"");
+					contentDetails.put("live", languageContentlet.isLive()+"");
+					contentDetails.put("deleted", languageContentlet.isArchived()+"");
+					contentDetails.put("locked", languageContentlet.isLocked()+"");
+					contentDetails.put("siblingInode", firstContentlet.getInode());
+					
+					for (Field f : targetFields) {
+						if (f.isIndexed() || f.isListed()) {
+							hasListedFields = true;
+							String fieldName = f.getFieldName();
+							Object fieldValueObj = "";
+							try{
+								fieldValueObj = conAPI.getFieldValue(languageContentlet, f);
+							}catch (Exception e) {
+								Logger.error(ContentletAjax.class, "Unable to get value for field", e);
+							}
+							String fieldValue = "";
+							if (fieldValueObj instanceof java.util.Date) {
+								if (fieldValueObj != null)
+									fieldValue = modDateFormat.format(fieldValueObj);
+							} else if (fieldValueObj instanceof java.sql.Timestamp) {
+								if (fieldValueObj != null) {
+									java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp) fieldValueObj).getTime());
+									fieldValue = modDateFormat.format(fieldDate);
+								}
+							} else {
+								if (fieldValueObj != null)
+									fieldValue = fieldValueObj.toString();
+							}
+							contentDetails.put(fieldName, fieldValue);
+						}
+					}
+					if( !hasListedFields ) {
+						contentDetails.put("identifier", identifier);
+					}
+				}
+				contentletList.add(contentDetails);
+			}
+			
+			result = contentletList;
+			
+					
+
+		} catch (DotDataException e) {
+			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
+		} catch (PortalException e) {
+			Logger.error(this, "Portal exception.", e);
+		} catch (SystemException e) {
+			Logger.error(this, "System exception.", e);
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Security exception.", e);
+		}
+
+		return result;
+	}	
+
 
 	/**
 	 * This method is used by the backend to pull the content from the lucene
