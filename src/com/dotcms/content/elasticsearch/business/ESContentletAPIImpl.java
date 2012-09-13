@@ -500,17 +500,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         if(anyLanguage){//GIT-816
-            for(Language lang : APILocator.getLanguageAPI().getLanguages()){
-            	try{
-            		List<Contentlet> langCons = findContentletsByIdentifiers(identifiers, false, lang.getId(), user, respectFrontendRoles);
-            		if(langCons.size() > 0){
-            			contentlets.addAll(langCons);
-            			break;
-            		}
-                }catch(DotContentletStateException se){
-                	Logger.debug(this, se.getMessage());
+        	for(String identifier : identifiers){
+        		for(Language lang : APILocator.getLanguageAPI().getLanguages()){
+                	try{
+                		Contentlet languageContentlet = null; 
+                		try{
+                			languageContentlet = findContentletByIdentifier(identifier, false, lang.getId(), user, respectFrontendRoles);
+                		}catch (DotContentletStateException e) {
+                			Logger.debug(this,e.getMessage(),e);
+						}
+                		if(languageContentlet != null && UtilMethods.isSet(languageContentlet.getInode())){
+                			contentlets.add(languageContentlet);
+                			break;
+                		}
+                    }catch(DotContentletStateException se){
+                    	Logger.debug(this, se.getMessage());
+                    }
                 }
-            }
+        	}
         }else{
         	contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         }
@@ -1591,6 +1598,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else {
                     tree = TreeFactory.getTree(relatedContent.getIdentifier(), contentlet.getIdentifier(), related.getRelationship().getRelationTypeValue());
                 }
+                Tree treeToDelete = TreeFactory.getTree(tree);
                 TreeFactory.deleteTree(tree);
             }
         }
@@ -1680,10 +1688,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 else
                     newTree.setTreeOrder(treePosition);
             }
+            
             //newTree.setTreeOrder(treePosition);
             if( uniqueRelationshipSet.add(newTree) ) {
-                TreeFactory.saveTree(newTree);
-                treePosition++;
+            	
+            	int newTreePosistion = newTree.getTreeOrder();            	
+            	Tree treeToUpdate = TreeFactory.getTree(newTree);
+            	treeToUpdate.setTreeOrder(newTreePosistion);
+          	
+            	if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType()))
+            		TreeFactory.saveTree(treeToUpdate);
+            	else
+            		TreeFactory.saveTree(newTree);
+                
+            	treePosition++;
+                
+            }
+            
+            if(!child){// when we change the order we need to index all the sibling content
+            	for(Contentlet con : getSiblings(c.getIdentifier())){
+            		refresh(con);
+            	}
             }
         }
     }
