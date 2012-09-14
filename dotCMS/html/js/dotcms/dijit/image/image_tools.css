@@ -1,51 +1,81 @@
 
 
-#main {width:920px;}
-#toolBar{background:#fff;width:920px;}
-#controlTable{width:920px; border-collapse:collapse;}
 
+
+#iFrameWrapper{
+		position:absolute;
+		left:0px;
+		right:0px;
+		top:26px;
+		bottom:0px;
+
+	
+}
+
+#imageToolIframe{
+	
+		//border:1px solid blue;
+
+		display:block;
+		position:absolute;
+		left:0px;
+		right:0px;
+		top:0px;
+		bottom:0px;
+}
 
 
 .imageToolButtonBar {
+	position:absolute;
+	left:0px;
+	right:0px;
+	top:0px;
 	background:#fff;
-	height:29px;
-	border:1px solid silver;
-	margin-width:0 1px;
+
+	border-bottom:1px solid silver;
+	border-top:1px solid silver;
+	margin-width:0 0px;
 	padding:5px 15px 1px 15px;
 	vertical-align: middle;
+	box-shadow:0 1px 3px rgba(0,0,0,0.2);-moz-box-shadow:0 1px 3px rgba(0,0,0,0.2);-webkit-box-shadow:0 1px 3px rgba(0,0,0,0.2);
 }
 
+
+#imageViewPort{
+	overflow:auto;
+	//border:1px solid red;
+	padding:0px;
+	margin:0px;
+	position:absolute;
+	left:0px;
+	right:0px;
+	top:36px;
+	bottom:123px;
+	
+
+ 	background-color:#eeeeee;
+}
+
+
+#toolBar{
+	background:#fff;
+	position:absolute;
+	bottom:0px;
+	left:0px;
+	right:0px;
+	//border:1px solid blue;
+}
 
 #exif { clear:both; height:2em; }
 
 
 
-#imageToolIframe{
-width:920px;margin:0;padding:0;	
-}
-
 #showScaleSlider{
-	margin-top:10px;
+	margin:10px auto;
 	width:250px; 
 	height:20px;
 }
-#imageViewPort{
-	overflow:auto;
-	border:1px solid silver;
-	border-width: 0 1px;
-	height:400px;
-	width:918px;
-	vertical-align:top;
-	padding:0px;
-	margin:0px;
- 	text-align:left;
- 	background-color:#eeeeee;
-}
 
-/* style the image */
-#me {
-
-}
 
 #saveAsDialog{
 	width:350px;
@@ -111,22 +141,13 @@ width:920px;margin:0;padding:0;
 	padding-top:4px;
 }
 
-#buttonControl{
-	width:920px;
-	padding:10px;
-	border:1px solid silver;
-}
+
 #doCropButton{
 	display:none;
 }
 
-#viewingUrlDiv{
-	padding:10px;
-	text-align:center;
-}
-#viewingUrl{
-	border:1px solid silver;padding:3px;width:600px;
-}
+
+
 
 #filtersUndoDiv{
 	
@@ -160,6 +181,11 @@ width:920px;margin:0;padding:0;
 	background:url('/html/images/icons/minus-small-circle.png') no-repeat right center ;
 }
 
+
+#controlTable{
+	width:100%;
+}
+
         
 #controlTable td{
 	border:1px solid silver;
@@ -168,6 +194,7 @@ width:920px;margin:0;padding:0;
 	white-space: nowrap;
 	vertical-align: middle;
 }
+
 #showScaleSlider td{
 	border:0px solid silver;
 	padding:0px;	
