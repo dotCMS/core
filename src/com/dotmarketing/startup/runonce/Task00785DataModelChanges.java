@@ -93,9 +93,9 @@ public class Task00785DataModelChanges implements StartupTask  {
 		String script=
     		"create table inodeskill (inode varchar(36) primary key);"+
 		    "delete from inodeskill;"+
-    		"insert into inodeskill"+
-    		    "(select inode from inode where type in('htmlpage','links','contentlet','containers','template','file_asset') " +
-    		    "and (identifier is null OR (identifier not in(select inode from identifier))));"+
+    		"insert into inodeskill "+
+    		    " select inode from inode where type in('htmlpage','links','contentlet','containers','template','file_asset') " +
+    		    "and (identifier is null OR (identifier not in(select inode from identifier)));"+
     		"delete from file_asset where inode in (select inode from inodeskill);"+
     		"delete from contentlet where inode in (select inode from inodeskill);"+
     		"delete from containers where inode in (select inode from inodeskill);"+
