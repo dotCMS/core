@@ -11,6 +11,7 @@ import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.FileItem;
 import com.bradmcevoy.http.FileResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -40,7 +41,6 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	private DotWebdavHelper dotDavHelper;
 	private IFileAsset file = new File();
 	String path;
-	private User user;
 	private boolean isAutoPub = false;
 	private PermissionAPI perAPI;
 	
@@ -53,6 +53,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 	
 	public void copyTo(CollectionResource collRes, String name) throws DotRuntimeException {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
@@ -77,8 +78,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 
 	public Object authenticate(String username, String password) {
 		try {
-			this.user =  dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -90,12 +90,15 @@ public class FileResourceImpl implements FileResource, LockableResource {
 			
 			if(auth == null)
 				return false;
-			else if(method.isWrite && isAutoPub){
-				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_PUBLISH, user, false);
-			}else if(method.isWrite && !isAutoPub){
-				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_EDIT, user, false);
-			}else if(!method.isWrite){
-				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_READ, user, false);
+			else {
+			    User user=(User)auth.getTag();
+			    if(method.isWrite && isAutoPub){
+    				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_PUBLISH, user, false);
+    			}else if(method.isWrite && !isAutoPub){
+    				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_EDIT, user, false);
+    			}else if(!method.isWrite){
+    				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_READ, user, false);
+    			}
 			}
 		} catch (DotDataException e) {
 			Logger.error(FileResourceImpl.class, e.getMessage(), e);
@@ -144,7 +147,8 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public void delete() throws DotRuntimeException {
-		try {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
+	    try {
 			dotDavHelper.removeObject(path, user);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
@@ -178,6 +182,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public void moveTo(CollectionResource collRes, String name) throws RuntimeException {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(!name.contains(".")){
 			Logger.warn(this, "You cannot rename a file without an extension");
 			return;

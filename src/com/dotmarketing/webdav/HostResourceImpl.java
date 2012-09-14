@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -36,7 +37,6 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 	private Host host;
 	private DotWebdavHelper dotDavHelper;
 	private String path;
-	private User user;
 	private boolean isAutoPub = false;
 	private PermissionAPI perAPI;
 	
@@ -50,8 +50,7 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 	
 	public Object authenticate(String username, String password) {
 		try {
-			this.user =  dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -60,13 +59,15 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 
 	public boolean authorise(Request request, Method method, Auth auth) {
 		try {
-			
 			if(auth == null)
 				return false;
-			else if(method.isWrite){
-				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, false);
-			}else{
-				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, false);
+			else {
+			    User user=(User)auth.getTag();
+			    if(method.isWrite){
+    				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, false);
+    			}else{
+    				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, false);
+    			}
 			}
 
 		} catch (DotDataException e) {
@@ -128,6 +129,7 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 	} 
 
 	public List<? extends Resource> getChildren() {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Folder> folders = listFolders();
 		List<Resource> frs = new ArrayList<Resource>();
 		for (Folder folder : folders) {
@@ -194,6 +196,7 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 	}
 
 	private List<Folder> listFolders(){
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		List<Folder> folders = new ArrayList<Folder>();
@@ -217,6 +220,7 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 	}
 
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(dotDavHelper.isTempResource(newName)){
 			File f = dotDavHelper.createTempFolder(File.separator + host.getHostname() + File.separator + newName);
 			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
