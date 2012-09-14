@@ -47,7 +47,6 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	public static final String TEMPLATE_FOLDER="_TEMPLATE";
 	private DotWebdavHelper dotDavHelper;
 	private String path;
-	private User user;
 
 	private PermissionAPI perAPI;
 	private Host host;
@@ -101,8 +100,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	 */
 	public Object authenticate(String username, String password) {
 		try {
-			this.user = dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -120,14 +118,16 @@ public class TemplateFolderResourceImpl implements LockableResource,
 
 			if (auth == null)
 				return false;
-			else if (method.isWrite) {
-				return perAPI.doesUserHavePermission(host,
-						PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
-			} else if (!method.isWrite) {
-				return perAPI.doesUserHavePermission(host,
-						PermissionAPI.PERMISSION_READ, user, false);
+			else { 
+			    User user=(User)auth.getTag();
+			    if (method.isWrite) {
+    				return perAPI.doesUserHavePermission(host,
+    						PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
+    			} else if (!method.isWrite) {
+    				return perAPI.doesUserHavePermission(host,
+    						PermissionAPI.PERMISSION_READ, user, false);
+    			}
 			}
-
 		} catch (DotDataException e) {
 			Logger.error(TemplateFolderResourceImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
