@@ -789,6 +789,9 @@
 
 				// to edit a related content, with proper referer
 				function <%= relationJsName %>editRelatedContent(inode, siblingInode, langId){
+					
+					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
+						return;
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
