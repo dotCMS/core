@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -31,7 +32,6 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 
 	private DotWebdavHelper dotDavHelper;
 	private String path;
-	private User user;
 	
 	public WebdavRootResourceImpl() {
 		dotDavHelper = new DotWebdavHelper();
@@ -39,8 +39,7 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 	
 	public Object authenticate(String username, String password) {
 		try {
-			user = dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -108,6 +107,7 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 	}
 
 	public List<? extends Resource> getChildren() {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Host> hosts = listHosts();
 		List<Resource> hrs = new ArrayList<Resource>();
 		for (Host host : hosts) {
@@ -127,6 +127,7 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 	}
 
 	private List<Host> listHosts(){
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts;
 		try {

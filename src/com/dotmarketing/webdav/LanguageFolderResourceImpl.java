@@ -42,7 +42,6 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	private DotWebdavHelper dotDavHelper;
 	private File folder;
 	private String path = "";
-	private User user;
 	private boolean isLanguageRoot = false;
 
 	/**
@@ -155,7 +154,7 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	 */
 	public Object authenticate(String username, String password) {
 		try {
-			this.user =  dotDavHelper.authorizePrincipal(username, password);
+			User user =  dotDavHelper.authorizePrincipal(username, password);
 			//Get the Administrator Role to validate if the user has permission  
 			Role cmsAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();
 			if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, cmsAdminRole.getId())){
