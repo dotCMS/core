@@ -12,6 +12,7 @@ import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.FileItem;
 import com.bradmcevoy.http.FileResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -37,7 +38,6 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 	private DotWebdavHelper dotDavHelper;
 	private final File file;
     private final String url;
-    private User user;
     private boolean isAutoPub = false;
     private PermissionAPI perAPI; 
     
@@ -87,8 +87,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
     
     public Object authenticate(String username, String password) {
     	try {
-			user =  dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -148,6 +147,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 
 
 	public void copyTo(CollectionResource collRes, String name) {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
@@ -191,6 +191,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 
 
 	public void moveTo(CollectionResource collRes, String name) {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {

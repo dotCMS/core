@@ -35,7 +35,6 @@ public class LanguageFileResourceImpl implements FileResource, LockableResource 
 
 	private DotWebdavHelper dotDavHelper;
 	private final File file;
-	private User user;
 
 	public LanguageFileResourceImpl(String path) {
 		if(path.contains("/")){
@@ -95,7 +94,7 @@ public class LanguageFileResourceImpl implements FileResource, LockableResource 
 
 	public Object authenticate(String username, String password) {
 		try {
-			user =  dotDavHelper.authorizePrincipal(username, password);
+			User user =  dotDavHelper.authorizePrincipal(username, password);
 			  
 			//Get the Administrator Role to validate if the user has permission
 			Role cmsAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();
