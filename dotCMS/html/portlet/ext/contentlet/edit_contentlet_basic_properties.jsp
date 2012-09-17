@@ -92,18 +92,10 @@
 		params.put("sibblingStructure", new String[] { (request.getParameter("selectedStructureFake") != null) ? request
 		.getParameter("selectedStructureFake") : "" });
 	}
-	
-	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
 	if(structure.getVelocityVarName().equals("calendarEvent")){
-		Map calParams = new HashMap();
-		calParams.put("struts_action",new String[] {"/ext/calendar/edit_event"});
-		calParams.put("inode",new String[] { contentlet.getInode() + "" });
-		calParams.put("cmd",new String[] { Constants.EDIT });
-		if (request.getParameter("referer") != null) {
-		   calParams.put("referer", new String[] { request.getParameter("referer") });
-		}
-	    editURL = PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),calParams);
+		params.put("struts_action",new String[] {"/ext/calendar/edit_event"});
 	}
+	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
 	
 	WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
 	WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet); 
