@@ -174,7 +174,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 				setAssetType("links");
 				setParentPath(uRI.substring(0, uRI.lastIndexOf("http://")));
 				setAssetName(uRI.substring(uRI.lastIndexOf("http://")));
-			}else{
+			}else if(!assetType.equals("links")) {
 				setAssetType("file_asset");
 				setParentPath(uRI.substring(0, uRI.lastIndexOf("/")+1));
 				setAssetName(uRI.substring(uRI.lastIndexOf("/")+1));
