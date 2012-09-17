@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="java.util.*" %>
 <%@page import="com.dotmarketing.beans.*" %>
 <%@page import="com.dotmarketing.util.*" %>
@@ -27,7 +28,7 @@
 	Identifier ident = null;
 	if (isContentlet && InodeUtils.isSet(cver.getInode())) {
 		ident = APILocator.getIdentifierAPI().find(cver);
-		versions.addAll(APILocator.getContentletAPI().findAllUserVersions(ident,user,false));
+		versions.addAll(APILocator.getContentletAPI().findAllVersions(ident,user,false));
 		Contentlet working = null;
 		try{
 			if(InodeUtils.isSet(ident.getInode()))
@@ -40,8 +41,8 @@
 		}catch(Exception e){
 			Logger.warn(this,LanguageUtil.get(pageContext, "Unable-to-get-working-contentlet")+ " : " + LanguageUtil.get(pageContext, "Usually-not-a-problem-it-is-probably-because-the-contentlet-is-new"));
 		}
-		if(working != null)
-			versions.add(0,working);
+		//if(working != null) 
+			//versions.add(0,working);
 	}else if(InodeUtils.isSet(v.getInode())){
 		ident = APILocator.getIdentifierAPI().find(v);
 		WebAsset working = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(ident, user, false);
@@ -68,6 +69,9 @@
 	<tr>
 		<th width="5%" nowrap><%= LanguageUtil.get(pageContext, "Status") %></th>
 		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "Action") %></th>
+		<% if(isContentlet){ %>
+			<th width="1%" nowrap>&nbsp;</th>
+		<% } %>
 		<th width="45%"><%= LanguageUtil.get(pageContext, "Title") %></th>
 		<th width="20%"><%= LanguageUtil.get(pageContext, "Author") %></th>
 		<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Modified-Date") %></th>
@@ -81,6 +85,10 @@
 		Versionable ver = versionsIt.next();
 		boolean working = ver.isWorking();
 		boolean live = ver.isLive();
+		Language langV = APILocator.getLanguageAPI().getDefaultLanguage();
+		if(isContentlet){
+			langV = APILocator.getLanguageAPI().getLanguage(((Contentlet)ver).getLanguageId());
+		}
 		String vinode = ver.getInode();
 		String title = ver.getTitle();
 		String modUser = ver.getModUser();
@@ -112,6 +120,9 @@
 			<%= LanguageUtil.get(pageContext, "Working-Version") %>
 		<% } %>
 		</td>
+		<% if(isContentlet){ %>
+			<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/></td>		
+		<% } %>
 		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
 <% 
 	String modUserName = "";
