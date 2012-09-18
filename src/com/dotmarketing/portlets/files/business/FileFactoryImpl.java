@@ -163,7 +163,7 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 			if (localTransation) {
 				HibernateUtil.rollbackTransaction();
 			}
-			throw new DotDataException(e.getMessage());
+			throw new DotDataException(e.getMessage(),e);
 
 		} finally {
 

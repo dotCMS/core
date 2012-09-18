@@ -20,6 +20,7 @@ import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -70,7 +71,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
-		save(webasset);
+		if(!UtilMethods.isSet(webasset.getInode()))
+		    HibernateUtil.save(webasset);
 
 		// create new identifier, without URI
 		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Host)null);
@@ -79,6 +81,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		APILocator.getIdentifierAPI().save(id);
 		
 		webasset.setIdentifier(id.getId());
+		save(webasset);
 		APILocator.getVersionableAPI().setWorking(webasset);
 	}
 	
@@ -87,7 +90,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		webasset.setModUser(userId);
 		
 		// persists the webasset
-        save(webasset);
+		if(!UtilMethods.isSet(webasset.getInode()))
+            HibernateUtil.save(webasset);
 		
 		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Folder) parent);
 		id.setOwner(userId);
@@ -112,7 +116,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
-		save(webasset);
+		//save(webasset);
 
 		// adds asset to the existing identifier
 		//identifier.addChild(webasset);
@@ -153,8 +157,10 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		//newWebAsset.setWorking(true);
 		
 		//save(oldWebAsset);
-		save(newWebAsset);
 		newWebAsset.setIdentifier(id.getId());
+		
+		save(newWebAsset);
+		
 		APILocator.getVersionableAPI().setWorking(newWebAsset);
 
 		return newWebAsset;
@@ -165,7 +171,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
-		save(webasset);
+		if(!UtilMethods.isSet(webasset.getInode()))
+            HibernateUtil.save(webasset);
 
 		// adds the webasset as child of the folder or parent inode
 		if(!parent.getType().equalsIgnoreCase("folder"))
