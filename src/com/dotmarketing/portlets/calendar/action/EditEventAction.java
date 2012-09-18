@@ -112,7 +112,7 @@ public class EditEventAction extends EditContentletAction {
 			ActionRequest req, ActionResponse res, String command, User user) throws DotDataException, DotSecurityException, ParseException  {
 		Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
 		if(InodeUtils.isSet(contentlet.getInode())) {
-			Event ev = eventAPI.find(contentlet.getIdentifier(), false, user, false);
+			Event ev = eventAPI.findbyInode(contentlet.getInode(), user, false);
 			req.setAttribute(WebKeys.EVENT_EDIT, ev);
 
 		} else {
@@ -156,6 +156,8 @@ public class EditEventAction extends EditContentletAction {
 			ActionRequest req, ActionResponse res, User user)  {
 		EventForm eventForm = (EventForm) form;
 		Event event = (Event) req.getAttribute(WebKeys.EVENT_EDIT);
+		if(!UtilMethods.isSet(event.getInode()))
+			return;
 		if (event.getRecurs()) {
 			eventForm.setRecurrenceStartsDate(event.getRecurrenceStart());
 			eventForm.setRecurrenceDayOfMonth(String.valueOf(event.getRecurrenceDayOfMonth()));
