@@ -86,6 +86,9 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		
+		// persists the webasset
+        save(webasset);
+		
 		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Folder) parent);
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.

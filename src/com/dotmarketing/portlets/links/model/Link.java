@@ -96,6 +96,7 @@ public class Link extends WebAsset implements Serializable, Comparable {
 		this.setTarget(newLink.getTarget());
 		this.setType(newLink.getType());
 		this.setProtocal(newLink.getProtocal());
+		this.setInternalLinkIdentifier(newLink.getInternalLinkIdentifier());
 	    super.copy(newLink);
 	}
 
