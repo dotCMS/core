@@ -79,7 +79,6 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 		dc.executeStatement(addtemplate);
 		dc.executeStatement(addFK);
 		
-		addTriggerToHTMLPage();
 		dc.setSQL(htmlQuery);
 		List<Map<String, String>> treeResults = dc.loadResults();
 		for(Map<String,String> tree : treeResults){
@@ -90,6 +89,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 			dc.addParam(htmlpageInode);
 			dc.loadResult();
 		}
+		addTriggerToHTMLPage();
 	}
 	
 	private void triggerChanges() throws SQLException {
