@@ -157,7 +157,11 @@ public class VersionableFactoryImpl extends VersionableFactory {
             Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
             VersionInfo vi=(VersionInfo)dh.load();
             if(vi ==null || !UtilMethods.isSet(vi.getIdentifier())) {
-            	vi = new VersionInfo();
+            	try {
+                    vi = (VersionInfo) clazz.newInstance();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             return vi;
