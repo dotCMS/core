@@ -245,8 +245,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetName(uri);
 			}else if (versionable instanceof WebAsset) {
 				identifier.setURI(((WebAsset) versionable).getURI(folder));
+				identifier.setAssetType(versionable.getVersionType());
+				if(versionable instanceof Link)
+				    identifier.setAssetName(versionable.getInode());
 			}else{
 				identifier.setURI(uri);
+				identifier.setAssetType(versionable.getVersionType());
 			}
 			identifier.setId(null);
 		}
@@ -309,7 +313,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             } else if ( versionable instanceof HTMLPage ) {
                 identifier.setURI( '/' + ((HTMLPage) versionable).getPageUrl() );
             } else if ( versionable instanceof Link ) {
-                identifier.setURI( '/' + versionable.getInode() );
+                identifier.setAssetName( versionable.getInode() );
+                identifier.setParentPath("/");
             } else {
                 identifier.setURI( uri );
             }
