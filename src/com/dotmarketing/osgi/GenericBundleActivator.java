@@ -3,11 +3,17 @@ package com.dotmarketing.osgi;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.OSGIUtil;
+import com.dotmarketing.util.VelocityUtil;
+import org.apache.felix.http.api.ExtHttpService;
+import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
+import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -33,7 +39,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     /**
      * Allow to this bundle/elements to be visible and accessible from the host classpath
      */
-    public void publishBundleServices ( BundleContext context ) {
+    protected void publishBundleServices ( BundleContext context ) {
 
         //Felix classloader
         ClassLoader felixClassLoader = getFelixClassLoader();
@@ -69,7 +75,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     /**
      * Unpublish this bundle elements
      */
-    public void unpublishBundleServices () {
+    protected void unpublishBundleServices () {
 
         //Get the current classloader
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -87,7 +93,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param bundleJarFileName bundle file name
      * @throws Exception
      */
-    public void registerBundleLibrary ( String bundleJarFileName ) throws Exception {
+    protected void registerBundleLibrary ( String bundleJarFileName ) throws Exception {
 
         //Felix directories
         String felixDirectory = Config.CONTEXT.getRealPath( File.separator + "WEB-INF" + File.separator + "felix" );
@@ -103,7 +109,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param filePath a String pointing to the file
      * @throws java.io.IOException
      */
-    public void addFileToClasspath ( String filePath ) throws Exception {
+    protected void addFileToClasspath ( String filePath ) throws Exception {
 
         File fileToAdd = new File( filePath );
         addFileToClasspath( fileToAdd );
@@ -115,7 +121,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param toAdd the file to be added
      * @throws java.io.IOException
      */
-    public void addFileToClasspath ( File toAdd ) throws Exception {
+    protected void addFileToClasspath ( File toAdd ) throws Exception {
 
         addURLToApplicationClassLoader( toAdd.toURI().toURL() );
     }
@@ -153,8 +159,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param actionlet
      */
     @SuppressWarnings ("unchecked")
-    public void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
+    protected void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
 
+        //Getting the service to register our Actionlet
         ServiceReference serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
         if ( serviceRefSelected == null ) {
             return;
@@ -174,7 +181,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     /**
      * Unregister the registered WorkFlowActionlet services
      */
-    public void unregisterActionlets () {
+    protected void unregisterActionlets () {
 
         if ( this.workflowOsgiService != null && actionlets != null ) {
             for ( WorkFlowActionlet actionlet : actionlets ) {
@@ -192,19 +199,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param info
      */
     @SuppressWarnings ("unchecked")
-    public void registerViewToolService ( BundleContext context, ToolInfo info ) {
+    protected void registerViewToolService ( BundleContext context, ToolInfo info ) {
 
+        //Getting the service to register our ViewTool
         ServiceReference serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
         if ( serviceRefSelected == null ) {
-
-            /*//Forcing the loading of the ToolboxManager??
-            //VelocityUtil.getEngine();
-            VelocityUtil.getToolboxManager();
-            serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
-            if ( serviceRefSelected == null ) {
-                return;
-            }*/
-
             return;
         }
 
@@ -220,9 +219,95 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
+     * Is possible on certain scenarios to have our ToolManager without initialization, or most probably a ToolManager without
+     * set our required services, so we need to force things a little bit here, and register those services if it is necessary.
+     *
+     * @param context
+     */
+    private void forceToolBoxLoading ( BundleContext context ) {
+
+        ServiceReference serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
+        if ( serviceRefSelected == null ) {
+
+            //Forcing the loading of the ToolboxManager
+            ServletToolboxManager toolboxManager = (ServletToolboxManager) VelocityUtil.getToolboxManager();
+            if ( toolboxManager != null ) {
+
+                serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
+                if ( serviceRefSelected == null ) {
+                    toolboxManager.registerService();
+                }
+            }
+        }
+    }
+
+    /**
+     * Is possible on certain scenarios to have our WorkflowAPI without initialization, or most probably a WorkflowAPI without
+     * set our required services, so we need to force things a little bit here, and register those services if it is necessary.
+     *
+     * @param context
+     */
+    private void forceWorkflowServiceLoading ( BundleContext context ) {
+
+        //Getting the service to register our Actionlet
+        ServiceReference serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
+        if ( serviceRefSelected == null ) {
+
+            //Forcing the loading of the WorkflowService
+            WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+            if ( workflowAPI != null ) {
+
+                serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
+                if ( serviceRefSelected == null ) {
+                    //Forcing the registration of our required services
+                    workflowAPI.registerBundleService();
+                }
+            }
+        }
+    }
+
+    /**
+     * Forcing the registry of the HttpService, usually need it when the felix framework is reloaded and we need to update the
+     * bundle context of our already registered services.
+     *
+     * @param context
+     */
+    private void forceHttpServiceLoading ( BundleContext context ) {
+
+        //Service reference to ExtHttpService that will allows to register servlets and filters
+        ServiceReference httpService = context.getServiceReference( ExtHttpService.class.getName() );
+        if ( httpService == null ) {
+
+            try {
+                //Working with the http bridge
+                if ( OSGIProxyServlet.tracker != null ) {//If it is null probably the servlet wasn't even been loaded...
+                    OSGIProxyServlet.tracker = new DispatcherTracker( context.getBundle( OSGIUtil.BUNDLE_HTTP_BRIDGE_ID ).getBundleContext(), null, OSGIProxyServlet.servletConfig );
+                    OSGIProxyServlet.tracker.open();
+                }
+            } catch ( Exception e ) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Verify and initialize if necessary the required OSGI services to create plugins
+     *
+     * @param context
+     */
+    protected void initializeServices ( BundleContext context ) {
+
+        forceHttpServiceLoading( context );
+        //Forcing the loading of the ToolboxManager
+        forceToolBoxLoading( context );
+        //Forcing the loading of the WorkflowService
+        forceWorkflowServiceLoading( context );
+    }
+
+    /**
      * Unregister the registered ViewTool services
      */
-    public void unregisterViewToolServices () {
+    protected void unregisterViewToolServices () {
 
         if ( this.toolboxManager != null && viewTools != null ) {
             for ( ToolInfo toolInfo : viewTools ) {
@@ -239,7 +324,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param preHook
      * @throws Exception
      */
-    public void addPreHook ( Object preHook ) throws Exception {
+    protected void addPreHook ( Object preHook ) throws Exception {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
         interceptor.addPreHook( preHook );
@@ -251,7 +336,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param postHook
      * @throws Exception
      */
-    public void addPostHook ( Object postHook ) throws Exception {
+    protected void addPostHook ( Object postHook ) throws Exception {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
         interceptor.addPostHook( postHook );
@@ -261,7 +346,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * Utility method to unregister all the possible services and/or tools registered by this activator class.
      * Some how we have to try to clean up anything added on the deploy if this bundle.
      */
-    public void unregisterServices () {
+    protected void unregisterServices () {
 
         unregisterActionlets();
         unregisterViewToolServices();

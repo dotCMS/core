@@ -95,14 +95,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}));
 
 		refreshWorkFlowActionletMap();
+        registerBundleService();
+    }
 
-		// Register main service
+    public void registerBundleService () {
+
+        // Register main service
         BundleContext context = HostActivator.instance().getBundleContext();
         Hashtable<String, String> props = new Hashtable<String, String>();
         context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
-	}
+    }
 
-	public WorkFlowActionlet newActionlet(String className) throws DotDataException {
+    public WorkFlowActionlet newActionlet(String className) throws DotDataException {
 		for ( Class<WorkFlowActionlet> z : actionletClasses ) {
 			if ( z.getName().equals(className.trim())) {
 				try {
@@ -587,8 +591,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 						try {
 							actionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
-							actionletClasses.add(actionlet.getClass());
-						} catch (InstantiationException e) {
+                            if ( !actionletClasses.contains( actionlet.getClass() ) ) {
+                                actionletClasses.add( actionlet.getClass() );
+                            }
+                        } catch (InstantiationException e) {
 							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
 						} catch (IllegalAccessException e) {
 							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);

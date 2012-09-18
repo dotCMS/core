@@ -5,10 +5,10 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.util.HashMap"%>
-<%@page import="com.dotmarketing.listeners.OsgiFelixListener"%>
 <%@page import="org.osgi.framework.Bundle"%>
+<%@ page import="com.dotmarketing.util.OSGIUtil" %>
 <%
-Bundle[] ba = OsgiFelixListener.m_fwk.getBundleContext().getBundles();
+Bundle[] ba = OSGIUtil.getInstance().getBundleContext().getBundles();
 
 List<String> ignoreBuns =Arrays.asList(new String[]{"org.apache.felix.gogo.shell","org.apache.felix.framework", "org.apache.felix.bundlerepository","org.apache.felix.fileinstall","org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core"});
 
@@ -32,6 +32,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 </div>
 <div class="buttonBoxRight">
 	<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
+	<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('extraPacakgesOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-add-Extra-Packages")%></button>
 	<button dojoType="dijit.form.Button" onClick="mainAdmin.refresh();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
 
 </div>
@@ -49,6 +50,18 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 			</div>
 		</form>
 	</div>
+</div>
+
+<div id="extraPacakgesOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "OSGI-Extra-Packages")%>" style="display: none;">
+    <div style="padding:30px 15px;">
+        <form id="addExtraPackages" name="addExtraPackages" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="cmd" value="addExtraSystemPackages">
+            <textarea class="form-text" cols="70" name="system.packages.extra" rows="10" wrap="soft"></textarea>
+            <div>
+                <button dojoType="dijit.form.Button" onClick='bundles.addExtraSystemPackages()' iconClass="uploadIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Extra-Packages-save-restart")%></button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <table class="listingTable" style="margin:0 0 25px 0;" id="bundlesTable">
