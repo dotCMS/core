@@ -172,6 +172,31 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		dijit.byId('uploadOSGIDialog').hide();
 		dijit.byId('savingOSGIDialog').show();
 		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+	},
+    addExtraSystemPackages : function(){
+		var fm = dojo.byId("addExtraPackages");
+
+        require(["dojo/io/iframe"], function(ioIframe){
+            ioIframe.send({
+                // The form node, which contains the
+                // data. We also pull the URL and METHOD from it:
+                form: fm,
+                url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=addExtraSystemPackages",
+                method : "post",
+                // The used data format:
+                handleAs: "json",
+
+                // Callback on successful call:
+                load: function(response, ioArgs) {
+                    // return the response for succeeding callbacks
+                    setTimeout(function() {mainAdmin.refresh();},7000);
+                    return response;
+                }
+            });
+		});
+		dijit.byId('extraPacakgesOSGIDialog').hide();
+		dijit.byId('savingOSGIDialog').show();
+		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	}
 });
 
