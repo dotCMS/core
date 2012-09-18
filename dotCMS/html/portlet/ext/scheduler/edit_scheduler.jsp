@@ -8,19 +8,19 @@
 <%@ page import="javax.servlet.jsp.PageContext" %>
 
 <%
-	SchedulerForm schedulerForm = null;   
+	SchedulerForm schedulerForm = null;
 
 	if (request.getAttribute("SchedulerForm") != null) {
 		schedulerForm = (SchedulerForm) request.getAttribute("SchedulerForm");
 	}
-	
+
 	java.util.Hashtable params = new java.util.Hashtable();
 	params.put("struts_action", new String [] {"/ext/scheduler/view_schedulers"} );
-	
+
 	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
-	
+
 	List<String> listJobClasses = SchedulerJobLocator.getJobClassess();
-	
+
 %>
 
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -30,7 +30,7 @@
 .aligncenter{
 	margin-left: auto;
     margin-right: auto;
-    width: 6em
+    width: 600px;
 }
 </style>
 <script language="Javascript">
@@ -53,7 +53,7 @@ function submitfm(form) {
 		form.referrer.value = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/scheduler/view_schedulers" /><portlet:param name="group" value="user_jobs" /></portlet:renderURL>';
 		submitForm(form);
 	}
-	
+
 }
 
 function cancelEdit() {
@@ -75,13 +75,13 @@ function deleteSchedule(form) {
 		 }
 
 
-	 function updateDate(varName) {		
+	 function updateDate(varName) {
 			var field = $(varName);
 			var dateValue ="";
 			var myDate = dijit.byId(varName + "Date");
 			var x = new Date();
 			if(myDate != null){
-				x = myDate.getValue(); 
+				x = myDate.getValue();
 			}
 			var month = (x.getMonth() +1) + "";
 			month = (month.length < 2) ? "0" + month : month;
@@ -96,11 +96,11 @@ function deleteSchedule(form) {
 				if(hour < 10) hour = "0" + hour;
 				var min = time.getMinutes();
 				if(min < 10) min = "0" + min;
-				dateValue += hour + ":" + min; 
+				dateValue += hour + ":" + min;
 			} else {
 				dateValue += "00:00";
 			}
-			
+
 			field.value = dateValue;
 		}
 </script>
@@ -115,7 +115,7 @@ function deleteSchedule(form) {
 			<dl>
 					<dt>
 						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Job-Name") %>:</b></font>
-					</dt>				
+					</dt>
 					<dd>
 <%
 	if (((schedulerForm.getJobGroup() == null) ||
@@ -135,7 +135,7 @@ function deleteSchedule(form) {
 					</dd>
 					<dt>
 						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Job-Description") %>:</b></font>
-					</dt>				
+					</dt>
 					<dd>
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
@@ -151,10 +151,10 @@ function deleteSchedule(form) {
 					</dd>
 					<dt>
 						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Execute") %>:</b></font>
-					</dt>				
+					</dt>
 					<dd>
 						<div id="startDateDiv">
-						
+
 <%
 	SimpleDateFormat sdf = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE);
 
@@ -166,9 +166,9 @@ function deleteSchedule(form) {
 
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-							
+
 							    	<font><%= LanguageUtil.get(pageContext, "From1") %></font>
-							  
+
 <%
 	Calendar startDateCalendar = null;
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
@@ -196,9 +196,9 @@ function deleteSchedule(form) {
 %>
 							<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveStartDate()?"checked":""  %> id="haveStartDate" name="haveStartDate" />
 							<input type="text" value="<%= df.format(startDate) %>" onChange="updateDate('startDate');" dojoType="dijit.form.DateTextBox" name="startDateDate"
-                                            id="startDateDate" style="width:150px;" />                                            
+                                            id="startDateDate" style="width:150px;" />
                             <input type="text" id="startDateTime" name="startDateTime" value='T<%=hour+":"+min%>:00' onChange="updateDate('startDate');"
-                                            dojoType="dijit.form.TimeTextBox" style="width: 100px;" />  
+                                            dojoType="dijit.form.TimeTextBox" style="width: 100px;" />
 							<input type="hidden" name="startDate" value="" id="startDate">
 							<script language="javascript">
 							dojo.addOnLoad (function(){
@@ -214,9 +214,9 @@ function deleteSchedule(form) {
 							</script>
 <%
 	} else {%>
-							
-							    	<font><%= LanguageUtil.get(pageContext, "From1") %></font>							   
-								
+
+							    	<font><%= LanguageUtil.get(pageContext, "From1") %></font>
+
 <%
 	if (schedulerForm.isHaveStartDate()) {
 		Calendar startDateCalendar = null;
@@ -231,7 +231,7 @@ function deleteSchedule(form) {
 				startDate = new Date();
 			}
 		}
-		
+
 		SimpleDateFormat sdf2 = new SimpleDateFormat("MMMM/dd/yyyy hh:mm:ss a");
 %>
 									&nbsp;&nbsp;&nbsp;<%= sdf2.format(startDate) %>
@@ -243,8 +243,8 @@ function deleteSchedule(form) {
 	}
 %>
 						</div>
-					</dd>			
-							
+					</dd>
+
 <%
 	}
 %>
@@ -252,9 +252,9 @@ function deleteSchedule(form) {
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
 					<dd>
-						<div id="endDateDiv">		
-							&nbsp;&nbsp;&nbsp;&nbsp;<font><%= LanguageUtil.get(pageContext, "To1") %></font>								
-								
+						<div id="endDateDiv">
+							&nbsp;&nbsp;&nbsp;&nbsp;<font><%= LanguageUtil.get(pageContext, "To1") %></font>
+
 <%
 	Calendar endDateCalendar = null;
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
@@ -281,11 +281,11 @@ function deleteSchedule(form) {
      String min = (endDateCalendar.get(GregorianCalendar.MINUTE) < 10) ? "0"+endDateCalendar.get(GregorianCalendar.MINUTE) : ""+endDateCalendar.get(GregorianCalendar.MINUTE);
 
 %>
-						 	<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveEndDate()?"checked":""  %> id="haveEndDate" name="haveEndDate" />	
+						 	<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveEndDate()?"checked":""  %> id="haveEndDate" name="haveEndDate" />
 							<input type="text" value="<%= df.format(endDate) %>" onChange="updateDate('endDate');" dojoType="dijit.form.DateTextBox" name="endDateDate"
                                             id="endDateDate" style="width:150px;" />
                             <input type="text" id="endDateTime" name="endDateTime" value='T<%=hour+":"+min%>:00' onChange="updateDate('endDate');"
-                                            dojoType="dijit.form.TimeTextBox" style="width: 100px;" /> 
+                                            dojoType="dijit.form.TimeTextBox" style="width: 100px;" />
 							<input type="hidden" name="endDate" value="" id="endDate">
 							<script language="javascript">
 							dojo.addOnLoad (function(){
@@ -304,7 +304,7 @@ function deleteSchedule(form) {
 	} else {
 %>
 							<font><%= LanguageUtil.get(pageContext, "To1") %></font>
-								
+
 <%
 	if (schedulerForm.isHaveEndDate()) {
 	Calendar endDateCalendar = null;
@@ -319,7 +319,7 @@ function deleteSchedule(form) {
 				endDate = new Date();
 			}
 		}
-		
+
 		SimpleDateFormat sdf2 = new SimpleDateFormat("MMMM/dd/yyyy hh:mm:ss a");
 %>
 									&nbsp;&nbsp;&nbsp;<%= sdf2.format(endDate) %>
@@ -330,17 +330,17 @@ function deleteSchedule(form) {
 <%
 	}
 %>
-								
+
 <%
 	}
 %>
-						
+
 						</div>
 					</dd>
-					
+
 					<dt>
 						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Class-to-be-executed") %>:</b></font>
-					</dt>				
+					</dt>
 					<dd>
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
@@ -358,7 +358,7 @@ function deleteSchedule(form) {
 	}
 %>
 					</dd>
-				
+
 			<dt>
 				<span class="required"></span> <font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "cron-expression") %>: </b></font> <br>
 			</dt>
@@ -367,30 +367,30 @@ function deleteSchedule(form) {
 			</dd>
 			<dt><span ></span> <font class="bg" size="2"><b></b></font> <br></dt>
 			<dd>
-				<div style="width: 350px;  text-align: left;" id="cronHelpDiv" class="callOutBox2" >				 
+				<div style="width: 350px;  text-align: left;" id="cronHelpDiv" class="callOutBox2" >
 					<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
 					<span style="font-size: 88%;">
 						<p></p>
-		        		<p><b><%= LanguageUtil.get(pageContext, "cron-once-an-hour") %>:</b> 0 0/60 * * * ?</p> 	
-		       	 		<p><b><%= LanguageUtil.get(pageContext, "cron-twice-a-day") %>:</b> 0 0 10-11 ? * *</p> 	
-			    		<p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p> 
+		        		<p><b><%= LanguageUtil.get(pageContext, "cron-once-an-hour") %>:</b> 0 0/60 * * * ?</p>
+		       	 		<p><b><%= LanguageUtil.get(pageContext, "cron-twice-a-day") %>:</b> 0 0 10-11 ? * *</p>
+			    		<p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p>
 					</span>
 				</div>
-			</dd>					
+			</dd>
 			</dl>
 		</div>
-		
+
 		<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Parameters") %>">
 <%
 	java.util.Map<String, String> properties = schedulerForm.getMap();
 	Iterator<String> keys = null;
 	if (properties != null)
 		keys = properties.keySet().iterator();
-	
+
 	boolean parameterShowed = false;
 	String key;
 	String value;
-	
+
 	if ((keys != null) && keys.hasNext()) {
 		key = keys.next();
 		value = properties.get(key);
