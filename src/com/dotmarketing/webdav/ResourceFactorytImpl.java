@@ -52,7 +52,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			
 			// DAV ROOT
 			if(isWebDavRoot){
-				WebdavRootResourceImpl wr = new WebdavRootResourceImpl();
+				WebdavRootResourceImpl wr = new WebdavRootResourceImpl(url);
 				return wr;
 			}
 			
@@ -85,7 +85,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 					SystemRootResourceImpl sys = new SystemRootResourceImpl();
 					return sys;
 				}else{
-					HostResourceImpl hr = new HostResourceImpl(url,host);
+					HostResourceImpl hr = new HostResourceImpl(url);
 					return hr;
 				}
 			}
