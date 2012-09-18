@@ -12,11 +12,10 @@ import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
 import com.bradmcevoy.http.LockToken;
 import com.bradmcevoy.http.LockableResource;
-import com.bradmcevoy.http.LockingCollectionResource;
 import com.bradmcevoy.http.PropFindableResource;
 import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.Request.Method;
+import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -33,8 +32,9 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 	private DotWebdavHelper dotDavHelper;
 	private String path;
 	
-	public WebdavRootResourceImpl() {
+	public WebdavRootResourceImpl(String path) {
 		dotDavHelper = new DotWebdavHelper();
+		this.path=path;
 	}
 	
 	public Object authenticate(String username, String password) {
@@ -99,7 +99,9 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 		}
 		for (Host host : hosts) {
 			if(childName.equalsIgnoreCase(host.getHostname())){
-				HostResourceImpl hr = new HostResourceImpl(path + "/" + host.getHostname(), host);
+			    String sep="/";
+			    if(path.endsWith(sep)) sep="";
+				HostResourceImpl hr = new HostResourceImpl(path + sep + host.getHostname());
 				return hr;
 			}
 		}
@@ -111,7 +113,9 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 		List<Host> hosts = listHosts();
 		List<Resource> hrs = new ArrayList<Resource>();
 		for (Host host : hosts) {
-			HostResourceImpl hr = new HostResourceImpl(path + "/" + host.getHostname(), host);
+		    String sep="/";
+            if(path.endsWith(sep)) sep="";
+			HostResourceImpl hr = new HostResourceImpl(path + sep + host.getHostname());
 			hr.setHost(host);
 			hrs.add(hr);
 		}

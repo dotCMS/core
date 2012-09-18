@@ -424,9 +424,7 @@ public class DotWebdavHelper {
     }
 
     public String getHostName ( String uri ) {
-        String hostname = stripMapping(uri);
-		hostname = getHostname(uri);
-		return hostname;
+		return getHostname(stripMapping(uri));
 	}
 	
 	public boolean isTempResource(String path){
