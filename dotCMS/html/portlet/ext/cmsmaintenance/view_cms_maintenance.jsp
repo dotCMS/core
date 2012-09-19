@@ -16,6 +16,12 @@
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@ page import="com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm"%>
 <%@ page import="java.util.List"%>
+<%@page import="java.util.regex.Matcher"%>
+<%@page import="java.util.regex.Pattern"%>
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+
 
 <%@ include file="/html/portlet/ext/cmsmaintenance/init.jsp"%>
 
@@ -1425,7 +1431,7 @@ function showIndexClusterStatus(indexName) {
     <div id="Logging" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Log-Files") %>" >
         <div style="height:20px">&nbsp;</div>
         <div style="margin-bottom:10px;height:700px;border:0px solid red">
-            <iframe style="margin-bottom:10px;height:500px;width:100%;border:0px;" id="_logFileInclude" src="/html/portlet/ext/cmsmaintenance/tail_log.jsp" style=""></iframe>
+            <%@ include file="/html/portlet/ext/cmsmaintenance/tail_log.jsp"%>
         </div>
    
     </div>
