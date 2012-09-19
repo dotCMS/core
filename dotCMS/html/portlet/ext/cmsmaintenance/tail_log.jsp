@@ -1,48 +1,41 @@
-<%@page import="java.util.regex.Matcher"%>
-<%@page import="java.util.regex.Pattern"%>
-<%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@ include file="/html/common/init.jsp"%>
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotmarketing.util.Config"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-
 <%
 
-	String regex = Config.getStringProperty("TAIL_LOG_FILE_REGEX");
-	if(!UtilMethods.isSet(regex)){
+	String regex = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_FILE_REGEX");
+	if(!com.dotmarketing.util.UtilMethods.isSet(regex)){
 		regex=".*";
 	}
-	String[] files = FileUtil.listFiles(Config.CONTEXT.getRealPath(Config.getStringProperty("TAIL_LOG_LOG_FOLDER")), true);
-	Pattern p = Pattern.compile(regex);
-	List<String> l = new ArrayList<String>();
+	String[] files = com.liferay.util.FileUtil.listFiles(
+	        com.dotmarketing.util.Config.CONTEXT.getRealPath(
+	                com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER")), true);
+	java.util.regex.Pattern pp = java.util.regex.Pattern.compile(regex);
+	java.util.List<String> l = new java.util.ArrayList<String>();
 	for(String x : files){
-		if(p.matcher(x).matches()){
+		if(pp.matcher(x).matches()){
 			l.add(x);
 		}
 	}
 	// http://jira.dotmarketing.net/browse/DOTCMS-6271
 	// put matched files set to an array with exact size and then sort them
 	files = l.toArray(new String[l.size()]);
-	Arrays.sort(files);
+	java.util.Arrays.sort(files);
 
 
 
 
-
+	com.liferay.portal.model.User uu=null;
 	try {
-		user = com.liferay.portal.util.PortalUtil.getUser(request);
+		uu = com.liferay.portal.util.PortalUtil.getUser(request);
 	} catch (Exception e) {
 		response.sendError(403);
 		return;
 	}
 	try {
-		if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+		if (!com.dotmarketing.business.APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", uu)) {
 			response.sendError(403);
 			return;
 		}
 	} catch (Exception e2) {
-		Logger.error(this.getClass(), e2.getMessage(), e2);
+		com.dotmarketing.util.Logger.error(this.getClass(), e2.getMessage(), e2);
 		response.sendError(403);
 		return;
 	}
@@ -50,10 +43,8 @@
 
 %>
 
-<%request.setAttribute("popup", "true"); %>
-<%@ include file="/html/common/top_inc.jsp" %>
 
-<style>
+<style type="text/css">
 	#tailingFrame{
 		border:1px solid silver;
 		overflow: auto;
@@ -82,7 +73,6 @@
 
 	#popMeUp{
 		float:right;
-		display:none;
 	}
 
 	#logman_dia {
@@ -91,7 +81,7 @@
 	}
 </style>
 
-<script>
+<script type="text/javascript">
 
 	function reloadTail(){
 		var x = dijit.byId("fileName").getValue();
@@ -102,7 +92,7 @@
 	function doPopup(){
 			var x = dijit.byId("fileName").getValue();
 			dijit.byId("fileName").setValue("");
-			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=600,width=800");
+			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=600,width=800");
 			newwin.focus();
 	}
 
@@ -114,7 +104,7 @@
 
 
 		<%if(request.getParameter("fileName")!= null){%>
-			dijit.byId("fileName").setValue("<%=UtilMethods.xmlEscape(request.getParameter("fileName"))%>");
+			dijit.byId("fileName").setValue("<%=com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName"))%>");
 		<%}%>
 
 	});
@@ -243,7 +233,7 @@
 
 
 	<div id="headerContainer">
-		<%=LanguageUtil.get(pageContext, "Tail")%>:
+		<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Tail")%>:
 		<select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
 			<option value=""></option>
 			<%for(String f: files){ %>
@@ -253,13 +243,13 @@
 			<%} %>
 		</select>
 		&nbsp; &nbsp;
-		<%=LanguageUtil.get(pageContext, "Follow") %> <input type='checkbox' id='scrollMe' dojoType="dijit.form.CheckBox" value=1 checked="true" />
+		<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %> <input type='checkbox' id='scrollMe' dojoType="dijit.form.CheckBox" value=1 checked="true" />
 		            <button dojoType="dijit.form.Button" onClick="doPopup()"  iconClass="detailView"  value="popup" name="popup" >
-                <%= LanguageUtil.get(pageContext,"popup") %>
+                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
             </button>
 		<div id="popMeUp">
             <button dojoType="dijit.form.Button" onClick="doManageLogs()"  iconClass="detailView"  value="popup" name="popup" >
-                <%= LanguageUtil.get(pageContext,"LOG_Manager") %>
+                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"LOG_Manager") %>
             </button>
 		</div>
 
@@ -271,9 +261,9 @@
 
 
    <div id="logman_dia" dojoType="dijit.Dialog">
-        <div id="search" title="<%= LanguageUtil.get(pageContext, "LOG_activity") %>" >
+        <div id="search" title="<%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_activity") %>" ></div>
 
-		<div style="width:620px;height:470px;">
+		<div style="width:620px;height:300px;">
 		    <table class="listingTable" id="logsTable" align="center">
 		        <tr id="logsTableHeader">
 		            <th><input width="5%" type="checkbox" dojoType="dijit.form.CheckBox" id="checkAllCkBx" value="true" onClick="checkUncheck()" /></th>
@@ -286,7 +276,7 @@
 		<div>&nbsp;</div>
 
 		<div class="buttonRow">
-		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="enableDisableLogs()"> <%= LanguageUtil.get(pageContext, "LOG_button") %> </button>
+		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="enableDisableLogs()"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %> </button>
 		    <button dojoType="dijit.form.Button" iconClass="resetIcon" name="refreshButton" onclick="getCurrentLogs()"> Refresh </button>
 		</div>
 
