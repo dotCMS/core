@@ -258,9 +258,9 @@ boolean hasPath = false;
 			</td>
 			<td>
 				<div style="padding:0px;">
-					<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="includeAll" name="includeExclude" value="all" <%="all".equals(includeExclude) ? "checked='true'" : ""%>     ><label for="includeAll">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All")) %></label> &nbsp; &nbsp; &nbsp; 
-					<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="include" name="includeExclude" value="include" <%="include".equals(includeExclude) ? "checked='true'" : ""%>><label for="include">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Include")) %></label> &nbsp; &nbsp; &nbsp; 
-					<input onclick="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude" <%="exclude".equals(includeExclude) ? "checked='true'" : ""%>><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
+					<input onChange="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="includeAll" name="includeExclude" value="all" <%="all".equals(includeExclude) ? "checked='true'" : ""%>     ><label for="includeAll">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All")) %></label> &nbsp; &nbsp; &nbsp; 
+					<input onChange="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="include" name="includeExclude" value="include" <%="include".equals(includeExclude) ? "checked='true'" : ""%>><label for="include">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Include")) %></label> &nbsp; &nbsp; &nbsp; 
+					<input onChange="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude" <%="exclude".equals(includeExclude) ? "checked='true'" : ""%>><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
 				</div>
 				<br>
 				<textarea  name="paths" id="paths" <%=("all".equals(includeExclude)) ? "disabled='true'" :"" %> type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'" value="" /><%=(UtilMethods.isSet(paths)) ? paths : "/*" %></textarea>
