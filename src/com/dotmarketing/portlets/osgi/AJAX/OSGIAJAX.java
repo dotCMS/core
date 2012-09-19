@@ -105,11 +105,6 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         }
     }
 
-    public void addExtraSystemPackages ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
-        restart( request, response );
-    }
-
     public void restart ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
         //First we need to stop the framework
