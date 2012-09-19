@@ -280,7 +280,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
             try {
                 //Working with the http bridge
-                if ( OSGIProxyServlet.tracker != null ) {//If it is null probably the servlet wasn't even been loaded...
+                if ( OSGIProxyServlet.servletConfig != null ) {//If it is null probably the servlet wasn't even been loaded...
                     OSGIProxyServlet.tracker = new DispatcherTracker( context.getBundle( OSGIUtil.BUNDLE_HTTP_BRIDGE_ID ).getBundleContext(), null, OSGIProxyServlet.servletConfig );
                     OSGIProxyServlet.tracker.open();
                 }
