@@ -5,10 +5,10 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.util.HashMap"%>
-<%@page import="com.dotmarketing.listeners.OsgiFelixListener"%>
 <%@page import="org.osgi.framework.Bundle"%>
+<%@ page import="com.dotmarketing.util.OSGIUtil" %>
 <%
-Bundle[] ba = OsgiFelixListener.m_fwk.getBundleContext().getBundles();
+Bundle[] ba = OSGIUtil.getInstance().getBundleContext().getBundles();
 
 List<String> ignoreBuns =Arrays.asList(new String[]{"org.apache.felix.gogo.shell","org.apache.felix.framework", "org.apache.felix.bundlerepository","org.apache.felix.fileinstall","org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core"});
 
@@ -32,6 +32,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 </div>
 <div class="buttonBoxRight">
 	<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
+	<button dojoType="dijit.form.Button" onClick="bundles.reboot();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
 	<button dojoType="dijit.form.Button" onClick="mainAdmin.refresh();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
 
 </div>

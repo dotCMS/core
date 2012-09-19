@@ -262,17 +262,17 @@ public class VelocityUtil {
 		
 	}
 	private static ToolboxManager toolboxManager=null;
-	private static ToolboxManager getToolboxManager(){
-		if(toolboxManager ==null){
-			synchronized (VelocityUtil.class) {
-				if(toolboxManager ==null){
-					toolboxManager = ServletToolboxManager.getInstance(Config.CONTEXT, "/WEB-INF/toolbox.xml");
-				}
-			}
+    public static ToolboxManager getToolboxManager () {
+        if ( toolboxManager == null ) {
+            synchronized ( VelocityUtil.class ) {
+                if ( toolboxManager == null ) {
+                    toolboxManager = ServletToolboxManager.getInstance( Config.CONTEXT, "/WEB-INF/toolbox.xml" );
+                }
+            }
 
-		}
-		return toolboxManager;
-	}
+        }
+        return toolboxManager;
+    }
 	
 	private static List<Language> languages =null;
 	

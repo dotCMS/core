@@ -16,6 +16,9 @@ public class Activator extends GenericBundleActivator {
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
 
+        //Initializing services...
+        initializeServices( context );
+
         //Service reference to ExtHttpService that will allows to register servlets and filters
         ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
         if ( sRef != null ) {
@@ -31,13 +34,13 @@ public class Activator extends GenericBundleActivator {
             } catch ( Exception e ) {
                 e.printStackTrace();
             }
-            CMSFilter.addExclude( "/dynamic/spring" );
+            CMSFilter.addExclude( "/app/spring" );
         }
     }
 
     public void stop ( BundleContext context ) throws Exception {
 
-        CMSFilter.removeExclude( "/dynamic/spring" );
+        CMSFilter.removeExclude( "/app/spring" );
 
         //Unpublish bundle services
         unpublishBundleServices();
