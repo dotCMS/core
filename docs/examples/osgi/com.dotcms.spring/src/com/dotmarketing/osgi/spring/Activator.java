@@ -34,13 +34,13 @@ public class Activator extends GenericBundleActivator {
             } catch ( Exception e ) {
                 e.printStackTrace();
             }
-            CMSFilter.addExclude( "/dynamic/spring" );
+            CMSFilter.addExclude( "/app/spring" );
         }
     }
 
     public void stop ( BundleContext context ) throws Exception {
 
-        CMSFilter.removeExclude( "/dynamic/spring" );
+        CMSFilter.removeExclude( "/app/spring" );
 
         //Unpublish bundle services
         unpublishBundleServices();
