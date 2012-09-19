@@ -273,7 +273,7 @@
    <div id="logman_dia" dojoType="dijit.Dialog">
         <div id="search" title="<%= LanguageUtil.get(pageContext, "LOG_activity") %>" >
 
-		<div style="width:90%;margin:auto;">
+		<div style="width:620px;height:470px;">
 		    <table class="listingTable" id="logsTable" align="center">
 		        <tr id="logsTableHeader">
 		            <th><input width="5%" type="checkbox" dojoType="dijit.form.CheckBox" id="checkAllCkBx" value="true" onClick="checkUncheck()" /></th>
