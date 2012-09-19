@@ -1,7 +1,10 @@
 package com.dotmarketing.osgi;
 
+import org.apache.felix.framework.BundleWiringImpl;
+
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -19,8 +22,35 @@ public class CombinedLoader extends ClassLoader {
     public void addLoader ( ClassLoader loader ) {
 
         if ( !loaders.contains( loader ) ) {
+
+            if ( loader instanceof BundleWiringImpl.BundleClassLoader ) {
+
+                //If we already have a class loader of this bundle lets remove it an replace it with the new one it have
+                BundleWiringImpl.BundleClassLoader bundleClassLoader = (BundleWiringImpl.BundleClassLoader) loader;
+                removeByBundleName( bundleClassLoader.getBundle().getSymbolicName() );
+            }
+
             loaders.add( loader );
         }
+    }
+
+    private void removeByBundleName ( String bundleName ) {
+
+        Iterator<ClassLoader> iterator = loaders.iterator();
+        while ( iterator.hasNext() ) {
+
+            ClassLoader loader = iterator.next();
+            if ( loader instanceof BundleWiringImpl.BundleClassLoader ) {
+
+                BundleWiringImpl.BundleClassLoader bundleClassLoader = (BundleWiringImpl.BundleClassLoader) loader;
+                String symbolicName = bundleClassLoader.getBundle().getSymbolicName();
+
+                if ( bundleName.contains( symbolicName ) ) {
+                    iterator.remove();
+                }
+            }
+        }
+
     }
 
     public void addLoader ( Class clazz ) {
