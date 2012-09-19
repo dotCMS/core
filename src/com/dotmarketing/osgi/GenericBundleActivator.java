@@ -9,7 +9,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.VelocityUtil;
-import org.apache.felix.http.api.ExtHttpService;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
@@ -274,19 +273,23 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     private void forceHttpServiceLoading ( BundleContext context ) {
 
-        //Service reference to ExtHttpService that will allows to register servlets and filters
-        ServiceReference httpService = context.getServiceReference( ExtHttpService.class.getName() );
-        if ( httpService == null ) {
+        try {
+            //Working with the http bridge
+            if ( OSGIProxyServlet.servletConfig != null ) {//If it is null probably the servlet wasn't even been loaded...
 
-            try {
-                //Working with the http bridge
-                if ( OSGIProxyServlet.servletConfig != null ) {//If it is null probably the servlet wasn't even been loaded...
-                    OSGIProxyServlet.tracker = new DispatcherTracker( context.getBundle( OSGIUtil.BUNDLE_HTTP_BRIDGE_ID ).getBundleContext(), null, OSGIProxyServlet.servletConfig );
+                try {
+                    OSGIProxyServlet.bundleContext.getBundle();
+                } catch ( IllegalStateException e ) {
+                    //If we are here is because we have an invalid bundle context, so we need to provide a new one
+                    BundleContext httpBundle = context.getBundle( OSGIUtil.BUNDLE_HTTP_BRIDGE_ID ).getBundleContext();
+                    OSGIProxyServlet.tracker = new DispatcherTracker( httpBundle, null, OSGIProxyServlet.servletConfig );
                     OSGIProxyServlet.tracker.open();
+                    OSGIProxyServlet.bundleContext = httpBundle;
                 }
-            } catch ( Exception e ) {
-                e.printStackTrace();
+
             }
+        } catch ( Exception e ) {
+            e.printStackTrace();
         }
     }
 
