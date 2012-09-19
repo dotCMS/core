@@ -137,14 +137,18 @@ public class ServletToolboxManager extends XMLToolboxManager
         requestToolInfo = new ArrayList();
         createSession = true;
 
+        registerService();
+    }
+
+    // -------------------------------------------- Public Methods ------------
+
+    public void registerService () {
+
         // Register main service
         BundleContext context = HostActivator.instance().getBundleContext();
         Hashtable<String, String> props = new Hashtable<String, String>();
         context.registerService(PrimitiveToolboxManager.class.getName(), this, props);
     }
-
-
-    // -------------------------------------------- Public Methods ------------
 
     /**
      * ServletToolboxManager factory method.

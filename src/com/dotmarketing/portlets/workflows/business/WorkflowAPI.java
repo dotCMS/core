@@ -25,7 +25,7 @@ import com.liferay.portal.model.User;
 
 public interface WorkflowAPI {
 
-
+    public void registerBundleService ();
 
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
 
