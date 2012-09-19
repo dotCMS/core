@@ -18,6 +18,7 @@ public class OSGIProxyServlet extends HttpServlet {
 
     public static DispatcherTracker tracker;
     public static ServletConfig servletConfig;
+    public static BundleContext bundleContext;
 
     @Override
     public void init ( ServletConfig config ) throws ServletException {
@@ -39,6 +40,7 @@ public class OSGIProxyServlet extends HttpServlet {
         tracker.open();
 
         servletConfig = getServletConfig();
+        bundleContext = getBundleContext();
     }
 
     @Override
