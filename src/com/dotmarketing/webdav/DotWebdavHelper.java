@@ -625,7 +625,8 @@ public class DotWebdavHelper {
 			Folder folder = folderAPI.findFolderByPath(folderName, host,user,false);
 			boolean hasPermission = false;
 
-			hasPermission = perAPI.doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user, false);
+			hasPermission = (!folderName.equals("/") && perAPI.doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user, false))
+			                || (folderName.equals("/") && perAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, false));
 
 			if (hasPermission) {
 				// Check the folder filters
