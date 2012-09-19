@@ -14,6 +14,9 @@ public class Activator extends GenericBundleActivator {
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
 
+        //Initializing services...
+        initializeServices( context );
+
         //Create new ServiceTracker for HelloWorldService via HelloWorld interface
         helloWorldServiceTracker = new ServiceTracker( context, HelloWorld.class.getName(), null );
 
