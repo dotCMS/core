@@ -247,11 +247,7 @@
 	function updateSteps(){
 		var schemeId = dijit.byId("schemeId").value;
 		var myUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme&schemeId=" + schemeId;
-		var stepId = dijit.byId("stepId");
-		stepId.store= emptyStore;
-		//dojo.attr(stepId,"Value","");
-		stepId.store= new dojo.data.ItemFileReadStore({url:myUrl});
-
+		dijit.byId("stepId").set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
 	}
 	
 	function assignedToMe(){
