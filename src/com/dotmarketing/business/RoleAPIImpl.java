@@ -321,7 +321,7 @@ public class RoleAPIImpl implements RoleAPI {
 		Role role = loadRoleByKey(user.getUserId());
 		if(role == null) {
 			role = rf.addUserRole(user);
-		} else if(!role.getName().equals(user.getFullName())) {
+		} else if(!role.getName().equals(user.getFullName()) && !role.getName().equalsIgnoreCase("System")) {
 			role.setName(user.getFullName());
 			rf.save(role);
 		}
