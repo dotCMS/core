@@ -70,7 +70,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			else {
 			    User user=(User)auth.getTag();
 			    if(method.isWrite){
-    				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, false);
+    				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
     			}else{
     				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, false);
     			}
