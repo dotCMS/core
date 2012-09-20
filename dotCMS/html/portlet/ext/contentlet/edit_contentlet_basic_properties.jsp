@@ -365,7 +365,7 @@
 			</tr>
 			<tr>
 				<th><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>
-				<td><%=(wfTask == null || wfTask.isNew()) ? LanguageUtil.get(pageContext, "Nobody") : APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()).getName() %></td>
+				<td><%=(wfTask == null || wfTask.isNew() || !UtilMethods.isSet(wfTask.getAssignedTo()) || APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()) == null) ? LanguageUtil.get(pageContext, "Nobody") : APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()).getName() %></td>
 			</tr>
 		
 			<tr id="contentLockedInfo" <%=(!isLocked) ? "style='height:0px;'" : "" %>>
