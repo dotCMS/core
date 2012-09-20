@@ -330,7 +330,7 @@ public class ForgotPasswordAction extends DispatchAction {
     	Logger.debug(ForgotPasswordAction.class, "linkparamEncrypted="+linkparamEncrypted);
 
 		HashMap<String, Object> parameters = new HashMap<String, Object> ();
-		parameters.put("subject", company.getName() + " Reset Password Link");
+		parameters.put("subject", host.getHostname() + " Reset Password Link");
 		parameters.put("linkurl", UtilMethods.encodeURL(linkparamEncrypted));
 		parameters.put("emailTemplate", Config.getStringProperty("RESET_PASSWORD_LINK_EMAIL_TEMPLATE"));
 		parameters.put("to", user.getEmailAddress());
