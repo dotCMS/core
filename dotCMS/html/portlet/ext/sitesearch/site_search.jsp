@@ -515,16 +515,16 @@ function doCreateSiteSearch(alias,number) {
 
 
 
-function runNow() {
-	var runNow = dijit.byId("whenToRunNow").getValue();
+function runNow(action) {
+	//var value = dijit.byId(action).getValue();
 
-	if(runNow){
+	if(action == 'now'){
 		
 		dojo.query('.showScheduler').style({display:"none"});
 		dojo.query('.showRunNow').style({display:""});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("<%=SiteSearchAPI.ES_SITE_SEARCH_EXECUTE_JOB_NAME%>");
 	}
-	else{
+	else if (action == 'schedule'){
 		dojo.query('.showScheduler').style({display:""});
 		dojo.query('.showRunNow').style({display:"none"});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("");
@@ -957,7 +957,7 @@ function  resizeBrowser(){
 		</div>
 		
 		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
-			<div dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
+			<div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
 		</div>
 		
 	</div>

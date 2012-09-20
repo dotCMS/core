@@ -124,8 +124,8 @@ boolean hasPath = false;
 				<b><%= LanguageUtil.get(pageContext, "Run") %></b>
 			</td>
 			<td>
-				<input type="radio" onclick="runNow()" <%=(runNow) ? "checked='true'" : "" %> dojoType="dijit.form.RadioButton" name="RUN_NOW" id="whenToRunNow" value="true"><label for="whenToRunNow"><%= LanguageUtil.get(pageContext, "Now") %></label>&nbsp; &nbsp;
-				<input type="radio" onclick="runNow()" <%=(!runNow) ? "checked='true'" : "" %> dojoType="dijit.form.RadioButton" name="RUN_NOW" id="whenToRunCron" value="false"><label for="whenToRunCron"><%= LanguageUtil.get(pageContext, "Scheduled") %></label>
+				<input type="radio" onclick="runNow('now')" <%=(runNow) ? "checked='true'" : "" %> dojoType="dijit.form.RadioButton" name="RUN_NOW" id="whenToRunNow" ><label for="whenToRunNow"><%= LanguageUtil.get(pageContext, "Now") %></label>&nbsp; &nbsp;
+				<input type="radio" onclick="runNow('schedule')" <%=(!runNow) ? "checked='true'" : "" %> dojoType="dijit.form.RadioButton" name="RUN_NOW" id="whenToRunCron" ><label for="whenToRunCron"><%= LanguageUtil.get(pageContext, "Scheduled") %></label>
 			</td>
 		</tr>
 		
@@ -303,7 +303,7 @@ boolean hasPath = false;
 						</button>
 					</span>
 
-					<span class="showRunNow" style='<%=(!runNow) ? "display: none; " : "" %>'>
+					<span class="showRunNow" style='<%=(!runNow) ? "display: none; " : "" %>;'>
 						<button dojoType="dijit.form.Button"
 							id="saveAndExecuteButton" onClick="scheduleJob();"
 							iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
