@@ -82,6 +82,7 @@ public class TemplateAjax {
 					t.setTitle("--- " + LanguageUtil.get(user, "All-Hosts") +" ---");
 					t.setIdentifier("0");
 					fullListTemplates.add(0,t);
+					fullListTemplates.remove(fullListTemplates.size()-1);
 				}
 			}
 
