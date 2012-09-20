@@ -1,0 +1,8 @@
+Bundle-ManifestVersion: 2
+Bundle-Name: System extra packages
+Bundle-SymbolicName: fragment.system.extra.packages
+Bundle-Version: 1.0
+Bundle-Description: Bundle exporting 3rdparty libs
+Fragment-Host: system.bundle; extension:=framework
+Export-Package: com.dotmarketing.portlets.structure.factories,
+ com.dotmarketing.common.db
