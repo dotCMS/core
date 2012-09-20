@@ -5,6 +5,7 @@
 String cmd = ParamUtil.getString(request, "my_account_cmd");
 session.removeAttribute(WebKeys.USER_ID);
 String emailAddress = request.getParameter("my_account_email_address");
+Xss.strip(emailAddress);
 if ((emailAddress == null) || (emailAddress.equals("null"))) {
 	emailAddress = "";
 }
