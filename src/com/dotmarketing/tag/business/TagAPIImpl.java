@@ -843,5 +843,22 @@ public class TagAPIImpl implements TagAPI{
 
     }
 
+    @Override
+    public List<Tag> getTagsByInode(String inode) {
+        try {
+            HibernateUtil dh = new HibernateUtil(Tag.class);
+            dh.setQuery("select tag from com.dotmarketing.tag.model.TagInode tagi, com.dotmarketing.tag.model.Tag tag " +
+            		    " where tagi.tagId=tag.tagId and tagi.inode = ?");
+            dh.setParam(inode);
+
+            List list = dh.list();
+            return list;
+
+        } catch (Exception e) {
+            Logger.warn(Tag.class, "getTagInodeByInode failed:" + e, e);
+            throw new RuntimeException(e);
+        }
+    }
+
 
 }
