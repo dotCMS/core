@@ -72,17 +72,25 @@ public class TemplateAjax {
 
 
 			if(UtilMethods.isSet(query.get("hostId"))) {
-				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, start, count));
+			    int startF=start;
+			    int countF=count;
+			    if(start==0){
+                    Template t = new Template();
+                    t.setOwner(user.getUserId());
+                    t.setModUser(user.getUserId());
+                    t.setInode("0");
+                    t.setTitle("--- " + LanguageUtil.get(user, "All-Hosts") +" ---");
+                    t.setIdentifier("0");
+                    fullListTemplates.add(t);
+                    totalTemplates.add(t);
+                    countF=count-1;
+                }
+			    else {
+			        startF=start-1;
+			    }
+				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, startF, countF));
 				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, 0, 1000));
-				if(fullListTemplates.size() >0 && start==0){
-					Template t = new Template();
-					t.setOwner(user.getUserId());
-					t.setModUser(user.getUserId());
-					t.setInode("0");
-					t.setTitle("--- " + LanguageUtil.get(user, "All-Hosts") +" ---");
-					t.setIdentifier("0");
-					fullListTemplates.add(0,t);
-				}
+				
 			}
 
 			//doesn't currently respect archived
@@ -120,9 +128,7 @@ public class TemplateAjax {
 //		List<Map<String, Object>> templates = list.subList(start, start + count);
 
 		results.put("totalResults", totalTemplates.size());
-		if(UtilMethods.isSet(query.get("hostId"))) {
-			results.put("totalResults", totalTemplates.size());
-		}
+		
 		results.put("list", list);
 
 		return results;
