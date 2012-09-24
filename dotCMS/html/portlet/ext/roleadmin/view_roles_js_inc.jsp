@@ -268,7 +268,7 @@
 		dojo.connect(menu, "_openMyself", this, (function(e) {
 			
             var tn = dijit.getEnclosingWidget(e.target);
-			var item = tn.item;
+			var item = tn.lastFocused;
 			
 			var role = findRole(item.id, flatTree);
 			var locked = eval(norm(role.locked));
@@ -1436,6 +1436,7 @@
 		for(var i = 0; i < roles.length; i++) {
 			var id1 = dojo.isArray(roles[i].id)?roles[i].id[0]:roles[i].id;
 			var id2 = dojo.isArray(roleid)?roleid[0]:roleid;
+			if(/^treeNode-/.test(id2)) id2=id2.replace("treeNode-","");
 			if(id1 == id2)
 				return roles[i];
 		}
