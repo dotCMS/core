@@ -366,11 +366,8 @@
 							if(o['siblings'][sibIndex]['live'] == 'true'){
 																								
 								anchorValue = "";
-								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
+								if (o != null){
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
-					 			else{
-					 				anchorValue =   "<a href=\"javascript:alert('This content is locked');\">";
 					 			}
 								
 								result = result +'&nbsp;&nbsp;' + anchorValue + '<img style="vertical-align: middle; border: solid 2px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
@@ -378,11 +375,8 @@
 							}else if(o['siblings'][sibIndex]['working'] == 'true'){
 								
 								anchorValue = "";
-								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
+								if (o != null){
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
-					 			else{
-					 				anchorValue =   "<a  href=\"javascript:alert('This content is locked');\">";
 					 			}
 								
 								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FF1919; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
@@ -390,11 +384,8 @@
 							}else{
 								
 								anchorValue = "";
-								if (o != null && o['siblings'][sibIndex]['locked'] == "false"){
+								if (o != null){
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
-					 			else{
-					 				anchorValue =   "<a  href=\"javascript:alert('This content is locked');\">";
 					 			}
 								
 								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
@@ -462,11 +453,8 @@
 		 %>
 	 		function <%= functionName %> (o) {
 				var value = "";
-				if (o != null && o['locked'] == "false"){
+				if (o != null){
 					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['<%=fieldName%>'] + "</a>";
-	 			}
-	 			else{
-	 				value =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">" + o['<%=fieldName%>'] + "</a>";
 	 			}
 	 			return value;
 			}
@@ -821,11 +809,8 @@
 				// displays edit icon and link to edit content
 		 		function <%= relationJsName %>editAction (o) {
 					var value = "";
-					if (o != null && o['locked'] == "false"){
+					if (o != null){
 						value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + "><span class=\"editIcon\"></span></a>";
-		 			}
-		 			else{
-		 				value =   '<a class="beta" href="javascript:alert(\'This content is locked\');"><span class="editIcon"></span></a>';
 		 			}
 		 			return value;
 		 		}
