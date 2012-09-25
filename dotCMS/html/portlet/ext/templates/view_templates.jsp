@@ -186,11 +186,13 @@ function processDelete(inode, referer) {
 	    </button>
 		<% } %>
 		<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
+		<!-- 
 		<% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_DESIGN)) { %>
 		<button dojoType="dijit.form.Button" onClick="designAsset" iconClass="designTemplateIcon">
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "design-template")) %>
 	    </button>
-		<% } %>		
+		<% } %>
+		 -->		
 		<!-- *********************** END GRAZIANO issue-12-dnd-template -->
 	</div>
 </div>
