@@ -81,15 +81,18 @@
         },
         "actionWhoCanUseSelect");
 
-
-
+	    <%
+	    String assignToLabel=r.getName();
+	    if(r.equals(APILocator.getRoleAPI().loadCMSAnonymousRole()))
+	        assignToLabel=LanguageUtil.get(pageContext, "current-user");
+	    %>
 
 		var assignSelect = new dijit.form.FilteringSelect({
             id: "actionAssignToSelect",
             name: "actionAssignToSelect",
             store: myRoleReadStore,
 
-            displayedValue : "<%=UtilMethods.webifyString(r.getName())%>",
+            displayedValue : "<%=UtilMethods.webifyString(assignToLabel)%>",
             searchDelay:300,
             value:"<%=UtilMethods.webifyString(action.getNextAssign())%>",
             pageSize:20,
