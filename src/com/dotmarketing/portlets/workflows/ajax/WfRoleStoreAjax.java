@@ -35,17 +35,10 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
 		String searchName = request.getParameter("searchName");
 
-		Map m = request.getParameterMap();
-		
-		
 		if(searchName ==null) searchName ="";
 		String roleId = request.getParameter("roleId");
 		RoleAPI rapi = APILocator.getRoleAPI();
 		
-		Map<String, Object> mm= request.getParameterMap();
-		for (String x : mm.keySet()) {
-			//System.out.println(x + ":"+ ((String[])mm.get(x))[0]);
-		}
 		
 		int start = 0 ;
 		int count = 20;
@@ -65,6 +58,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 			Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
 
 			String cmsAnonName =LanguageUtil.get(getUser(), "current-user");
+			cmsAnon.setName(cmsAnonName);
 			boolean addSystemUser = false;
 			if(searchName.length() > 0 && cmsAnonName.startsWith(searchName)){
 				addSystemUser = true;
@@ -75,7 +69,10 @@ public class WfRoleStoreAjax extends WfBaseAction {
 	        	try{
 	        		Role r = rapi.loadRoleById(roleId);
 	        		if(r!= null){
-	        			roleList.add(r);
+	        		    if(r.getId().equals(cmsAnon.getId()))
+	        		        roleList.add(cmsAnon);
+	        		    else
+	        		        roleList.add(r);
 	        			response.getWriter().write(rolesToJson(roleList));
 	        			return;
 	        		}	        		
@@ -100,11 +97,8 @@ public class WfRoleStoreAjax extends WfBaseAction {
 							continue;
 						}
 		        	}
-		        	if(role.getId().equals(cmsAnon.getId())){		        		
-		        		Role rAnon = new Role();
-		        		BeanUtils.copyProperties(rAnon, role);		        		
-		        		role = rAnon;		        		
-		        		role.setName(cmsAnonName);
+		        	if(role.getId().equals(cmsAnon.getId())){
+		        		role = cmsAnon;
 		        		addSystemUser = false;
 		        	}		        	
 		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId()) && !role.getId().equals(APILocator.getRoleAPI().loadCMSAdminRole().getId())){
