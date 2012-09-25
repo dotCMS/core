@@ -522,52 +522,8 @@ public class SubmitContentUtil {
 		 */
 		contentlet = conAPI.checkin(contentlet, relationships, cats, permissionList, user, true);
 
-		try {
-		APILocator.getVersionableAPI().setWorking(contentlet);
-		} catch(DotStateException e) {}
 		if(autoPublish)
 		    APILocator.getVersionableAPI().setLive(contentlet);
-
-		/**
-		 * Saving file and images
-		 */
-
-		if(fileParameters.size() > 0){
-
-			for(Map<String,Object> value : fileParameters){
-				Field field = (Field)value.get("field");
-				//http://jira.dotmarketing.net/browse/DOTCMS-3463
-				if(field.getFieldType().equals(Field.FieldType.IMAGE.toString())||
-						field.getFieldType().equals(Field.FieldType.FILE.toString())){
-					java.io.File uploadedFile = (java.io.File)value.get("file");
-					try {
-						if(!UtilMethods.isSet(FileUtil.getBytes(uploadedFile)))
-							continue;
-					} catch (IOException e) {
-						Logger.error(SubmitContentUtil.class, e.getMessage());
-					}
-					String title = (String)value.get("title");
-					Host host = (Host)value.get("host");
-					contentlet = addFileToContentlet(contentlet, field,host, uploadedFile, user, title);
-				}
-			}
-			if(autoPublish){//DOTCMS-5188
-				contentlet = conAPI.checkinWithoutVersioning(contentlet, relationships, cats, permissionList, user, true);
-				conAPI.publish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
-			}else{
-				contentlet = conAPI.checkinWithoutVersioning(contentlet, relationships, cats, permissionList, user, true);
-				conAPI.unpublish(contentlet, APILocator.getUserAPI().getSystemUser(), false);
-			}
-		}
-
-
-
-		/*}catch(Exception e){
-
-			Logger.error(SubmitContentUtil.class, e.getMessage());
-			throw new DotContentletStateException("Unable to perform checkin. "+e.getMessage());
-
-		}*/
 
 		return contentlet;
 	}
