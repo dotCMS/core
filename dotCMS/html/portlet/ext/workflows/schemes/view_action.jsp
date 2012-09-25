@@ -145,7 +145,8 @@
 		actionAdmin.whoCanUse = new Array();
 		<% Set<Role> roles = APILocator.getPermissionAPI().getReadRoles(action);%>
 		<%for(Role tmpRole :  roles){%>
-			actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>", "<%=tmpRole.getName()%> <%=(tmpRole.getName().toLowerCase().contains("anonymous")) ?  " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : (tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : ""%>");
+			actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>", 
+					"<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
 		<% }%>
 
 		actionAdmin.refreshWhoCanUse();
