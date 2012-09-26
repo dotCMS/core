@@ -134,14 +134,11 @@ public class SubmitContentUtil {
 	 * @throws DotDataException
 	 * @throws DotSecurityExceptionlanguageId
 	 */
-	private static Contentlet addFileToContentlet(Contentlet contentlet, Field field,Host host, java.io.File uploadedFile, User user, String title)throws DotSecurityException, DotDataException{
-		String identifier = String.valueOf(contentlet.getIdentifier());
-		//String folderPath = ROOT_FILE_FOLDER+contentlet.getStructure().getName()+"/"+identifier.substring(0, 1)+"/"+identifier.substring(1, 2)+"/"+identifier+"/";
+	private static void addFileToContentlet(Contentlet contentlet, Field field,Host host, java.io.File uploadedFile, User user, String title)throws DotSecurityException, DotDataException{
 		String folderPath = ROOT_FILE_FOLDER+contentlet.getStructure().getName();
 		try {
 			FileAsset file = saveFile(user,host,uploadedFile,folderPath, title);
-			conAPI.setContentletProperty(contentlet, field, file.getIdentifier());
-			return contentlet;
+			contentlet.setStringProperty(field.getVelocityVarName(), file.getIdentifier());
 		} catch (Exception e) {
 			Logger.error(SubmitContentUtil.class, e.getMessage());
 			throw new DotDataException("File could not be saved. "+e.getMessage());
@@ -515,6 +512,29 @@ public class SubmitContentUtil {
 					"\" has been posted by " + UtilHTML.escapeHTMLSpecialChars(user.getFullName()) + " ("+user.getEmailAddress()+")");
 
 			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, roleAPI.loadRoleByKey(moderatorRole).getId());
+		}
+		
+		/*
+		* Saving file and images
+		*/
+		if(fileParameters.size() > 0) { 
+		    for(Map<String,Object> value : fileParameters) {
+		         Field field = (Field)value.get("field");
+		         //http://jira.dotmarketing.net/browse/DOTCMS-3463
+		         if(field.getFieldType().equals(Field.FieldType.IMAGE.toString())|| 
+		                 field.getFieldType().equals(Field.FieldType.FILE.toString())){
+		           java.io.File uploadedFile = (java.io.File)value.get("file");
+		           try {
+		             if(!UtilMethods.isSet(FileUtil.getBytes(uploadedFile)))
+		               continue;
+		           } catch (IOException e) {
+		               Logger.error(SubmitContentUtil.class, e.getMessage());
+		           }
+		           String title = (String)value.get("title");
+		           Host host = (Host)value.get("host");
+		           addFileToContentlet(contentlet, field,host, uploadedFile, user, title);
+		         }
+            }
 		}
 
 		/**
