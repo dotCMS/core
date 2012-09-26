@@ -263,7 +263,7 @@ boolean hasPath = false;
 					<input onChange="changeIncludeExclude()"  type="radio" dojoType="dijit.form.RadioButton" id="exclude" name="includeExclude" value="exclude" <%="exclude".equals(includeExclude) ? "checked='true'" : ""%>><label for="exclude">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Exclude")) %></label>
 				</div>
 				<br>
-				<textarea  name="paths" id="paths" <%=("all".equals(includeExclude)) ? "disabled='true'" :"" %> type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'" value="" /><%=(UtilMethods.isSet(paths)) ? paths : "/*" %></textarea>
+				<textarea  name="paths" id="paths" <%=("all".equals(includeExclude)) ? "disabled='true'" :"" %> type="text" dojoType='dijit.form.Textarea' style='width: 400px;min-height:70px;'"><%=(UtilMethods.isSet(paths)) ? paths : "/*" %></textarea>
 			</td>
 		</tr>
 
