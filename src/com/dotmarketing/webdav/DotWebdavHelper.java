@@ -318,18 +318,6 @@ public class DotWebdavHelper {
     /**
      * Returns a collection of child Resources for a given folder
      *
-     * @param parentFolder
-     * @param isAutoPub
-     * @return
-     * @throws IOException
-     */
-    public List<Resource> getChildrenOfFolder ( Folder parentFolder, boolean isAutoPub ) throws IOException {
-        return getChildrenOfFolder( parentFolder, null, isAutoPub );
-    }
-
-    /**
-     * Returns a collection of child Resources for a given folder
-     *
      * @param parentFolder Parent folder
      * @param user         Authenticated user
      * @param isAutoPub
@@ -447,7 +435,7 @@ public class DotWebdavHelper {
 		return f;
 	}
 	
-	public void copyFolderToTemp(Folder folder, java.io.File tempFolder, String name,boolean isAutoPub) throws IOException{
+	public void copyFolderToTemp(Folder folder, java.io.File tempFolder, User user, String name,boolean isAutoPub) throws IOException{
 		String p = "";
 		try {
 			p = idapi.find(folder).getPath();
@@ -460,11 +448,11 @@ public class DotWebdavHelper {
 		String path = p.replace("/", java.io.File.separator);
 		path = tempFolder.getPath() + java.io.File.separator + name;
 		java.io.File tf = createTempFolder(path);
-		List<Resource> children = getChildrenOfFolder(folder, isAutoPub);
+		List<Resource> children = getChildrenOfFolder(folder, user, isAutoPub);
 		for (Resource resource : children) {
 			if(resource instanceof CollectionResource){
 				FolderResourceImpl fr = (FolderResourceImpl)resource;
-				copyFolderToTemp(fr.getFolder(), tf, fr.getFolder().getName(),isAutoPub);
+				copyFolderToTemp(fr.getFolder(), tf, user, fr.getFolder().getName(),isAutoPub);
 			}else{
 				FileResourceImpl fr = (FileResourceImpl)resource;
 				copyFileToTemp(fr.getFile(), tf);
