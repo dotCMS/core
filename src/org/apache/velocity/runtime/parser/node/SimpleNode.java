@@ -20,6 +20,8 @@ package org.apache.velocity.runtime.parser.node;
  */
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.io.Writer;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -34,11 +36,16 @@ import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
+
 /**
  *
  */
-public class SimpleNode implements Node
+public class SimpleNode implements Node, Serializable
 {
+    private static final long serialVersionUID = 2212796154857814566L;
+
     /** */
     protected RuntimeServices rsvc = null;
 
@@ -56,7 +63,7 @@ public class SimpleNode implements Node
 
     /** */
     // TODO - It seems that this field is only valid when parsing, and should not be kept around.    
-    protected Parser parser;
+    protected transient Parser parser;
 
     /** */
     protected int info; // added
@@ -445,6 +452,12 @@ public class SimpleNode implements Node
     public String getTemplateName()
     {
       return templateName;
+    }
+    
+    private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
+        this.rsvc = VelocityUtil.getEngine().getRuntimeServices();
+        this.log = rsvc.getLog();
+        ois.defaultReadObject();
     }
 }
 

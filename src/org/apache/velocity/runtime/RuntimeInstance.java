@@ -295,8 +295,26 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
      */
     private void requireInitialization()
     {
-        if (!initialized)
+        if (parserPool == null) {
+            synchronized (this) {
+                if (parserPool == null) {
+                    try {
+                        initialized = false;
+                        initializing = false;
+                        init();
+                    } catch (Exception e) {
+                        getLog().error("Could not auto-initialize Velocity", e);
+                        throw new RuntimeException(
+                                "Velocity could not be initialized!", e);
+                    }
+                    
+                }
+            }
+            
+        }
+        if (!initialized && !initializing)
         {
+            log.debug("Velocity was not initialized! Calling init()...");
             try
             {
                 init();

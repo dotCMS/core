@@ -534,4 +534,8 @@ public class VelocityEngine implements RuntimeConstants
      {
         ri.loadDirective(directiveClass);
      }
+     
+     public RuntimeInstance getRuntimeServices() {
+         return ri;
+     }
 }
