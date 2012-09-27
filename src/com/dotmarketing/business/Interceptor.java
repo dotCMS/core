@@ -74,15 +74,29 @@ public interface Interceptor {
 	 * @throws InstantiationException 
 	 */
 	public void addPostHook(String className, int indexToAddAt) throws InstantiationException, IllegalAccessException, ClassNotFoundException;
-	
-	/**
-	 * Adds a hook to the list at the specified index
-	 */
-	public void delPreHood(int indexToRemAt);
-	
-	/**
-	 * Adds a hook to the list at the specified index
-	 */
-	public void delPostHood(int indexToRemAt);
+
+    /**
+     * Removes a hook from the list at the specified index
+     */
+    public void delPreHook ( int indexToRemAt );
+
+    /**
+     * Removes a given hook from the list
+     *
+     * @param preHook
+     */
+    public void delPreHook ( Object preHook );
+
+    /**
+     * Removes a hook from the list at the specified index
+     */
+    public void delPostHook ( int indexToRemAt );
+
+    /**
+     * Removes a given hook from the list
+     *
+     * @param postHook
+     */
+    public void delPostHook ( Object postHook );
 
 }
