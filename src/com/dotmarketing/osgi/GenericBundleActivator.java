@@ -34,6 +34,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private WorkflowAPIOsgiService workflowOsgiService;
     private Collection<ToolInfo> viewTools;
     private Collection<WorkFlowActionlet> actionlets;
+    private Collection preHooks;
+    private Collection postHooks;
 
     /**
      * Allow to this bundle/elements to be visible and accessible from the host classpath
@@ -330,7 +332,29 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void addPreHook ( Object preHook ) throws Exception {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+
+        if ( preHooks == null ) {
+            preHooks = new ArrayList();
+        }
+
         interceptor.addPreHook( preHook );
+        preHooks.add( preHook );
+    }
+
+    /**
+     * Unregister all the registered pre hooks
+     *
+     * @throws Exception
+     */
+    protected void unregisterPreHooks () {
+
+        if ( preHooks != null ) {
+
+            Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+            for ( Object preHook : preHooks ) {
+                interceptor.delPreHook( preHook );
+            }
+        }
     }
 
     /**
@@ -342,7 +366,29 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void addPostHook ( Object postHook ) throws Exception {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+
+        if ( postHooks == null ) {
+            postHooks = new ArrayList();
+        }
+
         interceptor.addPostHook( postHook );
+        postHooks.add( postHook );
+    }
+
+    /**
+     * Unregister all the registered post hooks
+     *
+     * @throws Exception
+     */
+    protected void unregisterPostHooks () {
+
+        if ( postHooks != null ) {
+
+            Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+            for ( Object postHook : postHooks ) {
+                interceptor.delPostHook( postHook );
+            }
+        }
     }
 
     /**
@@ -354,6 +400,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterActionlets();
         unregisterViewToolServices();
         unpublishBundleServices();
+        unregisterPreHooks();
+        unregisterPostHooks();
     }
 
 }

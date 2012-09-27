@@ -1732,13 +1732,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	public void delPreHood(int indexToRemAt) {
-		postHooks.remove(indexToRemAt);
-	}
-	
-	public void delPostHood(int indexToRemAt) {
-		preHooks.remove(indexToRemAt);
-	}
+    public void delPreHook ( int indexToRemAt ) {
+        preHooks.remove( indexToRemAt );
+    }
+
+    public void delPreHook ( Object preHook ) {
+        preHooks.remove( preHook );
+    }
+
+    public void delPostHook ( int indexToRemAt ) {
+        postHooks.remove( indexToRemAt );
+    }
+
+    public void delPostHook ( Object postHook ) {
+        postHooks.remove( postHook );
+    }
 
 	public List<String> getPreHooks() {
 		List<String> result = new ArrayList<String>();

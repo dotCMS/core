@@ -13,7 +13,7 @@ public class SamplePostContentHook extends ContentletAPIPostHookAbstractImp {
     public long contentletCount ( long returnValue ) throws DotDataException {
 
         System.out.println( "+++++++++++++++++++++++++++++++++++++++++++++++" );
-        System.out.println( "INSIDE SamplePostContentHook.contentletCount()" );
+        System.out.println( "INSIDE SamplePostContentHook.contentletCount() -->" + String.valueOf( returnValue ) );
         System.out.println( "+++++++++++++++++++++++++++++++++++++++++++++++" );
 
         return super.contentletCount( returnValue );
