@@ -1,13 +1,11 @@
 package com.dotmarketing.velocity;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.collections.ExtendedProperties;
@@ -448,19 +446,19 @@ public class DotResourceLoader extends ResourceLoader {
         }else{
         	throw new ResourceNotFoundException("Unable to build the resource");
         }
-        if(UtilMethods.isSet(result)){
-        	StringBuilder sb = new StringBuilder();
-        	BufferedReader reader = new BufferedReader(new InputStreamReader(result));
-        	String line = null;
-        	try {
-        		while ((line = reader.readLine()) != null) {
-        			sb.append(line + "\n");
-        		}
-        	} catch (IOException e) {
-        		Logger.error(this , e.getMessage(),e);
-        	}
-        	result.reset();
-        }
+//        if(UtilMethods.isSet(result)){
+//        	StringBuilder sb = new StringBuilder();
+//        	BufferedReader reader = new BufferedReader(new InputStreamReader(result));
+//        	String line = null;
+//        	try {
+//        		while ((line = reader.readLine()) != null) {
+//        			sb.append(line + "\n");
+//        		}
+//        	} catch (IOException e) {
+//        		Logger.error(this , e.getMessage(),e);
+//        	}
+//        	result.reset();
+//        }
         return result;
     }
 
