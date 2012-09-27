@@ -16,8 +16,6 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,7 +25,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -80,26 +77,26 @@ public class ContentletMapServices {
 		// CONTENTLET CONTROLS BEGIN
 		// To edit the look, see
 		// WEB-INF/velocity/static/preview/content_controls.vtl
-		sb.append("#set( $dotcms_content_" + content.getIdentifier() + " = ${contents.getEmptyMap()})\n");
+		sb.append("#set( $dotcms_content_").append(content.getIdentifier()).append(" = ${contents.getEmptyMap()})\n");
 //		Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //      I actually think it should be fine passed the ctx which is a chained context here
 //		sb.append("#set($velocityContext = $UtilMethods.pushVelocityContext($velocityContext))\n");
 //		sb.append("$!velocityContext.put(\"content\",$content)\n");
 
-		sb.append("$!dotcms_content_" + content.getIdentifier() + ".put(\"permission\", $EDIT_CONTENT_PERMISSION" + content.getIdentifier() + " )\n");
-		sb.append("$!dotcms_content_" + content.getIdentifier() + ".put(\"inode\", '" + content.getInode() + "'  )\n");
-		sb.append("$!dotcms_content_" + content.getIdentifier() + ".put(\"identifier\", '" + content.getIdentifier() + "'  )\n");
-		sb.append("$!dotcms_content_" + content.getIdentifier() + ".put(\"structureInode\", '" + content.getStructureInode() + "'  )\n");
-		sb.append("$!dotcms_content_" + content.getIdentifier() + ".put(\"contentTitle\", \"" + UtilMethods.espaceForVelocity(conTitle) + "\" )\n");
-		sb.append("$!dotcms_content_" + content.getIdentifier() + ".put(\"detailPageURI\", \"" + getDetailPageURI(content) + "\"  )\n");
+		sb.append("$!dotcms_content_").append(content.getIdentifier()).append(".put(\"permission\", $EDIT_CONTENT_PERMISSION").append(content.getIdentifier()).append(" )\n");
+		sb.append("$!dotcms_content_").append(content.getIdentifier()).append(".put(\"inode\", '").append(content.getInode()).append("'  )\n");
+		sb.append("$!dotcms_content_").append(content.getIdentifier()).append(".put(\"identifier\", '").append(content.getIdentifier()).append("'  )\n");
+		sb.append("$!dotcms_content_").append(content.getIdentifier()).append(".put(\"structureInode\", '").append(content.getStructureInode()).append("'  )\n");
+		sb.append("$!dotcms_content_").append(content.getIdentifier()).append(".put(\"contentTitle\", \"").append(UtilMethods.espaceForVelocity(conTitle)).append("\" )\n");
+		sb.append("$!dotcms_content_").append(content.getIdentifier()).append(".put(\"detailPageURI\", \"").append(getDetailPageURI(content)).append("\"  )\n");
 		Structure structure = content.getStructure();
 
 		String modDateStr = UtilMethods.dateToHTMLDate((Date) content.getModDate(), "yyyy-MM-dd H:mm:ss");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"modDate\", $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" + modDateStr + "\")))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentLastModDate\", $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" + modDateStr + "\")))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentLastModUserId\", \"" + content.getModUser() + "\"))\n");
+		sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"modDate\", $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"").append(modDateStr).append("\")))\n");
+		sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"contentLastModDate\", $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"").append(modDateStr).append("\")))\n");
+		sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"contentLastModUserId\", \"").append(content.getModUser()).append("\"))\n");
 		if (content.getOwner() != null)
-			sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentOwnerId\", \"" + content.getOwner() + "\"))\n");
+			sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"contentOwnerId\", \"").append(content.getOwner()).append("\"))\n");
 
 		// Structure fields
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(content.getStructureInode());
@@ -110,7 +107,7 @@ public class ContentletMapServices {
 		while (fieldsIt.hasNext()) {
 			Field field = (Field) fieldsIt.next();
 
-			sb.append("\n\n##Set Field " + field.getFieldName() + " properties\n");
+			sb.append("\n\n##Set Field ").append(field.getFieldName()).append(" properties\n");
 
 			String contField = field.getFieldContentlet();
 			String contFieldValue = null;
@@ -138,9 +135,9 @@ public class ContentletMapServices {
 //					sb.append("$UtilMethods.getVelocityTemplate(\"" + folderPath +  content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\").merge($context, $fieldStringWriter" + content.getInode() + field.getInode()  + ")\n");
 //					sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $fieldStringWriter" + content.getInode() + field.getInode()  + ".toString()))\n");
 					if(field.getValues().contains("$") || field.getValues().contains("#")){
-						sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $velutil.mergeTemplate(\"" + velPath +  content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\")))\n");
+						sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", $velutil.mergeTemplate(\"").append(velPath).append(content.getInode()).append("_").append(field.getInode()).append(".").append(Config.getStringProperty("VELOCITY_FIELD_EXTENSION")).append("\")))\n");
 					}else{
-						sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", \"" + UtilMethods.espaceForVelocity(field.getValues()).trim() + "\"))\n");
+						sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", \"").append(UtilMethods.espaceForVelocity(field.getValues()).trim()).append("\"))\n");
 					}
 					continue;
 				}
@@ -160,7 +157,7 @@ public class ContentletMapServices {
 				if (!field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) && !field.getFieldType().equals(Field.FieldType.DATE.toString())
 						&& !field.getFieldType().equals(Field.FieldType.TIME.toString())) {
 					if (fdAPI.isNumeric(field)) {
-						sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", "+ contFieldValue +"))\n");
+						sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", ").append(contFieldValue).append("))\n");
 					} else {
 //						sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('"
 //								+ UtilMethods.espaceVariableForVelocity(contFieldValue) + "'), $velocityContext)))\n");
@@ -169,9 +166,9 @@ public class ContentletMapServices {
 //						sb.append("$UtilMethods.getVelocityTemplate(\"" + folderPath + content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\").merge($context, $fieldStringWriter" + content.getInode() + field.getInode()  + ")\n");
 //						sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $fieldStringWriter" + content.getInode() + field.getInode()  +".toString()))\n");
 						if(contFieldValue.contains("$") || contFieldValue.contains("#")){
-							sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $velutil.mergeTemplate(\"" + velPath +  content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\")))\n");
+							sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", $velutil.mergeTemplate(\"").append(velPath).append(content.getInode()).append("_").append(field.getInode()).append(".").append(Config.getStringProperty("VELOCITY_FIELD_EXTENSION")).append("\")))\n");
 						}else{
-							sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", \"" + UtilMethods.espaceForVelocity(contFieldValue).trim() + "\"))\n");
+							sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", \"").append(UtilMethods.espaceForVelocity(contFieldValue).trim()).append("\"))\n");
 						}
 					}
 				}
@@ -189,48 +186,48 @@ public class ContentletMapServices {
 				String identifierValue = content.getStringProperty(field.getVelocityVarName());
 				if( InodeUtils.isSet(identifierValue) ) {
 					if (EDIT_MODE){
-						sb.append("#set( $" + field.getVelocityVarName() + " = $filetool.getFile('" + identifierValue + "',false))\n");
+						sb.append("#set( $").append(field.getVelocityVarName()).append(" = $filetool.getFile('").append(identifierValue).append("',false))\n");
 					}else{
-						sb.append("#set( $" + field.getVelocityVarName() + " = $filetool.getFile('" + identifierValue + "',true))\n");
+						sb.append("#set( $").append(field.getVelocityVarName()).append(" = $filetool.getFile('").append(identifierValue).append("',true))\n");
 					}
 				}else{
-					sb.append("#set( $" + field.getVelocityVarName() + " = $filetool.getNewFile())\n");
+					sb.append("#set( $").append(field.getVelocityVarName()).append(" = $filetool.getNewFile())\n");
 				}
 
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageInode\", $" + field.getVelocityVarName() + ".getInode() ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageIdentifier\", $" + field.getVelocityVarName() + ".getIdentifier() ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageWidth\", $" + field.getVelocityVarName() + ".getWidth() ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageHeight\", $" + field.getVelocityVarName() + ".getHeight() ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageExtension\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getExtension()) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageURI\", $filetool.getURI($" + field.getVelocityVarName() + ") ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageTitle\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getTitle()) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageFriendlyName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getFriendlyName()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append( content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageInode\", $").append(field.getVelocityVarName()).append(".getInode() ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageIdentifier\", $").append(field.getVelocityVarName()).append(".getIdentifier() ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageWidth\", $").append(field.getVelocityVarName()).append(".getWidth() ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageHeight\", $").append(field.getVelocityVarName()).append(".getHeight() ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageExtension\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append(".getExtension()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageURI\", $filetool.getURI($").append(field.getVelocityVarName()).append(") ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageTitle\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append(".getTitle()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageFriendlyName\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append(".getFriendlyName()) ))\n");
 
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImagePath\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getPath()) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ImageName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + ".getFileName()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImagePath\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append(".getPath()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ImageName\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append(".getFileName()) ))\n");
 
 			} else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 				String identifierValue = content.getStringProperty(field.getVelocityVarName());
 				if( InodeUtils.isSet(identifierValue) ) {
 					if (EDIT_MODE){
-						sb.append("#set( $" + field.getVelocityVarName() + "Object = $filetool.getFile('" + identifierValue + "',false))\n");
+						sb.append("#set( $").append(field.getVelocityVarName()).append("Object = $filetool.getFile('").append(identifierValue).append("',false))\n");
 					}else{
-						sb.append("#set( $" + field.getVelocityVarName() + "Object = $filetool.getFile('" + identifierValue + "',true))\n");
+						sb.append("#set( $").append(field.getVelocityVarName()).append("Object = $filetool.getFile('").append(identifierValue).append("',true))\n");
 					}
 				}else{
-					sb.append("#set( $" + field.getVelocityVarName() + "Object = $filetool.getNewFile())\n");
+					sb.append("#set( $").append(field.getVelocityVarName()).append("Object = $filetool.getNewFile())\n");
 				}
 
 
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileInode\", $" + field.getVelocityVarName() + "Object.getInode() ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileIdentifier\", $" + field.getVelocityVarName() + "Object.getIdentifier() ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileFriendlyName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getFriendlyName()) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileExtension\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getExtension()) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileURI\", $filetool.getURI($" + field.getVelocityVarName() + "Object) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileTitle\", $" + field.getVelocityVarName() + "Object.getTitle() ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("FileInode\", $").append(field.getVelocityVarName()).append("Object.getInode() ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("FileIdentifier\", $").append(field.getVelocityVarName()).append("Object.getIdentifier() ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("FileFriendlyName\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append("Object.getFriendlyName()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("FileExtension\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append("Object.getExtension()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("FileURI\", $filetool.getURI($").append(field.getVelocityVarName()).append("Object) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("FileTitle\", $").append(field.getVelocityVarName()).append("Object.getTitle() ))\n");
 
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FilePath\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getPath()) ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "FileName\", $UtilMethods.espaceForVelocity($" + field.getVelocityVarName() + "Object.getFileName()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("FilePath\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append("Object.getPath()) ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("FileName\", $UtilMethods.espaceForVelocity($").append(field.getVelocityVarName()).append("Object.getFileName()) ))\n");
 
 			} //http://jira.dotmarketing.net/browse/DOTCMS-2178
 			else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
@@ -247,21 +244,21 @@ public class ContentletMapServices {
 					Logger.error(ContentletServices.class, "Unable to retrive binary file for content id " + content.getIdentifier() + " field " + field.getVelocityVarName(), e);
 					continue;
 				}
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "BinaryFileTitle\", \"" + UtilMethods.espaceForVelocity(fileName) + "\"))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "BinaryFileSize\", \"" + UtilMethods.espaceForVelocity(filesize) + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("BinaryFileTitle\", \"").append(UtilMethods.espaceForVelocity(fileName)).append("\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("BinaryFileSize\", \"").append(UtilMethods.espaceForVelocity(filesize)).append("\"))\n");
 				String binaryFileURI = fileName.length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode()):"";
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "BinaryFileURI\", \""	+ binaryFileURI + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("BinaryFileURI\", \"").append(binaryFileURI).append("\"))\n");
 			} else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())) {
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "SelectLabelsValues\", \""
-						+ field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("SelectLabelsValues\", \""
+				        ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ")).append("\"))\n");
 
 			} else if (field.getFieldType().equals(Field.FieldType.RADIO.toString())) {
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "RadioLabelsValues\", \""
-						+ field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("RadioLabelsValues\", \""
+				        ).append(field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ")).append("\"))\n");
 
 			} else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())) {
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "CheckboxLabelsValues\", \""
-						+ field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("CheckboxLabelsValues\", \""
+				        ).append(field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ")).append("\"))\n");
 
 			} else if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
 				String shortFormat = "";
@@ -270,16 +267,16 @@ public class ContentletMapServices {
 					shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
 					dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd");
 				}
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $date.toDate(\"yyyy-MM-dd\", \"" + dbFormat + "\")))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ShortFormat\", \"" + shortFormat + "\"))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "DBFormat\", \"" + dbFormat + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", $date.toDate(\"yyyy-MM-dd\", \"").append(dbFormat).append("\")))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ShortFormat\", \"").append(shortFormat).append("\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("DBFormat\", \"").append(dbFormat).append("\"))\n");
 			} else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
 				String shortFormat = "";
 				if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
 					shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "H:mm:ss");
 				}
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $date.toDate(\"H:mm:ss\", \"" + shortFormat + "\")))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ShortFormat\", \"" + shortFormat + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", $date.toDate(\"H:mm:ss\", \"").append(shortFormat).append("\")))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append( content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("ShortFormat\", \"").append(shortFormat).append("\"))\n");
 
 			} else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 				String shortFormat = "";
@@ -291,15 +288,15 @@ public class ContentletMapServices {
 					dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd H:mm:ss");
 				}
 
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" + dbFormat + "\")))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ShortFormat\", \"" + shortFormat + "\"))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "DBFormat\", \"" + dbFormat + "\"))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "LongFormat\", \"" + longFormat + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_").append(content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "\", $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" ).append( dbFormat ).append( "\")))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "ShortFormat\", \"" ).append( shortFormat ).append( "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "DBFormat\", \"" ).append( dbFormat ).append( "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "LongFormat\", \"" ).append( longFormat ).append( "\"))\n");
 
 			} else if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())) {
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ButtonValue\", \"" + (field.getFieldName() == null ? "" : field.getFieldName())
-						+ "\"))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "ButtonCode\", \"" + (field.getValues() == null ? "" : field.getValues()) + "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "ButtonValue\", \"" ).append( (field.getFieldName() == null ? "" : field.getFieldName())
+						).append( "\"))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "ButtonCode\", \"" ).append( (field.getValues() == null ? "" : field.getValues()) ).append( "\"))\n");
 
 			} else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
 
@@ -310,8 +307,6 @@ public class ContentletMapServices {
 				List<Category> selectedCategories = categoryAPI.getParents(content, systemUser, false);
 
 				// Initialize variables
-				String catNames = "";
-				String catKeys = "";
 				String catInodes = "";
 				Set<Category> categoryList = new HashSet<Category>();
 				List<Category> categoryTree = categoryAPI.getAllChildren(category, systemUser, false);
@@ -329,98 +324,92 @@ public class ContentletMapServices {
 
 				if (categoryList.size() > 0) {
 					Iterator<Category> it = categoryList.iterator();
+					StringBuilder catbuilder=new StringBuilder();
 					while (it.hasNext()) {
 						Category cat = (Category) it.next();
-						catInodes += "\"" +cat.getInode()+ "\"" ;
-						catNames += "\"" + cat.getCategoryName() + "\"";
-						catKeys += "\"" + cat.getKey() + "\"";
+						catbuilder.append("\"").append(cat.getInode()).append("\"") ;
 						if (it.hasNext()) {
-							catInodes += ",";
-							catNames += ",";
-							catKeys += ",";
+							catbuilder.append(",");
 						}
 					}
+					catInodes=catbuilder.toString();
 				}
 
-				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $categories.filterCategoriesByUserPermissions([" + catInodes + "] ))\n");
+				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories = $categories.filterCategoriesByUserPermissions([" ).append( catInodes ).append( "] ))\n");
 
-				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
-				sb.append("#foreach ($dotcms_content_" + content.getIdentifier() + "_filteredCategory in $dotcms_content_" + content.getIdentifier() + "_filteredCategories)\n");
-				sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes.add($dotcms_content_" + content.getIdentifier() + "_filteredCategory.inode))\n");
-				sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames.add($dotcms_content_" + content.getIdentifier() + "_filteredCategory.categoryName))\n");
-				sb.append("#if ($UtilMethods.isSet($dotcms_content_" + content.getIdentifier() + "_filteredCategory.key))\n");
-				sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys.add($dotcms_content_" + content.getIdentifier() + "_filteredCategory.key))\n");
+				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes = $contents.getEmptyList())\n");
+				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames = $contents.getEmptyList())\n");
+				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys = $contents.getEmptyList())\n");
+				sb.append("#foreach ($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory in $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories)\n");
+				sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.inode))\n");
+				sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.categoryName))\n");
+				sb.append("#if ($UtilMethods.isSet($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.key))\n");
+				sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.key))\n");
 				sb.append("#else\n");
-				sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys.add(''))\n");
+				sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys.add(''))\n");
 				sb.append("#end\n");
 				sb.append("#end\n");
 
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "CategoryObjects\", $dotcms_content_" + content.getIdentifier() + "_filteredCategories ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "Categories\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "CategoryObjects\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "Categories\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes ))\n");
 				//http://jira.dotmarketing.net/browse/DOTCMS-2288
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "CategoriesNames\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames ))\n");
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "CategoriesKeys\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "CategoriesNames\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"" ).append( field.getVelocityVarName() ).append( "CategoriesKeys\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys ))\n");
 
-				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
+				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories = $contents.getEmptyList())\n");
+				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes = $contents.getEmptyList())\n");
+				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames = $contents.getEmptyList())\n");
+				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys = $contents.getEmptyList())\n");
 			}
 
 		}
 
 		// get the contentlet categories to make a list
 		String categories = "";
-		String categoryNames = "";
-		String categoryKeys = "";
 		Set<Category> categoryList = new HashSet<Category>(categoryAPI.getParents(content, systemUser, false));
 		if (categoryList != null) {
+		    StringBuilder catbuilder=new StringBuilder();
 			Iterator<Category> it = categoryList.iterator();
 			while (it.hasNext()) {
 				Category category = it.next();
-				categories += "\"" +category.getInode()+"\"";
-				categoryNames += "\"" + category.getCategoryName() + "\"";
-				categoryKeys += "\"" + category.getKey() + "\"";
+				catbuilder.append("\"").append(category.getInode()).append("\"");
 				if (it.hasNext()) {
-					categories += ",";
-					categoryNames += ",";
-					categoryKeys += ",";
+					catbuilder.append(",");
 				}
 			}
+			categories=catbuilder.toString();
 		}
 
 		// sets the categories as a list on velocity
-		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $categories.filterCategoriesByUserPermissions([" + categories + "] ))\n");
+		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories = $categories.filterCategoriesByUserPermissions([" ).append( categories ).append( "] ))\n");
 
-		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
-		sb.append("#foreach ($dotcms_content_" + content.getIdentifier() + "_filteredCategory in $dotcms_content_" + content.getIdentifier() + "_filteredCategories)\n");
-		sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes.add($dotcms_content_" + content.getIdentifier() + "_filteredCategory.inode))\n");
-		sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames.add($dotcms_content_" + content.getIdentifier() + "_filteredCategory.categoryName))\n");
-		sb.append("#if ($UtilMethods.isSet($dotcms_content_" + content.getIdentifier() + "_filteredCategory.key))\n");
-		sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys.add($dotcms_content_" + content.getIdentifier() + "_filteredCategory.key))\n");
+		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes = $contents.getEmptyList())\n");
+		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames = $contents.getEmptyList())\n");
+		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys = $contents.getEmptyList())\n");
+		sb.append("#foreach ($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory in $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories)\n");
+		sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.inode))\n");
+		sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.categoryName))\n");
+		sb.append("#if ($UtilMethods.isSet($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.key))\n");
+		sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.key))\n");
 		sb.append("#else\n");
-		sb.append("#set($_dummy = $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys.add(''))\n");
+		sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys.add(''))\n");
 		sb.append("#end\n");
 		sb.append("#end\n");
 
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"ContentletCategoryObjects\", $dotcms_content_" + content.getIdentifier() + "_filteredCategories ))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentletCategoryObjects\", $dotcms_content_" + content.getIdentifier() + "_filteredCategories ))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"ContentletCategories\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes ))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentletCategories\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes ))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"ContentletCategoriesNames\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames ))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentletCategoriesNames\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames ))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"ContentletCategoriesKeys\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys ))\n");
-		sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"contentletCategoriesKeys\", $dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys ))\n");
+		sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"ContentletCategoryObjects\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories ))\n");
+		sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"contentletCategoryObjects\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories ))\n");
+		sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"ContentletCategories\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes ))\n");
+		sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"contentletCategories\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes ))\n");
+		sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"ContentletCategoriesNames\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames ))\n");
+		sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"contentletCategoriesNames\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames ))\n");
+		sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"ContentletCategoriesKeys\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys ))\n");
+		sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"contentletCategoriesKeys\", $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys ))\n");
 
-		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategories = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesInodes = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesNames = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" + content.getIdentifier() + "_filteredCategoriesKeys = $contents.getEmptyList())\n");
+		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories = $contents.getEmptyList())\n");
+		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes = $contents.getEmptyList())\n");
+		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames = $contents.getEmptyList())\n");
+		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys = $contents.getEmptyList())\n");
 //		Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
 //      I actually think it should be fine passed the ctx which is a chained context here
 //		sb.append("#set($velocityContext = $UtilMethods.popVelocityContext($velocityContext))\n");
@@ -428,15 +417,15 @@ public class ContentletMapServices {
 		sb.append(widgetCode);
 
 		if(structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET){
-			sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"isWidget\", \"" + true + "\"  ))\n");
+			sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"isWidget\", \"" ).append( true ).append( "\"  ))\n");
 			if(structure.getName().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)){
-				sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"isFormWidget\", \"" + true + "\"  ))\n");
+				sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"isFormWidget\", \"" ).append( true ).append( "\"  ))\n");
 			}
 		}else{
-			sb.append("#set($_dummy = $!dotcms_content_" + content.getIdentifier() + ".put(\"isWidget\", \"" + false + "\"  ))\n");
+			sb.append("#set($_dummy = $!dotcms_content_" ).append( content.getIdentifier() ).append( ".put(\"isWidget\", \"" ).append( false ).append( "\"  ))\n");
 		}
 
-		sb.append("#set ($content = $dotcms_content_" + content.getIdentifier() + ")");
+		sb.append("#set ($content = $dotcms_content_" ).append( content.getIdentifier() ).append( ")");
 
 		if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			try {
