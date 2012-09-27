@@ -1,5 +1,12 @@
 package org.apache.velocity.runtime.parser;
 
+import java.io.CharArrayReader;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
+import com.dotmarketing.util.Logger;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -36,8 +43,9 @@ package org.apache.velocity.runtime.parser;
  */
 
 public final class VelocityCharStream
-implements CharStream
+implements CharStream, Serializable
 {
+    private static final long serialVersionUID = 3912314600586227564L;
     public static final boolean staticFlag = false;
     int bufsize;
     private int nextBufExpand;
@@ -54,9 +62,10 @@ implements CharStream
     private boolean prevCharIsCR = false;
     private boolean prevCharIsLF = false;
 
-    private java.io.Reader inputStream;
+    private transient java.io.Reader inputStream;
 
     private char[] buffer;
+    private char[] dataForInputStream;
     private int maxNextCharInd = 0;
     private int inBuf = 0;
 
@@ -520,5 +529,23 @@ implements CharStream
         line = bufline[j];
         column = bufcolumn[j];
     }
-
+    
+    private void writeObject(ObjectOutputStream oos)throws IOException {
+        try {
+            dataForInputStream = new char[buffer.length];
+            try{
+                inputStream.read(dataForInputStream);
+            }catch (Exception e) {
+                dataForInputStream = buffer;
+            }
+            oos.defaultWriteObject();
+        } catch (IOException e) {
+            Logger.error(this, "Unable to get the resource loader.  Looks like the velocity cache/cluster is not working.",e);
+        }
+    }
+    
+    private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
+        ois.defaultReadObject();
+        this.inputStream = new CharArrayReader(dataForInputStream);
+    }
 }

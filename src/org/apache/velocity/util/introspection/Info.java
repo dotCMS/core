@@ -19,6 +19,8 @@ package org.apache.velocity.util.introspection;
  * under the License.    
  */
 
+import java.io.Serializable;
+
 import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.Node;
 
@@ -29,8 +31,9 @@ import org.apache.velocity.runtime.parser.node.Node;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: Info.java 733416 2009-01-11 05:26:52Z byron $
  */
-public class Info
+public class Info implements Serializable
 {
+    private static final long serialVersionUID = -7620503479533845293L;
     private int line;
     private int column;
     private String templateName;

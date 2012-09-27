@@ -19,6 +19,8 @@ package org.apache.velocity.runtime.directive;
  * under the License.    
  */
 
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.io.Writer;
 import java.io.IOException;
 
@@ -33,6 +35,9 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
+
 
 /**
  * Base class for all directives used in Velocity.
@@ -41,8 +46,11 @@ import org.apache.velocity.exception.TemplateInitException;
  * @author Nathan Bubna
  * @version $Id: Directive.java 778045 2009-05-23 22:17:46Z nbubna $
  */
-public abstract class Directive implements DirectiveConstants, Cloneable
+public abstract class Directive implements DirectiveConstants, Cloneable, Serializable
 {
+    
+    private static final long serialVersionUID = -1659960348240518956L;
+    
     private int line = 0;
     private int column = 0;
     private boolean provideScope = false;
@@ -51,7 +59,7 @@ public abstract class Directive implements DirectiveConstants, Cloneable
     /**
      *
      */
-    protected RuntimeServices rsvc = null;
+    protected transient RuntimeServices rsvc = null;
 
     /**
      * Return the name of this directive.
@@ -222,6 +230,11 @@ public abstract class Directive implements DirectiveConstants, Cloneable
                 // about replacing anything superseded by this directive's scope
             }
         }
+    }
+    
+    private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
+        this.rsvc = VelocityUtil.getEngine().getRuntimeServices();      
+        ois.defaultReadObject();
     }
 
 }

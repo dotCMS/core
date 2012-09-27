@@ -19,6 +19,10 @@ package org.apache.velocity.runtime.resource;
  * under the License.    
  */
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.RuntimeConstants;
 
@@ -26,6 +30,10 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.ParseErrorException;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.velocity.DotResourceLoader;
 
 /**
  * This class represent a general text resource that
@@ -36,8 +44,11 @@ import org.apache.velocity.exception.ParseErrorException;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: Resource.java 729843 2008-12-29 09:06:57Z byron $
  */
-public abstract class Resource
+public abstract class Resource implements Serializable
 {
+    
+    private static final long serialVersionUID = 8359481009919491228L;
+
     protected RuntimeServices rsvc = null;
 
     /**
@@ -288,5 +299,11 @@ public abstract class Resource
     public int getType()
     {
         return type;
+    }
+    
+    private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
+        this.resourceLoader = DotResourceLoader.getInstance();
+        this.rsvc = VelocityUtil.getEngine().getRuntimeServices();      
+        ois.defaultReadObject();
     }
 }
