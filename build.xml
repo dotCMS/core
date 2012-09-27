@@ -135,7 +135,10 @@
 		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
 		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
 		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" />
-		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
+        <copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
+        <copy todir="${build.classes}/org/apache/velocity/runtime/defaults/">
+            <fileset dir="${src.dir}/org/apache/velocity/runtime/defaults/"/>
+        </copy>
 	</target>
 
 	<target name="compile-anttasks" depends="prepare" description="Compiles source code need for clean and deploy plugins.">
