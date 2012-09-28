@@ -35,6 +35,8 @@ import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.resource.Resource;
 
+import com.dotmarketing.util.VelocityUtil;
+
 /**
  * <p>Pluggable directive that handles the #include() statement in VTL.
  * This #include() can take multiple arguments of either
@@ -115,6 +117,7 @@ public class Include extends InputBase
         throws TemplateInitException
     {
         super.init( rs, context, node );
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
 
         /*
          *  get the msg, and add the space so we don't have to
@@ -147,7 +150,7 @@ public class Include extends InputBase
         /*
          *  get our arguments and check them
          */
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         int argCount = node.jjtGetNumChildren();
 
         for( int i = 0; i < argCount; i++)
@@ -195,6 +198,7 @@ public class Include extends InputBase
         throws IOException, MethodInvocationException,
                ResourceNotFoundException
     {
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         if ( node == null )
         {
             rsvc.getLog().error("#include() null argument");

@@ -36,6 +36,8 @@ import org.apache.velocity.runtime.log.LogDisplayWrapper;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.Node;
 
+import com.dotmarketing.velocity.DotResourceLoader;
+
 /**
  *  VelocimacroFactory.java
  *
@@ -602,7 +604,7 @@ public class VelocimacroFactory
                              */
 
                             long tt = tw.modificationTime;
-                            long ft = template.getResourceLoader().getLastModified(template);
+                            long ft = DotResourceLoader.getInstance().getLastModified(template);
 
                             if (ft > tt)
                             {

@@ -38,6 +38,8 @@ import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
+import com.dotmarketing.util.VelocityUtil;
+
 /**
  * Pluggable directive that handles the <code>#parse()</code>
  * statement in VTL.
@@ -104,6 +106,7 @@ public class Parse extends InputBase
         throws TemplateInitException
     {
         super.init(rs, context, node);
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
 
         this.maxDepth = rsvc.getInt(RuntimeConstants.PARSE_DIRECTIVE_MAXDEPTH, 10);
     }
@@ -139,6 +142,7 @@ public class Parse extends InputBase
          *  does it have a value?  If you have a null reference, then no.
          */
         Object value =  node.jjtGetChild(0).value( context );
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         if (value == null && rsvc.getLog().isDebugEnabled())
         {
             rsvc.getLog().debug("#parse(): null argument at " +

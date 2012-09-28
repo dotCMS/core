@@ -24,6 +24,8 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.TemplateNumber;
 
+import com.dotmarketing.util.Logger;
+
 /**
  *  Handles <code>arg1  == arg2</code>
  *
@@ -123,9 +125,9 @@ public class ASTEQNode extends SimpleNode
 
         if (left == null && right == null)
         {
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("Both right (" + getLiteral(false) + " and left "
+                Logger.debug(this,"Both right (" + getLiteral(false) + " and left "
                           + getLiteral(true) + " sides of '==' operation returned null."
                           + "If references, they may not be in the context."
                           + getLocation(context));
@@ -134,9 +136,9 @@ public class ASTEQNode extends SimpleNode
         }
         else if (left == null || right == null)
         {
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug((left == null ? "Left" : "Right")
+                Logger.debug(this,(left == null ? "Left" : "Right")
                         + " side (" + getLiteral(left == null)
                         + ") of '==' operation has null value. If it is a "
                         + "reference, it may not be in the context or its "

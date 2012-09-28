@@ -25,6 +25,9 @@ import java.io.InputStreamReader;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.velocity.DotResourceLoader;
+
 /**
  * This class represent a general text resource that may have been
  * retrieved from any number of possible sources.
@@ -63,7 +66,7 @@ public class ContentResource extends Resource
             StringWriter sw = new StringWriter();
 
             reader = new BufferedReader(
-                new InputStreamReader(resourceLoader.getResourceStream(name),
+                new InputStreamReader(DotResourceLoader.getInstance().getResourceStream(name),
                                       encoding));
 
             char buf[] = new char[1024];
@@ -85,7 +88,7 @@ public class ContentResource extends Resource
         catch ( Exception e )
         {
             String msg = "Cannot process content resource";
-            rsvc.getLog().error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
         finally

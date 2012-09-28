@@ -23,6 +23,8 @@ import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MathException;
 import org.apache.velocity.runtime.parser.Parser;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Handles number division of nodes<br><br>
  *
@@ -65,12 +67,12 @@ public class ASTDivNode extends ASTMathNode
                           + getLocation(context);
             if (strictMode)
             {
-                log.error(msg);
+                Logger.error(this,msg);
                 throw new MathException(msg);
             }
             else
             {
-                log.debug(msg);
+                Logger.debug(this,msg);
                 return null;
             }
         }

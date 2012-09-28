@@ -28,6 +28,8 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.node.Node;
 
+import com.dotmarketing.util.VelocityUtil;
+
 /**
  * BlockMacro directive is used to invoke Velocity macros with normal parameters and a macro body.
  * <p>
@@ -94,7 +96,7 @@ public class BlockMacro extends Block
         throws TemplateInitException
     {
         super.init(rs, context, node);
-        
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         // get name of the reference that refers to AST block passed to block macro call
         key = rsvc.getString(RuntimeConstants.VM_BODY_REFERENCE, "bodyContent");
 

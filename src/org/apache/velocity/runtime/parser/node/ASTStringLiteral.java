@@ -26,10 +26,14 @@ import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  * ASTStringLiteral support. Will interpolate!
@@ -86,7 +90,8 @@ public class ASTStringLiteral extends SimpleNode
          */
 
         super.init(context, data);
-
+        
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         /*
          * the stringlit is set at template parse time, so we can do this here
          * for now. if things change and we can somehow create stringlits at
@@ -360,7 +365,7 @@ public class ASTStringLiteral extends SimpleNode
             catch (IOException e)
             {
                 String msg = "Error in interpolating string literal";
-                log.error(msg, e);
+                Logger.error(this,msg, e);
                 throw new VelocityException(msg, e);
             }
 

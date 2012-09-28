@@ -20,18 +20,14 @@ package org.apache.velocity.runtime.resource;
  */
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import org.apache.velocity.runtime.RuntimeServices;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.RuntimeConstants;
-
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.exception.ParseErrorException;
-
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceLoader;
 
@@ -48,15 +44,6 @@ public abstract class Resource implements Serializable
 {
     
     private static final long serialVersionUID = 8359481009919491228L;
-
-    protected RuntimeServices rsvc = null;
-
-    /**
-     * The template loader that initially loaded the input
-     * stream for this template, and knows how to check the
-     * source of the input stream for modification.
-     */
-    protected ResourceLoader resourceLoader;
 
     /**
      * The number of milliseconds in a minute, used to calculate the
@@ -108,14 +95,6 @@ public abstract class Resource implements Serializable
     }
 
     /**
-     * @param rs
-     */
-    public void setRuntimeServices( RuntimeServices rs )
-    {
-        rsvc = rs;
-    }
-
-    /**
      * Perform any subsequent processing that might need
      * to be done by a resource. In the case of a template
      * the actual parsing of the input stream needs to be
@@ -137,7 +116,7 @@ public abstract class Resource implements Serializable
      */
     public boolean isSourceModified()
     {
-        return resourceLoader.isSourceModified(this);
+        return DotResourceLoader.getInstance().isSourceModified(this);
     }
 
     /**
@@ -243,27 +222,6 @@ public abstract class Resource implements Serializable
     }
 
     /**
-     * Return the template loader that pulled
-     * in the template stream
-     * @return The resource loader for this resource.
-     */
-    public ResourceLoader getResourceLoader()
-    {
-        return resourceLoader;
-    }
-
-    /**
-     * Set the template loader for this template. Set
-     * when the Runtime determines where this template
-     * came from the list of possible sources.
-     * @param resourceLoader
-     */
-    public void setResourceLoader(ResourceLoader resourceLoader)
-    {
-        this.resourceLoader = resourceLoader;
-    }
-
-    /**
      * Set arbitrary data object that might be used
      * by the resource.
      * @param data
@@ -302,8 +260,6 @@ public abstract class Resource implements Serializable
     }
     
     private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
-        this.resourceLoader = DotResourceLoader.getInstance();
-        this.rsvc = VelocityUtil.getEngine().getRuntimeServices();      
         ois.defaultReadObject();
     }
 }

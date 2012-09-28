@@ -35,12 +35,16 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.directive.Scope;
 import org.apache.velocity.runtime.directive.StopCommand;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceManager;
+
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.velocity.DotResourceLoader;
 
 /**
  * This class is used for controlling all template
@@ -105,7 +109,7 @@ public class Template extends Resource
          */
         try
         {
-            is = resourceLoader.getResourceStream(name);
+            is = DotResourceLoader.getInstance().getResourceStream(name);
         }
         catch( ResourceNotFoundException rnfe )
         {
@@ -131,7 +135,7 @@ public class Template extends Resource
             try
             {
                 BufferedReader br = new BufferedReader( new InputStreamReader( is, encoding ) );
-                data = rsvc.parse( br, name);
+                data = VelocityUtil.getEngine().getRuntimeServices().parse( br, name);
                 initDocument();
                 return true;
             }
@@ -223,7 +227,7 @@ public class Template extends Resource
             /*
              *  init the AST
              */
-
+            RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
             ((SimpleNode)data).init( ica, rsvc);
 
             String property = scopeName+'.'+RuntimeConstants.PROVIDE_SCOPE_CONTROL;
@@ -289,6 +293,7 @@ public class Template extends Resource
             throw errorCondition;
         }
 
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         if( data != null)
         {
             /*

@@ -36,6 +36,8 @@ import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotmarketing.util.VelocityUtil;
+
 /**
  * Evaluates the directive argument as a VTL string, using the existing
  * context.
@@ -154,7 +156,7 @@ public class Evaluate extends Directive
          */
         String templateName = context.getCurrentTemplateName();
         SimpleNode nodeTree = null;
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         try
         {
             nodeTree = rsvc.parse(new StringReader(sourceText), templateName, false);
@@ -175,7 +177,7 @@ public class Evaluate extends Directive
          * now we want to init and render.  Chain the context
          * to prevent any changes to the current context.
          */
-
+        
         if (nodeTree != null)
         {
             InternalContextAdapter ica = new EvaluateContext(context, rsvc);

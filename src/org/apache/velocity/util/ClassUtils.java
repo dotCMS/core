@@ -30,6 +30,8 @@ import org.apache.velocity.util.introspection.Info;
 import org.apache.velocity.util.introspection.IntrospectionCacheData;
 import org.apache.velocity.util.introspection.VelMethod;
 
+import com.dotmarketing.util.VelocityUtil;
+
 
 
 /**
@@ -199,7 +201,7 @@ public class ClassUtils {
         /*
          * otherwise, do the introspection, and then cache it
          */
-        method = node.getRuntimeServices().getUberspect().getMethod(o, methodName, params,
+        method = VelocityUtil.getEngine().getRuntimeServices().getUberspect().getMethod(o, methodName, params,
            new Info(node.getTemplateName(), node.getLine(), node.getColumn()));
 
         if ((method != null) && (o != null))

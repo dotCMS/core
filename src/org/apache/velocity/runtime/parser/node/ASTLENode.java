@@ -23,9 +23,13 @@ import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.TemplateNumber;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  * Handles arg1 &lt;= arg2<br><br>
@@ -83,7 +87,7 @@ public class ASTLENode extends SimpleNode
         /*
          *  if either is null, lets log and bail
          */
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         if (left == null || right == null)
         {
             String msg = (left == null ? "Left" : "Right")
@@ -91,13 +95,13 @@ public class ASTLENode extends SimpleNode
                            + jjtGetChild( (left == null? 0 : 1) ).literal()
                            + ") of '<=' operation has null value at "
                            + Log.formatFileString(this);
-
+            
             if (rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false))
             {
               throw new VelocityException(msg);
             }
             
-            log.error(msg);
+            Logger.error(this,msg);
             return false;
         }
 
@@ -127,7 +131,7 @@ public class ASTLENode extends SimpleNode
               throw new VelocityException(msg);
             }
 
-            log.error(msg);
+            Logger.error(this,msg);
             return false;
         }
 

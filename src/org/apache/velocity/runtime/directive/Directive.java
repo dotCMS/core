@@ -57,11 +57,6 @@ public abstract class Directive implements DirectiveConstants, Cloneable, Serial
     private String templateName;
 
     /**
-     *
-     */
-    protected transient RuntimeServices rsvc = null;
-
-    /**
      * Return the name of this directive.
      * @return The name of this directive.
      */
@@ -151,8 +146,7 @@ public abstract class Directive implements DirectiveConstants, Cloneable, Serial
                       Node node)
         throws TemplateInitException
     {
-        rsvc = rs;
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         String property = getScopeName()+'.'+RuntimeConstants.PROVIDE_SCOPE_CONTROL;
         this.provideScope = rsvc.getBoolean(property, provideScope);
     }
@@ -233,7 +227,6 @@ public abstract class Directive implements DirectiveConstants, Cloneable, Serial
     }
     
     private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
-        this.rsvc = VelocityUtil.getEngine().getRuntimeServices();      
         ois.defaultReadObject();
     }
 

@@ -20,7 +20,6 @@ package org.apache.velocity.runtime.parser.node;
  */
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.Writer;
 
@@ -36,7 +35,6 @@ import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
 
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
 /**
@@ -45,12 +43,6 @@ import com.dotmarketing.util.VelocityUtil;
 public class SimpleNode implements Node, Serializable
 {
     private static final long serialVersionUID = 2212796154857814566L;
-
-    /** */
-    protected RuntimeServices rsvc = null;
-
-    /** */
-    protected Log log = null;
 
     /** */
     protected Node parent;
@@ -83,11 +75,6 @@ public class SimpleNode implements Node, Serializable
     
     protected String templateName;
 
-    
-    public RuntimeServices getRuntimeServices()
-    {
-      return rsvc;
-    }
     
     /**
      * @param i
@@ -306,9 +293,6 @@ public class SimpleNode implements Node, Serializable
          * hold onto the RuntimeServices
          */
 
-        rsvc = (RuntimeServices) data;
-        log = rsvc.getLog();
-
         int i, k = jjtGetNumChildren();
 
         for (i = 0; i < k; i++)
@@ -455,8 +439,6 @@ public class SimpleNode implements Node, Serializable
     }
     
     private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
-        this.rsvc = VelocityUtil.getEngine().getRuntimeServices();
-        this.log = rsvc.getLog();
         ois.defaultReadObject();
     }
 }
