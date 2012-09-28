@@ -5,10 +5,14 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.introspection.VelMethod;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -56,7 +60,8 @@ public class ASTIndex extends SimpleNode
     public Object init(InternalContextAdapter context, Object data)
         throws TemplateInitException
     {
-        super.init(context, data);    
+        super.init(context, data);
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
         return data;
     }  
@@ -171,7 +176,7 @@ public class ASTIndex extends SimpleNode
               + (argument == null ? "null" : argument.getClass().getName()) 
               + ")' in " + o.getClass().getName()
               + " at " + Log.formatFileString(this);
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }  

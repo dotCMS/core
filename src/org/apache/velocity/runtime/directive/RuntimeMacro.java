@@ -39,6 +39,8 @@ import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotmarketing.util.VelocityUtil;
+
 /**
  * This class acts as a proxy for potential macros.  When the AST is built
  * this class is inserted as a placeholder for the macro (whether or not
@@ -138,7 +140,7 @@ public class RuntimeMacro extends Directive
                      Node node)
     {
         super.init(rs, context, node);
-        rsvc = rs;
+        
         this.node = node;
         
         /**
@@ -151,6 +153,7 @@ public class RuntimeMacro extends Directive
         Token t = node.getLastToken();
         if (t.image.startsWith(")") || t.image.startsWith("#end"))
         {
+            RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
             strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
         }
                 
@@ -254,6 +257,7 @@ public class RuntimeMacro extends Directive
         /**
          * first look in the source template
          */
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         Object o = rsvc.getVelocimacro(macroName, getTemplateName(), renderingTemplate);
 
         if( o != null )

@@ -21,7 +21,10 @@ package org.apache.velocity.runtime.directive;
 
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
+
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  * Base class for directives which do input operations
@@ -53,6 +56,7 @@ public abstract class InputBase extends Directive
         }
         else
         {
+            RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
             return (String) rsvc.getProperty(RuntimeConstants.INPUT_ENCODING);
         }
     }

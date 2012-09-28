@@ -24,8 +24,12 @@ import org.apache.velocity.exception.MathException;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.TemplateNumber;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  * Helps handle math<br><br>
@@ -60,6 +64,7 @@ public abstract class ASTMathNode extends SimpleNode
     public Object init(InternalContextAdapter context, Object data) throws TemplateInitException
     {
         super.init(context, data);
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         strictMode = rsvc.getBoolean(RuntimeConstants.STRICT_MATH, false);
         return data;
     }
@@ -119,12 +124,12 @@ public abstract class ASTMathNode extends SimpleNode
                         + getLocation(context);
             if (strictMode)
             {
-                log.error(msg);
+                Logger.error(this,msg);
                 throw new MathException(msg);
             }
             else
             {
-                log.debug(msg);
+                Logger.debug(this,msg);
                 return null;
             }
         }

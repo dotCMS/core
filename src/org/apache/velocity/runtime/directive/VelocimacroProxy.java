@@ -35,6 +35,9 @@ import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
+
 /**
  *  VelocimacroProxy.java
  *
@@ -148,7 +151,7 @@ public class VelocimacroProxy extends Directive
             throws IOException, MethodInvocationException, MacroOverflowException
     {
         // wrap the current context and add the macro arguments
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         // the creation of this context is a major bottleneck (incl 2x HashMap)
         final ProxyVMContext vmc = new ProxyVMContext(context, rsvc, localContextScope);
 
@@ -234,8 +237,7 @@ public class VelocimacroProxy extends Directive
      */
     public void init(RuntimeServices rs)
     {
-        rsvc = rs;
-      
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         // this is a very expensive call (ExtendedProperties is very slow)
         strictArguments = rs.getConfiguration().getBoolean(
             RuntimeConstants.VM_ARGUMENTS_STRICT, false);
@@ -306,9 +308,9 @@ public class VelocimacroProxy extends Directive
                 throw new TemplateInitException(buildErrorMsg(node, i), 
                     context.getCurrentTemplateName(), 0, 0);
             }
-            else if (rsvc.getLog().isDebugEnabled())
+            else if (Logger.isDebugEnabled(this.getClass()))
             {
-                rsvc.getLog().debug(buildErrorMsg(node, i));
+                Logger.debug(this,buildErrorMsg(node, i));
                 return;
             }
         }

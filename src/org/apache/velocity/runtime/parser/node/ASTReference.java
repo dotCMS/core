@@ -31,6 +31,7 @@ import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.Renderable;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.directive.Block.Reference;
 import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
@@ -39,6 +40,9 @@ import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.introspection.Info;
 import org.apache.velocity.util.introspection.VelMethod;
 import org.apache.velocity.util.introspection.VelPropertySet;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  * This class is responsible for handling the references in
@@ -135,6 +139,7 @@ public class ASTReference extends SimpleNode
     throws TemplateInitException
     {
         super.init(context, data);
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         
         strictEscape = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT_ESCAPE, false);
         strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
@@ -238,7 +243,8 @@ public class ASTReference extends SimpleNode
          */
 
         Object result = getVariableValue(context, rootString);
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
+        
         if (result == null && !strictRef)
         {
             return EventHandlerUtil.invalidGetMethod(rsvc, context, 
@@ -400,7 +406,7 @@ public class ASTReference extends SimpleNode
          * 
          * if we have an event cartridge, get a new value object
          */
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         value = EventHandlerUtil.referenceInsert(rsvc, context, literal, value);
 
         String toString = null;
@@ -420,7 +426,7 @@ public class ASTReference extends SimpleNode
                     // We want to log where the reference is at so that a developer can easily
                     // know where the offending call is located.  This can be seen
                     // as another element of the error stack we report to log.
-                    log.error("Exception rendering "
+                    Logger.error(this,"Exception rendering "
                         + ((renderable instanceof Reference)? "block ":"Renderable ")
                         + rootString + " at " + Log.formatFileString(this));
                     throw e;
@@ -436,7 +442,7 @@ public class ASTReference extends SimpleNode
             {
                 if (referenceType != QUIET_REFERENCE)
                 {
-                  log.error("Prepend the reference with '$!' e.g., $!" + literal().substring(1)
+                  Logger.error(this,"Prepend the reference with '$!' e.g., $!" + literal().substring(1)
                       + " if you want Velocity to ignore the reference when it evaluates to null");
                   if (value == null)
                   {
@@ -473,9 +479,9 @@ public class ASTReference extends SimpleNode
             writer.write(morePrefix);
             writer.write(localNullString);
 
-            if (logOnNull && referenceType != QUIET_REFERENCE && log.isDebugEnabled())
+            if (logOnNull && referenceType != QUIET_REFERENCE && Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("Null reference [template '" + getTemplateName()
+                Logger.debug(this,"Null reference [template '" + getTemplateName()
                         + "', line " + this.getLine() + ", column " + this.getColumn() + "] : "
                         + this.literal() + " cannot be resolved.");
             }
@@ -609,7 +615,7 @@ public class ASTReference extends SimpleNode
         {
             String msg = "reference set is not a valid reference at "
                     + Log.formatFileString(uberInfo);
-            log.error(msg);
+            Logger.error(this,msg);
             return false;
         }
 
@@ -633,7 +639,7 @@ public class ASTReference extends SimpleNode
               
                 String msg = "reference set is not a valid reference at "
                     + Log.formatFileString(uberInfo);
-                log.error(msg);
+                Logger.error(this,msg);
 
                 return false;
             }
@@ -716,6 +722,7 @@ public class ASTReference extends SimpleNode
 
         try
         {
+            RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
             VelPropertySet vs =
                     rsvc.getUberspect().getPropertySet(result, identifier,
                             value, uberInfo);
@@ -763,7 +770,7 @@ public class ASTReference extends SimpleNode
              */
             String msg = "ASTReference setValue() : exception : " + e
                           + " template at " + Log.formatFileString(uberInfo);
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
          }
 
@@ -816,7 +823,7 @@ public class ASTReference extends SimpleNode
             if (i == -1)
             {
                 /* yikes! */
-                log.error("ASTReference.getRoot() : internal error : "
+                Logger.error(this,"ASTReference.getRoot() : internal error : "
                             + "no $ found for slashbang.");
                 computableReference = false;
                 nullString = t.image;
@@ -992,7 +999,7 @@ public class ASTReference extends SimpleNode
         }
         catch(RuntimeException e)
         {
-            log.error("Exception calling reference $" + variable + " at "
+            Logger.error(this,"Exception calling reference $" + variable + " at "
                       + Log.formatFileString(uberInfo));
             throw e;
         }
@@ -1001,7 +1008,7 @@ public class ASTReference extends SimpleNode
         {
           if (!context.containsKey(variable))
           {
-              log.error("Variable $" + variable + " has not been set at "
+              Logger.error(this,"Variable $" + variable + " has not been set at "
                         + Log.formatFileString(uberInfo));
               throw new MethodInvocationException("Variable $" + variable +
                   " has not been set", null, identifier,

@@ -29,11 +29,15 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.directive.StopCommand;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.introspection.Info;
 import org.apache.velocity.util.introspection.VelMethod;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  *  ASTMethod.java
@@ -113,7 +117,8 @@ public class ASTMethod extends SimpleNode
 
         methodName = getFirstToken().image;
         paramCount = jjtGetNumChildren() - 1;
-
+        
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
         
         return data;
@@ -204,7 +209,7 @@ public class ASTMethod extends SimpleNode
         {
             String msg = "ASTMethod.execute() : exception invoking method '"
                          + methodName + "' in " + o.getClass();
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }
@@ -230,6 +235,7 @@ public class ASTMethod extends SimpleNode
         {
             try
             {
+                RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
                 return EventHandlerUtil.methodException( rsvc, context, o.getClass(), methodName, (Exception) t );
             }
 

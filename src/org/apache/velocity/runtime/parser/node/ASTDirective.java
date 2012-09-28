@@ -28,12 +28,15 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.directive.Directive;
 import org.apache.velocity.runtime.directive.RuntimeMacro;
 import org.apache.velocity.runtime.directive.BlockMacro;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ExceptionUtils;
+
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  * This class is responsible for handling the pluggable
@@ -93,7 +96,7 @@ public class ASTDirective extends SimpleNode
         if (!isInitialized)
         {
             super.init( context, data );
-
+            RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
             /*
              *  only do things that are not context dependent
              */

@@ -38,6 +38,8 @@ import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotmarketing.util.VelocityUtil;
+
 /**
  * Foreach directive used for moving through arrays,
  * or objects that provide an Iterator.
@@ -204,6 +206,7 @@ public class Foreach extends Directive
         throws TemplateInitException
     {
         super.init(rs, context, node);
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
 
         // handle deprecated config settings
         counterName = rsvc.getString(RuntimeConstants.COUNTER_NAME);
@@ -321,7 +324,7 @@ public class Foreach extends Directive
              return false;
 
         Iterator i = null;
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         try
         {
             i = rsvc.getUberspect().getIterator(listObject, uberInfo);

@@ -27,10 +27,14 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.introspection.Info;
 import org.apache.velocity.util.introspection.IntrospectionCacheData;
 import org.apache.velocity.util.introspection.VelPropertyGet;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  *  ASTIdentifier.java
@@ -104,7 +108,7 @@ public class ASTIdentifier extends SimpleNode
         identifier = getFirstToken().image.intern();
 
         uberInfo = new Info(getTemplateName(), getLine(), getColumn());
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
         
         return data;
@@ -144,7 +148,7 @@ public class ASTIdentifier extends SimpleNode
                  *  otherwise, do the introspection, and cache it.  Use the
                  *  uberspector
                  */
-
+                RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
                 vg = rsvc.getUberspect().getPropertyGet(o,identifier, uberInfo);
 
                 if (vg != null && vg.isCacheable() && (o != null))
@@ -167,7 +171,7 @@ public class ASTIdentifier extends SimpleNode
         catch(Exception e)
         {
             String msg = "ASTIdentifier.execute() : identifier = "+identifier;
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
 
@@ -209,6 +213,7 @@ public class ASTIdentifier extends SimpleNode
             {
                 try
                 {
+                    RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
                     return EventHandlerUtil.methodException(rsvc, context, o.getClass(), vg.getMethodName(),
                             (Exception) t);
                 }
@@ -260,7 +265,7 @@ public class ASTIdentifier extends SimpleNode
             String msg = "ASTIdentifier() : exception invoking method "
                         + "for identifier '" + identifier + "' in "
                         + o.getClass();
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }

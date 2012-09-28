@@ -27,9 +27,12 @@ import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.introspection.Info;
+
+import com.dotmarketing.util.VelocityUtil;
 
 /**
  * Node for the #set directive
@@ -40,6 +43,7 @@ import org.apache.velocity.util.introspection.Info;
  */
 public class ASTSetDirective extends SimpleNode
 {
+    private static final long serialVersionUID = 1793078993045394048L;
     private String leftReference = "";
     private Node right = null;
     private ASTReference left = null;
@@ -108,6 +112,7 @@ public class ASTSetDirective extends SimpleNode
             right = getRightHandSide();
             left = getLeftHandSide();
     
+            RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
             logOnNull = rsvc.getBoolean(RuntimeConstants.RUNTIME_LOG_REFERENCE_LOG_INVALID, true);
             allowNull = rsvc.getBoolean(RuntimeConstants.SET_NULL_ALLOWED, false);
             strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
@@ -146,8 +151,10 @@ public class ASTSetDirective extends SimpleNode
          * it is not allowed by configuration
          */
 
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         if( !allowNull )
         {
+            
             if ( value == null )
             {                
                 /*

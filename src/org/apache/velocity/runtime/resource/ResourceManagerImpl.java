@@ -36,6 +36,8 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoaderFactory;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.StringUtils;
 
+import com.dotmarketing.velocity.DotResourceLoader;
+
 
 /**
  * Class to manage the text resource for the Velocity Runtime.
@@ -351,7 +353,7 @@ public class ResourceManagerImpl
                  */    
                 resource = loadResource(resourceName, resourceType, encoding);
 
-                if (resource.getResourceLoader().isCachingOn())
+                if (DotResourceLoader.getInstance().isCachingOn())
                 {
                     globalCache.put(resourceKey, resource);
                 }
@@ -407,7 +409,6 @@ public class ResourceManagerImpl
             ParseErrorException
     {
         Resource resource = createResource(resourceName, resourceType);
-        resource.setRuntimeServices(rsvc);
         resource.setName(resourceName);
         resource.setEncoding(encoding);
 
@@ -424,7 +425,6 @@ public class ResourceManagerImpl
         for (Iterator it = resourceLoaders.iterator(); it.hasNext();)
         {
             ResourceLoader resourceLoader = (ResourceLoader) it.next();
-            resource.setResourceLoader(resourceLoader);
 
             /*
              *  catch the ResourceNotFound exception
@@ -479,7 +479,7 @@ public class ResourceManagerImpl
          */
 
         resource.setLastModified(howOldItWas);
-        resource.setModificationCheckInterval(resource.getResourceLoader().getModificationCheckInterval());
+        resource.setModificationCheckInterval(DotResourceLoader.getInstance().getModificationCheckInterval());
 
         resource.touch();
 
@@ -516,7 +516,7 @@ public class ResourceManagerImpl
         /* check whether this can now be found in a higher priority
          * resource loader.  if so, pass the request off to loadResource.
          */
-        ResourceLoader loader = resource.getResourceLoader();
+        ResourceLoader loader = DotResourceLoader.getInstance();
         if (resourceLoaders.size() > 0 && resourceLoaders.indexOf(loader) > 0)
         {
             String name = resource.getName();
@@ -560,10 +560,8 @@ public class ResourceManagerImpl
             Resource newResource = 
                 ResourceFactory.getResource(resource.getName(), resource.getType());
 
-            newResource.setRuntimeServices(rsvc);
             newResource.setName(resource.getName());
             newResource.setEncoding(resource.getEncoding());
-            newResource.setResourceLoader(loader);
             newResource.setModificationCheckInterval(loader.getModificationCheckInterval());
 
             newResource.process();

@@ -52,8 +52,6 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
 
     VelocityCharStream velcharstream = null;
 
-    private transient RuntimeServices rsvc = null;
-
     /**
      * This constructor was added to allow the re-use of parsers.
      * The normal constructor takes a single argument which
@@ -80,10 +78,6 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
         strictEscape =
             rs.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT_ESCAPE, false);
 
-        /*
-         *  and save the RuntimeServices
-         */
-        rsvc = rs;
     }
 
     /**
@@ -101,7 +95,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
         SimpleNode sn = null;
 
         currentTemplateName = templateName;
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         try
         {
             token_source.clearStateVars();
@@ -158,6 +152,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
      */
     public Directive getDirective(String directive)
     {
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         return (Directive) rsvc.getDirective(directive);
     }
 
@@ -166,6 +161,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
      */
     public boolean isDirective(String directive)
     {
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         return rsvc.getDirective(directive) != null;
     }
 
@@ -196,7 +192,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
          *  mode then we always absord the forward slash regardless
          *  if the derective is defined or not.
          */
-
+        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
         if (strictEscape
              || isDirective(dirTag)
              || macroNames.containsKey(dirTag)
@@ -477,6 +473,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
         /*
          * if that failed, lets lookahead to see if we matched a PD or a VM
          */
+        RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
         String nTag = t.next.image.substring(1);
         if (strictEscape
             || isDirective(nTag)
@@ -757,7 +754,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
                 /*
                  *  if null, then not a real directive, but maybe a Velocimacro
                  */
-
+                RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
                 isVM = rsvc.isVelocimacro(directiveName, currentTemplateName);
 
                 /*
@@ -955,6 +952,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
 
         if (doItNow)
         {
+            RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
             // Further checking of macro arguments
             Macro.checkArgs(rsvc, t, jjtn000, currentTemplateName);
 
@@ -3733,7 +3731,6 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
   }
   
   private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
-      this.rsvc = VelocityUtil.getEngine().getRuntimeServices();
       ois.defaultReadObject();
   }
 
