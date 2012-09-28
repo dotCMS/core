@@ -26,6 +26,8 @@ import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.RuntimeServicesAware;
 import org.apache.velocity.util.StringUtils;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Base class for escaping references.  To use it, override the following methods:
  * <DL>
@@ -142,7 +144,7 @@ public abstract class EscapeReference implements ReferenceInsertionEventHandler,
             }
             catch (MalformedPerl5PatternException E)
             {
-                rs.getLog().error("Invalid regular expression '" + matchRegExp
+                Logger.error(this,"Invalid regular expression '" + matchRegExp
                                   + "'.  No escaping will be performed.", E);
                 matchRegExp = null;
             }

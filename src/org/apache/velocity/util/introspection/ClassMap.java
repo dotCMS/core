@@ -24,8 +24,9 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang.text.StrBuilder;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.util.MapFactory;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * A cache of introspection information for a specific class instance.
@@ -44,9 +45,6 @@ public class ClassMap
 {
     /** Set true if you want to debug the reflection code */
     private static final boolean debugReflection = false;
-
-    /** Class logger */
-    private final Log log;
     
     /**
      * Class passed into the constructor used to as
@@ -60,22 +58,21 @@ public class ClassMap
      * Standard constructor
      * @param clazz The class for which this ClassMap gets constructed.
      */
-    public ClassMap(final Class clazz, final Log log)
+    public ClassMap(final Class clazz)
     {
         this.clazz = clazz;
-        this.log = log;
         
-        if (debugReflection && log.isDebugEnabled())
+        if (debugReflection && Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("=================================================================");
-            log.debug("== Class: " + clazz);
+            Logger.debug(this,"=================================================================");
+            Logger.debug(this,"== Class: " + clazz);
         }
         
         methodCache = createMethodCache();
 
-        if (debugReflection && log.isDebugEnabled())
+        if (debugReflection && Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("=================================================================");
+            Logger.debug(this,"=================================================================");
         }
     }
 
@@ -110,7 +107,7 @@ public class ClassMap
      */
     private MethodCache createMethodCache()
     {
-        MethodCache methodCache = new MethodCache(log);
+        MethodCache methodCache = new MethodCache();
 	//
 	// Looks through all elements in the class hierarchy. This one is bottom-first (i.e. we start
 	// with the actual declaring class and its interfaces and then move up (superclass etc.) until we
@@ -157,9 +154,9 @@ public class ClassMap
 
     private void populateMethodCacheWith(MethodCache methodCache, Class classToReflect)
     {
-        if (debugReflection && log.isDebugEnabled())
+        if (debugReflection && Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("Reflecting " + classToReflect);
+            Logger.debug(this,"Reflecting " + classToReflect);
         }
 
         try
@@ -176,9 +173,9 @@ public class ClassMap
         }
         catch (SecurityException se) // Everybody feels better with...
         {
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("While accessing methods of " + classToReflect + ": ", se);
+                Logger.debug(this,"While accessing methods of " + classToReflect + ": ", se);
             }
         }
     }
@@ -209,9 +206,6 @@ public class ClassMap
             convertPrimitives.put(Short.TYPE,     Short.class.getName());
         }
 
-    	/** Class logger */
-	    private final Log log;
-
         /**
          * Cache of Methods, or CACHE_MISS, keyed by method
          * name and actual arguments used to find it.
@@ -221,9 +215,8 @@ public class ClassMap
         /** Map of methods that are searchable according to method parameters to find a match */
         private final MethodMap methodMap = new MethodMap();
 
-        private MethodCache(Log log)
+        private MethodCache()
         {
-            this.log = log;
         }
 
         /**
@@ -290,9 +283,9 @@ public class ClassMap
             {
                 cache.put(methodKey, method);
                 methodMap.add(method);
-                if (debugReflection && log.isDebugEnabled())
+                if (debugReflection && Logger.isDebugEnabled(this.getClass()))
                 {
-                    log.debug("Adding " + method);
+                    Logger.debug(this,"Adding " + method);
                 }
             }
         }

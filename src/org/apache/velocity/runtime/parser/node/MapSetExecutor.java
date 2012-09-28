@@ -21,7 +21,8 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.util.Map;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.log.Log;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * SetExecutor that is smart about Maps. If it detects one, it does not
@@ -36,9 +37,8 @@ public class MapSetExecutor
 {
     private final String property;
 
-    public MapSetExecutor(final Log log, final Class clazz, final String property)
+    public MapSetExecutor(final Class clazz, final String property)
     {
-        this.log = log;
         this.property = property;
         discover(clazz);
     }
@@ -61,7 +61,7 @@ public class MapSetExecutor
             catch(Exception e)
             {
                 String msg = "Exception while looking for put('" + property + "') method";
-                log.error(msg, e);
+                Logger.error(this,msg, e);
                 throw new VelocityException(msg, e);
             }
         }

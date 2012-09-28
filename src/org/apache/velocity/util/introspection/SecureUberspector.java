@@ -25,6 +25,8 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.RuntimeServicesAware;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Use a custom introspector that prevents classloader related method 
  * calls.  Use this introspector for situations in which template 
@@ -62,7 +64,7 @@ public class SecureUberspector extends UberspectImpl implements RuntimeServicesA
         String [] badClasses = runtimeServices.getConfiguration()
                         .getStringArray(RuntimeConstants.INTROSPECTOR_RESTRICT_CLASSES);
         
-        introspector = new SecureIntrospectorImpl(badClasses, badPackages, log);
+        introspector = new SecureIntrospectorImpl(badClasses, badPackages);
     }
     
     /**
@@ -84,7 +86,7 @@ public class SecureUberspector extends UberspectImpl implements RuntimeServicesA
             }
             else
             {
-                log.warn("Cannot retrieve iterator from " + obj.getClass() +
+                Logger.warn(this,"Cannot retrieve iterator from " + obj.getClass() +
                          " due to security restrictions.");
             }
         }

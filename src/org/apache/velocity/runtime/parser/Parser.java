@@ -122,12 +122,12 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
              *  thrown by the Macro class when something is amiss in the
              *  Macro specification
              */
-            rsvc.getLog().error("Parser Error: " + templateName, mee);
+            Logger.error(this,"Parser Error: " + templateName, mee);
             throw mee;
         }
         catch (ParseException pe)
         {
-            rsvc.getLog().error("Parser Exception: " + templateName, pe);
+            Logger.error(this,"Parser Exception: " + templateName, pe);
             throw new TemplateParseException (pe.currentToken,
                                 pe.expectedTokenSequences, pe.tokenImage, currentTemplateName);
                 }
@@ -138,7 +138,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
         catch (Exception e)
         {
             String msg = "Parser Error: " + templateName;
-            rsvc.getLog().error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
 

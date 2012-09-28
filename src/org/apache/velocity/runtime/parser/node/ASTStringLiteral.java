@@ -27,7 +27,6 @@ import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
@@ -178,7 +177,7 @@ public class ASTStringLiteral extends SimpleNode
             catch (ParseException e)
             {
                 String msg = "Failed to parse String literal at "+
-                    Log.formatFileString(templateName, getLine(), getColumn());
+                        VelocityException.formatFileString(templateName, getLine(), getColumn());
                 throw new TemplateInitException(msg, e, templateName, getColumn(), getLine());
             }
 

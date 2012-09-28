@@ -31,7 +31,6 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.Renderable;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
@@ -200,8 +199,8 @@ public class VelocimacroProxy extends Directive
                 }
                 out.append(stack[i]);
             }
-            out.append(" at " + Log.formatFileString(this));
-            rsvc.getLog().error(out.toString());
+            out.append(" at " + VelocityException.formatFileString(this));
+            Logger.error(this,out.toString());
             
             // clean out the macro stack, since we just broke it
             while (vmc.getCurrentMacroCallDepth() > 0)
@@ -227,7 +226,7 @@ public class VelocimacroProxy extends Directive
         catch (Exception e)
         {
             String msg = "VelocimacroProxy.render() : exception VM = #" + macroName + "()";
-            rsvc.getLog().error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }
@@ -245,7 +244,7 @@ public class VelocimacroProxy extends Directive
         // support for local context scope feature, where all references are local
         // we do not have to check this at every invocation of ProxyVMContext
         localContextScope = rsvc.getBoolean(RuntimeConstants.VM_CONTEXT_LOCALSCOPE, false);
-        if (localContextScope && rsvc.getLog().isWarnEnabled())
+        if (localContextScope && Logger.isWarnEnabled(this.getClass()))
         {
             // only warn once per runtime, so this isn't obnoxious
             String key = "velocimacro.context.localscope.warning";
@@ -253,8 +252,8 @@ public class VelocimacroProxy extends Directive
             if (alreadyWarned == null)
             {
                 rsvc.setApplicationAttribute(key, Boolean.TRUE);
-                rsvc.getLog()
-                .warn("The "+RuntimeConstants.VM_CONTEXT_LOCALSCOPE+
+                Logger
+                .warn(this,"The "+RuntimeConstants.VM_CONTEXT_LOCALSCOPE+
                       " feature is deprecated and will be removed in Velocity 2.0."+
                       " Instead, please use the $macro scope to store references"+
                       " that must be local to your macros (e.g. "+

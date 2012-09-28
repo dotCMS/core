@@ -35,6 +35,8 @@ import org.apache.velocity.runtime.resource.util.StringResourceRepository;
 import org.apache.velocity.runtime.resource.util.StringResourceRepositoryImpl;
 import org.apache.velocity.util.ClassUtils;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Resource loader that works with Strings. Users should manually add
  * resources to the repository that is used by the resource loader instance.
@@ -210,7 +212,7 @@ public class StringResourceLoader extends ResourceLoader
      */
     public void init(final ExtendedProperties configuration)
     {
-        log.trace("StringResourceLoader : initialization starting.");
+        Logger.debug(this,"StringResourceLoader : initialization starting.");
 
         // get the repository configuration info
         String repoClass = configuration.getString(REPOSITORY_CLASS, REPOSITORY_CLASS_DEFAULT);
@@ -222,17 +224,17 @@ public class StringResourceLoader extends ResourceLoader
         if (isStatic)
         {
             this.repository = getRepository(repoName);
-            if (repository != null && log.isDebugEnabled())
+            if (repository != null && Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("Loaded repository '"+repoName+"' from static repo store");
+                Logger.debug(this,"Loaded repository '"+repoName+"' from static repo store");
             }
         }
         else
         {
             this.repository = (StringResourceRepository)rsvc.getApplicationAttribute(repoName);
-            if (repository != null && log.isDebugEnabled())
+            if (repository != null && Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("Loaded repository '"+repoName+"' from application attributes");
+                Logger.debug(this,"Loaded repository '"+repoName+"' from application attributes");
             }
         }
 
@@ -257,7 +259,7 @@ public class StringResourceLoader extends ResourceLoader
             // warn them if they are trying to change the class of the repository
             if (!this.repository.getClass().getName().equals(repoClass))
             {
-                log.debug("Cannot change class of string repository '"+repoName+
+                Logger.debug(this,"Cannot change class of string repository '"+repoName+
                           "' from "+this.repository.getClass().getName()+" to "+repoClass+
                           ". The change will be ignored.");
             }
@@ -266,16 +268,16 @@ public class StringResourceLoader extends ResourceLoader
             if (encoding != null &&
                 !this.repository.getEncoding().equals(encoding))
             {
-                if (log.isDebugEnabled())
+                if (Logger.isDebugEnabled(this.getClass()))
                 {
-                    log.debug("Changing the default encoding of string repository '"+repoName+
+                    Logger.debug(this,"Changing the default encoding of string repository '"+repoName+
                               "' from "+this.repository.getEncoding()+" to "+encoding);
                 }
                 this.repository.setEncoding(encoding);
             }
         }
 
-        log.trace("StringResourceLoader : initialization complete.");
+        Logger.debug(this,"StringResourceLoader : initialization complete.");
     }
 
     /**
@@ -284,9 +286,9 @@ public class StringResourceLoader extends ResourceLoader
     public StringResourceRepository createRepository(final String className,
                                                      final String encoding)
     {
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("Creating string repository using class "+className+"...");
+            Logger.debug(this,"Creating string repository using class "+className+"...");
         }
 
         StringResourceRepository repo;
@@ -316,9 +318,9 @@ public class StringResourceLoader extends ResourceLoader
             repo.setEncoding(REPOSITORY_ENCODING_DEFAULT);
         }
 
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("Default repository encoding is " + repo.getEncoding());
+            Logger.debug(this,"Default repository encoding is " + repo.getEncoding());
         }
         return repo;
     }

@@ -21,8 +21,9 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.lang.reflect.InvocationTargetException;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.util.introspection.Introspector;
+
+import com.dotmarketing.util.Logger;
 
 
 /**
@@ -49,10 +50,9 @@ public class PutExecutor extends SetExecutor
      * @param arg
      * @param property
      */
-    public PutExecutor(final Log log, final Introspector introspector,
+    public PutExecutor(final Introspector introspector,
             final Class clazz, final Object arg, final String property)
     {
-        this.log = log;
         this.introspector = introspector;
         this.property = property;
 
@@ -98,7 +98,7 @@ public class PutExecutor extends SetExecutor
         catch(Exception e)
         {
             String msg = "Exception while looking for put('" + params[0] + "') method";
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }

@@ -26,6 +26,8 @@ import org.apache.velocity.util.ContextAware;
 import org.apache.velocity.util.RuntimeServicesAware;
 import org.apache.velocity.util.StringUtils;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Simple event handler that checks to see if an included page is available.
  * If not, it includes a designated replacement page instead.
@@ -89,7 +91,7 @@ public class IncludeNotFound implements IncludeEventHandler,RuntimeServicesAware
                 /**
                  * can't find not found, so display nothing
                  */
-                rs.getLog().error("Can't find include not found page: " + notfound);
+                Logger.error(this,"Can't find include not found page: " + notfound);
                 return null;
             }
         }

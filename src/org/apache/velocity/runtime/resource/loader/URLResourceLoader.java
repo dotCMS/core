@@ -31,6 +31,8 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * This is a simple URL-based loader.
  *
@@ -51,14 +53,14 @@ public class URLResourceLoader extends ResourceLoader
      */
     public void init(ExtendedProperties configuration)
     {
-        log.trace("URLResourceLoader : initialization starting.");
+        Logger.debug(this,"URLResourceLoader : initialization starting.");
 
         roots = configuration.getStringArray("root");
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
             for (int i=0; i < roots.length; i++)
             {
-                log.debug("URLResourceLoader : adding root '" + roots[i] + "'");
+                Logger.debug(this,"URLResourceLoader : adding root '" + roots[i] + "'");
             }
         }
 
@@ -71,11 +73,11 @@ public class URLResourceLoader extends ResourceLoader
                 Method conn = URLConnection.class.getMethod("setConnectTimeout", types);
                 Method read = URLConnection.class.getMethod("setReadTimeout", types);
                 timeoutMethods = new Method[] { conn, read };
-                log.debug("URLResourceLoader : timeout set to "+timeout);
+                Logger.debug(this,"URLResourceLoader : timeout set to "+timeout);
             }
             catch (NoSuchMethodException nsme)
             {
-                log.debug("URLResourceLoader : Java 1.5+ is required to customize timeout!", nsme);
+                Logger.debug(this,"URLResourceLoader : Java 1.5+ is required to customize timeout!", nsme);
                 timeout = -1;
             }
         }
@@ -83,7 +85,7 @@ public class URLResourceLoader extends ResourceLoader
         // init the template paths map
         templateRoots = new HashMap();
 
-        log.trace("URLResourceLoader : initialization complete.");
+        Logger.debug(this,"URLResourceLoader : initialization complete.");
     }
 
     /**
@@ -116,7 +118,7 @@ public class URLResourceLoader extends ResourceLoader
 
                 if (inputStream != null)
                 {
-                    if (log.isDebugEnabled()) log.debug("URLResourceLoader: Found '"+name+"' at '"+roots[i]+"'");
+                    if (Logger.isDebugEnabled(this.getClass())) Logger.debug(this,"URLResourceLoader: Found '"+name+"' at '"+roots[i]+"'");
 
                     // save this root for later re-use
                     templateRoots.put(name, roots[i]);
@@ -125,7 +127,7 @@ public class URLResourceLoader extends ResourceLoader
             }
             catch(IOException ioe)
             {
-                if (log.isDebugEnabled()) log.debug("URLResourceLoader: Exception when looking for '"+name+"' at '"+roots[i]+"'", ioe);
+                if (Logger.isDebugEnabled(this.getClass())) Logger.debug(this,"URLResourceLoader: Exception when looking for '"+name+"' at '"+roots[i]+"'", ioe);
 
                 // only save the first one for later throwing
                 if (exception == null)
@@ -196,7 +198,7 @@ public class URLResourceLoader extends ResourceLoader
         {
             // the file is not reachable at its previous address
             String msg = "URLResourceLoader: '"+name+"' is no longer reachable at '"+root+"'";
-            log.error(msg, ioe);
+            Logger.error(this,msg, ioe);
             throw new ResourceNotFoundException(msg, ioe);
         }
     }
@@ -223,7 +225,7 @@ public class URLResourceLoader extends ResourceLoader
             catch (Exception e)
             {
                 String msg = "Unexpected exception while setting connection timeout for "+conn;
-                log.error(msg, e);
+                Logger.error(this,msg, e);
                 throw new VelocityException(msg, e);
             }
         }

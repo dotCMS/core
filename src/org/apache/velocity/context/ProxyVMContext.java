@@ -32,6 +32,8 @@ import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.node.ASTReference;
 import org.apache.velocity.runtime.parser.node.Node;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Context for Velocity macro arguments.
  * 
@@ -249,7 +251,7 @@ public class ProxyVMContext extends ChainedInternalContextAdapter
                 catch (Exception e)
                 {
                     String msg = "ProxyVMContext.get() : error rendering reference";
-                    rsvc.getLog().error(msg, e);
+                    Logger.error(this,msg, e);
                     throw new VelocityException(msg, e);
                 }
             }

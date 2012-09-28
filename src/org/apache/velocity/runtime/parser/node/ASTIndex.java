@@ -6,7 +6,6 @@ import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.introspection.VelMethod;
@@ -93,7 +92,7 @@ public class ASTIndex extends SimpleNode
               throw new VelocityException(
                 "A 'size()' method required for negative value "
                  + ((Integer)argument).intValue() + " does not exist for class '" 
-                 + o.getClass().getName() + "' at " + Log.formatFileString(node));
+                 + o.getClass().getName() + "' at " + VelocityException.formatFileString(node));
           }             
 
           Object size = null;
@@ -104,7 +103,7 @@ public class ASTIndex extends SimpleNode
           catch (Exception e)
           {
               throw new VelocityException("Error trying to calls the 'size()' method on '"
-                + o.getClass().getName() + "' at " + Log.formatFileString(node), e);
+                + o.getClass().getName() + "' at " + VelocityException.formatFileString(node), e);
           }
           
           int sizeint = 0;          
@@ -117,7 +116,7 @@ public class ASTIndex extends SimpleNode
               // If size() doesn't return an Integer we want to report a pretty error
               throw new VelocityException("Method 'size()' on class '" 
                   + o.getClass().getName() + "' returned '" + size.getClass().getName()
-                  + "' when Integer was expected at " + Log.formatFileString(node));
+                  + "' when Integer was expected at " + VelocityException.formatFileString(node));
           }
           
           argument = new Integer(sizeint + ((Integer)argument).intValue());
@@ -175,7 +174,7 @@ public class ASTIndex extends SimpleNode
             String msg = "Error invoking method 'get("
               + (argument == null ? "null" : argument.getClass().getName()) 
               + ")' in " + o.getClass().getName()
-              + " at " + Log.formatFileString(this);
+              + " at " + VelocityException.formatFileString(this);
             Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }

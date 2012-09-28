@@ -21,8 +21,6 @@ package org.apache.velocity.util.introspection;
 
 import java.lang.reflect.Method;
 
-import org.apache.velocity.runtime.log.Log;
-
 /**
  * Lookup a a Method object for a particular class given the name of a method
  * and its parameters.
@@ -53,8 +51,6 @@ import org.apache.velocity.runtime.log.Log;
  */
 public abstract class IntrospectorBase
 {
-    /** Class logger */
-    protected final Log log;
 
     /** The Introspector Cache */
     private final IntrospectorCache introspectorCache;
@@ -62,10 +58,9 @@ public abstract class IntrospectorBase
     /**
      * C'tor.
      */
-    protected IntrospectorBase(final Log log)
-    {
-        this.log = log;
-        introspectorCache = new IntrospectorCacheImpl(log); // TODO: Load that from properties.
+    protected IntrospectorBase()
+    {   
+        introspectorCache = new IntrospectorCacheImpl(); // TODO: Load that from properties.
     }
     
     /**

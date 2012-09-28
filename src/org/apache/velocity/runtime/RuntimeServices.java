@@ -31,7 +31,6 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.directive.Directive;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.node.Node;
@@ -51,7 +50,7 @@ import org.apache.velocity.util.introspection.Uberspect;
  * @author <a href="mailto:geirm@optonline.net">Geir Magusson Jr.</a>
  * @version $Id: RuntimeServices.java 898050 2010-01-11 20:15:31Z nbubna $
  */
-public interface RuntimeServices extends RuntimeLogger
+public interface RuntimeServices
 {
 
    /**
@@ -475,12 +474,6 @@ public interface RuntimeServices extends RuntimeLogger
      * @return The current Uberspect object.
      */
     public Uberspect getUberspect();
-
-    /**
-     * Returns a convenient Log instance that wraps the current LogChute.
-     * @return A log object.
-     */
-    public Log getLog();
 
     /**
      * Returns the event handlers for the application.

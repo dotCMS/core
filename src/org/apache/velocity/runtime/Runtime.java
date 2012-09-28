@@ -350,46 +350,6 @@ public class Runtime implements RuntimeConstants
 
 
     /**
-     * Log a warning message.
-     *
-     * @param message message to log
-     */
-    public static void warn(Object message)
-    {
-        RuntimeSingleton.warn( message );
-    }
-
-    /**
-     * Log an info message.
-     *
-     * @param message message to log
-     */
-    public static void info(Object message)
-    {
-        RuntimeSingleton.info( message );
-    }
-
-    /**
-     * Log an error message.
-     *
-     * @param message message to log
-     */
-    public static void error(Object message)
-    {
-        RuntimeSingleton.error( message );
-    }
-
-    /**
-     * Log a debug message.
-     *
-     * @param message message to log
-     */
-    public static void debug(Object message)
-    {
-        RuntimeSingleton.debug( message );
-    }
-
-    /**
      * String property accessor method with default to hide the
      * configuration implementation.
      *

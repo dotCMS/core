@@ -28,6 +28,8 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.MapFactory;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Default implementation of the resource cache for the default
  * ResourceManager.  The cache uses a <i>least recently used</i> (LRU)
@@ -72,7 +74,7 @@ public class ResourceCacheImpl implements ResourceCache
             lruCache.putAll(cache);
             cache = lruCache;
         }
-        rsvc.getLog().debug("ResourceCache: initialized ("+this.getClass()+") with "+
+        Logger.debug(this,"ResourceCache: initialized ("+this.getClass()+") with "+
                cache.getClass()+" cache map.");
     }
 

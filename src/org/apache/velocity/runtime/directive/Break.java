@@ -23,7 +23,6 @@ import java.io.Writer;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.Node;
 
 /**
@@ -80,7 +79,7 @@ public class Break extends Directive
         if (kids > 1)
         {  
             throw new VelocityException("The #stop directive only accepts a single scope object at "
-                 + Log.formatFileString(this));
+                 + VelocityException.formatFileString(this));
         }
         else
         {
@@ -116,7 +115,7 @@ public class Break extends Directive
         {
             throw new VelocityException(node.jjtGetChild(0).literal()+
                 " is not a valid " + Scope.class.getName() + " instance at "
-                + Log.formatFileString(this));
+                + VelocityException.formatFileString(this));
         }
         return false;
     }

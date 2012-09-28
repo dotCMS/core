@@ -31,6 +31,8 @@ import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.commons.collections.ExtendedProperties;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * <p>
  * ResourceLoader to load templates from multiple Jar files.
@@ -84,7 +86,7 @@ public class JarResourceLoader extends ResourceLoader
      */
     public void init( ExtendedProperties configuration)
     {
-        log.trace("JarResourceLoader : initialization starting.");
+        Logger.debug(this,"JarResourceLoader : initialization starting.");
 
         // rest of Velocity engine still use legacy Vector
         // and Hashtable classes. Classes are implicitly
@@ -103,7 +105,7 @@ public class JarResourceLoader extends ResourceLoader
 
             if (paths != null && paths.size() > 0)
             {
-                log.debug("JarResourceLoader : you are using a deprecated configuration"
+                Logger.debug(this,"JarResourceLoader : you are using a deprecated configuration"
                           + " property for the JarResourceLoader -> '<name>.resource.loader.resource.path'."
                           + " Please change to the conventional '<name>.resource.loader.path'.");
             }
@@ -111,7 +113,7 @@ public class JarResourceLoader extends ResourceLoader
 
         if (paths != null)
         {
-            log.debug("JarResourceLoader # of paths : " + paths.size() );
+            Logger.debug(this,"JarResourceLoader # of paths : " + paths.size() );
 
             for ( int i=0; i<paths.size(); i++ )
             {
@@ -119,27 +121,27 @@ public class JarResourceLoader extends ResourceLoader
             }
         }
 
-        log.trace("JarResourceLoader : initialization complete.");
+        Logger.debug(this,"JarResourceLoader : initialization complete.");
     }
 
     private void loadJar( String path )
     {
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("JarResourceLoader : trying to load \"" + path + "\"");
+            Logger.debug(this,"JarResourceLoader : trying to load \"" + path + "\"");
         }
 
         // Check path information
         if ( path == null )
         {
             String msg = "JarResourceLoader : can not load JAR - JAR path is null";
-            log.error(msg);
+            Logger.error(this,msg);
             throw new RuntimeException(msg);
         }
         if ( !path.startsWith("jar:") )
         {
             String msg = "JarResourceLoader : JAR path must start with jar: -> see java.net.JarURLConnection for information";
-            log.error(msg);
+            Logger.error(this,msg);
             throw new RuntimeException(msg);
         }
         if ( path.indexOf("!/") < 0 )
@@ -208,7 +210,7 @@ public class JarResourceLoader extends ResourceLoader
                 " contains .. and may be trying to access " +
                 "content outside of template root.  Rejected.";
 
-            log.error( "JarResourceLoader : " + msg );
+            Logger.error(this, "JarResourceLoader : " + msg );
 
             throw new ResourceNotFoundException ( msg );
         }

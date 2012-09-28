@@ -29,9 +29,10 @@ import java.util.jar.JarFile;
 import java.util.Hashtable;
 
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * A small wrapper around a Jar
@@ -45,22 +46,19 @@ public class JarHolder
     private JarFile theJar = null;
     private JarURLConnection conn = null;
 
-    private Log log = null;
-
     /**
      * @param rs
      * @param urlpath
      */
     public JarHolder( RuntimeServices rs, String urlpath )
     {
-        this.log = rs.getLog();
 
         this.urlpath=urlpath;
         init();
 
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("JarHolder: initialized JAR: " + urlpath);
+            Logger.debug(this,"JarHolder: initialized JAR: " + urlpath);
         }
     }
 
@@ -71,9 +69,9 @@ public class JarHolder
     {
         try
         {
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("JarHolder: attempting to connect to " + urlpath);
+                Logger.debug(this,"JarHolder: attempting to connect to " + urlpath);
             }
             URL url = new URL( urlpath );
             conn = (JarURLConnection) url.openConnection();
@@ -87,7 +85,7 @@ public class JarHolder
         {
             String msg = "JarHolder: error establishing connection to JAR at \""
                          + urlpath + "\"";
-            log.error(msg, ioe);
+            Logger.error(this,msg, ioe);
             throw new VelocityException(msg, ioe);
         }
     }
@@ -104,13 +102,13 @@ public class JarHolder
         catch ( Exception e )
         {
             String msg = "JarHolder: error closing the JAR file";
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
         theJar = null;
         conn = null;
 
-        log.trace("JarHolder: JAR file closed");
+        Logger.debug(this,"JarHolder: JAR file closed");
     }
 
     /**
@@ -133,7 +131,7 @@ public class JarHolder
         }
         catch(Exception fnfe)
         {
-            log.error("JarHolder: getResource() error", fnfe);
+            Logger.error(this,"JarHolder: getResource() error", fnfe);
             throw new ResourceNotFoundException(fnfe);
         }
 

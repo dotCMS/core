@@ -35,7 +35,8 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeSingleton;
-import org.apache.velocity.runtime.log.Log;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * This class provides  services to the application
@@ -331,7 +332,7 @@ public class Velocity implements RuntimeConstants
         {
             String msg = "Velocity.mergeTemplate() was unable to load template '"
                            + templateName + "'";
-            getLog().error(msg);
+            Logger.error(Velocity.class,msg);
             throw new ResourceNotFoundException(msg);
         }
         else
@@ -395,58 +396,6 @@ public class Velocity implements RuntimeConstants
     public static boolean resourceExists(String resourceName)
     {
         return (RuntimeSingleton.getLoaderNameForResource(resourceName) != null);
-    }
-
-    /**
-     * Returns a convenient Log instance that wraps the current LogChute.
-     * Use this to log error messages. It has the usual methods.
-     *
-     * @return A convenience Log instance that wraps the current LogChute.
-     * @since 1.5
-     */
-    public static Log getLog()
-    {
-        return RuntimeSingleton.getLog();
-    }
-
-    /**
-     * @deprecated Use getLog() and call warn() on it.
-     * @see Log#warn(Object)
-     * @param message The message to log.
-     */
-    public static void warn(Object message)
-    {
-        getLog().warn( message );
-    }
-
-    /**
-     * @deprecated Use getLog() and call info() on it.
-     * @see Log#info(Object)
-     * @param message The message to log.
-     */
-    public static void info(Object message)
-    {
-        getLog().info( message );
-    }
-
-    /**
-     * @deprecated Use getLog() and call error() on it.
-     * @see Log#error(Object)
-     * @param message The message to log.
-     */
-    public static void error(Object message)
-    {
-        getLog().error( message );
-    }
-
-    /**
-     * @deprecated Use getLog() and call debug() on it.
-     * @see Log#debug(Object)
-     * @param message The message to log.
-     */
-    public static void debug(Object message)
-    {
-        getLog().debug( message );
     }
 
     /**

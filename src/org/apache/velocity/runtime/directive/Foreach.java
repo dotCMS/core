@@ -32,12 +32,12 @@ import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.ASTReference;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
 /**
@@ -213,13 +213,13 @@ public class Foreach extends Directive
         hasNextName = rsvc.getString(RuntimeConstants.HAS_NEXT_NAME);
         counterInitialValue = rsvc.getInt(RuntimeConstants.COUNTER_INITIAL_VALUE);
         // only warn once per instance...
-        if (!warned && rsvc.getLog().isWarnEnabled())
+        if (!warned && Logger.isWarnEnabled(this.getClass()))
         {
             warned = true;
             // ...and only if they customize these settings
             if (!"velocityCount".equals(counterName))
             {
-                rsvc.getLog().warn("The "+RuntimeConstants.COUNTER_NAME+
+                Logger.warn(this,"The "+RuntimeConstants.COUNTER_NAME+
                     " property has been deprecated. It will be removed"+
                     " (along with $velocityCount itself) in Velocity 2.0. "+
                     " Instead, please use $foreach.count to access"+
@@ -227,7 +227,7 @@ public class Foreach extends Directive
             }
             if (!"velocityHasNext".equals(hasNextName))
             {
-                rsvc.getLog().warn("The "+RuntimeConstants.HAS_NEXT_NAME+
+                Logger.warn(this,"The "+RuntimeConstants.HAS_NEXT_NAME+
                     " property has been deprecated. It will be removed"+
                     " (along with $velocityHasNext itself ) in Velocity 2.0. "+
                     " Instead, please use $foreach.hasNext to access"+
@@ -235,7 +235,7 @@ public class Foreach extends Directive
             }
             if (counterInitialValue != 1)
             {
-                rsvc.getLog().warn("The "+RuntimeConstants.COUNTER_INITIAL_VALUE+
+                Logger.warn(this,"The "+RuntimeConstants.COUNTER_INITIAL_VALUE+
                     " property has been deprecated. It will be removed"+
                     " (along with $velocityCount itself) in Velocity 2.0. "+
                     " Instead, please use $foreach.index to access"+
@@ -339,7 +339,7 @@ public class Foreach extends Directive
         catch(Exception ee)
         {
             String msg = "Error getting iterator for #foreach at "+uberInfo;
-            rsvc.getLog().error(msg, ee);
+            Logger.error(this,msg, ee);
             throw new VelocityException(msg, ee);
         }
 
@@ -353,10 +353,10 @@ public class Foreach extends Directive
             {
                 Node pnode = node.jjtGetChild(2);
                 String msg = "#foreach parameter " + pnode.literal() + " at "
-                    + Log.formatFileString(pnode)
+                    + VelocityException.formatFileString(pnode)
                     + " is of type " + listObject.getClass().getName()
                     + " and is either of wrong type or cannot be iterated.";
-                rsvc.getLog().error(msg);
+                Logger.error(this,msg);
                 throw new VelocityException(msg);
             }
         }

@@ -27,6 +27,8 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.ClassUtils;
 
+import com.dotmarketing.util.Logger;
+
 /**
  *  This is a special, internal-use-only context implementation to be
  *  used for the #evaluate directive.
@@ -70,7 +72,7 @@ public class EvaluateContext extends ChainedInternalContextAdapter
 
         if (contextClass != null && contextClass.length() > 0)
         {
-            rsvc.getLog().warn("The "+RuntimeConstants.EVALUATE_CONTEXT_CLASS+
+            Logger.warn(this,"The "+RuntimeConstants.EVALUATE_CONTEXT_CLASS+
                 " property has been deprecated. It will be removed in Velocity 2.0. "+
                 " Instead, please use the automatically provided $evaluate"+
                 " namespace to get and set local references"+
@@ -86,14 +88,14 @@ public class EvaluateContext extends ChainedInternalContextAdapter
             {
                 String err = "The specified class for #evaluate() context (" + contextClass
                 + ") does not exist or is not accessible to the current classloader.";
-                rsvc.getLog().error(err);
+                Logger.error(this,err);
                 throw new RuntimeException(err,cnfe);
             }
             catch (Exception e)
             {
                 String err = "The specified class for #evaluate() context (" + contextClass
                 + ") can not be loaded.";
-                rsvc.getLog().error(err,e);
+                Logger.error(this,err,e);
                 throw new RuntimeException(err);
             }
 
@@ -101,7 +103,7 @@ public class EvaluateContext extends ChainedInternalContextAdapter
             {                
                 String err = "The specified class for #evaluate() context (" + contextClass
                 + ") does not implement " + Context.class.getName() + ".";
-                rsvc.getLog().error(err);
+                Logger.error(this,err);
                 throw new RuntimeException(err);
             }
             
@@ -110,9 +112,9 @@ public class EvaluateContext extends ChainedInternalContextAdapter
         }
         else
         {
-            if (rsvc.getLog().isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                rsvc.getLog().debug("No class specified for #evaluate() context, "+
+                Logger.debug(this,"No class specified for #evaluate() context, "+
                     "so #set calls will now alter the global context and no longer be local.  "+
                     "This is a change from earlier versions due to VELOCITY-704.  "+
                     "If you need references within #evaluate to stay local, "+

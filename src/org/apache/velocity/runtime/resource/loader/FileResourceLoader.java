@@ -38,6 +38,8 @@ import org.apache.velocity.io.UnicodeInputStream;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.util.StringUtils;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * A loader for templates stored on the file system.  Treats the template
  * as relative to the configured root path.  If the root path is empty
@@ -71,9 +73,9 @@ public class FileResourceLoader extends ResourceLoader
      */
     public void init( ExtendedProperties configuration)
     {
-        if (log.isTraceEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            log.trace("FileResourceLoader : initialization starting.");
+            Logger.debug(this,"FileResourceLoader : initialization starting.");
         }
 
         paths.addAll( configuration.getVector("path") );
@@ -83,12 +85,12 @@ public class FileResourceLoader extends ResourceLoader
         // recognize all unicode boms.
         unicode = configuration.getBoolean("unicode", false);
 
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("Do unicode file recognition:  " + unicode);
+            Logger.debug(this,"Do unicode file recognition:  " + unicode);
         }
 
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
             // trim spaces from all paths
             StringUtils.trimStrings(paths);
@@ -97,9 +99,9 @@ public class FileResourceLoader extends ResourceLoader
             int sz = paths.size();
             for( int i=0; i < sz; i++)
             {
-                log.debug("FileResourceLoader : adding path '" + (String) paths.get(i) + "'");
+                Logger.debug(this,"FileResourceLoader : adding path '" + (String) paths.get(i) + "'");
             }
-            log.trace("FileResourceLoader : initialization complete.");
+            Logger.debug(this,"FileResourceLoader : initialization complete.");
         }
     }
 
@@ -136,7 +138,7 @@ public class FileResourceLoader extends ResourceLoader
                 " contains .. and may be trying to access " +
                 "content outside of template root.  Rejected.";
 
-            log.error("FileResourceLoader : " + msg);
+            Logger.error(this,"FileResourceLoader : " + msg);
 
             throw new ResourceNotFoundException ( msg );
         }
@@ -154,7 +156,7 @@ public class FileResourceLoader extends ResourceLoader
             catch (IOException ioe)
             {
                 String msg = "Exception while loading Template " + template;
-                log.error(msg, ioe);
+                Logger.error(this,msg, ioe);
                 throw new VelocityException(msg, ioe);
             }
 
@@ -209,7 +211,7 @@ public class FileResourceLoader extends ResourceLoader
             catch (Exception ioe)
             {
                 String msg = "Exception while checking for template " + name;
-                log.debug(msg, ioe);
+                Logger.debug(this,msg, ioe);
             }
         }
         return false;
@@ -245,9 +247,9 @@ public class FileResourceLoader extends ResourceLoader
                         {
                             uis = new UnicodeInputStream(fis, true);
 
-                            if (log.isDebugEnabled())
+                            if (Logger.isDebugEnabled(this.getClass()))
                             {
-                                log.debug("File Encoding for " + file + " is: " + uis.getEncodingFromStream());
+                                Logger.debug(this,"File Encoding for " + file + " is: " + uis.getEncodingFromStream());
                             }
 
                             return new BufferedInputStream(uis);

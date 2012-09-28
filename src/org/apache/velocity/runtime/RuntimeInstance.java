@@ -51,8 +51,6 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.directive.Directive;
 import org.apache.velocity.runtime.directive.Scope;
 import org.apache.velocity.runtime.directive.StopCommand;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.LogManager;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.node.Node;
@@ -66,7 +64,9 @@ import org.apache.velocity.util.introspection.ChainableUberspector;
 import org.apache.velocity.util.introspection.Introspector;
 import org.apache.velocity.util.introspection.LinkingUberspector;
 import org.apache.velocity.util.introspection.Uberspect;
-import org.apache.velocity.util.introspection.UberspectLoggable;
+import org.github.jamm.MemoryMeter;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * This is the Runtime system for Velocity. It is the
@@ -121,14 +121,6 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
      *  VelocimacroFactory object to manage VMs
      */
     private  VelocimacroFactory vmFactory = null;
-
-    /**
-     * The Runtime logger.  We start with an instance of
-     * a 'primordial logger', which just collects log messages
-     * then, when the log system is initialized, all the
-     * messages get dumpted out of the primordial one into the real one.
-     */
-    private Log log = new Log();
 
     /**
      * The Runtime parser pool
@@ -224,7 +216,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         /*
          *  make a new introspector and initialize it
          */
-        introspector = new Introspector(getLog());
+        introspector = new Introspector();
 
         /*
          * and a store for the application attributes
@@ -251,15 +243,13 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
     {
         if (!initialized && !initializing)
         {
-            log.debug("Initializing Velocity, Calling init()...");
+            Logger.debug(this,"Initializing Velocity, Calling init()...");
             initializing = true;
-
-            log.trace("*******************************************************************");
-            log.debug("Starting Apache Velocity v@build.version@ (compiled: @build.time@)");
-            log.trace("RuntimeInstance initializing.");
+            
+            Logger.debug(this,"Starting Apache Velocity v@build.version@ (compiled: @build.time@)");
+            Logger.debug(this,"RuntimeInstance initializing.");
 
             initializeProperties();
-            initializeLog();
             initializeResourceManager();
             initializeDirectives();
             initializeEventHandlers();
@@ -273,7 +263,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
              */
             vmFactory.initVelocimacro();
 
-            log.trace("RuntimeInstance successfully initialized.");
+            Logger.debug(this,"RuntimeInstance successfully initialized.");
 
             initialized = true;
             initializing = false;
@@ -303,7 +293,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                         initializing = false;
                         init();
                     } catch (Exception e) {
-                        getLog().error("Could not auto-initialize Velocity", e);
+                        Logger.error(this,"Could not auto-initialize Velocity", e);
                         throw new RuntimeException(
                                 "Velocity could not be initialized!", e);
                     }
@@ -314,14 +304,14 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         }
         if (!initialized && !initializing)
         {
-            log.debug("Velocity was not initialized! Calling init()...");
+            Logger.debug(this,"Velocity was not initialized! Calling init()...");
             try
             {
                 init();
             }
             catch (Exception e)
             {
-                getLog().error("Could not auto-initialize Velocity", e);
+                Logger.error(this,"Could not auto-initialize Velocity", e);
                 throw new RuntimeException("Velocity could not be initialized!", e);
             }
         }
@@ -347,7 +337,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
             {
                 String err = "The specified class for Uberspect (" + rm
                     + ") does not exist or is not accessible to the current classloader.";
-                log.error(err);
+                Logger.error(this,err);
                 throw new VelocityException(err, cnfe);
             }
             catch (InstantiationException ie)
@@ -365,16 +355,11 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                     + rm + ") does not implement " + Uberspect.class.getName()
                     + "; Velocity is not initialized correctly.";
 
-                log.error(err);
+                Logger.error(this,err);
                 throw new VelocityException(err);
             }
 
             Uberspect u = (Uberspect)o;
-
-            if (u instanceof UberspectLoggable)
-            {
-                ((UberspectLoggable)u).setLog(getLog());
-            }
 
             if (u instanceof RuntimeServicesAware)
             {
@@ -413,7 +398,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
            + " Uberspect.  Please ensure that all configuration"
            + " information is correct.";
 
-           log.error(err);
+           Logger.error(this,err);
            throw new VelocityException(err);
         }
     }
@@ -433,9 +418,9 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
 
             configuration.load( inputStream );
 
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("Default Properties File: " +
+                Logger.debug(this,"Default Properties File: " +
                     new File(DEFAULT_RUNTIME_PROPERTIES).getPath());
             }
 
@@ -444,7 +429,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         catch (IOException ioe)
         {
             String msg = "Cannot get Velocity Runtime default properties!";
-            log.error(msg, ioe);
+            Logger.error(this,msg, ioe);
             throw new RuntimeException(msg, ioe);
         }
         finally
@@ -459,7 +444,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
             catch (IOException ioe)
             {
                 String msg = "Cannot close Velocity Runtime default properties!";
-                log.error(msg, ioe);
+                Logger.error(this,msg, ioe);
                 throw new RuntimeException(msg, ioe);
             }
         }
@@ -721,7 +706,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
             {
                 String err = "The specified class for ResourceManager (" + rm
                     + ") does not exist or is not accessible to the current classloader.";
-                log.error(err);
+                Logger.error(this,err);
                 throw new VelocityException(err, cnfe);
             }
             catch (InstantiationException ie)
@@ -739,7 +724,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                     + ") does not implement " + ResourceManager.class.getName()
                     + "; Velocity is not initialized correctly.";
 
-                log.error(err);
+                Logger.error(this,err);
                 throw new VelocityException(err);
             }
 
@@ -757,7 +742,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
             + " ResourceManager.  Please ensure that all configuration"
             + " information is correct.";
 
-            log.error(err);
+            Logger.error(this,err);
             throw new VelocityException( err );
         }
     }
@@ -845,7 +830,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                 String err = "The specified class for "
                     + paramName + " (" + classname
                     + ") does not exist or is not accessible to the current classloader.";
-                log.error(err);
+                Logger.error(this,err);
                 throw new VelocityException(err, cnfe);
             }
             catch (InstantiationException ie)
@@ -864,7 +849,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                     + EventHandlerInterface.getName()
                     + "; Velocity is not initialized correctly.";
 
-                log.error(err);
+                Logger.error(this,err);
                 throw new VelocityException(err);
             }
 
@@ -876,24 +861,6 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         } else
             return null;
     }
-
-    /**
-     * Initialize the Velocity logging system.
-     */
-    private void initializeLog()
-    {
-        // since the Log we started with was just placeholding,
-        // let's update it with the real LogChute settings.
-        try
-        {
-            LogManager.updateLog(this.log, this);
-        } 
-        catch (Exception e)
-        {
-            throw new VelocityException("Error initializing log: " + e.getMessage(), e);
-        }
-    }
-
 
     /**
      * This methods initializes all the directives
@@ -932,7 +899,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         catch (IOException ioe)
         {
             String msg = "Error while loading directive properties!";
-            log.error(msg, ioe);
+            Logger.error(this,msg, ioe);
             throw new RuntimeException(msg, ioe);
         }
         finally
@@ -947,7 +914,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
             catch (IOException ioe)
             {
                 String msg = "Cannot close directive properties!";
-                log.error(msg, ioe);
+                Logger.error(this,msg, ioe);
                 throw new RuntimeException(msg, ioe);
             }
         }
@@ -965,7 +932,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         {
             String directiveClass = (String) directiveClasses.nextElement();
             loadDirective(directiveClass);
-            log.debug("Loaded System Directive: " + directiveClass);
+            Logger.debug(this,"Loaded System Directive: " + directiveClass);
         }
 
         /*
@@ -977,9 +944,9 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         for( int i = 0; i < userdirective.length; i++)
         {
             loadDirective(userdirective[i]);
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("Loaded User Directive: " + userdirective[i]);
+                Logger.debug(this,"Loaded User Directive: " + userdirective[i]);
             }
         }
 
@@ -1049,7 +1016,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
             {
                 String msg = directiveClass + " does not implement "
                     + Directive.class.getName() + "; it cannot be loaded.";
-                log.error(msg);
+                Logger.error(this,msg);
                 throw new VelocityException(msg);
             }
         }
@@ -1059,7 +1026,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         catch (Exception e)
         {
             String msg = "Failed to load Directive: " + directiveClass;
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }
@@ -1094,7 +1061,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                 String err = "The specified class for ParserPool ("
                     + pp
                     + ") does not exist (or is not accessible to the current classloader.";
-                log.error(err);
+                Logger.error(this,err);
                 throw new VelocityException(err, cnfe);
             }
             catch (InstantiationException ie)
@@ -1112,7 +1079,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                     + pp + ") does not implement " + ParserPool.class
                     + " Velocity not initialized correctly.";
 
-                log.error(err);
+                Logger.error(this,err);
                 throw new VelocityException(err);
             }
 
@@ -1130,7 +1097,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                 + " ParserPool.  Please ensure that all configuration"
                 + " information is correct.";
 
-            log.error(err);
+            Logger.error(this,err);
             throw new VelocityException( err );
         }
 
@@ -1220,9 +1187,9 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
             /*
              *  if we couldn't get a parser from the pool make one and log it.
              */
-            if (log.isInfoEnabled())
+            if (Logger.isInfoEnabled(this.getClass()))
             {
-                log.info("Runtime : ran out of parsers. Creating a new one. "
+                Logger.info(this,"Runtime : ran out of parsers. Creating a new one. "
                       + " Please increment the parser.pool.size property."
                       + " The current value is too small.");
             }
@@ -1382,7 +1349,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
             catch(Exception e)
             {
                 String msg = "RuntimeInstance.render(): init exception for tag = "+logTag;
-                getLog().error(msg, e);
+                Logger.error(this,msg, e);
                 throw new VelocityException(msg, e);
             }
 
@@ -1401,9 +1368,9 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                 {
                     throw stop;
                 }
-                else if (getLog().isDebugEnabled())
+                else if (Logger.isDebugEnabled(this.getClass()))
                 {
-                    getLog().debug(stop.getMessage());
+                    Logger.debug(this,stop.getMessage());
                 }
             }
             catch (IOException e)
@@ -1463,7 +1430,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         if (vmName == null || context == null || writer == null)
         {
             String msg = "RuntimeInstance.invokeVelocimacro() : invalid call : vmName, context, and writer must not be null";
-            getLog().error(msg);
+            Logger.error(this,msg);
             throw new NullPointerException(msg);
         }
 
@@ -1482,7 +1449,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         {
             String msg = "RuntimeInstance.invokeVelocimacro() : VM '" + vmName
                          + "' is not registered.";
-            getLog().error(msg);
+            Logger.error(this,msg);
             throw new VelocityException(msg);
         }
 
@@ -1613,58 +1580,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         return resourceManager.getLoaderNameForResource(resourceName);
     }
 
-    /**
-     * Returns a convenient Log instance that wraps the current LogChute.
-     * Use this to log error messages. It has the usual methods.
-     *
-     * @return A convenience Log instance that wraps the current LogChute.
-     * @since 1.5
-     */
-    public Log getLog()
-    {
-        return log;
-    }
-
-    /**
-     * @deprecated Use getLog() and call warn() on it.
-     * @see Log#warn(Object)
-     * @param message The message to log.
-     */
-    public void warn(Object message)
-    {
-        getLog().warn(message);
-    }
-
-    /**
-     * @deprecated Use getLog() and call info() on it.
-     * @see Log#info(Object)
-     * @param message The message to log.
-     */
-    public void info(Object message)
-    {
-        getLog().info(message);
-    }
-
-    /**
-     * @deprecated Use getLog() and call error() on it.
-     * @see Log#error(Object)
-     * @param message The message to log.
-     */
-    public void error(Object message)
-    {
-        getLog().error(message);
-    }
-
-    /**
-     * @deprecated Use getLog() and call debug() on it.
-     * @see Log#debug(Object)
-     * @param message The message to log.
-     */
-    public void debug(Object message)
-    {
-        getLog().debug(message);
-    }
-
+    
     /**
      * String property accessor method with default to hide the
      * configuration implementation.
@@ -1904,4 +1820,29 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
         return uberSpect;
     }
 
+    
+    public String getAllsizes() {
+        StringBuilder b=new StringBuilder();
+        MemoryMeter mm=new MemoryMeter();
+        b.append("this.applicationAttributes ").append(mm.measureDeep(this.applicationAttributes)).append("\n");
+        b.append("this.configuration ").append(mm.measureDeep(this.configuration)).append("\n");
+        b.append("this.eventCartridge ").append(mm.measureDeep(this.eventCartridge)).append("\n");
+        b.append("this.introspector ").append(mm.measureDeep(this.introspector)).append("\n");
+        b.append("this.overridingProperties ").append(mm.measureDeep(this.overridingProperties)).append("\n");
+        b.append("this.parserPool ").append(mm.measureDeep(this.parserPool)).append("\n");
+        //b.append("this.resourceManager ").append(mm.measureDeep(this.resourceManager)).append("\n");
+        
+        b.append("this.runtimeDirectives ").append(mm.measureDeep(this.runtimeDirectives)).append("\n");
+        b.append("this.runtimeDirectivesShared ").append(mm.measureDeep(this.runtimeDirectivesShared)).append("\n");
+        b.append("this.uberSpect ").append(mm.measureDeep(this.uberSpect)).append("\n");
+        b.append("this.vmFactory ").append(mm.measureDeep(this.vmFactory)).append("\n");
+        return b.toString();
+    }
+    
+    public void setRM(ResourceManager rm) {
+        this.resourceManager=rm;
+    }
+    public ResourceManager getRM() {
+        return this.resourceManager;
+    }
 }

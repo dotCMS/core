@@ -23,7 +23,6 @@ import java.io.Writer;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.node.Node;
@@ -59,7 +58,7 @@ public class Define extends Block
         if ( node.jjtGetNumChildren() != 2 )
         {
             throw new VelocityException("parameter missing: block name at "
-                 + Log.formatFileString(this));
+                 + VelocityException.formatFileString(this));
         }
         
         /*

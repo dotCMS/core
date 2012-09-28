@@ -21,7 +21,7 @@ package org.apache.velocity.util.introspection;
 
 import java.io.Serializable;
 
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.parser.node.Node;
 
 /**
@@ -95,6 +95,6 @@ public class Info implements Serializable
      */
     public String toString()
     {
-        return Log.formatFileString(getTemplateName(), getLine(), getColumn());
+        return VelocityException.formatFileString(getTemplateName(), getLine(), getColumn());
     }
 }

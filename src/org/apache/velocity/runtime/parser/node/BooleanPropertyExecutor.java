@@ -20,10 +20,9 @@ package org.apache.velocity.runtime.parser.node;
  */
 
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeLogger;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.RuntimeLoggerLog;
 import org.apache.velocity.util.introspection.Introspector;
+
+import com.dotmarketing.util.Logger;
 
 /**
  *  Handles discovery and valuation of a
@@ -47,24 +46,12 @@ public class BooleanPropertyExecutor extends PropertyExecutor
      * @param property
      * @since 1.5
      */
-    public BooleanPropertyExecutor(final Log log, final Introspector introspector,
+    public BooleanPropertyExecutor(final Introspector introspector,
             final Class clazz, final String property)
     {
-        super(log, introspector, clazz, property);
+        super(introspector, clazz, property);
     }
 
-    /**
-     * @param rlog
-     * @param introspector
-     * @param clazz
-     * @param property
-     * @deprecated RuntimeLogger is deprecated. Use the other constructor.
-     */
-    public BooleanPropertyExecutor(final RuntimeLogger rlog, final Introspector introspector,
-            final Class clazz, final String property)
-    {
-        super(new RuntimeLoggerLog(rlog), introspector, clazz, property);
-    }
 
     protected void discover(final Class clazz, final String property)
     {
@@ -116,7 +103,7 @@ public class BooleanPropertyExecutor extends PropertyExecutor
         catch(Exception e)
         {
             String msg = "Exception while looking for boolean property getter for '" + property;
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }

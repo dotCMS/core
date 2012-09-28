@@ -43,6 +43,7 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceLoader;
 
@@ -324,7 +325,7 @@ public class Template extends Resource
                         /*
                         * the macro lib wasn't found.  Note it and throw
                         */
-                        rsvc.getLog().error("template.merge(): " +
+                        Logger.error(this,"template.merge(): " +
                                 "cannot find template " +
                                 (String) macroLibraries.get(i));
                         throw re;
@@ -335,7 +336,7 @@ public class Template extends Resource
                         * the macro lib was found, but didn't parse - syntax error
                         *  note it and throw
                         */
-                        rsvc.getLog().error("template.merge(): " +
+                        Logger.error(this,"template.merge(): " +
                                 "syntax error in template " +
                                 (String) macroLibraries.get(i) + ".");
                         throw pe;
@@ -366,9 +367,9 @@ public class Template extends Resource
                 {
                     throw stop;
                 }
-                else if (rsvc.getLog().isDebugEnabled())
+                else if (Logger.isDebugEnabled(this.getClass()))
                 {
-                    rsvc.getLog().debug(stop.getMessage());
+                    Logger.debug(this,stop.getMessage());
                 }
             }
             catch (IOException e)

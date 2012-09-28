@@ -27,9 +27,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeLogger;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.RuntimeLoggerLog;
 import org.apache.velocity.runtime.parser.node.AbstractExecutor;
 import org.apache.velocity.runtime.parser.node.BooleanPropertyExecutor;
 import org.apache.velocity.runtime.parser.node.GetExecutor;
@@ -43,6 +40,8 @@ import org.apache.velocity.util.ArrayIterator;
 import org.apache.velocity.util.ArrayListWrapper;
 import org.apache.velocity.util.EnumerationIterator;
 
+import com.dotmarketing.util.Logger;
+
 /**
  *  Implementation of Uberspect to provide the default introspective
  *  functionality of Velocity
@@ -51,12 +50,8 @@ import org.apache.velocity.util.EnumerationIterator;
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
  * @version $Id: UberspectImpl.java 898032 2010-01-11 19:51:03Z nbubna $
  */
-public class UberspectImpl implements Uberspect, UberspectLoggable
+public class UberspectImpl implements Uberspect
 {
-    /**
-     *  Our runtime logger.
-     */
-    protected Log log;
 
     /**
      *  the default Velocity introspector
@@ -70,31 +65,9 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
      */
     public void init()
     {
-        introspector = new Introspector(log);
+        introspector = new Introspector();
     }
 
-    /**
-     *  Sets the runtime logger - this must be called before anything
-     *  else.
-     *
-     * @param log The logger instance to use.
-     * @since 1.5
-     */
-    public void setLog(Log log)
-    {
-        this.log = log;
-    }
-
-    /**
-     * @param runtimeLogger
-     * @deprecated Use setLog(Log log) instead.
-     */
-    public void setRuntimeLogger(RuntimeLogger runtimeLogger)
-    {
-        // in the off chance anyone still uses this method
-        // directly, use this hack to keep it working
-        setLog(new RuntimeLoggerLog(runtimeLogger));
-    }
 
     /**
      *  To support iterative objects used in a <code>#foreach()</code>
@@ -121,9 +94,9 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
         }
         else if (obj instanceof Iterator)
         {
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("The iterative object in the #foreach() loop at " +
+                Logger.debug(this,"The iterative object in the #foreach() loop at " +
                            i + " is of type java.util.Iterator.  Because " +
                            "it is not resettable, if used in more than once it " +
                            "may lead to unexpected results.");
@@ -132,9 +105,9 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
         }
         else if (obj instanceof Enumeration)
         {
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("The iterative object in the #foreach() loop at " +
+                Logger.debug(this,"The iterative object in the #foreach() loop at " +
                            i + " is of type java.util.Enumeration.  Because " +
                            "it is not resettable, if used in more than once it " +
                            "may lead to unexpected results.");
@@ -165,7 +138,7 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
                 }
                 else
                 {
-                    log.debug("iterator() method of reference in #foreach loop at "
+                    Logger.debug(this,"iterator() method of reference in #foreach loop at "
                               + i + " does not return a true Iterator.");
                 }
             }
@@ -176,7 +149,7 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
         }
 
         /*  we have no clue what this is  */
-        log.debug("Could not determine type of iterator in #foreach loop at " + i);
+        Logger.debug(this,"Could not determine type of iterator in #foreach loop at " + i);
 
         return null;
     }
@@ -250,14 +223,14 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
          *  first try for a getFoo() type of property
          *  (also getfoo() )
          */
-        AbstractExecutor executor = new PropertyExecutor(log, introspector, claz, identifier);
+        AbstractExecutor executor = new PropertyExecutor(introspector, claz, identifier);
 
         /*
          * Let's see if we are a map...
          */
         if (!executor.isAlive()) 
         {
-            executor = new MapGetExecutor(log, claz, identifier);
+            executor = new MapGetExecutor(claz, identifier);
         }
 
         /*
@@ -266,7 +239,7 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
 
         if (!executor.isAlive())
         {
-            executor = new GetExecutor(log, introspector, claz, identifier);
+            executor = new GetExecutor(introspector, claz, identifier);
         }
 
         /*
@@ -275,7 +248,7 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
 
         if (!executor.isAlive())
         {
-            executor = new BooleanPropertyExecutor(log, introspector, claz,
+            executor = new BooleanPropertyExecutor(introspector, claz,
                                                    identifier);
         }
 
@@ -305,13 +278,13 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
          *  first try for a setFoo() type of property
          *  (also setfoo() )
          */
-        SetExecutor executor = new SetPropertyExecutor(log, introspector, claz, identifier, arg);
+        SetExecutor executor = new SetPropertyExecutor(introspector, claz, identifier, arg);
 
         /*
          * Let's see if we are a map...
          */
         if (!executor.isAlive())  {
-            executor = new MapSetExecutor(log, claz, identifier);
+            executor = new MapSetExecutor(claz, identifier);
         }
 
         /*
@@ -320,7 +293,7 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
 
         if (!executor.isAlive())
         {
-            executor = new PutExecutor(log, introspector, claz, arg, identifier);
+            executor = new PutExecutor(introspector, claz, arg, identifier);
         }
 
         return (executor.isAlive()) ? new VelSetterImpl(executor) : null;
@@ -606,4 +579,5 @@ public class UberspectImpl implements Uberspect, UberspectLoggable
             return setExecutor.isAlive() ? setExecutor.getMethod().getName() : null;
         }
     }
+
 }
