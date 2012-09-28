@@ -25,7 +25,8 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
         if(info==null) {
         	//build it once
         	synchronized (this.getClass()) {
-        		if(cache.get() == null){
+        		info=cache.get();
+        		if(info==null) {
 		            info=new IndiciesInfo();
 		            DotConnect dc = new DotConnect();
 		            dc.setSQL("SELECT index_name,index_type FROM indicies");
