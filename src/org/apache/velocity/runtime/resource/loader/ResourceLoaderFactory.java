@@ -23,6 +23,8 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.ClassUtils;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * Factory to grab a template loader.
  *
@@ -45,7 +47,7 @@ public class ResourceLoaderFactory
         {
             loader = (ResourceLoader) ClassUtils.getNewInstance( loaderClassName );
 
-            rs.getLog().debug("ResourceLoader instantiated: "
+            Logger.debug(ResourceLoaderFactory.class,"ResourceLoader instantiated: "
                               + loader.getClass().getName());
 
             return loader;
@@ -56,7 +58,7 @@ public class ResourceLoaderFactory
             String msg = "Problem instantiating the template loader: "+loaderClassName+".\n" +
                          "Look at your properties file and make sure the\n" +
                          "name of the template loader is correct.";
-            rs.getLog().error(msg, e);
+            Logger.error(ResourceLoaderFactory.class,msg, e);
             throw new VelocityException(msg, e);
         }
     }

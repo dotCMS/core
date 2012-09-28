@@ -30,6 +30,8 @@ import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 
+import com.dotmarketing.util.Logger;
+
 /**
  *  Macro implements the macro definition directive of VTL.
  *
@@ -140,7 +142,7 @@ public class Macro extends Directive
              *  error - they didn't name the macro or
              *  define a block
              */
-            rs.getLog().error("#macro error : Velocimacro must have name as 1st " +
+            Logger.error(Macro.class,"#macro error : Velocimacro must have name as 1st " +
                               "argument to #macro(). #args = " + numArgs);
 
             throw new MacroParseException("First argument to #macro() must be " +
@@ -215,7 +217,7 @@ public class Macro extends Directive
             StringBuffer msg = new StringBuffer("Macro.getArgArray() : nbrArgs=");
             msg.append(numArgs).append(" : ");
             macroToString(msg, argArray);
-            rsvc.getLog().debug(msg);
+            Logger.debug(Macro.class,msg.toString());
         }
 
         return argArray;

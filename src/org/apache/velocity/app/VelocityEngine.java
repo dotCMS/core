@@ -36,7 +36,8 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeInstance;
-import org.apache.velocity.runtime.log.Log;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * <p>
@@ -346,7 +347,7 @@ public class VelocityEngine implements RuntimeConstants
         {
             String msg = "VelocityEngine.mergeTemplate() was unable to load template '"
                            + templateName + "'";
-            getLog().error(msg);
+            Logger.error(this,msg);
             throw new ResourceNotFoundException(msg);
         }
         else
@@ -424,53 +425,6 @@ public class VelocityEngine implements RuntimeConstants
         return resourceExists(resourceName);
     }
 
-
-    /**
-     * Returns a convenient Log instance that wraps the current LogChute.
-     * Use this to log error messages. It has the usual methods you'd expect.
-     * @return A log object.
-     * @since 1.5
-     */
-    public Log getLog()
-    {
-        return ri.getLog();
-    }
-
-    /**
-     * @param message
-     * @deprecated Use getLog() and call warn() on it.
-     */
-    public void warn(Object message)
-    {
-        getLog().warn(message);
-    }
-
-    /**
-     * @param message
-     * @deprecated Use getLog() and call warn() on it.
-     */
-    public void info(Object message)
-    {
-        getLog().info(message);
-    }
-
-    /**
-     * @param message
-     * @deprecated Use getLog() and call warn() on it.
-     */
-    public void error(Object message)
-    {
-        getLog().error(message);
-    }
-
-    /**
-     * @param message
-     * @deprecated Use getLog() and call warn() on it.
-     */
-    public void debug(Object message)
-    {
-        getLog().debug(message);
-    }
 
     /**
      *  <p>

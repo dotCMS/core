@@ -32,10 +32,10 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.directive.Directive;
 import org.apache.velocity.runtime.directive.Macro;
 import org.apache.velocity.runtime.directive.VelocimacroProxy;
-import org.apache.velocity.runtime.log.LogDisplayWrapper;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.Node;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.DotResourceLoader;
 
 /**
@@ -52,11 +52,6 @@ public class VelocimacroFactory
      *  runtime services for this instance
      */
     private final RuntimeServices rsvc;
-
-    /**
-     *  the log for this instance
-     */
-    private final LogDisplayWrapper log;
 
     /**
      *  VMManager : deal with namespace management
@@ -108,9 +103,6 @@ public class VelocimacroFactory
     public VelocimacroFactory(final RuntimeServices rsvc)
     {
         this.rsvc = rsvc;
-        this.log = new LogDisplayWrapper(rsvc.getLog(), "Velocimacro : ",
-                rsvc.getBoolean(RuntimeConstants.VM_MESSAGES_ON, true));
-
         /*
          *  we always access in a synchronized(), so we
          *  can use an unsynchronized hashmap
@@ -130,7 +122,7 @@ public class VelocimacroFactory
          */
         synchronized(this)
         {
-            log.trace("initialization starting.");
+            Logger.debug(this,"initialization starting.");
 
             /*
              *   allow replacements while we add the libraries, if exist
@@ -153,7 +145,7 @@ public class VelocimacroFactory
 
              if (libfiles == null)
              {
-                 log.debug("\"" + RuntimeConstants.VM_LIBRARY +
+                 Logger.debug(this,"\"" + RuntimeConstants.VM_LIBRARY +
                      "\" is not set.  Trying default library: " +
                      RuntimeConstants.VM_LIBRARY_DEFAULT);
 
@@ -164,7 +156,7 @@ public class VelocimacroFactory
                  }
                  else
                  {
-                     log.debug("Default library not found.");
+                     Logger.debug(this,"Default library not found.");
                  }
              }
 
@@ -197,7 +189,7 @@ public class VelocimacroFactory
 
                          vmManager.setRegisterFromLib(true);
 
-                         log.debug("adding VMs from VM library : " + lib);
+                         Logger.debug(this,"adding VMs from VM library : " + lib);
 
                          try
                          {
@@ -217,11 +209,11 @@ public class VelocimacroFactory
                          catch (Exception e)
                          {
                              String msg = "Velocimacro : Error using VM library : " + lib;
-                             log.error(true, msg, e);
+                             Logger.error(this,msg, e);
                              throw new VelocityException(msg, e);
                          }
 
-                         log.trace("VM library registration complete.");
+                         Logger.debug(this,"VM library registration complete.");
 
                          vmManager.setRegisterFromLib(false);
                      }
@@ -245,11 +237,11 @@ public class VelocimacroFactory
             {
                 setAddMacroPermission(false);
 
-                log.debug("allowInline = false : VMs can NOT be defined inline in templates");
+                Logger.debug(this,"allowInline = false : VMs can NOT be defined inline in templates");
             }
             else
             {
-                log.debug("allowInline = true : VMs can be defined inline in templates");
+                Logger.debug(this,"allowInline = true : VMs can be defined inline in templates");
             }
 
             /*
@@ -265,12 +257,12 @@ public class VelocimacroFactory
             {
                 setReplacementPermission(true);
                 
-                log.debug("allowInlineToOverride = true : VMs " +
+                Logger.debug(this,"allowInlineToOverride = true : VMs " +
                     "defined inline may replace previous VM definitions");
             }
             else
             {
-                log.debug("allowInlineToOverride = false : VMs " +
+                Logger.debug(this,"allowInlineToOverride = false : VMs " +
                     "defined inline may NOT replace previous VM definitions");
             }
 
@@ -288,12 +280,12 @@ public class VelocimacroFactory
 
             if (getTemplateLocalInline())
             {
-                log.debug("allowInlineLocal = true : VMs " +
+                Logger.debug(this,"allowInlineLocal = true : VMs " +
                     "defined inline will be local to their defining template only.");
             }
             else
             {
-                log.debug("allowInlineLocal = false : VMs " +
+                Logger.debug(this,"allowInlineLocal = false : VMs " +
                     "defined inline will be global in scope if allowed.");
             }
 
@@ -306,16 +298,16 @@ public class VelocimacroFactory
 
             if (getAutoload())
             {
-                log.debug("autoload on : VM system " +
+                Logger.debug(this,"autoload on : VM system " +
                      "will automatically reload global library macros");
             }
             else
             {
-                log.debug("autoload off : VM system " +
+                Logger.debug(this,"autoload off : VM system " +
                       "will not automatically reload global library macros");
             }
 
-            log.trace("Velocimacro : initialization complete.");
+            Logger.debug(this,"Velocimacro : initialization complete.");
         }
     }
 
@@ -364,7 +356,7 @@ public class VelocimacroFactory
                 msg += "sourceTemplate";
             }
             msg += " argument was null";
-            log.error(msg);
+            Logger.error(this,msg);
             throw new NullPointerException(msg);
         }
 
@@ -392,12 +384,12 @@ public class VelocimacroFactory
             }
         }
 
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
             StringBuffer msg = new StringBuffer("added ");
             Macro.macroToString(msg, argArray);
             msg.append(" : source = ").append(sourceTemplate);
-            log.debug(msg.toString());
+            Logger.debug(this,msg.toString());
         }
 
         return true;
@@ -447,7 +439,7 @@ public class VelocimacroFactory
                 msg += "sourceTemplate";
             }
             msg += " argument was null";
-            log.error(msg);
+            Logger.error(this,msg);
             throw new NullPointerException(msg);
         }
 
@@ -464,9 +456,9 @@ public class VelocimacroFactory
         {
             vmManager.addVM(name, macroBody, argArray, sourceTemplate, replaceAllowed);
         }
-        if (log.isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            log.debug("added VM "+name+": source="+sourceTemplate);
+            Logger.debug(this,"added VM "+name+": source="+sourceTemplate);
         }
         return true;
     }
@@ -501,7 +493,7 @@ public class VelocimacroFactory
          */
         if (!addNewAllowed)
         {
-            log.warn("VM addition rejected : "+name+" : inline VMs not allowed.");
+            Logger.warn(this,"VM addition rejected : "+name+" : inline VMs not allowed.");
             return false;
         }
 
@@ -525,8 +517,8 @@ public class VelocimacroFactory
                  * causes false alarms when several concurrent threads simultaneously (re)parse
                  * some macro
                  */ 
-                if (log.isDebugEnabled())
-                    log.debug("VM addition rejected : "+name+" : inline not allowed to replace existing VM");
+                if (Logger.isDebugEnabled(this.getClass()))
+                    Logger.debug(this,"VM addition rejected : "+name+" : inline not allowed to replace existing VM");
                 return false;
             }
         }
@@ -608,7 +600,7 @@ public class VelocimacroFactory
 
                             if (ft > tt)
                             {
-                                log.debug("auto-reloading VMs from VM library : " + lib);
+                                Logger.debug(this,"auto-reloading VMs from VM library : " + lib);
 
                                 /*
                                  * when there are VMs in a library that invoke each other, there are
@@ -640,7 +632,7 @@ public class VelocimacroFactory
                     catch (Exception e)
                     {
                         String msg = "Velocimacro : Error using VM library : " + lib;
-                        log.error(true, msg, e);
+                        Logger.error(this,msg, e);
                         throw new VelocityException(msg, e);
                     }
 

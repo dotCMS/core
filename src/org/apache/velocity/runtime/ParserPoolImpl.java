@@ -23,6 +23,8 @@ import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.SimplePool;
 import org.apache.velocity.runtime.parser.CharStream;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * This wraps the original parser SimplePool class.  It also handles
  * instantiating ad-hoc parsers if none are available.
@@ -50,9 +52,9 @@ public class ParserPoolImpl implements ParserPool {
             pool.put(rsvc.createNewParser());
         }
 
-        if (rsvc.getLog().isDebugEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            rsvc.getLog().debug("Created '" + max + "' parsers.");
+            Logger.debug(this,"Created '" + max + "' parsers.");
         }
     }
 

@@ -36,6 +36,7 @@ import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
 /**
@@ -211,9 +212,9 @@ public class Evaluate extends Directive
                     {
                         throw stop;
                     }
-                    else if (rsvc.getLog().isDebugEnabled())
+                    else if (Logger.isDebugEnabled(this.getClass()))
                     {
-                        rsvc.getLog().debug(stop.getMessage());
+                        Logger.debug(this,stop.getMessage());
                     }
                 }
                 catch (ParseErrorException pex)

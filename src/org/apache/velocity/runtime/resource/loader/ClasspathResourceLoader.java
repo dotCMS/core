@@ -28,6 +28,8 @@ import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.ExceptionUtils;
 
+import com.dotmarketing.util.Logger;
+
 /**
  *  ClasspathResourceLoader is a simple loader that will load
  *  templates from the classpath.
@@ -84,9 +86,9 @@ public class ClasspathResourceLoader extends ResourceLoader
      */
     public void init( ExtendedProperties configuration)
     {
-        if (log.isTraceEnabled())
+        if (Logger.isDebugEnabled(this.getClass()))
         {
-            log.trace("ClasspathResourceLoader : initialization complete.");
+            Logger.debug(this,"ClasspathResourceLoader : initialization complete.");
         }
     }
 

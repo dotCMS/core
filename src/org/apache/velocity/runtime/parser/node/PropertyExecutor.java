@@ -23,10 +23,9 @@ import java.lang.reflect.InvocationTargetException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeLogger;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.RuntimeLoggerLog;
 import org.apache.velocity.util.introspection.Introspector;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * Returned the value of object property when executed.
@@ -42,10 +41,10 @@ public class PropertyExecutor extends AbstractExecutor
      * @param property
      * @since 1.5
      */
-    public PropertyExecutor(final Log log, final Introspector introspector,
+    public PropertyExecutor(final Introspector introspector,
             final Class clazz, final String property)
     {
-        this.log = log;
+        
         this.introspector = introspector;
 
         // Don't allow passing in the empty string or null because
@@ -55,19 +54,6 @@ public class PropertyExecutor extends AbstractExecutor
         {
             discover(clazz, property);
         }
-    }
-
-    /**
-     * @param r
-     * @param introspector
-     * @param clazz
-     * @param property
-     * @deprecated RuntimeLogger is deprecated. Use the other constructor.
-     */
-    public PropertyExecutor(final RuntimeLogger r, final Introspector introspector,
-            final Class clazz, final String property)
-    {
-        this(new RuntimeLoggerLog(r), introspector, clazz, property);
     }
 
     /**
@@ -128,7 +114,7 @@ public class PropertyExecutor extends AbstractExecutor
         catch(Exception e)
         {
             String msg = "Exception while looking for property getter for '" + property;
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }

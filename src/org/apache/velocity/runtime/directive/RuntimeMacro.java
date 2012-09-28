@@ -33,12 +33,12 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.Renderable;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
 /**
@@ -165,7 +165,7 @@ public class RuntimeMacro extends Directive
             if (child.getType() == ParserTreeConstants.JJTWORD)
             {
                 badArgsErrorMsg = "Invalid arg '" + child.getFirstToken().image 
-                + "' in macro #" + macroName + " at " + Log.formatFileString(child);
+                + "' in macro #" + macroName + " at " + VelocityException.formatFileString(child);
               
                 if (strictRef)  // If strict, throw now
                 {
@@ -300,7 +300,7 @@ public class RuntimeMacro extends Directive
             catch (TemplateInitException die)
             {
                 throw new ParseErrorException(die.getMessage() + " at "
-                    + Log.formatFileString(node), new Info(node));
+                    + VelocityException.formatFileString(node), new Info(node));
             }
 
             if (badArgsErrorMsg != null)
@@ -331,14 +331,14 @@ public class RuntimeMacro extends Directive
                  * especially important for multiple macro call levels.
                  * this is also true for the following catch blocks.
                  */
-                rsvc.getLog().error("Exception in macro #" + macroName + " called at " +
-                  Log.formatFileString(node));
+                Logger.error(this,"Exception in macro #" + macroName + " called at " +
+                        VelocityException.formatFileString(node));
                 throw e;
             }
             catch (IOException e)
             {
-                rsvc.getLog().error("Exception in macro #" + macroName + " called at " +
-                  Log.formatFileString(node));
+                Logger.error(this,"Exception in macro #" + macroName + " called at " +
+                        VelocityException.formatFileString(node));
                 throw e;
             }
             finally
@@ -349,7 +349,7 @@ public class RuntimeMacro extends Directive
         else if (strictRef)
         {
             throw new VelocityException("Macro '#" + macroName + "' is not defined at "
-                + Log.formatFileString(node));
+                + VelocityException.formatFileString(node));
         }
         
         /**

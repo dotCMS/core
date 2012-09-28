@@ -24,7 +24,6 @@ import java.io.Writer;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.Node;
 
 /**
@@ -74,7 +73,7 @@ public class Stop extends Directive
         if (kids > 1)
         {  
             throw new VelocityException("The #stop directive only accepts a single message parameter at "
-                 + Log.formatFileString(this));
+                 + VelocityException.formatFileString(this));
         }
         else
         {

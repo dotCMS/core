@@ -21,10 +21,9 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.lang.reflect.InvocationTargetException;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeLogger;
-import org.apache.velocity.runtime.log.Log;
-import org.apache.velocity.runtime.log.RuntimeLoggerLog;
 import org.apache.velocity.util.introspection.Introspector;
+
+import com.dotmarketing.util.Logger;
 
 
 /**
@@ -51,10 +50,9 @@ public class GetExecutor extends AbstractExecutor
      * @param property
      * @since 1.5
      */
-    public GetExecutor(final Log log, final Introspector introspector,
+    public GetExecutor(final Introspector introspector,
             final Class clazz, final String property)
     {
-        this.log = log;
         this.introspector = introspector;
 
         // If you passed in null as property, we don't use the value
@@ -69,19 +67,6 @@ public class GetExecutor extends AbstractExecutor
             this.params = new Object[] { property };
         }
         discover(clazz);
-    }
-
-    /**
-     * @param rlog
-     * @param introspector
-     * @param clazz
-     * @param property
-     * @deprecated RuntimeLogger is deprecated. Use the other constructor.
-     */
-    public GetExecutor(final RuntimeLogger rlog, final Introspector introspector,
-            final Class clazz, final String property)
-    {
-        this(new RuntimeLoggerLog(rlog), introspector, clazz, property);
     }
 
     /**
@@ -103,7 +88,7 @@ public class GetExecutor extends AbstractExecutor
         catch(Exception e)
         {
             String msg = "Exception while looking for get('" + params[0] + "') method";
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }

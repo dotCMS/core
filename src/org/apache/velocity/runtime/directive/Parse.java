@@ -34,10 +34,10 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
 /**
@@ -135,7 +135,7 @@ public class Parse extends InputBase
         if ( node.jjtGetNumChildren() == 0 )
         {
             throw new VelocityException("#parse(): argument missing at " +
-                                        Log.formatFileString(this));
+                                        VelocityException.formatFileString(this));
         }
 
         /*
@@ -143,10 +143,10 @@ public class Parse extends InputBase
          */
         Object value =  node.jjtGetChild(0).value( context );
         RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
-        if (value == null && rsvc.getLog().isDebugEnabled())
+        if (value == null && Logger.isDebugEnabled(this.getClass()))
         {
-            rsvc.getLog().debug("#parse(): null argument at " +
-                                Log.formatFileString(this));
+            Logger.debug(this,"#parse(): null argument at " +
+                    VelocityException.formatFileString(this));
         }
 
         /*
@@ -183,7 +183,7 @@ public class Parse extends InputBase
                 {
                     path.append( " > " + templateStack[i] );
                 }
-                rsvc.getLog().error("Max recursion depth reached (" +
+                Logger.error(this,"Max recursion depth reached (" +
                                     templateStack.length + ')' + " File stack:" +
                                     path);
                 return false;
@@ -205,8 +205,8 @@ public class Parse extends InputBase
             /*
              * the arg wasn't found.  Note it and throw
              */
-            rsvc.getLog().error("#parse(): cannot find template '" + arg +
-                                "', called at " + Log.formatFileString(this));
+            Logger.error(this,"#parse(): cannot find template '" + arg +
+                                "', called at " + VelocityException.formatFileString(this));
             throw rnfe;
         }
         catch ( ParseErrorException pee )
@@ -215,8 +215,8 @@ public class Parse extends InputBase
              * the arg was found, but didn't parse - syntax error
              *  note it and throw
              */
-            rsvc.getLog().error("#parse(): syntax error in #parse()-ed template '"
-                                + arg + "', called at " + Log.formatFileString(this));
+            Logger.error(this,"#parse(): syntax error in #parse()-ed template '"
+                                + arg + "', called at " + VelocityException.formatFileString(this));
             throw pee;
         }
         /**
@@ -224,15 +224,15 @@ public class Parse extends InputBase
          */
         catch( RuntimeException e )
         {
-            rsvc.getLog().error("Exception rendering #parse(" + arg + ") at " +
-                                Log.formatFileString(this));
+            Logger.error(this,"Exception rendering #parse(" + arg + ") at " +
+                    VelocityException.formatFileString(this));
             throw e;
         }
         catch ( Exception e)
         {
             String msg = "Exception rendering #parse(" + arg + ") at " +
-                         Log.formatFileString(this);
-            rsvc.getLog().error(msg, e);
+                    VelocityException.formatFileString(this);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
 
@@ -278,15 +278,15 @@ public class Parse extends InputBase
             /**
              * Log #parse errors so the user can track which file called which.
              */
-            rsvc.getLog().error("Exception rendering #parse(" + arg + ") at " +
-                                Log.formatFileString(this));
+            Logger.error(this,"Exception rendering #parse(" + arg + ") at " +
+                    VelocityException.formatFileString(this));
             throw e;
         }
         catch ( Exception e )
         {
             String msg = "Exception rendering #parse(" + arg + ") at " +
-                         Log.formatFileString(this);
-            rsvc.getLog().error(msg, e);
+                    VelocityException.formatFileString(this);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
         finally

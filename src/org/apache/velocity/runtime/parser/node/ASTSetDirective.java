@@ -26,12 +26,13 @@ import org.apache.velocity.app.event.EventHandlerUtil;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
+import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
 /**
@@ -164,10 +165,10 @@ public class ASTSetDirective extends SimpleNode
                 {
                     boolean doit = EventHandlerUtil.shouldLogOnNullSet( rsvc, context, left.literal(), right.literal() );
 
-                    if (doit && rsvc.getLog().isDebugEnabled())
+                    if (doit && Logger.isDebugEnabled(this.getClass()))
                     {
-                        rsvc.getLog().debug("RHS of #set statement is null. Context will not be modified. "
-                                      + Log.formatFileString(this));
+                        Logger.debug(this,"RHS of #set statement is null. Context will not be modified. "
+                                      + VelocityException.formatFileString(this));
                     }
                 }
                 

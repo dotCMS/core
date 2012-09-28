@@ -22,7 +22,6 @@ package org.apache.velocity.runtime.parser.node;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.apache.velocity.runtime.log.Log;
 
 /**
  * Abstract class that is used to execute an arbitrary
@@ -35,8 +34,6 @@ import org.apache.velocity.runtime.log.Log;
  */
 public abstract class AbstractExecutor
 {
-    /** */
-    protected Log log = null;
 
     /**
      * Method to be executed.

@@ -30,12 +30,12 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.apache.velocity.runtime.resource.loader.ResourceLoaderFactory;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.StringUtils;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.DotResourceLoader;
 
 
@@ -87,9 +87,6 @@ public class ResourceManagerImpl
     /** The internal RuntimeServices object. */
     protected RuntimeServices rsvc = null;
 
-    /** Logging. */
-    protected Log log = null;
-
     /**
      * Initialize the ResourceManager.
      *
@@ -99,16 +96,15 @@ public class ResourceManagerImpl
     {
         if (isInit)
         {
-            log.debug("Re-initialization of ResourceLoader attempted and ignored.");
+            Logger.debug(this,"Re-initialization of ResourceLoader attempted and ignored.");
             return;
         }
 	
         ResourceLoader resourceLoader = null;
 
         this.rsvc = rsvc;
-        log = rsvc.getLog();
-
-        log.trace("Default ResourceManager initializing. (" + this.getClass() + ")");
+        
+        Logger.debug(this,"Default ResourceManager initializing. (" + this.getClass() + ")");
 
         assembleResourceLoaderInitializers();
 
@@ -137,7 +133,7 @@ public class ResourceManagerImpl
                           configuration.getString(RESOURCE_LOADER_IDENTIFIER) +
                           ".resource.loader.class' specification in configuration." +
                           " This is a critical value.  Please adjust configuration.";
-                log.error(msg);
+                Logger.error(this,msg);
                 throw new VelocityException(msg);
             }
 
@@ -170,7 +166,7 @@ public class ResourceManagerImpl
             {
                 String msg = "The specified class for ResourceCache (" + cacheClassName +
                           ") does not exist or is not accessible to the current classloader.";
-                log.error(msg, cnfe);
+                Logger.error(this,msg, cnfe);
                 throw new VelocityException(msg, cnfe);
             }
             catch (IllegalAccessException ae)
@@ -188,7 +184,7 @@ public class ResourceManagerImpl
             {
                 String msg = "The specified resource cache class (" + cacheClassName +
                           ") must implement " + ResourceCache.class.getName();
-                log.error(msg);
+                Logger.error(this,msg);
                 throw new RuntimeException(msg);
             }
         }
@@ -205,7 +201,7 @@ public class ResourceManagerImpl
 
         globalCache.initialize(rsvc);
 
-        log.trace("Default ResourceManager initialization complete.");
+        Logger.debug(this,"Default ResourceManager initialization complete.");
     }
 
     /**
@@ -240,7 +236,7 @@ public class ResourceManagerImpl
              */
             if (loaderConfiguration == null)
             {
-                log.debug("ResourceManager : No configuration information found "+
+                Logger.debug(this,"ResourceManager : No configuration information found "+
                           "for resource loader named '" + loaderName +
                           "' (id is "+loaderID+"). Skipping it...");
                 continue;
@@ -335,12 +331,12 @@ public class ResourceManagerImpl
             }
             catch (ParseErrorException pee)
             {
-                log.error("ResourceManager.getResource() exception", pee);
+                Logger.error(this,"ResourceManager.getResource() exception", pee);
                 throw pee;
             }
             catch (RuntimeException re)
             {
-                log.error("ResourceManager.getResource() exception", re);
+                Logger.error(this,"ResourceManager.getResource() exception", re);
         	    throw re;
             }
         }
@@ -360,18 +356,18 @@ public class ResourceManagerImpl
             }
             catch (ResourceNotFoundException rnfe)
             {
-                log.error("ResourceManager : unable to find resource '" +
+                Logger.error(this,"ResourceManager : unable to find resource '" +
                           resourceName + "' in any resource loader.");
                 throw rnfe;
             }
             catch (ParseErrorException pee)
             {
-                log.error("ResourceManager.getResource() parse exception", pee);
+                Logger.error(this,"ResourceManager.getResource() parse exception", pee);
                 throw pee;
             }
             catch (RuntimeException re)
             {
-                log.error("ResourceManager.getResource() load exception", re);
+                Logger.error(this,"ResourceManager.getResource() load exception", re);
                 throw re;
             }
         }
@@ -445,9 +441,9 @@ public class ResourceManagerImpl
                      *  multi-path support - will revisit and fix
                      */
 
-                    if (logWhenFound && log.isDebugEnabled())
+                    if (logWhenFound && Logger.isDebugEnabled(this.getClass()))
                     {
-                        log.debug("ResourceManager : found " + resourceName +
+                        Logger.debug(this,"ResourceManager : found " + resourceName +
                                   " with loader " +
                                   resourceLoader.getClassName());
                     }
@@ -536,7 +532,7 @@ public class ResourceManagerImpl
 
             if (!org.apache.commons.lang.StringUtils.equals(resource.getEncoding(), encoding))
             {
-                log.warn("Declared encoding for template '" +
+                Logger.warn(this,"Declared encoding for template '" +
                              resource.getName() +
                              "' is different on reload. Old = '" +
                              resource.getEncoding() + "' New = '" + encoding);

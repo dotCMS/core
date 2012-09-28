@@ -24,8 +24,9 @@ import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.util.introspection.Introspector;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * Executor for looking up property names in the passed in class
@@ -47,10 +48,9 @@ public class SetPropertyExecutor
      * @param property
      * @param arg
      */
-    public SetPropertyExecutor(final Log log, final Introspector introspector,
+    public SetPropertyExecutor(final Introspector introspector,
             final Class clazz, final String property, final Object arg)
     {
-        this.log = log;
         this.introspector = introspector;
 
         // Don't allow passing in the empty string or null because
@@ -116,7 +116,7 @@ public class SetPropertyExecutor
         catch(Exception e)
         {
             String msg = "Exception while looking for property setter for '" + property;
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }

@@ -22,12 +22,13 @@ package org.apache.velocity.runtime.resource.loader;
 import java.io.InputStream;
 
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceCacheImpl;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.commons.collections.ExtendedProperties;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * This is abstract class the all text resource loaders should
@@ -58,7 +59,6 @@ public abstract class ResourceLoader
     protected String className = null;
 
     protected RuntimeServices rsvc = null;
-    protected Log log = null;
 
     /**
      * This initialization is used by all resource
@@ -70,7 +70,6 @@ public abstract class ResourceLoader
     public void commonInit( RuntimeServices rs, ExtendedProperties configuration)
     {
         this.rsvc = rs;
-        this.log = rsvc.getLog();
 
         /*
          *  these two properties are not required for all loaders.
@@ -88,7 +87,7 @@ public abstract class ResourceLoader
         {
             isCachingOn = false;
             String msg = "Exception parsing cache setting: "+configuration.getString("cache");
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
         try
@@ -99,7 +98,7 @@ public abstract class ResourceLoader
         {
             modificationCheckInterval = 0;
             String msg = "Exception parsing modificationCheckInterval setting: "+configuration.getString("modificationCheckInterval");
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
 
@@ -114,7 +113,7 @@ public abstract class ResourceLoader
         catch (Exception e)
         {
             String msg = "Exception retrieving resource cache class name";
-            log.error(msg, e);
+            Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
         }
     }
@@ -225,9 +224,9 @@ public abstract class ResourceLoader
         }
         catch (ResourceNotFoundException e)
         {
-            if (log.isDebugEnabled())
+            if (Logger.isDebugEnabled(this.getClass()))
             {
-                log.debug("Could not load resource '" + resourceName 
+                Logger.debug(this,"Could not load resource '" + resourceName 
                         + "' from ResourceLoader " + this.getClass().getName() 
                         + ": " + e.getMessage());
             }
@@ -243,11 +242,11 @@ public abstract class ResourceLoader
             }
             catch (Exception e)
             {
-                if (log.isErrorEnabled())
+                if (Logger.isErrorEnabled(this.getClass()))
                 {
                     String msg = "While closing InputStream for resource '" + resourceName
                         + "' from ResourceLoader "+this.getClass().getName();
-                    log.error(msg, e);
+                    Logger.error(this,msg, e);
                     throw new VelocityException(msg, e);
                 }
             }

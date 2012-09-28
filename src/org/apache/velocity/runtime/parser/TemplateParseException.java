@@ -20,7 +20,7 @@ package org.apache.velocity.runtime.parser;
  */
 
 import org.apache.velocity.exception.ExtendedParseException;
-import org.apache.velocity.runtime.log.Log;
+import org.apache.velocity.exception.VelocityException;
 
 
 /**
@@ -234,7 +234,7 @@ public class TemplateParseException
      */
     protected void appendTemplateInfo(final StringBuffer sb)
     {
-        sb.append(Log.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
+        sb.append(VelocityException.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
         sb.append(eol);
     }
 }

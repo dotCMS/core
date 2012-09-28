@@ -30,8 +30,8 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
+import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
 
@@ -257,7 +257,7 @@ public class SimpleNode implements Node, Serializable
      */
     protected String getLocation(InternalContextAdapter context)
     {
-        return Log.formatFileString(this);
+        return VelocityException.formatFileString(this);
     }
 
     // All additional methods
