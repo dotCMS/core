@@ -55,7 +55,7 @@ public class SimpleNode implements Node, Serializable
 
     /** */
     // TODO - It seems that this field is only valid when parsing, and should not be kept around.    
-    protected transient Parser parser;
+    private transient Parser parser;
 
     /** */
     protected int info; // added
@@ -109,6 +109,7 @@ public class SimpleNode implements Node, Serializable
     public void jjtClose()
     {
         last = parser.getToken(0); // added
+        parser = null;
     }
 
     /**

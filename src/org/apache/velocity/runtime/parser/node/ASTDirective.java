@@ -58,6 +58,7 @@ public class ASTDirective extends SimpleNode
     private String directiveName = "";
     private boolean isDirective;
     private boolean isInitialized;
+    private Parser parser=null;
 
     /**
      * @param id
@@ -74,6 +75,7 @@ public class ASTDirective extends SimpleNode
     public ASTDirective(Parser p, int id)
     {
         super(p, id);
+        parser=p;
     }
 
 
@@ -191,6 +193,7 @@ public class ASTDirective extends SimpleNode
             
             isInitialized = true;
         }
+        parser=null;
            
         return data;
     }
