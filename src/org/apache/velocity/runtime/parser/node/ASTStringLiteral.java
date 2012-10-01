@@ -50,8 +50,6 @@ public class ASTStringLiteral extends SimpleNode
 
     private String image = "";
 
-    private String interpolateimage = "";
-
     /** true if the string contains a line comment (##) */
     private boolean containsLineComment;
 
@@ -144,7 +142,8 @@ public class ASTStringLiteral extends SimpleNode
         /*
          * if appropriate, tack a space on the end (dreaded <MORE> kludge)
          */
-
+        String interpolateimage=null;
+        
         if (!containsLineComment)
         {
             interpolateimage = image + " ";
@@ -156,6 +155,7 @@ public class ASTStringLiteral extends SimpleNode
 
         if (interpolate)
         {
+            image="";
             /*
              * now parse and init the nodeTree
              */
