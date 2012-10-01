@@ -1,5 +1,6 @@
 package com.dotmarketing.osgi.servlet;
 
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.service.HelloWorld;
 import org.apache.felix.http.api.ExtHttpService;
@@ -37,11 +38,15 @@ public class Activator extends GenericBundleActivator {
             }
         }
 
+        CMSFilter.addExclude( "/app/helloworld" );
+
         // open service tracker to start tracking
         helloWorldServiceTracker.open();
     }
 
     public void stop ( BundleContext context ) throws Exception {
+
+        CMSFilter.removeExclude( "/app/helloworld" );
 
         // close service tracker to stop tracking
         helloWorldServiceTracker.close();

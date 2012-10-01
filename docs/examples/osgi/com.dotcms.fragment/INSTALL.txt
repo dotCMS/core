@@ -15,12 +15,15 @@ In order to install this bundle:
 		
 2) 	From this directory (ROOT of the plugin), execute the "build" task of the build.xml ant 
 	file to create the bundle jar file.
-	
-3) 	From this directory (ROOT of the plugin), execute the "deploy" task of the build.xml 
-	ant file in order to move the generated jar by the "build" task inside the Felix OSGI container 
-	(dotCMS/felix/load).
+
+To install this bundle:
+
+    1) Copy the bundle jar file inside the Felix OSGI container (dotCMS/felix/load).
+        OR
+    2) Upload the bundle jar file using the dotCMS UI (CMS Admin->Dynamic Plugins->Upload Plugin).
 	
 To uninstall this bundle:
 
-1) 	From this directory (ROOT of the plugin), execute the "undeploy" task of the build.xml ant file 
-	in order to remove the bundle jar file from the Felix OSGI container (dotCMS/felix/load).
+    1) Remove the bundle jar file from the Felix OSGI container (dotCMS/felix/load).
+        OR
+    2) Undeploy the bundle using the dotCMS UI (CMS Admin->Dynamic Plugins->Undeploy).
