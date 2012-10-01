@@ -2,10 +2,8 @@
 README
 ------
 
-This bundle plugin is an example of how to add dotcms hooks classes with our bundle plugin.
-
-How to create a bundle plugin for dotcms hook classes
--------------------------------------------
+How to add a ViewTool OSGI plugin
+---------------------------------
 
 --
 In order to create this OSGI plugin, you must write the META-INF/MANIFEST
