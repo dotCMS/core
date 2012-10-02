@@ -48,7 +48,7 @@ com.dotmarketing.osgi.servlet.HelloWorldServlet
 -----------------------------------------------
 
 Simple and standard implementation of a HttpServlet that will use
-the HelloWorld service provide by the com.dotcms.service bundle plugin.
+the HelloWorld service provide by the com.dotcms.service bundle plugin (Please refer to INSTALL.txt (!)).
 
 --
 com.dotmarketing.osgi.servlet.TestFilter
@@ -61,7 +61,7 @@ Activator
 ---------
 
 This bundle activator extends from com.dotmarketing.osgi.GenericBundleActivator and implements BundleActivator.start().
-Gets a reference for the HelloWorldService via HelloWorld interface (com.dotcms.service bundle plugin) and register
+Gets a reference for the HelloWorldService via HelloWorld interface (com.dotcms.service bundle plugin - Please refer to INSTALL.txt (!)) and register
 our HelloWorldServlet servlet and the TestFilter filter.
 
 --
@@ -70,9 +70,9 @@ our HelloWorldServlet servlet and the TestFilter filter.
 Testing
 -------
 
-The HelloWorldServlet is registered under the url pattern "/helloworld" can be test it running and assuming your dotcms url is localhost:80880:
-    http://localhost:8080/dynamic/helloworld
+The HelloWorldServlet is registered under the url pattern "/helloworld" can be test it running and assuming your dotcms url is localhost:8080:
+    http://localhost:8080/app/helloworld
 
-The TestFilter filter is registered for the url pattern "/helloworld/.*" can be test it running and assuming your dotcms url is localhost:80880:
+The TestFilter filter is registered for the url pattern "/helloworld/.*" can be test it running and assuming your dotcms url is localhost:8080:
     http://localhost:8080/app/helloworld/
     http://localhost:8080/app/helloworld/testing.dot
