@@ -54,6 +54,5 @@ Activator
 ---------
 
 This bundle activator extends from com.dotmarketing.osgi.GenericBundleActivator and implements BundleActivator.start().
-Registers an instance of a our test service using the bundle context;
-and attaches properties to the service that can be queried
+Registers an instance of a our test service using the bundle context; and attaches properties to the service that can be queried
 when performing a service look-up.
