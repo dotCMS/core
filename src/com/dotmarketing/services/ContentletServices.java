@@ -46,27 +46,27 @@ import com.liferay.util.FileUtil;
  */
 public class ContentletServices {
 
-	private static CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+	private static CategoryAPI categoryAPI= APILocator.getCategoryAPI();
 
 	public static CategoryAPI getCategoryAPI() {
 		return categoryAPI;
 	}
 
 	public static void setCategoryAPI(CategoryAPI categoryAPI) {
-		ContentletServices.categoryAPI = categoryAPI;
+		ContentletServices.categoryAPI= categoryAPI;
 	}
 
 
 	public static void invalidate(Contentlet contentlet) throws DotDataException, DotSecurityException {
 
-		Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+		Identifier identifier= APILocator.getIdentifierAPI().find(contentlet);
 		invalidate(contentlet, identifier, false);
 		invalidate(contentlet, identifier, true);
 	}
 
 	public static void invalidate(Contentlet contentlet, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
 
-		Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+		Identifier identifier= APILocator.getIdentifierAPI().find(contentlet);
 		invalidate(contentlet, identifier, EDIT_MODE);
 	}
 
@@ -76,237 +76,214 @@ public class ContentletServices {
 
 	public static InputStream buildVelocity(Contentlet content, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
 		InputStream result;
-		ContentletAPI conAPI = APILocator.getContentletAPI();
-		FieldAPI fAPI = APILocator.getFieldAPI();
-		User systemUser = APILocator.getUserAPI().getSystemUser();
+		ContentletAPI conAPI= APILocator.getContentletAPI();
+		FieldAPI fAPI= APILocator.getFieldAPI();
+		User systemUser= APILocator.getUserAPI().getSystemUser();
 
 
 		// let's write this puppy out to our file
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb= new StringBuilder();
 
 		// CONTENTLET CONTROLS BEGIN
 		sb.append("#if($EDIT_MODE)");
-		sb.append("     #set( $EDIT_CONTENT_PERMISSION =$EDIT_CONTENT_PERMISSION" ).append( identifier.getInode() ).append( " )\n");
+		sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION" ).append( identifier.getInode() ).append( ")");
 		sb.append("#end");
 
-		sb.append("#set( $CONTENT_INODE ='" ).append( content.getInode() ).append( "' )\n");
-		sb.append("#set( $IDENTIFIER_INODE ='" ).append( identifier.getInode() ).append( "' )\n");
+		sb.append("#set($CONTENT_INODE='" ).append( content.getInode() ).append( "' )");
+		sb.append("#set($IDENTIFIER_INODE='" ).append( identifier.getInode() ).append( "' )");
 
 		// set all properties from the contentlet
-		sb.append("##Set Content properties\n");
-		sb.append("#set( $ContentInode ='" ).append( content.getInode() ).append( "' )\n");
-		sb.append("#set( $ContentIdentifier ='" ).append( identifier.getInode() ).append( "' )\n");
-		sb.append("#set( $ContentletTitle =\"" ).append( UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)) ).append( "\" )\n");
-		String modDateStr = UtilMethods.dateToHTMLDate((Date) content.getModDate(), "yyyy-MM-dd H:mm:ss");
-		sb.append("#set( $ContentLastModDate = $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" ).append( modDateStr ).append( "\"))\n");
-		sb.append("#set( $ContentLastModUserId = \"" ).append( content.getModUser() ).append( "\")\n");
+		sb.append("#set($ContentInode='" ).append( content.getInode() ).append( "' )");
+		sb.append("#set($ContentIdentifier='" ).append( identifier.getInode() ).append( "' )");
+		sb.append("#set($ContentletTitle=\"" ).append( UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)) ).append( "\" )");
+		String modDateStr= UtilMethods.dateToHTMLDate((Date) content.getModDate(), "yyyy-MM-dd H:mm:ss");
+		sb.append("#set($ContentLastModDate= $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" ).append( modDateStr ).append( "\"))");
+		sb.append("#set($ContentLastModUserId= \"" ).append( content.getModUser() ).append( "\")");
 		if (content.getOwner() != null)
-			sb.append("#set( $ContentOwnerId = \"" ).append( content.getOwner() ).append( "\")\n");
+			sb.append("#set($ContentOwnerId= \"" ).append( content.getOwner() ).append( "\")");
 
 		// Structure fields
 
-		Structure structure = content.getStructure();
+		Structure structure= content.getStructure();
 
-		List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-		Iterator<Field> fieldsIt = fields.iterator();
+		List<Field> fields= FieldsCache.getFieldsByStructureInode(structure.getInode());
+		Iterator<Field> fieldsIt= fields.iterator();
 
-		String widgetCode = "";
+		String widgetCode= "";
 
 		while (fieldsIt.hasNext()) {
-			Field field = (Field) fieldsIt.next();
-
-			sb.append("\n\n##Set Field " ).append( field.getFieldName() ).append( " properties\n");
-
-			String contField = field.getFieldContentlet();
-			String contFieldValue = null;
-			Object contFieldValueObject = null;
-			String velPath = (!EDIT_MODE) ? "live/" : "working/";
+			Field field= (Field) fieldsIt.next();
+			String contField= field.getFieldContentlet();
+			String contFieldValue= null;
+			Object contFieldValueObject= null;
+			String velPath= (!EDIT_MODE) ? "live/" : "working/";
 			if(fAPI.isElementConstant(field)){
 			    if(field.getVelocityVarName().equals("widgetPreexecute")){
 					continue;
 				}
 				if(field.getVelocityVarName().equals("widgetCode")){
-//					widgetCode = "#set( $" + field.getVelocityVarName() + " = $UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('"
-//					+ UtilMethods.espaceVariableForVelocity(field.getValues()) + "'), $velocityContext))\n";
-//					widgetCode = "#set( $" + field.getVelocityVarName() + " = '" + field.getValues() + "')\n";
-//					widgetCode = "#set( $" + field.getVelocityVarName() + " =\"" + UtilMethods.espaceForVelocity(field.getValues()).trim() + "\" )\n";
-//					widgetCode = "#set( $fieldStringWriter" + content.getInode() + field.getInode()  + " = $stringsapi.getEmptyStringWriter())\n";
-//					widgetCode += "$UtilMethods.getVelocityTemplate(\"" + folderPath + content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\").merge($context, $fieldStringWriter" + content.getInode() + field.getInode()  + ")\n";
-//					widgetCode += "#set( $" + field.getVelocityVarName() + " = $fieldStringWriter" +  content.getInode() + field.getInode()  + ".toString())\n";
-					widgetCode = "#set( $" + field.getVelocityVarName() + " = $velutil.mergeTemplate(\"" + velPath +  content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\"))\n";
+					widgetCode= "#set($" + field.getVelocityVarName() + "=$velutil.mergeTemplate(\"" + velPath +  content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\"))";
 					continue;
 				}else{
-//					sb.append("#set( $" + field.getVelocityVarName() + " = $UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('"
-//							+ UtilMethods.espaceVariableForVelocity(field.getValues()) + "'), $velocityContext))\n");
-//					sb.append("#set( $" + field.getVelocityVarName() + " = \"" + UtilMethods.espaceForVelocity(field.getValues()).trim() + "\")\n");
-//					sb.append("#set( $fieldStringWriter" + content.getInode() + field.getInode()  + " = $stringsapi.getEmptyStringWriter())\n");
-//					sb.append("$UtilMethods.getVelocityTemplate(\"" + folderPath + content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\").merge($context, $fieldStringWriter" + content.getInode() + field.getInode()  + ")\n");
-//					sb.append("#set( $" + field.getVelocityVarName() + " = $fieldStringWriter" + content.getInode() + field.getInode()  + ".toString())\n");
 					String fieldValues=field.getValues()==null?"":field.getValues();
 					if(fieldValues.contains("$") || fieldValues.contains("#")){
-						sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " = $velutil.mergeTemplate(\"" ).append( velPath ).append(  content.getInode() ).append( "_" ).append( field.getInode() ).append( "." ).append( Config.getStringProperty("VELOCITY_FIELD_EXTENSION") ).append( "\"))\n");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "= $velutil.mergeTemplate(\"" ).append( velPath ).append(  content.getInode() ).append( "_" ).append( field.getInode() ).append( "." ).append( Config.getStringProperty("VELOCITY_FIELD_EXTENSION") ).append( "\"))");
 					}else{
-						sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " = \"" ).append( UtilMethods.espaceForVelocity(fieldValues).trim() ).append( "\")\n");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "= \"" ).append( UtilMethods.espaceForVelocity(fieldValues).trim() ).append( "\")");
 					}
 					continue;
 				}
 			}
 			if (UtilMethods.isSet(contField)) {
 				try {
-					contFieldValueObject = conAPI.getFieldValue(content, field);
-					contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
+					contFieldValueObject= conAPI.getFieldValue(content, field);
+					contFieldValue= contFieldValueObject== null ? "" : contFieldValueObject.toString();
 				} catch (Exception e) {
 					Logger.error(ContentletServices.class, "writeContentletToFile: " + e.getMessage());
 				}
 				if (!field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) && !field.getFieldType().equals(Field.FieldType.DATE.toString())
 						&& !field.getFieldType().equals(Field.FieldType.TIME.toString())){
-//					sb.append("#set( $" + field.getVelocityVarName() + " = $UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('"
-//							+ UtilMethods.espaceVariableForVelocity(contFieldValue) + "'), $velocityContext))\n");
-//					sb.append("#set( $" + field.getVelocityVarName() + " = \"" + UtilMethods.espaceForVelocity(contFieldValue).trim() + "\")\n");
-//					sb.append("#set( $fieldStringWriter" + content.getInode() + field.getInode()  + " = $stringsapi.getEmptyStringWriter())\n");
-//					sb.append("$UtilMethods.getVelocityTemplate(\"" + folderPath + content.getInode() + "_" + field.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\").merge($context, $fieldStringWriter" + content.getInode() + field.getInode()  + ")\n");
-//					sb.append("#set( $" + field.getVelocityVarName() + " = $fieldStringWriter" + content.getInode() + field.getInode()  + ".toString())\n");
 					if(contFieldValue.contains("$") || contFieldValue.contains("#")){
-						sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " = $velutil.mergeTemplate(\"" ).append( velPath ).append(  content.getInode() ).append( "_" ).append( field.getInode() ).append( "." ).append( Config.getStringProperty("VELOCITY_FIELD_EXTENSION") ).append( "\"))\n");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "=$velutil.mergeTemplate(\"" ).append( velPath ).append(  content.getInode() ).append( "_" ).append( field.getInode() ).append( "." ).append( Config.getStringProperty("VELOCITY_FIELD_EXTENSION") ).append( "\"))");
 					}else{
-						sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " = \"" ).append( UtilMethods.espaceForVelocity(contFieldValue).trim() ).append( "\")\n");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "=\"" ).append( UtilMethods.espaceForVelocity(contFieldValue).trim() ).append( "\")");
 					}
 				}
 
 			}
 
 			if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())) {
-				String identifierValue = content.getStringProperty(field.getVelocityVarName());
+				String identifierValue= content.getStringProperty(field.getVelocityVarName());
 				if( InodeUtils.isSet(identifierValue) ) {
 					if (EDIT_MODE){
-						sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Object = $filetool.getFile('" ).append( identifierValue ).append( "',false))\n");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',false))");
 					}else{
-						sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Object = $filetool.getFile('" ).append( identifierValue ).append( "',true))\n");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',true))");
 					}
 				}else{
-					sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Object = $filetool.getNewFile())\n");
+					sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getNewFile())");
 				}
 
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageInode =$" ).append( field.getVelocityVarName() ).append( "Object.getInode() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageIdentifier =$" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageWidth =$" ).append( field.getVelocityVarName() ).append( "Object.getWidth() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageHeight =$" ).append( field.getVelocityVarName() ).append( "Object.getHeight() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageExtension =$" ).append( field.getVelocityVarName() ).append( "Object.getExtension() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageURI =$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object))\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageTitle =$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getTitle()) )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageFriendlyName =$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName()) )\n");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageInode=$" ).append( field.getVelocityVarName() ).append( "Object.getInode() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageIdentifier=$" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageWidth=$" ).append( field.getVelocityVarName() ).append( "Object.getWidth() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageHeight=$" ).append( field.getVelocityVarName() ).append( "Object.getHeight() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageExtension=$" ).append( field.getVelocityVarName() ).append( "Object.getExtension() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageURI=$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object))");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageTitle=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getTitle()) )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageFriendlyName=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName()) )");
 
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImagePath =$" ).append( field.getVelocityVarName() ).append( "Object.getPath() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageName =$" ).append( field.getVelocityVarName() ).append( "Object.getFileName() )\n");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImagePath=$" ).append( field.getVelocityVarName() ).append( "Object.getPath())");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageName=$" ).append( field.getVelocityVarName() ).append( "Object.getFileName())");
 
 			}//	http://jira.dotmarketing.net/browse/DOTCMS-2178
 			else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())){
 				java.io.File binFile;
-				String fileName = "";
-				String filesize = "";
+				String fileName= "";
+				String filesize= "";
 				try {
-					binFile = content.getBinary(field.getVelocityVarName());
+					binFile= content.getBinary(field.getVelocityVarName());
 					if(binFile != null) {
-						fileName = binFile.getName();
-						filesize = FileUtil.getsize(binFile);
+						fileName= binFile.getName();
+						filesize= FileUtil.getsize(binFile);
 					}
 				} catch (IOException e) {
 					Logger.error(ContentletServices.class, "Unable to retrive binary file for content id " + content.getIdentifier() + " field " + field.getVelocityVarName(), e);
 					continue;
 				}
-			   	sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "BinaryFileTitle =\"" ).append( UtilMethods.espaceForVelocity(fileName) ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "BinaryFileSize =\"" ).append( UtilMethods.espaceForVelocity(filesize) ).append( "\" )\n");
-				String binaryFileURI = fileName.length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode()):"";
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "BinaryFileURI =\"" ).append( binaryFileURI).append("\" )\n");
+			   	sb.append("#set($" ).append( field.getVelocityVarName() ).append( "BinaryFileTitle=\"" ).append( UtilMethods.espaceForVelocity(fileName) ).append( "\" )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "BinaryFileSize=\"" ).append( UtilMethods.espaceForVelocity(filesize) ).append( "\" )");
+				String binaryFileURI= fileName.length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode()):"";
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "BinaryFileURI=\"" ).append( binaryFileURI).append("\" )");
 			}else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
-				String identifierValue = content.getStringProperty(field.getVelocityVarName());
+				String identifierValue= content.getStringProperty(field.getVelocityVarName());
 				if( InodeUtils.isSet(identifierValue) ) {
 					if (EDIT_MODE){
-						sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Object = $filetool.getFile('" ).append( identifierValue ).append( "',false))\n");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',false))");
 					}else{
-						sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Object = $filetool.getFile('" ).append( identifierValue ).append( "',true))\n");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',true))");
 					}
 				}else{
-					sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Object = $filetool.getNewFile())\n");
+					sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getNewFile())");
 				}
 
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileInode =$" ).append( field.getVelocityVarName() ).append( "Object.getInode() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileIdentifier =$" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileExtension =$" ).append( field.getVelocityVarName() ).append( "Object.getExtension() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileURI =$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object))\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileTitle =$" ).append( field.getVelocityVarName() ).append( "Object.getTitle() )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileFriendlyName =$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName() ))\n");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileInode=$" ).append( field.getVelocityVarName() ).append( "Object.getInode() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileIdentifier=$" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileExtension=$" ).append( field.getVelocityVarName() ).append( "Object.getExtension() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileURI=$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object))");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileTitle=$" ).append( field.getVelocityVarName() ).append( "Object.getTitle() )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileFriendlyName=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName() ))");
 
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FilePath =$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getPath()) )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileName =$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFileName()) )\n");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FilePath=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getPath()) )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileName=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFileName()) )");
 
 
 			} else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "SelectLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\")\n");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "SelectLabelsValues=\"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\")");
 			} else if (field.getFieldType().equals(Field.FieldType.RADIO.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "RadioLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )\n");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "RadioLabelsValues=\"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CheckboxLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )\n");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "CheckboxLabelsValues=\"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
-				String shortFormat = "";
-				String dbFormat = "";
+				String shortFormat= "";
+				String dbFormat= "";
 				if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
-					shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
-					dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd");
+					shortFormat= UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
+					dbFormat= UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd");
 				}
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " = $date.toDate(\"yyyy-MM-dd\", \"" ).append( dbFormat ).append( "\"))\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"" ).append( shortFormat ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "DBFormat =\"" ).append( dbFormat ).append( "\" )\n");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "=$date.toDate(\"yyyy-MM-dd\", \"" ).append( dbFormat ).append( "\"))");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ShortFormat=\"" ).append( shortFormat ).append( "\" )");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "DBFormat=\"" ).append( dbFormat ).append( "\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-				String shortFormat = "";
+				String shortFormat= "";
 				if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
-					shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "H:mm:ss");
+					shortFormat= UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "H:mm:ss");
 				}
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"" ).append( shortFormat ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " = $date.toDate(\"H:mm:ss\", \"" ).append( shortFormat ).append( "\"))\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat=\"" ).append( shortFormat ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "= $date.toDate(\"H:mm:ss\", \"" ).append( shortFormat ).append( "\"))");
 			} else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-				String shortFormat = "";
-				String longFormat = "";
-				String dbFormat = "";
+				String shortFormat= "";
+				String longFormat= "";
+				String dbFormat= "";
 				if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
-					shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
-					longFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy H:mm:ss");
-					dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd H:mm:ss");
+					shortFormat= UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
+					longFormat= UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy H:mm:ss");
+					dbFormat= UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd H:mm:ss");
 				}
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " = $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" ).append( dbFormat ).append( "\"))\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"" ).append( shortFormat ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "LongFormat =\"" ).append( longFormat ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "DBFormat =\"" ).append( dbFormat ).append( "\" )\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "= $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"" ).append( dbFormat ).append( "\"))");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat=\"" ).append( shortFormat ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "LongFormat=\"" ).append( longFormat ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "DBFormat=\"" ).append( dbFormat ).append( "\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonValue =\"" ).append( (field.getFieldName() == null ? "" : field.getFieldName()) ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonCode =\"" ).append( (field.getValues() == null ? "" : field.getValues()) ).append( "\" )\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonValue=\"" ).append( (field.getFieldName()== null ? "" : field.getFieldName()) ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonCode=\"" ).append( (field.getValues()== null ? "" : field.getValues()) ).append( "\" )");
 			}//http://jira.dotmarketing.net/browse/DOTCMS-2869
 //			else if (field.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString())){
-//				 sb.append("#set( $" + field.getVelocityVarName() + "Code =\"" + UtilMethods.espaceForVelocity(field.getValues()) + "\" )\n");
+//				 sb.append("#set( $" + field.getVelocityVarName() + "Code=\"" + UtilMethods.espaceForVelocity(field.getValues()) + "\" )");
 //			}//http://jira.dotmarketing.net/browse/DOTCMS-3232
 			else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
 				if(InodeUtils.isSet(content.getFolder())){
-					sb.append("#set( $ConHostFolder ='" ).append( content.getFolder() ).append( "' )\n");
+					sb.append("#set( $ConHostFolder='" ).append( content.getFolder() ).append( "' )");
 				}else{
-					sb.append("#set( $ConHostFolder ='" ).append( content.getHost() ).append( "' )\n");
+					sb.append("#set( $ConHostFolder='" ).append( content.getHost() ).append( "' )");
 				}
 			}
 
 			else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
 
 				// Get the Category Field
-				Category category = categoryAPI.find(field.getValues(), systemUser, false);
+				Category category= categoryAPI.find(field.getValues(), systemUser, false);
 				// Get all the Contentlets Categories
-				List<Category> selectedCategories = categoryAPI.getParents(content, systemUser, false);
+				List<Category> selectedCategories= categoryAPI.getParents(content, systemUser, false);
 
         		//Initialize variables
-        		String catInodes = "";
-        		Set<Category> categoryList = new HashSet<Category>();
-				List<Category> categoryTree = categoryAPI.getAllChildren(category, systemUser, false);
+        		String catInodes= "";
+        		Set<Category> categoryList= new HashSet<Category>();
+				List<Category> categoryTree= categoryAPI.getAllChildren(category, systemUser, false);
 
 				if (selectedCategories.size() > 0 && categoryTree != null) {
-					for (int k = 0; k < categoryTree.size(); k++) {
-						Category cat = (Category) categoryTree.get(k);
+					for (int k= 0; k < categoryTree.size(); k++) {
+						Category cat= (Category) categoryTree.get(k);
 						for (Category categ : selectedCategories) {
 							if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
 								categoryList.add(cat);
@@ -317,96 +294,62 @@ public class ContentletServices {
 
 				if (categoryList.size() > 0) {
 				    StringBuilder catbuilder=new StringBuilder();
-					Iterator<Category> it = categoryList.iterator();
+					Iterator<Category> it= categoryList.iterator();
 					while (it.hasNext()) {
-						Category cat = (Category) it.next();
+						Category cat= (Category) it.next();
 						catbuilder.append("\"").append(cat.getInode()).append("\"");
 						if (it.hasNext()) {
 							catbuilder.append(",");
 						}
 					}
 					catInodes=catbuilder.toString();
+					
+					sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FilteredCategories=$categories.filterCategoriesByUserPermissions([" ).append( catInodes ).append( "] ))");
+	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Categories=$categories.fetchCategoriesInodes($").append(field.getVelocityVarName()).append("FilteredCategories))");
+	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesNames=$categories.fetchCategoriesNames($").append(field.getVelocityVarName()).append("FilteredCategories))");
+	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "=$").append(field.getVelocityVarName()).append("Categories)");
+	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesKeys=$categories.fetchCategoriesKeys($").append(field.getVelocityVarName()).append("FilteredCategories))");
+				}	
+				else {
+				    sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FilteredCategories=$contents.getEmptyList())");
+	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Categories=$contents.getEmptyList())");
+	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesNames=$contents.getEmptyList())");
+	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "=$contents.getEmptyList())");
+	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesKeys=$contents.getEmptyList())");
 				}
-
-				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories = $categories.filterCategoriesByUserPermissions([" ).append( catInodes ).append( "] ))\n");
-
-				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys = $contents.getEmptyList())\n");
-				sb.append("#foreach ($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory in $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories)\n");
-				sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.inode))\n");
-				sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.categoryName))\n");
-				sb.append("#if ($UtilMethods.isSet($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.key))\n");
-				sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.key))\n");
-				sb.append("#else\n");
-				sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys.add(''))\n");
-				sb.append("#end\n");
-				sb.append("#end\n");
-
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FilteredCategories = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Categories = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesNames = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames )\n");
-				//http://jira.dotmarketing.net/browse/DOTCMS-2288
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesKeys = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys )\n");
-
-				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames = $contents.getEmptyList())\n");
-				sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys = $contents.getEmptyList())\n");
 			}
 		}
 
 
         // get the contentlet categories to make a list
-        String categories = "";
-        Set<Category> categoryList = new HashSet<Category>(categoryAPI.getParents(content, systemUser, false));
-        if (categoryList!=null) {
+        String categories= "";
+        Set<Category> categoryList= new HashSet<Category>(categoryAPI.getParents(content, systemUser, false));
+        if (categoryList!=null && categoryList.size()>0) {
             StringBuilder catbuilder=new StringBuilder();
-			Iterator<Category> it = categoryList.iterator();
+			Iterator<Category> it= categoryList.iterator();
 			while (it.hasNext()) {
-				Category category = (Category) it.next();
+				Category category= (Category) it.next();
 	        	catbuilder.append("\"").append(category.getInode()).append("\"") ;
 				if (it.hasNext()) {
 	        		catbuilder.append(",");
 	        	}
 	        }
 			categories=catbuilder.toString();
+			
+			sb.append("#set($ContentletFilteredCategories=$categories.filterCategoriesByUserPermissions([" ).append( categories ).append( "] ))");
+	        sb.append("#set($ContentletCategories=$categories.fetchCategoriesInodes($ContentletFilteredCategories))");
+	        sb.append("#set($ContentletCategoryNames=$categories.fetchCategoriesNames($ContentletFilteredCategories))");
+	        sb.append("#set($ContentletCategoryKeys=$categories.fetchCategoriesKeys($ContentletFilteredCategories))");
+        }
+        else {
+            sb.append("#set($ContentletFilteredCategories=$contents.getEmptyList())");
+            sb.append("#set($ContentletCategories=$contents.getEmptyList())");
+            sb.append("#set($ContentletCategoryNames=$contents.getEmptyList())");
+            sb.append("#set($ContentletCategoryKeys=$contents.getEmptyList())");
         }
 
-
-        //sets the categories as a list on velocity
-        sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories = $categories.filterCategoriesByUserPermissions([" ).append( categories ).append( "] ))\n");
-
-        sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys = $contents.getEmptyList())\n");
-		sb.append("#foreach ($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory in $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories)\n");
-		sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.inode))\n");
-		sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.categoryName))\n");
-		sb.append("#if ($UtilMethods.isSet($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.key))\n");
-		sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys.add($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategory.key))\n");
-		sb.append("#else\n");
-		sb.append("#set($_dummy = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys.add(''))\n");
-		sb.append("#end\n");
-		sb.append("#end\n");
-
-		sb.append("#set( $ContentletFilteredCategories = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories )\n");
-        sb.append("#set( $ContentletCategories = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes )\n");
-        sb.append("#set( $ContentletCategoryNames = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames )\n");
-        sb.append("#set( $ContentletCategoryKeys = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys )\n");
-        sb.append("#set( $contentletFilteredCategories = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories )\n");
-        sb.append("#set( $contentletCategories = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes )\n");
-        sb.append("#set( $contentletCategoryNames = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames )\n");
-        sb.append("#set( $contentletCategoryKeys = $dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys )\n");
-
-        sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategories = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesInodes = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesNames = $contents.getEmptyList())\n");
-		sb.append("#set($dotcms_content_" ).append( content.getIdentifier() ).append( "_filteredCategoriesKeys = $contents.getEmptyList())\n");
-
 		//This needs to be here because the all fields like cats etc.. need to be parsed first and it needs to be before
-		// the $CONTENT_INODE is reset sb.append("#set( $CONTENT_INODE =\"" + content.getInode() + "\" )\n");
+		// the $CONTENT_INODE is reset sb.append("#set( $CONTENT_INODE=\"" + content.getInode() + "\" )");
 		//http://jira.dotmarketing.net/browse/DOTCMS-2808
 		sb.append(widgetCode);
 
@@ -417,48 +360,48 @@ public class ContentletServices {
 		// WEB-INF/velocity/static/preview/content_controls.vtl
 
 		if(EDIT_MODE) {
-			sb.append("#set( $EDIT_CONTENT_PERMISSION =$EDIT_CONTENT_PERMISSION" ).append( identifier.getInode() ).append( " )\n");
+			sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION" ).append( identifier.getInode() ).append( " )");
 		}
 
-		sb.append("#set( $CONTENT_INODE =\"" ).append( content.getInode() ).append( "\" )\n");
-		sb.append("#set( $IDENTIFIER_INODE =\"" ).append( identifier.getInode() ).append( "\" )\n");
-		sb.append("##Set Content properties\n");
-		sb.append("#set( $ContentInode =\"" ).append( content.getInode() ).append( "\" )\n");
-		sb.append("#set( $ContentIdentifier =\"" ).append( identifier.getInode() ).append( "\" )\n");
-		sb.append("#set( $ContentletTitle =\"" ).append( UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)) ).append( "\" )\n");
+		sb.append("#set( $CONTENT_INODE=\"" ).append( content.getInode() ).append( "\" )");
+		sb.append("#set( $IDENTIFIER_INODE=\"" ).append( identifier.getInode() ).append( "\" )");
+		
+		sb.append("#set( $ContentInode=\"" ).append( content.getInode() ).append( "\" )");
+		sb.append("#set( $ContentIdentifier=\"" ).append( identifier.getInode() ).append( "\" )");
+		sb.append("#set( $ContentletTitle=\"" ).append( UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)) ).append( "\" )");
 
-		if(structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET){
-			sb.append("#set( $isWidget = \"" ).append( true ).append( "\")\n");
+		if(structure.getStructureType()== Structure.STRUCTURE_TYPE_WIDGET){
+			sb.append("#set( $isWidget= \"" ).append( true ).append( "\")");
 			if(structure.getName().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)){
-				sb.append("#set( $isFormWidget = \"" ).append( true ).append( "\")\n");
+				sb.append("#set($isFormWidget= \"" ).append( true ).append( "\")");
 			}else{
-				sb.append("#set( $isFormWidget = \"" ).append( false ).append( "\")\n");
+				sb.append("#set($isFormWidget= \"" ).append( false ).append( "\")");
 			}
 		}else{
-			sb.append("#set( $isWidget = \"" ).append( false ).append( "\")\n");
+			sb.append("#set($isWidget= \"" ).append( false ).append( "\")");
 		}
 
 		if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			try {
 
-				String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
+				String velocityRootPath= Config.getStringProperty("VELOCITY_ROOT");
 
 				if (velocityRootPath.startsWith("/WEB-INF")) {
-					velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+					velocityRootPath= Config.CONTEXT.getRealPath(velocityRootPath);
 				}
 				velocityRootPath += java.io.File.separator;
 
-				String veloExt = Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
-				String baseFilename = String.format("%s_%d.%s", identifier.getInode(), content.getLanguageId(), veloExt);
+				String veloExt= Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
+				String baseFilename= String.format("%s_%d.%s", identifier.getInode(), content.getLanguageId(), veloExt);
 
 				// Save always to working
-				String filePath = "working" + java.io.File.separator + baseFilename;
+				String filePath= "working" + java.io.File.separator + baseFilename;
 
 				saveToDisk(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator,filePath, sb.toString());
 
 				// Save to live, if publishing
 				if (!EDIT_MODE) {
-					filePath = "live" + java.io.File.separator + baseFilename;
+					filePath= "live" + java.io.File.separator + baseFilename;
 					saveToDisk(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator,filePath, sb.toString());
 				}
 
@@ -467,9 +410,9 @@ public class ContentletServices {
 			}
 		}
 		try {
-			result = new ByteArrayInputStream(sb.toString().getBytes("UTF-8"));
+			result= new ByteArrayInputStream(sb.toString().getBytes("UTF-8"));
 		} catch (UnsupportedEncodingException e1) {
-			result = new ByteArrayInputStream(sb.toString().getBytes());
+			result= new ByteArrayInputStream(sb.toString().getBytes());
 			Logger.error(ContainerServices.class,e1.getMessage(), e1);
 		}
         return result;
@@ -494,7 +437,7 @@ public class ContentletServices {
 
 		Identifier identifier;
 		try {
-			identifier = APILocator.getIdentifierAPI().find(asset);
+			identifier= APILocator.getIdentifierAPI().find(asset);
 			removeContentletFile(asset, identifier, false);
 		} catch (DotHibernateException e) {
 			Logger.error(ContainerServices.class, "Unable to retrieve Identifier", e);
@@ -504,7 +447,7 @@ public class ContentletServices {
 
 	public static void removeContentletFile(Contentlet asset, boolean EDIT_MODE) throws DotStateException, DotDataException {
 		try {
-			Identifier identifier = APILocator.getIdentifierAPI().find(asset);
+			Identifier identifier= APILocator.getIdentifierAPI().find(asset);
 			removeContentletFile(asset, identifier, EDIT_MODE);
 		} catch (DotHibernateException e) {
 			Logger.error(ContainerServices.class,"Unable to retrieve Identifier", e);
@@ -518,18 +461,18 @@ public class ContentletServices {
 	 * @throws DotDataException
 	 */
 	public static void removeContentletFile(Structure structure) throws DotDataException, DotSecurityException{
-		ContentletAPI conAPI = APILocator.getContentletAPI();
-		int limit = 500;
-		int offset = 0;
-		List<Contentlet> contentlets = conAPI.findByStructure(structure, APILocator.getUserAPI().getSystemUser(), false, limit, offset);
-		int size = contentlets.size();
+		ContentletAPI conAPI= APILocator.getContentletAPI();
+		int limit= 500;
+		int offset= 0;
+		List<Contentlet> contentlets= conAPI.findByStructure(structure, APILocator.getUserAPI().getSystemUser(), false, limit, offset);
+		int size= contentlets.size();
 		while(size > 0){
 			for (Contentlet contentlet : contentlets) {
 				removeContentletFile(contentlet);
 			}
 			offset += limit;
-			contentlets = conAPI.findByStructure(structure, APILocator.getUserAPI().getSystemUser(), false, limit, offset);
-			size = contentlets.size();
+			contentlets= conAPI.findByStructure(structure, APILocator.getUserAPI().getSystemUser(), false, limit, offset);
+			size= contentlets.size();
 		}
 	}
 
@@ -557,18 +500,18 @@ public class ContentletServices {
 	}
 
 	public static void removeContentletFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
-		String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
-		String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
+		String folderPath= (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
+		String velocityRootPath= Config.getStringProperty("VELOCITY_ROOT");
 		if (velocityRootPath.startsWith("/WEB-INF")) {
-			velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+			velocityRootPath= Config.CONTEXT.getRealPath(velocityRootPath);
 		}
 		velocityRootPath += java.io.File.separator;
 		String filePath= folderPath + identifier.getInode() + "_" + asset.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
-		java.io.File f = new java.io.File(velocityRootPath + filePath);
+		java.io.File f= new java.io.File(velocityRootPath + filePath);
 		f.delete();
-		DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+		DotResourceCache vc= CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(asset.getStructureInode());
+        List<Field> fields= FieldsCache.getFieldsByStructureInode(asset.getStructureInode());
         for (Field field : fields) {
 			try {
 				FieldServices.invalidate(field.getInode(), asset.getInode(), EDIT_MODE);
@@ -582,17 +525,17 @@ public class ContentletServices {
 
 	private static void saveToDisk(String folderPath, String filePath, String data) throws IOException {
 
-		java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(folderPath+ filePath)));
+		java.io.BufferedOutputStream tmpOut= new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(folderPath+ filePath)));
 
 		// Specify a proper character encoding
-		OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
+		OutputStreamWriter out= new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
 
 		out.write(data);
 
 		out.flush();
 		out.close();
 		tmpOut.close();
-		DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
+		DotResourceCache vc= CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
 	}
 
