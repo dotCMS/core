@@ -2,10 +2,10 @@
 README
 ------
 
-This bundle plugin is an example of how to add dotcms hooks classes with our bundle plugin.
+This bundle plugin is an example of how to add dotcms WorkFlowActionlet classes with our bundle plugin.
 
-How to create a bundle plugin for dotcms hook classes
--------------------------------------------
+How to add a Actionlet OSGI plugin
+---------------------------------
 
 --
 In order to create this OSGI plugin, you must write the META-INF/MANIFEST
@@ -46,11 +46,11 @@ a plugin can Import the packages to use them inside the OSGI blundle.
 com.dotmarketing.osgi.actionlet.MyActionlet
 -----------------------------------------------
 
-Classes used to create a ViewTool object implementation.
+Implementation of a WorkFlowActionlet object.
 
 --
 Activator
 ---------
 
 This bundle activator extends from com.dotmarketing.osgi.GenericBundleActivator and implements BundleActivator.start().
-This activator will allow you to register the ViewTool object using the GenericBundleActivator.registerViewToolService method
+This activator will allow you to register the WorkFlowActionlet object using the GenericBundleActivator.registerActionlet method
