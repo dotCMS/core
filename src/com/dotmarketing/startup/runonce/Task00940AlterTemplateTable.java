@@ -39,12 +39,12 @@ public class Task00940AlterTemplateTable implements StartupTask {
             dc.executeStatement("ALTER TABLE CONTAINERS ADD FOR_METADATA number(1,0)");
         }
         else if(DbConnectionFactory.isMySql()) {
-        	dc.executeStatement("ALTER TABLE TEMPLATE ADD DRAWED  tinyint(1)");
-            dc.executeStatement("ALTER TABLE TEMPLATE ADD DRAWED_BODY longtext");
-            dc.executeStatement("ALTER TABLE TEMPLATE ADD ADD_CONTAINER_LINKS integer");
-            dc.executeStatement("ALTER TABLE TEMPLATE ADD CONTAINERS_ADDED integer");
-            dc.executeStatement("ALTER TABLE TEMPLATE ADD HEAD_CODE longtext");
-            dc.executeStatement("ALTER TABLE CONTAINERS ADD FOR_METADATA tinyint(1)");
+        	dc.executeStatement("ALTER TABLE template ADD DRAWED  tinyint(1)");
+            dc.executeStatement("ALTER TABLE template ADD DRAWED_BODY longtext");
+            dc.executeStatement("ALTER TABLE template ADD ADD_CONTAINER_LINKS integer");
+            dc.executeStatement("ALTER TABLE template ADD CONTAINERS_ADDED integer");
+            dc.executeStatement("ALTER TABLE template ADD HEAD_CODE longtext");
+            dc.executeStatement("ALTER TABLE containers ADD FOR_METADATA tinyint(1)");
         }
         else if(DbConnectionFactory.isPostgres()) {
         	dc.executeStatement("ALTER TABLE TEMPLATE ADD DRAWED  bool");
