@@ -24,6 +24,7 @@
 	var foldersWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folders")) %>';
 	var containersWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Containers")) %>';
 	var templatesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Templates")) %>';
+	var templateLayoutsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Template-Layouts")) %>';
 	var pagesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Pages")) %>';
 	var filesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Files")) %>';
 	var linksWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Links")) %>';
@@ -66,6 +67,7 @@
 	var folderClassName = '<%= Folder.class.getCanonicalName() %>'
 	var containerClassName = '<%= Container.class.getCanonicalName() %>'
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
+	var templateLayoutClassName = '<%= Template.TEMPLATE_LAYOUTS_CANONICAL_NAME %>'
 	var pageClassName = '<%= HTMLPage.class.getCanonicalName() %>'
 	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
@@ -254,7 +256,7 @@
 		}
 		container.resize({ h: myHeight });
 		container._verticalSpace = 375;
-		
+
 		if(data.length > 1)//GIT-417 -- To fix the weird behaviour of permissions tab under roles portlet.
 			container.selectChild(dijit.byId('permissionsAccordionPane-' + norm(selectedChildPaneId)));
 		else{
@@ -316,6 +318,15 @@
 			'templates-publish-permission-' + id,
 			'templates-edit-permissions-permission-' + id,
 			'templates-virtual-links-permission-' + id,
+
+			'template-layouts-view-permission-' + id,
+			'template-layouts-add-children-permission-' + id,
+			'template-layouts-edit-permission-' + id,
+			'template-layouts-publish-permission-' + id,
+			'template-layouts-edit-permission-' + id,
+			'template-layouts-publish-permission-' + id,
+			'template-layouts-edit-permissions-permission-' + id,
+			'template-layouts-virtual-links-permission-' + id,
 
 			'pages-view-permission-' + id,
 			'pages-add-children-permission-' + id,
@@ -466,6 +477,7 @@
             }
         }
 
+
 		RoleAjax.isPermissionableInheriting(id, function(data){
 			if(!data.isInheriting || (data.isInheriting && confirm(permissionBreakInheritance))){
 				var systemHost = getSystemHost(permissionsData);
@@ -474,6 +486,7 @@
 				var foldersPermissions = retrievePermissionChecks(id, 'folders');
 				var containersPermissions = retrievePermissionChecks(id, 'containers');
 				var templatesPermissions = retrievePermissionChecks(id, 'templates');
+				var templateLayoutsPermissions = retrievePermissionChecks(id, 'template-layouts');
 				var pagesPermissions = retrievePermissionChecks(id, 'pages');
 				var filesPermissions = retrievePermissionChecks(id, 'files');
 				var linksPermissions = retrievePermissionChecks(id, 'links');
@@ -498,6 +511,7 @@
 						folders: foldersPermissions,
 						containers: containersPermissions,
 						templates: templatesPermissions,
+						templateLayouts: templateLayoutsPermissions,
 						pages: pagesPermissions,
 						files: filesPermissions,
 						links: linksPermissions,
@@ -575,7 +589,7 @@
         var changes=false;
         var item;
 
-        dojo.forEach(currentListOfHostFolders, function(itemvar) {
+        dojo.forEach (currentListOfHostFolders, function(itemvar) {
             if(itemvar.id==id)
                 item=itemvar;
             });
@@ -641,7 +655,7 @@
                 return true;
         }
 
-        types=['hosts','folders','containers','templates','pages','files','links','structures','content','categories'];
+        types=['hosts','folders','containers','templates','template-layouts','pages','files','links','structures','content','categories'];
 
         for(var i=0;i<types.length;i++)
             if(changedType(item,types[i]))
@@ -748,6 +762,7 @@
 		fillTemplatePermissionOptions(item, permissions, folderClassName, 'folders');
 		fillTemplatePermissionOptions(item, permissions, containerClassName, 'containers');
 		fillTemplatePermissionOptions(item, permissions, templateClassName, 'templates');
+		fillTemplatePermissionOptions(item, permissions, templateLayoutClassName, 'templateLayouts');
 		fillTemplatePermissionOptions(item, permissions, pageClassName, 'pages');
 		fillTemplatePermissionOptions(item, permissions, fileClassName, 'files');
 		fillTemplatePermissionOptions(item, permissions, linkClassName, 'links');
@@ -764,11 +779,13 @@
 			}
 			item.containersPermissionsEntryStyle = '';
 			item.templatesPermissionsEntryStyle = '';
+			item.templateLayoutsPermissionsEntryStyle = '';
 			item.categoriesPermissionsEntryStyle = '';
 		} else {
 			item.hostsPermissionsEntryStyle = 'display: none';
 			item.containersPermissionsEntryStyle = 'display: none';
 			item.templatesPermissionsEntryStyle = 'display: none';
+			item.templateLayoutsPermissionsEntryStyle = 'display: none';
 			item.categoriesPermissionsEntryStyle = 'display: none';
 			if(item.type == 'folder'){
 				item.structuresPermissionsEntryStyle = '';
@@ -786,6 +803,7 @@
 		item.foldersWillInherit = foldersWillInheritMsg;
 		item.containersWillInherit = containersWillInheritMsg;
 		item.templatesWillInherit = templatesWillInheritMsg;
+		item.templateLayoutsWillInherit = templateLayoutsWillInheritMsg;
 		item.pagesWillInherit = pagesWillInheritMsg;
 		item.filesWillInherit = filesWillInheritMsg;
 		item.linksWillInherit = linksWillInheritMsg;
@@ -807,6 +825,7 @@
 		fillEmptyTemplatePermissionOptions(item, 'folders');
 		fillEmptyTemplatePermissionOptions(item, 'containers');
 		fillEmptyTemplatePermissionOptions(item, 'templates');
+		fillEmptyTemplatePermissionOptions(item, 'templateLayouts');
 		fillEmptyTemplatePermissionOptions(item, 'pages');
 		fillEmptyTemplatePermissionOptions(item, 'files');
 		fillEmptyTemplatePermissionOptions(item, 'links');
@@ -824,11 +843,13 @@
 			}
 			item.containersPermissionsEntryStyle = '';
 			item.templatesPermissionsEntryStyle = '';
+			item.templateLayoutsPermissionsEntryStyle = '';
 			item.categoriesPermissionsEntryStyle = '';
 		} else {
 			item.hostsPermissionsEntryStyle = 'display: none';
 			item.containersPermissionsEntryStyle = 'display: none';
 			item.templatesPermissionsEntryStyle = 'display: none';
+			item.templateLayoutsPermissionsEntryStyle = 'display: none';
 			item.categoriesPermissionsEntryStyle = 'display: none';
 			if(item.type == 'folder'){
 				item.structuresPermissionsEntryStyle = '';
@@ -841,6 +862,7 @@
 		item.foldersWillInherit = foldersWillInheritMsg;
 		item.containersWillInherit = containersWillInheritMsg;
 		item.templatesWillInherit = templatesWillInheritMsg;
+		item.templateLayoutsWillInherit = templateLayoutsWillInheritMsg;
 		item.pagesWillInherit = pagesWillInheritMsg;
 		item.filesWillInherit = filesWillInheritMsg;
 		item.linksWillInherit = linksWillInheritMsg;
