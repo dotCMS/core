@@ -155,7 +155,6 @@ public class ASTStringLiteral extends SimpleNode
 
         if (interpolate)
         {
-            image="";
             /*
              * now parse and init the nodeTree
              */
@@ -188,6 +187,10 @@ public class ASTStringLiteral extends SimpleNode
              */
 
             nodeTree.init(context, rsvc);
+            
+            // we really don't need those anymore in this case
+            image="";
+            getFirstToken().image="";
         }
 
         return data;
