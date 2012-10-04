@@ -245,20 +245,19 @@ public class ASTStringLiteral extends SimpleNode
         for(int i = 0, is = s.length(); i < is; i++)
         {
             char c = s.charAt(i);
-            result.append(c);
-          
             if( i + 1 < is )
             {
                 char next =  s.charAt(i + 1);
-				// '""' -> "", "''" -> '' 
-				// thus it is not necessary to double quotes if the "surrounding" quotes
-				// of the StringLiteral are different. See VELOCITY-785
-                if( (literalQuoteChar == '"' && (next == '"' && c == '"')) || 
-				    (literalQuoteChar == '\'' && (next == '\'' && c == '\'')) )
+                
+                // escaped "/'
+                if( (literalQuoteChar == '"' && (next == '"' && c=='\\')) ||
+                    (literalQuoteChar == '\'' && (next == '\'' && c=='\\')))
                 {
                     i++;
+                    c=literalQuoteChar;
                 }
-           }    
+           }
+           result.append(c);
         }
         return result.toString();
     }

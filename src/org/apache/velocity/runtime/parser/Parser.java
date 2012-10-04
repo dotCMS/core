@@ -28,13 +28,10 @@ import com.dotmarketing.util.VelocityUtil;
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="hps@intermeta.de">Henning P. Schmiedehausen</a>
- * @version $Id: Parser.java 928463 2010-03-28 18:11:34Z nbubna $
+ * @version $Id: Parser.jjt 928463 2010-03-28 18:11:34Z nbubna $
 */
-public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConstants, Serializable {/*@bgen(jjtree)*/
-  
-    private static final long serialVersionUID = 3456024289827406729L;
-    
-    protected JJTParserState jjtree = new JJTParserState();/**
+public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConstants {/*@bgen(jjtree)*/
+  protected JJTParserState jjtree = new JJTParserState();/**
      * Keep track of defined macros, used for escape processing
      */
     private Map macroNames = new HashMap();
@@ -45,7 +42,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
     public String currentTemplateName = "";
 
     /**
-     * Set to true if the property
+     * Set to true if the property 
      * RuntimeConstants.RUNTIME_REFERENCES_STRICT_ESCAPE is set to true
      */
     public boolean strictEscape = false;
@@ -66,13 +63,13 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
          */
 
         this(   new VelocityCharStream(
-                new ByteArrayInputStream("\n".getBytes()), 1, 1 ));
+                new ByteArrayInputStream("\u005cn".getBytes()), 1, 1 ));
 
         /*
          * now setup a VCS for later use
          */
         velcharstream = new VelocityCharStream(
-                new ByteArrayInputStream("\n".getBytes()), 1, 1 );
+                new ByteArrayInputStream("\u005cn".getBytes()), 1, 1 );
 
 
         strictEscape =
@@ -95,7 +92,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
         SimpleNode sn = null;
 
         currentTemplateName = templateName;
-        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
+
         try
         {
             token_source.clearStateVars();
@@ -152,8 +149,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
      */
     public Directive getDirective(String directive)
     {
-        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
-        return (Directive) rsvc.getDirective(directive);
+        return (Directive) VelocityUtil.getEngine().getRuntimeServices().getDirective(directive);
     }
 
     /**
@@ -161,8 +157,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
      */
     public boolean isDirective(String directive)
     {
-        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
-        return rsvc.getDirective(directive) != null;
+        return VelocityUtil.getEngine().getRuntimeServices().getDirective(directive) != null;
     }
 
 
@@ -172,7 +167,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
      */
     private String escapedDirective( String strImage )
     {
-        int iLast = strImage.lastIndexOf("\\");
+        int iLast = strImage.lastIndexOf("\u005c\u005c");
 
         String strDirective = strImage.substring(iLast + 1);
 
@@ -192,11 +187,11 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
          *  mode then we always absord the forward slash regardless
          *  if the derective is defined or not.
          */
-        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
+
         if (strictEscape
              || isDirective(dirTag)
              || macroNames.containsKey(dirTag)
-             || rsvc.isVelocimacro(dirTag, currentTemplateName))
+             || VelocityUtil.getEngine().getRuntimeServices().isVelocimacro(dirTag, currentTemplateName))
         {
             bRecognizedDirective = true;
         }
@@ -251,7 +246,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
                 /**
                  * if not a white space return
                  */
-                else if (c != ' ' && c != '\n' && c != '\r' && c != '\t')
+                else if (c != ' ' && c != '\u005cn' && c != '\u005cr' && c != '\u005ct')
                 {
                     return false;
                 }
@@ -473,12 +468,11 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
         /*
          * if that failed, lets lookahead to see if we matched a PD or a VM
          */
-        RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
         String nTag = t.next.image.substring(1);
         if (strictEscape
             || isDirective(nTag)
             || macroNames.containsKey(nTag)
-            || rsvc.isVelocimacro(nTag, currentTemplateName))
+            || VelocityUtil.getEngine().getRuntimeServices().isVelocimacro(nTag, currentTemplateName))
         {
             control = true;
         }
@@ -486,7 +480,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
         jjtn000.val = "";
 
         for( int i = 0; i < count; i++)
-            jjtn000.val += ( control ? "\\" : "\\\\");
+            jjtn000.val += ( control ? "\u005c\u005c" : "\u005c\u005c\u005c\u005c");
     } finally {
       if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
@@ -754,8 +748,8 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
                 /*
                  *  if null, then not a real directive, but maybe a Velocimacro
                  */
-                RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
-                isVM = rsvc.isVelocimacro(directiveName, currentTemplateName);
+
+                isVM = VelocityUtil.getEngine().getRuntimeServices().isVelocimacro(directiveName, currentTemplateName);
 
                 /*
                  * Currently, all VMs are LINE directives
@@ -848,7 +842,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
 
                         {if (true) throw new MacroParseException("Invalid first arg"
                         + " in #macro() directive - must be a"
-                        + " word token (no \' or \" surrounding)", currentTemplateName, t);}
+                        + " word token (no \u005c' or \u005c" surrounding)", currentTemplateName, t);}
                     }
                 }
 
@@ -952,9 +946,8 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
 
         if (doItNow)
         {
-            RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
             // Further checking of macro arguments
-            Macro.checkArgs(rsvc, t, jjtn000, currentTemplateName);
+            Macro.checkArgs(VelocityUtil.getEngine().getRuntimeServices(), t, jjtn000, currentTemplateName);
 
             // Add the macro name so that we can peform escape processing
             // on defined macros
@@ -3612,7 +3605,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
       return (jj_ntk = jj_nt.kind);
   }
 
-  private java.util.List jj_expentries = new java.util.ArrayList();
+  private java.util.List<int[]> jj_expentries = new java.util.ArrayList<int[]>();
   private int[] jj_expentry;
   private int jj_kind = -1;
   private int[] jj_lasttokens = new int[100];
@@ -3627,7 +3620,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
       for (int i = 0; i < jj_endpos; i++) {
         jj_expentry[i] = jj_lasttokens[i];
       }
-      jj_entries_loop: for (java.util.Iterator it = jj_expentries.iterator(); it.hasNext();) {
+      jj_entries_loop: for (java.util.Iterator<?> it = jj_expentries.iterator(); it.hasNext();) {
         int[] oldentry = (int[])(it.next());
         if (oldentry.length == jj_expentry.length) {
           for (int i = 0; i < jj_expentry.length; i++) {
@@ -3678,7 +3671,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
     jj_add_error_token(0, 0);
     int[][] exptokseq = new int[jj_expentries.size()][];
     for (int i = 0; i < jj_expentries.size(); i++) {
-      exptokseq[i] = (int[])jj_expentries.get(i);
+      exptokseq[i] = jj_expentries.get(i);
     }
     return new ParseException(token, exptokseq, tokenImage);
   }
@@ -3729,14 +3722,8 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
     }
     p.gen = jj_gen + xla - jj_la; p.first = token; p.arg = xla;
   }
-  
-  private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
-      ois.defaultReadObject();
-  }
 
-  static final class JJCalls implements Serializable {
-    private static final long serialVersionUID = -5868870181237334162L;
-    
+  static final class JJCalls {
     int gen;
     Token first;
     int arg;
