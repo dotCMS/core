@@ -61,6 +61,7 @@
 	var foldersWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folders")) %>';
 	var containersWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Containers")) %>';
 	var templatesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Templates")) %>';
+	var templateLayoutsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Templates-Layouts")) %>';
 	var pagesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Pages")) %>';
 	var filesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Files")) %>';
 	var linksWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Links")) %>';
@@ -101,6 +102,7 @@
 	var folderClassName = '<%= Folder.class.getCanonicalName() %>'
 	var containerClassName = '<%= Container.class.getCanonicalName() %>'
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
+	var templateLayoutClassName = '<%= Template.TEMPLATE_LAYOUTS_CANONICAL_NAME %>'
 	var pageClassName = '<%= HTMLPage.class.getCanonicalName() %>'
 	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
@@ -391,6 +393,7 @@
 				rolePermission.foldersPermission = retrievePermissionChecks(role.id, 'folders');
 				rolePermission.containersPermission = retrievePermissionChecks(role.id, 'containers');
 				rolePermission.templatesPermission = retrievePermissionChecks(role.id, 'templates');
+				rolePermission.templateLayoutsPermission = retrievePermissionChecks(role.id, 'template-layouts');
 				rolePermission.pagesPermission = retrievePermissionChecks(role.id, 'pages');
 				rolePermission.filesPermission = retrievePermissionChecks(role.id, 'files');
 				rolePermission.linksPermission = retrievePermissionChecks(role.id, 'links');
@@ -439,6 +442,7 @@
 		destroyCheckboxes(getPermissionCheckboxDijits('folders', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('containers', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('templates', role.roleId))
+		destroyCheckboxes(getPermissionCheckboxDijits('template-layouts', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('pages', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('files', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('links', role.roleId))
@@ -471,6 +475,7 @@
 					rolePermission.foldersPermission |
 					rolePermission.containersPermission |
 					rolePermission.templatesPermission |
+					rolePermission.templateLayoutsPermission |
 					rolePermission.pagesPermission |
 					rolePermission.filesPermission |
 					rolePermission.linksPermission |
@@ -572,7 +577,7 @@
                 return true;
         }
 
-        types=['hosts','folders','containers','templates','pages','files','links','structure','content','categories'];
+        types=['hosts','folders','containers','templates','template-layouts','pages','files','links','structure','content','categories'];
 
         for(var i=0;i<types.length;i++)
             if(changedType(item,types[i]))
@@ -737,6 +742,7 @@
 			enableCheckboxes(getPermissionCheckboxDijits('folders', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('containers', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('templates', role.id))
+			enableCheckboxes(getPermissionCheckboxDijits('template-layouts', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('pages', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('files', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('links', role.id))
@@ -875,6 +881,7 @@
 		fillTemplatePermissionOptions(role, permissions, folderClassName, 'folders');
 		fillTemplatePermissionOptions(role, permissions, containerClassName, 'containers');
 		fillTemplatePermissionOptions(role, permissions, templateClassName, 'templates');
+		fillTemplatePermissionOptions(role, permissions, templateLayoutClassName, 'templateLayouts');
 		fillTemplatePermissionOptions(role, permissions, pageClassName, 'pages');
 		fillTemplatePermissionOptions(role, permissions, fileClassName, 'files');
 		fillTemplatePermissionOptions(role, permissions, linkClassName, 'links');
@@ -921,6 +928,7 @@
 		role.foldersWillInherit = foldersWillInheritMsg;
 		role.containersWillInherit = containersWillInheritMsg;
 		role.templatesWillInherit = templatesWillInheritMsg;
+		role.templateLayoutsWillInherit = templateLayoutsWillInheritMsg;
 		role.pagesWillInherit = pagesWillInheritMsg;
 		role.filesWillInherit = filesWillInheritMsg;
 		role.linksWillInherit = linksWillInheritMsg;
