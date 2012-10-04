@@ -27,7 +27,7 @@ public class Logger{
 
 	private static Map<Class, org.apache.log4j.Logger> map = new HashMap<Class, org.apache.log4j.Logger>();
 
-	
+	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
 	/**
 	 * This class is syncrozned.  It shouldn't be called. It is exposed so that 
 	 * @param cl
@@ -243,8 +243,8 @@ public class Logger{
     
     
     private static void velocityLogError(Class cl){
-    	if(VelocityServlet.velocityCtx.get() != null){
-    		Context ctx =  VelocityServlet.velocityCtx.get();
+    	if(velocityCtx.get() != null){
+    		Context ctx =  velocityCtx.get();
     		InternalContextAdapter ica =  new InternalContextAdapterImpl(ctx);
     		org.apache.log4j.Logger logger = map.get(VelocityServlet.class);
     		logger.error("#--------------------------------------------------------------------------------------");
