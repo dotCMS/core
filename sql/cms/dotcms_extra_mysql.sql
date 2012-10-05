@@ -595,5 +595,7 @@ create table indicies (
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 -- ****** Content Publishing Framework *******
-create table contentlet_publishing_queue (id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, solr_operation bigint, asset_identifier VARCHAR(36) NOT NULL, language_id bigint NOT NULL, 
-entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, in_error varchar(1) DEFAULT '0', last_results LONGTEXT);
+create table publishing_queue (id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, operation bigint, asset_identifier VARCHAR(36) NOT NULL, language_id bigint NOT NULL, 
+entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, in_error varchar(1) DEFAULT '0', last_results LONGTEXT, 
+publish_date DATETIME, server_id VARCHAR(256), 
+type VARCHAR(256), bundle_id VARCHAR(256));
