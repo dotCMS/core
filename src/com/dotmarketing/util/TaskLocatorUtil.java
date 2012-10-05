@@ -68,6 +68,8 @@ public class TaskLocatorUtil {
         ret.add(Task00930AddIdentifierIndex.class);
         ret.add(Task00935LogConsoleTableData.class);
         ret.add(Task00940AlterTemplateTable.class);
+        // Content Publishing Framework
+        ret.add(Task00945AddTableContentPublishing.class);
         return ret;
     }
 

@@ -10,47 +10,49 @@
 	<appender name="ASYNC" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
-		<!-- <appender-ref ref="FILE" /> -->
+		<!-- appender-ref ref="FILE" / -->
 		<appender-ref ref="CONSOLE" />
     </appender>
 
     <appender name="ASYNC-TEST" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
         <param name="BufferSize" value="500" />
         <param name="FailToSync" value="false" />
-        <!-- <appender-ref ref="TEST" /> -->
-		<appender-ref ref="CONSOLE" />
+        <!-- appender-ref ref="TEST" /-->
+        <appender-ref ref="CONSOLE" />
     </appender>
 
     <appender name="ASYNC-SECURITY" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
-		<!-- <appender-ref ref="SECURITY"/> -->
+		<!-- appender-ref ref="SECURITY"/ -->
 		<appender-ref ref="CONSOLE" />
     </appender>
     
     <appender name="ASYNC-SITESEARCH" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
-		<!-- <appender-ref ref="SITESEARCH"/> -->
+		<!-- appender-ref ref="SITESEARCH"/ -->
 		<appender-ref ref="CONSOLE" />
     </appender>
 
     <appender name="ASYNC-ADMINAUDIT" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
-       	<appender-ref ref="ADMINAUDIT"/>
+       	<!--  appender-ref ref="ADMINAUDIT"/-->
+       	<appender-ref ref="CONSOLE" />
     </appender>
     
     <appender name="ASYNC-USERACTIVITY" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
-       	<appender-ref ref="USERS_ACTIVITY"/>
+       	<!-- appender-ref ref="USERS_ACTIVITY"/ -->
+       	<appender-ref ref="CONSOLE" />
     </appender>
     
      <appender name="ASYNC-VELOCITY" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
-		<!-- <appender-ref ref="VELOCITY" /> -->
+		<!-- appender-ref ref="VELOCITY" / -->
 		<appender-ref ref="CONSOLE" />
     </appender>
     
