@@ -676,4 +676,4 @@ language_id numeric(19,0) NOT NULL, entered_date DATETIME,
 last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0,
 in_error tinyint DEFAULT 0, last_results TEXT, 
 publish_date DATETIME, server_id VARCHAR(256), 
-type VARCHAR(256), bundle_id VARCHAR(256));
+type VARCHAR(256), bundle_id VARCHAR(256), target text);

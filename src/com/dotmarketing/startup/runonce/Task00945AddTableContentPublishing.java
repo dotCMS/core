@@ -30,7 +30,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 															"last_try TIMESTAMP, num_of_tries int8 NOT NULL DEFAULT 0, " +
 															"in_error bool DEFAULT 'f', last_results TEXT, " +
 															"publish_date TIMESTAMP, server_id VARCHAR(256), " +
-															"type VARCHAR(256), bundle_id VARCHAR(256))";
+															"type VARCHAR(256), bundle_id VARCHAR(256), target text)";
 	
 	private static final String MYCREATESQL				=	"CREATE TABLE IF NOT EXISTS publishing_queue " +
 															"(id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, " +
@@ -39,7 +39,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 															"last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, " +
 															"in_error varchar(1) DEFAULT '0', last_results LONGTEXT, " +
 															"publish_date DATETIME, server_id VARCHAR(256), " +
-															"type VARCHAR(256), bundle_id VARCHAR(256))";
+															"type VARCHAR(256), bundle_id VARCHAR(256), target text)";
 	
 	private static final String MSVALIDATETABLESQL		=	"SELECT COUNT(*) as exist " +
 															"FROM sysobjects " +
@@ -52,7 +52,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 															"last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0, " +
 															"in_error tinyint DEFAULT 0, last_results TEXT, " +
 															"publish_date DATETIME, server_id VARCHAR(256), " +
-															"type VARCHAR(256), bundle_id VARCHAR(256))";
+															"type VARCHAR(256), bundle_id VARCHAR(256), target text)";
 	
 	private static final String OCLVALIDATETABLESQL		=	"SELECT COUNT(*) as exist " +
 															"FROM user_tables WHERE table_name='PUBLISHING_QUEUE'";
@@ -64,7 +64,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 															"last_try DATE, num_of_tries number(19,0) DEFAULT 0 NOT NULL, " +
 															"in_error number(1,0) DEFAULT 0, last_results NCLOB,PRIMARY KEY (id), " +
 															"publish_date DATE, server_id VARCHAR2(256), " +
-															"type VARCHAR2(256), bundle_id VARCHAR2(256))";
+															"type VARCHAR2(256), bundle_id VARCHAR2(256), target nclob)";
 	
 	private static final String OCLCREATESEQSQL			=	"CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1";
 	
