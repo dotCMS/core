@@ -593,3 +593,7 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
+
+-- ****** Content Publishing Framework *******
+create table contentlet_publishing_queue (id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, solr_operation bigint, asset_identifier VARCHAR(36) NOT NULL, language_id bigint NOT NULL, 
+entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, in_error varchar(1) DEFAULT '0', last_results LONGTEXT);
