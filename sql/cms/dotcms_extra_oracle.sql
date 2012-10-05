@@ -791,6 +791,6 @@ language_id number(19,0) NOT NULL, entered_date DATE,
 last_try DATE, num_of_tries number(19,0) DEFAULT 0 NOT NULL,
 in_error number(1,0) DEFAULT 0, last_results NCLOB,PRIMARY KEY (id), 
 publish_date DATE, server_id VARCHAR2(256), 
-type VARCHAR2(256), bundle_id VARCHAR2(256));
+type VARCHAR2(256), bundle_id VARCHAR2(256), target nclob);
 
 CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on CONTENTLET_PUBLISHING_QUEUE for each row begin select CONTENTLET_PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;;
