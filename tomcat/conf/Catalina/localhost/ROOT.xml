@@ -10,14 +10,23 @@
 		in your server.xml file.
 		We recommend you set your number of connections to be your max server threads + 10
 	 -->
-	<!-- POSTGRESQL -->
+	<!-- POSTGRESQL 
 	<Resource name="jdbc/dotCMSPool" auth="Container" 
 	        type="javax.sql.DataSource"
 	        driverClassName="org.postgresql.Driver"
 	        url="jdbc:postgresql://localhost/trunk"
 	        username="{your db user}" password="{your db password}" maxActive="60" maxIdle="5" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
-		  validationQuery="SELECT 1" testOnBorrow="true" />		  
+		  validationQuery="SELECT 1" testOnBorrow="true" / -->		
+		  
+	
+    <!-- MYSQL UTF8 -->
+    <Resource name="jdbc/dotCMSPool" auth="Container"
+          type="javax.sql.DataSource" driverClassName="com.mysql.jdbc.Driver"
+          url="jdbc:mysql://172.20.102.129:3306/dotcms?characterEncoding=UTF-8"
+          username="u_dotcms_svl" password="u_dotcms_svl" maxActive="60" maxIdle="10" maxWait="60000"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          validationQuery="SELECT 1" testOnBorrow="true"/>  
 	
 	
 	<!-- MYSQL UTF8 
