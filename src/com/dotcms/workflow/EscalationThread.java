@@ -25,17 +25,14 @@ public class EscalationThread extends Thread {
     
     @Override
     public void run() {
-    	// if we don't have workflows, no need for this thread.
-        if(LicenseUtil.getLevel()<200){
-            return ;
-        }
-        if(Config.getBooleanProperty("ESCALATION_ENABLE",false)) {
+    	if(Config.getBooleanProperty("ESCALATION_ENABLE",false)) {
             final int interval=Config.getIntProperty("ESCALATION_CHECK_INTERVAL_SECS",600);
             final String wfActionAssign=Config.getStringProperty("ESCALATION_DEFAULT_ASSIGN","");
             final String wfActionComments=Config.getStringProperty("ESCALATION_DEFAULT_COMMENT","Task time out");
             WorkflowAPI wapi=APILocator.getWorkflowAPI();
             while(!Thread.interrupted()) {
                 try {
+                   if(LicenseUtil.getLevel()>=200) {
                     try {
                         HibernateUtil.startTransaction();
                         List<WorkflowTask> tasks=wapi.findExpiredTasks();
@@ -85,8 +82,8 @@ public class EscalationThread extends Thread {
                         } catch (DotHibernateException e) {}
                         Logger.warn(this, ex.getMessage(), ex);
                     }
-                    
-                    Thread.sleep(interval*1000L);
+                   }
+                   Thread.sleep(interval*1000L);
                 }
                 catch(InterruptedException ex) {
                     return;

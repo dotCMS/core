@@ -1,2 +1,252 @@
-//>>built
-define("dojox/date/hebrew",["dojo/_base/kernel","dojo/date","./hebrew/Date"],function(_1,dd,_2){_1.getObject("date.hebrew",true,dojox);_1.experimental("dojox.date.hebrew");dojox.date.hebrew.getDaysInMonth=function(_3){return _3.getDaysInHebrewMonth(_3.getMonth(),_3.getFullYear());};dojox.date.hebrew.compare=function(_4,_5,_6){if(_4 instanceof _2){_4=_4.toGregorian();}if(_5 instanceof _2){_5=_5.toGregorian();}return dd.compare.apply(null,arguments);};dojox.date.hebrew.add=function(_7,_8,_9){var _a=new _2(_7);switch(_8){case "day":_a.setDate(_7.getDate()+_9);break;case "weekday":var _b=_7.getDay();var _c=0;if(_9<0&&_b==6){_b=5;_c=-1;}if((_b+_9)<5&&(_b+_9)>=0){_a.setDate(_7.getDate()+_9+_c);}else{var _d=(_9>0)?5:-1;var _e=(_9>0)?2:-2;if(_9>0&&(_b==5||_b==6)){_c=4-_b;_b=4;}var _f=_b+_9-_d;var _10=parseInt(_f/5);var _11=_f%5;_a.setDate(_7.getDate()-_b+_e+_10*7+_c+_11+_d);}break;case "year":_a.setFullYear(_7.getFullYear()+_9);break;case "week":_9*=7;_a.setDate(_7.getDate()+_9);break;case "month":var _12=_7.getMonth(),_13=_12+_9;if(!_7.isLeapYear(_7.getFullYear())){if(_12<5&&_13>=5){_13++;}else{if(_12>5&&_13<=5){_13--;}}}_a.setMonth(_13);break;case "hour":_a.setHours(_7.getHours()+_9);break;case "minute":_a._addMinutes(_9);break;case "second":_a._addSeconds(_9);break;case "millisecond":_a._addMilliseconds(_9);break;}return _a;};dojox.date.hebrew.difference=function(_14,_15,_16){_15=_15||new _2();_16=_16||"day";var _17=_15.getFullYear()-_14.getFullYear();var _18=1;switch(_16){case "weekday":var _19=Math.round(dojox.date.hebrew.difference(_14,_15,"day"));var _1a=parseInt(dojox.date.hebrew.difference(_14,_15,"week"));var mod=_19%7;if(mod==0){_19=_1a*5;}else{var adj=0;var _1b=_14.getDay();var _1c=_15.getDay();_1a=parseInt(_19/7);mod=_19%7;var _1d=new _2(_14);_1d.setDate(_1d.getDate()+(_1a*7));var _1e=_1d.getDay();if(_19>0){switch(true){case _1b==5:adj=-1;break;case _1b==6:adj=0;break;case _1c==5:adj=-1;break;case _1c==6:adj=-2;break;case (_1e+mod)>5:adj=-2;}}else{if(_19<0){switch(true){case _1b==5:adj=0;break;case _1b==6:adj=1;break;case _1c==5:adj=2;break;case _1c==6:adj=1;break;case (_1e+mod)<0:adj=2;}}}_19+=adj;_19-=(_1a*2);}_18=_19;break;case "year":_18=_17;break;case "month":var _1f=(_15.toGregorian()>_14.toGregorian())?_15:_14;var _20=(_15.toGregorian()>_14.toGregorian())?_14:_15;var _21=_1f.getMonth();var _22=_20.getMonth();if(_17==0){_18=(!_15.isLeapYear(_15.getFullYear())&&_1f.getMonth()>5&&_20.getMonth()<=5)?(_1f.getMonth()-_20.getMonth()-1):(_1f.getMonth()-_20.getMonth());}else{_18=(!_20.isLeapYear(_20.getFullYear())&&_22<6)?(13-_22-1):(13-_22);_18+=(!_1f.isLeapYear(_1f.getFullYear())&&_21>5)?(_21-1):_21;var i=_20.getFullYear()+1;var e=_1f.getFullYear();for(i;i<e;i++){_18+=_20.isLeapYear(i)?13:12;}}if(_15.toGregorian()<_14.toGregorian()){_18=-_18;}break;case "week":_18=parseInt(dojox.date.hebrew.difference(_14,_15,"day")/7);break;case "day":_18/=24;case "hour":_18/=60;case "minute":_18/=60;case "second":_18/=1000;case "millisecond":_18*=_15.toGregorian().getTime()-_14.toGregorian().getTime();}return Math.round(_18);};return dojox.date.hebrew;});
+define("dojox/date/hebrew", ["..", "dojo/_base/lang", "dojo/date", "./hebrew/Date"], function(dojox, lang, dd, HDate){
+
+var dhebrew = lang.getObject("date.hebrew", true, dojox);
+
+// Utility methods to do arithmetic calculations with hebrew.Dates
+
+// added for compat to date
+dhebrew.getDaysInMonth = function(/*dojox/date/hebrew/Date*/month){
+	return month.getDaysInHebrewMonth(month.getMonth(), month.getFullYear());
+};
+
+//TODO: define hebrew.isLeapYear?  Or should it be invalid, since it has different meaning?
+
+dhebrew.compare = function(/*dojox/date/hebrew/Date*/dateheb1, /*dojox/date/hebrew/Date*/dateheb2, /*String?*/portion){
+	// summary:
+	//		Compare two hebrew date objects by date, time, or both.
+	// description:
+	//		Returns 0 if equal, positive if a > b, else negative.
+	// date1: dojox/date/hebrew/Date
+	// date2: dojox/date/hebrew/Date
+	//		If not specified, the current hebrew.Date is used.
+	// portion:
+	//		A string indicating the "date" or "time" portion of a Date object.
+	//		Compares both "date" and "time" by default.  One of the following:
+	//		"date", "time", "datetime"
+
+	if(dateheb1 instanceof HDate){
+		dateheb1 = dateheb1.toGregorian();
+	}
+	if(dateheb2 instanceof HDate){
+		dateheb2 = dateheb2.toGregorian();
+	}
+	
+	return dd.compare.apply(null, arguments);
+};
+
+
+dhebrew.add = function(/*dojox/date/hebrew/Date*/date, /*String*/interval, /*int*/amount){
+	// summary:
+	//		Add to a Date in intervals of different size, from milliseconds to years
+	// date: dojox/date/hebrew/Date
+	//		Date object to start with
+	// interval:
+	//		A string representing the interval.  One of the following:
+	//		"year", "month", "day", "hour", "minute", "second",
+	//		"millisecond", "week", "weekday"
+	// amount:
+	//		How much to add to the date.
+
+	//	based on and similar to dojo.date.add
+
+	var newHebrDate = new HDate(date);
+
+	switch(interval){
+		case "day":
+			newHebrDate.setDate(date.getDate() + amount);
+			break;
+		case "weekday":
+			var day = date.getDay();
+			var remdays = 0;
+			if(amount < 0 && day == 6){ day = 5; remdays = -1; }
+			
+			if((day + amount) < 5 && (day + amount) >= 0){ //in the same week
+				 newHebrDate.setDate(date.getDate() + amount + remdays);
+			}else{
+				var add = (amount > 0) ? 5 : -1;
+				var adddays = (amount > 0) ? 2 : -2 ; /*first weekend */
+				if  (amount > 0 && (day == 5 || day == 6)) { remdays =  4 - day; day = 4;}
+				var newamount  =  day + amount - add;
+				var weeks = parseInt(newamount / 5);
+				var newday = newamount%5;
+				newHebrDate.setDate(date.getDate() - day+ adddays + weeks * 7 + remdays + newday + add);
+			}
+			break;
+		case "year":
+			newHebrDate.setFullYear(date.getFullYear() + amount);
+			break;
+		case "week":
+			amount *= 7;
+			newHebrDate.setDate(date.getDate() + amount);
+			break;
+		case "month":
+			var month = date.getMonth(),
+				newMonth = month + amount;
+			if(!date.isLeapYear(date.getFullYear())){
+				if(month < 5 && newMonth >= 5){ newMonth++;}
+				else if (month > 5 && newMonth <= 5){ newMonth--;}
+			}
+			newHebrDate.setMonth(newMonth);
+			break;
+		case "hour":
+			newHebrDate.setHours(date.getHours() + amount);
+			break;
+		case "minute":
+			newHebrDate._addMinutes(amount);
+			break;
+		case "second":
+			newHebrDate._addSeconds(amount);
+			break;
+		case "millisecond":
+			newHebrDate._addMilliseconds(amount);
+			break;
+	}
+
+	return newHebrDate; // dojox.date.hebrew.Date
+};
+
+dhebrew.difference = function(/*dojox/date/hebrew/Date*/date1, /*dojox/date/hebrew/Date?*/date2, /*String?*/interval){
+	// summary:
+	//		date2 - date1
+	// date1: dojox/date/hebrew/Date
+	// date2: dojox/date/hebrew/Date
+	//		If not specified, the current dojox.date.hebrew.Date is used.
+	// interval:
+	//		A string representing the interval.  One of the following:
+	//		"year", "month", "day", "hour", "minute", "second",
+	//		"millisecond",  "week", "weekday"
+	//
+	//		Defaults to "day".
+
+	//	based on and similar to dojo.date.difference
+
+	date2 = date2 || new HDate();
+	interval = interval || "day";
+	var yearDiff = date2.getFullYear() - date1.getFullYear();
+	var delta = 1; // Integer return value
+	switch(interval){
+		case "weekday":
+			var days = Math.round(dhebrew.difference(date1, date2, "day"));
+			var weeks = parseInt(dhebrew.difference(date1, date2, "week"));
+			var mod = days % 7;
+
+			// Even number of weeks
+			if(mod == 0){
+				days = weeks*5;
+			}else{
+				// Weeks plus spare change (< 7 days)
+				var adj = 0;
+				var aDay = date1.getDay();
+				var bDay = date2.getDay();
+	
+				weeks = parseInt(days/7);
+				mod = days % 7;
+				// Mark the date advanced by the number of
+				// round weeks (may be zero)
+				var dtMark = new HDate(date1);
+				dtMark.setDate(dtMark.getDate()+(weeks*7));
+				var dayMark = dtMark.getDay();
+	
+				// Spare change days -- 6 or less
+				if(days > 0){
+					switch(true){
+						// Range starts on Fri
+						case aDay == 5:
+							adj = -1;
+							break;
+						// Range starts on Sat
+						case aDay == 6:
+							adj = 0;
+							break;
+						// Range ends on Fri
+						case bDay == 5:
+							adj = -1;
+							break;
+						// Range ends on Sat
+						case bDay == 6:
+							adj = -2;
+							break;
+						// Range contains weekend
+						case (dayMark + mod) > 5:
+							adj = -2;
+					}
+				}else if(days < 0){
+					switch(true){
+						// Range starts on Fri
+						case aDay == 5:
+							adj = 0;
+							break;
+						// Range starts on Sat
+						case aDay == 6:
+							adj = 1;
+							break;
+						// Range ends on Fri
+						case bDay == 5:
+							adj = 2;
+							break;
+						// Range ends on Sat
+						case bDay == 6:
+							adj = 1;
+							break;
+						// Range contains weekend
+						case (dayMark + mod) < 0:
+							adj = 2;
+					}
+				}
+				days += adj;
+				days -= (weeks*2);
+			}
+			delta = days;
+			break;
+		case "year":
+			delta = yearDiff;
+			break;
+		case "month":
+			var startdate =  (date2.toGregorian() > date1.toGregorian()) ? date2 : date1; // more
+			var enddate = (date2.toGregorian() > date1.toGregorian()) ? date1 : date2;
+			
+			var month1 = startdate.getMonth();
+			var month2 = enddate.getMonth();
+			
+			if(yearDiff == 0){
+				delta = ( !date2.isLeapYear(date2.getFullYear())  && startdate.getMonth() > 5 && enddate.getMonth() <=5) ? (startdate.getMonth() - enddate.getMonth() - 1) :
+						(startdate.getMonth() - enddate.getMonth() );
+			}else{
+				delta = (!enddate.isLeapYear(enddate.getFullYear()) &&  month2 < 6) ? (13-month2-1) : (13-month2);
+				delta +=  (!startdate.isLeapYear(startdate.getFullYear()) &&  month1 > 5) ? (month1 -1): month1;
+				var i = enddate.getFullYear()  + 1;
+				var e = startdate.getFullYear();
+				for (i;   i < e;  i++){
+					delta += enddate.isLeapYear(i) ? 13 : 12;
+				}
+			}
+			if(date2.toGregorian() < date1.toGregorian()){
+				delta = -delta;
+			}
+			break;
+		case "week":
+			// Truncate instead of rounding
+			// Don't use Math.floor -- value may be negative
+			delta = parseInt(dhebrew.difference(date1, date2, "day")/7);
+			break;
+		case "day":
+			delta /= 24;
+			// fallthrough
+		case "hour":
+			delta /= 60;
+			// fallthrough
+		case "minute":
+			delta /= 60;
+			// fallthrough
+		case "second":
+			delta /= 1000;
+			// fallthrough
+		case "millisecond":
+			delta *= date2.toGregorian().getTime()- date1.toGregorian().getTime();
+	}
+
+	// Round for fractional values and DST leaps
+	return Math.round(delta); // Number (integer)
+};
+return dhebrew;
+});

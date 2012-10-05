@@ -1,16 +1,12 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sv/LocalImage", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sv/LocalImage", ({
 	insertImageTitle: "Infoga bild",
 	url: "Bild",
 	browse: "Bläddra...",
-	text: "Beskrivning",
+	text: "Beksrivning",
 	set: "Infoga",
-	invalidMessage: "Ogiltigt bildfilformat",
-	prePopuTextUrl: "Ange en bild-URL-adress",
-	prePopuTextBrowse: " eller bläddra efter en lokal fil."
+	invalidMessage: "Ogiltig bildfilstyp",
+	prePopuTextUrl: "Fyll i bild-URL",
+	prePopuTextBrowse: " eller bläddra till en lokal fil."
 })
-
-//end v1.x content
 );

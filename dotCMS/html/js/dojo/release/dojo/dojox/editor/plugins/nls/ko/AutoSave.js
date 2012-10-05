@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ko/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ko/AutoSave", ({
 	"saveLabel": "저장",
 	"saveSettingLabelOn": "자동 저장 간격 설정...",
 	"saveSettingLabelOff": "자동 저장 끄기",
@@ -14,6 +12,4 @@ define(
 	"saveMessageSuccess": "${0}에 저장됨",
 	"saveMessageFail": "${0}에 저장 실패"
 })
-
-//end v1.x content
 );

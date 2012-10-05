@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/form/nls/ca/CheckedMultiSelect", ({
 	invalidMessage: "Cal seleccionar, com a mínim, un element.",

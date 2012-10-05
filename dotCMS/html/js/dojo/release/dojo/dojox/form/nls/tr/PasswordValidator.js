@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/form/nls/tr/PasswordValidator", //begin v1.x content
-({
+"dojox/form/nls/tr/PasswordValidator", ({
         nomatchMessage: "Parolalar eşleşmiyor.",
-		badPasswordMessage: "Geçersiz Parola."
+	badPasswordMessage: "Geçersiz Parola."
 })
-
-//end v1.x content
 );

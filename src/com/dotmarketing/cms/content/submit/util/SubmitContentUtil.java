@@ -1,5 +1,6 @@
 package com.dotmarketing.cms.content.submit.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,6 +17,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -30,8 +32,10 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
@@ -53,6 +57,9 @@ import com.liferay.util.FileUtil;
  */
 public class SubmitContentUtil {
 
+	public static final String errorFieldVariable = "errorFieldMessage";
+	private static FieldAPI fieldAPI = APILocator.getFieldAPI();
+	private static UserAPI userAPI = APILocator.getUserAPI();
 	private static ContentletAPI conAPI = APILocator.getContentletAPI();
 	@SuppressWarnings("unchecked")
 	private static PermissionAPI perAPI = APILocator.getPermissionAPI();
@@ -127,14 +134,11 @@ public class SubmitContentUtil {
 	 * @throws DotDataException
 	 * @throws DotSecurityExceptionlanguageId
 	 */
-	private static Contentlet addFileToContentlet(Contentlet contentlet, Field field,Host host, java.io.File uploadedFile, User user, String title)throws DotSecurityException, DotDataException{
-		String identifier = String.valueOf(contentlet.getIdentifier());
-		//String folderPath = ROOT_FILE_FOLDER+contentlet.getStructure().getName()+"/"+identifier.substring(0, 1)+"/"+identifier.substring(1, 2)+"/"+identifier+"/";
+	private static void addFileToContentlet(Contentlet contentlet, Field field,Host host, java.io.File uploadedFile, User user, String title)throws DotSecurityException, DotDataException{
 		String folderPath = ROOT_FILE_FOLDER+contentlet.getStructure().getName();
 		try {
 			FileAsset file = saveFile(user,host,uploadedFile,folderPath, title);
-			conAPI.setContentletProperty(contentlet, field, file.getIdentifier());
-			return contentlet;
+			contentlet.setStringProperty(field.getVelocityVarName(), file.getIdentifier());
 		} catch (Exception e) {
 			Logger.error(SubmitContentUtil.class, e.getMessage());
 			throw new DotDataException("File could not be saved. "+e.getMessage());
@@ -297,13 +301,17 @@ public class SubmitContentUtil {
 	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
 		Structure st = StructureCache.getStructureByName(structureName);
+		String contentletInode = null;
+		Field fileField = new Field(),imageField=new Field(),binaryField=new Field();
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
-		for (Field field : fields) {//GIT-763
-			if(field.isRequired() && !parametersName.contains(field.getVelocityVarName())){
-				parametersName.add(field.getVelocityVarName());
-				values.add(new String[]{});
-			}
-		}		
+		for (Field field : fields) {
+			if(parametersName.contains(field.getVelocityVarName()+"oldFileInode"))
+				fileField =field;
+			else if(parametersName.contains(field.getVelocityVarName()+"oldImageInode"))
+				imageField= field;
+			else if(parametersName.contains(field.getVelocityVarName()+"oldBinaryInode"))
+				binaryField= field;
+		}	
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
 		contentlet.setLanguageId(lAPI.getDefaultLanguage().getId());
@@ -312,6 +320,33 @@ public class SubmitContentUtil {
 			String fieldname = parametersName.get(i);
 			String[] fieldValue = values.get(i);
 			setField(st, contentlet, fieldname, fieldValue);
+			
+			//To Update Content
+			if(fieldname.equalsIgnoreCase("contentIdentifier"))
+				contentlet.setIdentifier(VelocityUtil.cleanVelocity(values.get(i)[0]));
+			else if(fieldname.equalsIgnoreCase("contentInode"))
+				contentletInode = VelocityUtil.cleanVelocity(values.get(i)[0]);
+			else if(fieldname.equalsIgnoreCase(fileField.getVelocityVarName()+"oldFileInode")){
+				if(UtilMethods.isSet(VelocityUtil.cleanVelocity(values.get(i)[0]))){
+					APILocator.getContentletAPI().setContentletProperty(contentlet, fileField, VelocityUtil.cleanVelocity(values.get(i)[0]));
+				}
+			}
+			else if(fieldname.equalsIgnoreCase(imageField.getVelocityVarName()+"oldImageInode")){
+				if(UtilMethods.isSet(VelocityUtil.cleanVelocity(values.get(i)[0]))){
+					APILocator.getContentletAPI().setContentletProperty(contentlet, imageField, VelocityUtil.cleanVelocity(values.get(i)[0]));
+				}
+			}
+			else if(fieldname.equalsIgnoreCase(binaryField.getVelocityVarName()+"oldBinaryInode")){
+				if(UtilMethods.isSet(VelocityUtil.cleanVelocity(values.get(i)[0]))){
+					User user = APILocator.getUserAPI().getSystemUser();
+					try {
+						File newFile = APILocator.getContentletAPI().getBinaryFile(contentletInode, binaryField.getVelocityVarName(), user);
+						contentlet.setBinary(binaryField.getVelocityVarName(), newFile);
+					} catch (Exception e) {
+						Logger.debug(SubmitContentUtil.class, e.getMessage());
+					} 
+				}
+			}
 		}
 
 		return contentlet;
@@ -478,51 +513,37 @@ public class SubmitContentUtil {
 
 			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, roleAPI.loadRoleByKey(moderatorRole).getId());
 		}
+		
+		/*
+		* Saving file and images
+		*/
+		if(fileParameters.size() > 0) { 
+		    for(Map<String,Object> value : fileParameters) {
+		         Field field = (Field)value.get("field");
+		         //http://jira.dotmarketing.net/browse/DOTCMS-3463
+		         if(field.getFieldType().equals(Field.FieldType.IMAGE.toString())|| 
+		                 field.getFieldType().equals(Field.FieldType.FILE.toString())){
+		           java.io.File uploadedFile = (java.io.File)value.get("file");
+		           try {
+		             if(!UtilMethods.isSet(FileUtil.getBytes(uploadedFile)))
+		               continue;
+		           } catch (IOException e) {
+		               Logger.error(SubmitContentUtil.class, e.getMessage());
+		           }
+		           String title = (String)value.get("title");
+		           Host host = (Host)value.get("host");
+		           addFileToContentlet(contentlet, field,host, uploadedFile, user, title);
+		         }
+            }
+		}
 
 		/**
 		 * Saving Content
 		 */
 		contentlet = conAPI.checkin(contentlet, relationships, cats, permissionList, user, true);
 
-		try {
-		APILocator.getVersionableAPI().setWorking(contentlet);
-		} catch(DotStateException e) {}
 		if(autoPublish)
 		    APILocator.getVersionableAPI().setLive(contentlet);
-
-		/**
-		 * Saving file and images
-		 */
-
-		if(fileParameters.size() > 0){
-
-			for(Map<String,Object> value : fileParameters){
-				Field field = (Field)value.get("field");
-				//http://jira.dotmarketing.net/browse/DOTCMS-3463
-				if(field.getFieldType().equals(Field.FieldType.IMAGE.toString())||
-						field.getFieldType().equals(Field.FieldType.FILE.toString())){
-					java.io.File uploadedFile = (java.io.File)value.get("file");
-					try {
-						if(!UtilMethods.isSet(FileUtil.getBytes(uploadedFile)))
-							continue;
-					} catch (IOException e) {
-						Logger.error(SubmitContentUtil.class, e.getMessage());
-					}
-					String title = (String)value.get("title");
-					Host host = (Host)value.get("host");
-					contentlet = addFileToContentlet(contentlet, field,host, uploadedFile, user, title);
-				}
-			}
-		}
-
-
-
-		/*}catch(Exception e){
-
-			Logger.error(SubmitContentUtil.class, e.getMessage());
-			throw new DotContentletStateException("Unable to perform checkin. "+e.getMessage());
-
-		}*/
 
 		return contentlet;
 	}
@@ -542,6 +563,24 @@ public class SubmitContentUtil {
 		return false;
 	}
 
-
+	/**
+	 * Get the specified field message. If the field attribute exist
+	 * @param field Field
+	 * @param fieldAttribute Name of the field attribute
+	 * @return String
+	 * @throws DotSecurityException 
+	 * @throws DotDataException 
+	 */
+	public static String getCustomizedFieldErrorMessage(Field field, String fieldAttribute) throws DotDataException, DotSecurityException{
+		String errorMessage = null;
+		List<FieldVariable> fieldVariables = fieldAPI.getFieldVariablesForField(field.getInode(), userAPI.getSystemUser(), false);		
+		for(FieldVariable fv : fieldVariables){
+			if(fv.getKey().equals(fieldAttribute)){
+				errorMessage = fv.getValue();
+				break;
+			}
+		}
+		return errorMessage;
+	}
 
 }

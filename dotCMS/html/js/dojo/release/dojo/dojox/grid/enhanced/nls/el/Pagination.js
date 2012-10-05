@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/el/Pagination", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/el/Pagination", ({
 	"descTemplate": "${2} - ${3} από ${1} ${0}",
 	"firstTip": "Πρώτη σελίδα",
 	"lastTip": "Τελευταία σελίδα",
@@ -18,7 +16,6 @@ define(
 	"pageCountIndication": " (${0} σελίδες)",
 	"dialogConfirm": "Μετάβαση",
 	"dialogCancel": "Ακύρωση",
-	"all": "όλα"
+	"all": "Όλα"
 })
-//end v1.x content
 );

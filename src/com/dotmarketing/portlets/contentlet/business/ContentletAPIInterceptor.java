@@ -528,17 +528,17 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#deleteOldContent(java.util.Date, int)
 	 */
-	public int deleteOldContent(Date deleteFrom, int offset) throws DotDataException {
+	public int deleteOldContent(Date deleteFrom) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.deleteOldContent(deleteFrom, offset);
+			boolean preResult = pre.deleteOldContent(deleteFrom);
 			if(!preResult){
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		int c = conAPI.deleteOldContent(deleteFrom, offset);
+		int c = conAPI.deleteOldContent(deleteFrom);
 		for(ContentletAPIPostHook post : postHooks){
-			post.deleteOldContent(deleteFrom, offset,c);
+			post.deleteOldContent(deleteFrom,c);
 		}
 		return c;
 	}
@@ -1688,8 +1688,13 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	public void addPreHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
-		if(o instanceof ContentletAPIPreHook){
-			preHooks.add((ContentletAPIPreHook)o);
+        addPreHook( o );
+    }
+
+    public void addPreHook ( Object preHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+
+        if ( preHook instanceof ContentletAPIPreHook ) {
+            preHooks.add( (ContentletAPIPreHook) preHook );
 		}else {
 			throw new InstantiationException("This hook must implement ContentletAPIPrehook");
 		}
@@ -1706,8 +1711,13 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	
 	public void addPostHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
-		if(o instanceof ContentletAPIPostHook){
-			postHooks.add((ContentletAPIPostHook)o);
+        addPostHook( o );
+    }
+
+    public void addPostHook ( Object postHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+
+        if ( postHook instanceof ContentletAPIPostHook ) {
+            postHooks.add( (ContentletAPIPostHook) postHook );
 		}else {
 			throw new InstantiationException("This hook must implement ContentletAPIPosthook");
 		}		
@@ -1722,13 +1732,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	public void delPreHood(int indexToRemAt) {
-		postHooks.remove(indexToRemAt);
-	}
-	
-	public void delPostHood(int indexToRemAt) {
-		preHooks.remove(indexToRemAt);
-	}
+    public void delPreHook ( int indexToRemAt ) {
+        preHooks.remove( indexToRemAt );
+    }
+
+    public void delPreHook ( Object preHook ) {
+        preHooks.remove( preHook );
+    }
+
+    public void delPostHook ( int indexToRemAt ) {
+        postHooks.remove( indexToRemAt );
+    }
+
+    public void delPostHook ( Object postHook ) {
+        postHooks.remove( postHook );
+    }
 
 	public List<String> getPreHooks() {
 		List<String> result = new ArrayList<String>();
@@ -2021,6 +2039,24 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
+	
+	/* (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int, boolean)
+	 */
+	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,	DotSecurityException, ParseException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		List<Contentlet> c = conAPI.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
+		for(ContentletAPIPostHook post : postHooks){
+			post.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
+		}
+		return c;
+	}	
 
 	public void refreshContentUnderFolder(Folder folder)
 			throws DotReindexStateException {

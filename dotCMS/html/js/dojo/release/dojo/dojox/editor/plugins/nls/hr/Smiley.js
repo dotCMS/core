@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/editor/plugins/nls/hr/Smiley", ({
 	smiley: "Umetni emotikon",
@@ -9,7 +8,7 @@ define(
 	emoticonCool: "staložen",
 	emoticonAngry: "ljut",
 	emoticonHalf: "indiferentan",
-	emoticonEyebrow: "namigivanje",
+	emoticonEyebrow: "podignuta obrva",
 	emoticonFrown: "namršten",
 	emoticonShy: "stidljiv",
 	emoticonGoofy: "budalast",

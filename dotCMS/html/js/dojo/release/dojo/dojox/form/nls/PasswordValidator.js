@@ -1,4 +1,3 @@
-//>>built
 define("dojox/form/nls/PasswordValidator", { root:
 //begin v1.x content
 ({

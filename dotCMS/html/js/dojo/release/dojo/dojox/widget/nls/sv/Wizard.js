@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/sv/Wizard", //begin v1.x content
-({
+"dojox/widget/nls/sv/Wizard", ({
 next: "Nästa",
 previous: "Föregående",
-done: "Stäng"
+done: "Klart"
 })
-//end v1.x content
 );

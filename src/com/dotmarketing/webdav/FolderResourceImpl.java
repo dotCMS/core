@@ -15,6 +15,7 @@ import java.util.Map;
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.FolderResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -24,8 +25,10 @@ import com.bradmcevoy.http.LockingCollectionResource;
 import com.bradmcevoy.http.MakeCollectionableResource;
 import com.bradmcevoy.http.Range;
 import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.Request.Method;
+import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -45,21 +48,16 @@ import com.liferay.portal.model.User;
  * @author Jason Tesser
  *
  */
-public class FolderResourceImpl implements LockableResource, LockingCollectionResource, FolderResource , MakeCollectionableResource {
+public class FolderResourceImpl extends BasicFolderResourceImpl implements LockableResource, LockingCollectionResource, FolderResource , MakeCollectionableResource {
 
-	private DotWebdavHelper dotDavHelper;
+	private DotWebdavHelper dotDavHelper=new DotWebdavHelper();
 	private Folder folder;
-	private String path;
-	private User user;
-	private boolean isAutoPub = false;
 	private PermissionAPI perAPI;
 	private HostAPI hostAPI;
 	
 	public FolderResourceImpl(Folder folder, String path) {
+	    super(path);
 		this.perAPI = APILocator.getPermissionAPI();
-		this.dotDavHelper = new DotWebdavHelper();
-		this.isAutoPub = dotDavHelper.isAutoPub(path);
-		this.path = path;
 		this.folder = folder;
 		this.hostAPI = APILocator.getHostAPI();
 	}
@@ -68,11 +66,12 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 	 * @see com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		String folderPath ="";
 		if(dotDavHelper.isTempResource(newName)){
 			Host host;
 			try {
-				host = hostAPI.find(folder.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+				host = hostAPI.find(folder.getHostId(), user, false);
 				folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
 			} catch (DotDataException e) {
 				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
@@ -104,9 +103,10 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 	 * @see com.bradmcevoy.http.CollectionResource#child(java.lang.String)
 	 */
 	public Resource child(String childName) {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Resource> children;
 		try {
-			children = dotDavHelper.getChildrenOfFolder(folder, isAutoPub);
+			children = dotDavHelper.getChildrenOfFolder(folder, user, isAutoPub);
 		} catch (IOException e) {
 			Logger.error(FolderResourceImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -141,10 +141,11 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 	 * @see com.bradmcevoy.http.CollectionResource#getChildren()
 	 */
 	public List<? extends Resource> getChildren() {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Resource> children;
 		try {
-			children = dotDavHelper.getChildrenOfFolder(folder, isAutoPub);
-		} catch (IOException e) {
+            children = dotDavHelper.getChildrenOfFolder( folder, user, isAutoPub );
+        } catch (IOException e) {
 			Logger.error(FolderResourceImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
@@ -156,8 +157,7 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 	 */
 	public Object authenticate(String username, String password) {
 		try {
-			this.user =  dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -172,10 +172,13 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 			
 			if(auth == null)
 				return false;
-			else if(method.isWrite){
-				return perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
-			}else if(!method.isWrite){
-				return perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false);
+			else {
+			    User user=(User)auth.getTag();
+			    if(method.isWrite){
+    				return perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
+    			}else if(!method.isWrite){
+    				return perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false);
+    			}
 			}
 
 		} catch (DotDataException e) {
@@ -229,99 +232,10 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 	}
 
 	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.PutableResource#createNew(java.lang.String, java.io.InputStream, java.lang.Long, java.lang.String)
-	 */
-	public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException, DotRuntimeException {
-		if(newName.startsWith("."))
-		    // http://jira.dotmarketing.net/browse/DOTCMS-7285
-		    return null;
-	    
-	    if(!path.endsWith("/")){
-			path = path + "/";
-		}
-		if(!dotDavHelper.isTempResource(newName)){
-			try {
-				dotDavHelper.createResource(path + newName, isAutoPub, user);
-			} catch (DotDataException e) {
-				Logger.error(FolderResourceImpl.class,e.getMessage(),e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			}
-			IFileAsset f = null;
-			try {
-				dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
-				f = dotDavHelper.loadFile(path + newName);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-			FileResourceImpl fr = new FileResourceImpl(f, f.getFileName());
-			return fr;
-		}
-		String folderPath = "";
-		Host host;
-		try {
-			host = hostAPI.find(folder.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-			folderPath = APILocator.getIdentifierAPI().find(folder).getPath(); 
-		} catch (DotDataException e) {
-			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
-		} catch (DotSecurityException e) {
-			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage());
-		}
-		String p = folderPath;
-		if(!p.endsWith("/")){
-			p = p + "/";
-		}
-		File f = dotDavHelper.createTempFile("/" + host.getHostname() + p + newName);
-		FileOutputStream fos = new FileOutputStream(f);
-		byte[] buf = new byte[256];
-        int read = -1;
-		while ((read = in.read()) != -1) {
-			fos.write(read);
-		}
-		TempFileResourceImpl tr = new TempFileResourceImpl(f, path + newName, isAutoPub);
-		return tr;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.CopyableResource#copyTo(com.bradmcevoy.http.CollectionResource, java.lang.String)
-	 */
-	public void copyTo(CollectionResource collRes, String name) {
-		if(collRes instanceof TempFolderResourceImpl){
-			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
-			try {
-				dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), name, isAutoPub);
-			} catch (IOException e) {
-				Logger.error(this, e.getMessage(), e);
-				return;
-			}
-		}else if(collRes instanceof FolderResourceImpl){
-			FolderResourceImpl fr = (FolderResourceImpl)collRes;
-			try {
-				String p = fr.getPath();
-				if(!p.endsWith("/"))
-					p = p + "/";
-				dotDavHelper.copyFolder(this.getPath(), p+name, user, isAutoPub);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-		}else if(collRes instanceof HostResourceImpl){
-			HostResourceImpl hr = (HostResourceImpl)collRes;
-			String p = this.getPath();
-			if(!p.endsWith("/"))
-				p = p +"/";
-			try {
-				dotDavHelper.copyFolder(p, "/" + hr.getName() + "/"+name, user, isAutoPub);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-		}
-	}
-
-	/* (non-Javadoc)
 	 * @see com.bradmcevoy.http.DeletableResource#delete()
 	 */
 	public void delete() throws DotRuntimeException{
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		try {
 			dotDavHelper.removeObject(path, user);
 		} catch (Exception e) {
@@ -336,23 +250,52 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 	public Long getMaxAgeSeconds() {
 		return new Long(0);
 	}
-
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.GetableResource#sendContent(java.io.OutputStream, com.bradmcevoy.http.Range, java.util.Map)
-	 */
-	public void sendContent(OutputStream arg0, Range arg1, Map<String, String> arg2, String arg3) throws IOException {
-		return;
-	}
+	
+	@Override
+    public void copyTo(CollectionResource collRes, String name) throws NotAuthorizedException, BadRequestException,ConflictException {
+        User user=(User)HttpManager.request().getAuthorization().getTag();
+        
+        if(collRes instanceof TempFolderResourceImpl){
+            TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
+            try {
+                dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub);
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+                return;
+            }
+        }else if(collRes instanceof FolderResourceImpl){
+            FolderResourceImpl fr = (FolderResourceImpl)collRes;
+            try {
+                String p = fr.getPath();
+                if(!p.endsWith("/"))
+                    p = p + "/";
+                dotDavHelper.copyFolder(path, p+name, user, isAutoPub);
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }else if(collRes instanceof HostResourceImpl){
+            HostResourceImpl hr = (HostResourceImpl)collRes;
+            String p = path;
+            if(!p.endsWith("/"))
+                p = p +"/";
+            try {
+                dotDavHelper.copyFolder(p, "/" + hr.getName() + "/"+name, user, isAutoPub);
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+    }
 
 	/* (non-Javadoc)
 	 * @see com.bradmcevoy.http.MoveableResource#moveTo(com.bradmcevoy.http.CollectionResource, java.lang.String)
 	 */
 	public void moveTo(CollectionResource collRes, String name) throws DotRuntimeException{
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			Logger.debug(this, "Webdav clients wants to move a file from dotcms to a tempory storage but we don't allow this in fear that the tranaction may break and delete a file from dotcms");
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
-				dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), name, isAutoPub);
+				dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub);
 			} catch (IOException e) {
 				Logger.error(this, e.getMessage(), e);
 				return;
@@ -363,7 +306,7 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 				Host host;
 				String folderPath = "";
 				try {
-					host = hostAPI.find(fr.getFolder().getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+					host = hostAPI.find(fr.getFolder().getHostId(), user, false);
 					folderPath = APILocator.getIdentifierAPI().find(fr.getFolder()).getPath();
 				} catch (DotDataException e) {
 					Logger.error(FolderResourceImpl.class, e.getMessage(), e);
@@ -465,5 +408,4 @@ public class FolderResourceImpl implements LockableResource, LockingCollectionRe
 		return lock(timeout, lockInfo).getLockToken();
 	}
 
-	
 }

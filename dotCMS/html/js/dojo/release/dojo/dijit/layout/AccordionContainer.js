@@ -1,2 +1,540 @@
-//>>built
-require({cache:{"url:dijit/layout/templates/AccordionButton.html":"<div data-dojo-attach-event='onclick:_onTitleClick' class='dijitAccordionTitle' role=\"presentation\">\n\t<div data-dojo-attach-point='titleNode,focusNode' data-dojo-attach-event='onkeypress:_onTitleKeyPress'\n\t\t\tclass='dijitAccordionTitleFocus' role=\"tab\" aria-expanded=\"false\"\n\t\t><span class='dijitInline dijitAccordionArrow' role=\"presentation\"></span\n\t\t><span class='arrowTextUp' role=\"presentation\">+</span\n\t\t><span class='arrowTextDown' role=\"presentation\">-</span\n\t\t><img src=\"${_blankGif}\" alt=\"\" class=\"dijitIcon\" data-dojo-attach-point='iconNode' style=\"vertical-align: middle\" role=\"presentation\"/>\n\t\t<span role=\"presentation\" data-dojo-attach-point='titleTextNode' class='dijitAccordionText'></span>\n\t</div>\n</div>\n"}});define("dijit/layout/AccordionContainer",["require","dojo/_base/array","dojo/_base/declare","dojo/_base/event","dojo/_base/fx","dojo/dom","dojo/dom-attr","dojo/dom-class","dojo/dom-construct","dojo/dom-geometry","dojo/_base/kernel","dojo/keys","dojo/_base/lang","dojo/_base/sniff","dojo/topic","../focus","../_base/manager","dojo/ready","../_Widget","../_Container","../_TemplatedMixin","../_CssStateMixin","./StackContainer","./ContentPane","dojo/text!./templates/AccordionButton.html"],function(_1,_2,_3,_4,fx,_5,_6,_7,_8,_9,_a,_b,_c,_d,_e,_f,_10,_11,_12,_13,_14,_15,_16,_17,_18){var _19=_3("dijit.layout._AccordionButton",[_12,_14,_15],{templateString:_18,label:"",_setLabelAttr:{node:"titleTextNode",type:"innerHTML"},title:"",_setTitleAttr:{node:"titleTextNode",type:"attribute",attribute:"title"},iconClassAttr:"",_setIconClassAttr:{node:"iconNode",type:"class"},baseClass:"dijitAccordionTitle",getParent:function(){return this.parent;},buildRendering:function(){this.inherited(arguments);var _1a=this.id.replace(" ","_");_6.set(this.titleTextNode,"id",_1a+"_title");this.focusNode.setAttribute("aria-labelledby",_6.get(this.titleTextNode,"id"));_5.setSelectable(this.domNode,false);},getTitleHeight:function(){return _9.getMarginSize(this.domNode).h;},_onTitleClick:function(){var _1b=this.getParent();_1b.selectChild(this.contentWidget,true);_f.focus(this.focusNode);},_onTitleKeyPress:function(evt){return this.getParent()._onKeyPress(evt,this.contentWidget);},_setSelectedAttr:function(_1c){this._set("selected",_1c);this.focusNode.setAttribute("aria-expanded",_1c);this.focusNode.setAttribute("aria-selected",_1c);this.focusNode.setAttribute("tabIndex",_1c?"0":"-1");}});var _1d=_3("dijit.layout._AccordionInnerContainer",[_12,_15],{baseClass:"dijitAccordionInnerContainer",isLayoutContainer:true,buildRendering:function(){this.domNode=_8.place("<div class='"+this.baseClass+"' role='presentation'>",this.contentWidget.domNode,"after");var _1e=this.contentWidget,cls=_c.isString(this.buttonWidget)?_c.getObject(this.buttonWidget):this.buttonWidget;this.button=_1e._buttonWidget=(new cls({contentWidget:_1e,label:_1e.title,title:_1e.tooltip,dir:_1e.dir,lang:_1e.lang,textDir:_1e.textDir,iconClass:_1e.iconClass,id:_1e.id+"_button",parent:this.parent})).placeAt(this.domNode);this.containerNode=_8.place("<div class='dijitAccordionChildWrapper' style='display:none'>",this.domNode);_8.place(this.contentWidget.domNode,this.containerNode);},postCreate:function(){this.inherited(arguments);var _1f=this.button;this._contentWidgetWatches=[this.contentWidget.watch("title",_c.hitch(this,function(_20,_21,_22){_1f.set("label",_22);})),this.contentWidget.watch("tooltip",_c.hitch(this,function(_23,_24,_25){_1f.set("title",_25);})),this.contentWidget.watch("iconClass",_c.hitch(this,function(_26,_27,_28){_1f.set("iconClass",_28);}))];},_setSelectedAttr:function(_29){this._set("selected",_29);this.button.set("selected",_29);if(_29){var cw=this.contentWidget;if(cw.onSelected){cw.onSelected();}}},startup:function(){this.contentWidget.startup();},destroy:function(){this.button.destroyRecursive();_2.forEach(this._contentWidgetWatches||[],function(w){w.unwatch();});delete this.contentWidget._buttonWidget;delete this.contentWidget._wrapperWidget;this.inherited(arguments);},destroyDescendants:function(_2a){this.contentWidget.destroyRecursive(_2a);}});var _2b=_3("dijit.layout.AccordionContainer",_16,{duration:_10.defaultDuration,buttonWidget:_19,baseClass:"dijitAccordionContainer",buildRendering:function(){this.inherited(arguments);this.domNode.style.overflow="hidden";this.domNode.setAttribute("role","tablist");},startup:function(){if(this._started){return;}this.inherited(arguments);if(this.selectedChildWidget){var _2c=this.selectedChildWidget.containerNode.style;_2c.display="";_2c.overflow="auto";this.selectedChildWidget._wrapperWidget.set("selected",true);}},layout:function(){var _2d=this.selectedChildWidget;if(!_2d){return;}var _2e=_2d._wrapperWidget.domNode,_2f=_9.getMarginExtents(_2e),_30=_9.getPadBorderExtents(_2e),_31=_2d._wrapperWidget.containerNode,_32=_9.getMarginExtents(_31),_33=_9.getPadBorderExtents(_31),_34=this._contentBox;var _35=0;_2.forEach(this.getChildren(),function(_36){if(_36!=_2d){_35+=_9.getMarginSize(_36._wrapperWidget.domNode).h;}});this._verticalSpace=_34.h-_35-_2f.h-_30.h-_32.h-_33.h-_2d._buttonWidget.getTitleHeight();this._containerContentBox={h:this._verticalSpace,w:this._contentBox.w-_2f.w-_30.w-_32.w-_33.w};if(_2d){_2d.resize(this._containerContentBox);}},_setupChild:function(_37){_37._wrapperWidget=_1d({contentWidget:_37,buttonWidget:this.buttonWidget,id:_37.id+"_wrapper",dir:_37.dir,lang:_37.lang,textDir:_37.textDir,parent:this});this.inherited(arguments);},addChild:function(_38,_39){if(this._started){var _3a=this.containerNode;if(_39&&typeof _39=="number"){var _3b=_12.prototype.getChildren.call(this);if(_3b&&_3b.length>=_39){_3a=_3b[_39-1].domNode;_39="after";}}_8.place(_38.domNode,_3a,_39);if(!_38._started){_38.startup();}this._setupChild(_38);_e.publish(this.id+"-addChild",_38,_39);this.layout();if(!this.selectedChildWidget){this.selectChild(_38);}}else{this.inherited(arguments);}},removeChild:function(_3c){if(_3c._wrapperWidget){_8.place(_3c.domNode,_3c._wrapperWidget.domNode,"after");_3c._wrapperWidget.destroy();delete _3c._wrapperWidget;}_7.remove(_3c.domNode,"dijitHidden");this.inherited(arguments);},getChildren:function(){return _2.map(this.inherited(arguments),function(_3d){return _3d.declaredClass=="dijit.layout._AccordionInnerContainer"?_3d.contentWidget:_3d;},this);},destroy:function(){if(this._animation){this._animation.stop();}_2.forEach(this.getChildren(),function(_3e){if(_3e._wrapperWidget){_3e._wrapperWidget.destroy();}else{_3e.destroyRecursive();}});this.inherited(arguments);},_showChild:function(_3f){_3f._wrapperWidget.containerNode.style.display="block";return this.inherited(arguments);},_hideChild:function(_40){_40._wrapperWidget.containerNode.style.display="none";this.inherited(arguments);},_transition:function(_41,_42,_43){if(_d("ie")<8){_43=false;}if(this._animation){this._animation.stop(true);delete this._animation;}var _44=this;if(_41){_41._wrapperWidget.set("selected",true);var d=this._showChild(_41);if(this.doLayout&&_41.resize){_41.resize(this._containerContentBox);}}if(_42){_42._wrapperWidget.set("selected",false);if(!_43){this._hideChild(_42);}}if(_43){var _45=_41._wrapperWidget.containerNode,_46=_42._wrapperWidget.containerNode;var _47=_41._wrapperWidget.containerNode,_48=_9.getMarginExtents(_47),_49=_9.getPadBorderExtents(_47),_4a=_48.h+_49.h;_46.style.height=(_44._verticalSpace-_4a)+"px";this._animation=new fx.Animation({node:_45,duration:this.duration,curve:[1,this._verticalSpace-_4a-1],onAnimate:function(_4b){_4b=Math.floor(_4b);_45.style.height=_4b+"px";_46.style.height=(_44._verticalSpace-_4a-_4b)+"px";},onEnd:function(){delete _44._animation;_45.style.height="auto";_42._wrapperWidget.containerNode.style.display="none";_46.style.height="auto";_44._hideChild(_42);}});this._animation.onStop=this._animation.onEnd;this._animation.play();}return d;},_onKeyPress:function(e,_4c){if(this.disabled||e.altKey||!(_4c||e.ctrlKey)){return;}var c=e.charOrCode;if((_4c&&(c==_b.LEFT_ARROW||c==_b.UP_ARROW))||(e.ctrlKey&&c==_b.PAGE_UP)){this._adjacent(false)._buttonWidget._onTitleClick();_4.stop(e);}else{if((_4c&&(c==_b.RIGHT_ARROW||c==_b.DOWN_ARROW))||(e.ctrlKey&&(c==_b.PAGE_DOWN||c==_b.TAB))){this._adjacent(true)._buttonWidget._onTitleClick();_4.stop(e);}}}});if(!_a.isAsync){_11(0,function(){var _4d=["dijit/layout/AccordionPane"];_1(_4d);});}_2b._InnerContainer=_1d;_2b._Button=_19;return _2b;});
+require({cache:{
+'url:dijit/layout/templates/AccordionButton.html':"<div data-dojo-attach-event='onclick:_onTitleClick' class='dijitAccordionTitle' role=\"presentation\">\n\t<div data-dojo-attach-point='titleNode,focusNode' data-dojo-attach-event='onkeypress:_onTitleKeyPress'\n\t\t\tclass='dijitAccordionTitleFocus' role=\"tab\" aria-expanded=\"false\"\n\t\t><span class='dijitInline dijitAccordionArrow' role=\"presentation\"></span\n\t\t><span class='arrowTextUp' role=\"presentation\">+</span\n\t\t><span class='arrowTextDown' role=\"presentation\">-</span\n\t\t><img src=\"${_blankGif}\" alt=\"\" class=\"dijitIcon\" data-dojo-attach-point='iconNode' style=\"vertical-align: middle\" role=\"presentation\"/>\n\t\t<span role=\"presentation\" data-dojo-attach-point='titleTextNode' class='dijitAccordionText'></span>\n\t</div>\n</div>\n"}});
+define("dijit/layout/AccordionContainer", [
+	"require",
+	"dojo/_base/array", // array.forEach array.map
+	"dojo/_base/declare", // declare
+	"dojo/_base/event", // event.stop
+	"dojo/_base/fx", // fx.Animation
+	"dojo/dom", // dom.setSelectable
+	"dojo/dom-attr", // domAttr.attr
+	"dojo/dom-class", // domClass.remove
+	"dojo/dom-construct", // domConstruct.place
+	"dojo/dom-geometry",
+	"dojo/keys", // keys
+	"dojo/_base/lang", // lang.getObject lang.hitch
+	"dojo/sniff", // has("ie") has("dijit-legacy-requires")
+	"dojo/topic", // publish
+	"../focus",			// focus.focus()
+	"../_base/manager",	// manager.defaultDuration
+	"dojo/ready",
+	"../_Widget",
+	"../_Container",
+	"../_TemplatedMixin",
+	"../_CssStateMixin",
+	"./StackContainer",
+	"./ContentPane",
+	"dojo/text!./templates/AccordionButton.html"
+], function(require, array, declare, event, fx, dom, domAttr, domClass, domConstruct, domGeometry,
+			keys, lang, has, topic, focus, manager, ready,
+			_Widget, _Container, _TemplatedMixin, _CssStateMixin, StackContainer, ContentPane, template){
+
+	// module:
+	//		dijit/layout/AccordionContainer
+
+
+	// Design notes:
+	//
+	// An AccordionContainer is a StackContainer, but each child (typically ContentPane)
+	// is wrapped in a _AccordionInnerContainer.   This is hidden from the caller.
+	//
+	// The resulting markup will look like:
+	//
+	//	<div class=dijitAccordionContainer>
+	//		<div class=dijitAccordionInnerContainer>	(one pane)
+	//				<div class=dijitAccordionTitle>		(title bar) ... </div>
+	//				<div class=dijtAccordionChildWrapper>   (content pane) </div>
+	//		</div>
+	//	</div>
+	//
+	// Normally the dijtAccordionChildWrapper is hidden for all but one child (the shown
+	// child), so the space for the content pane is all the title bars + the one dijtAccordionChildWrapper,
+	// which on claro has a 1px border plus a 2px bottom margin.
+	//
+	// During animation there are two dijtAccordionChildWrapper's shown, so we need
+	// to compensate for that.
+
+
+	var AccordionButton = declare("dijit.layout._AccordionButton", [_Widget, _TemplatedMixin, _CssStateMixin], {
+		// summary:
+		//		The title bar to click to open up an accordion pane.
+		//		Internal widget used by AccordionContainer.
+		// tags:
+		//		private
+
+		templateString: template,
+
+		// label: String
+		//		Title of the pane
+		label: "",
+		_setLabelAttr: {node: "titleTextNode", type: "innerHTML" },
+
+		// title: String
+		//		Tooltip that appears on hover
+		title: "",
+		_setTitleAttr: {node: "titleTextNode", type: "attribute", attribute: "title"},
+
+		// iconClassAttr: String
+		//		CSS class for icon to left of label
+		iconClassAttr: "",
+		_setIconClassAttr: { node: "iconNode", type: "class" },
+
+		baseClass: "dijitAccordionTitle",
+
+		getParent: function(){
+			// summary:
+			//		Returns the AccordionContainer parent.
+			// tags:
+			//		private
+			return this.parent;
+		},
+
+		buildRendering: function(){
+			this.inherited(arguments);
+			var titleTextNodeId = this.id.replace(' ','_');
+			domAttr.set(this.titleTextNode, "id", titleTextNodeId+"_title");
+			this.focusNode.setAttribute("aria-labelledby", domAttr.get(this.titleTextNode, "id"));
+			dom.setSelectable(this.domNode, false);
+		},
+
+		getTitleHeight: function(){
+			// summary:
+			//		Returns the height of the title dom node.
+			return domGeometry.getMarginSize(this.domNode).h;	// Integer
+		},
+
+		// TODO: maybe the parent should set these methods directly rather than forcing the code
+		// into the button widget?
+		_onTitleClick: function(){
+			// summary:
+			//		Callback when someone clicks my title.
+			var parent = this.getParent();
+				parent.selectChild(this.contentWidget, true);
+				focus.focus(this.focusNode);
+		},
+
+		_onTitleKeyPress: function(/*Event*/ evt){
+			return this.getParent()._onKeyPress(evt, this.contentWidget);
+		},
+
+		_setSelectedAttr: function(/*Boolean*/ isSelected){
+			this._set("selected", isSelected);
+			this.focusNode.setAttribute("aria-expanded", isSelected ? "true" : "false");
+			this.focusNode.setAttribute("aria-selected", isSelected ? "true" : "false");
+			this.focusNode.setAttribute("tabIndex", isSelected ? "0" : "-1");
+		}
+	});
+
+	var AccordionInnerContainer = declare("dijit.layout._AccordionInnerContainer", [_Widget, _CssStateMixin], {
+		// summary:
+		//		Internal widget placed as direct child of AccordionContainer.containerNode.
+		//		When other widgets are added as children to an AccordionContainer they are wrapped in
+		//		this widget.
+
+/*=====
+		// buttonWidget: Function|String
+		//		Class to use to instantiate title
+		//		(Wish we didn't have a separate widget for just the title but maintaining it
+		//		for backwards compatibility, is it worth it?)
+		 buttonWidget: null,
+=====*/
+
+/*=====
+		// contentWidget: dijit/_WidgetBase
+		//		Pointer to the real child widget
+		contentWidget: null,
+=====*/
+
+		baseClass: "dijitAccordionInnerContainer",
+
+		// tell nested layout widget that we will take care of sizing
+		isLayoutContainer: true,
+
+		buildRendering: function(){
+			// Builds a template like:
+			//	<div class=dijitAccordionInnerContainer>
+			//		Button
+			//		<div class=dijitAccordionChildWrapper>
+			//			ContentPane
+			//		</div>
+			//	</div>
+
+			// Create wrapper div, placed where the child is now
+			this.domNode = domConstruct.place("<div class='" + this.baseClass +
+				"' role='presentation'>", this.contentWidget.domNode, "after");
+
+			// wrapper div's first child is the button widget (ie, the title bar)
+			var child = this.contentWidget,
+				cls = lang.isString(this.buttonWidget) ? lang.getObject(this.buttonWidget) : this.buttonWidget;
+			this.button = child._buttonWidget = (new cls({
+				contentWidget: child,
+				label: child.title,
+				title: child.tooltip,
+				dir: child.dir,
+				lang: child.lang,
+				textDir: child.textDir,
+				iconClass: child.iconClass,
+				id: child.id + "_button",
+				parent: this.parent
+			})).placeAt(this.domNode);
+
+			// and then the actual content widget (changing it from prior-sibling to last-child),
+			// wrapped by a <div class=dijitAccordionChildWrapper>
+			this.containerNode = domConstruct.place("<div class='dijitAccordionChildWrapper' style='display:none'>", this.domNode);
+			domConstruct.place(this.contentWidget.domNode, this.containerNode);
+		},
+
+		postCreate: function(){
+			this.inherited(arguments);
+
+			// Map changes in content widget's title etc. to changes in the button
+			var button = this.button;
+			this._contentWidgetWatches = [
+				this.contentWidget.watch('title', lang.hitch(this, function(name, oldValue, newValue){
+					button.set("label", newValue);
+				})),
+				this.contentWidget.watch('tooltip', lang.hitch(this, function(name, oldValue, newValue){
+					button.set("title", newValue);
+				})),
+				this.contentWidget.watch('iconClass', lang.hitch(this, function(name, oldValue, newValue){
+					button.set("iconClass", newValue);
+				}))
+			];
+		},
+
+		_setSelectedAttr: function(/*Boolean*/ isSelected){
+			this._set("selected", isSelected);
+			this.button.set("selected", isSelected);
+			if(isSelected){
+				var cw = this.contentWidget;
+				if(cw.onSelected){ cw.onSelected(); }
+			}
+		},
+
+		startup: function(){
+			// Called by _Container.addChild()
+			this.contentWidget.startup();
+		},
+
+		destroy: function(){
+			this.button.destroyRecursive();
+
+			array.forEach(this._contentWidgetWatches || [], function(w){ w.unwatch(); });
+
+			delete this.contentWidget._buttonWidget;
+			delete this.contentWidget._wrapperWidget;
+
+			this.inherited(arguments);
+		},
+
+		destroyDescendants: function(/*Boolean*/ preserveDom){
+			// since getChildren isn't working for me, have to code this manually
+			this.contentWidget.destroyRecursive(preserveDom);
+		}
+	});
+
+	var AccordionContainer = declare("dijit.layout.AccordionContainer", StackContainer, {
+		// summary:
+		//		Holds a set of panes where every pane's title is visible, but only one pane's content is visible at a time,
+		//		and switching between panes is visualized by sliding the other panes up/down.
+		// example:
+		//	|	<div data-dojo-type="dijit/layout/AccordionContainer">
+		//	|		<div data-dojo-type="dijit/layout/ContentPane" title="pane 1">
+		//	|		</div>
+		//	|		<div data-dojo-type="dijit/layout/ContentPane" title="pane 2">
+		//	|			<p>This is some text</p>
+		//	|		</div>
+		//	|	</div>
+
+		// duration: Integer
+		//		Amount of time (in ms) it takes to slide panes
+		duration: manager.defaultDuration,
+
+		// buttonWidget: [const] String
+		//		The name of the widget used to display the title of each pane
+		buttonWidget: AccordionButton,
+
+/*=====
+		// _verticalSpace: Number
+		//		Pixels of space available for the open pane
+		//		(my content box size minus the cumulative size of all the title bars)
+		_verticalSpace: 0,
+=====*/
+		baseClass: "dijitAccordionContainer",
+
+		buildRendering: function(){
+			this.inherited(arguments);
+			this.domNode.style.overflow = "hidden";		// TODO: put this in dijit.css
+			this.domNode.setAttribute("role", "tablist");	// TODO: put this in template
+		},
+
+		startup: function(){
+			if(this._started){ return; }
+			this.inherited(arguments);
+			if(this.selectedChildWidget){
+				this.selectedChildWidget._wrapperWidget.set("selected", true);
+			}
+		},
+
+		layout: function(){
+			// Implement _LayoutWidget.layout() virtual method.
+			// Set the height of the open pane based on what room remains.
+
+			var openPane = this.selectedChildWidget;
+
+			if(!openPane){ return;}
+
+			// space taken up by title, plus wrapper div (with border/margin) for open pane
+			var wrapperDomNode = openPane._wrapperWidget.domNode,
+				wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode),
+				wrapperDomNodePadBorder = domGeometry.getPadBorderExtents(wrapperDomNode),
+				wrapperContainerNode = openPane._wrapperWidget.containerNode,
+				wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode),
+				wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode),
+				mySize = this._contentBox;
+
+			// get cumulative height of all the unselected title bars
+			var totalCollapsedHeight = 0;
+			array.forEach(this.getChildren(), function(child){
+	            if(child != openPane){
+					// Using domGeometry.getMarginSize() rather than domGeometry.position() since claro has 1px bottom margin
+					// to separate accordion panes.  Not sure that works perfectly, it's probably putting a 1px
+					// margin below the bottom pane (even though we don't want one).
+					totalCollapsedHeight += domGeometry.getMarginSize(child._wrapperWidget.domNode).h;
+				}
+			});
+			this._verticalSpace = mySize.h - totalCollapsedHeight - wrapperDomNodeMargin.h
+				- wrapperDomNodePadBorder.h - wrapperContainerNodeMargin.h - wrapperContainerNodePadBorder.h
+				- openPane._buttonWidget.getTitleHeight();
+
+			// Memo size to make displayed child
+			this._containerContentBox = {
+				h: this._verticalSpace,
+				w: this._contentBox.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w
+					- wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w
+			};
+
+			if(openPane){
+				openPane.resize(this._containerContentBox);
+			}
+		},
+
+		_setupChild: function(child){
+			// Overrides _LayoutWidget._setupChild().
+			// Put wrapper widget around the child widget, showing title
+
+			child._wrapperWidget = AccordionInnerContainer({
+				contentWidget: child,
+				buttonWidget: this.buttonWidget,
+				id: child.id + "_wrapper",
+				dir: child.dir,
+				lang: child.lang,
+				textDir: child.textDir,
+				parent: this
+			});
+
+			this.inherited(arguments);
+		},
+
+		addChild: function(/*dijit/_WidgetBase*/ child, /*Integer?*/ insertIndex){
+			// Overrides _LayoutWidget.addChild().
+			if(this._started){
+				// Adding a child to a started Accordion is complicated because children have
+				// wrapper widgets.  Default code path (calling this.inherited()) would add
+				// the new child inside another child's wrapper.
+
+				// First add in child as a direct child of this AccordionContainer
+				var refNode = this.containerNode;
+				if(insertIndex && typeof insertIndex == "number"){
+					var children = _Widget.prototype.getChildren.call(this);	// get wrapper panes
+					if(children && children.length >= insertIndex){
+						refNode = children[insertIndex-1].domNode;
+						insertIndex = "after";
+					}
+				}
+				domConstruct.place(child.domNode, refNode, insertIndex);
+
+				if(!child._started){
+					child.startup();
+				}
+
+				// Then stick the wrapper widget around the child widget
+				this._setupChild(child);
+
+				// Code below copied from StackContainer
+				topic.publish(this.id+"-addChild", child, insertIndex);	// publish
+				this.layout();
+				if(!this.selectedChildWidget){
+					this.selectChild(child);
+				}
+			}else{
+				// We haven't been started yet so just add in the child widget directly,
+				// and the wrapper will be created on startup()
+				this.inherited(arguments);
+			}
+		},
+
+		removeChild: function(child){
+			// Overrides _LayoutWidget.removeChild().
+
+			// Destroy wrapper widget first, before StackContainer.getChildren() call.
+			// Replace wrapper widget with true child widget (ContentPane etc.).
+			// This step only happens if the AccordionContainer has been started; otherwise there's no wrapper.
+			if(child._wrapperWidget){
+				domConstruct.place(child.domNode, child._wrapperWidget.domNode, "after");
+				child._wrapperWidget.destroy();
+				delete child._wrapperWidget;
+			}
+
+			domClass.remove(child.domNode, "dijitHidden");
+
+			this.inherited(arguments);
+		},
+
+		getChildren: function(){
+			// Overrides _Container.getChildren() to return content panes rather than internal AccordionInnerContainer panes
+			return array.map(this.inherited(arguments), function(child){
+				return child.declaredClass == "dijit.layout._AccordionInnerContainer" ? child.contentWidget : child;
+			}, this);
+		},
+
+		destroy: function(){
+			if(this._animation){
+				this._animation.stop();
+			}
+			array.forEach(this.getChildren(), function(child){
+				// If AccordionContainer has been started, then each child has a wrapper widget which
+				// also needs to be destroyed.
+				if(child._wrapperWidget){
+					child._wrapperWidget.destroy();
+				}else{
+					child.destroyRecursive();
+				}
+			});
+			this.inherited(arguments);
+		},
+
+		_showChild: function(child){
+			// Override StackContainer._showChild() to set visibility of _wrapperWidget.containerNode
+			child._wrapperWidget.containerNode.style.display="block";
+			return this.inherited(arguments);
+		},
+
+		_hideChild: function(child){
+			// Override StackContainer._showChild() to set visibility of _wrapperWidget.containerNode
+			child._wrapperWidget.containerNode.style.display="none";
+			this.inherited(arguments);
+		},
+
+		_transition: function(/*dijit/_WidgetBase?*/ newWidget, /*dijit/_WidgetBase?*/ oldWidget, /*Boolean*/ animate){
+			// Overrides StackContainer._transition() to provide sliding of title bars etc.
+
+			if(has("ie") < 8){
+				// workaround animation bugs by not animating; not worth supporting animation for IE6 & 7
+				animate = false;
+			}
+
+			if(this._animation){
+				// there's an in-progress animation.  speedily end it so we can do the newly requested one
+				this._animation.stop(true);
+				delete this._animation;
+			}
+
+			var self = this;
+
+			if(newWidget){
+				newWidget._wrapperWidget.set("selected", true);
+
+				var d = this._showChild(newWidget);	// prepare widget to be slid in
+
+				// Size the new widget, in case this is the first time it's being shown,
+				// or I have been resized since the last time it was shown.
+				// Note that page must be visible for resizing to work.
+				if(this.doLayout && newWidget.resize){
+					newWidget.resize(this._containerContentBox);
+				}
+			}
+
+			if(oldWidget){
+				oldWidget._wrapperWidget.set("selected", false);
+				if(!animate){
+					this._hideChild(oldWidget);
+				}
+			}
+
+			if(animate){
+				var newContents = newWidget._wrapperWidget.containerNode,
+					oldContents = oldWidget._wrapperWidget.containerNode;
+
+				// During the animation we will be showing two dijitAccordionChildWrapper nodes at once,
+				// which on claro takes up 4px extra space (compared to stable AccordionContainer).
+				// Have to compensate for that by immediately shrinking the pane being closed.
+				var wrapperContainerNode = newWidget._wrapperWidget.containerNode,
+					wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode),
+					wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode),
+					animationHeightOverhead = wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h;
+
+				oldContents.style.height = (self._verticalSpace - animationHeightOverhead) + "px";
+
+				this._animation = new fx.Animation({
+					node: newContents,
+					duration: this.duration,
+					curve: [1, this._verticalSpace - animationHeightOverhead - 1],
+					onAnimate: function(value){
+						value = Math.floor(value);	// avoid fractional values
+						newContents.style.height = value + "px";
+						oldContents.style.height = (self._verticalSpace - animationHeightOverhead - value) + "px";
+					},
+					onEnd: function(){
+						delete self._animation;
+						newContents.style.height = "auto";
+						oldWidget._wrapperWidget.containerNode.style.display = "none";
+						oldContents.style.height = "auto";
+						self._hideChild(oldWidget);
+					}
+				});
+				this._animation.onStop = this._animation.onEnd;
+				this._animation.play();
+			}
+
+			return d;	// If child has an href, promise that fires when the widget has finished loading
+		},
+
+		// note: we are treating the container as controller here
+		_onKeyPress: function(/*Event*/ e, /*dijit/_WidgetBase*/ fromTitle){
+			// summary:
+			//		Handle keypress events
+			// description:
+			//		This is called from a handler on AccordionContainer.domNode
+			//		(setup in StackContainer), and is also called directly from
+			//		the click handler for accordion labels
+			if(this.disabled || e.altKey || !(fromTitle || e.ctrlKey)){
+				return;
+			}
+			var c = e.charOrCode;
+			if((fromTitle && (c == keys.LEFT_ARROW || c == keys.UP_ARROW)) ||
+					(e.ctrlKey && c == keys.PAGE_UP)){
+				this._adjacent(false)._buttonWidget._onTitleClick();
+				event.stop(e);
+			}else if((fromTitle && (c == keys.RIGHT_ARROW || c == keys.DOWN_ARROW)) ||
+					(e.ctrlKey && (c == keys.PAGE_DOWN || c == keys.TAB))){
+				this._adjacent(true)._buttonWidget._onTitleClick();
+				event.stop(e);
+			}
+		}
+	});
+
+	// Back compat w/1.6, remove for 2.0
+	if(has("dijit-legacy-requires")){
+		ready(0, function(){
+			var requires = ["dijit/layout/AccordionPane"];
+			require(requires);	// use indirection so modules not rolled into a build
+		});
+	}
+
+	// For monkey patching
+	AccordionContainer._InnerContainer = AccordionInnerContainer;
+	AccordionContainer._Button = AccordionButton;
+
+	return AccordionContainer;
+});

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/es/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/es/AutoSave", ({
 	"saveLabel": "Guardar",
 	"saveSettingLabelOn": "Definir intervalo de guardado automático...",
 	"saveSettingLabelOff": "Desactivar guardado automático",
@@ -14,6 +12,4 @@ define(
 	"saveMessageSuccess": "Guardado a las ${0}",
 	"saveMessageFail": "No se ha podido guardar a las ${0}"
 })
-
-//end v1.x content
 );

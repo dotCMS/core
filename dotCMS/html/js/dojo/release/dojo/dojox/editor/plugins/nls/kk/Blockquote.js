@@ -1,9 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/kk/Blockquote", //begin v1.x content
-({
+"dojox/editor/plugins/nls/kk/Blockquote", ({
 	"blockquote": "Blockquote"
 })
-
-//end v1.x content
 );

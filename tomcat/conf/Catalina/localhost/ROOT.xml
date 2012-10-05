@@ -1,7 +1,7 @@
 <Context path="" docBase="../../dotCMS" debug="0" reloadable="false" crossContext="true">
 	
 	
-	<Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="smtp.eng.it" />
+	<Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />
 	
 	<!--
 		IMPORTANT your maxActive number of connections should be higher than the number of server threads you 

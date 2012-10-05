@@ -515,16 +515,16 @@ function doCreateSiteSearch(alias,number) {
 
 
 
-function runNow() {
-	var runNow = dijit.byId("whenToRunNow").getValue();
+function runNow(action) {
+	//var value = dijit.byId(action).getValue();
 
-	if(runNow){
+	if(action == 'now'){
 		
 		dojo.query('.showScheduler').style({display:"none"});
 		dojo.query('.showRunNow').style({display:""});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("<%=SiteSearchAPI.ES_SITE_SEARCH_EXECUTE_JOB_NAME%>");
 	}
-	else{
+	else if (action == 'schedule'){
 		dojo.query('.showScheduler').style({display:""});
 		dojo.query('.showRunNow').style({display:"none"});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("");
@@ -566,9 +566,14 @@ function submitSchedule() {
 		return;
 	}
 	
-	if(dojo.query("#sitesearch input[name='langToIndex'][aria-pressed='true']").length==0) {
+	if(dojo.query("#sitesearch input[name='langToIndex']:checked").length==0) {
 		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Choose-a-Language")) %>");
 		return;
+	}
+	
+	if(/^\s*$/.test(dojo.byId("indexAlias").value)) {
+		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
+        return;
 	}
 	
 	if (myForm.validate()) {
@@ -820,7 +825,60 @@ dojo.addOnLoad (function(){
    	refreshIndexStats();
 	resizeBrowser();
 	dojo.connect(window, "onresize", "resizeBrowser");
+	enableJobsProgressUpdate();
 });
+
+function enableJobsProgressUpdate() {
+	setInterval(function() {
+		var tab =dijit.byId("mainTabContainer");
+		selectedTab = tab.selectedChildWidget;
+		if(selectedTab.id =="jobTabCp")
+		    jobsProgressUpdate();
+	},5000);
+}
+
+function jobsProgressUpdate() {
+	
+	var xhrArgs = {
+       url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/getJobProgress/" ,
+       handleAs: "json",
+       load : function(dataOrError, ioArgs) {
+           if (dojo.isString(dataOrError) && dataOrError.indexOf("FAILURE") == 0) {
+               showDotCMSSystemMessage(dataOrError, true);
+           } else {
+        	   var refresh=false;
+        	   if(dojo.query("div.pb").length!=dataOrError.length) 
+        		   refresh=true;
+        	   else
+                 dataOrError.each(function(p) {
+            	   if(!refresh) {
+	            	   if(dojo.query("tr[jobname='"+p.jobname+"']").length) {
+	            		   if(p.progress!=-1) {
+	            			   // job in progress. Lets show the progress bar
+	            			   dojo.query("tr[jobname='"+p.jobname+"'] .deleteIcon").addClass("hidden");
+	            			   dojo.query("tr[jobname='"+p.jobname+"'] .pb").removeClass("hidden");
+	            			   dijit.byNode(dojo.query("tr[jobname='"+p.jobname+"'] .pb")[0]).set("value",p.progress);
+	            			   dijit.byNode(dojo.query("tr[jobname='"+p.jobname+"'] .pb")[0]).set("maximum",p.max);
+	            		   }
+	            		   else {
+	            			   // job not running. Lets show the delete icon
+	            			   dojo.query("tr[jobname='"+p.jobname+"'] .deleteIcon").removeClass("hidden");
+	                           dojo.query("tr[jobname='"+p.jobname+"'] .pb").addClass("hidden");
+	            		   }
+	            	   }
+	            	   else {
+	            		   // we don't know that job. Lets refresh the whole thing
+	            		   refresh=true;
+	            	   }
+            	   }
+                 });
+               if(refresh)
+            	   refreshJobStats();
+           }
+       }
+    };
+    dojo.xhrPost(xhrArgs);
+}
 
 function  resizeBrowser(){
         var viewport = dijit.getViewport();
@@ -862,6 +920,9 @@ function  resizeBrowser(){
 	    background: #94BBFF;
 	    color: white !important;
 	}
+	.hidden {
+	   display: none;
+	}
 </style>
 
 
@@ -896,7 +957,7 @@ function  resizeBrowser(){
 		</div>
 		
 		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
-			<div dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
+			<div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
 		</div>
 		
 	</div>

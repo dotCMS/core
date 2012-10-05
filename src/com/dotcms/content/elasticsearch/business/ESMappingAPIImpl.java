@@ -52,6 +52,8 @@ import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
@@ -347,7 +349,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	@SuppressWarnings("unchecked")
 	protected void loadPermissions(Contentlet con, Map<String,String> m) throws DotDataException {
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        List<Permission> permissions = permissionAPI.getPermissions(con, false, false, true);
+        List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
         StringBuilder permissionsSt = new StringBuilder();
         boolean ownerCanRead = false;
         boolean ownerCanWrite = false;
@@ -481,6 +483,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 			    if(allowedFields==null || allowedFields.contains(key.toLowerCase()))
                 			        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName() + "." + key, (String)keyValueMap.get(key));
                 	}
+                } else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
+                    StringBuilder tagg=new StringBuilder();
+                    for(Tag t : APILocator.getTagAPI().getTagsByInode(con.getInode()))
+                        tagg.append(t.getTagName()).append(' ');
+                    m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), tagg.toString());
                 } else {
                     if (f.getFieldContentlet().startsWith("bool")) {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());

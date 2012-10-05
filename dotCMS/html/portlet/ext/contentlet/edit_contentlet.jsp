@@ -25,7 +25,10 @@
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 
+<script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
+
 <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp" %>
+
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -292,6 +295,17 @@ var editButtonRow="editContentletButtonRow";
 										request.setAttribute("folder", null);
 					    	  		}
 						  	    }
+					    	  	if (f.getFieldType().equals(Field.FieldType.BINARY.toString())) {
+					    	  		if(InodeUtils.isSet(contentlet.getHost())) {
+										request.setAttribute("host",contentlet.getHost());										
+					    	  		} else if(f.isRequired()) {
+					    	  			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);					    	  			
+										request.setAttribute("host", hostId);										
+					    	  		} else if(!f.isRequired()) {
+					    	  			String hostId = (String) APILocator.getHostAPI().findSystemHost().getIdentifier();
+										request.setAttribute("host", hostId);										
+					    	  		}
+					    	  	}
 					    	  	request.setAttribute("inode",contentlet.getInode());
 							request.setAttribute("counter", catCounter.toString());
 					  	    %>

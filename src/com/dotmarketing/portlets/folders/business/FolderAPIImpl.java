@@ -176,7 +176,12 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user + " does not have permission to read " + host.getInode());
 		}
 
-		return ffac.findFoldersByHost(host);
+		List<Folder> full = ffac.findFoldersByHost(host);
+		List<Folder> ret = new ArrayList<Folder>(full.size());
+		for(Folder ff : full) 
+		    if(papi.doesUserHavePermission(ff, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions))
+		        ret.add(ff);
+		return ret;
 	}
 
 	/**
@@ -558,6 +563,21 @@ public class FolderAPIImpl implements FolderAPI  {
 	public List<Folder> findFoldersByHost(Host host, User user, boolean respectFrontendRoles) throws DotHibernateException {
 		return ffac.findFoldersByHost(host);
 	}
+
+    public List<HTMLPage> getHTMLPages ( Host host, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
+
+        if ( !papi.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
+            throw new DotSecurityException( "User " + user + " does not have permission to read  " + host.getHostname() );
+        }
+
+        ChildrenCondition cond = new ChildrenCondition();
+        cond.working = true;
+        cond.deleted = false;
+
+        List list = ffac.getChildrenClass( host, HTMLPage.class, cond );
+        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
+    }
+
 	public  List<HTMLPage> getHTMLPages(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 	DotDataException, DotSecurityException{
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
@@ -570,7 +590,21 @@ public class FolderAPIImpl implements FolderAPI  {
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 
-	public  List<HTMLPage> getHTMLPages(Folder parent, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions) throws DotStateException,
+    public List<HTMLPage> getHTMLPages ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
+
+        if ( !papi.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
+            throw new DotSecurityException( "User " + user + " does not have permission to read  " + host.getHostname() );
+        }
+
+        ChildrenCondition cond = new ChildrenCondition();
+        cond.working = working;
+        cond.deleted = deleted;
+
+        List list = ffac.getChildrenClass( host, HTMLPage.class, cond );
+        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
+    }
+
+    public  List<HTMLPage> getHTMLPages(Folder parent, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions) throws DotStateException,
     DotDataException, DotSecurityException{
         if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
             throw new DotSecurityException("User " + user + " does not have permission to read  " + parent.getName());
@@ -594,14 +628,39 @@ public class FolderAPIImpl implements FolderAPI  {
         return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
     }
 
-	public  List<Link> getLinks(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
-		DotDataException, DotSecurityException{
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user + " does not have permission to read " + parent.getName());
-		}
-		List list = ffac.getChildrenClass(parent, Link.class);
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
+    public List<Link> getLinks ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
+
+        if ( !papi.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
+            throw new DotSecurityException( "User " + user + " does not have permission to read  " + host.getHostname() );
+        }
+
+        ChildrenCondition cond = new ChildrenCondition();
+        cond.working = working;
+        cond.deleted = deleted;
+        List list = ffac.getChildrenClass( host, Link.class, cond );
+        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
+    }
+
+    public List<Link> getLinks ( Host host, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
+
+        if ( !papi.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
+            throw new DotSecurityException( "User " + user + " does not have permission to read " + host.getHostname() );
+        }
+
+        List list = ffac.getChildrenClass( host, Link.class );
+        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
+    }
+
+    public List<Link> getLinks ( Folder parent, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
+
+        if ( !papi.doesUserHavePermission( parent, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
+            throw new DotSecurityException( "User " + user + " does not have permission to read " + parent.getName() );
+        }
+
+        List list = ffac.getChildrenClass( parent, Link.class );
+        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
+    }
+
 	public  List<File> getFiles(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 		DotDataException, DotSecurityException{
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {

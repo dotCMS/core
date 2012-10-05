@@ -1,16 +1,12 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/it/LocalImage", //begin v1.x content
-({
+"dojox/editor/plugins/nls/it/LocalImage", ({
 	insertImageTitle: "Inserisci immagine",
 	url: "Immagine",
 	browse: "Sfoglia...",
 	text: "Descrizione",
 	set: "Inserisci",
-	invalidMessage: "Tipo di file immagine non valido",
+	invalidMessage: "Tipo file immagine non valido",
 	prePopuTextUrl: "Immettere un URL immagine",
-	prePopuTextBrowse: " o individuare un file locale."
+	prePopuTextBrowse: " o selezionare un file locale."
 })
-
-//end v1.x content
 );

@@ -1,4 +1,3 @@
-//>>built
 define("dojox/editor/plugins/nls/TableDialog", { root:
 //begin v1.x content
 ({
@@ -31,8 +30,8 @@ define("dojox/editor/plugins/nls/TableDialog", { root:
 	deleteTableRowLabel: "Delete Row",
 	deleteTableColumnLabel: "Delete Column"
 })
-,
 //end v1.x content
+,
 "zh": true,
 "zh-tw": true,
 "tr": true,

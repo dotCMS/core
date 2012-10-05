@@ -1,2 +1,81 @@
-//>>built
-define("dojox/charting/themes/gradientGenerator",["dojo/_base/lang","dojo/_base/array","dojo/_base/Color","../Theme","dojox/color/_base","./common"],function(_1,_2,_3,_4,_5,_6){var gg=_1.getObject("gradientGenerator",true,_6);gg.generateFills=function(_7,_8,_9,_a){return _2.map(_7,function(c){return _4.generateHslGradient(c,_8,_9,_a);});};gg.updateFills=function(_b,_c,_d,_e){_2.forEach(_b,function(t){if(t.fill&&!t.fill.type){t.fill=_4.generateHslGradient(t.fill,_c,_d,_e);}});};gg.generateMiniTheme=function(_f,_10,_11,_12,_13){return _2.map(_f,function(c){c=new _5.Color(c);return {fill:_4.generateHslGradient(c,_10,_11,_12),stroke:{color:_4.generateHslColor(c,_13)}};});};gg.generateGradientByIntensity=function(_14,_15){_14=new _3(_14);return _2.map(_15,function(_16){var s=_16.i/255;return {offset:_16.o,color:new _3([_14.r*s,_14.g*s,_14.b*s,_14.a])};});};return gg;});
+define("dojox/charting/themes/gradientGenerator", ["dojo/_base/lang", "dojo/_base/array", "dojo/_base/Color", "../Theme", "dojox/color/_base", "./common"], 
+	function(lang, arr, Color, Theme, dxcolor, themes){
+	
+	var gg = lang.getObject("gradientGenerator", true, themes);
+
+	gg.generateFills = function(colors, fillPattern, lumFrom, lumTo){
+		// summary:
+		//		generates 2-color gradients using pure colors, a fill pattern, and two luminance values
+		// colors: Array
+		//		Array of colors to generate gradients for each.
+		// fillPattern: Object
+		//		Gradient fill descriptor which colors list will be generated.
+		// lumFrom: Number
+		//		Initial luminance value (0-100).
+		// lumTo: Number
+		//		Final luminance value (0-100).
+		return arr.map(colors, function(c){	// Array
+			return Theme.generateHslGradient(c, fillPattern, lumFrom, lumTo);
+		});
+	};
+	
+	gg.updateFills = function(themes, fillPattern, lumFrom, lumTo){
+		// summary:
+		//		transforms solid color fills into 2-color gradients using a fill pattern, and two luminance values
+		// themes: Array
+		//		Array of mini-themes (usually series themes or marker themes), which fill will be transformed.
+		// fillPattern: Object
+		//		Gradient fill descriptor which colors list will be generated.
+		// lumFrom: Number
+		//		Initial luminance value (0-100).
+		// lumTo: Number
+		//		Final luminance value (0-100).
+		arr.forEach(themes, function(t){
+			if(t.fill && !t.fill.type){
+				t.fill = Theme.generateHslGradient(t.fill, fillPattern, lumFrom, lumTo);
+			}
+		});
+	};
+	
+	gg.generateMiniTheme = function(colors, fillPattern, lumFrom, lumTo, lumStroke){
+		// summary:
+		//		generates mini-themes with 2-color gradients using colors, a fill pattern, and three luminance values
+		// colors: Array
+		//		Array of colors to generate gradients for each.
+		// fillPattern: Object
+		//		Gradient fill descriptor which colors list will be generated.
+		// lumFrom: Number
+		//		Initial luminance value (0-100).
+		// lumTo: Number
+		//		Final luminance value (0-100).
+		// lumStroke: Number
+		//		Stroke luminance value (0-100).
+		return arr.map(colors, function(c){	// Array
+			c = new dxcolor.Color(c);
+			return {
+				fill:   Theme.generateHslGradient(c, fillPattern, lumFrom, lumTo),
+				stroke: {color: Theme.generateHslColor(c, lumStroke)}
+			}
+		});
+	};
+	
+	gg.generateGradientByIntensity = function(color, intensityMap){
+		// summary:
+		//		generates gradient colors using an intensity map
+		// color: dojo.Color
+		//		Color to use to generate gradients.
+		// intensityMap: Array
+		//		Array of tuples {o, i}, where o is a gradient offset (0-1),
+		//		and i is an intensity (0-255).
+		color = new Color(color);
+		return arr.map(intensityMap, function(stop){	// Array
+			var s = stop.i / 255;
+			return {
+				offset: stop.o,
+				color:  new Color([color.r * s, color.g * s, color.b * s, color.a])
+			};
+		});
+	}
+	
+	return gg;
+});

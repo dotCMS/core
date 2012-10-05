@@ -48,8 +48,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.logConsole.model.LogMapperRow;
+import com.dotmarketing.plugin.model.Plugin;
+import com.dotmarketing.plugin.model.PluginProperty;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
+import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread;
+import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread.BasicProcessStatus;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -211,8 +215,33 @@ public class CMSMaintenanceAjax {
 
     public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException {
         	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
-        	MaintenanceUtil.deleteAssetsWithNoInode();
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
+    }
+    
+    public Map cleanAssets (boolean files, boolean binarys) throws DotDataException {
+
+        //Create the thread to clean the assets
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true , files, binarys);
+        BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
+        cleanAssetsThread.start();
+
+        //Return the initial process status
+        return processStatus.buildStatusMap();
+    }
+
+    /**
+     * Method to check the status of the clean assets process
+     *
+     * @return map with the current status information
+     */
+    public Map getCleanAssetsStatus () {
+
+        //Getting the running clean assets thread
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( false , false, false);
+        BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
+
+        //Return its current running status
+        return processStatus.buildStatusMap();
     }
 
     public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {
@@ -342,7 +371,8 @@ public class CMSMaintenanceAjax {
 				while (it.hasNext()) {
 					Map.Entry pairs = (Map.Entry) it.next();
 					Class x = (Class) pairs.getKey();
-					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x.equals(ClickstreamRequest.class))
+					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x.equals(ClickstreamRequest.class) 
+					        && !x.equals(Plugin.class) && !x.equals(PluginProperty.class))
 						_tablesToDump.add(x);
 
 				}

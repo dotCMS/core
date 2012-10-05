@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/cs/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/cs/TableDialog", ({
 	insertTableTitle: "Vložit tabulku",
 	modifyTableTitle: "Upravit tabulku",
 	rows: "Řádky:",
@@ -12,7 +10,7 @@ define(
 	tableWidth: "Šířka tabulky:",
 	backgroundColor: "Barva pozadí:",
 	borderColor: "Barva ohraničení:",
-	borderThickness: "TloušťkaOhraničení",
+	borderThickness: "Tloušťka ohraničení:",
 	percent: "procent",
 	pixels: "pixelů",
 	"default": "výchozí",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "Nastavit", // translated elsewhere?
 	buttonInsert: "Vložit",
 	buttonCancel: "Storno",
-
 	selectTableLabel: "Vybrat tabulku",
 	insertTableRowBeforeLabel: "Přidat řádek před",
 	insertTableRowAfterLabel: "Přidat řádek za",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "Odstranit řádek",
 	deleteTableColumnLabel: "Odstranit sloupec"
 })
-//end v1.x content
 );

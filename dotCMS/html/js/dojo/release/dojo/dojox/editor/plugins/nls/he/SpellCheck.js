@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/he/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/he/SpellCheck", ({
 	widgetLabel: "בדיקת איות באצווה ",
 	unfound: "לא נמצא ",
 	skip: "דילוג",
@@ -17,6 +15,4 @@ define(
 	iSkipAll: "דילוג על כל הערכים הדומים לערך זה ",
 	iMsg: "אין הצעות איות "
 })
-
-//end v1.x content
 );

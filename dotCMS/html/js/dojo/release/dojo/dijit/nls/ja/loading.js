@@ -1,9 +1,6 @@
-//>>built
 define(
-"dijit/nls/ja/loading", //begin v1.x content
-({
+"dijit/nls/ja/loading", ({
 	loadingState: "ロード中...",
 	errorState: "エラーが発生しました。"
 })
-//end v1.x content
 );

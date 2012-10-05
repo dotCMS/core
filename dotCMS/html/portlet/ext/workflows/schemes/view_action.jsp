@@ -81,15 +81,18 @@
         },
         "actionWhoCanUseSelect");
 
-
-
+	    <%
+	    String assignToLabel=r.getName();
+	    if(r.equals(APILocator.getRoleAPI().loadCMSAnonymousRole()))
+	        assignToLabel=LanguageUtil.get(pageContext, "current-user");
+	    %>
 
 		var assignSelect = new dijit.form.FilteringSelect({
             id: "actionAssignToSelect",
             name: "actionAssignToSelect",
             store: myRoleReadStore,
 
-            displayedValue : "<%=UtilMethods.webifyString(r.getName())%>",
+            displayedValue : "<%=UtilMethods.webifyString(assignToLabel)%>",
             searchDelay:300,
             value:"<%=UtilMethods.webifyString(action.getNextAssign())%>",
             pageSize:20,
@@ -142,7 +145,8 @@
 		actionAdmin.whoCanUse = new Array();
 		<% Set<Role> roles = APILocator.getPermissionAPI().getReadRoles(action);%>
 		<%for(Role tmpRole :  roles){%>
-			actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>", "<%=tmpRole.getName()%> <%=(tmpRole.getName().toLowerCase().contains("anonymous")) ?  " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : (tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : ""%>");
+			actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>", 
+					"<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
 		<% }%>
 
 		actionAdmin.refreshWhoCanUse();

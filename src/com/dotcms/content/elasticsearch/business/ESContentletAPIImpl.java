@@ -480,10 +480,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,DotSecurityException, ParseException {
+    	return searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles, requiredPermission, false);
+    }
+
+    public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException, ParseException {
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
         contents.setTotalResults(list.getTotalResults());
-        
+
         List<String> identifierList = new ArrayList<String>();
         for(ContentletSearch conwrap: list){
             String ident=conwrap.getIdentifier();
@@ -494,7 +498,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String[] identifiers=new String[identifierList.size()];
         identifiers=identifierList.toArray(identifiers);
 
-        List<Contentlet> contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
+        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        if(anyLanguage){//GIT-816
+        	for(String identifier : identifiers){
+        		for(Language lang : APILocator.getLanguageAPI().getLanguages()){
+                	try{
+                		Contentlet languageContentlet = null; 
+                		try{
+                			languageContentlet = findContentletByIdentifier(identifier, false, lang.getId(), user, respectFrontendRoles);
+                		}catch (DotContentletStateException e) {
+                			Logger.debug(this,e.getMessage(),e);
+						}
+                		if(languageContentlet != null && UtilMethods.isSet(languageContentlet.getInode())){
+                			contentlets.add(languageContentlet);
+                			break;
+                		}
+                    }catch(DotContentletStateException se){
+                    	Logger.debug(this, se.getMessage());
+                    }
+                }
+        	}
+        }else{
+        	contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
+        }
+
         Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
             map.put(contentlet.getIdentifier(), contentlet);
@@ -919,7 +946,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         try{
-            return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (ParseException e) {
             throw new DotDataException("Unable look up related content",e);
         }
@@ -944,7 +971,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         try{
-            return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (ParseException e) {
             throw new DotDataException("Unable look up related content",e);
         }
@@ -1571,6 +1598,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else {
                     tree = TreeFactory.getTree(relatedContent.getIdentifier(), contentlet.getIdentifier(), related.getRelationship().getRelationTypeValue());
                 }
+                Tree treeToDelete = TreeFactory.getTree(tree);
                 TreeFactory.deleteTree(tree);
             }
         }
@@ -1660,10 +1688,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 else
                     newTree.setTreeOrder(treePosition);
             }
+            
             //newTree.setTreeOrder(treePosition);
             if( uniqueRelationshipSet.add(newTree) ) {
-                TreeFactory.saveTree(newTree);
-                treePosition++;
+            	
+            	int newTreePosistion = newTree.getTreeOrder();            	
+            	Tree treeToUpdate = TreeFactory.getTree(newTree);
+            	treeToUpdate.setTreeOrder(newTreePosistion);
+          	
+            	if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType()))
+            		TreeFactory.saveTree(treeToUpdate);
+            	else
+            		TreeFactory.saveTree(newTree);
+                
+            	treePosition++;
+                
+            }
+            
+            if(!child){// when we change the order we need to index all the sibling content
+            	for(Contentlet con : getSiblings(c.getIdentifier())){
+            		refresh(con);
+            	}
             }
         }
     }
@@ -2189,15 +2234,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		FileUtil.move(incomingFile, newFile);
 
 			                		// what happens is we never clean up the temp directory
-			                		java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
-			                		if(delMe.exists() && delMe.getAbsolutePath().contains(Config.CONTEXT
-											.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
+			                		// answer: this happends --> https://github.com/dotCMS/dotCMS/issues/1071
+			                		// there is a quarz job to clean that
+			                		/*java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
+			                		if(delMe.exists() && delMe.getAbsolutePath().contains(
+			                		        APILocator.getFileAPI().getRealAssetPathTmpBinary()
 											+ java.io.File.separator + user.getUserId()
 											+ java.io.File.separator  ) ){
 			                			delMe.delete();
 			                			delMe = incomingFile.getParentFile().getParentFile();
 			                			FileUtil.deltree(delMe);
-			                		}
+			                		}*/
 
 			                	}
 			                	else if (oldFile.exists()) {
@@ -3238,12 +3285,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentRelationships;
     }
 
-    public int deleteOldContent(Date deleteFrom, int offset) throws DotDataException {
+    public int deleteOldContent(Date deleteFrom) throws DotDataException {
         int results = 0;
         if(deleteFrom == null){
             throw new DotDataException("Date to delete from must not be null");
         }
-        results = conFac.deleteOldContent(deleteFrom, offset);
+        results = conFac.deleteOldContent(deleteFrom);
         return results;
     }
 
@@ -3474,7 +3521,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
         java.io.File srcFile;
-        java.io.File destFile = new java.io.File(Config.CONTEXT.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH) + java.io.File.separator + user.getUserId());
+        java.io.File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId());
         if (!destFile.exists())
             destFile.mkdirs();
 
@@ -3495,7 +3542,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         }else{
                             fieldValue=srcFile.getName();
                         }
-                        destFile = new java.io.File(Config.CONTEXT.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH) + java.io.File.separator + user.getUserId() + java.io.File.separator + fieldValue);
+                        destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + java.io.File.separator + fieldValue);
                         if (!destFile.exists())
                             destFile.createNewFile();
 
@@ -3666,54 +3713,89 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public String getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-        String result = null;
-        if (InodeUtils.isSet(contentlet.getStructureInode())) {
-            Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
-            if (UtilMethods.isSet(structure.getUrlMapPattern())) {
-                List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
-                String urlMapField;
-                String urlMapFieldValue;
-                String testResult = structure.getUrlMapPattern();
-                for (RegExMatch match: matches) {
-                    urlMapField = match.getMatch();
-                    urlMapFieldValue = contentlet.getStringProperty(urlMapField.substring(1, (urlMapField.length() - 1)));
-                    urlMapField = urlMapField.replaceFirst("\\{", "\\\\{");
-                    urlMapField = urlMapField.replaceFirst("\\}", "\\\\}");
-                    if(urlMapFieldValue !=null ){
-                    	result = testResult.replaceAll(urlMapField, urlMapFieldValue);
-                    }
+       
+    	
+    	// no structure, no inode, no workee
+        if (!InodeUtils.isSet(contentlet.getInode()) || !InodeUtils.isSet(contentlet.getStructureInode())) {
+        	return null;
+        }
+    	
+    	final String CONTENTLET_URL_MAP_FOR_CONTENT = "URL_MAP_FOR_CONTENT";
+    	final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
+    	String result = (String) contentlet.getMap().get(CONTENTLET_URL_MAP_FOR_CONTENT);
+    	if(result != null){
+        	if(CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result) ){
+        		return null;
+        	}
+    		return result;
+    	}
 
+    	
 
+        
+        // if there is no detail page, return
+        Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        if(!UtilMethods.isSet(structure.getDetailPage())) {
+        	return null;	
+        }
+        
+        
+      
+
+        Identifier id = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+        Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles); 
+        
+        // File assets send their path
+        // if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
+        // 	result = id.getPath();
+        // }
+        
+        // URL MAPPed
+       if (UtilMethods.isSet(structure.getUrlMapPattern())) {
+            List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
+            String urlMapField;
+            String urlMapFieldValue;
+            result = structure.getUrlMapPattern();
+            for (RegExMatch match: matches) {
+                urlMapField = match.getMatch();
+                urlMapFieldValue = contentlet.getStringProperty(urlMapField.substring(1, (urlMapField.length() - 1)));
+                urlMapField = urlMapField.replaceFirst("\\{", "\\\\{");
+                urlMapField = urlMapField.replaceFirst("\\}", "\\\\}");
+                if (UtilMethods.isSet(urlMapFieldValue)){
+                	result = result.replaceAll(urlMapField, urlMapFieldValue);
+                }
+                else{
+                	result = result.replaceAll(urlMapField, "");
                 }
             }
-            if (result == null && UtilMethods.isSet(structure.getDetailPage())) {
-            	HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
-            	if(p != null && UtilMethods.isSet(p.getIdentifier())){
-            		result = p.getURI() + "?id=" + contentlet.getInode();
-            	}
-
-
-            }
-            Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, respectFrontendRoles);
-            if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles) {
-
-            	if(result == null || result.indexOf("?") <0){
-
-            		result = result + "?host_id=" + host.getIdentifier();
-            	}
-            	else{
-            		result = result + "&host_id=" + host.getIdentifier();
-            	}
-            }
         }
-
-        if(result ==null && contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-            	//Host h = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-            	Identifier id = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-            	result = id.getPath();
-
+        
+        // or Detail page with id=uuid
+        else{
+            HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
+        	if(p != null && UtilMethods.isSet(p.getIdentifier())){
+        		result = p.getURI() + "?id=" + contentlet.getInode();
+        	}
         }
+        
+        // we send the host of the content, not the detail page (is this right?)
+        if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles && result !=null) {
+        	if(result.indexOf("?") <0){
+        		result = result + "?host_id=" + host.getIdentifier();
+        	}
+        	else{
+        		result = result + "&host_id=" + host.getIdentifier();
+        	}
+        }
+        
 
+
+
+        
+    	if(result == null){
+    		result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
+    	}
+        contentlet.setStringProperty(CONTENTLET_URL_MAP_FOR_CONTENT, result);
 
 
 

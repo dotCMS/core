@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/nb/commands", //begin v1.x content
-({
+"dijit/_editor/nls/nb/commands", ({
 	'bold': 'Fet',
 	'copy': 'Kopier',
 	'cut': 'Klipp ut',
@@ -50,5 +48,4 @@ define(
 	'ctrlKey':'ctrl+${0}',
 	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })
-//end v1.x content
 );

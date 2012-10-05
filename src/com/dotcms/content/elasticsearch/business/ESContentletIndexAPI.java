@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -197,22 +199,30 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else
 	        return initIndex();
 	}
-
+	
 	public boolean isInFullReindex() throws DotDataException {
-	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+	    return isInFullReindex(DbConnectionFactory.getConnection());
+	}
+	
+	public boolean isInFullReindex(Connection conn) throws DotDataException {
+	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies(conn);
 	    return info.reindex_working!=null && info.reindex_live!=null;
 	}
 
+	public synchronized void fullReindexSwitchover() {
+	    fullReindexSwitchover(DbConnectionFactory.getConnection());
+	}
+	
 	/**
 	 * This will drop old index and will point read aliases to new index.
 	 * This method should be called after call to {@link #setUpFullReindex()}
 	 * @return
 	 */
-	public synchronized void fullReindexSwitchover() {
+	public synchronized void fullReindexSwitchover(Connection conn) {
     	try {
     	    if(!isInFullReindex()) return;
 
-            IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+            IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies(conn);
 
             Logger.info(this, "Executing switchover from old index ["
                    +info.working+","+info.live+"] and new index ["
@@ -224,7 +234,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             IndiciesInfo newinfo=new IndiciesInfo();
             newinfo.working=info.reindex_working;
             newinfo.live=info.reindex_live;
-            APILocator.getIndiciesAPI().point(newinfo);
+            APILocator.getIndiciesAPI().point(conn,newinfo);
 
             iapi.moveIndexBackToCluster(newinfo.working);
             iapi.moveIndexBackToCluster(newinfo.live);
@@ -337,14 +347,25 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    List<String> depsIdentifiers=mappingAPI.dependenciesLeftToReindex(content);
         for(String ident : depsIdentifiers) {
             // get working and live version for all languages based on the identifier
-            String sql = "select distinct inode from contentlet join contentlet_version_info " +
-                    " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
+//            String sql = "select distinct inode from contentlet join contentlet_version_info " +
+//                    " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
+            String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
+    	    
             DotConnect dc = new DotConnect();
             dc.setSQL(sql);
             dc.addParam(ident);
             List<Map<String,String>> ret = dc.loadResults();
+            List<String> inodes = new ArrayList<String>(); 
             for(Map<String,String> m : ret) {
-                String inode=m.get("inode");
+            	String workingInode = m.get("working_inode");
+            	String liveInode = m.get("live_inode");
+            	inodes.add(workingInode);
+            	if(UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)){
+            		inodes.add(liveInode);
+            	}
+            }
+            
+            for(String inode : inodes) {
                 Contentlet con=APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false);
                 contentToIndex.add(con);
             }

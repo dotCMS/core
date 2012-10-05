@@ -499,6 +499,10 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 	public boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException, ParseException {
         return true;
     }
+	
+	public boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException, DotSecurityException, ParseException {
+        return true;
+    }
 
 	public boolean searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) {
 		return true;
@@ -552,4 +556,8 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 		return true;
 	}
 
+	public boolean deleteOldContent(Date deleteFrom) {
+		return true;
+	}
+	
 }

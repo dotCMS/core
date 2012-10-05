@@ -1,12 +1,11 @@
-//>>built
 define("dojox/editor/plugins/nls/TextColor", { root:
 //begin v1.x content
 ({
 	"setButtonText": "Set",
 	"cancelButtonText": "Cancel"
 })
-,
 //end v1.x content
+,
 "zh": true,
 "zh-tw": true,
 "tr": true,

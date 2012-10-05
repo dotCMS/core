@@ -31,18 +31,20 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	private String selectedimage;
     /** nullable persistent field */
 	private String image;
-	
+
 	//	*********************** BEGIN GRAZIANO issue-12-dnd-template
 	private Boolean drawed;
-	
+
 	private String drawedBody;
-	
+
 	private Integer countAddContainer;
-	
+
 	private Integer countContainers;
-	
+
 	private String headCode;
 	//	*********************** END GRAZIANO issue-12-dnd-template
+
+	public static final String TEMPLATE_LAYOUTS_CANONICAL_NAME = "com.dotmarketing.portlets.templates.model.TemplateLayout";
 
 	/** default constructor */
 	public Template() {
@@ -57,7 +59,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage());
 			throw new DotRuntimeException(e.getMessage(),e);
-		} 
+		}
     	return folderPath + this.getInode();
     }
 
@@ -94,7 +96,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	public String getInode() {
 		if(InodeUtils.isSet(this.inode))
 			return this.inode;
-			
+
 		return "";
 	}
 
@@ -160,7 +162,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	public void setHeader(String header) {
 		this.header = header;
 	}
-	
+
 	/**
 	 * Identify the drawed template
 	 * @return
@@ -170,7 +172,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	}
 
 	/**
-	 * Sets the boolean for drawed template 
+	 * Sets the boolean for drawed template
 	 * @param drawed
 	 */
 	public void setDrawed(Boolean drawed) {
@@ -179,7 +181,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 		else
 			this.drawed = false;
 	}
-		
+
 	public String getDrawedBody() {
 		return drawedBody;
 	}
@@ -215,7 +217,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	public int compareTo(Object compObject){
 
 		if(!(compObject instanceof Template))return -1;
-		
+
 		Template template = (Template) compObject;
 		return (template.getTitle().compareTo(this.getTitle()));
 
@@ -239,7 +241,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 				PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 		return accepted;
 	}
-	
+
 	public Permissionable getParentPermissionable() throws DotDataException {
 
 		try {

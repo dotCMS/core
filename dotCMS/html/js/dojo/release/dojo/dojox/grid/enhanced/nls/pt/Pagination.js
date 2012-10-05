@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/pt/Pagination", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/pt/Pagination", ({
 	"descTemplate": "${2} - ${3} de ${1} ${0}",
 	"firstTip": "Primeira Página",
 	"lastTip": "Última Página",
@@ -18,7 +16,6 @@ define(
 	"pageCountIndication": " (${0} páginas)",
 	"dialogConfirm": "Ir",
 	"dialogCancel": "Cancelar",
-	"all": "todos"
+	"all": "Todos"
 })
-//end v1.x content
 );

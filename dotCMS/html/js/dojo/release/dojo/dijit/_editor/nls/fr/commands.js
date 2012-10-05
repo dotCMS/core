@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/fr/commands", //begin v1.x content
-({
+"dijit/_editor/nls/fr/commands", ({
 	'bold': 'Gras',
 	'copy': 'Copier',
 	'cut': 'Couper',
@@ -46,7 +44,8 @@ define(
 	"print": "Imprimer",
 	"newPage": "Nouvelle page",
 	/* Error messages */
-	'systemShortcut': 'L\'action "${0}" est disponible dans votre navigateur uniquement, par le biais d\'un raccourci-clavier. Utilisez ${1}.'
+	'systemShortcut': 'L\'action "${0}" est disponible dans votre navigateur uniquement, par le biais d\'un raccourci-clavier. Utilisez ${1}.',
+	'ctrlKey':'ctrl+${0}',
+	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })
-//end v1.x content
 );

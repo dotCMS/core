@@ -1,17 +1,13 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/sk/EnhancedGrid", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/sk/EnhancedGrid", ({
 	singleSort: "Jednoduché triedenie",
 	nestedSort: "Vnorené triedenie",
-	ascending: "Vzostupne",
-	descending: "Zostupne",
+	ascending: "Kliknite pre vzostupné triedenie",
+	descending: "Kliknite pre zostupné triedenie",
 	sortingState: "${0} - ${1}",
 	unsorted: "Netriediť tento stĺpec",
 	indirectSelectionRadio: "Riadok ${0}, jednoduchý výber, prepínač",
 	indirectSelectionCheckBox: "Riadok ${0}, viacnásobný výber, začiarkavacie políčko",
 	selectAll: "Vybrať všetko"
 })
-//end v1.x content
 );
-

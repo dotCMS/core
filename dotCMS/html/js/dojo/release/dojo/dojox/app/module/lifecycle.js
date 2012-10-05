@@ -1,2 +1,26 @@
-//>>built
-define("dojox/app/module/lifecycle",["dojo/_base/declare","dojo/_base/connect"],function(_1,_2){return _1(null,{lifecycle:{UNKNOWN:0,STARTING:1,STARTED:2,STOPPING:3,STOPPED:4},_status:0,getStatus:function(){return this._status;},setStatus:function(_3){this._status=_3;_2.publish("/app/status",[_3]);}});});
+define("dojox/app/module/lifecycle", ["dojo/_base/declare", "dojo/topic"], function(declare, topic){
+    return declare(null, {
+    
+        lifecycle: {
+            UNKNOWN: 0, //unknown
+            STARTING: 1, //starting
+            STARTED: 2, //started
+            STOPPING: 3, //stopping
+            STOPPED: 4 //stopped
+        },
+        
+        _status: 0, //unknown
+        
+        getStatus: function(){
+            return this._status;
+        },
+        
+        setStatus: function(newStatus){
+            this._status = newStatus;
+            
+            // publish /app/stauts event.
+            // application can subscribe this event to do some status change operation.
+            topic.publish("/app/status", newStatus);
+        }
+    });
+});

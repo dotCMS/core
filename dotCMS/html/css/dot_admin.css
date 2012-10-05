@@ -120,6 +120,9 @@ li.smallify .navMenu-arrow{display:block;}
 .listingTable td table tr{border:none;}
 .listingTable td button, .listingTable table.dijitSelect, .listingTable td .dijitTextBox{font-size:12px;}
 
+/* RELATIONSHIP TABLE */
+.relationLanguageFlag th, .relationLanguageFlag td{padding:0px 0px;border:0px;}
+
 .myVarTable{border:1px solid #d0d0d0; border-collapse:collapse;width:100%;}
 .myVarTable td{padding:4px 10px;border: 1px solid #ddd;}
 

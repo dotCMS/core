@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/sl/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/sl/SpellCheck", ({
 	widgetLabel: "Paketno preverjanje črkovanja ",
 	unfound: "Ni najdeno ",
 	skip: "Preskoči",
@@ -17,6 +15,4 @@ define(
 	iSkipAll: "Preskoči vse vnose, kot je ta ",
 	iMsg: "Ni predlogov za črkovanje "
 })
-
-//end v1.x content
 );

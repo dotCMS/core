@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/pt-pt/InsertAnchor", //begin v1.x content
-({
+"dojox/editor/plugins/nls/pt-pt/InsertAnchor", ({
 	insertAnchor: "Inserir âncora",
 	title: "Propriedades da âncora",
 	anchor: "Nome:",
@@ -9,6 +7,4 @@ define(
 	set: "Definir",
 	cancel: "Cancelar"
 })
-
-//end v1.x content
 );

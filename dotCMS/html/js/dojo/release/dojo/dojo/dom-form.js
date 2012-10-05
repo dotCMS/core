@@ -1,8 +1,149 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/dom-form", ["./_base/lang", "./dom", "./io-query", "./json"], function(lang, dom, ioq, json){
+	// module:
+	//		dojo/dom-form
 
-//>>built
-define("dojo/dom-form",["./_base/lang","./dom","./io-query","./json"],function(_1,_2,_3,_4){function _5(_6,_7,_8){if(_8===null){return;}var _9=_6[_7];if(typeof _9=="string"){_6[_7]=[_9,_8];}else{if(_1.isArray(_9)){_9.push(_8);}else{_6[_7]=_8;}}};var _a="file|submit|image|reset|button";var _b={fieldToObject:function fieldToObject(_c){var _d=null;_c=_2.byId(_c);if(_c){var _e=_c.name,_f=(_c.type||"").toLowerCase();if(_e&&_f&&!_c.disabled){if(_f=="radio"||_f=="checkbox"){if(_c.checked){_d=_c.value;}}else{if(_c.multiple){_d=[];var _10=[_c.firstChild];while(_10.length){for(var _11=_10.pop();_11;_11=_11.nextSibling){if(_11.nodeType==1&&_11.tagName.toLowerCase()=="option"){if(_11.selected){_d.push(_11.value);}}else{if(_11.nextSibling){_10.push(_11.nextSibling);}if(_11.firstChild){_10.push(_11.firstChild);}break;}}}}else{_d=_c.value;}}}}return _d;},toObject:function formToObject(_12){var ret={},_13=_2.byId(_12).elements;for(var i=0,l=_13.length;i<l;++i){var _14=_13[i],_15=_14.name,_16=(_14.type||"").toLowerCase();if(_15&&_16&&_a.indexOf(_16)<0&&!_14.disabled){_5(ret,_15,_b.fieldToObject(_14));if(_16=="image"){ret[_15+".x"]=ret[_15+".y"]=ret[_15].x=ret[_15].y=0;}}}return ret;},toQuery:function formToQuery(_17){return _3.objectToQuery(_b.toObject(_17));},toJson:function formToJson(_18,_19){return _4.stringify(_b.toObject(_18),null,_19?4:0);}};return _b;});
+    function setValue(/*Object*/ obj, /*String*/ name, /*String*/ value){
+        // summary:
+        //		For the named property in object, set the value. If a value
+        //		already exists and it is a string, convert the value to be an
+        //		array of values.
+
+        // Skip it if there is no value
+        if(value === null){
+            return;
+        }
+
+        var val = obj[name];
+        if(typeof val == "string"){ // inline'd type check
+            obj[name] = [val, value];
+        }else if(lang.isArray(val)){
+            val.push(value);
+        }else{
+            obj[name] = value;
+        }
+    }
+
+	var exclude = "file|submit|image|reset|button";
+
+	var form = {
+		// summary:
+		//		This module defines form-processing functions.
+
+		fieldToObject: function fieldToObject(/*DOMNode|String*/ inputNode){
+			// summary:
+			//		Serialize a form field to a JavaScript object.
+			// description:
+			//		Returns the value encoded in a form field as
+			//		as a string or an array of strings. Disabled form elements
+			//		and unchecked radio and checkboxes are skipped.	Multi-select
+			//		elements are returned as an array of string values.
+			// inputNode: DOMNode|String
+			// returns: Object
+
+			var ret = null;
+			inputNode = dom.byId(inputNode);
+			if(inputNode){
+				var _in = inputNode.name, type = (inputNode.type || "").toLowerCase();
+				if(_in && type && !inputNode.disabled){
+					if(type == "radio" || type == "checkbox"){
+						if(inputNode.checked){
+							ret = inputNode.value;
+						}
+					}else if(inputNode.multiple){
+						ret = [];
+						var nodes = [inputNode.firstChild];
+						while(nodes.length){
+							for(var node = nodes.pop(); node; node = node.nextSibling){
+								if(node.nodeType == 1 && node.tagName.toLowerCase() == "option"){
+									if(node.selected){
+										ret.push(node.value);
+									}
+								}else{
+									if(node.nextSibling){
+										nodes.push(node.nextSibling);
+									}
+									if(node.firstChild){
+										nodes.push(node.firstChild);
+									}
+									break;
+								}
+							}
+						}
+					}else{
+						ret = inputNode.value;
+					}
+				}
+			}
+			return ret; // Object
+		},
+
+		toObject: function formToObject(/*DOMNode|String*/ formNode){
+			// summary:
+			//		Serialize a form node to a JavaScript object.
+			// description:
+			//		Returns the values encoded in an HTML form as
+			//		string properties in an object which it then returns. Disabled form
+			//		elements, buttons, and other non-value form elements are skipped.
+			//		Multi-select elements are returned as an array of string values.
+			// formNode: DOMNode|String
+			// example:
+			//		This form:
+			//		|	<form id="test_form">
+			//		|		<input type="text" name="blah" value="blah">
+			//		|		<input type="text" name="no_value" value="blah" disabled>
+			//		|		<input type="button" name="no_value2" value="blah">
+			//		|		<select type="select" multiple name="multi" size="5">
+			//		|			<option value="blah">blah</option>
+			//		|			<option value="thud" selected>thud</option>
+			//		|			<option value="thonk" selected>thonk</option>
+			//		|		</select>
+			//		|	</form>
+			//
+			//		yields this object structure as the result of a call to
+			//		formToObject():
+			//
+			//		|	{
+			//		|		blah: "blah",
+			//		|		multi: [
+			//		|			"thud",
+			//		|			"thonk"
+			//		|		]
+			//		|	};
+
+			var ret = {}, elems = dom.byId(formNode).elements;
+			for(var i = 0, l = elems.length; i < l; ++i){
+				var item = elems[i], _in = item.name, type = (item.type || "").toLowerCase();
+				if(_in && type && exclude.indexOf(type) < 0 && !item.disabled){
+					setValue(ret, _in, form.fieldToObject(item));
+					if(type == "image"){
+						ret[_in + ".x"] = ret[_in + ".y"] = ret[_in].x = ret[_in].y = 0;
+					}
+				}
+			}
+			return ret; // Object
+		},
+
+		toQuery: function formToQuery(/*DOMNode|String*/ formNode){
+			// summary:
+			//		Returns a URL-encoded string representing the form passed as either a
+			//		node or string ID identifying the form to serialize
+			// formNode: DOMNode|String
+			// returns: String
+
+			return ioq.objectToQuery(form.toObject(formNode)); // String
+		},
+
+		toJson: function formToJson(/*DOMNode|String*/ formNode, /*Boolean?*/ prettyPrint){
+			// summary:
+			//		Create a serialized JSON string from a form node or string
+			//		ID identifying the form to serialize
+			// formNode: DOMNode|String
+			// prettyPrint: Boolean?
+			// returns: String
+
+			return json.stringify(form.toObject(formNode), null, prettyPrint ? 4 : 0); // String
+		}
+	};
+
+    return form;
+});

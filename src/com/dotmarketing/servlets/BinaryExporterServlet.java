@@ -475,7 +475,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 
 		
-		if(cacheMisses.containsKey(id)){
+		if(cacheMisses.containsKey(id+byInode)){
 			throw new DotStateException("404 - Unable to find id:" + id);
 		}
 
@@ -518,7 +518,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 
 		}
-		cacheMisses.put(id, true);
+		cacheMisses.put(id+byInode, true);
 		throw new DotStateException("404 - Unable to find id:" + id);
 		
 		

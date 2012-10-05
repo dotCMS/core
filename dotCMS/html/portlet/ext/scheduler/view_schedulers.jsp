@@ -22,6 +22,7 @@
 
 
 <div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
+
 	<div id="user_jobs" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "User-Jobs") %>" <%= ((request.getParameter("group") != null) && request.getParameter("group").equals("user_jobs")) ? "selected=\"true\"" : "" %> >		
 		<div class="yui-g portlet-toolbar">
 			<div class="yui-u" style="text-align:right;">	
@@ -122,6 +123,15 @@
 			<div style="clear: both;"></div>
 		<% } %>
 	</div>
+	<div id="system_jobs" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "scheduler.system.jobs") %>" <%= ((request.getParameter("group") != null) && request.getParameter("group").equals("user_jobs")) ? "selected=\"true\"" : "" %> >		
+		
+	
+		<%@ include file="/html/portlet/ext/scheduler/system_jobs.jsp" %>
+	
+	
+	
+	</div>
+	
 	<div id="recurrent_campaign" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Recurrent-Campaign-job") %>" <%= ((request.getParameter("group") != null) && request.getParameter("group").equals("user_jobs")) ? "selected=\"true\"" : "" %>>
 		<!-- Recurrent Campaing -->
 		<table class="listingTable">

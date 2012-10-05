@@ -29,6 +29,15 @@
         <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="templates-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('templates', '${id}')" ${templatesEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
         <td>NA</td>
     </tr>
+     <tr>
+        <th class="permissionType">${templateLayoutsWillInherit}</th>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-view-permission-${id}" onclick="viewPermissionChanged('template-layouts', '${id}')" ${templateLayoutsViewPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-edit-permission-${id}" onclick="editPermissionChanged('template-layouts', '${id}')" ${templateLayoutsEditPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-publish-permission-${id}" onclick="publishPermissionChanged('template-layouts', '${id}')" ${templateLayoutsPublishPermissionChecked} ${editPermissionDisabled} /></td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('template-layouts', '${id}')" ${templateLayoutsEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>
+        <td>NA</td>
+    </tr>
     <tr>
         <th class="permissionType">${pagesWillInherit}</th>
         <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="pages-view-permission-${id}" onclick="viewPermissionChanged('pages', '${id}')" ${pagesViewPermissionChecked} ${editPermissionDisabled} /></td>

@@ -1,5 +1,7 @@
 package com;
 
+import com.dotmarketing.business.PermissionAPITest;
+import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
@@ -17,7 +19,9 @@ import org.junit.runners.Suite;
         FieldFactoryTest.class,
         StructureFactoryTest.class,
         ContentletFactoryTest.class,
-        ContentletAPITest.class
+        ContentletAPITest.class,
+        PermissionAPITest.class,
+        ContainerAPITest.class
 } )
 public class AllTestsSuite {
 

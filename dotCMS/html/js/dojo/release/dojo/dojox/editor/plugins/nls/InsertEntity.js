@@ -1,11 +1,10 @@
-//>>built
 define("dojox/editor/plugins/nls/InsertEntity", { root:
 //begin v1.x content
 ({
 	insertEntity: "Insert Symbol"
 })
-,
 //end v1.x content
+,
 "zh": true,
 "zh-tw": true,
 "tr": true,

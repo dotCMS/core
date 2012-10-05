@@ -410,6 +410,13 @@
 		<scope>application</scope>
 		<class>com.dotmarketing.viewtools.WorkflowTool</class>
 	</tool>
+	
+	<tool>
+		<key>submitcontenttool</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.SubmitContentWebAPI</class>
+	</tool>
+	
 	<!-- Dotmarketing View Tools End -->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->

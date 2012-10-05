@@ -150,9 +150,8 @@
 			<div id="<%= relationJsName %>relateMenu"></div>
 		</div>
 	</div>
-
-
-		<table border="0" class="listingTable" id="<%= relationJsName %>Table" style="margin-bottom:30px;">
+	
+		<table border="0" class="listingTable"  style="margin-bottom:30px;">
 				<thead>
 					<tr class="beta">
 					<th width="20"><B><font class="beta" size="2"></font></B></th>
@@ -183,7 +182,7 @@
 					<%
 						if(langs.size() > 1) {
 					%>
-						<th width="40"><B><font class="beta" size="2"></font></B></th>
+						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 200 %>px;"><B><font class="beta" size="2"></font></B></th>
 					<%
 						}else{
 					%>
@@ -226,6 +225,64 @@
 				   	if(parent && RelationshipFactory.isSameStructureRelationship(rel, targetStructure)){
 			        	//continue;
 			        }
+				   	
+				   	
+				   	
+				   	
+					/**********   GIT 1057     *******/
+					
+					ContentletAPI contentletAPI = APILocator.getContentletAPI();
+					Contentlet languageContentlet = null;
+				    %>
+				    var cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings = new Array();
+				    <%
+					for(Language lang : langs){
+						try{
+							languageContentlet = null;
+							languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), true, lang.getId(), user, false);
+						}catch (Exception e) {
+							try{
+							languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), false, lang.getId(), user, false);
+							}catch (Exception e1) {	}
+						}
+					    %>
+					    var cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling = new Array();
+					    <%
+					    if((languageContentlet == null) || (!UtilMethods.isSet(languageContentlet.getInode()))){
+					    	%>
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langCode'] = '<%=langAPI.getLanguageCodeAndCountry(lang.getId(),null)%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langName'] = '<%=lang.getLanguage() %>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langId'] = '<%=lang.getId() %>';
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['inode'] = '';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['parent'] = '<%=parent %>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['working'] = 'false';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['live'] = 'false';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['deleted'] = 'true';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['locked'] = 'false';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['siblingInode'] = '<%=cont.getInode()%>';
+							
+						    <%
+					    }else{
+					    	%>
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langCode'] = '<%=langAPI.getLanguageCodeAndCountry(lang.getId(),null)%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langName'] = '<%=lang.getLanguage() %>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langId'] = '<%=lang.getId() %>';
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['inode'] = '<%=languageContentlet.getInode()%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['parent'] = '<%=parent %>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['working'] = '<%=String.valueOf(languageContentlet.isWorking())%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['live'] = '<%=String.valueOf(languageContentlet.isLive())%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['deleted'] = '<%=String.valueOf(languageContentlet.isArchived())%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['locked'] = '<%=Boolean.valueOf(languageContentlet.isLocked() && ! languageContentlet.getModUser().equals(user.getUserId()))%>';
+							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['siblingInode'] = '<%=cont.getInode()%>';
+						    <%
+					    }
+					    %>
+					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings[cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings.length] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling;
+					    <%
+					    
+					}
+					
+				/**********   GIT 1057     *******/							 				   	
 
 					String languageCode;
 					String languageName;
@@ -241,7 +298,7 @@
 				cont['live'] = '<%=String.valueOf(cont.isLive())%>';
 				cont['deleted'] = '<%=String.valueOf(cont.isArchived())%>';
 				cont['locked'] = '<%=Boolean.valueOf(cont.isLocked() && ! cont.getModUser().equals(user.getUserId()))%>';
-
+				cont['siblings'] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings;
 
 		<%
 					for (Field f : targetFields) {
@@ -294,22 +351,54 @@
 				function <%= relationJsName %>_lang(o) {
 					var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
 					var lang = '';
-					var result = '&nbsp;';
-
+					var result = '';
+					var anchorValue = "";
+		
 					if (o != null) {
-					  langImg = o['langCode'];
-					  langName = o['langName'];
-					  result = '';
-					    result = '<img style="vertical-align: middle;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">';
+						result = result + "<table width=\"100%\" class=\"relationLanguageFlag\"><tbody><tr>"
+						
+						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
+																								
+							result = result + '<td  class=\"relationLanguageFlag\">';
+							langImg = o['siblings'][sibIndex]['langCode'];
+							langName = o['siblings'][sibIndex]['langName'];
+							
+							if(o['siblings'][sibIndex]['live'] == 'true'){
+																								
+								anchorValue = "";
+								if (o != null){
+									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+					 			}
+								
+								result = result +'&nbsp;&nbsp;' + anchorValue + '<img style="vertical-align: middle; border: solid 2px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
+								
+							}else if(o['siblings'][sibIndex]['working'] == 'true'){
+								
+								anchorValue = "";
+								if (o != null){
+									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+					 			}
+								
+								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FF1919; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
+								
+							}else{
+								
+								anchorValue = "";
+								if (o != null){
+									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
+					 			}
+								
+								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
+								
+							}
+							
+							result = result + "</td>";
+							if((sibIndex+1)%6 == 0){
+								result = result + "</tr><tr>";
+							}
+						}
+						result = result + "</tr></tbody></table>";
 					}
-
-					if(contentletLangCode != o['langCode']){
-						  langImg = '<%=langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
-						  langName = '<%=langAPI.getLanguage(contentlet.getLanguageId()).getLanguage()%>';
-						  result = '';
-  					    result = '<img style="vertical-align: middle;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">';
-					}
-
 					return result;
 				}
 
@@ -364,11 +453,8 @@
 		 %>
 	 		function <%= functionName %> (o) {
 				var value = "";
-				if (o != null && o['locked'] == "false"){
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "');\"" + ">" + o['<%=fieldName%>'] + "</a>";
-	 			}
-	 			else{
-	 				value =   "<a class=\"beta\" href=\"javascript:alert('This content is locked');\">" + o['<%=fieldName%>'] + "</a>";
+				if (o != null){
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['<%=fieldName%>'] + "</a>";
 	 			}
 	 			return value;
 			}
@@ -418,26 +504,75 @@
 				}
 
 				//Invoked when a contentlet is selected to fill the contentlet data in the table
-				function <%= relationJsName %>_addRelationshipCallback(data){
+				function <%= relationJsName %>_addRelationshipCallback(selectedData){
+					var data = new Array();
+					var dataToRelate = new Array();
+					
+					// Eliminating existing relations
+					for (var indexJ = 0; indexJ < selectedData.length; indexJ++) {
+						var relationExists = false;
+						for (var indexI = 0; indexI < <%= relationJsName %>_Contents.length; indexI++) {
+							if(selectedData[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
+								relationExists = true;
+							}
+						}
+						if(!relationExists){
+							dataToRelate[dataToRelate.length] = selectedData[indexJ];
+						}
+					}
+					
+					// Eliminating mulitple contentlets for same identifier
+					for (var indexK = 0; indexK < dataToRelate.length; indexK++) {
+						var doesIdentifierExists = false;
+						for (var indexL = 0; indexL < data.length; indexL++) {
+							if(dataToRelate[indexK]['id'] == data[indexL]['id'])
+								doesIdentifierExists = true;
+						}
+						if(!doesIdentifierExists)
+							data[data.length] = dataToRelate[indexK];
+					}				
+					
+					
 					if( data == null || (data != null && data.length == 0) ) {
 					  return;
 					}
+
+					var dataNoRep = new Array();
+
+					if(<%= relationJsName %>_Contents.length == 0) {
+						 dataNoRep = data;
+					}
+
 					for (var i = 0; i < <%= relationJsName %>_Contents.length; i++) {
 						var cont = <%= relationJsName %>_Contents[i];
 						var identifier = "";
 						if (cont != null) {
 							identifier = cont['id'];
 						}
-						if (identifier == data[0]['id']) {
-							alert ("This relation already exists!");
-							return;
+
+						var k = 0;
+						for(var j = 0; j < data.length; j++ ) {
+							if (identifier == data[j]['id']) {
+								data.splice(j,1);
+							} else {
+								dataNoRep[k] = data[j];
+								k++;
+							}
 						}
+
 					}
-					data[0]['groupStart'] = true;
-					<%= relationJsName %>RelatedCons.insertNodes(false,data);
-					<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(data);
+
+					for(var i=0; i < dataNoRep.length; i++) {
+						dataNoRep[i]['groupStart'] = true;
+					}
+
+// 					data[0]['groupStart'] = true;
+					<%= relationJsName %>RelatedCons.insertNodes(false,dataNoRep);
+					<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(dataNoRep);
 					renumberRecolorAndReorder<%= relationJsName %>();
 				}
+
+
 
 				function <%= relationJsName %>_reorder () {
 					var newOrder = new Array();
@@ -502,12 +637,11 @@
 
 					var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					href += "<portlet:param name='cmd' value='new' />";
-
-					href += "<portlet:param name='inode' value='' />";
+					href += "<portlet:param name='cmd' value='new' />";					
 					href += "</portlet:actionURL>";
 
-					//href += "&_EXT_11_selectedStructure=" + structureInode ;
+					//href += "&_EXT_11_selectedStructure=" + structureInode ; 
+					href += "&inode" + "";
 					href += "&selectedStructure=" + structureInode ;
 					href += "&lang=" + '<%= languageId %>';
 					href += "&relwith=" +'<%=contentletInode%>';
@@ -605,8 +739,8 @@
 					<%
 					if(langs.size() > 1) {
 					%>	// displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-						var langTD = document.createElement("td");
-						langTD.innerHTML = <%= relationJsName %>_status(item) + "&nbsp;" + <%= relationJsName %>_lang(item);
+						var langTD = document.createElement("td");					
+						langTD.innerHTML = <%= relationJsName %>_lang(item);
 						tr.appendChild(langTD);
 					<%
 					}else{
@@ -640,14 +774,18 @@
 
 				dojo.addOnLoad(<%= relationJsName %>init);
 
+
 				// to edit a related content, with proper referer
-				function <%= relationJsName %>editRelatedContent(inode){
+				function <%= relationJsName %>editRelatedContent(inode, siblingInode, langId){
+					
+					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
+						return;
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					referer += "<portlet:param name='cmd' value='edit' />";
-					referer += "<portlet:param name='inode' value='<%=contentletInode%>' />";
+					referer += "<portlet:param name='cmd' value='edit' />";					
 					referer += "</portlet:actionURL>";
+					referer += "&inode="+'<%=contentletInode%>';
 					referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
 					referer += "&relend=true";
 					referer += "&referer=" + '<%=java.net.URLDecoder.decode(referer, "UTF-8")%>';
@@ -660,6 +798,10 @@
 					href += "<portlet:param name='cmd' value='edit' />";
 					href += "</portlet:actionURL>";
 					href += "&inode="+inode;
+					if(inode == ''){
+						href += "&sibbling=" + siblingInode;
+						href += "&lang=" + langId;
+					}			
 					href += "&referer=" + escape(referer);
 					document.location.href = href;
 				}
@@ -667,11 +809,8 @@
 				// displays edit icon and link to edit content
 		 		function <%= relationJsName %>editAction (o) {
 					var value = "";
-					if (o != null && o['locked'] == "false"){
-						value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "');\"" + "><span class=\"editIcon\"></span></a>";
-		 			}
-		 			else{
-		 				value =   '<a class="beta" href="javascript:alert(\'This content is locked\');"><span class="editIcon"></span></a>';
+					if (o != null){
+						value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + "><span class=\"editIcon\"></span></a>";
 		 			}
 		 			return value;
 		 		}
@@ -820,7 +959,7 @@
 
 			</script>
 
-			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" onContentSelected="callback<%= relationJsName %>" title="" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
+			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" relationJsName="<%= relationJsName %>" multiple="true" onContentSelected="callback<%= relationJsName %>" title="" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
 <%
             counter=counter+100;
             searchCounter+=10000;
@@ -841,6 +980,19 @@
 				  }
 				);
 			<%}%>
+			function toggleCheckbox(id){				
+				var chk = document.getElementById(id);
+				var elems = chk.getElementsByTagName ("input");				
+				var len = elems.length;	
+				
+				for ( var i = 0; i < len; i++ ){
+					if (elems[i].checked){
+						dijit.byId(elems[i].id).set("checked",false);
+				    }else{
+				    	dijit.byId(elems[i].id).set("checked",true);
+				    }				
+				}
+			}
 			</script>
 <%
 	} else {

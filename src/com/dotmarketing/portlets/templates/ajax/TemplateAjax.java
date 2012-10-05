@@ -32,6 +32,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 
@@ -71,14 +72,31 @@ public class TemplateAjax {
 
 
 			if(UtilMethods.isSet(query.get("hostId"))) {
-				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, start, count));
+			    int startF=start;
+			    int countF=count;
+			    if(start==0){
+                    Template t = new Template();
+                    t.setOwner(user.getUserId());
+                    t.setModUser(user.getUserId());
+                    t.setInode("0");
+                    t.setTitle("--- " + LanguageUtil.get(user, "All-Hosts") +" ---");
+                    t.setIdentifier("0");
+                    fullListTemplates.add(t);
+                    totalTemplates.add(t);
+                    countF=count-1;
+                }
+			    else {
+			        startF=start-1;
+			    }
+				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, startF, countF));
+				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, 0, 1000));
+				
 			}
 
 			//doesn't currently respect archived
 			if(fullListTemplates.size() ==0){
-
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user,"", filter,true, start, start>0?count:count+1));
-
+				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user,"", filter,true, 0, 1000));
 			}
 
 
@@ -103,16 +121,14 @@ public class TemplateAjax {
 			}
 		}
 
-		totalTemplates = templateAPI.findTemplatesAssignedTo(host);
+//		totalTemplates = templateAPI.findTemplatesAssignedTo(host);
 //		if(start >= list.size()) start =  list.size() - 1;
 //		if(start < 0)  start  = 0;
 //		if(start + count >= list.size()) count = list.size() - start;
 //		List<Map<String, Object>> templates = list.subList(start, start + count);
 
 		results.put("totalResults", totalTemplates.size());
-		if(UtilMethods.isSet(query.get("hostId"))) {
-			results.put("totalResults", totalTemplates.size());
-		}
+		
 		results.put("list", list);
 
 		return results;

@@ -1,2 +1,234 @@
-//>>built
-define("dijit/form/FilteringSelect",["dojo/data/util/filter","dojo/_base/declare","dojo/_base/Deferred","dojo/_base/lang","./MappedTextBox","./ComboBoxMixin"],function(_1,_2,_3,_4,_5,_6){return _2("dijit.form.FilteringSelect",[_5,_6],{required:true,_lastDisplayedValue:"",_isValidSubset:function(){return this._opened;},isValid:function(){return this.item||(!this.required&&this.get("displayedValue")=="");},_refreshState:function(){if(!this.searchTimer){this.inherited(arguments);}},_callbackSetLabel:function(_7,_8,_9,_a){if((_8&&_8[this.searchAttr]!==this._lastQuery)||(!_8&&_7.length&&this.store.getIdentity(_7[0])!=this._lastQuery)){return;}if(!_7.length){this.set("value","",_a||(_a===undefined&&!this.focused),this.textbox.value,null);}else{this.set("item",_7[0],_a);}},_openResultList:function(_b,_c,_d){if(_c[this.searchAttr]!==this._lastQuery){return;}this.inherited(arguments);if(this.item===undefined){this.validate(true);}},_getValueAttr:function(){return this.valueNode.value;},_getValueField:function(){return "value";},_setValueAttr:function(_e,_f,_10,_11){if(!this._onChangeActive){_f=null;}if(_11===undefined){if(_e===null||_e===""){_e="";if(!_4.isString(_10)){this._setDisplayedValueAttr(_10||"",_f);return;}}var _12=this;this._lastQuery=_e;_3.when(this.store.get(_e),function(_13){_12._callbackSetLabel(_13?[_13]:[],undefined,undefined,_f);});}else{this.valueNode.value=_e;this.inherited(arguments);}},_setItemAttr:function(_14,_15,_16){this.inherited(arguments);this._lastDisplayedValue=this.textbox.value;},_getDisplayQueryString:function(_17){return _17.replace(/([\\\*\?])/g,"\\$1");},_setDisplayedValueAttr:function(_18,_19){if(_18==null){_18="";}if(!this._created){if(!("displayedValue" in this.params)){return;}_19=false;}if(this.store){this.closeDropDown();var _1a=_4.clone(this.query);var qs=this._getDisplayQueryString(_18),q;if(this.store._oldAPI){q=qs;}else{q=_1.patternToRegExp(qs,this.ignoreCase);q.toString=function(){return qs;};}this._lastQuery=_1a[this.searchAttr]=q;this.textbox.value=_18;this._lastDisplayedValue=_18;this._set("displayedValue",_18);var _1b=this;var _1c={ignoreCase:this.ignoreCase,deep:true};_4.mixin(_1c,this.fetchProperties);this._fetchHandle=this.store.query(_1a,_1c);_3.when(this._fetchHandle,function(_1d){_1b._fetchHandle=null;_1b._callbackSetLabel(_1d||[],_1a,_1c,_19);},function(err){_1b._fetchHandle=null;if(!_1b._cancelingQuery){console.error("dijit.form.FilteringSelect: "+err.toString());}});}},undo:function(){this.set("displayedValue",this._lastDisplayedValue);}});});
+define("dijit/form/FilteringSelect", [
+	"dojo/data/util/filter", // filter.patternToRegExp
+	"dojo/_base/declare", // declare
+	"dojo/_base/lang", // lang.mixin
+	"dojo/when",
+	"./MappedTextBox",
+	"./ComboBoxMixin"
+], function(filter, declare, lang, when, MappedTextBox, ComboBoxMixin){
+
+	// module:
+	//		dijit/form/FilteringSelect
+
+	return declare("dijit.form.FilteringSelect", [MappedTextBox, ComboBoxMixin], {
+		// summary:
+		//		An enhanced version of the HTML SELECT tag, populated dynamically
+		//
+		// description:
+		//		An enhanced version of the HTML SELECT tag, populated dynamically. It works
+		//		very nicely with very large data sets because it can load and page data as needed.
+		//		It also resembles ComboBox, but does not allow values outside of the provided ones.
+		//		If OPTION tags are used as the data provider via markup, then the
+		//		OPTION tag's child text node is used as the displayed value when selected
+		//		while the OPTION tag's value attribute is used as the widget value on form submit.
+		//		To set the default value when using OPTION tags, specify the selected
+		//		attribute on 1 of the child OPTION tags.
+		//
+		//		Similar features:
+		//
+		//		- There is a drop down list of possible values.
+		//		- You can only enter a value from the drop down list.  (You can't
+		//			enter an arbitrary value.)
+		//		- The value submitted with the form is the hidden value (ex: CA),
+		//			not the displayed value a.k.a. label (ex: California)
+		//
+		//		Enhancements over plain HTML version:
+		//
+		//		- If you type in some text then it will filter down the list of
+		//			possible values in the drop down list.
+		//		- List can be specified either as a static list or via a javascript
+		//			function (that can get the list from a server)
+
+		// required: Boolean
+		//		True (default) if user is required to enter a value into this field.
+		required: true,
+
+		_lastDisplayedValue: "",
+
+		_isValidSubset: function(){
+			return this._opened;
+		},
+
+		isValid: function(){
+			// Overrides ValidationTextBox.isValid()
+			return !!this.item || (!this.required && this.get('displayedValue') == ""); // #5974
+		},
+
+		_refreshState: function(){
+			if(!this.searchTimer){ // state will be refreshed after results are returned
+				this.inherited(arguments);
+			}
+		},
+
+		_callbackSetLabel: function(
+						/*Array*/ result,
+						/*Object*/ query,
+						/*Object*/ options,
+						/*Boolean?*/ priorityChange){
+			// summary:
+			//		Callback from dojo.store after lookup of user entered value finishes
+
+			// setValue does a synchronous lookup,
+			// so it calls _callbackSetLabel directly,
+			// and so does not pass dataObject
+			// still need to test against _lastQuery in case it came too late
+			if((query && query[this.searchAttr] !== this._lastQuery) || (!query && result.length && this.store.getIdentity(result[0]) != this._lastQuery)){
+				return;
+			}
+			if(!result.length){
+				//#3268: don't modify display value on bad input
+				//#3285: change CSS to indicate error
+				this.set("value", '', priorityChange || (priorityChange === undefined && !this.focused), this.textbox.value, null);
+			}else{
+				this.set('item', result[0], priorityChange);
+			}
+		},
+
+		_openResultList: function(/*Object*/ results, /*Object*/ query, /*Object*/ options){
+			// Callback when a data store query completes.
+			// Overrides ComboBox._openResultList()
+
+			// #3285: tap into search callback to see if user's query resembles a match
+			if(query[this.searchAttr] !== this._lastQuery){
+				return;
+			}
+			this.inherited(arguments);
+
+			if(this.item === undefined){ // item == undefined for keyboard search
+				// If the search returned no items that means that the user typed
+				// in something invalid (and they can't make it valid by typing more characters),
+				// so flag the FilteringSelect as being in an invalid state
+				this.validate(true);
+			}
+		},
+
+		_getValueAttr: function(){
+			// summary:
+			//		Hook for get('value') to work.
+
+			// don't get the textbox value but rather the previously set hidden value.
+			// Use this.valueNode.value which isn't always set for other MappedTextBox widgets until blur
+			return this.valueNode.value;
+		},
+
+		_getValueField: function(){
+			// Overrides ComboBox._getValueField()
+			return "value";
+		},
+
+		_setValueAttr: function(/*String*/ value, /*Boolean?*/ priorityChange, /*String?*/ displayedValue, /*item?*/ item){
+			// summary:
+			//		Hook so set('value', value) works.
+			// description:
+			//		Sets the value of the select.
+			//		Also sets the label to the corresponding value by reverse lookup.
+			if(!this._onChangeActive){ priorityChange = null; }
+
+			if(item === undefined){
+				if(value === null || value === ''){
+					value = '';
+					if(!lang.isString(displayedValue)){
+						this._setDisplayedValueAttr(displayedValue||'', priorityChange);
+						return;
+					}
+				}
+
+				var self = this;
+				this._lastQuery = value;
+				when(this.store.get(value), function(item){
+					self._callbackSetLabel(item? [item] : [], undefined, undefined, priorityChange);
+				});
+			}else{
+				this.valueNode.value = value;
+				this.inherited(arguments);
+			}
+		},
+
+		_setItemAttr: function(/*item*/ item, /*Boolean?*/ priorityChange, /*String?*/ displayedValue){
+			// summary:
+			//		Set the displayed valued in the input box, and the hidden value
+			//		that gets submitted, based on a dojo.data store item.
+			// description:
+			//		Users shouldn't call this function; they should be calling
+			//		set('item', value)
+			// tags:
+			//		private
+			this.inherited(arguments);
+			this._lastDisplayedValue = this.textbox.value;
+		},
+
+		_getDisplayQueryString: function(/*String*/ text){
+			return text.replace(/([\\\*\?])/g, "\\$1");
+		},
+
+		_setDisplayedValueAttr: function(/*String*/ label, /*Boolean?*/ priorityChange){
+			// summary:
+			//		Hook so set('displayedValue', label) works.
+			// description:
+			//		Sets textbox to display label. Also performs reverse lookup
+			//		to set the hidden value.  label should corresponding to item.searchAttr.
+
+			if(label == null){ label = ''; }
+
+			// This is called at initialization along with every custom setter.
+			// Usually (or always?) the call can be ignored.   If it needs to be
+			// processed then at least make sure that the XHR request doesn't trigger an onChange()
+			// event, even if it returns after creation has finished
+			if(!this._created){
+				if(!("displayedValue" in this.params)){
+					return;
+				}
+				priorityChange = false;
+			}
+
+			// Do a reverse lookup to map the specified displayedValue to the hidden value.
+			// Note that if there's a custom labelFunc() this code
+			if(this.store){
+				this.closeDropDown();
+				var query = lang.clone(this.query); // #6196: populate query with user-specifics
+
+				// Generate query
+				var qs = this._getDisplayQueryString(label), q;
+				if(this.store._oldAPI){
+					// remove this branch for 2.0
+					q = qs;
+				}else{
+					// Query on searchAttr is a regex for benefit of dojo/store/Memory,
+					// but with a toString() method to help dojo/store/JsonRest.
+					// Search string like "Co*" converted to regex like /^Co.*$/i.
+					q = filter.patternToRegExp(qs, this.ignoreCase);
+					q.toString = function(){ return qs; };
+				}
+				this._lastQuery = query[this.searchAttr] = q;
+
+				// If the label is not valid, the callback will never set it,
+				// so the last valid value will get the warning textbox.   Set the
+				// textbox value now so that the impending warning will make
+				// sense to the user
+				this.textbox.value = label;
+				this._lastDisplayedValue = label;
+				this._set("displayedValue", label);	// for watch("displayedValue") notification
+				var _this = this;
+				var options = {
+					ignoreCase: this.ignoreCase,
+					deep: true
+				};
+				lang.mixin(options, this.fetchProperties);
+				this._fetchHandle = this.store.query(query, options);
+				when(this._fetchHandle, function(result){
+					_this._fetchHandle = null;
+					_this._callbackSetLabel(result || [], query, options, priorityChange);
+				}, function(err){
+					_this._fetchHandle = null;
+					if(!_this._cancelingQuery){	// don't treat canceled query as an error
+						console.error('dijit.form.FilteringSelect: ' + err.toString());
+					}
+				});
+			}
+		},
+
+		undo: function(){
+			this.set('displayedValue', this._lastDisplayedValue);
+		}
+	});
+});

@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -545,23 +547,34 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 		return ffac.findFiles(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
 
-	public File copyFile(File file, Folder parent, User user, boolean respectFrontendRoles) throws IOException, DotSecurityException,
-			DotDataException {
+    public File copyFile ( File file, Host host, User user, boolean respectFrontendRoles ) throws IOException, DotSecurityException, DotDataException {
+        return copyFile( file, host, null, user, respectFrontendRoles );
+    }
 
-		if(!isLegacyFilesSupported()){
-			throw new DotStateException("File Assets have been disabled.");
-		}
-		
-		if (!permissionAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-		return ffac.copyFile(file, parent);
+    public File copyFile ( File file, Folder parent, User user, boolean respectFrontendRoles ) throws IOException, DotSecurityException, DotDataException {
+        return copyFile( file, null, parent, user, respectFrontendRoles );
+    }
 
-	}
+    public File copyFile ( File file, Host host, Folder parent, User user, boolean respectFrontendRoles ) throws IOException, DotSecurityException, DotDataException {
 
+        if ( !isLegacyFilesSupported() ) {
+            throw new DotStateException( "File Assets have been disabled." );
+        }
+
+        if ( !permissionAPI.doesUserHavePermission( file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        }
+
+        if ( parent != null ) {
+            return ffac.copyFile( file, parent );
+        } else {
+            return ffac.copyFile( file, host );
+        }
+    }
 
 	public boolean renameFile(File file, String newName, User user, boolean respectFrontendRoles) throws DotStateException,
 			DotDataException, DotSecurityException {
@@ -576,20 +589,33 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 		return ffac.renameFile(file, newName);
 	}
 
-	public boolean moveFile(File file, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException,
-			DotSecurityException {
+	public boolean moveFile(File file, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
+        return moveFile(file, parent, null, user, respectFrontendRoles);
+    }
+
+	public boolean moveFile(File file, Host host, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
+        return moveFile(file, null, host, user, respectFrontendRoles);
+    }
+
+	public boolean moveFile(File file, Folder parent, Host host, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
+
 		if(!isLegacyFilesSupported()){
 			throw new DotStateException("File Assets have been disabled.");
 		}
-		
-		if (!permissionAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-		return ffac.moveFile(file, parent);
 
+        if ( !permissionAPI.doesUserHavePermission( file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles ) ) {
+            throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+        }
+
+        if ( parent != null ) {
+            return ffac.moveFile(file, parent);
+        } else {
+            return ffac.moveFile( file, host );
+        }
 	}
 
 	public void publishFile(File file, User user, boolean respectFrontendRoles) throws WebAssetException, DotSecurityException,
@@ -724,6 +750,18 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
         }
     }
     
+    public String getRealAssetPathTmpBinary() {
+        String assetpath=getRealAssetPath();
+        java.io.File adir=new java.io.File(assetpath);
+        if(!adir.isDirectory())
+            adir.mkdir();
+        String path=assetpath+java.io.File.separator+"tmp_upload";
+        java.io.File dir=new java.io.File(path);
+        if(!dir.isDirectory())
+            dir.mkdir();
+        return path;
+    }
+    
     public boolean isLegacyFilesSupported(){//DOTCMS-6905
     	boolean isLegacyFilesSupported = false;
 		try{
@@ -738,5 +776,32 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			}
 		}
 		return isLegacyFilesSupported;
+    }
+
+    @Override
+    public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException {
+        String condition = " mod_date < ? and not exists (select * from fileasset_version_info "+
+                " where working_inode=file_asset.inode or live_inode=file_asset.inode)";
+        
+        String inodesToDelete = "select inode from file_asset where "+condition;
+        DotConnect dc = new DotConnect();
+        dc.setSQL(inodesToDelete);
+        dc.addParam(assetsOlderThan);
+        for(Map<String,Object> inodeMap : dc.loadObjectResults()) {
+            String inode=inodeMap.get("inode").toString();
+            java.io.File fileFolderPath = new java.io.File(
+                    APILocator.getFileAPI().getRealAssetPath() + 
+                    java.io.File.separator + inode.substring(0, 1) +
+                    java.io.File.separator + inode.substring(1, 2));
+            if(fileFolderPath.exists() && fileFolderPath.isDirectory()) {
+                for(java.io.File ff : fileFolderPath.listFiles())
+                    if(ff.getName().startsWith(inode) && UtilMethods.isImage(ff.getName()))
+                        if(FileUtils.deleteQuietly(ff))
+                            Logger.info(this, "deleting old file "+ff.getAbsolutePath());
+                        else
+                            Logger.info(this, "can't delete old file "+ff.getAbsolutePath());
+            }
+        }
+        return deleteOldVersions(assetsOlderThan,"file_asset");
     }
 }

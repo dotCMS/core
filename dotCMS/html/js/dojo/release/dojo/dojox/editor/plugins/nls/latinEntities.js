@@ -1,4 +1,3 @@
-//>>built
 define("dojox/editor/plugins/nls/latinEntities", { root:
 //begin v1.x content
 ({
@@ -257,8 +256,8 @@ define("dojox/editor/plugins/nls/latinEntities", { root:
 	rsaquo:"single right-pointing angle quotation mark",
 	euro:"euro sign"
 })
-,
 //end v1.x content
+,
 "zh": true,
 "zh-tw": true,
 "tr": true,

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ar/InsertAnchor", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ar/InsertAnchor", ({
 	insertAnchor: "ادراج نقطة التثبيت",
 	title: "خصائص نقطة التثبيت",
 	anchor: "الاسم:",
@@ -9,6 +7,4 @@ define(
 	set: "تحديد",
 	cancel: "الغاء"
 })
-
-//end v1.x content
 );

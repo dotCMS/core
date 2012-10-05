@@ -26,7 +26,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class ReindexThread extends Thread {
 
@@ -40,6 +42,8 @@ public class ReindexThread extends Thread {
 	private boolean work = false;
 	private int sleep = 100;
 	private int delay = 7500;
+	private boolean reindexSleepDuringIndex = false;
+	private int reindexSleepDuringIndexTime = 0;
 
 	private void finish() {
 		work = false;
@@ -80,18 +84,19 @@ public class ReindexThread extends Thread {
 					    fillRemoteQ();
 					
 					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation()) {
-					    HibernateUtil.startTransaction();
+					    Connection conn=DbConnectionFactory.getDataSource().getConnection();
 					    try{
-    					    lockCluster();
+					        conn.setAutoCommit(false);
+    					    lockCluster(conn);
     					    
-    					    if(ESReindexationProcessStatus.inFullReindexation()) {
-    					        if(jAPI.recordsLeftToIndexForServer()==0) {
+    					    if(ESReindexationProcessStatus.inFullReindexation(conn)) {
+    					        if(jAPI.recordsLeftToIndexForServer(conn)==0) {
     					            Logger.info(this, "Running Reindex Switchover");
     					            
     					            // wait a bit while all records gets flushed to index
                                     Thread.sleep(2000L);
                                     
-    					            indexAPI.fullReindexSwitchover();
+    					            indexAPI.fullReindexSwitchover(conn);
     					            
     					            // wait a bit while elasticsearch flushes it state
     	                            Thread.sleep(2000L);
@@ -99,8 +104,21 @@ public class ReindexThread extends Thread {
     					    }
 					    
 					    }finally{
-					    	unlockCluster();
-					    	HibernateUtil.commitTransaction();
+					        try {
+					            unlockCluster(conn);
+					        }
+					        finally {
+					            try {
+					                conn.commit();
+					            }
+					            catch(Exception ex) {
+					                Logger.warn(this, ex.getMessage(), ex);
+					                conn.rollback();
+					            }
+					            finally {
+					                conn.close();
+					            }
+					        }
 					    }
 					}    
 					
@@ -113,6 +131,13 @@ public class ReindexThread extends Thread {
     					    IndexJournal<String> idx = remoteQ.removeFirst();
     				        writeDocumentToIndex(bulk,idx);
     				        recordsToDelete.add(idx);
+    				        if(reindexSleepDuringIndex){
+	    				        try {
+	    							Thread.sleep(delay);
+	    						} catch (InterruptedException e) {
+	    							Logger.error(this, e.getMessage(), e);
+	    						}
+    				        }
 						}
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
@@ -140,8 +165,19 @@ public class ReindexThread extends Thread {
 				} finally {
 					try {
 						HibernateUtil.closeSession();
+						try{
+							DbConnectionFactory.closeConnection();
+						}catch (Exception e) {
+							Logger.debug(this, "Unable to close connection : " + e.getMessage(),e);
+						}
+						
 					} catch (DotHibernateException e) {
 						Logger.error(this, e.getMessage(), e);
+						try{
+							DbConnectionFactory.closeConnection();
+						}catch (Exception e1) {
+							Logger.debug(this, "Unable to close connection : " + e1.getMessage(),e1);
+						}
 					}
 				}
 				
@@ -165,9 +201,12 @@ public class ReindexThread extends Thread {
 	}
 
 	public void unlockCluster() throws DotDataException {
+	    unlockCluster(DbConnectionFactory.getConnection());
+	}
+	
+	public void unlockCluster(Connection lockConn) throws DotDataException {
 	    try {
             if(DbConnectionFactory.isMySql()) {
-                Connection lockConn=DbConnectionFactory.getConnection();
                 Statement smt=lockConn.createStatement();
                 smt.executeUpdate("unlock tables");
                 smt.close();
@@ -178,7 +217,11 @@ public class ReindexThread extends Thread {
         }
     }
 
-    public void lockCluster() throws DotDataException {
+	public void lockCluster() throws DotDataException {
+	    lockCluster(DbConnectionFactory.getConnection());
+	}
+	
+    public void lockCluster(Connection conn) throws DotDataException {
         try {
             String lock=null;
             /* this isn't working. A race condition might come
@@ -199,7 +242,6 @@ public class ReindexThread extends Thread {
             else if(DbConnectionFactory.isPostgres())
                 lock="lock table dist_reindex_journal";
             
-            Connection conn=DbConnectionFactory.getConnection();
             Statement smt=conn.createStatement();
             smt.execute(lock);
             smt.close();
@@ -244,6 +286,11 @@ public class ReindexThread extends Thread {
 		if (instance == null) {
 			instance = new ReindexThread();
 			instance.start();
+			int i = Config.getIntProperty("REINDEX_SLEEP_DURING_INDEX", 0);
+			if(i>0){
+				instance.setReindexSleepDuringIndex(true);
+				instance.setReindexSleepDuringIndexTime(i);
+			}
 		}
 
 	}
@@ -289,22 +336,27 @@ public class ReindexThread extends Thread {
 	private void writeDocumentToIndex(BulkRequestBuilder bulk, IndexJournal<String> idx) throws DotDataException, DotSecurityException {
 	    Logger.debug(this, "Indexing document "+idx.getIdentToIndex());
 	    System.setProperty("IN_FULL_REINDEX", "true");
-	    String sql = "select distinct inode from contentlet join contentlet_version_info " +
-                " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
+//	    String sql = "select distinct inode from contentlet join contentlet_version_info " +
+//                " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
+	    
+	    String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
 	    
         DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(idx.getIdentToIndex());
         List<Map<String,String>> ret = dc.loadResults();
+        List<String> inodes = new ArrayList<String>(); 
         for(Map<String,String> m : ret) {
-        	
-        	try {
-				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				Logger.error(ReindexThread.class,e.getMessage(),e);
-			}			
-			
-            String inode=m.get("inode");
+        	String workingInode = m.get("working_inode");
+        	String liveInode = m.get("live_inode");
+        	inodes.add(workingInode);
+        	if(UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)){
+        		inodes.add(liveInode);
+        	}
+        }
+        
+        for(String inode : inodes) {
+        				
             Contentlet con = FactoryLocator.getContentletFactory().convertFatContentletToContentlet(
                     (com.dotmarketing.portlets.contentlet.business.Contentlet)
                         HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode));
@@ -345,5 +397,33 @@ public class ReindexThread extends Thread {
 	    indexAPI.fullReindexAbort();
 	    unpause();
 	    HibernateUtil.commitTransaction();
+	}
+
+	/**
+	 * @return the reindexSleepDuringIndex
+	 */
+	public boolean isReindexSleepDuringIndex() {
+		return reindexSleepDuringIndex;
+	}
+
+	/**
+	 * @param reindexSleepDuringIndex the reindexSleepDuringIndex to set
+	 */
+	public void setReindexSleepDuringIndex(boolean reindexSleepDuringIndex) {
+		this.reindexSleepDuringIndex = reindexSleepDuringIndex;
+	}
+
+	/**
+	 * @return the reindexSleepDuringIndexTime
+	 */
+	public int getReindexSleepDuringIndexTime() {
+		return reindexSleepDuringIndexTime;
+	}
+
+	/**
+	 * @param reindexSleepDuringIndexTime the reindexSleepDuringIndexTime to set
+	 */
+	public void setReindexSleepDuringIndexTime(int reindexSleepDuringIndexTime) {
+		this.reindexSleepDuringIndexTime = reindexSleepDuringIndexTime;
 	}
 }

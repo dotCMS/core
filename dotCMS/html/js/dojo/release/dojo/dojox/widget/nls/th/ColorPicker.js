@@ -1,13 +1,13 @@
-//>>built
 define(
-"dojox/widget/nls/th/ColorPicker", //begin v1.x content
-({
-redLabel: "อาร์",
-greenLabel: "จี",
-blueLabel: "บี",
-hueLabel: "เอช",
-saturationLabel: "เอส",
-valueLabel: "วี", /* aka intensity or brightness */
+"dojox/widget/nls/th/ColorPicker", ({
+redLabel: "r",
+greenLabel: "ก.",
+blueLabel: "b",
+hueLabel: "ชม.",
+saturationLabel: "วิ.",
+valueLabel: "v", /* aka intensity or brightness */
+degLabel: "\u00B0",
+hexLabel: "hex",
 huePickerTitle: "ตัวเลือกสี",
 saturationPickerTitle: "ตัวเลือกความอิ่มของสี"
 })
