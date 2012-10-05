@@ -47,8 +47,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 										"publish_date, "+ 
 										"server_id, "+ 
 										"type, "+ 
-										"bundle_id";
-	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?,?,?" ;
+										"bundle_id, " +
+										"target";
+	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?,?,?,?" ;
 	
 	//"last_results, "+ 
 	//	"last_try,  "+
