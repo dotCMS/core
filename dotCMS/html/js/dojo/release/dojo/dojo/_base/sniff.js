@@ -1,8 +1,96 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/_base/sniff", ["./kernel", "./lang", "../sniff"], function(dojo, lang, has){
+	// module:
+	//		dojo/_base/sniff
 
-//>>built
-define("dojo/_base/sniff",["./kernel","../has"],function(_1,_2){if(!1){return _2;}_1.isBrowser=true,_1._name="browser";var _3=_2.add,n=navigator,_4=n.userAgent,_5=n.appVersion,tv=parseFloat(_5),_6,_7,_8,_9,_a,_b,_c,_d,_e,_f,_10,_11,_12,_13,_14;if(_4.indexOf("AdobeAIR")>=0){_7=1;}_8=(_5.indexOf("Konqueror")>=0)?tv:0;_9=parseFloat(_4.split("WebKit/")[1])||undefined;_a=parseFloat(_4.split("Chrome/")[1])||undefined;_b=_5.indexOf("Macintosh")>=0;_12=/iPhone|iPod|iPad/.test(_4);_13=parseFloat(_4.split("Android ")[1])||undefined;_14=typeof opera!="undefined"&&opera.wiiremote;var _15=Math.max(_5.indexOf("WebKit"),_5.indexOf("Safari"),0);if(_15&&!_a){_c=parseFloat(_5.split("Version/")[1]);if(!_c||parseFloat(_5.substr(_15+7))<=419.3){_c=2;}}if(!_2("dojo-webkit")){if(_4.indexOf("Opera")>=0){_6=tv;if(_6>=9.8){_6=parseFloat(_4.split("Version/")[1])||tv;}}if(_4.indexOf("Gecko")>=0&&!_8&&!_9){_d=_e=tv;}if(_e){_10=parseFloat(_4.split("Firefox/")[1]||_4.split("Minefield/")[1])||undefined;}if(document.all&&!_6){_f=parseFloat(_5.split("MSIE ")[1])||undefined;var _16=document.documentMode;if(_16&&_16!=5&&Math.floor(_f)!=_16){_f=_16;}}}_11=document.compatMode=="BackCompat";_3("opera",_1.isOpera=_6);_3("air",_1.isAIR=_7);_3("khtml",_1.isKhtml=_8);_3("webkit",_1.isWebKit=_9);_3("chrome",_1.isChrome=_a);_3("mac",_1.isMac=_b);_3("safari",_1.isSafari=_c);_3("mozilla",_1.isMozilla=_1.isMoz=_d);_3("ie",_1.isIE=_f);_3("ff",_1.isFF=_10);_3("quirks",_1.isQuirks=_11);_3("ios",_1.isIos=_12);_3("android",_1.isAndroid=_13);_1.locale=_1.locale||(_f?n.userLanguage:n.language).toLowerCase();return _2;});
+	/*=====
+	return {
+		// summary:
+		//		Deprecated.   New code should use dojo/sniff.
+		//		This module populates the dojo browser version sniffing properties like dojo.isIE.
+	};
+	=====*/
+
+	if(! 1 ){
+		return has;
+	}
+
+	// no idea what this is for, or if it's used
+	dojo._name = "browser";
+
+	lang.mixin(dojo, {
+		// isBrowser: Boolean
+		//		True if the client is a web-browser
+		isBrowser: true,
+
+		// isFF: Number|undefined
+		//		Version as a Number if client is FireFox. undefined otherwise. Corresponds to
+		//		major detected FireFox version (1.5, 2, 3, etc.)
+		isFF: has("ff"),
+
+		// isIE: Number|undefined
+		//		Version as a Number if client is MSIE(PC). undefined otherwise. Corresponds to
+		//		major detected IE version (6, 7, 8, etc.)
+		isIE: has("ie"),
+
+		// isKhtml: Number|undefined
+		//		Version as a Number if client is a KHTML browser. undefined otherwise. Corresponds to major
+		//		detected version.
+		isKhtml: has("khtml"),
+
+		// isWebKit: Number|undefined
+		//		Version as a Number if client is a WebKit-derived browser (Konqueror,
+		//		Safari, Chrome, etc.). undefined otherwise.
+		isWebKit: has("webkit"),
+
+		// isMozilla: Number|undefined
+		//		Version as a Number if client is a Mozilla-based browser (Firefox,
+		//		SeaMonkey). undefined otherwise. Corresponds to major detected version.
+		isMozilla: has("mozilla"),
+		// isMoz: Number|undefined
+		//		Version as a Number if client is a Mozilla-based browser (Firefox,
+		//		SeaMonkey). undefined otherwise. Corresponds to major detected version.
+		isMoz: has("mozilla"),
+
+		// isOpera: Number|undefined
+		//		Version as a Number if client is Opera. undefined otherwise. Corresponds to
+		//		major detected version.
+		isOpera: has("opera"),
+
+		// isSafari: Number|undefined
+		//		Version as a Number if client is Safari or iPhone. undefined otherwise.
+		isSafari: has("safari"),
+
+		// isChrome: Number|undefined
+		//		Version as a Number if client is Chrome browser. undefined otherwise.
+		isChrome: has("chrome"),
+
+		// isMac: Boolean
+		//		True if the client runs on Mac
+		isMac: has("mac"),
+
+		// isIos: Boolean
+		//		True if client is iPhone, iPod, or iPad
+		isIos: has("ios"),
+
+		// isAndroid: Number|undefined
+		//		Version as a Number if client is android browser. undefined otherwise.
+		isAndroid: has("android"),
+
+		// isWii: Boolean
+		//		True if client is Wii
+		isWii: has("wii"),
+
+		// isQuirks: Boolean
+		//		Page is in quirks mode.
+		isQuirks: has("quirks"),
+
+		// isAir: Boolean
+		//		True if client is Adobe Air
+		isAir: has("air")
+	});
+
+
+	dojo.locale = dojo.locale || (has("ie") ? navigator.userLanguage : navigator.language).toLowerCase();
+
+	return has;
+});

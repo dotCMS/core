@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/form/nls/kk/CheckedMultiSelect", ({
 	invalidMessage: "Кемінде бір элемент таңдалуы керек.",

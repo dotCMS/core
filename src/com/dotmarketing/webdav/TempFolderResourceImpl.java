@@ -16,6 +16,7 @@ import java.util.Map;
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.FolderResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -41,7 +42,6 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	private File folder;
 	private String path;
 	private boolean isAutoPub = false;
-	private User user;
 	
 	
 	public TempFolderResourceImpl(String path, File folder, boolean isAutoPub) {
@@ -105,8 +105,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 */
 	public Object authenticate(String username, String password) {
 		try {
-			this.user =  dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -191,6 +190,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 * @see com.bradmcevoy.http.CopyableResource#copyTo(com.bradmcevoy.http.CollectionResource, java.lang.String)
 	 */
 	public void copyTo(CollectionResource collRes, String name) {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
@@ -241,6 +241,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 * @see com.bradmcevoy.http.MoveableResource#moveTo(com.bradmcevoy.http.CollectionResource, java.lang.String)
 	 */
 	public void moveTo(CollectionResource collRes, String name) {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {

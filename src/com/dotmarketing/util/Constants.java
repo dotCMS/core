@@ -105,9 +105,6 @@ public final class Constants {
 	
 	//Used to set a url to serve for the LocalResourcesServlet
 	public static final String SERVE_URL = "com.dotmarketing.util.Constants.SERVER_URL";
-	
-	//Used to locate where the ajax uploaded files reside 
-	public static final String TEMP_BINARY_PATH = "WEB-INF" + java.io.File.separator + "binary";
 
 	// http://jira.dotmarketing.net/browse/DOTCMS-2178
 	// Used to create cache directory

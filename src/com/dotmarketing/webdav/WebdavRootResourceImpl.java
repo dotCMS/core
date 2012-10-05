@@ -6,16 +6,16 @@ import java.util.List;
 
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
 import com.bradmcevoy.http.LockToken;
 import com.bradmcevoy.http.LockableResource;
-import com.bradmcevoy.http.LockingCollectionResource;
 import com.bradmcevoy.http.PropFindableResource;
 import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.Request.Method;
+import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -31,16 +31,15 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 
 	private DotWebdavHelper dotDavHelper;
 	private String path;
-	private User user;
 	
-	public WebdavRootResourceImpl() {
+	public WebdavRootResourceImpl(String path) {
 		dotDavHelper = new DotWebdavHelper();
+		this.path=path;
 	}
 	
 	public Object authenticate(String username, String password) {
 		try {
-			user = dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -100,7 +99,9 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 		}
 		for (Host host : hosts) {
 			if(childName.equalsIgnoreCase(host.getHostname())){
-				HostResourceImpl hr = new HostResourceImpl(path + "/" + host.getHostname(), host);
+			    String sep="/";
+			    if(path.endsWith(sep)) sep="";
+				HostResourceImpl hr = new HostResourceImpl(path + sep + host.getHostname());
 				return hr;
 			}
 		}
@@ -108,10 +109,13 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 	}
 
 	public List<? extends Resource> getChildren() {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Host> hosts = listHosts();
 		List<Resource> hrs = new ArrayList<Resource>();
 		for (Host host : hosts) {
-			HostResourceImpl hr = new HostResourceImpl(path + "/" + host.getHostname(), host);
+		    String sep="/";
+            if(path.endsWith(sep)) sep="";
+			HostResourceImpl hr = new HostResourceImpl(path + sep + host.getHostname());
 			hr.setHost(host);
 			hrs.add(hr);
 		}
@@ -127,10 +131,11 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 	}
 
 	private List<Host> listHosts(){
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts;
 		try {
-			hosts = hostAPI.findAll(APILocator.getUserAPI().getSystemUser(), false);
+			hosts = hostAPI.findAll(user, false);
 			hosts.remove(APILocator.getHostAPI().findSystemHost());
 		} catch (DotDataException e) {
 			Logger.error(WebdavRootResourceImpl.class, e.getMessage(), e);

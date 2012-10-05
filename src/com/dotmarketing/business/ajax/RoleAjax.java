@@ -584,6 +584,10 @@ public class RoleAjax {
 			int permission = Integer.parseInt(permissions.get("templates"));
 			permissionsToSave.add(new Permission(Template.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
 		}
+		if(permissions.get("templateLayouts") != null) {
+			int permission = Integer.parseInt(permissions.get("templateLayouts"));
+			permissionsToSave.add(new Permission("com.dotmarketing.portlets.templates.model.TemplateLayout", permissionable.getPermissionId(), roleId, permission, true));
+		}
 		if(permissions.get("files") != null) {
 			int permission = Integer.parseInt(permissions.get("files"));
 			permissionsToSave.add(new Permission(File.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));

@@ -1,2 +1,331 @@
-//>>built
-define("dojox/validate/check",["dojo/_base/kernel","dojo/_base/lang","./_base"],function(_1,_2,_3){_1.experimental("dojox.validate.check");_3.check=function(_4,_5){var _6=[];var _7=[];var _8={isSuccessful:function(){return (!this.hasInvalid()&&!this.hasMissing());},hasMissing:function(){return (_6.length>0);},getMissing:function(){return _6;},isMissing:function(_9){for(var i=0;i<_6.length;i++){if(_9==_6[i]){return true;}}return false;},hasInvalid:function(){return (_7.length>0);},getInvalid:function(){return _7;},isInvalid:function(_a){for(var i=0;i<_7.length;i++){if(_a==_7[i]){return true;}}return false;}};var _b=function(_c,_d){return (typeof _d[_c]=="undefined");};if(_5.trim instanceof Array){for(var i=0;i<_5.trim.length;i++){var _e=_4[_5.trim[i]];if(_b("type",_e)||_e.type!="text"&&_e.type!="textarea"&&_e.type!="password"){continue;}_e.value=_e.value.replace(/(^\s*|\s*$)/g,"");}}if(_5.uppercase instanceof Array){for(var i=0;i<_5.uppercase.length;i++){var _e=_4[_5.uppercase[i]];if(_b("type",_e)||_e.type!="text"&&_e.type!="textarea"&&_e.type!="password"){continue;}_e.value=_e.value.toUpperCase();}}if(_5.lowercase instanceof Array){for(var i=0;i<_5.lowercase.length;i++){var _e=_4[_5.lowercase[i]];if(_b("type",_e)||_e.type!="text"&&_e.type!="textarea"&&_e.type!="password"){continue;}_e.value=_e.value.toLowerCase();}}if(_5.ucfirst instanceof Array){for(var i=0;i<_5.ucfirst.length;i++){var _e=_4[_5.ucfirst[i]];if(_b("type",_e)||_e.type!="text"&&_e.type!="textarea"&&_e.type!="password"){continue;}_e.value=_e.value.replace(/\b\w+\b/g,function(_f){return _f.substring(0,1).toUpperCase()+_f.substring(1).toLowerCase();});}}if(_5.digit instanceof Array){for(var i=0;i<_5.digit.length;i++){var _e=_4[_5.digit[i]];if(_b("type",_e)||_e.type!="text"&&_e.type!="textarea"&&_e.type!="password"){continue;}_e.value=_e.value.replace(/\D/g,"");}}if(_5.required instanceof Array){for(var i=0;i<_5.required.length;i++){if(!_2.isString(_5.required[i])){continue;}var _e=_4[_5.required[i]];if(!_b("type",_e)&&(_e.type=="text"||_e.type=="textarea"||_e.type=="password"||_e.type=="file")&&/^\s*$/.test(_e.value)){_6[_6.length]=_e.name;}else{if(!_b("type",_e)&&(_e.type=="select-one"||_e.type=="select-multiple")&&(_e.selectedIndex==-1||/^\s*$/.test(_e.options[_e.selectedIndex].value))){_6[_6.length]=_e.name;}else{if(_e instanceof Array){var _10=false;for(var j=0;j<_e.length;j++){if(_e[j].checked){_10=true;}}if(!_10){_6[_6.length]=_e[0].name;}}}}}}if(_5.required instanceof Array){for(var i=0;i<_5.required.length;i++){if(!_2.isObject(_5.required[i])){continue;}var _e,_11;for(var _12 in _5.required[i]){_e=_4[_12];_11=_5.required[i][_12];}if(_e instanceof Array){var _10=0;for(var j=0;j<_e.length;j++){if(_e[j].checked){_10++;}}if(_10<_11){_6[_6.length]=_e[0].name;}}else{if(!_b("type",_e)&&_e.type=="select-multiple"){var _13=0;for(var j=0;j<_e.options.length;j++){if(_e.options[j].selected&&!/^\s*$/.test(_e.options[j].value)){_13++;}}if(_13<_11){_6[_6.length]=_e.name;}}}}}if(_2.isObject(_5.dependencies)){for(_12 in _5.dependencies){var _e=_4[_12];if(_b("type",_e)){continue;}if(_e.type!="text"&&_e.type!="textarea"&&_e.type!="password"){continue;}if(/\S+/.test(_e.value)){continue;}if(_8.isMissing(_e.name)){continue;}var _14=_4[_5.dependencies[_12]];if(_14.type!="text"&&_14.type!="textarea"&&_14.type!="password"){continue;}if(/^\s*$/.test(_14.value)){continue;}_6[_6.length]=_e.name;}}if(_2.isObject(_5.constraints)){for(_12 in _5.constraints){var _e=_4[_12];if(!_e){continue;}if(!_b("tagName",_e)&&(_e.tagName.toLowerCase().indexOf("input")>=0||_e.tagName.toLowerCase().indexOf("textarea")>=0)&&/^\s*$/.test(_e.value)){continue;}var _15=true;if(_2.isFunction(_5.constraints[_12])){_15=_5.constraints[_12](_e.value);}else{if(_2.isArray(_5.constraints[_12])){if(_2.isArray(_5.constraints[_12][0])){for(var i=0;i<_5.constraints[_12].length;i++){_15=_3.evaluateConstraint(_5,_5.constraints[_12][i],_12,_e);if(!_15){break;}}}else{_15=_3.evaluateConstraint(_5,_5.constraints[_12],_12,_e);}}}if(!_15){_7[_7.length]=_e.name;}}}if(_2.isObject(_5.confirm)){for(_12 in _5.confirm){var _e=_4[_12];var _14=_4[_5.confirm[_12]];if(_b("type",_e)||_b("type",_14)||(_e.type!="text"&&_e.type!="textarea"&&_e.type!="password")||(_14.type!=_e.type)||(_14.value==_e.value)||(_8.isInvalid(_e.name))||(/^\s*$/.test(_14.value))){continue;}_7[_7.length]=_e.name;}}return _8;};_3.evaluateConstraint=function(_16,_17,_18,_19){var _1a=_17[0];var _1b=_17.slice(1);_1b.unshift(_19.value);if(typeof _1a!="undefined"){return _1a.apply(null,_1b);}return false;};return _3.check;});
+define("dojox/validate/check", ["dojo/_base/kernel", "dojo/_base/lang", "./_base"], 
+ function(kernel, lang, validate){
+kernel.experimental("dojox.validate.check");
+
+/**
+	FIXME: How much does this overlap with dojox.form.Manager and friends?
+
+	Procedural API Description
+
+		The main aim is to make input validation expressible in a simple format.
+		You define profiles which declare the required and optional fields and any constraints they might have.
+		The results are provided as an object that makes it easy to handle missing and invalid input.
+
+	Usage
+
+		var results = dojox.validate.check(form, profile);
+
+	Profile Object
+
+		var profile = {
+			// filters change the field value and are applied before validation.
+			trim: ["tx1", "tx2"],
+			uppercase: ["tx9"],
+			lowercase: ["tx5", "tx6", "tx7"],
+			ucfirst: ["tx10"],
+			digit: ["tx11"],
+
+			// required input fields that are blank will be reported missing.
+			// required radio button groups and drop-down lists with no selection will be reported missing.
+			// checkbox groups and selectboxes can be required to have more than one value selected.
+			// List required fields by name and use this notation to require more than one value: {checkboxgroup: 2}, {selectboxname: 3}.
+			required: ["tx7", "tx8", "pw1", "ta1", "rb1", "rb2", "cb3", "s1", {"doubledip":2}, {"tripledip":3}],
+
+			// dependant/conditional fields are required if the target field is present and not blank.
+			// At present only textbox, password, and textarea fields are supported.
+			dependencies:	{
+				cc_exp: "cc_no",
+				cc_type: "cc_no"
+			},
+
+			// Fields can be validated using any boolean valued function.
+			// Use arrays to specify parameters in addition to the field value.
+			constraints: {
+				field_name1: myValidationFunction,
+				field_name2: dojox.validate.isInteger,
+				field_name3: [myValidationFunction, additional parameters],
+				field_name4: [dojox.validate.isValidDate, "YYYY.MM.DD"],
+				field_name5: [dojox.validate.isEmailAddress, false, true]
+			},
+
+			// Confirm is a sort of conditional validation.
+			// It associates each field in its property list with another field whose value should be equal.
+			// If the values are not equal, the field in the property list is reported as Invalid. Unless the target field is blank.
+			confirm: {
+				email_confirm: "email",
+				pw2: "pw1"
+			}
+		};
+
+	Results Object
+
+		isSuccessful(): Returns true if there were no invalid or missing fields, else it returns false.
+		hasMissing():  Returns true if the results contain any missing fields.
+		getMissing():  Returns a list of required fields that have values missing.
+		isMissing(field):  Returns true if the field is required and the value is missing.
+		hasInvalid():  Returns true if the results contain fields with invalid data.
+		getInvalid():  Returns a list of fields that have invalid values.
+		isInvalid(field):  Returns true if the field has an invalid value.
+
+*/
+
+validate.check = function(/*HTMLFormElement*/form, /*Object*/profile){
+	// summary:
+	//		validates user input of an HTML form based on input profile
+	// description:
+	//		returns an object that contains several methods summarizing the results of the validation
+	// form:
+	//		form to be validated
+	// profile:
+	//		specifies how the form fields are to be validated
+	//		{trim:Array, uppercase:Array, lowercase:Array, ucfirst:Array, digit:Array,
+	//		required:Array, dependencies:Object, constraints:Object, confirm:Object}
+
+	// Essentially private properties of results object
+	var missing = [];
+	var invalid = [];
+
+	// results object summarizes the validation
+	var results = {
+		isSuccessful: function() {return ( !this.hasInvalid() && !this.hasMissing() );},
+		hasMissing: function() {return ( missing.length > 0 );},
+		getMissing: function() {return missing;},
+		isMissing: function(elemname) {
+			for(var i = 0; i < missing.length; i++){
+				if(elemname == missing[i]){ return true; }
+			}
+			return false;
+		},
+		hasInvalid: function() {return ( invalid.length > 0 );},
+		getInvalid: function() {return invalid;},
+		isInvalid: function(elemname){
+			for(var i = 0; i < invalid.length; i++){
+				if(elemname == invalid[i]){ return true; }
+			}
+			return false;
+		}
+	};
+
+	var _undef = function(name,object){
+                return (typeof object[name] == "undefined");
+        };
+
+	// Filters are applied before fields are validated.
+	// Trim removes white space at the front and end of the fields.
+	if(profile.trim instanceof Array){
+		for(var i = 0; i < profile.trim.length; i++){
+			var elem = form[profile.trim[i]];
+			if(_undef("type", elem) || elem.type != "text" && elem.type != "textarea" && elem.type != "password"){ continue; }
+			elem.value = elem.value.replace(/(^\s*|\s*$)/g, "");
+		}
+	}
+	// Convert to uppercase
+	if(profile.uppercase instanceof Array){
+		for(var i = 0; i < profile.uppercase.length; i++){
+			var elem = form[profile.uppercase[i]];
+			if(_undef("type", elem) || elem.type != "text" && elem.type != "textarea" && elem.type != "password"){ continue; }
+			elem.value = elem.value.toUpperCase();
+		}
+	}
+	// Convert to lowercase
+	if(profile.lowercase instanceof Array){
+		for (var i = 0; i < profile.lowercase.length; i++){
+			var elem = form[profile.lowercase[i]];
+			if(_undef("type", elem) || elem.type != "text" && elem.type != "textarea" && elem.type != "password"){ continue; }
+			elem.value = elem.value.toLowerCase();
+		}
+	}
+	// Uppercase first letter
+	if(profile.ucfirst instanceof Array){
+		for(var i = 0; i < profile.ucfirst.length; i++){
+			var elem = form[profile.ucfirst[i]];
+			if(_undef("type", elem) || elem.type != "text" && elem.type != "textarea" && elem.type != "password"){ continue; }
+			elem.value = elem.value.replace(/\b\w+\b/g, function(word) { return word.substring(0,1).toUpperCase() + word.substring(1).toLowerCase(); });
+		}
+	}
+	// Remove non digits characters from the input.
+	if(profile.digit instanceof Array){
+		for(var i = 0; i < profile.digit.length; i++){
+			var elem = form[profile.digit[i]];
+			if(_undef("type", elem) || elem.type != "text" && elem.type != "textarea" && elem.type != "password"){ continue; }
+			elem.value = elem.value.replace(/\D/g, "");
+		}
+	}
+
+	// See if required input fields have values missing.
+	if(profile.required instanceof Array){
+		for(var i = 0; i < profile.required.length; i++){
+			if(!lang.isString(profile.required[i])){ continue; }
+			var elem = form[profile.required[i]];
+			// Are textbox, textarea, or password fields blank.
+			if(!_undef("type", elem)
+				&& (elem.type == "text" || elem.type == "textarea" || elem.type == "password" || elem.type == "file")
+				&& /^\s*$/.test(elem.value)){
+				missing[missing.length] = elem.name;
+			}
+			// Does drop-down box have option selected.
+			else if(!_undef("type", elem) && (elem.type == "select-one" || elem.type == "select-multiple")
+						&& (elem.selectedIndex == -1
+						|| /^\s*$/.test(elem.options[elem.selectedIndex].value))){
+				missing[missing.length] = elem.name;
+			}
+			// Does radio button group (or check box group) have option checked.
+			else if(elem instanceof Array){
+				var checked = false;
+				for(var j = 0; j < elem.length; j++){
+					if (elem[j].checked) { checked = true; }
+				}
+				if(!checked){
+					missing[missing.length] = elem[0].name;
+				}
+			}
+		}
+	}
+
+	// See if checkbox groups and select boxes have x number of required values.
+	if(profile.required instanceof Array){
+		for (var i = 0; i < profile.required.length; i++){
+			if(!lang.isObject(profile.required[i])){ continue; }
+			var elem, numRequired;
+			for(var name in profile.required[i]){
+				elem = form[name];
+				numRequired = profile.required[i][name];
+			}
+			// case 1: elem is a check box group
+			if(elem instanceof Array){
+				var checked = 0;
+				for(var j = 0; j < elem.length; j++){
+					if(elem[j].checked){ checked++; }
+				}
+				if(checked < numRequired){
+					missing[missing.length] = elem[0].name;
+				}
+			}
+			// case 2: elem is a select box
+			else if(!_undef("type", elem) && elem.type == "select-multiple" ){
+				var selected = 0;
+				for(var j = 0; j < elem.options.length; j++){
+					if (elem.options[j].selected && !/^\s*$/.test(elem.options[j].value)) { selected++; }
+				}
+				if(selected < numRequired){
+					missing[missing.length] = elem.name;
+				}
+			}
+		}
+	}
+
+	// Dependent fields are required when the target field is present (not blank).
+	// Todo: Support dependent and target fields that are radio button groups, or select drop-down lists.
+	// Todo: Make the dependency based on a specific value of the target field.
+	// Todo: allow dependent fields to have several required values, like {checkboxgroup: 3}.
+	if(lang.isObject(profile.dependencies)){
+		// properties of dependencies object are the names of dependent fields to be checked
+		for(name in profile.dependencies){
+			var elem = form[name];	// the dependent element
+			if(_undef("type", elem)){continue;}
+			if(elem.type != "text" && elem.type != "textarea" && elem.type != "password"){ continue; } // limited support
+			if(/\S+/.test(elem.value)){ continue; }	// has a value already
+			if(results.isMissing(elem.name)){ continue; }	// already listed as missing
+			var target = form[profile.dependencies[name]];
+			if(target.type != "text" && target.type != "textarea" && target.type != "password"){ continue; }	// limited support
+			if(/^\s*$/.test(target.value)){ continue; }	// skip if blank
+			missing[missing.length] = elem.name;	// ok the dependent field is missing
+		}
+	}
+
+	// Find invalid input fields.
+	if(lang.isObject(profile.constraints)){
+		// constraint properties are the names of fields to bevalidated
+		for(name in profile.constraints){
+			var elem = form[name];
+			if(!elem) {continue;}
+			
+			// skip if blank - its optional unless required, in which case it
+			// is already listed as missing.
+			if(!_undef("tagName",elem)
+				&& (elem.tagName.toLowerCase().indexOf("input") >= 0
+					|| elem.tagName.toLowerCase().indexOf("textarea") >= 0)
+				&& /^\s*$/.test(elem.value)){
+				continue;
+			}
+			
+			var isValid = true;
+			// case 1: constraint value is validation function
+			if(lang.isFunction(profile.constraints[name])){
+				isValid = profile.constraints[name](elem.value);
+			}else if(lang.isArray(profile.constraints[name])){
+				
+				// handle nested arrays for multiple constraints
+				if(lang.isArray(profile.constraints[name][0])){
+					for (var i=0; i<profile.constraints[name].length; i++){
+						isValid = validate.evaluateConstraint(profile, profile.constraints[name][i], name, elem);
+						if(!isValid){ break; }
+					}
+				}else{
+					// case 2: constraint value is array, first elem is function,
+					// tail is parameters
+					isValid = validate.evaluateConstraint(profile, profile.constraints[name], name, elem);
+				}
+			}
+			
+			if(!isValid){
+				invalid[invalid.length] = elem.name;
+			}
+		}
+	}
+
+	// Find unequal confirm fields and report them as Invalid.
+	if(lang.isObject(profile.confirm)){
+		for(name in profile.confirm){
+			var elem = form[name];	// the confirm element
+			var target = form[profile.confirm[name]];
+			if (_undef("type", elem) || _undef("type", target) || (elem.type != "text" && elem.type != "textarea" && elem.type != "password")
+				||(target.type != elem.type)
+				||(target.value == elem.value)	// it's valid
+				||(results.isInvalid(elem.name))// already listed as invalid
+				||(/^\s*$/.test(target.value)))	// skip if blank - only confirm if target has a value
+			{
+				continue;
+			}
+			invalid[invalid.length] = elem.name;
+		}
+	}
+	return results; // Object
+};
+
+//TODO: evaluateConstraint doesn't use profile or fieldName args?
+validate.evaluateConstraint=function(profile, /*Array*/constraint, fieldName, elem){
+	// summary:
+	//		Evaluates dojo.validate.check() constraints that are specified as array
+	//		arguments
+	// description:
+	//		The arrays are expected to be in the format of:
+	//	|    constraints:{
+	//	|            fieldName: [functionToCall, param1, param2, etc.],
+	//	|            fieldName: [[functionToCallFirst, param1],[functionToCallSecond,param2]]
+	//	|    }
+	//
+	//		This function evaluates a single array function in the format of:
+	//		[functionName, argument1, argument2, etc]
+	//
+	//		The function will be parsed out and evaluated against the incoming parameters.
+	// profile:
+	//		The dojo.validate.check() profile that this evaluation is against.
+	// constraint:
+	//		The single [] array of function and arguments for the function.
+	// fieldName:
+	//		The form dom name of the field being validated.
+	// elem:
+	//		The form element field.
+	
+ 	var isValidSomething = constraint[0];
+	var params = constraint.slice(1);
+	params.unshift(elem.value);
+	if(typeof isValidSomething != "undefined"){
+		return isValidSomething.apply(null, params);
+	}
+	return false; // Boolean
+};
+
+return validate.check;
+});

@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.links.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -11,12 +13,14 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -38,6 +42,27 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		Link newLink = new Link();
 
         newLink.copy(sourceLink);
+        
+        // translating internal link if internal and different host than the target folder
+        if(sourceLink.getLinkType().equals(Link.LinkType.INTERNAL.toString()) &&
+                !APILocator.getIdentifierAPI().find(sourceLink).getHostId().equals(destination.getHostId())) {
+            
+            Host destHost=APILocator.getHostAPI().find(destination.getHostId(),user,false);
+            if(sourceLink.getUrl()!=null && sourceLink.getUrl().contains("/")) {
+                String assetPath=sourceLink.getUrl().substring(sourceLink.getUrl().indexOf('/'));
+                newLink.setUrl(destHost.getHostname()+assetPath);
+            }
+            
+            // using source internal link ident get URI on source host. Link to same asset in dest host 
+            Identifier ident=APILocator.getIdentifierAPI().find(sourceLink.getInternalLinkIdentifier());
+            if(ident!=null && UtilMethods.isSet(ident.getId())) {
+                Identifier newTargetIdent=APILocator.getIdentifierAPI().find(destHost, ident.getURI());
+                if(newTargetIdent!=null && UtilMethods.isSet(newTargetIdent.getId())) {
+                    String newLinkIdent=newTargetIdent.getId();
+                    newLink.setInternalLinkIdentifier(newLinkIdent);
+                }
+            }
+        }
         
         //persists the webasset
         save(newLink, destination, user, respectFrontendRoles);
@@ -130,5 +155,10 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 			DotDataException {
 		return menuLinkFactory.findLinks(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
+
+    @Override
+    public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException {
+        return deleteOldVersions(assetsOlderThan,"links");
+    }
 
 }

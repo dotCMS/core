@@ -1,2 +1,10 @@
-//>>built
-define("dojox/color",["./color/_base"],function(_1){return _1;});
+define("dojox/color", ["./color/_base"], function(dxcolor){
+	/*=====
+	 return {
+	 // summary:
+	 //		Deprecated.  Should require dojox/color modules directly rather than trying to access them through
+	 //		this module.
+	 };
+	 =====*/
+	return dxcolor;
+});

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/el/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/el/TableDialog", ({
 	insertTableTitle: "Εισαγωγή πίνακα",
 	modifyTableTitle: "Τροποποίηση πίνακα",
 	rows: "Γραμμές:",
@@ -12,7 +10,7 @@ define(
 	tableWidth: "Πλάτος πίνακα:",
 	backgroundColor: "Χρώμα φόντου:",
 	borderColor: "Χρώμα περιγράμματος:",
-	borderThickness: "Πάχος περιγράμματος",
+	borderThickness: "Πάχος περιγράμματος:",
 	percent: "ποσοστό",
 	pixels: "εικονοστοιχεία",
 	"default": "προεπιλογή",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "Ορισμός", // translated elsewhere?
 	buttonInsert: "Εισαγωγή",
 	buttonCancel: "Ακύρωση",
-
 	selectTableLabel: "Επιλογή πίνακα",
 	insertTableRowBeforeLabel: "Προσθήκη γραμμής πριν",
 	insertTableRowAfterLabel: "Προσθήκη γραμμής μετά",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "Διαγραφή γραμμής",
 	deleteTableColumnLabel: "Διαγραφή στήλης"
 })
-//end v1.x content
 );

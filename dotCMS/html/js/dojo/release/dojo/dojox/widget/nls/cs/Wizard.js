@@ -1,10 +1,7 @@
-//>>built
 define(
-"dojox/widget/nls/cs/Wizard", //begin v1.x content
-({
+"dojox/widget/nls/cs/Wizard", ({
 next: "Další",
 previous: "Předchozí",
 done: "Hotovo"
 })
-//end v1.x content
 );

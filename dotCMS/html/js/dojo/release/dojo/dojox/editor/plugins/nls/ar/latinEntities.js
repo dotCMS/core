@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ar/latinEntities", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ar/latinEntities", ({
 	/* These are already handled in the default RTE
 		amp:"ampersand",lt:"less-than sign",
 		gt:"greater-than sign",
@@ -103,7 +101,6 @@ define(
 	yacute:"حرف لاتيني صغير y حاد",
 	thorn:"حرف لاتيني صغير طنان",
 	yuml:"حرف لاتيني صغير y مع علامة حرف العلة",
-
 // Greek Characters and Symbols
 	fnof:"حرف لاتيني صغير f مع التواء\nوظيفة\nفلورين",
 	Alpha:"حرف يوناني كبير الفا",
@@ -257,6 +254,4 @@ define(
 	rsaquo:"علامة تنصيص زاوية منفردة تشير الى اليمين",
 	euro:"علامة اليورو"
 })
-
-//end v1.x content
 );

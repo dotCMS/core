@@ -1,4 +1,3 @@
-//>>built
 define(
 "dojox/widget/nls/hr/FilePicker", ({
 	name: "Ime",

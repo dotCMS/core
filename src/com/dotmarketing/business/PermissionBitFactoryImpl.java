@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,8 @@ import com.liferay.portal.model.User;
 */
 public class PermissionBitFactoryImpl extends PermissionFactory {
 
+    private static final int MAX_IDS_CLEAR=200;
+
 	private PermissionCache permissionCache;
 	private static final Map<String, Integer> PERMISION_TYPES = new HashMap<String, Integer>();
 
@@ -77,15 +80,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The permisionable id
 	 */
 
-	private final String loadPermissionHSQL =
-		"select {permission.*} from permission where permission.id in (" +
-		"	select permission.id from permission where inode_id = ?" +
-		"	union" +
-		"	select permission.id from permission where exists (" +
-		"		select * from permission_reference where asset_id = ? " +
-		"		and inode_id = reference_id and permission.permission_type = permission_reference.permission_type" +
-		"	)" +
-		")";
+	private final String loadPermissionSQL =
+		" select {permission.*} from permission where inode_id = ? "+
+        " union all "+
+        " select {permission.*} from permission join permission_reference "+
+        "    on (inode_id = reference_id and permission.permission_type = permission_reference.permission_type) "+
+        "    where asset_id = ?";
 
 	/*
 	 * To load permission references objects based on the reference they are pointing to
@@ -174,9 +174,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The id of the host
 	 */
 	private final String selectChildrenTemplateSQL =
-		"select distinct identifier.id from template, inode, identifier where " +
-		"template.inode = inode.inode and template.identifier = identifier.id and " +
-		"identifier.host_inode = ?";
+		"select id from identifier where identifier.host_inode = ? and asset_type='template' ";
 
 	/*
 	 * To load template identifiers that are children of a host and have inheritable permissions
@@ -184,8 +182,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The id of the host
 	 */
 	private final String selectChildrenTemplateWithIndividualPermissionsSQL =
-		selectChildrenTemplateSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-				"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
+        "where asset_type='template' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
+        "and host_inode = ? ";
 
 	/*
 	 * To remove all permission of templates attached to an specific host
@@ -222,12 +221,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"select permission_reference_seq.NEXTVAL, ":
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		"select nextval('permission_reference_seq'), ") +
-		"identifier.id, ?, '" + Template.class.getCanonicalName() + "'" +
-		"	from identifier where identifier.id in " +
+		"ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"	from identifier ident where ident.id in " +
 		"		(" + selectChildrenTemplateSQL + " and " +
-		"		 template.identifier not in (select inode_id from permission " +
+		"		 identifier.id not in (select inode_id from permission " +
 		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
-		"		 template.identifier not in (select asset_id from permission_reference where " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
 		"			permission_type = '" + Template.class.getCanonicalName() + "'))";
 
 	/*
@@ -236,9 +235,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 */
 	private final String selectChildrenContainerSQL =
-		"select distinct identifier.id from containers, inode, identifier where " +
-		"containers.inode = inode.inode and containers.identifier = identifier.id and " +
-		"identifier.host_inode = ?";
+		"select distinct identifier.id from identifier where " +
+		"identifier.host_inode = ? and asset_type='containers' ";
 
 	/*
 	 * To load container identifiers that are children of a host and have inheritable permissions
@@ -246,8 +244,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 */
 	private final String selectChildrenContainerWithIndividualPermissionsSQL =
-		selectChildrenContainerSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
+        "where asset_type='containers' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
+        "and host_inode = ? ";
 
 	/*
 	 * To remove all permissions of containers attached to an specific host
@@ -283,12 +282,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"select permission_reference_seq.NEXTVAL, ":
 			"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 			"select nextval('permission_reference_seq'), ") +
-		" identifier.id, ?, '" + Container.class.getCanonicalName() + "'" +
-		"	from identifier where identifier.id in " +
+		" ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+		"	from identifier ident where ident.id in " +
 		"		(" + selectChildrenContainerSQL + " and " +
-		"		 containers.identifier not in (select inode_id from permission " +
+		"		 identifier.id not in (select inode_id from permission " +
 		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
-		"		 containers.identifier not in (select asset_id from permission_reference where " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
 		"			permission_type = '" + Container.class.getCanonicalName() + "'))";
 
 	/**
@@ -304,8 +303,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. Parent folder exact path E.G. '/about/' pass '' if you want all from the host
 	 */
 	private final String selectChildrenFolderSQL =
-		"select distinct folder.inode from folder, inode,identifier where " +
-		"folder.inode = inode.inode and	folder.identifier = identifier.id and identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
+		"select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) where " +
+		"identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ? ";
 
 	/*
 	 * To load folder identifiers that are children of a host and have either individual and/or inheritable permissions
@@ -315,7 +314,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. Parent folder exact path E.G. '/about/' pass '' if you want all from the host
 	 */
 	private final String selectChildrenFolderWithDirectPermissionsSQL =
-		selectChildrenFolderSQL + " and exists (select * from permission where inode_id = inode.inode)";
+	     "select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) join permission on (inode_id=folder.inode) where " +
+	     "identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
 
 	/*
 	 * To remove all permissions of sub-folders of a given parent folder
@@ -349,19 +349,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	permission_type = '" + Folder.class.getCanonicalName() + "' and asset_id = folder.inode) " +
 		"and (reference_id in ( " +
 			"select distinct folder.inode " +
-			"from folder, inode,identifier " +
-			"where folder.inode = inode.inode " +
-			"	and folder.identifier = identifier.id and identifier.host_inode = ? " +
+			"from folder join identifier on (folder.identifier = identifier.id) " +
+			"where " +
+			"	identifier.host_inode = ? " +
 			"	and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
 			"	and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 			"	and reference_id = folder.inode" +
 			")" +
-			"OR EXISTS(SELECT c.inode " +
-			"FROM contentlet c JOIN inode i " +
-			"ON  " +
-			"  i.type = 'contentlet' " +
-			"  AND i.inode = c.inode" +
-			"  WHERE c.identifier = reference_id)	" +
+			" OR EXISTS(SELECT c.inode " +
+			" FROM contentlet c  " +
+			" WHERE c.identifier = reference_id)" +
 			")";
 
 	/*
@@ -388,8 +385,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from folder where folder.inode in (" +
 		"		" + selectChildrenFolderSQL + " and " +
 		"		folder.inode not in (" +
-		"			select asset_id from permission_reference, folder ref_folder where " +
-		"			reference_id = ref_folder.inode and " +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) where " +
 		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Folder.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		folder.inode not in (" +
@@ -406,9 +402,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenHTMLPageSQL =
-		"select distinct identifier.id from htmlpage join identifier " +
-		" on (htmlpage.identifier = identifier.id) where " +
-		" identifier.host_inode = ? and identifier.parent_path like ?";
+		"select distinct identifier.id from identifier where " +
+		" asset_type='htmlpage' and identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load html pages identifiers that are children of a host and have inheritable permissions
@@ -417,8 +412,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
-		selectChildrenHTMLPageSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
+        " asset_type='htmlpage' and identifier.host_inode = ? and identifier.parent_path like ? " +
+        " and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of html pages of a given parent folder
@@ -484,8 +480,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"	from identifier where identifier.id in (" +
 				"		" + selectChildrenHTMLPageSQL + " and" +
 				"		identifier.id not in (" +
-		        "			select asset_id from permission_reference, folder ref_folder, identifier where ref_folder.identifier=identifier.id and " +
-		        "			reference_id = ref_folder.inode and	"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + HTMLPage.class.getCanonicalName() + "'" +
+		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + HTMLPage.class.getCanonicalName() + "'" +
 				"		) and " +
 				"		identifier.id not in (" +
 				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
@@ -501,9 +498,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenFileSQL =
-		"select distinct identifier.id from file_asset, inode, identifier where " +
-		"file_asset.inode = inode.inode and file_asset.identifier = identifier.id and " +
-		"identifier.host_inode = ? and identifier.parent_path like ?";
+		"select distinct identifier.id from identifier where " +
+		"asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load file identifiers that are children of a host and have inheritable permissions
@@ -512,8 +508,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenFileWithIndividualPermissionsSQL =
-		selectChildrenFileSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
+        "asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ? " +
+        "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of files of a given parent folder
@@ -546,18 +543,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	permission_type = '" + File.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
-		"from folder, inode,identifier " +
-		"where folder.inode = inode.inode " +
-		"and folder.identifier = identifier.id and identifier.host_inode = ? " +
-		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
-		"and reference_id = folder.inode" +
+		" from folder join identifier on (folder.identifier = identifier.id) " +
+		" where " +
+		" identifier.host_inode = ? " +
+		" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+		" and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		" and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
-		"FROM contentlet c JOIN inode i " +
-		"ON  " +
-		"  i.type = 'contentlet' " +
-		"  AND i.inode = c.inode" +
+		" FROM contentlet c " +
 		"  WHERE c.identifier = reference_id)	" +
 		")";
 	/*
@@ -583,9 +577,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from identifier where identifier.id in (" +
 		"		" + selectChildrenFileSQL + " and" +
 		"		identifier.id not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier ii where" +
-		"			reference_id = ref_folder.inode and ii.id=ref_folder.identifier and" +
-		"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		"              join identifier ii on (ii.id=ref_folder.identifier) " +
+		"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		identifier.id not in (" +
 		"			select inode_id from permission where " +
@@ -602,9 +596,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenLinkSQL =
-		"select distinct identifier.id from links, inode, identifier where " +
-		"links.inode = inode.inode and links.identifier = identifier.id and " +
-		"identifier.host_inode = ? and identifier.parent_path like ?";
+		"select distinct identifier.id from identifier where " +
+		"asset_type='links' and identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load link identifiers that are children of a host and have inheritable permissions
@@ -613,8 +606,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenLinkWithIndividualPermissionsSQL =
-		selectChildrenLinkSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
+        "asset_type='links' and identifier.host_inode = ? and identifier.parent_path like ? " +
+        "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of links of a given parent folder
@@ -646,18 +640,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	permission_type = '" + Link.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
-		"from folder, inode,identifier " +
-		"where folder.inode = inode.inode " +
-		"and folder.identifier = identifier.id and identifier.host_inode = ? " +
-		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
-		"and reference_id = folder.inode" +
+		"from folder join identifier on (folder.identifier = identifier.id) " +
+		"where " +
+		" identifier.host_inode = ? " +
+		" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
+		" and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		" and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
-		"FROM contentlet c JOIN inode i " +
-		"ON  " +
-		"  i.type = 'contentlet' " +
-		"  AND i.inode = c.inode" +
+		"FROM contentlet c " +
 		"  WHERE c.identifier = reference_id)	" +
 		")";
 
@@ -684,8 +675,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from identifier where identifier.id in (" +
 		"		" + selectChildrenLinkSQL + " and" +
 		"		identifier.id not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier ii where" +
-		"			reference_id = ref_folder.inode and ii.id=ref_folder.identifier and" +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		"            join identifier ii on (ii.id=ref_folder.identifier) where " +
 		"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		identifier.id not in (" +
@@ -703,9 +694,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenContentByPathSQL =
-		"select distinct identifier.id from contentlet, inode, identifier, folder, identifier ffi where " +
-		"contentlet.inode = inode.inode and identifier.id = contentlet.identifier and folder.identifier=ffi.id and  " +
-		"identifier.host_inode = ? and contentlet.identifier <> identifier.host_inode and identifier.parent_path = "+dotFolderPath+"(ffi.parent_path,ffi.asset_name) and "+dotFolderPath+"(ffi.parent_path,ffi.asset_name) like ?";
+        "select distinct identifier.id from identifier where asset_type='contentlet' " +
+        " and identifier.id <> identifier.host_inode and identifier.host_inode = ? " +
+        " and identifier.parent_path like ?";
 
 	/*
 	 * To load content identifiers that are children of a host and have inheritable permissions
@@ -714,8 +705,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
 	private final String selectChildrenContentWithIndividualPermissionsByPathSQL =
-		selectChildrenContentByPathSQL + " and exists (select * from permission where inode_id = identifier.id and " +
-		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
+        " where asset_type='contentlet' and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
+        " and identifier.id <> identifier.host_inode and identifier.host_inode = ? " +
+        " and identifier.parent_path like ?";
 
 	/*
 	 * To load content identifiers that are of the type of a structure
@@ -754,22 +747,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private final String deleteContentReferencesByPathOnAddSQL =
 		"delete from permission_reference where exists (" +
 		"	" + selectChildrenContentByPathSQL + " and " +
-		"permission_type = '" + Contentlet.class.getCanonicalName() + "' and asset_id = contentlet.identifier) " +
+		"permission_type = '" + Contentlet.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
-		"from folder, inode,identifier " +
-		"where folder.inode = inode.inode " +
-		"and folder.identifier = identifier.id and identifier.host_inode = ? " +
+		"from folder join identifier on (folder.identifier = identifier.id) " +
+		"where identifier.host_inode = ? " +
 		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		"and permission_type = '"+Contentlet.class.getCanonicalName()+"' " +
 		"and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
-		"FROM contentlet c JOIN inode i " +
-		"ON  " +
-		"  i.type = 'contentlet' " +
-		"  AND i.inode = c.inode" +
-		"  WHERE c.identifier = reference_id)	" +
+		"FROM contentlet c WHERE c.identifier = reference_id)	" +
 		")";
 
 	/*
@@ -818,9 +806,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from identifier where identifier.id in (" +
 		"		" + selectChildrenContentByPathSQL + " and" +
 		"		identifier.id not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier where" +
-		"			reference_id = ref_folder.inode and identifier.id=folder.identifier and " +
-		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		"                                join identifier on (identifier.id=ref_folder.identifier) " +
+		"			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		identifier.id not in (" +
 		"			select inode_id from permission where " +
@@ -869,8 +857,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. The host id
 	 */
 	private final String selectChildrenStructureByPathSQL =
-		"select distinct structure.inode from structure, inode where structure.inode = inode.inode  and ( " +
-		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(select folder.inode from folder,identifier where identifier.id=folder.identifier and structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
+		"select distinct structure.inode from structure where ( " +
+		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
+		"         select folder.inode from folder join identifier on (identifier.id=folder.identifier) " +
+		"         where structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
 		"(structure.host <> 'SYSTEM_HOST' AND structure.host = ?) OR " +
 		"(structure.host = 'SYSTEM_HOST' AND exists (select inode from contentlet where title = 'System Host' AND inode = ?)))";
 
@@ -884,8 +874,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. The host id
 	 */
 	private final String selectChildrenStructureByPathSQLFolder =
-		"select distinct structure.inode from structure, inode where structure.inode = inode.inode  and ( " +
-		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(select folder.inode from folder,identifier where identifier.id=folder.identifier and structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
+		"select distinct structure.inode from structure where ( " +
+		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
+		"            select folder.inode from folder join identifier on(identifier.id=folder.identifier) " +
+		"            where structure.folder = folder.inode and "+dotFolderPath+"(parent_path,asset_name) like ?)) OR " +
 		"(structure.host = 'SYSTEM_HOST' AND exists (select inode from contentlet where title = 'System Host' AND inode = ?)))";
 
 	/*
@@ -902,8 +894,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"delete from permission_reference where exists (" +
 			"	" + selectChildrenStructureByPathSQL + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
-			"select ref_folder.inode from folder ref_folder,identifier ref_ident where ref_folder.identifier = ref_ident.id " +
-			"and ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
+			"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
+			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
 
 
 	/*
@@ -920,30 +912,27 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"delete from permission_reference where exists (" +
 			"	" + selectChildrenStructureByPathSQLFolder + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
-			"select ref_folder.inode from folder ref_folder,identifier ref_ident where ref_folder.identifier = ref_ident.id " +
-			"and ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
+			"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
+			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?))";
 
 
 	private final String deleteStructureReferencesByPathOnAddSQL =
 		"delete from permission_reference where exists(" +
 		"	" + selectChildrenStructureByPathSQL + " and asset_id = structure.inode and " +
 		"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
-		"select ref_folder.inode from folder ref_folder,identifier ref_ident where ref_folder.identifier = ref_ident.id " +
-		"and ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
+		"select ref_folder.inode from folder ref_folder join identifier ref_ident on (ref_folder.identifier = ref_ident.id) where " +
+		"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
 		"and (reference_id in (" +
 		"select distinct folder.inode " +
-		"from folder, inode,identifier " +
-		"where folder.inode = inode.inode " +
-		"and folder.identifier = identifier.id and identifier.host_inode = ? " +
+		"from folder join identifier on(folder.identifier = identifier.id) " +
+		"where " +
+		"identifier.host_inode = ? " +
 		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
 		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 		"and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
-		"FROM contentlet c JOIN inode i " +
-		"ON  " +
-		"  i.type = 'contentlet' " +
-		"  AND i.inode = c.inode" +
+		"FROM contentlet c " +
 		"  WHERE c.identifier = reference_id)	" +
 		")";
 
@@ -952,22 +941,19 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"delete from permission_reference where exists(" +
 			"	" + selectChildrenStructureByPathSQLFolder + " and asset_id = structure.inode and " +
 			"permission_type = '" + Structure.class.getCanonicalName() + "' and reference_id not in (" +
-			"select ref_folder.inode from folder ref_folder,identifier ref_ident where ref_folder.identifier = ref_ident.id " +
-			"and ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
+			"select ref_folder.inode from folder ref_folder join identifier ref_ident on(ref_folder.identifier = ref_ident.id) where  " +
+			"ref_ident.host_inode = ? and "+dotFolderPath+"(ref_ident.parent_path,ref_ident.asset_name) like ?)) " +
 			"and (reference_id in (" +
 			"select distinct folder.inode " +
-			"from folder, inode,identifier " +
-			"where folder.inode = inode.inode " +
-			"and folder.identifier = identifier.id and identifier.host_inode = ? " +
+			"from folder join identifier on (folder.identifier = identifier.id) " +
+			"where " +
+			"identifier.host_inode = ? " +
 			"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
 			"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
 			"and reference_id = folder.inode" +
 			") " +
 			"OR EXISTS(SELECT c.inode " +
-			"FROM contentlet c JOIN inode i " +
-			"ON  " +
-			"  i.type = 'contentlet' " +
-			"  AND i.inode = c.inode" +
+			"FROM contentlet c " +
 			"  WHERE c.identifier = reference_id)	" +
 			")";
 
@@ -996,8 +982,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from structure where structure.inode in (" +
 		"		" + selectChildrenStructureByPathSQL + " and" +
 		"		structure.inode not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier where" +
-		"			reference_id = ref_folder.inode and ref_folder.identifier=identifier.id and" +
+		"			select asset_id from permission_reference join folder ref_folder on(reference_id = ref_folder.inode) " +
+		"                                join identifier on (ref_folder.identifier=identifier.id) where " +
 		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		structure.inode not in (" +
@@ -1032,8 +1018,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"	from structure where structure.inode in (" +
 		"		" + selectChildrenStructureByPathSQLFolder + " and" +
 		"		structure.inode not in (" +
-		"			select asset_id from permission_reference, folder ref_folder, identifier where" +
-		"			reference_id = ref_folder.inode and ref_folder.identifier=identifier.id and" +
+		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) " +
+		"                               join identifier on (ref_folder.identifier=identifier.id) where " +
 		"			"+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
 		"		) and " +
 		"		structure.inode not in (" +
@@ -1074,7 +1060,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. The host id
 	 */
 	private final String selectChildrenStructureWithIndividualPermissionsByPathSQL =
-		selectChildrenStructureByPathSQL + " and exists (select * from permission where inode_id = inode.inode and " +
+		selectChildrenStructureByPathSQL + " and exists (select * from permission where inode_id = structure.inode and " +
 		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
 
 
@@ -1098,11 +1084,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						PERMISION_TYPES.put(mask, f.getInt(null));
 					} catch (Exception e) {
 						Logger.error(PermissionBitFactoryImpl.class,e.getMessage(),e);
-					} 
+					}
 	        	}
-	        	
+
 	        }
-				
+
 		}
 	}
 
@@ -1300,6 +1286,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		Host systemHost = hostAPI.findSystemHost();
 		DotConnect dc = new DotConnect();
 
+		boolean ran01=false,ran02=false,ran03=false,ran04=false,ran05=false,
+		        ran06=false,ran07=false,ran08=false,ran09=false,ran10=false;
 
 		List<Map<String, Object>> idsToClear = new ArrayList<Map<String, Object>>();
 		List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(permissionable), parentPermissionableId);
@@ -1323,7 +1311,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				// host
 				if (!permissionable.getPermissionId().equals(systemHost.getPermissionId())) {
 
-					if (isHost && p.getType().equals(Template.class.getCanonicalName())) {
+					if (isHost && p.getType().equals(Template.class.getCanonicalName()) && !ran01) {
 						// Find all host templates pointing to the system host
 						// and update their references
 
@@ -1340,11 +1328,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of templates changed to clear
 						// their caches
-						dc.setSQL(selectChildrenTemplateSQL);
-						dc.addParam(permissionable.getPermissionId());
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenTemplateSQL, MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(permissionable.getPermissionId());
+    						idsToClear.addAll(dc.loadResults());
+						}
 
-					} else if (isHost && p.getType().equals(Container.class.getCanonicalName())) {
+						ran01=true;
+					} else if (isHost && p.getType().equals(Container.class.getCanonicalName()) && !ran02) {
 						// Find all host containers pointing to the system host
 						// and update their references
 
@@ -1361,17 +1352,21 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of container changed to clear
 						// their caches
-						dc.setSQL(selectChildrenContainerSQL);
-						dc.addParam(permissionable.getPermissionId());
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenContainerSQL,MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(permissionable.getPermissionId());
+    						idsToClear.addAll(dc.loadResults());
+						}
 
-					}else if (p.getType().equals(Folder.class.getCanonicalName())) {
+						ran02=true;
+
+					}else if (p.getType().equals(Folder.class.getCanonicalName()) && !ran03) {
 						// Find all subfolders
 						// Removing all references to the system host
 						dc.setSQL(this.deleteSubfolderReferencesSQLOnAdd);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
-						dc.addParam(path);
+						dc.addParam(isHost ? " " : path);
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						dc.addParam(path);
@@ -1382,19 +1377,22 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(permissionable.getPermissionId());
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
-						dc.addParam(path);
+						dc.addParam(isHost ? " " : path);
 						dc.addParam(path + "%");
 						dc.loadResult();
 
 						// Retrieving the list of container changed to clear
 						// their caches
-						dc.setSQL(selectChildrenFolderSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						dc.addParam(path);
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenFolderSQL,MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						dc.addParam(isHost ? " " : path);
+    						idsToClear.addAll(dc.loadResults());
+						}
 
-					} else if (p.getType().equals(HTMLPage.class.getCanonicalName())) {
+						ran03=true;
+					} else if (p.getType().equals(HTMLPage.class.getCanonicalName()) && !ran04) {
 
 						// Update html page references
 
@@ -1422,12 +1420,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of pages changed to clear their
 						// caches
-						dc.setSQL(selectChildrenHTMLPageSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenHTMLPageSQL,MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						idsToClear.addAll(dc.loadResults());
+						}
 
-					} else if (p.getType().equals(File.class.getCanonicalName())) {
+						ran04=true;
+					} else if (p.getType().equals(File.class.getCanonicalName()) && !ran05) {
 
 						// Find all files to update their references
 
@@ -1456,12 +1457,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of files changed to clear their
 						// caches
-						dc.setSQL(selectChildrenFileSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						idsToClear.addAll(dc.loadResults());
-
-					} else if (p.getType().equals(Link.class.getCanonicalName())) {
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenFileSQL,MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						idsToClear.addAll(dc.loadResults());
+						}
+						ran05=true;
+					} else if (p.getType().equals(Link.class.getCanonicalName()) && !ran06) {
 						// Find all files to update their references
 
 						// Removing all references to the system host
@@ -1488,12 +1491,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of links changed to clear their
 						// caches
-						dc.setSQL(selectChildrenLinkSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenLinkSQL, MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						idsToClear.addAll(dc.loadResults());
+						}
 
-					} else if (p.getType().equals(Contentlet.class.getCanonicalName())) {
+						ran06=true;
+
+					} else if (p.getType().equals(Contentlet.class.getCanonicalName()) && !ran07) {
 						// Find all content
 
 						// Removing all references to the system host
@@ -1520,12 +1527,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 						// Retrieving the list of links changed to clear their
 						// caches
-						dc.setSQL(selectChildrenContentByPathSQL);
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						idsToClear.addAll(dc.loadResults());
+						if(idsToClear.size()<MAX_IDS_CLEAR) {
+    						dc.setSQL(selectChildrenContentByPathSQL, MAX_IDS_CLEAR-idsToClear.size());
+    						dc.addParam(parentHost.getPermissionId());
+    						dc.addParam(path + "%");
+    						idsToClear.addAll(dc.loadResults());
+						}
 
-					} else if (p.getType().equals(Structure.class.getCanonicalName())) {
+						ran07=true;
+
+					} else if (p.getType().equals(Structure.class.getCanonicalName()) && !ran08) {
 
 						if(isHost){
 							dc.setSQL(this.deleteStructureReferencesByPathOnAddSQL);
@@ -1551,11 +1562,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 							// Retrieving the list of structures changed to clear
 							// their caches
-							dc.setSQL(this.selectChildrenStructureByPathSQL);
-							dc.addParam(path + "%");
-							dc.addParam(parentHost.getPermissionId());
-							dc.addParam(parentHost.getPermissionId());
-							idsToClear.addAll(dc.loadResults());
+							if(idsToClear.size()<MAX_IDS_CLEAR) {
+    							dc.setSQL(this.selectChildrenStructureByPathSQL, MAX_IDS_CLEAR-idsToClear.size());
+    							dc.addParam(path + "%");
+    							dc.addParam(parentHost.getPermissionId());
+    							dc.addParam(parentHost.getPermissionId());
+    							idsToClear.addAll(dc.loadResults());
+							}
 						}else{
 							dc.setSQL(this.deleteStructureReferencesByPathOnAddSQLFolder);
 							dc.addParam(path + "%");
@@ -1578,59 +1591,77 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 							// Retrieving the list of structures changed to clear
 							// their caches
-							dc.setSQL(this.selectChildrenStructureByPathSQLFolder);
-							dc.addParam(path + "%");
-							dc.addParam(parentHost.getPermissionId());
-							idsToClear.addAll(dc.loadResults());
+							if(idsToClear.size()<MAX_IDS_CLEAR) {
+    							dc.setSQL(this.selectChildrenStructureByPathSQLFolder, MAX_IDS_CLEAR-idsToClear.size());
+    							dc.addParam(path + "%");
+    							dc.addParam(parentHost.getPermissionId());
+    							List<Map<String,Object>> sts=dc.loadResults();
+                                idsToClear.addAll(sts);
+
+                                Iterator<Map<String,Object>> it = sts.iterator();
+                                while(it.hasNext() && (MAX_IDS_CLEAR-idsToClear.size())>0) {
+                                   dc.setSQL(this.selectChildrenContentByStructureSQL,MAX_IDS_CLEAR-idsToClear.size());
+                                   dc.addParam(it.next().get("inode"));
+                                   idsToClear.addAll(dc.loadResults());
+                                }
+							}
 
 						}
-
+						ran08=true;
 					}
 				} else {
 					// If the system host we need to force all references of the
 					// type of the permissionable
-					dc.setSQL(selectPermissionReferenceSQL);
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(p.getType());
-					idsToClear.addAll(dc.loadResults());
+				    if(idsToClear.size()<MAX_IDS_CLEAR) {
+    					dc.setSQL(selectPermissionReferenceSQL, MAX_IDS_CLEAR-idsToClear.size());
+    					dc.addParam(permissionable.getPermissionId());
+    					dc.addParam(p.getType());
+    					idsToClear.addAll(dc.loadResults());
+				    }
 				}
 			} else if(isCategory) {
-				Category cat = (Category) permissionable;
-				CategoryAPI catAPI = APILocator.getCategoryAPI();
-				User systemUser = APILocator.getUserAPI().getSystemUser();
-				try {
-					List<Category> children = catAPI.getCategoryTreeDown(cat, cat, systemUser, false);
-					for(Category child : children) {
-						dc.setSQL(updatePermissionReferenceByAssetIdSQL);
-						dc.addParam(cat.getInode());
-						dc.addParam(Category.class.getCanonicalName());
-						dc.addParam(child.getInode());
-						dc.loadResult();
-						idsToClear.add(child.getMap());
-					}
-				} catch (DotSecurityException e) {
-					Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
-					throw new DotRuntimeException(e.getMessage(), e);
-				}
+			    if(!ran09) {
+    				Category cat = (Category) permissionable;
+    				CategoryAPI catAPI = APILocator.getCategoryAPI();
+    				User systemUser = APILocator.getUserAPI().getSystemUser();
+    				try {
+    					List<Category> children = catAPI.getCategoryTreeDown(cat, cat, systemUser, false);
+    					for(Category child : children) {
+    						dc.setSQL(updatePermissionReferenceByAssetIdSQL);
+    						dc.addParam(cat.getInode());
+    						dc.addParam(Category.class.getCanonicalName());
+    						dc.addParam(child.getInode());
+    						dc.loadResult();
+    						idsToClear.add(child.getMap());
+    					}
+    				} catch (DotSecurityException e) {
+    					Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
+    					throw new DotRuntimeException(e.getMessage(), e);
+    				}
+    				ran09=true;
+			    }
 			} else if (isStructure) {
+			    if(!ran10) {
+    				// Removing all references to the system host
+    				dc.setSQL(this.deleteContentReferencesByStructureSQL);
+    				// All the content that belongs to the host
+    				dc.addParam(permissionable.getPermissionId());
+    				dc.loadResult();
 
-				// Removing all references to the system host
-				dc.setSQL(this.deleteContentReferencesByStructureSQL);
-				// All the content that belongs to the host
-				dc.addParam(permissionable.getPermissionId());
-				dc.loadResult();
-
-				dc.setSQL(selectChildrenContentByStructureSQL);
-				dc.addParam(permissionable.getPermissionId());
-				idsToClear.addAll(dc.loadResults());
-
+    				if(idsToClear.size()<MAX_IDS_CLEAR) {
+        				dc.setSQL(selectChildrenContentByStructureSQL, MAX_IDS_CLEAR-idsToClear.size());
+        				dc.addParam(permissionable.getPermissionId());
+        				idsToClear.addAll(dc.loadResults());
+    				}
+    				ran10=true;
+			    }
 			}
 
 
 		}
 
 		//Clearing the caches
-		if(idsToClear.size() < 30) {
+		if(idsToClear.size() < MAX_IDS_CLEAR) {
 			for(Map<String, Object> idToClear: idsToClear) {
 				String inode = (String)(idToClear.get("inode") != null?idToClear.get("inode"):idToClear.get("asset_id"));
 				if(inode==null) inode=(String)idToClear.get("id");
@@ -1690,12 +1721,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		List<Map<String, String>> toClear = new ArrayList<Map<String,String>>();
 		for(String type: referenceReplacement.keySet()) {
 
-			dc.setSQL(selectPermissionReferenceSQL);
-			dc.addParam(permissionable.getPermissionId());
-			dc.addParam(type);
-			for(Map<String, String> entry : (ArrayList<Map<String, String>>)dc.loadResults()) {
-				toClear.add(entry);
-			}
+		    if(toClear.size()<MAX_IDS_CLEAR) {
+    			dc.setSQL(selectPermissionReferenceSQL, MAX_IDS_CLEAR-toClear.size());
+    			dc.addParam(permissionable.getPermissionId());
+    			dc.addParam(type);
+    			toClear.addAll(dc.loadResults());
+		    }
 
 			String replacement = referenceReplacement.get(type);
 			if(!replacement.equals(permissionable.getPermissionId())) {
@@ -1710,15 +1741,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		}
 
-		if(toClear.size() < 30) {
-			for(Map<String, String> entry : toClear) {
+		if(toClear.size() < MAX_IDS_CLEAR)
+			for(Map<String, String> entry : toClear)
 				permissionCache.remove(entry.get("asset_id"));
-			}
-		} else {
+	    else
 			permissionCache.clearCache();
-		}
-
-
 	}
 
 	/*
@@ -1733,9 +1760,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		HibernateUtil hu = new HibernateUtil(PermissionReference.class);
 		hu.setQuery(query);
 		hu.setParam(permissionable.getPermissionId());
+		hu.setMaxResults(MAX_IDS_CLEAR);
 		List<PermissionReference> permissionReferences = hu.list();
 
-		if(permissionReferences.size() < 30) {
+		if(permissionReferences.size() < MAX_IDS_CLEAR) {
 			for(PermissionReference reference : permissionReferences) {
 				permissionCache.remove(reference.getAssetId());
 			}
@@ -2110,9 +2138,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		try {
 			DotConnect db = new DotConnect();
-			db.setSQL("select * from permission where roleid='"+roleId+"'");
-
-			/*removing from the bd*/
 			db.setSQL("delete from permission where roleid='"+roleId+"'");
 			db.loadResult();
 
@@ -2375,7 +2400,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 
 		HibernateUtil persistenceService = new HibernateUtil(Permission.class);
-		persistenceService.setSQLQuery(loadPermissionHSQL);
+		persistenceService.setSQLQuery(loadPermissionSQL);
 		persistenceService.setParam(permissionable.getPermissionId());
 		persistenceService.setParam(permissionable.getPermissionId());
 		List<Permission> bitPermissionsList = (List<Permission>) persistenceService.list();
@@ -2423,6 +2448,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						}
 					}
 				}
+
+				if(permissionable instanceof Template && ((Template) permissionable).isDrawed()) {
+					 type = Template.TEMPLATE_LAYOUTS_CANONICAL_NAME;
+				}
+
 				Permissionable parentPermissionable = permissionable.getParentPermissionable();
 				Permissionable newReference = null;
 				List<Permission> inheritedPermissions = new ArrayList<Permission>();
@@ -2622,9 +2652,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
 				//Retrieving the list of templates to clear their caches later
-				dc.setSQL(selectChildrenTemplateSQL);
-				dc.addParam(host.getPermissionId());
-				idsToClear.addAll(dc.loadResults());
+				if(idsToClear.size()<MAX_IDS_CLEAR) {
+    				dc.setSQL(selectChildrenTemplateSQL, MAX_IDS_CLEAR-idsToClear.size());
+    				dc.addParam(host.getPermissionId());
+    				idsToClear.addAll(dc.loadResults());
+				}
 
 				//Removing permissions and permission references for all children containers
 				dc.setSQL(deleteContainerReferencesSQL);
@@ -2639,9 +2671,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
 				//Retrieving the list of containers to clear their caches later
-				dc.setSQL(selectChildrenContainerSQL);
-				dc.addParam(host.getPermissionId());
-				idsToClear.addAll(dc.loadResults());
+				if(idsToClear.size()<MAX_IDS_CLEAR) {
+    				dc.setSQL(selectChildrenContainerSQL, MAX_IDS_CLEAR-idsToClear.size());
+    				dc.addParam(host.getPermissionId());
+    				idsToClear.addAll(dc.loadResults());
+				}
 
 			}
 			String folderPath = "";
@@ -2668,12 +2702,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			//Retrieving the list of sub folders changed to clear their caches
-			dc.setSQL(selectChildrenFolderSQL);
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.addParam(isHost?" ":folderPath+"");
-			idsToClear.addAll(dc.loadResults());
-
+			if(idsToClear.size()<MAX_IDS_CLEAR) {
+    			dc.setSQL(selectChildrenFolderSQL, MAX_IDS_CLEAR-idsToClear.size());
+    			dc.addParam(host.getPermissionId());
+    			dc.addParam(isHost?"%":folderPath+"%");
+    			dc.addParam(isHost?" ":folderPath+"");
+    			idsToClear.addAll(dc.loadResults());
+			}
 
 			//Removing permissions and permission references for all children containers
 			dc.setSQL(deleteHTMLPageReferencesSQL);
@@ -2692,10 +2727,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			//Retrieving the list of htmlpages changed to clear their caches
-			dc.setSQL(selectChildrenHTMLPageSQL);
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			idsToClear.addAll(dc.loadResults());
+			if(idsToClear.size()<MAX_IDS_CLEAR) {
+    			dc.setSQL(selectChildrenHTMLPageSQL, MAX_IDS_CLEAR-idsToClear.size());
+    			dc.addParam(host.getPermissionId());
+    			dc.addParam(isHost?"%":folderPath+"%");
+    			idsToClear.addAll(dc.loadResults());
+			}
 
 			//Removing permissions and permission references for all children containers
 			dc.setSQL(deleteFileReferencesSQL);
@@ -2714,10 +2751,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			//Retrieving the list of files changed to clear their caches
-			dc.setSQL(selectChildrenFileSQL);
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			idsToClear.addAll(dc.loadResults());
+			if(idsToClear.size()<MAX_IDS_CLEAR) {
+    			dc.setSQL(selectChildrenFileSQL, MAX_IDS_CLEAR-idsToClear.size());
+    			dc.addParam(host.getPermissionId());
+    			dc.addParam(isHost?"%":folderPath+"%");
+    			idsToClear.addAll(dc.loadResults());
+			}
 
 			//Removing permissions and permission references for all children containers
 			dc.setSQL(deleteLinkReferencesSQL);
@@ -2736,10 +2775,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			//Retrieving the list of links changed to clear their caches
-			dc.setSQL(selectChildrenLinkSQL);
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			idsToClear.addAll(dc.loadResults());
+			if(idsToClear.size()<MAX_IDS_CLEAR) {
+    			dc.setSQL(selectChildrenLinkSQL, MAX_IDS_CLEAR-idsToClear.size());
+    			dc.addParam(host.getPermissionId());
+    			dc.addParam(isHost?"%":folderPath+"%");
+    			idsToClear.addAll(dc.loadResults());
+			}
 
 			//Removing permissions and permission references for all children content
 			dc.setSQL(deleteContentReferencesByPathSQL);
@@ -2758,10 +2799,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			//Retrieving the list of content changed to clear their caches
-			dc.setSQL(selectChildrenContentByPathSQL);
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			idsToClear.addAll(dc.loadResults());
+			if(idsToClear.size()<MAX_IDS_CLEAR) {
+    			dc.setSQL(selectChildrenContentByPathSQL, MAX_IDS_CLEAR-idsToClear.size());
+    			dc.addParam(host.getPermissionId());
+    			dc.addParam(isHost?"%":folderPath+"%");
+    			idsToClear.addAll(dc.loadResults());
+			}
 
 			if(isHost){
 				//Removing permissions and permission references for all children structures
@@ -2786,11 +2829,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.loadResult();
 				// Retrieving the list of structures changed to clear their caches
-				dc.setSQL(this.selectChildrenStructureByPathSQL);
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.addParam(host.getPermissionId());
-				dc.addParam(host.getPermissionId());
-				idsToClear.addAll(dc.loadResults());
+				if(idsToClear.size()<MAX_IDS_CLEAR) {
+    				dc.setSQL(this.selectChildrenStructureByPathSQL, MAX_IDS_CLEAR-idsToClear.size());
+    				dc.addParam(isHost?"%":folderPath+"%");
+    				dc.addParam(host.getPermissionId());
+    				dc.addParam(host.getPermissionId());
+    				idsToClear.addAll(dc.loadResults());
+				}
 			}else if(isFolder){
 				//Removing permissions and permission references for all children structures
 				dc.setSQL(this.deleteStructureReferencesByPathSQLFolder);
@@ -2811,10 +2856,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.loadResult();
 				// Retrieving the list of structures changed to clear their caches
-				dc.setSQL(this.selectChildrenStructureByPathSQLFolder);
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.addParam(host.getPermissionId());
-				idsToClear.addAll(dc.loadResults());
+				if(idsToClear.size()<MAX_IDS_CLEAR) {
+    				dc.setSQL(this.selectChildrenStructureByPathSQLFolder, MAX_IDS_CLEAR-idsToClear.size());
+    				dc.addParam(isHost?"%":folderPath+"%");
+    				dc.addParam(host.getPermissionId());
+    				idsToClear.addAll(dc.loadResults());
+				}
 			}
 
 
@@ -2833,9 +2880,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(permissionable.getPermissionId());
 			dc.loadResult();
 			//Retrieving the list of content changed to clear their caches
-			dc.setSQL(selectChildrenContentByStructureSQL);
-			dc.addParam(permissionable.getPermissionId());
-			idsToClear.addAll(dc.loadResults());
+			if(idsToClear.size()<MAX_IDS_CLEAR) {
+    			dc.setSQL(selectChildrenContentByStructureSQL, MAX_IDS_CLEAR-idsToClear.size());
+    			dc.addParam(permissionable.getPermissionId());
+    			idsToClear.addAll(dc.loadResults());
+			}
 
 		} else if(isCategory) {
 
@@ -2860,9 +2909,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			updatePermissionReferencesOnRemove(permissionable);
 
 			//Clearing the caches
-			if(idsToClear.size() < 1000) {
+			if(idsToClear.size() < MAX_IDS_CLEAR) {
 				for(Map<String, String> idToClear: idsToClear) {
-					permissionCache.remove(idToClear.get("inode"));
+				    String ii=idToClear.get("inode");
+				    if(ii==null) ii=idToClear.get("id");
+					permissionCache.remove(ii);
 				}
 			} else {
 				permissionCache.clearCache();
@@ -3306,7 +3357,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
 	    ContentletAPI contAPI = APILocator.getContentletAPI();
 	    ContentletIndexAPI indexAPI=new ESContentletIndexAPI();
-	    
+
 	    DotConnect dc = new DotConnect();
 		dc.setSQL(deleteContentReferencesByStructureSQL);
 		dc.addParam(structure.getPermissionId());
@@ -3322,7 +3373,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             } catch (DotSecurityException e) {
                 throw new RuntimeException(e);
             }
-			
+
 			BulkRequestBuilder bulk=new ESClient().getClient().prepareBulk();
 			for(Contentlet cont : contentlets) {
 			    permissionCache.remove(cont.getPermissionId());
@@ -3330,7 +3381,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			}
 			if(bulk.numberOfActions()>0)
 			    bulk.execute().actionGet();
-			
+
 			offset=offset+limit;
 		} while(contentlets.size()>0);
 	}

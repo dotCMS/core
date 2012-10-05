@@ -501,7 +501,7 @@ public class ContentletBaseTest extends TestBase {
         htmlPage.setModDate( new Date() );
         htmlPage.setModUser( user.getUserId() );
         htmlPage.setOwner( user.getUserId() );
-        htmlPage.setPageUrl( "junit_htmlpage_test_" + contentlet.getInode() + ".dot" );
+        htmlPage.setPageUrl( "junit_htmlpage_test_" + contentlet.getInode() + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION") );
         htmlPage.setRedirect( "" );
         htmlPage.setShowOnMenu( true );
         htmlPage.setSortOrder( 2 );

@@ -90,6 +90,27 @@
                 <td>
                 </td>
             </tr>
+            <tr style="${templateLayoutsPermissionsEntryStyle}">
+                <td class="permissionType">
+                	${templateLayoutsWillInherit}
+                </td>
+                <td>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-view-permission-${id}" onclick="viewPermissionChanged('template-layouts', '${id}')" ${templateLayoutsViewPermissionChecked} ${disabledPermissions} />
+                </td>
+                <td>
+                </td>
+                <td>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-edit-permission-${id}" onclick="editPermissionChanged('template-layouts', '${id}')" ${templateLayoutsEditPermissionChecked} ${disabledPermissions} />
+                </td>
+                <td>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-publish-permission-${id}" onclick="publishPermissionChanged('template-layouts', '${id}')" ${templateLayoutsPublishPermissionChecked} ${disabledPermissions} />
+                </td>
+                <td>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('template-layouts', '${id}')" ${templateLayoutsEditPermissionsPermissionChecked} ${disabledPermissions} />
+                </td>
+                <td>
+                </td>
+            </tr>
             <tr>
                 <td class="permissionType">
                 	${pagesWillInherit}

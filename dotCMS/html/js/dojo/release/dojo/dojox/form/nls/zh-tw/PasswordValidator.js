@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/form/nls/zh-tw/PasswordValidator", //begin v1.x content
-({
+"dojox/form/nls/zh-tw/PasswordValidator", ({
         nomatchMessage: "密碼不符合。",
-		badPasswordMessage: "無效的密碼。"
+	badPasswordMessage: "無效的密碼。"
 })
-
-//end v1.x content
 );

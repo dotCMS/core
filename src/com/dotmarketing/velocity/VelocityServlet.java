@@ -103,7 +103,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	private static LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
+	public static  ThreadLocal<Context> velocityCtx = Logger.velocityCtx;
 	/**
 	 * @param permissionAPI
 	 *            the permissionAPI to set
@@ -500,11 +500,9 @@ public abstract class VelocityServlet extends HttpServlet {
 			String trimmedPage = out.toString().trim();
 			response.getWriter().write(trimmedPage);
 			response.getWriter().close();
-			synchronized (key) {
-				String x = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
-				if (x != null) {
-					return;
-				}
+			synchronized (key) {				
+				//CacheLocator.getBlockDirectiveCache().clearCache();
+				CacheLocator.getHTMLPageCache().remove(page);
 				CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
 			}
 		} else {

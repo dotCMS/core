@@ -1,10 +1,7 @@
-//>>built
 define(
-"dijit/form/nls/it/validate", //begin v1.x content
-({
+"dijit/form/nls/it/validate", ({
 	invalidMessage: "Il valore immesso non è valido.",
 	missingMessage: "Questo valore è obbligatorio.",
-	rangeMessage: "Questo valore non è compreso nell'intervallo."
+	rangeMessage: "Questo valore è fuori dall'intervallo consentito."
 })
-//end v1.x content
 );

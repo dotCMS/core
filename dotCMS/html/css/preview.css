@@ -33,13 +33,13 @@
 .dotNewContentDisabled{background:url(/html/images/icons/card-plus-off.png) no-repeat 5px center;}
 
 .dotReuseContent a{background:url(/html/images/icons/card-search.png) no-repeat 5px 5px;}
-.dotReuseContentDisabled{background:url(/html/images/icons/cards-plus-off.png) no-repeat 5px 5px;}
+.dotReuseContentDisabled{background:url(/html/images/icons/card-search-off.png) no-repeat 5px 5px;}
 
 .dotAddWidget a{background:url(/html/images/icons/gear-plus.png) no-repeat 5px 5px;}
 .dotAddWidgetDisabled{background:url(/html/images/icons/gear-plus-off.png) no-repeat 5px 5px;}
 
 .dotAddForm a{background:url(/html/images/icons/ui-scroll-pane-form-plus.png) no-repeat 5px 5px;border-top: 1px solid #fff;border-bottom: 1px solid #ddd;}
-.dotAddFormDisabled{background:url(/html/images/icons/ui-scroll-pane-form-off.png) no-repeat 5px 5px;border-top: 1px solid #fff;border-bottom: 1px solid #ddd;}
+.dotAddFormDisabled{background:url(/html/images/icons/ui-scroll-pane-form-plus-off.png) no-repeat 5px 5px;border-top: 1px solid #fff;border-bottom: 1px solid #ddd;}
 
 .dotControlsClose a{background:url(/html/images/icons/cross-small.png) no-repeat 5px 5px;border-top: 1px solid #fff;}
 /* END CONTAINER CONTROLS */

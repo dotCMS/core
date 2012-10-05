@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/th/CollapsibleToolbar", //begin v1.x content
-({
+"dojox/editor/plugins/nls/th/CollapsibleToolbar", ({
 	"collapse": "ยุบรวมแถบเครื่องมือตัวแก้ไข",
 	"expand": "ขยายแถบเครื่องมือตัวแก้ไข"
 })
-
-//end v1.x content
 );

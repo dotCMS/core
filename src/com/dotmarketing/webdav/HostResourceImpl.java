@@ -1,12 +1,21 @@
 package com.dotmarketing.webdav;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.io.IOUtils;
 
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.FolderResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -14,11 +23,15 @@ import com.bradmcevoy.http.LockToken;
 import com.bradmcevoy.http.LockingCollectionResource;
 import com.bradmcevoy.http.MakeCollectionableResource;
 import com.bradmcevoy.http.PropFindableResource;
+import com.bradmcevoy.http.Range;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.LockedException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.NotFoundException;
 import com.bradmcevoy.http.exceptions.PreConditionFailedException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -26,32 +39,24 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-public class HostResourceImpl implements Resource, CollectionResource, PropFindableResource, MakeCollectionableResource, LockingCollectionResource{
+public class HostResourceImpl extends BasicFolderResourceImpl implements Resource, CollectionResource, FolderResource, PropFindableResource, MakeCollectionableResource, LockingCollectionResource{
 
-	private Host host;
-	private DotWebdavHelper dotDavHelper;
-	private String path;
-	private User user;
-	private boolean isAutoPub = false;
 	private PermissionAPI perAPI;
 	
-	public HostResourceImpl(String path, Host host) {
+	public HostResourceImpl(String path) {
+	    super(path);
 		perAPI = APILocator.getPermissionAPI();
-		dotDavHelper = new DotWebdavHelper();
-		this.isAutoPub = isAutoPub;
-		this.path = path;
-		this.host = host;
 	}
 	
 	public Object authenticate(String username, String password) {
 		try {
-			this.user =  dotDavHelper.authorizePrincipal(username, password);
-			return user;
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -60,13 +65,15 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 
 	public boolean authorise(Request request, Method method, Auth auth) {
 		try {
-			
 			if(auth == null)
 				return false;
-			else if(method.isWrite){
-				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, false);
-			}else{
-				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, false);
+			else {
+			    User user=(User)auth.getTag();
+			    if(method.isWrite){
+    				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
+    			}else{
+    				return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, false);
+    			}
 			}
 
 		} catch (DotDataException e) {
@@ -128,6 +135,7 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 	} 
 
 	public List<? extends Resource> getChildren() {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Folder> folders = listFolders();
 		List<Resource> frs = new ArrayList<Resource>();
 		for (Folder folder : folders) {
@@ -194,11 +202,12 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 	}
 
 	private List<Folder> listFolders(){
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		List<Folder> folders = new ArrayList<Folder>();
 		try {
-			folders = folderAPI.findSubFolders(host,APILocator.getUserAPI().getSystemUser(),false);
+			folders = folderAPI.findSubFolders(host,user,false);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);
@@ -217,6 +226,7 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
 	}
 
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(dotDavHelper.isTempResource(newName)){
 			File f = dotDavHelper.createTempFolder(File.separator + host.getHostname() + File.separator + newName);
 			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
@@ -263,5 +273,20 @@ public class HostResourceImpl implements Resource, CollectionResource, PropFinda
             PreConditionFailedException {
         // TODO Auto-generated method stub
         
+    }
+    
+    @Override
+    public void delete() throws DotRuntimeException {
+        
+    }
+
+    @Override
+    public void moveTo(CollectionResource arg0, String arg1) throws ConflictException, NotAuthorizedException, BadRequestException {
+        return;
+    }
+
+    @Override
+    public void copyTo(CollectionResource arg0, String arg1) throws NotAuthorizedException, BadRequestException, ConflictException {
+        return;
     }
 }

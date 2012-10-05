@@ -1,4 +1,3 @@
-//>>built
 define("dojox/grid/enhanced/nls/Pagination", { root:
 //begin v1.x content
 ({

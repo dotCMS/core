@@ -131,7 +131,19 @@ THIS FILE AND ITS INCLUDES
 			//debugger;
 			console.log(msg, e);
 		}
-
+		var dojoDom=dojo.require("dojo.dom");
+		var dojoDomGeometry=dojo.require("dojo.dom-geometry");
+		var dojoStyle=dojo.require("dojo.dom-style");
+		dojo.coords = function(elem,xx) {
+            var mb=dojoDomGeometry.getMarginBox(elem,dojoStyle.getComputedStyle(elem));
+            var abs=dojoDomGeometry.position(elem,xx);
+            mb.x=abs.x;
+            mb.y=abs.y;
+            mb.w=abs.w;
+            mb.h=abs.h;
+            return mb;
+        };
+		
 	</script>
 	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
 	<style>

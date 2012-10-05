@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/grid/enhanced/nls/hr/Filter", //begin v1.x content
-({
+"dojox/grid/enhanced/nls/hr/Filter", ({
 	"clearFilterDialogTitle": "Brisanje filtera",
 	"filterDefDialogTitle": "Filter",
 	"ruleTitleTemplate": "Pravilo ${0}",
@@ -31,7 +29,7 @@ define(
 	"waiRelAll": "Usporedi sva sljedeća pravila:",
 	"relationAny": "bilo koja pravila",
 	"waiRelAny": "Usporedi bilo koje od sljedećih pravila:",
-	"relationMsgFront": "Odgovara",
+	"relationMsgFront": "Usporedi:",
 	"relationMsgTail": "",
 	"and": "i",
 	"or": "ili",
@@ -82,8 +80,7 @@ define(
 	"clearFilterMsg": "Ovo uklanja filter i prikazuje sve raspoložive slogove.",
 	"anyColumnOption": "Bilo koji stupac",
 	
-	"trueLabel": "True",
-	"falseLabel": "False"
+	"trueLabel": "Istinito",
+	"falseLabel": "Lažno"
 })
-//end v1.x content
 );

@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/ko/TableDialog", //begin v1.x content
-({
+"dojox/editor/plugins/nls/ko/TableDialog", ({
 	insertTableTitle: "테이블 삽입",
 	modifyTableTitle: "테이블 수정",
 	rows: "행:",
@@ -12,7 +10,7 @@ define(
 	tableWidth: "테이블 너비:",
 	backgroundColor: "배경색:",
 	borderColor: "테두리 색:",
-	borderThickness: "테두리 굵기",
+	borderThickness: "테두리 두께",
 	percent: "백분율",
 	pixels: "픽셀",
 	"default": "기본값",
@@ -22,7 +20,6 @@ define(
 	buttonSet: "설정", // translated elsewhere?
 	buttonInsert: "삽입",
 	buttonCancel: "취소",
-
 	selectTableLabel: "테이블 선택",
 	insertTableRowBeforeLabel: "사전 행 추가",
 	insertTableRowAfterLabel: "사후 행 추가",
@@ -31,5 +28,4 @@ define(
 	deleteTableRowLabel: "행 삭제",
 	deleteTableColumnLabel: "열 삭제"
 })
-//end v1.x content
 );

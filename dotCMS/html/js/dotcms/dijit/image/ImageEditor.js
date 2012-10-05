@@ -28,8 +28,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     fieldName:'fileAsset',
     saveAsIncrement:1,
     editImageText:"Edit Image",
-    windowWidth:920,
-    windowHeight:620,
     binaryFieldId:'',
     fieldContentletId:'',
     saveAsFileName:'',
@@ -148,9 +146,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     		x= x.replace("//","/");
     	}
     	return x;
-    	
-    	
-    	
+
+
+
     },
 
 
@@ -176,16 +174,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.tabindex = 0;
         this.thumbnailDiv.tabindex=0;
 
-        // window width/height
-        var vp = dijit.getViewport();
 
-        // was going to prevent user if window too small
-        if(vp.w +20 < this.windowWidth || vp.h + 20 <this.windowHeight){
 
-            // alert("Your window is tool " + vp.w + "px wide.\nImage tools
-            // requires:" + (w + 20) + "px width.");
-            // return;
-        }
 
 
         // clean up any old image editors laying around
@@ -195,8 +185,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         console.log("url=" + url);
         this.imageEditor = new dijit.Dialog({
               title: "Image Editor",
-              content: "<iframe scrolling='no' src='#' height='0' id='imageToolIframe' width='0' frameborder='0' style='width:0px;height:0px;overflow:hidden;'></iframe>",
-              style:"width:"+(this.windowWidth+10)+"px;height:"+(this.windowHeight+10)+"px;padding:0;margin:0;",
+              content: "<div id='iFrameWrapper'><iframe scrolling='no' src='#' height='0' id='imageToolIframe' width='0' frameborder='0' style='width:0px;height:0px;overflow:hidden;'></iframe></div>",
+              style:"position:absolute;top:10%;bottom:10%;left:10%;right:10% ;padding:0;margin:0;",
               id:"imgDialog",
               widgetId:"imgDialog",
               draggable:false,
@@ -210,10 +200,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         console.log("frame:" + frame);
 
         var parent = frame.parentNode;
-        dojo.attr(parent, {
-            style:"width:" + this.windowWidth + "px;height:" + (this.windowHeight-20) + "px;overflow:hidden;padding:0;margin:2px 0 2px 4px;"
-            }
-        );
+
+
 
         console.log("parent:" + parent);
 
@@ -236,10 +224,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var frame=dojo.byId("imageToolIframe");
         console.log("ctx : " + this);
         console.log("frame : " + frame);
-        console.log("ctx.windowWidth : " + this.windowWidth);
-        console.log("ctx.windowHeight : " + this.windowHeight);
+
         dojo.attr(frame, {
-            style:"width:" + this.windowWidth + "px;height:" + (this.windowHeight-20) + "px;overflow:auto;"
+            style:"width:100%;height:100%; "
             }
         );
 
@@ -538,7 +525,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             this._redrawImage();
         }
         var x = this.cleanUrl(this.currentUrl);
-        
+
         var url = x + "?_imageToolSaveFile=true";
         console.log(url);
         //console.log(url);
@@ -835,7 +822,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         sTop = this.iframe.dojo.byId("imageViewPort").scrollTop;
         sLeft = this.iframe.dojo.byId("imageViewPort").scrollLeft;
         var x = pc.l - vp.l + sLeft;
-        var y = pc.t - vp.t + sTop;
+        var y = pc.t + sTop;
 
         var sw = parseInt(this.iframe.dojo.byId("displayImageWidth").value);
         var sh = parseInt(this.iframe.dojo.byId("displayImageHeight").value);
@@ -883,7 +870,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var w = Math.round(bic.w * (zoomValue / 100));
         if(!this.resizeFilter)
         	this.iframe.dojo.byId("displayImageWidth").value = w;
-        
+
         this.resizeFilter= false;
         this.setHieghtFromWidth();
     },
@@ -983,7 +970,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     resizeBtnClick: function(action){
     	if(action == 'resize')
     		this.resizeFilter = true;
-    	
+
         var width =parseInt(this.iframe.dojo.byId("displayImageWidth").value);
         if(!isNaN(width)){
             this._doResize(width);

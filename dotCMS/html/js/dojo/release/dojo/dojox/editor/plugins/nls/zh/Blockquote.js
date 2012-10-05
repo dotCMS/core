@@ -1,8 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh/Blockquote", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh/Blockquote", ({
 	"blockquote": "块引用"
 })
-//end v1.x content
 );

@@ -103,8 +103,9 @@ public class TagFactory {
 	public static java.util.List<Tag> getTagByUser(String userId) {
         try {
             HibernateUtil dh = new HibernateUtil(Tag.class);
-            dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where user_id = ?");
-            dh.setParam(userId);
+            String userIdParam = "%"+userId+"%";
+            dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where user_id like ?");
+            dh.setParam(userIdParam);
 
             List list = dh.list();
 
@@ -354,7 +355,7 @@ public class TagFactory {
     public static TagInode addTagInode(String tagName, String inode, String hostId) throws Exception {
 
     	//Ensure the tag exists in the tag table
-    	Tag existingTag = getTag(tagName, "", hostId);
+    	Tag existingTag = getTag(tagName, inode, hostId);
 
     	//validates the tagInode already exists
 		TagInode existingTagInode = getTagInode(existingTag.getTagId(), inode);
@@ -623,6 +624,11 @@ public class TagFactory {
         		}
         	}
         }
+        String oldUserId = newTag.getUserId();
+        if(oldUserId!=userId){
+        	userId = oldUserId+","+userId;
+        }
+        newTag.setUserId(userId);
         // returning tag
         return newTag;
 	}

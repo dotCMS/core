@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 /**
  * @author Jason Tesser
@@ -51,7 +52,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			
 			// DAV ROOT
 			if(isWebDavRoot){
-				WebdavRootResourceImpl wr = new WebdavRootResourceImpl();
+				WebdavRootResourceImpl wr = new WebdavRootResourceImpl(url);
 				return wr;
 			}
 			
@@ -74,20 +75,17 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			String[] splitPath = actualPath.split("/");
 			
 			
-
-
-
-
+			User user=APILocator.getUserAPI().getSystemUser();
 			
 			
 			// Handle root SYSTEM or Root Host view
 			if(splitPath != null && splitPath.length == 1){
-				host = hostAPI.findByName(splitPath[0], APILocator.getUserAPI().getSystemUser(), false);
+				host = hostAPI.findByName(splitPath[0], user, false);
 				if(splitPath[0].equalsIgnoreCase("system")){
 					SystemRootResourceImpl sys = new SystemRootResourceImpl();
 					return sys;
 				}else{
-					HostResourceImpl hr = new HostResourceImpl(url,host);
+					HostResourceImpl hr = new HostResourceImpl(url);
 					return hr;
 				}
 			}
@@ -159,11 +157,11 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			}
 			**/
 			
-			if(dotDavHelper.isResource(url)){
+			if(dotDavHelper.isResource(url,user)){
 				isResource = true;
 			}
 			
-			if(dotDavHelper.isFolder(url)){
+			if(dotDavHelper.isFolder(url,user)){
 				isFolder = true;
 			}
 			if(!isFolder && !isResource){
@@ -171,7 +169,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			}
 			
 			if(!isFolder && isResource){
-				IFileAsset file = dotDavHelper.loadFile(url);
+				IFileAsset file = dotDavHelper.loadFile(url,user);
 				if(file == null || !InodeUtils.isSet(file.getInode())){
 					Logger.debug(this, "The file for url " + url + " returned null or not in db");
 					return null;
@@ -179,7 +177,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 				FileResourceImpl fr = new FileResourceImpl(file,url);
 				return fr;
 			}else{
-				Folder folder = dotDavHelper.loadFolder(url);
+				Folder folder = dotDavHelper.loadFolder(url,user);
 				if(folder == null || !InodeUtils.isSet(folder.getInode())){
 					Logger.debug(this, "The folder for url " + url + " returned null or not in db");
 					return null;

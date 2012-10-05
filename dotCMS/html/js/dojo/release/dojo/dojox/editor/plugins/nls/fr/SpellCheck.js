@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/fr/SpellCheck", //begin v1.x content
-({
+"dojox/editor/plugins/nls/fr/SpellCheck", ({
 	widgetLabel: "Vérification orthographique par lots",
 	unfound: "Introuvable",
 	skip: "Ignorer",
@@ -17,6 +15,4 @@ define(
 	iSkipAll: "Ignorer chaque fois",
 	iMsg: "Aucune suggestion orthographique"
 })
-
-//end v1.x content
 );

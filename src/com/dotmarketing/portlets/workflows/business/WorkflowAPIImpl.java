@@ -95,14 +95,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}));
 
 		refreshWorkFlowActionletMap();
+        registerBundleService();
+    }
 
-		// Register main service
+    public void registerBundleService () {
+
+        // Register main service
         BundleContext context = HostActivator.instance().getBundleContext();
         Hashtable<String, String> props = new Hashtable<String, String>();
         context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
-	}
+    }
 
-	public WorkFlowActionlet newActionlet(String className) throws DotDataException {
+    public WorkFlowActionlet newActionlet(String className) throws DotDataException {
 		for ( Class<WorkFlowActionlet> z : actionletClasses ) {
 			if ( z.getName().equals(className.trim())) {
 				try {
@@ -587,8 +591,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 						try {
 							actionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
-							actionletClasses.add(actionlet.getClass());
-						} catch (InstantiationException e) {
+                            if ( !actionletClasses.contains( actionlet.getClass() ) ) {
+                                actionletClasses.add( actionlet.getClass() );
+                            }
+                        } catch (InstantiationException e) {
 							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
 						} catch (IllegalAccessException e) {
 							Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
@@ -775,24 +781,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			processor.getContentlet().setStringProperty("wfActionId", processor.getAction().getId());
 
 
-
-
-
-
-			List<WorkflowActionClass> actionClasses = processor.getActionClasses();
-			if(actionClasses != null){
-				for(WorkflowActionClass actionClass : actionClasses){
-					WorkFlowActionlet actionlet= actionClass.getActionlet();
-					Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
-					actionlet.executeAction(processor, params);
-
-					//if we should stop processing further actionlets
-					if(actionlet.stopProcessing()){
-						break;
-					}
-				}
-			}
-
+			
 			WorkflowTask task = processor.getTask();
 				if(task != null){
 				Role r = APILocator.getRoleAPI().getUserRole(processor.getUser());
@@ -820,6 +809,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					saveComment(comment);
 				}
 			}
+				
+				List<WorkflowActionClass> actionClasses = processor.getActionClasses();
+				if(actionClasses != null){
+					for(WorkflowActionClass actionClass : actionClasses){
+						WorkFlowActionlet actionlet= actionClass.getActionlet();
+						Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+						actionlet.executeAction(processor, params);
+
+						//if we should stop processing further actionlets
+						if(actionlet.stopProcessing()){
+							break;
+						}
+					}
+				}
+
 		}catch(Exception e){
 			if(local){
 				HibernateUtil.rollbackTransaction();

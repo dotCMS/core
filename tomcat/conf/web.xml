@@ -1095,11 +1095,11 @@
         <mime-type>application/xhtml+xml</mime-type>
     </mime-mapping>
     <mime-mapping>
-        <extension>xls</extension>
+        <extension>xlsx</extension>
         <mime-type>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</mime-type>
     </mime-mapping>
     <mime-mapping>
-        <extension>xlsx</extension>
+        <extension>xls</extension>
         <mime-type>application/vnd.ms-excel</mime-type>
     </mime-mapping>
     <mime-mapping>

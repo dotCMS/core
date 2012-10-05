@@ -200,6 +200,15 @@ public class EditStructureAction extends DotPortletAction {
 				structure = StructureFactory.getStructureByInode(inodeString);
 			}
 		}
+		if(!structure.isFixed()){//GIT-780
+			if(structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET
+					&& structure.getVelocityVarName().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
+				
+						structure.setFixed(true);
+						StructureFactory.saveStructure(structure);
+			}
+		}
+		
 		req.setAttribute(WebKeys.Structure.STRUCTURE, structure);
 
 		boolean searchable = false;
@@ -244,7 +253,13 @@ public class EditStructureAction extends DotPortletAction {
 
 			// Checking permissions
 			_checkWritePermissions(structure, user, httpReq);
-
+			
+			// Validating structure type
+			
+			if (structureForm.getStructureType()< 1 ){
+                throw new DotDataException(LanguageUtil.get(user, "structure-type-is-required"));
+                
+			}
 			// Check if another structure with the same name exist
 			String auxStructureName = structureForm.getName();
 			auxStructureName = (auxStructureName != null ? auxStructureName.trim() : "");

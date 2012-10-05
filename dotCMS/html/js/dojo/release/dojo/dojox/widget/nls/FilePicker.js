@@ -1,4 +1,3 @@
-//>>built
 define("dojox/widget/nls/FilePicker", { root:
 //begin v1.x content
 ({

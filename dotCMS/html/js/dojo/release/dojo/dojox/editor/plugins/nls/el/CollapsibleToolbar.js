@@ -1,10 +1,6 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/el/CollapsibleToolbar", //begin v1.x content
-({
+"dojox/editor/plugins/nls/el/CollapsibleToolbar", ({
 	"collapse": "Σύμπτυξη γραμμής εργαλείων λειτουργίας επεξεργασίας",
 	"expand": "Ανάπτυξη γραμμής εργαλείων λειτουργίας επεξεργασίας"
 })
-
-//end v1.x content
 );

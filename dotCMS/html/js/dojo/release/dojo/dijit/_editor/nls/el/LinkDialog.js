@@ -1,7 +1,5 @@
-//>>built
 define(
-"dijit/_editor/nls/el/LinkDialog", //begin v1.x content
-({
+"dijit/_editor/nls/el/LinkDialog", ({
 	createLinkTitle: "Ιδιότητες σύνδεσης",
 	insertImageTitle: "Ιδιότητες εικόνας",
 	url: "Διεύθυνση URL:",
@@ -13,6 +11,4 @@ define(
 	topWindow: "Παράθυρο σε πρώτο πλάνο",
 	newWindow: "Νέο παράθυρο"
 })
-
-//end v1.x content
 );

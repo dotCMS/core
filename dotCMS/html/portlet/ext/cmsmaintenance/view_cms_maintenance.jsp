@@ -16,6 +16,12 @@
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@ page import="com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm"%>
 <%@ page import="java.util.List"%>
+<%@page import="java.util.regex.Matcher"%>
+<%@page import="java.util.regex.Pattern"%>
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+
 
 <%@ include file="/html/portlet/ext/cmsmaintenance/init.jsp"%>
 
@@ -347,56 +353,80 @@ function doDeleteContentletsCallback(contentlets){
 }
 
 function doDropAssets(){
-   var form = $('cmsMaintenanceForm');
-   if(!validateDate(form.removeassetsdate)){
+   var dateInput = dijit.byId('removeassetsdate');
+      
+   if(dateInput.get('value')==null || !dateInput.validate()){
      alert("<%= LanguageUtil.get(pageContext,"Please,-enter-a-valid-date") %>");
      return false;
    }
 
   if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")){
-	 	$("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></font>';
-	 	$("dropAssetsButton").disabled = true;
-		CMSMaintenanceAjax.removeOldVersions(form.removeassetsdate.value, doDropAssetsCallback);
+	    $("dropAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></spanstyle>';
+        dijit.byId('dropAssetsButton').attr('disabled', true);
+	 	var dateStr=dojo.date.locale.format(dijit.byId("removeassetsdate").get('value'),{selector: "date", datePattern:"MM/dd/yyyy"});
+		CMSMaintenanceAjax.removeOldVersions(dateStr, doDropAssetsCallback);
 	}
 }
 
 function doDropAssetsCallback(removed){
- 	$("dropAssetsButton").disabled = false;
-	if (removed >= 0)
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b>' + removed + '<%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></font>';
-	else if (removed == -2)
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></font>';
-	else
-	 	document.getElementById("dropAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></font>';
+	dijit.byId('dropAssetsButton').attr('disabled', false);
+    if (removed >= 0)
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></spanstyle>';
+    else if (removed == -2)
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
+    else
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
 }
 
-function validateDate(date){
+/**
+ * Call to clean assets deleting assets that are no longer in the File asset table and the Contentlet table
+ * where the structure type is <b>File Asset<b/>
+ */
+var doCleanAssets = function () {
 
-  if(date == null || date.value==''){
-  	return false;
-  }
+    if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation") %>")) {
+        $("cleanAssetsMessage").innerHTML = '<span style="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress") %></b></span>';
+        dijit.byId('cleanAssetsButton').attr('disabled', true);
+        
+        var files=false;
+        var binaries=false;
+        var whatclean=dijit.byId('whatClean').attr('value')
+        if(whatclean=='all') {
+        	files=true; binaries=true;
+        } else if(whatclean=='binary') {
+        	files=false; binaries=true;
+        } else if(whatclean=='file_asset') {
+        	files=true; binaries=false;
+        }
+        
+        CMSMaintenanceAjax.cleanAssets(files,binaries,doCleanAssetsCallback);
+    }
+};
 
-  var dateStr = date.value;
-  var datearr = dateStr.split("/");
+dojo.ready(function() {
+	doCleanAssetsCallback();
+});
 
-  var month= datearr[0];
-  if(parseInt(month) > 12){
-  	return false;
-  }
-
-  var day= datearr[1];
-  if(parseInt(day) > 31){
-  	return false;
-  }
-
-  var year= datearr[2];
-  if(parseInt(year) > 9999 || parseInt(year) < 1900  ){
-  	return false;
-  }
-
-  return true;
+function doCleanAssetsCallback() {
+    CMSMaintenanceAjax.getCleanAssetsStatus(getCleanAssetsStatusCallback);
 }
 
+function getCleanAssetsStatusCallback(status) {
+	if(!dijit.byId('cleanAssetsButton').attr('disabled') && status['running']=='false')
+		return;
+	
+    document.getElementById("cleanAssetsMessage").innerHTML = 
+     	                      '<table> <tr><td>Deleted</td><td>'+status['deleted']+'</td></tr>'+
+     	                              '<tr><td>Analized</td><td>'+status['currentFiles']+'</td></tr>'+
+     	                              '<tr><td>Total Files</td><td>'+status['totalFiles']+'</td></tr>'+
+     	                              ((status['running']=='true' && parseInt(status['totalFiles'])>0) ?
+     	                              ('<tr><td>Progress</td><td>'+Math.round(100*(parseInt(status['currentFiles'])/parseInt(status['totalFiles'])))+'%</td></tr>') : '')+
+     	                              '<tr><td>Status</td><td>'+status['status']+'</td></tr></table>';
+    if (status['running']=='true') 
+       setTimeout("doCleanAssetsCallback()", 1000);
+    else
+       dijit.byId('cleanAssetsButton').attr('disabled',false);
+}
 
 function indexStructureChanged(){
 	if(dojo.byId('structure') ==undefined || dijit.byId('cleanReindexButton') == undefined){
@@ -966,8 +996,7 @@ function loadUsers() {
 					html+="<td> ";
 					if("<%=session.getId()%>" !=session.sessionId ){
 						html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
-						html+=" <button id='invalidateButtonNode-"+session.sessionId+"' type='button'> ";
-		                html+=" </button>";
+						html+=" <button id='invalidateButtonNode-"+session.sessionId+"'></button>";
 					}
 	                
 					html+=" </td>";
@@ -978,8 +1007,17 @@ function loadUsers() {
 
 				for(var i=0;i<sessionList.size();i++) {
                     var session=sessionList[i];
+
+                    var id = "invalidateButton-" + session.sessionId;
+
+                    //Verify if a button widget with this id exist, if it exist we must delete firts before to try to create a new one
+                    var button = dijit.byId(id);
+                    if (button) {
+                        button.destroyRecursive();
+                    }
+
                     new dijit.form.Button({
-                    	id:"invalidateButton-"+session.sessionId,
+                    	id: id,
                         label: "<%= LanguageUtil.get(pageContext,"logged-users-tab-killsession") %>",
                         iconClass: "deleteIcon",
                         "class": "killsessionButton",
@@ -1336,6 +1374,24 @@ function showIndexClusterStatus(indexName) {
                       </button>
                     </td>
                 </tr>
+                
+                <tr>
+                   <td>
+                      <p><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.explanation") %></p>
+
+                      <div align="center"  id="cleanAssetsMessage">&nbsp;</div>
+                   </td>
+                   <td align="center">
+                      <select id="whatClean" name="whatClean" dojoType="dijit.form.FilteringSelect" >
+                            <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Clean-bin-and-file") %></option>
+                            <option value="binary"><%= LanguageUtil.get(pageContext,"Clean-only-bin") %></option>
+                            <option value="file_asset"><%= LanguageUtil.get(pageContext,"Clean-only-fileasset") %></option>
+                      </select>
+                      <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon"> 
+                           <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
+                      </button>
+                   </td>
+                 </tr>
             </table>
 
             <div style="height:20px">&nbsp;</div>
@@ -1375,7 +1431,7 @@ function showIndexClusterStatus(indexName) {
     <div id="Logging" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Log-Files") %>" >
         <div style="height:20px">&nbsp;</div>
         <div style="margin-bottom:10px;height:700px;border:0px solid red">
-            <iframe style="margin-bottom:10px;height:500px;width:100%;border:0px;" id="_logFileInclude" src="/html/portlet/ext/cmsmaintenance/tail_log.jsp" style=""></iframe>
+            <%@ include file="/html/portlet/ext/cmsmaintenance/tail_log.jsp"%>
         </div>
    
     </div>

@@ -45,7 +45,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	
 	protected Identifier getIdentifier(Host host,String URI) {
 		if(host ==null) return null;
-		return getIdentifier(host.getIdentifier(),URI);
+		return getIdentifier(URI, host.getIdentifier());
 	}
 
 	/**

@@ -36,10 +36,20 @@ public class DotCMSAPIInterceptor implements DotCMSAPI, Interceptor {
 
 	}
 
+    public void addPostHook ( Object postHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        // TODO Auto-generated method stub
+
+    }
+
 	public void addPreHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		// TODO Auto-generated method stub
 
 	}
+
+    public void addPreHook ( Object preHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        // TODO Auto-generated method stub
+
+    }
 
 	public void addPreHook(String className, int indexToAddAt) throws InstantiationException, IllegalAccessException,
 			ClassNotFoundException {
@@ -53,15 +63,25 @@ public class DotCMSAPIInterceptor implements DotCMSAPI, Interceptor {
 
 	}
 
-	public void delPreHood(int indexToRemAt) {
-		// TODO Auto-generated method stub
+    public void delPreHook ( int indexToRemAt ) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	public void delPostHood(int indexToRemAt) {
-		// TODO Auto-generated method stub
+    public void delPreHook ( Object preHook ) {
+        // TODO Auto-generated method stub
 
-	}
+    }
+
+    public void delPostHook ( int indexToRemAt ) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void delPostHook ( Object postHood ) {
+        // TODO Auto-generated method stub
+
+    }
 
 	public List<Inode> findAll(int offset, int limit) throws DotDataException {
 		// TODO Auto-generated method stub

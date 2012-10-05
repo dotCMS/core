@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-Name: Custom service
+Bundle-SymbolicName: com.dotmarketing.osgi.service
+Bundle-Description: A bundle that creates a custom service
+Bundle-Version: 1.0.0
+Bundle-Activator: com.dotmarketing.osgi.service.Activator
+Export-Package: com.dotmarketing.osgi.service
+Import-Package: org.osgi.framework,
+ com.dotmarketing.osgi

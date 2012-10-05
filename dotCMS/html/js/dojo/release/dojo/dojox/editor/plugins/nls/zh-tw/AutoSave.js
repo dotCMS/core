@@ -1,7 +1,5 @@
-//>>built
 define(
-"dojox/editor/plugins/nls/zh-tw/AutoSave", //begin v1.x content
-({
+"dojox/editor/plugins/nls/zh-tw/AutoSave", ({
 	"saveLabel": "儲存",
 	"saveSettingLabelOn": "設定自動儲存間隔...",
 	"saveSettingLabelOff": "關閉自動儲存",
@@ -14,5 +12,4 @@ define(
 	"saveMessageSuccess": "已儲存於 ${0}",
 	"saveMessageFail": "無法儲存於 ${0}"
 })
-//end v1.x content
 );

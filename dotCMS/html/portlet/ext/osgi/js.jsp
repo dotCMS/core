@@ -149,26 +149,52 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	},
 	add : function(){
-		var fm = dojo.byId("addBundle")
-		dojo.io.iframe.send({
-			// The form node, which contains the
-			// data. We also pull the URL and METHOD from it:
-			form: fm,
-			url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=add",
-			method : "post",	
-			// The used data format:
-			handleAs: "json",
-			
-			// Callback on successful call:
-			load: function(response, ioArgs) {
-				// return the response for succeeding callbacks
-				setTimeout(function() {mainAdmin.refresh();},7000);
-				return response;
-			}
-		});	
+		var fm = dojo.byId("addBundle");
+
+        require(["dojo/io/iframe"], function(ioIframe){
+            ioIframe.send({
+                // The form node, which contains the
+                // data. We also pull the URL and METHOD from it:
+                form: fm,
+                url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=add",
+                method : "post",
+                // The used data format:
+                handleAs: "json",
+
+                // Callback on successful call:
+                load: function(response, ioArgs) {
+                    // return the response for succeeding callbacks
+                    setTimeout(function() {mainAdmin.refresh();},7000);
+                    return response;
+                }
+            });
+		});
 		dijit.byId('uploadOSGIDialog').hide();
 		dijit.byId('savingOSGIDialog').show();
 		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+	},
+    reboot : function(){
+
+        if(confirm('<%=LanguageUtil.get(pageContext, "OSGI-restart-confirmation") %>')) {
+            var xhrArgs = {
+                url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=restart",
+                handle : function(dataOrError, ioArgs) {
+                    if (dojo.isString(dataOrError)) {
+                        if (dataOrError.indexOf("FAILURE") == 0) {
+
+                        // needs logging
+                        } else {
+                        // needs logging
+                        }
+                    } else {
+                        // needs logging
+                    }
+                }
+            };
+            dijit.byId('savingOSGIDialog').show();
+            dojo.xhrPut(xhrArgs);
+            setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+        }
 	}
 });
 

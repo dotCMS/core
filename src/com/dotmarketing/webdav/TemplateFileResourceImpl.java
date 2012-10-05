@@ -16,6 +16,7 @@ import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.FileItem;
 import com.bradmcevoy.http.FileResource;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -46,7 +47,6 @@ public class TemplateFileResourceImpl implements FileResource, LockableResource 
 
 	private DotWebdavHelper dotDavHelper;
 	private final Template template;
-	private User user;
 	private TemplateAPI tapi;
 	private Host host;
 
@@ -87,24 +87,23 @@ public class TemplateFileResourceImpl implements FileResource, LockableResource 
 
 	public Object authenticate(String username, String password) {
 		try {
-			this.user = dotDavHelper.authorizePrincipal(username, password);
+			return dotDavHelper.authorizePrincipal(username, password);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
 		}
-		return this.user;
 	}
 
 	public boolean authorise(Request request, Request.Method method, Auth auth) {
 		try {
 			if (auth == null)
 				return false;
-			else if (method.isWrite) {
-				return APILocator.getPermissionAPI().doesUserHavePermission(host,
-						PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
-			} else if (!method.isWrite) {
-				return APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user,
-						false);
+			else { 
+			    User user=(User)auth.getTag();
+			    if (method.isWrite) 
+    				return APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
+    			else if (!method.isWrite) 
+    				return APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user,false);
 			}
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
@@ -140,6 +139,7 @@ public class TemplateFileResourceImpl implements FileResource, LockableResource 
 	 */
 	public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException,
 			DotRuntimeException {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 
 		StringWriter sw = new StringWriter();
 
@@ -183,7 +183,7 @@ public class TemplateFileResourceImpl implements FileResource, LockableResource 
 	}
 
 	public void delete() {
-
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		try {
 			tapi.delete(template, user, false);
 

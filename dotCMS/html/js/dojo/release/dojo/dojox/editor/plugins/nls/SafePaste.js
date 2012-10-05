@@ -1,4 +1,3 @@
-//>>built
 define("dojox/editor/plugins/nls/SafePaste", { root:
 //begin v1.x content
 ({

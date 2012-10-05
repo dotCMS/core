@@ -3,20 +3,6 @@
  */
 package com.dotmarketing.util;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import com.csvreader.CsvReader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -54,11 +40,14 @@ import com.dotmarketing.tag.factories.TagFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
-/**
-
- *
- */
 public class ImportUtil {
 
 
@@ -142,7 +131,6 @@ public class ImportUtil {
 						HibernateUtil.startTransaction();
 
 					String[] csvLine;
-					Language dotCMSLanguage;
 					while (csvreader.readRecord()) {
 						if(ImportAuditUtil.cancelledImports.containsKey(importId)){
 							break;
@@ -152,35 +140,62 @@ public class ImportUtil {
 						try {
 							lines++;
 							Logger.debug(ImportUtil.class, "Line " + lines + ": (" + csvreader.getRawRecord() + ").");
-							//Importing a line
-							if (0 < language) {
-//								results.get("identifiers").add(csvLine[0]);
-								importLine(csvLine, st, preview, isMultilingual, user, results, lineNumber, language, headers, keyFields, choosenKeyField,
-										counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields,relationships,onlyChild,onlyParent);
-							} else {
 
-								dotCMSLanguage = langAPI.getLanguage(csvLine[languageCodeHeaderColumn], csvLine[countryCodeHeaderColumn]);
+                            //Importing a line
+                            Long languageToImport = language;
+                            if ( language == -1 ) {
+                                Language dotCMSLanguage = langAPI.getLanguage( csvLine[languageCodeHeaderColumn], csvLine[countryCodeHeaderColumn] );
+                                languageToImport = dotCMSLanguage.getId();
+                            }
 
-								if (0 < dotCMSLanguage.getId()) {
-//									results.get("identifiers").add(csvLine[0]);
-									importLine(csvLine, st, preview, isMultilingual, user, results, lineNumber, dotCMSLanguage.getId(), headers, keyFields, choosenKeyField,
-											counters, keyContentUpdated, structurePermissions, uniqueFieldBeans , uniqueFields,relationships,onlyChild,onlyParent);
-								} else {
-									results.get("errors").add(LanguageUtil.get(user, "Line--" ) + lineNumber + LanguageUtil.get(user, "Locale-not-found-for-languageCode" )+" ='" + csvLine[languageCodeHeaderColumn] + "' countryCode='" + csvLine[countryCodeHeaderColumn] + "'");
-									errors++;
-								}
-							}
+                            if ( languageToImport != -1 ) {
 
-							if (!preview && (lineNumber % commitGranularity == 0)) {
-								HibernateUtil.commitTransaction();
-								Thread.sleep(sleepTime);
-								HibernateUtil.startTransaction();
-							}
+                                /*
+                                Verifies if there was already imported a record with the same keys.
+                                Useful to know if we have batch uploads with the same keys, mostly visible for batch content uploads with multiple languages
+                                */
+                                boolean sameKeyBatchInsert = true;
+                                if ( keyFields != null && !keyFields.isEmpty() ) {
 
-						} catch (DotRuntimeException ex) {
+                                    for ( Integer column : keyFields.keySet() ) {
 
-							String errorMessage = ex.getMessage();
-							if(errorMessage.indexOf("Line #") == -1){
+                                        Field keyField = keyFields.get( column );
+                                        if ( !counters.matchKey( keyField.getFieldName(), csvLine[column] ) ) {
+                                            sameKeyBatchInsert = false;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                //Importing content record...
+                                importLine( csvLine, st, preview, isMultilingual, user, results, lineNumber, languageToImport, headers, keyFields, choosenKeyField,
+                                        counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert );
+
+                                //Storing the record keys we just imported for a later reference...
+                                if ( keyFields != null && !keyFields.isEmpty() ) {
+
+                                    for ( Integer column : keyFields.keySet() ) {
+
+                                        Field keyField = keyFields.get( column );
+                                        counters.addKey( keyField.getFieldName(), csvLine[column] );
+                                    }
+                                }
+
+                            } else {
+                                results.get( "errors" ).add( LanguageUtil.get( user, "Line--" ) + lineNumber + LanguageUtil.get( user, "Locale-not-found-for-languageCode" ) + " ='" + csvLine[languageCodeHeaderColumn] + "' countryCode='" + csvLine[countryCodeHeaderColumn] + "'" );
+                                errors++;
+                            }
+
+                            if ( !preview && (lineNumber % commitGranularity == 0) ) {
+                                HibernateUtil.commitTransaction();
+                                Thread.sleep( sleepTime );
+                                HibernateUtil.startTransaction();
+                            }
+
+                        } catch ( DotRuntimeException ex ) {
+
+                            String errorMessage = ex.getMessage();
+                            if(errorMessage.indexOf("Line #") == -1){
 								errorMessage = "Line #"+lineNumber+" "+errorMessage;
 							}
 							results.get("errors").add(errorMessage);
@@ -408,20 +423,48 @@ public class ImportUtil {
 		}
 	}
 
-	private static void importLine(String[] line, Structure structure, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
-			HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
-			HashSet<String> keyContentUpdated, List<Permission> structurePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields,HashMap<Integer,Relationship> relationships,HashMap<Integer,Boolean> onlyChild,HashMap<Integer,Boolean> onlyParent) throws DotRuntimeException {
-		try {
-			//Building a values HashMap based on the headers/columns position
-			HashMap<Integer, Object> values = new HashMap<Integer, Object>();
-			Set<Category> categories = new HashSet<Category> ();
-			boolean headersIncludeHostField = false;
-			for (Integer column : headers.keySet()) {
-				Field field = headers.get(column);
-				if (line.length < column) {
-					throw new DotRuntimeException("Incomplete line found, the line #" + lineNumber +
-					" doesn't contain all the required columns.");
-				}
+    /**
+     * Imports content extracted from a csv upload file, this method will receive and handle line by line of the import file
+     * @param line
+     * @param structure
+     * @param preview
+     * @param isMultilingual
+     * @param user
+     * @param results
+     * @param lineNumber
+     * @param language
+     * @param headers
+     * @param keyFields
+     * @param choosenKeyField
+     * @param counters
+     * @param keyContentUpdated
+     * @param structurePermissions
+     * @param uniqueFieldBeans
+     * @param uniqueFields
+     * @param relationships
+     * @param onlyChild
+     * @param onlyParent
+     * @param sameKeyBatchInsert Indicates if the keys for this row had been use them in this batch upload, help us to see if there is a batch content upload with multiple records
+     *                           and the same key, mostly used for content with multiple languages.
+     * @throws DotRuntimeException
+     */
+    private static void importLine ( String[] line, Structure structure, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
+                                     HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
+                                     HashSet<String> keyContentUpdated, List<Permission> structurePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships, HashMap<Integer, Boolean> onlyChild, HashMap<Integer, Boolean> onlyParent,
+                                     boolean sameKeyBatchInsert ) throws DotRuntimeException {
+
+        try {
+
+            //Building a values HashMap based on the headers/columns position
+            HashMap<Integer, Object> values = new HashMap<Integer, Object>();
+            Set<Category> categories = new HashSet<Category>();
+            boolean headersIncludeHostField = false;
+            for ( Integer column : headers.keySet() ) {
+                Field field = headers.get( column );
+                if ( line.length < column ) {
+                    throw new DotRuntimeException( "Incomplete line found, the line #" + lineNumber +
+                            " doesn't contain all the required columns." );
+                }
 				String value = line[column];
 				Object valueObj = value;
 				if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
@@ -660,48 +703,45 @@ public class ImportUtil {
 			//Searching contentlets to be updated by key fields
 			List<Contentlet> contentlets = new ArrayList<Contentlet>();
 			String conditionValues = "";
-			StringBuffer buffy = new StringBuffer();
 
-			int identifierFieldIndex= -1;
-			try {
-				identifierFieldIndex = Integer.parseInt(results.get("identifiers").get(0));
-			} catch (Exception e) {
-			}
+            int identifierFieldIndex = -1;
+            try {
+                identifierFieldIndex = Integer.parseInt( results.get( "identifiers" ).get( 0 ) );
+            } catch ( Exception e ) {
+            }
 
-			String identifier = null;
-			if (-1 < identifierFieldIndex) {
-				identifier = line[identifierFieldIndex];
-			}
+            String identifier = null;
+            if ( -1 < identifierFieldIndex ) {
+                identifier = line[identifierFieldIndex];
+            }
 
-			if (isMultilingual || UtilMethods.isSet(identifier))
-				buffy.append("+structureName:" + structure.getVelocityVarName() + " +working:true +deleted:false");
-			else
-				buffy.append("+structureName:" + structure.getVelocityVarName() + " +working:true +deleted:false +languageId:" + language);
+            StringBuffer buffy = new StringBuffer();
+            buffy.append( "+structureName:" + structure.getVelocityVarName() + " +working:true +deleted:false" );
 
-			if (UtilMethods.isSet(identifier)) {
-				buffy.append(" +identifier:" + identifier);
+            if ( UtilMethods.isSet( identifier ) ) {
+                buffy.append( " +identifier:" + identifier );
 
-				List<ContentletSearch> contentsSearch = conAPI.searchIndex(buffy.toString(), 0, -1, null, user, true);
+                List<ContentletSearch> contentsSearch = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
 
-				if ((contentsSearch == null) || (contentsSearch.size() == 0)) {
-					throw new DotRuntimeException("Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
-				} else {
-					Contentlet contentlet;
-					for (ContentletSearch contentSearch: contentsSearch) {
-						contentlet = conAPI.find(contentSearch.getInode(), user, true);
-						if ((contentlet != null) && InodeUtils.isSet(contentlet.getInode())) {
-							contentlets.add(contentlet);
-						} else {
-							throw new DotRuntimeException("Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
-						}
-					}
-				}
+                if ( (contentsSearch == null) || (contentsSearch.size() == 0) ) {
+                    throw new DotRuntimeException( "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n" );
+                } else {
+                    Contentlet contentlet;
+                    for ( ContentletSearch contentSearch : contentsSearch ) {
+                        contentlet = conAPI.find( contentSearch.getInode(), user, true );
+                        if ( (contentlet != null) && InodeUtils.isSet( contentlet.getInode() ) ) {
+                            contentlets.add( contentlet );
+                        } else {
+                            throw new DotRuntimeException( "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n" );
+                        }
+                    }
+                }
 			} else if (keyFields.size() > 0) {
 
 				for (Integer column : keyFields.keySet()) {
 					Field field = keyFields.get(column);
 					Object value = values.get(column);
-					String text = null;
+					String text;
 					if (value instanceof Date || value instanceof Timestamp) {
 						SimpleDateFormat formatter = null;
 						if(field.getFieldType().equals(Field.FieldType.DATE.toString())){
@@ -747,10 +787,28 @@ public class ImportUtil {
 						}
 					}
 
-
 				}
-				List<ContentletSearch> cons = conAPI.searchIndex(buffy.toString(), 0, -1, null, user, true);
-				Contentlet con;
+
+                String noLanguageQuery = buffy.toString();
+                if ( !isMultilingual && !UtilMethods.isSet( identifier ) ) {
+                    buffy.append( " +languageId:" ).append( language );
+                }
+
+                List<ContentletSearch> cons = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
+                /*
+                We need to handle the case when keys are used, we could have a contentlet already saved with the same keys but different language
+                so the above query is not going to find it.
+                 */
+                if ( cons == null || cons.isEmpty() ) {
+                    if ( choosenKeyField.length() > 1 ) {
+                        cons = conAPI.searchIndex( noLanguageQuery, 0, -1, null, user, true );
+                        if (cons != null && !cons.isEmpty()) {
+                            isMultilingual = true;
+                        }
+                    }
+                }
+
+                Contentlet con;
 				for (ContentletSearch contentletSearch: cons) {
 					con = conAPI.find(contentletSearch.getInode(), user, true);
 					if ((con != null) && InodeUtils.isSet(con.getInode())) {
@@ -796,68 +854,114 @@ public class ImportUtil {
 						  contentlets.add(con);
 					}
 				}
-			}
 
+                if ( !preview ) {//Don't do unnecessary calls if it is not required
 
-			//Creating/updating content
-			boolean isNew = false;
-			if (contentlets.size() == 0) {
-				counters.setNewContentCounter(counters.getNewContentCounter() + 1);
-				isNew = true;
-				//if (!preview) {
-				Contentlet newCont = new Contentlet();
-				newCont.setStructureInode(structure.getInode());
-				newCont.setLanguageId(language);
-				contentlets.add(newCont);
-				//}
-			} else {
-				if (isMultilingual || UtilMethods.isSet(identifier)) {
-					List<Contentlet> multilingualContentlets = new ArrayList<Contentlet>();
+                    /*
+                   We must use an alternative search for cases when we are using the same key for batch uploads,
+                   for example if we have multilingual inserts for new records, the search above (searchIndex)
+                   can manage multilingual inserts for already stored records but not for the case when the new record and its multilingual records
+                   came in the same import file. They are new, we will not find them in the index.
+                    */
+                    if ( sameKeyBatchInsert && contentlets.isEmpty() ) {
 
-					for (Contentlet contentlet: contentlets) {
-						if (contentlet.getLanguageId() == language)
-							multilingualContentlets.add(contentlet);
-					}
+                        //Searching for all the contentlets of this structure
+                        List<Contentlet> foundContentlets = conAPI.findByStructure( structure, user, true, 0, -1 );
 
-					if (multilingualContentlets.size() == 0) {
-						String lastIdentifier = "" ;
-						isNew = true;
-						for (Contentlet contentlet: contentlets) {
-							if (!contentlet.getIdentifier().equals(lastIdentifier)) {
-								counters.setNewContentCounter(counters.getNewContentCounter() + 1);
-								Contentlet newCont = new Contentlet();
-								newCont.setIdentifier(contentlet.getIdentifier());
-								newCont.setStructureInode(structure.getInode());
-								newCont.setLanguageId(language);
-								multilingualContentlets.add(newCont);
+                        for ( Contentlet contentlet : foundContentlets ) {
 
-								lastIdentifier = contentlet.getIdentifier();
-							}
-						}
-					}
+                            boolean match = true;
+                            for ( Integer column : keyFields.keySet() ) {
 
-					contentlets = multilingualContentlets;
-				}
+                                //Getting key values
+                                Field field = keyFields.get( column );
+                                Object value = values.get( column );
 
-				if (!isNew) {
-					if (conditionValues.equals("") || !keyContentUpdated.contains(conditionValues) || isMultilingual) {
-						counters.setContentToUpdateCounter(counters.getContentToUpdateCounter()+contentlets.size());
-						if (preview)
-							keyContentUpdated.add(conditionValues);
-					}
-					if (contentlets.size() == 1) {//DOTCMS-5204
-						results.get("warnings").add(
-								LanguageUtil.get(user, "Line--") + lineNumber + ". "+ LanguageUtil.get(user, "The-key-fields-chosen-match-one-existing-content(s)")+" - "
-								+ LanguageUtil.get(user, "more-than-one-match-suggests-key(s)-are-not-properly-unique"));
-					}else if (contentlets.size() > 1) {
-						results.get("warnings").add(
-								LanguageUtil.get(user, "Line--") + lineNumber + ". "+ LanguageUtil.get(user, "The-key-fields-choosen-match-more-than-one-content-in-this-case")+": "
-								+ " "+ LanguageUtil.get(user, "matches")+": " + contentlets.size() + " " +LanguageUtil.get(user, "different-content-s-looks-like-the-key-fields-choosen")+" " +
-								LanguageUtil.get(user, "aren-t-a-real-key"));
-					}
-				}
-			}
+                                //Ok, comparing our keys with the contentlets we found trying to see if there is a contentlet to update with the specified keys
+                                Object conValue = conAPI.getFieldValue( contentlet, field );
+                                if ( !conValue.equals( value ) ) {
+                                    match = false;
+                                }
+                            }
 
+                            //Ok, we found our record
+                            if ( match ) {
+                                contentlets.add( contentlet );
+                                isMultilingual = true;
+                                break;
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            //Creating/updating content
+            boolean isNew = false;
+            Long existingMultilingualLanguage = null;//For multilingual batch imports we need the language of an existing contentlet if there is any
+            if ( contentlets.size() == 0 ) {
+
+                counters.setNewContentCounter( counters.getNewContentCounter() + 1 );
+                isNew = true;
+                //if (!preview) {
+                Contentlet newCont = new Contentlet();
+                newCont.setStructureInode( structure.getInode() );
+                newCont.setLanguageId( language );
+                contentlets.add( newCont );
+                //}
+            } else {
+
+                if ( isMultilingual || UtilMethods.isSet( identifier ) ) {
+
+                    List<Contentlet> multilingualContentlets = new ArrayList<Contentlet>();
+
+                    for ( Contentlet contentlet : contentlets ) {
+                        if ( contentlet.getLanguageId() == language ) {
+                            multilingualContentlets.add( contentlet );
+                            existingMultilingualLanguage = contentlet.getLanguageId();
+                        }
+                    }
+
+                    if ( multilingualContentlets.size() == 0 ) {
+                        String lastIdentifier = "";
+                        isNew = true;
+                        for ( Contentlet contentlet : contentlets ) {
+                            if ( !contentlet.getIdentifier().equals( lastIdentifier ) ) {
+                                counters.setNewContentCounter( counters.getNewContentCounter() + 1 );
+                                Contentlet newCont = new Contentlet();
+                                newCont.setIdentifier( contentlet.getIdentifier() );
+                                newCont.setStructureInode( structure.getInode() );
+                                newCont.setLanguageId( language );
+                                multilingualContentlets.add( newCont );
+
+                                existingMultilingualLanguage = contentlet.getLanguageId();
+                                lastIdentifier = contentlet.getIdentifier();
+                            }
+                        }
+                    }
+
+                    contentlets = multilingualContentlets;
+                }
+
+                if ( !isNew ) {
+
+                    if ( conditionValues.equals( "" ) || !keyContentUpdated.contains( conditionValues ) || isMultilingual ) {
+                        counters.setContentToUpdateCounter( counters.getContentToUpdateCounter() + contentlets.size() );
+                        if ( preview )
+                            keyContentUpdated.add( conditionValues );
+                    }
+                    if ( contentlets.size() == 1 ) {//DOTCMS-5204
+                        results.get( "warnings" ).add(
+                                LanguageUtil.get( user, "Line--" ) + lineNumber + ". " + LanguageUtil.get( user, "The-key-fields-chosen-match-one-existing-content(s)" ) + " - "
+                                        + LanguageUtil.get( user, "more-than-one-match-suggests-key(s)-are-not-properly-unique" ) );
+                    } else if ( contentlets.size() > 1 ) {
+                        results.get( "warnings" ).add(
+                                LanguageUtil.get( user, "Line--" ) + lineNumber + ". " + LanguageUtil.get( user, "The-key-fields-choosen-match-more-than-one-content-in-this-case" ) + ": "
+                                        + " " + LanguageUtil.get( user, "matches" ) + ": " + contentlets.size() + " " + LanguageUtil.get( user, "different-content-s-looks-like-the-key-fields-choosen" ) + " " +
+                                        LanguageUtil.get( user, "aren-t-a-real-key" ) );
+                    }
+                }
+            }
 
 			for (Contentlet cont : contentlets)
 			{
@@ -944,10 +1048,19 @@ public class ImportUtil {
 						categoriesToRetain.addAll(catAPI.getChildren(cat,false, user, false));
 					}
 
-					Contentlet workingCont = conAPI.findContentletByIdentifier(cont.getIdentifier(), false,langAPI.getDefaultLanguage().getId() , user, false);
-					categoriesOnWorkingContent = catAPI.getParents(workingCont, user, false);
+                    /*
+                     We need to verify that we are not trying to save a contentlet that have as language the default language because that mean that
+                     contentlet for that default language couldn't exist, we are just saving it after all....
+                      */
+                    Long languageId = langAPI.getDefaultLanguage().getId();
+                    if ( existingMultilingualLanguage != null ) {
+                        languageId = existingMultilingualLanguage;//Using the language another an existing contentlet with the same identifier
+                    }
 
-					for(Category existingCat : categoriesOnWorkingContent){
+                    Contentlet workingCont = conAPI.findContentletByIdentifier( cont.getIdentifier(), false, languageId, user, false );
+                    categoriesOnWorkingContent = catAPI.getParents( workingCont, user, false );
+
+                    for(Category existingCat : categoriesOnWorkingContent){
 						for(Category retainCat :categoriesToRetain){
 							if(existingCat.compareTo(retainCat) == 0){
 								categories.add(existingCat);
@@ -1130,30 +1243,37 @@ public class ImportUtil {
 	}
 
 	public static class Counters {
-		public int newContentCounter = 0;
-		public int contentToUpdateCounter = 0;
-		public int contentCreated = 0;
-		public int contentUpdated = 0;
-		public int contentUpdatedDuplicated = 0;
-		/**
-		 * @return the newContentCounter
-		 */
-		public int getNewContentCounter() {
-			return newContentCounter;
-		}
-		/**
-		 * @param newContentCounter the newContentCounter to set
-		 */
-		public void setNewContentCounter(int newContentCounter) {
-			this.newContentCounter = newContentCounter;
-		}
-		/**
-		 * @return the contentToUpdateCounter
-		 */
-		public int getContentToUpdateCounter() {
-			return contentToUpdateCounter;
-		}
-		/**
+
+        public int newContentCounter = 0;
+        public int contentToUpdateCounter = 0;
+        public int contentCreated = 0;
+        public int contentUpdated = 0;
+        public int contentUpdatedDuplicated = 0;
+
+        private Collection<Map<String, String>> keys = new ArrayList<Map<String, String>>();
+
+        /**
+         * @return the newContentCounter
+         */
+        public int getNewContentCounter () {
+            return newContentCounter;
+        }
+
+        /**
+         * @param newContentCounter the newContentCounter to set
+         */
+        public void setNewContentCounter ( int newContentCounter ) {
+            this.newContentCounter = newContentCounter;
+        }
+
+        /**
+         * @return the contentToUpdateCounter
+         */
+        public int getContentToUpdateCounter () {
+            return contentToUpdateCounter;
+        }
+
+        /**
 		 * @param contentToUpdateCounter the contentToUpdateCounter to set
 		 */
 		public void setContentToUpdateCounter(int contentToUpdateCounter) {
@@ -1195,20 +1315,61 @@ public class ImportUtil {
 		public void setContentUpdatedDuplicated(int contentUpdatedDuplicated) {
 			this.contentUpdatedDuplicated = contentUpdatedDuplicated;
 		}
-	}
 
-	public static boolean isImportableField(Field field) {
-		return !(
-				field.getFieldType().equals(Field.FieldType.BUTTON.toString()) ||
-				field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
-				field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) ||
-				field.getFieldType().equals(Field.FieldType.BINARY.toString()) ||
-				field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()));
-	}
+        /**
+         * Stores unique keys per line, useful to know if we have batch uploads with the same keys, mostly use it for batch content uploads with multiple languages
+         *
+         * @param key
+         * @param value
+         */
+        public void addKey ( String key, String value ) {
 
-	private static Date parseExcelDate (String date) throws ParseException
-	{
-		return DateUtil.convertDate(date, IMP_DATE_FORMATS);
+            if ( !matchKey( key, value ) ) {
+
+                Map<String, String> keyMap = new HashMap<String, String>();
+                keyMap.put( key, value );
+
+                keys.add( keyMap );
+            }
+        }
+
+        /**
+         * Verifies if a key with a given value was already used
+         *
+         * @param key
+         * @param value
+         * @return
+         */
+        public boolean matchKey ( String key, String value ) {
+
+            for ( Map<String, String> keyMap : keys ) {
+
+                String match = keyMap.get( key );
+                if ( match != null && match.equals( value ) ) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public int uniqueKeysCount () {
+            return keys.size();
+        }
+
+    }
+
+    public static boolean isImportableField ( Field field ) {
+        return !(
+                field.getFieldType().equals( Field.FieldType.BUTTON.toString() ) ||
+                        field.getFieldType().equals( Field.FieldType.LINE_DIVIDER.toString() ) ||
+                        field.getFieldType().equals( Field.FieldType.TAB_DIVIDER.toString() ) ||
+                        field.getFieldType().equals( Field.FieldType.BINARY.toString() ) ||
+                        field.getFieldType().equals( Field.FieldType.PERMISSIONS_TAB.toString() ));
+    }
+
+    private static Date parseExcelDate ( String date ) throws ParseException {
+		return DateUtil.convertDate( date, IMP_DATE_FORMATS );
 	}
 
 	private static class UniqueFieldBean {

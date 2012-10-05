@@ -1,9 +1,6 @@
-//>>built
 define(
-"dijit/nls/tr/loading", //begin v1.x content
-({
+"dijit/nls/tr/loading", ({
 	loadingState: "Yükleniyor...",
 	errorState: "Üzgünüz, bir hata oluştu"
 })
-//end v1.x content
 );

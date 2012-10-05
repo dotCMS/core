@@ -1,0 +1,68 @@
+<project name="Bundle Builder" default="build">
+
+    <basename file="${basedir}" property="plugin.name"/>
+
+    <property name="build.dir" value="build"/>
+    <property name="src.dir" value="src"/>
+    <property name="jar.name" value="fragment-${plugin.name}.jar"/>
+    <property name="jar.file" value="${build.dir}/jar/${jar.name}"/>
+
+    <property name="app.base" value="${basedir}/../../../../"/>
+    <property name="lib.app" value="${app.base}/dotCMS/WEB-INF/lib"/>
+    <property name="lib.bundles" value="${app.base}/dotCMS/WEB-INF/felix/bundle"/>
+    <property name="lib.server" value="${app.base}/tomcat/lib"/>
+    <property name="deploy.dir" value="${app.base}/dotCMS/WEB-INF/felix/load"/>
+
+    <property name="meta-inf.dir" value="META-INF"/>
+    <property name="classpath.dir" value="classpath"/>
+    <property name="manifest.file" value="${meta-inf.dir}/MANIFEST.MF"/>
+
+    <target name="build" depends="clean,jar"/>
+
+    <target name="jar" depends="doif">
+        <mkdir dir="${build.dir}/jar"/>
+
+        <!--
+          CREATE DIRECTORIES THAT DON'T EXIST.
+          THIS PREVENTS THE jar TASK FROM FAILING
+          -->
+        <!--<mkdir dir="${build.classes}"/>-->
+        <!--<mkdir dir="lib"/>-->
+
+        <jar jarfile="${jar.file}" manifest="${manifest.file}">
+            <metainf dir="${meta-inf.dir}" />
+
+            <zipfileset dir=".">
+                <exclude name="src/**"/>
+                <exclude name="build/**"/>
+                <exclude name="META-INF/**"/>
+                <exclude name="build.xml"/>
+            </zipfileset>
+
+        </jar>
+
+    </target>
+
+    <target name="doif" depends="checkFileExists, if_target"/>
+    <target name="checkFileExists">
+        <condition property="p">
+            <available file="${classpath.dir}"/>
+        </condition>
+    </target>
+    <target name="if_target" if="p">
+        <jar destfile="${lib.app}/bundle-${plugin.name}-classpath.jar" basedir="${classpath.dir}"/>
+    </target>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <target name="deploy">
+        <copy file="${jar.file}" tofile="${deploy.dir}/${jar.name}"/>
+    </target>
+
+    <target name="undeploy">
+        <delete file="${deploy.dir}/${jar.name}"/>
+    </target>
+
+</project>

@@ -31,13 +31,15 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 
 	public void save(Link menuLink) throws DotDataException, DotStateException, DotSecurityException {
 		HibernateUtil.save(menuLink);
-		menuLinkCache.add(menuLink.getInode(), menuLink);
-		WorkingCache.removeAssetFromCache(menuLink);
-		WorkingCache.addToWorkingAssetToCache(menuLink);
-		LiveCache.removeAssetFromCache(menuLink);
-		APILocator.getVersionableAPI().setWorking(menuLink);
-		if (menuLink.isLive()) {
-			LiveCache.addToLiveAssetToCache(menuLink);
+		if(UtilMethods.isSet(menuLink.getIdentifier())) {
+    		menuLinkCache.add(menuLink.getInode(), menuLink);
+    		WorkingCache.removeAssetFromCache(menuLink);
+    		WorkingCache.addToWorkingAssetToCache(menuLink);
+    		LiveCache.removeAssetFromCache(menuLink);
+    		APILocator.getVersionableAPI().setWorking(menuLink);
+    		if (menuLink.isLive()) {
+    			LiveCache.addToLiveAssetToCache(menuLink);
+    		}
 		}
 	}
 

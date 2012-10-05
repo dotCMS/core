@@ -1,8 +1,374 @@
-/*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
+define("dojo/_base/connect", ["./kernel", "../on", "../topic", "../aspect", "./event", "../mouse", "./sniff", "./lang", "../keys"], function(dojo, on, hub, aspect, eventModule, mouse, has, lang){
+// module:
+//		dojo/_base/connect
 
-//>>built
-define("dojo/_base/connect",["./kernel","../on","../topic","../aspect","./event","../mouse","./sniff","./lang","../keys"],function(_1,on,_2,_3,_4,_5,_6,_7){_6.add("events-keypress-typed",function(){var _8={charCode:0};try{_8=document.createEvent("KeyboardEvent");(_8.initKeyboardEvent||_8.initKeyEvent).call(_8,"keypress",true,true,null,false,false,false,false,9,3);}catch(e){}return _8.charCode==0&&!_6("opera");});function _9(_a,_b,_c,_d,_e){_d=_7.hitch(_c,_d);if(!_a||!(_a.addEventListener||_a.attachEvent)){return _3.after(_a||_1.global,_b,_d,true);}if(typeof _b=="string"&&_b.substring(0,2)=="on"){_b=_b.substring(2);}if(!_a){_a=_1.global;}if(!_e){switch(_b){case "keypress":_b=_f;break;case "mouseenter":_b=_5.enter;break;case "mouseleave":_b=_5.leave;break;}}return on(_a,_b,_d,_e);};var _10={106:42,111:47,186:59,187:43,188:44,189:45,190:46,191:47,192:96,219:91,220:92,221:93,222:39,229:113};var _11=_6("mac")?"metaKey":"ctrlKey";var _12=function(evt,_13){var _14=_7.mixin({},evt,_13);_15(_14);_14.preventDefault=function(){evt.preventDefault();};_14.stopPropagation=function(){evt.stopPropagation();};return _14;};function _15(evt){evt.keyChar=evt.charCode?String.fromCharCode(evt.charCode):"";evt.charOrCode=evt.keyChar||evt.keyCode;};var _f;if(_6("events-keypress-typed")){var _16=function(e,_17){try{return (e.keyCode=_17);}catch(e){return 0;}};_f=function(_18,_19){var _1a=on(_18,"keydown",function(evt){var k=evt.keyCode;var _1b=(k!=13||(_6("ie")>=9&&!_6("quirks")))&&k!=32&&(k!=27||!_6("ie"))&&(k<48||k>90)&&(k<96||k>111)&&(k<186||k>192)&&(k<219||k>222)&&k!=229;if(_1b||evt.ctrlKey){var c=_1b?0:k;if(evt.ctrlKey){if(k==3||k==13){return _19.call(evt.currentTarget,evt);}else{if(c>95&&c<106){c-=48;}else{if((!evt.shiftKey)&&(c>=65&&c<=90)){c+=32;}else{c=_10[c]||c;}}}}var _1c=_12(evt,{type:"keypress",faux:true,charCode:c});_19.call(evt.currentTarget,_1c);if(_6("ie")){_16(evt,_1c.keyCode);}}});var _1d=on(_18,"keypress",function(evt){var c=evt.charCode;c=c>=32?c:0;evt=_12(evt,{charCode:c,faux:true});return _19.call(this,evt);});return {remove:function(){_1a.remove();_1d.remove();}};};}else{if(_6("opera")){_f=function(_1e,_1f){return on(_1e,"keypress",function(evt){var c=evt.which;if(c==3){c=99;}c=c<32&&!evt.shiftKey?0:c;if(evt.ctrlKey&&!evt.shiftKey&&c>=65&&c<=90){c+=32;}return _1f.call(this,_12(evt,{charCode:c}));});};}else{_f=function(_20,_21){return on(_20,"keypress",function(evt){_15(evt);return _21.call(this,evt);});};}}var _22={_keypress:_f,connect:function(obj,_23,_24,_25,_26){var a=arguments,_27=[],i=0;_27.push(typeof a[0]=="string"?null:a[i++],a[i++]);var a1=a[i+1];_27.push(typeof a1=="string"||typeof a1=="function"?a[i++]:null,a[i++]);for(var l=a.length;i<l;i++){_27.push(a[i]);}return _9.apply(this,_27);},disconnect:function(_28){if(_28){_28.remove();}},subscribe:function(_29,_2a,_2b){return _2.subscribe(_29,_7.hitch(_2a,_2b));},publish:function(_2c,_2d){return _2.publish.apply(_2,[_2c].concat(_2d));},connectPublisher:function(_2e,obj,_2f){var pf=function(){_22.publish(_2e,arguments);};return _2f?_22.connect(obj,_2f,pf):_22.connect(obj,pf);},isCopyKey:function(e){return e[_11];}};_22.unsubscribe=_22.disconnect;1&&_7.mixin(_1,_22);return _22;});
+has.add("events-keypress-typed", function(){ // keypresses should only occur a printable character is hit
+	var testKeyEvent = {charCode: 0};
+	try{
+		testKeyEvent = document.createEvent("KeyboardEvent");
+		(testKeyEvent.initKeyboardEvent || testKeyEvent.initKeyEvent).call(testKeyEvent, "keypress", true, true, null, false, false, false, false, 9, 3);
+	}catch(e){}
+	return testKeyEvent.charCode == 0 && !has("opera");
+});
+
+function connect_(obj, event, context, method, dontFix){
+	method = lang.hitch(context, method);
+	if(!obj || !(obj.addEventListener || obj.attachEvent)){
+		// it is a not a DOM node and we are using the dojo.connect style of treating a
+		// method like an event, must go right to aspect
+		return aspect.after(obj || dojo.global, event, method, true);
+	}
+	if(typeof event == "string" && event.substring(0, 2) == "on"){
+		event = event.substring(2);
+	}
+	if(!obj){
+		obj = dojo.global;
+	}
+	if(!dontFix){
+		switch(event){
+			// dojo.connect has special handling for these event types
+			case "keypress":
+				event = keypress;
+				break;
+			case "mouseenter":
+				event = mouse.enter;
+				break;
+			case "mouseleave":
+				event = mouse.leave;
+				break;
+		}
+	}
+	return on(obj, event, method, dontFix);
+}
+
+var _punctMap = {
+	106:42,
+	111:47,
+	186:59,
+	187:43,
+	188:44,
+	189:45,
+	190:46,
+	191:47,
+	192:96,
+	219:91,
+	220:92,
+	221:93,
+	222:39,
+	229:113
+};
+var evtCopyKey = has("mac") ? "metaKey" : "ctrlKey";
+
+
+var _synthesizeEvent = function(evt, props){
+	var faux = lang.mixin({}, evt, props);
+	setKeyChar(faux);
+	// FIXME: would prefer to use lang.hitch: lang.hitch(evt, evt.preventDefault);
+	// but it throws an error when preventDefault is invoked on Safari
+	// does Event.preventDefault not support "apply" on Safari?
+	faux.preventDefault = function(){ evt.preventDefault(); };
+	faux.stopPropagation = function(){ evt.stopPropagation(); };
+	return faux;
+};
+function setKeyChar(evt){
+	evt.keyChar = evt.charCode ? String.fromCharCode(evt.charCode) : '';
+	evt.charOrCode = evt.keyChar || evt.keyCode;
+}
+var keypress;
+if(has("events-keypress-typed")){
+	// this emulates Firefox's keypress behavior where every keydown can correspond to a keypress
+	var _trySetKeyCode = function(e, code){
+		try{
+			// squelch errors when keyCode is read-only
+			// (e.g. if keyCode is ctrl or shift)
+			return (e.keyCode = code);
+		}catch(e){
+			return 0;
+		}
+	};
+	keypress = function(object, listener){
+		var keydownSignal = on(object, "keydown", function(evt){
+			// munge key/charCode
+			var k=evt.keyCode;
+			// These are Windows Virtual Key Codes
+			// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/WinUI/WindowsUserInterface/UserInput/VirtualKeyCodes.asp
+			var unprintable = (k!=13) && k!=32 && (k!=27||!has("ie")) && (k<48||k>90) && (k<96||k>111) && (k<186||k>192) && (k<219||k>222) && k!=229;
+			// synthesize keypress for most unprintables and CTRL-keys
+			if(unprintable||evt.ctrlKey){
+				var c = unprintable ? 0 : k;
+				if(evt.ctrlKey){
+					if(k==3 || k==13){
+						return listener.call(evt.currentTarget, evt); // IE will post CTRL-BREAK, CTRL-ENTER as keypress natively
+					}else if(c>95 && c<106){
+						c -= 48; // map CTRL-[numpad 0-9] to ASCII
+					}else if((!evt.shiftKey)&&(c>=65&&c<=90)){
+						c += 32; // map CTRL-[A-Z] to lowercase
+					}else{
+						c = _punctMap[c] || c; // map other problematic CTRL combinations to ASCII
+					}
+				}
+				// simulate a keypress event
+				var faux = _synthesizeEvent(evt, {type: 'keypress', faux: true, charCode: c});
+				listener.call(evt.currentTarget, faux);
+				if(has("ie")){
+					_trySetKeyCode(evt, faux.keyCode);
+				}
+			}
+		});
+		var keypressSignal = on(object, "keypress", function(evt){
+			var c = evt.charCode;
+			c = c>=32 ? c : 0;
+			evt = _synthesizeEvent(evt, {charCode: c, faux: true});
+			return listener.call(this, evt);
+		});
+		return {
+			remove: function(){
+				keydownSignal.remove();
+				keypressSignal.remove();
+			}
+		};
+	};
+}else{
+	if(has("opera")){
+		keypress = function(object, listener){
+			return on(object, "keypress", function(evt){
+				var c = evt.which;
+				if(c==3){
+					c=99; // Mozilla maps CTRL-BREAK to CTRL-c
+				}
+				// can't trap some keys at all, like INSERT and DELETE
+				// there is no differentiating info between DELETE and ".", or INSERT and "-"
+				c = c<32 && !evt.shiftKey ? 0 : c;
+				if(evt.ctrlKey && !evt.shiftKey && c>=65 && c<=90){
+					// lowercase CTRL-[A-Z] keys
+					c += 32;
+				}
+				return listener.call(this, _synthesizeEvent(evt, { charCode: c }));
+			});
+		};
+	}else{
+		keypress = function(object, listener){
+			return on(object, "keypress", function(evt){
+				setKeyChar(evt);
+				return listener.call(this, evt);
+			});
+		};
+	}
+}
+
+var connect = {
+	// summary:
+	//		This module defines the dojo.connect API.
+	//		This modules also provides keyboard event handling helpers.
+	//		This module exports an extension event for emulating Firefox's keypress handling.
+	//		However, this extension event exists primarily for backwards compatibility and
+	//		is not recommended. WebKit and IE uses an alternate keypress handling (only
+	//		firing for printable characters, to distinguish from keydown events), and most
+	//		consider the WebKit/IE behavior more desirable.
+
+	_keypress:keypress,
+
+	connect:function(obj, event, context, method, dontFix){
+		// summary:
+		//		`dojo.connect` is a deprecated event handling and delegation method in
+		//		Dojo. It allows one function to "listen in" on the execution of
+		//		any other, triggering the second whenever the first is called. Many
+		//		listeners may be attached to a function, and source functions may
+		//		be either regular function calls or DOM events.
+		//
+		// description:
+		//		Connects listeners to actions, so that after event fires, a
+		//		listener is called with the same arguments passed to the original
+		//		function.
+		//
+		//		Since `dojo.connect` allows the source of events to be either a
+		//		"regular" JavaScript function or a DOM event, it provides a uniform
+		//		interface for listening to all the types of events that an
+		//		application is likely to deal with though a single, unified
+		//		interface. DOM programmers may want to think of it as
+		//		"addEventListener for everything and anything".
+		//
+		//		When setting up a connection, the `event` parameter must be a
+		//		string that is the name of the method/event to be listened for. If
+		//		`obj` is null, `kernel.global` is assumed, meaning that connections
+		//		to global methods are supported but also that you may inadvertently
+		//		connect to a global by passing an incorrect object name or invalid
+		//		reference.
+		//
+		//		`dojo.connect` generally is forgiving. If you pass the name of a
+		//		function or method that does not yet exist on `obj`, connect will
+		//		not fail, but will instead set up a stub method. Similarly, null
+		//		arguments may simply be omitted such that fewer than 4 arguments
+		//		may be required to set up a connection See the examples for details.
+		//
+		//		The return value is a handle that is needed to
+		//		remove this connection with `dojo.disconnect`.
+		//
+		// obj: Object?
+		//		The source object for the event function.
+		//		Defaults to `kernel.global` if null.
+		//		If obj is a DOM node, the connection is delegated
+		//		to the DOM event manager (unless dontFix is true).
+		//
+		// event: String
+		//		String name of the event function in obj.
+		//		I.e. identifies a property `obj[event]`.
+		//
+		// context: Object|null
+		//		The object that method will receive as "this".
+		//
+		//		If context is null and method is a function, then method
+		//		inherits the context of event.
+		//
+		//		If method is a string then context must be the source
+		//		object object for method (context[method]). If context is null,
+		//		kernel.global is used.
+		//
+		// method: String|Function
+		//		A function reference, or name of a function in context.
+		//		The function identified by method fires after event does.
+		//		method receives the same arguments as the event.
+		//		See context argument comments for information on method's scope.
+		//
+		// dontFix: Boolean?
+		//		If obj is a DOM node, set dontFix to true to prevent delegation
+		//		of this connection to the DOM event manager.
+		//
+		// example:
+		//		When obj.onchange(), do ui.update():
+		//	|	dojo.connect(obj, "onchange", ui, "update");
+		//	|	dojo.connect(obj, "onchange", ui, ui.update); // same
+		//
+		// example:
+		//		Using return value for disconnect:
+		//	|	var link = dojo.connect(obj, "onchange", ui, "update");
+		//	|	...
+		//	|	dojo.disconnect(link);
+		//
+		// example:
+		//		When onglobalevent executes, watcher.handler is invoked:
+		//	|	dojo.connect(null, "onglobalevent", watcher, "handler");
+		//
+		// example:
+		//		When ob.onCustomEvent executes, customEventHandler is invoked:
+		//	|	dojo.connect(ob, "onCustomEvent", null, "customEventHandler");
+		//	|	dojo.connect(ob, "onCustomEvent", "customEventHandler"); // same
+		//
+		// example:
+		//		When ob.onCustomEvent executes, customEventHandler is invoked
+		//		with the same scope (this):
+		//	|	dojo.connect(ob, "onCustomEvent", null, customEventHandler);
+		//	|	dojo.connect(ob, "onCustomEvent", customEventHandler); // same
+		//
+		// example:
+		//		When globalEvent executes, globalHandler is invoked
+		//		with the same scope (this):
+		//	|	dojo.connect(null, "globalEvent", null, globalHandler);
+		//	|	dojo.connect("globalEvent", globalHandler); // same
+
+		// normalize arguments
+		var a=arguments, args=[], i=0;
+		// if a[0] is a String, obj was omitted
+		args.push(typeof a[0] == "string" ? null : a[i++], a[i++]);
+		// if the arg-after-next is a String or Function, context was NOT omitted
+		var a1 = a[i+1];
+		args.push(typeof a1 == "string" || typeof a1 == "function" ? a[i++] : null, a[i++]);
+		// absorb any additional arguments
+		for(var l=a.length; i<l; i++){	args.push(a[i]); }
+		return connect_.apply(this, args);
+	},
+
+	disconnect:function(handle){
+		// summary:
+		//		Remove a link created by dojo.connect.
+		// description:
+		//		Removes the connection between event and the method referenced by handle.
+		// handle: Handle
+		//		the return value of the dojo.connect call that created the connection.
+
+		if(handle){
+			handle.remove();
+		}
+	},
+
+	subscribe:function(topic, context, method){
+		// summary:
+		//		Attach a listener to a named topic. The listener function is invoked whenever the
+		//		named topic is published (see: dojo.publish).
+		//		Returns a handle which is needed to unsubscribe this listener.
+		// topic: String
+		//		The topic to which to subscribe.
+		// context: Object?
+		//		Scope in which method will be invoked, or null for default scope.
+		// method: String|Function
+		//		The name of a function in context, or a function reference. This is the function that
+		//		is invoked when topic is published.
+		// example:
+		//	|	dojo.subscribe("alerts", null, function(caption, message){ alert(caption + "\n" + message); });
+		//	|	dojo.publish("alerts", [ "read this", "hello world" ]);
+		return hub.subscribe(topic, lang.hitch(context, method));
+	},
+
+	publish:function(topic, args){
+		// summary:
+		//		Invoke all listener method subscribed to topic.
+		// topic: String
+		//		The name of the topic to publish.
+		// args: Array?
+		//		An array of arguments. The arguments will be applied
+		//		to each topic subscriber (as first class parameters, via apply).
+		// example:
+		//	|	dojo.subscribe("alerts", null, function(caption, message){ alert(caption + "\n" + message); };
+		//	|	dojo.publish("alerts", [ "read this", "hello world" ]);
+		return hub.publish.apply(hub, [topic].concat(args));
+	},
+
+	connectPublisher:function(topic, obj, event){
+		// summary:
+		//		Ensure that every time obj.event() is called, a message is published
+		//		on the topic. Returns a handle which can be passed to
+		//		dojo.disconnect() to disable subsequent automatic publication on
+		//		the topic.
+		// topic: String
+		//		The name of the topic to publish.
+		// obj: Object?
+		//		The source object for the event function. Defaults to kernel.global
+		//		if null.
+		// event: String
+		//		The name of the event function in obj.
+		//		I.e. identifies a property obj[event].
+		// example:
+		//	|	dojo.connectPublisher("/ajax/start", dojo, "xhrGet");
+		var pf = function(){ connect.publish(topic, arguments); };
+		return event ? connect.connect(obj, event, pf) : connect.connect(obj, pf); //Handle
+	},
+
+	isCopyKey: function(e){
+		// summary:
+		//		Checks an event for the copy key (meta on Mac, and ctrl anywhere else)
+		// e: Event
+		//		Event object to examine
+		return e[evtCopyKey];	// Boolean
+	}
+};
+
+connect.unsubscribe = connect.disconnect;
+/*=====
+ connect.unsubscribe = function(handle){
+	 // summary:
+	 //		Remove a topic listener.
+	 // handle: Handle
+	 //		The handle returned from a call to subscribe.
+	 // example:
+	 //	|	var alerter = dojo.subscribe("alerts", null, function(caption, message){ alert(caption + "\n" + message); };
+	 //	|	...
+	 //	|	dojo.unsubscribe(alerter);
+ };
+ =====*/
+
+ 1  && lang.mixin(dojo, connect);
+return connect;
+
+});
+
+

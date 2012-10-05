@@ -249,13 +249,9 @@ public class RoleAPIImpl implements RoleAPI {
 	
 	public List<User> findUsersForRole(Role role) throws DotDataException, NoSuchUserException, DotSecurityException {
 		List<String> uids = findUserIdsForRole(role);
-		List<User> users = null;
-		for (String uid : uids) {
-			if(users == null){
-				users = new ArrayList<User>();
-			}
+		List<User> users = new ArrayList<User>();
+		for (String uid : uids)
 			users.add(APILocator.getUserAPI().loadUserById(uid, APILocator.getUserAPI().getSystemUser(), true));
-		}
 		return users;
 	}
 	
@@ -325,7 +321,7 @@ public class RoleAPIImpl implements RoleAPI {
 		Role role = loadRoleByKey(user.getUserId());
 		if(role == null) {
 			role = rf.addUserRole(user);
-		} else if(!role.getName().equals(user.getFullName())) {
+		} else if(!role.getName().equals(user.getFullName()) && !role.getName().equalsIgnoreCase("System")) {
 			role.setName(user.getFullName());
 			rf.save(role);
 		}

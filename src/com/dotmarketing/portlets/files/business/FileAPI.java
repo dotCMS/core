@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.files.business;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -217,11 +218,13 @@ public interface FileAPI {
 	
     public  File copyFile(File file, Folder parent, User user, boolean respectFrontEndRoles) throws IOException, DotSecurityException,DotDataException ;
 
+    public  File copyFile(File file, Host host, User user, boolean respectFrontEndRoles) throws IOException, DotSecurityException,DotDataException ;
 
 	public  boolean renameFile (File file, String newName, User user, boolean respectFrontEndRoles)  throws DotStateException, DotDataException, DotSecurityException ;
 	
     public  boolean moveFile(File file, Folder parent, User user, boolean respectFrontEndRoles) throws DotStateException, DotDataException, DotSecurityException ;
 
+    public  boolean moveFile(File file, Host host, User user, boolean respectFrontEndRoles) throws DotStateException, DotDataException, DotSecurityException ;
 
     void publishFile(File file, User user, boolean respectFrontendRoles) throws WebAssetException, DotSecurityException, DotDataException ;
     
@@ -247,12 +250,16 @@ public interface FileAPI {
      */
     public  String getRealAssetPath();
 	 
-    String getRealAssetPath(Inode inode);
-    String getRealAssetPath(String inode, String ext);
+    public String getRealAssetPath(Inode inode);
+    public String getRealAssetPath(String inode, String ext);
+    public String getRealAssetPathTmpBinary(); 
     
     /**
      * 
      * @return true/false based on the support configured for Old Files 
      */
     public boolean isLegacyFilesSupported();
+
+
+    public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException;
 }

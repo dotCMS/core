@@ -171,11 +171,19 @@ public interface TagAPI {
     public TagInode addTagInode(String tagName, String inode, String hostId) throws Exception;
 
     /**
-     * Gets all tags associated to an object
+     * Gets all tagInode associated to an object
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-	public List getTagInodeByInode(String inode);
+	public List<TagInode> getTagInodeByInode(String inode);
+	
+	/**
+	 * Gets all tags associated to an object
+	 * 
+	 * @param inode
+	 * @return
+	 */
+	public List<Tag> getTagsByInode(String inode);
 
     /**
      * Gets all tags associated to an object

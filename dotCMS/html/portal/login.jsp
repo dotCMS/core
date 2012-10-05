@@ -5,6 +5,7 @@
 String cmd = ParamUtil.getString(request, "my_account_cmd");
 session.removeAttribute(WebKeys.USER_ID);
 String emailAddress = request.getParameter("my_account_email_address");
+Xss.strip(emailAddress);
 if ((emailAddress == null) || (emailAddress.equals("null"))) {
 	emailAddress = "";
 }
@@ -279,8 +280,12 @@ function showLanguageSelector(){
 	<% if(editPassword){ %>
 		<div id="forgotPassword" style="display:none" draggable="false" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "forgot-password") %>">
 			<dl>
-				<dt><label for="forgotPasswordEmailBox" class="formLabel"><%= LanguageUtil.get(pageContext, "email-address") %></label> :</dt>
-				<dd><input id="forgotPasswordEmailBox" name="forgotPasswordEmailBox" type="text"  value="<%= login %>" value="<%= emailAddress %>" dojoType="dijit.form.TextBox"></dd>
+				<dt><label for="forgotPasswordEmailBox" class="formLabel"><%if(company.getAuthType().equals(Company.AUTH_TYPE_EA)){%>
+						<%= LanguageUtil.get(pageContext, "email-address") %> : 
+					<%}else{ %>
+						<%= LanguageUtil.get(pageContext, "user-id") %> : 
+					<%} %></label></dt>
+				<dd><input id="forgotPasswordEmailBox" name="forgotPasswordEmailBox" type="text"  value="<%= login %>"  dojoType="dijit.form.TextBox"></dd>
 				<dd><button dojoType="dijit.form.Button"  onClick="forgotPassword()"><%= LanguageUtil.get(pageContext, "get-new-password") %></button></dd>
 			</dl>
 		</div>

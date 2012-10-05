@@ -52,12 +52,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
+import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
@@ -3419,6 +3422,22 @@ public class UtilMethods {
             return FileAssetVersionInfo.class;
         else if(type.equals("htmlpage"))
             return HTMLPageVersionInfo.class;
+        else return null;
+    }
+    
+    public static Class getVersionableClass(String type) {
+        if(type.equals("links"))
+            return Link.class;
+        else if(type.equals("contentlet"))
+            return Contentlet.class;
+        else if(type.equals("containers"))
+            return Container.class;
+        else if(type.equals("template"))
+            return com.dotmarketing.portlets.templates.model.Template.class;
+        else if(type.equals("file_asset"))
+            return com.dotmarketing.portlets.files.model.File.class;
+        else if(type.equals("htmlpage"))
+            return HTMLPage.class;
         else return null;
     }
 
