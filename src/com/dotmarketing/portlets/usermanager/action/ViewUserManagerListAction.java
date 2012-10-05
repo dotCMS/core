@@ -1297,7 +1297,7 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                         UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userDuplicated,APILocator.getUserAPI().getSystemUser(), false);
                                         for (; tagNameToken.hasMoreTokens();) {
                                             String tagTokenized = tagNameToken.nextToken().trim();
-                                            TagFactory.addTagInode(tagTokenized, String.valueOf(userProxy.getInode()), "");
+                                            TagFactory.addTagInode(tagTokenized, String.valueOf(userProxy.getUserId()), "");
                                         }
                                     }
                                 }
