@@ -782,13 +782,15 @@ create table indicies (
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 -- ****** Content Publishing Framework *******
-CREATE SEQUENCE CONTENTLET_PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 
-CREATE TABLE CONTENTLET_PUBLISHING_QUEUE
+CREATE TABLE PUBLISHING_QUEUE
 (id INTEGER NOT NULL,
-solr_operation number(19,0), asset_identifier VARCHAR(36) NOT NULL,
+operation number(19,0), asset_identifier VARCHAR2(36) NOT NULL,
 language_id number(19,0) NOT NULL, entered_date DATE,
 last_try DATE, num_of_tries number(19,0) DEFAULT 0 NOT NULL,
-in_error number(1,0) DEFAULT 0, last_results NCLOB,PRIMARY KEY (id));
+in_error number(1,0) DEFAULT 0, last_results NCLOB,PRIMARY KEY (id), 
+publish_date DATE, server_id VARCHAR2(256), 
+type VARCHAR2(256), bundle_id VARCHAR2(256));
 
-CREATE OR REPLACE TRIGGER CONTENTLET_PUBLISHING_QUEUE_TRIGGER before insert on CONTENTLET_PUBLISHING_QUEUE for each row begin select CONTENTLET_PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;;
+CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on CONTENTLET_PUBLISHING_QUEUE for each row begin select CONTENTLET_PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;;
