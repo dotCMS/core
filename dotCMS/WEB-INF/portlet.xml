@@ -2597,7 +2597,7 @@
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
 				<name>view-jsp</name>
-				<value>/portlet/ext/contentlet/publishing/view_solr_tool.jsp</value>
+				<value>/portlet/ext/contentlet/publishing/view_publish_tool.jsp</value>
 		</init-param>
 		<init-param>
 				<name>useWEBINFDIR</name>
