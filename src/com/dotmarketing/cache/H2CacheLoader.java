@@ -778,10 +778,11 @@ public class H2CacheLoader implements CacheLoader{
 			if(conn==null){
 				return;
 			}
+			
 			try {
 				Statement s=conn.createStatement();
 				s.execute("CREATE CACHED TABLE IF NOT EXISTS `" + getGroupName(fqn) + "` (CACHE_KEY VARCHAR(255) PRIMARY KEY, CACHE_DATA BLOB)" );
-				//s.execute("CREATE UNIQUE INDEX IF NOT EXISTS `" + getGroupName(fqn) + "_group_key_idx` ON  `" + getGroupName(fqn) + "` (CACHE_KEY)");
+				s.close();
 			 } catch (SQLException e) {
 				Logger.error(H2CacheLoader.class,"SQLException: " +e.getMessage(),e);
 			 }
@@ -804,17 +805,24 @@ public class H2CacheLoader implements CacheLoader{
 		while(x<=numberOfSpaces*dbsPerSpace){
 			Connection c = createConnection(true, x);
 			Statement stmt = null;
-			stmt=c.createStatement();
-			ResultSet rs = stmt.executeQuery("SHOW TABLES");
-			if(rs != null){
-				while(rs.next()){
-					String table = rs.getString(1);
-					if(UtilMethods.isSet(table)){
-						groups.add(table);
-					}
-				}
+			try {
+    			stmt=c.createStatement();
+    			ResultSet rs = stmt.executeQuery("SHOW TABLES");
+    			if(rs != null){
+    				while(rs.next()){
+    					String table = rs.getString(1);
+    					if(UtilMethods.isSet(table)){
+    						groups.add(table);
+    					}
+    				}
+    				rs.close();
+    			}
+    			x++;
 			}
-			x++;
+			finally {
+			    stmt.close();
+			    c.close(); 
+			}
 		}
 		return groups;
 	}
@@ -847,6 +855,7 @@ public class H2CacheLoader implements CacheLoader{
 						rs.next();
 						ret += rs.getLong(1);
 					}
+					rs.close(); s.close();
 				 } catch (SQLException e) {
 					Logger.debug(H2CacheLoader.class,"SQLException: " +e.getMessage(),e);
 				 }
