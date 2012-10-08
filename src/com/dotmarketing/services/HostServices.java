@@ -62,22 +62,23 @@ public class HostServices {
 	 	int counter=1;
 		while (hostvars.hasNext()) {
 			HostVariable next = (HostVariable) hostvars.next();
-			sb.append("#set ($_dummy  = $host_variable.put(\"" + String.valueOf(next.getKey())+ "\", \"" + String.valueOf(UtilMethods.espaceForVelocity(next.getValue()))+ "\"))\n"); 
+			sb.append("#set ($_dummy  = $host_variable.put(\"" ).append( String.valueOf(next.getKey())).append( "\", \"" ).append( String.valueOf(UtilMethods.espaceForVelocity(next.getValue()))).append( "\"))\n"); 
 			
 			counter++;  			
 			
 			 }
 		}
 		try {
-			String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
-			String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-			String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
-			if (velocityRootPath.startsWith("/WEB-INF")) {
-				velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
-			}
-			velocityRootPath += java.io.File.separator;
 
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
+			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
+	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
+	            String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
+	            if (velocityRootPath.startsWith("/WEB-INF")) {
+	                velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+	            }
+	            velocityRootPath += java.io.File.separator;
+			    
 				java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
 				//Specify a proper character encoding
 				OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
