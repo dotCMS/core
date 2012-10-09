@@ -12,7 +12,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 
 /**
- * This Actionlet Include/Update content in a Solr Index
+ * This Actionlet Include/Update content in a PublishQueue Index
  * @author Oswaldo
  *
  */
@@ -31,7 +31,7 @@ public class PublisherAddActionlet extends WorkFlowActionlet{
 
 	@Override
 	public String getName() {
-		return "Add/Update to Solr Index";
+		return "Add/Update to PublishQueue Index";
 	}
 
 	@Override
@@ -47,7 +47,7 @@ public class PublisherAddActionlet extends WorkFlowActionlet{
 	throws WorkflowActionFailureException {
 		try {
 			Contentlet con = processor.getContentlet();
-			solrAPI.addContentToSolr(con);				
+			solrAPI.addContentToPublishQueue(con);				
 		} catch (DotPublisherException e) {
 			Logger.debug(PublisherAddActionlet.class, e.getMessage());
 			throw new  WorkflowActionFailureException(e.getMessage());

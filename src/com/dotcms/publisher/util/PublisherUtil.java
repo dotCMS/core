@@ -56,22 +56,22 @@ import com.liferay.portal.model.User;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 /**
- * This class manage all the operation we can do over a from/to a Solr index (search, add and delete)
+ * This class manage all the operation we can do over a from/to a PublishQueue index (search, add and delete)
  * @author Oswaldo
  *
  */
 public class PublisherUtil {	
 
 	/**
-	 * Adding SolrInputDocument to Solr Index
-	 * @param SolrServerUrl Solr Server Url
+	 * Adding SolrInputDocument to PublishQueue Index
+	 * @param PublishQueueServerUrl PublishQueue Server Url
 	 * @param doc SolrInputDocument to include
-	 * @return boolean, true if the element were added to the Solr index
+	 * @return boolean, true if the element were added to the PublishQueue index
 	 * @throws SolrServerException
 	 * @throws IOException
 	 */
-	public static void addToSolrIndex(String SolrServerUrl, SolrInputDocument doc) throws SolrServerException, IOException {		
-		CommonsHttpSolrServer server = new CommonsHttpSolrServer(SolrServerUrl);
+	public static void addToPublishQueueIndex(String PublishQueueServerUrl, SolrInputDocument doc) throws SolrServerException, IOException {		
+		CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 		server.setParser(new XMLResponseParser());
 		/*Add collection to solr index*/
 		Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument>();
@@ -84,14 +84,14 @@ public class PublisherUtil {
 	}
 
 	/**
-	 * Adding documents collection to Solr Index
-	 * @param SolrServerUrl Solr Server Url
+	 * Adding documents collection to PublishQueue Index
+	 * @param PublishQueueServerUrl PublishQueue Server Url
 	 * @param docs Collection<SolrInputDocument> collection of elements to include
 	 * @throws SolrServerException
 	 * @throws IOException
 	 */
-	public static void addToSolrIndex(String SolrServerUrl, Collection<SolrInputDocument> docs) throws SolrServerException, IOException {
-		CommonsHttpSolrServer server = new CommonsHttpSolrServer(SolrServerUrl);
+	public static void addToPublishQueueIndex(String PublishQueueServerUrl, Collection<SolrInputDocument> docs) throws SolrServerException, IOException {
+		CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 		server.setParser(new XMLResponseParser());
 		/*Add collection to solr index*/
 		UpdateResponse rsp = server.add( docs );
@@ -102,14 +102,14 @@ public class PublisherUtil {
 	}
 
 	/**
-	 * Deleting document from Solr Index
-	 * @param SolrServerUrl Solr Server Url
+	 * Deleting document from PublishQueue Index
+	 * @param PublishQueueServerUrl PublishQueue Server Url
 	 * @param id ID of the element to delete 
 	 * @throws SolrServerException
 	 * @throws IOException
 	 */
-	public static void deleteFromSolrIndexById(String SolrServerUrl, String id) throws SolrServerException, IOException {
-		CommonsHttpSolrServer server = new CommonsHttpSolrServer(SolrServerUrl);
+	public static void deleteFromPublishQueueIndexById(String PublishQueueServerUrl, String id) throws SolrServerException, IOException {
+		CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 		server.setParser(new XMLResponseParser());
 		/*Add collection to solr index*/
 		UpdateResponse rsp = server.deleteById(id);
@@ -120,15 +120,15 @@ public class PublisherUtil {
 	}
 
 	/**
-	 * Deleting document from Solr Index
-	 * @param SolrServerUrl Solr Server Url
+	 * Deleting document from PublishQueue Index
+	 * @param PublishQueueServerUrl PublishQueue Server Url
 	 * @param ids List od ID's of the elements to delete 
 	 * @throws SolrServerException
 	 * @throws IOException
 	 */
-	public static boolean deleteFromSolrIndexById(String SolrServerUrl, List<String> ids) {
+	public static boolean deleteFromPublishQueueIndexById(String PublishQueueServerUrl, List<String> ids) {
 		try {
-			CommonsHttpSolrServer server = new CommonsHttpSolrServer(SolrServerUrl);
+			CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 			server.setParser(new XMLResponseParser());
 			/*Add collection to solr index*/
 			UpdateResponse rsp = server.deleteById(ids);
@@ -210,41 +210,41 @@ public class PublisherUtil {
 	 */
 
 	/**
-	 * Execute a search in the Solr index, passing all the parameter directly in a url query.
+	 * Execute a search in the PublishQueue index, passing all the parameter directly in a url query.
 	 * For example, query:"indent=on&version=2.2&q=%2Bcat%3Aelectronics&fq=&start=0&rows=20&fl=*%2Cscore&qt=&wt=&explainOther=&hl.fl="
-	 * @param SolrServerUrl Solr Server Url
-	 * @param query Solr query
+	 * @param PublishQueueServerUrl PublishQueue Server Url
+	 * @param query PublishQueue query
 	 * @return QueryResponse
 	 * @throws SolrServerException
 	 * @throws MalformedURLException
 	 */
-	public static QueryResponse executeSolrGenericSearch(String SolrServerUrl, String query) throws SolrServerException, MalformedURLException {
-		CommonsHttpSolrServer server = new CommonsHttpSolrServer(SolrServerUrl);
+	public static QueryResponse executePublishQueueGenericSearch(String PublishQueueServerUrl, String query) throws SolrServerException, MalformedURLException {
+		CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 		server.setParser(new XMLResponseParser());
 		SolrParams solrParams = SolrRequestParsers.parseQueryString(query);
 		return server.query(solrParams);
 	}
 
 	/**
-	 * Execute a search in the specified Solr index using a url parameter 
-	 * @param SolrServerUrl Solr Server Url
+	 * Execute a search in the specified PublishQueue index using a url parameter 
+	 * @param PublishQueueServerUrl PublishQueue Server Url
 	 * @param start initial value to return
 	 * @param rows number of row to return
 	 * @param queryType  qt=spellcheck || qt=spellchecker (optional)
 	 * @param facet Facet parameter. Values accepted "on" or "off"
 	 * @param ident Ident parameter. Values accepted "on" or "off"
-	 * @param query Solr query
-	 * @param myCollection Solr collection name (optional)
-	 * @param username Solr username (optional)
-	 * @param password Solr password (optional)
+	 * @param query PublishQueue query
+	 * @param myCollection PublishQueue collection name (optional)
+	 * @param username PublishQueue username (optional)
+	 * @param password PublishQueue password (optional)
 	 * @return QueryResponse
 	 * @throws SolrServerException
 	 * @throws MalformedURLException
 	 */
-	public static QueryResponse executeURLSolrParamsSearch(String SolrServerUrl, int start, int rows, String queryType,String facet, String ident, String query, String myCollection, String username, String password)
+	public static QueryResponse executeURLSolrParamsSearch(String PublishQueueServerUrl, int start, int rows, String queryType,String facet, String ident, String query, String myCollection, String username, String password)
 	throws SolrServerException, MalformedURLException {
 
-		CommonsHttpSolrServer server = new CommonsHttpSolrServer(SolrServerUrl);
+		CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 		server.setParser(new XMLResponseParser());
 
 		StringBuffer request = new StringBuffer();
@@ -276,25 +276,25 @@ public class PublisherUtil {
 	}
 
 	/**
-	 * Execute a search in the specified Solr index using a ModifiableSolrParams
-	 * @param SolrServerUrl Solr Server Url
+	 * Execute a search in the specified PublishQueue index using a ModifiableSolrParams
+	 * @param PublishQueueServerUrl PublishQueue Server Url
 	 * @param start initial value to return
 	 * @param rows number of row to return
 	 * @param queryType  qt=spellcheck || qt=spellchecker (optional)
 	 * @param facet Facet parameter. Values accepted "on" or "off"
 	 * @param ident Ident parameter. Values accepted "on" or "off"
-	 * @param query Solr query
-	 * @param myCollection Solr collection name (optional)
-	 * @param username Solr username (optional)
-	 * @param password Solr password (optional)
+	 * @param query PublishQueue query
+	 * @param myCollection PublishQueue collection name (optional)
+	 * @param username PublishQueue username (optional)
+	 * @param password PublishQueue password (optional)
 	 * @return QueryResponse
 	 * @throws SolrServerException
 	 * @throws MalformedURLException
 	 */
-	public static QueryResponse executeModifiableSolrParamsSearch(String SolrServerUrl, int start, int rows,String queryType, String facet, String ident, String query, String myCollection, String username, String password)
+	public static QueryResponse executeModifiableSolrParamsSearch(String PublishQueueServerUrl, int start, int rows,String queryType, String facet, String ident, String query, String myCollection, String username, String password)
 	throws SolrServerException, MalformedURLException {
 
-		CommonsHttpSolrServer server = new CommonsHttpSolrServer(SolrServerUrl);
+		CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 		server.setParser(new XMLResponseParser());
 
 		ModifiableSolrParams solrParams = new ModifiableSolrParams();
@@ -325,24 +325,24 @@ public class PublisherUtil {
 
 
 	/**
-	 * Execute a search in the specified Solr index using a SolrQuery
-	 * @param SolrServerUrl Solr Server Url
+	 * Execute a search in the specified PublishQueue index using a SolrQuery
+	 * @param PublishQueueServerUrl PublishQueue Server Url
 	 * @param start initial value to return
 	 * @param rows number of row to return
 	 * @param queryType  qt=spellcheck || qt=spellchecker (optional)
 	 * @param facet Facet parameter. Values accepted "on" or "off"
 	 * @param ident Ident parameter. Values accepted "on" or "off"
-	 * @param query Solr query
-	 * @param myCollection Solr collection name (optional)
-	 * @param username Solr username (optional)
-	 * @param password Solr password (optional)
+	 * @param query PublishQueue query
+	 * @param myCollection PublishQueue collection name (optional)
+	 * @param username PublishQueue username (optional)
+	 * @param password PublishQueue password (optional)
 	 * @return QueryResponse
 	 * @throws SolrServerException
 	 * @throws MalformedURLException
 	 */
-	public static QueryResponse executeSolrQuerySearch(String SolrServerUrl, int start, int rows,String queryType, String facet, String ident, String query, String myCollection, String username, String password)
+	public static QueryResponse executeSolrQuerySearch(String PublishQueueServerUrl, int start, int rows,String queryType, String facet, String ident, String query, String myCollection, String username, String password)
 	throws SolrServerException, MalformedURLException {
-		CommonsHttpSolrServer server = new CommonsHttpSolrServer(SolrServerUrl);
+		CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 		server.setParser(new XMLResponseParser());
 
 		SolrQuery solrQuery = new SolrQuery();
@@ -382,10 +382,10 @@ public class PublisherUtil {
 	private static final String OCLCREATETRIGERSQL="CREATE OR REPLACE TRIGGER SOLR_QUEUE_TRIGGER before insert on SOLR_QUEUE for each row begin select SOLR_QUEUE_SEQ.nextval into :new.id from dual; end;";
 
 	/**
-	 * Create dotcms Solr assets index table
+	 * Create dotcms PublishQueue assets index table
 	 * @return boolean, true if the table was created successfully
 	 */
-	public static boolean createSolrTable(){
+	public static boolean createPublishQueueTable(){
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -438,10 +438,10 @@ public class PublisherUtil {
 	private static final String OCLDELETETRIGGERSQL="DROP TRIGGER SOLR_QUEUE_TRIGGER";
 
 	/**
-	 * Delete dotcms Solr assets index table
+	 * Delete dotcms PublishQueue assets index table
 	 * @return boolean, true if the table was created successfully
 	 */
-	public static boolean deleteSolrTable(){
+	public static boolean deletePublishQueueTable(){
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -559,20 +559,20 @@ public class PublisherUtil {
 	}
 
 	/**
-	 * Check if the field contains the field attribute to modify the field name to use in Solr Index
+	 * Check if the field contains the field attribute to modify the field name to use in PublishQueue Index
 	 * @param list List<FieldVariable>
-	 * @param fieldAttribute String name of the field with the new field name to use in Solr index
-	 * @param defaultSolrFieldName String field velocity var name
+	 * @param fieldAttribute String name of the field with the new field name to use in PublishQueue index
+	 * @param defaultPublishQueueFieldName String field velocity var name
 	 * @return String
 	 */
-	public static String getSolrFieldName(List<FieldVariable> list, String fieldAttribute, String defaultSolrFieldName){
+	public static String getPublishQueueFieldName(List<FieldVariable> list, String fieldAttribute, String defaultPublishQueueFieldName){
 		for(FieldVariable fv : list){
 			if(fv.getKey().equals(fieldAttribute)){
 				String values = fv.getValue();
 				return values;
 			}
 		}		 
-		return defaultSolrFieldName;
+		return defaultPublishQueueFieldName;
 	}
 
 	/**
