@@ -25,7 +25,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 	
 	private static final String PGCREATESQL				=	"CREATE TABLE publishing_queue " +
 															"(id bigserial PRIMARY KEY NOT NULL, " +
-															"operation int8, asset_identifier VARCHAR(36) NOT NULL, " +
+															"operation int8, asset VARCHAR(2000) NOT NULL, " +
 															"language_id  int8 NOT NULL, entered_date TIMESTAMP, " +
 															"last_try TIMESTAMP, num_of_tries int8 NOT NULL DEFAULT 0, " +
 															"in_error bool DEFAULT 'f', last_results TEXT, " +
@@ -34,7 +34,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 	
 	private static final String MYCREATESQL				=	"CREATE TABLE IF NOT EXISTS publishing_queue " +
 															"(id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, " +
-															"operation bigint, asset_identifier VARCHAR(36) NOT NULL, " +
+															"operation bigint, asset VARCHAR(2000) NOT NULL, " +
 															"language_id bigint NOT NULL, entered_date DATETIME, " +
 															"last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, " +
 															"in_error varchar(1) DEFAULT '0', last_results LONGTEXT, " +
@@ -47,7 +47,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 	
 	private static final String MSCREATESQL				=	"CREATE TABLE publishing_queue " +
 															"(id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL, " +
-															"operation numeric(19,0), asset_identifier VARCHAR(36) NOT NULL, " +
+															"operation numeric(19,0), asset VARCHAR(2000) NOT NULL, " +
 															"language_id numeric(19,0) NOT NULL, entered_date DATETIME, " +
 															"last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0, " +
 															"in_error tinyint DEFAULT 0, last_results TEXT, " +
@@ -59,7 +59,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 	
 	private static final String OCLCREATESQL			=	"CREATE TABLE PUBLISHING_QUEUE " +
 															"(id INTEGER NOT NULL, " +
-															"operation number(19,0), asset_identifier VARCHAR2(36) NOT NULL, " +
+															"operation number(19,0), asset VARCHAR2(2000) NOT NULL, " +
 															"language_id number(19,0) NOT NULL, entered_date DATE, " +
 															"last_try DATE, num_of_tries number(19,0) DEFAULT 0 NOT NULL, " +
 															"in_error number(1,0) DEFAULT 0, last_results NCLOB,PRIMARY KEY (id), " +

@@ -1,8 +1,10 @@
 package com.dotcms.publisher.business;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
@@ -14,12 +16,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * Implement the SolrAPI abstract class methods
+ * Implement the PublishQueueAPI abstract class methods
  * @author Oswaldo
  *
  */
 public class PublisherAPIImpl extends PublisherAPI{
 
+	private static final int _ASSET_LENGTH_LIMIT = 20;
+	private static final String SPACE = " ";
+	private static final String IDENTIFIER = "identifier:";
 	private static PublisherAPIImpl instance= null;
 	private static int numOfTries = 10;
 	public static PublisherAPIImpl getInstance() {
@@ -40,9 +45,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 	
 	private static final String MANDATORY_FIELDS= 
 										"operation, "+
-										"asset_identifier, "+ 
-										"language_id, "+
+										"asset, "+ 
 										"entered_date, "+
+										"language_id, "+
 										"in_error, "+ 
 										"publish_date, "+ 
 										"server_id, "+ 
@@ -51,6 +56,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 										"target";
 	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?,?,?,?" ;
 	
+//	
 	//"last_results, "+ 
 	//	"last_try,  "+
 	//	"num_of_tries, "+ 
@@ -59,20 +65,109 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MYINSERTSOLRSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	private static final String MSINSERTSOLRSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	private static final String OCLINSERTSOLRSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
+	
+	
+	public void addContentsToPublishQueue(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException {		
+		List<String> assets = null;
+		if(contents != null) {
+			assets = prepareAssets(contents, isLive);
+			
+			try{
+				HibernateUtil.startTransaction();
+				for(String asset: assets) {
+					DotConnect dc = new DotConnect();
+					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+						dc.setSQL(PGINSERTSOLRSQL);
+					} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+						dc.setSQL(MYINSERTSOLRSQL);
+					} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+						dc.setSQL(MSINSERTSOLRSQL);
+					} else{
+						dc.setSQL(OCLINSERTSOLRSQL);
+					}
+					
+					dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
+					dc.addObject(asset); //asset
+					dc.addParam(new Date());
+					dc.addObject(1);
+					dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
+					
+					//TODO How do I get new columns value?	
+					dc.addParam(new Date());
+					dc.addObject(null);
+					dc.addObject(null);
+					dc.addObject(bundleId);
+					dc.addObject(null);
+					
+					dc.loadResult();	
+				}
+				
+				HibernateUtil.commitTransaction();			
+			}catch(Exception e){
+	
+				try {
+					HibernateUtil.rollbackTransaction();
+				} catch (DotHibernateException e1) {
+					Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+				}			
+				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
+				throw new DotPublisherException("Unable to add element to publish queue table:" + e.getMessage(), e);
+			}finally{
+				DbConnectionFactory.closeConnection();
+			}
+		}
+	}
+	
+	private List<String> prepareAssets(List<Contentlet> contents, boolean isLive) {
+		StringBuilder assetBuffer = new StringBuilder();
+		List<String> assets;
+		assets = new ArrayList<String>();
+		
+		if(contents.size() == 1) {
+			assetBuffer.append("+"+IDENTIFIER+contents.get(0).getIdentifier());
+			if(isLive)
+				assets.add(assetBuffer.toString() +" live:true");
+			else
+				assets.add(assetBuffer.toString() +" working:true");
+			
+		} else {
+			int counter = 1;
+			Contentlet c = null;
+			for(int ii = 0; ii < contents.size(); ii++) {
+				c = contents.get(ii);
+				
+				assetBuffer.append(IDENTIFIER+c.getIdentifier());
+				assetBuffer.append(SPACE);
+				
+				if(counter == _ASSET_LENGTH_LIMIT || (ii+1 == contents.size())) {
+					if(isLive)
+						assets.add("+("+assetBuffer.toString()+") +live:true");
+					else
+						assets.add("+("+assetBuffer.toString()+") +working:true");
+					
+					assetBuffer = new StringBuilder();
+					counter = 0;
+				} else
+					counter++;
+			}
+		}
+		return assets;
+	}
+	
 
 	/**
-	 * Include in the publishing_queue table the content to add or update in the Solr Index
+	 * Include in the publishing_queue table the content to add or update in the PublishQueue Index
 	 * @param con Contentlet
 	 * @throws DotPublisherException 
 	 */
-	public void addContentToSolr(Contentlet con) throws DotPublisherException {
+	public void addContentToPublishQueue(Contentlet con) throws DotPublisherException {
 		try{
 			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
 				dc.setSQL(PGINSERTSOLRSQL);
-				dc.addParam(PublisherAPI.ADD_OR_UPDATE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
 				dc.addObject(con.getIdentifier());
 				dc.addObject(con.getLanguageId());
 				dc.addParam(new Date());
@@ -83,18 +178,24 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.loadResult();	
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
 				dc.setSQL(MYINSERTSOLRSQL);
-				dc.addParam(PublisherAPI.ADD_OR_UPDATE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
 				dc.addObject(con.getIdentifier());
 				dc.addObject(con.getLanguageId());
 				dc.addParam(new Date());
 				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
 				
+				
 				//TODO How do I get new columns value?	
+				dc.addParam(new Date());
+				dc.addObject(null);
+				dc.addObject(null);
+				dc.addObject(UUID.randomUUID());
+				dc.addObject(null);
 				
 				dc.loadResult();				
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 				dc.setSQL(MSINSERTSOLRSQL);
-				dc.addParam(PublisherAPI.ADD_OR_UPDATE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
 				dc.addObject(con.getIdentifier());
 				dc.addObject(con.getLanguageId());
 				dc.addParam(new Date());
@@ -105,7 +206,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.loadResult();				
 			}else{
 				dc.setSQL(OCLINSERTSOLRSQL);
-				dc.addParam(PublisherAPI.ADD_OR_UPDATE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
 				dc.addObject(con.getIdentifier());
 				dc.addObject(con.getLanguageId());
 				dc.addParam(new Date());
@@ -135,18 +236,18 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSDELETESOLRSQL= MSINSERTSOLRSQL;
 	private static final String OCLDELETESOLRSQL= OCLINSERTSOLRSQL;
 	/**
-	 * Include in the publishing_queue table the content to remove in the Solr Index
+	 * Include in the publishing_queue table the content to remove in the PublishQueue Index
 	 * @param con Contentlet
 	 * @throws DotPublisherException
 	 */
-	public void removeContentFromSolr(Contentlet con) throws DotPublisherException {
+	public void removeContentFromPublishQueue(Contentlet con) throws DotPublisherException {
 		try{
 			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
 				dc.setSQL(PGDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.DELETE_ELEMENT);
 				dc.addObject(con.getIdentifier());
 				dc.addObject(con.getLanguageId());
 				dc.addParam(new Date());
@@ -157,18 +258,24 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.loadResult();
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
 				dc.setSQL(MYDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.DELETE_ELEMENT);
 				dc.addObject(con.getIdentifier());
 				dc.addObject(con.getLanguageId());
 				dc.addParam(new Date());
 				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
 				
+				
 				//TODO How do I get new columns value?	
+				dc.addParam(new Date());
+				dc.addObject(null);
+				dc.addObject(null);
+				dc.addObject(UUID.randomUUID());
+				dc.addObject(null);
 				
 				dc.loadResult();					
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 				dc.setSQL(MSDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.DELETE_ELEMENT);
 				dc.addObject(con.getIdentifier());
 				dc.addObject(con.getLanguageId());
 				dc.addParam(new Date());
@@ -179,7 +286,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.loadResult();					
 			}else{
 				dc.setSQL(OCLDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.DELETE_ELEMENT);
 				dc.addObject(con.getIdentifier());
 				dc.addObject(con.getLanguageId());
 				dc.addParam(new Date());
@@ -203,14 +310,14 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 	
-	public void removeContentFromSolr(String identifier, long languageId) throws DotPublisherException {
+	public void removeContentFromPublishQueue(String identifier, long languageId) throws DotPublisherException {
 		try{
 			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
 				dc.setSQL(PGDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.DELETE_ELEMENT);
 				dc.addObject(identifier);
 				dc.addObject(languageId);
 				dc.addParam(new Date());
@@ -221,7 +328,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.loadResult();	
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
 				dc.setSQL(MYDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.DELETE_ELEMENT);
 				dc.addObject(identifier);
 				dc.addObject(languageId);
 				dc.addParam(new Date());
@@ -232,7 +339,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.loadResult();					
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 				dc.setSQL(MSDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.DELETE_ELEMENT);
 				dc.addObject(identifier);
 				dc.addObject(languageId);
 				dc.addParam(new Date());
@@ -243,7 +350,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.loadResult();						
 			}else{
 				dc.setSQL(OCLDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_SOLR_ELEMENT);
+				dc.addParam(PublisherAPI.DELETE_ELEMENT);
 				dc.addObject(identifier);
 				dc.addObject(languageId);
 				dc.addParam(new Date());
@@ -380,16 +487,16 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 
 
-	private static final String PSGETASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries+" and operation in ("+PublisherAPI.ADD_OR_UPDATE_SOLR_ELEMENT+","+PublisherAPI.DELETE_SOLR_ELEMENT+") order by id asc";
-	private static final String MYGETASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries+" and operation in ("+PublisherAPI.ADD_OR_UPDATE_SOLR_ELEMENT+","+PublisherAPI.DELETE_SOLR_ELEMENT+") order by id asc";
-	private static final String MSGETASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries+" and operation in ("+PublisherAPI.ADD_OR_UPDATE_SOLR_ELEMENT+","+PublisherAPI.DELETE_SOLR_ELEMENT+") order by id asc";
-	private static final String OCLGETASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries+" and operation in ("+PublisherAPI.ADD_OR_UPDATE_SOLR_ELEMENT+","+PublisherAPI.DELETE_SOLR_ELEMENT+") order by id asc";
+	private static final String PSGETASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries+" and operation in ("+PublisherAPI.ADD_OR_UPDATE_ELEMENT+","+PublisherAPI.DELETE_ELEMENT+") order by id asc";
+	private static final String MYGETASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries+" and operation in ("+PublisherAPI.ADD_OR_UPDATE_ELEMENT+","+PublisherAPI.DELETE_ELEMENT+") order by id asc";
+	private static final String MSGETASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries+" and operation in ("+PublisherAPI.ADD_OR_UPDATE_ELEMENT+","+PublisherAPI.DELETE_ELEMENT+") order by id asc";
+	private static final String OCLGETASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries+" and operation in ("+PublisherAPI.ADD_OR_UPDATE_ELEMENT+","+PublisherAPI.DELETE_ELEMENT+") order by id asc";
 	/**
-	 * Get the Assets not processed yet to update the Solr index
+	 * Get the Assets not processed yet to update the PublishQueue index
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public List<Map<String,Object>> getSolrQueueContentletToProcess() throws DotPublisherException{
+	public List<Map<String,Object>> getPublishQueueQueueContentletToProcess() throws DotPublisherException{
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -421,7 +528,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public List<Map<String,Object>> getSolrQueueContentletsCounter(String condition, String orderBy) throws DotPublisherException{
+	public List<Map<String,Object>> getPublishQueueQueueContentletsCounter(String condition, String orderBy) throws DotPublisherException{
 		try{
 			DotConnect dc = new DotConnect();
 			String query = "";
@@ -462,7 +569,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public List<Map<String,Object>> getSolrQueueContentletsPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException{
+	public List<Map<String,Object>> getPublishQueueQueueContentletsPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException{
 		try{
 			DotConnect dc = new DotConnect();
 			String query = "";
@@ -497,13 +604,13 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSGETPAGINATEDASSETSCOUNTERTOINDEX="select count(*) as count from publishing_queue where num_of_tries < "+numOfTries;
 	private static final String OCLGETPAGINATEDASSETSCOUNTERTOINDEX="select count(*) as count from publishing_queue where num_of_tries < "+numOfTries;
 	/**
-	 * Get the total of Assets not processed yet to update the Solr index paginated
+	 * Get the total of Assets not processed yet to update the PublishQueue index paginated
 	 * @param condition WHERE condition
 	 * @param orderBy ORDER BY condition
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public List<Map<String,Object>> getSolrQueueContentletToProcessCounter(String condition, String orderBy) throws DotPublisherException{
+	public List<Map<String,Object>> getPublishQueueQueueContentletToProcessCounter(String condition, String orderBy) throws DotPublisherException{
 		try{
 			DotConnect dc = new DotConnect();
 			String query = "";
@@ -536,7 +643,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSGETPAGINATEDASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries;
 	private static final String OCLGETPAGINATEDASSETSTOINDEX="select * from publishing_queue where num_of_tries < "+numOfTries;
 	/**
-	 * Get the Assets not processed yet to update the Solr index paginated
+	 * Get the Assets not processed yet to update the PublishQueue index paginated
 	 * @param condition WHERE condition
 	 * @param orderBy ORDER BY condition
 	 * @param offset first row to return
@@ -544,7 +651,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public List<Map<String,Object>> getSolrQueueContentletToProcessPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException{
+	public List<Map<String,Object>> getPublishQueueQueueContentletToProcessPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException{
 		try{
 			DotConnect dc = new DotConnect();
 			String query = "";
@@ -589,7 +696,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @param last_results error message
 	 * @throws DotPublisherException
 	 */
-	public void updateElementStatusFromSolrQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException{
+	public void updateElementStatusFromPublishQueueQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException{
 		try{
 			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();			
@@ -636,7 +743,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @return boolean
 	 * @throws DotPublisherException
 	 */
-	public void deleteElementFromSolrQueueTable(long id) throws DotPublisherException{
+	public void deleteElementFromPublishQueueQueueTable(long id) throws DotPublisherException{
 		try{
 			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
@@ -674,7 +781,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * Delete all elements from publishing_queue table
 	 * @return boolean
 	 */
-	public void deleteAllElementsFromSolrQueueTable() throws DotPublisherException{
+	public void deleteAllElementsFromPublishQueueQueueTable() throws DotPublisherException{
 		try{
 			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
