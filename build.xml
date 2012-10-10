@@ -482,7 +482,7 @@
                         <classpath refid="files-classpath" />
                         <doctitle>
                                 <![CDATA[
-                        <h1>dotCMS 2.1 API Specification</h1>
+                        <h1>dotCMS 2.2 API Specification</h1>
                         ]]>
                         </doctitle>
                         <bottom>
