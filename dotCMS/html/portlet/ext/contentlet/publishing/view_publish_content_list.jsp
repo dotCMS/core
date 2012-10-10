@@ -1,3 +1,6 @@
+<%@page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
 <%@page import="java.util.UUID"%>
 <%@page import="com.dotmarketing.common.model.ContentletSearch"%>
 <%@page import="com.dotmarketing.util.PaginatedArrayList"%>
@@ -24,6 +27,7 @@
 <%
   	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
     ContentletAPI conAPI = APILocator.getContentletAPI();
+    LanguageAPI languagesAPI = APILocator.getLanguageAPI();
     if(user == null){
     	response.setStatus(403);
     	return;
@@ -99,16 +103,26 @@
     					processedCounter = 0;	
     				}
 		    	}else{
+		    		//Get available languages
+					List<Language> languages = languagesAPI.getLanguages();
+		    		
 		    		List<Contentlet> contentsLive = new ArrayList<Contentlet>();
 		    		List<Contentlet> contentsWorking = new ArrayList<Contentlet>();
 		    		for(String item : addQueueElementsStr.split(",")){
 		    			String[] value = item.split("_");
 		    			if(addOperationType.equals("add")){
-	    					Contentlet conLive = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
-	    					contentsLive.add(conLive);
-	    					Contentlet conWorking = conAPI.findContentletByIdentifier(value[0],false,Long.parseLong(value[1]),user, false);
-	    					contentsWorking.add(conWorking);
-	    					processedCounter++;							
+		    				//for(Language language : languages) {
+		    					try {
+			    					Contentlet conLive = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
+			    					contentsLive.add(conLive);
+		    					} catch(DotContentletStateException e) {}
+		    					try {
+			    					Contentlet conWorking = conAPI.findContentletByIdentifier(value[0],false,Long.parseLong(value[1]),user, false);
+			    					contentsWorking.add(conWorking);
+		    					} catch(DotContentletStateException e) {}
+		    					
+		    					processedCounter++;
+		    				//}
 		    			}
 		    		}
 		    		try{
@@ -190,7 +204,7 @@
 		</tr>
 		<% for(Contentlet c : iresults) {%>
 			<tr>
-				<td style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"_"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()%>" /></td>
+				<td style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"_"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"_"+c.getLanguageId()%>" /></td>
 				<td><a href="/c/portal/layout?p_l_id=<%=layout%>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>"><%=c.getTitle()%></a></td>
 				<td style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></a></td>
 			</tr>
@@ -249,7 +263,7 @@
 	                    	   addToPublishQueueQueue('remove');
 	           }
 	       });
-	       menu.addChild(menuItem2);
+	       //menu.addChild(menuItem2);
 	       
 	       var button = new dijit.form.ComboButton({
 	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
@@ -294,7 +308,7 @@
 	                    	   //addToPublishQueueQueue('remove');
 	           }
 	       });
-	       menu.addChild(menuItem2);
+	       //menu.addChild(menuItem2);
 	       
 	       var button = new dijit.form.ComboButton({
 	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
