@@ -126,9 +126,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 		if(contents.size() == 1) {
 			assetBuffer.append("+"+IDENTIFIER+contents.get(0).getIdentifier());
 			if(isLive)
-				assets.add(assetBuffer.toString() +" live:true");
+				assets.add(assetBuffer.toString() +" +live:true");
 			else
-				assets.add(assetBuffer.toString() +" working:true");
+				assets.add(assetBuffer.toString() +" +working:true");
 			
 		} else {
 			int counter = 1;
