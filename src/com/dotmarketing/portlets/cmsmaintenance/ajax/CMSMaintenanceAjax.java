@@ -711,21 +711,7 @@ public class CMSMaintenanceAjax {
 				//backup workflow
 				File file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
 				WorkflowImportExportUtil.getInstance().exportWorkflows(file);
-				
-				
-				/* log_mapper */
-				List<LogMapperRow> logs;
-                try {
-                    logs = LogMapper.getInstance().getLogList();
-                    _xstream = new XStream(new DomDriver());
-                    _writing = new File(backupTempFilePath + "/LogsMappers.xml");
-                    _bout = new BufferedOutputStream(new FileOutputStream(_writing));
-                    _xstream.toXML(logs, _bout);
-                    _bout.close();
-                } catch (DotCacheException e) {
-                    Logger.error(this, e.getMessage(), e);
-                }
-				
+								
 			} catch (HibernateException e) {
 				Logger.error(this,e.getMessage(),e);
 			} catch (SystemException e) {
