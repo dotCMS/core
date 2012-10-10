@@ -25,6 +25,8 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.UUIDGenerator;
+
 import org.apache.lucene.queryParser.ParseException;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1645,6 +1647,46 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
+    }
+    
+    /**
+     * Now we introduce the case when we wanna add content with
+     * the inode & identifier we set. The content should not exists
+     * for that inode nor the identifier. 
+     * 
+     * @throws Exception if test fails
+     */
+    @Test
+    public void saveContentWithExistingIdentifier() throws Exception {
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzz", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzz" );
+
+        Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, false, 1, false, false, false );
+        FieldFactory.saveField( field );
+        
+        Contentlet cont=new Contentlet();
+        cont.setStructureInode(testStructure.getInode());
+        cont.setStringProperty(field.getVelocityVarName(), "a value");
+        cont.setReviewInterval( "1m" );
+        cont.setStructureInode( testStructure.getInode() );
+        cont.setHost( defaultHost.getIdentifier() );
+        
+        // here comes the existing inode and identifier
+        // for this test we generate them using the normal
+        // generator but the use case for this is when 
+        // the content comes from another dotCMS instance
+        String inode=UUIDGenerator.generateUuid();
+        String identifier=UUIDGenerator.generateUuid();
+        cont.setInode(inode);
+        cont.setIdentifier(identifier);
+        
+        Contentlet saved = contentletAPI.checkin(cont, user, false);
+        contentlets.add(saved);
+        
+        assertEquals(saved.getInode(), inode);
+        assertEquals(saved.getIdentifier(), identifier);
+        
+        // the inode should hit the index
+        contentletAPI.isInodeIndexed(inode, 2);
     }
 
 }
