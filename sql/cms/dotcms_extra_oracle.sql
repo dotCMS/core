@@ -786,7 +786,7 @@ CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 
 CREATE TABLE PUBLISHING_QUEUE
 (id INTEGER NOT NULL,
-operation number(19,0), asset_identifier VARCHAR2(36) NOT NULL,
+operation number(19,0), asset VARCHAR2(2000) NOT NULL,
 language_id number(19,0) NOT NULL, entered_date DATE,
 last_try DATE, num_of_tries number(19,0) DEFAULT 0 NOT NULL,
 in_error number(1,0) DEFAULT 0, last_results NCLOB,PRIMARY KEY (id), 
