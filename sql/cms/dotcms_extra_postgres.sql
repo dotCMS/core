@@ -709,7 +709,7 @@ create index idx_identifier_perm on identifier (asset_type,host_inode);
 -- ****** Content Publishing Framework *******
 CREATE TABLE publishing_queue
 (id bigserial PRIMARY KEY NOT NULL,
-operation int8, asset_identifier VARCHAR(36) NOT NULL,
+operation int8, asset VARCHAR(2000) NOT NULL,
 language_id  int8 NOT NULL, entered_date TIMESTAMP,
 last_try TIMESTAMP, num_of_tries int8 NOT NULL DEFAULT 0,
 in_error bool DEFAULT 'f', last_results TEXT,

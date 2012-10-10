@@ -12,7 +12,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 
 /**
- * This Actionlet remove content with IMAGE,FILE or BINARY fields from SolrIndex
+ * This Actionlet remove content with IMAGE,FILE or BINARY fields from PublishQueueIndex
  * @author Oswaldo
  *
  */
@@ -31,12 +31,12 @@ public class PublisherDeleteActionlet extends WorkFlowActionlet{
 
 	@Override
 	public String getName() {
-		return "Remove Content from the Solr Index";
+		return "Remove Content from the PublishQueue Index";
 	}
 
 	@Override
 	public String getHowTo() {
-		return "This actionlet will remove the content from the Solr Index";
+		return "This actionlet will remove the content from the PublishQueue Index";
 	}
 
 	/**
@@ -47,7 +47,7 @@ public class PublisherDeleteActionlet extends WorkFlowActionlet{
 	throws WorkflowActionFailureException {
 		try {
 			Contentlet con = processor.getContentlet();
-			solrAPI.removeContentFromSolr(con);				
+			solrAPI.removeContentFromPublishQueue(con);				
 		} catch (DotPublisherException e) {
 			Logger.debug(PublisherAddActionlet.class, e.getMessage());
 			throw new  WorkflowActionFailureException(e.getMessage());

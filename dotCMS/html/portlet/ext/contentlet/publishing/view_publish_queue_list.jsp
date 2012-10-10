@@ -102,20 +102,20 @@
     try{
     	if(deleteQueueElements){
     		if(deleteQueueElementsStr.equals("all")){
-    	solrAPI.deleteAllElementsFromSolrQueueTable();
+    	solrAPI.deleteAllElementsFromPublishQueueQueueTable();
     		}else{
     	for(String id : deleteQueueElementsStr.split(",")){
-    		solrAPI.deleteElementFromSolrQueueTable(Long.parseLong(id.trim()));
+    		solrAPI.deleteElementFromPublishQueueQueueTable(Long.parseLong(id.trim()));
     	}
     		}
     	}
     	
     	if(showPendings && showErrors){
-    		iresults =  solrAPI.getSolrQueueContentletsPaginated(query, sortBy, offset, limit);
-    		counter =  solrAPI.getSolrQueueContentletsCounter(query, sortBy).get(0).get("count").toString();
+    		iresults =  solrAPI.getPublishQueueQueueContentletsPaginated(query, sortBy, offset, limit);
+    		counter =  solrAPI.getPublishQueueQueueContentletsCounter(query, sortBy).get(0).get("count").toString();
     	}else if (showPendings) {
-    		iresults = solrAPI.getSolrQueueContentletToProcessPaginated(query, sortBy, offset, limit);
-    		counter =  solrAPI.getSolrQueueContentletToProcessCounter(query, sortBy).get(0).get("count").toString();
+    		iresults = solrAPI.getPublishQueueQueueContentletToProcessPaginated(query, sortBy, offset, limit);
+    		counter =  solrAPI.getPublishQueueQueueContentletToProcessCounter(query, sortBy).get(0).get("count").toString();
     	}else if(showErrors) {
     		iresults = solrAPI.getQueueErrorsPaginated(query, sortBy, offset, limit);	
     		counter =  solrAPI.getQueueErrorsCounter(query, sortBy).get(0).get("count").toString();

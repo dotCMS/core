@@ -50,13 +50,15 @@ if (layoutOb != null) {
 		var myCp = dijit.byId("solrToolCp");	
 		
 		if (myCp) {
-			myCp.destroyRecursive(true);
+			myCp.destroyRecursive(false);
 		}
 		myCp = new dojox.layout.ContentPane({
 			id : "solrToolCp"
 		}).placeAt("queue_results");
 
 		myCp.attr("href", url);
+		
+		myCp.refresh();
 
 	}
 	
@@ -80,16 +82,18 @@ if (layoutOb != null) {
 		
 		
 		if (myCp) {
-			myCp.destroyRecursive(true);
+			myCp.destroyRecursive(false);
 		}
 		myCp = new dojox.layout.ContentPane({
 			id : "solrLuceneToolCp"
 		}).placeAt("lucene_results");
 
 		myCp.attr("href", url);
+		
+		myCp.refresh();
 
 	}
-	function loadSolrServers(){
+	function loadPublishQueueServers(){
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_servers.jsp";		
 		
 		var myCp = dijit.byId("solrServersToolCp");	
@@ -158,9 +162,11 @@ if (layoutOb != null) {
 			</div>
 			<script type="text/javascript">
 			dojo.ready(function(){
-				loadSolrServers();
+				loadPublishQueueServers();
 			});
 			</script>
   		</div>
 	</div>
 </div>
+
+

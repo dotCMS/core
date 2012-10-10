@@ -1,3 +1,7 @@
+<%@page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
+<%@page import="java.util.UUID"%>
 <%@page import="com.dotmarketing.common.model.ContentletSearch"%>
 <%@page import="com.dotmarketing.util.PaginatedArrayList"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
@@ -23,6 +27,7 @@
 <%
   	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
     ContentletAPI conAPI = APILocator.getContentletAPI();
+    LanguageAPI languagesAPI = APILocator.getLanguageAPI();
     if(user == null){
     	response.setStatus(403);
     	return;
@@ -31,7 +36,7 @@
     long processedCounter=0;
     long errorCounter=0;
 
-    PublisherAPI solrAPI = PublisherAPI.getInstance();
+    PublisherAPI publisherAPI = PublisherAPI.getInstance();
 
     String sortBy = request.getParameter("sort");
     if(!UtilMethods.isSet(sortBy)){
@@ -43,7 +48,7 @@
     }
     String limit = request.getParameter("limit");
     if(!UtilMethods.isSet(limit)){
-    	limit="10"; //TODO Load from properties
+    	limit="50"; //TODO Load from properties
     }
     String query = request.getParameter("query");
     if(!UtilMethods.isSet(query)){
@@ -78,55 +83,64 @@
     try{
     	if(UtilMethods.isSet(query)){
     		//contador de procesados y fallidos
-    		if(addQueueElements){
-    	if(addQueueElementsStr.equals("all")){
-    		iresults = conAPI.search(query,0,0,sortBy,user,false);
-    		for(Contentlet con : iresults){
-    			if(addOperationType.equals("add")){
-    				try{
-    					if(!con.isLive()){
-    						con = conAPI.findContentletByIdentifier(con.getIdentifier(),true,con.getLanguageId(),user, false);
-    					}
-    					solrAPI.addContentToSolr(con);
-    					processedCounter++;
-    				}catch(Exception b){
-    					nastyError += "<br/>"+con.getTitle()+": "+b.getMessage();
+    		//Add 'only not archived' condition
+    		query+=" +deleted:false";
+    		
+	    	if(addQueueElements){
+	    		String bundeId = UUID.randomUUID().toString();
+		    	if(addQueueElementsStr.equals("all")){
+		    		try{
+		    			//Live
+		    			iresults = conAPI.search(query+" +live:true",0,0,sortBy,user,false);
+		    			publisherAPI.addContentsToPublishQueue(iresults,bundeId, true);
+		    			//Working
+		    			iresults = conAPI.search(query+" +working:true",0,0,sortBy,user,false);
+		    			publisherAPI.addContentsToPublishQueue(iresults,bundeId, false);
+		    			processedCounter = iresults.size();
+		    		}catch(Exception b){
+    					nastyError += "<br/>Unable to add selected contents";
     					errorCounter++;
+    					processedCounter = 0;	
     				}
-    			}else if(addOperationType.equals("remove")){
-    				solrAPI.removeContentFromSolr(con);
-    				processedCounter++;
-    			}
-    		}
-    	}else{
-    		for(String item : addQueueElementsStr.split(",")){
-    			String[] value = item.split("_");
-    			if(addOperationType.equals("add")){
-    				try{
-    					Contentlet con = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
-    					solrAPI.addContentToSolr(con);
-    					processedCounter++;							
-    				}catch(Exception b){
-    					Contentlet con = conAPI.findContentletByIdentifier(value[0],false,Long.parseLong(value[1]),user, false);
-    					nastyError += "<br/>"+con.getTitle()+": "+b.getMessage();
+		    	}else{
+		    		//Get available languages
+					List<Language> languages = languagesAPI.getLanguages();
+		    		
+		    		List<Contentlet> contentsLive = new ArrayList<Contentlet>();
+		    		List<Contentlet> contentsWorking = new ArrayList<Contentlet>();
+		    		for(String item : addQueueElementsStr.split(",")){
+		    			String[] value = item.split("_");
+		    			if(addOperationType.equals("add")){
+		    				//for(Language language : languages) {
+		    					try {
+			    					Contentlet conLive = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
+			    					contentsLive.add(conLive);
+		    					} catch(DotContentletStateException e) {}
+		    					try {
+			    					Contentlet conWorking = conAPI.findContentletByIdentifier(value[0],false,Long.parseLong(value[1]),user, false);
+			    					contentsWorking.add(conWorking);
+		    					} catch(DotContentletStateException e) {}
+		    					
+		    					processedCounter++;
+		    				//}
+		    			}
+		    		}
+		    		try{
+		    			publisherAPI.addContentsToPublishQueue(contentsLive, bundeId, true);
+		    			publisherAPI.addContentsToPublishQueue(contentsWorking, bundeId, false);
+		    		}catch(Exception b){
+    					nastyError += "<br/>Unable to add selected contents";
     					errorCounter++;
+    					processedCounter = 0;	
     				}
-    			}else if(addOperationType.equals("remove")){
-    				solrAPI.removeContentFromSolr(value[0],Long.parseLong(value[1]));
-    				processedCounter++;
-    			}
+		    	}
     		}
-    	}
-    		}
-    	
+    		
+    		
     		iresults = conAPI.search(query,new Integer(limit),new Integer(offset),sortBy,user,false);
     		results = (PaginatedArrayList) conAPI.searchIndex(query,new Integer(limit),new Integer(offset),sortBy,user,false);
     		counter = ""+results.getTotalResults();
     	}
-    }catch(DotPublisherException e){
-    	iresults = new ArrayList();
-    	results = new PaginatedArrayList();
-    	nastyError = e.toString();
     }catch(Exception pe){
     	iresults = new ArrayList();
     	results = new PaginatedArrayList();
@@ -151,7 +165,7 @@
 		refreshLuceneList(url);
 	}
    
-   function addToSolrQueue(action){
+   function addToPublishQueueQueue(action){
 	   var url="layout=<%=layout%>&query=<%=UtilMethods.encodeURIComponent(query)%>&sort=<%=sortBy%>&offset=0&limit=<%=limit%>";	
 		if(dijit.byId("add_all").checked){
 			url+="&add=all";
@@ -186,11 +200,11 @@
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" /></th>		
-			<th colspan="2"><div id="addSolrMenu"></div></th>			
+			<th colspan="2"><div id="addPublishQueueMenu"></div></th>			
 		</tr>
 		<% for(Contentlet c : iresults) {%>
 			<tr>
-				<td style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"_"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()%>" /></td>
+				<td style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"_"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"_"+c.getLanguageId()%>" /></td>
 				<td><a href="/c/portal/layout?p_l_id=<%=layout%>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>"><%=c.getTitle()%></a></td>
 				<td style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></a></td>
 			</tr>
@@ -234,40 +248,40 @@
 	           style: "display: none;"
 	       });
 	       var menuItem1 = new dijit.MenuItem({
-	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_Reindex_In_Solr" )) %>",
+	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
 	                       iconClass: "plusIcon",
 	                       onClick: function() {
-	                    	   addToSolrQueue('add');
+	                    	   addToPublishQueueQueue('add');
 	           }
 	       });
 	       menu.addChild(menuItem1);
 
 	       var menuItem2 = new dijit.MenuItem({
-	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_Remove_From_Solr" )) %>",
+	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_remove_publish_queue" )) %>",
 	                       iconClass: "deleteIcon",
 	                       onClick: function() {
-	                    	   addToSolrQueue('remove');
+	                    	   addToPublishQueueQueue('remove');
 	           }
 	       });
-	       menu.addChild(menuItem2);
+	       //menu.addChild(menuItem2);
 	       
 	       var button = new dijit.form.ComboButton({
-	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_Reindex_In_Solr" )) %>",
+	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
 	                        iconClass: "plusIcon",
 	                        dropDown: menu,
 	                        onClick: function() {
-	                        	addToSolrQueue('add');
+	                        	addToPublishQueueQueue('add');
 	            }
 	        });
 
-	      dojo.byId("addSolrMenu").appendChild(button.domNode);
+	      dojo.byId("addPublishQueueMenu").appendChild(button.domNode);
 	   });
 	</script>
 <% }else{ %>
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px">&nbsp;</th>		
-			<th colspan="2"><div id="addSolrMenu"></div></th>			
+			<th colspan="2"><div id="addPublishQueueMenu"></div></th>			
 		</tr>
 		<tr>
 			<td colspan="2" class="solr_tcenter"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
@@ -279,34 +293,34 @@
 	           style: "display: none;"
 	       });
 	       var menuItem1 = new dijit.MenuItem({
-	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_Reindex_In_Solr" )) %>",
+	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
 	                       iconClass: "plusIcon",
 	                       onClick: function() {
-	                    	   //addToSolrQueue('add');
+	                    	   //addToPublishQueueQueue('add');
 	           }
 	       });
 	       menu.addChild(menuItem1);
 
 	       var menuItem2 = new dijit.MenuItem({
-	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_Remove_From_Solr" )) %>",
+	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_remove_publish_queue" )) %>",
 	                       iconClass: "deleteIcon",
 	                       onClick: function() {
-	                    	   //addToSolrQueue('remove');
+	                    	   //addToPublishQueueQueue('remove');
 	           }
 	       });
-	       menu.addChild(menuItem2);
+	       //menu.addChild(menuItem2);
 	       
 	       var button = new dijit.form.ComboButton({
-	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_Reindex_In_Solr" )) %>",
+	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
 	                        iconClass: "plusIcon",
 	                        dropDown: menu,
 	                        onClick: function() {
-	                        	//addToSolrQueue('add');
+	                        	//addToPublishQueueQueue('add');
 	            },
 	            disabled:true
 	        });
 
-	      dojo.byId("addSolrMenu").appendChild(button.domNode);
+	      dojo.byId("addPublishQueueMenu").appendChild(button.domNode);
 	   });
 	</script>
 <%} %>

@@ -15,9 +15,9 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 public abstract class PublisherAPI {
 
 	/*Basic operations*/
-	public static final long PROCESSED_SOLR_ELEMENT=0;
-	public static final long ADD_OR_UPDATE_SOLR_ELEMENT=1;
-	public static final long DELETE_SOLR_ELEMENT=2;
+	public static final long PROCESSED_ELEMENT=0;
+	public static final long ADD_OR_UPDATE_ELEMENT=1;
+	public static final long DELETE_ELEMENT=2;
 	
 	private static PublisherAPI solrAPI = null;
 	public static PublisherAPI getInstance(){
@@ -28,23 +28,29 @@ public abstract class PublisherAPI {
 	}
 
 	/**
-	 * Include in the publishing_queue table the content to add or update in the Solr Index
+	 * Include in the publishing_queue table the content to add or update in the PublishQueue Index
 	 * @param con Contentlet
 	 */
-	public abstract void addContentToSolr(Contentlet con) throws DotPublisherException;
-
-	/**
-	 * Include in the publishing_queue table the content to remove in the Solr Index
-	 * @param con Contentlet
-	 */
-	public abstract void removeContentFromSolr(Contentlet con) throws DotPublisherException;
+	public abstract void addContentToPublishQueue(Contentlet con) throws DotPublisherException;
 	
 	/**
-	 * Include in the publishing_queue table the content to remove in the Solr Index
+	 * Include in the publishing_queue table the Lucene query used to get contents to publish
+	 * @param con Contentlet
+	 */
+	public abstract void addContentsToPublishQueue(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException;
+
+	/**
+	 * Include in the publishing_queue table the content to remove in the PublishQueue Index
+	 * @param con Contentlet
+	 */
+	public abstract void removeContentFromPublishQueue(Contentlet con) throws DotPublisherException;
+	
+	/**
+	 * Include in the publishing_queue table the content to remove in the PublishQueue Index
 	 * @param identifier Contentlet identifier
 	 * @param languageId contentlet languageId
 	 */
-	public abstract void removeContentFromSolr(String identifier, long languageId) throws DotPublisherException;
+	public abstract void removeContentFromPublishQueue(String identifier, long languageId) throws DotPublisherException;
 
 	/**
 	 * Get a list of all the elements in the publishing_queue table that could be processes because some error
@@ -79,7 +85,7 @@ public abstract class PublisherAPI {
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getSolrQueueContentletsCounter(String condition, String orderBy) throws DotPublisherException;
+	public abstract List<Map<String,Object>> getPublishQueueQueueContentletsCounter(String condition, String orderBy) throws DotPublisherException;
 	
 	/**
 	 * Get All the Assets in the publishing_queue table paginated
@@ -90,19 +96,19 @@ public abstract class PublisherAPI {
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getSolrQueueContentletsPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException;
+	public abstract List<Map<String,Object>> getPublishQueueQueueContentletsPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException;
 	
 	/**
-	 * Get the total of Assets not processed yet to update the Solr index paginated
+	 * Get the total of Assets not processed yet to update the PublishQueue index paginated
 	 * @param condition WHERE condition
 	 * @param orderBy ORDER BY condition
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getSolrQueueContentletToProcessCounter(String condition, String orderBy) throws DotPublisherException;
+	public abstract List<Map<String,Object>> getPublishQueueQueueContentletToProcessCounter(String condition, String orderBy) throws DotPublisherException;
 	
 	/**
-	 * Get the Assets not processed yet to update the Solr index paginated
+	 * Get the Assets not processed yet to update the PublishQueue index paginated
 	 * @param condition WHERE condition
 	 * @param orderBy ORDER BY condition
 	 * @param offset first row to return
@@ -110,13 +116,13 @@ public abstract class PublisherAPI {
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getSolrQueueContentletToProcessPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException;
+	public abstract List<Map<String,Object>> getPublishQueueQueueContentletToProcessPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException;
 	
 	/**
-	 * Get the Assets not processed yet to update the Solr index
+	 * Get the Assets not processed yet to update the PublishQueue index
 	 * @return List<Map<String,Object>>
 	 */
-	public abstract List<Map<String,Object>> getSolrQueueContentletToProcess() throws DotPublisherException;
+	public abstract List<Map<String,Object>> getPublishQueueQueueContentletToProcess() throws DotPublisherException;
 	
 	/**
 	 * update element from publishing_queue table by id
@@ -126,18 +132,18 @@ public abstract class PublisherAPI {
 	 * @param last_results error message
 	 * @return boolean
 	 */
-	public abstract void updateElementStatusFromSolrQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException;
+	public abstract void updateElementStatusFromPublishQueueQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException;
 	
 	/**
 	 * Delete element from publishing_queue table by id
 	 * @param id ID of the element in the table
 	 * @return boolean
 	 */
-	public abstract void deleteElementFromSolrQueueTable(long id) throws DotPublisherException;
+	public abstract void deleteElementFromPublishQueueQueueTable(long id) throws DotPublisherException;
 	
 	/**
 	 * Delete all elements from publishing_queue table
 	 * @return boolean
 	 */
-	public abstract void deleteAllElementsFromSolrQueueTable() throws DotPublisherException;
+	public abstract void deleteAllElementsFromPublishQueueQueueTable() throws DotPublisherException;
 }
