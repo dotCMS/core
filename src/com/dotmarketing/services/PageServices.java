@@ -103,8 +103,8 @@ public class PageServices {
 		
 		// set the page cache var
 		if(htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() > 99){
-			sb.append("#set($dotPageCacheDate = \""+ new java.util.Date() +"\")");
-			sb.append("#set($dotPageCacheTTL = \""+ htmlPage.getCacheTTL()  +"\")");
+			sb.append("#set($dotPageCacheDate = \"").append( new java.util.Date() ).append("\")");
+			sb.append("#set($dotPageCacheTTL = \"").append( htmlPage.getCacheTTL()  ).append("\")");
 		}
 		
 		
@@ -114,7 +114,7 @@ public class PageServices {
 
 		Host host = htmlPageAPI.getParentHost(htmlPage);
 		sb.append("#if(!$doNotParseTemplate)\n");
-			sb.append("$velutil.mergeTemplate('" + folderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION") + "')");
+			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( host.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_HOST_EXTENSION") ).append( "')");
 		sb.append("#end\n");
 		
 		
@@ -123,28 +123,28 @@ public class PageServices {
 		// Build a context to pass to the page
 		sb.append("#if(!$doNotSetPageInfo)");
 		sb.append("#set ( $quote = '\"' )");
-		sb.append("#set ($HTMLPAGE_INODE = \"" + String.valueOf(htmlPage.getInode()) + "\" )");
-		sb.append("#set ($HTMLPAGE_IDENTIFIER = \"" + String.valueOf(htmlPage.getIdentifier()) + "\" )");
-		sb.append("#set ($HTMLPAGE_TITLE = \"" + UtilMethods.espaceForVelocity(htmlPage.getTitle()) + "\" )");
-		sb.append("#set ($HTMLPAGE_FRIENDLY_NAME = \"" + UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) + "\" )");
-		sb.append("#set ($TEMPLATE_INODE = \"" + String.valueOf(cmsTemplate.getInode()) + "\" )");
-		sb.append("#set ($HTMLPAGE_META = \"" + UtilMethods.espaceForVelocity(htmlPage.getMetadata()) + "\" )");
+		sb.append("#set ($HTMLPAGE_INODE = \"" ).append( String.valueOf(htmlPage.getInode()) ).append( "\" )");
+		sb.append("#set ($HTMLPAGE_IDENTIFIER = \"" ).append( String.valueOf(htmlPage.getIdentifier()) ).append( "\" )");
+		sb.append("#set ($HTMLPAGE_TITLE = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getTitle()) ).append( "\" )");
+		sb.append("#set ($HTMLPAGE_FRIENDLY_NAME = \"" + UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) ).append( "\" )");
+		sb.append("#set ($TEMPLATE_INODE = \"" ).append( String.valueOf(cmsTemplate.getInode()) ).append( "\" )");
+		sb.append("#set ($HTMLPAGE_META = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getMetadata()) ).append( "\" )");
 		sb.append("#set ($HTMLPAGE_META = \"#fixBreaks($HTMLPAGE_META)\")");
 		
-		sb.append("#set ($HTMLPAGE_DESCRIPTION = \"" + UtilMethods.espaceForVelocity(htmlPage.getSeoDescription()) + "\" )");
+		sb.append("#set ($HTMLPAGE_DESCRIPTION = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getSeoDescription()) ).append( "\" )");
 		sb.append("#set ($HTMLPAGE_DESCRIPTION = \"#fixBreaks($HTMLPAGE_DESCRIPTION)\")");
 		
-		sb.append("#set ($HTMLPAGE_KEYWORDS = \"" + UtilMethods.espaceForVelocity(htmlPage.getSeoKeywords()) + "\" )");
+		sb.append("#set ($HTMLPAGE_KEYWORDS = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getSeoKeywords()) ).append( "\" )");
 		sb.append("#set ($HTMLPAGE_KEYWORDS = \"#fixBreaks($HTMLPAGE_KEYWORDS)\")");
 		
 		
-		sb.append("#set ($HTMLPAGE_SECURE = \"" + String.valueOf(htmlPage.isHttpsRequired()) + "\" )");
-		sb.append("#set ($VTLSERVLET_URI = \"" + UtilMethods.encodeURIComponent(identifier.getURI()) + "\" )");
-		sb.append("#set ($HTMLPAGE_REDIRECT = \"" + UtilMethods.espaceForVelocity(htmlPage.getRedirect()) + "\" )");
+		sb.append("#set ($HTMLPAGE_SECURE = \"" ).append( String.valueOf(htmlPage.isHttpsRequired()) ).append( "\" )");
+		sb.append("#set ($VTLSERVLET_URI = \"" ).append( UtilMethods.encodeURIComponent(identifier.getURI()) ).append( "\" )");
+		sb.append("#set ($HTMLPAGE_REDIRECT = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getRedirect()) ).append( "\" )");
 		
-		sb.append("#set ($pageTitle = \"" + UtilMethods.espaceForVelocity(htmlPage.getTitle()) + "\" )");
-		sb.append("#set ($pageChannel = \"" + pageChannel + "\" )\n");
-		sb.append("#set ($friendlyName = \"" + UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) + "\" )");
+		sb.append("#set ($pageTitle = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getTitle()) ).append( "\" )");
+		sb.append("#set ($pageChannel = \"" ).append( pageChannel ).append( "\" )\n");
+		sb.append("#set ($friendlyName = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) ).append( "\" )");
 
 		Date moddate = null;
 		if(UtilMethods.isSet(htmlPage.getModDate())){
@@ -155,8 +155,8 @@ public class PageServices {
 
 		moddate = new Timestamp(moddate.getTime());
 
-		sb.append("#set ($HTML_PAGE_LAST_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" + moddate + "\"))");
-		sb.append("#set ($HTMLPAGE_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" + moddate + "\"))");
+		sb.append("#set ($HTML_PAGE_LAST_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" ).append( moddate ).append( "\"))");
+		sb.append("#set ($HTMLPAGE_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" ).append( moddate ).append( "\"))");
 		sb.append("#end\n");
 						
 		//get the containers for the page and stick them in context
@@ -176,7 +176,7 @@ public class PageServices {
 				c = (Container) APILocator.getVersionableAPI().findLiveVersion(ident.getIdentifier(),APILocator.getUserAPI().getSystemUser(),false);
 			}
 			//sets container to load the container file
-			sb.append("#set ($container"+ident.getIdentifier() + " = \"" + folderPath + ident.getIdentifier() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION") + "\" )");
+			sb.append("#set ($container").append(ident.getIdentifier() ).append( " = \"" ).append( folderPath ).append( ident.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION") ).append( "\" )");
 
 			String sort = (c.getSortContentletsBy() == null) ? "tree_order" : c.getSortContentletsBy();
 
@@ -210,7 +210,7 @@ public class PageServices {
 				contentlets = contentletsFilter;
 			}
 
-			String contentletList = "";
+			StringBuilder contentletList = new StringBuilder();
 			Iterator iter = contentlets.iterator();
 			int count = 0;
 			while (iter.hasNext() && count < c.getMaxContentlets()) {
@@ -223,9 +223,9 @@ public class PageServices {
 					Logger.error(PageServices.class,"Unable to rertive identifier for contentlet",dhe);
 				}
 
-					contentletList += "\"" + contentletIdentifier.getInode() + "\"";
+					contentletList.append("\"").append(contentletIdentifier.getInode()).append("\"");
 					if (iter.hasNext() && count < c.getMaxContentlets()) {
-						contentletList += ",";	
+						contentletList.append(",");	
 					}
 				count++;
 				Structure contStructure =contentlet.getStructure();
@@ -238,10 +238,8 @@ public class PageServices {
 				
 				
 			}
-			contentletList = contentletList.endsWith(",")?contentletList.substring(0, contentletList.length()-1):contentletList;
-			
-			sb.append("#set ($contentletList" + ident.getIdentifier() + " = [" + contentletList + "] )");
-			sb.append("\n#set ($totalSize" + ident.getIdentifier() + "=" + count + ")");
+			sb.append("#set ($contentletList" ).append( ident.getIdentifier() ).append( " = [" ).append( contentletList.toString() ).append( "] )");
+			sb.append("\n#set ($totalSize" ).append( ident.getIdentifier() ).append( "=" ).append( count ).append( ")");
 			langCounter++;
 
 
@@ -266,21 +264,21 @@ public class PageServices {
 
 		
 		sb.append("#if(!$doNotParseTemplate)");
-			sb.append("$velutil.mergeTemplate('" + folderPath + iden.getInode() + "." + Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION") + "')");
+			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION") ).append( "')");
 		sb.append("#end");
 		
 		
-		
 		try {
-			String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
-			String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-			String filePath = realFolderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-			if (velocityRootPath.startsWith("/WEB-INF")) {
-				velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
-			}
-			velocityRootPath += java.io.File.separator;
 
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
+			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
+	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
+	            String filePath = realFolderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
+	            if (velocityRootPath.startsWith("/WEB-INF")) {
+	                velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+	            }
+	            velocityRootPath += java.io.File.separator;
+			    
 				java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
 				//Specify a proper character encoding
 				OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());

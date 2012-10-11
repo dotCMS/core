@@ -63,7 +63,7 @@ import com.liferay.portal.model.User;
  * @author David Torres (2009)
 */
 public class PermissionBitFactoryImpl extends PermissionFactory {
-    
+
     private static final int MAX_IDS_CLEAR=200;
 
 	private PermissionCache permissionCache;
@@ -84,7 +84,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		" select {permission.*} from permission where inode_id = ? "+
         " union all "+
         " select {permission.*} from permission join permission_reference "+
-        "    on (inode_id = reference_id and permission.permission_type = permission_reference.permission_type) "+ 
+        "    on (inode_id = reference_id and permission.permission_type = permission_reference.permission_type) "+
         "    where asset_id = ?";
 
 	/*
@@ -246,7 +246,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private final String selectChildrenContainerWithIndividualPermissionsSQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
         "where asset_type='containers' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
-        "and host_inode = ? ";  
+        "and host_inode = ? ";
 
 	/*
 	 * To remove all permissions of containers attached to an specific host
@@ -1084,11 +1084,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						PERMISION_TYPES.put(mask, f.getInt(null));
 					} catch (Exception e) {
 						Logger.error(PermissionBitFactoryImpl.class,e.getMessage(),e);
-					} 
+					}
 	        	}
-	        	
+
 	        }
-				
+
 		}
 	}
 
@@ -1285,7 +1285,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		HostAPI hostAPI = APILocator.getHostAPI();
 		Host systemHost = hostAPI.findSystemHost();
 		DotConnect dc = new DotConnect();
-		
+
 		boolean ran01=false,ran02=false,ran03=false,ran04=false,ran05=false,
 		        ran06=false,ran07=false,ran08=false,ran09=false,ran10=false;
 
@@ -1333,7 +1333,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     						dc.addParam(permissionable.getPermissionId());
     						idsToClear.addAll(dc.loadResults());
 						}
-						
+
 						ran01=true;
 					} else if (isHost && p.getType().equals(Container.class.getCanonicalName()) && !ran02) {
 						// Find all host containers pointing to the system host
@@ -1357,7 +1357,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     						dc.addParam(permissionable.getPermissionId());
     						idsToClear.addAll(dc.loadResults());
 						}
-						
+
 						ran02=true;
 
 					}else if (p.getType().equals(Folder.class.getCanonicalName()) && !ran03) {
@@ -1390,7 +1390,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     						dc.addParam(isHost ? " " : path);
     						idsToClear.addAll(dc.loadResults());
 						}
-						
+
 						ran03=true;
 					} else if (p.getType().equals(HTMLPage.class.getCanonicalName()) && !ran04) {
 
@@ -1497,7 +1497,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     						dc.addParam(path + "%");
     						idsToClear.addAll(dc.loadResults());
 						}
-						
+
 						ran06=true;
 
 					} else if (p.getType().equals(Contentlet.class.getCanonicalName()) && !ran07) {
@@ -1533,7 +1533,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     						dc.addParam(path + "%");
     						idsToClear.addAll(dc.loadResults());
 						}
-						
+
 						ran07=true;
 
 					} else if (p.getType().equals(Structure.class.getCanonicalName()) && !ran08) {
@@ -1597,7 +1597,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     							dc.addParam(parentHost.getPermissionId());
     							List<Map<String,Object>> sts=dc.loadResults();
                                 idsToClear.addAll(sts);
-                                
+
                                 Iterator<Map<String,Object>> it = sts.iterator();
                                 while(it.hasNext() && (MAX_IDS_CLEAR-idsToClear.size())>0) {
                                    dc.setSQL(this.selectChildrenContentByStructureSQL,MAX_IDS_CLEAR-idsToClear.size());
@@ -1647,7 +1647,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     				// All the content that belongs to the host
     				dc.addParam(permissionable.getPermissionId());
     				dc.loadResult();
-    
+
     				if(idsToClear.size()<MAX_IDS_CLEAR) {
         				dc.setSQL(selectChildrenContentByStructureSQL, MAX_IDS_CLEAR-idsToClear.size());
         				dc.addParam(permissionable.getPermissionId());
@@ -1741,8 +1741,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		}
 
-		if(toClear.size() < MAX_IDS_CLEAR) 
-			for(Map<String, String> entry : toClear) 
+		if(toClear.size() < MAX_IDS_CLEAR)
+			for(Map<String, String> entry : toClear)
 				permissionCache.remove(entry.get("asset_id"));
 	    else
 			permissionCache.clearCache();
@@ -2448,6 +2448,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						}
 					}
 				}
+
+				if(permissionable instanceof Template && ((Template) permissionable).isDrawed()) {
+					 type = Template.TEMPLATE_LAYOUTS_CANONICAL_NAME;
+				}
+
 				Permissionable parentPermissionable = permissionable.getParentPermissionable();
 				Permissionable newReference = null;
 				List<Permission> inheritedPermissions = new ArrayList<Permission>();
@@ -3352,7 +3357,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
 	    ContentletAPI contAPI = APILocator.getContentletAPI();
 	    ContentletIndexAPI indexAPI=new ESContentletIndexAPI();
-	    
+
 	    DotConnect dc = new DotConnect();
 		dc.setSQL(deleteContentReferencesByStructureSQL);
 		dc.addParam(structure.getPermissionId());
@@ -3368,7 +3373,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             } catch (DotSecurityException e) {
                 throw new RuntimeException(e);
             }
-			
+
 			BulkRequestBuilder bulk=new ESClient().getClient().prepareBulk();
 			for(Contentlet cont : contentlets) {
 			    permissionCache.remove(cont.getPermissionId());
@@ -3376,7 +3381,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			}
 			if(bulk.numberOfActions()>0)
 			    bulk.execute().actionGet();
-			
+
 			offset=offset+limit;
 		} while(contentlets.size()>0);
 	}
