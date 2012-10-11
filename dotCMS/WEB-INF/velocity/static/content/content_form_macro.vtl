@@ -55,7 +55,9 @@ var theme = 'dmundra';
 #parse($errorMessagesPath)
 #set($contentId='')
 #set($contentIdentifier='')
-#set($contentMap = $dotcontent.find($contentletInode))
+#if($UtilMethods.isSet($contentletInode))
+	#set($contentMap = $dotcontent.find($contentletInode))
+#end
 #if($UtilMethods.isSet($contentMap))
 	#set($structure = $contentMap.getStructure())
 	#set($contentId = $contentMap.get('inode'))
