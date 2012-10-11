@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.velocity.runtime.log.Log;
 import org.apache.velocity.tools.generic.ValueParser;
 import org.apache.velocity.tools.view.tools.ViewTool;
 import org.dom4j.Attribute;
@@ -38,6 +37,7 @@ import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.viewtools.cache.XmlToolCache;
 import com.dotmarketing.viewtools.util.ConversionUtils;
 import com.dotmarketing.viewtools.bean.XmlToolDoc;
@@ -88,8 +88,6 @@ import com.dotmarketing.viewtools.bean.XmlToolDoc;
 public class XmlTool implements ViewTool {
 	public static final String FILE_KEY = "file";
 
-	protected Log LOG;
-
 	private List<Node> nodes;
 	private static long ttl = 30;
 
@@ -130,12 +128,6 @@ public class XmlTool implements ViewTool {
 		}
 		this.nodes = new ArrayList<Node>(1);
 		this.nodes.add(node);
-	}
-
-	private void log(Object o, Throwable t) {
-		if (LOG != null) {
-			LOG.debug("XmlTool - " + o, t);
-		}
 	}
 
 	/**
