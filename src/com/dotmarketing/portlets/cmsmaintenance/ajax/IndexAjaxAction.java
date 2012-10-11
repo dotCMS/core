@@ -37,6 +37,7 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -403,7 +404,7 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 
 	public void startReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		ReindexThread.stopThread();
+		ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
 	}
 
 	public void getReindexThreadStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
