@@ -1,13 +1,11 @@
 package com.dotmarketing.velocity;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.collections.ExtendedProperties;
@@ -199,7 +197,7 @@ public class DotResourceLoader extends ResourceLoader {
 	                result = new BufferedInputStream(new FileInputStream(f));
 	            }
 	        }catch (Exception e) {
-	            log.warn("Error ocurred finding resource '" + arg0 + "' exception: " + e.toString());
+	            Logger.warn(this,"Error ocurred finding resource '" + arg0 + "' exception: " + e.toString());
 	            if(e instanceof ResourceNotFoundException){
 	            	throw (ResourceNotFoundException)e;
 	            }
@@ -239,7 +237,7 @@ public class DotResourceLoader extends ResourceLoader {
         }
         x = arg0.substring(startSub, endSub);
 
-        log.debug("DotResourceLoader:\tInode: " + x);
+        Logger.debug(this,"DotResourceLoader:\tInode: " + x);
 
         boolean preview = arg0.indexOf("working") > -1;
 
@@ -257,12 +255,12 @@ public class DotResourceLoader extends ResourceLoader {
                 	container=(Container)versionableAPI.findLiveVersion(identifier, user, true);
                 }
 
-                log.debug("DotResourceLoader:\tWriting out container inode = " + container.getInode());
+                Logger.debug(this,"DotResourceLoader:\tWriting out container inode = " + container.getInode());
 
                 result = ContainerServices.buildVelocity(container, identifier, preview);
             } catch (NumberFormatException e) {
             	CacheLocator.getVeloctyResourceCache().addMiss(arg0);
-                log.warn("getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
+                Logger.warn(this,"getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
                 try {
     				return new ByteArrayInputStream("".getBytes("UTF-8"));
     			} catch (UnsupportedEncodingException e1) {
@@ -272,11 +270,11 @@ public class DotResourceLoader extends ResourceLoader {
         }else if (arg0.endsWith(VELOCITY_CONTENT_EXTENSION)) {
             String language = "";
             if (x.indexOf("_") > -1) {
-                log.debug("x=" + x);
+                Logger.debug(this,"x=" + x);
                 language = x.substring(x.indexOf("_") + 1, x.length());
-                log.debug("language=" + language);
+                Logger.debug(this,"language=" + language);
                 x = x.substring(0, x.indexOf("_"));
-                log.debug("x=" + x);
+                Logger.debug(this,"x=" + x);
             }
             try {
                 //Integer.parseInt(x);
@@ -309,11 +307,11 @@ public class DotResourceLoader extends ResourceLoader {
 
 
 
-                log.debug("DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
+                Logger.debug(this,"DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
 
                 result = ContentletServices.buildVelocity(contentlet, identifier, preview);
             } catch (NumberFormatException e) {
-                log.warn("getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
+                Logger.warn(this,"getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
                 try {
     				return new ByteArrayInputStream("".getBytes("UTF-8"));
     			} catch (UnsupportedEncodingException e1) {
@@ -321,7 +319,7 @@ public class DotResourceLoader extends ResourceLoader {
     			}
             } catch (DotContentletStateException e) {
             	CacheLocator.getVeloctyResourceCache().addMiss(arg0);
-                log.debug("getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
+                Logger.debug(this,"getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
                 try {
     				return new ByteArrayInputStream("".getBytes("UTF-8"));
     			} catch (UnsupportedEncodingException e1) {
@@ -343,11 +341,11 @@ public class DotResourceLoader extends ResourceLoader {
             try {
 	            String language = "";
 	            if (x.indexOf("_") > -1) {
-	                log.debug("x=" + x);
+	                Logger.debug(this,"x=" + x);
 	                language = x.substring(x.indexOf("_") + 1, x.length());
-	                log.debug("language=" + language);
+	                Logger.debug(this,"language=" + language);
 	                x = x.substring(0, x.indexOf("_"));
-	                log.debug("x=" + x);
+	                Logger.debug(this,"x=" + x);
 	            }
 
 	            Contentlet contentlet = null;
@@ -364,12 +362,12 @@ public class DotResourceLoader extends ResourceLoader {
                 	throw new ResourceNotFoundException("Contentlet is a miss in the cache");
                 }
 
-	            log.debug("DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
+	            Logger.debug(this,"DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
 
 	            result = ContentletMapServices.buildVelocity(contentlet, preview);
             } catch (DotContentletStateException e) {
             	CacheLocator.getVeloctyResourceCache().addMiss(arg0);
-                log.debug("getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
+                Logger.debug(this,"getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
                 try {
     				return new ByteArrayInputStream("".getBytes("UTF-8"));
     			} catch (UnsupportedEncodingException e1) {
@@ -389,7 +387,7 @@ public class DotResourceLoader extends ResourceLoader {
                 	page=(HTMLPage) versionableAPI.findLiveVersion(identifier, user, true);
                 }
 
-                log.debug("DotResourceLoader:\tWriting out HTMLpage inode = " + page.getInode());
+                Logger.debug(this,"DotResourceLoader:\tWriting out HTMLpage inode = " + page.getInode());
 
                 if (!InodeUtils.isSet(page.getInode())) {
                     throw new ResourceNotFoundException("Page " + arg0 + "not found error 404");
@@ -397,7 +395,7 @@ public class DotResourceLoader extends ResourceLoader {
                 	result = PageServices.buildStream(page, preview);
                 }
             } catch (NumberFormatException e) {
-                log.warn("getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
+                Logger.warn(this,"getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
                 throw new ResourceNotFoundException("Invalid resource path provided = " + arg0);
             }
         }else if (arg0.endsWith(VELOCITY_HOST_EXTENSION)) {
@@ -407,7 +405,7 @@ public class DotResourceLoader extends ResourceLoader {
                 Host host= APILocator.getHostAPI().find(x, APILocator.getUserAPI().getSystemUser(), false);
 
                  if (!InodeUtils.isSet(host.getInode()))
-                log.debug("host not found");
+                Logger.debug(this,"host not found");
                  else
                 	result = HostServices.buildStream(host, preview);
 
@@ -425,11 +423,11 @@ public class DotResourceLoader extends ResourceLoader {
                 	template = (Template) versionableAPI.findLiveVersion(identifier, user, true);
                 }
 
-                log.debug("DotResourceLoader:\tWriting out Template inode = " + template.getInode());
+                Logger.debug(this,"DotResourceLoader:\tWriting out Template inode = " + template.getInode());
 
                 result = TemplateServices.buildVelocity(template, preview);
             } catch (NumberFormatException e) {
-                log.warn("getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
+                Logger.warn(this,"getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
                 throw new ResourceNotFoundException("Invalid resource path provided = " + arg0);
             }
         }else if (arg0.endsWith(VELOCITY_STRUCTURE_EXTENSION))
@@ -442,25 +440,25 @@ public class DotResourceLoader extends ResourceLoader {
             }
             catch(NumberFormatException e)
             {
-                log.warn("getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
+                Logger.warn(this,"getResourceStream: Invalid resource path provided = " + arg0 + ", request discarded.");
                 throw new ResourceNotFoundException("Invalid resource path provided = " + arg0);
             }
         }else{
         	throw new ResourceNotFoundException("Unable to build the resource");
         }
-        if(UtilMethods.isSet(result)){
-        	StringBuilder sb = new StringBuilder();
-        	BufferedReader reader = new BufferedReader(new InputStreamReader(result));
-        	String line = null;
-        	try {
-        		while ((line = reader.readLine()) != null) {
-        			sb.append(line + "\n");
-        		}
-        	} catch (IOException e) {
-        		Logger.error(this , e.getMessage(),e);
-        	}
-        	result.reset();
-        }
+//        if(UtilMethods.isSet(result)){
+//        	StringBuilder sb = new StringBuilder();
+//        	BufferedReader reader = new BufferedReader(new InputStreamReader(result));
+//        	String line = null;
+//        	try {
+//        		while ((line = reader.readLine()) != null) {
+//        			sb.append(line + "\n");
+//        		}
+//        	} catch (IOException e) {
+//        		Logger.error(this , e.getMessage(),e);
+//        	}
+//        	result.reset();
+//        }
         return result;
     }
 

@@ -249,6 +249,9 @@
         <listener-class>org.apache.felix.http.proxy.ProxyListener</listener-class>
     </listener>
     <listener>
+		<listener-class>org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
+	</listener>
+    <listener>
     	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
     </listener>
 	<!-- this must be the last listener -->
@@ -533,7 +536,12 @@
 	</servlet>
 	<servlet>
 		<servlet-name>CMIS</servlet-name>
-		<servlet-class>com.dotcms.enterprise.cmis.CMISServlet</servlet-class>
+		<servlet-class>org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
+		<init-param>
+			<param-name>callContextHandler</param-name>
+			<param-value>org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
+		</init-param>
+		<load-on-startup>2</load-on-startup>
 	</servlet>
 	<servlet>
 		<servlet-name>ScheduledJobs</servlet-name>
@@ -882,7 +890,6 @@
 		<url-pattern>/servlets/template/design/preview</url-pattern>
 	</servlet-mapping>
 	<!-- END GRAZIANO issue-12-dnd-template -->	
-
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLET-MAPPINGS -->
