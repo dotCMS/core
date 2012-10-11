@@ -103,7 +103,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	private static LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
+	public static  ThreadLocal<Context> velocityCtx = Logger.velocityCtx;
 	/**
 	 * @param permissionAPI
 	 *            the permissionAPI to set
