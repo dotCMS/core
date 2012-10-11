@@ -4,8 +4,6 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
-import com.dotcms.enterprise.cmis.CMISFactory;
-import com.dotcms.enterprise.cmis.CMISFactoryImpl;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -127,11 +125,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static LayoutFactory getLayoutFactory(){
     	return (LayoutFactory) getInstance(FactoryIndex.LAYOUT_FACTORY);
     }
-    
-    public static CMISFactory getCMISFactory(){
-    	return (CMISFactory) getInstance(FactoryIndex.CMIS_FACTORY);
-    }
-    
+        
     public static FileFactory getFileFactory(){
     	return (FileFactory) getInstance(FactoryIndex.FILE_FACTORY);
     }
@@ -220,7 +214,6 @@ enum FactoryIndex
 	LAYOUT_FACTORY,
 	HOST_VARIABLE_FACTORY, 
 	HOST_FACTORY,
-	CMIS_FACTORY,
 	FILE_FACTORY,
 	HTMLPAGE_FACTORY,
 	MENULINK_FACTORY,
@@ -251,7 +244,6 @@ enum FactoryIndex
             case LAYOUT_FACTORY : return new LayoutFactoryImpl();
             case USER_PROXY_FACTORY: return new UserProxyFactoryImpl() {};
             case ROLE_FACTORY : return new RoleFactoryImpl();
-            case CMIS_FACTORY : return new CMISFactoryImpl();
             case FILE_FACTORY : return new FileFactoryImpl();
             case HTMLPAGE_FACTORY : return new HTMLPageFactoryImpl();
             case MENULINK_FACTORY : return new MenuLinkFactoryImpl();

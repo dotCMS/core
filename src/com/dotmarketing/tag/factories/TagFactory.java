@@ -106,7 +106,7 @@ public class TagFactory {
             String userIdParam = "%"+userId+"%";
             dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where user_id like ?");
             dh.setParam(userIdParam);
-            
+
             List list = dh.list();
 
         	return list;
@@ -355,7 +355,7 @@ public class TagFactory {
     public static TagInode addTagInode(String tagName, String inode, String hostId) throws Exception {
 
     	//Ensure the tag exists in the tag table
-    	Tag existingTag = getTag(tagName, "", hostId);
+    	Tag existingTag = getTag(tagName, inode, hostId);
 
     	//validates the tagInode already exists
 		TagInode existingTagInode = getTagInode(existingTag.getTagId(), inode);

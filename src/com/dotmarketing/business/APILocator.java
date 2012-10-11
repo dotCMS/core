@@ -7,11 +7,9 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.enterprise.cmis.CMISAPI;
-import com.dotcms.enterprise.cmis.CMISAPIImpl;
+import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
-import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -222,11 +220,7 @@ public class APILocator extends Locator<APIIndex>{
 	public static HostVariableAPI getHostVariableAPI(){
 		return (HostVariableAPI) getInstance(APIIndex.HOST_VARIABLE_API);
 	}
-	
-	public static CMISAPI getCMISAPI(){
-		return (CMISAPI) getInstance(APIIndex.CMIS_API);
-	}
-	
+		
 	public static FileAPI getFileAPI(){
 		return (FileAPI) getInstance(APIIndex.FILE_API);
 	}
@@ -337,7 +331,6 @@ enum APIIndex
 	LAYOUT_API,
 	HOST_VARIABLE_API,
 	FORM_API,
-	CMIS_API,
 	FILE_API,
 	HTMLPAGE_API,
 	MENULINK_API,
@@ -381,7 +374,6 @@ enum APIIndex
 		case LAYOUT_API : return new LayoutAPIImpl();
 		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
 		case FORM_API: return new FormAPIImpl();
-		case CMIS_API: return new CMISAPIImpl();
 		case FILE_API: return new FileAPIImpl();
 		case HTMLPAGE_API: return new HTMLPageAPIImpl();
 		case MENULINK_API: return new MenuLinkAPIImpl();

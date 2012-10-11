@@ -54,9 +54,9 @@ import com.liferay.portal.model.User;
 
 
 /**
- * 
+ *
  * AJAX controller for permission related operations
- * 
+ *
  * @author davidtorresv
  *
  */
@@ -66,18 +66,18 @@ public class PermissionAjax {
 	 * Retrieves a list of roles and its associated permissions for the given asset
 	 * @param assetId
 	 * @return
-	 * @throws DotDataException 
-	 * @throws SystemException 
-	 * @throws PortalException 
-	 * @throws DotRuntimeException 
-	 * @throws DotSecurityException 
+	 * @throws DotDataException
+	 * @throws SystemException
+	 * @throws PortalException
+	 * @throws DotRuntimeException
+	 * @throws DotSecurityException
 	 */
 	public List<Map<String, Object>> getAssetPermissions(String assetId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
-		
+
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		
+
 		//Retrieving the current user
 		User user = userWebAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
@@ -86,9 +86,9 @@ public class PermissionAjax {
 
 		List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
 		Map<String, Map<String, Object>> roles = new TreeMap<String, Map<String, Object>>();
-		
-		Permissionable perm = retrievePermissionable(assetId, user, respectFrontendRoles); 
-		
+
+		Permissionable perm = retrievePermissionable(assetId, user, respectFrontendRoles);
+
 		List<Permission> assetPermissions = permAPI.getPermissions(perm, true);
 		for(Permission p : assetPermissions) {
 			addPermissionToRoleList(perm, p, roles, false);
@@ -99,22 +99,22 @@ public class PermissionAjax {
 				addPermissionToRoleList(perm, p, roles, true);
 			}
 		}
-		
+
 		toReturn.addAll(roles.values());
-		
+
 		Collections.sort(toReturn,new Comparator<Map<String, Object>> () {
 			public int compare(Map<String, Object> o1, Map<String, Object> o2) {
 				return ((String)o1.get("name")).compareTo((String)o2.get("name"));
 			}
-		});		
-		
+		});
+
 		return toReturn;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void addPermissionToRoleList(Permissionable perm, Permission p, Map<String, Map<String, Object>> roles, boolean inheritable) throws DotDataException, DotSecurityException {
 		Map<String, Permissionable> inodeCache = new HashMap<String, Permissionable>();
-		
+
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -132,7 +132,7 @@ public class PermissionAjax {
 				} else {
 					roleMap.put("inherited", true);
 					String assetInode = p.getInode();
-					
+
 					//try from the cache
 					Permissionable permParent = inodeCache.get(p.getInode());
 					if(permParent == null) {
@@ -168,7 +168,7 @@ public class PermissionAjax {
 							roleMap.put("inheritedFromPath", host.getHostname());
 							roleMap.put("inheritedFromId", host.getIdentifier());
 						}
-						
+
 					}
 				}
 			}
@@ -183,25 +183,25 @@ public class PermissionAjax {
 			permissionMap.put("type", PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
 		}
 		Logger.info(this, "##=> permissionMap: " + permissionMap.toString());
-		rolePermissions.add(permissionMap);		
+		rolePermissions.add(permissionMap);
 	}
-	
+
 	public void saveAssetPermissions (String assetId, List<Map<String, String>> permissions, boolean reset) throws DotDataException, DotSecurityException, SystemException, PortalException  {
-		
+
 		HibernateUtil.startTransaction();
-		
+
 		try {
 			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
-			
+
 			//Retrieving the current user
 			User user = userWebAPI.getLoggedInUser(request);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
-			
+
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-			Permissionable asset = retrievePermissionable(assetId, user, respectFrontendRoles); 
-			
+			Permissionable asset = retrievePermissionable(assetId, user, respectFrontendRoles);
+
 			List<Permission> newSetOfPermissions = new ArrayList<Permission>();
 			for(Map<String, String> permission: permissions) {
 				String roleId = permission.get("roleId");
@@ -210,72 +210,77 @@ public class PermissionAjax {
 					newSetOfPermissions.add(new Permission(asset.getPermissionId(), roleId, Integer.parseInt(individualPermission), true));
 					//If a structure we need to save permissions inheritable by children content
 					if(asset instanceof Structure) {
-						newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+						newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), asset.getPermissionId(), roleId,
 								Integer.parseInt(individualPermission), true));
 					}
 					//If a category we need to save permissions inheritable by children categories
 					if(asset instanceof Category) {
-						newSetOfPermissions.add(new Permission(Category.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+						newSetOfPermissions.add(new Permission(Category.class.getCanonicalName(), asset.getPermissionId(), roleId,
 								Integer.parseInt(individualPermission), true));
 					}
 				}
 				String containersPermission = permission.get("containersPermission");
 				if(containersPermission != null) {
-					newSetOfPermissions.add(new Permission(Container.class.getCanonicalName(), asset.getPermissionId(), 
+					newSetOfPermissions.add(new Permission(Container.class.getCanonicalName(), asset.getPermissionId(),
 							roleId, Integer.parseInt(containersPermission), true));
 				}
 				String filesPermission = permission.get("filesPermission");
 				if(filesPermission != null) {
-					newSetOfPermissions.add(new Permission(File.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+					newSetOfPermissions.add(new Permission(File.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(filesPermission), true));
 				}
 				String pagesPermission = permission.get("pagesPermission");
 				if(pagesPermission != null) {
-					newSetOfPermissions.add(new Permission(HTMLPage.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+					newSetOfPermissions.add(new Permission(HTMLPage.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(pagesPermission), true));
 				}
 				String foldersPermission = permission.get("foldersPermission");
 				if(foldersPermission != null) {
-					newSetOfPermissions.add(new Permission(Folder.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+					newSetOfPermissions.add(new Permission(Folder.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(foldersPermission), true));
 				}
 				String contentPermission = permission.get("contentPermission");
 				if(contentPermission != null) {
-					newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+					newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(contentPermission), true));
 				}
 				String linksPermission = permission.get("linksPermission");
 				if(linksPermission != null) {
-					newSetOfPermissions.add(new Permission(Link.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+					newSetOfPermissions.add(new Permission(Link.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(linksPermission), true));
 				}
 				String templatesPermission = permission.get("templatesPermission");
 				if(templatesPermission != null) {
-					newSetOfPermissions.add(new Permission(Template.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+					newSetOfPermissions.add(new Permission(Template.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(templatesPermission), true));
+				}
+				String templateLayoutsPermission = permission.get("templateLayoutsPermission");
+				if(templateLayoutsPermission != null) {
+					newSetOfPermissions.add(new Permission(Template.TEMPLATE_LAYOUTS_CANONICAL_NAME, asset.getPermissionId(), roleId,
+							Integer.parseInt(templateLayoutsPermission), true));
 				}
 				String structurePermission = permission.get("structurePermission");
 				if(structurePermission != null) {
-					newSetOfPermissions.add(new Permission(Structure.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+					newSetOfPermissions.add(new Permission(Structure.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(structurePermission), true));
 				}
 				String categoriesPermissions = permission.get("categoriesPermissions");
 				if(categoriesPermissions != null) {
-					newSetOfPermissions.add(new Permission(Category.class.getCanonicalName(), asset.getPermissionId(), roleId, 
+					newSetOfPermissions.add(new Permission(Category.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(categoriesPermissions), true));
 				}
 			}
-			
+
 			if(newSetOfPermissions.size() > 0) {
 				permissionAPI.assignPermissions(newSetOfPermissions, asset, user, respectFrontendRoles);
-			
+
 				if(reset && asset.isParentPermissionable()) {
 					ResetPermissionsJob.triggerJobImmediately(asset);
-				}					
+				}
 			} else {
 				permissionAPI.removePermissions(asset);
 			}
-			
+
 		} catch (DotDataException e) {
 			HibernateUtil.rollbackTransaction();
 			throw e;
@@ -293,15 +298,15 @@ public class PermissionAjax {
 		HibernateUtil.commitTransaction();
 
 	}
-	
+
 	public void resetAssetPermissions (String assetId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		HibernateUtil.startTransaction();
 		try {
-			
+
 			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
-			
+
 			//Retrieving the current user
 			User user = userWebAPI.getLoggedInUser(request);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
@@ -309,28 +314,28 @@ public class PermissionAjax {
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 			Permissionable asset = retrievePermissionable(assetId, user, respectFrontendRoles);
 			permissionAPI.removePermissions(asset);
-			
+
 		} catch (DotDataException e) {
 			HibernateUtil.rollbackTransaction();
 			throw e;
 		}
 		HibernateUtil.commitTransaction();
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private Permissionable retrievePermissionable (String assetId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		HostAPI hostAPI = APILocator.getHostAPI();
-		
+
 		Permissionable perm = null;
-		
+
 		//Determining the type
-		
+
 		try{
 		//Host?
 			perm = hostAPI.find(assetId, user, respectFrontendRoles);
 		}
 		catch(Exception e){
-			
+
 		}
 		if(perm == null) {
 			//Content?
@@ -340,9 +345,9 @@ public class PermissionAjax {
 			} catch (DotContentletStateException e) {
 			}
 		}
-		
+
 		if(perm == null) {
-			
+
 			DotConnect dc = new DotConnect();
 			ArrayList results = new ArrayList();
 			String assetType ="";
@@ -362,7 +367,7 @@ public class PermissionAjax {
 				String inode = (String) ((Map)results.get(0)).get("inode");
 				perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
 			}
-			
+
 		}
 
 		if(perm == null || !UtilMethods.isSet(perm.getPermissionId())) {
@@ -370,7 +375,7 @@ public class PermissionAjax {
 		}
 		return perm;
 	}
-	
+
 	  public void permissionIndividually(String assetId) throws Exception {
 			HibernateUtil.startTransaction();
 	    	try {
@@ -385,7 +390,7 @@ public class PermissionAjax {
 	    		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	    		Permissionable asset = retrievePermissionable(assetId, user, respectFrontendRoles);
 	    		Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(asset);
-	    		
+
 	    		if(parentPermissionable!=null){
 	    			permissionAPI.permissionIndividually(parentPermissionable, asset, user, respectFrontendRoles);
 	    		}
@@ -402,14 +407,14 @@ public class PermissionAjax {
 		PermissionableObjectDWR asset = new PermissionableObjectDWR();
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
 		Permissionable p = null;
-		
+
 		asset.setId(inodeOrIdentifier);
 
 		try {
 			// Retrieving the current user
 			User user = userWebAPI.getLoggedInUser(request);
 			Structure hostStrucuture = StructureCache.getStructureByVelocityVarName("Host");
-			
+
 			if (InodeFactory.isInode(inodeOrIdentifier)) {
 				Inode inode = InodeFactory.find(inodeOrIdentifier);
 				p = inode;
@@ -417,15 +422,15 @@ public class PermissionAjax {
 			} else {
 				ContentletAPI contAPI = APILocator.getContentletAPI();
 				Contentlet content = contAPI.find(inodeOrIdentifier, user, false);
-				
+
 				if (UtilMethods.isSet(content) && content.getStructureInode().equals(hostStrucuture.getInode())) {
 					p = content;
 					asset.setType(Host.class.getName());
 				}
 			}
-			
+
 			if(p==null) return null;
-			
+
 			asset.setIsFolder(p instanceof Folder);
 			asset.setIsHost((p instanceof Host) || ((p instanceof Contentlet) && ((Contentlet)p).getStructureInode().equals(hostStrucuture.getInode())));
 			asset.setIsParentPermissionable(p.isParentPermissionable());
@@ -438,5 +443,5 @@ public class PermissionAjax {
 		return asset;
 	}
 
-		
+
 }
