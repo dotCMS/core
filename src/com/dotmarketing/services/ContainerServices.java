@@ -51,33 +51,33 @@ public class ContainerServices {
          
         //  let's write this puppy out to our file
         sb.append("#set ($SERVER_NAME =\"$host.getHostname()\" )\n");
-        sb.append("#set ($CONTAINER_IDENTIFIER_INODE = '" +identifier.getInode() + "')\n");
-        sb.append("#set ($CONTAINER_INODE = '" +container.getInode() + "')\n");
-        sb.append("#set ($CONTAINER_MAX_CONTENTLETS = " + container.getMaxContentlets()+ ")\n");
+        sb.append("#set ($CONTAINER_IDENTIFIER_INODE = '" ).append(identifier.getInode() ).append( "')\n");
+        sb.append("#set ($CONTAINER_INODE = '" ).append(container.getInode() ).append( "')\n");
+        sb.append("#set ($CONTAINER_MAX_CONTENTLETS = " ).append( container.getMaxContentlets()).append( ")\n");
         Structure st = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
-        sb.append("#set ($CONTAINER_STRUCTURE_NAME = \"" + (UtilMethods.isSet(st.getName())?st.getName():"") + "\")\n");
-        sb.append("#set ($STATIC_CONTAINER = " + !UtilMethods.isSet(container.getLuceneQuery()) +")\n");
-        sb.append("#set ($SORT_PAGE = \"" + container.getSortContentletsBy() + "\")\n");
-        sb.append("#set ($containerInode = '" + container.getInode() + "')\n");
+        sb.append("#set ($CONTAINER_STRUCTURE_NAME = \"" ).append( (UtilMethods.isSet(st.getName())?st.getName():"") ).append( "\")\n");
+        sb.append("#set ($STATIC_CONTAINER = " ).append( !UtilMethods.isSet(container.getLuceneQuery()) ).append(")\n");
+        sb.append("#set ($SORT_PAGE = \"" ).append( container.getSortContentletsBy() ).append( "\")\n");
+        sb.append("#set ($containerInode = '" ).append( container.getInode() ).append( "')\n");
 
         if(EDIT_MODE) {
 	        //Permissions to read/use the container in order to be able to add content to it and reorder content
-	        sb.append("#set ($USE_CONTAINER_PERMISSION = $USE_CONTAINER_PERMISSION" + identifier.getInode() + ")\n");
+	        sb.append("#set ($USE_CONTAINER_PERMISSION = $USE_CONTAINER_PERMISSION" ).append( identifier.getInode() ).append( ")\n");
 
-	        //Permissions to edit the container based on write permission + access to the portlet
-	        sb.append("#set ($EDIT_CONTAINER_PERMISSION = $EDIT_CONTAINER_PERMISSION" + identifier.getInode() + ")\n");
+	        //Permissions to edit the container based on write permission ).append( access to the portlet
+	        sb.append("#set ($EDIT_CONTAINER_PERMISSION = $EDIT_CONTAINER_PERMISSION" ).append( identifier.getInode() ).append( ")\n");
 	
 	        //Permissions over the structure to add new contents
-	        sb.append("#set ($ADD_CONTENT_PERMISSION = $ADD_CONTENT_PERMISSION" + identifier.getInode() + ")\n");
+	        sb.append("#set ($ADD_CONTENT_PERMISSION = $ADD_CONTENT_PERMISSION" ).append( identifier.getInode() ).append( ")\n");
         }
         
-        sb.append("#set ($CONTENTLETS = $contentletList" + identifier.getInode() + ")\n");
-        sb.append("#set ($CONTAINER_NUM_CONTENTLETS = $totalSize" + identifier.getInode() + ")\n");
+        sb.append("#set ($CONTENTLETS = $contentletList" ).append( identifier.getInode() ).append( ")\n");
+        sb.append("#set ($CONTAINER_NUM_CONTENTLETS = $totalSize" ).append( identifier.getInode() ).append( ")\n");
         
-        sb.append("#set ($CONTAINER_NAME = \"" + UtilMethods.espaceForVelocity(container.getTitle()) + "\")\n");
-        sb.append("#set ($CONTAINER_STRUCTURE_NAME = \"" + UtilMethods.espaceForVelocity(st.getName()) + "\")\n");
+        sb.append("#set ($CONTAINER_NAME = \"" ).append( UtilMethods.espaceForVelocity(container.getTitle()) ).append( "\")\n");
+        sb.append("#set ($CONTAINER_STRUCTURE_NAME = \"" ).append( UtilMethods.espaceForVelocity(st.getName()) ).append( "\")\n");
         if (UtilMethods.isSet(container.getNotes())) 
-        	sb.append("#set ($CONTAINER_NOTES = \"" + UtilMethods.espaceForVelocity(container.getNotes()) + "\")\n");
+        	sb.append("#set ($CONTAINER_NOTES = \"" ).append( UtilMethods.espaceForVelocity(container.getNotes()) ).append( "\")\n");
         else sb.append("#set ($CONTAINER_NOTES = \"\")\n");
         
         /*
@@ -86,14 +86,14 @@ public class ContainerServices {
         if (isDynamic) {
             String luceneQuery = container.getLuceneQuery();
             sb.append("#set ($CONTENTS_PER_PAGE = \"$CONTAINER_MAX_CONTENTLETS\")\n");
-            sb.append("#if ($request.getParameter(\"cont_" + identifier.getInode() + "_per_page\"))\n");
-            sb.append("     #set ($CONTENTS_PER_PAGE = $request.getParameter(\"cont_" + identifier.getInode() + "_per_page\"))\n");
+            sb.append("#if ($request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))\n");
+            sb.append("     #set ($CONTENTS_PER_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))\n");
             sb.append("#end\n");
             sb.append("#set ($CURRENT_PAGE = \"1\")\n");
-            sb.append("#if ($request.getParameter(\"cont_" + identifier.getInode() + "_page\"))\n");
-            sb.append("     #set ($CURRENT_PAGE = $request.getParameter(\"cont_" + identifier.getInode() + "_page\"))\n");
+            sb.append("#if ($request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_page\"))\n");
+            sb.append("     #set ($CURRENT_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_page\"))\n");
             sb.append("#end\n");
-            sb.append("#set ($LUCENE_QUERY = \"" + luceneQuery + "\")\n");
+            sb.append("#set ($LUCENE_QUERY = \"" ).append( luceneQuery ).append( "\")\n");
         }
         
         // if the container needs to get its contentlets
@@ -114,23 +114,23 @@ public class ContainerServices {
             if (isDynamic) {
                Structure containerStructure = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
 
-                sb.append("#set ($contentletResultsMap" + identifier.getInode() + 
-                        " = $contents.searchWithLuceneQuery(\""+ containerStructure.getInode() +"\", " +
-                                "\"$LUCENE_QUERY\", " +
-                                "\"$SORT_PAGE\", " +
+                sb.append("#set ($contentletResultsMap" ).append( identifier.getInode() ).append( 
+                        " = $contents.searchWithLuceneQuery(\"").append( containerStructure.getInode() ).append("\", " ).append(
+                                "\"$LUCENE_QUERY\", " ).append(
+                                "\"$SORT_PAGE\", " ).append(
                                 "$CURRENT_PAGE, $CONTENTS_PER_PAGE))\n");
-                sb.append("#set ($contentletList" + identifier.getInode() + 
-                        " = $contents.getContentIdentifiersFromLuceneHits($contentletResultsMap" + identifier.getInode() + ".get(\"assets\")))\n");
+                sb.append("#set ($contentletList" ).append( identifier.getInode() ).append( 
+                        " = $contents.getContentIdentifiersFromLuceneHits($contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"assets\")))\n");
                 
-                sb.append("#set ($HAS_NEXT_PAGE = $contentletResultsMap" + identifier.getInode() + ".get(\"has_next_page\"))\n");
-                sb.append("#set ($HAS_PREVIOUS_PAGE = $contentletResultsMap" + identifier.getInode() + ".get(\"has_previous_page\"))\n");
-                sb.append("#set ($TOTAL_CONTENTS = $contentletResultsMap" + identifier.getInode() + ".get(\"total_records_int\"))\n");
-                sb.append("#set ($TOTAL_PAGES = $contentletResultsMap" + identifier.getInode() + ".get(\"total_pages_int\"))\n");
-                sb.append("#set ($CONTENTLETS = $contentletList" + identifier.getInode() + ")\n");
-                sb.append("#set ($CONTAINER_NUM_CONTENTLETS = $totalSize" + identifier.getInode() + ")\n");
+                sb.append("#set ($HAS_NEXT_PAGE = $contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"has_next_page\"))\n");
+                sb.append("#set ($HAS_PREVIOUS_PAGE = $contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"has_previous_page\"))\n");
+                sb.append("#set ($TOTAL_CONTENTS = $contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"total_records_int\"))\n");
+                sb.append("#set ($TOTAL_PAGES = $contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"total_pages_int\"))\n");
+                sb.append("#set ($CONTENTLETS = $contentletList" ).append( identifier.getInode() ).append( ")\n");
+                sb.append("#set ($CONTAINER_NUM_CONTENTLETS = $totalSize" ).append( identifier.getInode() ).append( ")\n");
             }
                         
-            sb.append("\n#foreach ($contentletId in $contentletList" + identifier.getInode() + ")\n");            
+            sb.append("\n#foreach ($contentletId in $contentletList" ).append( identifier.getInode() ).append( ")\n");            
             
        		//##Checking of contentlet is parseable and not throwing errors
            	if (EDIT_MODE) {
@@ -188,7 +188,7 @@ public class ContainerServices {
                 sb.append("#if($isWidget == true)\n");
                 	sb.append("$widgetCode\n");
                 sb.append("#else\n");
-                	sb.append(code + "\n");
+                	sb.append(code ).append( "\n");
                 sb.append("#end");
               //The empty div added for styling issue in Internet Explorer is closed here
                 //http://jira.dotmarketing.net/browse/DOTCMS-1974
