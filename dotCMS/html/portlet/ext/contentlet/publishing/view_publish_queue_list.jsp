@@ -190,7 +190,7 @@
 			<tr <%=errorclass%>>
 				<td><input dojoType="dijit.form.CheckBox" type="checkbox" class="queue_to_delete" name="queue_to_delete" value="<%=c.get("id") %>" id="queue_to_delete_<%=c.get("id") %>" /></td>
 				<%try{
-					Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset_identifier"),true,Long.parseLong(c.get("language_id").toString()),user, false);
+					Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),true,Long.parseLong(c.get("language_id").toString()),user, false);
 				%>
 				<td><a href="/c/portal/layout?p_l_id=<%=layout%>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=con.getInode() %>&referer=<%=referer %>"><%=con.getTitle()%></a></td>
 				<%
