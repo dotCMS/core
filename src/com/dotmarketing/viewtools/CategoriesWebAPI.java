@@ -567,4 +567,26 @@ public class CategoriesWebAPI implements ViewTool {
 
 		return result;
 	}
+	
+	public List<String> fetchCategoriesInodes(List<Category> cats) {
+	    List<String> inodes=new ArrayList<String>(cats.size());
+	    for(Category cc : cats)
+	        inodes.add(cc.getInode());
+	    return inodes;
+	}
+	public List<String> fetchCategoriesNames(List<Category> cats) {
+        List<String> inodes=new ArrayList<String>(cats.size());
+        for(Category cc : cats)
+            inodes.add(cc.getCategoryName());
+        return inodes;
+    }
+	public List<String> fetchCategoriesKeys(List<Category> cats) {
+        List<String> inodes=new ArrayList<String>(cats.size());
+        for(Category cc : cats)
+            if(UtilMethods.isSet(cc.getKey()))
+                inodes.add(cc.getKey());
+            else
+                inodes.add("");
+        return inodes;
+    }
 }
