@@ -84,6 +84,7 @@ public class PublisherAddActionlet extends WorkFlowActionlet{
 			} catch(DotContentletStateException e) {}
 			//}
 			
+			
 			publisherAPI.addContentsToPublishQueue(contentsLive, bundleId, true);
 			publisherAPI.addContentsToPublishQueue(contentsWorking, bundleId, false);
 			
