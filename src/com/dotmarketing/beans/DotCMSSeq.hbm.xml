@@ -295,7 +295,8 @@
 			<property column="add_container_links" length="4" name="countAddContainer" type="integer" />
 			<property column="containers_added" length="4" name="countContainers" type="integer" />
 			<property column="head_code" name="headCode" type="string" length="123456789" />
-			<!-- *********************** END GRAZIANO issue-12-dnd-template -->			
+			<!-- *********************** END GRAZIANO issue-12-dnd-template -->
+			<property column="theme" name="theme" length="255" type="string" />
 		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.htmlpages.model.HTMLPage" table="htmlpage">

@@ -309,8 +309,8 @@ public class FolderFactoryImpl extends FolderFactory {
 				for(FileAsset fileAsset : fileAssets) {
 					if(fileAsset.isShowOnMenu()){
 						filesListSubChildren.add(fileAsset);
-					}					
-				}				
+					}
+				}
 			} catch (DotSecurityException e) {}
 
 			// gets all subitems
@@ -888,15 +888,15 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
 		CacheLocator.getFolderCache().removeFolder(folder, ident);
-		
+
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		ff.setName(newName);
 		ff.setTitle(newName);
-		
+
 		save(ff);
-		
+
 		HibernateUtil.getSession().clear();
-		
+
 		return true;
 	}
 
@@ -1352,6 +1352,21 @@ public class FolderFactoryImpl extends FolderFactory {
 		HibernateUtil dh = new HibernateUtil(Folder.class);
 		dh.setSQLQuery("SELECT {folder.*} from folder folder,identifier ident, inode folder_1_ where folder_1_.inode = folder.inode "
 			    + "and folder.identifier = ident.id and ident.host_inode = ? and ident.parent_path='/' order by folder.title");
+		dh.setParam(host.getIdentifier());
+		List<Folder> folderList=dh.list();
+		Collections.sort(folderList,new Comparator<Folder>() {
+		    public int compare(Folder o1, Folder o2) {
+		        return o1.getName().compareToIgnoreCase(o2.getName());
+		    }
+        });
+		return folderList;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException {
+		HibernateUtil dh = new HibernateUtil(Folder.class);
+		dh.setSQLQuery("SELECT {folder.*} from folder folder,identifier ident, inode folder_1_ where folder_1_.inode = folder.inode "
+			    + "and folder.identifier = ident.id and ident.host_inode = ? and ident.parent_path='/application/themes/' order by folder.title");
 		dh.setParam(host.getIdentifier());
 		List<Folder> folderList=dh.list();
 		Collections.sort(folderList,new Comparator<Folder>() {
