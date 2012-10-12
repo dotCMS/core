@@ -755,6 +755,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_clearSearch: function () {
 
 		dojo.empty(this.results_table);
+		
+		 var objc = document.getElementById("langcombo+"+this.dialogCounter);
+			if(objc!=null){
+				objc.value='';
+			}
 
 		for (var i = 0; i < this.categories.length; i++) {
 			var mainCat = this.categories[i];
