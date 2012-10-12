@@ -18,32 +18,34 @@ h2 {
 	font-family: Verdana,Geneva,sans-serif;
 	padding: 10px;
 }
-	
+
 #hd-template, #ft-template {
 	margin-bottom: 10px;
 	margin-top: 10px;
-	border:1px solid #9AB3CE;	
+	border:1px solid #9AB3CE;
 	background-color: #E0E9F6;
 	text-align: center;
+	padding-top: 30px;
+
 }
-			
+
 .yui-b-template {
 	border:1px solid #9AB3CE;
 	background-color: #E0E9F6;
 	padding: 5px 1px 5px 1px;
-	margin-bottom: 0.7%;				 		
+	margin-bottom: 0.7%;
 }
-			
+
 .yui-u-template {
 	border:1px solid #9AB3CE;
 	background-color: #EEF5F9;
-	padding: 5px 1px 5px 1px;			
+	padding: 5px 1px 5px 1px;
 }
-			
+
 #yui-b2 {
 	text-align: center;
 	vertical-align: middle;
-}			
+}
 
 .yui-u-template h1, .yui-b-template h1, #hd-template h1, #ft-template h1, .yui-u-template h2, .yui-b-template h2, #hd-template h2, #ft-template h2 {
 	vertical-align: middle;
@@ -61,14 +63,14 @@ h2 {
 	text-align: left;
 	vertical-align: middle;
 	padding: 3px;
-	margin: 2px;	
+	margin: 2px;
 }
 
 .removeDiv a {
-	text-decoration: none;	
+	text-decoration: none;
 	color: #315395;
 	font-family: Verdana,Geneva,Arial,sans-serif;
-	font-size: 12px;	
+	font-size: 12px;
 	font-weight: normal;
 	display: block;
 	line-height: 13px;
@@ -80,14 +82,14 @@ h2 {
 	text-align: left;
 	vertical-align: middle;
 	padding: 3px;
-	margin: 2px;	
+	margin: 2px;
 }
 
 .addContainerSpan a {
-	text-decoration: none;	
+	text-decoration: none;
 	color: #315395;
 	font-family: Verdana,Geneva,Arial,sans-serif;
-	font-size: 12px;	
+	font-size: 12px;
 	display: block;
 	line-height: 13px;
 	padding: 3px;
@@ -99,7 +101,7 @@ h2 {
 	height:14px;
 	display:inline-block;
 	vertical-align: top;
-	margin-right: 3px;	
+	margin-right: 3px;
 }
 
 .minusIcon {
@@ -108,7 +110,7 @@ h2 {
 	height:14px;
 	display:inline-block;
 	vertical-align: top;
-	margin-right: 3px;	
+	margin-right: 3px;
 }
 
 .cssIcon {
@@ -117,7 +119,7 @@ h2 {
 	height:32px;
 	display:inline-block;
 	vertical-align: top;
-	margin: 3px;	
+	margin: 3px;
 }
 
 .jsIcon {
@@ -126,7 +128,7 @@ h2 {
 	height:32px;
 	display:inline-block;
 	vertical-align: top;
-	margin: 3px;	
+	margin: 3px;
 }
 
 .metatagIcon {
@@ -135,7 +137,7 @@ h2 {
 	height:32px;
 	display:inline-block;
 	vertical-align: top;
-	margin: 3px;	
+	margin: 3px;
 }
 
 .headCodeIcon {
@@ -144,7 +146,7 @@ h2 {
 	height:32px;
 	display:inline-block;
 	vertical-align: top;
-	margin: 3px;	
+	margin: 3px;
 }
 
 .cssIcon h3, .jsIcon h3 {
@@ -175,7 +177,7 @@ h2 {
 	font-size: 14px;
 	font-family: Verdana,Geneva,sans-serif;
 	width: 750px;
-} 
+}
 
 .mockContent {
 	color: #d0d0d0;
@@ -248,7 +250,7 @@ tr.spaceUnder > td
 #addFileToTemplate {
 	margin: 10px 10px 0pt 0pt;
 	float: right;
-	
+
 }
 
 #fileContainerDiv {

@@ -44,7 +44,23 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	private String headCode;
 	//	*********************** END GRAZIANO issue-12-dnd-template
 
+	private String theme;
+
+	private String themeName;
+
 	public static final String TEMPLATE_LAYOUTS_CANONICAL_NAME = "com.dotmarketing.portlets.templates.model.TemplateLayout";
+
+	public static final String THEME_HTML_HEAD = "html_head.vtl";
+	public static final String THEME_HEADER = "header.vtl";
+	public static final String THEME_FOOTER = "footer.vtl";
+	public static final List<String> THEME_FILES = new ArrayList<String>();
+	public static final String THEMES_PATH = "/application/themes/";
+
+	static {
+		THEME_FILES.add(THEME_HTML_HEAD);
+		THEME_FILES.add(THEME_HEADER);
+		THEME_FILES.add(THEME_FOOTER);
+	}
 
 	/** default constructor */
 	public Template() {
@@ -212,6 +228,22 @@ public class Template extends WebAsset implements Serializable, Comparable {
 
 	public void setHeadCode(String headCode) {
 		this.headCode = headCode;
+	}
+
+	public String getTheme() {
+		return theme;
+	}
+
+	public void setTheme(String theme) {
+		this.theme = theme;
+	}
+
+	public String getThemeName() {
+		return themeName;
+	}
+
+	public void setThemeName(String themeName) {
+		this.themeName = themeName;
 	}
 
 	public int compareTo(Object compObject){
