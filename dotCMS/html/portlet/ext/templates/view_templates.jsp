@@ -91,7 +91,7 @@ function addAsset(event) {
 }
 
 // *********************** BEGIN GRAZIANO issue-12-dnd-template
-function designAsset(event) {	
+function designAsset(event) {
 	window.location.href = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="design" /><portlet:param name="referer" value="<%=referer%>" /></portlet:actionURL>';
 	dojo.stopEvent(event);
 }
@@ -186,13 +186,13 @@ function processDelete(inode, referer) {
 	    </button>
 		<% } %>
 		<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
-		<!-- 
+
 		<% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_DESIGN)) { %>
 		<button dojoType="dijit.form.Button" onClick="designAsset" iconClass="designTemplateIcon">
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "design-template")) %>
 	    </button>
 		<% } %>
-		 -->		
+
 		<!-- *********************** END GRAZIANO issue-12-dnd-template -->
 	</div>
 </div>
@@ -269,7 +269,7 @@ function processDelete(inode, referer) {
 						<span class="templateIcon"></span>
 					<%} %>
 					&nbsp;
-					
+
 					<%=template.getTitle()%>
 				</td>
 				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(template) %></td>
