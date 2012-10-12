@@ -52,7 +52,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	@Override
 	public List<Class> getPublishers(){
 		List<Class> clazz = new ArrayList<Class>();
-		clazz.add(ESSiteSearchPublisher.class);
+		clazz.add(PushPublisher.class);
 		return clazz;
 	}
 }
