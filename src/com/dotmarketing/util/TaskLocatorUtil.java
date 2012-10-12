@@ -68,7 +68,6 @@ public class TaskLocatorUtil {
         ret.add(Task00930AddIdentifierIndex.class);
         ret.add(Task00935LogConsoleTableData.class);
         ret.add(Task00940AlterTemplateTable.class);
-        ret.add(Task00945TemplateThemes.class);
         return ret;
     }
 
