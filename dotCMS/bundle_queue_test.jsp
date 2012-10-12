@@ -1,15 +1,14 @@
+<%@page import="com.dotcms.publisher.myTest.PushPublisher"%>
 <%@page import="com.dotcms.publishing.IBundler"%>
-<%@page import="com.dotcms.publisher.myTest.MyBundler"%>
+<%@page import="com.dotcms.publisher.myTest.PushPublisherBundler"%>
 <%@page import="org.apache.commons.collections.ListUtils"%>
 <%@page import="com.dotcms.publisher.myTest.PushPublisherConfig"%>
 <%@page import="java.util.Map"%>
 <%@page import="com.dotcms.publisher.business.PublisherAPI"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig"%>
 <%@page import="java.util.Date"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchPublisher"%>
 <%@page import="java.util.Arrays"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -18,8 +17,7 @@
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%
-
-User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 ContentletAPI conAPI = APILocator.getContentletAPI();
 PublisherAPI pubAPI = PublisherAPI.getInstance();  
 
@@ -48,8 +46,8 @@ String luceneQuery = null;
 PushPublisherConfig pconf = new PushPublisherConfig();
 List<Class> clazz = new ArrayList();
 List<IBundler> bundler = new ArrayList();
-bundler.add(new MyBundler());
-clazz.add(ESSiteSearchPublisher.class);
+bundler.add(new PushPublisherBundler());
+clazz.add(PushPublisher.class);
 int counter = 0;
 for(Map<String,Object> c : iresults) {
 	luceneQuery = (String)c.get("asset");
@@ -63,7 +61,7 @@ for(Map<String,Object> c : iresults) {
 	pconf.setLiveOnly(false);
 	pconf.setBundlers(bundler);
 	APILocator.getPublisherAPI().publish(pconf);
-	out.print(pconf.getId() +" Done!"); 
+	out.print(pconf.getId() +" Done! <br />"); 
 }
 
 /* Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
@@ -93,6 +91,4 @@ pconf.setLiveOnly(false);
 
 
 APILocator.getPublisherAPI().publish(pconf); */
-
-
 %>

@@ -2,6 +2,8 @@ package com.dotcms.publisher.myTest;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +29,7 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.extended.EncodedByteArrayConverter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
-public class MyBundler implements IBundler {
+public class PushPublisherBundler implements IBundler {
 	private PublisherConfig config;
 	private User systemUser;
 	ContentletAPI conAPI = null;
@@ -37,7 +39,7 @@ public class MyBundler implements IBundler {
 	
 	@Override
 	public String getName() {
-		return "My Test bundler";
+		return "Push publisher bundler";
 	}
 
 	@Override
@@ -49,7 +51,7 @@ public class MyBundler implements IBundler {
 		try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
-			Logger.fatal(MyBundler.class,e.getMessage(),e);
+			Logger.fatal(PushPublisherBundler.class,e.getMessage(),e);
 		}
 	}
 
@@ -61,12 +63,12 @@ public class MyBundler implements IBundler {
 	    
 		List<Contentlet> cs = new ArrayList<Contentlet>();
 		
-		Logger.info(MyBundler.class, config.getLuceneQuery());
+		Logger.info(PushPublisherBundler.class, config.getLuceneQuery());
 		
 		try {
 			cs = conAPI.search(config.getLuceneQuery(), 0, 0, "moddate", systemUser, false);
 		} catch (Exception e) {
-			Logger.error(MyBundler.class,e.getMessage(),e);
+			Logger.error(PushPublisherBundler.class,e.getMessage(),e);
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + config.getLuceneQuery(), e);
 		}
 		
@@ -77,7 +79,7 @@ public class MyBundler implements IBundler {
 				writeFileToDisk(bundleRoot, con);
 				status.addCount();
 			} catch (Exception e) {
-				Logger.error(MyBundler.class,e.getMessage() + " : Unable to write file",e);
+				Logger.error(PushPublisherBundler.class,e.getMessage() + " : Unable to write file",e);
 				status.addFailure();
 			}
 		}
@@ -91,13 +93,17 @@ public class MyBundler implements IBundler {
 			if(ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
 				File file = con.getBinary( ff.getVelocityVarName()); 
 				
-				byte[] bytes=org.apache.commons.io.FileUtils.readFileToByteArray(file);
-				
-				Map<String, Object> bufferMap =  new HashMap<String, Object>();
-				bufferMap.put(file.getName(), bytes);
-				contentMap.put(ff.getFieldName(), bufferMap);
+				if(file != null) {
+					byte[] bytes=org.apache.commons.io.FileUtils.readFileToByteArray(file);
+					
+					Map<String, Object> bufferMap =  new HashMap<String, Object>();
+					bufferMap.put(file.getName(), bytes);
+					contentMap.put(ff.getVelocityVarName(), bufferMap);
+				} else {
+					contentMap.put(ff.getVelocityVarName(), null);
+				}
 		    } else {
-		    	contentMap.put(ff.getFieldName(), con.getStringProperty(ff.getFieldName()));
+		    	contentMap.put(ff.getVelocityVarName(), con.get(ff.getVelocityVarName()));
 		    }
 			
 		}
@@ -108,47 +114,17 @@ public class MyBundler implements IBundler {
 	    XStream xstream=new XStream(new DomDriver());
 	    xstream.registerConverter(new EncodedByteArrayConverter());
 	    
-	    // note that it also support passing an outputstream. That would be faster
-	    String xml=xstream.toXML(wrapper);
+	    String myFile = bundleRoot.getPath() + File.separator 
+				+ con.getInode()
+				+ XML_EXTENSION;
 	    
-	    System.out.println("this is the XML");
-	    System.out.println(xml);
-			
-			
-	//			String myFile = APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator 
-	//					file.getURI().replace("/", File.separator) + FILE_ASSET_EXTENSION;
-	//	File file= conAPI.getBinaryFile(
-	//            con.getInode(), ff.getVelocityVarName(), systemUser);
-				
-	//			// Should we write or is the file already there:
-	//			Calendar cal = Calendar.getInstance();
-	//			cal.setTime(info.getVersionTs());
-	//			cal.set(Calendar.MILLISECOND, 0);
-	//			
-	//			String dir = myFile.substring(0, myFile.lastIndexOf(File.separator));
-	//			new File(dir).mkdirs();
-	//			
-	//			
-	//			//only write if changed
-	//			File f = new File(myFile);
-	//			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
-	//				String x  = (String) fileAsset.get("metaData");
-	//				fileAsset.setMetaData(x);
-	//				BundlerUtil.objectToXML(wrap, f, true);
-	//				f.setLastModified(cal.getTimeInMillis());
-	//			}
-	//			
-	//			//only write if changed
-	//			f = new File(myFile.replaceAll(FILE_ASSET_EXTENSION,""));
-	//			if(!f.exists() || f.lastModified() != cal.getTimeInMillis()){
-	//				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPath(fileAsset.getInode(), fileAsset.getFileName()));
-	//				FileUtil.copyFile(oldAsset, f, true);
-	//				f.setLastModified(cal.getTimeInMillis());
-	//			}
-	//			// set the time of the file
-				
-			
-			
+	    //Write to a file in the file system
+        try {
+            FileOutputStream fs = new FileOutputStream(myFile);
+            xstream.toXML(wrapper, fs);
+        } catch (FileNotFoundException e1) {
+            e1.printStackTrace();
+        }		
 	}
 
 	@Override
