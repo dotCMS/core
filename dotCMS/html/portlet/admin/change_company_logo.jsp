@@ -13,7 +13,7 @@
 <dl>
 	<dt>&nbsp;</dt>
 	<dd><input class="form-text" name="<portlet:namespace />file_name" size="50" type="file"></dd>
-	<dd class="inputCaption"><%= LanguageUtil.format(pageContext, "upload-a-gif-or-jpeg-that-is-x-pixels-tall-and-x-pixels-wide", new Object[] {"50", "250"}, false) %></dd>
+	<dd class="inputCaption"></dd>
 </dl>
 	
 <div class="buttonRow">
