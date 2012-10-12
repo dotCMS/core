@@ -557,7 +557,7 @@ create index workflow_idx_scheme_structure_1 on
 
 create unique index workflow_idx_scheme_structure_2 on
     workflow_scheme_x_structure(structure_id);
-    
+
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
@@ -593,3 +593,4 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
+alter table template add theme varchar(255);

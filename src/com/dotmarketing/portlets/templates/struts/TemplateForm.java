@@ -36,35 +36,43 @@ public class TemplateForm extends ValidatorForm {
 
     /** nullable persistent field */
 	private String image;
-	
+
     /** nullable persistent field */
     private String header;
     /** nullable persistent field */
     private String footer;
-    
+
     /** nullable persistent field */
     private String hostId;
-    
+
     // BEGIN GRAZIANO issue-12-dnd-template
     private String drawedBody;
-    
+
     private boolean drawed;
-    
+
     private int countAddContainer;
-    
+
     private int countContainers;
-    
+
     private String headCode;
-    // END GRAZIANO issue-12-dnd-template    
-    
+    // END GRAZIANO issue-12-dnd-template
+
     private String owner;  // dotcms 472
-    
+
+    private String theme;
+
+    private String themeName;
+
+    private boolean headerCheck;
+
+    private boolean footerCheck;
+
 
 
 	public TemplateForm() {
     }
-	
-	
+
+
 
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
@@ -82,7 +90,7 @@ public class TemplateForm extends ValidatorForm {
 	public void setImage(String image) {
 		this.image = image;
 	}
-    
+
 	/**
 	 * Returns the title.
 	 * @return String
@@ -172,7 +180,7 @@ public class TemplateForm extends ValidatorForm {
 	public void setBody(String body) {
 		this.body = body;
 	}
-	
+
 	// BEGIN GRAZIANO issue-12-dnd-template
 	public String getDrawedBody() {
 		return drawedBody;
@@ -189,7 +197,7 @@ public class TemplateForm extends ValidatorForm {
 	public void setDrawed(boolean drawed) {
 		this.drawed = drawed;
 	}
-	
+
 	public int getCountAddContainer() {
 		return countAddContainer;
 	}
@@ -212,7 +220,7 @@ public class TemplateForm extends ValidatorForm {
 
 	public void setHeadCode(String headCode) {
 		this.headCode = headCode;
-	}	
+	}
 	// END GRAZIANO issue-12-dnd-template
 
 	/**
@@ -262,5 +270,38 @@ public class TemplateForm extends ValidatorForm {
 	public void setOwner(String owner) {
 		this.owner = owner;
 	}
+
+	public String getTheme() {
+		return theme;
+	}
+
+	public void setTheme(String theme) {
+		this.theme = theme;
+	}
+
+	public String getThemeName() {
+		return themeName;
+	}
+
+	public void setThemeName(String themeName) {
+		this.themeName = themeName;
+	}
+
+	public boolean isHeaderCheck() {
+		return headerCheck;
+	}
+
+	public void setHeaderCheck(boolean headerCheck) {
+		this.headerCheck = headerCheck;
+	}
+
+	public boolean isFooterCheck() {
+		return footerCheck;
+	}
+
+	public void setFooterCheck(boolean footerCheck) {
+		this.footerCheck = footerCheck;
+	}
+
 
 }
