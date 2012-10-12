@@ -667,4 +667,3 @@ create table indicies (
 
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
-alter table template add theme varchar(255);

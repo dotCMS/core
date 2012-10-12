@@ -593,4 +593,3 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
-alter table template add theme varchar(255);
