@@ -1,7 +1,7 @@
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@ page import="com.dotmarketing.util.Config"%>
-<%@ page import="com.dotmarketing.portlets.templates.design.bean.SplitBody"%>
-<%@ page import="com.dotmarketing.portlets.templates.design.bean.DesignTemplateJSParameter"%>
+<%@ page import="com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow"%>
+<%@ page import="com.dotmarketing.portlets.templates.design.bean.TemplateLayout"%>
 <%@ page import="com.dotmarketing.beans.Host"%>
 <%@ page import="com.dotmarketing.beans.Identifier" %>
 <%@ page import="com.dotmarketing.business.IdentifierFactory" %>
@@ -26,7 +26,7 @@
 
 	boolean overrideBody = (Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY);
 
-	DesignTemplateJSParameter parameters = (DesignTemplateJSParameter)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_JAVASCRIPT_PARAMETERS);
+	TemplateLayout parameters = (TemplateLayout)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_JAVASCRIPT_PARAMETERS);
 
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
 	ContainerAPI containerAPI = APILocator.getContainerAPI();
@@ -65,8 +65,8 @@
 		java.util.Map params = new java.util.HashMap();
 		params.put("struts_action",new String[] {"/ext/templates/view_templates"});
 		if (request.getParameter("pageNumber")!=null) {
-			int pageNumber = Integer.parseInt(request.getParameter("pageNumber"));
-			params.put("pageNumber",new String[] { pageNumber + "" });
+	int pageNumber = Integer.parseInt(request.getParameter("pageNumber"));
+	params.put("pageNumber",new String[] { pageNumber + "" });
 		}
 		referer = UtilMethods.encodeURL(com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params));
 	}
@@ -80,9 +80,9 @@
 	List<Host> listHosts= (List <Host>) request.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_HOSTS);
 	if(!UtilMethods.isSet(hostId)) {
 		if(request.getParameter("host_id") != null) {
-			hostId = request.getParameter("host_id");
+	hostId = request.getParameter("host_id");
 		} else {
-			hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
+	hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
 		}
 	}
 	Host host = null;
@@ -97,8 +97,6 @@
 	catch(Exception e){
 
 	}
-
-
 %>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
@@ -123,6 +121,13 @@
 			return;
 		}
 
+		var theme = dijit.byId("themeDiv");
+
+		if(null==theme.value || ''==theme.value){
+			alert('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "template-theme-mandatory"))%>');
+			return;
+		}
+
 		var addContainerLinks = window.parseInt(document.getElementById("countAddContainerLinks").value);
 		var containersAdded = window.parseInt(document.getElementById("countContainersAdded").value);
 		if(containersAdded==0){
@@ -133,7 +138,6 @@
 				return;
 		}
 
-		var theme = dijit.byId("themeDiv");
 		if(null!=theme.value && ''!=theme.value){
 			dojo.byId("theme").value = dijit.byId("themeDiv").value;
 			dojo.byId("themeName").value = dijit.byId("themeDiv").displayedValue;
@@ -154,7 +158,7 @@
 	}
 
 	function submitfmDelete() {
-		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template")) %>'))
+		if(confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template"))%>'))
 		{
 			self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="full_delete" /><portlet:param name="inode" value="<%=template.getInode()%>" /></portlet:actionURL>&referer=' + referer;
 		}
@@ -198,6 +202,14 @@
 	}
 
 	function previewTemplate(name, params) {
+
+		var theme = dijit.byId("themeDiv");
+
+		if(null==theme.value || ''==theme.value){
+			alert('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "template-theme-mandatory"))%>');
+			return;
+		}
+
 		var url = '/servlets/template/design/preview';
 		openWindowWithPost(url, name, params);
 	}
@@ -234,23 +246,23 @@
 	}
 
 	function selectTemplateVersion(objId,referer) {
-		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.replace.template")) %>')){
-			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=getversionback&inode_version=' + objId + '&referer=' + referer;
+		if(confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.replace.template"))%>')){
+			window.location = '<portlet:actionURL windowState="<%=WindowState.MAXIMIZED.toString()%>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=getversionback&inode_version=' + objId + '&referer=' + referer;
 		}
 	}
 
     function deleteVersion(objId){
-        if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.delete.version")) %>')){
-			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=deleteversion&inode=' + objId  + '&referer=' + referer;
+        if(confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.delete.version"))%>')){
+			window.location = '<portlet:actionURL windowState="<%=WindowState.MAXIMIZED.toString()%>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=deleteversion&inode=' + objId  + '&referer=' + referer;
         }
     }
 	function selectVersion(objId) {
-        if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.replace.version")) %>')){
-			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=getversionback&inode=' + objId + '&inode_version=' + objId  + '&referer=' + referer;
+        if(confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.replace.version"))%>')){
+			window.location = '<portlet:actionURL windowState="<%=WindowState.MAXIMIZED.toString()%>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=getversionback&inode=' + objId + '&inode_version=' + objId  + '&referer=' + referer;
 	    }
 	}
 	function editVersion(objId) {
-		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=edit&inode=' + objId  + '&referer=' + referer;
+		window.location = '<portlet:actionURL windowState="<%=WindowState.MAXIMIZED.toString()%>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=edit&inode=' + objId  + '&referer=' + referer;
 	}
 
 	function getContainerMockContent(title){
@@ -266,7 +278,7 @@
 
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
-		drawDefault(<%=overrideBody%>,'<%= LanguageUtil.get(pageContext, "Add-Container") %>','<%= LanguageUtil.get(pageContext, "Remove-Container") %>');
+		drawDefault(<%=overrideBody%>,'<%=LanguageUtil.get(pageContext, "Add-Container")%>','<%=LanguageUtil.get(pageContext, "Remove-Container")%>');
 		setTimeout('codeMirrorArea()',1);
 		dojo.byId("titleField").focus(true);
 	});
@@ -303,17 +315,17 @@
 
 
 <html:form action='/ext/templates/edit_template' styleId="fm">
-<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="add">
+<input name="<portlet:namespace /><%=Constants.CMD%>" type="hidden" value="add">
 <input name="<portlet:namespace />referer" type="hidden" value="<%=referer%>">
 <input name="<portlet:namespace />inode" type="hidden" value="<%=template.getInode()%>">
 <input name="<portlet:namespace />subcmd" type="hidden" value="">
-<input name="userId" type="hidden" value="<%= user.getUserId() %>">
+<input name="userId" type="hidden" value="<%=user.getUserId()%>">
 <input name="admin_l_list" type="hidden" value="">
 <input name="countAddContainer" type="hidden" id="countAddContainerLinks" value="<%=template.getCountAddContainer()!=null?template.getCountAddContainer():"0"%>"/>
 <input name="countContainers" type="hidden" id="countContainersAdded" value="<%=template.getCountContainers()!=null?template.getCountContainers():"0"%>"/>
 
 <div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" style="height: 100%; min-height: 881px;" >
-	<div id="template" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="<%= LanguageUtil.get(pageContext, "draw-template") %>" >
+	<div id="template" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="<%=LanguageUtil.get(pageContext, "draw-template")%>" >
 
 		<%-- Start Template Controls --%>
 
@@ -343,8 +355,8 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%= LanguageUtil.get(pageContext, "Theme") %>:</dt>
-							<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" themesOnly=true value="<%= UtilMethods.webifyString(template.getTheme())%>" displayedValue="<%= UtilMethods.webifyString(template.getThemeName())%>"></div>
+							<dt><%=LanguageUtil.get(pageContext, "Theme")%>:</dt>
+							<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" themesOnly=true value="<%=UtilMethods.webifyString(template.getTheme())%>" displayedValue="<%=UtilMethods.webifyString(template.getThemeName())%>"></div>
 							</dd>
 						</dl>
 					</div>
@@ -359,12 +371,12 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "page-width") %>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "page-width")%>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-									<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) { %>selected="selected"<%}%>>750px</option>
-									<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) { %>selected="selected"<%}%>>950px</option>
-									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) { %>selected="selected"<%}%>>100%</option>
-									<option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) { %>selected="selected"<%}%>>974px</option>
+									<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>
+									<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>
+									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
+									<option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>974px</option>
 								</select>
 							</dd>
 						</dl>
@@ -374,15 +386,15 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "Layout") %>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "Layout")%>:</dt>
 							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
-									<option value="none" <%if(parameters.getLayout().equals("none")) { %>selected="selected"<%}%>></option>
-									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-160-left") %></option>
-									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-180-left") %></option>
-									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-300-left") %></option>
-									<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-180-right") %></option>
-									<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-240-right") %></option>
-									<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "layout-300-right") %></option>
+									<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>></option>
+									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-160-left")%></option>
+									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-left")%></option>
+									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-left")%></option>
+									<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-right")%></option>
+									<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-240-right")%></option>
+									<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-right")%></option>
 								</select>
 							</dd>
 						</dl>
@@ -392,29 +404,29 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "Header") %>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "Header")%>:</dt>
 							<dd>
-								<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" <%if(parameters.isHeader()) { %>checked="checked"<%}%>/>
+								<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" <%if(parameters.isHeader()) {%>checked="checked"<%}%>/>
 							</dd>
 						</dl>
 						<div class="clear"></div>
 					    <dl>
-							<dt><%=LanguageUtil.get(pageContext, "Footer") %>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "Footer")%>:</dt>
 							<dd>
-								<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" <%if(parameters.isFooter()) { %>checked="checked"<%}%>/>
+								<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" <%if(parameters.isFooter()) {%>checked="checked"<%}%>/>
 							</dd>
 						</dl>
 					</div>
 				</div>
 				<div class="clear"></div>
-				<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows") %></div>
+				<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows")%></div>
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
 							<dt id="tableContainer">
 								<table id="splitBodyTable" cellspacing="4" cellpadding="2">
 									<%
-										for(SplitBody sb : parameters.getBodyRows()){
+										for(TemplateLayoutRow sb : parameters.getBodyRows()){
 									%>
 								        <tr id="_selectRow<%=sb.getIdentifier()%>" class="spaceUnder">
 									        <td style="width: 16px;">
@@ -509,7 +521,7 @@
 					<div class="leftProperties">
 						<dl>
 							<dt><%= LanguageUtil.get(pageContext, "Theme") %>:</dt>
-							<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" themesOnly=true></div>
+							<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" onlySelectFolders="true" themesOnly=true></div>
 							</dd>
 						</dl>
 					</div>
@@ -557,14 +569,14 @@
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "Header") %>:</dt>
 							<dd>
-								<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" onclick="javascript: addHeader(this.checked)" checked="checked"/>
+								<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" checked="checked"/>
 							</dd>
 						</dl>
 						<div class="clear"></div>
 					    <dl>
 							<dt><%=LanguageUtil.get(pageContext, "Footer") %>:</dt>
 							<dd>
-								<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" onclick="javascript: addFooter(this.checked)" checked="checked"/>
+								<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" checked="checked"/>
 							</dd>
 						</dl>
 					</div>
