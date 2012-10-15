@@ -56,7 +56,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
 
         //Force the loading of some classes that may be already loaded on the host classpath but we want to override with the ones on this bundle and we specified
-        String overrideClasses = (String) context.getBundle().getHeaders().get( "Override-Classes" );
+        String overrideClasses = context.getBundle().getHeaders().get( "Override-Classes" );
         if ( overrideClasses != null ) {
             String[] forceOverride = overrideClasses.split( "," );
             for ( String classToOverride : forceOverride ) {
