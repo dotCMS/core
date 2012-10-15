@@ -211,7 +211,7 @@ dojo.declare("dotcms.dijit.form.HostFolderFilteringSelect", [dijit._Widget, diji
 
 	_selectItem: function(item, event) {
 
-		if(this.onlySelectFolders && item.type != 'folder')
+		if((this.onlySelectFolders || this.themesOnly ) && item.type != 'folder')
 			return false;
 
 		var name = this.model.getLabel(item);
