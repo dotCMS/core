@@ -27,6 +27,10 @@ djConfig={
 <script type="text/javascript" src="/dwr/util.js"></script>
 <script type="text/javascript" src="/dwr/interface/TagAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
+<script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
+<script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
+<script type="text/javascript" src="/dwr/interface/TemplateAjax.js"></script>
+<script type="text/javascript" src="/dwr/interface/StructureAjax.js"></script>
 
 <script type="text/javascript">
 dojo.ready(function(){
@@ -46,6 +50,13 @@ var theme = 'dmundra';
 	dojo.require("dijit.form.CheckBox");
 	dojo.require("dijit.form.DateTextBox");
 	dojo.require("dijit.form.MultiSelect");
+	dojo.require('dijit.form.Slider');
+	dojo.require("dijit.Dialog");
+	dojo.registerModulePath("dotcms","/html/js/dotcms");
+	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+	dojo.require("dotcms.dijit.form.FileSelector");
+	dojo.require("dotcms.dijit.FileBrowserDialog");
+	dojo.require("dojo.dnd.Source");
 	var DWRUtil = dwr.util;
 </script>
 
@@ -329,9 +340,20 @@ var theme = 'dmundra';
 
 
 				#elseif($field.fieldType == 'relationships_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
-
-
-
+					<div class="group">
+						<dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
+		    				#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+		    					<label for="${field.velocityVarName}FieldLabel">#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
+		    				#end
+		    			</dt>
+		    			<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
+		    				#set($fieldAux = $field)
+							#parse('/static/content/relationships_tab_render.vtl')
+							<script language="javascript">
+					       		updateTabCounter("$currentTab");
+					    	</script>
+					    </dd>
+					</div>
 				#elseif(!$structures.isFieldConstant($field) && $field.fieldName != 'Form Host')
 					#set($fieldAux = $field)
 				    <div class="group">
@@ -706,7 +728,29 @@ var theme = 'dmundra';
 					        		updateTabCounter("$currentTab");
 					        	</script>
 	            			#end
-
+					#elseif($field.fieldType == 'host or folder' && !($showOnlyRequiredFields && !$field.isRequired()))                     
+	            	
+		            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+		            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+		            	    	#set($fieldDefaultValue = $tempVelocityVar)
+		            	    #else
+		            	    	#set($fieldDefaultValue = "$!host.identifier")
+		            	    #end
+		            	    
+							
+		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            				#parse('/static/content/hidden_field_render.vtl') 
+	            		    #else
+		            		    #if(!$UtilMethods.isSet($user))
+		            		    	#parse('/static/content/hidden_field_render.vtl') 
+		            		    #else
+		            				#parse('/static/content/host_folder_field_render.vtl')
+		            				<script language="javascript">
+						        		updateTabCounter("$currentTab");
+						        	</script>
+		            			#end		            				
+	            			#end
 	            	#elseif($field.fieldType == 'category' && !($showOnlyRequiredFields && !$field.isRequired()) )
 	            		#set($fieldDefaultValue = "")
 	            		#if($UtilMethods.isSet($request.getParameter("categoryNames")))
