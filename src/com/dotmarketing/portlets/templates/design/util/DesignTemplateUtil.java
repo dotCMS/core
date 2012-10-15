@@ -29,9 +29,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import com.dotmarketing.portlets.templates.design.bean.DesignTemplateJSParameter;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
-import com.dotmarketing.portlets.templates.design.bean.SplitBody;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 
@@ -54,25 +54,17 @@ public class DesignTemplateUtil {
 		Document templateBody = Jsoup.parse(_body);
 
 		// adding default css for YUI Grid
-		Element head = templateBody.head();
-
 		if(UtilMethods.isSet(themePath)) {
-			head.append("#dotParse('"+themePath+Template.THEME_HTML_HEAD+"')");
+			addHeadCode(templateBody, "#dotParse('"+themePath+Template.THEME_HTML_HEAD+"')");
 		}
-
-		head.append("<link rel=\"stylesheet\" type=\"text/css\" href=\""+PATH_CSS_YUI+"\">");
-
-		// adding the window title
-		head.append("<title>Design Template Preview</title>");
-
-		Element body = templateBody.body();
+		addHeadCode(templateBody, "<link rel=\"stylesheet\" type=\"text/css\" href=\""+PATH_CSS_YUI+"\">");
 
 		if(UtilMethods.isSet(themePath) && header) {
-			body.prepend("#dotParse('"+themePath+Template.THEME_HEADER+"')");
+			addHeaderCode(templateBody, "#dotParse('"+themePath+Template.THEME_HEADER+"')");
 		}
 
-		if(UtilMethods.isSet(themePath) && header) {
-			body.prepend("#dotParse('"+themePath+Template.THEME_FOOTER+"')");
+		if(UtilMethods.isSet(themePath) && footer) {
+			addFooterCode(templateBody, "#dotParse('"+themePath+Template.THEME_FOOTER+"')");
 		}
 
 		// remove the div for file
@@ -94,6 +86,7 @@ public class DesignTemplateUtil {
 		// gets the parseContainer
 		getParseContainer(templateBody);
 
+
 		return new StringBuffer(templateBody.toString());
 
 	}
@@ -108,21 +101,18 @@ public class DesignTemplateUtil {
 		Document templateBody = Jsoup.parse(_body);
 
 		// adding default css for YUI Grid
-		Element head = templateBody.head();
 
 		if(UtilMethods.isSet(themePath)) {
-			head.append("#dotParse('"+themePath+Template.THEME_HTML_HEAD+"')");
+			addHeadCode(templateBody, "#dotParse('"+themePath+Template.THEME_HTML_HEAD+"')");
 		}
-		head.append("<link rel=\"stylesheet\" type=\"text/css\" href=\""+PATH_CSS_YUI+"\">");
-
-		Element body = templateBody.body();
+		addHeadCode(templateBody, "<link rel=\"stylesheet\" type=\"text/css\" href=\""+PATH_CSS_YUI+"\">");
 
 		if(UtilMethods.isSet(themePath) && header) {
-			body.prepend("#dotParse('"+themePath+Template.THEME_HEADER+"')");
+			addHeaderCode(templateBody, "#dotParse('"+themePath+Template.THEME_HEADER+"')");
 		}
 
 		if(UtilMethods.isSet(themePath) && footer) {
-			body.append("#dotParse('"+themePath+Template.THEME_FOOTER+"')");
+			addFooterCode(templateBody, "#dotParse('"+themePath+Template.THEME_FOOTER+"')");
 		}
 
 		// remove the div for file
@@ -159,9 +149,9 @@ public class DesignTemplateUtil {
 	 * @param drawedBody
 	 * @return
 	 */
-	public static DesignTemplateJSParameter getDesignParameters(String drawedBody){
+	public static TemplateLayout getDesignParameters(String drawedBody){
 		Document templateDrawedBody = Jsoup.parse(drawedBody);
-		DesignTemplateJSParameter parameters = new DesignTemplateJSParameter();
+		TemplateLayout parameters = new TemplateLayout();
 		parameters.setPageWidth(getPageWithValue(templateDrawedBody));
 		parameters.setHeader(hasHeader(templateDrawedBody));
 		parameters.setFooter(hasFooter(templateDrawedBody));
@@ -257,6 +247,16 @@ public class DesignTemplateUtil {
 		head.append(headCode);
 	}
 
+	private static void addHeaderCode(Document templateBody, String headCode){
+		Element header = templateBody.getElementById(HEADER_ID);
+		header.append(headCode);
+	}
+
+	private static void addFooterCode(Document templateBody, String headCode){
+		Element header = templateBody.getElementById(FOOTER_ID);
+		header.append(headCode);
+	}
+
 	private static String getPageWithValue(Document templateDrawedBody){
 		Element globalContainer = templateDrawedBody.getElementsByAttributeValue(NAME_ATTRIBUTE, MAIN_DIV_NAME_VALUE).get(0);
 		return globalContainer.attr(ID_ATTRIBUTE);
@@ -284,15 +284,15 @@ public class DesignTemplateUtil {
 		return footer!=null;
 	}
 
-	private static List<SplitBody> getSelectForBody(Document templateDrawedBody){
-		List<SplitBody> splitBodiesList = new ArrayList<SplitBody>();
+	private static List<TemplateLayoutRow> getSelectForBody(Document templateDrawedBody){
+		List<TemplateLayoutRow> splitBodiesList = new ArrayList<TemplateLayoutRow>();
 		Elements splitBodies = templateDrawedBody.select(DIV_TAG+"["+ID_ATTRIBUTE+"~="+getRegexForSelectBody());
 		for(int i=0; i<splitBodies.size(); i++){
 			Element splitBody = splitBodies.get(i);
 			// gets the identifier of the body div
 			String idHtml = splitBody.attr(ID_ATTRIBUTE);
 			String id = idHtml.substring(idHtml.indexOf(SPLIT_BODY_ID_PREFIX)+SPLIT_BODY_ID_PREFIX.length());
-			SplitBody sb = new SplitBody();
+			TemplateLayoutRow sb = new TemplateLayoutRow();
 			sb.setIdentifier(Integer.parseInt(id));
 			sb.setId("select_splitBody");
 			sb.setValue(splitBody.child(0).attr(ID_ATTRIBUTE));
