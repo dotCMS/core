@@ -249,4 +249,14 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	    }
     }
 
+	@Override
+    public void indexList(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        try {
+            response.setContentType("text/plain");
+            response.getWriter().println(APILocator.getSiteSearchAPI().listIndices());
+        }
+        catch(Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 }
