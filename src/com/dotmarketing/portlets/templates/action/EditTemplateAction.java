@@ -30,7 +30,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.design.bean.DesignTemplateJSParameter;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -480,7 +480,7 @@ public class EditTemplateAction extends DotPortletAction implements
 			req.setAttribute(WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY, true);
 			// create the javascript parameters for left side (Page Width, Layout ecc..) of design template
 			Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_EDIT);
-			DesignTemplateJSParameter parameters = DesignTemplateUtil.getDesignParameters(template.getDrawedBody());
+			TemplateLayout parameters = DesignTemplateUtil.getDesignParameters(template.getDrawedBody());
 			req.setAttribute(WebKeys.TEMPLATE_JAVASCRIPT_PARAMETERS, parameters);
 			setForward(req, "portlet.ext.templates.design_template");
 		}else
