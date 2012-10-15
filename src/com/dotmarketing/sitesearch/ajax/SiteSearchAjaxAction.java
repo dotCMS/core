@@ -239,7 +239,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
             String defaultIndex=APILocator.getIndiciesAPI().loadIndicies().site_search;
             List<String> ret=new ArrayList<String>();
             for(String ii : APILocator.getSiteSearchAPI().listIndices())
-                if(!defaultIndex.equals(ii))
+                if(defaultIndex==null || !defaultIndex.equals(ii))
                     ret.add(ii);
             response.setContentType("text/plain");
             response.getWriter().println(ret);
