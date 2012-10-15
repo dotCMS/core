@@ -156,11 +156,11 @@ function addHeader(checked){
 		//adding at the first position
 		mainDiv.insertBefore(headerDiv,mainDiv.firstChild);
 
-		updateAddContainerLinksCount(true);
+//		updateAddContainerLinksCount(true);
 	} else { //delete the header div
 		var div = document.getElementById("hd-template");
 		div.parentNode.removeChild(div);
-		updateAddContainerLinksCount(false);
+//		updateAddContainerLinksCount(false);
 	}
 }
 
@@ -175,11 +175,11 @@ function addFooter(checked){
 		// adding at the last position (append)
 		mainDiv.appendChild(footerDiv);
 		//update the add container links count
-		updateAddContainerLinksCount(true);
+//		updateAddContainerLinksCount(true);
 	} else { //delete the footer div
 		var div = document.getElementById("ft-template");
 		div.parentNode.removeChild(div);
-		updateAddContainerLinksCount(false);
+//		updateAddContainerLinksCount(false);
 	}
 }
 
