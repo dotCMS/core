@@ -411,4 +411,8 @@ public class IndexAjaxAction extends AjaxAction {
 		response.getWriter().println(ReindexThread.getInstance().isWorking()?"active":"stopped");
 	}
 
+	public void indexList(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
+        response.getWriter().println(idxApi.listDotCMSIndices());        
+    }
 }
