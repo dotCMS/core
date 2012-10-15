@@ -102,7 +102,7 @@ public class SubmitContentUtil {
 	 * @return Map<Relationship,List<Contentlet>>
 	 * @throws DotSecurityException
 	 **/
-	private static Map<Relationship,List<Contentlet>> getRelationships(Structure structure, Contentlet contentlet, String parametersOptions, User user) throws DotDataException, DotSecurityException{
+	private static Map<Relationship,List<Contentlet>> getRelationships(Structure structure, Contentlet contentlet, String parametersOptions,List<String> parametersName,List<String[]> values, User user) throws DotDataException, DotSecurityException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
 		Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
 		if(contentlet == null)
@@ -118,6 +118,19 @@ public class SubmitContentUtil {
 
 					List<Contentlet> cons = conAPI.findContentletsByIdentifiers(identArray, true, lAPI.getDefaultLanguage().getId(), user, true);
 					if(cons.size()>0){
+						contentRelationships.put(rel, cons);
+					}
+				}
+			}
+			for(int i=0; i < parametersName.size(); i++){
+				String fieldname = parametersName.get(i);
+				String[] fieldValue = values.get(i);
+				if(fieldname.indexOf(rel.getRelationTypeValue()) != -1){
+					List<Contentlet> cons = conAPI.findContentletsByIdentifiers(fieldValue, true, lAPI.getDefaultLanguage().getId(), user, true);
+					if(cons.size()>0){
+						if(contentRelationships.containsKey(rel)){
+							cons.addAll(contentRelationships.get(rel));
+						}
 						contentRelationships.put(rel, cons);
 					}
 				}
@@ -454,7 +467,7 @@ public class SubmitContentUtil {
 		/**
 		 * Get the required relationships
 		 */
-		Map<Relationship,List<Contentlet>> relationships = SubmitContentUtil.getRelationships(st, contentlet, options, user);
+		Map<Relationship,List<Contentlet>> relationships = SubmitContentUtil.getRelationships(st, contentlet, options,parametersName,values, user);
 
 
 		/**

@@ -129,3 +129,36 @@
 	text-decoration: none;
 }
 */
+/* relationship dialog */
+#relationshipsDialog .dojoDialog {
+	background : #ffffff;
+	border : 1px solid #999;
+	-moz-border-radius : 5px;
+	padding : 4px;
+	margin-bottom : 0;
+}
+/* group multiple buttons in a row */
+#searchFields {
+	display: block;
+	text-align: center;
+}
+#searchFields .dojoButton {
+	float: left;
+	margin-right: 10px;
+}
+
+#relationshipsDialog #searchResults li {
+   border-bottom: 1px solid #B3B3B3;
+   list-style-type: none;
+}
+#relationshipsDialog #searchResults li .addButton {
+	float:right;
+}
+
+#relationshipsDialog #pagination .previousButton{
+	float:left;
+}
+
+#relationshipsDialog #pagination .nextButton{
+	float:right;
+}
