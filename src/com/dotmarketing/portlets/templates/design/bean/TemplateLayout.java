@@ -8,7 +8,7 @@ import java.util.List;
  * @author	Graziano Aliberti - Engineering Ingegneria Informatica
  * @date	Apr 20, 2012
  */
-public class DesignTemplateJSParameter {
+public class TemplateLayout {
 	
 	public String pageWidth;
 	
@@ -18,7 +18,7 @@ public class DesignTemplateJSParameter {
 	
 	public boolean footer;
 	
-	public List<SplitBody> bodyRows;
+	public List<TemplateLayoutRow> bodyRows;
 
 	public String getPageWidth() {
 		return pageWidth;
@@ -52,11 +52,11 @@ public class DesignTemplateJSParameter {
 		this.footer = footer;
 	}
 
-	public List<SplitBody> getBodyRows() {
+	public List<TemplateLayoutRow> getBodyRows() {
 		return bodyRows;
 	}
 
-	public void setBodyRows(List<SplitBody> bodyRows) {
+	public void setBodyRows(List<TemplateLayoutRow> bodyRows) {
 		this.bodyRows = bodyRows;
 	}
 	
