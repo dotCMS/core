@@ -8,13 +8,13 @@ var lastTabId = '';
 var errorFieldName='';
 
 function submitContent(tabName){
-	dijit.byId("buttonSubmitButton").setAttribute('disabled', true);
+	dojo.byId("buttonSubmitButton").disabled=true;
 	errorFieldName='';
 	var isValid = checkTabFields(tabName); 
 	if(isValid){	
 		document.getElementById('submitContentForm').submit();	
 	}else{
-		dijit.byId("buttonSubmitButton").setAttribute('disabled', false);
+		dojo.byId("buttonSubmitButton").disabled=false;
 		if(errorFieldName != null && errorFieldName != ''){
 			document.getElementById(errorFieldName).focus();	
 		}
