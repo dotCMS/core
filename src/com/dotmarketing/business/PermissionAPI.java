@@ -49,6 +49,7 @@ public interface PermissionAPI {
 		put("FOLDERS", Folder.class.getCanonicalName());
 		put("LINKS", Link.class.getCanonicalName());
 		put("TEMPLATES", Template.class.getCanonicalName());
+		put("TEMPLATE_LAYOUTS", Template.TEMPLATE_LAYOUTS_CANONICAL_NAME);
 		put("STRUCTURES", Structure.class.getCanonicalName());
 		put("CONTENTLETS", Contentlet.class.getCanonicalName());
    }};
@@ -60,6 +61,7 @@ public interface PermissionAPI {
 	   FOLDERS(Folder.class.getCanonicalName()),
 	   LINKS(Link.class.getCanonicalName()),
 	   TEMPLATES(Template.class.getCanonicalName()),
+	   TEMPLATE_LAYOUTS(Template.TEMPLATE_LAYOUTS_CANONICAL_NAME),
 	   STRUCTURES(Structure.class.getCanonicalName()),
 	   CONTENTLETS(Contentlet.class.getCanonicalName());
 
