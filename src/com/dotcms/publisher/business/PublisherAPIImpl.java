@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
@@ -67,7 +66,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String OCLINSERTSOLRSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	
 	
-	public void addContentsToPublishQueue(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException {		
+	public void addContentsToPublish(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException {		
 		List<String> assets = null;
 		if(contents != null) {
 			assets = prepareAssets(contents, isLive);
@@ -154,224 +153,106 @@ public class PublisherAPIImpl extends PublisherAPI{
 		return assets;
 	}
 	
-
-	/**
-	 * Include in the publishing_queue table the content to add or update in the PublishQueue Index
-	 * @param con Contentlet
-	 * @throws DotPublisherException 
-	 */
-	public void addContentToPublishQueue(Contentlet con) throws DotPublisherException {
-		try{
-			HibernateUtil.startTransaction();
-			DotConnect dc = new DotConnect();
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-				/*Validate if the table doesn't exist then is created*/
-				dc.setSQL(PGINSERTSOLRSQL);
-				dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
-				dc.addObject(con.getIdentifier());
-				dc.addObject(con.getLanguageId());
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
+	public void addContentsToUnpublish(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException {		
+		List<String> assets = null;
+		if(contents != null) {
+			assets = prepareAssets(contents, isLive);
+			
+			try{
+				HibernateUtil.startTransaction();
+				for(String asset: assets) {
+					DotConnect dc = new DotConnect();
+					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+						dc.setSQL(PGINSERTSOLRSQL);
+					} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+						dc.setSQL(MYINSERTSOLRSQL);
+					} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+						dc.setSQL(MSINSERTSOLRSQL);
+					} else{
+						dc.setSQL(OCLINSERTSOLRSQL);
+					}
+					
+					dc.addParam(PublisherAPI.DELETE_ELEMENT);
+					dc.addObject(asset); //asset
+					dc.addParam(new Date());
+					dc.addObject(1);
+					dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
+					
+					//TODO How do I get new columns value?	
+					dc.addParam(new Date());
+					dc.addObject(null);
+					dc.addObject(null);
+					dc.addObject(bundleId);
+					dc.addObject(null);
+					
+					dc.loadResult();	
+				}
 				
-				//TODO How do I get new columns value?
-				
-				dc.loadResult();	
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-				dc.setSQL(MYINSERTSOLRSQL);
-				dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
-				dc.addObject(con.getIdentifier());
-				dc.addObject(con.getLanguageId());
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				
-				//TODO How do I get new columns value?	
-				dc.addParam(new Date());
-				dc.addObject(null);
-				dc.addObject(null);
-				dc.addObject(UUID.randomUUID());
-				dc.addObject(null);
-				
-				dc.loadResult();				
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-				dc.setSQL(MSINSERTSOLRSQL);
-				dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
-				dc.addObject(con.getIdentifier());
-				dc.addObject(con.getLanguageId());
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-				
-				dc.loadResult();				
-			}else{
-				dc.setSQL(OCLINSERTSOLRSQL);
-				dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
-				dc.addObject(con.getIdentifier());
-				dc.addObject(con.getLanguageId());
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-								
-				dc.loadResult();				
+				HibernateUtil.commitTransaction();			
+			}catch(Exception e){
+	
+				try {
+					HibernateUtil.rollbackTransaction();
+				} catch (DotHibernateException e1) {
+					Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+				}			
+				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
+				throw new DotPublisherException("Unable to add element to publish queue table:" + e.getMessage(), e);
+			}finally{
+				DbConnectionFactory.closeConnection();
 			}
-			HibernateUtil.commitTransaction();			
-		}catch(Exception e){
-
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
-			}			
-			Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to add " + con.getIdentifier() + " to solr table:" + e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
-		}
-	}
-
-	private static final String PGDELETESOLRSQL= PGINSERTSOLRSQL;
-	private static final String MYDELETESOLRSQL= MYINSERTSOLRSQL;
-	private static final String MSDELETESOLRSQL= MSINSERTSOLRSQL;
-	private static final String OCLDELETESOLRSQL= OCLINSERTSOLRSQL;
-	/**
-	 * Include in the publishing_queue table the content to remove in the PublishQueue Index
-	 * @param con Contentlet
-	 * @throws DotPublisherException
-	 */
-	public void removeContentFromPublishQueue(Contentlet con) throws DotPublisherException {
-		try{
-			HibernateUtil.startTransaction();
-			DotConnect dc = new DotConnect();
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-				/*Validate if the table doesn't exist then is created*/
-				dc.setSQL(PGDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_ELEMENT);
-				dc.addObject(con.getIdentifier());
-				dc.addObject(con.getLanguageId());
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-				
-				dc.loadResult();
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-				dc.setSQL(MYDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_ELEMENT);
-				dc.addObject(con.getIdentifier());
-				dc.addObject(con.getLanguageId());
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				
-				//TODO How do I get new columns value?	
-				dc.addParam(new Date());
-				dc.addObject(null);
-				dc.addObject(null);
-				dc.addObject(UUID.randomUUID());
-				dc.addObject(null);
-				
-				dc.loadResult();					
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-				dc.setSQL(MSDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_ELEMENT);
-				dc.addObject(con.getIdentifier());
-				dc.addObject(con.getLanguageId());
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-				
-				dc.loadResult();					
-			}else{
-				dc.setSQL(OCLDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_ELEMENT);
-				dc.addObject(con.getIdentifier());
-				dc.addObject(con.getLanguageId());
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-				
-				dc.loadResult();
-			}
-			HibernateUtil.commitTransaction();
-		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
-			}
-			Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to add " + con.getIdentifier() + " to solr table:" + e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 	
-	public void removeContentFromPublishQueue(String identifier, long languageId) throws DotPublisherException {
-		try{
-			HibernateUtil.startTransaction();
-			DotConnect dc = new DotConnect();
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-				/*Validate if the table doesn't exist then is created*/
-				dc.setSQL(PGDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_ELEMENT);
-				dc.addObject(identifier);
-				dc.addObject(languageId);
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-				
-				dc.loadResult();	
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-				dc.setSQL(MYDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_ELEMENT);
-				dc.addObject(identifier);
-				dc.addObject(languageId);
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-				
-				dc.loadResult();					
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-				dc.setSQL(MSDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_ELEMENT);
-				dc.addObject(identifier);
-				dc.addObject(languageId);
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-				
-				dc.loadResult();						
-			}else{
-				dc.setSQL(OCLDELETESOLRSQL);
-				dc.addParam(PublisherAPI.DELETE_ELEMENT);
-				dc.addObject(identifier);
-				dc.addObject(languageId);
-				dc.addParam(new Date());
-				dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
-				
-				//TODO How do I get new columns value?	
-				
-				dc.loadResult();
-			}
-			HibernateUtil.commitTransaction();
-		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
-			}
+	private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";
+	/**
+	 * Get tree data of a content
+	 * @param indentifier
+	 * @return
+	 * @throws DotPublisherException 
+	 */
+	public List<Map<String,Object>> getContentTreeMatrix(String id) throws DotPublisherException {
+		List<Map<String,Object>> res = null;
+		DotConnect dc=new DotConnect();
+		dc.setSQL(TREE_QUERY);
+		dc.addParam(id);
+		dc.addParam(id);
+		
+		try {
+			res = dc.loadObjectResults();
+		} catch (Exception e) {
 			Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to add " + identifier + " to solr table:" + e.getMessage(), e);
-		}finally{
+			throw new DotPublisherException("Unable find tree:" + e.getMessage(), e);
+		} finally {
 			DbConnectionFactory.closeConnection();
 		}
+		
+		return res;
+	}
+	
+	
+	private static final String MULTI_TREE_QUERY = "select * from multi_tree where child = ?";
+	/**
+	 * Get multi tree data of a content
+	 * @param indentifier
+	 * @return
+	 */
+	public List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException {
+		List<Map<String,Object>> res = null;
+		DotConnect dc=new DotConnect();
+		dc.setSQL(MULTI_TREE_QUERY);
+		dc.addParam(id);
+		
+		try {
+			res = dc.loadObjectResults();
+		} catch (Exception e) {
+			Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable find multi tree:" + e.getMessage(), e);
+		} finally {
+			DbConnectionFactory.closeConnection();
+		}
+		
+		return res;
 	}
 
 	private static final String PSGETENTRIESWITHERRORS="select * from publishing_queue where in_error = "+DbConnectionFactory.getDBTrue();

@@ -26,32 +26,33 @@ public abstract class PublisherAPI {
 		}
 		return solrAPI;	
 	}
-
-	/**
-	 * Include in the publishing_queue table the content to add or update in the PublishQueue Index
-	 * @param con Contentlet
-	 */
-	public abstract void addContentToPublishQueue(Contentlet con) throws DotPublisherException;
 	
 	/**
 	 * Include in the publishing_queue table the Lucene query used to get contents to publish
 	 * @param con Contentlet
 	 */
-	public abstract void addContentsToPublishQueue(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException;
-
-	/**
-	 * Include in the publishing_queue table the content to remove in the PublishQueue Index
-	 * @param con Contentlet
-	 */
-	public abstract void removeContentFromPublishQueue(Contentlet con) throws DotPublisherException;
+	public abstract void addContentsToPublish(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException;
 	
 	/**
-	 * Include in the publishing_queue table the content to remove in the PublishQueue Index
-	 * @param identifier Contentlet identifier
-	 * @param languageId contentlet languageId
+	 * Include in the publishing_queue table the Lucene query used to get contents to UN-publish
+	 * @param con Contentlet
 	 */
-	public abstract void removeContentFromPublishQueue(String identifier, long languageId) throws DotPublisherException;
-
+	public abstract void addContentsToUnpublish(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException;
+	
+	/**
+	 * Get tree data of a content
+	 * @param id
+	 * @return
+	 */
+	public abstract List<Map<String,Object>> getContentTreeMatrix(String id) throws DotPublisherException;
+	
+	/**
+	 * Get multi tree data of a content
+	 * @param id
+	 * @return
+	 */
+	public abstract List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException;
+	
 	/**
 	 * Get a list of all the elements in the publishing_queue table that could be processes because some error
 	 * @return List<Map<String,Object>>

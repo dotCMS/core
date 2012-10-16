@@ -11,7 +11,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
@@ -26,7 +25,6 @@ import com.dotmarketing.util.Logger;
 public class PublisherAddActionlet extends WorkFlowActionlet{
 
 	private PublisherAPI publisherAPI = PublisherAPI.getInstance();
-	private LanguageAPI languagesAPI = APILocator.getLanguageAPI();
 	ContentletAPI conAPI = APILocator.getContentletAPI();
 	
 	/**
@@ -85,8 +83,8 @@ public class PublisherAddActionlet extends WorkFlowActionlet{
 			//}
 			
 			
-			publisherAPI.addContentsToPublishQueue(contentsLive, bundleId, true);
-			publisherAPI.addContentsToPublishQueue(contentsWorking, bundleId, false);
+			publisherAPI.addContentsToPublish(contentsLive, bundleId, true);
+			publisherAPI.addContentsToPublish(contentsWorking, bundleId, false);
 			
 		} catch (DotPublisherException e) {
 			Logger.debug(PublisherAddActionlet.class, e.getMessage());
