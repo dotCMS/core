@@ -677,3 +677,10 @@ last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0,
 in_error tinyint DEFAULT 0, last_results TEXT, 
 publish_date DATETIME, server_id VARCHAR(256), 
 type VARCHAR(256), bundle_id VARCHAR(256), target text);
+
+CREATE TABLE publishing_queue_audit
+(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, 
+status INTEGER, 
+status_pojo text, 
+status_updated DATETIME, 
+create_date DATETIME);

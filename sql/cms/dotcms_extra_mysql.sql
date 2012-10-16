@@ -599,3 +599,5 @@ create table publishing_queue (id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, op
 entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, in_error varchar(1) DEFAULT '0', last_results LONGTEXT, 
 publish_date DATETIME, server_id VARCHAR(256), 
 type VARCHAR(256), bundle_id VARCHAR(256) , target text);
+
+create table publishing_queue_audit (bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, status INTEGER, status_pojo text, status_updated DATETIME, create_date DATETIME);

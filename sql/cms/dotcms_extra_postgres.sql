@@ -715,3 +715,10 @@ last_try TIMESTAMP, num_of_tries int8 NOT NULL DEFAULT 0,
 in_error bool DEFAULT 'f', last_results TEXT,
 publish_date TIMESTAMP, server_id VARCHAR(256), 
 type VARCHAR(256), bundle_id VARCHAR(256), target text);
+
+CREATE TABLE publishing_queue_audit
+(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, 
+status INTEGER, 
+status_pojo text, 
+status_updated TIMESTAMP, 
+create_date TIMESTAMP);
