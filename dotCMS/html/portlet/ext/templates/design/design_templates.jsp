@@ -521,7 +521,7 @@
 					<div class="leftProperties">
 						<dl>
 							<dt><%= LanguageUtil.get(pageContext, "Theme") %>:</dt>
-							<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" onlySelectFolders="true" themesOnly=true></div>
+							<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" themesOnly=true></div>
 							</dd>
 						</dl>
 					</div>
