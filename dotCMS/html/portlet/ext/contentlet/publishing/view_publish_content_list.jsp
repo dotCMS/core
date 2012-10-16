@@ -92,10 +92,18 @@
 		    		try{
 		    			//Live
 		    			iresults = conAPI.search(query+" +live:true",0,0,sortBy,user,false);
-		    			publisherAPI.addContentsToPublishQueue(iresults,bundeId, true);
+		    			if(addOperationType.equals("add"))
+		    				publisherAPI.addContentsToPublish(iresults,bundeId, true);
+		    			else
+		    				publisherAPI.addContentsToUnpublish(iresults,bundeId, true);
 		    			//Working
 		    			iresults = conAPI.search(query+" +working:true",0,0,sortBy,user,false);
-		    			publisherAPI.addContentsToPublishQueue(iresults,bundeId, false);
+		    			
+		    			if(addOperationType.equals("add"))
+		    				publisherAPI.addContentsToPublish(iresults,bundeId, false);
+		    			else
+		    				publisherAPI.addContentsToUnpublish(iresults,bundeId, false);
+		    			
 		    			processedCounter = iresults.size();
 		    		}catch(Exception b){
     					nastyError += "<br/>Unable to add selected contents";
@@ -110,24 +118,29 @@
 		    		List<Contentlet> contentsWorking = new ArrayList<Contentlet>();
 		    		for(String item : addQueueElementsStr.split(",")){
 		    			String[] value = item.split("_");
-		    			if(addOperationType.equals("add")){
-		    				//for(Language language : languages) {
-		    					try {
-			    					Contentlet conLive = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
-			    					contentsLive.add(conLive);
-		    					} catch(DotContentletStateException e) {}
-		    					try {
-			    					Contentlet conWorking = conAPI.findContentletByIdentifier(value[0],false,Long.parseLong(value[1]),user, false);
-			    					contentsWorking.add(conWorking);
-		    					} catch(DotContentletStateException e) {}
-		    					
-		    					processedCounter++;
-		    				//}
-		    			}
+		    			
+	    				//for(Language language : languages) {
+	    					try {
+		    					Contentlet conLive = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
+		    					contentsLive.add(conLive);
+	    					} catch(DotContentletStateException e) {}
+	    					try {
+		    					Contentlet conWorking = conAPI.findContentletByIdentifier(value[0],false,Long.parseLong(value[1]),user, false);
+		    					contentsWorking.add(conWorking);
+	    					} catch(DotContentletStateException e) {}
+	    					
+	    					processedCounter++;
+	    				//}
+		    			
 		    		}
 		    		try{
-		    			publisherAPI.addContentsToPublishQueue(contentsLive, bundeId, true);
-		    			publisherAPI.addContentsToPublishQueue(contentsWorking, bundeId, false);
+		    			if(addOperationType.equals("add")){
+		    				publisherAPI.addContentsToPublish(contentsLive, bundeId, true);
+		    				publisherAPI.addContentsToPublish(contentsWorking, bundeId, false);
+		    			} else {
+		    				publisherAPI.addContentsToUnpublish(contentsLive, bundeId, true);
+		    				publisherAPI.addContentsToUnpublish(contentsWorking, bundeId, false);
+		    			}
 		    		}catch(Exception b){
     					nastyError += "<br/>Unable to add selected contents";
     					errorCounter++;
@@ -263,7 +276,7 @@
 	                    	   addToPublishQueueQueue('remove');
 	           }
 	       });
-	       //menu.addChild(menuItem2);
+	       menu.addChild(menuItem2);
 	       
 	       var button = new dijit.form.ComboButton({
 	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
@@ -296,7 +309,7 @@
 	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
 	                       iconClass: "plusIcon",
 	                       onClick: function() {
-	                    	   //addToPublishQueueQueue('add');
+	                    	   addToPublishQueueQueue('add');
 	           }
 	       });
 	       menu.addChild(menuItem1);
@@ -305,17 +318,17 @@
 	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_remove_publish_queue" )) %>",
 	                       iconClass: "deleteIcon",
 	                       onClick: function() {
-	                    	   //addToPublishQueueQueue('remove');
+	                    	   addToPublishQueueQueue('remove');
 	           }
 	       });
-	       //menu.addChild(menuItem2);
+	       menu.addChild(menuItem2);
 	       
 	       var button = new dijit.form.ComboButton({
 	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
 	                        iconClass: "plusIcon",
 	                        dropDown: menu,
 	                        onClick: function() {
-	                        	//addToPublishQueueQueue('add');
+	                        	addToPublishQueueQueue('add');
 	            },
 	            disabled:true
 	        });

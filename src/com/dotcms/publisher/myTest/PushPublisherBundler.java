@@ -2,19 +2,21 @@ package com.dotcms.publisher.myTest;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
@@ -22,20 +24,20 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.converters.extended.EncodedByteArrayConverter;
-import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.liferay.util.FileUtil;
 
 public class PushPublisherBundler implements IBundler {
 	private PublisherConfig config;
 	private User systemUser;
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
+	PublisherAPI pubAPI = null;
 	
-	public final static String  XML_EXTENSION = ".xml" ;
+	public final static String  PUSH_XML_EXTENSION = ".toPush.xml" ;
 	
 	@Override
 	public String getName() {
@@ -47,6 +49,7 @@ public class PushPublisherBundler implements IBundler {
 		config = pc;
 		conAPI = APILocator.getContentletAPI();
 		uAPI = APILocator.getUserAPI();
+		pubAPI = PublisherAPI.getInstance();  
 		
 		try {
 			systemUser = uAPI.getSystemUser();
@@ -85,46 +88,81 @@ public class PushPublisherBundler implements IBundler {
 		}
 	}
 	
-	private void writeFileToDisk(File bundleRoot, Contentlet con) throws IOException, DotBundleException, DotDataException, DotSecurityException{
-		List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-		Map<String,Object> contentMap=new HashMap<String, Object>();
+	private void writeFileToDisk(File bundleRoot, Contentlet con) 
+			throws IOException, DotBundleException, DotDataException, 
+				DotSecurityException, DotPublisherException
+	{
+		Calendar cal = Calendar.getInstance();
+		File pushContentFile = null;
+		Host h = null;
 		
+		//Populate wrapper
+		ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+		h = APILocator.getHostAPI().find(con.getHost(), APILocator.getUserAPI().getSystemUser(), true);
+		
+		PushContentWrapper wrapper=new PushContentWrapper();
+	    wrapper.setContent(con);
+		wrapper.setInfo(info);
+		wrapper.setId(APILocator.getIdentifierAPI().find(con.getIdentifier()));
+		wrapper.setTags(APILocator.getTagAPI().getTagsByInode(con.getInode()));
+		
+		//Find MultiTree
+		wrapper.setMultiTree(pubAPI.getContentMultiTreeMatrix(con.getIdentifier()));
+		
+		//Find Tree
+		wrapper.setMultiTree(pubAPI.getContentTreeMatrix(con.getIdentifier()));
+		
+		//Copy asset files to bundle folder keeping folders structure
+		List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+		File assetFolder = new File(bundleRoot.getPath()+File.separator+"assets");
 		for(Field ff : fields) {
 			if(ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
-				File file = con.getBinary( ff.getVelocityVarName()); 
+				File sourceFile = con.getBinary( ff.getVelocityVarName()); 
 				
-				if(file != null) {
-					byte[] bytes=org.apache.commons.io.FileUtils.readFileToByteArray(file);
+				if(sourceFile != null && sourceFile.exists()) {
+					if(!assetFolder.exists())
+						assetFolder.mkdir();
 					
-					Map<String, Object> bufferMap =  new HashMap<String, Object>();
-					bufferMap.put(file.getName(), bytes);
-					contentMap.put(ff.getVelocityVarName(), bufferMap);
-				} else {
-					contentMap.put(ff.getVelocityVarName(), null);
+					String folderTree = buildAssetsFolderTree(sourceFile);
+					
+					File destFile = new File(assetFolder, folderTree);
+		            destFile.getParentFile().mkdirs();
+		            FileUtil.copyFile(sourceFile, destFile);		
 				}
-		    } else {
-		    	contentMap.put(ff.getVelocityVarName(), con.get(ff.getVelocityVarName()));
 		    }
 			
 		}
+
 		
-		PushAssetWrapper wrapper=new PushAssetWrapper();
-	    wrapper.setContentMap(contentMap);
-	    
-	    XStream xstream=new XStream(new DomDriver());
-	    xstream.registerConverter(new EncodedByteArrayConverter());
-	    
-	    String myFile = bundleRoot.getPath() + File.separator 
-				+ con.getInode()
-				+ XML_EXTENSION;
-	    
-	    //Write to a file in the file system
-        try {
-            FileOutputStream fs = new FileOutputStream(myFile);
-            xstream.toXML(wrapper, fs);
-        } catch (FileNotFoundException e1) {
-            e1.printStackTrace();
-        }		
+		String liveworking = con.isLive() ? "live" :  "working";
+		
+		String myFileUrl = bundleRoot.getPath() + File.separator 
+				+liveworking + File.separator 
+				+ h.getHostname() + File.separator + config.getLanguage()
+				+ APILocator.getIdentifierAPI().find(con).getURI().replace("/", File.separator);
+		
+		pushContentFile = new File(myFileUrl);
+		pushContentFile.mkdirs();
+				
+		BundlerUtil.objectToXML(wrapper, pushContentFile, true);
+		pushContentFile.setLastModified(cal.getTimeInMillis());
+	}
+	
+	private String buildAssetsFolderTree(File child) {
+		List<String> folders = new ArrayList<String>();
+		File temp = child.getParentFile();
+		folders.add(child.getName());
+		while(!temp.getName().equals("assets")) {
+			folders.add(temp.getName());
+			temp = temp.getParentFile();
+		}
+		Collections.reverse(folders);
+		StringBuilder s = new StringBuilder();
+		for(String folder: folders) {
+			s.append(folder+File.separator);
+		}
+		
+		return s.toString();
 	}
 
 	@Override

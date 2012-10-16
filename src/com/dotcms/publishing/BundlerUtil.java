@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.extended.EncodedByteArrayConverter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class BundlerUtil {
@@ -103,6 +104,9 @@ public class BundlerUtil {
 			f.delete();
 		
 		XStream xstream = new XStream(new DomDriver());
+		
+		//Added bynary management
+		xstream.registerConverter(new EncodedByteArrayConverter());
 
 		try {
 			if(!f.exists())f.createNewFile();
