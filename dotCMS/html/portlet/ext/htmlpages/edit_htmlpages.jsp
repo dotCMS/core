@@ -29,13 +29,15 @@ Boolean fileAsContent = false;
 if(UtilMethods.isSet(htmlpage.getIdentifier())) {
     identifier = APILocator.getIdentifierAPI().find(htmlpage.getIdentifier());
     htmlTemplate = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(htmlpage);
-    Identifier imageIdentifier = APILocator.getIdentifierAPI().find(htmlTemplate.getImage());
-
-    if(imageIdentifier != null && imageIdentifier.getAssetType() != null && (fileAsContent = imageIdentifier.getAssetType().equals("contentlet"))) {
-    	templateImgPreviewContent = TemplateFactory.getImageContentlet(htmlTemplate);
-	} else {
-		templateImgPreviewFile = TemplateFactory.getImageFile(htmlTemplate);
-	}
+    if(UtilMethods.isSet(htmlTemplate.getImage())) {
+	    Identifier imageIdentifier = APILocator.getIdentifierAPI().find(htmlTemplate.getImage());
+	
+	    if(imageIdentifier != null && imageIdentifier.getAssetType() != null && (fileAsContent = imageIdentifier.getAssetType().equals("contentlet"))) {
+	    	templateImgPreviewContent = TemplateFactory.getImageContentlet(htmlTemplate);
+		} else {
+			templateImgPreviewFile = TemplateFactory.getImageFile(htmlTemplate);
+		}
+    }
 }
 
 
