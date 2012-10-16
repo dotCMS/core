@@ -226,7 +226,8 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
     	    Map<String, String> map = getURIParams();
     	    String indexName = getIndexNameOrAlias(map);
     	    response.setContentType("text/plain");
-            response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().site_search.equals(indexName) ? "default" : "inactive");
+    	    String defindex=APILocator.getIndiciesAPI().loadIndicies().site_search;
+            response.getWriter().println((defindex!=null && defindex.equals(indexName)) ? "default" : "inactive");
 	    }
 	    catch(Exception ex) {
 	        throw new RuntimeException(ex);
