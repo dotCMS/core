@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.chains;
 
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -67,9 +68,10 @@ public class ChainsProcessor {
 
         	if(control.getRequest() != null) {
         		HttpServletRequest req = control.getRequest();
-        		Map<String, String> reqparams = req.getParameterMap();
-        		for(Entry<String, String> e : reqparams.entrySet()) {
-        			control.putChainProperty(e.getKey(), e.getValue());
+        		Enumeration<String> parameterNames = req.getParameterNames();
+        		while(parameterNames.hasMoreElements()) {
+        		    String e = parameterNames.nextElement();
+        			control.putChainProperty(e, req.getParameter(e));
         		}
         	}
         	
