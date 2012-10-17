@@ -498,7 +498,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 <!-- START Tab1 -->
 <div id="TabOne" dojoType="dijit.layout.ContentPane" title="Overview">
 	<!-- START Field Options -->	
-	<%-------- Hint Box  -----------%>
+	<%-- Hint Box  --%>
 	<div style="position:absolute;top:80px;right:40px;width:300px;display:none;text-align:left;" class="callOutBox2" id="values_eg"></div>	
 	
 	

@@ -8,7 +8,7 @@
 	<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions.css" %>
 </style>
 
-<%--------------- Add Role Dialog-----------------%>
+<%-- Add Role Dialog --%>
 
 <div id="addRoleDialog" title="<%= LanguageUtil.get(pageContext, "edit-role") %>" dojoType="dijit.Dialog" style="display: none">
 	<form id="newRoleForm" dojoType="dijit.form.Form" class="roleForm">
@@ -44,12 +44,12 @@
 		</div>
 	</form>	
 </div>
-<%--------------- /Add Role Dialog-----------------%>
+<%-- /Add Role Dialog --%>
 
 
 
 
-<%--------------- New Layout Dialog-----------------%>
+<%-- New Layout Dialog --%>
 
 <div id="newLayouDialog" title="<%= LanguageUtil.get(pageContext, "edit-tab") %>" dojoType="dijit.Dialog" style="display: none;width:475px;">
 	<form id="newLayoutForm" dojoType="dijit.form.Form">
@@ -87,12 +87,12 @@
 		</div>
 	</form>								
 </div>
-<%--------------- /New Layout Dialog-----------------%>
+<%-- /New Layout Dialog --%>
 
 
 
 
-<%--------------- Begin Page Layout-----------------%>
+<%-- Begin Page Layout --%>
 <div style="display:none">
 	<div class="label"><%= LanguageUtil.get(pageContext, "key") %>:</div> <div id="roleKey" class="title"></div><br/>
 	<div class="label"><%= LanguageUtil.get(pageContext, "path") %>:</div> <div id="rolePath" class="title"></div>
