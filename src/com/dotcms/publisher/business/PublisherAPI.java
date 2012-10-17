@@ -86,7 +86,7 @@ public abstract class PublisherAPI {
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getPublishQueueQueueContentletsCounter(String condition, String orderBy) throws DotPublisherException;
+	public abstract List<Map<String,Object>> getPublishQueueQueueContentletsCounter(String condition) throws DotPublisherException;
 	
 	/**
 	 * Get All the Assets in the publishing_queue table paginated

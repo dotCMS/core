@@ -112,7 +112,7 @@
     	
     	if(showPendings && showErrors){
     		iresults =  solrAPI.getPublishQueueQueueContentletsPaginated(query, sortBy, offset, limit);
-    		counter =  solrAPI.getPublishQueueQueueContentletsCounter(query, sortBy).get(0).get("count").toString();
+    		counter =  solrAPI.getPublishQueueQueueContentletsCounter(query).get(0).get("count").toString();
     	}else if (showPendings) {
     		iresults = solrAPI.getPublishQueueQueueContentletToProcessPaginated(query, sortBy, offset, limit);
     		counter =  solrAPI.getPublishQueueQueueContentletToProcessCounter(query, sortBy).get(0).get("count").toString();
