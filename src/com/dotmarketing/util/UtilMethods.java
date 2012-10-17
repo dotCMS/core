@@ -34,6 +34,7 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.beanutils.PropertyUtils;
@@ -3444,5 +3445,15 @@ public class UtilMethods {
         response.setHeader("Cache-Control", "public, no-store, no-cache, max-age=0");
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", System.currentTimeMillis());
+    }
+    
+    public static Map<String,Object> getParameterMap(HttpServletRequest req) {
+        Map<String,Object> map=new HashMap<String,Object>();
+        Enumeration<String> names = req.getParameterNames();
+        while(names.hasMoreElements()) {
+            String ee=names.nextElement();
+            map.put(ee, req.getParameter(ee));
+        }
+        return map;
     }
 }
