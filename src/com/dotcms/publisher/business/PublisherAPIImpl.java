@@ -392,16 +392,16 @@ public class PublisherAPIImpl extends PublisherAPI{
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to get list of solr elements to process:"+e.getMessage(), e);
+			throw new DotPublisherException("Unable to get list of assets to process:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
 		}
 	}
 	
-	private static final String PSGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX="select count(*) as count from publishing_queue";
-	private static final String MYGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX="select count(*) as count from publishing_queue";
-	private static final String MSGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX="select count(*) as count from publishing_queue";
-	private static final String OCLGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX="select count(*) as count from publishing_queue";
+	private static final String PSGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX="select count(id) as count from publishing_queue";
+	private static final String MYGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX="select count(id) as count from publishing_queue";
+	private static final String MSGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX="select count(id) as count from publishing_queue";
+	private static final String OCLGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX="select count(id) as count from publishing_queue";
 	/**
 	 * Get the total of All the Assets in the publishing_queue table paginated
 	 * @param condition WHERE condition
@@ -409,16 +409,16 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public List<Map<String,Object>> getPublishQueueQueueContentletsCounter(String condition, String orderBy) throws DotPublisherException{
+	public List<Map<String,Object>> getPublishQueueQueueContentletsCounter(String condition) throws DotPublisherException{
 		try{
 			DotConnect dc = new DotConnect();
 			String query = "";
 			if(UtilMethods.isSet(condition)){
 				query = " WHERE "+condition;
 			}
-			if(UtilMethods.isSet(orderBy)){
-				query += " ORDER BY "+orderBy;
-			}
+//			if(UtilMethods.isSet(orderBy)){
+//				query += " ORDER BY "+orderBy + " GROUP BY " + orderBy;
+//			}
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				dc.setSQL(PSGETQUEUEPAGINATEDASSETSCOUNTERTOINDEX+query);
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
@@ -430,8 +430,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to get list of solr elements:"+e.getMessage(), e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of assets:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
 		}
@@ -474,7 +474,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to get list of solr elements:"+e.getMessage(), e);
+			throw new DotPublisherException("Unable to get list of assets:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
 		}
@@ -513,7 +513,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to get list of solr elements to process:"+e.getMessage(), e);
+			throw new DotPublisherException("Unable to get list of assets to process:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
 		}
@@ -556,7 +556,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to get list of solr elements to process:"+e.getMessage(), e);
+			throw new DotPublisherException("Unable to get list of assets to process:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
 		}
@@ -654,10 +654,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 	
-	private static final String PSDELETEALLELEMENTFROMSOLRQUEUESQL="DELETE FROM publishing_queue";
-	private static final String MYDELETEALLELEMENTFROMSOLRQUEUESQL="DELETE FROM publishing_queue";
-	private static final String MSDELETEALLELEMENTFROMSOLRQUEUESQL="DELETE FROM publishing_queue"; 
-	private static final String OCLDELETEALLELEMENTFROMSOLRQUEUESQL="DELETE FROM publishing_queue";
+	private static final String PSDELETEALLELEMENTFROMQUEUESQL="DELETE FROM publishing_queue";
+	private static final String MYDELETEALLELEMENTFROMQUEUESQL="DELETE FROM publishing_queue";
+	private static final String MSDELETEALLELEMENTFROMQUEUESQL="DELETE FROM publishing_queue"; 
+	private static final String OCLDELETEALLELEMENTFROMQUEUESQL="DELETE FROM publishing_queue";
 	/**
 	 * Delete all elements from publishing_queue table
 	 * @return boolean
@@ -668,13 +668,13 @@ public class PublisherAPIImpl extends PublisherAPI{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/				
-				dc.setSQL(PSDELETEALLELEMENTFROMSOLRQUEUESQL);
+				dc.setSQL(PSDELETEALLELEMENTFROMQUEUESQL);
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-				dc.setSQL(MYDELETEALLELEMENTFROMSOLRQUEUESQL);
+				dc.setSQL(MYDELETEALLELEMENTFROMQUEUESQL);
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-				dc.setSQL(MSDELETEALLELEMENTFROMSOLRQUEUESQL);
+				dc.setSQL(MSDELETEALLELEMENTFROMQUEUESQL);
 			}else{
-				dc.setSQL(OCLDELETEALLELEMENTFROMSOLRQUEUESQL);
+				dc.setSQL(OCLDELETEALLELEMENTFROMQUEUESQL);
 			}
 			dc.loadResult();
 			HibernateUtil.commitTransaction();
