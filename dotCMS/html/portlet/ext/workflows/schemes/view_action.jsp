@@ -202,7 +202,7 @@
 							</td>
 						</tr>
 						<tr>
-							<td nowrap="true"><%=LanguageUtil.get(pageContext, "Requires-Checkout")%>:</td>
+							<td  width="100px" ><%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)</td>
 							<td nowrap="true"><input type="checkbox" name="actionRequiresCheckout"
 								id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
 								<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
