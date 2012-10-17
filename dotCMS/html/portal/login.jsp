@@ -346,7 +346,7 @@ function showLanguageSelector(){
 
 
 
-			<%------  Language Selector -----%>
+			<%--  Language Selector --%>
 			    <div id="languageSelectorBar" style="visibility: hidden; display: none;" title="Select Language">
 			    	<div style="text-align: right;margin-right:-5px;margin-top:-3px;">
 			    		<img onclick="dijit.popup.close(myDialog);" alt="<%= LanguageUtil.get(pageContext, "close") %>" title="<%= LanguageUtil.get(pageContext, "close") %>" src="/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabCloseHover.png" width="10" height="10" style="cursor: pointer;">
@@ -363,7 +363,7 @@ function showLanguageSelector(){
 					    <% } %>
 				    </div>
 			   </div>
-			<%------/  Language Selector -----%>
+			<%--  Language Selector --%>
 			
 			
 			
