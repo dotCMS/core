@@ -247,7 +247,7 @@ public class RequestWrapper implements HttpServletRequest{
 	}
 
 	public void removeAttribute(String arg0) {
-		_request.removeAttribute(arg0);
+	    // do nothing
 	}
 
 	public void setAttribute(String arg0, Object arg1) {
