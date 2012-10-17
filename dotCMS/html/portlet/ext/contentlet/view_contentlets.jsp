@@ -530,7 +530,11 @@
                 <%boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
                 <div class="clear"></div>
 
-                <!-- START Buton Row -->
+                
+        </div>
+        
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="bottom" id="buttonsWrapper">
+          <!-- START Buton Row -->
                         <div class="buttonRow">
                                 <div id="archiveButtonDiv" style="display:none">
                                         <button dojoType="dijit.form.Button" id="unArchiveButton" onClick="unArchiveSelectedContentlets()" iconClass="unarchiveIconDis" disabled="true" >
