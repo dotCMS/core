@@ -14,8 +14,8 @@
 	<Resource name="jdbc/dotCMSPool" auth="Container" 
 	        type="javax.sql.DataSource"
 	        driverClassName="org.postgresql.Driver"
-	        url="jdbc:postgresql://localhost/dotcms20"
-	        username="postgres" password="123" maxActive="60" maxIdle="5" maxWait="60000"
+	        url="jdbc:postgresql://localhost/dotcms"
+            username="{your db user}" password="{your db password}" maxActive="60" maxIdle="5" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
 		  validationQuery="SELECT 1" testOnBorrow="true" />		  
 	
