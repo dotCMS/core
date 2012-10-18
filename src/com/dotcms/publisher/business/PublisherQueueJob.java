@@ -46,7 +46,7 @@ public class PublisherQueueJob implements StatefulJob {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private UserAPI userAPI = APILocator.getUserAPI();
 	private HostAPI hostAPI = APILocator.getHostAPI();
-	private PublisherAPI solrAPI = PublisherAPI.getInstance();
+	private PublisherAPI pubAPI = PublisherAPI.getInstance();
 	private FileAPI fileAPI = APILocator.getFileAPI();
 	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI() ;
 
@@ -89,7 +89,7 @@ public class PublisherQueueJob implements StatefulJob {
 			/*the job is executed only if there are solr servers and entries in the publishing_queue table to process */
 			if(serversNumber > 0){
 
-				List<Map<String,Object>> solrQueue = solrAPI.getPublishQueueQueueContentletToProcess();
+				List<Map<String,Object>> solrQueue = pubAPI.getQueueElementsGroupByBundleId();
 				Logger.info(PublisherQueueJob.class, "PublishQueue Queue element(s) to process: "+solrQueue.size());
 
 				if(solrQueue.size() > 0){
@@ -278,7 +278,7 @@ public class PublisherQueueJob implements StatefulJob {
 											}
 											int addCounter = 0;
 											for(Map<String,Object> solrO : solrIdAddDocs){
-												solrAPI.deleteElementFromPublishQueueQueueTable(Long.parseLong(solrO.get("id").toString()));//delete from table	
+												pubAPI.deleteElementFromPublishQueueTable((String) solrO.get("bundle_id"));//delete from table	
 												addCounter++;
 											}
 											addDocs.clear();
@@ -289,7 +289,7 @@ public class PublisherQueueJob implements StatefulJob {
 											int addCounter = 0;
 											Logger.debug(PublisherQueueJob.class,"Document(s) not Added/Updated: "+addDocs.size());
 											for(Map<String,Object> solrO : solrIdAddDocs){
-												solrAPI.updateElementStatusFromPublishQueueQueueTable(Long.parseLong(solrO.get("id").toString()),new Date(),(Integer.parseInt(solrO.get("num_of_tries").toString())+1), true, "An error occurs trying to add/update this assets in the PublishQueue Index. ERROR: "+e);
+												pubAPI.updateElementStatusFromPublishQueueTable(Long.parseLong(solrO.get("id").toString()),new Date(),(Integer.parseInt(solrO.get("num_of_tries").toString())+1), true, "An error occurs trying to add/update this assets in the PublishQueue Index. ERROR: "+e);
 												addCounter++;
 											}
 											addDocs.clear();
@@ -297,7 +297,7 @@ public class PublisherQueueJob implements StatefulJob {
 										}
 									}
 								}else{
-									solrAPI.updateElementStatusFromPublishQueueQueueTable(Long.parseLong(solr.get("id").toString()),new Date(),(Integer.parseInt(solr.get("num_of_tries").toString())+1), true, "This file asset content:"+(String)solr.get("asset_identifier")+" doesn't exist");
+									pubAPI.updateElementStatusFromPublishQueueTable(Long.parseLong(solr.get("id").toString()),new Date(),(Integer.parseInt(solr.get("num_of_tries").toString())+1), true, "This file asset content:"+(String)solr.get("asset_identifier")+" doesn't exist");
 								}
 							} else if(Long.parseLong(solr.get("solr_operation").toString()) == PublisherAPI.DELETE_ELEMENT){
 								/* delete element from index*/
@@ -317,7 +317,7 @@ public class PublisherQueueJob implements StatefulJob {
 										}
 										int deleteCounter = 0;
 										for(Map<String,Object> solrO : solrIdDeleteDocs){
-											solrAPI.deleteElementFromPublishQueueQueueTable(Long.parseLong(solrO.get("id").toString()));//delete from table
+											pubAPI.deleteElementFromPublishQueueTable((String) solrO.get("bundle_id"));//delete from table
 											deleteCounter++;
 										}
 										deleteDocs.clear();
@@ -328,7 +328,7 @@ public class PublisherQueueJob implements StatefulJob {
 										int deleteCounter = 0;
 										Logger.debug(PublisherQueueJob.class,"Document(s) not Deleted: "+deleteDocs.size());
 										for(Map<String,Object> solrO : solrIdDeleteDocs){
-											solrAPI.updateElementStatusFromPublishQueueQueueTable(Long.parseLong(solrO.get("id").toString()),new Date(),(Integer.parseInt(solrO.get("num_of_tries").toString())+1), true, "An error occurs trying to delete this assets in the PublishQueue Index. ERROR: "+e);
+											pubAPI.updateElementStatusFromPublishQueueTable(Long.parseLong(solrO.get("id").toString()),new Date(),(Integer.parseInt(solrO.get("num_of_tries").toString())+1), true, "An error occurs trying to delete this assets in the PublishQueue Index. ERROR: "+e);
 											deleteCounter++;
 										}
 										deleteDocs.clear();
@@ -338,7 +338,7 @@ public class PublisherQueueJob implements StatefulJob {
 							}							
 						}catch(Exception b){
 							Logger.debug(PublisherQueueJob.class,b.getMessage(),b);
-							solrAPI.updateElementStatusFromPublishQueueQueueTable(Long.parseLong(solr.get("id").toString()),new Date(),(Integer.parseInt(solr.get("num_of_tries").toString())+1), true, "An error occurs trying to process this assets in the PublishQueue Index. ERROR: "+b);
+							pubAPI.updateElementStatusFromPublishQueueTable(Long.parseLong(solr.get("id").toString()),new Date(),(Integer.parseInt(solr.get("num_of_tries").toString())+1), true, "An error occurs trying to process this assets in the PublishQueue Index. ERROR: "+b);
 						}						
 					}	
 
@@ -353,7 +353,7 @@ public class PublisherQueueJob implements StatefulJob {
 							}
 							int addCounter = 0;
 							for(Map<String,Object> solrO : solrIdAddDocs){
-								solrAPI.deleteElementFromPublishQueueQueueTable(Long.parseLong(solrO.get("id").toString()));//delete from table	
+								pubAPI.deleteElementFromPublishQueueTable((String) solrO.get("bundle_id"));//delete from table	
 								addCounter++;
 							}
 							addDocs.clear();
@@ -364,7 +364,7 @@ public class PublisherQueueJob implements StatefulJob {
 							int addCounter = 0;
 							Logger.debug(PublisherQueueJob.class,"Document(s) not Added/Updated: "+addDocs.size());
 							for(Map<String,Object> solrO : solrIdAddDocs){
-								solrAPI.updateElementStatusFromPublishQueueQueueTable(Long.parseLong(solrO.get("id").toString()),new Date(),(Integer.parseInt(solrO.get("num_of_tries").toString())+1), true, "An error occurs trying to add/update this assets in the PublishQueue Index. ERROR: "+e);
+								pubAPI.updateElementStatusFromPublishQueueTable(Long.parseLong(solrO.get("id").toString()),new Date(),(Integer.parseInt(solrO.get("num_of_tries").toString())+1), true, "An error occurs trying to add/update this assets in the PublishQueue Index. ERROR: "+e);
 								addCounter++;
 							}
 							addDocs.clear();
@@ -381,7 +381,7 @@ public class PublisherQueueJob implements StatefulJob {
 							}
 							int deleteCounter = 0;
 							for(Map<String,Object> solrO : solrIdDeleteDocs){
-								solrAPI.deleteElementFromPublishQueueQueueTable(Long.parseLong(solrO.get("id").toString()));//delete from table
+								pubAPI.deleteElementFromPublishQueueTable((String) solrO.get("bundle_id"));//delete from table
 								deleteCounter++;
 							}
 							deleteDocs.clear();
@@ -392,7 +392,7 @@ public class PublisherQueueJob implements StatefulJob {
 							int deleteCounter = 0;
 							Logger.debug(PublisherQueueJob.class,"Document(s) not Deleted: "+deleteDocs.size());
 							for(Map<String,Object> solrO : solrIdDeleteDocs){
-								solrAPI.updateElementStatusFromPublishQueueQueueTable(Long.parseLong(solrO.get("id").toString()),new Date(),(Integer.parseInt(solrO.get("num_of_tries").toString())+1), true, "An error occurs trying to delete this assets in the PublishQueue Index. ERROR: "+e);
+								pubAPI.updateElementStatusFromPublishQueueTable(Long.parseLong(solrO.get("id").toString()),new Date(),(Integer.parseInt(solrO.get("num_of_tries").toString())+1), true, "An error occurs trying to delete this assets in the PublishQueue Index. ERROR: "+e);
 								deleteCounter++;
 							}
 							deleteDocs.clear();

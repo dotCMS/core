@@ -10,6 +10,8 @@ import java.util.List;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
@@ -36,8 +38,7 @@ public class PushPublisherBundler implements IBundler {
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
 	PublisherAPI pubAPI = null;
-	
-	public final static String  PUSH_XML_EXTENSION = ".toPush.xml" ;
+	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	
 	@Override
 	public String getName() {
@@ -64,27 +65,30 @@ public class PushPublisherBundler implements IBundler {
 		if(LicenseUtil.getLevel()<200)
 	        throw new RuntimeException("need an enterprise license to run this bundler");
 	    
+		
+		
 		List<Contentlet> cs = new ArrayList<Contentlet>();
 		
 		Logger.info(PushPublisherBundler.class, config.getLuceneQuery());
 		
 		try {
+			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING);
 			cs = conAPI.search(config.getLuceneQuery(), 0, 0, "moddate", systemUser, false);
-		} catch (Exception e) {
-			Logger.error(PushPublisherBundler.class,e.getMessage(),e);
-			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" + e.getMessage() + ": Unable to pull content with query " + config.getLuceneQuery(), e);
-		}
-		
-		status.setTotal(cs.size());
-		
-		for (Contentlet con : cs) {
-			try {
+			
+			status.setTotal(cs.size());
+			
+			for (Contentlet con : cs) {
 				writeFileToDisk(bundleRoot, con);
 				status.addCount();
-			} catch (Exception e) {
-				Logger.error(PushPublisherBundler.class,e.getMessage() + " : Unable to write file",e);
-				status.addFailure();
 			}
+		} catch (Exception e) {
+			try {
+				pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE);
+			} catch (DotPublisherException e1) { }
+			status.addFailure();
+			
+			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" 
+			+ e.getMessage() + ": Unable to pull content with query " + config.getLuceneQuery(), e);
 		}
 	}
 	
@@ -112,7 +116,7 @@ public class PushPublisherBundler implements IBundler {
 		//Find Tree
 		wrapper.setMultiTree(pubAPI.getContentTreeMatrix(con.getIdentifier()));
 		
-		//Copy asset files to bundle folder keeping folders structure
+		//Copy asset files to bundle folder keeping original folders structure
 		List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
 		File assetFolder = new File(bundleRoot.getPath()+File.separator+"assets");
 		for(Field ff : fields) {

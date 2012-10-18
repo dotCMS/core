@@ -11,6 +11,8 @@ import java.util.Map;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetWrapper;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.IBundler;
@@ -28,6 +30,7 @@ import com.liferay.util.FileUtil;
 public class PushPublisher extends Publisher {
 
 	public static final String SITE_SEARCH_INDEX = "SITE_SEARCH_INDEX";
+	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
@@ -65,6 +68,7 @@ public class PushPublisher extends Publisher {
             throw new RuntimeException("need an enterprise licence to run this");
 	    
 		try {
+			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.PUBLISHING);
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
 			// int numThreads = config.getAdditionalThreads() + 1;
 			// ExecutorService executor =
@@ -106,6 +110,8 @@ public class PushPublisher extends Publisher {
 				// executor.execute(worker);
 				// }
 			}
+			
+			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SUCCESS);
 
 			return config;
 

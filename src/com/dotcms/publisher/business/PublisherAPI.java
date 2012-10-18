@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
@@ -19,12 +20,16 @@ public abstract class PublisherAPI {
 	public static final long ADD_OR_UPDATE_ELEMENT=1;
 	public static final long DELETE_ELEMENT=2;
 	
-	private static PublisherAPI solrAPI = null;
+	public static final long TO_PUBLISH_FILTER=1;
+	public static final long TO_UNPUBLISH_FILTER=2;
+	public static final long ERRORS_FILTER=3;
+	
+	private static PublisherAPI pubAPI = null;
 	public static PublisherAPI getInstance(){
-		if(solrAPI == null){
-			solrAPI = PublisherAPIImpl.getInstance();
+		if(pubAPI == null){
+			pubAPI = PublisherAPIImpl.getInstance();
 		}
-		return solrAPI;	
+		return pubAPI;	
 	}
 	
 	/**
@@ -54,76 +59,35 @@ public abstract class PublisherAPI {
 	public abstract List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException;
 	
 	/**
-	 * Get a list of all the elements in the publishing_queue table that could be processes because some error
-	 * @return List<Map<String,Object>>
+	 * Get queue elements group by bundle_id
+	 * @return
+	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getQueueErrors() throws DotPublisherException;
-
+	public abstract List<Map<String,Object>> getQueueElementsGroupByBundleId() throws DotPublisherException;
+	
 	/**
-	 * Get the total of all the elements in the publishing_queue table that could be processes because some error
-	 * @param condition WHERE condition
-	 * @param orderBy ORDER BY condition
+	 * count queue elements group by bundle_id
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getQueueErrorsCounter(String condition, String orderBy) throws DotPublisherException;
+	public abstract List<Map<String,Object>> countQueueElementsGroupByBundleId() throws DotPublisherException;
 	
 	/**
-	 * Get a list of all the elements in the publishing_queue table that could be processes because some error
-	 * @param condition WHERE condition
-	 * @param orderBy ORDER BY condition
-	 * @param offset first row to return
-	 * @param limit max number of rows to return
-	 * @return List<Map<String,Object>>
+	 * Get queue elements group by bundle_id paginated
+	 * @param offset
+	 * @param limit
+	 * @return
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getQueueErrorsPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException;
+	public abstract List<Map<String,Object>> getQueueElementsGroupByBundleId(String offset, String limit) throws DotPublisherException;
 	
 	/**
-	 * Get the total of All the Assets in the publishing_queue table paginated
-	 * @param condition WHERE condition
-	 * @param orderBy ORDER BY condition
-	 * @return List<Map<String,Object>>
+	 * Get queue elements with a given status
+	 * @param status
+	 * @return
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getPublishQueueQueueContentletsCounter(String condition) throws DotPublisherException;
-	
-	/**
-	 * Get All the Assets in the publishing_queue table paginated
-	 * @param condition WHERE condition
-	 * @param orderBy ORDER BY condition
-	 * @param offset first row to return
-	 * @param limit max number of rows to return
-	 * @return List<Map<String,Object>>
-	 * @throws DotPublisherException
-	 */
-	public abstract List<Map<String,Object>> getPublishQueueQueueContentletsPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException;
-	
-	/**
-	 * Get the total of Assets not processed yet to update the PublishQueue index paginated
-	 * @param condition WHERE condition
-	 * @param orderBy ORDER BY condition
-	 * @return List<Map<String,Object>>
-	 * @throws DotPublisherException
-	 */
-	public abstract List<Map<String,Object>> getPublishQueueQueueContentletToProcessCounter(String condition, String orderBy) throws DotPublisherException;
-	
-	/**
-	 * Get the Assets not processed yet to update the PublishQueue index paginated
-	 * @param condition WHERE condition
-	 * @param orderBy ORDER BY condition
-	 * @param offset first row to return
-	 * @param limit max number of rows to return
-	 * @return List<Map<String,Object>>
-	 * @throws DotPublisherException
-	 */
-	public abstract List<Map<String,Object>> getPublishQueueQueueContentletToProcessPaginated(String condition, String orderBy, String offset, String limit) throws DotPublisherException;
-	
-	/**
-	 * Get the Assets not processed yet to update the PublishQueue index
-	 * @return List<Map<String,Object>>
-	 */
-	public abstract List<Map<String,Object>> getPublishQueueQueueContentletToProcess() throws DotPublisherException;
+	public abstract List<Map<String,Object>> getQueueElementsByStatus(Status status) throws DotPublisherException;
 	
 	/**
 	 * update element from publishing_queue table by id
@@ -133,18 +97,18 @@ public abstract class PublisherAPI {
 	 * @param last_results error message
 	 * @return boolean
 	 */
-	public abstract void updateElementStatusFromPublishQueueQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException;
+	public abstract void updateElementStatusFromPublishQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException;
 	
 	/**
-	 * Delete element from publishing_queue table by id
+	 * Delete element from publishing_queue table by bundleid
 	 * @param id ID of the element in the table
 	 * @return boolean
 	 */
-	public abstract void deleteElementFromPublishQueueQueueTable(long id) throws DotPublisherException;
+	public abstract void deleteElementFromPublishQueueTable(String bundleId) throws DotPublisherException;
 	
 	/**
 	 * Delete all elements from publishing_queue table
 	 * @return boolean
 	 */
-	public abstract void deleteAllElementsFromPublishQueueQueueTable() throws DotPublisherException;
+	public abstract void deleteAllElementsFromPublishQueueTable() throws DotPublisherException;
 }

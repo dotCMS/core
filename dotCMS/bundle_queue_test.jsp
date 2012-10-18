@@ -1,3 +1,6 @@
+<%@page import="com.dotcms.publisher.business.PublishAuditStatus.Status"%>
+<%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
+<%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@page import="com.dotcms.publisher.myTest.PushPublisher"%>
 <%@page import="com.dotcms.publishing.IBundler"%>
 <%@page import="com.dotcms.publisher.myTest.PushPublisherBundler"%>
@@ -20,6 +23,7 @@
 	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 ContentletAPI conAPI = APILocator.getContentletAPI();
 PublisherAPI pubAPI = PublisherAPI.getInstance();  
+PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance(); 
 
 List<Map<String,Object>> iresults =  null;
 
@@ -40,7 +44,7 @@ if(!UtilMethods.isSet(query)){
 	query="";
 }
 
-iresults =  pubAPI.getPublishQueueQueueContentletsPaginated(query, sortBy, offset, limit);
+iresults =  pubAPI.getQueueElementsByStatus(Status.NOT_BUNDLED);
 
 String luceneQuery = null;
 PushPublisherConfig pconf = new PushPublisherConfig();
@@ -60,6 +64,9 @@ for(Map<String,Object> c : iresults) {
 	pconf.setIncremental(false);
 	pconf.setLiveOnly(false);
 	pconf.setBundlers(bundler);
+	
+	pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.BUNDLE_REQUESTED);
+	
 	APILocator.getPublisherAPI().publish(pconf);
 	out.print(pconf.getId() +" Done! <br />"); 
 }
