@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
+<%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
@@ -37,6 +39,7 @@
     long errorCounter=0;
 
     PublisherAPI publisherAPI = PublisherAPI.getInstance();
+    PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
 
     String sortBy = request.getParameter("sort");
     if(!UtilMethods.isSet(sortBy)){
@@ -104,6 +107,9 @@
 		    			else
 		    				publisherAPI.addContentsToUnpublish(iresults,bundeId, false);
 		    			
+		    			PublishAuditStatus pas = new PublishAuditStatus(bundeId);
+		    			publishAuditAPI.insertPublishAuditStatus(pas);
+		    			
 		    			processedCounter = iresults.size();
 		    		}catch(Exception b){
     					nastyError += "<br/>Unable to add selected contents";
@@ -117,7 +123,7 @@
 		    		List<Contentlet> contentsLive = new ArrayList<Contentlet>();
 		    		List<Contentlet> contentsWorking = new ArrayList<Contentlet>();
 		    		for(String item : addQueueElementsStr.split(",")){
-		    			String[] value = item.split("_");
+		    			String[] value = item.split("\\$");
 		    			
 	    				//for(Language language : languages) {
 	    					try {
@@ -141,6 +147,9 @@
 		    				publisherAPI.addContentsToUnpublish(contentsLive, bundeId, true);
 		    				publisherAPI.addContentsToUnpublish(contentsWorking, bundeId, false);
 		    			}
+		    			
+		    			PublishAuditStatus pas = new PublishAuditStatus(bundeId);
+		    			publishAuditAPI.insertPublishAuditStatus(pas);
 		    		}catch(Exception b){
     					nastyError += "<br/>Unable to add selected contents";
     					errorCounter++;
@@ -163,9 +172,9 @@
 <script type="text/javascript">
  function solrAddCheckUncheckAll(){
 	   var check=false;
-	   if(dijit.byId("add_all").checked){
+	   /* if(dijit.byId("add_all").checked){
 		   check=true;
-	   }
+	   } */
 	   var nodes = dojo.query('.add_to_queue');
 	   dojo.forEach(nodes, function(node) {
 		    dijit.getEnclosingWidget(node).set("checked",check);
@@ -180,9 +189,9 @@
    
    function addToPublishQueueQueue(action){
 	   var url="layout=<%=layout%>&query=<%=UtilMethods.encodeURIComponent(query)%>&sort=<%=sortBy%>&offset=0&limit=<%=limit%>";	
-		if(dijit.byId("add_all").checked){
+/* 		if(dijit.byId("add_all").checked){
 			url+="&add=all";
-		}else{
+		}else{ */
 			var ids="";
 			var nodes = dojo.query('.add_to_queue');
 			   dojo.forEach(nodes, function(node) {
@@ -193,7 +202,7 @@
 			if(ids != ""){   
 				url+="&add="+ids.substring(1);
 			}
-		}
+		//}
 		url+="&action="+action;
 		refreshLuceneList(url);	   
    }
@@ -212,12 +221,12 @@
 	<% } %>								
 	<table class="listingTable shadowBox">
 		<tr>
-			<th style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" /></th>		
+			<th style="width:30px"><!-- <input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" /> --></th>		
 			<th colspan="2"><div id="addPublishQueueMenu"></div></th>			
 		</tr>
 		<% for(Contentlet c : iresults) {%>
 			<tr>
-				<td style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"_"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"_"+c.getLanguageId()%>" /></td>
+				<td style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"$"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"$"+c.getLanguageId()%>" /></td>
 				<td><a href="/c/portal/layout?p_l_id=<%=layout%>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>"><%=c.getTitle()%></a></td>
 				<td style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></a></td>
 			</tr>

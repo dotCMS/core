@@ -28,17 +28,17 @@ if (layoutOb != null) {
 	function doQueueFilter () {
 	
 		var url="";
-		if(dijit.byId("showPendings").checked){
-			url="&showPendings=true";
+/* 		if(dijit.byId("showToUnpublish").checked){
+			url="&viewFilter=2";
 		}
 		if(dijit.byId("showErrors").checked){
-			url+="&showErrors=true";
+			url+="&viewFilter=3";
 		}
 		if(url==""){
-			dijit.byId("showPendings").setValue(true);
-			url="showPendings=true";
-		}
-		url="layout=<%=layout%>"+url;
+			dijit.byId("showToUnpublish").setValue(false);
+			url="viewFilter=1";
+		} */
+		url="layout=<%=layout%>";
 		refreshQueueList(url);
 	}
 	var lastUrlParams ;
@@ -135,9 +135,9 @@ if (layoutOb != null) {
 				<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon">
 					<%= LanguageUtil.get(pageContext, "publisher_Delete_from_queue") %> 
 				</button>
-				&nbsp;&nbsp;<%= LanguageUtil.get(pageContext, "publisher_Show") %> 
+				<%-- &nbsp;&nbsp;<%= LanguageUtil.get(pageContext, "publisher_Show") %> 
 				<input dojoType="dijit.form.CheckBox" checked="checked" type="checkbox" name="showPendings" value="true" id="showPendings" onclick="doQueueFilter()" /> <label for="showPendings"><%=LanguageUtil.get(pageContext, "publisher_Queue_Pending")%></label> 
-				<input dojoType="dijit.form.CheckBox" checked="checked" type="checkbox" name="showErrors" value="true" id="showErrors"  onclick="doQueueFilter()"  /> <label for="showErrors"><%=LanguageUtil.get(pageContext, "publisher_Queue_Error")%></label>
+				<input dojoType="dijit.form.CheckBox" checked="checked" type="checkbox" name="showErrors" value="true" id="showErrors"  onclick="doQueueFilter()"  /> <label for="showErrors"><%=LanguageUtil.get(pageContext, "publisher_Queue_Error")%></label> --%>
 				<button class="solr_right" dojoType="dijit.form.Button" onClick="doQueueFilter();" iconClass="resetIcon">
 					<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
 				</button> 

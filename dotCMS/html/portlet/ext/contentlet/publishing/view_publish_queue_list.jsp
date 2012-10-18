@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
+<%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
@@ -13,56 +15,30 @@
 <%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<style>
-/*.solr_red {
- background-color: #CC9999;  
-}
-.solr_box { 
-	color: white; 
-	background-color: #ba2929; 
-	width: 200px; 
-	height: 50px; 
-	padding: 10px; 
-}
-.solr_tcenter{
- 	text-align: center;
- }
- .listingTableNoBorder {
-    border: 0;
-    font-size: 88%;
-    padding: 5px;
-    margin: 10px auto;
-    width: 99%;
-}*/
-</style>
+
 <script type="text/javascript">
    dojo.require("dijit.Tooltip");
 </script>  
 <%
   	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
     ContentletAPI conAPI = APILocator.getContentletAPI();
+    PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
+    
     if(user == null){
     	response.setStatus(403);
     	return;
     }
 
-    PublisherAPI solrAPI = PublisherAPI.getInstance();  
-    String showPendingsStr = request.getParameter("showPendings");
-    boolean showPendings = false;
-    if(UtilMethods.isSet(showPendingsStr)){
-    	showPendings=Boolean.parseBoolean(showPendingsStr);
+    PublisherAPI pubAPI = PublisherAPI.getInstance();  
+    String viewFilterStr = request.getParameter("viewFilter");
+    Integer viewFilter = null;
+    if(UtilMethods.isSet(viewFilterStr)){
+    	viewFilter=Integer.valueOf(viewFilterStr);
     }
-
-    String showErrorsStr = request.getParameter("showErrors");
-    boolean showErrors=false;
-    if(UtilMethods.isSet(showErrorsStr)){
-    	showErrors=Boolean.parseBoolean(showErrorsStr);
-    }
-
-    String sortBy = request.getParameter("sort");
-    if(!UtilMethods.isSet(sortBy)){
-    	sortBy="id asc";
-    }
+    
+    
+    String sortBy="entered_date desc";
+    
     String offset = request.getParameter("offset");
     if(!UtilMethods.isSet(offset)){
     	offset="0";
@@ -70,10 +46,6 @@
     String limit = request.getParameter("limit");
     if(!UtilMethods.isSet(limit)){
     	limit="10"; //TODO Put this value in a properties file
-    }
-    String query = request.getParameter("query");
-    if(!UtilMethods.isSet(query)){
-    	query="";
     }
 
     String nastyError = null;
@@ -102,27 +74,19 @@
     try{
     	if(deleteQueueElements){
     		if(deleteQueueElementsStr.equals("all")){
-    	solrAPI.deleteAllElementsFromPublishQueueQueueTable();
+    			pubAPI.deleteAllElementsFromPublishQueueTable();
     		}else{
-    	for(String id : deleteQueueElementsStr.split(",")){
-    		solrAPI.deleteElementFromPublishQueueQueueTable(Long.parseLong(id.trim()));
-    	}
+		    	for(String bundleId : deleteQueueElementsStr.split(",")){
+		    		pubAPI.deleteElementFromPublishQueueTable(bundleId);
+		    		publishAuditAPI.deletePublishAuditStatus(bundleId);
+		    	}
     		}
     	}
     	
-    	if(showPendings && showErrors){
-    		iresults =  solrAPI.getPublishQueueQueueContentletsPaginated(query, sortBy, offset, limit);
-    		counter =  solrAPI.getPublishQueueQueueContentletsCounter(query).get(0).get("count").toString();
-    	}else if (showPendings) {
-    		iresults = solrAPI.getPublishQueueQueueContentletToProcessPaginated(query, sortBy, offset, limit);
-    		counter =  solrAPI.getPublishQueueQueueContentletToProcessCounter(query, sortBy).get(0).get("count").toString();
-    	}else if(showErrors) {
-    		iresults = solrAPI.getQueueErrorsPaginated(query, sortBy, offset, limit);	
-    		counter =  solrAPI.getQueueErrorsCounter(query, sortBy).get(0).get("count").toString();
-    	}else {
-    		iresults =  new ArrayList();
-    		counter="0";
-    	}
+    	
+   		iresults =  pubAPI.getQueueElementsGroupByBundleId(offset, limit);
+   		counter =  pubAPI.countQueueElementsGroupByBundleId().get(0).get("count").toString();
+    	
     }catch(DotPublisherException e){
     	iresults = new ArrayList();
     	nastyError = e.toString();
@@ -134,26 +98,26 @@
 <script type="text/javascript">
  function solrQueueCheckUncheckAll(){
 	   var check=false;
-	   if(dijit.byId("queue_all").checked){
+/* 	   if(dijit.byId("queue_all").checked){
 		   check=true;
-	   }
+	   } */
 	   var nodes = dojo.query('.queue_to_delete');
 	   dojo.forEach(nodes, function(node) {
 		    dijit.getEnclosingWidget(node).set("checked",check);
 	   }); 
    }
    function doQueuePagination(offset,limit) {		
-		var url="layout=<%=layout%>&showPendings=<%=showPendings%>&showErrors=<%=showErrors%>&query=<%=query%>&sort=<%=sortBy%>";
+		var url="layout=<%=layout%>";
 		url+="&offset="+offset;
 		url+="&limit="+limit;		
 		refreshQueueList(url);
 	}
    
    function deleteQueue(){
-	   var url="layout=<%=layout%>&showPendings=<%=showPendings%>&showErrors=<%=showErrors%>&query=<%=query%>&sort=<%=sortBy%>&offset=0&limit=<%=limit%>";	
-		if(dijit.byId("queue_all").checked){
+	   var url="layout=<%=layout%>&offset=0&limit=<%=limit%>";	
+/* 		if(dijit.byId("queue_all").checked){
 			url+="&delete=all";
-		}else{
+		}else{ */
 			var ids="";
 			var nodes = dojo.query('.queue_to_delete');
 			   dojo.forEach(nodes, function(node) {
@@ -164,7 +128,7 @@
 			if(ids != ""){   
 				url+="&delete="+ids.substring(1);
 			}
-		}
+		//}
 		refreshQueueList(url);	   
    }
 </script>
@@ -176,10 +140,11 @@
 <%}else if(iresults.size() >0){ %>										
 	<table class="listingTable shadowBox">
 		<tr>
-			<th><input dojoType="dijit.form.CheckBox" type="checkbox" name="queue_all" value="all" id="queue_all" onclick="solrQueueCheckUncheckAll()" /></th>		
+			<th><!-- <input dojoType="dijit.form.CheckBox" type="checkbox" name="queue_all" value="all" id="queue_all" onclick="solrQueueCheckUncheckAll()" /> --></th>		
 			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
-			<th colspan="2"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>			
+			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
+			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 		</tr>
 		<% for(Map<String,Object> c : iresults) {
 			String errorclass="";
@@ -188,7 +153,7 @@
 			}
 		%>
 			<tr <%=errorclass%>>
-				<td><input dojoType="dijit.form.CheckBox" type="checkbox" class="queue_to_delete" name="queue_to_delete" value="<%=c.get("id") %>" id="queue_to_delete_<%=c.get("id") %>" /></td>
+				<td><input dojoType="dijit.form.CheckBox" type="checkbox" class="queue_to_delete" name="queue_to_delete" value="<%=c.get("bundle_id") %>" id="queue_to_delete_<%=c.get("bundle_id") %>" /></td>
 				<%try{
 					Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),true,Long.parseLong(c.get("language_id").toString()),user, false);
 				%>
@@ -197,21 +162,11 @@
 				}catch(Exception e){
 					nastyError=e.getMessage();
 				%>
-				<td><%=c.get("asset_identifier") %></td>
+				<td><%=c.get("bundle_id") %></td>
 				<%} %>
 				<td style="width:40px"><img class="center" src="/html/images/icons/<%=(c.get("operation").toString().equals("1")?"plus.png":"cross.png")%>"/></td>
 			    <td><%=UtilMethods.dateToHTMLDate((Date)c.get("entered_date"),"MM/dd/yyyy hh:mma") %></td>
-			    <%if(UtilMethods.isSet(c.get("last_results"))){ %>
-			    	<td id="error_<%=c.get("id")%>"><%= LanguageUtil.get(pageContext, "publisher_Failed")%> <%=c.get("num_of_tries")%> <%= LanguageUtil.get(pageContext, "publisher_Num_Times")+UtilMethods.shortenString(c.get("last_results").toString(),30)%></td>
-			    	<script type="text/javascript">
-			    		new dijit.Tooltip({
-					     	connectId: ["error_<%=c.get("id")%>"],
-					     	label: "<%=UtilMethods.escapeQuotes((String)c.get("last_results"))%>"
-					  	});
-			    	</script>
-			    <%}else{ %>
-			    	<td><%= LanguageUtil.get(pageContext, "publisher_Pending")%></td>
-			    <%} %>
+			    <td><%=PublishAuditStatus.getStatusByCode(Integer.valueOf((Integer) c.get("status")))%></td>
 			</tr>
 		<%}%>
 	</table>
@@ -247,7 +202,8 @@
 			<th style="width:30px">&nbsp;</th>		
 			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
-			<th colspan="2"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>			
+			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>			
+			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 		</tr>
 		<tr>
 			<td colspan="5" class="solr_tcenter"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
