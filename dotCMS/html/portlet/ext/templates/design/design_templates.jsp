@@ -205,6 +205,9 @@
 		fileSelector.show();
 	}
 
+	
+	
+	
 	function previewTemplate(name, params) {
 
 		var theme = dijit.byId("themeDiv");
@@ -218,9 +221,15 @@
 		openWindowWithPost(url, name, params);
 	}
 
+	var previewWindow;
 	function openWindowWithPost(url, name, params) {
-		var newWindow = window.open(url, name, params);
-		if (!newWindow) return false;
+		if (previewWindow) {
+			previewWindow.close();	
+		
+		}
+
+		previewWindow = window.open(url, "previewWindow", params);
+		if (!previewWindow) return false;
 		var bodyTemplateHTML = document.getElementById('bodyTemplate').innerHTML;
 		var theme = dijit.byId("themeDiv").value;
 		var themeName = dijit.byId("themeDiv").displayedValue;
@@ -236,9 +245,57 @@
 		html += '<input type="hidden" name="footerCheck" value="'+footerCheck+'">';
 		html += '<input type="hidden" name="hostId" value="'+hostId+'">';
 		html += '<textarea style="display: none;" name="bodyTemplateHTML">'+bodyTemplateHTML+'</textarea></form><script>document.previewForm.submit();<' + '/script' + '>' + '</body></html>';
-		newWindow.document.write(html);
-		return newWindow;
+		previewWindow.document.write(html);
+		return previewWindow;
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	function refreshPreviewTab(){
+
+		var bodyTemplateHTML = document.getElementById('bodyTemplate').innerHTML;
+		var theme = dijit.byId("themeDiv").value;
+		var themeName = dijit.byId("themeDiv").displayedValue;
+
+		var headerCheck = dijit.byId("headerCheck").checked;
+		var footerCheck = dijit.byId("footerCheck").checked;
+		var hostId = dojo.byId("hostId").value;
+
+		
+		dojo.byId("themePreviewRandom").value=Math.floor(Math.random()*1123213213);;
+		dojo.byId("themePreviewTheme").value=theme;
+		dojo.byId("themePreviewName").value=themeName;
+		dojo.byId("themePreviewHeaderCheck").value=headerCheck;
+		dojo.byId("themePreviewFooterCheck").value=footerCheck;
+		dojo.byId("themePreviewBodyTemplateHTML").value=bodyTemplateHTML;
+		dojo.byId("themePreviewHostId").value=hostId;
+
+
+		dojo.byId("themePreviewForm").submit();
+
+		
+		
+	}
+	
+	dojo.addOnLoad (function(){
+		var tab =dijit.byId("mainTabContainer");
+	   	dojo.connect(tab, 'selectChild',
+			function (evt) {
+			 	selectedTab = tab.selectedChildWidget;
+				  	if(selectedTab.id =="previewThemeTab"){
+				  		refreshPreviewTab();
+				  	}
+			});
+
+	});
+	
+
 
 	function addFileCallback(file) {
 		if(file.extension == 'js') {
@@ -272,6 +329,10 @@
 	function getContainerMockContent(title){
 		return "<h2>Container: "+title+"</h2><p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>";
 	}
+	
+
+	
+	
 </script>
 
 <script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
@@ -338,22 +399,7 @@
 			if(null!=parameters) { // retrieve the parameters for auto-populate the fields
 		%>
 			<div class="gradient2">
-<%-- 				<%if(themes != null && themes.size() > 0){ %> --%>
-<!-- 					<div class="fieldWrapperSide"> -->
-<!-- 						<div class="leftProperties"> -->
-<!-- 							<dl> -->
-<%-- 								<dt><%=LanguageUtil.get(pageContext, "Theme") %>:</dt> --%>
-<!-- 								<dd> -->
-<!-- 									<select id="theme" dojoType="dijit.form.FilteringSelect" name="theme" onchange="javascript: setTheme(this.value)"> -->
-<%-- 										<%for(Folder f : themes){%> --%>
-<%-- 											<option value="<%=f.getName() %>"><%=f.getName() %></option> --%>
-<%-- 										<%} %> --%>
-<!-- 									</select> -->
-<!-- 								</dd> -->
-<!-- 							</dl> -->
-<!-- 						</div> -->
-<!-- 					</div> -->
-<%-- 				<%} %> --%>
+
 
 
 				<div class="fieldWrapperSide">
@@ -503,24 +549,6 @@
 			} else {
 		%>
 			<div class="gradient2">
-<%-- 				<%if(themes != null && themes.size() > 0){ %> --%>
-<!-- 					<div class="fieldWrapperSide"> -->
-<!-- 						<div class="leftProperties"> -->
-<!-- 							<dl> -->
-<%-- 								<dt><%=LanguageUtil.get(pageContext, "Theme") %>:</dt> --%>
-<!-- 								<dd> -->
-<!-- 									<select id="theme" dojoType="dijit.form.FilteringSelect" name="theme" onchange="javascript: setTheme(this.value)"> -->
-<!-- 										<option value=""></option> -->
-<%-- 										<%for(Folder f : themes){%> --%>
-<%-- 											<option value="<%=f.getName() %>"><%=f.getName() %></option> --%>
-<%-- 										<%} %> --%>
-<!-- 									</select> -->
-<!-- 								</dd> -->
-<!-- 							</dl> -->
-<!-- 						</div> -->
-<!-- 					</div> -->
-<%-- 				<%} %> --%>
-
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -668,20 +696,7 @@
 			<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>
 
 		</div>
-			<div id="addFileToTemplate">
-				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
-				</button>
 
-				<button dojoType="dijit.form.Button" onClick="showAddMetadataContainerDialog()" type="button">
-					<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-meta"))%>
-				</button>
-				<%if(enablePreview){%>
-					<button dojoType="dijit.form.Button" onClick="previewTemplate('Preview','width=1024,height=768')" type="button" iconClass="previewIcon">
-						<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "preview"))%>
-					</button>
-				<%}%>
-			</div>
 			<div class="clear"></div>
 			<div id="bodyTemplate"></div>
 		</div>
@@ -728,22 +743,61 @@
 			</dl>
 		</div>
 	</div>
-	<!--
-	<div id="headCodeContentPane" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="<%= LanguageUtil.get(pageContext, "add-head-code") %>" >
-		<div class="wrapperRight" style="position:relative;" id="headCodeContentPaneWrapper">
-			<div id="headCode">
-				<h3><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "head-code-tab-description"))%></h3>
-				<br />
-				<div id="addHeaderCodeTextArea" style="border: 0px;  width: auto; height: 450px; padding-left: 20px;">
-					<html:textarea property="headCode" onkeydown="return catchTab(this,event)" style="width: auto; height: 450px; font-size: 12px" styleId="headerField"></html:textarea>
-				</div>
-				<br />
-		    	<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor" style="margin-left: 26px" onClick="codeMirrorColoration();"  checked="checked"  />
-		    	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+	
+	<div id="previewThemeTab" style="position:absolute; position:absolute;top:40px;left:10px;right:10px;bottom:0px;" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>" >
+
+		<div class="yui-g portlet-toolbar">
+			<div class="yui-u" style="text-align:right;">
+			
+			<div dojoType="dijit.form.DropDownButton">
+				<span><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Mobile Preview"))%></span>
+					<div dojoType="dijit.Menu">
+					
+		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=340,height=480')" >
+		                    <span class="addIcon"></span>
+		                    <%= LanguageUtil.get(pageContext,"iPhone") %>
+		                </div>
+					
+					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=1024,height=768')">
+		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"iPad") %>
+		                </div>
+		                
+					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
+		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
+		                </div>
+		                
+		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=640,height=920')" >
+		                    <span class="addIcon"></span>
+		                    <%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
+		                </div>
+		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=2048,height=1536')" >
+		                    <span class="addIcon"></span>
+		                    <%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
+		                </div>
+		           </div>
+			</div>
+			
+			
+			
+			
+
 			</div>
 		</div>
+			
+			
+			
+			
+		<iframe id="previewThemeIFrame" name="previewThemeIFrame"
+				style="width:99%;height:90%;border:1px solid black;"  
+				scrolling='auto' 
+				frameborder='1'>
+			</iframe>
+
+
 	</div>
-	 -->
+
+
+
 
 
 	<!-- Permissions Tab -->
@@ -772,7 +826,16 @@
 </div>
 
 </html:form>
-
+<form id="themePreviewForm" action="/servlets/template/design/preview" method="POST" target="previewThemeIFrame" name="themePreviewForm">
+	<input type="hidden" name="theme" id="themePreviewTheme">
+	<input type="hidden" name="themeName" id="themePreviewName">
+	<input type="hidden" name="headerCheck" id="themePreviewHeaderCheck">
+	<input type="hidden" name="footerCheck" id="themePreviewFooterCheck">
+	<input type="hidden" name="hostId" id="themePreviewHostId">
+	<input type="hidden" name="bodyTemplateHTML" id="themePreviewBodyTemplateHTML">
+	<input type="hidden" name="themePreviewRandom" id="themePreviewRandom">
+	
+</form>
 
 
 
