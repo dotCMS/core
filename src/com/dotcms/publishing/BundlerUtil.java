@@ -104,9 +104,6 @@ public class BundlerUtil {
 			f.delete();
 		
 		XStream xstream = new XStream(new DomDriver());
-		
-		//Added bynary management
-		xstream.registerConverter(new EncodedByteArrayConverter());
 
 		try {
 			if(!f.exists())f.createNewFile();
