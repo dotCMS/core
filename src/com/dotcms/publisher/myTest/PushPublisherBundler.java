@@ -5,7 +5,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 
 import com.dotcms.enterprise.LicenseUtil;
@@ -119,6 +118,7 @@ public class PushPublisherBundler implements IBundler {
 		//Copy asset files to bundle folder keeping original folders structure
 		List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
 		File assetFolder = new File(bundleRoot.getPath()+File.separator+"assets");
+		String inode=con.getInode();
 		for(Field ff : fields) {
 			if(ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
 				File sourceFile = con.getBinary( ff.getVelocityVarName()); 
@@ -127,7 +127,8 @@ public class PushPublisherBundler implements IBundler {
 					if(!assetFolder.exists())
 						assetFolder.mkdir();
 					
-					String folderTree = buildAssetsFolderTree(sourceFile);
+					String folderTree = inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+
+					        inode+File.separator+ff.getVelocityVarName()+File.separator+sourceFile.getName();
 					
 					File destFile = new File(assetFolder, folderTree);
 		            destFile.getParentFile().mkdirs();
@@ -152,23 +153,6 @@ public class PushPublisherBundler implements IBundler {
 		pushContentFile.setLastModified(cal.getTimeInMillis());
 	}
 	
-	private String buildAssetsFolderTree(File child) {
-		List<String> folders = new ArrayList<String>();
-		File temp = child.getParentFile();
-		folders.add(child.getName());
-		while(!temp.getName().equals("assets")) {
-			folders.add(temp.getName());
-			temp = temp.getParentFile();
-		}
-		Collections.reverse(folders);
-		StringBuilder s = new StringBuilder();
-		for(String folder: folders) {
-			s.append(folder+File.separator);
-		}
-		
-		return s.toString();
-	}
-
 	@Override
 	public FileFilter getFileFilter() {
 		// TODO Auto-generated method stub
