@@ -23,7 +23,6 @@
 package com.liferay.util.mail;
 
 import java.io.ByteArrayInputStream;
-import java.io.PrintStream;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -39,12 +38,9 @@ import javax.naming.NamingException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import sun.net.smtp.SmtpClient;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.JNDIUtil;
-import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
 
 /**
@@ -190,7 +186,7 @@ public class MailEngine {
 			_log.error("Subject: " + subject);
 			_log.error("Body: " + body);
 
-			_sendError(from, sfe);
+			Logger.error(MailEngine.class, sfe.getMessage(),sfe);
 		}
 		catch (Exception e) {
 			throw new MailEngineException(e);
@@ -215,48 +211,10 @@ public class MailEngine {
 			_sendMessage(session, msg);
 		}
 		catch (SendFailedException sfe) {
-			_sendError(from[0], sfe);
+		    Logger.error(MailEngine.class, sfe.getMessage(), sfe);
 		}
 		catch (Exception e) {
 			throw new MailEngineException(e);
-		}
-	}
-
-	private static void _sendError(InternetAddress to,
-								   SendFailedException sfe) {
-
-		Logger.info(MailEngine.class,StringUtil.stackTrace(sfe));
-
-		try {
-			Session session = getSession();
-
-			String smtpHost = session.getProperty("mail.smtp.host");
-
-			SmtpClient smtp = new SmtpClient(smtpHost);
-
-			InternetAddress from = new InternetAddress(
-				"MAILER-DAEMON@" + smtpHost, "Mail Delivery Subsystem");
-
-			smtp.from(from.getAddress());
-			smtp.to(to.getAddress());
-
-			StringBuffer sb = new StringBuffer();
-
-			sb.append("From: ").append(from.toString()).append("\n");
-			sb.append("To: ").append(to.toString()).append("\n");
-
-			sb.append("Subject: ").append(
-				"Returned mail: see transcript for details").append("\n\n");
-			sb.append(sfe.toString());
-
-			PrintStream msg = smtp.startMessage();
-			msg.print(sb.toString());
-			msg.close();
-
-			smtp.closeServer();
-		}
-		catch (Exception e) {
-			Logger.error(MailEngine.class,e.getMessage(),e);
 		}
 	}
 
