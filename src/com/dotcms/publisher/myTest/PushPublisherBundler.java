@@ -114,7 +114,7 @@ public class PushPublisherBundler implements IBundler {
 		wrapper.setMultiTree(pubAPI.getContentMultiTreeMatrix(con.getIdentifier()));
 		
 		//Find Tree
-		wrapper.setMultiTree(pubAPI.getContentTreeMatrix(con.getIdentifier()));
+		wrapper.setTree(pubAPI.getContentTreeMatrix(con.getIdentifier()));
 		
 		//Copy asset files to bundle folder keeping original folders structure
 		List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
