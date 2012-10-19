@@ -24,6 +24,7 @@
 	String inode=request.getParameter("inode");
 	String _crumbHost = "";
 	if(UtilMethods.isSet(inode)){
+	    request.removeAttribute("SHOW_HOST_SELECTOR");
 		hostContentlet = conAPI.find(inode,user,false);
 		hostContentletForm = (ContentletForm) request.getAttribute("ContentletForm");
 		try{

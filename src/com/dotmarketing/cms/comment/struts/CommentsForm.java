@@ -180,7 +180,7 @@ public class CommentsForm extends ValidatorForm
 			Logger.error(this, "Unable to look up contentlet with inode " + contentInode + " because of security issue", dse);
 		}
 		
-		if(!InodeUtils.isSet(parentContentlet.getInode())){
+		if(parentContentlet==null || !InodeUtils.isSet(parentContentlet.getInode())){
 			errors.add(ActionErrors.GLOBAL_ERROR, new ActionError("message.contentlet.required","Contentlet Inode"));    		
 			return errors;
 		}
