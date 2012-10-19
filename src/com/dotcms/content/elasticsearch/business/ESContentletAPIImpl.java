@@ -99,6 +99,7 @@ import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -2080,48 +2081,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 				for (Field field : fields) {
-				    if (isFieldTypeString(field)) {
-				        String value = contentlet.getStringProperty(field.getVelocityVarName());
-				        if (field.getFieldType().equals(Field.FieldType.TAG.toString()) && UtilMethods.isSet(value)) {
-				            String[] tagNames = ((String) value).split(",");
-
-
-				            if(structureHasAHostField){
-								Host host = null;
-								String hostId = "";
-								try{
-									host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-								}catch(Exception e){
-									Logger.error(this, "Unable to get default host");
-								}
-								if(host.getIdentifier().equals(Host.SYSTEM_HOST))
-									hostId = Host.SYSTEM_HOST;
-								else
-									hostId = host.getIdentifier();
-								for (String tagName : tagNames)
-									try {
-										tagAPI.addTagInode(tagName.trim(), contentlet.getInode(), hostId);
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-							}
-							else {
-								for (String tagName : tagNames)
-									try {
-										tagAPI.addTagInode(tagName.trim(), contentlet.getInode(), Host.SYSTEM_HOST);
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-							}
+				    if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
+				        String value=contentlet.getStringProperty(field.getVelocityVarName()).trim();
+				        if(UtilMethods.isSet(value)) {
+    				        String hostId = Host.SYSTEM_HOST;
+    				        if(structureHasAHostField){
+    				            Host host = null;
+    				            try{
+    				                host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
+    				            }catch(Exception e){
+    				                Logger.error(this, "Unable to get contentlet host");
+    				            }
+    				            if(host.getIdentifier().equals(Host.SYSTEM_HOST))
+    				                hostId = Host.SYSTEM_HOST;
+    				            else
+    				                hostId = host.getIdentifier();
+    				            
+    				        }
+    				        List<Tag> list=tagAPI.getTagsInText(value, user.getUserId(), hostId);
+    				        for(Tag tag : list)
+    				            tagAPI.addTagInode(tag.getTagName(), contentlet.getInode(), hostId);
 				        }
 				    }
+				    
 				}
 
-				// save temporally live state
-
-				if(contentlet.isLive()){
-				    APILocator.getVersionableAPI().setLive(contentlet);
-				}
+				
 				if (workingContentlet == null) {
 				    workingContentlet = contentlet;
 				}
