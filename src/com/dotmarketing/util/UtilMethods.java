@@ -1223,9 +1223,6 @@ public class UtilMethods {
         if (isSet(text)) {
             text = replace(text, "\"", "${quote}");
             text = replace(text, "##", "${pounds}");
-            text = replace(text, "�", "'");
-            text = replace(text, "�", "-");
-            text = replace(text, "�", "\\�");
             return text.trim();
         }
 

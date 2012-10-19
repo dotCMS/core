@@ -557,7 +557,7 @@ create index workflow_idx_scheme_structure_1 on
 
 create unique index workflow_idx_scheme_structure_2 on
     workflow_scheme_x_structure(structure_id);
-    
+
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
@@ -592,8 +592,6 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
 
-create index idx_identifier_perm on identifier (asset_type,host_inode);
-
 -- ****** Content Publishing Framework *******
 create table publishing_queue (id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, operation bigint, asset VARCHAR(2000) NOT NULL, language_id bigint NOT NULL, 
 entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, in_error varchar(1) DEFAULT '0', last_results LONGTEXT, 
@@ -601,3 +599,6 @@ publish_date DATETIME, server_id VARCHAR(256),
 type VARCHAR(256), bundle_id VARCHAR(256) , target text);
 
 create table publishing_queue_audit (bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, status INTEGER, status_pojo text, status_updated DATETIME, create_date DATETIME);
+
+create index idx_identifier_perm on identifier (asset_type,host_inode);
+

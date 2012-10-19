@@ -14,6 +14,7 @@ import org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
@@ -46,15 +47,18 @@ public class ViewTemplatesAction extends DotPortletAction {
 			List<Host> hosts = APILocator.getHostAPI().findAll(user, false);
 			hosts.remove(APILocator.getHostAPI().findSystemHost(user, false));
 			hosts = perAPI.filterCollection(hosts, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, false, user);
+
 			if(hosts.size() == 0) {
 				req.setAttribute(WebKeys.TEMPLATE_CAN_ADD, false);
 			    // *********************** GRAZIANO issue-12-dnd-template
-				req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, false);
+//				req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, false);
 			} else {
 				req.setAttribute(WebKeys.TEMPLATE_CAN_ADD, true);
 			    // *********************** GRAZIANO issue-12-dnd-template
-				req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, true);				
+//				req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, true);
 			}
+
+			req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, perAPI.doesUserHavePermissions(WebAPILocator.getHostWebAPI().getCurrentHost(req),"TEMPLATE_LAYOUTS:"+(PermissionAPI.PERMISSION_READ+PermissionAPI.PERMISSION_EDIT), user));
 
 			_viewWebAssets(req, user, Template.class, "template",WebKeys.TEMPLATES_VIEW_COUNT,WebKeys.TEMPLATES_VIEW, WebKeys.TEMPLATE_QUERY, WebKeys.TEMPLATE_SHOW_DELETED, WebKeys.TEMPLATE_HOST_CHANGED);
 

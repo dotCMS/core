@@ -2016,6 +2016,8 @@
 
                 var  e =  dojo.byId("contentWrapper");
                 dojo.style(e, "height", viewport_height -230+ "px");
+                
+                dijit.byId('borderContainer').resize()
         }
         
         //dojo.addOnLoad(resizeBrowser);

@@ -26,6 +26,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -478,6 +479,11 @@ public class SubmitContentUtil {
 					} catch (IOException e) {
 
 					}
+				}
+				else if(field.isRequired()) {
+				    DotContentletValidationException cve = new DotContentletValidationException("Contentlet's fields are not valid");
+				    cve.addRequiredField(field);
+				    throw cve;
 				}
 		     }
 		}

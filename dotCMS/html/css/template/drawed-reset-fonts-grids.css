@@ -1,7 +1,7 @@
 @CHARSET "UTF-8";
 
 /* *********************************************************************************************************** */
-/* 	YUI Grid extensions 
+/* 	YUI Grid extensions
 	New ids and classes customized for template design.
 /* *********************************************************************************************************** */
 
@@ -122,7 +122,7 @@
 	width:49.1%
 }
 .yui-gb-template .yui-u-template,.yui-g-template .yui-gb-template .yui-u-template,.yui-gb-template .yui-g-template,.yui-gb-template .yui-gb-template,.yui-gb-template .yui-gc-template,.yui-gb-template .yui-gd-template,.yui-gb-template .yui-ge-template,.yui-gb-template .yui-gf-template,.yui-gc-template .yui-u-template,.yui-gc-template .yui-g-template,.yui-gd-template .yui-u-template{
-	width:31%;	
+	width:31%;
 	margin-left:1.1%
 }
 .yui-gb-template .yui-u-template{
@@ -246,12 +246,12 @@
 }
 
 /* *********************************************************************************************************** */
-/* 	YUI Grid extensions 
+/* 	YUI Grid extensions
 	Alter properties for Edit Mode of the HTMLPage
 /* *********************************************************************************************************** */
 
 #hd-template, #ft-template {
-	min-height: 120px;
+	min-height: 90px;
 }
 
 .yui-b-template{
@@ -267,6 +267,6 @@
 }
 
 #doc-template .yui-gb-template .yui-u-template{
-	width:31%;	
+	width:31%;
 	margin-left:1%
 }

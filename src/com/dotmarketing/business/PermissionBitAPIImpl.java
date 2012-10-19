@@ -1215,7 +1215,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				permissions.addAll(getPermissionsByRole(r, true, true));
 			}
 
-			if(!permisssionIds.isEmpty()){
+ 			if(!permisssionIds.isEmpty()){
 				for(String permissionId : permissionIdsStr){
 					String[] perId = permissionId.split(":");
 					int requiredPermissionId = Integer.parseInt(perId[1].trim());
@@ -1260,7 +1260,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 										break;
 									}else if(p.getType().equals(perType) && p.matchesPermission(requiredPermissionId)
 											&& userRoleIds.contains(p.getRoleId())
-											&& (isInheriting || (isHost && p.getInode().equals(host.getIdentifier())) ||
+											&& (isInheriting || (isHost && (p.getInode().equals("SYSTEM_HOST") || p.getInode().equals(host.getIdentifier()))) ||
 													   (isFolder && p.getInode().equals(folder.getInode())))){
 										perCount++;
 										break;
