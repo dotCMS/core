@@ -72,9 +72,9 @@ public abstract class DashboardFactory {
 	
 	protected String getWorkstreamQuery(String hostId){  
 		return  " inode, asset_type, mod_user_id, host_id, mod_date,case when deleted = 1 then 'Deleted' else case when live_inode IS NOT NULL then 'Published' else 'Saved' end end as action, name from( "+ 
-		" select contentlet.inode as inode, 'contentlet' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date,lang_info.live_inode,lang_info.working_inode,info.deleted, coalesce(contentlet.title,contentlet.identifier) as name "+ 
-		" from contentlet_version_info info,contentlet join identifier identifier on identifier.id = contentlet.identifier where " +
-		" contentlet.identifier = info.identifier "+ 
+		" select contentlet.inode as inode, 'contentlet' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date,lang_info.live_inode,lang_info.working_inode,lang_info.deleted, coalesce(contentlet.title,contentlet.identifier) as name "+ 
+		" from contentlet_version_info lang_info,contentlet join identifier identifier on identifier.id = contentlet.identifier where " +
+		" contentlet.identifier = lang_info.identifier "+ 
 		" UNION ALL "+ 
 		" select htmlpage.inode as inode, 'htmlpage' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, page_info.live_inode, page_info.working_inode, page_info.deleted, " +
 		((DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)||(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)))?"identifier.parent_path || identifier.asset_name ":

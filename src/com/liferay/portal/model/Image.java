@@ -23,15 +23,14 @@
 package com.liferay.portal.model;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Iterator;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 
 import com.liferay.util.Base64;
-import com.sun.imageio.plugins.gif.GIFImageReader;
-import com.sun.imageio.plugins.jpeg.JPEGImageReader;
-import com.sun.imageio.plugins.png.PNGImageReader;
 
 /**
  * <a href="Image.java.html"><b><i>View Source</i></b></a>
@@ -87,17 +86,19 @@ public class Image extends ImageModel {
 		Iterator itr = ImageIO.getImageReaders(mcis);
 
 		_type = null;
-
+		String fm;
 		if (itr.hasNext()) {
-			Object obj = itr.next();
-
-			if (obj instanceof GIFImageReader) {
+			ImageReader obj = (ImageReader)itr.next();
+			try {
+                fm=obj.getFormatName();
+            } catch (IOException e) {return;}
+			if (fm.equalsIgnoreCase("gif")) {
 				_type = "gif";
 			}
-			else if (obj instanceof JPEGImageReader) {
+			else if (fm.equalsIgnoreCase("jpeg") || fm.equalsIgnoreCase("jpg")) {
 				_type = "jpeg";
 			}
-			else if (obj instanceof PNGImageReader) {
+			else if (fm.equalsIgnoreCase("png")) {
 				_type = "png";
 			}
 		}

@@ -1366,6 +1366,37 @@ public class BrowserAjax {
 		return hostsToReturn;
 	}
 
+	public List<Map<String, Object>> getHostsWithThemes() throws PortalException, SystemException, DotDataException, DotSecurityException {
+    	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+    	WebContext ctx = WebContextFactory.get();
+        User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
+		HostAPI hostAPI = APILocator.getHostAPI();
+
+		// get hosts the user has read permissions on
+		List<Host> hosts = hostAPI.getHostsWithPermission(com.dotmarketing.business.PermissionAPI.PERMISSION_READ, false, user, false);
+
+		List<Map<String, Object>> hostsToReturn = new ArrayList<Map<String,Object>>(hosts.size());
+		List<Host> filteredHosts = new ArrayList<Host>();
+
+		for (Host h : hosts) {
+			Folder folder = APILocator.getFolderAPI().findFolderByPath("/application/themes/", h , user, false);
+			// add hosts who have /application/themes/ folder
+			// add hosts the user has read permissions to the /application/themes/ folder
+			if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getName()) &&
+					permissionAPI.doesUserHavePermissions(folder,"TEMPLATE_LAYOUTS:"+PermissionAPI.PERMISSION_READ, user)) {
+				filteredHosts.add(h);
+			}
+		}
+
+		Collections.sort(hosts, new HostNameComparator());
+		for (Host h: filteredHosts) {
+			if(permissionAPI.doesUserHavePermissions(h,"TEMPLATE_LAYOUTS:"+PermissionAPI.PERMISSION_READ, user)){
+				hostsToReturn.add(hostMap(h));
+			}
+		}
+		return hostsToReturn;
+	}
+
 	public List<Map<String, Object>> getHostsIncludeAll() throws PortalException, SystemException, DotDataException, DotSecurityException {
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -1574,6 +1605,39 @@ public class BrowserAjax {
 
 		}
 		return null;
+	}
+
+	public List<Map<String, Object>> getHostThemes(String hostId) throws PortalException, SystemException, DotDataException, DotSecurityException {
+		if(hostId.equals("allHosts")){
+			return  new ArrayList<Map<String,Object>>();
+		}
+    	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+    	WebContext ctx = WebContextFactory.get();
+        User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
+        Role[] roles = new Role[]{};
+		try {
+			roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
+		} catch (DotDataException e1) {
+			Logger.error(BrowserAjax.class,e1.getMessage(),e1);
+		}
+        boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
+		HostAPI hostAPI = APILocator.getHostAPI();
+		Host host = hostAPI.find(hostId, user, respectFrontendRoles);
+		FolderAPI folderAPI = APILocator.getFolderAPI();
+		List<Folder> folders = folderAPI.findThemes(host, user, respectFrontendRoles);
+		List<Map<String, Object>> foldersToReturn = new ArrayList<Map<String,Object>>(folders.size());
+		for (Folder f: folders){
+			List permissions = new ArrayList();
+			try {
+				permissions = permissionAPI.getPermissionIdsFromRoles(f, roles, user);
+			} catch (DotDataException e) {
+				Logger.error(this, "Could not load permissions : ",e);
+			}
+			if(permissions.contains(PERMISSION_READ)){
+			     foldersToReturn.add(folderMap(f));
+			}
+		}
+		return foldersToReturn;
 	}
 
 }

@@ -6,7 +6,7 @@ package com.dotmarketing.portlets.templates.design.bean;
  * @author	Graziano Aliberti - Engineering Ingegneria Informatica
  * @date	Apr 23, 2012
  */
-public class SplitBody {
+public class TemplateLayoutRow {
 	
 	private int identifier;
 	
