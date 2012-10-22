@@ -132,7 +132,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
 		dojo.require("dojo.data.ItemFileReadStore");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' id='langcombo+"+this.dialogCounter+"' name='langcombo+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.contentletLanguageId+"'>";
+		htmlstr += "<select dojoType='dijit.form.FilteringSelect' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.contentletLanguageId+"'>";
 
 		for (var i = 0; i < data.length; i++) {
 
