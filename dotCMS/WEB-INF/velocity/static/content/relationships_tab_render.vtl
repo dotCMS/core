@@ -58,6 +58,7 @@
 		relation=relationshipName;
 		structureName=structure;
 		StructureAjax.getStructureSearchFields(structureIdentifier, loadStructureSearchFields);
+		document.getElementById('searchResults').innerHTML="<ul><li>No results find yet</li></ul>";
 		dijit.byId('relationshipsDialog').show();
 	}
 	function loadStructureSearchFields(data){
@@ -137,7 +138,7 @@
 		div.appendChild(actionDiv);
 		counter=counter+1;
 		dijit.byId('relationshipsDialog').hide();
-		document.getElementById('searchResults').innerHTML="No results find yet";
+		document.getElementById('searchResults').innerHTML="<ul><li>No results find yet</li></ul>";
 	}
 	
 	function removeRelationships(relationshipName){
