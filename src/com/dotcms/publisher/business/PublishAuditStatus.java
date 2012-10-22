@@ -13,13 +13,12 @@ public class PublishAuditStatus implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	public static enum Status {
-		NOT_BUNDLED(1),
-		BUNDLE_REQUESTED(2),
-		BUNDLING(3),
-		PUBLISHING(4),
-		FAILED_TO_BUNDLE(5), 
-		FAILED_TO_PUBLISH(6),
-		SUCCESS(7);
+		BUNDLE_REQUESTED(1),
+		BUNDLING(2),
+		PUBLISHING(3),
+		FAILED_TO_BUNDLE(4), 
+		FAILED_TO_PUBLISH(5),
+		SUCCESS(6);
 		
 		private int code;
 		private Status(int code) {
@@ -46,7 +45,7 @@ public class PublishAuditStatus implements Serializable {
 	public PublishAuditStatus(String bundleId) {
 		this.bundleId = bundleId;
 		this.createDate = new Date();
-		this.status = Status.NOT_BUNDLED;
+		this.status = Status.BUNDLE_REQUESTED;
 	}
 	
 	/**

@@ -25,15 +25,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String SPACE = " ";
 	private static final String IDENTIFIER = "identifier:";
 	private static PublisherAPIImpl instance= null;
-	private static int numOfTries = 10;
+	
 	public static PublisherAPIImpl getInstance() {
 		if(instance==null){
 			instance = new PublisherAPIImpl();
-			try {
-				numOfTries = 5; //TODO Put this value in a properties file
-			} catch (NumberFormatException e) {
-				Logger.debug(PublisherAPIImpl.class, e.getMessage());
-			}
 		}	
 		
 		return instance;
@@ -66,14 +61,12 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String OCLINSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	
 	
-	public void addContentsToPublish(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException {		
-		List<String> assets = null;
-		if(contents != null) {
-			assets = prepareAssets(contents, isLive);
+	public void addContentsToPublish(List<String> identifiers, String bundleId) throws DotPublisherException {		
+		if(identifiers != null) {
 			
 			try{
 				HibernateUtil.startTransaction();
-				for(String asset: assets) {
+				for(String identifier: identifiers) {
 					DotConnect dc = new DotConnect();
 					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 						dc.setSQL(PGINSERTSQL);
@@ -86,7 +79,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					}
 					
 					dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
-					dc.addObject(asset); //asset
+					dc.addObject(identifier); //asset
 					dc.addParam(new Date());
 					dc.addObject(1);
 					dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
@@ -117,14 +110,14 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 	
-	public void addContentsToUnpublish(List<Contentlet> contents, String bundleId, boolean isLive) throws DotPublisherException {		
+	public void addContentsToUnpublish(List<String> identifiers, String bundleId) throws DotPublisherException {		
 		List<String> assets = null;
-		if(contents != null) {
-			assets = prepareAssets(contents, isLive);
+		if(identifiers != null) {
+		
 			
 			try{
 				HibernateUtil.startTransaction();
-				for(String asset: assets) {
+				for(String identifier: identifiers) {
 					DotConnect dc = new DotConnect();
 					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 						dc.setSQL(PGINSERTSQL);
@@ -137,7 +130,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					}
 					
 					dc.addParam(PublisherAPI.DELETE_ELEMENT);
-					dc.addObject(asset); //asset
+					dc.addObject(identifier); //asset
 					dc.addParam(new Date());
 					dc.addObject(1);
 					dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
@@ -299,26 +292,21 @@ public class PublisherAPIImpl extends PublisherAPI{
 			DbConnectionFactory.closeConnection();
 		}
 	}
-
-	private static final String PSGETENTRIES=
-			"SELECT a.bundle_id, p.entered_date, a.status, p.operation " +
-			"FROM publishing_queue p, publishing_queue_audit a " +
-			"where p.bundle_id = a.bundle_id group by bundle_id ";
-	private static final String MYGETENTRIES=
-			"SELECT a.bundle_id, p.entered_date, a.status, p.operation " +
-			"FROM publishing_queue p, publishing_queue_audit a " +
-			"where p.bundle_id = a.bundle_id group by bundle_id ";
-	private static final String MSGETENTRIES=
-			"SELECT a.bundle_id, p.entered_date, a.status, p.operation " +
-			"FROM publishing_queue p, publishing_queue_audit a " +
-			"where p.bundle_id = a.bundle_id group by bundle_id ";
-	private static final String OCLGETENTRIES=
-			"SELECT a.bundle_id, p.entered_date, a.status, p.operation " +
-			"FROM publishing_queue p, publishing_queue_audit a " +
-			"where p.bundle_id = a.bundle_id group by bundle_id ";
 	
+	private static final String PSGETENTRIES = 
+			"SELECT * "+
+			"FROM publishing_queue p order by bundle_id ";
+	private static final String MYGETENTRIES = 
+			"SELECT * "+
+			"FROM publishing_queue p order by bundle_id ";
+	private static final String MSGETENTRIES = 
+			"SELECT * "+
+			"FROM publishing_queue p order by bundle_id ";
+	private static final String OCLGETENTRIES = 
+			"SELECT * "+
+			"FROM publishing_queue p order by bundle_id ";
 	
-	public List<Map<String,Object>> getQueueElementsGroupByBundleId() throws DotPublisherException {
+	public List<Map<String,Object>> getQueueElements() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -329,6 +317,73 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.setSQL(MSGETENTRIES);
 			}else{
 				dc.setSQL(OCLGETENTRIES);
+			}
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}finally{
+			DbConnectionFactory.closeConnection();
+		}
+	}
+	
+	private static final String PSCOUNTENTRIES="select count(*) as count from publishing_queue ";
+	private static final String MYCOUNTENTRIES="select count(*) as count from publishing_queue ";
+	private static final String MSCOUNTENTRIES="select count(*) as count from publishing_queue ";
+	private static final String OCLCOUNTENTRIES="select count(*) as count from publishing_queue ";
+	
+	public List<Map<String,Object>> countQueueElements() throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+				dc.setSQL(PSCOUNTENTRIES);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				dc.setSQL(MYCOUNTENTRIES);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+				dc.setSQL(MSCOUNTENTRIES);
+			}else{
+				dc.setSQL(OCLCOUNTENTRIES);
+			}
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}finally{
+			DbConnectionFactory.closeConnection();
+		}
+	}
+
+	private static final String PSGETENTRIESGROUPED=
+			"SELECT a.bundle_id, p.entered_date, a.status, p.operation " +
+			"FROM publishing_queue p, publishing_queue_audit a " +
+			"where p.bundle_id = a.bundle_id group by bundle_id ";
+	private static final String MYGETENTRIESGROUPED=
+			"SELECT a.bundle_id, p.entered_date, a.status, p.operation " +
+			"FROM publishing_queue p, publishing_queue_audit a " +
+			"where p.bundle_id = a.bundle_id group by bundle_id ";
+	private static final String MSGETENTRIESGROUPED=
+			"SELECT a.bundle_id, p.entered_date, a.status, p.operation " +
+			"FROM publishing_queue p, publishing_queue_audit a " +
+			"where p.bundle_id = a.bundle_id group by bundle_id ";
+	private static final String OCLGETENTRIESGROUPED=
+			"SELECT a.bundle_id, p.entered_date, a.status, p.operation " +
+			"FROM publishing_queue p, publishing_queue_audit a " +
+			"where p.bundle_id = a.bundle_id group by bundle_id ";
+	
+	
+	public List<Map<String,Object>> getQueueElementsGroupByBundleId() throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+				dc.setSQL(PSGETENTRIESGROUPED);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				dc.setSQL(MYGETENTRIESGROUPED);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+				dc.setSQL(MSGETENTRIESGROUPED);
+			}else{
+				dc.setSQL(OCLGETENTRIESGROUPED);
 			}
 			return dc.loadObjectResults();
 		}catch(Exception e){
@@ -343,13 +398,13 @@ public class PublisherAPIImpl extends PublisherAPI{
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-				dc.setSQL(PSGETENTRIES);
+				dc.setSQL(PSGETENTRIESGROUPED);
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-				dc.setSQL(MYGETENTRIES);
+				dc.setSQL(MYGETENTRIESGROUPED);
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-				dc.setSQL(MSGETENTRIES);
+				dc.setSQL(MSGETENTRIESGROUPED);
 			}else{
-				dc.setSQL(OCLGETENTRIES);
+				dc.setSQL(OCLGETENTRIESGROUPED);
 			}
 			
 			dc.setStartRow(offset);
@@ -364,22 +419,97 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 	
-	private static final String PSCOUNTENTRIES="select count(distinct(bundle_id)) as count from publishing_queue ";
-	private static final String MYCOUNTENTRIES="select count(distinct(bundle_id)) as count from publishing_queue ";
-	private static final String MSCOUNTENTRIES="select count(distinct(bundle_id)) as count from publishing_queue ";
-	private static final String OCLCOUNTENTRIES="select count(distinct(bundle_id)) as count from publishing_queue ";
+	
+	private static final String PSGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
+	private static final String MYGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
+	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
+	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
+	
+	/**
+	 * get bundle_ids available
+	 * @return List<Map<String,Object>>
+	 * @throws DotPublisherException
+	 */
+	public List<Map<String,Object>> getQueueBundleIds() throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+				dc.setSQL(PSGETBUNDLES);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				dc.setSQL(MYGETBUNDLES);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+				dc.setSQL(MSGETBUNDLES);
+			}else{
+				dc.setSQL(OCLGETBUNDLES);
+			}
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}finally{
+			DbConnectionFactory.closeConnection();
+		}
+	}
+	
+	private static final String PSGETENTRIESBYBUNDLE= 
+			"SELECT * "+
+			"FROM publishing_queue p where bundle_id = ? order by asset ";
+	private static final String MYGETENTRIESBYBUNDLE = 
+			"SELECT * "+
+			"FROM publishing_queue p where bundle_id = ? order by asset ";
+	private static final String MSGETENTRIESBYBUNDLE = 
+			"SELECT * "+
+			"FROM publishing_queue p where bundle_id = ? order by asset ";
+	private static final String OCLGETENTRIESBYBUNDLE = 
+			"SELECT * "+
+			"FROM publishing_queue p where bundle_id = ? order by asset ";
+	
+	/**
+	 * get queue elements by bundle_id
+	 * @return List<Map<String,Object>>
+	 * @throws DotPublisherException
+	 */
+	public List<Map<String,Object>> getQueueElementsByBundleId(String bundleId) throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+				dc.setSQL(PSGETENTRIESBYBUNDLE);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				dc.setSQL(MYGETENTRIESBYBUNDLE);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+				dc.setSQL(MSGETENTRIESBYBUNDLE);
+			}else{
+				dc.setSQL(OCLGETENTRIESBYBUNDLE);
+			}
+			
+			dc.addParam(bundleId);
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}finally{
+			DbConnectionFactory.closeConnection();
+		}
+	}
+	
+	private static final String PSCOUNTENTRIESGROUPED="select count(distinct(bundle_id)) as count from publishing_queue ";
+	private static final String MYCOUNTENTRIESGROUPED="select count(distinct(bundle_id)) as count from publishing_queue ";
+	private static final String MSCOUNTENTRIESGROUPED="select count(distinct(bundle_id)) as count from publishing_queue ";
+	private static final String OCLCOUNTENTRIESGROUPED="select count(distinct(bundle_id)) as count from publishing_queue ";
 	
 	public List<Map<String,Object>> countQueueElementsGroupByBundleId() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-				dc.setSQL(PSCOUNTENTRIES);
+				dc.setSQL(PSCOUNTENTRIESGROUPED);
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-				dc.setSQL(MYCOUNTENTRIES);
+				dc.setSQL(MYCOUNTENTRIESGROUPED);
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-				dc.setSQL(MSCOUNTENTRIES);
+				dc.setSQL(MSCOUNTENTRIESGROUPED);
 			}else{
-				dc.setSQL(OCLCOUNTENTRIES);
+				dc.setSQL(OCLCOUNTENTRIESGROUPED);
 			}
 			
 			return dc.loadObjectResults();
@@ -444,17 +574,17 @@ public class PublisherAPIImpl extends PublisherAPI{
 	/**
 	 * Delete element from publishing_queue table by id
 	 */
-	private static final String PSDELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
-	private static final String MYDELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
-	private static final String MSDELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?"; 
-	private static final String OCLDELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
+	private static final String PSDELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where asset=?";
+	private static final String MYDELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where asset=?";
+	private static final String MSDELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where asset=?"; 
+	private static final String OCLDELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where asset=?";
 	/**
 	 * Delete element from publishing_queue table by bundleId
 	 * @param id ID of the element in the table
 	 * @return boolean
 	 * @throws DotPublisherException
 	 */
-	public void deleteElementFromPublishQueueTable(String bundleId) throws DotPublisherException{
+	public void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException{
 		try{
 			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
@@ -467,6 +597,49 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.setSQL(MSDELETEELEMENTFROMQUEUESQL);
 			}else{
 				dc.setSQL(OCLDELETEELEMENTFROMQUEUESQL);
+			}
+			dc.addParam(identifier);
+			dc.loadResult();
+			HibernateUtil.commitTransaction();
+		}catch(Exception e){
+			try {
+				HibernateUtil.rollbackTransaction();
+			} catch (DotHibernateException e1) {
+				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+			}
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
+		}finally{
+			DbConnectionFactory.closeConnection();
+		}
+	}
+	
+	/**
+	 * Delete element(s) from publishing_queue table by id
+	 */
+	private static final String PSDELETEELEMENTSFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
+	private static final String MYDELETEELEMENTSFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
+	private static final String MSDELETEELEMENTSFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?"; 
+	private static final String OCLDELETEELEMENTSFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
+	/**
+	 * Delete element from publishing_queue table by bundleId
+	 * @param id ID of the element in the table
+	 * @return boolean
+	 * @throws DotPublisherException
+	 */
+	public void deleteElementsFromPublishQueueTable(String bundleId) throws DotPublisherException{
+		try{
+			HibernateUtil.startTransaction();
+			DotConnect dc = new DotConnect();
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+				/*Validate if the table doesn't exist then is created*/				
+				dc.setSQL(PSDELETEELEMENTSFROMQUEUESQL);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				dc.setSQL(MYDELETEELEMENTSFROMQUEUESQL);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+				dc.setSQL(MSDELETEELEMENTSFROMQUEUESQL);
+			}else{
+				dc.setSQL(OCLDELETEELEMENTSFROMQUEUESQL);
 			}
 			dc.addParam(bundleId);
 			dc.loadResult();

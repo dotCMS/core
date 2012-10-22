@@ -1,5 +1,8 @@
 package com.dotcms.publisher.business;
 
+import java.util.List;
+import java.util.Map;
+
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 
 
@@ -52,5 +55,5 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	//Select
-	public abstract PublishAuditStatus getPublishAuditStatus(String bundleId) throws DotPublisherException;
+	public abstract List<Map<String,Object>> getPublishAuditStatus(String bundleId) throws DotPublisherException;
 }
