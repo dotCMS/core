@@ -78,8 +78,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				}			
 				Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e);
 				throw new DotPublisherException("Unable to add element to publish queue audit table:" + e.getMessage(), e);
-			}finally{
-				DbConnectionFactory.closeConnection();
 			}
 		}
 	}
@@ -123,8 +121,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			throw new DotPublisherException(
 					"Unable to update element in publish queue audit table:" +
 					"with the following bundle_id "+bundleId+" "+ e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 	
@@ -166,8 +162,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			throw new DotPublisherException(
 					"Unable to remove element in publish queue audit table:" +
 					"with the following bundle_id "+bundleId+" "+ e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 	

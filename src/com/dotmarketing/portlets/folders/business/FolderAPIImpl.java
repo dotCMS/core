@@ -112,7 +112,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			return ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
-			
+
 		} catch (Exception e) {
 
 			if (localTransaction) {
@@ -178,10 +178,25 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		List<Folder> full = ffac.findFoldersByHost(host);
 		List<Folder> ret = new ArrayList<Folder>(full.size());
-		for(Folder ff : full) 
+		for(Folder ff : full)
 		    if(papi.doesUserHavePermission(ff, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions))
 		        ret.add(ff);
 		return ret;
+	}
+
+	public List<Folder> findThemes(Host host, User user, boolean respectFrontEndPermissions) throws DotDataException,
+	DotSecurityException {
+
+		if (!papi.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+			throw new DotSecurityException("User " + user + " does not have permission to read " + host.getInode());
+		}
+
+		List<Folder> full = ffac.findThemesByHost(host);
+		List<Folder> ret = new ArrayList<Folder>(full.size());
+		for(Folder ff : full)
+			if(papi.doesUserHavePermission(ff, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions))
+				ret.add(ff);
+				return ret;
 	}
 
 	/**
@@ -328,7 +343,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				// permission (checked above) they can delete to children
 				delete(childFolder, user, respectFrontEndPermissions);
 			}
-			
+
 			// delete assets in this folder
 			_deleteChildrenAssetsFromFolder(folder, user, respectFrontEndPermissions);
 			APILocator.getPermissionAPI().removePermissions(folder);
@@ -344,7 +359,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				// RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(faker);
 			}
-			
+
 			if(localTransaction){
                 HibernateUtil.commitTransaction();
             }
@@ -412,7 +427,7 @@ public class FolderAPIImpl implements FolderAPI  {
 					APILocator.getIdentifierAPI().delete(identifier);
 				}
 			}
-			
+
 			/******** delete possible orphaned identifiers under the folder *********/
 			HibernateUtil.getSession().clear();
 			Identifier ident=APILocator.getIdentifierAPI().find(folder);
@@ -686,7 +701,6 @@ public class FolderAPIImpl implements FolderAPI  {
 		List list = StructureFactory.getStructures("folder='"+parent.getInode()+"'", null, 0, 0, null);
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
-
 
 	public boolean isChildFolder(Folder folder1, Folder folder2) throws DotDataException,DotSecurityException {
 	   return ffac.isChildFolder(folder1, folder2);

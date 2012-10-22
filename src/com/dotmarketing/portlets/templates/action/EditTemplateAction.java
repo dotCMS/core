@@ -12,10 +12,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.MatchResult;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -29,11 +25,12 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.design.bean.DesignTemplateJSParameter;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -52,38 +49,38 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
-import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
  * @author Maria
  */
 
+@SuppressWarnings("deprecation")
 public class EditTemplateAction extends DotPortletAction implements
 	DotPortletActionInterface {
 
 	private static HostAPI hostAPI = APILocator.getHostAPI();
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
-		protected Perl5Matcher initialValue() {
-			return new Perl5Matcher();
-		}
-	};
+//	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
+//		protected Perl5Matcher initialValue() {
+//			return new Perl5Matcher();
+//		}
+//	};
+//
+//	private static org.apache.oro.text.regex.Pattern parseContainerPattern;
+//	private static org.apache.oro.text.regex.Pattern oldContainerPattern;
 
-	private static org.apache.oro.text.regex.Pattern parseContainerPattern;
-	private static org.apache.oro.text.regex.Pattern oldContainerPattern;
-
-	public EditTemplateAction() {
-		Perl5Compiler c = new Perl5Compiler();
-    	try{
-	    	parseContainerPattern = c.compile("#parse\\( \\$container.* \\)",Perl5Compiler.READ_ONLY_MASK);
-	    	oldContainerPattern = c.compile("[0-9]+",Perl5Compiler.READ_ONLY_MASK);
-    	}catch (MalformedPatternException mfe) {
-    		Logger.fatal(this,"Unable to instaniate dotCMS Velocity Cache",mfe);
-			Logger.error(this,mfe.getMessage(),mfe);
-		}
-	}
+//	public EditTemplateAction() {
+//		Perl5Compiler c = new Perl5Compiler();
+//    	try{
+//	    	parseContainerPattern = c.compile("#parse\\( \\$container.* \\)",Perl5Compiler.READ_ONLY_MASK);
+//	    	oldContainerPattern = c.compile("[0-9]+",Perl5Compiler.READ_ONLY_MASK);
+//    	}catch (MalformedPatternException mfe) {
+//    		Logger.fatal(this,"Unable to instaniate dotCMS Velocity Cache",mfe);
+//			Logger.error(this,mfe.getMessage(),mfe);
+//		}
+//	}
 
 	public void processAction(ActionMapping mapping, ActionForm form,
 			PortletConfig config, ActionRequest req, ActionResponse res)
@@ -151,7 +148,7 @@ public class EditTemplateAction extends DotPortletAction implements
 			}
 		}
 
-		// *********************** BEGIN GRAZIANO issue-12-dnd-template	
+		// *********************** BEGIN GRAZIANO issue-12-dnd-template
 		/*
 		 * We are drawing the Template. In this case we call the _editWebAsset method but in the Template model creation we add the drawed property.
 		 */
@@ -179,13 +176,13 @@ public class EditTemplateAction extends DotPortletAction implements
 				}
 				_handleException(ae, req);
 			}
-		}		
+		}
 
 		if ((cmd != null) && cmd.equals(Constants.ADD_DESIGN)) {
 			try {
 				if (Validator.validate(req, form, mapping)) {
 					Logger.debug(this, "Calling Save method for design template");
-					_saveWebAsset(req, res, config, form, user);					
+					_saveWebAsset(req, res, config, form, user);
 					String subcmd = req.getParameter("subcmd");
 					if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
 						Logger.debug(this, "Calling Publish method");
@@ -212,8 +209,8 @@ public class EditTemplateAction extends DotPortletAction implements
 				_handleException(ae, req);
 			}
 		}
-		// *********************** END GRAZIANO issue-12-dnd-template	
-		
+		// *********************** END GRAZIANO issue-12-dnd-template
+
 		/*
 		 * If we are updating the Template, copy the information
 		 * from the struts bean to the hbm inode and run the
@@ -470,11 +467,11 @@ public class EditTemplateAction extends DotPortletAction implements
 		HibernateUtil.commitTransaction();
 
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
-		
-		
-		// *********************** BEGIN GRAZIANO issue-12-dnd-template		
+
+
+		// *********************** BEGIN GRAZIANO issue-12-dnd-template
 		boolean isDrawed = req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED)!=null?(Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED):false;
-		
+
 		// If we are into the design mode we are redirected at the new portlet action
 		if(((null!=cmd) && cmd.equals(Constants.DESIGN))){
 			req.setAttribute(WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY, false);
@@ -483,7 +480,7 @@ public class EditTemplateAction extends DotPortletAction implements
 			req.setAttribute(WebKeys.OVERRIDE_DRAWED_TEMPLATE_BODY, true);
 			// create the javascript parameters for left side (Page Width, Layout ecc..) of design template
 			Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_EDIT);
-			DesignTemplateJSParameter parameters = DesignTemplateUtil.getDesignParameters(template.getDrawedBody());
+			TemplateLayout parameters = DesignTemplateUtil.getDesignParameters(template.getDrawedBody());
 			req.setAttribute(WebKeys.TEMPLATE_JAVASCRIPT_PARAMETERS, parameters);
 			setForward(req, "portlet.ext.templates.design_template");
 		}else
@@ -517,7 +514,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		
+
 		//calls edit method from super class that returns parent folder
 		super._editWebAsset(req, res, config, form, user,
 				WebKeys.TEMPLATE_EDIT);
@@ -529,7 +526,12 @@ public class EditTemplateAction extends DotPortletAction implements
 		if(cmd.equals(Constants.DESIGN))
 			template.setDrawed(true);
 		// *********************** END GRAZIANO issue-12-dnd-template
-		
+
+		if(UtilMethods.isSet(template.getTheme())) {
+			Folder themeFolder = APILocator.getFolderAPI().find(template.getTheme(), user, false);
+			template.setThemeName(themeFolder.getName());
+		}
+
 		if(InodeUtils.isSet(template.getInode())) {
 			_checkReadPermissions(template, user, httpReq);
 		}
@@ -572,13 +574,12 @@ public class EditTemplateAction extends DotPortletAction implements
 		}
 		ActivityLogger.logInfo(this.getClass(), "Edit Template action", "User " + user.getPrimaryKey() + " edit template " + cf.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 		cf.setImage(fileAsContent?imageContentlet.getIdentifier():imageFile.getIdentifier());
-		
+
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
 		req.setAttribute(WebKeys.TEMPLATE_IS_DRAWED, template.isDrawed());
 		// *********************** END GRAZIANO issue-12-dnd-template
 	}
 
-	@SuppressWarnings("unchecked")
 	public void _saveWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 		String cmd = req.getParameter(Constants.CMD);
@@ -596,7 +597,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		//gets the current template being edited from the request object
 		Template currentTemplate = (Template) req.getAttribute(WebKeys.TEMPLATE_EDIT);
-		
+
 		//Retrieves the host were the template will be assigned to
 		Host host = hostAPI.find(cf.getHostId(), user, false);
 
@@ -616,7 +617,6 @@ public class EditTemplateAction extends DotPortletAction implements
 		}
 
 		//gets user id from request for mod user
-		String userId = user.getUserId();
 		//gets file object for the thumbnail
 		if (InodeUtils.isSet(cf.getImage())) {
 			newTemplate.setImage(cf.getImage());
@@ -625,18 +625,31 @@ public class EditTemplateAction extends DotPortletAction implements
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
 		if(cmd.equals(Constants.ADD_DESIGN)){
 			newTemplate.setDrawed(true);
-			
+
 			// create the body with all the main HTML tags
-			StringBuffer endBody = DesignTemplateUtil.getBody(newTemplate.getBody(), newTemplate.getHeadCode());
-			
+
+//			Folder themeFolder = APILocator.getFolderAPI().find(newTemplate.getTheme(), user, false);
+			String themeHostId = APILocator.getFolderAPI().find(newTemplate.getTheme(), user, false).getHostId();
+			String themePath = null;
+
+			if(themeHostId.equals(host.getInode())) {
+				themePath = Template.THEMES_PATH + newTemplate.getThemeName() + "/";
+			} else {
+				Host themeHost = APILocator.getHostAPI().find(themeHostId, user, false);
+				themePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + newTemplate.getThemeName() + "/";
+			}
+
+			StringBuffer endBody = DesignTemplateUtil.getBody(newTemplate.getBody(), newTemplate.getHeadCode(), themePath, cf.isHeaderCheck(), cf.isFooterCheck());
+
+
 			// set the drawedBody for future edit
 			newTemplate.setDrawedBody(newTemplate.getBody());
-			
+
 			// set the real body
-			newTemplate.setBody(endBody.toString());	
-			
+			newTemplate.setBody(endBody.toString());
+
 			newTemplate.setHeadCode(cf.getHeadCode());
-		}		
+		}
 		// *********************** END GRAZIANO issue-12-dnd-template
 
 		APILocator.getTemplateAPI().saveTemplate(newTemplate,host , user, false);
@@ -677,14 +690,13 @@ public class EditTemplateAction extends DotPortletAction implements
 		SessionMessages.add(httpReq, "message", "message.template.copy");
 	}
 
-	@SuppressWarnings("unchecked")
 	public void _getVersionBackWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
 		Template versionTemplate = (Template) InodeFactory.getInode(req
 				.getParameter("inode_version"), Template.class);
 
-		Identifier id = (Identifier)APILocator.getIdentifierAPI().find(versionTemplate);
+//		Identifier id = (Identifier)APILocator.getIdentifierAPI().find(versionTemplate);
 
 		//Template workingTemplate = (Template)APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(),false);
 
@@ -696,25 +708,25 @@ public class EditTemplateAction extends DotPortletAction implements
 		TemplateServices.invalidate(versionTemplate, true);
 	}
 
-	private void updateParseContainerSyntax(Template template){
-		String tb = template.getBody();
-		Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
-		String oldParse;
-		String newParse;
-    	while(matcher.contains(tb, parseContainerPattern)){
-     		MatchResult match = matcher.getMatch();
-    		int groups = match.groups();
-     		for(int g=0;g<groups;g++){
-     			oldParse = match.group(g);
-     			if(matcher.contains(oldParse, oldContainerPattern)){
-     				MatchResult matchOld = matcher.getMatch();
-     				newParse = matchOld.group(0).trim();
-     				newParse = "#parseContainer('" + newParse + "')";
-     				tb = StringUtil.replace(tb,oldParse,newParse);
-     			}
-     		}
-     		template.setBody(tb);
-    	}
-	}
+//	private void updateParseContainerSyntax(Template template){
+//		String tb = template.getBody();
+//		Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
+//		String oldParse;
+//		String newParse;
+//    	while(matcher.contains(tb, parseContainerPattern)){
+//     		MatchResult match = matcher.getMatch();
+//    		int groups = match.groups();
+//     		for(int g=0;g<groups;g++){
+//     			oldParse = match.group(g);
+//     			if(matcher.contains(oldParse, oldContainerPattern)){
+//     				MatchResult matchOld = matcher.getMatch();
+//     				newParse = matchOld.group(0).trim();
+//     				newParse = "#parseContainer('" + newParse + "')";
+//     				tb = StringUtil.replace(tb,oldParse,newParse);
+//     			}
+//     		}
+//     		template.setBody(tb);
+//    	}
+//	}
 
 }
