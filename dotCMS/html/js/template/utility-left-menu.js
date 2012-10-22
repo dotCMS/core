@@ -198,7 +198,7 @@ function addLayout(layout){
 			yuiBDiv.setAttribute("class","yui-b-template");
 			yuiBDiv.setAttribute("id","yui-b2");
 			yuiBDiv.style.height="70%";
-			yuiBDiv.innerHTML=getAddContainer("yui-b2")+"<h1>Sidebar</h1>"+getMockContent();
+			yuiBDiv.innerHTML=getAddContainer("yui-b2")+"<h1>Sidebar</h1>";
 			bodyDiv.appendChild(yuiBDiv);
 			//update the add container links count
 			updateAddContainerLinksCount(true);
@@ -388,7 +388,7 @@ function removeDrawedContainer(idDiv,idContainer){
 		if(idDiv!="yui-b2")
 			div.innerHTML+="<h1>Body</h1>";
 		else
-			div.innerHTML+="<h1>Sidebar</h1>"+getMockContent();
+			div.innerHTML+="<h1>Sidebar</h1>";
 	}
 
 	// update the containers counter

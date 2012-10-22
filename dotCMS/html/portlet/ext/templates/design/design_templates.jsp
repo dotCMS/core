@@ -89,14 +89,6 @@
 	if(UtilMethods.isSet(hostId)) {
 		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false);
 	}
-	Folder themeFolder= APILocator.getFolderAPI().findFolderByPath("/application/themes", host, user, false);
-	List<Folder> themes = null;
-	try{
-		themes = APILocator.getFolderAPI().findSubFolders(themeFolder, user, false);
-	}
-	catch(Exception e){
-
-	}
 %>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
@@ -130,9 +122,6 @@
 
 		var addContainerLinks = window.parseInt(document.getElementById("countAddContainerLinks").value);
 		var containersAdded = window.parseInt(document.getElementById("countContainersAdded").value);
-
-		alert(addContainerLinks);
-		alert(containersAdded);
 
 		if(containersAdded==0){
 			if(!confirm('Your template does not contains Containers. In this case you can\'t add contents. Are you sure you want to save?'))
