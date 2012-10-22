@@ -1,0 +1,28 @@
+<div id="HostSelector" name="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('$fieldAux.getVelocityVarName()');" includeAll="true" value="$!fieldDefaultValue"></div>
+<input type="hidden" name="$fieldAux.getVelocityVarName()" id="$fieldAux.getVelocityVarName()" value="$!fieldDefaultValue"/>
+<input type="hidden" name="hostId" id="hostId" value=""/>
+<input type="hidden" name="folderInode" id="folderInode" value=""/>
+<br />
+<script>
+	function updateHostFolderValues(field){
+	  if(!isInodeSet(dijit.byId('HostSelector').attr('value'))){
+		 dojo.byId(field).value = "";
+		 dojo.byId('hostId').value = "";
+		 dojo.byId('folderInode').value = "";
+	  }else{
+		 var data = dijit.byId('HostSelector').attr('selectedItem');
+		 if(data["type"]== "host"){
+			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId('hostId').value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId('folderInode').value = "";
+		 }else if(data["type"]== "folder"){
+			dojo.byId(field).value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId('folderInode').value =  dijit.byId('HostSelector').attr('value');
+			dojo.byId('hostId').value = "";
+		}
+	  }
+	}
+	function isInodeSet(x){
+		return (x && x != undefined && x!="" && x.length>15);
+	}
+</script>
