@@ -1,8 +1,11 @@
 package com.dotcms.publisher.business;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -42,7 +45,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	@Override
 	public void insertPublishAuditStatus(PublishAuditStatus pa)
 			throws DotPublisherException {
-		//if(getPublishAuditStatus(pa.getBundleId()) == null) {
+		if(getPublishAuditStatus(pa.getBundleId()) == null) {
 			try{
 				HibernateUtil.startTransaction();
 				DotConnect dc = new DotConnect();
@@ -78,7 +81,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			}finally{
 				DbConnectionFactory.closeConnection();
 			}
-		//}
+		}
 	}
 	
 	private final String PGUPDATESQL="update publishing_queue_audit set status = ? where bundle_id = ? ";
@@ -168,25 +171,27 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 	
-	private final String SELECTSQL="from publishing_queue_audit in class com.dotcms.publisher.business.PublishAuditStatus where bundle_id = ? ";
+	private final String SELECTSQL=
+			"SELECT * "+
+			"FROM publishing_queue_audit a where a.bundle_id = ? ";
 	
 	@Override
-	public PublishAuditStatus getPublishAuditStatus(String bundleId)
+	public List<Map<String,Object>> getPublishAuditStatus(String bundleId)
 			throws DotPublisherException {
 		
-		try {
-			HibernateUtil dh = new HibernateUtil(PublishAuditStatus.class);
-			dh.setQuery(SELECTSQL);
+		try{
+			DotConnect dc = new DotConnect();
+			dc.setSQL(SELECTSQL);
 			
-			dh.setParam(bundleId);
+			dc.addParam(bundleId);
 			
-			Object res = dh.load();
-			if(res != null)
-				return (PublishAuditStatus) dh.load();
-		} catch (Exception e) {
-            Logger.warn(PublishAuditAPIImpl.class, "getPublishAuditStatus failed:" + e, e);
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}finally{
+			DbConnectionFactory.closeConnection();
 		}
-		return null;
 	}
 
 	

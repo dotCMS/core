@@ -44,7 +44,7 @@ if(!UtilMethods.isSet(query)){
 	query="";
 }
 
-iresults =  pubAPI.getQueueElementsByStatus(Status.NOT_BUNDLED);
+iresults =  pubAPI.getQueueElements();
 
 String luceneQuery = null;
 PushPublisherConfig pconf = new PushPublisherConfig();
@@ -54,7 +54,7 @@ bundler.add(new PushPublisherBundler());
 clazz.add(PushPublisher.class);
 int counter = 0;
 for(Map<String,Object> c : iresults) {
-	luceneQuery = (String)c.get("asset");
+	luceneQuery = ("+identifier:"+ (String)c.get("asset"));
 	pconf.setLuceneQuery(luceneQuery);
 	pconf.setId((String) c.get("bundle_id"));
 	pconf.setUser(APILocator.getUserAPI().getSystemUser());
@@ -65,7 +65,7 @@ for(Map<String,Object> c : iresults) {
 	pconf.setLiveOnly(false);
 	pconf.setBundlers(bundler);
 	
-	pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.BUNDLE_REQUESTED);
+	pubAuditAPI.insertPublishAuditStatus(new PublishAuditStatus(pconf.getId()));
 	
 	APILocator.getPublisherAPI().publish(pconf);
 	out.print(pconf.getId() +" Done! <br />"); 

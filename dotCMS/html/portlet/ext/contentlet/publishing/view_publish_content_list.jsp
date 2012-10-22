@@ -91,71 +91,31 @@
     		
 	    	if(addQueueElements){
 	    		String bundeId = UUID.randomUUID().toString();
-		    	if(addQueueElementsStr.equals("all")){
-		    		try{
-		    			//Live
-		    			iresults = conAPI.search(query+" +live:true",0,0,sortBy,user,false);
-		    			if(addOperationType.equals("add"))
-		    				publisherAPI.addContentsToPublish(iresults,bundeId, true);
-		    			else
-		    				publisherAPI.addContentsToUnpublish(iresults,bundeId, true);
-		    			//Working
-		    			iresults = conAPI.search(query+" +working:true",0,0,sortBy,user,false);
-		    			
-		    			if(addOperationType.equals("add"))
-		    				publisherAPI.addContentsToPublish(iresults,bundeId, false);
-		    			else
-		    				publisherAPI.addContentsToUnpublish(iresults,bundeId, false);
-		    			
-		    			PublishAuditStatus pas = new PublishAuditStatus(bundeId);
-		    			publishAuditAPI.insertPublishAuditStatus(pas);
-		    			
-		    			processedCounter = iresults.size();
-		    		}catch(Exception b){
-    					nastyError += "<br/>Unable to add selected contents";
-    					errorCounter++;
-    					processedCounter = 0;	
-    				}
-		    	}else{
-		    		//Get available languages
-					List<Language> languages = languagesAPI.getLanguages();
-		    		
-		    		List<Contentlet> contentsLive = new ArrayList<Contentlet>();
-		    		List<Contentlet> contentsWorking = new ArrayList<Contentlet>();
-		    		for(String item : addQueueElementsStr.split(",")){
-		    			String[] value = item.split("\\$");
-		    			
-	    				//for(Language language : languages) {
-	    					try {
-		    					Contentlet conLive = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
-		    					contentsLive.add(conLive);
-	    					} catch(DotContentletStateException e) {}
-	    					try {
-		    					Contentlet conWorking = conAPI.findContentletByIdentifier(value[0],false,Long.parseLong(value[1]),user, false);
-		    					contentsWorking.add(conWorking);
-	    					} catch(DotContentletStateException e) {}
-	    					
-	    					processedCounter++;
-	    				//}
-		    			
-		    		}
-		    		try{
-		    			if(addOperationType.equals("add")){
-		    				publisherAPI.addContentsToPublish(contentsLive, bundeId, true);
-		    				publisherAPI.addContentsToPublish(contentsWorking, bundeId, false);
-		    			} else {
-		    				publisherAPI.addContentsToUnpublish(contentsLive, bundeId, true);
-		    				publisherAPI.addContentsToUnpublish(contentsWorking, bundeId, false);
-		    			}
-		    			
-		    			PublishAuditStatus pas = new PublishAuditStatus(bundeId);
-		    			publishAuditAPI.insertPublishAuditStatus(pas);
-		    		}catch(Exception b){
-    					nastyError += "<br/>Unable to add selected contents";
-    					errorCounter++;
-    					processedCounter = 0;	
-    				}
-		    	}
+		    		    		
+	    		List<String> identifiers = new ArrayList<String>();
+	    		
+	    		for(String item : addQueueElementsStr.split(",")){
+	    			String[] value = item.split("\\$");
+   					Contentlet conLive = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
+   					identifiers.add(value[0]);
+   					
+   					processedCounter++;
+	    			
+	    		}
+	    		try{
+	    			if(addOperationType.equals("add")){
+	    				publisherAPI.addContentsToPublish(identifiers, bundeId);
+	    			} else {
+	    				publisherAPI.addContentsToUnpublish(identifiers, bundeId);
+	    			}
+	    			
+	    			
+	    		}catch(Exception b){
+   					nastyError += "<br/>Unable to add selected contents";
+   					errorCounter++;
+   					processedCounter = 0;	
+   				}
+		    	
     		}
     		
     		
