@@ -20,12 +20,14 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
@@ -165,9 +167,11 @@ public class JSONContentServlet extends HttpServlet implements Servlet {
         // build our objects
 
 
-		List<Contentlet> cons = new ArrayList<Contentlet>();
+        List<Contentlet> cons = new ArrayList<Contentlet>();
+		PaginatedArrayList<ContentletSearch> cons2 = new PaginatedArrayList<ContentletSearch>();
 		try {
 			cons = APILocator.getContentletAPI().search(q,new Integer(limit),new Integer(offset),orderBy,user,true);
+			cons2 = (PaginatedArrayList<ContentletSearch>)APILocator.getContentletAPI().searchIndex(q,1,0,orderBy,user,true);
 		} catch (DotDataException e1) {
 			// TODO Auto-generated catch block
 			Logger.error(this.getClass(), e1.getMessage(), e1);
@@ -196,7 +200,7 @@ public class JSONContentServlet extends HttpServlet implements Servlet {
 		}
 		response.setCharacterEncoding("UTF-8");
 		if("json".equals(type)){
-			doJSON(cons, response);
+			doJSON(cons,cons2, response);
 		}
 		else{
 			doXML(cons, response, render);
@@ -230,7 +234,7 @@ public class JSONContentServlet extends HttpServlet implements Servlet {
 		response.getWriter().close();  
 	}
 		
-	private void doJSON(List<Contentlet> cons, HttpServletResponse response) throws IOException{
+	private void doJSON(List<Contentlet> cons, PaginatedArrayList<ContentletSearch> cons2, HttpServletResponse response) throws IOException{
 		
 	
 		
@@ -254,6 +258,7 @@ public class JSONContentServlet extends HttpServlet implements Servlet {
 
 		try {
 			json.put("contentlets", jsonCons);
+			json.put("total", cons2.getTotalResults());
 		} catch (JSONException e) {
 			Logger.error(this.getClass(), "unable to create JSONObject");
 			Logger.debug(this.getClass(), "unable to create JSONObject", e);
