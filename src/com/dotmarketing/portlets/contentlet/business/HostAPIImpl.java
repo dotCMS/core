@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import net.sf.hibernate.Hibernate;
+
 import org.quartz.SimpleTrigger;
 
 import com.dotmarketing.beans.Host;
@@ -273,7 +275,10 @@ public class HostAPIImpl implements HostAPI {
 		Host host  = hostCache.get(id);
 
 		if(host ==null){
-		    ContentletVersionInfo vinfo=APILocator.getVersionableAPI().getContentletVersionInfo(id, APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		    HibernateUtil hu=new HibernateUtil(ContentletVersionInfo.class);
+		    hu.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=?");
+		    hu.setParam(id);
+		    ContentletVersionInfo vinfo=(ContentletVersionInfo) hu.load();
 		    if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
 		        String hostInode=vinfo.getWorkingInode();
     			Contentlet cont= APILocator.getContentletAPI().find(hostInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
