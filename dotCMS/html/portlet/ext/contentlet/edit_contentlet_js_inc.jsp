@@ -615,10 +615,10 @@ dojo.require("dojox.layout.ContentPane");
     	},
 
 
-    	executeWfAction: function(wfId, assignable, commentable){
+    	executeWfAction: function(wfId, popupable, showpush){
     		this.wfActionId=wfId;
 
-    		if(assignable || commentable){
+    		if(popupable){
     			
     			var myCp = dijit.byId("contentletWfCP");
     			if (myCp) {
@@ -652,7 +652,7 @@ dojo.require("dojox.layout.ContentPane");
 
 
     			var r = Math.floor(Math.random() * 1000000000);
-				var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId + "&inode=" + inode + "&r=" + r;
+				var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId + "&inode=" + inode + "&showpush=" + showpush + "&r=" + r;
     			myCp.attr("href", url);
     			return;
     		}

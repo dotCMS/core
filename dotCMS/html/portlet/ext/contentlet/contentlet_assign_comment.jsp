@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@ include file="/html/common/init.jsp" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
@@ -12,7 +14,19 @@ String actionId=request.getParameter("actionId");
 String inode=request.getParameter("inode");// DOTCMS-7085
 WorkflowAction action = APILocator.getWorkflowAPI().findAction(actionId, user);
 Role role = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
+boolean showComments = false;
+if(action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition())){
+	showComments = true;
+}
+List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); 
+boolean hasPushPublishActionlet = false; 
+for(WorkflowActionClass actionlet : actionlets){ 
+	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ 
+		hasPushPublishActionlet = true; 
+	}
+} 
 %>
+
 <script>
 dojo.require("dojox.data.QueryReadStore");
 
@@ -25,6 +39,11 @@ var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.
 <!--  DOTCMS-7085 -->
 <input name="wfConId" id="wfConId" type="hidden" value="<%=inode%>"> 
 
+<div>
+	<h2>PUT HTML FOR PUSHING UI HERE</h2>
+</div>
+
+<% if(showComments){ %>
 <div style="margin:auto;width:300px;">
 		<div style="margin:10px;">
 			<b><%= LanguageUtil.get(pageContext, "Perform-Workflow") %></b>: <%=action.getName() %>
@@ -63,3 +82,4 @@ var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.
 	
 	</div>
 </div>
+<% } %>
