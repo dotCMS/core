@@ -139,6 +139,40 @@ if (layoutOb != null) {
 						<textarea dojoType="dijit.form.Textarea" name="query" style="width:500px;min-height: 150px;" id="query" type="text"></textarea>
 					</dd>
 					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Sort") %> </strong></dt><dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="modDate" size="10" /></dd>
+					<dt><strong><%= LanguageUtil.get(pageContext, "Publish") %> </strong></dt>
+					<dd>
+						<input 
+						type="text" 
+						dojoType="dijit.form.DateTextBox" 
+						validate="return false;" 
+						invalidMessage=""  
+						id="publishDate"
+						name="publishDate" value="">
+						
+						
+						<input type="text" name="publishDate" id="publishTime" value="T15:00:00"
+						  data-dojo-type="dijit.form.TimeTextBox"
+						  onChange="dojo.byId('val').value=arguments[0].toString().replace(/.*1970\s(\S+).*/,'T$1')"
+						  required="true" />
+					</dd>
+					
+					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Expire") %> </strong></dt>
+					<dd>
+						<input 
+						type="text" 
+						dojoType="dijit.form.DateTextBox" 
+						validate="return false;" 
+						invalidMessage=""  
+						id="expireDate" name="expireDate" value="">
+						
+						
+						<input type="text" name="expireDate" id="expireTime" value="T15:00:00"
+						  data-dojo-type="dijit.form.TimeTextBox"
+						  onChange="dojo.byId('val').value=arguments[0].toString().replace(/.*1970\s(\S+).*/,'T$1')"
+						  required="true" />
+					</dd>
+						
+					
 					<dt></dt><dd><button dojoType="dijit.form.Button" onclick="doLuceneFilter();" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "publisher_Search_Content") %></button></dd>
 				</dl>
 			</div>

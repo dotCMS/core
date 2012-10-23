@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.publisher.business.PublishAuditHistory"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus.Status"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
@@ -46,17 +47,55 @@ if(!UtilMethods.isSet(query)){
 
 iresults =  pubAPI.getQueueElements();
 
-String luceneQuery = null;
 PushPublisherConfig pconf = new PushPublisherConfig();
 List<Class> clazz = new ArrayList();
 List<IBundler> bundler = new ArrayList();
 bundler.add(new PushPublisherBundler());
 clazz.add(PushPublisher.class);
 int counter = 0;
-for(Map<String,Object> c : iresults) {
-	luceneQuery = ("+identifier:"+ (String)c.get("asset"));
-	pconf.setLuceneQuery(luceneQuery);
-	pconf.setId((String) c.get("bundle_id"));
+
+List<Map<String,Object>> bundleIds = pubAPI.getQueueBundleIds();
+List<Map<String,Object>> tempBundleContents = null;
+PublishAuditStatus status = null;
+PublishAuditHistory historyPojo = null;
+String tempBundleId = null;
+
+for(Map<String,Object> bundleId: bundleIds) {
+	tempBundleId = (String)bundleId.get("bundle_id");
+	tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
+	
+	//Setting Audit objects
+	//History
+	historyPojo = new PublishAuditHistory();
+	//Retriving assets
+	List<String> assets = new ArrayList<String>();
+	
+	
+	StringBuilder luceneQuery = new StringBuilder();
+	for(Map<String,Object> c : tempBundleContents) {
+		assets.add((String) c.get("asset"));
+		
+		luceneQuery.append("identifier:"+(String) c.get("asset"));
+		luceneQuery.append(" ");
+		
+	}
+	
+	historyPojo.setAssets(assets);
+	
+	
+	//Status
+	status =  new PublishAuditStatus(tempBundleId);
+	status.setStatusPojo(historyPojo);
+	
+	//Insert in Audit table
+	pubAuditAPI.insertPublishAuditStatus(status);
+	
+	if(tempBundleContents.size() > 1)
+		pconf.setLuceneQuery("+("+luceneQuery.toString()+")");
+	else
+		pconf.setLuceneQuery("+"+luceneQuery.toString());
+	
+	pconf.setId(tempBundleId);
 	pconf.setUser(APILocator.getUserAPI().getSystemUser());
 	pconf.runNow();
 
@@ -65,10 +104,9 @@ for(Map<String,Object> c : iresults) {
 	pconf.setLiveOnly(false);
 	pconf.setBundlers(bundler);
 	
-	pubAuditAPI.insertPublishAuditStatus(new PublishAuditStatus(pconf.getId()));
-	
 	APILocator.getPublisherAPI().publish(pconf);
 	out.print(pconf.getId() +" Done! <br />"); 
+	
 }
 
 /* Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);

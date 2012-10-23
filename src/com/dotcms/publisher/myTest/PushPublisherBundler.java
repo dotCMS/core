@@ -5,11 +5,13 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publishing.BundlerStatus;
@@ -69,9 +71,17 @@ public class PushPublisherBundler implements IBundler {
 		List<Contentlet> cs = new ArrayList<Contentlet>();
 		
 		Logger.info(PushPublisherBundler.class, config.getLuceneQuery());
-		
+		PublishAuditHistory currentStatusHistory = null;
 		try {
-			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING);
+			//Updating audit table
+			currentStatusHistory =
+					PublishAuditHistory.getObjectFromString(
+							(String)pubAuditAPI.getPublishAuditStatus(
+									config.getId()).get("status_pojo"));
+			currentStatusHistory.setBundleStart(new Date());
+			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
+			
+			
 			cs = conAPI.search(config.getLuceneQuery()+" +live:true", 0, 0, "moddate", systemUser, false);
 			cs.addAll(conAPI.search(config.getLuceneQuery()+" +working:true", 0, 0, "moddate", systemUser, false));
 			status.setTotal(cs.size());
@@ -80,9 +90,18 @@ public class PushPublisherBundler implements IBundler {
 				writeFileToDisk(bundleRoot, con);
 				status.addCount();
 			}
+			
+			//Updating audit table
+			currentStatusHistory =
+					PublishAuditHistory.getObjectFromString(
+							(String)pubAuditAPI.getPublishAuditStatus(
+									config.getId()).get("status_pojo"));
+			currentStatusHistory.setBundleEnd(new Date());
+			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
+			
 		} catch (Exception e) {
 			try {
-				pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE);
+				pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, currentStatusHistory);
 			} catch (DotPublisherException e1) { }
 			status.addFailure();
 			
