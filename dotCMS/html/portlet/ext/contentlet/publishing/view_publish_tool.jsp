@@ -28,33 +28,50 @@ if (layoutOb != null) {
 	function doQueueFilter () {
 	
 		var url="";
-/* 		if(dijit.byId("showToUnpublish").checked){
-			url="&viewFilter=2";
-		}
-		if(dijit.byId("showErrors").checked){
-			url+="&viewFilter=3";
-		}
-		if(url==""){
-			dijit.byId("showToUnpublish").setValue(false);
-			url="viewFilter=1";
-		} */
 		url="layout=<%=layout%>";
 		refreshQueueList(url);
 	}
+	
+	function doAuditFilter() {
+		var url="";
+		url="layout=<%=layout%>";
+		refreshAuditList(url);
+	}
+	
+	
 	var lastUrlParams ;
 	
 	function refreshQueueList(urlParams){
 		lastUrlParams = urlParams;
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_queue_list.jsp?"+ urlParams;		
 		
-		var myCp = dijit.byId("solrToolCp");	
+		var myCp = dijit.byId("queueContent");	
 		
 		if (myCp) {
 			myCp.destroyRecursive(false);
 		}
 		myCp = new dojox.layout.ContentPane({
-			id : "solrToolCp"
+			id : "queueContent"
 		}).placeAt("queue_results");
+
+		myCp.attr("href", url);
+		
+		myCp.refresh();
+
+	}
+	
+	function refreshAuditList(urlParams){
+		lastUrlParams = urlParams;
+		var url = "/html/portlet/ext/contentlet/publishing/view_publish_audit_list.jsp?"+ urlParams;		
+		
+		var myCp = dijit.byId("auditContent");	
+		
+		if (myCp) {
+			myCp.destroyRecursive(false);
+		}
+		myCp = new dojox.layout.ContentPane({
+			id : "auditContent"
+		}).placeAt("audit_results");
 
 		myCp.attr("href", url);
 		
@@ -78,14 +95,14 @@ if (layoutOb != null) {
 		lastLuceneUrlParams = urlParams;
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_content_list.jsp?"+ urlParams;		
 		
-		var myCp = dijit.byId("solrLuceneToolCp");
+		var myCp = dijit.byId("searchLuceneContent");
 		
 		
 		if (myCp) {
 			myCp.destroyRecursive(false);
 		}
 		myCp = new dojox.layout.ContentPane({
-			id : "solrLuceneToolCp"
+			id : "searchLuceneContent"
 		}).placeAt("lucene_results");
 
 		myCp.attr("href", url);
@@ -96,13 +113,13 @@ if (layoutOb != null) {
 	function loadPublishQueueServers(){
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_servers.jsp";		
 		
-		var myCp = dijit.byId("solrServersToolCp");	
+		var myCp = dijit.byId("instances");	
 		
 		if (myCp) {
 			myCp.destroyRecursive(true);
 		}
 		myCp = new dojox.layout.ContentPane({
-			id : "solrServersToolCp"
+			id : "instances"
 		}).placeAt("solr_servers");
 
 		myCp.attr("href", url);
@@ -114,7 +131,7 @@ if (layoutOb != null) {
 		<hr/>
 	</div>
 	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-  		<div id="search" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Search") %>" >
+  		<div id="searchLucene" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Search") %>" >
   			<div>
 				<dl>	
 					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Lucene_Query") %> </strong></dt>
@@ -152,6 +169,24 @@ if (layoutOb != null) {
 			});
 			</script>
   		</div>
+  		
+  		<div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
+			<div>
+				<button class="solr_right" dojoType="dijit.form.Button" onClick="doAuditFilter();" iconClass="resetIcon">
+					<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
+				</button> 
+			</div>			
+			<hr>
+			<div>&nbsp;</div>
+  			<div id="audit_results">
+			</div>
+			<script type="text/javascript">
+			dojo.ready(function(){
+				doAuditFilter();
+			});
+			</script>
+  		</div>
+  		
   		<div id="instances" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Servers") %>" >
   			<div>
 				<%= LanguageUtil.get(pageContext, "publisher_Servers_Intro") %> 

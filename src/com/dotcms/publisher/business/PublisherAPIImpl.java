@@ -61,7 +61,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String OCLINSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	
 	
-	public void addContentsToPublish(List<String> identifiers, String bundleId) throws DotPublisherException {		
+	public void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException {		
 		if(identifiers != null) {
 			
 			try{
@@ -85,7 +85,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
 					
 					//TODO How do I get new columns value?	
-					dc.addParam(new Date());
+					dc.addParam(publishDate);
 					dc.addObject(null);
 					dc.addObject(null);
 					dc.addObject(bundleId);
@@ -108,7 +108,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 	
-	public void addContentsToUnpublish(List<String> identifiers, String bundleId) throws DotPublisherException {		
+	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate) throws DotPublisherException {		
 		List<String> assets = null;
 		if(identifiers != null) {
 		
@@ -134,7 +134,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
 					
 					//TODO How do I get new columns value?	
-					dc.addParam(new Date());
+					dc.addParam(unpublishDate);
 					dc.addObject(null);
 					dc.addObject(null);
 					dc.addObject(bundleId);

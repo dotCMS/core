@@ -72,8 +72,8 @@ public class PushPublisherBundler implements IBundler {
 		
 		try {
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING);
-			cs = conAPI.search(config.getLuceneQuery(), 0, 0, "moddate", systemUser, false);
-			
+			cs = conAPI.search(config.getLuceneQuery()+" +live:true", 0, 0, "moddate", systemUser, false);
+			cs.addAll(conAPI.search(config.getLuceneQuery()+" +working:true", 0, 0, "moddate", systemUser, false));
 			status.setTotal(cs.size());
 			
 			for (Contentlet con : cs) {

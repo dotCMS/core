@@ -78,21 +78,15 @@
 
     try{
     	if(deleteQueueElements){
-    		if(deleteQueueElementsStr.equals("all")){
-    			pubAPI.deleteAllElementsFromPublishQueueTable();
-    		}else{
-		    	for(String identifier : deleteQueueElementsStr.split(",")){
-		    		pubAPI.deleteElementFromPublishQueueTable(identifier);
-		    	}
-    		}
+	    	for(String identifier : deleteQueueElementsStr.split(",")){
+	    		pubAPI.deleteElementFromPublishQueueTable(identifier);
+	    	}
     	}
     	
     	if(deleteBundleElements){
-    		
-	    	for(String bundleId : deleteQueueElementsStr.split(",")){
+	    	for(String bundleId : deleteBundleElementsStr.split(",")){
 	    		pubAPI.deleteElementsFromPublishQueueTable(bundleId);
 	    	}
-    		
     	}
     	
     	
@@ -127,22 +121,19 @@
    
    function deleteQueue(){
 	   var url="layout=<%=layout%>&offset=0&limit=<%=limit%>";	
-/* 		if(dijit.byId("queue_all").checked){
-			url+="&delete=all";
-		}else{ */
-			var ids="";
-			var nodes = dojo.query('.queue_to_delete');
-			   dojo.forEach(nodes, function(node) {
-				   if(dijit.getEnclosingWidget(node).checked){
-					   ids+=","+dijit.getEnclosingWidget(node).value; 
-				   }
-			   });
-			if(ids != ""){   
-				url+="&delete="+ids.substring(1);
-			}
-		//}
-			deleteBundle(url);
-		refreshQueueList(url);	   
+
+		var ids="";
+		var nodes = dojo.query('.queue_to_delete');
+		   dojo.forEach(nodes, function(node) {
+			   if(dijit.getEnclosingWidget(node).checked){
+				   ids+=","+dijit.getEnclosingWidget(node).value; 
+			   }
+		   });
+		if(ids != ""){   
+			url+="&delete="+ids.substring(1);
+		}
+		
+		deleteBundle(url);
    }
    
    function deleteBundle(url) {	
@@ -157,8 +148,7 @@
 		if(ids != ""){   
 			url+="&deleteBundle="+ids.substring(1);
 		}
-		
-		refreshQueueList(url);	
+		refreshQueueList(url);
    }
 </script>
 <%if(UtilMethods.isSet(nastyError)){%>
@@ -171,11 +161,11 @@
 	for(Map<String,Object> bundle : iresults) {
 		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));
 %>
-	<h3><%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <%=bundle.get("bundle_id") %></h3>					
+	<h3 style="margin-top:1em;"><%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <%=bundle.get("bundle_id") %></h3>					
 	<table class="listingTable shadowBox">
 		<tr>
-			<th><input dojoType="dijit.form.CheckBox" type="checkbox" class="bundle_to_delete" name="bundle_to_delete" value="<%=bundle.get("bundle_id") %>" id="bundle_to_delete_<%=bundle.get("bundle_id") %>" /></th>		
-			<th><strong><%= LanguageUtil.get(pageContext, "title") %></strong></th>	
+			<th style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="bundle_to_delete" name="bundle_to_delete" value="<%=bundle.get("bundle_id") %>" id="bundle_to_delete_<%=bundle.get("bundle_id") %>" /></th>		
+			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "title") %></strong></th>	
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
 			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 		</tr>
