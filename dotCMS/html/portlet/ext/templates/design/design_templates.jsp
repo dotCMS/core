@@ -90,6 +90,7 @@
 		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false);
 	}
 %>
+<script type='text/javascript' src='/dwr/interface/TemplateAjax.js'></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
 <script language="Javascript">
@@ -141,8 +142,23 @@
 		form.<portlet:namespace />subcmd.value = subcmd;
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
 		form.removeAttribute('onsubmit');
-		submitForm(form);
+
+        //Before to submit lets verify the title
+        verifyTitle(form);
 	}
+
+    function verifyTitle(form) {
+
+        function response(data) {
+            if (data) {
+                alert("The template title must be unique and this template title is already taken.");
+            } else {
+                submitForm(form);
+            }
+        }
+
+        TemplateAjax.duplicatedTitle(document.getElementById("titleField").value, "<%=template.getInode()%>", "<%=host.getIdentifier()%>", {callback:response});
+    }
 
 	var copyAsset = false;
 
@@ -318,10 +334,7 @@
 	function getContainerMockContent(title){
 		return "<h2>Container: "+title+"</h2><p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>";
 	}
-	
 
-	
-	
 </script>
 
 <script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
