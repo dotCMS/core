@@ -45,7 +45,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	@Override
 	public void insertPublishAuditStatus(PublishAuditStatus pa)
 			throws DotPublisherException {
-		if(getPublishAuditStatus(pa.getBundleId()) == null) {
+		if(getPublishAuditStatus(pa.getBundleId()).isEmpty()) {
 			try{
 				HibernateUtil.startTransaction();
 				DotConnect dc = new DotConnect();
@@ -62,7 +62,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				
 				dc.addParam(pa.getBundleId());
 				dc.addParam(pa.getStatus().getCode());
-				dc.addParam("");//status_pojo TODO
+				dc.addParam(pa.getStatusPojo());
 				dc.addParam(new Date());
 				dc.addParam(new Date());
 				
@@ -178,6 +178,24 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.setSQL(SELECTSQL);
 			
 			dc.addParam(bundleId);
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}finally{
+			DbConnectionFactory.closeConnection();
+		}
+	}
+	
+	private final String SELECTSQLALL=
+			"SELECT * "+
+			"FROM publishing_queue_audit a ";
+	
+	public List<Map<String,Object>> getAllPublishAuditStatus() throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			dc.setSQL(SELECTSQLALL);
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){

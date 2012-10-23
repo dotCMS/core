@@ -56,4 +56,13 @@ public abstract class PublishAuditAPI {
 	 */
 	//Select
 	public abstract List<Map<String,Object>> getPublishAuditStatus(String bundleId) throws DotPublisherException;
+	
+	/**
+	 * Get all publish status
+	 * @param bundleId
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	//Select
+	public abstract List<Map<String,Object>> getAllPublishAuditStatus() throws DotPublisherException;
 }
