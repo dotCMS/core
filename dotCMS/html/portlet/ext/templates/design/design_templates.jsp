@@ -694,8 +694,12 @@
 		<div class="wrapperRight" style="position:relative;border:0px solid red" id="containerBodyTemplate">
 		<div style="float:left;margin:10px;">
 
-			<input tabindex="1" type="text" name="title" id="titleField" maxlength="255" style="color:black;font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;" value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
-			<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>
+			<input tabindex="1" data-dojo-type="dijit/form/TextBox" name="title" id="titleField"
+                   placeHolder="Template Title"
+                   required="true"
+                   maxlength="255" style="color:black;font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;"
+                   value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
+			<%--<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>--%>
 
 		</div>
 

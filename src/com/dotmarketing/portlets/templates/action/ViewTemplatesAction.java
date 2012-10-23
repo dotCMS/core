@@ -47,12 +47,8 @@ public class ViewTemplatesAction extends DotPortletAction {
 
             if ( hosts.size() == 0 ) {
                 req.setAttribute( WebKeys.TEMPLATE_CAN_ADD, false );
-                // *********************** GRAZIANO issue-12-dnd-template
-//				req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, false);
             } else {
                 req.setAttribute( WebKeys.TEMPLATE_CAN_ADD, true );
-                // *********************** GRAZIANO issue-12-dnd-template
-//				req.setAttribute(WebKeys.TEMPLATE_CAN_DESIGN, true);
             }
 
             req.setAttribute( WebKeys.TEMPLATE_CAN_DESIGN, perAPI.doesUserHavePermissions( WebAPILocator.getHostWebAPI().getCurrentHost( req ), "TEMPLATE_LAYOUTS:" + PermissionAPI.PERMISSION_EDIT, user ) );

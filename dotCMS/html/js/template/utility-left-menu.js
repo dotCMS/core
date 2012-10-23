@@ -10,6 +10,7 @@ var removeContainerMSG;
 
 var countAddContainerLinks;
 var countContainersAdded;
+var containersAdded = [];
 
 
 function drawDefault(overrideBody, addContainer, removeContainer){
@@ -50,6 +51,9 @@ function drawDefault(overrideBody, addContainer, removeContainer){
 	}
 	textareaDrawedBodyHidden.value="";
 	textareaBodyHidden.value="";
+
+    //In order to keep a list of the containers used by this template
+    parseCurrentContainers();
 }
 
 function addRow(tableID,prefixSelect,prefixDiv) {
@@ -348,8 +352,11 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
 
 	div.appendChild(titleContainerSpan);
 	div.appendChild(containerDivHidden);
+
 	// update the container's link
 	updateContainersAddedCount(true);
+    //In order to keep a list of the containers used by this template
+    parseCurrentContainers();
 }
 
 function removeDrawedContainer(idDiv,idContainer){
@@ -393,7 +400,8 @@ function removeDrawedContainer(idDiv,idContainer){
 
 	// update the containers counter
 	updateContainersAddedCount(false);
-
+    //In order to keep a list of the containers used by this template
+    parseCurrentContainers();
 }
 
 /**
@@ -534,4 +542,18 @@ function updateContainersAddedCount(add){
 	}
 //	alert('containers added current value: ' + integerCountContainersAdded);
 	countContainersAdded.value = integerCountContainersAdded;
+}
+
+/**
+ * Method that will parse the current template code in order to get the list of containers
+ * used by this template.
+ */
+function parseCurrentContainers() {
+
+    containersAdded = [];
+    dojo.query('div[title*="container_"]').forEach(function (node) {
+        var title = dojo.attr(node, "title");
+        title = title.replace("container_", "");
+        containersAdded.push(title);
+    });
 }
