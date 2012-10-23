@@ -32,7 +32,7 @@ public class PublishAuditStatus implements Serializable {
 	
 	private String bundleId;
 	private Status status;
-	private String statusPojo; //contains the pojo serialized
+	private PublishAuditHistory statusPojo;
 	private Date statusUpdated;
 	private Date createDate;
 	
@@ -84,10 +84,10 @@ public class PublishAuditStatus implements Serializable {
 		this.status = status;
 	}
 	
-	public String getStatusPojo() {
+	public PublishAuditHistory getStatusPojo() {
 		return statusPojo;
 	}
-	public void setStatusPojo(String statusPojo) {
+	public void setStatusPojo(PublishAuditHistory statusPojo) {
 		this.statusPojo = statusPojo;
 	}
 	

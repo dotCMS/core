@@ -5,14 +5,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetWrapper;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
+import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.IBundler;
@@ -31,6 +35,7 @@ public class PushPublisher extends Publisher {
 
 	public static final String SITE_SEARCH_INDEX = "SITE_SEARCH_INDEX";
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
+	private PublisherAPI pubAPI = PublisherAPI.getInstance();
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
@@ -67,8 +72,16 @@ public class PushPublisher extends Publisher {
 	    if(LicenseUtil.getLevel()<200)
             throw new RuntimeException("need an enterprise licence to run this");
 	    
+	    PublishAuditHistory currentStatusHistory = null;
 		try {
-			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.PUBLISHING);
+			//Updating audit table
+			currentStatusHistory =
+					PublishAuditHistory.getObjectFromString(
+							(String)pubAuditAPI.getPublishAuditStatus(
+									config.getId()).get("status_pojo"));
+			currentStatusHistory.setPublishStart(new Date());
+			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.PUBLISHING, currentStatusHistory);
+
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
 			// int numThreads = config.getAdditionalThreads() + 1;
 			// ExecutorService executor =
@@ -111,11 +124,27 @@ public class PushPublisher extends Publisher {
 				// }
 			}
 			
-			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SUCCESS);
+			//Updating audit table
+			currentStatusHistory =
+					PublishAuditHistory.getObjectFromString(
+							(String)pubAuditAPI.getPublishAuditStatus(
+									config.getId()).get("status_pojo"));
+			currentStatusHistory.setPublishEnd(new Date());
+			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+			
+			//Deleting queue records
+			pubAPI.deleteElementsFromPublishQueueTable(config.getId());
 
 			return config;
 
 		} catch (Exception e) {
+			//Updating audit table
+			try {
+				pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory);
+			} catch (DotPublisherException e1) {
+				throw new DotPublishingException(e.getMessage());
+			}
+			
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotPublishingException(e.getMessage());
 

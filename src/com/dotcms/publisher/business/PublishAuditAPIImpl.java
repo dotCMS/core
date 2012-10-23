@@ -45,7 +45,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	@Override
 	public void insertPublishAuditStatus(PublishAuditStatus pa)
 			throws DotPublisherException {
-		if(getPublishAuditStatus(pa.getBundleId()).isEmpty()) {
+		if(getPublishAuditStatus(pa.getBundleId()) == null) {
 			try{
 				HibernateUtil.startTransaction();
 				DotConnect dc = new DotConnect();
@@ -62,7 +62,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				
 				dc.addParam(pa.getBundleId());
 				dc.addParam(pa.getStatus().getCode());
-				dc.addParam(pa.getStatusPojo());
+				
+				dc.addParam(pa.getStatusPojo().getSerialized());
 				dc.addParam(new Date());
 				dc.addParam(new Date());
 				
@@ -82,13 +83,13 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 	
-	private final String PGUPDATESQL="update publishing_queue_audit set status = ? where bundle_id = ? ";
-	private final String MYUPDATESQL="update publishing_queue_audit set status = ? where bundle_id = ? ";
-	private final String MSUPDATESQL="update publishing_queue_audit set status = ? where bundle_id = ? ";
-	private final String OCLUPDATESQL="update publishing_queue_audit set status = ? where bundle_id = ? ";
+	private final String PGUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
+	private final String MYUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ? where bundle_id = ? ";
+	private final String MSUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ? where bundle_id = ? ";
+	private final String OCLUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ? where bundle_id = ? ";
 	
 	@Override
-	public void updatePublishAuditStatus(String bundleId, Status newStatus)
+	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history)
 			throws DotPublisherException {
 		try{
 			HibernateUtil.startTransaction();
@@ -105,7 +106,14 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			}
 			
 			dc.addParam(newStatus.getCode());
+			
+			if(history != null)
+				dc.addParam(history.getSerialized());
+			else
+				dc.addParam("");
+			
 			dc.addParam(bundleId);
+			
 			
 			dc.loadResult();
 			
@@ -170,7 +178,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			"FROM publishing_queue_audit a where a.bundle_id = ? ";
 	
 	@Override
-	public List<Map<String,Object>> getPublishAuditStatus(String bundleId)
+	public Map<String,Object> getPublishAuditStatus(String bundleId)
 			throws DotPublisherException {
 		
 		try{
@@ -179,7 +187,14 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			
 			dc.addParam(bundleId);
 			
-			return dc.loadObjectResults();
+			List<Map<String, Object>> res = dc.loadObjectResults();
+			if(res.size() > 1)
+				throw new DotPublisherException("Found duplicate bundle status");
+			else {
+				if(!res.isEmpty())
+					return res.get(0);
+				return null;
+			}
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);

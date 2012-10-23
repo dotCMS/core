@@ -104,9 +104,9 @@
 	    		}
 	    		try{
 	    			if(addOperationType.equals("add")){
-	    				publisherAPI.addContentsToPublish(identifiers, bundeId);
+	    				publisherAPI.addContentsToPublish(identifiers, bundeId, new Date());
 	    			} else {
-	    				publisherAPI.addContentsToUnpublish(identifiers, bundeId);
+	    				publisherAPI.addContentsToUnpublish(identifiers, bundeId, new Date());
 	    			}
 	    			
 	    			

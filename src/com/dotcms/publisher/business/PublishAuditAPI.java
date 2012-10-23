@@ -35,10 +35,11 @@ public abstract class PublishAuditAPI {
 	 * Update publish audit status
 	 * @param bundleId
 	 * @param newStatus
+	 * @param history
 	 * @throws DotPublisherException
 	 */
 	//Update
-	public abstract void updatePublishAuditStatus(String bundleId, Status newStatus) throws DotPublisherException;
+	public abstract void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history) throws DotPublisherException;
 	
 	/**
 	 * Remove publish audit row from publish_audit table
@@ -55,7 +56,7 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	//Select
-	public abstract List<Map<String,Object>> getPublishAuditStatus(String bundleId) throws DotPublisherException;
+	public abstract Map<String,Object> getPublishAuditStatus(String bundleId) throws DotPublisherException;
 	
 	/**
 	 * Get all publish status
