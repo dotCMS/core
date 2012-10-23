@@ -1,4 +1,4 @@
-package com.dotmarketing.business;
+package com.dotcms.timemachine.business;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -10,6 +10,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -43,8 +44,8 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 	@Override
 	public List<Date> getAvailableTimeMachineForSite(Host host) throws DotDataException {
 		List<Date> list = new ArrayList<Date>();
-		String bundlePath = ConfigUtils.getBundlePath();
-		for ( File file : new File(bundlePath).listFiles()) {
+		File bundlePath = new File(ConfigUtils.getBundlePath());
+		for ( File file : bundlePath.listFiles()) {
 			if ( file.isDirectory() && file.getName().startsWith("tm_")) {
 				File hostDir = new File(file.getAbsolutePath() + File.separator + "live" + File.separator + host.getHostname());
 				if ( hostDir.exists() && hostDir.isDirectory() ) {

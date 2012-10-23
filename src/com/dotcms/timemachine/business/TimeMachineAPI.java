@@ -1,4 +1,4 @@
-package com.dotmarketing.business;
+package com.dotcms.timemachine.business;
 
 import java.util.Date;
 import java.util.List;
