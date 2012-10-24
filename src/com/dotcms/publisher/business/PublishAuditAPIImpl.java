@@ -205,7 +205,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	
 	private final String SELECTSQLALL=
 			"SELECT * "+
-			"FROM publishing_queue_audit a ";
+			"FROM publishing_queue_audit ";
 	
 	public List<Map<String,Object>> getAllPublishAuditStatus() throws DotPublisherException {
 		try{
@@ -218,6 +218,36 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
+		}
+	}
+	
+	public List<Map<String,Object>> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			dc.setSQL(SELECTSQLALL);
+			
+			dc.setStartRow(offset);
+			dc.setMaxRows(limit);
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}
+	}
+	
+	private final String SELECTSQLALLCOUNT=
+			"SELECT count(*) as count "+
+			"FROM publishing_queue_audit ";
+	
+	public List<Map<String,Object>> countAllPublishAuditStatus() throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			dc.setSQL(SELECTSQLALLCOUNT);
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
 
