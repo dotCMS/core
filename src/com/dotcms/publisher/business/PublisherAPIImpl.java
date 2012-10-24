@@ -405,10 +405,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 	
 	
-	private static final String PSGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
-	private static final String MYGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
-	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
-	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
+	private static final String PSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
+	private static final String MYGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
+	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
+	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
 	
 	/**
 	 * get bundle_ids available
@@ -496,6 +496,33 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}else{
 				dc.setSQL(OCLCOUNTENTRIESGROUPED);
 			}
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}
+	}
+	
+	private static final String PSGETENTRY="select * from publishing_queue where asset = ?";
+	private static final String MYGETENTRY="select * from publishing_queue where asset = ?";
+	private static final String MSGETENTRY="select * from publishing_queue where asset = ?";
+	private static final String OCLGETENTRY="select * from publishing_queue where asset = ?";
+	
+	public List<Map<String,Object>> getQueueElementsByAsset(String asset) throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+				dc.setSQL(PSGETENTRY);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				dc.setSQL(MYGETENTRY);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+				dc.setSQL(MSGETENTRY);
+			}else{
+				dc.setSQL(OCLGETENTRY);
+			}
+			
+			dc.addParam(asset);
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){

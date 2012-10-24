@@ -1,3 +1,4 @@
+<%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
@@ -126,7 +127,8 @@
 		var nodes = dojo.query('.queue_to_delete');
 		   dojo.forEach(nodes, function(node) {
 			   if(dijit.getEnclosingWidget(node).checked){
-				   ids+=","+dijit.getEnclosingWidget(node).value; 
+				   var nodeValue = dijit.getEnclosingWidget(node).value;
+				   ids+=","+nodeValue.split("$")[0];
 			   }
 		   });
 		if(ids != ""){   
@@ -161,7 +163,12 @@
 	for(Map<String,Object> bundle : iresults) {
 		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));
 %>
-	<h3 style="margin-top:1em;"><%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <%=bundle.get("bundle_id") %></h3>					
+	<h3 style="margin-top:1em;">
+		<%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <%=bundle.get("bundle_id") %>
+		<br />
+		<%= LanguageUtil.get(pageContext, "publisher_PubUnpubDate") %>: 
+		<%=new SimpleDateFormat("yyyy-MM-dd H:mm").format((Date) bundle.get("publish_date")) %>
+	</h3>					
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="bundle_to_delete" name="bundle_to_delete" value="<%=bundle.get("bundle_id") %>" id="bundle_to_delete_<%=bundle.get("bundle_id") %>" /></th>		
@@ -176,7 +183,7 @@
 			}
 		%>
 			<tr <%=errorclass%>>
-				<td><input dojoType="dijit.form.CheckBox" type="checkbox" class="queue_to_delete" name="queue_to_delete" value="<%=c.get("asset") %>" id="queue_to_delete_<%=c.get("asset") %>" /></td>
+				<td><input dojoType="dijit.form.CheckBox" type="checkbox" class="queue_to_delete" name="queue_to_delete" value="<%=c.get("asset") %>$<%=c.get("operation") %>" id="queue_to_delete_<%=c.get("asset") %>$<%=c.get("operation") %>" /></td>
 				<%try{
 					Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),true,Long.parseLong(c.get("language_id").toString()),user, false);
 				%>
@@ -185,6 +192,7 @@
 				}catch(Exception e){
 					nastyError=e.getMessage();
 				%>
+				<td><%= LanguageUtil.get(pageContext, "publisher_No_Title") %></td> 
 				<%} %>
 				<td style="width:40px"><img class="center" src="/html/images/icons/<%=(c.get("operation").toString().equals("1")?"plus.png":"cross.png")%>"/></td>
 			    <td><%=UtilMethods.dateToHTMLDate((Date)c.get("entered_date"),"MM/dd/yyyy hh:mma") %></td>
