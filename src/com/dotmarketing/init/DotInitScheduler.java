@@ -19,6 +19,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.DashboardProxy;
+import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
@@ -613,6 +614,41 @@ public class DotInitScheduler {
 						sched.rescheduleJob("trigger18", "group18", trigger);
 				} catch (Exception e) {
 					Logger.info(DotInitScheduler.class, e.toString());
+				}
+			}
+			
+			//SCHEDULE PUBLISH QUEUE JOB
+			if(Config.getBooleanProperty("ENABLE_PUBLISHER_QUEUE_THREAD")) {
+				try {
+					isNew = false;
+
+					try {
+						if ((job = sched.getJobDetail("PublishQueueJob", "dotcms_jobs")) == null) {
+							job = new JobDetail("PublishQueueJob", "dotcms_jobs", PublisherQueueJob.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob("PublishQueueJob", "dotcms_jobs");
+						job = new JobDetail("PublishQueueJob", "dotcms_jobs", PublisherQueueJob.class);
+						isNew = true;
+					}
+					calendar = GregorianCalendar.getInstance();
+				    trigger = new CronTrigger("trigger19", "group19", "PublishQueueJob", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					sched.addJob(job, true);
+
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob("trigger19", "group19", trigger);
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else {
+		        Logger.info(DotInitScheduler.class, "PublishQueueJob Cron Job schedule disabled on this server");
+		        Logger.info(DotInitScheduler.class, "Deleting PublishQueueJob Job");
+				if ((job = sched.getJobDetail("PublishQueueJob", "dotcms_jobs")) != null) {
+					sched.deleteJob("PublishQueueJob", "dotcms_jobs");
 				}
 			}
 

@@ -29,9 +29,6 @@ public class PublisherQueueJob implements StatefulJob {
 			PublisherAPI pubAPI = PublisherAPI.getInstance();  
 			PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance(); 
 
-			List<Map<String,Object>> iresults =  null;
-
-			iresults =  pubAPI.getQueueElements();
 
 			PushPublisherConfig pconf = new PushPublisherConfig();
 			List<Class> clazz = new ArrayList<Class>();
@@ -80,16 +77,18 @@ public class PublisherQueueJob implements StatefulJob {
 				else
 					pconf.setLuceneQuery("+"+luceneQuery.toString());
 				
-				pconf.setId(tempBundleId);
-				pconf.setUser(APILocator.getUserAPI().getSystemUser());
-				pconf.runNow();
-
-				pconf.setPublishers(clazz);
-				pconf.setIncremental(false);
-				pconf.setLiveOnly(false);
-				pconf.setBundlers(bundler);
-				
-				APILocator.getPublisherAPI().publish(pconf);
+				if(luceneQuery.toString().length() > 3) {
+					pconf.setId(tempBundleId);
+					pconf.setUser(APILocator.getUserAPI().getSystemUser());
+					pconf.runNow();
+	
+					pconf.setPublishers(clazz);
+					pconf.setIncremental(false);
+					pconf.setLiveOnly(false);
+					pconf.setBundlers(bundler);
+					
+					APILocator.getPublisherAPI().publish(pconf);
+				}
 				
 			}
 			

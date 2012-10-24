@@ -207,7 +207,6 @@
 			var timeValue = 
 					dojo.date.locale.format(dijit.byId('publishTime').get('value'),
 					{timePattern: "H-m", selector: "time"});
-			
 			url+="&publishTime="+timeValue;
 		}
 		
