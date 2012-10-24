@@ -1,6 +1,7 @@
 package com.dotcms.publisher.business;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -43,51 +44,55 @@ public class PublisherQueueJob implements StatefulJob {
 			String tempBundleId = null;
 
 			for(Map<String,Object> bundleId: bundleIds) {
-				tempBundleId = (String)bundleId.get("bundle_id");
-				tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
+				Date publishDate = (Date) bundleId.get("publish_date");
 				
-				//Setting Audit objects
-				//History
-				historyPojo = new PublishAuditHistory();
-				//Retriving assets
-				List<String> assets = new ArrayList<String>();
-				
-				
-				StringBuilder luceneQuery = new StringBuilder();
-				for(Map<String,Object> c : tempBundleContents) {
-					assets.add((String) c.get("asset"));
+				if(publishDate.before(new Date())) {
+					tempBundleId = (String)bundleId.get("bundle_id");
+					tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
 					
-					luceneQuery.append("identifier:"+(String) c.get("asset"));
-					luceneQuery.append(" ");
+					//Setting Audit objects
+					//History
+					historyPojo = new PublishAuditHistory();
+					//Retriving assets
+					List<String> assets = new ArrayList<String>();
 					
-				}
-				
-				historyPojo.setAssets(assets);
-				
-				
-				//Status
-				status =  new PublishAuditStatus(tempBundleId);
-				status.setStatusPojo(historyPojo);
-				
-				//Insert in Audit table
-				pubAuditAPI.insertPublishAuditStatus(status);
-				
-				if(tempBundleContents.size() > 1)
-					pconf.setLuceneQuery("+("+luceneQuery.toString()+")");
-				else
-					pconf.setLuceneQuery("+"+luceneQuery.toString());
-				
-				if(luceneQuery.toString().length() > 3) {
-					pconf.setId(tempBundleId);
-					pconf.setUser(APILocator.getUserAPI().getSystemUser());
-					pconf.runNow();
-	
-					pconf.setPublishers(clazz);
-					pconf.setIncremental(false);
-					pconf.setLiveOnly(false);
-					pconf.setBundlers(bundler);
 					
-					APILocator.getPublisherAPI().publish(pconf);
+					StringBuilder luceneQuery = new StringBuilder();
+					for(Map<String,Object> c : tempBundleContents) {
+						assets.add((String) c.get("asset"));
+						
+						luceneQuery.append("identifier:"+(String) c.get("asset"));
+						luceneQuery.append(" ");
+						
+					}
+					
+					historyPojo.setAssets(assets);
+					
+					
+					//Status
+					status =  new PublishAuditStatus(tempBundleId);
+					status.setStatusPojo(historyPojo);
+					
+					//Insert in Audit table
+					pubAuditAPI.insertPublishAuditStatus(status);
+					
+					if(tempBundleContents.size() > 1)
+						pconf.setLuceneQuery("+("+luceneQuery.toString()+")");
+					else
+						pconf.setLuceneQuery("+"+luceneQuery.toString());
+					
+					if(luceneQuery.toString().length() > 3) {
+						pconf.setId(tempBundleId);
+						pconf.setUser(APILocator.getUserAPI().getSystemUser());
+						pconf.runNow();
+		
+						pconf.setPublishers(clazz);
+						pconf.setIncremental(false);
+						pconf.setLiveOnly(false);
+						pconf.setBundlers(bundler);
+						
+						APILocator.getPublisherAPI().publish(pconf);
+					}
 				}
 				
 			}
