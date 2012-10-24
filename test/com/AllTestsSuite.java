@@ -3,6 +3,7 @@ package com;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+import com.dotcms.cmis.CMISBaseTest;
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
@@ -24,7 +25,8 @@ import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
         ContentletAPITest.class,
         PermissionAPITest.class,
         ContainerAPITest.class,
-        DotCMSCMISTest.class
+        DotCMSCMISTest.class,
+        CMISBaseTest.class
 } )
 public class AllTestsSuite {
 
