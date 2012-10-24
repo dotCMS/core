@@ -82,7 +82,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					dc.addObject(identifier); //asset
 					dc.addParam(new Date());
 					dc.addObject(1);
-					dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
+					dc.addParam(false);	//in error field
 					
 					//TODO How do I get new columns value?	
 					dc.addParam(publishDate);
