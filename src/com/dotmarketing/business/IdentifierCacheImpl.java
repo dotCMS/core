@@ -174,7 +174,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
     protected ContentletVersionInfo getContentVersionInfo(String identifier, long lang) {
         ContentletVersionInfo contV = null;
         try {
-            String key=contV.getIdentifier()+"-lang:"+contV.getLang();
+            String key=identifier+"-lang:"+lang;
             contV = (ContentletVersionInfo)cache.get(getVersionInfoGroup()+key, getVersionInfoGroup());
         }
         catch(Exception ex) {
