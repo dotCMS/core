@@ -14,17 +14,19 @@ String actionId=request.getParameter("actionId");
 String inode=request.getParameter("inode");// DOTCMS-7085
 WorkflowAction action = APILocator.getWorkflowAPI().findAction(actionId, user);
 Role role = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
-boolean showComments = false;
-if(action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition())){
-	showComments = true;
-}
 List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); 
 boolean hasPushPublishActionlet = false; 
+GregorianCalendar cal = new GregorianCalendar();
 for(WorkflowActionClass actionlet : actionlets){ 
 	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ 
 		hasPushPublishActionlet = true; 
 	}
 } 
+boolean mustShow = false;
+if(action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) || hasPushPublishActionlet){
+	mustShow = true;
+}
+
 %>
 
 <script>
@@ -39,12 +41,12 @@ var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.
 <!--  DOTCMS-7085 -->
 <input name="wfConId" id="wfConId" type="hidden" value="<%=inode%>"> 
 
-<div>
-	<h2>PUT HTML FOR PUSHING UI HERE</h2>
-</div>
-
-<% if(showComments){ %>
-<div style="margin:auto;width:300px;">
+<% if(mustShow){ %>
+	<%if(hasPushPublishActionlet){ %>
+	<div style="margin:auto;width:350px;">
+	<%}else{ %>		
+	<div style="margin:auto;width:300px;">
+	<%} %>
 		<div style="margin:10px;">
 			<b><%= LanguageUtil.get(pageContext, "Perform-Workflow") %></b>: <%=action.getName() %>
 		</div>
@@ -71,7 +73,43 @@ var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.
 				<input type="text" dojoType="dijit.form.TextBox" style="display:none" name="taskAssignmentAux" id="taskAssignmentAux" value="<%=role.getId()%>">
 			<%} %>
 		</div>
-	
+		<%if(hasPushPublishActionlet){
+			String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
+			String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
+		%>
+		
+		<div style="margin:10px;">
+			<strong><%= LanguageUtil.get(pageContext, "Publish") %> </strong>: <br />
+			<input 
+				type="text" 
+				dojoType="dijit.form.DateTextBox" 
+				validate="return false;" 
+				invalidMessage=""  
+				id="publishDate"
+				name="publishDate" value="now" style="width: 110px;">
+							
+								
+			<input type="text" name="publishTime" id="publishTime" value="now"
+			 	data-dojo-type="dijit.form.TimeTextBox"
+				required="true" style="width: 100px;"/>
+		</div>
+							
+		<div style="margin:10px;">
+			<strong><%= LanguageUtil.get(pageContext, "publisher_Expire") %> </strong>: <br />
+			<input 
+				type="text" 
+				dojoType="dijit.form.DateTextBox" 
+				validate="return false;"   
+				id="expireDate" name="expireDate" value="" style="width: 110px;">
+							
+							
+			<input type="text" name="expireTime" id="expireTime" value=""
+			    data-dojo-type="dijit.form.TimeTextBox"	
+				style="width: 100px;" />
+				
+			&nbsp;&nbsp;<input type="checkbox" dojoType="dijit.form.CheckBox" name="neverExpire" id="neverExpire" > <%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %>
+		</div>
+		<%}%>	
 	<div class="buttonRow">
 		<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="contentAdmin.saveAssign()" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
