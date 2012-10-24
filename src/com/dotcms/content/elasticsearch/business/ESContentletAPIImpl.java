@@ -2057,6 +2057,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				Contentlet contentletRaw=contentlet;
 				contentlet.setModDate(new Date());
 				
+				// Keep the 5 properties BEFORE store the contentlet on DB.
+				String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+				String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+				String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+				String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+				String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
+				
 				if(saveWithExistingID)
 				    contentlet = conFac.save(contentlet, existingInode);
 				else
@@ -2363,7 +2370,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    indexAPI.addContentToIndex(contentlet);
 				}
 
-
+				// Set the properties again after the store on DB and before the fire on an Actionlet.				
+				contentlet.setStringProperty("wfPublishDate", contentPushPublishDate);
+				contentlet.setStringProperty("wfPublishTime", contentPushPublishTime);
+				contentlet.setStringProperty("wfExpireDate", contentPushExpireDate);
+				contentlet.setStringProperty("wfExpireTime", contentPushExpireTime);
+				contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
+				
 				//wapi.
 				workflow.setContentlet(contentlet);
 				wapi.fireWorkflowPostCheckin(workflow);
