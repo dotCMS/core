@@ -82,7 +82,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					dc.addObject(identifier); //asset
 					dc.addParam(new Date());
 					dc.addObject(1);
-					dc.addParam(DbConnectionFactory.getDBFalse());	//in error field
+					dc.addParam(false);	//in error field
 					
 					//TODO How do I get new columns value?	
 					dc.addParam(publishDate);
@@ -100,9 +100,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 				try {
 					HibernateUtil.rollbackTransaction();
 				} catch (DotHibernateException e1) {
-					Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+					Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
 				}			
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
+				Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
 				throw new DotPublisherException("Unable to add element to publish queue table:" + e.getMessage(), e);
 			}
 		}
@@ -149,9 +149,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 				try {
 					HibernateUtil.rollbackTransaction();
 				} catch (DotHibernateException e1) {
-					Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+					Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
 				}			
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
+				Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
 				throw new DotPublisherException("Unable to add element to publish queue table:" + e.getMessage(), e);
 			}
 		}
@@ -210,7 +210,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		try {
 			res = dc.loadObjectResults();
 		} catch (Exception e) {
-			Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
+			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable find tree:" + e.getMessage(), e);
 		}
 		return res;
@@ -232,7 +232,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		try {
 			res = dc.loadObjectResults();
 		} catch (Exception e) {
-			Logger.debug(PublisherAPIImpl.class,e.getMessage(),e);
+			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable find multi tree:" + e.getMessage(), e);
 		}
 		
@@ -277,7 +277,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
@@ -310,7 +310,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
@@ -337,7 +337,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
@@ -376,7 +376,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
@@ -399,16 +399,16 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
 	
 	
-	private static final String PSGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
-	private static final String MYGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
-	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
-	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id from publishing_queue ";
+	private static final String PSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
+	private static final String MYGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
+	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
+	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
 	
 	/**
 	 * get bundle_ids available
@@ -430,7 +430,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
@@ -472,7 +472,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
@@ -499,7 +499,34 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}
+	}
+	
+	private static final String PSGETENTRY="select * from publishing_queue where asset = ?";
+	private static final String MYGETENTRY="select * from publishing_queue where asset = ?";
+	private static final String MSGETENTRY="select * from publishing_queue where asset = ?";
+	private static final String OCLGETENTRY="select * from publishing_queue where asset = ?";
+	
+	public List<Map<String,Object>> getQueueElementsByAsset(String asset) throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+				dc.setSQL(PSGETENTRY);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				dc.setSQL(MYGETENTRY);
+			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+				dc.setSQL(MSGETENTRY);
+			}else{
+				dc.setSQL(OCLGETENTRY);
+			}
+			
+			dc.addParam(asset);
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
@@ -545,9 +572,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 			try {
 				HibernateUtil.rollbackTransaction();
 			} catch (DotHibernateException e1) {
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
 			}
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to update element "+id+" :"+e.getMessage(), e);
 		}
 	}
@@ -586,9 +613,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 			try {
 				HibernateUtil.rollbackTransaction();
 			} catch (DotHibernateException e1) {
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
 			}
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
@@ -629,9 +656,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 			try {
 				HibernateUtil.rollbackTransaction();
 			} catch (DotHibernateException e1) {
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
 			}
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element(s) "+bundleId+" :"+e.getMessage(), e);
 		}
 	}
@@ -664,9 +691,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 			try {
 				HibernateUtil.rollbackTransaction();
 			} catch (DotHibernateException e1) {
-				Logger.debug(PublisherAPIImpl.class,e.getMessage(),e1);
+				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
 			}
-			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
 		}
 	}

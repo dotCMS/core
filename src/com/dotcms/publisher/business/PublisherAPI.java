@@ -102,6 +102,14 @@ public abstract class PublisherAPI {
 	public abstract List<Map<String,Object>> countQueueElementsGroupByBundleId() throws DotPublisherException;
 	
 	/**
+	 * Get queue element by asset
+	 * @param asset
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	public abstract List<Map<String,Object>> getQueueElementsByAsset(String asset) throws DotPublisherException;
+	
+	/**
 	 * Get queue elements group by bundle_id paginated
 	 * @param offset
 	 * @param limit
