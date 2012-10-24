@@ -1,3 +1,4 @@
+<%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException"%>
@@ -76,8 +77,22 @@
 
     boolean addQueueElements=false;
     String addQueueElementsStr = request.getParameter("add");
+    String publishDate = request.getParameter("publishDate");
+    String publishTime = request.getParameter("publishTime");
     if(UtilMethods.isSet(addQueueElementsStr)){
     	addQueueElements=true;	
+    	
+        
+        if(!UtilMethods.isSet(publishDate)){
+        	publishDate="";
+        	nastyError=LanguageUtil.get(pageContext, "publisher_Date_required");
+        }
+        
+        if(!UtilMethods.isSet(publishTime)){
+        	publishTime="";
+        	nastyError=LanguageUtil.get(pageContext, "publisher_Date_required");
+        }
+    	
     }
     String addOperationType = request.getParameter("action");
     if(!UtilMethods.isSet(addOperationType)){
@@ -93,20 +108,35 @@
 	    		String bundeId = UUID.randomUUID().toString();
 		    		    		
 	    		List<String> identifiers = new ArrayList<String>();
-	    		
+	    		Long operationType = addOperationType.equals("add")? new Long(1): new Long(2);
 	    		for(String item : addQueueElementsStr.split(",")){
 	    			String[] value = item.split("\\$");
-   					Contentlet conLive = conAPI.findContentletByIdentifier(value[0],true,Long.parseLong(value[1]),user, false);
-   					identifiers.add(value[0]);
-   					
-   					processedCounter++;
+	    			
+	    			List<Map<String,Object>> currentAssets = publisherAPI.getQueueElementsByAsset(value[0]);
+	    			boolean trovato = false;
+	    			for(Map<String,Object> currentAsset: currentAssets) {
+	    				if(((Long)currentAsset.get("operation")).equals(operationType))
+	    					trovato = true;
+	    			}
+	    			
+	    			if(!trovato) {
+	   					identifiers.add(value[0]);
+	   					processedCounter++;
+	    			} else {
+	    				errorCounter++;
+	    				trovato = false;
+	    			}
 	    			
 	    		}
 	    		try{
+	    			Date date = 
+	    					new SimpleDateFormat("yyyy-MM-dd-H-m").parse(publishDate+"-"+publishTime);
+	    			
+	    			
 	    			if(addOperationType.equals("add")){
-	    				publisherAPI.addContentsToPublish(identifiers, bundeId, new Date());
+	    				publisherAPI.addContentsToPublish(identifiers, bundeId, date);
 	    			} else {
-	    				publisherAPI.addContentsToUnpublish(identifiers, bundeId, new Date());
+	    				publisherAPI.addContentsToUnpublish(identifiers, bundeId, date);
 	    			}
 	    			
 	    			
@@ -164,6 +194,24 @@
 			}
 		//}
 		url+="&action="+action;
+		
+		if(dijit.byId('publishDate').get('value') != null) {
+			var dateValue = 
+					dojo.date.locale.format(dijit.byId('publishDate').get('value'),
+					{datePattern: "yyyy-MM-dd", selector: "date"});
+			
+			url+="&publishDate="+dateValue;
+		}
+		
+		if(dijit.byId('publishTime').get('value') != null) {
+			var timeValue = 
+					dojo.date.locale.format(dijit.byId('publishTime').get('value'),
+					{timePattern: "H-m", selector: "time"});
+			
+			url+="&publishTime="+timeValue;
+		}
+		
+		
 		refreshLuceneList(url);	   
    }
 </script>
@@ -178,11 +226,38 @@
 		<dt>&nbsp;</dt><dd><span style='color:green;'><%= LanguageUtil.get(pageContext, "publisher_Processed_message") %> <%=processedCounter %></span>
 		<span style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Error_Message") %> <%=errorCounter %></span></dd>
 	</dl>	
-	<% } %>								
+	<% } %>		
+	<% if(UtilMethods.isSet(nastyError)){%>
+	<dl>
+		<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Query_Error") %> </dt>
+		<dd><%=nastyError %></dd>
+	</dl>
+	<%} %>						
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px"><!-- <input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" /> --></th>		
-			<th colspan="2"><div id="addPublishQueueMenu"></div></th>			
+			<th colspan="2">
+				<div id="addPublishQueueMenu" style="float:left"></div>
+				
+				<div style="float:left"><strong><%= LanguageUtil.get(pageContext, "date") %> </strong>
+				
+					<input 
+					type="text" 
+					dojoType="dijit.form.DateTextBox" 
+					validate="return false;" 
+					invalidMessage=""  
+					id="publishDate"
+					name="publishDate" value="now">
+					
+					
+					<input type="text" name="publishDate" id="publishTime" value="now"
+					  data-dojo-type="dijit.form.TimeTextBox"
+					  onChange="dojo.byId('val').value=arguments[0].toString().replace(/.*1970\s(\S+).*/,'T$1')"
+					  required="true" />
+				
+				</div>
+			</th>	
+					
 		</tr>
 		<% for(Contentlet c : iresults) {%>
 			<tr>
@@ -218,12 +293,7 @@
 			<%} %>
 		</tr>
 	</table>
-	<% if(UtilMethods.isSet(nastyError)){%>
-	<dl>
-		<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Query_Error") %> </dt>
-		<dd><%=nastyError %></dd>
-	</dl>
-	<%} %>
+	
 	<script type="text/javascript">
 	dojo.ready(function() {
 	       var menu = new dijit.Menu({
@@ -263,7 +333,27 @@
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px">&nbsp;</th>		
-			<th colspan="2"><div id="addPublishQueueMenu"></div></th>			
+			<th colspan="2">
+				<div id="addPublishQueueMenu" style="float:left"></div>
+				
+				<div style="float:left"><strong><%= LanguageUtil.get(pageContext, "date") %> </strong>
+				
+					<input 
+					type="text" 
+					dojoType="dijit.form.DateTextBox" 
+					validate="return false;" 
+					invalidMessage=""  
+					id="publishDate"
+					name="publishDate" value="">
+					
+					
+					<input type="text" name="publishDate" id="publishTime" value="T15:00:00"
+					  data-dojo-type="dijit.form.TimeTextBox"
+					  onChange="dojo.byId('val').value=arguments[0].toString().replace(/.*1970\s(\S+).*/,'T$1')"
+					  required="true" />
+				
+				</div>
+			</th>	
 		</tr>
 		<tr>
 			<td colspan="2" class="solr_tcenter"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
