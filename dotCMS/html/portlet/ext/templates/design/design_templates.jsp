@@ -89,15 +89,8 @@
 	if(UtilMethods.isSet(hostId)) {
 		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false);
 	}
-	Folder themeFolder= APILocator.getFolderAPI().findFolderByPath("/application/themes", host, user, false);
-	List<Folder> themes = null;
-	try{
-		themes = APILocator.getFolderAPI().findSubFolders(themeFolder, user, false);
-	}
-	catch(Exception e){
-
-	}
 %>
+<script type='text/javascript' src='/dwr/interface/TemplateAjax.js'></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
 <script language="Javascript">
@@ -131,9 +124,6 @@
 		var addContainerLinks = window.parseInt(document.getElementById("countAddContainerLinks").value);
 		var containersAdded = window.parseInt(document.getElementById("countContainersAdded").value);
 
-		alert(addContainerLinks);
-		alert(containersAdded);
-
 		if(containersAdded==0){
 			if(!confirm('Your template does not contains Containers. In this case you can\'t add contents. Are you sure you want to save?'))
 				return;
@@ -152,8 +142,23 @@
 		form.<portlet:namespace />subcmd.value = subcmd;
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
 		form.removeAttribute('onsubmit');
-		submitForm(form);
+
+        //Before to submit lets verify the title
+        verifyTitle(form);
 	}
+
+    function verifyTitle(form) {
+
+        function response(data) {
+            if (data) {
+                alert("The template title must be unique and this template title is already taken.");
+            } else {
+                submitForm(form);
+            }
+        }
+
+        TemplateAjax.duplicatedTitle(document.getElementById("titleField").value, "<%=template.getInode()%>", "<%=host.getIdentifier()%>", {callback:response});
+    }
 
 	var copyAsset = false;
 
@@ -329,10 +334,7 @@
 	function getContainerMockContent(title){
 		return "<h2>Container: "+title+"</h2><p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>";
 	}
-	
 
-	
-	
 </script>
 
 <script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
@@ -692,8 +694,12 @@
 		<div class="wrapperRight" style="position:relative;border:0px solid red" id="containerBodyTemplate">
 		<div style="float:left;margin:10px;">
 
-			<input tabindex="1" type="text" name="title" id="titleField" maxlength="255" style="color:black;font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;" value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
-			<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>
+			<input tabindex="1" data-dojo-type="dijit/form/TextBox" name="title" id="titleField"
+                   placeHolder="Template Title"
+                   required="true"
+                   maxlength="255" style="color:black;font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;"
+                   value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
+			<%--<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>--%>
 
 		</div>
 
