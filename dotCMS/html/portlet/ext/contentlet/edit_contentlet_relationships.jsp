@@ -372,14 +372,15 @@
 								
 								result = result +'&nbsp;&nbsp;' + anchorValue + '<img style="vertical-align: middle; border: solid 2px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
 								
-							}else if(o['siblings'][sibIndex]['working'] == 'true'){
+							}else if(o['siblings'][sibIndex]['deleted'] == 'true'){
 								
 								anchorValue = "";
 								if (o != null){
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
+
+								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
 								
-								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FF1919; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
 								
 							}else{
 								
@@ -388,7 +389,7 @@
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
 								
-								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
+								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FFCC11; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
 								
 							}
 							
