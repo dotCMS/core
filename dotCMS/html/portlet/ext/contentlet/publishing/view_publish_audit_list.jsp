@@ -30,12 +30,20 @@
     }
 
     PublisherAPI pubAPI = PublisherAPI.getInstance();  
-    String viewFilterStr = request.getParameter("viewFilter");
-    Integer viewFilter = null;
-    if(UtilMethods.isSet(viewFilterStr)){
-    	viewFilter=Integer.valueOf(viewFilterStr);
+    
+    String offset = request.getParameter("offset");
+    if(!UtilMethods.isSet(offset)){
+    	offset="0";
+    }
+    String limit = request.getParameter("limit");
+    if(!UtilMethods.isSet(limit)){
+    	limit="50"; //TODO Load from properties
     }
     
+    String layout = request.getParameter("layout");
+    if(!UtilMethods.isSet(layout)) {
+    	layout = "";
+    }
 
     String nastyError = null;
 
@@ -48,8 +56,8 @@
     String counter =  "0";
 
     try{
-   		iresults =  publishAuditAPI.getAllPublishAuditStatus();
-   		counter =  String.valueOf(iresults.size());	
+   		iresults =  publishAuditAPI.getAllPublishAuditStatus(new Integer(limit),new Integer(offset));
+   		counter =   String.valueOf(publishAuditAPI.countAllPublishAuditStatus().get(0).get("count"));	
     }catch(DotPublisherException e){
     	iresults = new ArrayList();
     	nastyError = e.toString();
@@ -58,6 +66,15 @@
     	nastyError = pe.toString();
     }
   %>
+  
+  <script type="text/javascript">
+   function doAuditPagination(offset,limit) {		
+		var url="layout=<%=layout%>";
+		url+="&offset="+offset;
+		url+="&limit="+limit;		
+		refreshAuditList(url);
+	}
+</script> 
 
 <%if(UtilMethods.isSet(nastyError)){%>
 		<dl>
@@ -85,6 +102,32 @@
 			    <td><%=UtilMethods.dateToHTMLDate((Date)c.get("status_updated"),"MM/dd/yyyy hh:mma") %></td>
 			</tr>
 		<%}%>
+	</table>
+	<table class="solr_listingTableNoBorder">
+		<tr>
+			<%
+			long begin=Long.parseLong(offset);
+			long end = Long.parseLong(offset)+Long.parseLong(limit);
+			long total = Long.parseLong(counter);
+			if(begin > 0){ 
+				long previous=(begin-Long.parseLong(limit));
+				if(previous < 0){
+					previous=0;					
+				}
+			%>
+			<td style="width:130px"><button dojoType="dijit.form.Button" onClick="doAuditPagination(<%=previous%>,<%=limit%>);return false;" iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "publisher_Previous") %></button></td>
+			<%}else{ %>
+			<td style="width:130px">&nbsp;</td>
+			<%} %>
+			<td class="solr_tcenter" colspan="2"><strong> <%=begin+1%> - <%=end < total?end:total%> <%= LanguageUtil.get(pageContext, "publisher_Of") %> <%=total%> </strong></td>
+			<%if(end < total){ 
+				long next=(end < total?end:total);
+			%>
+			<td style="width:130px"><button class="solr_right" dojoType="dijit.form.Button" onClick="doAuditPagination(<%=next%>,<%=limit%>);return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
+			<%}else{ %>
+			<td style="width:130px">&nbsp;</td>
+			<%} %>
+		</tr>
 	</table>
 <%
 }else{ 

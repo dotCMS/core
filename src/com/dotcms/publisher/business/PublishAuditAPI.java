@@ -66,4 +66,22 @@ public abstract class PublishAuditAPI {
 	 */
 	//Select
 	public abstract List<Map<String,Object>> getAllPublishAuditStatus() throws DotPublisherException;
+	
+	/**
+	 * Get all publish status paginated
+	 * @param offset
+	 * @param limit
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	public abstract List<Map<String,Object>> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException;
+	
+	/**
+	 * count all publish status
+	 * @param offset
+	 * @param limit
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	public abstract List<Map<String,Object>> countAllPublishAuditStatus() throws DotPublisherException;
 }
