@@ -16,11 +16,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 
+import com.dotcms.timemachine.business.TimeMachineAPI.SnapshotInfo;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 
 public class TimeMachineAjaxAction extends AjaxAction {
     
@@ -50,7 +53,7 @@ public class TimeMachineAjaxAction extends AjaxAction {
         }
     }
     
-    private static final DateFormat fmtId=new SimpleDateFormat("yyyyMMdd");
+    
     private static final DateFormat fmtPretty=new SimpleDateFormat("yyyy-MM-dd");
     private static final ObjectWriter jsonWritter=new ObjectMapper().writerWithDefaultPrettyPrinter();
     
@@ -69,13 +72,14 @@ public class TimeMachineAjaxAction extends AjaxAction {
             return;
         }   
         
-        List<Date> dates=APILocator.getTimeMachineAPI().getAvailableTimeMachineForSite(host);
+        List<SnapshotInfo> snaps=APILocator.getTimeMachineAPI().getAvailableTimeMachineForSite(host);
         
-        List<Map<String,String>> list=new ArrayList<Map<String,String>>(dates.size()); 
-        for(Date dd : dates) {
+        List<Map<String,String>> list=new ArrayList<Map<String,String>>(snaps.size()); 
+        for(SnapshotInfo dd : snaps) {
             Map<String,String> m=new HashMap<String,String>();
-            m.put("id", fmtId.format(dd));
-            m.put("pretty", fmtPretty.format(dd));
+            m.put("id", dd.date.getTime()+"."+dd.langid);
+            Language lang=APILocator.getLanguageAPI().getLanguage(dd.langid);
+            m.put("pretty", fmtPretty.format(dd.date)+" "+lang.getLanguageCode()+"_"+lang.getCountryCode());
             list.add(m);
         }
         
@@ -85,6 +89,26 @@ public class TimeMachineAjaxAction extends AjaxAction {
         m.put("items", list);
         response.setContentType("application/json");
         jsonWritter.writeValue(response.getOutputStream(), m);
+    }
+    
+    public void startBrowsing(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        Map<String, String> map = getURIParams();
+        String snap=map.get("snap");
+        String hostid=map.get("hostid");
+        String[] cc=snap.split("\\.");
+        String datestr=cc[0];
+        String langid=cc[1];
+        
+        req.getSession().setAttribute("tm_host",
+                APILocator.getHostAPI().find(hostid, getUser(), false));
+        req.getSession().setAttribute("tm_date", datestr);
+        req.getSession().setAttribute("tm_lang", langid);
+    }
+    
+    public void stopBrowsing(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        req.getSession().removeAttribute("tm_date");
+        req.getSession().removeAttribute("tm_lang");
+        req.getSession().removeAttribute("tm_host");
     }
 
     @Override
