@@ -1,0 +1,29 @@
+<html>
+<head>
+    #dotParse("${THEME_PATH}html_head.vtl")
+    <link rel="stylesheet" type="text/css" href="/html/css/template/reset-fonts-grids.css" />
+</head>
+<body>
+
+<div id="doc3-template" name="globalContainer">
+
+    #if($themeLayout.header)
+        <div id="hd-template">
+            #dotParse("${THEME_PATH}header.vtl")
+        </div>
+    #end
+
+    <div id="bd-template">
+
+    </div>
+
+    #if($themeLayout.footer)
+        <div id="ft-template">
+            #dotParse("${THEME_PATH}footer.vtl")
+        </div>
+    #end
+
+</div>
+
+</body>
+</html>
