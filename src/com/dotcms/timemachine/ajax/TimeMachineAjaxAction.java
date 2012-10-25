@@ -16,14 +16,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 
-import com.dotcms.timemachine.business.TimeMachineAPI.SnapshotInfo;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 
 public class TimeMachineAjaxAction extends AjaxAction {
     
@@ -59,27 +57,23 @@ public class TimeMachineAjaxAction extends AjaxAction {
     
     public void getAvailableTimeMachineForSite(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, String> map = getURIParams();
-        Host host=null;
         
-        String hostname=map.get("hostname");
         String hostid=map.get("hostid");
-        if(UtilMethods.isSet(hostname))
-            host=APILocator.getHostAPI().findByName(hostname, getUser(), false);
-        else if(UtilMethods.isSet(hostid))
-            host=APILocator.getHostAPI().find(hostid, getUser(), false);
-        else {
+        
+        if(!validateParams(null, hostid, null)) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
-        }   
+        }
         
-        List<SnapshotInfo> snaps=APILocator.getTimeMachineAPI().getAvailableTimeMachineForSite(host);
+        Host host=APILocator.getHostAPI().find(hostid, getUser(), false);
+        
+        List<Date> snaps=APILocator.getTimeMachineAPI().getAvailableTimeMachineForSite(host);
         
         List<Map<String,String>> list=new ArrayList<Map<String,String>>(snaps.size()); 
-        for(SnapshotInfo dd : snaps) {
+        for(Date dd : snaps) {
             Map<String,String> m=new HashMap<String,String>();
-            m.put("id", dd.date.getTime()+"."+dd.langid);
-            Language lang=APILocator.getLanguageAPI().getLanguage(dd.langid);
-            m.put("pretty", fmtPretty.format(dd.date)+" "+lang.getLanguageCode()+"_"+lang.getCountryCode());
+            m.put("id", Long.toString(dd.getTime()));
+            m.put("pretty", fmtPretty.format(dd));
             list.add(m);
         }
         
@@ -91,24 +85,81 @@ public class TimeMachineAjaxAction extends AjaxAction {
         jsonWritter.writeValue(response.getOutputStream(), m);
     }
     
+    public void getAvailableLangForTimeMachine(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        Map<String, String> map = getURIParams();
+        String hostid=map.get("hostid");
+        String datestr=map.get("date");
+        
+        if(!validateParams(datestr, hostid, null)) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        
+        Host host=APILocator.getHostAPI().find(hostid, getUser(), false);
+        
+        List<String> langs=APILocator.getTimeMachineAPI().getAvailableLangForTimeMachine(
+                                 host, new Date(Long.parseLong(datestr)));
+        
+        List<Map<String,String>> list=new ArrayList<Map<String,String>>();
+        
+        for(String lid : langs) {
+            Language lang=APILocator.getLanguageAPI().getLanguage(lid);
+            Map<String,String> m=new HashMap<String,String>();
+            m.put("id", lid);
+            m.put("pretty", lang.getLanguage()+" - "+lang.getCountry());
+            list.add(m);
+        }
+        
+        Map<String, Object> m=new HashMap<String,Object>();
+        m.put("identifier", "id");
+        m.put("label", "pretty");
+        m.put("items", list);
+        resp.setContentType("application/json");
+        jsonWritter.writeValue(resp.getOutputStream(), m);
+    }
+    
     public void startBrowsing(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         Map<String, String> map = getURIParams();
-        String snap=map.get("snap");
+        String datestr=map.get("date");
         String hostid=map.get("hostid");
-        String[] cc=snap.split("\\.");
-        String datestr=cc[0];
-        String langid=cc[1];
+        String langid=map.get("langid");
         
-        req.getSession().setAttribute("tm_host",
-                APILocator.getHostAPI().find(hostid, getUser(), false));
-        req.getSession().setAttribute("tm_date", datestr);
-        req.getSession().setAttribute("tm_lang", langid);
+        if(!validateParams(datestr, hostid, langid))
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        else {
+            req.getSession().setAttribute("tm_host",
+                    APILocator.getHostAPI().find(hostid, getUser(), false));
+            req.getSession().setAttribute("tm_date", datestr);
+            req.getSession().setAttribute("tm_lang", langid);
+        }
     }
     
     public void stopBrowsing(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         req.getSession().removeAttribute("tm_date");
         req.getSession().removeAttribute("tm_lang");
         req.getSession().removeAttribute("tm_host");
+    }
+    
+    private boolean validateParams(String datestr, String hostid, String langid) {
+        try {
+            // validating
+            if(datestr!=null)
+                Long.parseLong(datestr);
+            if(hostid!=null) {
+                Host hh=APILocator.getHostAPI().find(hostid, getUser(), false);
+                if(hh==null || !UtilMethods.isSet(hh.getIdentifier()))
+                    throw new Exception();
+            }
+            if(langid!=null) {
+                Language ll=APILocator.getLanguageAPI().getLanguage(langid);
+                if(ll==null || !UtilMethods.isSet(ll.getId()))
+                    throw new Exception();
+            }
+        }
+        catch(Exception ex) {
+            return false;
+        }
+        return true;
     }
 
     @Override

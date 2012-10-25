@@ -36,6 +36,9 @@ dojo.ready(function(){
 	dijit.byId('closeBtn').set('disabled','disabled');
 });
 
+var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
+var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
+
 function hostChange() {
     var hostid=dijit.byId('hostsel').get('value');
     dijit.byId('timesel').set('value','');
@@ -45,15 +48,25 @@ function hostChange() {
 	    dijit.byId('timesel').set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
     }
     else {
-    	dijit.byId('timesel').set('store',new dojo.data.ItemFileReadStore());
+    	dijit.byId('timesel').set('store',emptyStore);
     }
+    dijit.byId('langsel').set('store',emptyStore);
 }
 function timeChange() {
     var time=dijit.byId('timesel').get('value');
     var hostid=dijit.byId('hostsel').get('value');
-    if(time && time.length>0 && hostid && hostid.length>0) {
+    var langid=dijit.byId('langsel').get('value');
+    
+    if(hostid && hostid.length>0 && time && time.length>0) {
+    	var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableLangForTimeMachine/hostid/"+
+                   hostid+"/date/"+time;
+        dijit.byId('langsel').set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
+    }	
+    
+    if(time && time.length>0 && langid && langid.length>0 && hostid && hostid.length>0) {
     	dojo.xhr('GET',{
-    		url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/startBrowsing/snap/'+time+'/hostid/'+hostid,
+    		url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/startBrowsing/date/'
+    		       +time+'/hostid/'+hostid+'/langid/'+langid,
     		handle: function() {
     			dojo.empty('iframeWrapper');
                 dojo.create("iframe", {
@@ -63,6 +76,7 @@ function timeChange() {
                 dijit.byId('closeBtn').set('disabled','');
                 dijit.byId('timesel').set('disabled','disabled');
                 dijit.byId('hostsel').set('disabled','disabled');
+                dijit.byId('langsel').set('disabled','disabled');
                 showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
     		}
     	});
@@ -76,7 +90,9 @@ function stopBrowing() {
             dijit.byId('closeBtn').set('disabled','disabled');
             dijit.byId('timesel').set('disabled','');
             dijit.byId('hostsel').set('disabled','');
+            dijit.byId('langsel').set('disabled','');
             dijit.byId('timesel').set('value','');
+            dijit.byId('langsel').set('value','');
         }
     });
 }
@@ -111,16 +127,20 @@ function showSettings() {
             <div dojoType="dijit.layout.ContentPane" region="top">
                    <span id="tools">
                    
+                       <select id="hostsel" dojoType="dijit.form.FilteringSelect" 
+                            store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
+                            searchDelay="400" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>"
+                            onchange="hostChange()"></select>
+                       
 	                   <select id="timesel" dojoType="dijit.form.FilteringSelect" 
 	                      labelAttr="pretty" searchDelay="400" searchAttr="pretty" 
 	                      onChange="timeChange()">
-	                   
 	                   </select>
 	                   
-	                   <select id="hostsel" dojoType="dijit.form.FilteringSelect" 
-						    store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
-						    searchDelay="400" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>"
-						    onchange="hostChange()"></select>
+	                   <select id="langsel" dojoType="dijit.form.FilteringSelect" 
+                          labelAttr="pretty" searchDelay="400" searchAttr="pretty" 
+                          onChange="timeChange()">
+                       </select>
 						    
 	                   <button id="closeBtn" dojoType="dijit.form.Button" onClick="stopBrowing()">
 	                      <%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE_SNAP")%>
