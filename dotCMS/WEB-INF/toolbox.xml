@@ -416,6 +416,12 @@
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.SubmitContentWebAPI</class>
 	</tool>
+
+    <tool>
+		<key>templatetool</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.DotTemplateTool</class>
+	</tool>
 	
 	<!-- Dotmarketing View Tools End -->
 	
