@@ -288,8 +288,17 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		currentContentlet.setStringProperty("wfActionId", (String) contentletFormData.get("wfActionId"));
 		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
 		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
-
-
+		
+		/**
+		 * 
+		 * Push Publishing Actionlet
+		 * 
+		 */
+		currentContentlet.setStringProperty("wfPublishDate", (String) contentletFormData.get("wfPublishDate"));
+		currentContentlet.setStringProperty("wfPublishTime", (String) contentletFormData.get("wfPublishTime"));
+		currentContentlet.setStringProperty("wfExpireDate", (String) contentletFormData.get("wfExpireDate"));
+		currentContentlet.setStringProperty("wfExpireTime", (String) contentletFormData.get("wfExpireTime"));
+		currentContentlet.setStringProperty("wfNeverExpire", (String) contentletFormData.get("wfNeverExpire"));
 
 
 
@@ -471,13 +480,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 			}
 
-
-
-
-
-
-
-
 			if("publish".equals(subcmd)){
 				currentContentlet.setBoolProperty("live", true);
 			}
@@ -486,9 +488,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(!isAutoSave){
 
 				currentContentlet.setInode(null);
-				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false);
-
-
+				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false);			
 
 
 			}else{
