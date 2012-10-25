@@ -12,6 +12,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
+import javax.ws.rs.core.MediaType;
+
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
@@ -29,6 +31,13 @@ import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.sun.jersey.multipart.FormDataMultiPart;
+import com.sun.jersey.multipart.file.FileDataBodyPart;
 
 public class PushPublisher extends Publisher {
 
@@ -87,8 +96,21 @@ public class PushPublisher extends Publisher {
 
 			ArrayList<File> list = new ArrayList<File>(1);
 			list.add(bundleRoot);
-			compressFiles(list, new File(bundleRoot+File.separator+".."+File.separator+config.getId()), bundleRoot.getAbsolutePath());
+			File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
+			compressFiles(list, bundle, bundleRoot.getAbsolutePath());
 			
+			//Sending bundle to endpoint
+			ClientConfig cc = new DefaultClientConfig();
+	        Client client = Client.create(cc);
+	        WebResource resource = client.resource("http://localhost:8080/api/bundlePublisher/publish");
+	        FormDataMultiPart form = new FormDataMultiPart();
+	        
+	        //form.field("username", "ljy");
+	        
+	        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+	        resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
+	        
+	        
 			
 			//Updating audit table
 			currentStatusHistory =
@@ -99,7 +121,7 @@ public class PushPublisher extends Publisher {
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
 			
 			//Deleting queue records
-			pubAPI.deleteElementsFromPublishQueueTable(config.getId());
+			//pubAPI.deleteElementsFromPublishQueueTable(config.getId());
 
 			return config;
 
@@ -153,7 +175,6 @@ public class PushPublisher extends Publisher {
 	 * Does the work of compression and going recursive for nested directories
 	 * <p/>
 	 *
-	 * Borrowed heavily from http://www.thoughtspark.org/node/53
 	 *
 	 * @param taos The archive
 	 * @param file The file to add to the archive
@@ -163,24 +184,27 @@ public class PushPublisher extends Publisher {
 	private void addFilesToCompression(TarArchiveOutputStream taos, File file, String dir, String bundleRoot)
 		throws IOException
 	{
-	    
-			// Create an entry for the file
-			taos.putArchiveEntry(new TarArchiveEntry(file, dir+File.separator+file.getName()));
-			if (file.isFile()) {
-		        // Add the file to the archive
-				BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-				IOUtils.copy(new FileInputStream(file), taos);
-				taos.closeArchiveEntry();
-				bis.close();
-			} else if (file.isDirectory()) {
-				//Logger.info(this.getClass(),file.getPath().substring(bundleRoot.length()));
-		         // close the archive entry
-				taos.closeArchiveEntry();
-		         // go through all the files in the directory and using recursion, add them to the archive
-				for (File childFile : file.listFiles()) {
-					addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
+	    	if(!file.isHidden()) {
+	    		// Create an entry for the file
+	    		if(!dir.equals("."))
+	    			taos.putArchiveEntry(new TarArchiveEntry(file, dir+File.separator+file.getName()));
+				if (file.isFile()) {
+			        // Add the file to the archive
+					BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+					IOUtils.copy(new FileInputStream(file), taos);
+					taos.closeArchiveEntry();
+					bis.close();
+				} else if (file.isDirectory()) {
+					//Logger.info(this.getClass(),file.getPath().substring(bundleRoot.length()));
+			         // close the archive entry
+					if(!dir.equals("."))
+						taos.closeArchiveEntry();
+			         // go through all the files in the directory and using recursion, add them to the archive
+					for (File childFile : file.listFiles()) {
+						addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
+					}
 				}
-			}
+	    	}
 	    
 	}
 
