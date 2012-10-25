@@ -801,3 +801,11 @@ status INTEGER,
 status_pojo nclob, 
 status_updated TIMESTAMP, 
 create_date TIMESTAMP);
+
+-- ****** Content Publishing Framework - End Point Management *******
+CREATE TABLE publishing_end_point (
+	server_name VARCHAR2(1024) unique,
+	address VARCHAR2(250),
+	enabled number(1,0) DEFAULT 0,
+	auth_key VARCHAR2(1024),
+	sending number(1,0) DEFAULT 0);

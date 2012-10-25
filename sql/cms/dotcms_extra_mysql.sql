@@ -602,3 +602,12 @@ create table publishing_queue_audit (bundle_id VARCHAR(256) PRIMARY KEY NOT NULL
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
+
+-- ****** Content Publishing Framework - End Point Management *******
+CREATE TABLE IF NOT EXISTS publishing_end_point (
+	server_name varchar(1024) unique,
+	address varchar(250),
+	enabled varchar(1) DEFAULT '0',
+	auth_key varchar(1024),
+	sending varchar(1) DEFAULT '0'
+);
