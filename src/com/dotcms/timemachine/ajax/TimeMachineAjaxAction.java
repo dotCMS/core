@@ -52,8 +52,26 @@ public class TimeMachineAjaxAction extends AjaxAction {
     }
     
     
-    private static final DateFormat fmtPretty=new SimpleDateFormat("yyyy-MM-dd");
+    private static final DateFormat fmtPretty=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final ObjectWriter jsonWritter=new ObjectMapper().writerWithDefaultPrettyPrinter();
+    
+    public void getHostsWithTimeMachine(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        List<Host> hosts=APILocator.getTimeMachineAPI().getHostsWithTimeMachine();
+        List<Map<String,String>> list=new ArrayList<Map<String,String>>(hosts.size()); 
+        for(Host hh : hosts) {
+            Map<String,String> m=new HashMap<String,String>();
+            m.put("id", hh.getIdentifier());
+            m.put("hostname", hh.getHostname());
+            list.add(m);
+        }
+        
+        Map<String, Object> m=new HashMap<String,Object>();
+        m.put("identifier", "id");
+        m.put("label", "hostname");
+        m.put("items", list);
+        response.setContentType("application/json");
+        jsonWritter.writeValue(response.getOutputStream(), m);
+    }
     
     public void getAvailableTimeMachineForSite(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, String> map = getURIParams();
