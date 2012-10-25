@@ -4,11 +4,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
-import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -16,6 +18,7 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class TimeMachineAPIImpl implements TimeMachineAPI {
 
@@ -42,6 +45,28 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 		}		
 	}
 	
+	@Override
+	public List<Host> getHostsWithTimeMachine() {
+	    Set<Host> list = new HashSet<Host>();
+        File bundlePath = new File(ConfigUtils.getBundlePath());
+        for ( File file : bundlePath.listFiles()) {
+            if ( file.isDirectory() && file.getName().startsWith("tm_")) {
+                File hostDir = new File(file.getAbsolutePath() + File.separator + "live");
+                if ( hostDir.exists() && hostDir.isDirectory() ) {
+                    for(String hostname : hostDir.list()) {
+                        try {
+                            Host host=APILocator.getHostAPI().findByName(hostname, APILocator.getUserAPI().getSystemUser(), false);
+                            if(host!=null && UtilMethods.isSet(host.getIdentifier()))
+                                list.add(host);
+                        }catch(Exception ex) {
+                            Logger.warn(this, ex.getMessage(),ex);
+                        }
+                    }
+                }
+            }
+        }
+        return new ArrayList<Host>(list);
+	}
 
 	@Override
 	public List<Date> getAvailableTimeMachineForSite(Host host) throws DotDataException {

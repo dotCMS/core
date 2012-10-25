@@ -18,7 +18,6 @@
 </style>
 
 <script type="text/javascript">
-dojo.require('dotcms.dojo.data.HostReadStore');
 dojo.require('dojo.data.ItemFileReadStore');
 function resized() {
 	var viewport = dijit.getViewport();
@@ -34,6 +33,10 @@ dojo.ready(function(){
 	dojo.connect(window,"onresize",resized);
 	resized();
 	dijit.byId('closeBtn').set('disabled','disabled');
+	
+	dijit.byId('hostsel').set('store',new dojo.data.ItemFileReadStore({
+		url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getHostsWithTimeMachine'
+	}));
 });
 
 var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
@@ -108,7 +111,6 @@ function showSettings() {
     dialog.show();
 }
 </script>
-<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
 
 <div class="portlet-wrapper">
     
@@ -128,8 +130,8 @@ function showSettings() {
                    <span id="tools">
                    
                        <select id="hostsel" dojoType="dijit.form.FilteringSelect" 
-                            store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
-                            searchDelay="400" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>"
+                            labelAttr="hostname"  searchAttr="hostname" 
+                            searchDelay="400"
                             onchange="hostChange()"></select>
                        
 	                   <select id="timesel" dojoType="dijit.form.FilteringSelect" 

@@ -17,5 +17,7 @@ public interface TimeMachineAPI {
     public ScheduledTask getQuartzJob();
 
     public List<String> getAvailableLangForTimeMachine(Host host, Date date);
+
+    public List<Host> getHostsWithTimeMachine();
 	
 }
