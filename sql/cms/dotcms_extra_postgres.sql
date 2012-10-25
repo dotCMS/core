@@ -722,3 +722,11 @@ status INTEGER,
 status_pojo text, 
 status_updated TIMESTAMP, 
 create_date TIMESTAMP);
+
+-- ****** Content Publishing Framework - End Point Management *******
+CREATE TABLE publishing_end_point (
+	server_name varchar(1024) unique,
+	address varchar(250),
+	enabled bool,
+	auth_key varchar(1024),
+	sending bool);
