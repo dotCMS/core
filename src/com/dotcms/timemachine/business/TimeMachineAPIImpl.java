@@ -44,8 +44,8 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 	
 
 	@Override
-	public List<SnapshotInfo> getAvailableTimeMachineForSite(Host host) throws DotDataException {
-		List<SnapshotInfo> list = new ArrayList<SnapshotInfo>();
+	public List<Date> getAvailableTimeMachineForSite(Host host) throws DotDataException {
+		List<Date> list = new ArrayList<Date>();
 		File bundlePath = new File(ConfigUtils.getBundlePath());
 		for ( File file : bundlePath.listFiles()) {
 			if ( file.isDirectory() && file.getName().startsWith("tm_")) {
@@ -53,12 +53,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 				if ( hostDir.exists() && hostDir.isDirectory() ) {
 					try {
 					    Date date=new Date(Long.parseLong(file.getName().substring(3)));
-						for(String lang : hostDir.list()) {
-						    SnapshotInfo snap=new SnapshotInfo();
-						    snap.date=date;
-						    snap.langid=lang;
-						    list.add(snap);
-						}
+						list.add(date);
 					}
 					catch (Throwable t) {
 						Logger.error(this, "bundle seems a time machine bundle but it is not! " + file.getName());
@@ -84,5 +79,19 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 	        throw new RuntimeException(ex);
 	    }
 	}
+
+
+    @Override
+    public List<String> getAvailableLangForTimeMachine(Host host, Date date) {
+        File hostPath = new File(ConfigUtils.getBundlePath()+File.separator+
+                                 "tm_"+date.getTime()+File.separator+
+                                 "live"+File.separator+host.getHostname());
+        if(hostPath.exists()) {
+            return Arrays.asList(hostPath.list());
+        }
+        else {
+            return null;
+        }
+    }
 
 }
