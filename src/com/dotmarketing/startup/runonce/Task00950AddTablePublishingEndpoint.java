@@ -32,7 +32,7 @@ public class Task00950AddTablePublishingEndpoint implements StartupTask {
 																"sending bool)";
 	
 	private static final String MYCREATESQL_PEP				=	"CREATE TABLE IF NOT EXISTS publishing_end_point " +
-																"(server_name varchar(1024) unique, " +
+																"(server_name varchar(1024), " +
 																"address varchar(250), " +
 																"enabled varchar(1) DEFAULT '0', " +
 																"auth_key varchar(1024), " +

@@ -605,7 +605,7 @@ create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE IF NOT EXISTS publishing_end_point (
-	server_name varchar(1024) unique,
+	server_name varchar(1024),
 	address varchar(250),
 	enabled varchar(1) DEFAULT '0',
 	auth_key varchar(1024),

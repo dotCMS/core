@@ -41,6 +41,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -689,5 +690,15 @@ public class PublisherUtil {
 			}
 		}
 		return translateMeta;
+	}
+	
+	public static PublishingEndPoint getObjectByMap(Map<String, Object> row){
+		PublishingEndPoint pep = new PublishingEndPoint();
+		pep.setAddress(row.get("address").toString());
+		pep.setServerName(new StringBuilder(row.get("server_name").toString()));
+		pep.setAuthKey(new StringBuilder(row.get("auth_key").toString()));
+		pep.setEnabled(row.get("enabled").toString().equals("1"));
+		pep.setSending(row.get("sending").toString().equals("1"));
+		return pep;
 	}
 }
