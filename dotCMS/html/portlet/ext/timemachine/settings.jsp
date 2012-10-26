@@ -121,8 +121,8 @@ function indexAll(checked){
 
 function saveAndRun(dorun) {
 	
-	var allhosts=dijit.("allhosts").checked;
-	if(dojo.query("[name$='snaphost']").length==0 && !allhosts) {
+	var allhosts=dijit.byId("allhosts").checked;
+	if(dojo.query("[name='snaphost']").length==0 && !allhosts) {
 		dijit.byId('hostSelector').focus();
 		return;
 	}  
@@ -134,23 +134,23 @@ function saveAndRun(dorun) {
 	
 	var actionURL='/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/saveJobConfig';
 	if(dorun)
-		actionURL+='/run/1'
+		actionURL+='/run/1';
 	
 	var form=dijit.byId('settingform');
 	
 	if(form.validate()) {
 		dijit.byId('saveButton').set('disabled','disabled');
 		dijit.byId('runButton').set('disabled','disabled');
-		var enableButtons=function() { 
+		var enableButtons=function() { -
 		  dijit.byId('saveButton').set('disabled',''); 
 		  dijit.byId('runButton').set('disabled',''); 
-		}
+		};
 		dojo.xhrPost({
 			url: actionURL,
             form : "settingform",
             preventCache:true,
             timeout : 30000,
-            error function(data) {
+            error: function(data) {
             	showDotCMSSystemMessage(data, true);
             	enableButtons();
             },
