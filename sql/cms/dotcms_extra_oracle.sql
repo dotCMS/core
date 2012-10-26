@@ -804,8 +804,12 @@ create_date TIMESTAMP);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE publishing_end_point (
-	server_name VARCHAR2(1024) unique,
+	id VARCHAR2(36) PRIMARY KEY, 
+	group_id VARCHAR2(700), 
+	server_name VARCHAR2(700) unique,
 	address VARCHAR2(250),
+	port VARCHAR2(10),
+	protocol VARCHAR2(10),
 	enabled number(1,0) DEFAULT 0,
-	auth_key VARCHAR2(1024),
+	auth_key nclob,
 	sending number(1,0) DEFAULT 0);

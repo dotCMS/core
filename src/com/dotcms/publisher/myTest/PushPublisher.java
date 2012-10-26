@@ -80,7 +80,7 @@ public class PushPublisher extends Publisher {
 			//Sending bundle to endpoint
 			ClientConfig cc = new DefaultClientConfig();
 	        Client client = Client.create(cc);
-	        WebResource resource = client.resource("http://localhost:8080/api/bundlePublisher/publish");
+	        WebResource resource = client.resource("http://172.20.102.132:8080/api/bundlePublisher/publish");
 	        FormDataMultiPart form = new FormDataMultiPart();
 	        
 	        //form.field("username", "ljy");

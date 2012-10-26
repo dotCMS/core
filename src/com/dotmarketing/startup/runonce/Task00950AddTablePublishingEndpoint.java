@@ -25,38 +25,54 @@ public class Task00950AddTablePublishingEndpoint implements StartupTask {
 																"WHERE Table_Name = 'publishing_end_point'";
 	
 	private static final String PGCREATESQL_PEP				=	"CREATE TABLE publishing_end_point " +
-																"(server_name varchar(1024) unique, " +
+																"(id varchar(36) PRIMARY KEY, " +
+																"group_id varchar(700), " +
+																"server_name varchar(700) unique, " +
 																"address varchar(250), " +
+																"port varchar(10), " +
+																"protocol varchar(10), " +
 																"enabled bool, " +
-																"auth_key varchar(1024), " +
+																"auth_key text, " +
 																"sending bool)";
 	
 	private static final String MYCREATESQL_PEP				=	"CREATE TABLE IF NOT EXISTS publishing_end_point " +
-																"(server_name varchar(1024), " +
+																"(id varchar(36) PRIMARY KEY, " +
+																"group_id varchar(700), " +
+																"server_name varchar(700) unique, " +
 																"address varchar(250), " +
-																"enabled varchar(1) DEFAULT '0', " +
-																"auth_key varchar(1024), " +
-																"sending varchar(1) DEFAULT '0')";
+																"port varchar(10), " +
+																"protocol varchar(10), " +																
+																"enabled tinyint, " +
+																"auth_key text, " +
+																"sending tinyint)";
 	
 	private static final String MSVALIDATETABLESQL_PEP		=	"SELECT COUNT(*) as exist " +
 																"FROM sysobjects " +
 																"WHERE name = 'publishing_end_point'";
 	
 	private static final String MSCREATESQL_PEP				=	"CREATE TABLE publishing_end_point " +
-																"(server_name varchar(1024) unique, " +
+																"(id varchar(36) PRIMARY KEY, " +
+																"group_id varchar(700), " +
+																"server_name varchar(700) unique, " +
 																"address varchar(250), " +
+																"port varchar(10), " +
+																"protocol varchar(10), " +																
 																"enabled tinyint DEFAULT 0, " +
-																"auth_key varchar(1024), " +
+																"auth_key text, " +
 																"sending tinyint DEFAULT 0)";
 	
 	private static final String OCLVALIDATETABLESQL_PEP		=	"SELECT COUNT(*) as exist " +
 																"FROM user_tables WHERE table_name='publishing_end_point'";
 	
 	private static final String OCLCREATESQL_PEP			=	"CREATE TABLE publishing_end_point " +
-																"(server_name VARCHAR2(1024) unique, " +
+																"(id VARCHAR2(36) PRIMARY KEY, " +
+																"group_id VARCHAR2(700), " +
+																"server_name VARCHAR2(700) unique, " +
 																"address VARCHAR2(250), " +
+																"port VARCHAR2(10), " +
+																"protocol VARCHAR2(10), " +																
 																"enabled number(1,0) DEFAULT 0, " +
-																"auth_key VARCHAR2(1024), " +
+																"auth_key nclob, " +
 																"sending number(1,0) DEFAULT 0)";
 	
 	// ********************************* END: ADD PUBLISHING_END_POINT
