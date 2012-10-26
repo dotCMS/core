@@ -1,11 +1,12 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     #dotParse("${THEME_PATH}html_head.vtl")
-    <link rel="stylesheet" type="text/css" href="/html/css/template/reset-fonts-grids.css" />
+    <link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
 </head>
 <body>
 
-<div id="doc3-template" name="globalContainer">
+<div id="$themeLayout.pageWidth" name="globalContainer">
 
     #if($themeLayout.header)
         <div id="hd-template">
@@ -14,6 +15,39 @@
     #end
 
     <div id="bd-template">
+
+        ##Adding the rows
+        #if ($themeLayout.bodyRows)
+            #foreach( $row in $themeLayout.bodyRows )
+
+                <div class="row-fluid">
+                    ##Every row will have a number of columns, lets add one by one using bootstrap grid layout
+                    #foreach( $column in $row.columns )
+
+                        ##Now..., depending on the width of the column lets try to use bootstrap layout styles
+                        #if ( $column.widthPercent == 100)
+                            #set ($currentColumnSpan = "span12" )
+                        #elseif ( $column.widthPercent == 75)
+                            #set ($currentColumnSpan = "span9" )
+                        #elseif ( $column.widthPercent == 66)
+                            #set ($currentColumnSpan = "span8" )
+                        #elseif ( $column.widthPercent == 33)
+                            #set ($currentColumnSpan = "span4" )
+                        #elseif ( $column.widthPercent == 25)
+                            #set ($currentColumnSpan = "span3" )
+                        #else
+                            #set ($currentColumnSpan = "" )
+                        #end
+
+                        <div class="$currentColumnSpan">
+                            ##Parse the container
+                            #parseContainer("$column.container")
+                        </div>
+                    #end
+                </div>
+
+            #end
+        #end
 
     </div>
 
