@@ -101,6 +101,7 @@ function stopBrowing() {
 }
 function showSettings() {
 	var dialog = new dijit.Dialog({
+		id: 'settingsDialog',
         title: "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>",
         style: "width: 600px;",
         content: new dojox.layout.ContentPane({
