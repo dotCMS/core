@@ -89,19 +89,25 @@ public class TemplateLayoutRow {
      */
     public void addContainer ( String container ) {
 
-        if ( columns == null ) {
-            columns = new ArrayList<TemplateLayoutColumn>();
+        if ( columnsCount > 0 ) {
+
+            if ( columns == null ) {
+                columns = new ArrayList<TemplateLayoutColumn>();
+            }
+
+            //Creating a new column for this row
+            TemplateLayoutColumn column = new TemplateLayoutColumn();
+            column.setContainer( container );
+
+            //Now calculate the width percent for this column
+            column.setWidthPercent( gridWidths[columns.size()] );
+
+            //Finally add this column to this row...
+            columns.add( column );
+        } else {
+             //FIXME: Working on it....
+            //TODO: This is a sidebar!!!, do something with this :) NEXT THING ON THE LIST ;) -> WORKKING ON IT!!!
         }
-
-        //Creating a new column for this row
-        TemplateLayoutColumn column = new TemplateLayoutColumn();
-        column.setContainer( container );
-
-        //Now calculate the width percent for this column
-        column.setWidthPercent( gridWidths[columns.size()] );
-
-        //Finally add this column to this row...
-        columns.add( column );
     }
 
 }
