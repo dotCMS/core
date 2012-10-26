@@ -179,6 +179,15 @@ public class TimeMachineAjaxAction extends AjaxAction {
         }
         return true;
     }
+    
+    public void saveJobConfig(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        String cronExp=req.getParameter("cronExp");
+        String[] hostids=req.getParameterValues("snaphost");
+        boolean allhost=req.getParameter("allhosts").equals("true");
+        String[] langids=req.getParameterValues("lang");
+        Map<String, String> map = getURIParams();
+        boolean runnow=map.get("run")!=null;
+    }
 
     @Override
     public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {}

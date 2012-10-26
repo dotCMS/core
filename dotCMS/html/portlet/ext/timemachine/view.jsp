@@ -102,13 +102,24 @@ function stopBrowing() {
 function showSettings() {
 	var dialog = new dijit.Dialog({
         title: "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>",
-        style: "width: 400px;",
+        style: "width: 600px;",
         content: new dojox.layout.ContentPane({
             href: "/html/portlet/ext/timemachine/settings.jsp"
-        })
+        }),
+        onHide: function() {
+        	var dialog=this;
+        	setTimeout(function() {
+        		dialog.destroyRecursive();
+        	},200);
+        },
+        onLoad: function() {
+        	
+        }
     });
     
     dialog.show();
+    
+    dojo.style(dialog.domNode,'top','100px');
 }
 </script>
 
