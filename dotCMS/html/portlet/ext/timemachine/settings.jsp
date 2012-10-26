@@ -119,6 +119,57 @@ function indexAll(checked){
     }
 }
 
+function saveAndRun(dorun) {
+	
+	var allhosts=dijit.("allhosts").checked;
+	if(dojo.query("[name$='snaphost']").length==0 && !allhosts) {
+		dijit.byId('hostSelector').focus();
+		return;
+	}  
+		
+	if(dojo.query("#settingform input[name='lang']:checked").length==0) {
+        showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Choose-a-Language")) %>");
+        return;
+    }
+	
+	var actionURL='/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/saveJobConfig';
+	if(dorun)
+		actionURL+='/run/1'
+	
+	var form=dijit.byId('settingform');
+	
+	if(form.validate()) {
+		dijit.byId('saveButton').set('disabled','disabled');
+		dijit.byId('runButton').set('disabled','disabled');
+		var enableButtons=function() { 
+		  dijit.byId('saveButton').set('disabled',''); 
+		  dijit.byId('runButton').set('disabled',''); 
+		}
+		dojo.xhrPost({
+			url: actionURL,
+            form : "settingform",
+            preventCache:true,
+            timeout : 30000,
+            error function(data) {
+            	showDotCMSSystemMessage(data, true);
+            	enableButtons();
+            },
+            load : function(dataOrError, ioArgs) {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMAMACHINE-SAVE")%>", false);
+                enableButtons();
+            }
+        });
+	}
+}
+ 
+function save() {
+	saveAndRun(false);
+}
+
+function runnow() {
+	saveAndRun(true);
+}
+
 dojo.ready(function() {
 	<% if(!allhosts && hosts!=null) { %>
 	     <% for(String h : hosts) { %>
