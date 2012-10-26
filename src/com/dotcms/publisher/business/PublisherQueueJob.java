@@ -24,6 +24,7 @@ import com.dotmarketing.util.Logger;
  */
 public class PublisherQueueJob implements StatefulJob {
 
+	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
 			Logger.info(PublisherQueueJob.class, "Started PublishQueue Job");
