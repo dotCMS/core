@@ -17,6 +17,7 @@ import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.myTest.PushContentWrapper;
 import com.dotcms.publisher.myTest.PushPublisherBundler;
 import com.dotcms.publishing.DotPublishingException;
@@ -27,12 +28,17 @@ import com.dotcms.rest.BundlePublisherResource;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.ConfigUtils;
@@ -89,16 +95,12 @@ public class BundlePublisher extends Publisher {
 			throw new DotPublishingException("Cannot extract the selected archive", e);
 		}
 		
-		//Publish the bundle extracted
-			//Copy assets folder
-		File sourceDir = new File(folderOut+File.separator+"assets");
-		File destDir = new File("/home/alberto/Scrivania/GZIP/assets");
-		destDir.mkdir();
 		
+		//Publish the bundle extracted
 		PushContentWrapper wrapper = null;
-		try {
-			if(sourceDir.exists())
-				FileUtils.copyDirectory(sourceDir, destDir);
+		Contentlet content = null;
+		try {				
+			HibernateUtil.startTransaction();
 			
 			//For each content take the wrapper and save it on DB
 			Collection<File> contentFiles = FileUtils.listFiles(folderOut, new String[]{"content"}, true);
@@ -110,13 +112,48 @@ public class BundlePublisher extends Publisher {
 						(PushContentWrapper) 
 						xstream.fromXML(new FileInputStream(contentFile));
 				
-				Contentlet content = wrapper.getContent();
-				content.setIdentifier(wrapper.getId().toString());
-				content.setInode(wrapper.getId().getInode());
+				content = wrapper.getContent();
+				content.setProperty("_dont_validate_me", true);
 				
-				System.out.println(content.getMap());
+				//Select user
+				User userToUse = null;
+				try {
+					userToUse = uAPI.loadUserById(content.getModUser());
+				} catch(NoSuchUserException e) {
+					userToUse = systemUser;
+				}
 				
-				conAPI.checkin(content, systemUser, false);
+				//Copy asset files to bundle folder keeping original folders structure
+				List<Field> fields=FieldsCache.getFieldsByStructureInode(content.getStructureInode());
+				
+				String inode=content.getInode();
+				for(Field ff : fields) {
+					if(ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
+						
+						String folderTree = inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+
+							        inode+File.separator+ff.getVelocityVarName();
+							
+						File binaryFolder = new File(folderOut+File.separator+"assets"+File.separator+folderTree);
+						
+						if(binaryFolder != null && binaryFolder.exists())
+							content.setBinary(ff.getVelocityVarName(), binaryFolder.listFiles()[0]);
+				    }
+					
+				}
+				
+				
+				conAPI.checkin(content, userToUse, false);
+				
+				//Tree
+				for(Map<String, Object> tRow : wrapper.getTree()) {
+					Tree tree = new Tree();
+					tree.setChild((String) tRow.get("child"));
+					tree.setParent((String) tRow.get("parent"));
+					tree.setRelationType((String) tRow.get("relation_type"));
+					tree.setTreeOrder((Integer) tRow.get("tree_order"));
+					
+					TreeFactory.saveTree(tree);
+				}
 				
 				//Multitree
 				for(Map<String, Object> mRow : wrapper.getMultiTree()) {
@@ -131,28 +168,22 @@ public class BundlePublisher extends Publisher {
 					MultiTreeFactory.saveMultiTree(multiTree);
 				}
 				
-				//Tree
-				for(Map<String, Object> tRow : wrapper.getTree()) {
-					Tree tree = new Tree();
-					tree.setChild((String) tRow.get("child"));
-					tree.setParent((String) tRow.get("parent"));
-					tree.setRelationType((String) tRow.get("relation_type"));
-					tree.setTreeOrder((Integer) tRow.get("tree_order"));
-					
-					TreeFactory.saveTree(tree);
-				}
-				
 				//Tags
 				for(Tag tag: wrapper.getTags()) {
-					tagAPI.addTag(tag.getTagName(), tag.getUserId(), wrapper.getId().getInode());
+					tagAPI.addTag(tag.getTagName(), userToUse.getUserId(), content.getInode());
 				}
 			}
-			
-		} catch (IOException e) {
-			throw new DotPublishingException("Cannot copy assets folder ", e);
+			HibernateUtil.commitTransaction();	
 		} catch (Exception e) {
+			try {
+				HibernateUtil.rollbackTransaction();
+			} catch (DotHibernateException e1) {
+				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+			}			
+			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
+			
 			throw new DotPublishingException("Cannot check in the content with inode: " +
-					wrapper.getId().getInode(), e);
+					content.getInode(), e);
 		}
 		
 		
