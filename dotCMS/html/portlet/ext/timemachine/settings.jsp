@@ -7,15 +7,15 @@
 
 <%
 String cronExp="";
-List<String> hosts=new ArrayList<String>();
+List<Host> hosts=new ArrayList<Host>();
 Boolean allhosts=false;
-List<String> langs=new ArrayList<String>(); 
+List<Language> langs=new ArrayList<Language>(); 
 
 ScheduledTask task=APILocator.getTimeMachineAPI().getQuartzJob();
 if(task!=null) {
     allhosts=(Boolean) task.getProperties().get("allhosts");
-    hosts=(List<String>) task.getProperties().get("hosts");
-    langs=(List<String>) task.getProperties().get("langs");
+    hosts=(List<Host>) task.getProperties().get("hosts");
+    langs=(List<Language>) task.getProperties().get("langs");
     cronExp=(String) task.getProperties().get("CRON_EXPRESSION");
 }
 %>
@@ -141,10 +141,7 @@ function saveAndRun(dorun) {
 	if(form.validate()) {
 		dijit.byId('saveButton').set('disabled','disabled');
 		dijit.byId('runButton').set('disabled','disabled');
-		var enableButtons=function() { -
-		  dijit.byId('saveButton').set('disabled',''); 
-		  dijit.byId('runButton').set('disabled',''); 
-		};
+		
 		dojo.xhrPost({
 			url: actionURL,
             form : "settingform",
@@ -152,11 +149,14 @@ function saveAndRun(dorun) {
             timeout : 30000,
             error: function(data) {
             	showDotCMSSystemMessage(data, true);
-            	enableButtons();
+            	dijit.byId('settingsDialog').hide();
             },
             load : function(dataOrError, ioArgs) {
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMAMACHINE-SAVE")%>", false);
-                enableButtons();
+            	if(dorun)
+            		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMEMACHINE-SAVED-RUN")%>", false);
+            	else
+            	    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMEMACHINE-SAVED")%>", false);
+                dijit.byId('settingsDialog').hide();
             }
         });
 	}
@@ -166,15 +166,14 @@ function save() {
 	saveAndRun(false);
 }
 
-function runnow() {
+function runNow() {
 	saveAndRun(true);
 }
 
 dojo.ready(function() {
 	<% if(!allhosts && hosts!=null) { %>
-	     <% for(String h : hosts) { %>
-	          <% Host hh=APILocator.getHostAPI().find(h, APILocator.getUserAPI().getSystemUser(), false); %>
-	          addHost("<%=h%>","<%=hh.getHostname()%>");
+	     <% for(Host hh : hosts) { %>
+	          addHost("<%=hh.getIdentifier()%>","<%=hh.getHostname()%>");
 	     <% } %>
 	<% } %>
 });
@@ -217,7 +216,7 @@ dojo.ready(function() {
           <div class="langContainer">
             <input type="checkbox" dojoType="dijit.form.CheckBox" id="op_<%=lang.getId()%>"
                    name="lang" value="<%=lang.getId()%>"
-                   <%=(langs!=null && langs.contains(lang.getId())) ? "checked='true'" : "" %>/>
+                   <%=(langs!=null && langs.contains(lang)) ? "checked='true'" : "" %>/>
             <label for="op_<%=lang.getId()%>">
               <%= lang.getLanguage() + " - " + lang.getCountry() %>
             </label>

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -15,10 +17,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
+import org.quartz.core.QuartzScheduler;
+import org.quartz.impl.QuartzServer;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -57,6 +63,14 @@ public class TimeMachineAjaxAction extends AjaxAction {
     
     public void getHostsWithTimeMachine(HttpServletRequest request, HttpServletResponse response) throws Exception {
         List<Host> hosts=APILocator.getTimeMachineAPI().getHostsWithTimeMachine();
+        
+        Collections.sort(hosts, new Comparator<Host>() {
+           @Override
+            public int compare(Host o1, Host o2) {
+                return o1.getHostname().compareTo(o2.getHostname());
+            } 
+        });
+        
         List<Map<String,String>> list=new ArrayList<Map<String,String>>(hosts.size()); 
         for(Host hh : hosts) {
             Map<String,String> m=new HashMap<String,String>();
@@ -86,6 +100,13 @@ public class TimeMachineAjaxAction extends AjaxAction {
         Host host=APILocator.getHostAPI().find(hostid, getUser(), false);
         
         List<Date> snaps=APILocator.getTimeMachineAPI().getAvailableTimeMachineForSite(host);
+        
+        Collections.sort(snaps, new Comparator<Date>() {
+           @Override
+            public int compare(Date o1, Date o2) {
+                return o2.compareTo(o1);
+            } 
+        });
         
         List<Map<String,String>> list=new ArrayList<Map<String,String>>(snaps.size()); 
         for(Date dd : snaps) {
@@ -127,6 +148,13 @@ public class TimeMachineAjaxAction extends AjaxAction {
             m.put("pretty", lang.getLanguage()+" - "+lang.getCountry());
             list.add(m);
         }
+        
+        Collections.sort(list, new Comparator<Map<String,String>>() {
+            @Override
+            public int compare(Map<String, String> m1,Map<String, String> m2) {
+                return m1.get("pretty").compareTo(m2.get("pretty"));
+            }
+        });
         
         Map<String, Object> m=new HashMap<String,Object>();
         m.put("identifier", "id");
@@ -183,10 +211,34 @@ public class TimeMachineAjaxAction extends AjaxAction {
     public void saveJobConfig(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         String cronExp=req.getParameter("cronExp");
         String[] hostids=req.getParameterValues("snaphost");
-        boolean allhost=req.getParameter("allhosts").equals("true");
+        boolean allhost=req.getParameter("allhosts")!=null;
         String[] langids=req.getParameterValues("lang");
         Map<String, String> map = getURIParams();
         boolean runnow=map.get("run")!=null;
+        
+        List<Host> hosts=new ArrayList<Host>(hostids.length);
+        List<Language> langs=new ArrayList<Language>(langids.length);
+        
+        if(allhost) 
+            hosts=APILocator.getHostAPI().findAll(getUser(), false);
+        else 
+            for(String h : hostids) 
+                hosts.add(APILocator.getHostAPI().find(h, getUser(), false));
+        
+        for(String id : langids) 
+            langs.add(APILocator.getLanguageAPI().getLanguage(id));
+        
+        APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,allhost,langs);
+        
+        if(runnow) {
+            final List<Host> dhosts=hosts;
+            final List<Language> dlangs=langs;
+            new Thread() {
+                public void run() {
+                    APILocator.getTimeMachineAPI().startTimeMachine(dhosts, dlangs);
+                }
+            }.start();
+        }
     }
 
     @Override
