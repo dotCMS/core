@@ -12,8 +12,6 @@ import com.dotmarketing.quartz.ScheduledTask;
 public interface TimeMachineAPI {
 
 	public List<Date> getAvailableTimeMachineForSite(Host host) throws DotDataException;
-	
-	public PublishStatus startTimeMachineForHostAndDate(Host host, Date date) throws DotDataException;
 
     public ScheduledTask getQuartzJob();
 

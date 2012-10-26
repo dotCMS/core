@@ -50,29 +50,6 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
         }
         return list;
     }
-    
-	@Override
-	public PublishStatus startTimeMachineForHostAndDate(Host host, Date date) throws DotDataException {
-				
-		TimeMachineConfig tmconfig = new TimeMachineConfig();
-
-		tmconfig.setUser(APILocator.getUserAPI().getSystemUser());
-		tmconfig.setHosts(Arrays.asList(host));
-		
-		// tmconfig.setSourceBundle()
-		tmconfig.setId("timeMachineBundle");
-		tmconfig.setDestinationBundle("tm_" + date.getTime());
-		// tmconfig.setExcludePatterns(Arrays.asList("*.dot"));
-		// tmconfig.setLiveOnly(false);
-		//Optional: time machine publisher will make it true
-		tmconfig.setIncremental(true);
-
-		try {
-			return APILocator.getPublisherAPI().publish(tmconfig);
-		} catch (DotPublishingException e) {
-			throw new DotDataException("Error in publishing time machine bundle", e);
-		}		
-	}
 	
 	@Override
 	public List<Host> getHostsWithTimeMachine() {
