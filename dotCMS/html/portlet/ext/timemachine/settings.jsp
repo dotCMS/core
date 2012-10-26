@@ -176,8 +176,8 @@ dojo.ready(function() {
    </tr>
    
    <tr class="showScheduler">
-       <td align="right" valign="top" nowrap="true">
-           <span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "TIMEMACHINE-CRONEXP") %>: </strong> <br>
+       <td align="right" valign="top">
+           <span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "TIMEMACHINE-CRONEXP") %>: </strong>
        </td>
        <td>
            <input name="cronExp" id="cronExp" type="text" dojoType='dijit.form.ValidationTextBox' 
