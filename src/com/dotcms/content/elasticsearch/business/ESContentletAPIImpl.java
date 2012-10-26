@@ -3164,6 +3164,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats)throws DotContentletValidationException {
+        if(contentlet.getStringProperty("_dont_validate_me")!=null)
+            return;
+        
         DotContentletValidationException cve = new DotContentletValidationException("Contentlet's fields are not valid");
         boolean hasError = false;
         String stInode = contentlet.getStructureInode();
