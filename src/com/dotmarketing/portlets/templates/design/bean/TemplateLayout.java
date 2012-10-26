@@ -11,11 +11,9 @@ import java.util.List;
 public class TemplateLayout {
 	
 	public String pageWidth;
-	
 	public String layout;
-	
+
 	public boolean header;
-	
 	public boolean footer;
 	
 	public List<TemplateLayoutRow> bodyRows;

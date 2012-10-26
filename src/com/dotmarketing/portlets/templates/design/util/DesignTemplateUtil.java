@@ -1,39 +1,21 @@
 package com.dotmarketing.portlets.templates.design.util;
 
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.ADD_CONTAINER_SPAN_CLASS;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.FILE_CONTAINER_DIV_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.FILE_TO_ADD_START_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.FILES_TO_ADD_DIV_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.H1_TAG;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.DIV_TAG;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.ID_ATTRIBUTE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.STYLE_ATTRIBUTE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.STYLE_DISPLAY_NONE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.TITLE_CONTAINER_SPAN_CLASS;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.START_COMMENT;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.END_COMMENT;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.PATH_CSS_YUI;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.NAME_ATTRIBUTE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.MAIN_DIV_NAME_VALUE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.HEADER_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.FOOTER_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.SIDEBAR_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.CLASS_ATTRIBUTE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.NO_SIDEBAR_VALUE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.SPLIT_BODY_ID_PREFIX;
-
-import java.util.ArrayList;
-import java.util.List;
-
+import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UtilMethods;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.UtilMethods;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
 
 /**
  * This class contains a list of utility's methods for the design of the template.
@@ -284,22 +266,34 @@ public class DesignTemplateUtil {
 		return footer!=null;
 	}
 
-	private static List<TemplateLayoutRow> getSelectForBody(Document templateDrawedBody){
-		List<TemplateLayoutRow> splitBodiesList = new ArrayList<TemplateLayoutRow>();
-		Elements splitBodies = templateDrawedBody.select(DIV_TAG+"["+ID_ATTRIBUTE+"~="+getRegexForSelectBody());
-		for(int i=0; i<splitBodies.size(); i++){
-			Element splitBody = splitBodies.get(i);
-			// gets the identifier of the body div
-			String idHtml = splitBody.attr(ID_ATTRIBUTE);
-			String id = idHtml.substring(idHtml.indexOf(SPLIT_BODY_ID_PREFIX)+SPLIT_BODY_ID_PREFIX.length());
-			TemplateLayoutRow sb = new TemplateLayoutRow();
-			sb.setIdentifier(Integer.parseInt(id));
-			sb.setId("select_splitBody");
-			sb.setValue(splitBody.child(0).attr(ID_ATTRIBUTE));
-			splitBodiesList.add(sb);
-		}
-		return splitBodiesList;
-	}
+    private static List<TemplateLayoutRow> getSelectForBody ( Document templateDrawedBody ) {
+
+        List<TemplateLayoutRow> splitBodiesList = new ArrayList<TemplateLayoutRow>();
+        Elements splitBodies = templateDrawedBody.select( DIV_TAG + "[" + ID_ATTRIBUTE + "~=" + getRegexForSelectBody() );
+        for ( int i = 0; i < splitBodies.size(); i++ ) {
+            Element splitBody = splitBodies.get( i );
+            // gets the identifier of the body div
+            String idHtml = splitBody.attr( ID_ATTRIBUTE );
+            String id = idHtml.substring( idHtml.indexOf( SPLIT_BODY_ID_PREFIX ) + SPLIT_BODY_ID_PREFIX.length() );
+
+            TemplateLayoutRow sb = new TemplateLayoutRow();
+            sb.setIdentifier( Integer.parseInt( id ) );
+            sb.setId( "select_splitBody" );
+            sb.setValue( splitBody.child( 0 ).attr( ID_ATTRIBUTE ) );
+
+            //Getting the containers for this html fragment
+            Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
+            Matcher matcher = parseContainerPatter.matcher( splitBody.text() );
+            while ( matcher.find() ) {
+                String container = matcher.group();
+                sb.addContainer( container );
+            }
+
+            splitBodiesList.add( sb );
+        }
+
+        return splitBodiesList;
+    }
 
 	private static void getMetatagContainers(Document templateBody){
 		Element head = templateBody.head();
