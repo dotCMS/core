@@ -21,7 +21,7 @@ import com.sun.jersey.multipart.FormDataParam;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {
-	public static String MY_TEMP = "ALBERTO_TEMP/";
+	public static String MY_TEMP = "";
 
 	@POST
 	@Path("/publish")

@@ -99,7 +99,7 @@ public class PushPublisher extends Publisher {
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
 			
 			//Deleting queue records
-			//pubAPI.deleteElementsFromPublishQueueTable(config.getId());
+			pubAPI.deleteElementsFromPublishQueueTable(config.getId());
 
 			return config;
 
