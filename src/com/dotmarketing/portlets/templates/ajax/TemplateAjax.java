@@ -1,20 +1,10 @@
 package com.dotmarketing.portlets.templates.ajax;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -27,6 +17,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateWrapper;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
@@ -34,7 +25,10 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.directwebremoting.WebContextFactory;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 /**
  * @author David
@@ -90,7 +84,7 @@ public class TemplateAjax {
 			    }
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, startF, countF));
 				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, 0, 1000));
-				
+
 			}
 
 			//doesn't currently respect archived
@@ -128,7 +122,7 @@ public class TemplateAjax {
 //		List<Map<String, Object>> templates = list.subList(start, start + count);
 
 		results.put("totalResults", totalTemplates.size());
-		
+
 		results.put("list", list);
 
 		return results;
@@ -250,6 +244,41 @@ public class TemplateAjax {
 		return templateAPI.checkDependencies(templateInode, user, respectFrontendRoles);
 	}
 
+    /**
+     * Method that will verify if a given template title is already used by another template
+     *
+     * @param title          template title to verify
+     * @param templateInode  template inode in case we are editing a template, null or empty in case of a new template
+     * @param hostIdentifier current host identifier
+     * @return
+     * @throws DotDataException
+     * @throws SystemException
+     * @throws PortalException
+     * @throws DotSecurityException
+     */
+    public boolean duplicatedTitle ( String title, String templateInode, String hostIdentifier ) throws DotDataException, SystemException, PortalException, DotSecurityException {
+
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = userWebAPI.getLoggedInUser( req );
+        boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend( req );
+
+        //Getting the current host
+        Host host = hostAPI.find( hostIdentifier, user, respectFrontendRoles );
+
+        //The template name must be unique
+        Template foundTemplate = FactoryLocator.getTemplateFactory().findWorkingTemplateByName( title, host );
+        boolean duplicatedTitle = false;
+        if ( foundTemplate != null && InodeUtils.isSet( foundTemplate.getInode() ) ) {
+            if ( !UtilMethods.isSet( templateInode ) ) {
+                duplicatedTitle = true;
+            } else {
+                if ( !foundTemplate.getInode().equals( templateInode ) ) {
+                    duplicatedTitle = true;
+                }
+            }
+        }
+
+        return duplicatedTitle;
+    }
+
 }
-
-
