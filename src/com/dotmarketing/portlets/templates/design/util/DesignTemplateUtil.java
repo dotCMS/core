@@ -125,22 +125,25 @@ public class DesignTemplateUtil {
 		return new StringBuffer(templateBody.toString());
 	}
 
-	/**
-	 * Get the values for the design fields.
-	 *
-	 * @param drawedBody
-	 * @return
-	 */
-	public static TemplateLayout getDesignParameters(String drawedBody){
-		Document templateDrawedBody = Jsoup.parse(drawedBody);
-		TemplateLayout parameters = new TemplateLayout();
-		parameters.setPageWidth(getPageWithValue(templateDrawedBody));
-		parameters.setHeader(hasHeader(templateDrawedBody));
-		parameters.setFooter(hasFooter(templateDrawedBody));
-		parameters.setLayout(getLayout(templateDrawedBody));
-		parameters.setBodyRows(getSelectForBody(templateDrawedBody));
-		return parameters;
-	}
+    /**
+     * Get the values for the design fields.
+     *
+     * @param drawedBody
+     * @return
+     */
+    public static TemplateLayout getDesignParameters ( String drawedBody ) {
+
+        Document templateDrawedBody = Jsoup.parse( drawedBody );
+        TemplateLayout parameters = new TemplateLayout();
+        parameters.setPageWidth( getPageWithValue( templateDrawedBody ) );
+        parameters.setHeader( hasHeader( templateDrawedBody ) );
+        parameters.setFooter( hasFooter( templateDrawedBody ) );
+        parameters.setLayout( getLayout( templateDrawedBody ) );
+        //Set the body layout to the template
+        setLayoutBody( parameters, templateDrawedBody );
+
+        return parameters;
+    }
 
 	/**
 	 * Get the imported files inodes
@@ -266,23 +269,54 @@ public class DesignTemplateUtil {
 		return footer!=null;
 	}
 
-    private static List<TemplateLayoutRow> getSelectForBody ( Document templateDrawedBody ) {
+    /**
+     * Method that will parse the drawed body in order to split it in rows for the main column, also
+     * will verify if the drawed body have a sidebar.
+     * <p/>
+     * After the parse will set the main column and the sidebar (if present) to the template layout.
+     *
+     * @param templateDrawedBody
+     * @return
+     */
+    private static void setLayoutBody ( TemplateLayout layout, Document templateDrawedBody ) {
 
+        //parseContainer regex
+        Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
+
+        //***************************************************************
+        //Verify if we have a sidebar
+        Elements splitSideBar = templateDrawedBody.select( DIV_TAG + "[" + ID_ATTRIBUTE + "=" + SIDEBAR_ID );
+        if ( splitSideBar != null && !splitSideBar.isEmpty() ) {//We found our sidebar
+
+            Element sidebar = splitSideBar.get( 0 );
+
+            //Getting the containers for this html fragment
+            Matcher matcher = parseContainerPatter.matcher( sidebar.text() );
+            if ( matcher.find() ) {
+                String container = matcher.group( 0 );
+                //Adding the sidebar to the layout
+                layout.setSidebar( container );
+            }
+        }
+
+        //***************************************************************
+        //Split the drawed body in rows
         List<TemplateLayoutRow> splitBodiesList = new ArrayList<TemplateLayoutRow>();
         Elements splitBodies = templateDrawedBody.select( DIV_TAG + "[" + ID_ATTRIBUTE + "~=" + getRegexForSelectBody() );
         for ( int i = 0; i < splitBodies.size(); i++ ) {
+
             Element splitBody = splitBodies.get( i );
             // gets the identifier of the body div
             String idHtml = splitBody.attr( ID_ATTRIBUTE );
             String id = idHtml.substring( idHtml.indexOf( SPLIT_BODY_ID_PREFIX ) + SPLIT_BODY_ID_PREFIX.length() );
 
+            //Create a template row
             TemplateLayoutRow sb = new TemplateLayoutRow();
             sb.setIdentifier( Integer.parseInt( id ) );
             sb.setId( "select_splitBody" );
             sb.setValue( splitBody.child( 0 ).attr( ID_ATTRIBUTE ) );
 
             //Getting the containers for this html fragment
-            Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
             Matcher matcher = parseContainerPatter.matcher( splitBody.text() );
             while ( matcher.find() ) {
                 String container = matcher.group();
@@ -291,8 +325,8 @@ public class DesignTemplateUtil {
 
             splitBodiesList.add( sb );
         }
-
-        return splitBodiesList;
+        //Set the body column with its rows
+        layout.setBody( splitBodiesList );
     }
 
 	private static void getMetatagContainers(Document templateBody){
