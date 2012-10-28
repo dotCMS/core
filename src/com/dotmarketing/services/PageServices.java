@@ -14,8 +14,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -257,45 +255,11 @@ public class PageServices {
 		
 		sb.append("#if(!$doNotParseTemplate)");
             if ( cmsTemplate.isDrawed() ) {//We have a designed template
-
-                //Get the theme folder
-                Folder themeFolder = APILocator.getFolderAPI().find( cmsTemplate.getTheme(), APILocator.getUserAPI().getSystemUser(), false );
-                //Get the theme files
-                List<FileAsset> themeFiles = APILocator.getFileAssetAPI().findFileAssetsByFolder( themeFolder, APILocator.getUserAPI().getSystemUser(), false );
-
-                //We need to verify if we have the template.vtl file
-                FileAsset themeTemplate = null;
-                for ( FileAsset themeFile : themeFiles ) {
-                    if ( Template.THEME_TEMPLATE.equals( themeFile.getFileName() ) ) {
-                        themeTemplate = themeFile;
-                        break;
-                    }
-                }
-
-                //Getting the theme path
-                String themePath;
-                if ( themeFolder.getHostId().equals( host.getIdentifier() ) ) {
-                    themePath = Template.THEMES_PATH + themeFolder.getName() + "/";
-                } else {
-                    Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
-                    themePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + themeFolder.getName() + "/";
-                }
-
-                //Getting the template.vtl file path
-                String themeTemplatePath;
-                if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
-                    themeTemplatePath = themeTemplate.getFileAsset().getPath();
-                } else {
-                    themeTemplatePath = "static/template/" + Template.THEME_TEMPLATE;
-                }
-
-                sb.append( "#set ($THEME_PATH = \"" ).append( themePath ).append( "\" )" );
-                sb.append( "#set ($THEME_NAME = \"" ).append( themeFolder.getName() ).append( "\" )" );
-                sb.append( "#set ($THEME_FOLDER = \"" ).append( cmsTemplate.getTheme() ).append( "\" )" );
-                sb.append( "#set ($THEME_INODE = \"" ).append( cmsTemplate.getInode() ).append( "\" )" );
-                sb.append( "#set ($themeLayout = $templatetool.themeLayout(\"" ).append( cmsTemplate.getInode() ).append( "\" ))" );
-
-                sb.append( "$velutil.mergeTemplate('" ).append( themeTemplatePath ).append( "')" );
+                //Setting some theme variables
+                sb.append( "#set ($dotTheme = $templatetool.theme(\"" ).append( cmsTemplate.getTheme() ).append( "\",\"" ).append( host.getIdentifier() ).append( "\"))" );
+                sb.append( "#set ($dotThemeLayout = $templatetool.themeLayout(\"" ).append( cmsTemplate.getInode() ).append( "\" ))" );
+                //Merging our template
+                sb.append( "$velutil.mergeTemplate(\"$dotTheme.templatePath\")" );
             } else {
                 sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION" ) ).append( "')" );
             }

@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.templates.design.bean;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
+
 /**
  * Bean that represent a single HTML select/option when we try to edit a drawed template.
  *
@@ -18,13 +20,6 @@ public class TemplateLayoutRow {
     public int columnsCount;
     public Integer[] gridWidths;
     public List<TemplateLayoutColumn> columns;
-
-    private String YUI_ONE_COLUMN_CLASS = "1";//1 Column (100)
-    private String YUI_TWO_COLUMN_CLASS_GC = "yui-gc-template";//2 Column (66/33)
-    private String YUI_TWO_COLUMN_CLASS_GD = "yui-gd-template";//2 Column (33/66)
-    private String YUI_TWO_COLUMN_CLASS_GE = "yui-ge-template";//2 Column (75/25)
-    private String YUI_TWO_COLUMN_CLASS_GF = "yui-gf-template";//2 Column (25/75)
-    private String YUI_THREE_COLUMN_CLASS = "yui-gb-template";//3 Column (33/33/33)
 
     public int getIdentifier () {
         return identifier;
@@ -46,6 +41,10 @@ public class TemplateLayoutRow {
      * @param value
      */
     public void setValue ( String value ) {
+
+        if (value == null) {
+            value = "";
+        }
         this.value = value;
 
         //Now based on this value (YUI layout class) we will set the row layout type
@@ -67,6 +66,9 @@ public class TemplateLayoutRow {
         } else if ( value.equals( YUI_THREE_COLUMN_CLASS ) ) {//3 Column (33/33/33)
             columnsCount = 3;
             gridWidths = new Integer[]{33, 33, 33};
+        } else {//1 Column (100)
+            columnsCount = 1;
+            gridWidths = new Integer[]{100};
         }
     }
 
@@ -89,25 +91,22 @@ public class TemplateLayoutRow {
      */
     public void addContainer ( String container ) {
 
-        if ( columnsCount > 0 ) {
-
-            if ( columns == null ) {
-                columns = new ArrayList<TemplateLayoutColumn>();
-            }
-
-            //Creating a new column for this row
-            TemplateLayoutColumn column = new TemplateLayoutColumn();
-            column.setContainer( container );
-
-            //Now calculate the width percent for this column
-            column.setWidthPercent( gridWidths[columns.size()] );
-
-            //Finally add this column to this row...
-            columns.add( column );
-        } else {
-             //FIXME: Working on it....
-            //TODO: This is a sidebar!!!, do something with this :) NEXT THING ON THE LIST ;) -> WORKKING ON IT!!!
+        if ( columns == null ) {
+            columns = new ArrayList<TemplateLayoutColumn>();
         }
+
+        //Creating a new column for this row
+        TemplateLayoutColumn column = new TemplateLayoutColumn();
+        column.setContainer( container );
+
+        //Now calculate the width percent for this column
+        column.setWidthPercent( gridWidths[columns.size()] );
+
+        //Important to specify that it is a normal column
+        column.setType( TemplateLayoutColumn.TYPE_COLUMN );
+
+        //Finally add this column to this row...
+        columns.add( column );
     }
 
 }
