@@ -21,8 +21,8 @@ public class PublisherConfig implements Map<String, Object> {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS;
-	};
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES;
+	}
 	
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
@@ -40,6 +40,7 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.FOLDERS.name(), folders);
 	}
 
+	@SuppressWarnings("unchecked")
 	public List<Structure> getStructures() {
 		return (List<Structure>) params.get(Config.STRUCTURES.name());
 	}
@@ -66,13 +67,22 @@ public class PublisherConfig implements Map<String, Object> {
 	public void setStructures(List<Structure> structures) {
 		params.put(Config.STRUCTURES.name(), structures);
 	}
-
+	
 	public String getLuceneQuery() {
 		return (String) params.get(Config.LUCENE_QUERY.name());
 	}
 
 	public void setLuceneQuery(String luceneQuery) {
 		params.put(Config.LUCENE_QUERY.name(), luceneQuery);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<String> getLuceneQueries() {
+		return (List<String>) params.get(Config.LUCENE_QUERIES.name());
+	}
+
+	public void setLuceneQueries(List<String> luceneQueries) {
+		params.put(Config.LUCENE_QUERIES.name(), luceneQueries);
 	}
 
 	public void clear() {
