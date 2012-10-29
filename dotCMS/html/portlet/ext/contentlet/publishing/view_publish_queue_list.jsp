@@ -171,7 +171,13 @@
 	</h3>					
 	<table class="listingTable shadowBox">
 		<tr>
-			<th style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="bundle_to_delete" name="bundle_to_delete" value="<%=bundle.get("bundle_id") %>" id="bundle_to_delete_<%=bundle.get("bundle_id") %>" /></th>		
+			<th style="width:30px">
+			<input dojoType="dijit.form.CheckBox" 
+					type="checkbox" 
+					class="bundle_to_delete" 
+					name="bundle_to_delete" 
+					value="<%=bundle.get("bundle_id") %>" 
+					id="bundle_to_delete_<%=bundle.get("bundle_id") %>" /></th>		
 			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "title") %></strong></th>	
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
 			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>

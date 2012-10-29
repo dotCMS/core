@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
@@ -29,6 +30,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -83,11 +85,15 @@ public class PushPublisher extends Publisher {
 	        WebResource resource = client.resource("http://localhost:8080/api/bundlePublisher/publish");
 	        FormDataMultiPart form = new FormDataMultiPart();
 	        
-	        //form.field("username", "ljy");
+	        form.field("AUTH_TOKEN", PublicEncryptionFactory.encryptString("blablabla"));
 	        
 	        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
-	        resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
 	        
+	        ClientResponse response = 
+	        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
+	        
+	        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED)
+	        	Logger.error(this.getClass(), "INVALID TOKEN");
 	        
 			
 			//Updating audit table

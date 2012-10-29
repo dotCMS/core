@@ -3,10 +3,16 @@ package com.dotcms.publisher.myTest;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchPublisher;
 import com.dotcms.publishing.PublisherConfig;
 
 public class PushPublisherConfig extends PublisherConfig {
+	public static enum Operation {
+		PUBLISH,
+		UNPUBLISH
+	}
+	
+	private Operation operation;
+	
 	public PushPublisherConfig() {
 		super();
 	}
@@ -32,6 +38,17 @@ public class PushPublisherConfig extends PublisherConfig {
 		return this.get(MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(MyConfig.RUN_NOW.toString()));
 		
 	}
+	
+	public Operation getOperation() {
+		return operation;
+	}
+
+
+	public void setOperation(Operation operation) {
+		this.operation = operation;
+	}
+
+
 	public void setRunNow(boolean once){
 		this.put(MyConfig.RUN_NOW.toString(), once);
 		
