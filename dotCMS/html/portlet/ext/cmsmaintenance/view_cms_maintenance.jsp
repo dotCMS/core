@@ -1037,13 +1037,20 @@ function loadUsers() {
 }
 
 function selectAll(id){
-
-	document.selection;
-	 s = window.getSelection();
-	 var r1 = document.createRange();
-	 r1.setStartBefore(document.getElementById(id));
-	 r1.setEndAfter(document.getElementById(id));
-	 s.addRange(r1);
+	if(window.getSelection){
+	 	document.selection;
+	 	s = window.getSelection();
+	    var r1 = document.createRange();
+	 	r1.setStartBefore(document.getElementById(id));
+	 	r1.setEndAfter(document.getElementById(id));
+	 	s.removeAllRanges();
+	 	s.addRange(r1);	 	
+	}
+	if (document.selection){
+		var rangeToSelect = document.selection.createRange ();
+        rangeToSelect.moveToElementText(document.getElementById(id));
+        rangeToSelect.select ();
+    }	 
 }
 
 function showIndexClusterStatus(indexName) {
