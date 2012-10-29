@@ -21,12 +21,40 @@ public class PublisherEndpointAPIImpl implements PublisherEndpointAPI {
 	}
 	
 	/**
-	 * Return the endpoints list.
+	 * Returns the endpoints list.
 	 */
 	public List<PublishingEndPoint> getAllEndpoints() throws DotDataException{		
 		return publisherEndpointFactory.getEndpoints();
 	}
+	
+	/**
+	 * Returns a single endpoint based on id.
+	 */
+	public PublishingEndPoint findEndpointById(String id) throws DotDataException {		
+		return publisherEndpointFactory.getEndpointById(id);
+	}
 
+	/**
+	 * Save a new endpoint
+	 */
+	public void saveEndpoint(PublishingEndPoint anEndpoint) throws DotDataException {
+		publisherEndpointFactory.store(anEndpoint);		
+	}
+	
+	/**
+	 * Update an endpoint
+	 */
+	public void updateEndpoint(PublishingEndPoint anEndpoint) throws DotDataException {
+		publisherEndpointFactory.update(anEndpoint);		
+	}
+
+	/**
+	 * Delete an endpoint by id
+	 */
+	public void deleteEndpointById(String id) throws DotDataException {		
+		publisherEndpointFactory.deleteEndpointById(id);
+	}
+	
 	public PublisherEndpointFactory getPublisherEndpointFactory() {
 		return publisherEndpointFactory;
 	}

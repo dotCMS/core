@@ -6,13 +6,18 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%
 	PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
+	if(null!=request.getParameter("delEp")){
+		String id = request.getParameter("delEp");
+		pepAPI.deleteEndpointById(id);
+	}
 	List<PublishingEndPoint> endpoints = pepAPI.getAllEndpoints();
 %>
+
 <div style="float: left">
 	<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Intro") %> 
 </div>
 <div style="float: right">
-	<button dojoType="dijit.form.Button" onClick="addEndpoint();" iconClass="plusIcon">
+	<button dojoType="dijit.form.Button" onClick="goToAddEndpoint();" iconClass="plusIcon">
 		<%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %> 
 	</button>				
 </div>			
@@ -33,7 +38,7 @@
 			for(PublishingEndPoint endpoint : endpoints){
 	%>
 	<tr>
-		<td><a style="cursor: pointer" onclick="javascript: alert('1')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>"><span class="deleteIcon"></span></a>&nbsp;<a style="cursor: pointer" onclick="javascript: alert('2')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>"><span class="editIcon"></span></a></td>
+		<td><a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>"><span class="deleteIcon"></span></a>&nbsp;<a style="cursor: pointer" onclick="editEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>"><span class="editIcon"></span></a></td>
 		<td><%=endpoint.getServerName()%></td>
 		<td><%=endpoint.getAddress()%></td>
 		<td><%=endpoint.getPort()%></td>
