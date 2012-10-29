@@ -1,0 +1,173 @@
+#set($structureRelationShips = $structures.getStructureRelationShips($structure))
+#if($UtilMethods.isSet($structureRelationShips) && $structureRelationShips.size() > 0)
+	#foreach($relationship in $structureRelationShips)
+		#if("$!relationship.getParentStructure().inode" == "$structure.inode")
+			#if($relationship.isChildRequired())
+			  	<div>
+					<span><strong><img src="/html/images/icons/required.gif"/> $!relationship.getChildStructure().getName()</strong>: Child ( $!relationship.getRelationTypeValue() )</span>
+					<button dojoType="dijit.form.Button" onClick='addRelationships("$!relationship.getChildStructure().inode","$!relationship.getChildStructure().velocityVarName" , "${relationship.getRelationTypeValue()}")' iconClass="plusIcon"> Add</button>
+					<button dojoType="dijit.form.Button" onClick='removeRelationships("${relationship.getRelationTypeValue()}")' iconClass="deleteIcon"> Remove</button>
+			  	</div>
+			  	<div id="${relationship.getRelationTypeValue()}Div"></div>
+			#else
+				<div>
+					<span><strong>$!relationship.getChildStructure().getName()</strong>: Child ( $!relationship.getRelationTypeValue() )</span>
+					<button dojoType="dijit.form.Button" onClick='addRelationships("$!relationship.getChildStructure().inode","$!relationship.getChildStructure().velocityVarName" , "${relationship.getRelationTypeValue()}")' iconClass="plusIcon"> Add</button>
+			  		<button dojoType="dijit.form.Button" onClick='removeRelationships("${relationship.getRelationTypeValue()}")' iconClass="deleteIcon"> Remove</button>
+			  	</div>
+			  	<div id="${relationship.getRelationTypeValue()}Div"></div>
+			#end		
+		#elseif("$!relationship.getChildStructure().inode" == "$structure.inode") 		
+		  #if($relationship.isParentRequired())
+		 	 <div>
+		 	 	<span><strong><img src="/html/images/icons/required.gif"/> $!relationship.getParentStructure().getName()</strong>: Parent ( $!relationship.getRelationTypeValue() )</span>
+		 	 	<button dojoType="dijit.form.Button" onClick='addRelationships("$!relationship.getParentStructure().inode","$!relationship.getParentStructure().velocityVarName" , "${relationship.getRelationTypeValue()}")' iconClass="plusIcon"> Add</button>
+			 	<button dojoType="dijit.form.Button" onClick='removeRelationships("${relationship.getRelationTypeValue()}")' iconClass="deleteIcon"> Remove</button>
+			 </div>
+			 <div id="${relationship.getRelationTypeValue()}Div"></div>
+		  #else
+		  	 <div>
+		  	 	<span><strong>$!relationship.getParentStructure().getName()</strong>:  Parent ( $!relationship.getRelationTypeValue() )</span> 
+		  	 	<button dojoType="dijit.form.Button" onClick='addRelationships("$!relationship.getParentStructure().inode","$!relationship.getParentStructure().velocityVarName" , "${relationship.getRelationTypeValue()}")' iconClass="plusIcon"> Add</button>
+			 	<button dojoType="dijit.form.Button" onClick='removeRelationships("${relationship.getRelationTypeValue()}")' iconClass="deleteIcon"> Remove</button>
+			 </div>
+			 <div id="${relationship.getRelationTypeValue()}Div"></div>
+		  #end
+	    #end
+	#end
+#end
+<script type="text/javascript">
+    var relationshipContentCounter = window.location.search;
+	var counter = 0;
+	var structureIdentifier=null;
+	var structureName=null;
+	var relation=null;
+	var fields = null;
+	
+	#if($UtilMethods.isSet($filterByHost) && $filterByHost)
+	    #if($UtilMethods.isSet($hostFilter))
+	    	var conhost ="$hostFilter";
+	    #else
+			var conhost ="$host.identifier";
+		#end
+	#else
+		var conhost ='';
+	#end	
+	function addRelationships(structureId, structure, relationshipName ){
+		structureIdentifier=structureId;
+		relation=relationshipName;
+		structureName=structure;
+		StructureAjax.getStructureSearchFields(structureIdentifier, loadStructureSearchFields);
+		document.getElementById('searchResults').innerHTML="<ul><li>No results find yet</li></ul>";
+		dijit.byId('relationshipsDialog').show();
+	}
+	function loadStructureSearchFields(data){
+		var searchFields="";
+		fields = new Array();
+		for(var i=0; i < data.length;i++){
+			var fieldName = data[i].fieldName;
+			var fieldVelocityName = data[i].velocityVarName;
+			if(data[i].fieldFieldType=="text"){
+			    fields[fields.length]=data[i];
+				searchFields=searchFields+'<dt>'+fieldName+': </dt><dd><input type="text" dojoType="dijit.form.TextBox" class="text" name="'+fieldVelocityName+'" id="'+fieldVelocityName+'" maxlength="255" value=""></dd>';
+			}
+		}
+		document.getElementById('searchFields').innerHTML='<dl>'+searchFields+'</dl>';
+	}
+	
+	function searchContentToRelate(offset, perPage){
+		
+	  	var query = "+structureName:"+structureName+" +live:true +deleted:false";
+	  	
+	  	if(conhost != '' && conhost != null){
+	  		query=query+" +conhost:"+conhost;
+	  	}
+	   	for(var i=0;i < fields.length; i++){	   
+	   		var value = document.getElementById(fields[i].velocityVarName).value;
+	   		if(value != '' && value != null){
+	   			query = query+" +"+structureName+"."+fields[i].fieldVelocityVarName+":"+value;
+	   		}
+	   	}
+	   	var urlPath = '/JSONContent/?type=json&offset='+offset+'&limit='+perPage+'&debug=false&orderBy=modDate+desc&q='+encodeURIComponent(query);
+	   	var xhrArgs = {	    		
+		    url: urlPath, 
+		    handleAs: "json",
+		    load: function(response, ioArgs) { 
+		    	var results = response;
+		    	loadResults(offset, perPage, response); 
+		    },
+		    error: function(response, ioArgs) {  
+		          console.error("HTTP status code: ", ioArgs.xhr.status);   
+		    }
+		};
+	    dojo.xhrPost( xhrArgs );
+	}
+	
+	function loadResults(offset, perPage,data){		
+		var results = data.contentlets;
+		var totalResults = data.total;
+		var strHTML='<ul>';
+		if(results !='' && results.length > 0){
+			for(var i=0; i < results.length;i++){
+				strHTML=strHTML+'<li>'+results[i].title+'<button dojoType="dijit.form.Button" onClick=\'addRelationshipsBox("'+results[i].identifier+'","'+results[i].title+'","'+relation+'" )\' class="dojoButton addButton"> Add</button></li>';
+			}
+		}else{
+			strHTML=strHTML+'<li>No results found</li>';
+		}
+		strHTML=strHTML+'</ul><div id="pagination">';
+		if(offset > 0){
+		    var newOffset = (offset-perPage);
+		    if(newOffset < 0){
+		    	newOffset=0;
+		    }
+		    strHTML=strHTML+'<button dojoType="dijit.form.Button" class="dojoButton nextPrevious" onClick=\'searchContentToRelate('+newOffset+','+perPage+')\' > Previous</button>';
+		}
+		if((offset+perPage) < totalResults){
+			strHTML=strHTML+'<button dojoType="dijit.form.Button" class="dojoButton nextButton" onClick=\'searchContentToRelate('+(offset+perPage)+','+perPage+')\' > Next</button>';
+		}
+		strHTML=strHTML+'</div>';
+		document.getElementById('searchResults').innerHTML=strHTML;
+	}
+	
+	function addRelationshipsBox(identifier,title,relationshipName ){
+		var div = document.getElementById(relationshipName+"Div");
+		var actionDiv = document.createElement("div");
+		actionDiv.id=identifier+'Div';
+		actionDiv.style="width:100%";
+		actionDiv.innerHTML = '<input type="checkbox" dojoType="dijit.form.CheckBox" id="' + identifier + '" name="' + relationshipName + 'Rel" value="'+identifier+'"><input type="hidden" name="' + relationshipName + '" value="'+identifier+'"><label for="' + title + '">'+title+'</label>';
+		div.appendChild(actionDiv);
+		counter=counter+1;
+		dijit.byId('relationshipsDialog').hide();
+		document.getElementById('searchResults').innerHTML="<ul><li>No results find yet</li></ul>";
+	}
+	
+	function removeRelationships(relationshipName){
+	  var div = document.getElementById(relationshipName+"Div");
+	  var checkboxes = document.getElementsByName(relationshipName+'Rel');
+	  for(var i=0 ; i < checkboxes.length;i++){
+	  	if(checkboxes[i].checked){
+	  		dojo.destroy(checkboxes[i].id+"Div");	  		
+	  	}
+	  }
+	}	    
+</script>
+<div dojoType="dijit.Dialog" id="relationshipsDialog" bgColor="black" bgOpacity="0.5" toggle="fade" toggleDuration="250">
+	<div id="contentSearch">
+		<table width="100%">
+			<tr>
+				<td>
+					<div id="searchFields">
+					</div>
+					<button dojoType="dijit.form.Button" onClick='searchContentToRelate(0,10)' iconClass="searchIcon">Search</button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<div id="searchResults" class="left">
+		  				<ul><li>No results find yet</li></ul>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>
