@@ -10,10 +10,14 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.httpclient.HttpStatus;
 
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.core.header.FormDataContentDisposition;
@@ -26,8 +30,15 @@ public class BundlePublisherResource extends WebResource {
 	@POST
 	@Path("/publish")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public void publish(@FormDataParam("bundle") InputStream bundle,
-			@FormDataParam("bundle") FormDataContentDisposition fileDetail) {
+	public Response publish(
+			@FormDataParam("bundle") InputStream bundle,
+			@FormDataParam("bundle") FormDataContentDisposition fileDetail,
+			@FormDataParam("AUTH_TOKEN") String auth_token_enc) {
+		
+		String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+		
+		if(!auth_token.equals("blablabla"))
+			return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
 		
 		//Write file on FS
 		String bundleName = fileDetail.getFileName();
@@ -45,11 +56,15 @@ public class BundlePublisherResource extends WebResource {
 			bundlePublisher.process(null);
 			
 			Logger.info(PublisherQueueJob.class, "Finished bundle publish process");
+			
+			return Response.status(HttpStatus.SC_OK).build();
 		} catch (NumberFormatException e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		} catch (Exception e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		}
+		
+		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 
 	

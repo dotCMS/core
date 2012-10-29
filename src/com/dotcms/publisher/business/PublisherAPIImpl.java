@@ -405,10 +405,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 	
 	
-	private static final String PSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
-	private static final String MYGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
-	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
-	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date from publishing_queue order by publish_date";
+	private static final String PSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue order by publish_date";
+	private static final String MYGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue order by publish_date";
+	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue order by publish_date";
+	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue order by publish_date";
 	
 	/**
 	 * get bundle_ids available

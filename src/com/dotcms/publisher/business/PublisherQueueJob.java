@@ -24,6 +24,9 @@ import com.dotmarketing.util.Logger;
  */
 public class PublisherQueueJob implements StatefulJob {
 
+	private static final String IDENTIFIER = "identifier:";
+	private static final int _ASSET_LENGTH_LIMIT = 20;
+
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
@@ -38,17 +41,18 @@ public class PublisherQueueJob implements StatefulJob {
 			bundler.add(new PushPublisherBundler());
 			clazz.add(PushPublisher.class);
 
-			List<Map<String,Object>> bundleIds = pubAPI.getQueueBundleIds();
+			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds();
 			List<Map<String,Object>> tempBundleContents = null;
 			PublishAuditStatus status = null;
 			PublishAuditHistory historyPojo = null;
 			String tempBundleId = null;
+			boolean acceptAll = true;
 
-			for(Map<String,Object> bundleId: bundleIds) {
-				Date publishDate = (Date) bundleId.get("publish_date");
+			for(Map<String,Object> bundle: bundles) {
+				Date publishDate = (Date) bundle.get("publish_date");
 				
-				if(publishDate.before(new Date())) {
-					tempBundleId = (String)bundleId.get("bundle_id");
+				if(publishDate.before(new Date()) || acceptAll) {
+					tempBundleId = (String)bundle.get("bundle_id");
 					tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
 					
 					//Setting Audit objects
@@ -58,17 +62,14 @@ public class PublisherQueueJob implements StatefulJob {
 					List<String> assets = new ArrayList<String>();
 					
 					
-					StringBuilder luceneQuery = new StringBuilder();
 					for(Map<String,Object> c : tempBundleContents) {
 						assets.add((String) c.get("asset"));
-						
-						luceneQuery.append("identifier:"+(String) c.get("asset"));
-						luceneQuery.append(" ");
-						
 					}
 					
-					historyPojo.setAssets(assets);
+					//Queries creation
+					pconf.setLuceneQueries(prepareQueries(tempBundleContents));
 					
+					historyPojo.setAssets(assets);
 					
 					//Status
 					status =  new PublishAuditStatus(tempBundleId);
@@ -76,24 +77,22 @@ public class PublisherQueueJob implements StatefulJob {
 					
 					//Insert in Audit table
 					pubAuditAPI.insertPublishAuditStatus(status);
+
+					pconf.setId(tempBundleId);
+					pconf.setUser(APILocator.getUserAPI().getSystemUser());
+					pconf.runNow();
+	
+					pconf.setPublishers(clazz);
+					pconf.setIncremental(false);
+					pconf.setLiveOnly(false);
+					pconf.setBundlers(bundler);
 					
-					if(tempBundleContents.size() > 1)
-						pconf.setLuceneQuery("+("+luceneQuery.toString()+")");
+					if(((Long) bundle.get("operation")).intValue() == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
+						pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
 					else
-						pconf.setLuceneQuery("+"+luceneQuery.toString());
+						pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
 					
-					if(luceneQuery.toString().length() > 3) {
-						pconf.setId(tempBundleId);
-						pconf.setUser(APILocator.getUserAPI().getSystemUser());
-						pconf.runNow();
-		
-						pconf.setPublishers(clazz);
-						pconf.setIncremental(false);
-						pconf.setLiveOnly(false);
-						pconf.setBundlers(bundler);
-						
-						APILocator.getPublisherAPI().publish(pconf);
-					}
+					APILocator.getPublisherAPI().publish(pconf);
 				}
 				
 			}
@@ -109,5 +108,38 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		}
 
+	}
+	
+	private List<String> prepareQueries(List<Map<String,Object>> bundle) {
+		StringBuilder assetBuffer = new StringBuilder();
+		List<String> assets;
+		assets = new ArrayList<String>();
+		
+		if(bundle.size() == 1) {
+			assetBuffer.append("+"+IDENTIFIER+(String) bundle.get(0).get("asset"));
+			
+			assets.add(assetBuffer.toString() +" +live:true");
+			assets.add(assetBuffer.toString() +" +working:true");
+			
+		} else {
+			int counter = 1;
+			Map<String,Object> c = null;
+			for(int ii = 0; ii < bundle.size(); ii++) {
+				c = bundle.get(ii);
+				
+				assetBuffer.append(IDENTIFIER+c.get("asset"));
+				assetBuffer.append(" ");
+				
+				if(counter == _ASSET_LENGTH_LIMIT || (ii+1 == bundle.size())) {
+					assets.add("+("+assetBuffer.toString()+") +live:true");
+					assets.add("+("+assetBuffer.toString()+") +working:true");
+					
+					assetBuffer = new StringBuilder();
+					counter = 0;
+				} else
+					counter++;
+			}
+		}
+		return assets;
 	}
 }

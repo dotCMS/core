@@ -162,9 +162,9 @@
 <script type="text/javascript">
  function solrAddCheckUncheckAll(){
 	   var check=false;
-	   /* if(dijit.byId("add_all").checked){
+	   if(dijit.byId("add_all").checked){
 		   check=true;
-	   } */
+	   } 
 	   var nodes = dojo.query('.add_to_queue');
 	   dojo.forEach(nodes, function(node) {
 		    dijit.getEnclosingWidget(node).set("checked",check);
@@ -234,7 +234,9 @@
 	<%} %>						
 	<table class="listingTable shadowBox">
 		<tr>
-			<th style="width:30px"><!-- <input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" /> --></th>		
+			<th style="width:30px">
+				<input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" />
+			</th>		
 			<th colspan="2">
 				<div id="addPublishQueueMenu" style="float:left"></div>
 				

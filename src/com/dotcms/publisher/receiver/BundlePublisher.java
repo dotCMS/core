@@ -20,6 +20,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.myTest.PushContentWrapper;
 import com.dotcms.publisher.myTest.PushPublisherBundler;
+import com.dotcms.publisher.myTest.PushPublisherConfig;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
@@ -123,54 +124,10 @@ public class BundlePublisher extends Publisher {
 					userToUse = systemUser;
 				}
 				
-				//Copy asset files to bundle folder keeping original folders structure
-				List<Field> fields=FieldsCache.getFieldsByStructureInode(content.getStructureInode());
-				
-				String inode=content.getInode();
-				for(Field ff : fields) {
-					if(ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
-						
-						String folderTree = inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+
-							        inode+File.separator+ff.getVelocityVarName();
-							
-						File binaryFolder = new File(folderOut+File.separator+"assets"+File.separator+folderTree);
-						
-						if(binaryFolder != null && binaryFolder.exists())
-							content.setBinary(ff.getVelocityVarName(), binaryFolder.listFiles()[0]);
-				    }
-					
-				}
-				
-				
-				conAPI.checkin(content, userToUse, false);
-				
-				//Tree
-				for(Map<String, Object> tRow : wrapper.getTree()) {
-					Tree tree = new Tree();
-					tree.setChild((String) tRow.get("child"));
-					tree.setParent((String) tRow.get("parent"));
-					tree.setRelationType((String) tRow.get("relation_type"));
-					tree.setTreeOrder((Integer) tRow.get("tree_order"));
-					
-					TreeFactory.saveTree(tree);
-				}
-				
-				//Multitree
-				for(Map<String, Object> mRow : wrapper.getMultiTree()) {
-					MultiTree multiTree = new MultiTree();
-					multiTree.setChild((String) mRow.get("child"));
-					multiTree.setParent1((String) mRow.get("parent1"));
-					multiTree.setParent2((String) mRow.get("parent2"));
-					multiTree.setRelationType((String) mRow.get("relation_type"));
-					multiTree.setTreeOrder((Integer) mRow.get("tree_order"));
-					
-					
-					MultiTreeFactory.saveMultiTree(multiTree);
-				}
-				
-				//Tags
-				for(Tag tag: wrapper.getTags()) {
-					tagAPI.addTag(tag.getTagName(), userToUse.getUserId(), content.getInode());
+				if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
+					publish(content, folderOut, userToUse, wrapper);
+				} else {
+					unpublish(content, folderOut, userToUse, wrapper);
 				}
 			}
 			HibernateUtil.commitTransaction();	
@@ -190,6 +147,74 @@ public class BundlePublisher extends Publisher {
 		
 	    
 	    return config;
+	}
+	
+	private void publish(Contentlet content, File folderOut, User userToUse, PushContentWrapper wrapper) 
+			throws Exception 
+	{
+		//Copy asset files to bundle folder keeping original folders structure
+		List<Field> fields=FieldsCache.getFieldsByStructureInode(content.getStructureInode());
+		
+		String inode=content.getInode();
+		for(Field ff : fields) {
+			if(ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
+				
+				String folderTree = inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+
+					        inode+File.separator+ff.getVelocityVarName();
+					
+				File binaryFolder = new File(folderOut+File.separator+"assets"+File.separator+folderTree);
+				
+				if(binaryFolder != null && binaryFolder.exists())
+					content.setBinary(ff.getVelocityVarName(), binaryFolder.listFiles()[0]);
+		    }
+			
+		}
+		
+		
+		conAPI.checkin(content, userToUse, false);
+		
+		//Tree
+		for(Map<String, Object> tRow : wrapper.getTree()) {
+			Tree tree = new Tree();
+			tree.setChild((String) tRow.get("child"));
+			tree.setParent((String) tRow.get("parent"));
+			tree.setRelationType((String) tRow.get("relation_type"));
+			tree.setTreeOrder((Integer) tRow.get("tree_order"));
+			
+			TreeFactory.saveTree(tree);
+		}
+		
+		//Multitree
+		for(Map<String, Object> mRow : wrapper.getMultiTree()) {
+			MultiTree multiTree = new MultiTree();
+			multiTree.setChild((String) mRow.get("child"));
+			multiTree.setParent1((String) mRow.get("parent1"));
+			multiTree.setParent2((String) mRow.get("parent2"));
+			multiTree.setRelationType((String) mRow.get("relation_type"));
+			multiTree.setTreeOrder((Integer) mRow.get("tree_order"));
+			
+			
+			MultiTreeFactory.saveMultiTree(multiTree);
+		}
+		
+		//Tags
+		for(Tag tag: wrapper.getTags()) {
+			tagAPI.addTag(tag.getTagName(), userToUse.getUserId(), content.getInode());
+		}
+	}
+	
+	private void unpublish(Contentlet content, File folderOut, User userToUse, PushContentWrapper wrapper) 
+			throws Exception 
+	{	
+		String luceneQuery = "+identifier:"+content.getIdentifier()+" +live:true";
+		List<Contentlet> contents = 
+				conAPI.searchByIdentifier(luceneQuery, 0, -1, null, userToUse, false);
+		
+		for (Contentlet contentlet : contents) {
+			conAPI.unpublish(contentlet, userToUse, false);
+		}
+		
+		conAPI.delete(content, userToUse, false, true);
 	}
 	
 	@SuppressWarnings("rawtypes")

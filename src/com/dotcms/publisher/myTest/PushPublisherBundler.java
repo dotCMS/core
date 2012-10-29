@@ -34,7 +34,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 public class PushPublisherBundler implements IBundler {
-	private PublisherConfig config;
+	private PushPublisherConfig config;
 	private User systemUser;
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
@@ -48,7 +48,7 @@ public class PushPublisherBundler implements IBundler {
 
 	@Override
 	public void setConfig(PublisherConfig pc) {
-		config = pc;
+		config = (PushPublisherConfig) pc;
 		conAPI = APILocator.getContentletAPI();
 		uAPI = APILocator.getUserAPI();
 		pubAPI = PublisherAPI.getInstance();  
@@ -70,7 +70,6 @@ public class PushPublisherBundler implements IBundler {
 		
 		List<Contentlet> cs = new ArrayList<Contentlet>();
 		
-		Logger.info(PushPublisherBundler.class, config.getLuceneQuery());
 		PublishAuditHistory currentStatusHistory = null;
 		try {
 			//Updating audit table
@@ -82,13 +81,14 @@ public class PushPublisherBundler implements IBundler {
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
 			
 			
-			cs = conAPI.search(config.getLuceneQuery()+" +live:true", 0, 0, "moddate", systemUser, false);
-			cs.addAll(conAPI.search(config.getLuceneQuery()+" +working:true", 0, 0, "moddate", systemUser, false));
-			status.setTotal(cs.size());
+			for(String luceneQuery: config.getLuceneQueries()) {
+				cs = conAPI.search(luceneQuery, 0, 0, "moddate", systemUser, false);
 			
-			for (Contentlet con : cs) {
-				writeFileToDisk(bundleRoot, con);
-				status.addCount();
+			
+				for (Contentlet con : cs) {
+					writeFileToDisk(bundleRoot, con);
+					status.addCount();
+				}
 			}
 			
 			//Updating audit table
@@ -106,7 +106,7 @@ public class PushPublisherBundler implements IBundler {
 			status.addFailure();
 			
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()" 
-			+ e.getMessage() + ": Unable to pull content with query " + config.getLuceneQuery(), e);
+			+ e.getMessage() + ": Unable to pull content", e);
 		}
 	}
 	
@@ -127,6 +127,7 @@ public class PushPublisherBundler implements IBundler {
 		wrapper.setInfo(info);
 		wrapper.setId(APILocator.getIdentifierAPI().find(con.getIdentifier()));
 		wrapper.setTags(APILocator.getTagAPI().getTagsByInode(con.getInode()));
+		wrapper.setOperation(config.getOperation());
 		
 		//Find MultiTree
 		wrapper.setMultiTree(pubAPI.getContentMultiTreeMatrix(con.getIdentifier()));
