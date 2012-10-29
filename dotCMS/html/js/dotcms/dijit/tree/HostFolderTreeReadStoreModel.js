@@ -30,6 +30,9 @@ dojo.declare("dotcms.dijit.tree.HostFolderTreeReadStoreModel", null, {
 	},
 
 	mayHaveChildren: function(/*dojo.data.Item*/ item) {
+        if (this.themesOnly && item.type == 'folder') {
+            return false;
+        }
 		return true;
 	},
 
@@ -59,17 +62,20 @@ dojo.declare("dotcms.dijit.tree.HostFolderTreeReadStoreModel", null, {
 				if(this.themesOnly){
 				    BrowserAjax.getHostThemes(parentItemId, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
 				} else {
-			    BrowserAjax.getHostSubfolders(parentItemId, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
+			        BrowserAjax.getHostSubfolders(parentItemId, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
 				}
 			}else{
 				BrowserAjax.getHostSubfoldersByPermissions(parentItemId, this.requiredPermissions, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
 			}
 		} else if(parentItem.type == 'folder') {
-			if(this.requiredPermissions == ''){
-			    BrowserAjax.getFolderSubfolders(parentItemId, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
-			}else{
-				BrowserAjax.getFolderSubfoldersByPermissions(parentItemId, this.requiredPermissions, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
-			}
+
+            if (!this.themesOnly) {
+                if (this.requiredPermissions == '') {
+                    BrowserAjax.getFolderSubfolders(parentItemId, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
+                } else {
+                    BrowserAjax.getFolderSubfoldersByPermissions(parentItemId, this.requiredPermissions, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
+                }
+            }
 		}
 	},
 

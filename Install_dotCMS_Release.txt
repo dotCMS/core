@@ -2,5 +2,5 @@ Installing dotCMS from Release
 
 See:
 
-http://dotcms.com/docs/1.9/Installation
+http://dotcms.com/docs/latest/Installation
 

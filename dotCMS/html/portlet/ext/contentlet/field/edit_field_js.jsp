@@ -580,6 +580,8 @@ var cmsfile=null;
 				 setKVValue(fieldId, fieldValueId);
 		    	 recolorTable(fieldId);
 			 });
+			var row1 = document.getElementById(fieldId+'_'+key);
+			document.getElementById(row1.id+'_v').value = value;
 			setKVValue(fieldId, fieldValueId);
 			dijit.byId(fieldValueId+'_key').reset();
 			dijit.byId(fieldValueId+'_value').reset();
@@ -598,7 +600,9 @@ var cmsfile=null;
 					 var rowCount = table.rows.length;
 					 for(var i=0; i<rowCount; i++) {
 						if(row.id==table.rows[i].id) {
+							
 							table.deleteRow(i);
+						
 							rowCount--;
 							i--;
 						}
