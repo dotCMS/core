@@ -478,7 +478,7 @@
 							<dt id="tableContainer">
 								<table id="splitBodyTable" cellspacing="4" cellpadding="2">
 									<%
-										for(TemplateLayoutRow sb : parameters.getBody().getColumnRows()){
+										for(TemplateLayoutRow sb : parameters.getBody().getRows()){
 									%>
 								        <tr id="_selectRow<%=sb.getIdentifier()%>" class="spaceUnder">
 									        <td style="width: 16px;">

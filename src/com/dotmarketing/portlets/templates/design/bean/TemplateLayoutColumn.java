@@ -23,7 +23,7 @@ public class TemplateLayoutColumn {
     public Integer widthPercent;
     public Integer width;
 
-    public List<TemplateLayoutRow> columnRows;
+    public List<TemplateLayoutRow> rows;
 
     public String getContainer () {
         return container;
@@ -65,12 +65,12 @@ public class TemplateLayoutColumn {
         this.location = location;
     }
 
-    public List<TemplateLayoutRow> getColumnRows () {
-        return columnRows;
+    public List<TemplateLayoutRow> getRows () {
+        return rows;
     }
 
-    public void setColumnRows ( List<TemplateLayoutRow> columnRows ) {
-        this.columnRows = columnRows;
+    public void setRows ( List<TemplateLayoutRow> rows ) {
+        this.rows = rows;
     }
 
     public Boolean isSidebar () {
