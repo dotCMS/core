@@ -1961,19 +1961,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
 				if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
 				    // maybe the user want to save new content with existing inode & identifier comming from somewhere
-				    // we need to check that the inode/identifier doesn't exists
+				    // we need to check that the inode doesn't exists
 				    DotConnect dc=new DotConnect();
-				    dc.setSQL("select inode from contentlet where inode=? or identifier=?");
+				    dc.setSQL("select inode from contentlet where inode=?");
 				    dc.addParam(contentlet.getInode());
-				    dc.addParam(contentlet.getIdentifier());
 				    if(dc.loadResults().size()>0)
 				        throw new DotContentletStateException("Contentlet must not exist already");
 				    else {
 				        saveWithExistingID=true;
-				        existingIdentifier=contentlet.getIdentifier();
 				        existingInode=contentlet.getInode();
 				        contentlet.setInode(null);
-				        contentlet.setIdentifier(null);
+				        
+				        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+				        if(ident==null || !UtilMethods.isSet(ident.getId())) {
+				            existingIdentifier=contentlet.getIdentifier();
+				            contentlet.setIdentifier(null);
+				        }
 				    }
 				}   
 				if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
@@ -2079,7 +2082,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    }
 				    Identifier ident;
 				    final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
-				    if(saveWithExistingID)
+				    if(existingIdentifier!=null)
 				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier);
 				    else
 				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
