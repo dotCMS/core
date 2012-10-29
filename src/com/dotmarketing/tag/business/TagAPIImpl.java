@@ -16,7 +16,6 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -382,6 +381,7 @@ public class TagAPIImpl implements TagAPI{
 	 * @param tagName tag(s) to create
 	 * @param userId owner of the tag
 	 * @param inode object to tag
+	 * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
 	 * @return a list of all tags assigned to an object
 	 */
 	public List addTag(String tagName, String userId, String inode) throws Exception {
@@ -860,5 +860,15 @@ public class TagAPIImpl implements TagAPI{
         }
     }
 
-
+    @Override
+    public List<Tag> getTagsInText(String text, String userId, String hostId) throws Exception {
+        List<Tag> tags=new ArrayList<Tag>();
+        String[] tagNames = text.split("[,\\n\\t\\r]");
+        for(String tagname : tagNames) {
+            tagname=tagname.trim();
+            if(tagname.length()>0)
+                tags.add(getTag(tagname,userId,hostId));
+        }
+        return tags;
+    }
 }

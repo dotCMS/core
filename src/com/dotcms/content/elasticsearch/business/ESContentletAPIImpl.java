@@ -100,6 +100,7 @@ import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -1960,19 +1961,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
 				if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
 				    // maybe the user want to save new content with existing inode & identifier comming from somewhere
-				    // we need to check that the inode/identifier doesn't exists
+				    // we need to check that the inode doesn't exists
 				    DotConnect dc=new DotConnect();
-				    dc.setSQL("select inode from contentlet where inode=? or identifier=?");
+				    dc.setSQL("select inode from contentlet where inode=?");
 				    dc.addParam(contentlet.getInode());
-				    dc.addParam(contentlet.getIdentifier());
 				    if(dc.loadResults().size()>0)
 				        throw new DotContentletStateException("Contentlet must not exist already");
 				    else {
 				        saveWithExistingID=true;
-				        existingIdentifier=contentlet.getIdentifier();
 				        existingInode=contentlet.getInode();
 				        contentlet.setInode(null);
-				        contentlet.setIdentifier(null);
+				        
+				        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+				        if(ident==null || !UtilMethods.isSet(ident.getId())) {
+				            existingIdentifier=contentlet.getIdentifier();
+				            contentlet.setIdentifier(null);
+				        }
 				    }
 				}   
 				if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
@@ -2078,7 +2082,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    }
 				    Identifier ident;
 				    final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
-				    if(saveWithExistingID)
+				    if(existingIdentifier!=null)
 				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier);
 				    else
 				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
@@ -2118,48 +2122,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 				for (Field field : fields) {
-				    if (isFieldTypeString(field)) {
-				        String value = contentlet.getStringProperty(field.getVelocityVarName());
-				        if (field.getFieldType().equals(Field.FieldType.TAG.toString()) && UtilMethods.isSet(value)) {
-				            String[] tagNames = ((String) value).split(",");
-
-
-				            if(structureHasAHostField){
-								Host host = null;
-								String hostId = "";
-								try{
-									host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-								}catch(Exception e){
-									Logger.error(this, "Unable to get default host");
-								}
-								if(host.getIdentifier().equals(Host.SYSTEM_HOST))
-									hostId = Host.SYSTEM_HOST;
-								else
-									hostId = host.getIdentifier();
-								for (String tagName : tagNames)
-									try {
-										tagAPI.addTagInode(tagName.trim(), contentlet.getInode(), hostId);
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-							}
-							else {
-								for (String tagName : tagNames)
-									try {
-										tagAPI.addTagInode(tagName.trim(), contentlet.getInode(), Host.SYSTEM_HOST);
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-							}
+				    if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
+				        String value=contentlet.getStringProperty(field.getVelocityVarName()).trim();
+				        if(UtilMethods.isSet(value)) {
+    				        String hostId = Host.SYSTEM_HOST;
+    				        if(structureHasAHostField){
+    				            Host host = null;
+    				            try{
+    				                host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
+    				            }catch(Exception e){
+    				                Logger.error(this, "Unable to get contentlet host");
+    				            }
+    				            if(host.getIdentifier().equals(Host.SYSTEM_HOST))
+    				                hostId = Host.SYSTEM_HOST;
+    				            else
+    				                hostId = host.getIdentifier();
+    				            
+    				        }
+    				        List<Tag> list=tagAPI.getTagsInText(value, user.getUserId(), hostId);
+    				        for(Tag tag : list)
+    				            tagAPI.addTagInode(tag.getTagName(), contentlet.getInode(), hostId);
 				        }
 				    }
+				    
 				}
 
-				// save temporally live state
-
-				if(contentlet.isLive()){
-				    APILocator.getVersionableAPI().setLive(contentlet);
-				}
+				
 				if (workingContentlet == null) {
 				    workingContentlet = contentlet;
 				}

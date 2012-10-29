@@ -687,8 +687,12 @@ create_date DATETIME);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE publishing_end_point (
-	server_name varchar(1024) unique,
+	id varchar(36) PRIMARY KEY, 
+	group_id varchar(700), 
+	server_name varchar(700) unique,
 	address varchar(250),
+	port varchar(10),
+	protocol varchar(10),	
 	enabled tinyint DEFAULT 0,
-	auth_key varchar(1024),
+	auth_key text,
 	sending tinyint DEFAULT 0);
