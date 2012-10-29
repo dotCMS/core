@@ -10,7 +10,6 @@ import java.util.UUID;
 
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
-import com.dotcms.publisher.business.PublisherAddActionlet;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -76,10 +75,10 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 				publisherAPI.addContentsToUnpublish(identifiers, bundleId, expireDate);
 			}
 		} catch (DotPublisherException e) {
-			Logger.debug(PublisherAddActionlet.class, e.getMessage());
+			Logger.debug(PushPublishActionlet.class, e.getMessage());
 			throw new  WorkflowActionFailureException(e.getMessage());
 		} catch (ParseException e){
-			Logger.debug(PublisherAddActionlet.class, e.getMessage());
+			Logger.debug(PushPublishActionlet.class, e.getMessage());
 			throw new  WorkflowActionFailureException(e.getMessage());			
 		}
 	}

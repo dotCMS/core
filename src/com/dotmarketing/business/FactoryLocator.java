@@ -5,6 +5,8 @@ import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
+import com.dotcms.publisher.endpoint.business.PublisherEndpointFactory;
+import com.dotcms.publisher.endpoint.business.PublisherEndpointFactoryImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
@@ -164,6 +166,9 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static IndiciesFactory getIndiciesFactory(){
         return (IndiciesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
     }
+    public static PublisherEndpointFactory getPublisherEndpointFactory(){
+        return (PublisherEndpointFactory) getInstance(FactoryIndex.PUBLISHER_END_POINT_FACTORY);
+    }
     
     private static Object getInstance(FactoryIndex index) {
 	
@@ -224,7 +229,8 @@ enum FactoryIndex
 	FOLDER_FACTORY,
 	DASHBOARD_FACTORY,
 	WORKFLOWS_FACTORY,
-	INDICIES_FACTORY;
+	INDICIES_FACTORY,
+	PUBLISHER_END_POINT_FACTORY;
 	
 	
 	Object create() {
@@ -255,6 +261,7 @@ enum FactoryIndex
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
             case INDICIES_FACTORY: return new IndiciesFactoryImpl();
+            case PUBLISHER_END_POINT_FACTORY: return new PublisherEndpointFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

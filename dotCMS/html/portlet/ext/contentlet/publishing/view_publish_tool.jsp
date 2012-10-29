@@ -113,19 +113,35 @@ if (layoutOb != null) {
 
 	}
 	function loadPublishQueueServers(){
-		var url = "/html/portlet/ext/contentlet/publishing/view_publish_servers.jsp";		
+		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";		
 		
-		var myCp = dijit.byId("instances");	
+		var myCp = dijit.byId("endpointsContent");	
 		
 		if (myCp) {
 			myCp.destroyRecursive(true);
 		}
 		myCp = new dojox.layout.ContentPane({
-			id : "instances"
-		}).placeAt("solr_servers");
+			id : "endpointsContent"
+		}).placeAt("endpoint_servers");
 
 		myCp.attr("href", url);
-	}
+	}	
+	function addEndpoint(){
+		var url = "/html/portlet/ext/contentlet/publishing/edit_publish_endpoint.jsp";		
+		
+		var myCp = dijit.byId("endpointsContent");	
+		
+		if (myCp) {
+			myCp.destroyRecursive(false);
+		}
+		myCp = new dojox.layout.ContentPane({
+			id : "endpointsContent"
+		}).placeAt("endpoint_servers");
+
+		myCp.attr("href", url);
+		
+		myCp.refresh();
+	}	
 </script>
 <div class="portlet-wrapper">
 	<div>
@@ -190,13 +206,8 @@ if (layoutOb != null) {
 			</script>
   		</div>
   		
-  		<div id="instances" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Servers") %>" >
-  			<div>
-				<%= LanguageUtil.get(pageContext, "publisher_Servers_Intro") %> 
-			</div>			
-			<hr>
-			<div>&nbsp;</div>
-  			<div id="solr_servers">
+  		<div id="endpoints" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Endpoints") %>" >
+  			<div id="endpoint_servers">
 			</div>
 			<script type="text/javascript">
 			dojo.ready(function(){

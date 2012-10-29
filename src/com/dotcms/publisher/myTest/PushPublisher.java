@@ -29,7 +29,6 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -40,8 +39,6 @@ import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.file.FileDataBodyPart;
 
 public class PushPublisher extends Publisher {
-
-	public static final String SITE_SEARCH_INDEX = "SITE_SEARCH_INDEX";
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
 
@@ -51,25 +48,6 @@ public class PushPublisher extends Publisher {
             throw new RuntimeException("need an enterprise licence to run this");
 	    
 		this.config = super.init(config);
-		PushPublisherConfig myConf = (PushPublisherConfig) config;
-
-		// if we don't specify an index, use the current one
-		if (myConf.getIndexName() == null) {
-			try {
-				String index = APILocator.getIndiciesAPI().loadIndicies().working;
-				if (index != null) {
-					myConf.setIndexName(index);
-					this.config = myConf;
-				} else {
-					throw new DotPublishingException("Active Site Search Index:null");
-				}
-			} catch (Exception e) {
-				throw new DotPublishingException(
-						"You must either specify a valid site search index in your PublishingConfig or have current active site search index.  " +
-						"Make sure you have a current active site search index by going to the site search admin portlet and creating one");
-			}
-
-		}
 
 		return this.config;
 
@@ -102,7 +80,7 @@ public class PushPublisher extends Publisher {
 			//Sending bundle to endpoint
 			ClientConfig cc = new DefaultClientConfig();
 	        Client client = Client.create(cc);
-	        WebResource resource = client.resource("http://localhost:8080/api/bundlePublisher/publish");
+	        WebResource resource = client.resource("http://172.20.102.132:8080/api/bundlePublisher/publish");
 	        FormDataMultiPart form = new FormDataMultiPart();
 	        
 	        //form.field("username", "ljy");
@@ -121,7 +99,7 @@ public class PushPublisher extends Publisher {
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
 			
 			//Deleting queue records
-			//pubAPI.deleteElementsFromPublishQueueTable(config.getId());
+			pubAPI.deleteElementsFromPublishQueueTable(config.getId());
 
 			return config;
 
