@@ -5,109 +5,54 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.zip.GZIPInputStream;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
-
+import com.dotcms.publisher.business.PublisherQueueJob;
+import com.dotcms.publisher.receiver.BundlePublisher;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {
+	public static String MY_TEMP = "";
 
 	@POST
 	@Path("/publish")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public void uploadFile(@FormDataParam("bundle") InputStream bundle,
+	public void publish(@FormDataParam("bundle") InputStream bundle,
 			@FormDataParam("bundle") FormDataContentDisposition fileDetail) {
 		
+		//Write file on FS
 		String bundleName = fileDetail.getFileName();
-		String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
-		File folderOut = new File("/home/alberto/Scrivania/GZIP/"+bundleFolder);
-		folderOut.mkdir();
-		// Handle multipart file
-		untar(bundle,
-				folderOut.getAbsolutePath()+File.separator+bundleName,
-				bundleName);
-	}
-
-	public void untar(InputStream bundle, String path, String fileName) {
-		TarEntry entry;
-		TarInputStream inputStream = null;
-		FileOutputStream outputStream = null;
-
+		String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
+		writeToFile(bundle, bundlePath+bundleName);
+		
+		//Configure and Invoke the Publisher
 		try {
-			// get a stream to tar file
-			InputStream gstream = new GZIPInputStream(bundle);
-			inputStream = new TarInputStream(gstream);
-
-			// For each entry in the tar, extract and save the entry to the file
-			// system
-			while (null != (entry = inputStream.getNextEntry())) {
-				// for each entry to be extracted
-				int bytesRead;
-
-				String pathWithoutName = path.substring(0,
-						path.indexOf(fileName));
-
-				// if the entry is a directory, create the directory
-				if (entry.isDirectory()) {
-					File fileOrDir = new File(pathWithoutName + entry.getName());
-					fileOrDir.mkdir();
-					continue;
-				}
-
-				// write to file
-				byte[] buf = new byte[1024];
-				outputStream = new FileOutputStream(pathWithoutName
-						+ entry.getName());
-				while ((bytesRead = inputStream.read(buf, 0, 1024)) > -1)
-					outputStream.write(buf, 0, bytesRead);
-				try {
-					if (null != outputStream)
-						outputStream.close();
-				} catch (Exception e) {
-				}
-
-				System.out.println("Extracted " + entry.getName());
-			}// while
-
+			Logger.info(PublisherQueueJob.class, "Started bundle publish process");
+			
+			PublisherConfig pconf = new PublisherConfig();
+			BundlePublisher bundlePublisher = new BundlePublisher();
+			pconf.setId(bundleName);
+			bundlePublisher.init(pconf);
+			bundlePublisher.process(null);
+			
+			Logger.info(PublisherQueueJob.class, "Finished bundle publish process");
+		} catch (NumberFormatException e) {
+			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		} catch (Exception e) {
-			e.printStackTrace();
-		} finally { // close your streams
-			if (inputStream != null) {
-				try {
-					inputStream.close();
-				} catch (IOException e) {
-				}
-			}
-			if (outputStream != null) {
-				try {
-					outputStream.close();
-				} catch (IOException e) {
-				}
-			}
+			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		}
 	}
-	
-	
-	
-//	BufferedInputStream buffIS = new BufferedInputStream(inputStream);
-//    BufferedOutputStream buffOS = new BufferedOutputStream(outputStream);
-//
-//    try {
-//        IOUtils.copy(buffIS, buffOS);
-//    } finally {
-//    	buffOS.close();
-//    	buffIS.close();
-//    }
 
+	
 	// save uploaded file to new location
 	private void writeToFile(InputStream uploadedInputStream,
 			String uploadedFileLocation) {
