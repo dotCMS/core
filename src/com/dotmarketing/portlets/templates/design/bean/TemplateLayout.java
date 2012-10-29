@@ -80,7 +80,7 @@ public class TemplateLayout {
 
         this.body = new TemplateLayoutColumn();
         this.body.setType( TemplateLayoutColumn.TYPE_BODY );
-        this.body.setColumnRows( bodyRows );
+        this.body.setRows( bodyRows );
     }
 
     public TemplateLayoutColumn getSidebar () {
