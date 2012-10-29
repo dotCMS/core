@@ -113,9 +113,9 @@ public class PageServices {
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 
 		Host host = htmlPageAPI.getParentHost(htmlPage);
-		sb.append("#if(!$doNotParseTemplate)\n");
+		sb.append("#if(!$doNotParseTemplate)");
 			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( host.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_HOST_EXTENSION") ).append( "')");
-		sb.append("#end\n");
+		sb.append(" #end ");
 		
 		
 		
@@ -143,7 +143,7 @@ public class PageServices {
 		sb.append("#set ($HTMLPAGE_REDIRECT = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getRedirect()) ).append( "\" )");
 		
 		sb.append("#set ($pageTitle = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getTitle()) ).append( "\" )");
-		sb.append("#set ($pageChannel = \"" ).append( pageChannel ).append( "\" )\n");
+		sb.append("#set ($pageChannel = \"" ).append( pageChannel ).append( "\" )");
 		sb.append("#set ($friendlyName = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) ).append( "\" )");
 
 		Date moddate = null;
@@ -157,7 +157,7 @@ public class PageServices {
 
 		sb.append("#set ($HTML_PAGE_LAST_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" ).append( moddate ).append( "\"))");
 		sb.append("#set ($HTMLPAGE_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" ).append( moddate ).append( "\"))");
-		sb.append("#end\n");
+		sb.append(" #end ");
 						
 		//get the containers for the page and stick them in context
 		//List identifiers = InodeFactory.getChildrenClass(cmsTemplate, Identifier.class);
@@ -239,21 +239,21 @@ public class PageServices {
 				
 			}
 			sb.append("#set ($contentletList" ).append( ident.getIdentifier() ).append( " = [" ).append( contentletList.toString() ).append( "] )");
-			sb.append("\n#set ($totalSize" ).append( ident.getIdentifier() ).append( "=" ).append( count ).append( ")");
+			sb.append("#set ($totalSize" ).append( ident.getIdentifier() ).append( "=" ).append( count ).append( ")");
 			langCounter++;
 
 
 		}
 
 		if(htmlPage.isHttpsRequired()){		
-			sb.append("#if(!$ADMIN_MODE  && !$request.isSecure())\n");
-			sb.append("    #if($request.getQueryString())\n");
+			sb.append(" #if(!$ADMIN_MODE  && !$request.isSecure())");
+			sb.append("    #if($request.getQueryString())");
 			sb.append("        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
-			sb.append("    #else\n");
+			sb.append("    #else ");
 			sb.append("        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
-			sb.append("    #end\n");
+			sb.append("    #end ");
 			sb.append("    $response.sendRedirect(\"$REDIRECT_URL\")"); 
-			sb.append("#end\n");
+			sb.append(" #end ");
 		}
 		
 		sb.append("#if($HTMLPAGE_REDIRECT != \"\")");

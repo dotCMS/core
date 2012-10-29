@@ -515,7 +515,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				ActionResponseImpl resImpl = (ActionResponseImpl) res;
 				HttpServletResponse response = resImpl.getHttpServletResponse();
 
-				downloadToExcel(response, user,searchContentlets(req,res,config,form,user,"Excel"));
+				downloadToExcel(response, user,searchContentlets(req,res,config,form,user,"Excel"), structureInode);
 
 			} catch (Exception ae) {
 				_handleException(ae, req);
@@ -1604,7 +1604,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	@SuppressWarnings({ "deprecation", "unchecked" })
-	public void downloadToExcel(HttpServletResponse response, User user, List contentletList) throws DotSecurityException{
+	public void downloadToExcel(HttpServletResponse response, User user, List contentletList, String structureInode) throws DotSecurityException{
 		/*http://jira.dotmarketing.net/browse/DOTCMS-72*/
 		PrintWriter pr = null;
 		if(contentletList.size() > 0) {
@@ -1639,7 +1639,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 			/*Structure, if contentletList.size() then contentletsList2 are not empty
 			 * http://jira.dotmarketing.net/browse/DOTCMS-72*/
-			st=(Structure)((contentletsList2.get(0)).getStructure());
+			st=StructureCache.getStructureByInode(structureInode);
 
 			try {
 				response.setContentType("application/octet-stream; charset=UTF-8");
