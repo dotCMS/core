@@ -25,6 +25,15 @@ public class PublishingEndPoint implements Serializable{
 	private StringBuilder authKey;
 	private boolean sending;
 	
+	public PublishingEndPoint(){
+		groupId = "";
+		serverName = new StringBuilder();
+		address = "";
+		port = "";
+		protocol = "";
+		authKey = new StringBuilder();
+	}
+	
 	public String getId() {
 		return id;
 	}
@@ -79,5 +88,15 @@ public class PublishingEndPoint implements Serializable{
 	public void setSending(boolean sending) {
 		this.sending = sending;
 	}
-		
+	public StringBuilder toURL(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(protocol);
+		sb.append("://");
+		sb.append(address);
+		if(!port.equals("80")){
+			sb.append(":");
+			sb.append(port);
+		}
+		return sb;
+	}
 }

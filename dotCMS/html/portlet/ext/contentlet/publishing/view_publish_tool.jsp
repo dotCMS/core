@@ -125,9 +125,42 @@ if (layoutOb != null) {
 		}).placeAt("endpoint_servers");
 
 		myCp.attr("href", url);
-	}	
-	function addEndpoint(){
-		var url = "/html/portlet/ext/contentlet/publishing/edit_publish_endpoint.jsp";		
+	}
+	
+	function goToAddEndpoint(){
+		var url = "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp";		
+		
+		var myCp = dijit.byId("endpointsContent");	
+		
+		if (myCp) {
+			myCp.destroyRecursive(false);
+		}
+		myCp = new dojox.layout.ContentPane({
+			id : "endpointsContent"
+		}).placeAt("endpoint_servers");
+	
+		myCp.attr("href", url);		
+		myCp.refresh();
+	}
+
+	function editEndpoint(identifier){	
+		var url = "/html/portlet/ext/contentlet/publishing/edit_publish_endpoint.jsp?op=edit&id="+identifier;		
+		
+		var myCp = dijit.byId("endpointsContent");	
+		
+		if (myCp) {
+			myCp.destroyRecursive(false);
+		}
+		myCp = new dojox.layout.ContentPane({
+			id : "endpointsContent"
+		}).placeAt("endpoint_servers");
+	
+		myCp.attr("href", url);		
+		myCp.refresh();	
+	}
+
+	function backToEndpointsList(){
+		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";		
 		
 		var myCp = dijit.byId("endpointsContent");	
 		
@@ -139,9 +172,26 @@ if (layoutOb != null) {
 		}).placeAt("endpoint_servers");
 
 		myCp.attr("href", url);
+		myCp.refresh();	
+	}
+
+	function deleteEndpoint(identifier){
+		if(confirm("Are you sure you want to delete this endpoint?")){
+			var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp?delEp="+identifier;		
+			
+			var myCp = dijit.byId("endpointsContent");	
+			
+			if (myCp) {
+				myCp.destroyRecursive(false);
+			}
+			myCp = new dojox.layout.ContentPane({
+				id : "endpointsContent"
+			}).placeAt("endpoint_servers");
 		
-		myCp.refresh();
-	}	
+			myCp.attr("href", url);			
+			myCp.refresh();	
+		}	
+	}
 </script>
 <div class="portlet-wrapper">
 	<div>

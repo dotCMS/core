@@ -635,6 +635,20 @@ public class PublisherUtil {
 		return metaMap;
 	}
 
+	public static PublishingEndPoint getObjectByMap(Map<String, Object> row){
+		PublishingEndPoint pep = new PublishingEndPoint();
+		pep.setId(row.get("id").toString());
+		pep.setGroupId(row.get("group_id").toString());
+		pep.setAddress(row.get("address").toString());
+		pep.setPort(row.get("port").toString());
+		pep.setProtocol(row.get("protocol").toString());		
+		pep.setServerName(new StringBuilder(row.get("server_name").toString()));
+		pep.setAuthKey(new StringBuilder(row.get("auth_key").toString()));
+		pep.setEnabled(Integer.parseInt(row.get("enabled").toString())==1);
+		pep.setSending(Integer.parseInt(row.get("sending").toString())==1);
+		return pep;
+	}
+	
 	/**
 	 * normalize metadata from various filetypes
 	 * this method will return an array of metadata keys
@@ -690,19 +704,5 @@ public class PublisherUtil {
 			}
 		}
 		return translateMeta;
-	}
-	
-	public static PublishingEndPoint getObjectByMap(Map<String, Object> row){
-		PublishingEndPoint pep = new PublishingEndPoint();
-		pep.setId(row.get("id").toString());
-		pep.setGroupId(row.get("group_id").toString());
-		pep.setAddress(row.get("address").toString());
-		pep.setPort(row.get("port").toString());
-		pep.setProtocol(row.get("protocol").toString());		
-		pep.setServerName(new StringBuilder(row.get("server_name").toString()));
-		pep.setAuthKey(new StringBuilder(row.get("auth_key").toString()));
-		pep.setEnabled(Integer.parseInt(row.get("enabled").toString())==1);
-		pep.setSending(Integer.parseInt(row.get("sending").toString())==1);
-		return pep;
-	}
+	}	
 }
