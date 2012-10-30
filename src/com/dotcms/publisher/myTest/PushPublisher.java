@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -69,15 +70,6 @@ public class PushPublisher extends Publisher {
 	    
 	    PublishAuditHistory currentStatusHistory = null;
 		try {
-			//Updating audit table
-			currentStatusHistory =
-					PublishAuditHistory.getObjectFromString(
-							(String)pubAuditAPI.getPublishAuditStatus(
-									config.getId()).get("status_pojo"));
-			currentStatusHistory.setPublishStart(new Date());
-			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.PUBLISHING, currentStatusHistory);
-			
-			
 			//Compressing bundle
 			File bundleRoot = BundlerUtil.getBundleRoot(config);
 
@@ -93,45 +85,84 @@ public class PushPublisher extends Publisher {
 			ClientConfig cc = new DefaultClientConfig();
 			Client client = Client.create(cc);
 			
-	        currentStatusHistory =
+			//Updating audit table
+			currentStatusHistory =
 					PublishAuditHistory.getObjectFromString(
 							(String)pubAuditAPI.getPublishAuditStatus(
 									config.getId()).get("status_pojo"));
+			currentStatusHistory.setPublishStart(new Date());
+			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
 	        
-	        
+	        boolean hasPublishError = false;
+	        boolean hasNetworkError = false;
+	        int errorCounter = 0;
 			for (PublishingEndPoint endpoint : endpoints) {
-				Map<String, Integer> endpointStatus = new HashMap<String, Integer>();
-				
-				FormDataMultiPart form = new FormDataMultiPart();
-		        form.field("AUTH_TOKEN", 
-		        		retriveKeyString(
-		        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
-		        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
-				
-				//Sending bundle to endpoint
-		        WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
+				Map<String, EndpointDetail> endpointStatus = new HashMap<String, EndpointDetail>();
+				EndpointDetail detail = new EndpointDetail();
+				try {
+					FormDataMultiPart form = new FormDataMultiPart();
+			        form.field("AUTH_TOKEN", 
+			        		retriveKeyString(
+			        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
+			        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+					
+					//Sending bundle to endpoint
+			        WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
+			        
+			        ClientResponse response = 
+			        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
+			        
+			        
+			        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED ||
+			        	response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) 
+			        {
+			        	detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+			        	detail.setInfo(
+			        			"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
+			        					"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
+			        	hasPublishError = true;
+			        } else {
+			        	detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+			        	detail.setInfo("");
+			        }
+			        endpointStatus.put(endpoint.getId(), detail);
+				} catch(Exception e) {
+					detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
+					detail.setInfo(
+		        			"An error occured (maybe network problem) " +
+		        			"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
+		        	
+					endpointStatus.put(endpoint.getId(), detail);
+		        	hasNetworkError = true;
+		        	errorCounter++;
+				}
 		        
-		        ClientResponse response = 
-		        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
-		        
-		        endpointStatus.put(endpoint.getId(), PublishAuditStatus.Status.BUNDLE_REQUESTED.getCode());
-		        
-		        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED ||
-		        	response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) 
-		        {
-		        	endpointStatus.put(endpoint.getId(), PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
-		        }
-		        
-		        currentStatusHistory.getEndpointsMap().add(endpointStatus);
+		        currentStatusHistory.addOrUpdateEndpoint(endpoint.getId(), detail);
 			}
 	        
-			
-			//Updating audit table
-	        currentStatusHistory.setPublishEnd(new Date());
-			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
-			
-			//Deleting queue records
-			pubAPI.deleteElementsFromPublishQueueTable(config.getId());
+			if(!hasPublishError && !hasNetworkError) {
+				//Updating audit table
+		        currentStatusHistory.setPublishEnd(new Date());
+				pubAuditAPI.updatePublishAuditStatus(config.getId(), 
+						PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+				
+				//Deleting queue records
+				pubAPI.deleteElementsFromPublishQueueTable(config.getId());
+			} else if(hasNetworkError) {
+				if(errorCounter == endpoints.size()) {
+					pubAuditAPI.updatePublishAuditStatus(config.getId(), 
+							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_ENDPOINTS, currentStatusHistory);
+				} else {
+					pubAuditAPI.updatePublishAuditStatus(config.getId(), 
+							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS, currentStatusHistory);
+				}
+			} else if(hasPublishError) {
+				pubAuditAPI.updatePublishAuditStatus(config.getId(), 
+						PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory);
+			} else {
+				pubAuditAPI.updatePublishAuditStatus(config.getId(), 
+						PublishAuditStatus.Status.FAILED, currentStatusHistory);
+			}
 
 			return config;
 

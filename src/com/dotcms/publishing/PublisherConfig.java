@@ -21,7 +21,7 @@ public class PublisherConfig implements Map<String, Object> {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES;
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT;
 	}
 	
 	public void PublisherConfig(Map<String, Object> map){
@@ -74,6 +74,14 @@ public class PublisherConfig implements Map<String, Object> {
 
 	public void setLuceneQuery(String luceneQuery) {
 		params.put(Config.LUCENE_QUERY.name(), luceneQuery);
+	}
+	
+	public String getEndpoint() {
+		return (String) params.get(Config.ENDPOINT.name());
+	}
+
+	public void setEndpoint(String endpoint) {
+		params.put(Config.ENDPOINT.name(), endpoint);
 	}
 	
 	@SuppressWarnings("unchecked")
