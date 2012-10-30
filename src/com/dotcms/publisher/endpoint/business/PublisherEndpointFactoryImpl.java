@@ -84,7 +84,7 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 	public List<PublishingEndPoint> getReceiverEndpoints() throws DotDataException {
 		List<PublishingEndPoint> receiverEndpoints = new ArrayList<PublishingEndPoint>();
 		DotConnect dc = new DotConnect();
-		dc.setSQL(GET_SENDER_ENDPOINT);
+		dc.setSQL(GET_RECEIVER_ENDPOINTS);
 		List<Map<String, Object>> res = dc.loadObjectResults();
 		for(Map<String, Object> singleEndpoint : res)
 			receiverEndpoints.add(PublisherUtil.getObjectByMap(singleEndpoint));
