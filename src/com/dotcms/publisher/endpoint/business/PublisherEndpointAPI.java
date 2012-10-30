@@ -35,6 +35,13 @@ public interface PublisherEndpointAPI {
 	PublishingEndPoint findSenderEndpoint() throws DotDataException;
 	
 	/**
+	 * Returns all the receiver endpoints. 
+	 * 
+	 * Oct 29, 2012 - 10:07:36 AM
+	 */
+	List<PublishingEndPoint> findReceiverEndpoints() throws DotDataException;
+	
+	/**
 	 * Save a new endpoint.
 	 * 
 	 * Oct 29, 2012 - 12:45:37 PM
