@@ -42,7 +42,7 @@ public class TemplateLayoutRow {
      */
     public void setValue ( String value ) {
 
-        if (value == null) {
+        if ( value == null ) {
             value = "";
         }
         this.value = value;
@@ -85,11 +85,12 @@ public class TemplateLayoutRow {
     }
 
     /**
-     * Adds a container to this row. Adding a container means to add a new column on the row.
+     * Adds a container to this row. Adding a container means to add a new column in the row.
      *
      * @param container
+     * @param isPreview
      */
-    public void addContainer ( String container ) {
+    public void addContainer ( String container, Boolean isPreview ) {
 
         if ( columns == null ) {
             columns = new ArrayList<TemplateLayoutColumn>();
@@ -104,6 +105,9 @@ public class TemplateLayoutRow {
 
         //Important to specify that it is a normal column
         column.setType( TemplateLayoutColumn.TYPE_COLUMN );
+
+        //Is preview mode??
+        column.setPreview( isPreview );
 
         //Finally add this column to this row...
         columns.add( column );

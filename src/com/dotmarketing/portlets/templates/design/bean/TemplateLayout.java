@@ -87,11 +87,12 @@ public class TemplateLayout {
         return sidebar;
     }
 
-    public void setSidebar ( String container ) {
+    public void setSidebar ( String container, Boolean isPreview ) {
 
         this.sidebar = new TemplateLayoutColumn();
         this.sidebar.setType( TemplateLayoutColumn.TYPE_SIDEBAR );
         this.sidebar.setContainer( container );
+        this.sidebar.setPreview( isPreview );
 
         if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T1 ) ) {//layout-160-left
             this.sidebar.setLocation( TemplateLayoutColumn.LOCATION_LEFT );
