@@ -104,6 +104,7 @@ public class BundlePublisherResource extends WebResource {
 		
 		historyPojo.addOrUpdateEndpoint(mySelf.getId(), detail);
 		status.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE);
+		status.setStatusPojo(historyPojo);
 		
 		//Insert in Audit table
 		auditAPI.insertPublishAuditStatus(status);
