@@ -127,6 +127,7 @@
 	<portlet id="WORKFLOW_SCHEMES"  />
 	<portlet id="OSGI_MANAGER"  />
 	<portlet id="EXT_TAG_MANAGER" struts-path="tag_manager" />
-	<portlet id="EXT_EXPCONTENT_TOOL" struts-path="ext/escalation" narrow="true" />
+    <portlet id="EXT_EXPCONTENT_TOOL" struts-path="ext/escalation" narrow="true" />
+    <portlet id="TIMEMACHINE" />
 	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
 </portlets>
