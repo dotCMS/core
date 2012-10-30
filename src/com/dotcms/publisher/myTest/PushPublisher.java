@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
 import javax.ws.rs.core.MediaType;
@@ -25,12 +27,14 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -43,6 +47,7 @@ import com.sun.jersey.multipart.file.FileDataBodyPart;
 public class PushPublisher extends Publisher {
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
+	private PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
@@ -79,29 +84,46 @@ public class PushPublisher extends Publisher {
 			File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
 			compressFiles(list, bundle, bundleRoot.getAbsolutePath());
 			
-			//Sending bundle to endpoint
-			ClientConfig cc = new DefaultClientConfig();
-	        Client client = Client.create(cc);
-	        WebResource resource = client.resource("http://172.20.102.132:8080/api/bundlePublisher/publish");
-	        FormDataMultiPart form = new FormDataMultiPart();
-	        
-	        form.field("AUTH_TOKEN", PublicEncryptionFactory.encryptString("blablabla"));
-	        
-	        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
-	        
-	        ClientResponse response = 
-	        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
-	        
-	        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED)
-	        	Logger.error(this.getClass(), "INVALID TOKEN");
-	        
 			
-			//Updating audit table
-			currentStatusHistory =
+			
+			//Retriving enpoints and init client
+			List<PublishingEndPoint> endpoints = endpointAPI.findReceiverEndpoints();
+			ClientConfig cc = new DefaultClientConfig();
+			Client client = Client.create(cc);
+			
+	        currentStatusHistory =
 					PublishAuditHistory.getObjectFromString(
 							(String)pubAuditAPI.getPublishAuditStatus(
 									config.getId()).get("status_pojo"));
-			currentStatusHistory.setPublishEnd(new Date());
+	        
+	        
+			for (PublishingEndPoint endpoint : endpoints) {
+				Map<String, Integer> endpointStatus = new HashMap<String, Integer>();
+				
+				FormDataMultiPart form = new FormDataMultiPart();
+		        form.field("AUTH_TOKEN", endpoint.getAuthKey().toString());
+		        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+				
+				//Sending bundle to endpoint
+		        WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
+		        
+		        ClientResponse response = 
+		        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
+		        
+		        endpointStatus.put(endpoint.getId(), PublishAuditStatus.Status.BUNDLE_REQUESTED.getCode());
+		        
+		        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED ||
+		        	response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) 
+		        {
+		        	endpointStatus.put(endpoint.getId(), PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+		        }
+		        
+		        currentStatusHistory.getEndpointsMap().add(endpointStatus);
+			}
+	        
+			
+			//Updating audit table
+	        currentStatusHistory.setPublishEnd(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
 			
 			//Deleting queue records
@@ -130,6 +152,7 @@ public class PushPublisher extends Publisher {
 	 *
 	 * @param files The files to compress
 	 * @param output The resulting output file (should end in .tar.gz)
+	 * @param bundleRoot
 	 * @throws IOException
 	 */
 	private void compressFiles(Collection<File> files, File output, String bundleRoot)
