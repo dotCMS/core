@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import com.dotmarketing.portlets.templates.design.util.PreviewTemplateUtil;
+
 import java.util.List;
 
 /**
@@ -17,6 +19,7 @@ public class TemplateLayoutColumn {
     public static String LOCATION_LEFT = "left";
     //ONLY FOR SIDEBARS!!!
 
+    public boolean preview;
     public String type;
     public String location;//ONLY FOR SIDEBARS!!!
     public String container;
@@ -31,6 +34,14 @@ public class TemplateLayoutColumn {
 
     public void setContainer ( String container ) {
         this.container = container;
+    }
+
+    public boolean isPreview () {
+        return preview;
+    }
+
+    public void setPreview ( boolean preview ) {
+        this.preview = preview;
     }
 
     public Integer getWidthPercent () {
@@ -75,6 +86,19 @@ public class TemplateLayoutColumn {
 
     public Boolean isSidebar () {
         return this.type != null && this.type.equals( TYPE_SIDEBAR );
+    }
+
+    public String draw () throws Exception {
+
+        StringBuffer sb;
+        if ( this.preview ) {
+            sb = PreviewTemplateUtil.getMockBodyContent();
+        } else {
+            sb = new StringBuffer();
+            sb.append( "#parseContainer('" ).append( this.container ).append( "')" );
+        }
+
+        return sb.toString();
     }
 
 }

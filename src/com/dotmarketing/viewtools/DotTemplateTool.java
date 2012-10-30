@@ -54,16 +54,37 @@ public class DotTemplateTool implements ViewTool {
      *
      */
     public static TemplateLayout themeLayout ( String themeInode ) throws DotDataException, DotSecurityException {
+        return themeLayout( themeInode, false );
+    }
 
-        Identifier ident = APILocator.getIdentifierAPI().findFromInode( themeInode );
-        WebAsset template = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion( ident, APILocator.getUserAPI().getSystemUser(), false );
-        if ( !template.getInode().equals( themeInode ) ) {
-            template = (WebAsset) InodeFactory.getInode( themeInode, Template.class );
+    /**
+     * Given a theme id we will parse it and return the Layout for the given template
+     *
+     * @param themeInode
+     * @param isPreview
+     * @return
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     */
+    public static TemplateLayout themeLayout ( String themeInode, Boolean isPreview ) throws DotDataException, DotSecurityException {
+
+        String drawedBody;
+        if ( UtilMethods.isSet( themeInode ) ) {
+            Identifier ident = APILocator.getIdentifierAPI().findFromInode( themeInode );
+            WebAsset template = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion( ident, APILocator.getUserAPI().getSystemUser(), false );
+            if ( !template.getInode().equals( themeInode ) ) {
+                template = (WebAsset) InodeFactory.getInode( themeInode, Template.class );
+            }
+
+            drawedBody = ((Template) template).getDrawedBody();
+        } else {
+            drawedBody = (String) request.getAttribute( "designedBody" );
         }
 
         //Parse and return the layout for this template
-        TemplateLayout parameters = DesignTemplateUtil.getDesignParameters( ((Template) template).getDrawedBody() );
-        return parameters;
+        return DesignTemplateUtil.getDesignParameters( drawedBody, isPreview );
     }
 
     /**
@@ -80,6 +101,38 @@ public class DotTemplateTool implements ViewTool {
 
         //Get the theme folder
         Folder themeFolder = APILocator.getFolderAPI().find( themeFolderInode, APILocator.getUserAPI().getSystemUser(), false );
+        return setThemeData( themeFolder, hostId );
+    }
+
+    /**
+     * Method that will create a map of required data for the Layout template, basically paths
+     * where the different elements of the theme can be found.
+     *
+     * @param themeFolderPath
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static Map<String, Object> themeByPath ( String themeFolderPath, String hostId ) throws DotDataException, DotSecurityException {
+
+        //Get the theme folder
+        Folder themeFolder = APILocator.getFolderAPI().findFolderByPath( themeFolderPath, hostId, APILocator.getUserAPI().getSystemUser(), false );
+        return setThemeData( themeFolder, hostId );
+    }
+
+    /**
+     * Method that will create a map of required data for the Layout template, basically paths
+     * where the different elements of the theme can be found.
+     *
+     * @param themeFolder
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private static Map<String, Object> setThemeData ( Folder themeFolder, String hostId ) throws DotDataException, DotSecurityException {
+
         //Get the theme files
         List<FileAsset> themeFiles = APILocator.getFileAssetAPI().findFileAssetsByFolder( themeFolder, APILocator.getUserAPI().getSystemUser(), false );
 

@@ -62,8 +62,8 @@
 
                 #if ( $sidebar.location == "left")
                     <div class="$sidebarColumn1Span">
-                        ##Parse the container
-                        #parseContainer("$sidebar.container")
+                        ##Draw the column content
+                        $render.eval($sidebar.draw())
                     </div><!--/span-->
                     <div class="$sidebarColumn2Span">
                 #else
@@ -100,8 +100,8 @@
                             #end
 
                             <div class="$currentColumnSpan">
-                                ##Parse the container
-                                #parseContainer("$column.container")
+                                ##Draw the column content
+                                $render.eval($column.draw())
                             </div><!--/span-->
                         #end
                     </div><!--/row-fluid-->

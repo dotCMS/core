@@ -132,6 +132,17 @@ public class DesignTemplateUtil {
      * @return
      */
     public static TemplateLayout getDesignParameters ( String drawedBody ) {
+        return getDesignParameters( drawedBody, false );
+    }
+
+    /**
+     * Get the values for the design fields.
+     *
+     * @param drawedBody
+     * @param isPreview
+     * @return
+     */
+    public static TemplateLayout getDesignParameters ( String drawedBody, Boolean isPreview ) {
 
         Document templateDrawedBody = Jsoup.parse( drawedBody );
         TemplateLayout parameters = new TemplateLayout();
@@ -140,7 +151,7 @@ public class DesignTemplateUtil {
         parameters.setFooter( hasFooter( templateDrawedBody ) );
         parameters.setLayout( getLayout( templateDrawedBody ) );
         //Set the body layout to the template
-        setLayoutBody( parameters, templateDrawedBody );
+        setLayoutBody( parameters, templateDrawedBody, isPreview );
 
         return parameters;
     }
@@ -275,10 +286,12 @@ public class DesignTemplateUtil {
      * <p/>
      * After the parse will set the main column and the sidebar (if present) to the template layout.
      *
+     * @param layout
      * @param templateDrawedBody
+     * @param isPreview
      * @return
      */
-    private static void setLayoutBody ( TemplateLayout layout, Document templateDrawedBody ) {
+    private static void setLayoutBody ( TemplateLayout layout, Document templateDrawedBody, Boolean isPreview ) {
 
         //parseContainer regex
         Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
@@ -295,7 +308,7 @@ public class DesignTemplateUtil {
             if ( matcher.find() ) {
                 String container = matcher.group( 0 );
                 //Adding the sidebar to the layout
-                layout.setSidebar( container );
+                layout.setSidebar( container, isPreview );
             }
         }
 
@@ -320,7 +333,7 @@ public class DesignTemplateUtil {
             Matcher matcher = parseContainerPatter.matcher( splitBody.text() );
             while ( matcher.find() ) {
                 String container = matcher.group();
-                sb.addContainer( container );
+                sb.addContainer( container, isPreview );
             }
 
             splitBodiesList.add( sb );
