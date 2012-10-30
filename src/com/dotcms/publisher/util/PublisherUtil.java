@@ -43,6 +43,7 @@ import org.xml.sax.ContentHandler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -634,7 +635,13 @@ public class PublisherUtil {
 
 		return metaMap;
 	}
-
+	
+	/**
+	 * Returns an object represent the single row of publishing_end_point table.
+	 * We descrypt the auth_key in this case.
+	 * 
+	 * Oct 30, 2012 - 11:21:23 AM
+	 */
 	public static PublishingEndPoint getObjectByMap(Map<String, Object> row){
 		PublishingEndPoint pep = new PublishingEndPoint();
 		pep.setId(row.get("id").toString());
@@ -643,7 +650,7 @@ public class PublisherUtil {
 		pep.setPort(row.get("port").toString());
 		pep.setProtocol(row.get("protocol").toString());		
 		pep.setServerName(new StringBuilder(row.get("server_name").toString()));
-		pep.setAuthKey(new StringBuilder(row.get("auth_key").toString()));
+		pep.setAuthKey(new StringBuilder(PublicEncryptionFactory.decryptString(row.get("auth_key").toString())));
 		pep.setEnabled(Integer.parseInt(row.get("enabled").toString())==1);
 		pep.setSending(Integer.parseInt(row.get("sending").toString())==1);
 		return pep;

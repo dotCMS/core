@@ -28,6 +28,13 @@ public interface PublisherEndpointAPI {
 	PublishingEndPoint findEndpointById(String id) throws DotDataException;
 	
 	/**
+	 * Returns the single endpoint configured like sender. Null otherwise. 
+	 * 
+	 * Oct 29, 2012 - 10:07:36 AM
+	 */
+	PublishingEndPoint findSenderEndpoint() throws DotDataException;
+	
+	/**
 	 * Save a new endpoint.
 	 * 
 	 * Oct 29, 2012 - 12:45:37 PM
@@ -47,6 +54,8 @@ public interface PublisherEndpointAPI {
 	 * Oct 29, 2012 - 12:45:37 PM
 	 */
 	void deleteEndpointById(String id) throws DotDataException;
+	
+	
 	
 		
 }

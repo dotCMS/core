@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 
@@ -23,16 +24,14 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 	}
 
 	public PublishingEndPoint getEndpointById(String id) throws DotDataException {
-		PublishingEndPoint pep = new PublishingEndPoint();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(GET_ENDPOINT_BY_ID);
 		dc.addParam(id);
 		List<Map<String, Object>> res = dc.loadObjectResults();
 		if(res.size()>0){
-			pep = PublisherUtil.getObjectByMap(res.get(0));
+			return PublisherUtil.getObjectByMap(res.get(0));
 		}else
-			pep = null;
-		return pep;
+			return null;
 	}
 
 	public void store(PublishingEndPoint anEndpoint) throws DotDataException {
@@ -73,4 +72,13 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 		dc.loadResult();
 	}
 
+	public PublishingEndPoint getSenderEndpoint() throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(GET_SENDER_ENDPOINT);
+		List<Map<String, Object>> res = dc.loadObjectResults();
+		if(res.size()>0){
+			return PublisherUtil.getObjectByMap(res.get(0));
+		}else
+			return null;
+		}
 }
