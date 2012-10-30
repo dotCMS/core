@@ -55,6 +55,14 @@ public class PublisherEndpointAPIImpl implements PublisherEndpointAPI {
 		publisherEndpointFactory.deleteEndpointById(id);
 	}
 	
+	/**
+	 * Returns the single endpoint configured like sender. Null otherwise. 
+	 * 
+	 */
+	public PublishingEndPoint findSenderEndpoint() throws DotDataException {
+		return publisherEndpointFactory.getSenderEndpoint();
+	}
+
 	public PublisherEndpointFactory getPublisherEndpointFactory() {
 		return publisherEndpointFactory;
 	}

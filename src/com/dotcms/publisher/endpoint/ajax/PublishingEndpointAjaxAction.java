@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
@@ -57,7 +58,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setAddress(request.getParameter("address"));
 			endpoint.setPort(request.getParameter("port"));
 			endpoint.setProtocol(request.getParameter("protocol"));
-			endpoint.setAuthKey(new StringBuilder(request.getParameter("authKey")));
+			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
 			endpoint.setSending(null!=request.getParameter("sending"));									
 
@@ -79,7 +80,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setAddress(request.getParameter("address"));
 			endpoint.setPort(request.getParameter("port"));
 			endpoint.setProtocol(request.getParameter("protocol"));
-			endpoint.setAuthKey(new StringBuilder(request.getParameter("authKey")));
+			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
 			endpoint.setSending(null!=request.getParameter("sending"));
 			
