@@ -28,11 +28,11 @@ public interface PublisherEndpointAPI {
 	PublishingEndPoint findEndpointById(String id) throws DotDataException;
 	
 	/**
-	 * Returns the single endpoint configured like sender. Null otherwise. 
+	 * Returns the endpoint configured like sender. Null otherwise. 
 	 * 
 	 * Oct 29, 2012 - 10:07:36 AM
 	 */
-	PublishingEndPoint findSenderEndpoint() throws DotDataException;
+	PublishingEndPoint findSenderEndpointByAddress(String address) throws DotDataException;
 	
 	/**
 	 * Returns all the receiver endpoints. 
