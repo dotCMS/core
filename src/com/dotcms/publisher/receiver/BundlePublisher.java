@@ -119,7 +119,7 @@ public class BundlePublisher extends Publisher {
 			currentStatusHistory =
 					PublishAuditHistory.getObjectFromString(
 							(String)auditAPI.getPublishAuditStatus(
-									config.getId()).get("status_pojo"));
+									bundleFolder).get("status_pojo"));
 			currentStatusHistory.setPublishStart(new Date());
 			detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
 			detail.setInfo("Publishing bundle");
