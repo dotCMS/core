@@ -71,9 +71,10 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 		dc.loadResult();
 	}
 
-	public PublishingEndPoint getSenderEndpoint() throws DotDataException {
+	public PublishingEndPoint getSenderEndpointByAddress(String address) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(GET_SENDER_ENDPOINT);
+		dc.setSQL(GET_SENDER_ENDPOINT_BY_ADDRESS);
+		dc.addParam(address);
 		List<Map<String, Object>> res = dc.loadObjectResults();
 		if(res.size()>0){
 			return PublisherUtil.getObjectByMap(res.get(0));

@@ -59,8 +59,8 @@ public class PublisherEndpointAPIImpl implements PublisherEndpointAPI {
 	 * Returns the single endpoint configured like sender. Null otherwise. 
 	 * 
 	 */
-	public PublishingEndPoint findSenderEndpoint() throws DotDataException {
-		return publisherEndpointFactory.getSenderEndpoint();
+	public PublishingEndPoint findSenderEndpointByAddress(String address) throws DotDataException {
+		return publisherEndpointFactory.getSenderEndpointByAddress(address);
 	}
 
 	/**
