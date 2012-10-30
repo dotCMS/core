@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -17,6 +18,11 @@ import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.myTest.PushContentWrapper;
 import com.dotcms.publisher.myTest.PushPublisherBundler;
@@ -53,6 +59,7 @@ public class BundlePublisher extends Publisher {
 	private User systemUser = null;
 	private UserAPI uAPI = null;
 	private TagAPI tagAPI = null;
+	private PublishAuditAPI auditAPI = null;
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
@@ -62,6 +69,7 @@ public class BundlePublisher extends Publisher {
 	    conAPI = APILocator.getContentletAPI();
 	    uAPI = APILocator.getUserAPI();
 	    tagAPI = APILocator.getTagAPI();
+	    auditAPI = PublishAuditAPI.getInstance();
 	    
 	    try {
 			systemUser = uAPI.getSystemUser();
@@ -82,6 +90,7 @@ public class BundlePublisher extends Publisher {
 	    String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
 	    String bundlePath = ConfigUtils.getBundlePath()+File.separator+BundlePublisherResource.MY_TEMP;//FIXME
 	    
+	    
 		File folderOut = new File(bundlePath+bundleFolder);
 		folderOut.mkdir();
 		
@@ -100,8 +109,25 @@ public class BundlePublisher extends Publisher {
 		//Publish the bundle extracted
 		PushContentWrapper wrapper = null;
 		Contentlet content = null;
+		PublishAuditHistory currentStatusHistory = null;
+		EndpointDetail detail = new EndpointDetail();
 		try {				
 			HibernateUtil.startTransaction();
+			
+		    
+			//Update audit
+			currentStatusHistory =
+					PublishAuditHistory.getObjectFromString(
+							(String)auditAPI.getPublishAuditStatus(
+									config.getId()).get("status_pojo"));
+			currentStatusHistory.setPublishStart(new Date());
+			detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
+			detail.setInfo("Publishing bundle");
+			currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
+			
+			auditAPI.updatePublishAuditStatus(bundleFolder, 
+					PublishAuditStatus.Status.PUBLISHING_BUNDLE, 
+					currentStatusHistory);
 			
 			//For each content take the wrapper and save it on DB
 			Collection<File> contentFiles = FileUtils.listFiles(folderOut, new String[]{"content"}, true);
@@ -130,6 +156,15 @@ public class BundlePublisher extends Publisher {
 					unpublish(content, folderOut, userToUse, wrapper);
 				}
 			}
+			
+			//Update audit
+			detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+			detail.setInfo("Success");
+			currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
+			currentStatusHistory.setBundleEnd(new Date());
+			auditAPI.updatePublishAuditStatus(bundleFolder, 
+					PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+			
 			HibernateUtil.commitTransaction();	
 		} catch (Exception e) {
 			try {
@@ -139,8 +174,21 @@ public class BundlePublisher extends Publisher {
 			}			
 			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
 			
-			throw new DotPublishingException("Cannot check in the content with inode: " +
-					content.getInode(), e);
+			//Update audit
+			try {
+				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+				detail.setInfo("Failed to publish because an error occurred: "+e.getMessage());
+				currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
+				currentStatusHistory.setBundleEnd(new Date());
+				
+				auditAPI.updatePublishAuditStatus(bundleFolder, 
+						PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
+						currentStatusHistory);
+				
+			} catch (DotPublisherException e1) {
+				throw new DotPublishingException("Cannot check in the content with inode: " +
+						content.getInode(), e);
+			}
 		}
 		
 		

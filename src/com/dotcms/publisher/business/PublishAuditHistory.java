@@ -3,6 +3,7 @@ package com.dotcms.publisher.business;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,7 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 public class PublishAuditHistory implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private List<Map<String, Integer>> endpointsMap;
+	private Map<String, EndpointDetail> endpointsMap;
 	private Date bundleStart;
 	private Date bundleEnd;
 	private Date publishStart;
@@ -21,14 +22,14 @@ public class PublishAuditHistory implements Serializable {
 	
 	public PublishAuditHistory() {
 		assets = new ArrayList<String>();
-		endpointsMap = new ArrayList<Map<String,Integer>>();
+		endpointsMap = new HashMap<String,EndpointDetail>();
 	}
 	
 	
-	public List<Map<String, Integer>> getEndpointsMap() {
+	public Map<String, EndpointDetail> getEndpointsMap() {
 		return endpointsMap;
 	}
-	public void setEndpointsMap(List<Map<String, Integer>> endpointsMap) {
+	public void setEndpointsMap(Map<String, EndpointDetail> endpointsMap) {
 		this.endpointsMap = endpointsMap;
 	}
 	
@@ -80,6 +81,16 @@ public class PublishAuditHistory implements Serializable {
 		this.assets = assets;
 	}
 	
+	public void addOrUpdateEndpoint(String endpointId, EndpointDetail detail) {
+		EndpointDetail temp = endpointsMap.get(endpointId);
+		if(temp != null) {
+			temp.setInfo(detail.getInfo());
+			temp.setStatus(detail.getStatus());
+		} else {
+			endpointsMap.put(endpointId, detail);
+		}
+	}
+	
 	public String getSerialized() {
 		XStream xstream=new XStream(new DomDriver());
 	       
@@ -92,3 +103,5 @@ public class PublishAuditHistory implements Serializable {
 		return (PublishAuditHistory) xstream.fromXML(serializedString);
 	}
 }
+
+

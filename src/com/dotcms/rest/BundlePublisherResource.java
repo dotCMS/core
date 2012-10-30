@@ -17,7 +17,11 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
@@ -49,24 +53,30 @@ public class BundlePublisherResource extends WebResource {
 		try {
 			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
 			String remoteIP = req.getRemoteAddr();
+			PublishingEndPoint mySelf = endpointAPI.findSenderEndpointByAddress(remoteIP);
 			
-			if(!isValidToken(auth_token, remoteIP)) {
+			if(!isValidToken(auth_token, remoteIP, mySelf)) {
 				bundle.close();
 				return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
 			}
 			
-			//Write file on FS
 			String bundleName = fileDetail.getFileName();
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
+			String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+			
+			updateAuditTable(mySelf, bundleFolder);
+			
+			//Write file on FS
 			writeToFile(bundle, bundlePath+bundleName);
 			
+			
 			//Configure and Invoke the Publisher
-		
 			Logger.info(PublisherQueueJob.class, "Started bundle publish process");
 			
 			PublisherConfig pconf = new PublisherConfig();
 			BundlePublisher bundlePublisher = new BundlePublisher();
 			pconf.setId(bundleName);
+			pconf.setEndpoint(mySelf.getId());
 			bundlePublisher.init(pconf);
 			bundlePublisher.process(null);
 			
@@ -81,13 +91,29 @@ public class BundlePublisherResource extends WebResource {
 		
 		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
+
+	private void updateAuditTable(PublishingEndPoint mySelf, String bundleFolder)
+			throws DotPublisherException {
+		//Status
+		PublishAuditStatus status =  new PublishAuditStatus(bundleFolder);
+		//History
+		PublishAuditHistory historyPojo = new PublishAuditHistory();
+		EndpointDetail detail = new EndpointDetail();
+		detail.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
+		detail.setInfo("Received bundle");
+		
+		historyPojo.addOrUpdateEndpoint(mySelf.getId(), detail);
+		status.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE);
+		
+		//Insert in Audit table
+		auditAPI.insertPublishAuditStatus(status);
+	}
 	
-	private boolean isValidToken(String token, String remoteIP) throws IOException, DotDataException {
+	private boolean isValidToken(String token, String remoteIP, PublishingEndPoint mySelf) throws IOException, DotDataException {
 		String clientKey = token;
 		
 		//My key
 		String myKey = null;
-		PublishingEndPoint mySelf = endpointAPI.findSenderEndpointByAddress(remoteIP);
 		if(mySelf != null) {
 			myKey = retriveKeyString(
 					PublicEncryptionFactory.decryptString(mySelf.getAuthKey().toString()));

@@ -61,14 +61,9 @@ public class PublisherQueueJob implements StatefulJob {
 					//Retriving assets
 					List<String> assets = new ArrayList<String>();
 					
-					
 					for(Map<String,Object> c : tempBundleContents) {
 						assets.add((String) c.get("asset"));
 					}
-					
-					//Queries creation
-					pconf.setLuceneQueries(prepareQueries(tempBundleContents));
-					
 					historyPojo.setAssets(assets);
 					
 					//Status
@@ -77,7 +72,9 @@ public class PublisherQueueJob implements StatefulJob {
 					
 					//Insert in Audit table
 					pubAuditAPI.insertPublishAuditStatus(status);
-
+					
+					//Queries creation
+					pconf.setLuceneQueries(prepareQueries(tempBundleContents));
 					pconf.setId(tempBundleId);
 					pconf.setUser(APILocator.getUserAPI().getSystemUser());
 					pconf.runNow();

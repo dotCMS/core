@@ -15,11 +15,22 @@ public class PublishAuditStatus implements Serializable {
 	public static enum Status {
 		BUNDLE_REQUESTED(1),
 		BUNDLING(2),
-		PUBLISHING(3),
-		FAILED_TO_BUNDLE(4), 
-		FAILED_TO_PUBLISH(5),
-		SUCCESS(6);
+		SENDING_TO_ENDPOINTS(3),
+		FAILED_TO_SEND_TO_ALL_ENDPOINTS(4),
+		FAILED_TO_SEND_TO_SOME_ENDPOINTS(5),
+		FAILED_TO_BUNDLE(6), 
+		FAILED_TO_SENT(7),
 		
+		FAILED_TO_PUBLISH(8),
+		SUCCESS(9),
+		
+//		BUNDLE_SENT_SUCCESSFULLY(9),
+		RECEIVED_BUNDLE(10),
+		PUBLISHING_BUNDLE(11),
+		
+		FAILED(12); //EPIC FAIL
+		
+
 		private int code;
 		private Status(int code) {
 			this.code = code;
