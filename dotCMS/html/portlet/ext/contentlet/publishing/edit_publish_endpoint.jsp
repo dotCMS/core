@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
@@ -84,7 +85,7 @@
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">						          	
-			<textarea dojoType="dijit.form.Textarea" name="authKey" style="width:450px;min-height:180px;max-height: 600px"><%if(null!=currentEndpoint)out.print(currentEndpoint.getAuthKey());%></textarea>
+			<textarea dojoType="dijit.form.Textarea" name="authKey" style="width:450px;min-height:180px;max-height: 600px"><%if(null!=currentEndpoint)out.print(PublicEncryptionFactory.decryptString(currentEndpoint.getAuthKey().toString()));%></textarea>
 		</div>		
 	</div>
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">

@@ -24,6 +24,11 @@ public abstract class PublisherEndpointFactory {
 	protected static String GET_SENDER_ENDPOINT					=	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
 																	"FROM publishing_end_point " +
 																	"WHERE sending = 1";
+
+	protected static String GET_RECEIVER_ENDPOINTS				=	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
+																	"FROM publishing_end_point " +
+																	"WHERE sending = 0";
+
 	
 	protected static String SET_ENDPOINT						=	"INSERT INTO publishing_end_point VALUES (?,?,?,?,?,?,?,?,?)";
 	
@@ -41,6 +46,8 @@ public abstract class PublisherEndpointFactory {
 	public abstract PublishingEndPoint getEndpointById(String id) throws DotDataException;
 	
 	public abstract PublishingEndPoint getSenderEndpoint() throws DotDataException;
+	
+	public abstract List<PublishingEndPoint> getReceiverEndpoints() throws DotDataException;
 	
 	public abstract void store(PublishingEndPoint anEndpoint) throws DotDataException;
 	

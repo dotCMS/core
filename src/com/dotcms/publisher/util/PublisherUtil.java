@@ -650,7 +650,7 @@ public class PublisherUtil {
 		pep.setPort(row.get("port").toString());
 		pep.setProtocol(row.get("protocol").toString());		
 		pep.setServerName(new StringBuilder(row.get("server_name").toString()));
-		pep.setAuthKey(new StringBuilder(PublicEncryptionFactory.decryptString(row.get("auth_key").toString())));
+		pep.setAuthKey(new StringBuilder(row.get("auth_key").toString()));
 		pep.setEnabled(Integer.parseInt(row.get("enabled").toString())==1);
 		pep.setSending(Integer.parseInt(row.get("sending").toString())==1);
 		return pep;

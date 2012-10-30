@@ -63,6 +63,13 @@ public class PublisherEndpointAPIImpl implements PublisherEndpointAPI {
 		return publisherEndpointFactory.getSenderEndpoint();
 	}
 
+	/**
+	 * Returns all the receiver endpoints. 
+	 */
+	public List<PublishingEndPoint> findReceiverEndpoints() throws DotDataException {
+		return publisherEndpointFactory.getReceiverEndpoints();
+	}
+
 	public PublisherEndpointFactory getPublisherEndpointFactory() {
 		return publisherEndpointFactory;
 	}
@@ -71,5 +78,4 @@ public class PublisherEndpointAPIImpl implements PublisherEndpointAPI {
 			PublisherEndpointFactory publisherEndpointFactory) {
 		this.publisherEndpointFactory = publisherEndpointFactory;
 	}
-
 }
