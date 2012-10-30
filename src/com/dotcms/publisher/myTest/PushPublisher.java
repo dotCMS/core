@@ -19,6 +19,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
@@ -35,6 +36,7 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -101,7 +103,9 @@ public class PushPublisher extends Publisher {
 				Map<String, Integer> endpointStatus = new HashMap<String, Integer>();
 				
 				FormDataMultiPart form = new FormDataMultiPart();
-		        form.field("AUTH_TOKEN", endpoint.getAuthKey().toString());
+		        form.field("AUTH_TOKEN", 
+		        		retriveKeyString(
+		        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
 		        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 				
 				//Sending bundle to endpoint
@@ -213,6 +217,19 @@ public class PushPublisher extends Publisher {
 				}
 	    	}
 	    
+	}
+	
+	private String retriveKeyString(String token) throws IOException {
+		String key = null;
+		if(token.contains(File.separator)) {
+			File tokenFile = new File(token);
+			if(tokenFile != null && tokenFile.exists())
+				key = FileUtils.readFileToString(tokenFile, "UTF-8").trim();
+		} else {
+			key = token;
+		}
+		
+		return PublicEncryptionFactory.encryptString(key);
 	}
 
 	
