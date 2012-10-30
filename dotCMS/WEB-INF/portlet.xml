@@ -3467,7 +3467,24 @@
 		<security-role-ref>
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
-	</portlet>
+    </portlet>
+
+    <portlet>
+        <portlet-name>TIMEMACHINE</portlet-name>
+        <display-name>Time Machine</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/timemachine/view.jsp</value>
+        </init-param>
+        <expiration-cache>0</expiration-cache>
+        <supports>
+            <mime-type>text/html</mime-type>
+        </supports>
+        <security-role-ref>
+            <role-name>CMS Administrator</role-name>
+        </security-role-ref>
+    </portlet> 
 
 	<custom-window-state>
 		<window-state>exclusive</window-state>
