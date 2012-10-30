@@ -116,7 +116,7 @@
 
 	  <Valve className="org.apache.catalina.valves.AccessLogValve"
 		 directory="logs"  prefix="dotcms_access." suffix=".log"
-		 pattern="combined" resolveHosts="false"/>
+		 pattern="%h %l %u %t %r %H %v%U%q %s %b %{Referer}i %{User-Agent}i" resolveHosts="false "/>
 
       <!-- Define the default virtual host
            Note: XML Schema validation will not work with Xerces 2.2.
