@@ -13,11 +13,16 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.FileUtils;
 
 import com.dotcms.publisher.business.PublisherQueueJob;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.core.header.FormDataContentDisposition;
@@ -26,6 +31,7 @@ import com.sun.jersey.multipart.FormDataParam;
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {
 	public static String MY_TEMP = "";
+	private PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
 
 	@POST
 	@Path("/publish")
@@ -35,18 +41,19 @@ public class BundlePublisherResource extends WebResource {
 			@FormDataParam("bundle") FormDataContentDisposition fileDetail,
 			@FormDataParam("AUTH_TOKEN") String auth_token_enc) {
 		
-		String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
-		
-		if(!auth_token.equals("blablabla"))
-			return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
-		
-		//Write file on FS
-		String bundleName = fileDetail.getFileName();
-		String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
-		writeToFile(bundle, bundlePath+bundleName);
-		
-		//Configure and Invoke the Publisher
 		try {
+			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+			
+			if(!isValidToken(auth_token))
+				return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+			
+			//Write file on FS
+			String bundleName = fileDetail.getFileName();
+			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
+			writeToFile(bundle, bundlePath+bundleName);
+			
+			//Configure and Invoke the Publisher
+		
 			Logger.info(PublisherQueueJob.class, "Started bundle publish process");
 			
 			PublisherConfig pconf = new PublisherConfig();
@@ -65,6 +72,37 @@ public class BundlePublisherResource extends WebResource {
 		}
 		
 		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+	}
+	
+	private boolean isValidToken(String token) throws IOException, DotDataException {
+		String clientKey = retriveKeyString(token);
+		
+		//My key
+		String myKey = null;
+		PublishingEndPoint mySelf = endpointAPI.findSenderEndpoint();
+		if(mySelf != null) {
+			myKey = retriveKeyString(
+					PublicEncryptionFactory.decryptString(mySelf.getAuthKey().toString()));
+		} else {
+			return false;
+		}
+		
+		
+		return clientKey.equals(myKey);
+			
+	}
+	
+	private String retriveKeyString(String token) throws IOException {
+		String key = null;
+		if(token.contains(File.separator)) {
+			File tokenFile = new File(token);
+			if(tokenFile != null && tokenFile.exists())
+				key = FileUtils.readFileToString(tokenFile, "UTF-8").trim();
+		} else {
+			key = token;
+		}
+		
+		return key;
 	}
 
 	

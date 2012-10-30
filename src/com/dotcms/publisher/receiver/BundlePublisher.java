@@ -199,7 +199,7 @@ public class BundlePublisher extends Publisher {
 		
 		//Tags
 		for(Tag tag: wrapper.getTags()) {
-			tagAPI.addTag(tag.getTagName(), userToUse.getUserId(), content.getInode());
+			tagAPI.addTagInode(tag.getTagName(), content.getInode(), tag.getHostId());
 		}
 	}
 	
