@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -43,7 +44,7 @@ public class BundlePublisherResource extends WebResource {
 			@FormDataParam("bundle") InputStream bundle,
 			@FormDataParam("bundle") FormDataContentDisposition fileDetail,
 			@FormDataParam("AUTH_TOKEN") String auth_token_enc,
-			HttpServletRequest req) {
+			@Context HttpServletRequest req) {
 		
 		try {
 			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
