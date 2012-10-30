@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -15,6 +16,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 
+import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
@@ -32,6 +34,7 @@ import com.sun.jersey.multipart.FormDataParam;
 public class BundlePublisherResource extends WebResource {
 	public static String MY_TEMP = "";
 	private PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
+	private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
 
 	@POST
 	@Path("/publish")
@@ -39,13 +42,17 @@ public class BundlePublisherResource extends WebResource {
 	public Response publish(
 			@FormDataParam("bundle") InputStream bundle,
 			@FormDataParam("bundle") FormDataContentDisposition fileDetail,
-			@FormDataParam("AUTH_TOKEN") String auth_token_enc) {
+			@FormDataParam("AUTH_TOKEN") String auth_token_enc,
+			HttpServletRequest req) {
 		
 		try {
 			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+			String remoteIP = req.getRemoteAddr();
 			
-			if(!isValidToken(auth_token))
+			if(!isValidToken(auth_token, remoteIP)) {
+				bundle.close();
 				return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+			}
 			
 			//Write file on FS
 			String bundleName = fileDetail.getFileName();
@@ -74,12 +81,12 @@ public class BundlePublisherResource extends WebResource {
 		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 	
-	private boolean isValidToken(String token) throws IOException, DotDataException {
-		String clientKey = retriveKeyString(token);
+	private boolean isValidToken(String token, String remoteIP) throws IOException, DotDataException {
+		String clientKey = token;
 		
 		//My key
 		String myKey = null;
-		PublishingEndPoint mySelf = endpointAPI.findSenderEndpoint();
+		PublishingEndPoint mySelf = endpointAPI.findSenderEndpointByAddress(remoteIP);
 		if(mySelf != null) {
 			myKey = retriveKeyString(
 					PublicEncryptionFactory.decryptString(mySelf.getAuthKey().toString()));
