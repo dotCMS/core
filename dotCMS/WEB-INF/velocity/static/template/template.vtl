@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        #if($dotTheme.htmlHead)
+            #dotParse("${dotTheme.path}html_head.vtl")
+        #end
+
+        <link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap.css" />
+        <link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
+    </head>
+
+    <body>
+
+        #if($dotThemeLayout.header)
+            <div id="hd-template">
+                #dotParse("${dotTheme.path}header.vtl")
+            </div>
+        #end
+
+        ##CURRENT POSSIBLE VALUES: 100%, 974px, 950px, 750px
+        #if($dotThemeLayout.width == "100%")
+            <div class="container-fluid">
+        #else
+            <div class="container">
+        #end
+
+            ##Main column
+            #set ($mainColumn = $dotThemeLayout.body )
+            ##Sidebar
+            #set ($sidebar = $dotThemeLayout.sidebar )
+
+            ############################
+            ## SIDEBAR - (IF PRESENT) ##
+            ############################
+            #if ($sidebar)
+                #if($dotThemeLayout.width == "100%")
+                    <div class="row-fluid">
+                #else
+                    <div class="row">
+                #end
+
+                ##IMPORTANT!! FOR SIDEBAR WE WILL HAVE AVAILABLE THE WIDTH ONLY IN PIXELS
+
+                #if ( $sidebar.width == 160)
+                    #set ($sidebarColumn1Span = "span2" )
+                    #set ($sidebarColumn2Span = "span10" )
+                #elseif ( $sidebar.width == 180)
+                    #set ($sidebarColumn1Span = "span3" )
+                    #set ($sidebarColumn2Span = "span9" )
+                #elseif ( $sidebar.width == 240)
+                    #set ($sidebarColumn1Span = "span3" )
+                    #set ($sidebarColumn2Span = "span9" )
+                #elseif ( $sidebar.width == 300)
+                    #set ($sidebarColumn1Span = "span4" )
+                    #set ($sidebarColumn2Span = "span8" )
+                #else
+                    #set ($sidebarColumn1Span = "" )
+                    #set ($sidebarColumn2Span = "" )
+                #end
+
+                #if ( $sidebar.location == "left")
+                    <div class="$sidebarColumn1Span">
+                        ##Draw the column content
+                        $render.eval($sidebar.draw())
+                    </div><!--/span-->
+                    <div class="$sidebarColumn2Span">
+                #else
+                    <div class="$sidebarColumn2Span">
+                #end
+
+            #end
+
+            #########################################
+            ## ADDING THE ROWS FOR THE MAIN COLUMN ##
+            #########################################
+            #if ($mainColumn.rows)
+                #foreach( $row in $mainColumn.rows )
+
+                    <div class="row-fluid">
+                        ##Every row will have a number of columns, lets add one by one using bootstrap grid layout
+                        #foreach( $column in $row.columns )
+
+                            ##IMPORTANT!! FOR COLUMNS WE WILL HAVE AVAILABLE THE WIDTH ONLY AS PERCENT
+
+                            ##Now..., depending on the width of the column lets try to use bootstrap layout styles
+                            #if ( $column.widthPercent == 100)
+                                #set ($currentColumnSpan = "span12" )
+                            #elseif ( $column.widthPercent == 75)
+                                #set ($currentColumnSpan = "span9" )
+                            #elseif ( $column.widthPercent == 66)
+                                #set ($currentColumnSpan = "span8" )
+                            #elseif ( $column.widthPercent == 33)
+                                #set ($currentColumnSpan = "span4" )
+                            #elseif ( $column.widthPercent == 25)
+                                #set ($currentColumnSpan = "span3" )
+                            #else
+                                #set ($currentColumnSpan = "" )
+                            #end
+
+                            <div class="$currentColumnSpan">
+                                ##Draw the column content
+                                $render.eval($column.draw())
+                            </div><!--/span-->
+                        #end
+                    </div><!--/row-fluid-->
+
+                #end
+            #end
+
+            ############################
+            ## SIDEBAR - (IF PRESENT) ##
+            ############################
+            #if ($sidebar)
+                #if ( $sidebar.location == "left")
+                    </div><!--/span-->
+                #else
+                    </div><!--/span-->
+                    <div class="$sidebarColumn1Span">
+                        ##Parse the container
+                        #parseContainer("$sidebar.container")
+                    </div><!--/span-->
+                #end
+
+                </div><!--/row-->
+            #end
+
+        </div><!--/container-->
+
+        #if($dotThemeLayout.footer)
+            <div id="ft-template">
+                #dotParse("${dotTheme.path}footer.vtl")
+            </div>
+        #end
+
+        <!-- Placed at the end of the document so the pages loads faster -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script src="/html/js/bootstrap/bootstrap.min.js"></script>
+
+    </body>
+
+</html>

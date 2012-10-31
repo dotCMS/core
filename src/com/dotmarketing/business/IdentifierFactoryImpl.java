@@ -210,13 +210,17 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		return find(versionable.getVersionId());
 	}
-
+	
 	protected Identifier createNewIdentifier(Versionable versionable, Folder folder) throws DotDataException {
+	    return createNewIdentifier(versionable,folder,UUIDGenerator.generateUuid());
+	}
+	
+	protected Identifier createNewIdentifier(Versionable versionable, Folder folder, String existingId) throws DotDataException {
 
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		HostAPI hostAPI = APILocator.getHostAPI();
 
-		String uuid=null;
+		String uuid=existingId;
 
 		Identifier identifier = new Identifier();
 		Identifier parentId=APILocator.getIdentifierAPI().find(folder);
@@ -227,7 +231,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
-			uuid=UUIDGenerator.generateUuid();
 			identifier.setId(uuid);
 			if(versionable instanceof Contentlet){
 				Contentlet cont = (Contentlet)versionable;
@@ -274,6 +277,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		return identifier;
 	}
+	
+	protected Identifier createNewIdentifier ( Versionable versionable, Host host ) throws DotDataException {
+	    return createNewIdentifier(versionable,host,UUIDGenerator.generateUuid());
+	}
 
     /**
      * Creates a new Identifier for a given versionable asset under a given Host
@@ -283,9 +290,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
      * @return
      * @throws DotDataException
      */
-    protected Identifier createNewIdentifier ( Versionable versionable, Host host ) throws DotDataException {
+    protected Identifier createNewIdentifier ( Versionable versionable, Host host, String existingId) throws DotDataException {
 
-        String uuid = null;
+        String uuid = existingId;
         Identifier identifier = new Identifier();
 
         if ( versionable instanceof Folder ) {
@@ -295,7 +302,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         } else {
 
             String uri = versionable.getVersionType() + "." + versionable.getInode();
-            uuid = UUIDGenerator.generateUuid();
             identifier.setId( uuid );
 
             if ( versionable instanceof Contentlet && ((Contentlet) versionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {

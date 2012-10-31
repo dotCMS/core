@@ -704,6 +704,7 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
 
+
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 CREATE TABLE broken_link (
@@ -720,3 +721,36 @@ alter table broken_link add CONSTRAINT fk_brokenl_content
 
 alter table broken_link add CONSTRAINT fk_brokenl_field
     FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
+
+  
+create index idx_identifier_perm on identifier (asset_type,host_inode);
+
+-- ****** Content Publishing Framework *******
+CREATE TABLE publishing_queue
+(id bigserial PRIMARY KEY NOT NULL,
+operation int8, asset VARCHAR(2000) NOT NULL,
+language_id  int8 NOT NULL, entered_date TIMESTAMP,
+last_try TIMESTAMP, num_of_tries int8 NOT NULL DEFAULT 0,
+in_error bool DEFAULT 'f', last_results TEXT,
+publish_date TIMESTAMP, server_id VARCHAR(256), 
+type VARCHAR(256), bundle_id VARCHAR(256), target text);
+
+CREATE TABLE publishing_queue_audit
+(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, 
+status INTEGER, 
+status_pojo text, 
+status_updated TIMESTAMP, 
+create_date TIMESTAMP);
+
+-- ****** Content Publishing Framework - End Point Management *******
+CREATE TABLE publishing_end_point (
+	id varchar(36) PRIMARY KEY, 
+	group_id varchar(700), 
+	server_name varchar(700) unique,
+	address varchar(250),
+	port varchar(10),
+	protocol varchar(10),
+	enabled bool,
+	auth_key text,
+	sending bool);
+

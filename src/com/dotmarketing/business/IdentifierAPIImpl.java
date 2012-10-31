@@ -116,10 +116,19 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		ifac.deleteIdentifier(id);
 	}
 	public Identifier createNew(Versionable asset, Treeable parent) throws DotDataException{
+	    return createNew(asset,parent,null);
+	}
+	public Identifier createNew(Versionable asset, Treeable parent, String existingId) throws DotDataException{
 		if(parent instanceof Folder){
-			return ifac.createNewIdentifier(asset, (Folder) parent);
+		    if(UtilMethods.isSet(existingId))
+		        return ifac.createNewIdentifier(asset, (Folder) parent, existingId);
+		    else
+		        return ifac.createNewIdentifier(asset, (Folder) parent);
 		}else if(parent instanceof Host){
-			return ifac.createNewIdentifier(asset, (Host) parent);
+		    if(UtilMethods.isSet(existingId))
+		        return ifac.createNewIdentifier(asset, (Host) parent, existingId);
+		    else
+		        return ifac.createNewIdentifier(asset, (Host) parent);
 		}
 		else{
 			throw new DotStateException("You can only create an identifier on a host of folder.  Trying: " + parent);

@@ -1,43 +1,5 @@
 package com.dotmarketing.velocity;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilterWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.struts.Globals;
-import org.apache.velocity.Template;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.tools.view.context.ChainedContext;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -66,16 +28,8 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.CookieUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletURLUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityProfiler;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
+import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.HTMLPageWebAPI;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -83,6 +37,25 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
+import org.apache.struts.Globals;
+import org.apache.velocity.Template;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.tools.view.context.ChainedContext;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.*;
+import java.io.*;
+import java.net.URLDecoder;
+import java.util.*;
+import java.util.Calendar;
+
+import static com.dotmarketing.business.PermissionAPI.*;
 
 public abstract class VelocityServlet extends HttpServlet {
 
@@ -696,10 +669,19 @@ public abstract class VelocityServlet extends HttpServlet {
 
 			template = VelocityUtil.getEngine().getTemplate("/preview_left_menu.vl");
 		} else if (request.getParameter("mainFrame") != null) {
-			hostVariablesTemplate = VelocityUtil.getEngine().getTemplate("/working/" + host.getIdentifier() + "."
-					+ Config.getStringProperty("VELOCITY_HOST_EXTENSION"));
-			template = VelocityUtil.getEngine().getTemplate("/working/" + templateIdentifier.getInode() + "."
-					+ Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION"));
+			hostVariablesTemplate = VelocityUtil.getEngine().getTemplate("/working/" + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION"));
+
+            if ( cmsTemplate.isDrawed() ) {//We have a designed template
+                //Setting some theme variables
+                Map<String, Object> dotThemeData = DotTemplateTool.theme( cmsTemplate.getTheme(), host.getIdentifier() );
+                context.put( "dotTheme", dotThemeData );
+                context.put( "dotThemeLayout", DotTemplateTool.themeLayout( cmsTemplate.getInode() ) );
+                //Our designed template
+                template = VelocityUtil.getEngine().getTemplate( (String) dotThemeData.get( "templatePath" ) );
+            } else {
+                template = VelocityUtil.getEngine().getTemplate( "/working/" + templateIdentifier.getInode() + "." + Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION" ) );
+            }
+
 		} else {
 			template = VelocityUtil.getEngine().getTemplate("/preview_mode.vl");
 		}
