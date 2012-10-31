@@ -2,11 +2,17 @@ package com.dotmarketing.portlets.checkurl.bean;
 
 public class CheckURLBean {
 	
-	private String url;
+    private String inode;
+    private String url;
 	private String title;
 	private int statusCode;
-	private boolean internalLink;
-	
+
+    public String getInode() {
+        return inode;
+    }
+    public void setInode(String inode) {
+        this.inode = inode;
+    }
 	public String getUrl() {
 		return url;
 	}
@@ -26,10 +32,7 @@ public class CheckURLBean {
 		this.title = title;
 	}
 	public boolean isInternalLink() {
-		return internalLink;
-	}
-	public void setInternalLink(boolean internalLink) {
-		this.internalLink = internalLink;
+		return url.startsWith("http://") || url.startsWith("https://"); 
 	}
 	
 	@Override
