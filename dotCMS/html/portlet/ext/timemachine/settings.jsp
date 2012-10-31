@@ -4,6 +4,8 @@
 <%@page import="com.dotmarketing.quartz.ScheduledTask"%>
 <%@include file="/html/common/init.jsp"%>
 <%@include file="/html/common/top_inc.jsp"%>
+<%if(!APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){return;} %>
+	                   
 
 <%
 String cronExp="";
