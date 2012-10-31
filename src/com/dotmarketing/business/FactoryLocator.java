@@ -17,6 +17,8 @@ import com.dotmarketing.portlets.categories.business.CategoryFactory;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryImpl;
 import com.dotmarketing.portlets.chains.business.ChainFactory;
 import com.dotmarketing.portlets.chains.business.ChainFactoryImpl;
+import com.dotmarketing.portlets.checkurl.business.LinkCheckerFactory;
+import com.dotmarketing.portlets.checkurl.business.LinkCheckerFactoryImpl;
 import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
@@ -164,6 +166,9 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static IndiciesFactory getIndiciesFactory(){
         return (IndiciesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
     }
+    public static LinkCheckerFactory getLinkCheckerFactory() {
+        return (LinkCheckerFactory) getInstance(FactoryIndex.LINKCHECKER_FACTORY);
+    }
     
     private static Object getInstance(FactoryIndex index) {
 	
@@ -224,7 +229,8 @@ enum FactoryIndex
 	FOLDER_FACTORY,
 	DASHBOARD_FACTORY,
 	WORKFLOWS_FACTORY,
-	INDICIES_FACTORY;
+	INDICIES_FACTORY,
+	LINKCHECKER_FACTORY;
 	
 	
 	Object create() {
@@ -255,6 +261,7 @@ enum FactoryIndex
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
             case INDICIES_FACTORY: return new IndiciesFactoryImpl();
+            case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

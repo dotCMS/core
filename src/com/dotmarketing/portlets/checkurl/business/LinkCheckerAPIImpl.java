@@ -18,22 +18,27 @@ import org.jsoup.select.Elements;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.checkurl.bean.CheckURLBean;
 import com.dotmarketing.portlets.checkurl.bean.URL;
 import com.dotmarketing.portlets.checkurl.util.ProxyManager;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.UtilMethods;
 
 public class LinkCheckerAPIImpl implements LinkCheckerAPI {
     
-    public static String ANCHOR = "a";  
-    public static String HREF = "href";
-    public static String TITLE = "title";
-    public static String HTTPS = "https";
-    public static String HTTP = "http";
-    public static String PARAGRAPH = "#";
+    private static String ANCHOR = "a";  
+    private static String HREF = "href";
+    private static String TITLE = "title";
+    private static String HTTPS = "https";
+    private static String HTTP = "http";
+    private static String PARAGRAPH = "#";
+    
+    private LinkCheckerFactory linkFactory=FactoryLocator.getLinkCheckerFactory(); 
     
     @SuppressWarnings("deprecation")
     private static void loadProxy(HttpClient client){
@@ -126,7 +131,6 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
                     c.setUrl(a.getExternalLink().absoluteURL());
                     c.setStatusCode(statusCode);
                     c.setTitle(a.getTitle());
-                    c.setInternalLink(false);
                     result.add(c);
                 }
             }else {  //internal link.
@@ -142,13 +146,33 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
                         CheckURLBean c = new CheckURLBean();
                         c.setUrl(a.getInternalLink());
                         c.setTitle(a.getTitle());
-                        c.setInternalLink(true);
                         result.add(c);
                     }
                 }
             }
         }
         return result;
+    }
+    
+    @Override
+    public void saveInvalidLinks(Contentlet contentlet, Field field, List<CheckURLBean> links) throws DotDataException, DotSecurityException {
+        linkFactory.save(contentlet.getInode(), field.getInode(), links);
+    }
+    
+    public void deleteInvalidLinks(Contentlet contentlet) throws DotDataException, DotSecurityException {
+        linkFactory.deleteByInode(contentlet.getInode());
+    }
+    
+    public List<CheckURLBean> findByInode(String inode) throws DotDataException {
+        return linkFactory.findByInode(inode);
+    }
+    
+    public List<CheckURLBean> findAll(int offset, int pageSize) throws DotDataException {
+        return linkFactory.findAll(offset, pageSize);
+    }
+    
+    public int findAllCount() throws DotDataException {
+        return linkFactory.findAllCount();
     }
     
     protected static class Anchor {
@@ -191,5 +215,4 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
         }
         
     }
-    
 }
