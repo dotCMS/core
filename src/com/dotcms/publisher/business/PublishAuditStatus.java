@@ -24,11 +24,9 @@ public class PublishAuditStatus implements Serializable {
 		FAILED_TO_PUBLISH(8),
 		SUCCESS(9),
 		
-//		BUNDLE_SENT_SUCCESSFULLY(9),
-		RECEIVED_BUNDLE(10),
-		PUBLISHING_BUNDLE(11),
-		
-		FAILED(12); //EPIC FAIL
+		BUNDLE_SENT_SUCCESSFULLY(10),
+		RECEIVED_BUNDLE(11),
+		PUBLISHING_BUNDLE(12);
 		
 
 		private int code;
@@ -79,6 +77,14 @@ public class PublishAuditStatus implements Serializable {
 				return status.toString();
 		}
 		return "";
+	}
+	
+	public static Status getStatusObjectByCode(int code) {
+		for(Status status: Status.values()) {
+			if(status.getCode() == code)
+				return status;
+		}
+		return null;
 	}
 	
 	public String getBundleId() {

@@ -10,8 +10,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.publisher.business.PublishAuditHistory;
 
 @Path("/auditPublishing")
 public class AuditPublishingResource extends WebResource {
@@ -21,16 +20,19 @@ public class AuditPublishingResource extends WebResource {
 	@GET
 	@Path("/get/{bundleId:.*}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public PublishAuditStatus get(@PathParam("bundleId") String bundleId) {
-		PublishAuditStatus status = null;
+	public PublishAuditHistory get(@PathParam("bundleId") String bundleId) {
+		Map<String, Object> status = null;
 		
-//		try {
-//			//status = auditAPI.getPublishAuditStatus(bundleId);
-//		} catch (DotPublisherException e) {
-//			e.printStackTrace();
-//		}
+		try {
+			status = auditAPI.getPublishAuditStatus(bundleId);
+			
+			if(status != null)
+				return (PublishAuditHistory) status.get("status_pojo");
+		} catch (DotPublisherException e) {
+			e.printStackTrace();
+		}
 		
-		return status;
+		return null;
 	}
 
 	

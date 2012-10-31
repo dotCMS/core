@@ -250,6 +250,24 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
-
 	
+	private final String SELECTSQLPENDING=
+			"SELECT * "+
+			"FROM publishing_queue_audit " +
+			"WHERE status = ? or status = ?";
+	
+	public List<Map<String,Object>> getPendingPublishAuditStatus() throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			dc.setSQL(SELECTSQLPENDING);
+			
+			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS.getCode());
+			
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}
+	}
 }
