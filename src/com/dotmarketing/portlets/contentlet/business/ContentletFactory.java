@@ -106,6 +106,7 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException 
 	 */
 	protected abstract Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
+	protected abstract Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
