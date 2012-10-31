@@ -112,7 +112,7 @@ if (layoutOb != null) {
 		myCp.refresh();
 
 	}
-	function loadPublishQueueServers(){
+	function loadPublishQueueEndpoints(){
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";		
 		
 		var myCp = dijit.byId("endpointsContent");	
@@ -128,42 +128,57 @@ if (layoutOb != null) {
 	}
 	
 	function goToAddEndpoint(){
-		var url = "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp";		
-		
-		var myCp = dijit.byId("endpointsContent");	
-		
-		if (myCp) {
-			myCp.destroyRecursive(false);
-		}
-		myCp = new dojox.layout.ContentPane({
-			id : "endpointsContent"
-		}).placeAt("endpoint_servers");
-	
-		myCp.attr("href", url);		
-		myCp.refresh();
+		var dialog = new dijit.Dialog({
+			id: 'addEndpoint',
+	        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Add")%>",
+	        style: "width: 800px; ",
+	        content: new dojox.layout.ContentPane({
+	            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp"
+	        }),
+	        onHide: function() {
+	        	var dialog=this;
+	        	setTimeout(function() {
+	        		dialog.destroyRecursive();
+	        	},200);
+	        },
+	        onLoad: function() {
+	        	
+	        }
+	    });
+	    dialog.show();	    
+	    dojo.style(dialog.domNode,'top','80px');
 	}
 
-	function editEndpoint(identifier){	
-		var url = "/html/portlet/ext/contentlet/publishing/edit_publish_endpoint.jsp?op=edit&id="+identifier;		
-		
-		var myCp = dijit.byId("endpointsContent");	
-		
-		if (myCp) {
-			myCp.destroyRecursive(false);
-		}
-		myCp = new dojox.layout.ContentPane({
-			id : "endpointsContent"
-		}).placeAt("endpoint_servers");
-	
-		myCp.attr("href", url);		
-		myCp.refresh();	
+	function goToEditEndpoint(identifier){
+		var dialog = new dijit.Dialog({
+			id: 'editEndpoint',
+	        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Edit")%>",
+	        style: "width: 800px; ",
+	        content: new dojox.layout.ContentPane({
+	            href: "/html/portlet/ext/contentlet/publishing/edit_publish_endpoint.jsp?op=edit&id="+identifier
+	        }),
+	        onHide: function() {
+	        	var dialog=this;
+	        	setTimeout(function() {
+	        		dialog.destroyRecursive();
+	        	},200);
+	        },
+	        onLoad: function() {
+	        }
+	    });
+	    dialog.show();	    
+	    dojo.style(dialog.domNode,'top','80px');
 	}
 
-	function backToEndpointsList(){
+	function backToEndpointsList(add){
+		if(add)
+			dijit.byId("addEndpoint").hide();			
+		else
+			dijit.byId("editEndpoint").hide();
+		
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";		
 		
 		var myCp = dijit.byId("endpointsContent");	
-		
 		if (myCp) {
 			myCp.destroyRecursive(false);
 		}
@@ -261,7 +276,7 @@ if (layoutOb != null) {
 			</div>
 			<script type="text/javascript">
 			dojo.ready(function(){
-				loadPublishQueueServers();
+				loadPublishQueueEndpoints();
 			});
 			</script>
   		</div>

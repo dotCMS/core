@@ -2,23 +2,28 @@
 <script type="text/javascript">
 	
 	function addEndpoint(){
-		  var form = dojo.byId("saveEndpoint");
-		  dojo.connect(form, "onsubmit", function(event){			  
+		  var form = dojo.byId("formSaveEndpoint");
+		  dojo.connect(form, "onsubmit", function(event){
+		  dijit.byId("save").setAttribute('disabled',true);	  
+		  dijit.byId("closeSave").setAttribute("disabled", true);
 		  dojo.stopEvent(event);
 		    var xhrArgs = {
 		    	url: "/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint",
-		      	form: dojo.byId("saveEndpoint"),
+		      	form: dojo.byId("formSaveEndpoint"),
 		      	handleAs: "text",
 			    load: function(data){
 			    	dojo.byId("response").style.color = 'green';
 			    	dojo.byId("response").style.weight = 'bold';
 			    	dojo.byId("response").innerHTML = "Endpoint saved successfully.";
 			    	dijit.byId("save").setAttribute('disabled',true);
+			    	dijit.byId("closeSave").setAttribute("disabled", false);
 			    },
 			    error: function(error){
 			    	dojo.byId("response").style.color = 'red';
 			    	dojo.byId("response").style.weight = 'bold';			    	
 			        dojo.byId("response").innerHTML = "Endpoint not saved successfully. "+error;
+			        dijit.byId("save").setAttribute('disabled',false);
+			        dijit.byId("closeSave").setAttribute("disabled", false);
 			    }
 			}
 	    	dojo.byId("response").style.color = '#FFCC00';
@@ -36,9 +41,9 @@
 <div>&nbsp;</div>
 <div>&nbsp;</div>
 <div style="float: left; padding-left: 15px;" id="response"></div>
-<form name="saveEndpoint" method="post" id="saveEndpoint">
+<form name="formSaveEndpoint" method="post" id="formSaveEndpoint">
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
@@ -47,19 +52,21 @@
 		
 	</div>
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
 			<input type="text" dojoType="dijit.form.TextBox" name="address" style="width:440px" value="" />		
 		</div>
-		<div style="padding-left:30px;padding-right:10px;width:30px;float:left;">
+	</div>	
+	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:
 		</div>
-		<div style="padding-left:5px;padding-right:10px;width:52px;float:left;">
+		<div style="padding-left:10px;padding-right:10px;width:52px;float:left;">
 			<input type="text" dojoType="dijit.form.TextBox" name="port" style="width:50px" value=""/>		
 		</div>
-		<div style="padding-left:40px;padding-right:10px;width:50px;float:left;">
+		<div style="padding-left:40px;padding-right:10px;width:60px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:
 		</div>
 		<div style="padding-left:5px;padding-right:10px;width:100px;height:50px;float:left;">
@@ -70,7 +77,7 @@
 		</div>		
 	</div>		
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">						          	
@@ -78,7 +85,7 @@
 		</div>		
 	</div>
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
@@ -86,7 +93,7 @@
 		</div>				
 	</div>	
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
@@ -94,7 +101,7 @@
 		</div>						
 	</div>
 	<div class="buttonRow">
-		<button dojoType="dijit.form.Button" onClick="backToEndpointsList()" id="back" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "back") %></button>
+		<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 		<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
     </div>	
 </form>
