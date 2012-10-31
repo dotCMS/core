@@ -3,6 +3,7 @@ package com.dotcms.publisher.myTest;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publishing.PublisherConfig;
 
 public class PushPublisherConfig extends PublisherConfig {
@@ -12,6 +13,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	}
 	
 	private Operation operation;
+	private List<PublishingEndPoint> endpoints;
 	
 	public PushPublisherConfig() {
 		super();
@@ -46,6 +48,16 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	public void setOperation(Operation operation) {
 		this.operation = operation;
+	}
+
+
+	public List<PublishingEndPoint> getEndpoints() {
+		return endpoints;
+	}
+
+
+	public void setEndpoints(List<PublishingEndPoint> endpoints) {
+		this.endpoints = endpoints;
 	}
 
 
