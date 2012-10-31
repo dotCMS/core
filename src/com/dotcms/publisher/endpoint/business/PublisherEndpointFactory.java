@@ -26,15 +26,15 @@ public abstract class PublisherEndpointFactory {
 	// this query is for select the current sender, on the receiver side, filtered by address
 	protected static String GET_SENDER_ENDPOINT_BY_ADDRESS		=	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
 																	"FROM publishing_end_point " +
-																	"WHERE sending = 1 " +
+																	"WHERE sending = ? " +
 																	"AND address = ? " +
-																	"AND enabled = 1";
+																	"AND enabled = ?";
 	
 	// this query is for select ALL the enabled receiver endpoint for sending them the bundle
 	protected static String GET_RECEIVER_ENDPOINTS				=	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
 																	"FROM publishing_end_point " +
-																	"WHERE sending = 0 " +
-																	"AND enabled = 1";
+																	"WHERE sending = ? " +
+																	"AND enabled = ?";
 
 	// this query is for store a new endpoint
 	protected static String SET_ENDPOINT						=	"INSERT INTO publishing_end_point VALUES (?,?,?,?,?,?,?,?,?)";
