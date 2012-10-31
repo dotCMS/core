@@ -1,9 +1,20 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ include file="/html/common/init.jsp" %>
+
+
+<% if(LicenseUtil.getLevel()< 199){ %>	
+<%@ include file="/html/portlet/ext/timemachine/not_licensed.jsp" %>
+
+<%return;} %>
+
+
+
 
 <style type="text/css">
 #tools {
@@ -160,11 +171,15 @@ function showSettings() {
 	                      <%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE_SNAP")%>
 	                   </button>
                    
+                   	<%if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){ %>
 	                   <span id="settings">
 		                   <button id="settingsBtn" dojoType="dijit.form.Button" onClick="showSettings()">
 		                      <%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>
 		                   </button>
 	                   </span>
+	                <%} %>
+	                   
+	                   
                    </span>
             </div>
             <div id="iframeWrapper" dojoType="dijit.layout.ContentPane" region="center">

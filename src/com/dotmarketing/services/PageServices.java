@@ -1,21 +1,6 @@
 package com.dotmarketing.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import bsh.This;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -33,12 +18,17 @@ import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.*;
 import com.dotmarketing.velocity.DotResourceCache;
+import org.apache.velocity.runtime.resource.ResourceManager;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.util.*;
 
 /**
  * @author will
@@ -86,7 +76,7 @@ public class PageServices {
 		StringBuilder sb = new StringBuilder();
 
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-		com.dotmarketing.portlets.templates.model.Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory.getHTMLPageTemplate(htmlPage, EDIT_MODE);
+		Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory.getHTMLPageTemplate(htmlPage, EDIT_MODE);
 		if(cmsTemplate == null || ! InodeUtils.isSet(cmsTemplate.getInode())){
 			Logger.error(This.class, "PAGE DOES NOT HAVE A VALID TEMPLATE (template unpublished?) : page id " + htmlPage.getIdentifier() + ":" + identifier.getURI()   );
 		}
@@ -264,7 +254,15 @@ public class PageServices {
 
 		
 		sb.append("#if(!$doNotParseTemplate)");
-			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION") ).append( "')");
+            if ( cmsTemplate.isDrawed() ) {//We have a designed template
+                //Setting some theme variables
+                sb.append( "#set ($dotTheme = $templatetool.theme(\"" ).append( cmsTemplate.getTheme() ).append( "\",\"" ).append( host.getIdentifier() ).append( "\"))" );
+                sb.append( "#set ($dotThemeLayout = $templatetool.themeLayout(\"" ).append( cmsTemplate.getInode() ).append( "\" ))" );
+                //Merging our template
+                sb.append( "$velutil.mergeTemplate(\"$dotTheme.templatePath\")" );
+            } else {
+                sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION" ) ).append( "')" );
+            }
 		sb.append("#end");
 		
 		
