@@ -144,7 +144,7 @@ public class PushPublisher extends Publisher {
 				
 				//Deleting queue records
 				pubAPI.deleteElementsFromPublishQueueTable(config.getId());
-			} else if(hasNetworkError) {
+			} else if(hasNetworkError && !hasPublishError) {
 				if(errorCounter == endpoints.size()) {
 					pubAuditAPI.updatePublishAuditStatus(config.getId(), 
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_ENDPOINTS, currentStatusHistory);
@@ -152,7 +152,7 @@ public class PushPublisher extends Publisher {
 					pubAuditAPI.updatePublishAuditStatus(config.getId(), 
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS, currentStatusHistory);
 				}
-			} else if(hasPublishError) {
+			} else if(hasPublishError && !hasNetworkError) {
 				pubAuditAPI.updatePublishAuditStatus(config.getId(), 
 						PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory);
 			} else {
