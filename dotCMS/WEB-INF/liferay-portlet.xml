@@ -82,6 +82,9 @@
 	<portlet id="EXT_8" struts-path="ext/folders" />
 	<portlet id="EXT_BROWSER" struts-path="ext/browser" />
 	<portlet id="EXT_11" struts-path="ext/contentlet" narrow="true"/>
+	<!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
+	<portlet id="EXT_CONTENT_PUBLISHING_TOOL" struts-path="ext/content/publishing" narrow="true" />
+	<!-- END: 	PORTLET CONTENT PUBLISHING FRAMEWORK -->
 	<portlet id="EXT_12" struts-path="ext/containers" narrow="true"/>
 	<portlet id="EXT_13" struts-path="ext/templates" narrow="true"/>
 	<portlet id="EXT_15" struts-path="ext/htmlpages" narrow="true"/>
