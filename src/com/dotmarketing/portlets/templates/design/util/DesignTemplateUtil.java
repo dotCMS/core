@@ -1,39 +1,21 @@
 package com.dotmarketing.portlets.templates.design.util;
 
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.ADD_CONTAINER_SPAN_CLASS;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.FILE_CONTAINER_DIV_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.FILE_TO_ADD_START_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.FILES_TO_ADD_DIV_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.H1_TAG;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.DIV_TAG;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.ID_ATTRIBUTE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.STYLE_ATTRIBUTE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.STYLE_DISPLAY_NONE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.TITLE_CONTAINER_SPAN_CLASS;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.START_COMMENT;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.END_COMMENT;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.PATH_CSS_YUI;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.NAME_ATTRIBUTE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.MAIN_DIV_NAME_VALUE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.HEADER_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.FOOTER_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.SIDEBAR_ID;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.CLASS_ATTRIBUTE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.NO_SIDEBAR_VALUE;
-import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.SPLIT_BODY_ID_PREFIX;
-
-import java.util.ArrayList;
-import java.util.List;
-
+import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UtilMethods;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.UtilMethods;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.*;
 
 /**
  * This class contains a list of utility's methods for the design of the template.
@@ -143,22 +125,36 @@ public class DesignTemplateUtil {
 		return new StringBuffer(templateBody.toString());
 	}
 
-	/**
-	 * Get the values for the design fields.
-	 *
-	 * @param drawedBody
-	 * @return
-	 */
-	public static TemplateLayout getDesignParameters(String drawedBody){
-		Document templateDrawedBody = Jsoup.parse(drawedBody);
-		TemplateLayout parameters = new TemplateLayout();
-		parameters.setPageWidth(getPageWithValue(templateDrawedBody));
-		parameters.setHeader(hasHeader(templateDrawedBody));
-		parameters.setFooter(hasFooter(templateDrawedBody));
-		parameters.setLayout(getLayout(templateDrawedBody));
-		parameters.setBodyRows(getSelectForBody(templateDrawedBody));
-		return parameters;
-	}
+    /**
+     * Get the values for the design fields.
+     *
+     * @param drawedBody
+     * @return
+     */
+    public static TemplateLayout getDesignParameters ( String drawedBody ) {
+        return getDesignParameters( drawedBody, false );
+    }
+
+    /**
+     * Get the values for the design fields.
+     *
+     * @param drawedBody
+     * @param isPreview
+     * @return
+     */
+    public static TemplateLayout getDesignParameters ( String drawedBody, Boolean isPreview ) {
+
+        Document templateDrawedBody = Jsoup.parse( drawedBody );
+        TemplateLayout parameters = new TemplateLayout();
+        parameters.setPageWidth( getPageWithValue( templateDrawedBody ) );
+        parameters.setHeader( hasHeader( templateDrawedBody ) );
+        parameters.setFooter( hasFooter( templateDrawedBody ) );
+        parameters.setLayout( getLayout( templateDrawedBody ) );
+        //Set the body layout to the template
+        setLayoutBody( parameters, templateDrawedBody, isPreview );
+
+        return parameters;
+    }
 
 	/**
 	 * Get the imported files inodes
@@ -284,22 +280,67 @@ public class DesignTemplateUtil {
 		return footer!=null;
 	}
 
-	private static List<TemplateLayoutRow> getSelectForBody(Document templateDrawedBody){
-		List<TemplateLayoutRow> splitBodiesList = new ArrayList<TemplateLayoutRow>();
-		Elements splitBodies = templateDrawedBody.select(DIV_TAG+"["+ID_ATTRIBUTE+"~="+getRegexForSelectBody());
-		for(int i=0; i<splitBodies.size(); i++){
-			Element splitBody = splitBodies.get(i);
-			// gets the identifier of the body div
-			String idHtml = splitBody.attr(ID_ATTRIBUTE);
-			String id = idHtml.substring(idHtml.indexOf(SPLIT_BODY_ID_PREFIX)+SPLIT_BODY_ID_PREFIX.length());
-			TemplateLayoutRow sb = new TemplateLayoutRow();
-			sb.setIdentifier(Integer.parseInt(id));
-			sb.setId("select_splitBody");
-			sb.setValue(splitBody.child(0).attr(ID_ATTRIBUTE));
-			splitBodiesList.add(sb);
-		}
-		return splitBodiesList;
-	}
+    /**
+     * Method that will parse the drawed body in order to split it in rows for the main column, also
+     * will verify if the drawed body have a sidebar.
+     * <p/>
+     * After the parse will set the main column and the sidebar (if present) to the template layout.
+     *
+     * @param layout
+     * @param templateDrawedBody
+     * @param isPreview
+     * @return
+     */
+    private static void setLayoutBody ( TemplateLayout layout, Document templateDrawedBody, Boolean isPreview ) {
+
+        //parseContainer regex
+        Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
+
+        //***************************************************************
+        //Verify if we have a sidebar
+        Elements splitSideBar = templateDrawedBody.select( DIV_TAG + "[" + ID_ATTRIBUTE + "=" + SIDEBAR_ID );
+        if ( splitSideBar != null && !splitSideBar.isEmpty() ) {//We found our sidebar
+
+            Element sidebar = splitSideBar.get( 0 );
+
+            //Getting the containers for this html fragment
+            Matcher matcher = parseContainerPatter.matcher( sidebar.text() );
+            if ( matcher.find() ) {
+                String container = matcher.group( 0 );
+                //Adding the sidebar to the layout
+                layout.setSidebar( container, isPreview );
+            }
+        }
+
+        //***************************************************************
+        //Split the drawed body in rows
+        List<TemplateLayoutRow> splitBodiesList = new ArrayList<TemplateLayoutRow>();
+        Elements splitBodies = templateDrawedBody.select( DIV_TAG + "[" + ID_ATTRIBUTE + "~=" + getRegexForSelectBody() );
+        for ( int i = 0; i < splitBodies.size(); i++ ) {
+
+            Element splitBody = splitBodies.get( i );
+            // gets the identifier of the body div
+            String idHtml = splitBody.attr( ID_ATTRIBUTE );
+            String id = idHtml.substring( idHtml.indexOf( SPLIT_BODY_ID_PREFIX ) + SPLIT_BODY_ID_PREFIX.length() );
+
+            //Create a template row
+            TemplateLayoutRow sb = new TemplateLayoutRow();
+            sb.setIdentifier( Integer.parseInt( id ) );
+            sb.setId( "select_splitBody" );
+            sb.setValue( splitBody.child( 0 ).attr( ID_ATTRIBUTE ) );
+
+            //Getting the containers for this html fragment
+            Matcher matcher = parseContainerPatter.matcher( splitBody.text() );
+            while ( matcher.find() ) {
+                String container = matcher.group();
+                sb.addContainer( container, isPreview );
+            }
+
+            splitBodiesList.add( sb );
+        }
+        //Set the body column with its rows
+        layout.setBody( splitBodiesList );
+    }
 
 	private static void getMetatagContainers(Document templateBody){
 		Element head = templateBody.head();
