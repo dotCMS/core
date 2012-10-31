@@ -1,7 +1,7 @@
 <Context path="" docBase="../../dotCMS" debug="0" reloadable="false" crossContext="true">
 	
 	
-	<Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />
+	<Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="smtp.eng.it" />
 	
 	<!--
 		IMPORTANT your maxActive number of connections should be higher than the number of server threads you 
@@ -14,8 +14,8 @@
 	<Resource name="jdbc/dotCMSPool" auth="Container" 
 	        type="javax.sql.DataSource"
 	        driverClassName="org.postgresql.Driver"
-	        url="jdbc:postgresql://localhost/trunk"
-	        username="{your db user}" password="{your db password}" maxActive="60" maxIdle="5" maxWait="60000"
+	        url="jdbc:postgresql://localhost/dotcms"
+	        username="postgres" password="snook05" maxActive="60" maxIdle="5" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
 		  validationQuery="SELECT 1" testOnBorrow="true" />		  
 	

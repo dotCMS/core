@@ -478,7 +478,7 @@
 							<dt id="tableContainer">
 								<table id="splitBodyTable" cellspacing="4" cellpadding="2">
 									<%
-										for(TemplateLayoutRow sb : parameters.getBodyRows()){
+										for(TemplateLayoutRow sb : parameters.getBody().getRows()){
 									%>
 								        <tr id="_selectRow<%=sb.getIdentifier()%>" class="spaceUnder">
 									        <td style="width: 16px;">
@@ -489,7 +489,7 @@
 									        	<% } %></td>
 									        <td>
 												<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)">
-													<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+													<option value="1" <%if(sb.getValue().equals("")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
 													<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
 													<option value="yui-gd-template" <%if(sb.getValue().equals("yui-gd-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
 													<option value="yui-ge-template" <%if(sb.getValue().equals("yui-ge-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
