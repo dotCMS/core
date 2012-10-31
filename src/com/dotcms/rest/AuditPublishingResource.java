@@ -27,7 +27,7 @@ public class AuditPublishingResource extends WebResource {
 			status = auditAPI.getPublishAuditStatus(bundleId);
 			
 			if(status != null)
-				return (PublishAuditHistory) status.get("status_pojo");
+				return PublishAuditHistory.getObjectFromString((String) status.get("status_pojo"));
 		} catch (DotPublisherException e) {
 			e.printStackTrace();
 		}
