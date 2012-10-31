@@ -148,7 +148,7 @@ public class PublisherQueueJob implements StatefulJob {
 		        			webResource
 					        .path("get")
 					        .path((String) pendingAudit.get("bundle_id"))
-					        .accept(MediaType.APPLICATION_JSON)
+					        .accept(MediaType.APPLICATION_XML)
 					        .get(PublishAuditHistory.class);
 		        	
 		        	if(enpointHistory != null) {
