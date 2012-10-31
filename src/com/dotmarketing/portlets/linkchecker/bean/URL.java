@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.checkurl.bean;
+package com.dotmarketing.portlets.linkchecker.bean;
 
 import org.apache.commons.httpclient.NameValuePair;
 
