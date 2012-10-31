@@ -68,7 +68,7 @@
 			<input type="text" dojoType="dijit.form.ValidationTextBox" 
 						  name="serverName" id="serverName" 
 						  style="width:440px;"
-						  required="true" promptMessage="A friendly server name identifier" onchange="enableSave()" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getServerName());%>"/>
+						  required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>" onchange="enableSave()" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getServerName());%>"/>
 		</div>
 		
 	</div>
@@ -79,7 +79,7 @@
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
 			<input type="text" dojoType="dijit.form.ValidationTextBox" 
 				   name="address" id="address" style="width:440px" 
-				   required="true" promptMessage="The DNS server name or the IP address" onchange="enableSave()" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getAddress());%>" />		
+				   required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>" onchange="enableSave()" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getAddress());%>" />		
 		</div>
 	</div>
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
@@ -89,7 +89,7 @@
 		<div style="padding-left:10px;padding-right:10px;width:52px;float:left;">
 			<input type="text" dojoType="dijit.form.ValidationTextBox" 
 				   name="port" style="width:50px" 
-				   promptMessage="The server port. Default 80" regExp="^[0-9]+$" invalidMessage="The server port must be a number." value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getPort());%>" />		
+				   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getPort());%>" />		
 		</div>
 		<div style="padding-left:40px;padding-right:10px;width:50px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:

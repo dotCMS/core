@@ -57,7 +57,7 @@
 			<input type="text" dojoType="dijit.form.ValidationTextBox" 
 					  name="serverName" id="serverName" 
 					  style="width:440px;"
-					  required="true" promptMessage="A friendly server name identifier" onchange="enableSave()"/>
+					  required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>" onchange="enableSave()"/>
 		</div>
 		
 	</div>
@@ -68,7 +68,7 @@
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
 			<input type="text" dojoType="dijit.form.ValidationTextBox" 
 				   name="address" id="address" style="width:440px" 
-				   required="true" promptMessage="The DNS server name or the IP address" onchange="enableSave()"/>
+				   required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>" onchange="enableSave()"/>
 		</div>
 	</div>	
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
@@ -78,7 +78,7 @@
 		<div style="padding-left:10px;padding-right:10px;width:52px;float:left;">
 			<input type="text" dojoType="dijit.form.ValidationTextBox" 
 				   name="port" id="port" style="width:50px" 
-				   promptMessage="The server port. Default 80" regExp="^[0-9]+$" invalidMessage="The server port must be a number." />		
+				   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />		
 		</div>
 		<div style="padding-left:40px;padding-right:10px;width:60px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:
