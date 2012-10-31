@@ -27,10 +27,10 @@ public class PublishingEndPoint implements Serializable{
 	
 	public PublishingEndPoint(){
 		groupId = "";
-		serverName = new StringBuilder();
-		address = "";
+		serverName = null;
+		address = null;
 		port = "";
-		protocol = "";
+		protocol = null;
 		authKey = new StringBuilder();
 	}
 	
