@@ -129,6 +129,6 @@
 	<input type="hidden" name="identifier" value="<%=currentEndpoint.getId()%>" />
 	<div class="buttonRow">
 		<button dojoType="dijit.form.Button" onClick="backToEndpointsList(false)" id="closeUpdate" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
-		<button dojoType="dijit.form.Button" type="submit" id="update" iconClass="saveIcon" disabled="true"><%= LanguageUtil.get(pageContext, "update") %></button>
+		<button dojoType="dijit.form.Button" type="submit" id="update" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "update") %></button>
     </div>	
 </form>
