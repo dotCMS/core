@@ -159,7 +159,7 @@ public class BundlePublisher extends Publisher {
 			
 			//Update audit
 			detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-			detail.setInfo("Success");
+			detail.setInfo("Everything ok");
 			currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
 			currentStatusHistory.setBundleEnd(new Date());
 			auditAPI.updatePublishAuditStatus(bundleFolder, 
