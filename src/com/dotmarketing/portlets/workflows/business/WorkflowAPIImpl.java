@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
@@ -91,7 +92,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			UnarchiveContentActionlet.class,
 			ResetTaskActionlet.class,
 			MultipleApproverActionlet.class,
-			TwitterActionlet.class
+			TwitterActionlet.class,
+			PushPublishActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();

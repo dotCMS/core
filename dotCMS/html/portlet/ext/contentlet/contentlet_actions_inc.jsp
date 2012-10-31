@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
+<%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="java.util.List"%>
@@ -129,7 +131,13 @@ catch(Exception e){
 
 <%--Start workflow tasks --%>
 <%for(WorkflowAction a : wfActions){ %>
-	<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable()%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
+<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
+<% boolean hasPushPublishActionlet = false; %>
+<% for(WorkflowActionClass actionlet : actionlets){ %>
+<% if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
+	<% hasPushPublishActionlet = true; %>
+<% }} %>
+	<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
 	<span class="<%=a.getIcon()%>"></span>
 		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
 	</a>

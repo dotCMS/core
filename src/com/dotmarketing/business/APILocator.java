@@ -8,6 +8,8 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
+import com.dotcms.publisher.endpoint.business.PublisherEndpointAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -272,6 +274,10 @@ public class APILocator extends Locator<APIIndex>{
 	public static PublisherAPI getPublisherAPI() {
 	    return (PublisherAPI) getInstance(APIIndex.PUBLISHER_API);
 	}
+	public static PublisherEndpointAPI getPublisherEndpointAPI() {
+		return (PublisherEndpointAPI) getInstance(APIIndex.PUBLISHER_ENDPOINT_API);
+	}
+	
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -347,7 +353,9 @@ enum APIIndex
 	CONTENLET_INDEX_API,
 	PUBLISHER_API,
 	ES_INDEX_API,
-	TIME_MACHINE_API;
+	TIME_MACHINE_API,
+	PUBLISHER_ENDPOINT_API;
+	
 	Object create() {
 		switch(this) {
 		case PERMISSION_API: return new PermissionBitAPIImpl(FactoryLocator.getPermissionFactory());
@@ -391,6 +399,7 @@ enum APIIndex
 		case ES_INDEX_API: return new ESIndexAPI();
 		case PUBLISHER_API: return new PublisherAPIImpl();
 		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
+		case PUBLISHER_ENDPOINT_API: return new PublisherEndpointAPIImpl(FactoryLocator.getPublisherEndpointFactory());
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
