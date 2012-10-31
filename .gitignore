@@ -41,7 +41,3 @@ dotCMS/WEB-INF/lib/dotcms_?.*.jar
 dotCMS/WEB-INF/lib/plugin-*.jar
 /bin
 
-# Content Publishing Framework #
-################################
-tomcat/conf/Catalina/localhost/ROOT.xml
-tomcat/lib/log4j.xml
