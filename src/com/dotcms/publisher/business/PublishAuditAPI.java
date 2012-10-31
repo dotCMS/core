@@ -84,4 +84,11 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	public abstract List<Map<String,Object>> countAllPublishAuditStatus() throws DotPublisherException;
+
+	/**
+	 * Gets all audit status not yet ended
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	public abstract List<Map<String,Object>> getPendingPublishAuditStatus() throws DotPublisherException;
 }

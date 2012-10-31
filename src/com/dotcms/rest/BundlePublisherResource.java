@@ -26,6 +26,7 @@ import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotcms.publisher.receiver.BundlePublisher;
+import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -64,23 +65,14 @@ public class BundlePublisherResource extends WebResource {
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
 			String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
 			
-			updateAuditTable(mySelf, bundleFolder);
+			PublishAuditStatus status =updateAuditTable(mySelf, bundleFolder);
 			
 			//Write file on FS
 			writeToFile(bundle, bundlePath+bundleName);
 			
 			
-			//Configure and Invoke the Publisher
-			Logger.info(PublisherQueueJob.class, "Started bundle publish process");
-			
-			PublisherConfig pconf = new PublisherConfig();
-			BundlePublisher bundlePublisher = new BundlePublisher();
-			pconf.setId(bundleName);
-			pconf.setEndpoint(mySelf.getId());
-			bundlePublisher.init(pconf);
-			bundlePublisher.process(null);
-			
-			Logger.info(PublisherQueueJob.class, "Finished bundle publish process");
+			//Start thread
+			new Thread(new PublishThread(bundleName, mySelf.getId(), status)).start();
 			
 			return Response.status(HttpStatus.SC_OK).build();
 		} catch (NumberFormatException e) {
@@ -91,8 +83,50 @@ public class BundlePublisherResource extends WebResource {
 		
 		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
+	
+	class PublishThread implements Runnable {
+		private String bundleName;
+		private String endpointId;
+		private PublishAuditStatus status;
+		
+		public PublishThread(String bundleName, String endpointId, PublishAuditStatus status) {
+			this.bundleName = bundleName;
+			this.endpointId = endpointId;
+			this.status = status;
+		}
+		
+	    public void run() {
+	    	//Configure and Invoke the Publisher
+			Logger.info(PublishThread.class, "Started bundle publish process");
+			
+			PublisherConfig pconf = new PublisherConfig();
+			BundlePublisher bundlePublisher = new BundlePublisher();
+			pconf.setId(bundleName);
+			pconf.setEndpoint(endpointId);
+			try {
+				bundlePublisher.init(pconf);
+				bundlePublisher.process(null);
+			} catch (DotPublishingException e) {
+				
+				EndpointDetail detail = new EndpointDetail();
+				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+				detail.setInfo("Failed to publish because an error occurred: "+e.getMessage());
+				status.getStatusPojo().addOrUpdateEndpoint(endpointId, detail);
+				
+				try {
+					auditAPI.updatePublishAuditStatus(bundleName.substring(0, bundleName.indexOf(".tar.gz")), 
+							PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
+							status.getStatusPojo());
+				} catch (DotPublisherException e1) {
+					Logger.info(PublishThread.class, "Unable to update audit status ");
+				}
+			}
+			
+			Logger.info(PublishThread.class, "Finished bundle publish process");
+	    }
+	}
 
-	private void updateAuditTable(PublishingEndPoint mySelf, String bundleFolder)
+	private PublishAuditStatus updateAuditTable(PublishingEndPoint mySelf, String bundleFolder)
 			throws DotPublisherException {
 		//Status
 		PublishAuditStatus status =  new PublishAuditStatus(bundleFolder);
@@ -108,6 +142,8 @@ public class BundlePublisherResource extends WebResource {
 		
 		//Insert in Audit table
 		auditAPI.insertPublishAuditStatus(status);
+		
+		return status;
 	}
 	
 	private boolean isValidToken(String token, String remoteIP, PublishingEndPoint mySelf) throws IOException, DotDataException {
