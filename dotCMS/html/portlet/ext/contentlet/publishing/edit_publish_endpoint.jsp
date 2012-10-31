@@ -10,32 +10,37 @@
 %>
 
 <script type="text/javascript">
-	
+
 	function editEndpoint(){
-		  var form = dojo.byId("editEndpoint");
+		  var form = dojo.byId("formEditEndpoint");
 		  dojo.connect(form, "onsubmit", function(event){
-		  dojo.stopEvent(event);
-		    var xhrArgs = {
-		    	url: "/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/editEndpoint",
-		      	form: dojo.byId("editEndpoint"),
+		  	  dijit.byId("update").setAttribute("disabled", true);
+		      dijit.byId("closeUpdate").setAttribute("disabled", true);
+		      dojo.stopEvent(event);
+		      var xhrArgs = {
+		    	url: "/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/editEndpoint",	  
+		      	form: dojo.byId("formEditEndpoint"),
 		      	handleAs: "text",
 			    load: function(data){
 			    	dojo.byId("response2").style.color = 'green';
 			    	dojo.byId("response2").style.weight = 'bold';
 			    	dojo.byId("response2").innerHTML = "Endpoint configuration updating successfully.";
 			    	dijit.byId("update").setAttribute("disabled", true);
+			    	dijit.byId("closeUpdate").setAttribute("disabled", false);
 			    },
 			    error: function(error){
 			    	dojo.byId("response2").style.color = 'red';
 			    	dojo.byId("response2").style.weight = 'bold';
 			        dojo.byId("response2").innerHTML = "Endpoint configuration updating is not successful. Please contact the Administration. "+error;
+			        dijit.byId("update").setAttribute("disabled", false);
+			        dijit.byId("closeUpdate").setAttribute("disabled", false);
 			    }
-			}
-	    	dojo.byId("response2").style.color = '#FFCC00';
-	    	dojo.byId("response2").style.weight = 'bold';
-			dojo.byId("response2").innerHTML = "Update the endpoint configuration. Please wait..."
-			var deferred = dojo.xhrPost(xhrArgs);
-		  });
+			  }
+	    	  dojo.byId("response2").style.color = '#FFCC00';
+	    	  dojo.byId("response2").style.weight = 'bold';
+			  dojo.byId("response2").innerHTML = "Update the endpoint configuration. Please wait..."	
+			  var deferred = dojo.xhrPost(xhrArgs);
+		 });
 	}
 	dojo.ready(editEndpoint);
 
@@ -46,9 +51,9 @@
 <div>&nbsp;</div>
 <div>&nbsp;</div>
 <div style="float: left; padding-left: 15px;" id="response2"></div>
-<form name="editEndpoint" method="post" id="editEndpoint">
+<form name="formEditEndpoint" method="post" id="formEditEndpoint">
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
@@ -57,16 +62,18 @@
 		
 	</div>
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
 			<input type="text" dojoType="dijit.form.TextBox" name="address" style="width:440px" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getAddress());%>" />		
 		</div>
-		<div style="padding-left:30px;padding-right:10px;width:30px;float:left;">
+	</div>
+	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:
 		</div>
-		<div style="padding-left:5px;padding-right:10px;width:52px;float:left;">
+		<div style="padding-left:10px;padding-right:10px;width:52px;float:left;">
 			<input type="text" dojoType="dijit.form.TextBox" name="port" style="width:50px" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getPort());%>"/>		
 		</div>
 		<div style="padding-left:40px;padding-right:10px;width:50px;float:left;">
@@ -81,7 +88,7 @@
 	</div>		
 	<div class="clear"></div>
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">						          	
@@ -89,7 +96,7 @@
 		</div>		
 	</div>
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
@@ -97,7 +104,7 @@
 		</div>				
 	</div>	
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
-		<div style="padding-left:30px;padding-right:10px;width:150px;float:left;text-align:right">
+		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
@@ -106,7 +113,7 @@
 	</div>
 	<input type="hidden" name="identifier" value="<%=currentEndpoint.getId()%>" />
 	<div class="buttonRow">
-		<button dojoType="dijit.form.Button" onClick="backToEndpointsList()" id="back" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "back") %></button>
+		<button dojoType="dijit.form.Button" onClick="backToEndpointsList(false)" id="closeUpdate" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 		<button dojoType="dijit.form.Button" type="submit" id="update" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "update") %></button>
     </div>	
 </form>

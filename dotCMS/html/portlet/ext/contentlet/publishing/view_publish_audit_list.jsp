@@ -18,6 +18,28 @@
 
 <script type="text/javascript">
    dojo.require("dijit.Tooltip");
+   
+   function showDetail(bundleId) {
+		var dialog = new dijit.Dialog({
+			id: 'bundleDetail',
+	        title: "<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail_Desc")%>",
+	        style: "width: 700px; ",
+	        content: new dojox.layout.ContentPane({
+	            href: "/html/portlet/ext/contentlet/publishing/view_publish_audit_detail.jsp?bundle="+bundleId
+	        }),
+	        onHide: function() {
+	        	var dialog=this;
+	        	setTimeout(function() {
+	        		dialog.destroyRecursive();
+	        	},200);
+	        },
+	        onLoad: function() {
+	        	
+	        }
+	    });
+	    dialog.show();	    
+	    dojo.style(dialog.domNode,'top','80px');
+	}
 </script>  
 <%
   	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
@@ -96,7 +118,7 @@
 			}
 		%>
 			<tr <%=errorclass%>>
-				<td><%=c.get("bundle_id")%></td>
+				<td><a style="cursor: pointer" onclick="javascript: showDetail('<%=c.get("bundle_id")%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail") %>"><%=c.get("bundle_id")%></a></td>
 			    <td><%=PublishAuditStatus.getStatusByCode((Integer)c.get("status")) %></td>
 			    <td><%=UtilMethods.dateToHTMLDate((Date)c.get("create_date"),"MM/dd/yyyy hh:mma") %></td>
 			    <td><%=UtilMethods.dateToHTMLDate((Date)c.get("status_updated"),"MM/dd/yyyy hh:mma") %></td>
