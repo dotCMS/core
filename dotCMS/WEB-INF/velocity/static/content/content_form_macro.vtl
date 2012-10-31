@@ -414,6 +414,31 @@ var theme = 'dmundra';
 					        	updateTabCounter("$currentTab");
 					        </script>
 	            		#end
+	            		
+	            	#elseif($field.fieldType == 'key_value' && !($showOnlyRequiredFields && !$field.isRequired()) )
+	            	    #set($fieldDefaultValue = "") 
+	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #else
+	            	    	#set($fieldDefaultValue = $!field.defaultValue)
+	            	    #end
+	            	    #if(! $fieldDefaultValue)
+	            	        #set($fieldDefaultValue = "")
+
+	            	    #end
+	            	    #if($action == 'editContent') 
+	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+	            	    #end	
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            			#parse('/static/content/hidden_field_render.vtl')
+	            		#else
+	            			#parse('/static/content/keyvalue_field_render.vtl')
+	            			<script language="javascript">
+					        	updateTabCounter("$currentTab");
+					        </script>
+	            		#end
 
 	            	#elseif($field.fieldType == 'wysiwyg' && !($showOnlyRequiredFields && !$field.isRequired()) )
 	            		#set($fieldDefaultValue = "")
