@@ -1332,15 +1332,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
             throw new DotDataException(e.getMessage(), e);
         }
 	}
+	
+	@Override
+    protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+	    return save(contentlet,null);
+	}
 
 	@Override
-	protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+	protected Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
 	    com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
         if(InodeUtils.isSet(contentlet.getInode())){
             fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentlet.getInode());
         }
         fatty = convertContentletToFatContentlet(contentlet, fatty);
-        HibernateUtil.saveOrUpdate(fatty);
+        
+        if(UtilMethods.isSet(existingInode))
+            HibernateUtil.saveWithPrimaryKey(fatty, existingInode);
+        else
+            HibernateUtil.saveOrUpdate(fatty);
+        
         final Contentlet content = convertFatContentletToContentlet(fatty);
 
         if (InodeUtils.isSet(contentlet.getHost())) {
