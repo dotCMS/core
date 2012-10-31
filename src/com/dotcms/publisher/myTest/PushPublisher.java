@@ -9,9 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
 import javax.ws.rs.core.MediaType;
@@ -96,8 +94,8 @@ public class PushPublisher extends Publisher {
 	        boolean hasPublishError = false;
 	        boolean hasNetworkError = false;
 	        int errorCounter = 0;
+
 			for (PublishingEndPoint endpoint : endpoints) {
-				Map<String, EndpointDetail> endpointStatus = new HashMap<String, EndpointDetail>();
 				EndpointDetail detail = new EndpointDetail();
 				try {
 					FormDataMultiPart form = new FormDataMultiPart();
@@ -123,23 +121,21 @@ public class PushPublisher extends Publisher {
 			        	hasPublishError = true;
 			        } else {
 			        	detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-			        	detail.setInfo("");
+			        	detail.setInfo("Everything ok");
 			        }
-			        endpointStatus.put(endpoint.getId(), detail);
 				} catch(Exception e) {
 					detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 					detail.setInfo(
 		        			"An error occured (maybe network problem) " +
 		        			"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
 		        	
-					endpointStatus.put(endpoint.getId(), detail);
 		        	hasNetworkError = true;
 		        	errorCounter++;
 				}
 		        
 		        currentStatusHistory.addOrUpdateEndpoint(endpoint.getId(), detail);
 			}
-	        
+			
 			if(!hasPublishError && !hasNetworkError) {
 				//Updating audit table
 		        currentStatusHistory.setPublishEnd(new Date());

@@ -107,6 +107,19 @@ public class PublisherQueueJob implements StatefulJob {
 
 	}
 	
+//	private updateAuditStatus() {
+//		ClientConfig clientConfig = new DefaultClientConfig();
+//        clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
+//        client = Client.create(clientConfig);
+//        webResource = client.resource("http://localhost:8080/rest-service");
+//	 
+//        webResource
+//        .path("cluster")
+//        .path(name)
+//        .accept(MediaType.APPLICATION_JSON)
+//        .get(Cluster.class);
+//	}
+	
 	private List<String> prepareQueries(List<Map<String,Object>> bundle) {
 		StringBuilder assetBuffer = new StringBuilder();
 		List<String> assets;
