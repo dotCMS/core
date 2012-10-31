@@ -651,8 +651,16 @@ public class PublisherUtil {
 		pep.setProtocol(row.get("protocol").toString());		
 		pep.setServerName(new StringBuilder(row.get("server_name").toString()));
 		pep.setAuthKey(new StringBuilder(row.get("auth_key").toString()));
-		pep.setEnabled(Integer.parseInt(row.get("enabled").toString())==1);
-		pep.setSending(Integer.parseInt(row.get("sending").toString())==1);
+		try{
+			pep.setEnabled(Integer.parseInt(row.get("enabled").toString())==1);
+		}catch (NumberFormatException e) {
+			pep.setEnabled(false);
+		}
+		try{
+			pep.setSending(Integer.parseInt(row.get("sending").toString())==1);
+		}catch (NumberFormatException e) {
+			pep.setSending(false);
+		}
 		return pep;
 	}
 	
