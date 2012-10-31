@@ -43,7 +43,15 @@
 		 });
 	}
 	dojo.ready(editEndpoint);
-
+	
+	function enableSave(){
+		var servernamevalue = dojo.byId("serverName").value;
+		var addressvalue = dojo.byId("address").value;
+		if(''!=servernamevalue && ''!=addressvalue)
+			dijit.byId("update").setAttribute('disabled',false);	
+		else
+			dijit.byId("update").setAttribute('disabled',true);
+	}
 </script>
 <div style="float: left; padding-left: 15px;">
 	<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Add_Intro") %> 
@@ -57,7 +65,10 @@
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
-			<textarea dojoType="dijit.form.Textarea" name="serverName" style="width:450px;min-height:100px;max-height: 600px"><%if(null!=currentEndpoint)out.print(currentEndpoint.getServerName());%></textarea>
+			<input type="text" dojoType="dijit.form.ValidationTextBox" 
+						  name="serverName" id="serverName" 
+						  style="width:440px;"
+						  required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>" onchange="enableSave()" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getServerName());%>"/>
 		</div>
 		
 	</div>
@@ -66,7 +77,9 @@
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
-			<input type="text" dojoType="dijit.form.TextBox" name="address" style="width:440px" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getAddress());%>" />		
+			<input type="text" dojoType="dijit.form.ValidationTextBox" 
+				   name="address" id="address" style="width:440px" 
+				   required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>" onchange="enableSave()" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getAddress());%>" />		
 		</div>
 	</div>
 	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
@@ -74,7 +87,9 @@
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:
 		</div>
 		<div style="padding-left:10px;padding-right:10px;width:52px;float:left;">
-			<input type="text" dojoType="dijit.form.TextBox" name="port" style="width:50px" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getPort());%>"/>		
+			<input type="text" dojoType="dijit.form.ValidationTextBox" 
+				   name="port" style="width:50px" 
+				   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" value="<%if(null!=currentEndpoint)out.print(currentEndpoint.getPort());%>" />		
 		</div>
 		<div style="padding-left:40px;padding-right:10px;width:50px;float:left;">
 			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:
