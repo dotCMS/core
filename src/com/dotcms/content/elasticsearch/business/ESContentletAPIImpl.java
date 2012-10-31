@@ -51,6 +51,7 @@ import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
@@ -1855,9 +1856,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<Category> cats = null;
         Map<Relationship, List<Contentlet>> contentRelationships = null;
         Contentlet workingCon = null;
+        
+        Identifier ident=null;
+        if(InodeUtils.isSet(contentlet.getIdentifier())) 
+            ident = APILocator.getIdentifierAPI().find(contentlet);
 
         //If contentlet is not new
-        if(InodeUtils.isSet(contentlet.getIdentifier())) {
+        if(ident!=null && InodeUtils.isSet(ident.getId())) {
             workingCon = findWorkingContentlet(contentlet);
             permissions = perAPI.getPermissions(workingCon);
             cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
@@ -1949,11 +1954,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String syncMe = (UtilMethods.isSet(contentlet.getIdentifier())) ? contentlet.getIdentifier() : UUIDGenerator.generateUuid();
 
         synchronized (syncMe) {
-
+            boolean saveWithExistingID=false;
+            String existingInode=null, existingIdentifier=null;
+            
         	Contentlet workingContentlet = contentlet;
             try {
-				if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode()))
-				    throw new DotContentletStateException("Contentlet must not exist already");
+				if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
+				    // maybe the user want to save new content with existing inode & identifier comming from somewhere
+				    // we need to check that the inode doesn't exists
+				    DotConnect dc=new DotConnect();
+				    dc.setSQL("select inode from contentlet where inode=?");
+				    dc.addParam(contentlet.getInode());
+				    if(dc.loadResults().size()>0)
+				        throw new DotContentletStateException("Contentlet must not exist already");
+				    else {
+				        saveWithExistingID=true;
+				        existingInode=contentlet.getInode();
+				        contentlet.setInode(null);
+				        
+				        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+				        if(ident==null || !UtilMethods.isSet(ident.getId())) {
+				            existingIdentifier=contentlet.getIdentifier();
+				            contentlet.setIdentifier(null);
+				        }
+				    }
+				}   
 				if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
 				    throw new DotContentletStateException("Contentlet must exist already");
 				if (contentlet != null && contentlet.isArchived())
@@ -2035,7 +2060,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				Contentlet contentletRaw=contentlet;
 				contentlet.setModDate(new Date());
-				contentlet = conFac.save(contentlet);
+				
+				// Keep the 5 properties BEFORE store the contentlet on DB.
+				String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+				String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+				String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+				String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+				String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
+				
+				if(saveWithExistingID)
+				    contentlet = conFac.save(contentlet, existingInode);
+				else
+				    contentlet = conFac.save(contentlet);
 
 				if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 				    Treeable parent = null;
@@ -2044,8 +2080,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    }else{
 				        parent = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
 				    }
-				    Identifier ident = APILocator.getIdentifierAPI().createNew(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet, parent);
-				    contentlet.setIdentifier(ident.getInode());
+				    Identifier ident;
+				    final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
+				    if(existingIdentifier!=null)
+				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier);
+				    else
+				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
+				    contentlet.setIdentifier(ident.getId());
 				    contentlet = conFac.save(contentlet);
 				} else {
 				    Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
@@ -2317,7 +2358,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    indexAPI.addContentToIndex(contentlet);
 				}
 
-
+				// Set the properties again after the store on DB and before the fire on an Actionlet.				
+				contentlet.setStringProperty("wfPublishDate", contentPushPublishDate);
+				contentlet.setStringProperty("wfPublishTime", contentPushPublishTime);
+				contentlet.setStringProperty("wfExpireDate", contentPushExpireDate);
+				contentlet.setStringProperty("wfExpireTime", contentPushExpireTime);
+				contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
+				
 				//wapi.
 				workflow.setContentlet(contentlet);
 				wapi.fireWorkflowPostCheckin(workflow);
@@ -3105,6 +3152,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats)throws DotContentletValidationException {
+        if(contentlet.getMap().get("_dont_validate_me") != null)
+            return;
+        
         DotContentletValidationException cve = new DotContentletValidationException("Contentlet's fields are not valid");
         boolean hasError = false;
         String stInode = contentlet.getStructureInode();
@@ -3238,8 +3288,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private Contentlet findWorkingContentlet(Contentlet content)throws DotSecurityException, DotDataException, DotContentletStateException{
-        if(content != null && InodeUtils.isSet(content.getInode()))
-            throw new DotContentletStateException("Contentlet must not exist already");
         Contentlet con = null;
         List<Contentlet> workingCons = new ArrayList<Contentlet>();
         if(InodeUtils.isSet(content.getIdentifier())){

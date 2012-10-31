@@ -682,3 +682,32 @@ alter table broken_link add CONSTRAINT fk_brokenl_content
 
 alter table broken_link add CONSTRAINT fk_brokenl_field
     FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
+    
+-- ****** Content Publishing Framework *******
+CREATE TABLE publishing_queue
+(id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL,
+operation numeric(19,0), asset VARCHAR(2000) NOT NULL,
+language_id numeric(19,0) NOT NULL, entered_date DATETIME,
+last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0,
+in_error tinyint DEFAULT 0, last_results TEXT, 
+publish_date DATETIME, server_id VARCHAR(256), 
+type VARCHAR(256), bundle_id VARCHAR(256), target text);
+
+CREATE TABLE publishing_queue_audit
+(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, 
+status INTEGER, 
+status_pojo text, 
+status_updated DATETIME, 
+create_date DATETIME);
+
+-- ****** Content Publishing Framework - End Point Management *******
+CREATE TABLE publishing_end_point (
+	id varchar(36) PRIMARY KEY, 
+	group_id varchar(700), 
+	server_name varchar(700) unique,
+	address varchar(250),
+	port varchar(10),
+	protocol varchar(10),	
+	enabled tinyint DEFAULT 0,
+	auth_key text,
+	sending tinyint DEFAULT 0);
