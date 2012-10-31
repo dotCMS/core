@@ -1081,6 +1081,54 @@ function clearCategoriesList(inode, name){
 	dojo.byId(inode+'categorieslist').innerHTML = buffer;
 }
 
+function addKVPair(inode, key, val){    
+    var k=dijit.byId(key).attr('value');
+    var v=dijit.byId(val).attr('value');
+    var list = dojo.byId(inode+'list').innerHTML;
+    var hid = dojo.byId(inode).value;
+    if(hid == ''){
+        hid = '{';
+    }
+    var valid = true;
+    if(k != "" && v != ""){
+        if(list == 'No key/value Added'){
+            list = '';
+        }
+        var keyVal  = list.split('\n');
+        for(i = 0; i < keyVal.length; i++){
+            var keys = keyVal[i].split(',');
+            for(j = 0; j < keys.length-1; j++){
+                if(keys[j]==k){
+                    valid = false;
+                }
+            }
+        }        
+        if(valid){
+            var buffer = list;
+            buffer+=k + "," + v + "\n";
+            buffer+="";
+            dojo.byId(inode+'list').innerHTML = buffer;
+            dojo.byId(key).value='';
+            dojo.byId(val).value='';
+            if(hid != '{'){
+                hid = hid.replace(/}/g,',');
+            }
+            hid = hid + "\"" + k + "\"" + ":" + "\"" + v + "\"" + "}"; 
+            dojo.byId(inode).value=hid;
+        }
+        else alert("Key already Exists");
+    }
+    else alert("Enter key/value");
+}
+
+function clearKeyList(inode){
+    dojo.byId(inode+'list').innerHTML = '';
+    dojo.byId(inode).value='{';
+    var buffer='No key/value Added';
+    dojo.byId(inode+'list').innerHTML = buffer;
+}
+
+
 function serveFile(doStuff,conInode,velVarNm){
 
     if(doStuff != ''){
