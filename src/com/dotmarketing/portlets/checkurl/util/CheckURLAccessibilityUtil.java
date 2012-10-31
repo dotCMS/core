@@ -87,26 +87,5 @@ public class CheckURLAccessibilityUtil {
 		return result;
 	}
 	
-	public static List<CheckURLBean> getInternalLinks(List<CheckURLBean> total){
-		List<CheckURLBean> result = new ArrayList<CheckURLBean>();
-		Iterator<CheckURLBean> it_total = total.iterator();
-		while(it_total.hasNext()){
-			CheckURLBean c = it_total.next();
-			if(c.isInternalLink()){
-				result.add(c);
-				it_total.remove();
-			}
-		}
-		return result;
-	}
 	
-	public static boolean isValidInternalLink(CheckURLBean internalLink, List<Host> hosts) throws DotDataException, DotSecurityException{
-		boolean result = false;
-		for(Host h : hosts){
-			Identifier id = APILocator.getIdentifierAPI().find(h, internalLink.getUrl());
-			if(null!=id.getId() && !"".equals(id.getId()) && !"null".equals(id.getId()))
-				result = true;
-		}
-		return result;
-	}
 }

@@ -29,6 +29,8 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.CategoryAPIImpl;
 import com.dotmarketing.portlets.chains.business.ChainAPI;
 import com.dotmarketing.portlets.chains.business.ChainAPIImpl;
+import com.dotmarketing.portlets.checkurl.business.LinkCheckerAPI;
+import com.dotmarketing.portlets.checkurl.business.LinkCheckerAPIImpl;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPIImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -272,6 +274,9 @@ public class APILocator extends Locator<APIIndex>{
 	public static PublisherAPI getPublisherAPI() {
 	    return (PublisherAPI) getInstance(APIIndex.PUBLISHER_API);
 	}
+	public static LinkCheckerAPI getLinkCheckerAPI() {
+	    return (LinkCheckerAPI) getInstance(APIIndex.LINKCHECKER_API);
+	}
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -347,6 +352,7 @@ enum APIIndex
 	CONTENLET_INDEX_API,
 	PUBLISHER_API,
 	ES_INDEX_API,
+	LINKCHECKER_API,
 	TIME_MACHINE_API;
 	Object create() {
 		switch(this) {
@@ -391,6 +397,7 @@ enum APIIndex
 		case ES_INDEX_API: return new ESIndexAPI();
 		case PUBLISHER_API: return new PublisherAPIImpl();
 		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
+		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

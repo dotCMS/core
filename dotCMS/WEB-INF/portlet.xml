@@ -3463,26 +3463,22 @@
         </security-role-ref>
     </portlet> 
 
-<portlet>
-	<portlet-name>EXT_BROKEN_LINKS</portlet-name>
-	<display-name>Broken Links</display-name>
-	<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-	<init-param>
-		<name>view-action</name>
-		<value>/ext/brokenlinks/view_broken_links</value>
-	</init-param>
-	<expiration-cache>0</expiration-cache>
-	<supports>
-		<mime-type>text/html</mime-type>
-	</supports>
-	<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-	<security-role-ref>
-		<role-name>CMS Administrator</role-name>
-	</security-role-ref>
-	<security-role-ref>
-		<role-name>CMS User</role-name>
-	</security-role-ref>	
-</portlet>
+	<portlet>
+		<portlet-name>EXT_BROKEN_LINKS</portlet-name>
+		<display-name>Broken Links</display-name>
+		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+		<init-param>
+			<name>view-jsp</name>
+			<value>/portlet/ext/brokenlinks/view_broken_links.jsp</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>	
+	</portlet>
 
 	<custom-window-state>
 		<window-state>exclusive</window-state>
