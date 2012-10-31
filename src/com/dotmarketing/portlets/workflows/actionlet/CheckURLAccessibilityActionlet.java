@@ -14,7 +14,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.linkchecker.bean.CheckURLBean;
+import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.linkchecker.util.LinkCheckerUtil;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -76,7 +76,7 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 				WebContext ctx = WebContextFactory.get();
 				HttpServletRequest request = ctx.getHttpServletRequest();
 				
-				List<CheckURLBean> httpResponse=null;
+				List<InvalidLink> httpResponse=null;
                 try {
                     httpResponse = APILocator.getLinkCheckerAPI().findInvalidLinks(value);
                 } catch (Exception e1) {
@@ -87,19 +87,15 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 				//if there are unreachable URL...
 				if(httpResponse.size()>0){
 					try {
-//						if(ProxyManager.INSTANCE.getMail().isSend()){
-							//send a mail
-							//Retrieving the current user
-							User user = userWebAPI.getLoggedInUser(request);
-							String[] emailAddress = new String[]{user.getEmailAddress()};
-							
-							String emailBody = LinkCheckerUtil.buildEmailBodyWithLinksList(LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.emailBody"), user.getFullName(), con.getTitle(), httpResponse);	
-							String emailFrom = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"checkURL.emailFrom");
-							String emailSubject = LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.emailSubject");
-							LinkCheckerUtil.sendWorkflowEmail(processor, 
-									emailAddress, emailSubject, emailBody, emailFrom, 
-									LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.emailFromFullName"), true);
-//						}
+						User user = userWebAPI.getLoggedInUser(request);
+						String[] emailAddress = new String[]{user.getEmailAddress()};
+						
+						String emailBody = LinkCheckerUtil.buildEmailBodyWithLinksList(LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.emailBody"), user.getFullName(), con.getTitle(), httpResponse);	
+						String emailFrom = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"checkURL.emailFrom");
+						String emailSubject = LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.emailSubject");
+						LinkCheckerUtil.sendWorkflowEmail(processor, 
+								emailAddress, emailSubject, emailBody, emailFrom, 
+								LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.emailFromFullName"), true);
 						Logger.error(CheckURLAccessibilityActionlet.class,LinkCheckerUtil.buildPopupMsgWithLinksList(LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.errorBrokenLinks"), httpResponse));
 						throw new WorkflowActionFailureException(LinkCheckerUtil.buildPopupMsgWithLinksList(LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.errorBrokenLinks"), httpResponse));
 					} catch (Exception e) {						

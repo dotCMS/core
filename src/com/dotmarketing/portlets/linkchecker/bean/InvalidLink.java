@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.linkchecker.bean;
 
-public class CheckURLBean {
+public class InvalidLink {
 	
     private String inode;
     private String url;
@@ -41,10 +41,10 @@ public class CheckURLBean {
 	}
 	@Override
 	public boolean equals(Object obj) {
-		if(!(obj instanceof CheckURLBean))
+		if(!(obj instanceof InvalidLink))
 			return false;
 		else{
-			CheckURLBean c = (CheckURLBean)obj;
+			InvalidLink c = (InvalidLink)obj;
 			return (c.getStatusCode()==this.getStatusCode())
 					&& (c.getTitle().equals(this.getTitle()))
 					&& (c.getUrl().equals(this.getUrl()))
