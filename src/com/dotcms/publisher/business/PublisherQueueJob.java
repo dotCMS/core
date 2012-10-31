@@ -145,11 +145,10 @@ public class PublisherQueueJob implements StatefulJob {
 	        		webResource = client.resource(target.toURL()+"/api/auditPublishing");
 	        	
 		        	PublishAuditHistory enpointHistory = 
+		        			PublishAuditHistory.getObjectFromString(
 		        			webResource
 					        .path("get")
-					        .path((String) pendingAudit.get("bundle_id"))
-					        .accept(MediaType.APPLICATION_XML)
-					        .get(PublishAuditHistory.class);
+					        .path((String) pendingAudit.get("bundle_id")).get(String.class));
 		        	
 		        	if(enpointHistory != null) {
 			        	int statusCode = -1;
