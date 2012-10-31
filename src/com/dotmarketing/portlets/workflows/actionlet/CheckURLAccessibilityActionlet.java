@@ -14,12 +14,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.checkurl.bean.CheckURLBean;
 import com.dotmarketing.portlets.checkurl.util.AdditionalWorkflowEmailUtil;
 import com.dotmarketing.portlets.checkurl.util.CheckURLAccessibilityUtil;
 import com.dotmarketing.portlets.checkurl.util.FormatUtil;
-import com.dotmarketing.portlets.checkurl.util.LinkChecker;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -88,29 +86,19 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 			if(fieldList.contains(f.getVelocityVarName())){
 				
 				//get the value
-				String value = f.getValues();
-				if(f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())){
-					//get the WYSIWYG value
-					value = (String)con.getMap().get(f.getVelocityVarName());
-				}
+				String value = con.getStringProperty(f.getVelocityVarName());
 				
 				UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 				WebContext ctx = WebContextFactory.get();
-				HttpServletRequest request = ctx.getHttpServletRequest();		
+				HttpServletRequest request = ctx.getHttpServletRequest();
 				
-				List<CheckURLBean> httpResponse = LinkChecker.checkURL(value);
-				
-				List<CheckURLBean> internalLinks = CheckURLAccessibilityUtil.getInternalLinks(httpResponse);
-				for(CheckURLBean internalLink : internalLinks){
-					try {
-						if(!CheckURLAccessibilityUtil.isValidInternalLink(internalLink, APILocator.getHostAPI().findAll(APILocator.getUserAPI().getSystemUser(), false)))
-							httpResponse.add(internalLink);
-					} catch (DotDataException e) {
-						e.printStackTrace();
-					} catch (DotSecurityException e) {
-						e.printStackTrace();
-					}
-				}
+				List<CheckURLBean> httpResponse=null;
+                try {
+                    httpResponse = APILocator.getLinkCheckerAPI().findInvalidLinks(value);
+                } catch (Exception e1) {
+                    Logger.error(this, e1.getMessage(), e1);
+                    throw new WorkflowActionFailureException(e1.getMessage());
+                }
 				
 				//if there are unreachable URL...
 				if(httpResponse.size()>0){

@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.checkurl.bean;
 
-import com.dotmarketing.portlets.checkurl.util.URL;;
 
 /**
  * Represent the anchor tag in HTML ('<a ...></a>')

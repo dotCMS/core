@@ -1,9 +1,9 @@
-package com.dotmarketing.portlets.checkurl.util;
+package com.dotmarketing.portlets.checkurl.bean;
 
 import org.apache.commons.httpclient.NameValuePair;
 
 /**
- * Classe contenente le proprietˆ per la URL. 
+ * Classe contenente le proprietï¿½ per la URL. 
  * 
  * @author 	Aliberti Graziano - Engineering Ingegneria Informatica
  * @date	01/02/2012
