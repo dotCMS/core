@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 
@@ -178,6 +179,7 @@ public class BundlePublisher extends Publisher {
 			try {
 				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
 				detail.setInfo("Failed to publish because an error occurred: "+e.getMessage());
+				detail.setStackTrace(ExceptionUtils.getStackTrace(e));
 				currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
 				currentStatusHistory.setBundleEnd(new Date());
 				

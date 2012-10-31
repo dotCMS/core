@@ -28,13 +28,11 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
@@ -48,7 +46,6 @@ import com.sun.jersey.multipart.file.FileDataBodyPart;
 public class PushPublisher extends Publisher {
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
-	private PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
@@ -79,7 +76,7 @@ public class PushPublisher extends Publisher {
 			
 			
 			//Retriving enpoints and init client
-			List<PublishingEndPoint> endpoints = endpointAPI.findReceiverEndpoints();
+			List<PublishingEndPoint> endpoints = ((PushPublisherConfig)config).getEndpoints();
 			ClientConfig cc = new DefaultClientConfig();
 			Client client = Client.create(cc);
 			
@@ -91,8 +88,7 @@ public class PushPublisher extends Publisher {
 			currentStatusHistory.setPublishStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
 	        
-	        boolean hasPublishError = false;
-	        boolean hasNetworkError = false;
+	        boolean hasError = false;
 	        int errorCounter = 0;
 
 			for (PublishingEndPoint endpoint : endpoints) {
@@ -114,37 +110,37 @@ public class PushPublisher extends Publisher {
 			        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED ||
 			        	response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) 
 			        {
-			        	detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+			        	detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 			        	detail.setInfo(
 			        			"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
 			        					"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
-			        	hasPublishError = true;
+			        	hasError = true;
+			        	errorCounter++;
 			        } else {
-			        	detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+			        	detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			        	detail.setInfo("Everything ok");
 			        }
 				} catch(Exception e) {
+					hasError = true;
 					detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 					detail.setInfo(
 		        			"An error occured (maybe network problem) " +
 		        			"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
-		        	
-		        	hasNetworkError = true;
 		        	errorCounter++;
 				}
 		        
 		        currentStatusHistory.addOrUpdateEndpoint(endpoint.getId(), detail);
 			}
 			
-			if(!hasPublishError && !hasNetworkError) {
+			if(!hasError) {
 				//Updating audit table
 		        currentStatusHistory.setPublishEnd(new Date());
 				pubAuditAPI.updatePublishAuditStatus(config.getId(), 
-						PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
 				
 				//Deleting queue records
 				pubAPI.deleteElementsFromPublishQueueTable(config.getId());
-			} else if(hasNetworkError && !hasPublishError) {
+			} else {
 				if(errorCounter == endpoints.size()) {
 					pubAuditAPI.updatePublishAuditStatus(config.getId(), 
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_ENDPOINTS, currentStatusHistory);
@@ -152,12 +148,6 @@ public class PushPublisher extends Publisher {
 					pubAuditAPI.updatePublishAuditStatus(config.getId(), 
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS, currentStatusHistory);
 				}
-			} else if(hasPublishError && !hasNetworkError) {
-				pubAuditAPI.updatePublishAuditStatus(config.getId(), 
-						PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory);
-			} else {
-				pubAuditAPI.updatePublishAuditStatus(config.getId(), 
-						PublishAuditStatus.Status.FAILED, currentStatusHistory);
 			}
 
 			return config;
