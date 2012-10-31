@@ -5,7 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cmis.proxy.DotInvocationHandler;
 import com.dotmarketing.cmis.proxy.DotRequestProxy;
 import com.dotmarketing.cmis.proxy.DotResponseProxy;
-import com.dotmarketing.portlets.linkchecker.bean.CheckURLBean;
+import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Config;
@@ -31,10 +31,10 @@ public class LinkCheckerUtil {
 	private static String PLACEHOLDER_FULL_NAME = "{0}";
 	private static String PLACEHOLDER_CONTENT_TITLE = "{1}";
 	
-	public static String buildEmailBodyWithLinksList(String emailBody, String userFullName, String contentTitle, List<CheckURLBean> list){
+	public static String buildEmailBodyWithLinksList(String emailBody, String userFullName, String contentTitle, List<InvalidLink> list){
 		StringBuilder sb = new StringBuilder();
 		sb.append("<ul>");
-		for(CheckURLBean c : list){
+		for(InvalidLink c : list){
 			sb.append("<li>");
 			sb.append("<strong> Link: </strong>");
 			sb.append(c.getUrl());
@@ -46,10 +46,10 @@ public class LinkCheckerUtil {
 		return emailBody.replace(PLACEHOLDER_LIST_LINKS, sb.toString()).replace(PLACEHOLDER_FULL_NAME, userFullName).replace(PLACEHOLDER_CONTENT_TITLE, contentTitle);
 	}
 	
-	public static String buildPopupMsgWithLinksList(String popupMsg, List<CheckURLBean> list){
+	public static String buildPopupMsgWithLinksList(String popupMsg, List<InvalidLink> list){
 		StringBuilder sb = new StringBuilder();
 		sb.append("<br />");
-		for(CheckURLBean c : list){
+		for(InvalidLink c : list){
 			sb.append("<br />");
 			sb.append("&nbsp-&nbsp");
 			sb.append("<strong> Link: </strong>");

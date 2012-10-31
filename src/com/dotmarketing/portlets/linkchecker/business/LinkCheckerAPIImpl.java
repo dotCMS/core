@@ -23,8 +23,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.linkchecker.bean.CheckURLBean;
-import com.dotmarketing.portlets.linkchecker.bean.URL;
+import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.linkchecker.util.ProxyManager;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.UtilMethods;
@@ -87,7 +86,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
     }
     
     @Override
-    public List<CheckURLBean> findInvalidLinks(String htmltext) throws DotDataException, DotSecurityException {
+    public List<InvalidLink> findInvalidLinks(String htmltext) throws DotDataException, DotSecurityException {
         List<Anchor> anchorList = new ArrayList<Anchor>();
         Document doc = Jsoup.parse(htmltext);
         Elements links = doc.select(ANCHOR);
@@ -113,7 +112,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
             
         }
         List<Host> hosts=APILocator.getHostAPI().findAll(APILocator.getUserAPI().getSystemUser(), false);
-        List<CheckURLBean> result = new ArrayList<CheckURLBean>();
+        List<InvalidLink> result = new ArrayList<InvalidLink>();
         for(Anchor a : anchorList){
             if(a.getExternalLink()!=null && (!a.isInternal())) { //external link
                 HttpClient client = new HttpClient();
@@ -127,7 +126,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
                 } catch(Exception e){ }
                 
                 if(statusCode!=200){
-                    CheckURLBean c = new CheckURLBean();
+                    InvalidLink c = new InvalidLink();
                     c.setUrl(a.getExternalLink().absoluteURL());
                     c.setStatusCode(statusCode);
                     c.setTitle(a.getTitle());
@@ -143,7 +142,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
                         }
                     }
                     if(!found) {
-                        CheckURLBean c = new CheckURLBean();
+                        InvalidLink c = new InvalidLink();
                         c.setUrl(a.getInternalLink());
                         c.setTitle(a.getTitle());
                         result.add(c);
@@ -155,7 +154,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
     }
     
     @Override
-    public void saveInvalidLinks(Contentlet contentlet, Field field, List<CheckURLBean> links) throws DotDataException, DotSecurityException {
+    public void saveInvalidLinks(Contentlet contentlet, Field field, List<InvalidLink> links) throws DotDataException, DotSecurityException {
         linkFactory.save(contentlet.getInode(), field.getInode(), links);
     }
     
@@ -163,11 +162,11 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
         linkFactory.deleteByInode(contentlet.getInode());
     }
     
-    public List<CheckURLBean> findByInode(String inode) throws DotDataException {
+    public List<InvalidLink> findByInode(String inode) throws DotDataException {
         return linkFactory.findByInode(inode);
     }
     
-    public List<CheckURLBean> findAll(int offset, int pageSize) throws DotDataException {
+    public List<InvalidLink> findAll(int offset, int pageSize) throws DotDataException {
         return linkFactory.findAll(offset, pageSize);
     }
     
@@ -215,4 +214,80 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
         }
         
     }
+    
+    protected static class URL {
+        
+        private String hostname;
+        private Integer port;
+        private boolean https;
+        private String path;
+        private boolean withParameter;
+        private NameValuePair[] queryString;
+        
+        public String getHostname() {
+            return hostname;
+        }
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+        public Integer getPort() {
+            return port;
+        }
+        public void setPort(Integer port) {
+            this.port = port;
+        }
+        public boolean isHttps() {
+            return https;
+        }
+        public void setHttps(boolean https) {
+            this.https = https;
+        }
+        public String getPath() {
+            return path;
+        }
+        public void setPath(String path) {
+            this.path = path;
+        }
+        public boolean isWithParameter() {
+            return withParameter;
+        }
+        public void setWithParameter(boolean withParameter) {
+            this.withParameter = withParameter;
+        }
+        public NameValuePair[] getQueryString() {
+            return queryString;
+        }
+        public void setQueryString(NameValuePair[] queryString) {
+            this.queryString = queryString;
+        }   
+        
+        public String completeURL(){
+            StringBuilder sb = new StringBuilder(500);
+            sb.append(https?"https://":"http://");
+            sb.append(hostname);
+            sb.append(port!=80?":"+port:"");
+            sb.append(path);
+            if(withParameter){
+                sb.append("?");
+                for(int i=0; i<queryString.length; i++){
+                    sb.append(queryString[i].getName());
+                    sb.append("=");
+                    sb.append(queryString[i].getValue());
+                    if(queryString.length-i>1)
+                        sb.append("&");
+                }
+            }
+            return sb.toString();
+        }
+        
+        public String absoluteURL(){
+            StringBuilder sb = new StringBuilder(500);
+            sb.append(https?"https://":"http://");
+            sb.append(hostname);
+            sb.append(port!=80?":"+port:"");
+            sb.append(path);
+            return sb.toString();
+        }
+    }
+
 }
