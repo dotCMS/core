@@ -1,9 +1,9 @@
-package com.dotmarketing.portlets.checkurl.business;
+package com.dotmarketing.portlets.linkchecker.business;
 
 import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.checkurl.bean.CheckURLBean;
+import com.dotmarketing.portlets.linkchecker.bean.CheckURLBean;
 
 public abstract class LinkCheckerFactory {
     protected abstract void save(String contentletInode, String fieldInode, List<CheckURLBean> links) throws DotDataException;

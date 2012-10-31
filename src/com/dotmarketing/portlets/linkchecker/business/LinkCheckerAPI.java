@@ -1,11 +1,11 @@
-package com.dotmarketing.portlets.checkurl.business;
+package com.dotmarketing.portlets.linkchecker.business;
 
 import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.checkurl.bean.CheckURLBean;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.linkchecker.bean.CheckURLBean;
 import com.dotmarketing.portlets.structure.model.Field;
 
 public interface LinkCheckerAPI {

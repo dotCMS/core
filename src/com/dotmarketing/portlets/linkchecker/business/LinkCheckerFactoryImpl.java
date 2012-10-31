@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.checkurl.business;
+package com.dotmarketing.portlets.linkchecker.business;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import java.util.Map;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.checkurl.bean.CheckURLBean;
+import com.dotmarketing.portlets.linkchecker.bean.CheckURLBean;
 
 public class LinkCheckerFactoryImpl extends LinkCheckerFactory {
     

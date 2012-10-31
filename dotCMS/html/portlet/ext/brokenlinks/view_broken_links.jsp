@@ -1,6 +1,6 @@
 
 <%@ page contentType="text/html" isELIgnored="false" %>
-<%@ page import="com.dotmarketing.portlets.checkurl.util.CheckURLAccessibilityUtil"%>
+<%@ page import="com.dotmarketing.portlets.linkchecker.util.CheckURLAccessibilityUtil"%>
 <%@ page import="java.util.*" %>
 <%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure" %>
