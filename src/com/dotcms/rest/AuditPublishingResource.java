@@ -18,7 +18,7 @@ public class AuditPublishingResource extends WebResource {
 
 	@GET
 	@Path("/get/{bundleId:.*}")
-	@Produces(MediaType.APPLICATION_XML)
+	@Produces(MediaType.TEXT_XML)
 	public String get(@PathParam("bundleId") String bundleId) {
 		Map<String, Object> status = null;
 		
