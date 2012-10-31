@@ -261,8 +261,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLPENDING);
 			
-			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY);
-			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS);
+			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS.getCode());
 			
 			return dc.loadObjectResults();
 		}catch(Exception e){
