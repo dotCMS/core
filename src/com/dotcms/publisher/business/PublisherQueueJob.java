@@ -137,32 +137,39 @@ public class PublisherQueueJob implements StatefulJob {
 					(String) pendingAudit.get("status_pojo"));
         	Map<String, EndpointDetail> endpointsTarget = localHistory.getEndpointsMap();
         	boolean hasError = false;
+        	int counter = 0;
         	Map<String, EndpointDetail> bufferMap = new HashMap<String, EndpointDetail>();
         	for(String endpointId: endpointsTarget.keySet()) {
-        		PublishingEndPoint target = endpointAPI.findEndpointById(endpointId);
+        		EndpointDetail localDetail = endpointsTarget.get(endpointId);
         		
-        		if(target != null) {
-	        		webResource = client.resource(target.toURL()+"/api/auditPublishing");
-	        	
-		        	PublishAuditHistory remoteHistory = 
-		        			PublishAuditHistory.getObjectFromString(
-		        			webResource
-					        .path("get")
-					        .path((String) pendingAudit.get("bundle_id")).get(String.class));
+        		if(localDetail.getStatus() == PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode()) {
+	        		PublishingEndPoint target = endpointAPI.findEndpointById(endpointId);
+	        		
+	        		if(target != null) {
+		        		webResource = client.resource(target.toURL()+"/api/auditPublishing");
 		        	
-		        	if(remoteHistory != null) {
-			        	int statusCode = -1;
-			        	Map<String, EndpointDetail> endpointsMap = remoteHistory.getEndpointsMap();
-			        	for(String endpointRemote: endpointsMap.keySet()) {
-			        		EndpointDetail detail = endpointsMap.get(endpointRemote);
-			        		bufferMap.put(endpointRemote, detail);
-			        		
-			        		statusCode = detail.getStatus();
-			        		
-			        		if(statusCode != PublishAuditStatus.Status.SUCCESS.getCode())
-			        			hasError = true;
+			        	PublishAuditHistory remoteHistory = 
+			        			PublishAuditHistory.getObjectFromString(
+			        			webResource
+						        .path("get")
+						        .path((String) pendingAudit.get("bundle_id")).get(String.class));
+			        	
+			        	if(remoteHistory != null) {
+				        	int statusCode = -1;
+				        	Map<String, EndpointDetail> endpointsMap = remoteHistory.getEndpointsMap();
+				        	for(String endpointRemote: endpointsMap.keySet()) {
+				        		EndpointDetail detail = endpointsMap.get(endpointRemote);
+				        		bufferMap.put(endpointId, detail);
+				        		
+				        		statusCode = detail.getStatus();
+				        		
+				        		if(statusCode != PublishAuditStatus.Status.SUCCESS.getCode())
+				        			hasError = true;
+				        		else
+				        			counter++;
+				        	}
 			        	}
-		        	}
+	        		}
         		}
 	        }
         	
@@ -171,13 +178,18 @@ public class PublisherQueueJob implements StatefulJob {
         	}
         	
         	
-        	if(!hasError) {
+        	if(!hasError && counter == endpointsTarget.size()) {
 	        	pubAuditAPI.updatePublishAuditStatus((String) pendingAudit.get("bundle_id"), 
 	        			PublishAuditStatus.Status.SUCCESS, 
 	        			localHistory);
-        	} else {
+        	} else if(hasError && counter == 0) {
         		pubAuditAPI.updatePublishAuditStatus((String) pendingAudit.get("bundle_id"), 
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
+	        			localHistory);
+        	} else {
+        		pubAuditAPI.updatePublishAuditStatus((String) pendingAudit.get("bundle_id"), 
+        				PublishAuditStatus.getStatusObjectByCode(
+        						new Integer((Integer)pendingAudit.get("status")).intValue()), 
 	        			localHistory);
         	}
         }
