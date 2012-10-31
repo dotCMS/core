@@ -12,7 +12,6 @@
 	}
 	List<PublishingEndPoint> endpoints = pepAPI.getAllEndpoints();
 %>
-
 <div style="float: left">
 	<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Intro") %> 
 </div>
@@ -38,7 +37,7 @@
 			for(PublishingEndPoint endpoint : endpoints){
 	%>
 	<tr>
-		<td><a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>"><span class="deleteIcon"></span></a>&nbsp;<a style="cursor: pointer" onclick="editEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>"><span class="editIcon"></span></a></td>
+		<td><a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>"><span class="deleteIcon"></span></a>&nbsp;<a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>"><span class="editIcon"></span></a></td>
 		<td><%=endpoint.getServerName()%></td>
 		<td><%=endpoint.getAddress()%></td>
 		<td><%=endpoint.getPort()%></td>
