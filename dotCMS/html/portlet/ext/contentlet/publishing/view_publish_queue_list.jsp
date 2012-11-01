@@ -17,9 +17,6 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
-<script type="text/javascript">
-   dojo.require("dijit.Tooltip");
-</script>  
 <%
 
     ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -92,13 +89,18 @@
   %>
 <script type="text/javascript">
 
- function checkAllBundle(x){
-	var chk = dijit.byId("bundle_to_delete_" + x).checked;
-	 dojo.query(".b" + x  + " input").forEach(function(box){
-		 dijit.byId(box.id).setValue(chk);
-	})
 
- }
+	dojo.require("dijit.Tooltip");
+
+
+
+	function checkAllBundle(x){
+		var chk = dijit.byId("bundle_to_delete_" + x).checked;
+		 dojo.query(".b" + x  + " input").forEach(function(box){
+			 dijit.byId(box.id).setValue(chk);
+		})
+	
+	}
  
  
  
@@ -142,6 +144,7 @@
 		refreshQueueList(url);
    }
 </script>
+
 <%if(UtilMethods.isSet(nastyError)){%>
 		<dl>
 			<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Query_Error") %> </dt>
@@ -153,7 +156,7 @@
 		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));
 %>
 
-	<table  style="border:0px;width:99%;margin:10px;">
+	<table  style="border:0px;width:99%;margin:7px;margin-top:20px;">
 		<tr>
 			<td>
 				<%= LanguageUtil.get(pageContext, "publisher_PubUnpubDate") %>: 
@@ -168,7 +171,8 @@
 	</table>					
 	<table class="listingTable shadowBox">
 		<tr>
-			<th style="width:30px">
+			<th style="width:40px"><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></th>
+			<th style="width:30px;text-align:center;">
 			<input dojoType="dijit.form.CheckBox" 
 					type="checkbox" 
 					class="bundle_to_delete" 
@@ -176,9 +180,9 @@
 					value="<%=bundle.get("bundle_id") %>" 
 					id="bundle_to_delete_<%=bundle.get("bundle_id") %>" 
 					onclick="checkAllBundle('<%=bundle.get("bundle_id") %>')"/></th>		
-			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>	
-			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
+			<th style="width:100%"><%= LanguageUtil.get(pageContext, "Title") %></th>	
+			
+			<th nowrap="nowrap"><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></th>
 		</tr>
 		<% for(Map<String,Object> c : bundleAssets) {
 			String errorclass="";
@@ -187,7 +191,8 @@
 			}
 		%>
 			<tr <%=errorclass%>>
-				<td><input 
+				<td  style="text-align: center;"><img class="center" src="/html/images/icons/<%=(c.get("operation").toString().equals("1")?"add.png":"cross.png")%>"/></td>
+				<td style="width:30px;text-align:center;"><input 
 						dojoType="dijit.form.CheckBox" 
 						type="checkbox" 
 						class="queue_to_delete b<%=bundle.get("bundle_id") %>" 
@@ -206,8 +211,8 @@
 				%>
 					<td><%= LanguageUtil.get(pageContext, "publisher_No_Title") %></td> 
 				<%} %>
-				<td  style="text-align: center;width:25px"><img class="center" src="/html/images/icons/<%=(c.get("operation").toString().equals("1")?"add.png":"cross.png")%>"/></td>
-			    <td><%=UtilMethods.dateToHTMLDate((Date)c.get("entered_date"),"MM/dd/yyyy hh:mma") %></td>
+				
+			    <td nowrap="nowrap"><%=UtilMethods.dateToHTMLDate((Date)c.get("entered_date"),"MM/dd/yyyy hh:mma") %></td>
 			</tr>
 		<%}%>
 	</table>
@@ -216,9 +221,9 @@
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px">&nbsp;</th>			
-			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>			
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
+			<th style="width:40px"><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></th>
+			<th><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></th>			
+			<th><%= LanguageUtil.get(pageContext, "publisher_Status") %></th>
 		</tr>
 		<tr>
 			<td colspan="14" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
