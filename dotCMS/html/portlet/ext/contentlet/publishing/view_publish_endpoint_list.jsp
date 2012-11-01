@@ -50,7 +50,7 @@
 		}else{
 	%>	
 	<tr>
-		<td colspan="4" class="solr_tcenter"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+		<td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
 	</tr>	
 	<%
 		}

@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -5,22 +7,31 @@
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<html xmlns="http://www.w3.org/1999/xhtml">
-
 <%
-User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-if(user == null){
-	response.setStatus(403);
-	return;
-}
+	String portletId1 = "EXT_CONTENT_PUBLISHING_TOOL";
+	Portlet portlet1 = PortletManagerUtil.getPortletById(company.getCompanyId(), portletId1);
+	String strutsAction = ParamUtil.get(request, "struts_action", null);
+	
+	if (!com.dotmarketing.util.UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action"))) {
+		List<CrumbTrailEntry> crumbTrailEntries = new ArrayList<CrumbTrailEntry>();
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), null));
+		request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, crumbTrailEntries);
+	}
+	
+	request.setAttribute(com.dotmarketing.util.WebKeys.DONT_DISPLAY_SUBNAV_ALL_HOSTS, false);
 
-Layout layoutOb = (Layout) request.getAttribute(WebKeys.LAYOUT);
-String layout = null;
-if (layoutOb != null) {
-	layout = layoutOb.getId();
-}
-
+	
 %>
+<div class="portlet-wrapper">
+	<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
+</div>
+<%	if(LicenseUtil.getLevel()<400){ %>
+	<%@ include file="/html/portlet/ext/contentlet/publishing/not_licensed.jsp" %>
+<%return;} %>
+
+
+
+
 <script type="text/javascript">
 	dojo.require("dijit.form.NumberTextBox");
     dojo.require("dojox.layout.ContentPane");
@@ -207,21 +218,45 @@ if (layoutOb != null) {
 			myCp.refresh();	
 		}	
 	}
+
+	
+	
+	dojo.ready(function(){
+		loadPublishQueueEndpoints();
+		doQueueFilter();
+		doAuditFilter();
+	});
+	
+	
+	dojo.addOnLoad (function(){
+		var tab =dijit.byId("mainTabContainer");
+	   	dojo.connect(tab, 'selectChild',
+			function (evt) {
+			 	selectedTab = tab.selectedChildWidget;
+				  	if(selectedTab.id =="queue"){
+				  		doQueueFilter();
+				  	}
+				  	else if(selectedTab.id =="queue"){
+				  		refreshAuditList("");
+				  	}
+			});
+
+	});
 </script>
+
+
+
 <div class="portlet-wrapper">
-	<div>
-		 <%= LanguageUtil.get(pageContext, "publisher_Manager") %>
-		<hr/>
-	</div>
 	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+
   		<div id="searchLucene" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Search") %>" >
   			<div>
 				<dl>	
 					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Lucene_Query") %> </strong></dt>
 					<dd>
-						<textarea dojoType="dijit.form.Textarea" name="query" style="width:500px;min-height: 150px;" id="query" type="text"></textarea>
+						<textarea dojoType="dijit.form.Textarea" name="query" style="width:500px;min-height: 150px;" id="query" type="text">*</textarea>
 					</dd>
-					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Sort") %> </strong></dt><dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="modDate" size="10" /></dd>	
+					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Sort") %> </strong></dt><dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="modDate desc" size="10" /></dd>	
 					
 					<dt></dt><dd><button dojoType="dijit.form.Button" onclick="doLuceneFilter();" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "publisher_Search_Content") %></button></dd>
 				</dl>
@@ -231,8 +266,11 @@ if (layoutOb != null) {
 			<div id="lucene_results">
 			</div>
 		</div>	
+		
   		<div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
-  		    <div>
+  		   <div class="buttonRow" style="text-align: right;">
+  		    	
+  		    
 				<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon">
 					<%= LanguageUtil.get(pageContext, "publisher_Delete_from_queue") %> 
 				</button>
@@ -243,42 +281,31 @@ if (layoutOb != null) {
 					<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
 				</button> 
 			</div>			
-			<hr>
-			<div>&nbsp;</div>
+
   			<div id="queue_results">
 			</div>
-			<script type="text/javascript">
-			dojo.ready(function(){
-				doQueueFilter();
-			});
-			</script>
+
   		</div>
-  		
+		
+		
+		
+		
   		<div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
-			<div>
+			<div class="buttonRow" style="text-align: right;">
 				<button class="solr_right" dojoType="dijit.form.Button" onClick="doAuditFilter();" iconClass="resetIcon">
 					<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
 				</button> 
 			</div>			
-			<hr>
-			<div>&nbsp;</div>
+
   			<div id="audit_results">
 			</div>
-			<script type="text/javascript">
-			dojo.ready(function(){
-				doAuditFilter();
-			});
-			</script>
+
   		</div>
   		
   		<div id="endpoints" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Endpoints") %>" >
   			<div id="endpoint_servers">
 			</div>
-			<script type="text/javascript">
-			dojo.ready(function(){
-				loadPublishQueueEndpoints();
-			});
-			</script>
+
   		</div>
 	</div>
 </div>

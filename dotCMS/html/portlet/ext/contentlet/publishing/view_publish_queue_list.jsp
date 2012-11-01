@@ -16,12 +16,12 @@
 <%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
-
+<%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <script type="text/javascript">
    dojo.require("dijit.Tooltip");
 </script>  
 <%
-  	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+
     ContentletAPI conAPI = APILocator.getContentletAPI();
     PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
     
@@ -51,17 +51,8 @@
 
     String nastyError = null;
 
-    boolean userIsAdmin = false;
-    if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
-    	userIsAdmin=true;
-    }
 
-    String layout = request.getParameter("layout");
-    if(!UtilMethods.isSet(layout)) {
-    	layout = "";
-    }
 
-    String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout + "&p_p_id=EXT_CONTENT_PUBLISHING_TOOL&");
     List<Map<String,Object>> iresults =  null;
     String counter =  "0";
 
@@ -163,12 +154,18 @@
 	for(Map<String,Object> bundle : iresults) {
 		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));
 %>
-	<h3 style="margin-top:1em;">
-		<%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <%=bundle.get("bundle_id") %>
-		<br />
-		<%= LanguageUtil.get(pageContext, "publisher_PubUnpubDate") %>: 
-		<%=new SimpleDateFormat("yyyy-MM-dd H:mm").format((Date) bundle.get("publish_date")) %>
-	</h3>					
+
+	<table  style="border:0px;width:99%">
+		<tr>
+			<td>
+				<%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <%=bundle.get("bundle_id") %>
+			</td>
+			<td>
+				<%= LanguageUtil.get(pageContext, "publisher_PubUnpubDate") %>: 
+				<%=new SimpleDateFormat("yyyy-MM-dd H:mm").format((Date) bundle.get("publish_date")) %>
+			</td>
+		</tr>
+	</table>					
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px">
@@ -178,7 +175,7 @@
 					name="bundle_to_delete" 
 					value="<%=bundle.get("bundle_id") %>" 
 					id="bundle_to_delete_<%=bundle.get("bundle_id") %>" /></th>		
-			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "title") %></strong></th>	
+			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>	
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
 			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 		</tr>
@@ -191,24 +188,22 @@
 			<tr <%=errorclass%>>
 				<td><input dojoType="dijit.form.CheckBox" type="checkbox" class="queue_to_delete" name="queue_to_delete" value="<%=c.get("asset") %>$<%=c.get("operation") %>" id="queue_to_delete_<%=c.get("asset") %>$<%=c.get("operation") %>" /></td>
 				<%try{
-					Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),true,Long.parseLong(c.get("language_id").toString()),user, false);
+					Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),false,Long.parseLong(c.get("language_id").toString()),user, false);
 				%>
-				<td><a href="/c/portal/layout?p_l_id=<%=layout%>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=con.getInode() %>&referer=<%=referer %>"><%=con.getTitle()%></a></td>
+				<td><a href="/c/portal/layout?p_l_id=EXT_11&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=con.getInode() %>&referer=<%=referer %>"><%=con.getTitle()%></a></td>
 				<%
 				}catch(Exception e){
 					nastyError=e.getMessage();
 				%>
-				<td><%= LanguageUtil.get(pageContext, "publisher_No_Title") %></td> 
+					<td><%= LanguageUtil.get(pageContext, "publisher_No_Title") %></td> 
 				<%} %>
 				<td style="width:40px"><img class="center" src="/html/images/icons/<%=(c.get("operation").toString().equals("1")?"plus.png":"cross.png")%>"/></td>
 			    <td><%=UtilMethods.dateToHTMLDate((Date)c.get("entered_date"),"MM/dd/yyyy hh:mma") %></td>
 			</tr>
 		<%}%>
 	</table>
-<%
-	}
-}else{ 
-%>
+<%}%>
+<%}else{%>
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px">&nbsp;</th>			
@@ -217,7 +212,7 @@
 			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 		</tr>
 		<tr>
-			<td colspan="4" class="solr_tcenter"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+			<td colspan="14" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
 		</tr>
 	</table>
 <%} %>
