@@ -22,20 +22,38 @@
 	   dijit.byId('bundleDetail').hide();
 	}
 </script>
-<div style="float: left; margin-left: 2px;">
-	<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail_intro") %> 
-</div>
-<div>&nbsp;</div>
+
+
+<h3><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Status") %>: <%=PublishAuditStatus.getStatusByCode(status) %></h3>
 <div style="width: 350px; margin:20px 15px 20px 2px; text-align: left;" class="callOutBox2">            
-	<span style="font-size: 88%;">
-		<h3><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Status") %>: <%=PublishAuditStatus.getStatusByCode(status) %></h3>
-    	<p></p>
-		<p><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Start") %>: </b><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleStart(),"MM/dd/yyyy hh:mma") %></p>
-		<p><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_End") %>: </b><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleEnd(),"MM/dd/yyyy hh:mma") %></p>    	
-		<p><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_Start") %>: </b><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishStart(),"MM/dd/yyyy hh:mma") %></p>
-		<p><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_End") %>: </b><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishEnd(),"MM/dd/yyyy hh:mma") %></p>
-		<p><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Asset_Number") %>: </b><%=currentEndpointHistory.getAssets().size() %></p>
-	</span>
+		
+    	<table class="listingTable shadowBox">
+	    	<tr>
+	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Start") %>: </b></td>
+	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleStart(),"MM/dd/yyyy hh:mma") %></td>
+	    	
+	    	</tr>
+	    	<tr>
+	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_End") %>: </b></td>
+	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleEnd(),"MM/dd/yyyy hh:mma") %></td>
+	    	
+	    	</tr>
+	    	<tr>
+	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_Start") %>: </b></td>
+	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishStart(),"MM/dd/yyyy hh:mma") %></td>
+	    	
+	    	</tr>
+	    	<tr>
+	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_End") %>: </b></td>
+	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishEnd(),"MM/dd/yyyy hh:mma") %></td>
+	    	
+	    	</tr>
+	    	<tr>
+	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Asset_Number") %>: </b></td>
+	    		<td style="background: white"><%=currentEndpointHistory.getAssets().size() %></td>
+	    	
+	    	</tr>
+    	</table>
 </div>
 
 <table class="listingTable shadowBox">
@@ -60,7 +78,7 @@
 	}else{
 %>	
 	<tr>
-		<td colspan="2" class="solr_tcenter"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+		<td colspan="5" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
 	</tr>	
 <%
 	}
