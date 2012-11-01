@@ -326,6 +326,17 @@ public interface VersionableAPI {
 	public ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException;
 	
 	/**
+	 * Will save the contentletVersionInfo Record. For normal operations you should use the setLive, setWorking etc... but there are cases like
+	 * PushPublishing where you want to say the entire record. 
+	 * 
+	 * @param cvInfo
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	public void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException;
+	
+	/**
 	 * Will return the @VersionInfo holder for the given identifier
 	 * @param identifier
 	 * @return
@@ -339,5 +350,12 @@ public interface VersionableAPI {
 	public void deleteContentletVersionInfo(String identifier, long lang) throws DotDataException;
 	
 	public boolean hasLiveVersion(Versionable identifier)  throws DotDataException, DotStateException;
+	
+	/**
+	 * 
+	 * @param identifier
+	 * @param lang
+	 */
+	public void removeContentletVersionInfoFromCache(String identifier, long lang);
 	
 }

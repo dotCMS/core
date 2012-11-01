@@ -81,11 +81,18 @@ public abstract class PublisherAPI {
 	public abstract List<Map<String,Object>> getQueueElementsGroupByBundleId() throws DotPublisherException;
 	
 	/**
+	 * gets a count of the distinct bundles
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	
+	public abstract int countQueueBundleIds() throws DotPublisherException;
+	/**
 	 * get bundle_ids available
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getQueueBundleIds() throws DotPublisherException;
+	public abstract List<Map<String,Object>> getQueueBundleIds(int limit, int offest) throws DotPublisherException ;
 	
 	/**
 	 * get queue elements by bundle_id

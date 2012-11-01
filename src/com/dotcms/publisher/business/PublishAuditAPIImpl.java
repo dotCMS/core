@@ -205,7 +205,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	
 	private final String SELECTSQLALL=
 			"SELECT * "+
-			"FROM publishing_queue_audit ";
+			"FROM publishing_queue_audit order by status_updated desc";
 	
 	public List<Map<String,Object>> getAllPublishAuditStatus() throws DotPublisherException {
 		try{

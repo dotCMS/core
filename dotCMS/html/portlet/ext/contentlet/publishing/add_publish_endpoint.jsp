@@ -42,80 +42,88 @@
 			dijit.byId("save").setAttribute('disabled',true);
 	}
 </script>
-<div style="float: left; padding-left: 15px;">
-	<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Add_Intro") %> 
-</div>		
-<div>&nbsp;</div>
-<div>&nbsp;</div>
-<div style="float: left; padding-left: 15px;" id="response"></div>
+
+<style>
+.myTable {margin:20px;}
+.myTable tr td{padding:5px;vertical-align: top}
+</style>
+
+
 <form name="formSaveEndpoint" method="post" id="formSaveEndpoint">
-	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
-			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:
-		</div>
-		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
-			<input type="text" dojoType="dijit.form.ValidationTextBox" 
-					  name="serverName" id="serverName" 
-					  style="width:440px;"
-					  required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>" onchange="enableSave()"/>
-		</div>
-		
-	</div>
-	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
-			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address") %>:
-		</div>
-		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
-			<input type="text" dojoType="dijit.form.ValidationTextBox" 
-				   name="address" id="address" style="width:440px" 
-				   required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>" onchange="enableSave()"/>
-		</div>
-	</div>	
-	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
-		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
-			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:
-		</div>
-		<div style="padding-left:10px;padding-right:10px;width:52px;float:left;">
-			<input type="text" dojoType="dijit.form.ValidationTextBox" 
-				   name="port" id="port" style="width:50px" 
-				   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />		
-		</div>
-		<div style="padding-left:40px;padding-right:10px;width:60px;float:left;">
-			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:
-		</div>
-		<div style="padding-left:5px;padding-right:10px;width:100px;height:50px;float:left;">
-			<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;height:28px;">
-				<option value="http">http</option>
-				<option value="https">https</option>
-			</select>		
-		</div>		
-	</div>		
-	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">	
-		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
-			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
-		</div>
-		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">						          	
-			<textarea dojoType="dijit.form.Textarea" name="authKey" id="authKey" style="width:450px;min-height:180px;max-height: 600px"></textarea>
-		</div>		
-	</div>
-	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
-		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
-			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending") %>:
-		</div>
-		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
-			<input dojoType="dijit.form.CheckBox" type="checkbox" name="sending" />		
-		</div>				
-	</div>	
-	<div class="fieldWrapper" style="padding-top: 15px; clear: both;">
-		<div style="padding-left:30px;padding-right:10px;width:80px;float:left;">
-			<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
-		</div>
-		<div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
-			<input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" />		
-		</div>						
-	</div>
-	<div class="buttonRow">
-		<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
-		<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon" disabled="true"><%= LanguageUtil.get(pageContext, "Save") %></button>
-    </div>	
+	<table class="myTable shadowBox" style="padding:10px;" align="center">
+		<tr>
+			<td align="right">
+				<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:
+			</td>
+			<td>
+				<input type="text" dojoType="dijit.form.ValidationTextBox" 
+						  name="serverName" id="serverName" 
+						  style="width:440px;"
+						  required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>" onchange="enableSave()"/>
+			</td>
+			
+		</tr>
+		<tr>
+			<td align="right">
+				<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address") %>:
+			</td>
+			<td>
+				<input type="text" dojoType="dijit.form.ValidationTextBox" 
+					   name="address" id="address" style="width:440px" 
+					   required="true" promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>" onchange="enableSave()"/>
+			</td>
+		</tr>	
+		<tr>
+			<td align="right"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:</td>
+			<td nowrap="nowrap">
+				
+				<input type="text" dojoType="dijit.form.ValidationTextBox" 
+					   name="port" id="port" style="width:50px" 
+					   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />		
+				&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+				<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:
+				
+	
+				<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;height:28px;">
+					<option value="http">http</option>
+					<option value="https">https</option>
+				</select>		
+
+			</td>		
+		</tr>	
+		<tr>
+			<td align="right">
+				<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
+			</td>
+			<td>						          	
+				<textarea dojoType="dijit.form.Textarea" name="authKey" id="authKey" style="width:450px;min-height:180px;max-height: 600px"></textarea>
+			</td>		
+		</tr>	
+		<tr>
+			<td align="right">
+				<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending") %>:
+			</td>
+			<td>
+				<input dojoType="dijit.form.CheckBox" type="checkbox" name="sending" />		
+			</td>				
+		</tr>	
+		<tr>
+			<td align="right">
+				<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
+			</td>
+			<td>
+				<input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" />		
+			</td>						
+		</tr>	
+	</table>
+	<table align="center">
+		<tr>
+			<td colspan="2" class="buttonRow" style="text-align: center;white-space: nowrap;">
+				<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon" disabled="true"><%= LanguageUtil.get(pageContext, "Save") %></button>
+				&nbsp;
+				<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+				
+		    </td>
+	    </tr>
+   </table>	
 </form>
