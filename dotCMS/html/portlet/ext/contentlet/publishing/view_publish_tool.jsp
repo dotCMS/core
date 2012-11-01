@@ -294,22 +294,23 @@
 		</div>	
 		
   		<div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
-  		   <div class="buttonRow" style="text-align: right;">
+  		   <div class="buttonRow" >
   		    	
-  		    
-				<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon">
-					<%= LanguageUtil.get(pageContext, "publisher_Delete_from_queue") %> 
-				</button>
-				<%-- &nbsp;&nbsp;<%= LanguageUtil.get(pageContext, "publisher_Show") %> 
-				<input dojoType="dijit.form.CheckBox" checked="checked" type="checkbox" name="showPendings" value="true" id="showPendings" onclick="doQueueFilter()" /> <label for="showPendings"><%=LanguageUtil.get(pageContext, "publisher_Queue_Pending")%></label> 
-				<input dojoType="dijit.form.CheckBox" checked="checked" type="checkbox" name="showErrors" value="true" id="showErrors"  onclick="doQueueFilter()"  /> <label for="showErrors"><%=LanguageUtil.get(pageContext, "publisher_Queue_Error")%></label> --%>
-				<button class="solr_right" dojoType="dijit.form.Button" onClick="doQueueFilter();" iconClass="resetIcon">
-					<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
-				</button> 
-			</div>			
-
-  			<div id="queue_results">
+	  		    <div style="float:left">
+					<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon">
+						<%= LanguageUtil.get(pageContext, "publisher_Delete_from_queue") %> 
+					</button>
+				</div>
+				<div style="float:right">
+					<button  dojoType="dijit.form.Button" onClick="doQueueFilter();" iconClass="resetIcon">
+						<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
+					</button> 
+				</div>			
+			
+				<div>&nbsp;</div>
 			</div>
+			<div style="height:10px;"></div>
+  			<div id="queue_results"></div>
 
   		</div>
 		
@@ -318,7 +319,7 @@
 		
   		<div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
 			<div class="buttonRow" style="text-align: right;">
-				<button class="solr_right" dojoType="dijit.form.Button" onClick="doAuditFilter();" iconClass="resetIcon">
+				<button  dojoType="dijit.form.Button" onClick="doAuditFilter();" iconClass="resetIcon">
 					<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
 				</button> 
 			</div>			
