@@ -57,12 +57,11 @@ public class PublisherQueueJob implements StatefulJob {
 			PublishAuditStatus status = null;
 			PublishAuditHistory historyPojo = null;
 			String tempBundleId = null;
-			boolean acceptAll = true;
 
 			for(Map<String,Object> bundle: bundles) {
 				Date publishDate = (Date) bundle.get("publish_date");
 				
-				if(publishDate.before(new Date()) || acceptAll) {
+				if(publishDate.before(new Date())) {
 					tempBundleId = (String)bundle.get("bundle_id");
 					tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
 					
