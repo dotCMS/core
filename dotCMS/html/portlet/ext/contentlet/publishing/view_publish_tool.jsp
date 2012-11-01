@@ -133,6 +133,7 @@
 		}).placeAt("endpoint_servers");
 
 		myCp.attr("href", url);
+		myCp.refresh();
 	}
 	
 	function goToAddEndpoint(){
@@ -249,8 +250,11 @@
 				  	if(selectedTab.id =="queue"){
 				  		doQueueFilter();
 				  	}
-				  	else if(selectedTab.id =="queue"){
+				  	else if(selectedTab.id =="audit"){
 				  		refreshAuditList("");
+				  	}
+				  	else if(selectedTab.id =="endpoints"){
+				  		loadPublishQueueEndpoints();
 				  	}
 			});
 
