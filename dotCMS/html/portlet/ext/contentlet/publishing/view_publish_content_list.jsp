@@ -200,6 +200,10 @@
 		
 		refreshLuceneList(url);	   
    }
+   
+   
+
+   
 </script>
 <%if(UtilMethods.isSet(nastyError) && errorCounter == 0){%>
 		<dl>
@@ -221,7 +225,8 @@
 	<%}%>						
 	<table class="listingTable shadowBox">
 		<tr>
-			<th style="width:30px">
+		
+			<th style="width:30px;text-align: center" align="center">
 				<input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" />
 			</th>		
 			<th colspan="2">
@@ -246,13 +251,20 @@
 		</tr>
 		<% for(Contentlet c : iresults) {%>
 			<tr>
-				<td style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"$"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"$"+c.getLanguageId()%>" /></td>
-				<td><a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>"><%=c.getTitle()%></a></td>
-				<td style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></a></td>
+		
+				<td style="width:30px;text-align: center" align="center"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"$"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"$"+c.getLanguageId()%>" /></td>
+				<td width="100%" nowrap="nowrap"><a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>"><%=c.getTitle()%></a>
+				<div style="float:right;color:silver">
+					<a href="#" onclick="filterStructure('<%=c.getStructure().getVelocityVarName() %>')" style="color:silver"><%=c.getStructure().getName() %></a>
+				</div>
+				
+				</td>
+				<td nowrap="nowrap" style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></a></td>
 			</tr>
 		<%}%>
 	</table>
-	<table >
+
+	<table width="97%" style="margin:10px;" >
 		<tr>
 			<%
 			long begin=Long.parseLong(offset);
@@ -264,17 +276,17 @@
 					previous=0;					
 				}
 			%>
-				<td style="width:130px"><button dojoType="dijit.form.Button" onClick="doLucenePagination(<%=previous%>,<%=limit%>);return false;" iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "publisher_Previous") %></button></td>
+				<td width="33%" ><button dojoType="dijit.form.Button" onClick="doLucenePagination(<%=previous%>,<%=limit%>);return false;" iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "publisher_Previous") %></button></td>
 			<%}else{ %>
-				<td style="width:130px">&nbsp;</td>
+				<td  width="33%" >&nbsp;</td>
 			<%} %>
-				<td class="solr_tcenter" colspan="2"><strong> <%=begin+1%> - <%=end < total?end:total%> <%= LanguageUtil.get(pageContext, "publisher_Of") %> <%=total%> </strong></td>
+				<td  width="34%"  colspan="2" align="center"><strong> <%=begin+1%> - <%=end < total?end:total%> <%= LanguageUtil.get(pageContext, "publisher_Of") %> <%=total%> </strong></td>
 			<%if(end < total){ 
 				long next=(end < total?end:total);
 			%>
-				<td style="width:130px"><button class="solr_right" dojoType="dijit.form.Button" onClick="doLucenePagination(<%=next%>,<%=limit%>);return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
+				<td align="right" width="33%" ><button class="solr_right" dojoType="dijit.form.Button" onClick="doLucenePagination(<%=next%>,<%=limit%>);return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
 			<%}else{ %>
-				<td style="width:130px">&nbsp;</td>
+				<td  width="33%" >&nbsp;</td>
 			<%} %>
 		</tr>
 	</table>
