@@ -410,12 +410,34 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue order by publish_date";
 	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue order by publish_date";
 	
+	private static final String COUNTBUNDLES="select count(distinct(bundle_id)) as bundle_count from publishing_queue ";
+
+	/**
+	 * Gets the count of the bundles to be published
+	 * @return
+	 */
+	public int countQueueBundleIds() throws DotPublisherException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(COUNTBUNDLES);
+		try{
+			Long l = (Long) dc.loadObjectResults().get(0).get("bundle_count");
+			return Integer.parseInt(l.toString());
+		}
+		catch(Exception e){
+			Logger.error(PublisherAPIImpl.class, e.getMessage());
+			throw new DotPublisherException(e.getMessage());
+		}
+	}
+	
+	
+	
+	
 	/**
 	 * get bundle_ids available
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public List<Map<String,Object>> getQueueBundleIds() throws DotPublisherException {
+	public List<Map<String,Object>> getQueueBundleIds(int limit, int offest) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -427,7 +449,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}else{
 				dc.setSQL(OCLGETBUNDLES);
 			}
-			
+			dc.setMaxRows(limit);
+			dc.setStartRow(offest);
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);

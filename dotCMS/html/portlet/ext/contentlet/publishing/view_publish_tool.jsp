@@ -38,22 +38,20 @@
 	
 	function doQueueFilter () {
 	
-		var url="";
-		url="layout=<%=layout%>";
-		refreshQueueList(url);
+
+		refreshQueueList("");
 	}
 	
 	function doAuditFilter() {
-		var url="";
-		url="layout=<%=layout%>";
-		refreshAuditList(url);
+
+		refreshAuditList("");
 	}
 	
 	
 	var lastUrlParams ;
 	
 	function refreshQueueList(urlParams){
-		lastUrlParams = urlParams;
+
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_queue_list.jsp?"+ urlParams;		
 		
 		var myCp = dijit.byId("queueContent");	
@@ -72,7 +70,6 @@
 	}
 	
 	function refreshAuditList(urlParams){
-		lastUrlParams = urlParams;
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_audit_list.jsp?"+ urlParams;		
 		
 		var myCp = dijit.byId("auditContent");	
@@ -241,9 +238,9 @@
 	
 	
 	dojo.ready(function(){
-		loadPublishQueueEndpoints();
-		doQueueFilter();
-		doAuditFilter();
+		//loadPublishQueueEndpoints();
+		//doQueueFilter();
+		//doAuditFilter();
 
 		var tab =dijit.byId("mainTabContainer");
 	   	dojo.connect(tab, 'selectChild',

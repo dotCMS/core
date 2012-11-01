@@ -252,7 +252,7 @@
 		<% for(Contentlet c : iresults) {%>
 			<tr>
 		
-				<td style="width:30px;text-align: center" align="center">y
+				<td style="width:30px;text-align: center" align="center">
 					<input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"$"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"$"+c.getLanguageId()%>" />
 				</td>
 				<td width="100%" nowrap="nowrap">
@@ -300,7 +300,7 @@
 	       });
 	       var menuItem1 = new dijit.MenuItem({
 	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
-	                       iconClass: "plusIcon",
+	                       iconClass: "addIcon",
 	                       onClick: function() {
 	                    	   addToPublishQueueQueue('add');
 	           }
@@ -318,7 +318,7 @@
 	       
 	       var button = new dijit.form.ComboButton({
 	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
-	                        iconClass: "plusIcon",
+	                        iconClass: "addIcon",
 	                        dropDown: menu,
 	                        onClick: function() {
 	                        	addToPublishQueueQueue('add');
