@@ -205,6 +205,18 @@ public class VersionableFactoryImpl extends VersionableFactory {
     }
 
     @Override
+    protected ContentletVersionInfo findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
+    	ContentletVersionInfo contv = null;
+    	 HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
+         dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
+         dh.setParam(identifier);
+         dh.setParam(lang);
+         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
+         contv = (ContentletVersionInfo)dh.load();
+         return contv;
+    }
+    
+    @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
     	cvInfo.setVersionTs(new Date());
     	HibernateUtil.saveOrUpdate(cvInfo);
