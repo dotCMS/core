@@ -39,6 +39,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -208,7 +209,12 @@ public class BundlePublisher extends Publisher {
 		}catch (Exception e) {
 			throw new DotPublishingException("Unable to update Cache or Reindex Content", e);
 		}
-		
+		try {
+			HibernateUtil.commitTransaction();
+		} catch (DotHibernateException e) {
+			Logger.error(BundlePublisher.class,e.getMessage(),e);
+		}
+		DbConnectionFactory.closeConnection();
 	    
 	    return config;
 	}
