@@ -386,6 +386,21 @@ public class VersionableAPIImpl implements VersionableAPI {
 	public ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
 	    return vfac.getContentletVersionInfo(identifier, lang);
 	}
+	
+	@Override
+	public void saveContentletVersionInfo( ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
+		ContentletVersionInfo info = vfac.findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
+		if(info == null){
+			vfac.saveContentletVersionInfo(cvInfo);
+		}else{
+			info.setDeleted(cvInfo.isDeleted());
+			info.setLiveInode(cvInfo.getLiveInode());
+			info.setLockedBy(cvInfo.getLockedBy());
+			info.setLockedOn(cvInfo.getLockedOn());
+			info.setWorkingInode(cvInfo.getWorkingInode());
+			vfac.saveContentletVersionInfo(info);
+		}
+	}
 
 	public void deleteVersionInfo(String identifier)throws DotDataException {
 		vfac.deleteVersionInfo(identifier);

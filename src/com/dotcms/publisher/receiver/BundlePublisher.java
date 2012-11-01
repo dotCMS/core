@@ -38,6 +38,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -46,6 +47,7 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
@@ -142,6 +144,7 @@ public class BundlePublisher extends Publisher {
 				
 				content = wrapper.getContent();
 				content.setProperty("_dont_validate_me", true);
+				ContentletVersionInfo info = wrapper.getInfo();
 				
 				//Select user
 				User userToUse = null;
@@ -152,7 +155,7 @@ public class BundlePublisher extends Publisher {
 				}
 				
 				if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
-					publish(content, folderOut, userToUse, wrapper);
+					publish(content, info, folderOut, userToUse, wrapper);
 				} else {
 					unpublish(content, folderOut, userToUse, wrapper);
 				}
@@ -199,7 +202,7 @@ public class BundlePublisher extends Publisher {
 	    return config;
 	}
 	
-	private void publish(Contentlet content, File folderOut, User userToUse, PushContentWrapper wrapper) 
+	private void publish(Contentlet content, ContentletVersionInfo info, File folderOut, User userToUse, PushContentWrapper wrapper) 
 			throws Exception 
 	{
 		//Copy asset files to bundle folder keeping original folders structure
@@ -220,8 +223,8 @@ public class BundlePublisher extends Publisher {
 			
 		}
 		
-		
-		conAPI.checkin(content, userToUse, false);
+		content = conAPI.checkin(content, userToUse, false);		
+		APILocator.getVersionableAPI().saveContentletVersionInfo(info);
 		
 		//Tree
 		for(Map<String, Object> tRow : wrapper.getTree()) {
