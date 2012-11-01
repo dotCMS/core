@@ -123,10 +123,10 @@
 	function loadPublishQueueEndpoints(){
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";		
 		
-		var myCp = dijit.byId("endpointsContent");	
+		var myCp = dijit.byId("endpointsContent");
 		
 		if (myCp) {
-			myCp.destroyRecursive(true);
+			myCp.destroyRecursive(false);
 		}
 		myCp = new dojox.layout.ContentPane({
 			id : "endpointsContent"
@@ -233,8 +233,13 @@
 		   dijit.byId("query").setValue("*");
 		   dojo.byId("lucene_results").innerHTML="";
 		   dijit.byId("clearButton").setDisabled(true);
-		
+		   doLuceneFilter ();
 	}
+	
+	
+	
+	
+	
 	
 	
 	
@@ -294,6 +299,13 @@
 			</div>
 		</div>	
 		
+		
+		
+		
+		
+		
+		
+		
   		<div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
   		   <div class="buttonRow" >
   		    	
@@ -318,15 +330,32 @@
 		
 		
 		
+		
+		
+		
+		
+		
+		
+		
   		<div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
-			<div class="buttonRow" style="text-align: right;">
-				<button  dojoType="dijit.form.Button" onClick="doAuditFilter();" iconClass="resetIcon">
-					<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
-				</button> 
-			</div>			
-
-  			<div id="audit_results">
+			<div class="buttonRow" >
+	  		    <div style="float:left">
+					<button dojoType="dijit.form.Button" onClick="deleteAudits();" id="deleteAuditsBtn" iconClass="deleteIcon">
+						<%= LanguageUtil.get(pageContext, "Delete") %> 
+					</button>
+				</div>
+				
+				
+				<div style="float:right">
+					<button  dojoType="dijit.form.Button" onClick="doAuditFilter();" iconClass="resetIcon">
+						<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
+					</button> 
+				</div>			
+				<div>&nbsp;</div>
 			</div>
+			<div style="height:10px;"></div>
+  			<div id="audit_results"></div>
+
 
   		</div>
   		
