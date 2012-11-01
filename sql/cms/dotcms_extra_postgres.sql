@@ -703,8 +703,25 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-userActivity.log','Log Users action on pages, structures, documents.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
-  
+
+
 create index idx_identifier_perm on identifier (asset_type,host_inode);
+
+CREATE TABLE broken_link (
+   inode VARCHAR(36) NOT NULL, 
+   field VARCHAR(36) NOT NULL,
+   link VARCHAR(255) NOT NULL,
+   title VARCHAR(255) NOT NULL,
+   status_code integer NOT NULL,
+   primary key(inode,field)
+);
+
+alter table broken_link add CONSTRAINT fk_brokenl_content
+    FOREIGN KEY (inode) REFERENCES contentlet(inode) ON DELETE CASCADE;
+
+alter table broken_link add CONSTRAINT fk_brokenl_field
+    FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
+
 
 -- ****** Content Publishing Framework *******
 CREATE TABLE publishing_queue
@@ -734,3 +751,4 @@ CREATE TABLE publishing_end_point (
 	enabled bool,
 	auth_key text,
 	sending bool);
+

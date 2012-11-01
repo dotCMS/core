@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
+import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointFactory;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointFactoryImpl;
@@ -33,6 +34,7 @@ import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactory;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl;
+import com.dotmarketing.portlets.linkchecker.business.LinkCheckerFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
@@ -166,8 +168,14 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static IndiciesFactory getIndiciesFactory(){
         return (IndiciesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
     }
+
+    public static LinkCheckerFactory getLinkCheckerFactory() {
+        return (LinkCheckerFactory) getInstance(FactoryIndex.LINKCHECKER_FACTORY);
+    }
+
     public static PublisherEndpointFactory getPublisherEndpointFactory(){
         return (PublisherEndpointFactory) getInstance(FactoryIndex.PUBLISHER_END_POINT_FACTORY);
+
     }
     
     private static Object getInstance(FactoryIndex index) {
@@ -230,6 +238,7 @@ enum FactoryIndex
 	DASHBOARD_FACTORY,
 	WORKFLOWS_FACTORY,
 	INDICIES_FACTORY,
+	LINKCHECKER_FACTORY,
 	PUBLISHER_END_POINT_FACTORY;
 	
 	
@@ -261,6 +270,7 @@ enum FactoryIndex
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
             case INDICIES_FACTORY: return new IndiciesFactoryImpl();
+            case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
             case PUBLISHER_END_POINT_FACTORY: return new PublisherEndpointFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
