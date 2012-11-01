@@ -28,8 +28,6 @@ import org.apache.lucene.search.BooleanQuery;
 import org.quartz.SchedulerException;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -50,9 +48,6 @@ import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.quartz.CronScheduledTask;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.ShutdownHookThread;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -219,27 +214,6 @@ public class InitServlet extends HttpServlet {
 		    EscalationThread.getInstace().start();
 		}
 
-		try {
-		    final String lc="linkchecker";
-		    try {
-                QuartzUtils.pauseJob(lc,lc);
-                QuartzUtils.removeTaskRuntimeValues(lc,lc);
-                QuartzUtils.removeJob(lc,lc);
-		    }catch(Exception ex) { /* just ignore those */}
-            
-            if(LicenseUtil.getLevel()>=200) {
-                // if not enterprise it will do nothing anyway
-                String cronExp=Config.getStringProperty("linkchecker.cronexp","0 0 0/2 * * ?");
-                ScheduledTask task = new CronScheduledTask(lc, lc, "Link Checker", 
-                        LinkCheckerJob.class.getName(), new Date(), null, 1, null, cronExp);
-                QuartzUtils.scheduleTask(task);
-                
-            }
-        } catch (Exception ex) {
-            Logger.error(this, ex.getMessage(), ex);
-        }
-        
-		
         /*
          * SHOULD BE LAST THING THAT HAPPENS
          */
