@@ -38,7 +38,6 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -77,7 +76,7 @@ public class BundlePublisher extends Publisher {
 	    try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
-			Logger.fatal(PushPublisherBundler.class,e.getMessage(),e);
+			Logger.fatal(this,e.getMessage(),e);
 		}
 	    
 		this.config = super.init(config);
@@ -144,6 +143,9 @@ public class BundlePublisher extends Publisher {
 				
 				content = wrapper.getContent();
 				content.setProperty("_dont_validate_me", true);
+				content.setProperty(Contentlet.WORKFLOW_ASSIGN_KEY, null);
+				content.setProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
+				content.setProperty(Contentlet.WORKFLOW_COMMENTS_KEY, null);
 				ContentletVersionInfo info = wrapper.getInfo();
 				
 				//Select user
