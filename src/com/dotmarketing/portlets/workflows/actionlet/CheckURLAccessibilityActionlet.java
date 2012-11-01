@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.directwebremoting.WebContext;
 import org.directwebremoting.WebContextFactory;
 
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -63,7 +64,9 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 
 	@Override
 	public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
-		
+	    if(LicenseUtil.getLevel()<200)
+            return; // the apis will do nothing anyway
+	    
 		Contentlet con = processor.getContentlet();
 		
 		for(Field f : FieldsCache.getFieldsByStructureInode(con.getStructureInode())) {
