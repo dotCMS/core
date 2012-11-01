@@ -16,19 +16,13 @@
 <%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
-
-<script type="text/javascript">
-   dojo.require("dijit.Tooltip");
-</script>  
+<%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
-  	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+
     ContentletAPI conAPI = APILocator.getContentletAPI();
     PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
     
-    if(user == null){
-    	response.setStatus(403);
-    	return;
-    }
+
 
     PublisherAPI pubAPI = PublisherAPI.getInstance();  
     String viewFilterStr = request.getParameter("viewFilter");
@@ -51,17 +45,8 @@
 
     String nastyError = null;
 
-    boolean userIsAdmin = false;
-    if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
-    	userIsAdmin=true;
-    }
 
-    String layout = request.getParameter("layout");
-    if(!UtilMethods.isSet(layout)) {
-    	layout = "";
-    }
 
-    String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout + "&p_p_id=EXT_CONTENT_PUBLISHING_TOOL&");
     List<Map<String,Object>> iresults =  null;
     String counter =  "0";
 
@@ -72,7 +57,7 @@
     if(UtilMethods.isSet(deleteQueueElementsStr)){
     	deleteQueueElements=true;	
     }
-    if(UtilMethods.isSet(deleteBundleElementsStr)){
+    else if(UtilMethods.isSet(deleteBundleElementsStr)){
     	deleteBundleElements=true;	
     }
     String elementsToDelete=null;
@@ -103,16 +88,22 @@
     }
   %>
 <script type="text/javascript">
- function solrQueueCheckUncheckAll(){
-	   var check=false;
-/* 	   if(dijit.byId("queue_all").checked){
-		   check=true;
-	   } */
-	   var nodes = dojo.query('.queue_to_delete');
-	   dojo.forEach(nodes, function(node) {
-		    dijit.getEnclosingWidget(node).set("checked",check);
-	   }); 
-   }
+
+
+	dojo.require("dijit.Tooltip");
+
+
+
+	function checkAllBundle(x){
+		var chk = dijit.byId("bundle_to_delete_" + x).checked;
+		 dojo.query(".b" + x  + " input").forEach(function(box){
+			 dijit.byId(box.id).setValue(chk);
+		})
+	
+	}
+ 
+ 
+ 
    function doQueuePagination(offset,limit) {		
 		var url="layout=<%=layout%>";
 		url+="&offset="+offset;
@@ -153,6 +144,7 @@
 		refreshQueueList(url);
    }
 </script>
+
 <%if(UtilMethods.isSet(nastyError)){%>
 		<dl>
 			<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Query_Error") %> </dt>
@@ -163,24 +155,34 @@
 	for(Map<String,Object> bundle : iresults) {
 		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));
 %>
-	<h3 style="margin-top:1em;">
-		<%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <%=bundle.get("bundle_id") %>
-		<br />
-		<%= LanguageUtil.get(pageContext, "publisher_PubUnpubDate") %>: 
-		<%=new SimpleDateFormat("yyyy-MM-dd H:mm").format((Date) bundle.get("publish_date")) %>
-	</h3>					
+
+	<table  style="border:0px;width:99%;margin:7px;margin-top:20px;">
+		<tr>
+			<td>
+				<%= LanguageUtil.get(pageContext, "publisher_PubUnpubDate") %>: 
+				<%=new SimpleDateFormat("yyyy-MM-dd H:mm").format((Date) bundle.get("publish_date")) %>
+			
+			</td>
+			<td align="right">
+				<%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <%=bundle.get("bundle_id") %>
+			
+			</td>
+		</tr>
+	</table>					
 	<table class="listingTable shadowBox">
 		<tr>
-			<th style="width:30px">
+			<th style="width:40px"><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></th>
+			<th style="width:30px;text-align:center;">
 			<input dojoType="dijit.form.CheckBox" 
 					type="checkbox" 
 					class="bundle_to_delete" 
 					name="bundle_to_delete" 
 					value="<%=bundle.get("bundle_id") %>" 
-					id="bundle_to_delete_<%=bundle.get("bundle_id") %>" /></th>		
-			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "title") %></strong></th>	
-			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
+					id="bundle_to_delete_<%=bundle.get("bundle_id") %>" 
+					onclick="checkAllBundle('<%=bundle.get("bundle_id") %>')"/></th>		
+			<th style="width:100%"><%= LanguageUtil.get(pageContext, "Title") %></th>	
+			
+			<th nowrap="nowrap"><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></th>
 		</tr>
 		<% for(Map<String,Object> c : bundleAssets) {
 			String errorclass="";
@@ -189,35 +191,42 @@
 			}
 		%>
 			<tr <%=errorclass%>>
-				<td><input dojoType="dijit.form.CheckBox" type="checkbox" class="queue_to_delete" name="queue_to_delete" value="<%=c.get("asset") %>$<%=c.get("operation") %>" id="queue_to_delete_<%=c.get("asset") %>$<%=c.get("operation") %>" /></td>
+				<td  style="text-align: center;"><img class="center" src="/html/images/icons/<%=(c.get("operation").toString().equals("1")?"add.png":"cross.png")%>"/></td>
+				<td style="width:30px;text-align:center;"><input 
+						dojoType="dijit.form.CheckBox" 
+						type="checkbox" 
+						class="queue_to_delete b<%=bundle.get("bundle_id") %>" 
+						name="queue_to_delete" 
+						value="<%=c.get("asset") %>$<%=c.get("operation") %>" 
+						id="queue_to_delete_<%=c.get("asset") %>$<%=c.get("operation") %>" /></td>
 				<%try{
-					Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),true,Long.parseLong(c.get("language_id").toString()),user, false);
+					Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),false,Long.parseLong(c.get("language_id").toString()),user, false);
 				%>
-				<td><a href="/c/portal/layout?p_l_id=<%=layout%>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=con.getInode() %>&referer=<%=referer %>"><%=con.getTitle()%></a></td>
+				<td>
+					<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=con.getInode() %>&referer=<%=referer %>"><%=con.getTitle()%></a>
+				</td>
 				<%
 				}catch(Exception e){
 					nastyError=e.getMessage();
 				%>
-				<td><%= LanguageUtil.get(pageContext, "publisher_No_Title") %></td> 
+					<td><%= LanguageUtil.get(pageContext, "publisher_No_Title") %></td> 
 				<%} %>
-				<td style="width:40px"><img class="center" src="/html/images/icons/<%=(c.get("operation").toString().equals("1")?"plus.png":"cross.png")%>"/></td>
-			    <td><%=UtilMethods.dateToHTMLDate((Date)c.get("entered_date"),"MM/dd/yyyy hh:mma") %></td>
+				
+			    <td nowrap="nowrap"><%=UtilMethods.dateToHTMLDate((Date)c.get("entered_date"),"MM/dd/yyyy hh:mma") %></td>
 			</tr>
 		<%}%>
 	</table>
-<%
-	}
-}else{ 
-%>
+<%}%>
+<%}else{%>
 	<table class="listingTable shadowBox">
 		<tr>
 			<th style="width:30px">&nbsp;</th>			
-			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></strong></th>
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>			
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
+			<th style="width:40px"><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></th>
+			<th><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></th>			
+			<th><%= LanguageUtil.get(pageContext, "publisher_Status") %></th>
 		</tr>
 		<tr>
-			<td colspan="4" class="solr_tcenter"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+			<td colspan="14" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
 		</tr>
 	</table>
 <%} %>

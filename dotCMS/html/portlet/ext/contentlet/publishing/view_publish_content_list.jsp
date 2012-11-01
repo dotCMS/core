@@ -1,3 +1,4 @@
+<%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
@@ -28,13 +29,10 @@
    dojo.require("dijit.MenuItem");
 </script>  
 <%
-  	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+
     ContentletAPI conAPI = APILocator.getContentletAPI();
     LanguageAPI languagesAPI = APILocator.getLanguageAPI();
-    if(user == null){
-    	response.setStatus(403);
-    	return;
-    }
+
     String nastyError = "";
     long processedCounter=0;
     long errorCounter=0;
@@ -60,18 +58,9 @@
     	nastyError=LanguageUtil.get(pageContext, "publisher_Query_required");
     }
 
-    boolean userIsAdmin = false;
-    if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
-    	userIsAdmin=true;
-    }
 
-    String layout = request.getParameter("layout");
-    if(!UtilMethods.isSet(layout)) {
-    	layout = "";
-    }
 
-    String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout + "&p_p_id=EXT_CONTENT_PUBLISHING_TOOL&");
-    List<Contentlet> iresults =  null;
+  	List<Contentlet> iresults =  null;
     PaginatedArrayList<ContentletSearch> results =  null;
     String counter =  "0";
 
@@ -179,9 +168,7 @@
    
    function addToPublishQueueQueue(action){
 	   var url="layout=<%=layout%>&query=<%=UtilMethods.encodeURIComponent(query)%>&sort=<%=sortBy%>&offset=0&limit=<%=limit%>";	
-/* 		if(dijit.byId("add_all").checked){
-			url+="&add=all";
-		}else{ */
+
 			var ids="";
 			var nodes = dojo.query('.add_to_queue');
 			   dojo.forEach(nodes, function(node) {
@@ -213,6 +200,10 @@
 		
 		refreshLuceneList(url);	   
    }
+   
+   
+
+   
 </script>
 <%if(UtilMethods.isSet(nastyError) && errorCounter == 0){%>
 		<dl>
@@ -220,28 +211,26 @@
 			<dd><%=nastyError %></dd>
 		</dl>
 <%}else if(iresults.size() >0){ %>	
-  <% if( processedCounter > 0 || errorCounter > 0){ %>
-  	<dl>
-		<dt>&nbsp;</dt><dd><span style='color:green;'><%= LanguageUtil.get(pageContext, "publisher_Processed_message") %> <%=processedCounter %></span>
-		<span style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Error_Message") %> <%=errorCounter %></span></dd>
-	</dl>	
-	<% } %>		
-	<% if(UtilMethods.isSet(nastyError)){%>
-	<dl>
-		<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Query_Error") %> </dt>
-		<dd><%=nastyError %></dd>
-	</dl>
-	<%} %>						
+  	<%if( processedCounter > 0 || errorCounter > 0){ %>
+	  	<dl>
+			<dt>&nbsp;</dt><dd><span style='color:green;'><%= LanguageUtil.get(pageContext, "publisher_Processed_message") %> <%=processedCounter %></span>
+			<span style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Error_Message") %> <%=errorCounter %></span></dd>
+		</dl>	
+	<%}%>		
+	<%if(UtilMethods.isSet(nastyError)){%>
+		<dl>
+			<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Query_Error") %> </dt>
+			<dd><%=nastyError %></dd>
+		</dl>
+	<%}%>						
 	<table class="listingTable shadowBox">
 		<tr>
-			<th style="width:30px">
+		
+			<th style="width:30px;text-align: center" align="center">
 				<input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" />
 			</th>		
 			<th colspan="2">
-				<div id="addPublishQueueMenu" style="float:left"></div>
-				
-				<div style="float:left"><strong><%= LanguageUtil.get(pageContext, "date") %> </strong>
-				
+
 					<input 
 					type="text" 
 					dojoType="dijit.form.DateTextBox" 
@@ -249,26 +238,35 @@
 					invalidMessage=""  
 					id="publishDate"
 					name="publishDate" value="now">
-					
-					
-					<input type="text" name="publishDate" id="publishTime" value="now"
+					&nbsp;
+					<input type="text" name="publishDate" id="publishTime" value="now" style="width:100px;"
 					  data-dojo-type="dijit.form.TimeTextBox"
 					  onChange="dojo.byId('val').value=arguments[0].toString().replace(/.*1970\s(\S+).*/,'T$1')"
 					  required="true" />
-				
-				</div>
+				&nbsp;
+			
+				<div id="addPublishQueueMenu" style="display: inline-block;"></div>
 			</th>	
 					
 		</tr>
 		<% for(Contentlet c : iresults) {%>
 			<tr>
-				<td style="width:30px"><input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"$"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"$"+c.getLanguageId()%>" /></td>
-				<td><a href="/c/portal/layout?p_l_id=<%=layout%>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>"><%=c.getTitle()%></a></td>
-				<td style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></a></td>
+		
+				<td style="width:30px;text-align: center" align="center">y
+					<input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"$"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"$"+c.getLanguageId()%>" />
+				</td>
+				<td width="100%" nowrap="nowrap">
+					<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>"><%=c.getTitle()%></a>
+					<div style="float:right;color:silver">
+						<a href="#" onclick="filterStructure('<%=c.getStructure().getVelocityVarName() %>')" style="color:silver"><%=c.getStructure().getName() %></a>
+					</div>
+				</td>
+				<td nowrap="nowrap" style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></a></td>
 			</tr>
 		<%}%>
 	</table>
-	<table class="solr_listingTableNoBorder">
+
+	<table width="97%" style="margin:10px;" >
 		<tr>
 			<%
 			long begin=Long.parseLong(offset);
@@ -280,23 +278,23 @@
 					previous=0;					
 				}
 			%>
-			<td style="width:130px"><button dojoType="dijit.form.Button" onClick="doLucenePagination(<%=previous%>,<%=limit%>);return false;" iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "publisher_Previous") %></button></td>
+				<td width="33%" ><button dojoType="dijit.form.Button" onClick="doLucenePagination(<%=previous%>,<%=limit%>);return false;" iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "publisher_Previous") %></button></td>
 			<%}else{ %>
-			<td style="width:130px">&nbsp;</td>
+				<td  width="33%" >&nbsp;</td>
 			<%} %>
-			<td class="solr_tcenter" colspan="2"><strong> <%=begin+1%> - <%=end < total?end:total%> <%= LanguageUtil.get(pageContext, "publisher_Of") %> <%=total%> </strong></td>
+				<td  width="34%"  colspan="2" align="center"><strong> <%=begin+1%> - <%=end < total?end:total%> <%= LanguageUtil.get(pageContext, "publisher_Of") %> <%=total%> </strong></td>
 			<%if(end < total){ 
 				long next=(end < total?end:total);
 			%>
-			<td style="width:130px"><button class="solr_right" dojoType="dijit.form.Button" onClick="doLucenePagination(<%=next%>,<%=limit%>);return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
+				<td align="right" width="33%" ><button class="solr_right" dojoType="dijit.form.Button" onClick="doLucenePagination(<%=next%>,<%=limit%>);return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
 			<%}else{ %>
-			<td style="width:130px">&nbsp;</td>
+				<td  width="33%" >&nbsp;</td>
 			<%} %>
 		</tr>
 	</table>
 	
 	<script type="text/javascript">
-	dojo.ready(function() {
+		dojo.ready(function() {
 	       var menu = new dijit.Menu({
 	           style: "display: none;"
 	       });
@@ -333,31 +331,33 @@
 <% }else{ %>
 	<table class="listingTable shadowBox">
 		<tr>
-			<th style="width:30px">&nbsp;</th>		
+		<tr>
+			<th style="width:30px">
+				<input dojoType="dijit.form.CheckBox" disabled="disabled" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" />
+			</th>		
 			<th colspan="2">
-				<div id="addPublishQueueMenu" style="float:left"></div>
-				
-				<div style="float:left"><strong><%= LanguageUtil.get(pageContext, "date") %> </strong>
-				
+
 					<input 
 					type="text" 
 					dojoType="dijit.form.DateTextBox" 
 					validate="return false;" 
 					invalidMessage=""  
 					id="publishDate"
-					name="publishDate" value="">
-					
-					
-					<input type="text" name="publishDate" id="publishTime" value="T15:00:00"
+					name="publishDate" value="now" disabled="disabled">
+					&nbsp;
+					<input type="text" name="publishDate" id="publishTime" value="now"
 					  data-dojo-type="dijit.form.TimeTextBox"
 					  onChange="dojo.byId('val').value=arguments[0].toString().replace(/.*1970\s(\S+).*/,'T$1')"
-					  required="true" />
-				
-				</div>
+					  required="false"  disabled="disabled" />
+				&nbsp;
+			
+				<div id="addPublishQueueMenu" style="display: inline-block;"></div>
 			</th>	
+					
+		</tr>
 		</tr>
 		<tr>
-			<td colspan="2" class="solr_tcenter"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+			<td colspan="33" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
 		</tr>
 	</table>
 	<script type="text/javascript">
