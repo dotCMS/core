@@ -783,10 +783,10 @@ create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 
 CREATE TABLE broken_link (
-   inode VARCHAR(36) NOT NULL, 
-   field VARCHAR(36) NOT NULL,
-   link VARCHAR(255) NOT NULL,
-   title VARCHAR(255) NOT NULL,
+   inode VARCHAR2(36) NOT NULL, 
+   field VARCHAR2(36) NOT NULL,
+   link VARCHAR2(255) NOT NULL,
+   title VARCHAR2(255) NOT NULL,
    status_code integer NOT NULL,
    primary key(inode,field)
 );
