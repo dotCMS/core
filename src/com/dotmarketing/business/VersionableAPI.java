@@ -351,4 +351,11 @@ public interface VersionableAPI {
 	
 	public boolean hasLiveVersion(Versionable identifier)  throws DotDataException, DotStateException;
 	
+	/**
+	 * 
+	 * @param identifier
+	 * @param lang
+	 */
+	public void removeContentletVersionInfoFromCache(String identifier, long lang);
+	
 }

@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -26,7 +27,6 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.myTest.PushContentWrapper;
-import com.dotcms.publisher.myTest.PushPublisherBundler;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
@@ -91,7 +91,7 @@ public class BundlePublisher extends Publisher {
 	    String bundleName = config.getId();
 	    String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
 	    String bundlePath = ConfigUtils.getBundlePath()+File.separator+BundlePublisherResource.MY_TEMP;//FIXME
-	    
+	    Map<String,Long> infoToRemove = new HashMap<String, Long>();
 	    
 		File folderOut = new File(bundlePath+bundleFolder);
 		folderOut.mkdir();
@@ -147,6 +147,7 @@ public class BundlePublisher extends Publisher {
 				content.setProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
 				content.setProperty(Contentlet.WORKFLOW_COMMENTS_KEY, null);
 				ContentletVersionInfo info = wrapper.getInfo();
+				infoToRemove.put(info.getIdentifier(), info.getLang());
 				
 				//Select user
 				User userToUse = null;
@@ -198,7 +199,15 @@ public class BundlePublisher extends Publisher {
 			}
 		}
 		
-		
+		try{
+			for (String ident : infoToRemove.keySet()) {
+				APILocator.getVersionableAPI().removeContentletVersionInfoFromCache(ident, infoToRemove.get(ident));
+				Contentlet c = conAPI.findContentletByIdentifier(ident, false, infoToRemove.get(ident), APILocator.getUserAPI().getSystemUser(), true);
+				APILocator.getContentletAPI().refresh(c);
+			}
+		}catch (Exception e) {
+			throw new DotPublishingException("Unable to update Cache or Reindex Content", e);
+		}
 		
 	    
 	    return config;
