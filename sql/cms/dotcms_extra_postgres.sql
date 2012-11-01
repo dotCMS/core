@@ -722,8 +722,6 @@ alter table broken_link add CONSTRAINT fk_brokenl_content
 alter table broken_link add CONSTRAINT fk_brokenl_field
     FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
 
-  
-create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 -- ****** Content Publishing Framework *******
 CREATE TABLE publishing_queue

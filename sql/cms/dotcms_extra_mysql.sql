@@ -617,9 +617,6 @@ type VARCHAR(256), bundle_id VARCHAR(256) , target text);
 
 create table publishing_queue_audit (bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, status INTEGER, status_pojo text, status_updated DATETIME, create_date DATETIME);
 
-create index idx_identifier_perm on identifier (asset_type,host_inode);
-
-
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE IF NOT EXISTS publishing_end_point (
 	id varchar(36) PRIMARY KEY, 

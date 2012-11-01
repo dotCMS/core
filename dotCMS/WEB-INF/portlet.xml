@@ -3492,7 +3492,7 @@
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
 			<name>view-jsp</name>
-			<value>/portlet/ext/brokenlinks/view_broken_links.jsp</value>
+			<value>/portlet/ext/linkchecker/view_broken_links.jsp</value>
 		</init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
