@@ -420,4 +420,10 @@ public class VersionableAPIImpl implements VersionableAPI {
 			return (vi != null && UtilMethods.isSet(vi.getLiveInode()));
 		}
 	}
+	
+	@Override
+	public void removeContentletVersionInfoFromCache(String identifier, long lang) {
+		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(identifier, lang);
+	}
+	
 }
