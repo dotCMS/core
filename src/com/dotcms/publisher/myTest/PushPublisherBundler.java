@@ -1,24 +1,9 @@
 package com.dotcms.publisher.myTest;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublisherAPI;
-import com.dotcms.publishing.BundlerStatus;
-import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.publishing.DotBundleException;
-import com.dotcms.publishing.IBundler;
-import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.*;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -32,6 +17,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.util.*;
 
 public class PushPublisherBundler implements IBundler {
 	private PushPublisherConfig config;
@@ -132,8 +122,11 @@ public class PushPublisherBundler implements IBundler {
 		//Find MultiTree
 		wrapper.setMultiTree(pubAPI.getContentMultiTreeMatrix(con.getIdentifier()));
 
-		//Find Tree
-		wrapper.setTree(pubAPI.getContentTreeMatrix(con.getIdentifier()));
+        //Find Tree
+        List<Map<String, Object>> contentTreeMatrix = pubAPI.getContentTreeMatrix( con.getIdentifier() );
+        //Now add the categories, we will find categories by inode NOT by identifier
+        contentTreeMatrix.addAll( pubAPI.getContentTreeMatrix( con.getInode() ) );
+        wrapper.setTree( contentTreeMatrix );
 
 		//Copy asset files to bundle folder keeping original folders structure
 		List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
