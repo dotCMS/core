@@ -16,7 +16,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -32,7 +31,8 @@ import com.liferay.portal.model.User;
 
 
 /**
- * This class allow to modify assets files using a string search and replace
+ * This class allows user to modify File Assets content using a string search and replace.
+ * This method only modify the file, not the database.
  * @author Oswaldo
  *
  */
@@ -40,17 +40,16 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 
 	private FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
-	private PluginAPI pluginAPI = APILocator.getPluginAPI();
-
+	
 	/**
-	 * Replace the specified String, with the given value in all the specified assets
-	 * @param searchText
-	 * @param replaceText
-	 * @param identifierList
-	 * @param generateNewAssetVersion
-	 * @param publish
-	 * @param user
-	 * @return String
+	 * Replace the specified String, with the new given value in all the specified File Assets
+	 * @param searchText Text to search
+	 * @param replaceText Text replacement
+	 * @param assets List of File Assets to modify 
+	 * @param generateNewAssetVersion True if you want to generate a new version of the file assets; false if you want to overwrite the current version
+	 * @param publish True is you want to publish the new file asset version; false if you do not want to publish the new version
+	 * @param user User executing the assets search and replace
+	 * @return Map<String,Object> Map with the amount of file processed, updated and errors.
 	 */
 	private Map<String,Object> AssetsSearchAndReplace(String searchText, String replaceText, List<FileAsset> assets,boolean generateNewAssetVersion, boolean publish,User user) {
 		Map<String,Object> results = new HashMap<String,Object>();
@@ -83,11 +82,9 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 	}
 
 	/**
-	 * Get the text of the specified asset
-	 * @param fileInode
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return String
+	 * Get the text of the specified File Asset
+	 * @param file File Asset
+	 * @return String String with the text of the specified File Asset
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 * @throws PortalException
@@ -105,12 +102,12 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 	}
 
 	/**
-	 * Save the asset with the given value
-	 * @param fileIdentifier
-	 * @param newText
-	 * @param user
-	 * @param generateNewAssetVersion
-	 * @param publish
+	 * Save the File Asset with the new text
+	 * @param file File Asset to save
+	 * @param newText Text to save
+	 * @param user User executing the assets search and replace
+	 * @param generateNewAssetVersion True if you want to generate a new version of the file assets; false if you want to overwrite the current version
+	 * @param publish True is you want to publish the new file asset version; false if you do not want to publish the new version
 	 * @param respectFrontendRoles
 	 * @throws PortalException
 	 * @throws SystemException
@@ -153,7 +150,7 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 	}
 
 	/**
-	 * Replace the specified string in all the file asset types specified
+	 * Replace File Assets content searching by file extension
 	 * @param request
 	 * @param response
 	 */
@@ -230,7 +227,7 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 	}
 
 	/**
-	 * Replace the specified string in all the file asset specified
+	 * Replace File Assets content searching by File Asset identifiers
 	 * @param request
 	 * @param response
 	 */
@@ -254,37 +251,29 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 			}
 			
 			long numberOfContentltet = assetsList.size();
-			/*int perSearch = Integer.parseInt(pluginAPI.loadProperty("com.dotcms.plugins.assetsSearchAndReplace","ASSETS_SEARCH_AND_REPLACE_ALLOWED_FILE_TYPES"));
-			int offset = 0;
-			int numberOfCycles=0;
-			long totalCyles = (numberOfContentltet/perSearch)+1;
-			*/
 			long toprocess=numberOfContentltet;
 			int processed=0;
 			int errors=0;
 			int matches=0;
 			String errorMessages="";
 			
-			//while(numberOfCycles < totalCyles){
-				HibernateUtil.startTransaction();
+			HibernateUtil.startTransaction();
 				
-				//offset = numberOfCycles * perSearch;
-				Map<String,Object> tempResults = AssetsSearchAndReplace(searchText, replaceText, assetsList, generateNewAssetVersion, publish, user);
+			Map<String,Object> tempResults = AssetsSearchAndReplace(searchText, replaceText, assetsList, generateNewAssetVersion, publish, user);
 				
-				HibernateUtil.commitTransaction();
-				processed= processed+(Integer)tempResults.get("processed");
-				matches= matches+(Integer)tempResults.get("matches");
-				errors= errors+(Integer)tempResults.get("errors");
-				errorMessages= errorMessages+"<br/>"+tempResults.get("errorMessages");
+			HibernateUtil.commitTransaction();
+			processed= processed+(Integer)tempResults.get("processed");
+			matches= matches+(Integer)tempResults.get("matches");
+			errors= errors+(Integer)tempResults.get("errors");
+			errorMessages= errorMessages+"<br/>"+tempResults.get("errorMessages");
 								
-				//numberOfCycles++;
-			//}			
 			results=toprocess+"|"+processed+"|"+matches+"|"+errors+"|"+errorMessages;
 			Logger.debug(AssetsSearchAndReplaceAjax.class, "Files to process: "+toprocess+" - Processed: "+processed+" - Matches: "+matches+" - Errors: "+errors+" - Error Messages"+errorMessages);
 			Logger.info(AssetsSearchAndReplaceAjax.class, "Search and replace by Ids has finished");
 			response.getWriter().print(results);
 		} catch (Exception e) {
 			try {
+				HibernateUtil.rollbackTransaction();
 				response.getWriter().print(e.getMessage());
 			} catch (Exception ex) {
 				Logger.error(AssetsSearchAndReplaceAjax.class, e.getMessage(), e.getCause());
@@ -295,7 +284,7 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 	}
 	
 	/**
-	 * Replace the specified string in all the file asset types specified
+	 * Return a string with the amount of File Assets to be processed
 	 * @param request
 	 * @param response
 	 */
@@ -336,6 +325,9 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 		}
 	}
 	
+	/**
+	 * Manage the Assets search and replace ajax requests
+	 */
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -379,6 +371,9 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 		}		
 	}	
 
+	/**
+	 * Initializes this instance using the given data
+	 */
 	@Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		return;
