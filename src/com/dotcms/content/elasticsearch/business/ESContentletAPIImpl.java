@@ -1965,9 +1965,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    DotConnect dc=new DotConnect();
 				    dc.setSQL("select inode from contentlet where inode=?");
 				    dc.addParam(contentlet.getInode());
-				    if(dc.loadResults().size()>0)
-				        throw new DotContentletStateException("Contentlet must not exist already");
-				    else {
+				    if(dc.loadResults().size()>0){
+				    	if(contentlet.getMap().get("_dont_validate_me") != null){
+				    		Logger.debug(this, "forcing checking with no version as the _dont_validate_me is set and inode exists");
+				    		createNewVersion = false;
+				    	}else{
+				    		throw new DotContentletStateException("Contentlet must not exist already");
+				    	}
+				    } else {
 				        saveWithExistingID=true;
 				        existingInode=contentlet.getInode();
 				        contentlet.setInode(null);
