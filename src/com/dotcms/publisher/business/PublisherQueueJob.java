@@ -44,15 +44,13 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.info(PublisherQueueJob.class, "Started PublishQueue Job");
 			PublisherAPI pubAPI = PublisherAPI.getInstance();  
 			
-
-
 			PushPublisherConfig pconf = new PushPublisherConfig();
 			List<Class> clazz = new ArrayList<Class>();
 			List<IBundler> bundler = new ArrayList<IBundler>();
 			bundler.add(new PushPublisherBundler());
 			clazz.add(PushPublisher.class);
 
-			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds();
+			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds(0,100);
 			List<Map<String,Object>> tempBundleContents = null;
 			PublishAuditStatus status = null;
 			PublishAuditHistory historyPojo = null;
