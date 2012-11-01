@@ -6,6 +6,7 @@ public class InvalidLink {
     private String url;
 	private String title;
 	private int statusCode;
+	private String field;
 
     public String getInode() {
         return inode;
@@ -13,7 +14,13 @@ public class InvalidLink {
     public void setInode(String inode) {
         this.inode = inode;
     }
-	public String getUrl() {
+	public String getField() {
+        return field;
+    }
+    public void setField(String field) {
+        this.field = field;
+    }
+    public String getUrl() {
 		return url;
 	}
 	public void setUrl(String url) {

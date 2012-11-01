@@ -1,14 +1,43 @@
+<%@page import="com.dotmarketing.util.PortletURLUtil"%>
 <%@ include file="/html/common/init.jsp" %>
-<%@include file="/html/common/top_inc.jsp"%>
 
 <script type="text/javascript">
+<%
+java.util.Map params = new java.util.HashMap();
+params.put("struts_action",new String[]{"/ext/contentlet/edit_contentlet"});
+params.put("cmd", new String[] { Constants.EDIT });
+String edit = PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);    
+
+%>
+
 function loadTable() {
+	var currentUser="<%=user.getUserId()%>";
+	var baseUrl="<%=edit%>";
 	dojo.empty('table_body');
 	dojo.xhr('GET',{
 		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/0/pageSize/50',
 		handleAs: 'json',
 		load: function(data) {
-			console.log(data);
+			for(var i=0;i<data.list.length;i++) {
+				var action=baseUrl+"&inode="+data.list[i].inode+"&referer="+document.referrer;
+				var conTitle=data.list[i].con_title;
+				var field=data.list[i].field;
+				var structure=data.list[i].structure;
+				var moduser=data.list[i].user;
+				var moddate=data.list[i].date;
+				var link="<strong>"+data.list[i].url_title+"</strong> "+data.list[i].url;
+				
+				var row="<tr>"+ 
+				          "<td><a href=\""+action+"\"><span class='editIcon'></span></a></td>"+
+				          "<td>"+conTitle+"</td>"+
+				          "<td>"+field+"</td>"+
+				          "<td>"+structure+"</td>"+
+				          "<td>"+moduser+"</td>"+
+				          "<td>"+moddate+"</td>"+
+				          "<td>"+link+"</td>"+
+				         "</tr>";
+				dojo.place(dojo.toDom(row),'table_body');
+			}
 		}
 	});
 }
@@ -51,15 +80,13 @@ dojo.ready(function(){
                 <table border=1>
                 <thead>
                     <tr>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_ACTION")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_TITLE")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_FIELD_NAME")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_OWNER")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_LEU")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_STR_NAME")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_STR_HOST")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_LMD")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_PORTLET_DETAIL_TABLE_LINK")%></th>                        
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_ACTION")%></th>
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_TITLE")%></th>
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_FIELD_NAME")%></th>
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_STRUCTURE")%></th>
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_USER")%></th>
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_DATE")%></th>
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_LINK")%></th>
                     </tr>
                 </thead>
                 <tbody id="table_body">
@@ -69,5 +96,3 @@ dojo.ready(function(){
         </div>
     </div>
 </div>
-
-<%@include file="/html/common/bottom_inc.jsp"%>
