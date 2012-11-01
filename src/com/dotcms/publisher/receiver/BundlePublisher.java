@@ -356,7 +356,7 @@ public class BundlePublisher extends Publisher {
             dc.setSQL( "delete from tree where parent = '" + contentlet.getIdentifier() + "' or child = '" + contentlet.getInode() + "'" );
             dc.loadResult();
         } catch ( Exception e ) {
-            throw new DotPublishingException( "Unable to update Cache or Reindex Content", e );
+            throw new DotPublishingException( "Unable delete trees for Contentlet.", e );
         }
     }
 
