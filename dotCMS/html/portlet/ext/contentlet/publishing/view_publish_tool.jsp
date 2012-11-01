@@ -221,14 +221,25 @@
 
 	
 	
+	   
+   function filterStructure(varName){
+	   var q  = dijit.byId("query").getValue();
+	   if(q.indexOf(varName) <0){
+		   q = q + " +structureName:" + varName;
+		   dijit.byId("query").setValue(q);
+		   doLuceneFilter ();
+	   }
+   }
+	   
+	
+	
+	
+	
 	dojo.ready(function(){
 		loadPublishQueueEndpoints();
 		doQueueFilter();
 		doAuditFilter();
-	});
-	
-	
-	dojo.addOnLoad (function(){
+
 		var tab =dijit.byId("mainTabContainer");
 	   	dojo.connect(tab, 'selectChild',
 			function (evt) {
