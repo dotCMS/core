@@ -50,7 +50,7 @@ public class PublisherQueueJob implements StatefulJob {
 			bundler.add(new PushPublisherBundler());
 			clazz.add(PushPublisher.class);
 
-			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds(0,100);
+			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds(100,0);
 			List<Map<String,Object>> tempBundleContents = null;
 			PublishAuditStatus status = null;
 			PublishAuditHistory historyPojo = null;
