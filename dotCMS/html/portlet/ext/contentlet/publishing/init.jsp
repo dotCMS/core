@@ -15,6 +15,10 @@
 		layoutId=l.getId();
 	}
 }
+if(user == null){
+	response.setStatus(403);
+	return;
+}
 boolean userIsAdmin = false;
 if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
 	userIsAdmin=true;

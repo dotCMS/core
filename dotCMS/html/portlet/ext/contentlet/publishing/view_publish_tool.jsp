@@ -99,7 +99,7 @@
 		url="layout=<%=layout%>"+url;
 		
 		refreshLuceneList(url);
-
+		dijit.byId("clearButton").setDisabled(false);
 	}
 	
 	var lastLuceneUrlParams ;
@@ -231,7 +231,12 @@
 	   }
    }
 	   
-	
+	function clearLuceneSearch(){
+		   dijit.byId("query").setValue("*");
+		   dojo.byId("lucene_results").innerHTML="";
+		   dijit.byId("clearButton").setDisabled(true);
+		
+	}
 	
 	
 	
@@ -269,7 +274,17 @@
 					</dd>
 					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Sort") %> </strong></dt><dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="modDate desc" size="10" /></dd>	
 					
-					<dt></dt><dd><button dojoType="dijit.form.Button" onclick="doLuceneFilter();" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "publisher_Search_Content") %></button></dd>
+					<dt></dt><dd>
+					
+					<button dojoType="dijit.form.Button" onclick="doLuceneFilter();" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "publisher_Search_Content") %></button>
+                    &nbsp;
+                    <button dojoType="dijit.form.Button" id="clearButton" disabled="true" onClick="clearLuceneSearch();" iconClass="resetIcon">
+                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
+                    </button>
+					
+					
+					
+					</dd>
 				</dl>
 			</div>
 			<hr>
