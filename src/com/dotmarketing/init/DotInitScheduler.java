@@ -2,7 +2,9 @@ package com.dotmarketing.init;
 
 import java.lang.management.ManagementFactory;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -19,9 +21,13 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.DashboardProxy;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotmarketing.business.cluster.mbeans.Cluster;
+import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CalendarReminderThread;
 import com.dotmarketing.quartz.job.CleanBlockCacheScheduledTask;
@@ -651,6 +657,44 @@ public class DotInitScheduler {
 					sched.deleteJob("PublishQueueJob", "dotcms_jobs");
 				}
 			}
+			
+			
+			final String lc="linkchecker";
+            final String lg="dotcms_jobs";
+			if(Config.getBooleanProperty("linkchecker.enablejob",true)) {
+                try {
+                    isNew = false;
+
+                    try {
+                        if ((job = sched.getJobDetail(lc, lg)) == null) {
+                            job = new JobDetail(lc,lg, LinkCheckerJob.class);
+                            isNew = true;
+                        }
+                    } catch (SchedulerException se) {
+                        sched.deleteJob(lc,lg);
+                        job = new JobDetail(lc,lg, LinkCheckerJob.class);
+                        isNew = true;
+                    }
+                    calendar = GregorianCalendar.getInstance();
+                    trigger = new CronTrigger("trigger20", "group20", lc,lg, calendar.getTime(), 
+                                  null,Config.getStringProperty("linkchecker.cronexp","0 0 0/2 * * ?"));
+                    trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+                    sched.addJob(job, true);
+
+                    if (isNew)
+                        sched.scheduleJob(trigger);
+                    else
+                        sched.rescheduleJob("trigger20", "group20", trigger);
+                } catch (Exception e) {
+                    Logger.error(DotInitScheduler.class, e.getMessage(),e);
+                }
+            } else {
+                Logger.info(DotInitScheduler.class, "LinkCheckerJob Cron Job schedule disabled on this server");
+                if ((job = sched.getJobDetail(lc, lg)) != null) {
+                    sched.deleteJob(lc, lg);
+                }
+            }
+                
 
 	        QuartzUtils.startSchedulers();
 
