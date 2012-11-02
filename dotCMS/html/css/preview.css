@@ -18,7 +18,7 @@
 .dotContainerControls{background-image: url(/html/images/preview/bg_containerControl.gif);background-repeat: repeat-x;position: absolute;top: 0;height: 24px;width: 100%;z-index:301;margin-bottom:15px;border-bottom: 1px solid #9bb3cd;}
 
 .dotContainerControlsAnchor{float:right;}
-.dotContainerControlsAnchor a{display:inline-block; height:24px; padding: 3px 5px 0 28px; font-weight:bolder; font-size:12px; text-decoration:none; text-align:left; color:#777; font-family:Arial, Helvetica, sanserif; background:url(/html/images/preview/containerControl.gif) no-repeat -4px center;}
+.dotContainerControlsAnchor a{display:inline-block; height:24px; line-height: 22px; padding: 0 5px 0 28px; font-weight:bolder; font-size:12px; text-decoration:none; text-align:left; color:#777; font-family:Arial, Helvetica, sanserif; background:url(/html/images/preview/containerControl.gif) no-repeat -4px center;}
 .dotContainerNotesAnchor{float:right;}
 
 .dotAddContent{float:right;}
