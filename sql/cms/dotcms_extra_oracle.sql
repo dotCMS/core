@@ -809,7 +809,7 @@ in_error number(1,0) DEFAULT 0, last_results NCLOB,
 publish_date TIMESTAMP, server_id VARCHAR2(256), 
 type VARCHAR2(256), bundle_id VARCHAR2(256), target nclob);
 
-CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on publishing_queue for each row begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;;
+CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on publishing_queue for each row begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;
 
 CREATE TABLE publishing_queue_audit
 (bundle_id VARCHAR2(256) PRIMARY KEY NOT NULL, 
