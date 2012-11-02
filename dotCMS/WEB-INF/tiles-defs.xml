@@ -1615,6 +1615,10 @@
 		<put name="portlet_sub_nav"
 				value="/portlet/ext/workflows/sub_nav.jsp" />
 	</definition>
+	
+	<definition name="portlet.ext.checkURL.struts" extends="portal">
+		<put name="content" value="/portlet/ext/brokenlinks/view_broken_links.jsp" />
+	</definition>
 
 	<!--DOTMARKETING TILE DEFINITIONS -->
 </tiles-definitions>
