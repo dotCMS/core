@@ -22,18 +22,18 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.WebKeys;
 
 public class TimeMachineFilter implements Filter {
-    
+
     ServletContext ctx;
-    
+
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse resp = (HttpServletResponse) response;
 		String uri=req.getRequestURI();
-		
+
 		if(req.getSession().getAttribute("tm_date")!=null && !CMSFilter.excludeURI(uri)) {
 		    String datestr=(String)req.getSession().getAttribute("tm_date");
-		    
+
 		    Date date;
 		    try {
 		        date=new Date(Long.parseLong(datestr));
@@ -42,20 +42,20 @@ public class TimeMachineFilter implements Filter {
 		        resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
 		        return;
 		    }
-		    
+
 		    Host host=(Host) req.getSession().getAttribute("tm_host");
 		    String langid=(String) req.getSession().getAttribute("tm_lang");
-            
+
 		    if(uri.equals("/"))
 		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 		    if(uri.endsWith("/"))
 		        uri+="index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-		    
+
 		    java.io.File file=new java.io.File(ConfigUtils.getBundlePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
-		            uri.replaceAll("/", java.io.File.separator));
+		            uri);
 		    if(file.exists()) {
 		        resp.setContentType(ctx.getMimeType(uri));
 		        resp.setContentLength((int)file.length());
