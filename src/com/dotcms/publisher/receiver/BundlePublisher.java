@@ -25,7 +25,9 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.ConfigUtils;
@@ -48,6 +50,8 @@ public class BundlePublisher extends Publisher {
     private UserAPI uAPI = null;
     private TagAPI tagAPI = null;
     private PublishAuditAPI auditAPI = null;
+    Map<String,Long> infoToRemove = new HashMap<String, Long>();
+    List<String> pagesToClear = new ArrayList<String>();
 
     @Override
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
@@ -77,7 +81,7 @@ public class BundlePublisher extends Publisher {
         String bundleName = config.getId();
         String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
         String bundlePath = ConfigUtils.getBundlePath()+File.separator+BundlePublisherResource.MY_TEMP;//FIXME
-        Map<String,Long> infoToRemove = new HashMap<String, Long>();
+        
 
         File folderOut = new File(bundlePath+bundleFolder);
         folderOut.mkdir();
@@ -194,6 +198,18 @@ public class BundlePublisher extends Publisher {
         }catch (Exception e) {
             throw new DotPublishingException("Unable to update Cache or Reindex Content", e);
         }
+        
+        try{
+        	for (String pageIdent : pagesToClear) {
+				HTMLPage page = new HTMLPage();
+				page.setIdentifier(pageIdent);
+				PageServices.removePageFile(page, true);
+				PageServices.removePageFile(page, false);
+			}
+        }catch (Exception e) {
+        	throw new DotPublishingException("Unable to update Cache or Reindex Content", e);
+		}
+  
         try {
             HibernateUtil.commitTransaction();
         } catch (DotHibernateException e) {
@@ -241,7 +257,7 @@ public class BundlePublisher extends Publisher {
 
             TreeFactory.saveTree(tree);
         }
-
+        
         //Multitree
         for(Map<String, Object> mRow : wrapper.getMultiTree()) {
             MultiTree multiTree = new MultiTree();
@@ -349,6 +365,18 @@ public class BundlePublisher extends Publisher {
      */
     private void cleanTrees ( Contentlet contentlet ) throws DotPublishingException {
 
+    	try{
+    		DotConnect dc = new DotConnect();
+    		dc.setSQL("select parent1 from multi_tree where child = ?");
+    		dc.addObject(contentlet.getIdentifier());
+    		List<Map<String,Object>> pages = dc.loadObjectResults();
+    		for (Map<String, Object> row : pages) {
+				pagesToClear.add(row.get("parent1").toString());
+			}
+    	}catch (Exception e) {
+			Logger.error(this, e.getMessage(),e);
+		}
+    	
         try {
             DotConnect dc = new DotConnect();
             //Parent -> identifier  for relationships
@@ -356,7 +384,17 @@ public class BundlePublisher extends Publisher {
             dc.setSQL( "delete from tree where parent = '" + contentlet.getIdentifier() + "' or child = '" + contentlet.getInode() + "'" );
             dc.loadResult();
         } catch ( Exception e ) {
-            throw new DotPublishingException( "Unable delete trees for Contentlet.", e );
+            throw new DotPublishingException( "Unable to delete tree records for Contentlet.", e );
+        }
+        
+        try {
+            DotConnect dc = new DotConnect();
+            //Parent -> identifier  for relationships
+            //Child  -> inode       for categories
+            dc.setSQL( "delete from multi_tree where child = '" + contentlet.getIdentifier() + "'" );
+            dc.loadResult();
+        } catch ( Exception e ) {
+            throw new DotPublishingException( "Unable to delete multi_tree records for Contentlet.", e );
         }
     }
 
