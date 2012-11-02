@@ -445,6 +445,8 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .shimIcon {background: url(/html/images/shim.gif) ;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .formIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .fileIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -840px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.rServerIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.sServerIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 /* BEGIN GRAZIANO issue-12-dnd-template */
 .designTemplateIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -40px;width:18px;height:18px;display:inline-block;vertical-align:top;}
