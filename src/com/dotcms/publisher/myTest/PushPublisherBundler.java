@@ -154,7 +154,13 @@ public class PushPublisherBundler implements IBundler {
 
 		String liveworking = con.isLive() ? "live" :  "working";
 
-		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getIdentifier() + "." + "content"):APILocator.getIdentifierAPI().find(con).getURI().replace("/", File.separator);
+		String uri = APILocator.getIdentifierAPI().find(con).getURI().replace("/", File.separator);
+		if(!uri.endsWith(".content")){
+			uri.replace(".content", "");
+			uri.trim();
+			uri += ".content";
+		}
+		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getIdentifier() + "." + "content"):uri;
 
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
