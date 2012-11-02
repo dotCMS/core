@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
@@ -93,7 +94,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			ResetTaskActionlet.class,
 			MultipleApproverActionlet.class,
 			TwitterActionlet.class,
-			PushPublishActionlet.class
+			PushPublishActionlet.class,
+			CheckURLAccessibilityActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();
