@@ -645,7 +645,8 @@ public class PublisherUtil {
 	public static PublishingEndPoint getObjectByMap(Map<String, Object> row){
 		PublishingEndPoint pep = new PublishingEndPoint();
 		pep.setId(row.get("id").toString());
-		pep.setGroupId(row.get("group_id").toString());
+		if(row.get("group_id") != null)
+			pep.setGroupId(row.get("group_id").toString());
 		pep.setAddress(row.get("address").toString());
 		pep.setPort(row.get("port").toString());
 		pep.setProtocol(row.get("protocol").toString());		
