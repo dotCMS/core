@@ -54,7 +54,7 @@ bundler.add(new PushPublisherBundler());
 clazz.add(PushPublisher.class);
 int counter = 0;
 
-List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds();
+List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds(100,0);
 List<Map<String,Object>> tempBundleContents = null;
 PublishAuditStatus status = null;
 PublishAuditHistory historyPojo = null;
