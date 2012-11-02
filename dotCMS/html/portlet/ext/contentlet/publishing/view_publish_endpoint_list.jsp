@@ -25,25 +25,31 @@
 <table class="listingTable shadowBox">
 	<tr>
 		<th style="width:40px"></th>		
-		<th><strong><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></strong></th>	
-		<th><strong><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address") %></strong></th>
-		<th><strong><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %></strong></th>
-		<th><strong><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %></strong></th>
-		<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %></strong></th>
-		<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending") %></strong></th>
+		<th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>	
+		<th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending_Server") %></th>
+		<th style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %></th>
 	</tr>
 	<%
 		if(endpoints.size()>0){
 			for(PublishingEndPoint endpoint : endpoints){
 	%>
 	<tr>
-		<td><a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>"><span class="deleteIcon"></span></a>&nbsp;<a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>"><span class="editIcon"></span></a></td>
-		<td><%=endpoint.getServerName()%></td>
-		<td><%=endpoint.getAddress()%></td>
-		<td><%=endpoint.getPort()%></td>
-		<td><%=endpoint.getProtocol()%></td>
-		<td><img class="center" src="/html/images/icons/<%=(endpoint.isEnabled()?"status.png":"status-offline.png")%>"/></td>
-		<td><img class="center" src="/html/images/icons/<%=(endpoint.isSending()?"status.png":"status-offline.png")%>"/></td>
+		<td nowrap="nowrap">
+			<a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+			<span class="deleteIcon"></span></a>&nbsp;
+			<a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
+			<span class="editIcon"></span></a>
+		</td>
+		<td style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+			<%=endpoint.getServerName()%> 
+		</td>
+		<td align="center" >
+			<%=endpoint.isSending()  %>
+			<%if(UtilMethods.isSet(endpoint.getAddress())){ %>
+				<%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%>
+			<%} %>
+		</td>
+		<td align="center"><%=(endpoint.isEnabled()?"<img src='/html/images/icons/status.png'":"")%></td>
 	</tr>
 	<%
 			}

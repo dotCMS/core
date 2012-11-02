@@ -1,9 +1,9 @@
 package com.dotcms.publisher.endpoint.business;
 
+import java.util.List;
+
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.exception.DotDataException;
-
-import java.util.List;
 
 /**
  * Factory for manage data into publishing_end_point
@@ -16,7 +16,7 @@ public abstract class PublisherEndpointFactory {
 	
 	// this query is for show the endpoint list on UI
 	protected static String GET_ENDPOINTS 						= 	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
-																	"FROM publishing_end_point";
+																	"FROM publishing_end_point order by server_name";
 	
 	// this query is for select a single endpoint for edit it
 	protected static String GET_ENDPOINT_BY_ID					=	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
