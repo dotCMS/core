@@ -16,9 +16,7 @@
 		currentEndpoint.setSending(false);
 		
 	}
-	
-	
-	
+
 %>
 
 <script type="text/javascript">
@@ -89,22 +87,12 @@
 			dojo.style("addressRow", "display", "none");
 			dojo.style("portRow", "display", "none");
 		}
-		
-		
-		
 	}
-	
-	
 	
 	dojo.ready( function(){
 		toggleServerType();
-		
-		
 	});
-	
-	
-	
-	
+
 </script>
 
 <style>
@@ -133,6 +121,8 @@
 						  />
 			</td>
 		</tr>
+		
+		
 		<tr>
 			<td align="center" colspan=2>
 				
@@ -148,9 +138,7 @@
 			</td>				
 		</tr>	
 		
-		
-		
-		
+
 		<tr id="addressRow">
 			<td align="right">
 				<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address") %>:
@@ -193,7 +181,7 @@
 				<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
 			</td>
 			<td>						          	
-				<textarea dojoType="dijit.form.Textarea" name="authKey" id="authKey" style="width:450px;min-height:180px;max-height: 600px"><%=( currentEndpoint.getAuthKey() != null && currentEndpoint.getAuthKey().length() > 0) ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
+				<textarea dojoType="dijit.form.Textarea" name="authKey" id="authKey" style="width:450px;min-height:150px;max-height:150px"><%=( currentEndpoint.getAuthKey() != null && currentEndpoint.getAuthKey().length() > 0) ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
 			</td>		
 		</tr>	
 
@@ -206,6 +194,7 @@
 			</td>						
 		</tr>	
 	</table>
+	
 	<table align="center">
 		<tr>
 			<td colspan="2" class="buttonRow" style="text-align: center;white-space: nowrap;">
