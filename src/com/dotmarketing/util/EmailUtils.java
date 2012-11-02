@@ -63,6 +63,9 @@ public class EmailUtils {
 		int numFields= fields.size();
 		int fieldsAdded=0;
 		int fieldsIndex=1;
+		String val = "";
+		String paramVal = "";
+		String fParam = "";
 		String keysOrdered="";
 		for (Field field : fields) {
 			for (Object param : paramlist){		
@@ -77,13 +80,24 @@ public class EmailUtils {
 					}
 					parameters.remove(field.getVelocityVarName());
 				}
+				val = map.get(param.toString()).toString();
 				if ((field.getVelocityVarName().equals(param.toString()) 
 						|| field.getFieldName().equals(param.toString())) 
 						&&(field.getFieldType().equals(Field.FieldType.BINARY.toString())								
 								|| field.getFieldType().equals(Field.FieldType.IMAGE.toString())
 								|| field.getFieldType().equals(Field.FieldType.FILE.toString()))) {//DOTCMS-5381
+					paramVal = map.get(param.toString()).toString();
+					fParam = param.toString();
 					parameters.remove(field.getVelocityVarName());
 				}
+				if(fParam!=""){
+					if(val.equalsIgnoreCase(paramVal) && !(fParam.equalsIgnoreCase(param.toString()))){
+						parameters.remove(param.toString());
+						fParam = "";
+						paramVal = "";
+					}
+				}
+				parameters.values();
 			}
 		}
 		
