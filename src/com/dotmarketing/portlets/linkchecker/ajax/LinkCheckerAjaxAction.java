@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.linkchecker.ajax;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,9 +12,15 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
+import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
@@ -21,8 +28,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
 public class LinkCheckerAjaxAction extends AjaxAction {
@@ -83,6 +92,24 @@ public class LinkCheckerAjaxAction extends AjaxAction {
                 .writeValue(response.getOutputStream(), result);
             
         } catch (Exception e) {
+            throw new ServletException(e);
+        }
+    }
+    
+    public void runCheckNow(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        try {
+            String randomID=UUIDGenerator.generateUuid();
+            JobDetail jd = new JobDetail("linkCheckerJob-" + randomID, "dotcms_jobs", LinkCheckerJob.class);
+            jd.setJobDataMap(new JobDataMap());
+            jd.setDurability(false);
+            jd.setVolatility(false);
+            jd.setRequestsRecovery(true);
+            
+            Trigger trigger=new SimpleTrigger("linkCheckerTrigger-"+randomID, "group20", new Date());
+            
+            Scheduler sched = QuartzUtils.getStandardScheduler();
+            sched.scheduleJob(jd, trigger);
+        } catch (SchedulerException e) {
             throw new ServletException(e);
         }
     }
