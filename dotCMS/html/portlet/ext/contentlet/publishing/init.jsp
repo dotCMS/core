@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@ include file="/html/common/init.jsp" %>
 <%if(layout==null){
