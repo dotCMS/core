@@ -140,6 +140,8 @@ function deleteRow(tableID, row, div, rowCountId) {
    	//remove the div into the body
    	removeGrid(div);
 
+    //In order to keep a list of the containers used by this template
+    parseCurrentContainers();
 }
 
 function addPageWidth(pageWidth){
