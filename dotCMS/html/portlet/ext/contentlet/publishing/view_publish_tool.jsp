@@ -25,9 +25,7 @@
 <div class="portlet-wrapper">
 	<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 </div>
-<%	if(LicenseUtil.getLevel()<400){ %>
-	<%@ include file="/html/portlet/ext/contentlet/publishing/not_licensed.jsp" %>
-<%return;} %>
+
 
 
 

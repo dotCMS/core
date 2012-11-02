@@ -16,16 +16,13 @@
 <%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
-  	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+
     ContentletAPI conAPI = APILocator.getContentletAPI();
     PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
 
     String nastyError = null;
-    if(user == null){
-    	response.setStatus(403);
-    	return;
-    }
 
     
    	int deletedCount=0;
@@ -60,12 +57,6 @@
     if(limit <0 || limit > 500) limit=50;
     
 
-
-
-    boolean userIsAdmin = false;
-    if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
-    	userIsAdmin=true;
-    }
 
     List<Map<String,Object>> iresults =  null;
     int counter =  0;

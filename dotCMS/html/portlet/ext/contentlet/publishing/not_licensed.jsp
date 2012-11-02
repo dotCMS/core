@@ -1,7 +1,6 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-
 <style>
-	.wrapper{background:url(/html/images/skin/publishing-promo.gif) no-repeat 0 0;width:1053px;height:900px;margin:0 auto;}
+	.wrapper{background:url(/html/images/skin/publishing-promo.png) no-repeat 0 0;width:1183px;height:800px;margin:0 auto;}
 	.content{position:fixed;left:50%;top:50%;margin:-200px 0 0 -300px;width:600px;background:#333;opacity:.85;color:#fff;padding:20px 20px 35px 20px;-moz-border-radius: 15px;-webkit-border-radius: 15px;-moz-box-shadow:0px 0px 15px #666;-webkit-box-shadow:0px 0px 15px #666;}
 	.content h2{font-size:200%;}
 	.content p{margin:0;}
