@@ -9,7 +9,7 @@
     	
         <link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap.css" />
         
-        #if($dotThemeLayout.width == "Responsive")
+        #if($dotThemeLayout.width == "responsive")
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
 		#end
@@ -21,7 +21,7 @@
 		<script src="/js/jquery-1.7.2.min.js"></script>
 		<script src="/js/bootstrap.min.js"></script>
 		
-		#if($dotThemeLayout.width == "Responsive")
+		#if($dotThemeLayout.width == "responsive")
 			<script src="/js/bootstrap-collapse.js"></script>
 		#end
     </head>
@@ -35,7 +35,7 @@
             </header>
         #end
 
-        ##CURRENT POSSIBLE VALUES: 100%, 950px, 750px, Responsive
+        ##CURRENT POSSIBLE VALUES: 100%, 950px, 750px, responsive
         #if($dotThemeLayout.width == "100%")
             <div class="container-fluid">
         #else
@@ -134,8 +134,8 @@
                 #else
                     </div><!--/span-->
                     <div class="$sidebarColumn1Span">
-                        ##Parse the container
-                        #parseContainer("$sidebar.container")
+                        ##Draw the column content
+                        $render.eval($sidebar.draw())
                     </div><!--/span-->
                 #end
 
