@@ -43,21 +43,23 @@
 				form: dojo.byId("formSaveEndpoint"),
 				handleAs: "text",
 				load: function(data){
-					
-					
+					if(data.indexOf("FAILURE") > -1){
+						
+						alert(data);
+					}
+					else{
+						backToEndpointsList();
+					}
 				},
 				error: function(error){
+					alert(error);
 					
 				}
 			}
 
 			var deferred = dojo.xhrPost(xhrArgs);				
 		}
-		else{
-			
-			
-			
-		}
+
 	}
 
 	
@@ -114,7 +116,7 @@
 </style>
 
 
-<div dojoType="dijit.form.Form"  name="formSaveEndpoint" method="post" id="formSaveEndpoint" >
+<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
 	<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getId())) %>">
 	<table class="myTable shadowBox"  align="center">
 		<tr>

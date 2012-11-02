@@ -73,7 +73,8 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			peAPI.saveEndpoint(endpoint);
 				
 		} catch (DotDataException e) {
-			throw new DotRuntimeException(e.getMessage());
+			response.getWriter().println("FAILURE: " + e.getMessage() );
+			//throw new DotRuntimeException(e.getMessage());
 		}		
 	}
 	
@@ -95,7 +96,8 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			peAPI.updateEndpoint(endpoint);
 			
 		} catch (DotDataException e) {
-			throw new DotRuntimeException(e.getMessage());
+			response.getWriter().println("FAILURE: " + e.getMessage() );
+			//throw new DotRuntimeException(e.getMessage());
 		} 
 	}
 		
