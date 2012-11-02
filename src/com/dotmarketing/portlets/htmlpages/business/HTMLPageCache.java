@@ -16,4 +16,6 @@ public abstract class HTMLPageCache implements Cachable {
 	abstract public void clearCache();
 
 	abstract public void remove(HTMLPage page);
+	
+	abstract public void remove(String pageIdentifier);
 }
