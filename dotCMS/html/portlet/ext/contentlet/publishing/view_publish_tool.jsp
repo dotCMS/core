@@ -160,11 +160,11 @@
 
 	function goToEditEndpoint(identifier){
 		var dialog = new dijit.Dialog({
-			id: 'editEndpoint',
+			id: 'addEndpoint',
 	        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Edit")%>",
 	        style: "width: 800px; ",
 	        content: new dojox.layout.ContentPane({
-	            href: "/html/portlet/ext/contentlet/publishing/edit_publish_endpoint.jsp?op=edit&id="+identifier
+	            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?op=edit&id="+identifier
 	        }),
 	        onHide: function() {
 	        	var dialog=this;
@@ -180,10 +180,8 @@
 	}
 
 	function backToEndpointsList(add){
-		if(add)
-			dijit.byId("addEndpoint").hide();			
-		else
-			dijit.byId("editEndpoint").hide();
+
+		dijit.byId("addEndpoint").hide();
 		
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";		
 		
