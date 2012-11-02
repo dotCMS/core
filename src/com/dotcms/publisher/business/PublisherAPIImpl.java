@@ -420,8 +420,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 		DotConnect dc = new DotConnect();
 		dc.setSQL(COUNTBUNDLES);
 		try{
-			Long l = (Long) dc.loadObjectResults().get(0).get("bundle_count");
-			return Integer.parseInt(l.toString());
+			Object total = dc.loadObjectResults().get(0).get("bundle_count");
+			return Integer.parseInt(total.toString());
 		}
 		catch(Exception e){
 			Logger.error(PublisherAPIImpl.class, e.getMessage());
