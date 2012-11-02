@@ -5,10 +5,10 @@
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ include file="/html/common/init.jsp" %>
+<%@page import="com.dotmarketing.beans.Identifier"%>
 
 
-<% if(LicenseUtil.getLevel()< 199){ %>	
+<% if(LicenseUtil.getLevel()< 199){ %>
 <%@ include file="/html/portlet/ext/timemachine/not_licensed.jsp" %>
 
 <%return;} %>
@@ -33,10 +33,10 @@ dojo.require('dojo.data.ItemFileReadStore');
 function resized() {
 	var viewport = dijit.getViewport();
     var viewport_height = viewport.h;
-    
+
     var  e =  dojo.byId("borderContainer");
     dojo.style(e, "height", viewport_height -150+ "px");
-    
+
     dijit.byId("borderContainer").resize();
 }
 
@@ -44,7 +44,7 @@ dojo.ready(function(){
 	dojo.connect(window,"onresize",resized);
 	resized();
 	dijit.byId('closeBtn').set('disabled','disabled');
-	
+
 	dijit.byId('hostsel').set('store',new dojo.data.ItemFileReadStore({
 		url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getHostsWithTimeMachine'
 	}));
@@ -54,7 +54,12 @@ var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id
 var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
 
 function hostChange() {
-    var hostid=dijit.byId('hostsel').get('value');
+    <%
+    String hostInode = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+    Identifier hostIdentifier = APILocator.getIdentifierAPI().findFromInode(hostInode);
+    %>
+    var hostid = "<%= hostIdentifier.getId() %>";
+    alert(hostid);
     dijit.byId('timesel').set('value','');
     if(hostid && hostid.length>0) {
 	    var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableTimeMachineForSite/hostid/"+
@@ -70,13 +75,13 @@ function timeChange() {
     var time=dijit.byId('timesel').get('value');
     var hostid=dijit.byId('hostsel').get('value');
     var langid=dijit.byId('langsel').get('value');
-    
+
     if(hostid && hostid.length>0 && time && time.length>0) {
     	var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableLangForTimeMachine/hostid/"+
                    hostid+"/date/"+time;
         dijit.byId('langsel').set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
-    }	
-    
+    }
+
     if(time && time.length>0 && langid && langid.length>0 && hostid && hostid.length>0) {
     	dojo.xhr('GET',{
     		url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/startBrowsing/date/'
@@ -125,52 +130,44 @@ function showSettings() {
         	},200);
         },
         onLoad: function() {
-        	
+
         }
     });
-    
+
     dialog.show();
-    
+
     dojo.style(dialog.domNode,'top','100px');
 }
 </script>
 
 <div class="portlet-wrapper">
-    
-    <div class="subNavCrumbTrail">
-        <ul id="subNavCrumbUl">        
-            <li>
-                <%=LanguageUtil.get(pageContext, "javax.portlet.title.TIMEMACHINE")%>
-            </li>
-            <li class="lastCrumb"><span><%=LanguageUtil.get(pageContext, "javax.portlet.title.TIMEMACHINE-VIEW")%></span></li>
-        </ul>
-        <div class="clear"></div>
-    </div>
-    
+
+    <%@ include file="/html/portlet/ext/timemachine/sub_nav.jsp" %>
+
     <div id="timemachineMain">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
             <div dojoType="dijit.layout.ContentPane" region="top">
                    <span id="tools">
-                   
-                       <select id="hostsel" dojoType="dijit.form.FilteringSelect" 
-                            labelAttr="hostname"  searchAttr="hostname" 
+
+                       <select id="hostsel" dojoType="dijit.form.FilteringSelect"
+                            labelAttr="hostname"  searchAttr="hostname"
                             searchDelay="400"
                             onchange="hostChange()"></select>
-                       
-	                   <select id="timesel" dojoType="dijit.form.FilteringSelect" 
-	                      labelAttr="pretty" searchDelay="400" searchAttr="pretty" 
+
+	                   <select id="timesel" dojoType="dijit.form.FilteringSelect"
+	                      labelAttr="pretty" searchDelay="400" searchAttr="pretty"
 	                      onChange="timeChange()">
 	                   </select>
-	                   
-	                   <select id="langsel" dojoType="dijit.form.FilteringSelect" 
-                          labelAttr="pretty" searchDelay="400" searchAttr="pretty" 
+
+	                   <select id="langsel" dojoType="dijit.form.FilteringSelect"
+                          labelAttr="pretty" searchDelay="400" searchAttr="pretty"
                           onChange="timeChange()">
                        </select>
-						    
+
 	                   <button id="closeBtn" dojoType="dijit.form.Button" onClick="stopBrowing()">
 	                      <%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE_SNAP")%>
 	                   </button>
-                   
+
                    	<%if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){ %>
 	                   <span id="settings">
 		                   <button id="settingsBtn" dojoType="dijit.form.Button" onClick="showSettings()">
@@ -178,8 +175,8 @@ function showSettings() {
 		                   </button>
 	                   </span>
 	                <%} %>
-	                   
-	                   
+
+
                    </span>
             </div>
             <div id="iframeWrapper" dojoType="dijit.layout.ContentPane" region="center">
