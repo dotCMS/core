@@ -179,22 +179,11 @@
 	    dojo.style(dialog.domNode,'top','80px');
 	}
 
-	function backToEndpointsList(add){
+	function backToEndpointsList(){
 
 		dijit.byId("addEndpoint").hide();
-		
-		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";		
-		
-		var myCp = dijit.byId("endpointsContent");	
-		if (myCp) {
-			myCp.destroyRecursive(false);
-		}
-		myCp = new dojox.layout.ContentPane({
-			id : "endpointsContent"
-		}).placeAt("endpoint_servers");
+		loadPublishQueueEndpoints();
 
-		myCp.attr("href", url);
-		myCp.refresh();	
 	}
 
 	function deleteEndpoint(identifier){
