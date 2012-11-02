@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class PublishingEndpointAjaxAction extends AjaxAction {
 
@@ -53,6 +54,11 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 	
 	public void addEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {		
         try {
+        	String identifier = request.getParameter("identifier");
+        	if(UtilMethods.isSet(identifier)){
+        		editEndpoint(request, response);
+        		return;
+        	}
         	PublishingEndPoint endpoint = new PublishingEndPoint();
 			endpoint.setServerName(new StringBuilder(request.getParameter("serverName")));
 			endpoint.setAddress(request.getParameter("address"));
@@ -60,14 +66,15 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setProtocol(request.getParameter("protocol"));
 			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
-			endpoint.setSending(null!=request.getParameter("sending"));									
+			endpoint.setSending("receive".equals(request.getParameter("sending")));									
 
 			//Save the endpoint.
 			PublisherEndpointAPI peAPI = APILocator.getPublisherEndpointAPI();
 			peAPI.saveEndpoint(endpoint);
 				
 		} catch (DotDataException e) {
-			throw new DotRuntimeException(e.getMessage());
+			response.getWriter().println("FAILURE: " + e.getMessage() );
+			//throw new DotRuntimeException(e.getMessage());
 		}		
 	}
 	
@@ -82,14 +89,15 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setProtocol(request.getParameter("protocol"));
 			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
-			endpoint.setSending(null!=request.getParameter("sending"));
+			endpoint.setSending("receive".equals(request.getParameter("sending")));	
 			
 			//Update the endpoint.
 			PublisherEndpointAPI peAPI = APILocator.getPublisherEndpointAPI();
 			peAPI.updateEndpoint(endpoint);
 			
 		} catch (DotDataException e) {
-			throw new DotRuntimeException(e.getMessage());
+			response.getWriter().println("FAILURE: " + e.getMessage() );
+			//throw new DotRuntimeException(e.getMessage());
 		} 
 	}
 		

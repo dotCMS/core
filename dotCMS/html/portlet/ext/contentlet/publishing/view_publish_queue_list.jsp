@@ -166,7 +166,7 @@
 	
 		
 <%}else if(iresults.size() ==0){ %>
-	<table class="listingTable shadowBox">
+	<table class="listingTable">
 		<tr>
 			<th style="width:30px">&nbsp;</th>			
 			<th style="width:40px"><%= LanguageUtil.get(pageContext, "publisher_Operation_Type") %></th>
@@ -183,17 +183,19 @@
 	for(Map<String,Object> bundle : iresults) {
 		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));%>
 				
-	<table class="listingTable shadowBox" style="margin:10px;margin-bottom:20px;">
+	<table class="listingTable" style="margin:10px;margin-bottom:20px;">
 		<tr>
-			<th style="width:40px">&nbsp;</th>
+			
 			<th style="width:30px;text-align:center;">
-			<input dojoType="dijit.form.CheckBox" 
-					type="checkbox" 
-					class="bundle_to_delete" 
-					name="bundle_to_delete" 
-					value="<%=bundle.get("bundle_id") %>" 
-					id="bundle_to_delete_<%=bundle.get("bundle_id") %>" 
-					onclick="checkAllBundle('<%=bundle.get("bundle_id") %>')"/></th>		
+				<input dojoType="dijit.form.CheckBox" 
+						type="checkbox" 
+						class="bundle_to_delete" 
+						name="bundle_to_delete" 
+						value="<%=bundle.get("bundle_id") %>" 
+						id="bundle_to_delete_<%=bundle.get("bundle_id") %>" 
+						onclick="checkAllBundle('<%=bundle.get("bundle_id") %>')"/>
+			</th>		
+
 			<th style="width:100%">
 			
 				<%= LanguageUtil.get(pageContext, "publisher_PubUnpubDate") %>: 
@@ -237,7 +239,6 @@
 			}
 		%>
 			<tr <%=errorclass%>>
-				<td  style="text-align: center;"><img class="center" src="/html/images/icons/<%=(c.get("operation").toString().equals("1")?"add.png":"cross.png")%>"/></td>
 				<td style="width:30px;text-align:center;">
 					<input 
 							dojoType="dijit.form.CheckBox" 
@@ -247,7 +248,10 @@
 							value="<%=c.get("asset") %>$<%=c.get("operation") %>" 
 							id="queue_to_delete_<%=c.get("asset") %>$<%=c.get("operation") %>" />
 				</td>
-				<td>
+				
+
+				<td valign="top">
+					<%=(c.get("operation").toString().equals("1")?"<span class='addIcon' style='opacity:.6'></span>":"<span class='closeIcon' style='opacity:.6'></span>")%>&nbsp;
 					<%try{
 						Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),false,Long.parseLong(c.get("language_id").toString()),user, false);%>
 						<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=con.getInode() %>&referer=<%=referer %>"><%=con.getTitle()%></a>

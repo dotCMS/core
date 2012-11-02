@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
 <%@page import="com.dotcms.publisher.business.EndpointDetail"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
@@ -5,8 +7,10 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditHistory"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
+
 <%
 	String bundleId = request.getParameter("bundle");
+	PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
 	PublishAuditHistory currentEndpointHistory = null;
 	int status = 0;
 	if(null!=bundleId){
@@ -67,9 +71,23 @@
 	if(currentEndpointHistory.getEndpointsMap().size()>0) {
 		for(String key : currentEndpointHistory.getEndpointsMap().keySet()) {
 			EndpointDetail ed = currentEndpointHistory.getEndpointsMap().get(key);
+			
+			
+			String serverName = key;
+			try{
+					
+				serverName = pepAPI.findEndpointById(key).getServerName().toString();
+			}
+			catch(Exception e){
+				
+			}
+			
+			
+			
+			
 %>
 	<tr>
-		<td><%=key%></td>
+		<td nowrap="nowrap"><%=serverName%></td>
 		<td><%=PublishAuditStatus.getStatusByCode(ed.getStatus())%></td>
 		<td><%=ed.getInfo()%></td>
 	</tr>	

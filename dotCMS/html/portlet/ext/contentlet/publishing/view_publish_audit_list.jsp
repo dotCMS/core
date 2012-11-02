@@ -16,16 +16,13 @@
 <%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
-  	User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+
     ContentletAPI conAPI = APILocator.getContentletAPI();
     PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
 
     String nastyError = null;
-    if(user == null){
-    	response.setStatus(403);
-    	return;
-    }
 
     
    	int deletedCount=0;
@@ -60,12 +57,6 @@
     if(limit <0 || limit > 500) limit=50;
     
 
-
-
-    boolean userIsAdmin = false;
-    if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
-    	userIsAdmin=true;
-    }
 
     List<Map<String,Object>> iresults =  null;
     int counter =  0;
@@ -183,7 +174,7 @@
 
 
 				
-	<table class="listingTable shadowBox">
+	<table class="listingTable ">
 		<tr>
 			<th style="text-align:center;">
 				<input dojoType="dijit.form.CheckBox" 
@@ -195,10 +186,10 @@
 			</th>	
 		
 		
-			<th style="width:100%"><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
-			<th style="width:100px"><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	
-			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
-			<th style="width:100px"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
+			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
+			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	
+			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
+			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
 		</tr>
 		<% for(Map<String,Object> c : iresults) {
 			String errorclass="";
@@ -260,7 +251,7 @@
 <%
 }else{ 
 %>
-	<table class="listingTable shadowBox">
+	<table class="listingTable ">
 		<tr>
 			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
 			<th style="width:100px"><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	

@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@ include file="/html/common/init.jsp" %>
 <%if(layout==null){
@@ -24,9 +26,7 @@ if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCM
 	userIsAdmin=true;
 }
 
-String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=EXT_CONTENT_PUBLISHING_TOOL&");
-
-
-
-
-%>
+String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=EXT_CONTENT_PUBLISHING_TOOL&");%>
+<%	if(LicenseUtil.getLevel()<400){ %>
+<%@ include file="/html/portlet/ext/contentlet/publishing/not_licensed.jsp" %>
+<%return;} %>
