@@ -183,7 +183,7 @@
 
 
 				
-	<table class="listingTable shadowBox">
+	<table class="listingTable ">
 		<tr>
 			<th style="text-align:center;">
 				<input dojoType="dijit.form.CheckBox" 
@@ -244,7 +244,7 @@
 <%
 }else{ 
 %>
-	<table class="listingTable shadowBox">
+	<table class="listingTable ">
 		<tr>
 			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
 			<th style="width:100px"><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	
