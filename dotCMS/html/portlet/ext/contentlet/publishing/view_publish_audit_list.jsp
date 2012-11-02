@@ -210,8 +210,24 @@
 			
 				<td nowrap="nowrap"><a style="cursor: pointer" onclick="javascript: showDetail('<%=c.get("bundle_id")%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail") %>"><%=c.get("bundle_id")%></a></td>
 			    <td nowrap="nowrap" align="center"><%=PublishAuditStatus.getStatusByCode((Integer)c.get("status")) %></td>
-			    <td nowrap="nowrap"><%=UtilMethods.dateToHTMLDate((Date)c.get("create_date"),"MM/dd/yyyy hh:mma") %></td>
-			    <td nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince( (Date)c.get("status_updated")) %></td>
+			    
+			    <%	
+					Date createDate = null;
+					if (c.get("create_date") instanceof java.util.Date) {
+						createDate = (Date) c.get("create_date");
+					} else if (c.get("create_date") instanceof oracle.sql.TIMESTAMP){
+						createDate = new Date(((oracle.sql.TIMESTAMP) c.get("create_date")).timeValue().getTime());
+					}
+					
+					Date statusUpdate = null;
+					if (c.get("status_updated") instanceof java.util.Date) {
+						statusUpdate = (Date) c.get("status_updated");
+					} else if (c.get("status_updated") instanceof oracle.sql.TIMESTAMP){
+						statusUpdate = new Date(((oracle.sql.TIMESTAMP) c.get("status_updated")).timeValue().getTime());
+					}
+				%>
+			    <td nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(createDate,"MM/dd/yyyy hh:mma") %></td>
+			    <td nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(statusUpdate) %></td>
 			</tr>
 		<%}%>
 <table width="97%" style="margin:10px;" >

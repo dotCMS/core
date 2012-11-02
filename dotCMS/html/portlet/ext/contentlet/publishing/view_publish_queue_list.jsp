@@ -199,8 +199,16 @@
 			<th style="width:100%">
 			
 				<%= LanguageUtil.get(pageContext, "publisher_PubUnpubDate") %>: 
-				<span style="color:<%=new Date().before((Date) bundle.get("publish_date")) ?"gray" : "red"%>;font-weight: normal;">
-					<%=new SimpleDateFormat("MM/dd/yyyy hh:mma").format((Date) bundle.get("publish_date")) %>
+				<%	
+					Date publishDate = null;
+					if (bundle.get("publish_date") instanceof java.util.Date) {
+						publishDate = (Date) bundle.get("publish_date");
+					} else if (bundle.get("publish_date") instanceof oracle.sql.TIMESTAMP){
+						publishDate = new Date(((oracle.sql.TIMESTAMP) bundle.get("publish_date")).timeValue().getTime());
+					}
+				%>
+				<span style="color:<%=new Date().before(publishDate) ?"gray" : "red"%>;font-weight: normal;">
+					<%=new SimpleDateFormat("MM/dd/yyyy hh:mma").format(publishDate) %>
 				</span>
 			
 			

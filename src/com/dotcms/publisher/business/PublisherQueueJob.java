@@ -57,7 +57,12 @@ public class PublisherQueueJob implements StatefulJob {
 			String tempBundleId = null;
 
 			for(Map<String,Object> bundle: bundles) {
-				Date publishDate = (Date) bundle.get("publish_date");
+				Date publishDate = null;
+				if (bundle.get("publish_date") instanceof java.util.Date) {
+					publishDate = (Date) bundle.get("publish_date");
+				} else if (bundle.get("publish_date") instanceof oracle.sql.TIMESTAMP){
+					publishDate = new Date(((oracle.sql.TIMESTAMP) bundle.get("publish_date")).timeValue().getTime());
+				}
 				
 				if(publishDate.before(new Date())) {
 					tempBundleId = (String)bundle.get("bundle_id");
