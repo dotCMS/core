@@ -2,17 +2,24 @@
 <html lang="en">
 
     <head>
-
+    	
+        <link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap.css" />
+        
+        #if($dotThemeLayout.width == "Responsive")
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
+		#end
+        
         #if($dotTheme.htmlHead)
             #dotParse("${dotTheme.path}html_head.vtl")
         #end
 
-		<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap.css" />
-		<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
-        
 		<script src="/js/jquery-1.7.2.min.js"></script>
 		<script src="/js/bootstrap.min.js"></script>
-		<script src="/js/bootstrap-collapse.js"></script>
+		
+		#if($dotThemeLayout.width == "Responsive")
+			<script src="/js/bootstrap-collapse.js"></script>
+		#end
     </head>
 
     <body>
@@ -24,7 +31,7 @@
             </header>
         #end
 
-        ##CURRENT POSSIBLE VALUES: 100%, 974px, 950px, 750px
+        ##CURRENT POSSIBLE VALUES: 100%, 950px, 750px, Responsive
         #if($dotThemeLayout.width == "100%")
             <div class="container-fluid">
         #else
