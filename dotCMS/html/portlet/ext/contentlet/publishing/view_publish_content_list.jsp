@@ -309,7 +309,7 @@
 
 	       var menuItem2 = new dijit.MenuItem({
 	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_remove_publish_queue" )) %>",
-	                       iconClass: "deleteIcon",
+	                       iconClass: "closeIcon",
 	                       onClick: function() {
 	                    	   addToPublishQueueQueue('remove');
 	           }
@@ -376,7 +376,7 @@
 
 	       var menuItem2 = new dijit.MenuItem({
 	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_remove_publish_queue" )) %>",
-	                       iconClass: "deleteIcon",
+	                       iconClass: "closeIcon",
 	                       onClick: function() {
 	                    	   addToPublishQueueQueue('remove');
 	           }

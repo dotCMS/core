@@ -89,7 +89,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setProtocol(request.getParameter("protocol"));
 			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
-			endpoint.setSending(null!=request.getParameter("sending"));
+			endpoint.setSending("receive".equals(request.getParameter("sending")));	
 			
 			//Update the endpoint.
 			PublisherEndpointAPI peAPI = APILocator.getPublisherEndpointAPI();
