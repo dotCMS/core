@@ -668,6 +668,21 @@ create table indicies (
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
+CREATE TABLE broken_link (
+   inode VARCHAR(36) NOT NULL, 
+   field VARCHAR(36) NOT NULL,
+   link VARCHAR(255) NOT NULL,
+   title VARCHAR(255) NOT NULL,
+   status_code bigint NOT NULL,
+   primary key(inode,field)
+);
+
+alter table broken_link add CONSTRAINT fk_brokenl_content
+    FOREIGN KEY (inode) REFERENCES contentlet(inode) ON DELETE CASCADE;
+
+alter table broken_link add CONSTRAINT fk_brokenl_field
+    FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
+    
 -- ****** Content Publishing Framework *******
 CREATE TABLE publishing_queue
 (id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL,
