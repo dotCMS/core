@@ -783,12 +783,12 @@ create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 
 CREATE TABLE broken_link (
+   id VARCHAR(36) PRIMARY KEY,
    inode VARCHAR2(36) NOT NULL, 
    field VARCHAR2(36) NOT NULL,
    link VARCHAR2(255) NOT NULL,
    title VARCHAR2(255) NOT NULL,
-   status_code integer NOT NULL,
-   primary key(inode,field)
+   status_code integer NOT NULL
 );
 
 alter table broken_link add CONSTRAINT fk_brokenl_content

@@ -101,10 +101,13 @@ function loadTable() {
 				          "<td>"+moddate+"</td>"+
 				          "<td>"+link+"</td>"+
 				         "</tr>";
-				dojo.place(dojo.toDom(row),'table_body');
-				dojo.byId('totalPages').textContent=Math.ceil(data.total/pageSize);
-				disableButtons('');
+				dojo.place(dojo.toDom(row),'table_body');				
 			}
+			dojo.byId('totalPages').textContent=Math.ceil(data.total/pageSize);
+            disableButtons('');
+		},
+		error: function(err) {
+			console.log(err);
 		}
 	});
 }

@@ -1,13 +1,19 @@
 package com.dotmarketing.portlets.linkchecker.bean;
 
 public class InvalidLink {
-	
+	private String id;
     private String inode;
     private String url;
 	private String title;
 	private int statusCode;
 	private String field;
 
+    public String getId() {
+        return id;
+    }
+    public void setId(String id) {
+        this.id = id;
+    }
     public String getInode() {
         return inode;
     }
