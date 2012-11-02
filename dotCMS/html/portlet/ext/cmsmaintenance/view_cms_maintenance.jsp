@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotcms.listeners.SessionMonitor"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -46,6 +48,8 @@ List<Structure> structs = StructureFactory.getStructures();
 
 <script language="Javascript">
 dojo.require("dijit.Editor");
+dojo.require("dijit.form.MultiSelect");
+
 
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
 
@@ -1066,7 +1070,158 @@ function showIndexClusterStatus(indexName) {
 	dialog.show();
 }
 
+var user = "<%=user.getUserId()%>";
 
+function enableDisableRadio(elem){
+	if(elem.checked && elem.value=='assetType'){
+		dijit.byId('assetType').setDisabled(false);
+		dijit.byId('assetIdentifier').setDisabled(true);
+		dijit.byId('assetIdentifier').set('value','');
+		dijit.byId('selectAssetHostInode').setDisabled(false);
+	}else if(elem.checked && elem.value=='assetIdentifier'){
+		dijit.byId('assetIdentifier').setDisabled(false);
+		dijit.byId('assetType').setDisabled(true);
+		dijit.byId('assetType').set('value','');
+		dijit.byId('selectAssetHostInode').setDisabled(true);
+	}
+}    
+
+function enableDisableCheckbox(elem){
+	if(elem.checked){
+		dijit.byId('autoPublish').setDisabled(false);
+	}else{
+		dijit.byId('autoPublish').setDisabled(true);
+		dijit.byId('autoPublish').set('checked',false);
+	}
+}
+function validateSearchAndReplace(){
+	var assetSearchType = dijit.byId('assetType').attr('value');
+	var assetIdentifier = dijit.byId('assetIdentifier').get('value');
+	var assetHost = dojo.byId('assetHost').value;
+	var searchString = dijit.byId('assetSearchString').get('value');
+	var replaceString = dijit.byId('assetReplaceString').get('value');
+	var newAssetVersion = dijit.byId('newAssetVersion').checked;
+	var autoPublish = dijit.byId('autoPublish').checked;
+	if( (assetSearchType != '' || assetIdentifier != '') && assetHost != '' && searchString != '' && replaceString != ''){
+		//alert("is Here:"+assetSearchType+" - "+assetIdentifier+" - "+assetHost+" - "+searchString+" - "+replaceString+" - "+newAssetVersion+autoPublish);
+		if(dijit.byId('assetSearchIdentifier').checked){
+			var fileAssetsIds = assetIdentifier.split(',');
+			assetsSearchAndReplace(fileAssetsIds.length);
+		}else{
+	    	var urlPath = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.AssetsSearchAndReplaceAjax/assetCountByFiles/true";
+	    	if(dijit.byId('assetSearchType').checked){
+	    		urlPath = urlPath+"/replaceByFiles/"+assetSearchType;
+	    	}else{
+	    		urlPath = urlPath+"/replaceByIds/"+assetIdentifier;
+	    	}
+	    	urlPath = urlPath+"/hosts/"+assetHost+"/user/"+user+"/generateNewAssetVersion/"+newAssetVersion+"/publish/"+autoPublish;
+	    	
+	    	var xhrArgs = {	    		
+	    	    url: urlPath, 
+	    	    handleAs: "text",
+	    	    load: function(response, ioArgs) { 
+	    	    	var results = response;
+	    	    	assetsSearchAndReplace(response); 
+	    	    },
+	    	    error: function(response, ioArgs) {  
+	    	          console.error("HTTP status code: ", ioArgs.xhr.status); 
+	    	          document.getElementById("asar_message").innerHTML = '<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error") %>'+response; //  
+	    	    }
+	    	};
+    		dojo.xhrPost( xhrArgs );
+		}
+	}else{
+		alert('<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Required") %>');
+	}
+}
+function assetsSearchAndReplace(assetsToProcess){
+	if(confirm('<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_JS_Confirmation1")%> '+assetsToProcess+' <%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_JS_Confirmation2")%>')){
+		var assetSearchType = dijit.byId('assetType').attr('value');
+    	var assetIdentifier = dijit.byId('assetIdentifier').get('value');
+    	var assetHost = dojo.byId('assetHost').value;
+    	var searchString = dijit.byId('assetSearchString').get('value');
+    	var replaceString = dijit.byId('assetReplaceString').get('value');
+    	var newAssetVersion = dijit.byId('newAssetVersion').checked;
+    	var autoPublish = dijit.byId('autoPublish').checked;
+    	if( (assetSearchType != '' || assetIdentifier != '') && assetHost != '' && searchString != '' && replaceString != ''){
+    		
+	    	//alert("is Here:"+assetSearchType+" - "+assetIdentifier+" - "+assetHost+" - "+searchString+" - "+replaceString+" - "+newAssetVersion+autoPublish);
+	    	var urlPath = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.AssetsSearchAndReplaceAjax/searchText/"+searchString+"/replaceText/"+replaceString;
+	    	if(dijit.byId('assetSearchType').checked){
+	    		urlPath = urlPath+"/replaceByFiles/"+assetSearchType;
+	    	}else{
+	    		urlPath = urlPath+"/replaceByIds/"+assetIdentifier;
+	    	}
+	    	urlPath = urlPath+"/hosts/"+assetHost+"/user/"+user+"/generateNewAssetVersion/"+newAssetVersion+"/publish/"+autoPublish;
+	    	var xhrArgs = {	    		
+	    	    url: urlPath, 
+	    	    handleAs: "text",
+	    	    load: function(response, ioArgs) { 
+	    	    	var results = response.split('|');
+	    	    	document.getElementById("asar_message").innerHTML = '<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_to_process")%> '+results[0]+'<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_processed")%> '+results[1]+'<%=LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Assets_modified")%> '+results[2]+'<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_not_processed")%> '+results[3]+'<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_error_messages")%> '+results[4]; 
+	    	    },
+	    	    error: function(response, ioArgs) {  
+	    	          console.error("HTTP status code: ", ioArgs.xhr.status); 
+	    	          document.getElementById("asar_message").innerHTML = '<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error") %>'+response; //  
+	    	    }
+	    	};
+    		dojo.xhrPost( xhrArgs );
+    		document.getElementById("asar_message").innerHTML = '<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Wait") %>';
+    	}else{
+    		alert('<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Required") %>');
+    	}
+	}
+}
+function updateHostList(inode, name, selectval){	
+	var f=dijit.byId(selectval).attr('value');
+	var c=dojo.byId(name).value.indexOf(dojo.byId(selectval).value);
+
+	if (c == -1){
+	    var hostlisting  = f.split(',');
+	    if(hostlisting == "all"){
+	      	dojo.byId(name).value='all';
+			dojo.byId(inode).value='all';
+			dojo.byId(inode+'list').innerHTML = '';
+	    }else if(dojo.byId(inode).value == "all"){
+			dojo.byId(name).value=hostlisting[0];
+			dojo.byId(inode).value=hostlisting[1];
+		} else {
+			dojo.byId(name).value= dojo.byId(name).value + "," + hostlisting[0];
+			dojo.byId(inode).value= dojo.byId(inode).value + "," + hostlisting[1];
+		}
+		dojo.byId(inode+'list').innerHTML = '';
+		var hostnames=dojo.byId(name).value.split(",");
+		var hostids=dojo.byId(inode).value.split(",");
+		var buffer='';
+		for(i = 0; i < hostnames.length; i++){
+			buffer+="<div id='entry-"+hostids[i]+"'>"+hostnames[i] + " <a href='#' onclick='removeHost(\""+hostids[i]+"\",\""+inode+"\",\""+name+"\")'><img src='/html/images/icons/cross.png'/></a></div>";
+		}
+		buffer+="";
+		dojo.byId(inode+'list').innerHTML = buffer;
+	}else{
+		alert("Host already selected");
+	}
+}
+function removeHost(id, inode, name){
+	var hostnames=dojo.byId(name).value.split(",");
+	var hostids=dojo.byId(inode).value.split(",");
+	var names="";
+	var ids="";
+	for(i = 0; i < hostids.length; i++){
+		if(hostids[i] != id){
+			if(names==""){
+				names=hostnames[i];
+				ids=hostids[i];
+			}else{
+				names=names + "," +hostnames[i];
+				ids=ids + "," +hostids[i];
+			}
+		}
+	}
+	dojo.byId(name).value=names;
+	dojo.byId(inode).value=ids;
+	dojo.destroy("entry-"+id);
+}
 </script>
 
 <style>
@@ -1081,6 +1236,23 @@ function showIndexClusterStatus(indexName) {
     background-color:#ECECEC;
 }
 
+dt.rightdl {
+   	width:300px;
+   	margin:0px 10px 10px;
+}
+dd.leftdl {
+  	width:400px;
+}
+.asarTextarea{
+  	width:300px;
+   	min-height:100px;
+   	max-height: 600px;
+}
+.asarMultiSelect{
+   	width: 300px;
+   	min-height:100px;
+   	max-height: 600px;
+}
 </style>
 
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
@@ -1428,6 +1600,89 @@ function showIndexClusterStatus(indexName) {
                 </tr>
 
             </table>
+            
+            <div style="height:20px">&nbsp;</div>
+            <%
+            	  List<Host> hosts = APILocator.getHostAPI().getHostsWithPermission(PermissionAPI.PERMISSION_READ,user,false);
+                  String validFileExtensions = Config.getStringProperty("ASSETS_SEARCH_AND_REPLACE_ALLOWED_FILE_TYPES");
+            %>
+           <table class="listingTable shadowBox">
+	        	<tr>
+	            	<th colspan="2"><%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Manager") %></th>
+	               	<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+	            </tr>
+	            <tr>
+	               	<td colspan="2">
+	               		<p><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_description") %></p>
+		               	<table class="listingTable">
+			               	<tr>
+			               		<td>
+			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %> 
+		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid host name"  onChange='updateHostList("assetHost","assetHostNames","selectAssetHostInode")'>   
+										<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_All") %></option>
+										<%	String hostNames="";
+											String hostIdentifier="";
+											for(Host h : hosts){ 
+	                            			if(!h.isSystemHost()){
+	                            				hostNames=hostNames+","+h.getHostname();
+	                            				hostIdentifier=hostIdentifier+","+h.getIdentifier();
+	                            		%>
+	                                			<option value="<%=h.getHostname()+","+h.getIdentifier()%>"><%= h.getHostname() %></option>
+	                            		<%  }  
+	                            	  	} 
+										%>
+									</select>
+									<input type="hidden" name="assetHost" id="assetHost" value="all"/>
+                        			<input type="hidden" name="assetHostNames" id="assetHostNames" value=""/>
+									<br/><br/>
+                        			<div name="assetHostlist" id="assetHostlist"></div>
+                  			    </td>
+			               		<td>
+			               			<input type="radio" onclick="enableDisableRadio(this)" checked="checked" value="assetType" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchType" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset") %>:<br/>
+	                                <select name="assetType" id="assetType" dojoType="dijit.form.MultiSelect" multiple="multiple" size="scrollable" class="asarMultiSelect">
+	                                <% for(String fileType : validFileExtensions.split(",")){%>
+	                                	<option value="<%=fileType%>"><%=fileType%></option>
+	                               <% }%>
+	                               </select></br/>
+	                                <em><%=LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset_hint") %></em>
+	                           </td>
+			               	</tr>
+			               	<tr>
+			               		<td>&nbsp;</td>
+			               		<td>
+			               		<input type="radio" onclick="enableDisableRadio(this)" value="assetIdentifier" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchIdentifier" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier") %>:<br/>
+	                                <input type="text" disabled="disabled" dojoType="dijit.form.Textarea" class="asarTextarea" rows="3" name="assetIdentifier" id="assetIdentifier"></br/>
+	                                <em><%=LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier_hint") %></em>
+	                            </td>
+			               	</tr>
+			               	<tr>
+			               		<td>
+			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_String_to_find") %> <input type="text" dojoType="dijit.form.TextBox" name="assetSearchString" id="assetSearchString" size="50">
+			               		</td>
+			               		<td>
+			               			<input type="checkbox" onclick="enableDisableCheckbox(this)" value="true" dojoType="dijit.form.CheckBox" name="newAssetVersion" id="newAssetVersion" /> <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Generate_new_asset_version") %>
+			               		</td>
+			               	</tr>
+			               	<tr>
+			               		<td>
+			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Replace_with") %> <input type="text" dojoType="dijit.form.TextBox" name="assetReplaceString" id="assetReplaceString" size="50">
+			               		</td>
+			               		<td>
+			               			<input type="checkbox" disabled="true" dojoType="dijit.form.CheckBox" name="autoPublish" id="autoPublish" /> <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Automatically_publish_new_asset_version") %>
+			               		</td>
+			               	</tr>
+		               	</table>
+	               	</td>
+	               	<td style="text-align:center;white-space:nowrap;">
+	               		<button dojoType="dijit.form.Button" onclick="validateSearchAndReplace();" iconClass="reorderIcon">
+	               		     <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Execute") %>
+	                    </button>   
+					</td>
+	            </tr>
+	            <tr>
+	               	<td colspan="3"><span id="asar_message"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Warning") %></span></td>
+	            </tr>   	    
+	        </table>            
         </div>
 
     </html:form>
