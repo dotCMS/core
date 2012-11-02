@@ -136,8 +136,6 @@ public class BundlePublisher extends Publisher {
                 content.setProperty(Contentlet.WORKFLOW_ASSIGN_KEY, null);
                 content.setProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
                 content.setProperty(Contentlet.WORKFLOW_COMMENTS_KEY, null);
-                ContentletVersionInfo info = wrapper.getInfo();
-                infoToRemove.put(info.getIdentifier(), info.getLang());
 
                 //Select user
                 User userToUse = null;
@@ -148,9 +146,18 @@ public class BundlePublisher extends Publisher {
                 }
 
                 if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
-                    publish(content, info, folderOut, userToUse, wrapper);
+                    publish(content, folderOut, userToUse, wrapper);
                 } else {
                     unpublish(content, folderOut, userToUse, wrapper);
+                }
+            }
+            
+            for (File contentFile : contentFiles) {
+            	wrapper = (PushContentWrapper)xstream.fromXML(new FileInputStream(contentFile));
+                if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
+	                ContentletVersionInfo info = wrapper.getInfo();
+	                infoToRemove.put(info.getIdentifier(), info.getLang());
+	                APILocator.getVersionableAPI().saveContentletVersionInfo(info);
                 }
             }
 
@@ -220,7 +227,7 @@ public class BundlePublisher extends Publisher {
         return config;
     }
 
-    private void publish(Contentlet content, ContentletVersionInfo info, File folderOut, User userToUse, PushContentWrapper wrapper)
+    private void publish(Contentlet content, File folderOut, User userToUse, PushContentWrapper wrapper)
             throws Exception
     {
         //Copy asset files to bundle folder keeping original folders structure
@@ -242,7 +249,6 @@ public class BundlePublisher extends Publisher {
         }
 
         content = conAPI.checkin(content, userToUse, false);
-        APILocator.getVersionableAPI().saveContentletVersionInfo(info);
 
         //First we need to remove the "old" trees in order to add this new ones
         cleanTrees( content );
