@@ -781,6 +781,22 @@ create table indicies (
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
+
+CREATE TABLE broken_link (
+   inode VARCHAR2(36) NOT NULL, 
+   field VARCHAR2(36) NOT NULL,
+   link VARCHAR2(255) NOT NULL,
+   title VARCHAR2(255) NOT NULL,
+   status_code integer NOT NULL,
+   primary key(inode,field)
+);
+
+alter table broken_link add CONSTRAINT fk_brokenl_content
+    FOREIGN KEY (inode) REFERENCES contentlet(inode) ON DELETE CASCADE;
+
+alter table broken_link add CONSTRAINT fk_brokenl_field
+    FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
+    
 -- ****** Content Publishing Framework *******
 CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 

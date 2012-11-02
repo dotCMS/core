@@ -44,25 +44,22 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.info(PublisherQueueJob.class, "Started PublishQueue Job");
 			PublisherAPI pubAPI = PublisherAPI.getInstance();  
 			
-
-
 			PushPublisherConfig pconf = new PushPublisherConfig();
 			List<Class> clazz = new ArrayList<Class>();
 			List<IBundler> bundler = new ArrayList<IBundler>();
 			bundler.add(new PushPublisherBundler());
 			clazz.add(PushPublisher.class);
 
-			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds();
+			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds(100,0);
 			List<Map<String,Object>> tempBundleContents = null;
 			PublishAuditStatus status = null;
 			PublishAuditHistory historyPojo = null;
 			String tempBundleId = null;
-			boolean acceptAll = true;
 
 			for(Map<String,Object> bundle: bundles) {
 				Date publishDate = (Date) bundle.get("publish_date");
 				
-				if(publishDate.before(new Date()) || acceptAll) {
+				if(publishDate.before(new Date())) {
 					tempBundleId = (String)bundle.get("bundle_id");
 					tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
 					
