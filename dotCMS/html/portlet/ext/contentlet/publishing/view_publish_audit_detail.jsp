@@ -7,6 +7,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditHistory"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
+
 <%
 	String bundleId = request.getParameter("bundle");
 	PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();

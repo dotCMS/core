@@ -1,3 +1,4 @@
+<%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="java.util.List"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
