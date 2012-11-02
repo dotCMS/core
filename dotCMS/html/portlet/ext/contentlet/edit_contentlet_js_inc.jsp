@@ -513,7 +513,7 @@ dojo.require("dojox.layout.ContentPane");
 					errorList = errorList+"<li>"+error+"</li>";
 				}
 			dojo.byId('exceptionData').innerHTML = "<ul>"+errorList+"</ul>";
-
+			dojo.byId("wfActionId").value=""; // hack to let the user choose save instead of wfAction
 			errorDisplayElement.show();
 			return;
 		}
