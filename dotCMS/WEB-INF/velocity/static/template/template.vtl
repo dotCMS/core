@@ -7,16 +7,21 @@
             #dotParse("${dotTheme.path}html_head.vtl")
         #end
 
-        <link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap.css" />
-        <link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
+		<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap.css" />
+		<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
+        
+		<script src="/js/jquery-1.7.2.min.js"></script>
+		<script src="/js/bootstrap.min.js"></script>
+		<script src="/js/bootstrap-collapse.js"></script>
     </head>
 
     <body>
+    	
 
         #if($dotThemeLayout.header)
-            <div id="hd-template">
+            <header id="hd-template">
                 #dotParse("${dotTheme.path}header.vtl")
-            </div>
+            </header>
         #end
 
         ##CURRENT POSSIBLE VALUES: 100%, 974px, 950px, 750px
@@ -129,15 +134,11 @@
         </div><!--/container-->
 
         #if($dotThemeLayout.footer)
-            <div id="ft-template">
+            <footer id="ft-template">
                 #dotParse("${dotTheme.path}footer.vtl")
-            </div>
+            </footer>
         #end
-
-        <!-- Placed at the end of the document so the pages loads faster -->
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-        <script src="/html/js/bootstrap/bootstrap.min.js"></script>
-
+        
     </body>
 
 </html>
