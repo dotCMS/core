@@ -31,8 +31,8 @@ public class TemplateLayout {
 
         if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_100_PERCENT ) ) {//100%
             this.setWidth( "100%" );
-        } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_974 ) ) {//974px
-            this.setWidth( "974px" );
+        } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_RESPONSIVE ) ) {//Responsive
+            this.setWidth( "responsive" );
         } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_950 ) ) {//950px
             this.setWidth( "950px" );
         } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_750 ) ) {//750px

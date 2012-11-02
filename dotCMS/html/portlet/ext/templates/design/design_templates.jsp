@@ -428,7 +428,7 @@
 									<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>
 									<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>
 									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
-									<option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>974px</option>
+									<option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>Responsive</option>
 								</select>
 							</dd>
 						</dl>
@@ -438,9 +438,9 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "Layout")%>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "sidebar")%>:</dt>
 							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
-									<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>></option>
+									<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "none")%></option>
 									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-160-left")%></option>
 									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-left")%></option>
 									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-left")%></option>
@@ -573,7 +573,7 @@
 									<option value="doc-template">750px</option>
 									<option value="doc2-template">950px</option>
 									<option value="doc3-template" selected="selected">100%</option>
-									<option value="doc4-template">974px</option>
+									<option value="doc4-template">Responsive</option>
 								</select>
 							</dd>
 						</dl>
@@ -583,9 +583,9 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "Layout") %>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
 							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
-									<option value="none" selected="selected"></option>
+									<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
 									<option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-160-left") %></option>
 									<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-180-left") %></option>
 									<option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-300-left") %></option>
