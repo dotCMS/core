@@ -355,8 +355,6 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
 	div.appendChild(titleContainerSpan);
 	div.appendChild(containerDivHidden);
 
-	// update the container's link
-	updateContainersAddedCount(true);
     //In order to keep a list of the containers used by this template
     parseCurrentContainers();
 }
@@ -400,8 +398,6 @@ function removeDrawedContainer(idDiv,idContainer){
 			div.innerHTML+="<h1>Sidebar</h1>";
 	}
 
-	// update the containers counter
-	updateContainersAddedCount(false);
     //In order to keep a list of the containers used by this template
     parseCurrentContainers();
 }
@@ -531,22 +527,6 @@ function updateAddContainerLinksCount(add){
 }
 
 /**
- * Update the counter of the Containers added to the template
- *
- * @param add: if true --> +1; if false --> -1.
- */
-function updateContainersAddedCount(add){
-	var integerCountContainersAdded = window.parseInt(countContainersAdded.value);
-	if(add) // we must add 1 to count
-		integerCountContainersAdded+=1;
-	else if(integerCountContainersAdded>0){
-		integerCountContainersAdded-=1;
-	}
-//	alert('containers added current value: ' + integerCountContainersAdded);
-	countContainersAdded.value = integerCountContainersAdded;
-}
-
-/**
  * Method that will parse the current template code in order to get the list of containers
  * used by this template.
  */
@@ -558,4 +538,6 @@ function parseCurrentContainers() {
         title = title.replace("container_", "");
         containersAdded.push(title);
     });
+
+    countContainersAdded.value = containersAdded.length;
 }
