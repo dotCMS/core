@@ -2733,6 +2733,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, (String) properties.get(Contentlet.WORKFLOW_ACTION_KEY));
             contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, (String) properties.get(Contentlet.WORKFLOW_COMMENTS_KEY));
             contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, (String) properties.get(Contentlet.WORKFLOW_ASSIGN_KEY));
+       
+
+            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, (String) properties.get(Contentlet.WORKFLOW_PUBLISH_DATE));
+            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, (String) properties.get(Contentlet.WORKFLOW_PUBLISH_TIME));
+            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, (String) properties.get(Contentlet.WORKFLOW_EXPIRE_DATE));
+            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, (String) properties.get(Contentlet.WORKFLOW_EXPIRE_TIME));
+            contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) properties.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
+            
+            
+            
+            
+        
+        
         }
     }
 
