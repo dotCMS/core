@@ -17,6 +17,7 @@ public class DesignTemplateHtmlCssConstants {
 	public static final String SIDEBAR_ID		 						= "yui-b2";
 	public static final String NO_SIDEBAR_VALUE		 					= "none";
 	public static final String SPLIT_BODY_ID_PREFIX						= "splitBody";
+	public static final String COLUMN_CONTAINER_CLASS					= "yui-u-template";
 
     public static final String YUI_ONE_COLUMN_CLASS                     = "1";//1 Column (100)
     public static final String YUI_TWO_COLUMN_CLASS_GC                  = "yui-gc-template";//2 Column (66/33)
