@@ -31,8 +31,8 @@ public class TemplateLayout {
 
         if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_100_PERCENT ) ) {//100%
             this.setWidth( "100%" );
-        } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_974 ) ) {//974px
-            this.setWidth( "974px" );
+        } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_RESPONSIVE ) ) {//Responsive
+            this.setWidth( "responsive" );
         } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_950 ) ) {//950px
             this.setWidth( "950px" );
         } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_750 ) ) {//750px
@@ -87,11 +87,11 @@ public class TemplateLayout {
         return sidebar;
     }
 
-    public void setSidebar ( String container, Boolean isPreview ) {
+    public void setSidebar ( List<String> containers, Boolean isPreview ) {
 
         this.sidebar = new TemplateLayoutColumn();
         this.sidebar.setType( TemplateLayoutColumn.TYPE_SIDEBAR );
-        this.sidebar.setContainer( container );
+        this.sidebar.setContainers( containers );
         this.sidebar.setPreview( isPreview );
 
         if ( layout.equals( YUI_LAYOUT_LEFT_CLASS_T1 ) ) {//layout-160-left

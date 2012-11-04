@@ -22,18 +22,18 @@ public class TemplateLayoutColumn {
     public boolean preview;
     public String type;
     public String location;//ONLY FOR SIDEBARS!!!
-    public String container;
+    public List<String> containers;
     public Integer widthPercent;
     public Integer width;
 
     public List<TemplateLayoutRow> rows;
 
-    public String getContainer () {
-        return container;
+    public List<String> getContainers () {
+        return containers;
     }
 
-    public void setContainer ( String container ) {
-        this.container = container;
+    public void setContainers ( List<String> containers ) {
+        this.containers = containers;
     }
 
     public boolean isPreview () {
@@ -90,12 +90,16 @@ public class TemplateLayoutColumn {
 
     public String draw () throws Exception {
 
-        StringBuffer sb;
-        if ( this.preview ) {
-            sb = PreviewTemplateUtil.getMockBodyContent();
-        } else {
-            sb = new StringBuffer();
-            sb.append( "#parseContainer('" ).append( this.container ).append( "')" );
+        StringBuffer sb = new StringBuffer();
+        if ( this.containers != null ) {
+            for ( String container: this.containers ) {
+
+                if ( this.preview ) {
+                    sb.append( PreviewTemplateUtil.getMockBodyContent() );
+                } else {
+                    sb.append( "#parseContainer('" ).append( container ).append( "')" );
+                }
+            }
         }
 
         return sb.toString();

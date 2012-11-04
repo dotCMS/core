@@ -85,12 +85,12 @@ public class TemplateLayoutRow {
     }
 
     /**
-     * Adds a container to this row. Adding a container means to add a new column in the row.
+     * Adds containers to this row. Adding a list of containers means to add a new column in the row.
      *
-     * @param container
+     * @param containers
      * @param isPreview
      */
-    public void addContainer ( String container, Boolean isPreview ) {
+    public void addColumnContainers ( List<String> containers, Boolean isPreview ) {
 
         if ( columns == null ) {
             columns = new ArrayList<TemplateLayoutColumn>();
@@ -98,7 +98,7 @@ public class TemplateLayoutRow {
 
         //Creating a new column for this row
         TemplateLayoutColumn column = new TemplateLayoutColumn();
-        column.setContainer( container );
+        column.setContainers( containers );
 
         //Now calculate the width percent for this column
         column.setWidthPercent( gridWidths[columns.size()] );

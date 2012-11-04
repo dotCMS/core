@@ -17,6 +17,7 @@ public class DesignTemplateHtmlCssConstants {
 	public static final String SIDEBAR_ID		 						= "yui-b2";
 	public static final String NO_SIDEBAR_VALUE		 					= "none";
 	public static final String SPLIT_BODY_ID_PREFIX						= "splitBody";
+	public static final String COLUMN_CONTAINER_CLASS					= "yui-u-template";
 
     public static final String YUI_ONE_COLUMN_CLASS                     = "1";//1 Column (100)
     public static final String YUI_TWO_COLUMN_CLASS_GC                  = "yui-gc-template";//2 Column (66/33)
@@ -34,7 +35,7 @@ public class DesignTemplateHtmlCssConstants {
 
     public static final String LAYOUT_WIDTH_CLASS_750                   = "doc-template";//750px
     public static final String LAYOUT_WIDTH_CLASS_950                   = "doc2-template";//950px
-    public static final String LAYOUT_WIDTH_CLASS_974                   = "doc4-template";//974px
+    public static final String LAYOUT_WIDTH_CLASS_RESPONSIVE            = "doc4-template";//responsive
     public static final String LAYOUT_WIDTH_CLASS_100_PERCENT           = "doc3-template";//100%
 
 	// HTML TAG/ATTRIBUTE

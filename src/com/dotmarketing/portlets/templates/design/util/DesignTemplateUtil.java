@@ -293,9 +293,6 @@ public class DesignTemplateUtil {
      */
     private static void setLayoutBody ( TemplateLayout layout, Document templateDrawedBody, Boolean isPreview ) {
 
-        //parseContainer regex
-        Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
-
         //***************************************************************
         //Verify if we have a sidebar
         Elements splitSideBar = templateDrawedBody.select( DIV_TAG + "[" + ID_ATTRIBUTE + "=" + SIDEBAR_ID );
@@ -304,12 +301,9 @@ public class DesignTemplateUtil {
             Element sidebar = splitSideBar.get( 0 );
 
             //Getting the containers for this html fragment
-            Matcher matcher = parseContainerPatter.matcher( sidebar.text() );
-            if ( matcher.find() ) {
-                String container = matcher.group( 0 );
-                //Adding the sidebar to the layout
-                layout.setSidebar( container, isPreview );
-            }
+            List<String> containers = getColumnContainers( sidebar );
+            //Adding the sidebar to the layout
+            layout.setSidebar( containers, isPreview );
         }
 
         //***************************************************************
@@ -322,24 +316,62 @@ public class DesignTemplateUtil {
             // gets the identifier of the body div
             String idHtml = splitBody.attr( ID_ATTRIBUTE );
             String id = idHtml.substring( idHtml.indexOf( SPLIT_BODY_ID_PREFIX ) + SPLIT_BODY_ID_PREFIX.length() );
+            String layoutType = splitBody.child( 0 ).attr( ID_ATTRIBUTE );
 
             //Create a template row
-            TemplateLayoutRow sb = new TemplateLayoutRow();
-            sb.setIdentifier( Integer.parseInt( id ) );
-            sb.setId( "select_splitBody" );
-            sb.setValue( splitBody.child( 0 ).attr( ID_ATTRIBUTE ) );
+            TemplateLayoutRow rowLayout = new TemplateLayoutRow();
+            rowLayout.setIdentifier( Integer.parseInt( id ) );
+            rowLayout.setId( "select_splitBody" );
+            rowLayout.setValue( layoutType );
 
-            //Getting the containers for this html fragment
-            Matcher matcher = parseContainerPatter.matcher( splitBody.text() );
-            while ( matcher.find() ) {
-                String container = matcher.group();
-                sb.addContainer( container, isPreview );
+            //We may have  multiple columns in here
+            Elements columns = splitBody.select( DIV_TAG + "." + COLUMN_CONTAINER_CLASS );
+            if ( columns != null && !columns.isEmpty() ) {
+
+                //We found multiple columns...
+                for ( Element columnElement : columns ) {
+                    //Find the containers for this column
+                    List<String> containers = getColumnContainers( columnElement );
+                    //Adding the containers for this column
+                    rowLayout.addColumnContainers( containers, isPreview );
+                }
+                //Add the created row
+                splitBodiesList.add( rowLayout );
+
+            } else { //It means we just have one column
+
+                //Find the containers for this column
+                List<String> containers = getColumnContainers( splitBody );
+                rowLayout.addColumnContainers( containers, isPreview );
+                //Add the created row
+                splitBodiesList.add( rowLayout );
             }
 
-            splitBodiesList.add( sb );
         }
         //Set the body column with its rows
         layout.setBody( splitBodiesList );
+    }
+
+    /**
+     * Method that will parse and return the containers inside a given html fragment
+     *
+     * @param splitBody
+     * @return
+     */
+    private static List<String> getColumnContainers ( Element splitBody ) {
+
+        //parseContainer regex
+        Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
+
+        //Getting the containers for this html fragment
+        List<String> containers = new ArrayList<String>();
+        Matcher matcher = parseContainerPatter.matcher( splitBody.text() );
+        while ( matcher.find() ) {
+            String container = matcher.group();
+            containers.add( container );
+        }
+
+        return containers;
     }
 
 	private static void getMetatagContainers(Document templateBody){
