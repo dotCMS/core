@@ -1,7 +1,31 @@
 package com.dotcms.publisher.receiver;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.tools.tar.TarEntry;
+import org.apache.tools.tar.TarInputStream;
+
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.myTest.PushContentWrapper;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
 import com.dotcms.publishing.DotPublishingException;
@@ -35,14 +59,6 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
-
-import java.io.*;
-import java.util.*;
-import java.util.zip.GZIPInputStream;
 
 public class BundlePublisher extends Publisher {
     private ContentletAPI conAPI = null;
@@ -257,7 +273,7 @@ public class BundlePublisher extends Publisher {
             tree.setChild((String) tRow.get("child"));
             tree.setParent((String) tRow.get("parent"));
             tree.setRelationType((String) tRow.get("relation_type"));
-            tree.setTreeOrder((Integer) tRow.get("tree_order"));
+            tree.setTreeOrder(Integer.parseInt(tRow.get("tree_order").toString()));
 
             TreeFactory.saveTree(tree);
         }
@@ -269,7 +285,7 @@ public class BundlePublisher extends Publisher {
             multiTree.setParent1((String) mRow.get("parent1"));
             multiTree.setParent2((String) mRow.get("parent2"));
             multiTree.setRelationType((String) mRow.get("relation_type"));
-            multiTree.setTreeOrder((Integer) mRow.get("tree_order"));
+            multiTree.setTreeOrder(Integer.parseInt( mRow.get("tree_order").toString()));
 
 
             MultiTreeFactory.saveMultiTree(multiTree);
