@@ -121,6 +121,11 @@
 			return;
 		}
 
+        //Update the counter of the "Add Container" links
+        updateAddContainerLinksCount();
+        //Update the counter of added containers
+        parseCurrentContainers();
+
 		var addContainerLinks = window.parseInt(document.getElementById("countAddContainerLinks").value);
 		var containersAdded = window.parseInt(document.getElementById("countContainersAdded").value);
 
@@ -253,40 +258,33 @@
 		previewWindow.document.write(html);
 		return previewWindow;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	function refreshPreviewTab(){
-
-		var bodyTemplateHTML = document.getElementById('bodyTemplate').innerHTML;
-		var theme = dijit.byId("themeDiv").value;
-		var themeName = dijit.byId("themeDiv").displayedValue;
-
-		var headerCheck = dijit.byId("headerCheck").checked;
-		var footerCheck = dijit.byId("footerCheck").checked;
-		var hostId = dojo.byId("hostId").value;
-
-		
-		dojo.byId("themePreviewRandom").value=Math.floor(Math.random()*1123213213);;
-		dojo.byId("themePreviewTheme").value=theme;
-		dojo.byId("themePreviewName").value=themeName;
-		dojo.byId("themePreviewHeaderCheck").value=headerCheck;
-		dojo.byId("themePreviewFooterCheck").value=footerCheck;
-		dojo.byId("themePreviewBodyTemplateHTML").value=bodyTemplateHTML;
-		dojo.byId("themePreviewHostId").value=hostId;
 
 
-		dojo.byId("themePreviewForm").submit();
+    function refreshPreviewTab() {
 
-		
-		
-	}
+        var bodyTemplateHTML = document.getElementById('bodyTemplate').innerHTML;
+        var theme = dijit.byId("themeDiv").value;
+        var themeName = dijit.byId("themeDiv").displayedValue;
+
+        var headerCheck = dijit.byId("headerCheck").checked;
+        var footerCheck = dijit.byId("footerCheck").checked;
+        var hostId = dojo.byId("hostId").value;
+
+        if (null == theme || '' == theme) {
+            alert('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "template-theme-mandatory"))%>');
+            return;
+        }
+
+        dojo.byId("themePreviewRandom").value = Math.floor(Math.random() * 1123213213);
+        dojo.byId("themePreviewTheme").value = theme;
+        dojo.byId("themePreviewName").value = themeName;
+        dojo.byId("themePreviewHeaderCheck").value = headerCheck;
+        dojo.byId("themePreviewFooterCheck").value = footerCheck;
+        dojo.byId("themePreviewBodyTemplateHTML").value = bodyTemplateHTML;
+        dojo.byId("themePreviewHostId").value = hostId;
+
+        dojo.byId("themePreviewForm").submit();
+    }
 	
 	dojo.addOnLoad (function(){
 		var tab =dijit.byId("mainTabContainer");
