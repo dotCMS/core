@@ -51,7 +51,7 @@ public class PublisherQueueJob implements StatefulJob {
 			clazz.add(PushPublisher.class);
 
 			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds(100,0);
-			List<Map<String,Object>> tempBundleContents = null;
+			List<PublishQueueElement> tempBundleContents = null;
 			PublishAuditStatus status = null;
 			PublishAuditHistory historyPojo = null;
 			String tempBundleId = null;
@@ -69,8 +69,8 @@ public class PublisherQueueJob implements StatefulJob {
 					//Retriving assets
 					List<String> assets = new ArrayList<String>();
 					
-					for(Map<String,Object> c : tempBundleContents) {
-						assets.add((String) c.get("asset"));
+					for(PublishQueueElement c : tempBundleContents) {
+						assets.add((String) c.getAsset());
 					}
 					historyPojo.setAssets(assets);
 					
@@ -91,7 +91,7 @@ public class PublisherQueueJob implements StatefulJob {
 					pconf.setBundlers(bundler);
 					pconf.setEndpoints(endpointAPI.findReceiverEndpoints());
 					
-					if(((Long) bundle.get("operation")).intValue() == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
+					if(Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
 						pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
 					else
 						pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
@@ -126,12 +126,12 @@ public class PublisherQueueJob implements StatefulJob {
         Client client = Client.create(clientConfig);
         WebResource webResource = null;
         
-        List<Map<String,Object>> pendingAudits = pubAuditAPI.getPendingPublishAuditStatus();
+        List<PublishAuditStatus> pendingAudits = pubAuditAPI.getPendingPublishAuditStatus();
         
-        for(Map<String,Object> pendingAudit: pendingAudits) {
+        for(PublishAuditStatus pendingAudit: pendingAudits) {
         	//Gets endpoints list
-        	PublishAuditHistory localHistory = PublishAuditHistory.getObjectFromString(
-					(String) pendingAudit.get("status_pojo"));
+        	PublishAuditHistory localHistory = pendingAudit.getStatusPojo();
+        	
         	Map<String, EndpointDetail> endpointsTarget = localHistory.getEndpointsMap();
         	boolean hasError = false;
         	int counter = 0;
@@ -149,7 +149,7 @@ public class PublisherQueueJob implements StatefulJob {
 			        			PublishAuditHistory.getObjectFromString(
 			        			webResource
 						        .path("get")
-						        .path((String) pendingAudit.get("bundle_id")).get(String.class));
+						        .path(pendingAudit.getBundleId()).get(String.class));
 			        	
 			        	if(remoteHistory != null) {
 				        	int statusCode = -1;
@@ -176,41 +176,39 @@ public class PublisherQueueJob implements StatefulJob {
         	
         	
         	if(!hasError && counter == endpointsTarget.size()) {
-	        	pubAuditAPI.updatePublishAuditStatus((String) pendingAudit.get("bundle_id"), 
+	        	pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
 	        			PublishAuditStatus.Status.SUCCESS, 
 	        			localHistory);
         	} else if(hasError && counter == 0) {
-        		pubAuditAPI.updatePublishAuditStatus((String) pendingAudit.get("bundle_id"), 
+        		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
 	        			localHistory);
         	} else {
-        		pubAuditAPI.updatePublishAuditStatus((String) pendingAudit.get("bundle_id"), 
-        				PublishAuditStatus.getStatusObjectByCode(
-        						new Integer((Integer)pendingAudit.get("status")).intValue()), 
+        		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), pendingAudit.getStatus(), 
 	        			localHistory);
         	}
         }
         
 	}
 	
-	private List<String> prepareQueries(List<Map<String,Object>> bundle) {
+	private List<String> prepareQueries(List<PublishQueueElement> bundle) {
 		StringBuilder assetBuffer = new StringBuilder();
 		List<String> assets;
 		assets = new ArrayList<String>();
 		
 		if(bundle.size() == 1) {
-			assetBuffer.append("+"+IDENTIFIER+(String) bundle.get(0).get("asset"));
+			assetBuffer.append("+"+IDENTIFIER+(String) bundle.get(0).getAsset());
 			
 			assets.add(assetBuffer.toString() +" +live:true");
 			assets.add(assetBuffer.toString() +" +working:true");
 			
 		} else {
 			int counter = 1;
-			Map<String,Object> c = null;
+			PublishQueueElement c = null;
 			for(int ii = 0; ii < bundle.size(); ii++) {
 				c = bundle.get(ii);
 				
-				assetBuffer.append(IDENTIFIER+c.get("asset"));
+				assetBuffer.append(IDENTIFIER+c.getAsset());
 				assetBuffer.append(" ");
 				
 				if(counter == _ASSET_LENGTH_LIMIT || (ii+1 == bundle.size())) {

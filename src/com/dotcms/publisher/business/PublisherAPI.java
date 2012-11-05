@@ -13,7 +13,6 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
  *
  */
 public abstract class PublisherAPI {
-
 	/*Basic operations*/
 	public static final long PROCESSED_ELEMENT=0;
 	public static final long ADD_OR_UPDATE_ELEMENT=1;
@@ -62,7 +61,7 @@ public abstract class PublisherAPI {
 	 * @return
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getQueueElements() throws DotPublisherException;
+	public abstract List<PublishQueueElement> getQueueElements() throws DotPublisherException;
 	
 	
 	/**
@@ -70,7 +69,7 @@ public abstract class PublisherAPI {
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> countQueueElements() throws DotPublisherException;
+	public abstract Integer countQueueElements() throws DotPublisherException;
 	
 	
 	/**
@@ -86,7 +85,7 @@ public abstract class PublisherAPI {
 	 * @throws DotPublisherException
 	 */
 	
-	public abstract int countQueueBundleIds() throws DotPublisherException;
+	public abstract Integer countQueueBundleIds() throws DotPublisherException;
 	/**
 	 * get bundle_ids available
 	 * @return List<Map<String,Object>>
@@ -99,14 +98,14 @@ public abstract class PublisherAPI {
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getQueueElementsByBundleId(String bundleId) throws DotPublisherException;
+	public abstract List<PublishQueueElement> getQueueElementsByBundleId(String bundleId) throws DotPublisherException;
 	
 	/**
 	 * count queue elements group by bundle_id
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> countQueueElementsGroupByBundleId() throws DotPublisherException;
+	public abstract Integer countQueueElementsGroupByBundleId() throws DotPublisherException;
 	
 	/**
 	 * Get queue element by asset
@@ -114,7 +113,7 @@ public abstract class PublisherAPI {
 	 * @return
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getQueueElementsByAsset(String asset) throws DotPublisherException;
+	public abstract List<PublishQueueElement> getQueueElementsByAsset(String asset) throws DotPublisherException;
 	
 	/**
 	 * Get queue elements group by bundle_id paginated

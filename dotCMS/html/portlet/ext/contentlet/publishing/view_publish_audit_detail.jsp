@@ -14,10 +14,10 @@
 	PublishAuditHistory currentEndpointHistory = null;
 	int status = 0;
 	if(null!=bundleId){
-		Map<String, Object> publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus(bundleId);
-		String pojo_string = (String)publishAuditStatus.get("status_pojo");
+		PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus(bundleId);
+		String pojo_string = (String)publishAuditStatus.getStatusPojo().getSerialized();
 		currentEndpointHistory = PublishAuditHistory.getObjectFromString(pojo_string);
-		status = (Integer)publishAuditStatus.get("status");
+		status = publishAuditStatus.getStatus().getCode();
 	}
 	if(null!=currentEndpointHistory){
 %>

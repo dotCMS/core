@@ -1,7 +1,5 @@
 package com.dotcms.rest;
 
-import java.util.Map;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -10,6 +8,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
 
 @Path("/auditPublishing")
 public class AuditPublishingResource extends WebResource {
@@ -20,13 +19,13 @@ public class AuditPublishingResource extends WebResource {
 	@Path("/get/{bundleId:.*}")
 	@Produces(MediaType.TEXT_XML)
 	public String get(@PathParam("bundleId") String bundleId) {
-		Map<String, Object> status = null;
+		PublishAuditStatus status = null;
 		
 		try {
 			status = auditAPI.getPublishAuditStatus(bundleId);
 			
 			if(status != null)
-				return (String) status.get("status_pojo");
+				return (String) status.getStatusPojo().getSerialized();
 		} catch (DotPublisherException e) {
 			e.printStackTrace();
 		}

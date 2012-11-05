@@ -81,10 +81,8 @@ public class PushPublisher extends Publisher {
 			Client client = Client.create(cc);
 			
 			//Updating audit table
-			currentStatusHistory =
-					PublishAuditHistory.getObjectFromString(
-							(String)pubAuditAPI.getPublishAuditStatus(
-									config.getId()).get("status_pojo"));
+			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
+			
 			currentStatusHistory.setPublishStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
 	        

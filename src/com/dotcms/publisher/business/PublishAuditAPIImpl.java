@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.mapper.PublishAuditStatusMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -16,6 +17,8 @@ import com.dotmarketing.util.Logger;
 public class PublishAuditAPIImpl extends PublishAuditAPI {
 	
 	private static PublishAuditAPIImpl instance= null;
+	private PublishAuditStatusMapper mapper = null;
+	
 	public static PublishAuditAPIImpl getInstance() {
 		if(instance==null)
 			instance = new PublishAuditAPIImpl();
@@ -25,6 +28,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	
 	protected PublishAuditAPIImpl(){
 		// Exists only to defeat instantiation.
+		mapper = new PublishAuditStatusMapper();
 	}
 	
 	private final String MANDATORY_FIELDS= 
@@ -178,7 +182,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			"FROM publishing_queue_audit a where a.bundle_id = ? ";
 	
 	@Override
-	public Map<String,Object> getPublishAuditStatus(String bundleId)
+	public PublishAuditStatus getPublishAuditStatus(String bundleId)
 			throws DotPublisherException {
 		
 		try{
@@ -192,7 +196,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				throw new DotPublisherException("Found duplicate bundle status");
 			else {
 				if(!res.isEmpty())
-					return res.get(0);
+					return mapper.mapObject(res.get(0));
 				return null;
 			}
 		}catch(Exception e){
@@ -207,12 +211,12 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			"SELECT * "+
 			"FROM publishing_queue_audit order by status_updated desc";
 	
-	public List<Map<String,Object>> getAllPublishAuditStatus() throws DotPublisherException {
+	public List<PublishAuditStatus> getAllPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLALL);
 			
-			return dc.loadObjectResults();
+			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -221,7 +225,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 	
-	public List<Map<String,Object>> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException {
+	public List<PublishAuditStatus> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLALL);
@@ -229,7 +233,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.setStartRow(offset);
 			dc.setMaxRows(limit);
 			
-			return dc.loadObjectResults();
+			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -240,11 +244,11 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			"SELECT count(*) as count "+
 			"FROM publishing_queue_audit ";
 	
-	public List<Map<String,Object>> countAllPublishAuditStatus() throws DotPublisherException {
+	public Integer countAllPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLALLCOUNT);
-			return dc.loadObjectResults();
+			return Integer.parseInt(dc.loadObjectResults().get(0).get("count").toString());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -256,7 +260,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			"FROM publishing_queue_audit " +
 			"WHERE status = ? or status = ?";
 	
-	public List<Map<String,Object>> getPendingPublishAuditStatus() throws DotPublisherException {
+	public List<PublishAuditStatus> getPendingPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLPENDING);
@@ -264,7 +268,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS.getCode());
 			
-			return dc.loadObjectResults();
+			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
