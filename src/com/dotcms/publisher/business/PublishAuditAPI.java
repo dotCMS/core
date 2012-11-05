@@ -1,7 +1,6 @@
 package com.dotcms.publisher.business;
 
 import java.util.List;
-import java.util.Map;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 
@@ -56,7 +55,7 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	//Select
-	public abstract Map<String,Object> getPublishAuditStatus(String bundleId) throws DotPublisherException;
+	public abstract PublishAuditStatus getPublishAuditStatus(String bundleId) throws DotPublisherException;
 	
 	/**
 	 * Get all publish status
@@ -65,7 +64,7 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	//Select
-	public abstract List<Map<String,Object>> getAllPublishAuditStatus() throws DotPublisherException;
+	public abstract List<PublishAuditStatus> getAllPublishAuditStatus() throws DotPublisherException;
 	
 	/**
 	 * Get all publish status paginated
@@ -74,7 +73,7 @@ public abstract class PublishAuditAPI {
 	 * @return
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException;
+	public abstract List<PublishAuditStatus> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException;
 	
 	/**
 	 * count all publish status
@@ -83,12 +82,12 @@ public abstract class PublishAuditAPI {
 	 * @return
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> countAllPublishAuditStatus() throws DotPublisherException;
+	public abstract Integer countAllPublishAuditStatus() throws DotPublisherException;
 
 	/**
 	 * Gets all audit status not yet ended
 	 * @return
 	 * @throws DotPublisherException
 	 */
-	public abstract List<Map<String,Object>> getPendingPublishAuditStatus() throws DotPublisherException;
+	public abstract List<PublishAuditStatus> getPendingPublishAuditStatus() throws DotPublisherException;
 }
