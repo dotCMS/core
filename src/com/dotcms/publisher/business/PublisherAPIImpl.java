@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -20,7 +21,9 @@ import com.dotmarketing.util.Logger;
  *
  */
 public class PublisherAPIImpl extends PublisherAPI{
-
+	
+	private PublishQueueMapper mapper = null;
+	
 	private static final int _ASSET_LENGTH_LIMIT = 20;
 	private static final String SPACE = " ";
 	private static final String IDENTIFIER = "identifier:";
@@ -34,7 +37,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		return instance;
 	}
 	protected PublisherAPIImpl(){
-		// Exists only to defeat instantiation.
+		mapper = new PublishQueueMapper();
 	}
 	
 	private static final String MANDATORY_FIELDS= 
@@ -109,7 +112,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 	
 	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate) throws DotPublisherException {		
-		List<String> assets = null;
 		if(identifiers != null) {
 		
 			
@@ -295,7 +297,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"SELECT * "+
 			"FROM publishing_queue p order by bundle_id ";
 	
-	public List<Map<String,Object>> getQueueElements() throws DotPublisherException {
+	public List<PublishQueueElement> getQueueElements() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -308,7 +310,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.setSQL(OCLGETENTRIES);
 			}
 			
-			return dc.loadObjectResults();
+			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -322,7 +324,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSCOUNTENTRIES="select count(*) as count from publishing_queue ";
 	private static final String OCLCOUNTENTRIES="select count(*) as count from publishing_queue ";
 	
-	public List<Map<String,Object>> countQueueElements() throws DotPublisherException {
+	public Integer countQueueElements() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -335,7 +337,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.setSQL(OCLCOUNTENTRIES);
 			}
 			
-			return dc.loadObjectResults();
+			return Integer.parseInt(dc.loadObjectResults().get(0).get("count").toString());
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -416,7 +418,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * Gets the count of the bundles to be published
 	 * @return
 	 */
-	public int countQueueBundleIds() throws DotPublisherException {
+	public Integer countQueueBundleIds() throws DotPublisherException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(COUNTBUNDLES);
 		try{
@@ -478,7 +480,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
-	public List<Map<String,Object>> getQueueElementsByBundleId(String bundleId) throws DotPublisherException {
+	public List<PublishQueueElement> getQueueElementsByBundleId(String bundleId) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -493,7 +495,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			dc.addParam(bundleId);
 			
-			return dc.loadObjectResults();
+			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -507,7 +509,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSCOUNTENTRIESGROUPED="select count(distinct(bundle_id)) as count from publishing_queue ";
 	private static final String OCLCOUNTENTRIESGROUPED="select count(distinct(bundle_id)) as count from publishing_queue ";
 	
-	public List<Map<String,Object>> countQueueElementsGroupByBundleId() throws DotPublisherException {
+	public Integer countQueueElementsGroupByBundleId() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -520,7 +522,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.setSQL(OCLCOUNTENTRIESGROUPED);
 			}
 			
-			return dc.loadObjectResults();
+			return Integer.parseInt(dc.loadObjectResults().get(0).get("count").toString());
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -532,7 +534,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSGETENTRY="select * from publishing_queue where asset = ?";
 	private static final String OCLGETENTRY="select * from publishing_queue where asset = ?";
 	
-	public List<Map<String,Object>> getQueueElementsByAsset(String asset) throws DotPublisherException {
+	public List<PublishQueueElement> getQueueElementsByAsset(String asset) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -547,7 +549,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			
 			dc.addParam(asset);
 			
-			return dc.loadObjectResults();
+			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
