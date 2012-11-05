@@ -44,21 +44,19 @@ dojo.ready(function(){
 	dojo.connect(window,"onresize",resized);
 	resized();
 	dijit.byId('closeBtn').set('disabled','disabled');
-
-	dijit.byId('hostsel').set('store',new dojo.data.ItemFileReadStore({
-		url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getHostsWithTimeMachine'
-	}));
+	hostChange();
 });
 
 var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
 var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
+var hostid;
 
 function hostChange() {
     <%
     String hostInode = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
     Identifier hostIdentifier = APILocator.getIdentifierAPI().findFromInode(hostInode);
     %>
-    var hostid = "<%= hostIdentifier.getId() %>";
+    hostid = "<%= hostIdentifier.getId() %>";
     alert(hostid);
     dijit.byId('timesel').set('value','');
     if(hostid && hostid.length>0) {
@@ -73,7 +71,6 @@ function hostChange() {
 }
 function timeChange() {
     var time=dijit.byId('timesel').get('value');
-    var hostid=dijit.byId('hostsel').get('value');
     var langid=dijit.byId('langsel').get('value');
 
     if(hostid && hostid.length>0 && time && time.length>0) {
@@ -148,11 +145,6 @@ function showSettings() {
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
             <div dojoType="dijit.layout.ContentPane" region="top">
                    <span id="tools">
-
-                       <select id="hostsel" dojoType="dijit.form.FilteringSelect"
-                            labelAttr="hostname"  searchAttr="hostname"
-                            searchDelay="400"
-                            onchange="hostChange()"></select>
 
 	                   <select id="timesel" dojoType="dijit.form.FilteringSelect"
 	                      labelAttr="pretty" searchDelay="400" searchAttr="pretty"

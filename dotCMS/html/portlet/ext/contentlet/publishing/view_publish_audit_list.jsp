@@ -58,12 +58,12 @@
     
 
 
-    List<Map<String,Object>> iresults =  null;
+    List<PublishAuditStatus> iresults =  null;
     int counter =  0;
 
     try{
    		iresults =  publishAuditAPI.getAllPublishAuditStatus(new Integer(limit),new Integer(offset));
-   		counter =   Integer.parseInt(String.valueOf(publishAuditAPI.countAllPublishAuditStatus().get(0).get("count")));	
+   		counter =   publishAuditAPI.countAllPublishAuditStatus().intValue();
     }catch(DotPublisherException e){
     	iresults = new ArrayList();
     	nastyError = e.toString();
@@ -191,11 +191,8 @@
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
 		</tr>
-		<% for(Map<String,Object> c : iresults) {
+		<% for(PublishAuditStatus c : iresults) {
 			String errorclass="";
-			if(UtilMethods.isSet(c.get("last_results"))){
-				errorclass="class=\"solr_red\"";				 
-			}
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;">
@@ -203,15 +200,15 @@
 							type="checkbox" 
 							name="chkBoxAudits" 
 							class="chkBoxAudits"
-							value="<%=c.get("bundle_id")%>" 
-							id="chkBox<%=c.get("bundle_id")%>"/>
+							value="<%=c.getBundleId()%>" 
+							id="chkBox<%=c.getBundleId()%>"/>
 				</td>	
 			
 			
-				<td nowrap="nowrap"><a style="cursor: pointer" onclick="javascript: showDetail('<%=c.get("bundle_id")%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail") %>"><%=c.get("bundle_id")%></a></td>
-			    <td nowrap="nowrap" align="center"><%=PublishAuditStatus.getStatusByCode((Integer)c.get("status")) %></td>
-			    <td nowrap="nowrap"><%=UtilMethods.dateToHTMLDate((Date)c.get("create_date"),"MM/dd/yyyy hh:mma") %></td>
-			    <td nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince( (Date)c.get("status_updated")) %></td>
+				<td nowrap="nowrap"><a style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail") %>"><%=c.getBundleId()%></a></td>
+			    <td nowrap="nowrap" align="center"><%=c.getStatus().toString() %></td>
+			    <td nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(c.getCreateDate(),"MM/dd/yyyy hh:mma") %></td>
+			    <td nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
 			</tr>
 		<%}%>
 <table width="97%" style="margin:10px;" >

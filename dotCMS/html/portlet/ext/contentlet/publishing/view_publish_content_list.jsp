@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
@@ -101,10 +102,10 @@
 	    		for(String item : addQueueElementsStr.split(",")){
 	    			String[] value = item.split("\\$");
 	    			
-	    			List<Map<String,Object>> currentAssets = publisherAPI.getQueueElementsByAsset(value[0]);
+	    			List<PublishQueueElement> currentAssets = publisherAPI.getQueueElementsByAsset(value[0]);
 	    			boolean trovato = false;
-	    			for(Map<String,Object> currentAsset: currentAssets) {
-	    				if(((Long)currentAsset.get("operation")).equals(operationType))
+	    			for(PublishQueueElement currentAsset: currentAssets) {
+	    				if(currentAsset.getOperation().intValue() == operationType.intValue())
 	    					trovato = true;
 	    			}
 	    			
