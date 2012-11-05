@@ -964,16 +964,33 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void getAllRelationshipsByContentlet () throws DotSecurityException, DotDataException {
+    	
+    	//First lets create a test structure
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+
+        //Now a new test contentlets
+        Contentlet parentContentlet = createContentlet( testStructure, null, false );
+        Contentlet childContentlet = createContentlet( testStructure, null, false );
+
+        //Create the relationship
+        Relationship testRelationship = createRelationShip( testStructure, false );
+
+        //Create the contentlet relationships
+        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        contentRelationships.add( childContentlet );
+
+        //Relate the content
+        contentletAPI.relateContent( parentContentlet, testRelationship, contentRelationships, user, false );
 
         //Getting a known contentlet
-        //Contentlet contentlet = contentlets.iterator().next();
+//        Contentlet contentlet = contentlets.iterator().next();
 
         //Find all the relationships for this contentlet
-        //ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( contentlet );
+        ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( parentContentlet );
 
         //Validations
-        //assertNotNull( contentletRelationships );
-        //assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
+        assertNotNull( contentletRelationships );
+        assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
     }
 
     /**
