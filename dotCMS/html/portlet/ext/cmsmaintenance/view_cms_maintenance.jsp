@@ -1603,7 +1603,13 @@ dd.leftdl {
             
             <div style="height:20px">&nbsp;</div>
             <%
-            	  List<Host> hosts = APILocator.getHostAPI().getHostsWithPermission(PermissionAPI.PERMISSION_READ,user,false);
+            	  List<Host> hosts = new ArrayList<Host>();
+            	try{
+            		hosts = APILocator.getHostAPI().getHostsWithPermission(PermissionAPI.PERMISSION_READ,user,false);
+            	}
+            	catch(Exception e){
+            		Logger.error(this.getClass(), "Unable to list Hosts: " + e.getMessage());	
+            	}
                   String validFileExtensions = Config.getStringProperty("ASSETS_SEARCH_AND_REPLACE_ALLOWED_FILE_TYPES");
             %>
            <table class="listingTable shadowBox">
