@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
@@ -179,7 +180,7 @@
 	</table>
 		
 <%} else {
-	List<Map<String,Object>> bundleAssets = null;
+	List<PublishQueueElement> bundleAssets = null;
 	for(Map<String,Object> bundle : iresults) {
 		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));%>
 				
@@ -224,11 +225,8 @@
 			
 
 		</tr>
-		<% for(Map<String,Object> c : bundleAssets) {
+		<% for(PublishQueueElement c : bundleAssets) {
 			String errorclass="";
-			if(UtilMethods.isSet(c.get("last_results"))){
-				errorclass="class=\"solr_red\"";				 
-			}
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;">
@@ -237,15 +235,15 @@
 							type="checkbox" 
 							class="queue_to_delete b<%=bundle.get("bundle_id") %>" 
 							name="queue_to_delete" 
-							value="<%=c.get("asset") %>$<%=c.get("operation") %>" 
-							id="queue_to_delete_<%=c.get("asset") %>$<%=c.get("operation") %>" />
+							value="<%=c.getAsset() %>$<%=c.getOperation() %>" 
+							id="queue_to_delete_<%=c.getAsset() %>$<%=c.getOperation() %>" />
 				</td>
 				
 
 				<td valign="top">
-					<%=(c.get("operation").toString().equals("1")?"<span class='addIcon' style='opacity:.6'></span>":"<span class='closeIcon' style='opacity:.6'></span>")%>&nbsp;
+					<%=(c.getOperation().toString().equals("1")?"<span class='addIcon' style='opacity:.6'></span>":"<span class='closeIcon' style='opacity:.6'></span>")%>&nbsp;
 					<%try{
-						Contentlet con = conAPI.findContentletByIdentifier((String)c.get("asset"),false,Long.parseLong(c.get("language_id").toString()),user, false);%>
+						Contentlet con = conAPI.findContentletByIdentifier(c.getAsset(),false, c.getLanguageId(),user, false);%>
 						<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=con.getInode() %>&referer=<%=referer %>"><%=con.getTitle()%></a>
 						<div style="float:right;color:silver">
 							<%=con.getStructure().getName() %>
