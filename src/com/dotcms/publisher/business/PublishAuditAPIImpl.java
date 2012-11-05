@@ -258,7 +258,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String SELECTSQLPENDING=
 			"SELECT * "+
 			"FROM publishing_queue_audit " +
-			"WHERE status = ? or status = ?";
+			"WHERE status = ? or status = ? or status = ? or status = ?";
 	
 	public List<PublishAuditStatus> getPendingPublishAuditStatus() throws DotPublisherException {
 		try{
@@ -267,7 +267,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			
 			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS.getCode());
-			
+			dc.addParam(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
+			dc.addParam(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
 			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
