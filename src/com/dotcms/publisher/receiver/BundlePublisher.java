@@ -52,6 +52,7 @@ public class BundlePublisher extends Publisher {
     private PublishAuditAPI auditAPI = null;
     Map<String,Long> infoToRemove = new HashMap<String, Long>();
     List<String> pagesToClear = new ArrayList<String>();
+    boolean bundleSuccess = true;
 
     @Override
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
@@ -103,23 +104,28 @@ public class BundlePublisher extends Publisher {
         Contentlet content = null;
         PublishAuditHistory currentStatusHistory = null;
         EndpointDetail detail = new EndpointDetail();
+        
+        try{
+        	//Update audit
+			currentStatusHistory =
+			        PublishAuditHistory.getObjectFromString(
+			                (String)auditAPI.getPublishAuditStatus(
+			                        bundleFolder).get("status_pojo"));
+			currentStatusHistory.setPublishStart(new Date());
+			detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
+			detail.setInfo("Publishing bundle");
+			currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
+			
+			auditAPI.updatePublishAuditStatus(bundleFolder,
+			        PublishAuditStatus.Status.PUBLISHING_BUNDLE,
+			        currentStatusHistory);
+        }catch (Exception e) {
+        	Logger.error(BundlePublisher.class,"Unable to update audit table : " + e.getMessage(),e);
+		}
+        
+        
         try {
             HibernateUtil.startTransaction();
-
-
-            //Update audit
-            currentStatusHistory =
-                    PublishAuditHistory.getObjectFromString(
-                            (String)auditAPI.getPublishAuditStatus(
-                                    bundleFolder).get("status_pojo"));
-            currentStatusHistory.setPublishStart(new Date());
-            detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
-            detail.setInfo("Publishing bundle");
-            currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
-
-            auditAPI.updatePublishAuditStatus(bundleFolder,
-                    PublishAuditStatus.Status.PUBLISHING_BUNDLE,
-                    currentStatusHistory);
 
             //For each content take the wrapper and save it on DB
             Collection<File> contentFiles = FileUtils.listFiles(folderOut, new String[]{"content"}, true);
@@ -161,16 +167,11 @@ public class BundlePublisher extends Publisher {
                 }
             }
 
-            //Update audit
-            detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-            detail.setInfo("Everything ok");
-            currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
-            currentStatusHistory.setBundleEnd(new Date());
-            auditAPI.updatePublishAuditStatus(bundleFolder,
-                    PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+            
 
             HibernateUtil.commitTransaction();
         } catch (Exception e) {
+        	bundleSuccess = false;
             try {
                 HibernateUtil.rollbackTransaction();
             } catch (DotHibernateException e1) {
@@ -222,6 +223,20 @@ public class BundlePublisher extends Publisher {
         } catch (DotHibernateException e) {
             Logger.error(BundlePublisher.class,e.getMessage(),e);
         }
+        
+        try{
+		    //Update audit
+		    detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+		    detail.setInfo("Everything ok");
+		    currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
+		    currentStatusHistory.setBundleEnd(new Date());
+		    auditAPI.updatePublishAuditStatus(bundleFolder,
+		            PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+		    HibernateUtil.commitTransaction();
+        }catch (Exception e) {
+			Logger.error(BundlePublisher.class,"Unable to update audit table : " + e.getMessage(),e);
+		}
+        
         DbConnectionFactory.closeConnection();
 
         return config;
