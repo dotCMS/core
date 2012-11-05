@@ -44,8 +44,6 @@ function drawDefault(overrideBody, addContainer, removeContainer){
 		yuiMainDiv.appendChild(yuiBDiv1);
 		bodyDiv.appendChild(yuiMainDiv);
 		mainDiv.insertBefore(bodyDiv,document.getElementById("ft-template"));
-		//update the add container links count
-		updateAddContainerLinksCount(true);
 	}else{
 		mainTemplateDiv.innerHTML=textareaDrawedBodyHidden.value;
 	}
@@ -161,12 +159,9 @@ function addHeader(checked){
 		headerDiv.innerHTML="<h1>Header</h1>";
 		//adding at the first position
 		mainDiv.insertBefore(headerDiv,mainDiv.firstChild);
-
-//		updateAddContainerLinksCount(true);
 	} else { //delete the header div
 		var div = document.getElementById("hd-template");
 		div.parentNode.removeChild(div);
-//		updateAddContainerLinksCount(false);
 	}
 }
 
@@ -180,12 +175,9 @@ function addFooter(checked){
 		footerDiv.innerHTML="<h1>Footer</h1>";
 		// adding at the last position (append)
 		mainDiv.appendChild(footerDiv);
-		//update the add container links count
-//		updateAddContainerLinksCount(true);
 	} else { //delete the footer div
 		var div = document.getElementById("ft-template");
 		div.parentNode.removeChild(div);
-//		updateAddContainerLinksCount(false);
 	}
 }
 
@@ -206,15 +198,11 @@ function addLayout(layout){
 			yuiBDiv.style.height="70%";
 			yuiBDiv.innerHTML=getAddContainer("yui-b2")+"<h1>Sidebar</h1>";
 			bodyDiv.appendChild(yuiBDiv);
-			//update the add container links count
-			updateAddContainerLinksCount(true);
 		}
 	}else{
 		mainDiv.removeAttribute("class");
 		if(null!=yuiB2)
 			bodyDiv.removeChild(yuiB2);
-		//update the add container links count
-		updateAddContainerLinksCount(false);
 	}
 }
 
@@ -234,7 +222,6 @@ function addGrid(gridId, yuiBId, rowCount){
 	}
 	if(1!=gridId){
 		// delete the first Add Container link created when was created the grid (100% body, default creation)
-		updateAddContainerLinksCount(false);
 		var gridDiv = document.createElement("div");
 		var yuiUFirst = document.createElement("div");
 		var yuiU2 = document.createElement("div");
@@ -245,48 +232,26 @@ function addGrid(gridId, yuiBId, rowCount){
 		yuiUFirst.setAttribute("class","yui-u-template first");
 		yuiUFirst.setAttribute("id",rowCount+"_yui-u-grid-1");
 		yuiUFirst.innerHTML=getAddContainer(rowCount+"_yui-u-grid-1")+"<h1>Body</h1>";
-		//update the add container links count
-		updateAddContainerLinksCount(true);
 		yuiU2.setAttribute("class","yui-u-template");
 		yuiU2.setAttribute("id",rowCount+"_yui-u-grid-2");
 		yuiU2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-2")+"<h1>Body</h1>";
-		//update the add container links count
-		updateAddContainerLinksCount(true);
 		gridDiv.appendChild(yuiUFirst);
 		gridDiv.appendChild(yuiU2);
 		if("yui-gb-template"==gridId){
 			yuiU3.setAttribute("class","yui-u-template");
 			yuiU3.setAttribute("id",rowCount+"_yui-u-grid-3");
 			yuiU3.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
-			//update the add container links count
-			updateAddContainerLinksCount(true);
 			gridDiv.appendChild(yuiU3);
 		}
 		yuiBDiv.appendChild(gridDiv);
 	}else{
 		yuiBDiv.innerHTML=getAddContainer(yuiBId)+"<h1>Body</h1>";
-		//update the add container links count
-		updateAddContainerLinksCount(true);
 	}
 }
 
 function removeGrid(yuiBId){
 	var childToRemove = document.getElementById(yuiBId);
 	var mainDiv = document.getElementById("yui-main-template");
-	if(childToRemove.hasChildNodes()) {
-		var nodes = childToRemove.childNodes;
-		var child = nodes[0];
-		if(null==child.getAttribute("id"))
-			updateAddContainerLinksCount(false);
-		else {
-			//update the add container links count
-			updateAddContainerLinksCount(false);
-			//update the add container links count
-			updateAddContainerLinksCount(false);
-			if("yui-gb-template"==child.getAttribute("id"))
-				updateAddContainerLinksCount(false);
-		}
-	}
 	mainDiv.removeChild(childToRemove);
 }
 
@@ -512,18 +477,9 @@ function hasContainer(value){
 
 /**
  * Update the counter of the "Add Container" links
- *
- * @param add: if true --> +1; if false --> -1.
  */
-function updateAddContainerLinksCount(add){
-	var integerCountAddContainerLinks = window.parseInt(countAddContainerLinks.value);
-	if(add) // we must add 1 to count
-		integerCountAddContainerLinks+=1;
-	else if(integerCountAddContainerLinks>0){
-		integerCountAddContainerLinks-=1;
-	}
-//	alert('add container current value: ' + integerCountAddContainerLinks);
-	countAddContainerLinks.value = integerCountAddContainerLinks;
+function updateAddContainerLinksCount() {
+    countAddContainerLinks.value = dojo.query(".addContainerSpan").length;
 }
 
 /**
