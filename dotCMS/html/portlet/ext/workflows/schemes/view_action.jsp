@@ -76,7 +76,8 @@
             searchDelay:300,
             required:false,
             onClick:function(){
-            	dijit.byId("whoCanUseSelect").displayedValue="";
+            	dijit.byId("whoCanUseSelect").set("displayedValue","");
+            	dijit.byId("whoCanUseSelect").loadDropDown();
             }
         },
         "actionWhoCanUseSelect");
@@ -95,14 +96,14 @@
             displayedValue : "<%=UtilMethods.webifyString(assignToLabel)%>",
             searchDelay:300,
             value:"<%=UtilMethods.webifyString(action.getNextAssign())%>",
-            pageSize:20,
+            pageSize:30,
 
             onChange:function(me){
             	actionAdmin.doChange();
             },
             onClick:function(){
-            	dijit.byId("actionAssignToSelect").displayedValue="";
-
+            	dijit.byId("actionAssignToSelect").set("displayedValue","");
+            	dijit.byId("actionAssignToSelect").loadDropDown();
             }
 
         },
