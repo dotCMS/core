@@ -228,13 +228,11 @@ public class UtilMethods {
     }
 
     public static String escapeSingleQuotes(String fixme) {
-        fixme = fixme.replaceAll("'", "\\\\'");
-        return fixme;
+        return RegEX.replaceAll(fixme, "\\\\'", "'");
     }
 
     public static String escapeDoubleQuotes(String fixme) {
-        fixme = fixme.replaceAll("\"", "'");
-        return fixme;
+        return RegEX.replaceAll(fixme, "\\\\\"", "\\\"");
     }
 
     public static final String getMonthName(int x) {
