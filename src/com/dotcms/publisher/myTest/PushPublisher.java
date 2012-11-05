@@ -105,18 +105,17 @@ public class PushPublisher extends Publisher {
 			        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
 			        
 			        
-			        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED ||
-			        	response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) 
+			        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) 
 			        {
+			        	detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+			        	detail.setInfo("Everything ok");
+			        } else {
 			        	detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 			        	detail.setInfo(
 			        			"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
 			        					"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
 			        	hasError = true;
 			        	errorCounter++;
-			        } else {
-			        	detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-			        	detail.setInfo("Everything ok");
 			        }
 				} catch(Exception e) {
 					hasError = true;
