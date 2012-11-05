@@ -63,10 +63,8 @@ public class PushPublisherBundler implements IBundler {
 		PublishAuditHistory currentStatusHistory = null;
 		try {
 			//Updating audit table
-			currentStatusHistory =
-					PublishAuditHistory.getObjectFromString(
-							(String)pubAuditAPI.getPublishAuditStatus(
-									config.getId()).get("status_pojo"));
+			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
+			
 			currentStatusHistory.setBundleStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
 
@@ -82,10 +80,8 @@ public class PushPublisherBundler implements IBundler {
 			}
 
 			//Updating audit table
-			currentStatusHistory =
-					PublishAuditHistory.getObjectFromString(
-							(String)pubAuditAPI.getPublishAuditStatus(
-									config.getId()).get("status_pojo"));
+			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
+			
 			currentStatusHistory.setBundleEnd(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
 
