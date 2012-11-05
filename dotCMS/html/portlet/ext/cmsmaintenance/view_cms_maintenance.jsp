@@ -324,32 +324,32 @@ function doDeleteContentletsCallback(contentlets){
  	 	 	var contadded=contentlets[0].split(',')
  	 	 	contaddedsize=contadded.length;
  	 	 	}*/
- 	 	message+= contaddedsize+ ' <%= LanguageUtil.get(pageContext,"contentlets-were-succesfully-deleted") %></br>';
+ 	 	message+= contaddedsize+ ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlets-were-succesfully-deleted")) %></br>';
  	}
 	if (contentlets[1]!="")
  	{
  	 	if(contentlets[1].indexOf(",")){
  	 	 	var contnotfound=contentlets[1].split(',')
- 	 	 	message+=  '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlets-were-not-found") %>: '+ contentlets[1] +'</br>';
+ 	 	 	message+=  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + contnotfound.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlets-were-not-found")) %>: '+ contentlets[1] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-was-not-found") %>: '+ contentlets[1] +'</br>';
+ 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-was-not-found")) %>: '+ contentlets[1] +'</br>';
  	}
 
 	if (contentlets[2]!="")
  	{
  	 	if(contentlets[2].indexOf(",")){
  	 	 	var conthasreqrel=contentlets[2].split(',')
- 	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + conthasreqrel.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content") %>: '+ contentlets[2] +'</br>';
+ 	 	 	message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + conthasreqrel.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content")) %>: '+ contentlets[2] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content") %>: '+ contentlets[2] +'</br>';
+ 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content")) %>: '+ contentlets[2] +'</br>';
  	}
 	if (contentlets[3]!="")
  	{
  	 	if(contentlets[3].indexOf(",")){
  	 	 	var contnotfound=contentlets[3].split(',')
- 	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[3] +'</br>';
+ 	 	 	message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + contnotfound.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions")) %>:'+ contentlets[3] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[1] +'</br>';
+ 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions")) %>:'+ contentlets[1] +'</br>';
  	}
 
 	document.getElementById("deleteContentletMessage").innerHTML=message;
@@ -364,8 +364,8 @@ function doDropAssets(){
      return false;
    }
 
-  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")){
-	    $("dropAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></spanstyle>';
+  if(confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets")) %>")){
+	    $("dropAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Process-in-progress")) %></b></spanstyle>';
         dijit.byId('dropAssetsButton').attr('disabled', true);
 	 	var dateStr=dojo.date.locale.format(dijit.byId("removeassetsdate").get('value'),{selector: "date", datePattern:"MM/dd/yyyy"});
 		CMSMaintenanceAjax.removeOldVersions(dateStr, doDropAssetsCallback);
@@ -375,11 +375,11 @@ function doDropAssets(){
 function doDropAssetsCallback(removed){
 	dijit.byId('dropAssetsButton').attr('disabled', false);
     if (removed >= 0)
-        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></spanstyle>';
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system")) %></b></spanstyle>';
     else if (removed == -2)
-        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled")) %></b></spanstyle>';
     else
-        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log")) %></b></spanstyle>';
 }
 
 /**
@@ -388,8 +388,8 @@ function doDropAssetsCallback(removed){
  */
 var doCleanAssets = function () {
 
-    if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation") %>")) {
-        $("cleanAssetsMessage").innerHTML = '<span style="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress") %></b></span>';
+    if (confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation")) %>")) {
+        $("cleanAssetsMessage").innerHTML = '<span style="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress")) %></b></span>';
         dijit.byId('cleanAssetsButton').attr('disabled', true);
         
         var files=false;
@@ -479,7 +479,7 @@ function refreshCache(){
 
 function deleteIndex(indexName, live){
 
-	if(live && ! confirm("<%= LanguageUtil.get(pageContext, "Delete-Live-Index") %>")){
+	if(live && ! confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Delete-Live-Index")) %>")){
 		return;
 	}
 	CMSMaintenanceAjax.deleteIndex(indexName,deleteIndexCallback);
@@ -512,7 +512,7 @@ function doDownloadIndex(indexName){
 function doFullReindex(){
 
 
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
 	}
@@ -541,11 +541,11 @@ function doCloseIndex(indexName) {
                 if (dataOrError.indexOf("FAILURE") == 0) {
                     showDotCMSSystemMessage(dataOrError, true);
                 } else {
-                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Closed")%>", true);
+                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Closed"))%>", true);
                     refreshIndexStats();
                 }
             } else {
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
             }
         }
     };
@@ -563,11 +563,11 @@ function doOpenIndex(indexName) {
                 if (dataOrError.indexOf("FAILURE") == 0) {
                     showDotCMSSystemMessage(dataOrError, true);
                 } else {
-                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Opened")%>", true);
+                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Opened"))%>", true);
                     refreshIndexStats();
                 }
             } else {
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
             }
         }
     };
@@ -576,7 +576,7 @@ function doOpenIndex(indexName) {
 
 function doClearIndex(indexName){
 
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index")%>")){
+	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index"))%>")){
 		return;
 
 	}
@@ -591,11 +591,11 @@ function doClearIndex(indexName){
 				if (dataOrError.indexOf("FAILURE") == 0) {
 					showDotCMSSystemMessage(dataOrError, true);
 				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Cleared")%>", true);
+					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Cleared"))%>", true);
 					refreshIndexStats();
 				}
 			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
 			}
 		}
 	};
@@ -604,7 +604,7 @@ function doClearIndex(indexName){
 }
 function doActivateIndex(indexName){
 
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index")%>")){
+	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index"))%>")){
 		return;
 
 	}
@@ -619,11 +619,11 @@ function doActivateIndex(indexName){
 				if (dataOrError.indexOf("FAILURE") == 0) {
 					showDotCMSSystemMessage(dataOrError, true);
 				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Activated")%>", true);
+					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Activated"))%>", true);
 					refreshIndexStats();
 				}
 			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
 			}
 		}
 	};
@@ -631,7 +631,7 @@ function doActivateIndex(indexName){
 }
 function doDeactivateIndex(indexName){
 
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index")%>")){
+	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index"))%>")){
 		return;
 
 	}
@@ -646,11 +646,11 @@ function doDeactivateIndex(indexName){
 				if (dataOrError.indexOf("FAILURE") == 0) {
 					showDotCMSSystemMessage(dataOrError, true);
 				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Deactivated")%>", true);
+					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Deactivated"))%>", true);
 					refreshIndexStats();
 				}
 			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
 			}
 		}
 	};
@@ -677,7 +677,7 @@ function showRestoreIndexDialog(indexName) {
 
 function doRestoreIndex() {
 	if(dojo.byId("uploadFileName").innerHTML=='') {
-		showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "No-File-Selected")%>");
+		showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "No-File-Selected"))%>");
 	}
 	else {
 		dijit.byId('uploadSubmit').set('disabled',true);
@@ -728,7 +728,7 @@ function connectUploadEvents() {
 function doCreateWorking() {
 
 
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
 	}
@@ -747,12 +747,12 @@ function doCreateWorking() {
                if (dataOrError.indexOf("FAILURE") == 0) {
                    showDotCMSSystemMessage(dataOrError, true);
                } else {
-                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Created")%>", true);
+                   showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
                    refreshIndexStats();
 
                }
            } else {
-               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+               showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
            }
        }
     };
@@ -762,7 +762,7 @@ function doCreateWorking() {
 function doCreateLive() {
 
 
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
 	}
@@ -782,11 +782,11 @@ function doCreateLive() {
                if (dataOrError.indexOf("FAILURE") == 0) {
                    showDotCMSSystemMessage(dataOrError, true);
                } else {
-                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Created")%>", true);
+                   showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
                    refreshIndexStats();
                }
            } else {
-               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+               showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
            }
        }
     };
@@ -795,7 +795,7 @@ function doCreateLive() {
 
 function updateReplicas(indexName,currentNum){
 
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Update-Replicas-Index")%> for index:\n\n" + indexName, currentNum);
+	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Update-Replicas-Index"))%> for index:\n\n" + indexName, currentNum);
 
 	if(!number){
 		return;
@@ -815,11 +815,11 @@ function updateReplicas(indexName,currentNum){
 						if (dataOrError.indexOf("FAILURE") == 0) {
 							showDotCMSSystemMessage(dataOrError, true);
 						} else {
-							showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Replicas-Updated")%>", true);
+							showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Replicas-Updated"))%>", true);
 							refreshIndexStats();
 						}
 					} else {
-						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+						showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
 					}
 				}
 			};
@@ -947,13 +947,13 @@ function killSession(sessionId) {
 			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
 			    dijit.byId('invalidateButton-'+sessionId).set('disabled',true);
 
-			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-killed")%>');
+			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
 			},
 			errorHandler:function(message) {
 				dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"block",visibility:"visible"});
 			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
 
-			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-notkilled")%>');
+			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
 	});
 }
@@ -961,11 +961,11 @@ function killSession(sessionId) {
 function killAllSessions() {
 	UserSessionAjax.invalidateAllSessions({
 			callback:function() {
-			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-killed")%>');
+			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
 			    loadUsers();
 			},
 			errorHandler:function(message) {
-			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-notkilled")%>');
+			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
 	});
 }
@@ -1022,7 +1022,7 @@ function loadUsers() {
 
                     new dijit.form.Button({
                     	id: id,
-                        label: "<%= LanguageUtil.get(pageContext,"logged-users-tab-killsession") %>",
+                        label: "<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killsession")) %>",
                         iconClass: "deleteIcon",
                         "class": "killsessionButton",
                         sid : session.sessionId,
@@ -1034,7 +1034,7 @@ function loadUsers() {
 			}
 		},
 		errorHandler: function(message) {
-			showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-reload-error")%>');
+			showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-reload-error"))%>');
 		}
 	});
 
@@ -1125,17 +1125,17 @@ function validateSearchAndReplace(){
 	    	    },
 	    	    error: function(response, ioArgs) {  
 	    	          console.error("HTTP status code: ", ioArgs.xhr.status); 
-	    	          document.getElementById("asar_message").innerHTML = '<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error") %>'+response; //  
+	    	          document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error")) %>'+response; //  
 	    	    }
 	    	};
     		dojo.xhrPost( xhrArgs );
 		}
 	}else{
-		alert('<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Required") %>');
+		alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Required")) %>');
 	}
 }
 function assetsSearchAndReplace(assetsToProcess){
-	if(confirm('<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_JS_Confirmation1")%> '+assetsToProcess+' <%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_JS_Confirmation2")%>')){
+	if(confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_JS_Confirmation1"))%> '+assetsToProcess+' <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_JS_Confirmation2"))%>')){
 		var assetSearchType = dijit.byId('assetType').attr('value');
     	var assetIdentifier = dijit.byId('assetIdentifier').get('value');
     	var assetHost = dojo.byId('assetHost').value;
@@ -1158,17 +1158,17 @@ function assetsSearchAndReplace(assetsToProcess){
 	    	    handleAs: "text",
 	    	    load: function(response, ioArgs) { 
 	    	    	var results = response.split('|');
-	    	    	document.getElementById("asar_message").innerHTML = '<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_to_process")%> '+results[0]+'<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_processed")%> '+results[1]+'<%=LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Assets_modified")%> '+results[2]+'<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_not_processed")%> '+results[3]+'<%=LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_error_messages")%> '+results[4]; 
+	    	    	document.getElementById("asar_message").innerHTML = '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_to_process"))%> '+results[0]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_processed"))%> '+results[1]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Assets_modified"))%> '+results[2]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_not_processed"))%> '+results[3]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_error_messages"))%> '+results[4]; 
 	    	    },
 	    	    error: function(response, ioArgs) {  
 	    	          console.error("HTTP status code: ", ioArgs.xhr.status); 
-	    	          document.getElementById("asar_message").innerHTML = '<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error") %>'+response; //  
+	    	          document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error")) %>'+response; //  
 	    	    }
 	    	};
     		dojo.xhrPost( xhrArgs );
-    		document.getElementById("asar_message").innerHTML = '<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Wait") %>';
+    		document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Wait")) %>';
     	}else{
-    		alert('<%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Required") %>');
+    		alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Required")) %>');
     	}
 	}
 }
@@ -1268,7 +1268,7 @@ dd.leftdl {
         <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
         <!-- START Cache TAB -->
         <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-        <div id="cache" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Cache") %>" >
+        <div id="cache" dojoType="dijit.layout.ContentPane" title="<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Cache")) %>" >
 
             <table class="listingTable shadowBox">
                 <tr>
