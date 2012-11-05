@@ -133,13 +133,12 @@ public class PublisherQueueJob implements StatefulJob {
         	PublishAuditHistory localHistory = pendingAudit.getStatusPojo();
         	
         	Map<String, EndpointDetail> endpointsTarget = localHistory.getEndpointsMap();
-        	boolean hasError = false;
-        	int counter = 0;
+        	boolean hasErrors = false;
         	Map<String, EndpointDetail> bufferMap = new HashMap<String, EndpointDetail>();
         	for(String endpointId: endpointsTarget.keySet()) {
         		EndpointDetail localDetail = endpointsTarget.get(endpointId);
         		
-        		if(localDetail.getStatus() == PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode()) {
+        		if(localDetail.getStatus() != PublishAuditStatus.Status.SUCCESS.getCode() && localDetail.getStatus() != PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()) {
 	        		PublishingEndPoint target = endpointAPI.findEndpointById(endpointId);
 	        		
 	        		if(target != null) {
@@ -152,18 +151,11 @@ public class PublisherQueueJob implements StatefulJob {
 						        .path(pendingAudit.getBundleId()).get(String.class));
 			        	
 			        	if(remoteHistory != null) {
-				        	int statusCode = -1;
 				        	Map<String, EndpointDetail> endpointsMap = remoteHistory.getEndpointsMap();
 				        	for(String endpointRemote: endpointsMap.keySet()) {
 				        		EndpointDetail detail = endpointsMap.get(endpointRemote);
 				        		bufferMap.put(endpointId, detail);
 				        		
-				        		statusCode = detail.getStatus();
-				        		
-				        		if(statusCode != PublishAuditStatus.Status.SUCCESS.getCode())
-				        			hasError = true;
-				        		else
-				        			counter++;
 				        	}
 			        	}
 	        		}
@@ -174,12 +166,25 @@ public class PublisherQueueJob implements StatefulJob {
         		localHistory.addOrUpdateEndpoint(bufferKey, bufferMap.get(bufferKey));
         	}
         	
+        	boolean allEndPointsDone = true;
+        	endpointsTarget = localHistory.getEndpointsMap();
+        	for(String endpointId: endpointsTarget.keySet()) {
+        		EndpointDetail localDetail = endpointsTarget.get(endpointId);
+        		if(localDetail.getStatus() == PublishAuditStatus.Status.SUCCESS.getCode()) {
+        			Logger.debug(this, "Some End Points Not Reporting Finished Yet");
+        		}else if(localDetail.getStatus() != PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()){
+        			hasErrors = true;
+        		}else{
+        			allEndPointsDone = false;
+        		}
+        		
+        	}
         	
-        	if(!hasError && counter == endpointsTarget.size()) {
+        	if(allEndPointsDone && !hasErrors) {
 	        	pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
 	        			PublishAuditStatus.Status.SUCCESS, 
 	        			localHistory);
-        	} else if(hasError && counter == 0) {
+        	} else if(allEndPointsDone && hasErrors) {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
 	        			localHistory);
