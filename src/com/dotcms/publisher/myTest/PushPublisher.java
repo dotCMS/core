@@ -28,24 +28,28 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.sun.jersey.client.urlconnection.HTTPSProperties;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.file.FileDataBodyPart;
 
 public class PushPublisher extends Publisher {
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
+	private TrustFactory tFactory;
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
@@ -53,6 +57,7 @@ public class PushPublisher extends Publisher {
             throw new RuntimeException("need an enterprise licence to run this");
 	    
 		this.config = super.init(config);
+		tFactory = new TrustFactory();
 
 		return this.config;
 
@@ -78,6 +83,9 @@ public class PushPublisher extends Publisher {
 			//Retriving enpoints and init client
 			List<PublishingEndPoint> endpoints = ((PushPublisherConfig)config).getEndpoints();
 			ClientConfig cc = new DefaultClientConfig();
+			
+			if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals(""))
+				cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
 			Client client = Client.create(cc);
 			
 			//Updating audit table
