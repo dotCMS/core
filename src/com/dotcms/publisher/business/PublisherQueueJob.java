@@ -172,7 +172,7 @@ public class PublisherQueueJob implements StatefulJob {
         		EndpointDetail localDetail = endpointsTarget.get(endpointId);
         		if(localDetail.getStatus() == PublishAuditStatus.Status.SUCCESS.getCode()) {
         			Logger.debug(this, "Some End Points Not Reporting Finished Yet");
-        		}else if(localDetail.getStatus() != PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()){
+        		}else if(localDetail.getStatus() == PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()){
         			hasErrors = true;
         		}else{
         			allEndPointsDone = false;
