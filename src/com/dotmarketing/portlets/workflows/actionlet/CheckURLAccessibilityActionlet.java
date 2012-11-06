@@ -14,7 +14,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.linkchecker.util.LinkCheckerUtil;
@@ -24,9 +23,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
@@ -71,6 +67,14 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 	    if(LicenseUtil.getLevel()<200)
             return; // the apis will do nothing anyway
 	    
+        WebContext ctx = WebContextFactory.get();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+	    User user=null;
+        try {
+            user = uWebAPI.getLoggedInUser(request);
+        } catch (Exception exx) {
+            throw new WorkflowActionFailureException(exx.getMessage());
+        }
 		Contentlet con = processor.getContentlet();
 		
 		for(Field f : FieldsCache.getFieldsByStructureInode(con.getStructureInode())) {
@@ -79,13 +83,9 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 				//get the value
 				String value = con.getStringProperty(f.getVelocityVarName());
 				
-				UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-				WebContext ctx = WebContextFactory.get();
-				HttpServletRequest request = ctx.getHttpServletRequest();
-				
 				List<InvalidLink> httpResponse=null;
                 try {
-                    httpResponse = APILocator.getLinkCheckerAPI().findInvalidLinks(value);
+                    httpResponse = APILocator.getLinkCheckerAPI().findInvalidLinks(value,user);
                 } catch (Exception e1) {
                     Logger.error(this, e1.getMessage(), e1);
                     throw new WorkflowActionFailureException(e1.getMessage());
@@ -95,7 +95,7 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 				if(httpResponse.size()>0){
 				    String msg="";
                     try {
-                        msg = LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.errorBrokenLinks");
+                        msg = LanguageUtil.get(user, "checkURL.errorBrokenLinks");
                     } catch (Exception e) {
                         
                     } 
