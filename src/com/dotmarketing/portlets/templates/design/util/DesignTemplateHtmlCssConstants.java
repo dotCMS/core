@@ -35,7 +35,8 @@ public class DesignTemplateHtmlCssConstants {
 
     public static final String LAYOUT_WIDTH_CLASS_750                   = "doc-template";//750px
     public static final String LAYOUT_WIDTH_CLASS_950                   = "doc2-template";//950px
-    public static final String LAYOUT_WIDTH_CLASS_RESPONSIVE            = "doc4-template";//responsive
+    public static final String LAYOUT_WIDTH_CLASS_975                   = "doc4-template";//975px
+    public static final String LAYOUT_WIDTH_CLASS_RESPONSIVE            = "resp-template";//responsive
     public static final String LAYOUT_WIDTH_CLASS_100_PERCENT           = "doc3-template";//100%
 
 	// HTML TAG/ATTRIBUTE

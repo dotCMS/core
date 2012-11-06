@@ -5,7 +5,7 @@
 	New ids and classes customized for template design.
 /* *********************************************************************************************************** */
 
-#doc-template,#doc2-template,#doc3-template,#doc4-template,.yui-t1-template,.yui-t2-template,.yui-t3-template,.yui-t4-template,.yui-t5-template,.yui-t6-template,.yui-t7-template{
+#doc-template,#doc2-template,#doc3-template,#doc4-template,#resp-template,.yui-t1-template,.yui-t2-template,.yui-t3-template,.yui-t4-template,.yui-t5-template,.yui-t6-template,.yui-t7-template{
 	margin:auto;
 	text-align:left;
 	width:57.69em;
@@ -25,6 +25,11 @@
 #doc4-template{
 	width:74.923em;
 	*width:73.05em
+}
+
+#resp-template{
+    width:74.923em;
+    *width:73.05em
 }
 
 .yui-b-template{

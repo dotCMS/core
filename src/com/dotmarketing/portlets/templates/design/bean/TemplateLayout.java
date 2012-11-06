@@ -35,6 +35,8 @@ public class TemplateLayout {
             this.setWidth( "responsive" );
         } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_950 ) ) {//950px
             this.setWidth( "950px" );
+        } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_975 ) ) {//975px
+            this.setWidth( "975px" );
         } else if ( pageWidth.equals( LAYOUT_WIDTH_CLASS_750 ) ) {//750px
             this.setWidth( "750px" );
         }

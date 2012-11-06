@@ -423,10 +423,11 @@
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "page-width")%>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-									<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>
-									<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>
+									<%--<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>--%>
+									<%--<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>--%>
+                                    <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
 									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
-									<option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>Responsive</option>
+									<option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
 								</select>
 							</dd>
 						</dl>
@@ -568,10 +569,11 @@
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "page-width") %>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-									<option value="doc-template">750px</option>
-									<option value="doc2-template">950px</option>
-									<option value="doc3-template" selected="selected">100%</option>
-									<option value="doc4-template">Responsive</option>
+									<%--<option value="doc-template">750px</option>--%>
+									<%--<option value="doc2-template">950px</option>--%>
+                                    <option value="doc4-template">975px</option>
+                                    <option value="doc3-template" selected="selected">100%</option>
+									<option value="resp-template">Responsive</option>
 								</select>
 							</dd>
 						</dl>
@@ -753,30 +755,27 @@
 		<div class="yui-g portlet-toolbar">
 			<div class="yui-u" style="text-align:right;">
 			
-			<div dojoType="dijit.form.DropDownButton">
+			<div dojoType="dijit.form.DropDownButton" data-dojo-props="iconClass:'mobileIcon', showLabel:true">
 				<span><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Mobile Preview"))%></span>
 					<div dojoType="dijit.Menu">
 					
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=340,height=480')" >
-		                    <span class="addIcon"></span>
-		                    <%= LanguageUtil.get(pageContext,"iPhone") %>
+		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"iPhone") %>
 		                </div>
 					
 					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=1024,height=768')">
-		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"iPad") %>
+		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"iPad") %>
 		                </div>
 		                
 					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
-		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
+		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
 		                </div>
 		                
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=640,height=920')" >
-		                    <span class="addIcon"></span>
-		                    <%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
+		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
 		                </div>
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=2048,height=1536')" >
-		                    <span class="addIcon"></span>
-		                    <%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
+		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
 		                </div>
 		           </div>
 			</div>
