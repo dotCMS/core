@@ -15,15 +15,17 @@ import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotcms.publisher.myTest.PushPublisher;
 import com.dotcms.publisher.myTest.PushPublisherBundler;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
+import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.IBundler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.json.JSONConfiguration;
+import com.sun.jersey.client.urlconnection.HTTPSProperties;
 
 /**
  * This class read the publishing_queue table and send bundles to some endpoints
@@ -36,7 +38,7 @@ public class PublisherQueueJob implements StatefulJob {
 	private static final int _ASSET_LENGTH_LIMIT = 20;
 	
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance(); 
-	PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
+	private PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
 
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
@@ -122,7 +124,12 @@ public class PublisherQueueJob implements StatefulJob {
 	
 	private void updateAuditStatus() throws DotPublisherException, DotDataException {
 		ClientConfig clientConfig = new DefaultClientConfig();
-        clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
+		TrustFactory tFactory = new TrustFactory();
+		
+		if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
+		clientConfig.getProperties()
+		.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
+		}
         Client client = Client.create(clientConfig);
         WebResource webResource = null;
         

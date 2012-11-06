@@ -53,7 +53,7 @@ public class BundlePublisherResource extends WebResource {
 		
 		try {
 			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
-			String remoteIP = req.getRemoteAddr();
+			String remoteIP = req.getRemoteHost();
 			PublishingEndPoint mySelf = endpointAPI.findSenderEndpointByAddress(remoteIP);
 			
 			if(!isValidToken(auth_token, remoteIP, mySelf)) {
