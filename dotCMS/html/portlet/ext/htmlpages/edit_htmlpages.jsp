@@ -20,6 +20,10 @@ if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
 	htmlpage = (HTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
 }
 
+if(UtilMethods.isSet(htmlpage) && !UtilMethods.isSet(htmlpage.getIdentifier())) {
+	htmlpage.setCacheTTL(Config.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS", 0));
+}
+
 Identifier identifier=null;
 Template htmlTemplate=null;
 File templateImgPreviewFile = null;
