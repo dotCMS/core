@@ -68,6 +68,7 @@ public class BundlePublisher extends Publisher {
     private PublishAuditAPI auditAPI = null;
     Map<String,Long> infoToRemove = new HashMap<String, Long>();
     List<String> pagesToClear = new ArrayList<String>();
+    List<String> assetIds = new ArrayList<String>();
     boolean bundleSuccess = true;
 
     @Override
@@ -165,6 +166,8 @@ public class BundlePublisher extends Publisher {
                     userToUse = systemUser;
                 }
 
+                assetIds.add(content.getIdentifier());
+                
                 if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
                     publish(content, folderOut, userToUse, wrapper);
                 } else {
@@ -244,6 +247,7 @@ public class BundlePublisher extends Publisher {
 		    detail.setInfo("Everything ok");
 		    currentStatusHistory.addOrUpdateEndpoint(config.getEndpoint(), detail);
 		    currentStatusHistory.setBundleEnd(new Date());
+		    currentStatusHistory.setAssets(assetIds);
 		    auditAPI.updatePublishAuditStatus(bundleFolder,
 		            PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
 		    HibernateUtil.commitTransaction();
