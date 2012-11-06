@@ -545,6 +545,11 @@
 			var accordionPane = dijit.byId('permissionsAccordionPane-' + id);
 			var container = dijit.byId('permissionsAccordionContainer');
 			container.removeChild(accordionPane);
+			for(var i = 0; i < currentListOfHostFolders.length; i++) {
+				if(currentListOfHostFolders[i].id == id){
+				currentListOfHostFolders.splice(i,1);
+				}
+			}
 		}
 		dijit.byId('savingPermissionsDialog').hide();
 		showDotCMSSystemMessage(permissionsSavedMsg);
