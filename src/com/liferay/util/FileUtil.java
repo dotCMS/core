@@ -46,6 +46,7 @@ import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.jna.JNALibrary;
 
@@ -119,6 +120,12 @@ public class FileUtil {
 			return;
 		}
 
+		
+		if(hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)){
+			hardLinks = false;
+		}
+		
+		
 		if ((destination.getParentFile() != null) &&
 			(!destination.getParentFile().exists())) {
 
