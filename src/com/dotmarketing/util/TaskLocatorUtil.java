@@ -73,6 +73,7 @@ public class TaskLocatorUtil {
         // Content Publishing Framework - End Point Management
         ret.add(Task00950AddTablePublishingEndpoint.class);
         ret.add(Task01000LinkChequerTable.class);
+        ret.add(Task01005TemplateThemeField.class);
         return ret;
     }
 
