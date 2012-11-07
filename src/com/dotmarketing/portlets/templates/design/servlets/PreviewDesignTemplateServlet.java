@@ -42,11 +42,13 @@ public class PreviewDesignTemplateServlet extends HttpServlet {
             String bodyTemplate = request.getParameter( "bodyTemplateHTML" );
             if ( bodyTemplate == null ) return;
 
-            request.setAttribute( "designedBody", bodyTemplate );
-
             String theme = request.getParameter( "theme" );
+            String templateTitle = request.getParameter( "title" );
             String themeName = request.getParameter( "themeName" );
             String hostId = request.getParameter( "hostId" );
+
+            request.setAttribute( "designedBody", bodyTemplate );
+            request.setAttribute( "title", templateTitle );
             /*
             String headerCheck = request.getParameter("headerCheck");
             String footerCheck = request.getParameter("footerCheck");
