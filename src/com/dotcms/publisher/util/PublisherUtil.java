@@ -43,7 +43,6 @@ import org.xml.sax.ContentHandler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -79,10 +78,10 @@ public class PublisherUtil {
 		Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument>();
 		docs.add( doc );			
 		UpdateResponse rsp = server.add( docs );
-		Logger.debug(PublisherUtil.class, "ADDING SORL INDEX: "+rsp);
+		Logger.debug(PublisherUtil.class, "ADDING TO PUB QUEUE: "+rsp);
 		/*Commit collection to solr index*/
 		UpdateResponse rsp2 = server.commit();		
-		Logger.debug(PublisherUtil.class, "COMMITING SORL INDEX: "+rsp2);		
+		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);		
 	}
 
 	/**
@@ -97,10 +96,10 @@ public class PublisherUtil {
 		server.setParser(new XMLResponseParser());
 		/*Add collection to solr index*/
 		UpdateResponse rsp = server.add( docs );
-		Logger.debug(PublisherUtil.class, "ADDING SORL INDEX: "+rsp);
+		Logger.debug(PublisherUtil.class, "ADDING TO PUB QUEUE: "+rsp);
 		/*Commit collection to solr index*/
 		UpdateResponse rsp2 = server.commit();		
-		Logger.debug(PublisherUtil.class, "COMMITING SORL INDEX: "+rsp2);		
+		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);		
 	}
 
 	/**
@@ -115,10 +114,10 @@ public class PublisherUtil {
 		server.setParser(new XMLResponseParser());
 		/*Add collection to solr index*/
 		UpdateResponse rsp = server.deleteById(id);
-		Logger.debug(PublisherUtil.class, "DELETING SORL INDEX: "+rsp);
+		Logger.debug(PublisherUtil.class, "DELETING TO PUB QUEUE: "+rsp);
 		/*Commit collection to solr index*/
 		UpdateResponse rsp2 = server.commit();	
-		Logger.debug(PublisherUtil.class, "COMMITING SORL INDEX: "+rsp2);		
+		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);		
 	}
 
 	/**
@@ -134,10 +133,10 @@ public class PublisherUtil {
 			server.setParser(new XMLResponseParser());
 			/*Add collection to solr index*/
 			UpdateResponse rsp = server.deleteById(ids);
-			Logger.debug(PublisherUtil.class, "DELETING SORL INDEX: "+rsp);
+			Logger.debug(PublisherUtil.class, "DELETING TO PUB QUEUE: "+rsp);
 			/*Commit collection to solr index*/
 			UpdateResponse rsp2 = server.commit();	
-			Logger.debug(PublisherUtil.class, "COMMITING SORL INDEX: "+rsp2);
+			Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);
 			return true;
 		} catch (Exception e) {
 			Logger.error(PublisherUtil.class, e.getMessage(), e);
