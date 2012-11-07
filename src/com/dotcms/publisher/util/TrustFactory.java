@@ -20,6 +20,7 @@ import javax.net.ssl.X509TrustManager;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class TrustFactory {
 	private static final String truststore_path = Config.getStringProperty("TRUSTSTORE_PATH", null); //cacerts.jks";
@@ -32,10 +33,16 @@ public class TrustFactory {
         KeyManager mykm[] = null;
 
         try {
-            mytm = new TrustManager[]{new MyX509TrustManager(truststore_path, truststore_password.toCharArray())};
-            mykm = new KeyManager[]{new MyX509KeyManager(keystore_path, keystore_password.toCharArray())};
+        	if(UtilMethods.isSet(truststore_path) && UtilMethods.isSet(truststore_password) ){
+        		mytm = new TrustManager[]{new MyX509TrustManager(truststore_path, truststore_password.toCharArray())};
+        	}
+            
+            if(UtilMethods.isSet(keystore_path) && UtilMethods.isSet(keystore_password) ){
+            	mykm = new KeyManager[]{new MyX509KeyManager(keystore_path, keystore_password.toCharArray())};
+            
+            }
         } catch (Exception ex) {
-            Logger.error(this.getClass(), ex.getMessage());
+            Logger.error(this.getClass(), ex.toString());
             Logger.debug(this.getClass(), ex.getMessage(), ex);
         }
 
