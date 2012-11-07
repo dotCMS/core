@@ -444,8 +444,10 @@ function indexStructureChanged(){
 }
 
 function cleanReindexStructure(){
-	var strInode = dojo.byId('structure').value;
-	CMSMaintenanceAjax.cleanReindexStructure(strInode,showDotCMSSystemMessage);
+	 if(confirm("<%= LanguageUtil.get(pageContext,"are-you-sure-delete-reindex") %>")){ 
+		var strInode = dojo.byId('structure').value;
+		CMSMaintenanceAjax.cleanReindexStructure(strInode,showDotCMSSystemMessage);
+	 }
 }
 
 var journalDataCellFuncs = [
