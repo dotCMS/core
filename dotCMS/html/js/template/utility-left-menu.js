@@ -247,6 +247,9 @@ function addGrid(gridId, yuiBId, rowCount){
 	}else{
 		yuiBDiv.innerHTML=getAddContainer(yuiBId)+"<h1>Body</h1>";
 	}
+
+    //In order to keep a list of the containers used by this template
+    parseCurrentContainers();
 }
 
 function removeGrid(yuiBId){
