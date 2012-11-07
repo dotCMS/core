@@ -57,7 +57,6 @@ function hostChange() {
     Identifier hostIdentifier = APILocator.getIdentifierAPI().findFromInode(hostInode);
     %>
     hostid = "<%= hostIdentifier.getId() %>";
-    alert(hostid);
     dijit.byId('timesel').set('value','');
     if(hostid && hostid.length>0) {
 	    var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableTimeMachineForSite/hostid/"+
@@ -91,7 +90,6 @@ function timeChange() {
                 }, dojo.byId('iframeWrapper'));
                 dijit.byId('closeBtn').set('disabled','');
                 dijit.byId('timesel').set('disabled','disabled');
-                dijit.byId('hostsel').set('disabled','disabled');
                 dijit.byId('langsel').set('disabled','disabled');
                 showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
     		}
@@ -105,7 +103,6 @@ function stopBrowing() {
             dojo.empty('iframeWrapper');
             dijit.byId('closeBtn').set('disabled','disabled');
             dijit.byId('timesel').set('disabled','');
-            dijit.byId('hostsel').set('disabled','');
             dijit.byId('langsel').set('disabled','');
             dijit.byId('timesel').set('value','');
             dijit.byId('langsel').set('value','');

@@ -83,8 +83,13 @@ public class DotInvocationHandler implements InvocationHandler{
 		}
 		
 		if(methodName.equalsIgnoreCase("getSession") || method.getName().equalsIgnoreCase("session")){
-			
-			InvocationHandler ih =  new DotInvocationHandler(new HashMap());
+			Map sessionMap=(Map)map.get("___session__map");
+			if(sessionMap==null) {
+			    sessionMap=new HashMap();
+			    map.put("___session__map", sessionMap);
+			}
+			    
+			InvocationHandler ih =  new DotInvocationHandler(sessionMap);
 			
 			DotSessionProxy session = (DotSessionProxy) Proxy.newProxyInstance(DotSessionProxy.class.getClassLoader(),
 	                new Class[] { DotSessionProxy.class },
@@ -139,7 +144,7 @@ public class DotInvocationHandler implements InvocationHandler{
 
 		// LANG
 		 if(key.equalsIgnoreCase(WebKeys.HTMLPAGE_LANGUAGE) && !proxy.containsKey(key))
-			return APILocator.getLanguageAPI().getDefaultLanguage().getId();
+			return Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 					
 		//COOKIE
 		if(key.equalsIgnoreCase("cookies"))
