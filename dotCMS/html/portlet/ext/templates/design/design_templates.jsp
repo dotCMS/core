@@ -278,6 +278,7 @@
         dojo.byId("themePreviewRandom").value = Math.floor(Math.random() * 1123213213);
         dojo.byId("themePreviewTheme").value = theme;
         dojo.byId("themePreviewName").value = themeName;
+        dojo.byId("templateTitle").value = document.getElementById("titleField").value;
         dojo.byId("themePreviewHeaderCheck").value = headerCheck;
         dojo.byId("themePreviewFooterCheck").value = footerCheck;
         dojo.byId("themePreviewBodyTemplateHTML").value = bodyTemplateHTML;
@@ -438,14 +439,15 @@
 					<div class="leftProperties">
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "sidebar")%>:</dt>
-							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
+							<dd>
+                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
 									<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "none")%></option>
-									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-160-left")%></option>
-									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-left")%></option>
-									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-left")%></option>
-									<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-right")%></option>
-									<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-240-right")%></option>
-									<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-right")%></option>
+									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-left")%></option>
+									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-left")%></option>
+									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-left")%></option>
+									<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-right")%></option>
+									<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-right")%></option>
+									<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-right")%></option>
 								</select>
 							</dd>
 						</dl>
@@ -584,14 +586,15 @@
 					<div class="leftProperties">
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
-							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
+							<dd>
+                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
 									<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
-									<option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-160-left") %></option>
-									<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-180-left") %></option>
-									<option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-300-left") %></option>
-									<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-180-right") %></option>
-									<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-240-right") %></option>
-									<option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-300-right") %></option>
+                                    <option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-20-left") %></option>
+									<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-30-left") %></option>
+                                    <option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-40-left") %></option>
+									<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-20-right") %></option>
+									<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-30-right") %></option>
+                                    <option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-40-right") %></option>
 								</select>
 							</dd>
 						</dl>
@@ -832,6 +835,7 @@
 <form id="themePreviewForm" action="/servlets/template/design/preview" method="POST" target="previewThemeIFrame" name="themePreviewForm">
 	<input type="hidden" name="theme" id="themePreviewTheme">
 	<input type="hidden" name="themeName" id="themePreviewName">
+	<input type="hidden" name="title" id="templateTitle">
 	<input type="hidden" name="headerCheck" id="themePreviewHeaderCheck">
 	<input type="hidden" name="footerCheck" id="themePreviewFooterCheck">
 	<input type="hidden" name="hostId" id="themePreviewHostId">

@@ -27,9 +27,9 @@ public class DesignTemplateHtmlCssConstants {
     public static final String YUI_THREE_COLUMN_CLASS                   = "yui-gb-template";//3 Column (33/33/33)
 
     public static final String YUI_LAYOUT_LEFT_CLASS_T1                 = "yui-t1-template";//layout-160-left
-    public static final String YUI_LAYOUT_LEFT_CLASS_T2                 = "yui-t2-template";//layout-180-left
+    public static final String YUI_LAYOUT_LEFT_CLASS_T2                 = "yui-t2-template";//layout-240-left
     public static final String YUI_LAYOUT_LEFT_CLASS_T3                 = "yui-t3-template";//layout-300-left
-    public static final String YUI_LAYOUT_RIGHT_CLASS_T4                = "yui-t4-template";//layout-180-right
+    public static final String YUI_LAYOUT_RIGHT_CLASS_T4                = "yui-t4-template";//layout-160-right
     public static final String YUI_LAYOUT_RIGHT_CLASS_T5                = "yui-t5-template";//layout-240-right
     public static final String YUI_LAYOUT_RIGHT_CLASS_T6                = "yui-t6-template";//layout-300-right
 
