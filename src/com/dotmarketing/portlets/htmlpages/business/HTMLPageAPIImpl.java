@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
@@ -16,8 +15,6 @@ import javax.servlet.http.Cookie;
 
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -37,6 +34,8 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.business.web.LanguageWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cmis.proxy.DotInvocationHandler;
@@ -67,8 +66,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.VelocityServlet;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
@@ -701,10 +698,14 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			
 			if(UtilMethods.isSet(langId)) {
 			    requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langId);
-			    requestProxy.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langId);
 			}
+			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
+            langWebAPI.checkSessionLocale(requestProxy);
 			
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
+			if(UtilMethods.isSet(langId)) 
+                context.put("language", langId);
+			
 			if(! liveMode ){
 				context.put("PREVIEW_MODE", new Boolean(true));
 			}else{
@@ -712,7 +713,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			}
 			
 			if(UtilMethods.isSet(langId)) {
-                context.put("language", langId);
+                
             }
 
 			context.put("host", host);
