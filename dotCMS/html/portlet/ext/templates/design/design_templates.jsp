@@ -278,6 +278,7 @@
         dojo.byId("themePreviewRandom").value = Math.floor(Math.random() * 1123213213);
         dojo.byId("themePreviewTheme").value = theme;
         dojo.byId("themePreviewName").value = themeName;
+        dojo.byId("templateTitle").value = document.getElementById("titleField").value;
         dojo.byId("themePreviewHeaderCheck").value = headerCheck;
         dojo.byId("themePreviewFooterCheck").value = footerCheck;
         dojo.byId("themePreviewBodyTemplateHTML").value = bodyTemplateHTML;
@@ -423,10 +424,11 @@
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "page-width")%>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-									<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>
-									<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>
+									<%--<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>--%>
+									<%--<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>--%>
+                                    <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
 									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
-									<option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>Responsive</option>
+									<option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
 								</select>
 							</dd>
 						</dl>
@@ -437,14 +439,15 @@
 					<div class="leftProperties">
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "sidebar")%>:</dt>
-							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
+							<dd>
+                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
 									<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "none")%></option>
-									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-160-left")%></option>
-									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-left")%></option>
-									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-left")%></option>
-									<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-right")%></option>
-									<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-240-right")%></option>
-									<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-right")%></option>
+									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-left")%></option>
+									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-left")%></option>
+									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-left")%></option>
+									<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-right")%></option>
+									<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-right")%></option>
+									<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-right")%></option>
 								</select>
 							</dd>
 						</dl>
@@ -568,10 +571,11 @@
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "page-width") %>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-									<option value="doc-template">750px</option>
-									<option value="doc2-template">950px</option>
-									<option value="doc3-template" selected="selected">100%</option>
-									<option value="doc4-template">Responsive</option>
+									<%--<option value="doc-template">750px</option>--%>
+									<%--<option value="doc2-template">950px</option>--%>
+                                    <option value="doc4-template">975px</option>
+                                    <option value="doc3-template" selected="selected">100%</option>
+									<option value="resp-template">Responsive</option>
 								</select>
 							</dd>
 						</dl>
@@ -582,14 +586,15 @@
 					<div class="leftProperties">
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
-							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
+							<dd>
+                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
 									<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
-									<option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-160-left") %></option>
-									<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-180-left") %></option>
-									<option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-300-left") %></option>
-									<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-180-right") %></option>
-									<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-240-right") %></option>
-									<option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-300-right") %></option>
+                                    <option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-20-left") %></option>
+									<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-30-left") %></option>
+                                    <option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-40-left") %></option>
+									<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-20-right") %></option>
+									<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-30-right") %></option>
+                                    <option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-40-right") %></option>
 								</select>
 							</dd>
 						</dl>
@@ -753,31 +758,30 @@
 		<div class="yui-g portlet-toolbar">
 			<div class="yui-u" style="text-align:right;">
 			
-			<div dojoType="dijit.form.DropDownButton">
+			<div dojoType="dijit.form.DropDownButton" data-dojo-props="iconClass:'mobileIcon', showLabel:true">
 				<span><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Mobile Preview"))%></span>
 					<div dojoType="dijit.Menu">
 					
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=340,height=480')" >
-		                    <span class="addIcon"></span>
-		                    <%= LanguageUtil.get(pageContext,"iPhone") %>
+		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPhone") %>
 		                </div>
 					
 					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=1024,height=768')">
-		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"iPad") %>
-		                </div>
-		                
-					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
-		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
+		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPad") %>
 		                </div>
 		                
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=640,height=920')" >
-		                    <span class="addIcon"></span>
-		                    <%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
+		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
 		                </div>
+		                
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=2048,height=1536')" >
-		                    <span class="addIcon"></span>
-		                    <%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
+		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
 		                </div>
+		                
+					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
+		                    <span class="androidIcon"></span> <%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
+		                </div>
+
 		           </div>
 			</div>
 			
@@ -833,6 +837,7 @@
 <form id="themePreviewForm" action="/servlets/template/design/preview" method="POST" target="previewThemeIFrame" name="themePreviewForm">
 	<input type="hidden" name="theme" id="themePreviewTheme">
 	<input type="hidden" name="themeName" id="themePreviewName">
+	<input type="hidden" name="title" id="templateTitle">
 	<input type="hidden" name="headerCheck" id="themePreviewHeaderCheck">
 	<input type="hidden" name="footerCheck" id="themePreviewFooterCheck">
 	<input type="hidden" name="hostId" id="themePreviewHostId">
