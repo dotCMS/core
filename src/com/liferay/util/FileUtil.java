@@ -143,10 +143,12 @@ public class FileUtil {
 				} catch (IOException e) {
 					Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
 							+ ", destination: " + destination.getAbsolutePath());
+					// setting this means we will try again if we cannot hard link
+					hardLinks = false;
 				}
 			}
 		}
-		else {
+		if(!hardLinks) {
 			try {
 				FileChannel srcChannel = new FileInputStream(source).getChannel();
 				FileChannel dstChannel = new FileOutputStream(
