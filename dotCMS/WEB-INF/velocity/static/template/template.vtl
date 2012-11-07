@@ -6,17 +6,16 @@
 <html lang="en">
 
     <head>
-
+		#if($dotTheme.htmlHead)
+            #dotParse("${dotTheme.path}html_head.vtl")
+        #end
+        
         <link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap.grid.min.css" />
 
         #if($dotThemeLayout.width == "responsive")
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
 		#end
-
-        #if($dotTheme.htmlHead)
-            #dotParse("${dotTheme.path}html_head.vtl")
-        #end
 
 		<script src="/js/jquery-1.7.2.min.js"></script>
 		<script src="/js/bootstrap.min.js"></script>
