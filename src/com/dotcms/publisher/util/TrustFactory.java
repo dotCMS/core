@@ -19,12 +19,13 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 public class TrustFactory {
-	private static final String truststore_path = Config.getStringProperty("TRUSTSTORE_PATH"); //cacerts.jks";
-    private static final String truststore_password = Config.getStringProperty("TRUSTSTORE_PWD");
-    private static final String keystore_path = Config.getStringProperty("KEYSTORE_PATH"); //keystore.jks";
-    private static final String keystore_password = Config.getStringProperty("KEYSTORE_PWD");
+	private static final String truststore_path = Config.getStringProperty("TRUSTSTORE_PATH", null); //cacerts.jks";
+    private static final String truststore_password = Config.getStringProperty("TRUSTSTORE_PWD", null);
+    private static final String keystore_path = Config.getStringProperty("KEYSTORE_PATH", null); //keystore.jks";
+    private static final String keystore_password = Config.getStringProperty("KEYSTORE_PWD", null);
 	
 	public SSLContext getSSLContext() {
         TrustManager mytm[] = null;
@@ -34,7 +35,8 @@ public class TrustFactory {
             mytm = new TrustManager[]{new MyX509TrustManager(truststore_path, truststore_password.toCharArray())};
             mykm = new KeyManager[]{new MyX509KeyManager(keystore_path, keystore_password.toCharArray())};
         } catch (Exception ex) {
-            ex.printStackTrace();
+            Logger.error(this.getClass(), ex.getMessage());
+            Logger.debug(this.getClass(), ex.getMessage(), ex);
         }
 
         SSLContext ctx = null;
@@ -42,6 +44,9 @@ public class TrustFactory {
             ctx = SSLContext.getInstance("SSL");
             ctx.init(mykm, mytm, null);
         } catch (java.security.GeneralSecurityException ex) {
+            Logger.error(this.getClass(), ex.getMessage(), ex);
+
+            
         }
         return ctx;
     }
@@ -108,7 +113,8 @@ public class TrustFactory {
             try {
                 pkixTrustManager.checkClientTrusted(chain, authType);
             } catch (CertificateException excep) {
-                // do any special handling here, or rethrow exception.
+                Logger.error(this.getClass(), excep.getMessage());
+                Logger.debug(this.getClass(), excep.getMessage(), excep);
             }
         }
 
@@ -120,10 +126,9 @@ public class TrustFactory {
             try {
                 pkixTrustManager.checkServerTrusted(chain, authType);
             } catch (CertificateException excep) {
-                /*
-                 * Possibly pop up a dialog box asking whether to trust the
-                 * cert chain.
-                 */
+                Logger.error(this.getClass(), excep.getMessage());
+                Logger.debug(this.getClass(), excep.getMessage(), excep);
+                throw excep;
             }
         }
 
