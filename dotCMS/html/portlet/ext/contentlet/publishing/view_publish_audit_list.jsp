@@ -186,7 +186,8 @@
 			</th>	
 		
 		
-			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
+			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
+			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Content") %></strong></th>	
 			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
@@ -195,7 +196,7 @@
 			String errorclass="";
 		%>
 			<tr <%=errorclass%>>
-				<td style="width:30px;text-align:center;">
+				<td style="width:30px;text-align:center;" valign="top">
 					<input dojoType="dijit.form.CheckBox" 
 							type="checkbox" 
 							name="chkBoxAudits" 
@@ -205,10 +206,27 @@
 				</td>	
 			
 			
-				<td nowrap="nowrap"><a style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail") %>"><%=c.getBundleId()%></a></td>
-			    <td nowrap="nowrap" align="center"><%=c.getStatus().toString() %></td>
-			    <td nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(c.getCreateDate(),"MM/dd/yyyy hh:mma") %></td>
-			    <td nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
+				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+				
+					<%=c.getBundleId()%>
+				</td>
+				<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+					<%try{ %>
+		
+						<span class="contentIncSpan">
+						<%for(int i =0 ;i < c.getStatusPojo().getAssets().size();i++){ %>
+							<%=APILocator.getContentletAPI().findContentletByIdentifier(c.getStatusPojo().getAssets().get(i), false,APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false ).getTitle() %>
+							<br>
+							<%if(i ==2) { %>(<%=c.getStatusPojo().getAssets().size() - i -1 %> <%= LanguageUtil.get(pageContext, "more") %>)<%break;} %>
+						<%} %>
+						</span>
+					<%}catch(Exception e) {%>
+					
+					<%} %>
+				</td>
+			    <td valign="top" nowrap="nowrap" align="center"><%=c.getStatus().toString() %></td>
+			    <td valign="top" nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(c.getCreateDate(),"MM/dd/yyyy hh:mma") %></td>
+			    <td valign="top" nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
 			</tr>
 		<%}%>
 <table width="97%" style="margin:10px;" >

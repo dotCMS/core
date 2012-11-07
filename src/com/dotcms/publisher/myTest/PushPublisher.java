@@ -128,10 +128,16 @@ public class PushPublisher extends Publisher {
 				} catch(Exception e) {
 					hasError = true;
 					detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-					detail.setInfo(
-		        			"An error occured (maybe network problem) " +
-		        			"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
+					
+					String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
+					
+					
+					detail.setInfo(error);
 		        	errorCounter++;
+		        	
+		        	Logger.error(this.getClass(), error);
+		        	
+		        	
 				}
 		        
 		        currentStatusHistory.addOrUpdateEndpoint(endpoint.getId(), detail);
