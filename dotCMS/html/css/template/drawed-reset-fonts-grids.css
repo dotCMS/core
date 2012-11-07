@@ -5,7 +5,7 @@
 	New ids and classes customized for template design.
 /* *********************************************************************************************************** */
 
-#doc-template,#doc2-template,#doc3-template,#doc4-template,.yui-t1-template,.yui-t2-template,.yui-t3-template,.yui-t4-template,.yui-t5-template,.yui-t6-template,.yui-t7-template{
+#doc-template,#doc2-template,#doc3-template,#doc4-template,#resp-template,.yui-t1-template,.yui-t2-template,.yui-t3-template,.yui-t4-template,.yui-t5-template,.yui-t6-template,.yui-t7-template{
 	margin:auto;
 	text-align:left;
 	width:57.69em;
@@ -25,6 +25,11 @@
 #doc4-template{
 	width:74.923em;
 	*width:73.05em
+}
+
+#resp-template{
+    width:74.923em;
+    *width:73.05em
 }
 
 .yui-b-template{
@@ -58,12 +63,12 @@
 }
 .yui-t2-template .yui-b-template{
 	float:left;
-	width:13.8461em;
-	*width:13.50em
+    width:18.4615em;
+    *width:18.00em
 }
 .yui-t2-template #yui-main-template .yui-b-template{
-	margin-left:14.8461em;
-	*margin-left:14.55em
+	margin-left:19.4615em;
+	*margin-left:19.125em
 }
 .yui-t3-template .yui-b-template{
 	float:left;
@@ -76,12 +81,12 @@
 }
 .yui-t4-template .yui-b-template{
 	float:right;
-	width:13.8456em;
-	*width:13.50em
+    width:12.30769em;
+    *width:12.00em
 }
 .yui-t4-template #yui-main-template .yui-b-template{
-	margin-right:14.8456em;
-	*margin-right:14.55em
+	margin-right:13.30769em;
+	*margin-right:13.05em
 }
 .yui-t5-template .yui-b-template{
 	float:right;

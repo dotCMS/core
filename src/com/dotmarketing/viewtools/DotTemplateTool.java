@@ -70,6 +70,7 @@ public class DotTemplateTool implements ViewTool {
      */
     public static TemplateLayout themeLayout ( String themeInode, Boolean isPreview ) throws DotDataException, DotSecurityException {
 
+        String title = null;
         String drawedBody;
         if ( UtilMethods.isSet( themeInode ) ) {
             Identifier ident = APILocator.getIdentifierAPI().findFromInode( themeInode );
@@ -79,12 +80,19 @@ public class DotTemplateTool implements ViewTool {
             }
 
             drawedBody = ((Template) template).getDrawedBody();
+            title = template.getTitle();
         } else {
             drawedBody = (String) request.getAttribute( "designedBody" );
+            if ( request.getAttribute( "title" ) != null ) {
+                title = (String) request.getAttribute( "title" );
+            }
         }
 
         //Parse and return the layout for this template
-        return DesignTemplateUtil.getDesignParameters( drawedBody, isPreview );
+        TemplateLayout layout = DesignTemplateUtil.getDesignParameters( drawedBody, isPreview );
+        layout.setTitle( title );
+
+        return layout;
     }
 
     /**
