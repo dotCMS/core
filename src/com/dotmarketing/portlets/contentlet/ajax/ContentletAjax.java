@@ -5,7 +5,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -18,7 +17,6 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.lucene.queryParser.ParseException;
 import org.directwebremoting.WebContextFactory;
 
@@ -78,7 +76,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -1167,10 +1165,10 @@ public class ContentletAjax {
                             if(!acopyFolder.exists())
                                 acopyFolder.mkdir();
                             File acopy=new File(acopyFolder, binaryFileValue);
-                            FileUtils.copyFile(binaryFile, acopy);
+                            FileUtil.copyFile(binaryFile, acopy);
                             elementValue = acopy;
-                        } catch (IOException e) {
-                            Logger.warn(this, "can't make a copy of the uploaded file");
+                        } catch (Exception e) {
+                            Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
                             throw new SystemException(e);
                         }
 					}
@@ -1197,13 +1195,14 @@ public class ContentletAjax {
 														if(!destFile.exists()){
 															destFile.createNewFile();
 														}
-														FileUtils.copyFile(binFile, destFile);
+														FileUtil.copyFile(binFile, destFile);
 														elementValue = destFile;
 
 												}
 											}
 										}
 									}catch(Exception e){
+										Logger.error(this.getClass(), e.getMessage(), e);
 									}
 						}
 
