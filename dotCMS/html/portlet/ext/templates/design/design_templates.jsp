@@ -763,23 +763,25 @@
 					<div dojoType="dijit.Menu">
 					
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=340,height=480')" >
-		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"iPhone") %>
+		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPhone") %>
 		                </div>
 					
 					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=1024,height=768')">
-		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"iPad") %>
-		                </div>
-		                
-					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
-		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
+		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPad") %>
 		                </div>
 		                
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=640,height=920')" >
-		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
+		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
 		                </div>
+		                
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=2048,height=1536')" >
-		                    <span class="mobileIcon"></span><%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
+		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
 		                </div>
+		                
+					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
+		                    <span class="androidIcon"></span> <%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
+		                </div>
+
 		           </div>
 			</div>
 			
