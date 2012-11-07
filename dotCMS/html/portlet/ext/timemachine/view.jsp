@@ -57,7 +57,6 @@ function hostChange() {
     Identifier hostIdentifier = APILocator.getIdentifierAPI().findFromInode(hostInode);
     %>
     hostid = "<%= hostIdentifier.getId() %>";
-    alert(hostid);
     dijit.byId('timesel').set('value','');
     if(hostid && hostid.length>0) {
 	    var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableTimeMachineForSite/hostid/"+
