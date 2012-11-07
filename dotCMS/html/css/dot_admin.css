@@ -451,6 +451,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .androidIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1900px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .appleIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1900px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .windowsIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1920px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.encrypIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -80px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 /* BEGIN GRAZIANO issue-12-dnd-template */
 .designTemplateIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -40px;width:18px;height:18px;display:inline-block;vertical-align:top;}
