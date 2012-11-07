@@ -455,7 +455,7 @@
 		#set ($structure = $structures.findStructureByName($structureName))
 		
 		#set ($query = "select associated_identifier as identifier from (select count(clickstream_request.associated_identifier) as num_views, clickstream_request.associated_identifier")
-		#set ($query = "${query} from contentlet, inode, clickstream_request where contentlet.structure_inode='${structure.inode}' and contentlet.live=1 and contentlet.deleted=0 and")
+		#set ($query = "${query} from contentlet, inode, clickstream_request, contentlet_version_info where contentlet.structure_inode='${structure.inode}' and contentlet.inode=contentlet_version_info.live_inode and contentlet_version_info.deleted=0 and")
 		#set ($query = "${query} contentlet.inode=inode.inode and contentlet.identifier=clickstream_request.associated_identifier group by clickstream_request.associated_identifier)")
 		#set ($query = "${query} as identifier_num_views order by num_views ${mostViewedTrailingDate}")
 		#getSQLResults($query)
