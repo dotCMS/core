@@ -56,6 +56,9 @@ public class TimeMachineFilter implements Filter {
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
 		            uri);
+		    if(file.isDirectory()) {
+		        file=new java.io.File(file,"index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
+		    }
 		    if(file.exists()) {
 		        resp.setContentType(ctx.getMimeType(uri));
 		        resp.setContentLength((int)file.length());
