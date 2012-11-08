@@ -136,6 +136,7 @@ public class EditSchedulerAction extends DotPortletAction {
 			}
 			catch (Exception ae) {
 				if (!ae.getMessage().equals(WebKeys.UNIQUE_SCHEDULER_EXCEPTION)){
+					SessionMessages.add(req, "error", ae.getMessage());
 					_handleException(ae, req);
 				}
 			}
@@ -419,7 +420,7 @@ public class EditSchedulerAction extends DotPortletAction {
 		} catch (Exception e) {			
 			//e.printStackTrace();
 			Logger.debug(EditSchedulerAction.class, e.getMessage());
-			throw new DotRuntimeException("Error Savining Schedule: " + e.getMessage(), e);
+			throw new DotRuntimeException("Error Savining Schedule: " + e, e);
 		
 		}
 		
