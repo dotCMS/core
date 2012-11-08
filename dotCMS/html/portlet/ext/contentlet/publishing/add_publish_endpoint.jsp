@@ -17,7 +17,7 @@
 		
 	}
 	
-	
+	List<String> groups = peAPI.findSendGroups();
 	
 %>
 
@@ -83,13 +83,14 @@
 			dojo.style("addressFromSpan", "display", "none");
 			dojo.style("addressToSpan", "display", "");
 			dojo.style("portRow", "display", "table-row");
-			
+			dojo.style("sendGroupRow", "display", "table-row");
 		}
 		else{
 			
 			dojo.style("addressFromSpan", "display", "");
 			dojo.style("addressToSpan", "display", "none");
 			dojo.style("portRow", "display", "none");
+			dojo.style("sendGroupRow", "display", "none");
 		}
 	}
 	
@@ -184,13 +185,27 @@
 				</td>		
 			</tr>	
 			
-			
+			<tr id="sendGroupRow">
+				<td align="right">
+					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_sendGroup") %>:
+				</td>
+				<td>		
+					<select name="groupId" id="groupId" dojoType="dijit.form.ComboBox">
+						<option value="<%=UtilMethods.webifyString(currentEndpoint.getGroupId())%>"><%=UtilMethods.webifyString(currentEndpoint.getGroupId())%></option>
+						<%for(String s : groups){ %>
+							<option value="<%=UtilMethods.escapeDoubleQuotes(s)%>"><%=s%></option>
+						<%} %>	
+					
+					</select>			          	
+					
+				</td>		
+			</tr>	
 			<tr id="authKeyRow">
 				<td align="right">
 					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
 				</td>
 				<td>						          	
-					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:400px;min-height:125px;"><%=( currentEndpoint.getAuthKey() != null && currentEndpoint.getAuthKey().length() > 0) ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
+					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:400px;height:105px;"><%=( currentEndpoint.getAuthKey() != null && currentEndpoint.getAuthKey().length() > 0) ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
 				</td>		
 			</tr>	
 	
