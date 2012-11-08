@@ -36,7 +36,7 @@ public class KeyStoreImportKey  {
     */
     public static void main ( String args[]) {
         if (args.length != 5) {
-            System.out.println("Usage: java KeyStoreImportKey keystore keystore_password alias keyfile certfile");
+            System.out.println("Usage: java java com.dotcms.cli.security.KeyStoreImportKey keystore keystore_password alias keyfile certfile");
             System.exit(0);
 	  }        
 

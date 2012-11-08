@@ -33,7 +33,7 @@ public class TrustStoreImportKey  {
     public static void main ( String args[]) {
         
 	  if (args.length != 4) {
-            System.out.println("Usage: java TrustStoreImportKey truststore truststore_password alias certfile ");
+            System.out.println("Usage: java com.dotcms.cli.security.TrustStoreImportKey truststore truststore_password alias certfile ");
             System.exit(0);
         }
         String keypass = args[1];
