@@ -162,3 +162,9 @@
 #relationshipsDialog #pagination .nextButton{
 	float:right;
 }
+
+button.removeFile {
+	padding: 6px !important;
+	width: 100px !important;
+	margin-left: 3px;	
+}
