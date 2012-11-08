@@ -2,6 +2,8 @@ package com.dotcms.publisher.endpoint.bean;
 
 import java.io.Serializable;
 
+import com.dotmarketing.util.UtilMethods;
+
 /**
  * Java Bean for publishing_end_point table
  * 
@@ -41,7 +43,10 @@ public class PublishingEndPoint implements Serializable{
 		this.id = id;
 	}
 	public String getGroupId() {
-		return groupId;
+		if(UtilMethods.isSet(groupId))
+			return groupId;
+		else
+			return id;
 	}
 	public void setGroupId(String groupId) {
 		this.groupId = groupId;

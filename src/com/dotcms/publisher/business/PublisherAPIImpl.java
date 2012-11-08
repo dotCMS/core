@@ -462,6 +462,33 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 	
+	private String SQLGETBUNDLESTOPROCESS = 
+			"select distinct(p.bundle_id) as bundle_id, " +
+			"publish_date, operation, a.status "+
+			"from publishing_queue p, publishing_queue_audit a "+
+			"where  "+
+			"a.status != ? "+
+			"and "+
+			"p.bundle_id = a.bundle_id  "+
+			"order by publish_date ";
+	
+	public List<Map<String, Object>> getQueueBundleIdsToProcess() throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			
+			dc.setSQL(SQLGETBUNDLESTOPROCESS);
+			
+			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+			return dc.loadObjectResults();
+		}catch(Exception e){
+			Logger.error(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}finally{
+			DbConnectionFactory.closeConnection();
+		}
+	}
+	
+	
 	private static final String PSGETENTRIESBYBUNDLE= 
 			"SELECT * "+
 			"FROM publishing_queue p where bundle_id = ? order by asset ";

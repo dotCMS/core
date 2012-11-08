@@ -266,7 +266,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.setSQL(SELECTSQLPENDING);
 			
 			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_ENDPOINTS.getCode());
+			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode());
 			dc.addParam(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
 			dc.addParam(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
 			return mapper.mapRows(dc.loadObjectResults());

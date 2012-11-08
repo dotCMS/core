@@ -10,6 +10,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotcms.publisher.myTest.PushPublisher;
@@ -39,6 +40,9 @@ public class PublisherQueueJob implements StatefulJob {
 	
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance(); 
 	private PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
+	private PublisherAPI pubAPI = PublisherAPI.getInstance();
+	
+	private static final Integer maxNumTries = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 5);
 
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
@@ -52,7 +56,7 @@ public class PublisherQueueJob implements StatefulJob {
 			bundler.add(new PushPublisherBundler());
 			clazz.add(PushPublisher.class);
 
-			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIds(100,0);
+			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
 			List<PublishQueueElement> tempBundleContents = null;
 			PublishAuditStatus status = null;
 			PublishAuditHistory historyPojo = null;
@@ -135,66 +139,72 @@ public class PublisherQueueJob implements StatefulJob {
         
         List<PublishAuditStatus> pendingAudits = pubAuditAPI.getPendingPublishAuditStatus();
         
+        //Foreach Bundle
         for(PublishAuditStatus pendingAudit: pendingAudits) {
-        	//Gets endpoints list
+        	//Gets groups list
         	PublishAuditHistory localHistory = pendingAudit.getStatusPojo();
         	
-        	Map<String, EndpointDetail> endpointsTarget = localHistory.getEndpointsMap();
-        	boolean hasErrors = false;
-        	Map<String, EndpointDetail> bufferMap = new HashMap<String, EndpointDetail>();
-        	for(String endpointId: endpointsTarget.keySet()) {
-        		EndpointDetail localDetail = endpointsTarget.get(endpointId);
-        		
-        		if(localDetail.getStatus() != PublishAuditStatus.Status.SUCCESS.getCode() && localDetail.getStatus() != PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()) {
-	        		PublishingEndPoint target = endpointAPI.findEndpointById(endpointId);
+        	Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
+        	Map<String, EndpointDetail> endpointsGroup = null;
+        	
+        	Map<String, Map<String, EndpointDetail>> bufferMap = new HashMap<String, Map<String, EndpointDetail>>();
+        	//Foreach Group
+        	for(String group : endpointsMap.keySet()) {
+        		endpointsGroup = endpointsMap.get(group);
+	        	
+	        	//Foreach endpoint
+	        	for(String endpointId: endpointsGroup.keySet()) {
+	        		EndpointDetail localDetail = endpointsGroup.get(endpointId);
 	        		
-	        		if(target != null) {
-		        		webResource = client.resource(target.toURL()+"/api/auditPublishing");
-		        	
-			        	PublishAuditHistory remoteHistory = 
-			        			PublishAuditHistory.getObjectFromString(
-			        			webResource
-						        .path("get")
-						        .path(pendingAudit.getBundleId()).get(String.class));
+	        		if(localDetail.getStatus() != PublishAuditStatus.Status.SUCCESS.getCode() && 
+	        			localDetail.getStatus() != PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()) 
+	        		{
+		        		PublishingEndPoint target = endpointAPI.findEndpointById(endpointId);
+		        		
+		        		if(target != null) {
+			        		webResource = client.resource(target.toURL()+"/api/auditPublishing");
 			        	
-			        	if(remoteHistory != null) {
-				        	Map<String, EndpointDetail> endpointsMap = remoteHistory.getEndpointsMap();
-				        	for(String endpointRemote: endpointsMap.keySet()) {
-				        		EndpointDetail detail = endpointsMap.get(endpointRemote);
-				        		bufferMap.put(endpointId, detail);
-				        		
+				        	PublishAuditHistory remoteHistory = 
+				        			PublishAuditHistory.getObjectFromString(
+				        			webResource
+							        .path("get")
+							        .path(pendingAudit.getBundleId()).get(String.class));
+				        	
+				        	if(remoteHistory != null) {
+				        		bufferMap.putAll(remoteHistory.getEndpointsMap());
+					        	break;
 				        	}
-			        	}
+		        		}
 	        		}
-        		}
+		        }
 	        }
         	
-        	for(String bufferKey: bufferMap.keySet()) {
-        		localHistory.addOrUpdateEndpoint(bufferKey, bufferMap.get(bufferKey));
-        	}
-        	
-        	boolean allEndPointsDone = true;
-        	endpointsTarget = localHistory.getEndpointsMap();
-        	for(String endpointId: endpointsTarget.keySet()) {
-        		EndpointDetail localDetail = endpointsTarget.get(endpointId);
-        		if(localDetail.getStatus() == PublishAuditStatus.Status.SUCCESS.getCode()) {
-        			Logger.debug(this, "Some End Points Not Reporting Finished Yet");
-        		}else if(localDetail.getStatus() == PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()){
-        			hasErrors = true;
-        		}else{
-        			allEndPointsDone = false;
-        		}
+        	int countOk = 0;
+        	for(String groupId: bufferMap.keySet()) {
+        		Map<String, EndpointDetail> group = bufferMap.get(groupId);
         		
+        		boolean isGroupOk = false;
+	        	for(String endpoint: group.keySet()) {
+	        		EndpointDetail detail = group.get(endpoint);
+	        		localHistory.addOrUpdateEndpoint(groupId, endpoint, detail);
+	        		if(detail.getStatus() == Status.SUCCESS.getCode())
+	        			isGroupOk = true;
+	        	}
+	        	
+	        	if(isGroupOk)
+	        		countOk++;
         	}
         	
-        	if(allEndPointsDone && !hasErrors) {
+        	if(countOk == bufferMap.size()) {
 	        	pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
 	        			PublishAuditStatus.Status.SUCCESS, 
 	        			localHistory);
-        	} else if(allEndPointsDone && hasErrors) {
+	        	pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
+        	} else if(localHistory.getNumTries() >= maxNumTries) {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
 	        			localHistory);
+        		pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
         	} else {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), pendingAudit.getStatus(), 
 	        			localHistory);
