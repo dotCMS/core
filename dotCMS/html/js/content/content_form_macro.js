@@ -1142,3 +1142,7 @@ function removeFile(fileInode){
 	dojo.empty(fileInode+"Container");
 	dojo.style(fileInode, "visibility", "visible");
 }
+
+function clearFileField(fieldId) { 
+	document.getElementById(fieldId+'FieldInput').innerHTML = document.getElementById(fieldId+'FieldInput').innerHTML; 
+}
