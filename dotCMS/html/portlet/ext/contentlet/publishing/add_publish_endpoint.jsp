@@ -191,9 +191,9 @@
 				</td>
 				<td>		
 					<select name="groupId" id="groupId" dojoType="dijit.form.ComboBox">
-						<option value="<%=UtilMethods.webifyString(currentEndpoint.getGroupId())%>"><%=UtilMethods.webifyString(currentEndpoint.getGroupId())%></option>
+
 						<%for(String s : groups){ %>
-							<option value="<%=UtilMethods.escapeDoubleQuotes(s)%>"><%=s%></option>
+							<option <%if(s!=null && s.equals(currentEndpoint.getGroupId())){ %>selected="true"<%} %> value="<%=UtilMethods.escapeDoubleQuotes(UtilMethods.webifyString(s))%>"><%=s%></option>
 						<%} %>	
 					
 					</select>			          	
