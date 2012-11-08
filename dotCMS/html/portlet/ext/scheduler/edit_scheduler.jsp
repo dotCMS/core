@@ -35,13 +35,6 @@
 </style>
 <script language="Javascript">
 
-function checkDate(element, fieldName) {
-	if (element.checked) {
-	  	eval("document.getElementById('" + fieldName + "Div').style.visibility = ''");
-	} else {
-		eval("document.getElementById('" + fieldName + "Div').style.visibility = 'hidden'");
-	}
-}
 
 
 
@@ -114,7 +107,7 @@ function deleteSchedule(form) {
 			<input type="hidden" name="jobGroup" id="jobGroup" value="User Job">
 			<dl>
 					<dt>
-						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Job-Name") %>:</b></font>
+						<b><%= LanguageUtil.get(pageContext, "Job-Name") %>:</b>
 					</dt>
 					<dd>
 <%
@@ -122,25 +115,25 @@ function deleteSchedule(form) {
 		 (schedulerForm.getJobGroup().equals("User Job"))) &&
 		(!schedulerForm.isEditMode())) {
 %>
-						<input class="form-text" dojoType="dijit.form.TextBox" name="jobName" id="jobName" value="<%= UtilMethods.isSet(schedulerForm.getJobName()) ? schedulerForm.getJobName() : "" %>" style="width: 300px;" type="text" >
+						<input  dojoType="dijit.form.TextBox" name="jobName" id="jobName" value="<%= UtilMethods.isSet(schedulerForm.getJobName()) ? schedulerForm.getJobName() : "" %>" style="width: 300px;" type="text" >
 <%
 	} else {
 %>
 						<%= schedulerForm.getJobGroup().equals("Recurrent Campaign") ? schedulerForm.getJobDescription() : schedulerForm.getJobName() %>
-						<input class="form-text" dojoType="dijit.form.TextBox" name="jobName" id="jobName" value="<%= UtilMethods.isSet(schedulerForm.getJobName()) ? schedulerForm.getJobName() : "" %>" type="hidden" >
-						<input class="form-text" dojoType="dijit.form.TextBox" name="editMode" id="editMode" value="<%= schedulerForm.isEditMode()? "true" : "false" %>" type="hidden" >
+						<input  dojoType="dijit.form.TextBox" name="jobName" id="jobName" value="<%= UtilMethods.isSet(schedulerForm.getJobName()) ? schedulerForm.getJobName() : "" %>" type="hidden" >
+						<input  dojoType="dijit.form.TextBox" name="editMode" id="editMode" value="<%= schedulerForm.isEditMode()? "true" : "false" %>" type="hidden" >
 <%
 	}
 %>
 					</dd>
 					<dt>
-						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Job-Description") %>:</b></font>
+						<b><%= LanguageUtil.get(pageContext, "Job-Description") %>:</b>
 					</dt>
 					<dd>
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-						<input class="form-text" dojoType="dijit.form.TextBox" name="jobDescription" id="jobDescription" value="<%= UtilMethods.isSet(schedulerForm.getJobDescription()) ? schedulerForm.getJobDescription() : "" %>"  style="width: 300px;" type="text" >
+						<input  dojoType="dijit.form.TextBox" name="jobDescription" id="jobDescription" value="<%= UtilMethods.isSet(schedulerForm.getJobDescription()) ? schedulerForm.getJobDescription() : "" %>"  style="width: 300px;" type="text" >
 <%
 	} else {
 %>
@@ -150,7 +143,7 @@ function deleteSchedule(form) {
 %>
 					</dd>
 					<dt>
-						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Execute") %>:</b></font>
+						<b><%= LanguageUtil.get(pageContext, "Execute") %>:</b>
 					</dt>
 					<dd>
 						<div id="startDateDiv">
@@ -167,7 +160,7 @@ function deleteSchedule(form) {
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
 
-							    	<font><%= LanguageUtil.get(pageContext, "From1") %></font>
+							    	<%= LanguageUtil.get(pageContext, "From1") %>
 
 <%
 	Calendar startDateCalendar = null;
@@ -194,7 +187,7 @@ function deleteSchedule(form) {
 	 String hour = (startDateCalendar.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+startDateCalendar.get(GregorianCalendar.HOUR_OF_DAY) : ""+startDateCalendar.get(GregorianCalendar.HOUR_OF_DAY);
      String min = (startDateCalendar.get(GregorianCalendar.MINUTE) < 10) ? "0"+startDateCalendar.get(GregorianCalendar.MINUTE) : ""+startDateCalendar.get(GregorianCalendar.MINUTE);
 %>
-							<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveStartDate()?"checked":""  %> id="haveStartDate" name="haveStartDate" />
+							<input type="checkbox" dojoType="dijit.form.CheckBox" value="true" <%=schedulerForm.isHaveStartDate()?"checked":""  %> id="haveStartDate" name="haveStartDate" />
 							<input type="text" value="<%= df.format(startDate) %>" onChange="updateDate('startDate');" dojoType="dijit.form.DateTextBox" name="startDateDate"
                                             id="startDateDate" style="width:150px;" />
                             <input type="text" id="startDateTime" name="startDateTime" value='T<%=hour+":"+min%>:00' onChange="updateDate('startDate');"
@@ -208,14 +201,14 @@ function deleteSchedule(form) {
 								document.getElementById('haveStartDate').checked = true;
 <%
 	}
-%>   							checkDate(document.forms[0].haveStartDate, 'startDate');
+%>   		
 								updateDate('startDate');
 							});
 							</script>
 <%
 	} else {%>
 
-							    	<font><%= LanguageUtil.get(pageContext, "From1") %></font>
+							    	<%= LanguageUtil.get(pageContext, "From1") %>
 
 <%
 	if (schedulerForm.isHaveStartDate()) {
@@ -253,7 +246,7 @@ function deleteSchedule(form) {
 %>
 					<dd>
 						<div id="endDateDiv">
-							&nbsp;&nbsp;&nbsp;&nbsp;<font><%= LanguageUtil.get(pageContext, "To1") %></font>
+							&nbsp;&nbsp;&nbsp;&nbsp;<%= LanguageUtil.get(pageContext, "To1") %>
 
 <%
 	Calendar endDateCalendar = null;
@@ -281,29 +274,17 @@ function deleteSchedule(form) {
      String min = (endDateCalendar.get(GregorianCalendar.MINUTE) < 10) ? "0"+endDateCalendar.get(GregorianCalendar.MINUTE) : ""+endDateCalendar.get(GregorianCalendar.MINUTE);
 
 %>
-						 	<input type="checkbox" dojoType="dijit.form.CheckBox" <%=schedulerForm.isHaveEndDate()?"checked":""  %> id="haveEndDate" name="haveEndDate" />
+						 	<input type="checkbox" dojoType="dijit.form.CheckBox" value="true" <%=schedulerForm.isHaveEndDate()?"checked":""  %> id="haveEndDate" name="haveEndDate" />
 							<input type="text" value="<%= df.format(endDate) %>" onChange="updateDate('endDate');" dojoType="dijit.form.DateTextBox" name="endDateDate"
                                             id="endDateDate" style="width:150px;" />
                             <input type="text" id="endDateTime" name="endDateTime" value='T<%=hour+":"+min%>:00' onChange="updateDate('endDate');"
                                             dojoType="dijit.form.TimeTextBox" style="width: 100px;" />
 							<input type="hidden" name="endDate" value="" id="endDate">
-							<script language="javascript">
-							dojo.addOnLoad (function(){
-								<%
-									if (!UtilMethods.isSet(schedulerForm.getJobGroup())) {
-								%>
-								    document.getElementById('haveEndDate').checked = true;
-								<%
-									}
-								%>
-								checkDate(document.forms[0].haveEndDate, 'endDate');
-								updateDate('endDate');
-							});
-							</script>
+		
 <%
 	} else {
 %>
-							<font><%= LanguageUtil.get(pageContext, "To1") %></font>
+							<%= LanguageUtil.get(pageContext, "To1") %>
 
 <%
 	if (schedulerForm.isHaveEndDate()) {
@@ -323,49 +304,37 @@ function deleteSchedule(form) {
 		SimpleDateFormat sdf2 = new SimpleDateFormat("MMMM/dd/yyyy hh:mm:ss a");
 %>
 									&nbsp;&nbsp;&nbsp;<%= sdf2.format(endDate) %>
-<%
-	} else {
-%>
+<%} else {%>
 									&nbsp;&nbsp;&nbsp;<%= LanguageUtil.get(pageContext, "Not-Specified") %>
-<%
-	}
-%>
+<%}%>
 
-<%
-	}
-%>
+<%}%>
 
 						</div>
 					</dd>
 
 					<dt>
-						<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Class-to-be-executed") %>:</b></font>
+						<b><%= LanguageUtil.get(pageContext, "Class-to-be-executed") %>:</b>
 					</dt>
 					<dd>
-<%
-	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
-%>
-						<select class="form-text" id="javaClass" name="javaClass" dojoType="dijit.form.FilteringSelect" required="true" value="<%= UtilMethods.isSet(schedulerForm.getJavaClass()) ? schedulerForm.getJavaClass() : "" %>" style="width: 300px;">
-						 <% for(String c : listJobClasses){ %>
-							<option><%= c %></option>
-						 <% } %>
-						</select>
-<%
-	} else {
-%>
-						<%= schedulerForm.getJavaClass() %>
-<%
-	}
-%>
+						<%if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {%>
+							<select id="javaClass" name="javaClass" dojoType="dijit.form.ComboBox" required="true" value="<%= UtilMethods.isSet(schedulerForm.getJavaClass()) ? schedulerForm.getJavaClass() : "" %>" style="width: 300px;">
+								 <% for(String c : listJobClasses){ %>
+									<option><%= c %></option>
+								 <% } %>
+							</select>
+						<%} else {%>
+							<input type="hidden" name="javaClass" value="<%= schedulerForm.getJavaClass() %>">
+						<%}%>
 					</dd>
 
 			<dt>
-				<span class="required"></span> <font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "cron-expression") %>: </b></font> <br>
+				<span class="required"></span> <b><%= LanguageUtil.get(pageContext, "cron-expression") %>: </b> <br>
 			</dt>
 			<dd>
 				<input name="cronExpression" id="cronExpression" type="text" dojoType='dijit.form.ValidationTextBox' style='width: 200px'" value="<%=schedulerForm.getCronExpression() %>" size="10" />
 			</dd>
-			<dt><span ></span> <font class="bg" size="2"><b></b></font> <br></dt>
+			<dt><span ></span> <b></b> <br></dt>
 			<dd>
 				<div style="width: 350px;  text-align: left;" id="cronHelpDiv" class="callOutBox2" >
 					<h3><%= LanguageUtil.get(pageContext, "cron-examples") %></h3>
@@ -402,8 +371,8 @@ function deleteSchedule(form) {
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyName0" id="propertyName0" value="<%= key %>">&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyValue0" id="propertyValue0" value="<%= value %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName0" id="propertyName0" value="<%= key %>">&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue0" id="propertyValue0" value="<%= value %>">
 				<br>
 				<br>
 <%
@@ -411,8 +380,8 @@ function deleteSchedule(form) {
 		if (UtilMethods.isSet(key)) {
 			parameterShowed = true;
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><%= key %>&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><%= value %>
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
 				<br>
 				<br>
 <%
@@ -431,8 +400,8 @@ function deleteSchedule(form) {
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyName1" id="propertyName1" value="<%= key %>">&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyValue1" id="propertyValue1" value="<%= value %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName1" id="propertyName1" value="<%= key %>">&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue1" id="propertyValue1" value="<%= value %>">
 				<br>
 				<br>
 <%
@@ -440,8 +409,8 @@ function deleteSchedule(form) {
 		if (UtilMethods.isSet(key)) {
 			parameterShowed = true;
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><%= key %>&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><%= value %>
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
 				<br>
 				<br>
 <%
@@ -460,8 +429,8 @@ function deleteSchedule(form) {
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyName2" id="propertyName2" value="<%= key %>">&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyValue2" id="propertyValue2" value="<%= value %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName2" id="propertyName2" value="<%= key %>">&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue2" id="propertyValue2" value="<%= value %>">
 				<br>
 				<br>
 <%
@@ -469,8 +438,8 @@ function deleteSchedule(form) {
 		if (UtilMethods.isSet(key)) {
 			parameterShowed = true;
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><%= key %>&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><%= value %>
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
 				<br>
 				<br>
 <%
@@ -489,8 +458,8 @@ function deleteSchedule(form) {
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyName3" id="propertyName3" value="<%= key %>">&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyValue3" id="propertyValue3" value="<%= value %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName3" id="propertyName3" value="<%= key %>">&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue3" id="propertyValue3" value="<%= value %>">
 				<br>
 				<br>
 <%
@@ -498,8 +467,8 @@ function deleteSchedule(form) {
 		if (UtilMethods.isSet(key)) {
 			parameterShowed = true;
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><%= key %>&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><%= value %>
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
 				<br>
 				<br>
 <%
@@ -519,8 +488,8 @@ function deleteSchedule(form) {
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyName4" id="propertyName4" value="<%= key %>">&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>:  </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyValue4" id="propertyValue4" value="<%= value %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName4" id="propertyName4" value="<%= key %>">&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>:  </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue4" id="propertyValue4" value="<%= value %>">
 				<br>
 				<br>
 <%
@@ -528,8 +497,8 @@ function deleteSchedule(form) {
 		if (UtilMethods.isSet(key)) {
 			parameterShowed = true;
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><%= key %>&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><%= value %>
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
 				<br>
 				<br>
 <%
@@ -548,8 +517,8 @@ function deleteSchedule(form) {
 <%
 	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyName5" id="propertyName5" value="<%= key %>">&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><input type="text" dojoType="dijit.form.TextBox" name="propertyValue5" id="propertyValue5" value="<%= value %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName5" id="propertyName5" value="<%= key %>">&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue5" id="propertyValue5" value="<%= value %>">
 				<br>
 				<br>
 <%
@@ -557,8 +526,8 @@ function deleteSchedule(form) {
 		if (UtilMethods.isSet(key)) {
 			parameterShowed = true;
 %>
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b></font><%= key %>&nbsp;&nbsp;
-				<font class="bg" size="2"><b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b></font><%= value %>
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
 				<br>
 				<br>
 <%
@@ -568,7 +537,7 @@ function deleteSchedule(form) {
 <%
 	if ((schedulerForm.getJobGroup() != null) && (schedulerForm.getJobGroup().equals("Recurrent Campaign")) && !parameterShowed) {
 %>
-			<font class="bg" size="2"><%= LanguageUtil.get(pageContext, "There-are-no-Parameters-to-show") %></font>
+			<%= LanguageUtil.get(pageContext, "There-are-no-Parameters-to-show") %>
 <%
 	}
 %>

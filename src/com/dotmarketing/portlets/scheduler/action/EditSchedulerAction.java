@@ -1,12 +1,10 @@
 package com.dotmarketing.portlets.scheduler.action;
 
 import java.net.URLDecoder;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -17,13 +15,12 @@ import javax.portlet.PortletConfig;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-import org.quartz.Trigger;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.scheduler.struts.SchedulerForm;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
@@ -421,8 +418,9 @@ public class EditSchedulerAction extends DotPortletAction {
 			QuartzUtils.scheduleTask(job);
 		} catch (Exception e) {			
 			//e.printStackTrace();
-			Logger.debug(EditSchedulerAction.class, "Based on configured schedule, the given trigger will never fire.");
-			return false;
+			Logger.debug(EditSchedulerAction.class, e.getMessage());
+			throw new DotRuntimeException("Error Savining Schedule: " + e.getMessage(), e);
+		
 		}
 		
 		SessionMessages.add(req, "message", "message.Scheduler.saved");
