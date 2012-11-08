@@ -111,7 +111,7 @@ public class BundlePublisherResource extends WebResource {
 				EndpointDetail detail = new EndpointDetail();
 				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
 				detail.setInfo("Failed to publish because an error occurred: "+e.getMessage());
-				status.getStatusPojo().addOrUpdateEndpoint(endpointId, detail);
+				status.getStatusPojo().addOrUpdateEndpoint("",endpointId, detail);
 				
 				try {
 					auditAPI.updatePublishAuditStatus(bundleName.substring(0, bundleName.indexOf(".tar.gz")), 
@@ -136,7 +136,7 @@ public class BundlePublisherResource extends WebResource {
 		detail.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
 		detail.setInfo("Received bundle");
 		
-		historyPojo.addOrUpdateEndpoint(mySelf.getId(), detail);
+		historyPojo.addOrUpdateEndpoint("", mySelf.getId(), detail);
 		status.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE);
 		status.setStatusPojo(historyPojo);
 		
