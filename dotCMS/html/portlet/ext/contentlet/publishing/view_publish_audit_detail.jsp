@@ -69,6 +69,7 @@
 
 <%
 	if(currentEndpointHistory.getEndpointsMap().size()>0) {
+
 		for(String groupkey : currentEndpointHistory.getEndpointsMap().keySet()) {
 			Map<String, EndpointDetail> groupMap = currentEndpointHistory.getEndpointsMap().get(groupkey);
 			
@@ -84,7 +85,6 @@
 				catch(Exception e){
 					
 				}
-			
 			
 			
 			
