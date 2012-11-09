@@ -17,6 +17,7 @@
 	dojo.require("dijit.Tree");
 	dojo.require("dojox.grid.DataGrid");
 	dojo.require("dojo.data.ItemFileReadStore");
+	dojo.require("dijit.dijit");
 
 	//I18n messages
 	var abondonUserChangesConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "abondon-user-changes-confirm")) %>';
@@ -93,6 +94,7 @@
         if(e){
        	  dojo.style(e, "height", viewport_height -155+"px");
         }
+       
     	//var  e =  dojo.byId("usersListWrapper");
        	//dojo.style(e, "height", viewport_height -240+"px");
 
