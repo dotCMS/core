@@ -36,6 +36,8 @@ public class FolderBundler implements IBundler {
 	PublisherAPI pubAPI = null;
 	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	FolderAPI fAPI = APILocator.getFolderAPI();
+	
+	public final static String FOLDER_EXTENSION = ".folder.xml" ;
 
 	@Override
 	public String getName() {
@@ -115,8 +117,8 @@ public class FolderBundler implements IBundler {
 					fsFolder.mkdirs();
 				
 				FolderWrapper wrapper = folderWrappers.remove(0);
-				String myFileUrl = myFolderUrl+ 
-						wrapper.getFolder().getIdentifier()+".folder";
+				String myFileUrl = fsFolder.getParent()+ 
+						wrapper.getFolder().getIdentifier()+FOLDER_EXTENSION;
 				
 				File fileWrapper = new File(myFileUrl);
 				
@@ -126,9 +128,18 @@ public class FolderBundler implements IBundler {
 	}
 
 	@Override
-	public FileFilter getFileFilter() {
-		// TODO Auto-generated method stub
-		return null;
+	public FileFilter getFileFilter(){
+		return new FolderBundlerFilter();
+	}
+	
+	public class FolderBundlerFilter implements FileFilter{
+
+		@Override
+		public boolean accept(File pathname) {
+
+			return (pathname.isDirectory() || pathname.getName().endsWith(FOLDER_EXTENSION));
+		}
+
 	}
 
 }

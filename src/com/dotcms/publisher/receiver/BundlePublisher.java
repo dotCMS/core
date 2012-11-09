@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
@@ -26,16 +25,22 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPIImpl;
+import com.dotcms.publisher.myTest.FolderWrapper;
 import com.dotcms.publisher.myTest.PushContentWrapper;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
+import com.dotcms.publisher.myTest.bundler.ContentBundler;
+import com.dotcms.publisher.myTest.bundler.FolderBundler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.BundlePublisherResource;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
@@ -49,6 +54,8 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.services.PageServices;
@@ -57,6 +64,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
@@ -66,6 +74,8 @@ public class BundlePublisher extends Publisher {
     private UserAPI uAPI = null;
     private TagAPI tagAPI = null;
     private PublishAuditAPI auditAPI = null;
+    private FolderAPI fAPI = null;
+    private IdentifierAPI iAPI = null;
     Map<String,Long> infoToRemove = new HashMap<String, Long>();
     List<String> pagesToClear = new ArrayList<String>();
     List<String> assetIds = new ArrayList<String>();
@@ -80,6 +90,8 @@ public class BundlePublisher extends Publisher {
         uAPI = APILocator.getUserAPI();
         tagAPI = APILocator.getTagAPI();
         auditAPI = PublishAuditAPI.getInstance();
+        fAPI = APILocator.getFolderAPI();
+        iAPI = APILocator.getIdentifierAPI();
 
         try {
             systemUser = uAPI.getSystemUser();
@@ -143,9 +155,51 @@ public class BundlePublisher extends Publisher {
             HibernateUtil.startTransaction();
 
             //For each content take the wrapper and save it on DB
-            Collection<File> contentFiles = FileUtils.listFiles(folderOut, new String[]{"content"}, true);
+            Collection<File> contentFiles = FileUtil.listFilesRecursively(folderOut, new ContentBundler().getFileFilter());
+            Collection<File> contentFolders = FileUtil.listFilesRecursively(folderOut, new FolderBundler().getFileFilter());
             XStream xstream=new XStream(new DomDriver());
-
+            
+            
+            
+            //Handle folders
+            for(File folderFile: contentFolders) {
+            	FolderWrapper folderWrapper = (FolderWrapper) 
+                        xstream.fromXML(new FileInputStream(folderFile));
+            	
+            	Folder folder = folderWrapper.getFolder();
+            	Identifier id = folderWrapper.getIndentifier();
+            	
+            	Folder parentFolder = fAPI.findFolderByPath(id.getParentPath(), id.getHostId(), systemUser, false);
+            	Folder test = fAPI.find(folder.getInode(), systemUser, false);
+            		if(test != null && test.getInode() != null) {
+            			if(test.getModDate().before(folder.getModDate())) {
+            				iAPI.save(id);
+            				fAPI.save(folder, systemUser, false);
+            			}
+            		} else {
+//            			Host host = APILocator.getHostAPI().find(folder.getHostId(), systemUser, false);
+            			Identifier newId = iAPI.createNew(folder, parentFolder, id.getId());
+            			
+            			fAPI.save(folder, folder.getInode(), systemUser, false);
+            		}
+            	
+            	
+            	//Check if exists
+            	
+            	
+            	//If yes
+            	//Store identifier
+            	
+            	//Store folder
+            }
+            
+            
+            
+            
+            
+            
+            //Handle contents
+            
             for (File contentFile : contentFiles) {
 
                 wrapper =
