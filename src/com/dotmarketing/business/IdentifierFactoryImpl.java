@@ -262,8 +262,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		try {
 			host = hostAPI.findParentHost(folder, systemUser, false);
 		} catch (DotSecurityException e) {
-			throw new DotStateException("I can't find the system host!");
+			throw new DotStateException("I can't find the parent host!");
 		}
+		
+		if("folder".equals(identifier.getAssetType()) && APILocator.getHostAPI().findSystemHost().getIdentifier().equals(host.getIdentifier())){
+			throw new DotStateException("You cannot save a folder on the system host");
+			
+		}
+		
 
 		identifier.setHostId(host.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
