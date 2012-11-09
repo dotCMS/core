@@ -155,89 +155,15 @@ public class BundlePublisher extends Publisher {
             HibernateUtil.startTransaction();
 
             //For each content take the wrapper and save it on DB
-            Collection<File> contentFiles = FileUtil.listFilesRecursively(folderOut, new ContentBundler().getFileFilter());
-            Collection<File> contentFolders = FileUtil.listFilesRecursively(folderOut, new FolderBundler().getFileFilter());
-            XStream xstream=new XStream(new DomDriver());
+            Collection<File> contents = FileUtil.listFilesRecursively(folderOut, new ContentBundler().getFileFilter());
+            Collection<File> folders = FileUtil.listFilesRecursively(new File(folderOut + File.separator + "ROOT"), new FolderBundler().getFileFilter());
+   
             
             
+            handleFolders(folders);
+            //handleContents(contents, folderOut);
             
-            //Handle folders
-            for(File folderFile: contentFolders) {
-            	FolderWrapper folderWrapper = (FolderWrapper) 
-                        xstream.fromXML(new FileInputStream(folderFile));
-            	
-            	Folder folder = folderWrapper.getFolder();
-            	Identifier id = folderWrapper.getIndentifier();
-            	
-            	Folder parentFolder = fAPI.findFolderByPath(id.getParentPath(), id.getHostId(), systemUser, false);
-            	Folder test = fAPI.find(folder.getInode(), systemUser, false);
-            		if(test != null && test.getInode() != null) {
-            			if(test.getModDate().before(folder.getModDate())) {
-            				iAPI.save(id);
-            				fAPI.save(folder, systemUser, false);
-            			}
-            		} else {
-//            			Host host = APILocator.getHostAPI().find(folder.getHostId(), systemUser, false);
-            			Identifier newId = iAPI.createNew(folder, parentFolder, id.getId());
-            			
-            			fAPI.save(folder, folder.getInode(), systemUser, false);
-            		}
-            	
-            	
-            	//Check if exists
-            	
-            	
-            	//If yes
-            	//Store identifier
-            	
-            	//Store folder
-            }
-            
-            
-            
-            
-            
-            
-            //Handle contents
-            
-            for (File contentFile : contentFiles) {
-
-                wrapper =
-                        (PushContentWrapper)
-                                xstream.fromXML(new FileInputStream(contentFile));
-
-                content = wrapper.getContent();
-                content.setProperty("_dont_validate_me", true);
-                content.setProperty(Contentlet.WORKFLOW_ASSIGN_KEY, null);
-                content.setProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
-                content.setProperty(Contentlet.WORKFLOW_COMMENTS_KEY, null);
-
-                //Select user
-                User userToUse = null;
-                try {
-                    userToUse = uAPI.loadUserById(content.getModUser());
-                } catch(NoSuchUserException e) {
-                    userToUse = systemUser;
-                }
-
-                assetIds.add(content.getIdentifier());
-                
-                if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
-                    publish(content, folderOut, userToUse, wrapper);
-                } else {
-                    unpublish(content, folderOut, userToUse, wrapper);
-                }
-            }
-            
-            for (File contentFile : contentFiles) {
-            	wrapper = (PushContentWrapper)xstream.fromXML(new FileInputStream(contentFile));
-                if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
-	                ContentletVersionInfo info = wrapper.getInfo();
-	                infoToRemove.put(info.getIdentifier(), info.getLang());
-	                APILocator.getVersionableAPI().saveContentletVersionInfo(info);
-                }
-            }
-
+           
             
 
             HibernateUtil.commitTransaction();
@@ -266,6 +192,7 @@ public class BundlePublisher extends Publisher {
                 throw new DotPublishingException("Cannot check in the content with inode: " +
                         content.getInode(), e);
             }
+            throw new DotPublishingException("Error Publishing: " +  e, e);
         }
 
         try{
@@ -491,17 +418,110 @@ public class BundlePublisher extends Publisher {
         }
     }
 
+    private void handleFolders(Collection<File> folders) throws DotPublishingException{
+    	try{
+	        XStream xstream=new XStream(new DomDriver());
+	        //Handle folders
+	        for(File folderFile: folders) {
+	        	if(folderFile.isDirectory()) continue;
+	        	FolderWrapper folderWrapper = (FolderWrapper)  xstream.fromXML(new FileInputStream(folderFile));
+	        	
+	        	Folder folder = folderWrapper.getFolder();
+	        	Identifier id = folderWrapper.getIndentifier();
+	        	
+	        	Folder parentFolder = fAPI.findFolderByPath(id.getParentPath(), id.getHostId(), systemUser, false);
+	        	Folder existing = null;
+	        	try{
+	        		existing = fAPI.find(folder.getInode(), systemUser, false);
+	        	}
+	        	catch(Exception e){
+	        		Logger.debug(this.getClass(), "Folder not found");
+	        	}
+	        	
+	    		if(existing != null && existing.getInode() != null && existing.getModDate().before(folder.getModDate())) {
+					iAPI.save(id);
+					fAPI.save(folder, systemUser, false);
+				
+	    		} else {
+	    			Identifier newId = null;
+	            	if(parentFolder.getHostId() ==null || parentFolder.getHostId().equals(APILocator.getHostAPI().findSystemHost().getIdentifier())){
+	            		Host host = APILocator.getHostAPI().find(folder.getHostId(), systemUser, false);
+	            		newId = iAPI.createNew(folder, host, id.getId());
+	            	}
+	            	else{
+	            		newId = iAPI.createNew(folder, parentFolder, id.getId());
+	            	}
+	    			
+	    			fAPI.save(folder, folder.getInode(), systemUser, false);
+	    		}
+	
+	        }
+        	
+    	}
+    	catch(Exception e){
+    		throw new DotPublishingException(e.getMessage(),e);
+    	}
+    	
+    	
+    	
+    }
+    
+    
+    
+    private void handleContents(Collection<File> contents, File folderOut) throws DotPublishingException{
+    	try{
+	        XStream xstream=new XStream(new DomDriver());
+	        PushContentWrapper wrapper =null;
+            for (File contentFile : contents) {
+            	if(contentFile.isDirectory() ) continue;
+            	 wrapper =
+                        (PushContentWrapper)
+                                xstream.fromXML(new FileInputStream(contentFile));
 
+            	Contentlet content = wrapper.getContent();
+            	
+            	
+            	
+                content = wrapper.getContent();
+                content.setProperty("_dont_validate_me", true);
+                content.setProperty(Contentlet.WORKFLOW_ASSIGN_KEY, null);
+                content.setProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
+                content.setProperty(Contentlet.WORKFLOW_COMMENTS_KEY, null);
 
-//	BufferedInputStream buffIS = new BufferedInputStream(inputStream);
-//    BufferedOutputStream buffOS = new BufferedOutputStream(outputStream);
-//
-//    try {
-//        IOUtils.copy(buffIS, buffOS);
-//    } finally {
-//    	buffOS.close();
-//    	buffIS.close();
-//    }
+                //Select user
+                User userToUse = null;
+                try {
+                    userToUse = uAPI.loadUserById(content.getModUser());
+                } catch(NoSuchUserException e) {
+                    userToUse = systemUser;
+                }
+
+                assetIds.add(content.getIdentifier());
+                
+                if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
+                    publish(content, folderOut, userToUse, wrapper);
+                } else {
+                    unpublish(content, folderOut, userToUse, wrapper);
+                }
+            }
+            
+            for (File contentFile : contents) {
+            	wrapper = (PushContentWrapper)xstream.fromXML(new FileInputStream(contentFile));
+                if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
+	                ContentletVersionInfo info = wrapper.getInfo();
+	                infoToRemove.put(info.getIdentifier(), info.getLang());
+	                APILocator.getVersionableAPI().saveContentletVersionInfo(info);
+                }
+            }
+        	
+    	}
+    	catch(Exception e){
+    		throw new DotPublishingException(e.getMessage(),e);
+    	}
+    	
+    	
+    	
+    }
 
 }
 

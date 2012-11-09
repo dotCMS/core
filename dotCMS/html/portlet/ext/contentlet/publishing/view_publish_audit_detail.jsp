@@ -70,18 +70,20 @@
 <%
 	if(currentEndpointHistory.getEndpointsMap().size()>0) {
 		for(String key : currentEndpointHistory.getEndpointsMap().keySet()) {
-			EndpointDetail ed = (EndpointDetail) currentEndpointHistory.getEndpointsMap().get(key);
-			
-			
 			String serverName = key;
 			try{
+				EndpointDetail ed = (EndpointDetail) currentEndpointHistory.getEndpointsMap().get(key);
+			
+			
+				
+			
 					
 				serverName = pepAPI.findEndpointById(key).getServerName().toString();
 			}
 			catch(Exception e){
 				
 			}
-			
+				
 			
 			
 			
