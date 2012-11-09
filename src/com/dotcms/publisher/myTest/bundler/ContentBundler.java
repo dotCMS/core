@@ -45,6 +45,8 @@ public class ContentBundler implements IBundler {
 	PublisherAPI pubAPI = null;
 	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	FolderAPI fAPI = APILocator.getFolderAPI();
+	
+	public final static String CONTENT_EXTENSION = ".content.xml" ;
 
 	@Override
 	public String getName() {
@@ -169,12 +171,12 @@ public class ContentBundler implements IBundler {
 		String liveworking = con.isLive() ? "live" :  "working";
 
 		String uri = APILocator.getIdentifierAPI().find(con).getURI().replace("/", File.separator);
-		if(!uri.endsWith(".content")){
-			uri.replace(".content", "");
+		if(!uri.endsWith(CONTENT_EXTENSION)){
+			uri.replace(CONTENT_EXTENSION, "");
 			uri.trim();
-			uri += ".content";
+			uri += CONTENT_EXTENSION;
 		}
-		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getIdentifier() + "." + "content"):uri;
+		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getIdentifier() + CONTENT_EXTENSION):uri;
 
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
@@ -189,9 +191,18 @@ public class ContentBundler implements IBundler {
 	}
 
 	@Override
-	public FileFilter getFileFilter() {
-		// TODO Auto-generated method stub
-		return null;
+	public FileFilter getFileFilter(){
+		return new ContentBundlerFilter();
+	}
+	
+	public class ContentBundlerFilter implements FileFilter{
+
+		@Override
+		public boolean accept(File pathname) {
+
+			return (pathname.isDirectory() || pathname.getName().endsWith(CONTENT_EXTENSION));
+		}
+
 	}
 
 }
