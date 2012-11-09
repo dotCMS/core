@@ -14,8 +14,9 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotcms.publisher.myTest.PushPublisher;
-import com.dotcms.publisher.myTest.PushPublisherBundler;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
+import com.dotcms.publisher.myTest.bundler.ContentBundler;
+import com.dotcms.publisher.myTest.bundler.FolderBundler;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.IBundler;
 import com.dotmarketing.business.APILocator;
@@ -53,7 +54,8 @@ public class PublisherQueueJob implements StatefulJob {
 			PushPublisherConfig pconf = new PushPublisherConfig();
 			List<Class> clazz = new ArrayList<Class>();
 			List<IBundler> bundler = new ArrayList<IBundler>();
-			bundler.add(new PushPublisherBundler());
+			bundler.add(new ContentBundler());
+			bundler.add(new  FolderBundler());
 			clazz.add(PushPublisher.class);
 
 			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();

@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest;
+package com.dotcms.publisher.myTest.bundler;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -15,6 +15,8 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.myTest.PushContentWrapper;
+import com.dotcms.publisher.myTest.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
@@ -35,7 +37,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-public class PushPublisherBundler implements IBundler {
+public class ContentBundler implements IBundler {
 	private PushPublisherConfig config;
 	private User systemUser;
 	ContentletAPI conAPI = null;
@@ -46,7 +48,7 @@ public class PushPublisherBundler implements IBundler {
 
 	@Override
 	public String getName() {
-		return "Push publisher bundler";
+		return "Content bundler";
 	}
 
 	@Override
@@ -59,7 +61,7 @@ public class PushPublisherBundler implements IBundler {
 		try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
-			Logger.fatal(PushPublisherBundler.class,e.getMessage(),e);
+			Logger.fatal(ContentBundler.class,e.getMessage(),e);
 		}
 	}
 
@@ -81,7 +83,7 @@ public class PushPublisherBundler implements IBundler {
 			currentStatusHistory.setBundleStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
 
-
+			List<String> folderList = new ArrayList<String>();
 			for(String luceneQuery: config.getLuceneQueries()) {
 				cs = conAPI.search(luceneQuery, 0, 0, "moddate", systemUser, false);
 
@@ -89,6 +91,7 @@ public class PushPublisherBundler implements IBundler {
 				for (Contentlet con : cs) {
 					writeFileToDisk(bundleRoot, con);
 					status.addCount();
+					folderList.add(con.getFolder());
 				}
 			}
 
@@ -97,6 +100,8 @@ public class PushPublisherBundler implements IBundler {
 			
 			currentStatusHistory.setBundleEnd(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
+			
+			config.setFolders(folderList);
 
 		} catch (Exception e) {
 			try {
@@ -181,32 +186,6 @@ public class PushPublisherBundler implements IBundler {
 
 		BundlerUtil.objectToXML(wrapper, pushContentFile, true);
 		pushContentFile.setLastModified(cal.getTimeInMillis());
-		
-		//Create the content folder tree
-		writeFolderTree(bundleRoot, con);
-	}
-	
-	private void writeFolderTree(File bundleRoot, Contentlet con)
-			throws IOException, DotBundleException, DotDataException,
-			DotSecurityException, DotPublisherException
-	{
-		//Get Folder tree
-		String contentFolder = con.getFolder();
-		if(!contentFolder.equals(FolderAPI.SYSTEM_FOLDER)) {
-			//Folder folder = fAPI.findFolderByPath(
-					//contentFolder, con.getHost(), systemUser, false);
-			
-			//Folder parent = fAPI.findParentFolder(folder, systemUser, false);
-			
-			String myFolderUrl = bundleRoot.getPath() + 
-					File.separator + "ROOT" +
-					contentFolder.replace("/", File.separator);
-			
-			File fsFolder = new File(myFolderUrl);
-			
-			if(!fsFolder.exists())
-				fsFolder.mkdirs();
-		}
 	}
 
 	@Override
