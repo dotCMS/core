@@ -123,6 +123,8 @@ public class PushPublisher extends Publisher {
 				        form.field("AUTH_TOKEN", 
 				        		retriveKeyString(
 				        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
+				        form.field("GROUP_ID", endpoint.getGroupId());
+				        form.field("ENDPOINT_ID", endpoint.getId());
 				        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 						
 						//Sending bundle to endpoint

@@ -21,7 +21,7 @@ public class PublisherConfig implements Map<String, Object> {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT;
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID;
 	}
 	
 	public void PublisherConfig(Map<String, Object> map){
@@ -82,6 +82,14 @@ public class PublisherConfig implements Map<String, Object> {
 
 	public void setEndpoint(String endpoint) {
 		params.put(Config.ENDPOINT.name(), endpoint);
+	}
+	
+	public String getGroupId() {
+		return (String) params.get(Config.GROUP_ID.name());
+	}
+
+	public void setGroupId(String groupId) {
+		params.put(Config.GROUP_ID.name(), groupId);
 	}
 	
 	@SuppressWarnings("unchecked")

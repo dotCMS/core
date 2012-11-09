@@ -163,17 +163,21 @@ public class PublisherQueueJob implements StatefulJob {
 		        		
 		        		if(target != null) {
 			        		webResource = client.resource(target.toURL()+"/api/auditPublishing");
-			        	
-				        	PublishAuditHistory remoteHistory = 
-				        			PublishAuditHistory.getObjectFromString(
-				        			webResource
-							        .path("get")
-							        .path(pendingAudit.getBundleId()).get(String.class));
-				        	
-				        	if(remoteHistory != null) {
-				        		bufferMap.putAll(remoteHistory.getEndpointsMap());
-					        	break;
-				        	}
+			        		
+			        		try {
+					        	PublishAuditHistory remoteHistory = 
+					        			PublishAuditHistory.getObjectFromString(
+					        			webResource
+								        .path("get")
+								        .path(pendingAudit.getBundleId()).get(String.class));
+					        	
+					        	if(remoteHistory != null) {
+					        		bufferMap.putAll(remoteHistory.getEndpointsMap());
+						        	break;
+					        	}
+			        		} catch(Exception e) {
+			        			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
+			        		}
 		        		}
 	        		}
 		        }
@@ -195,7 +199,7 @@ public class PublisherQueueJob implements StatefulJob {
 	        		countOk++;
         	}
         	
-        	if(countOk == bufferMap.size()) {
+        	if(countOk == endpointsMap.size()) {
 	        	pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
 	        			PublishAuditStatus.Status.SUCCESS, 
 	        			localHistory);

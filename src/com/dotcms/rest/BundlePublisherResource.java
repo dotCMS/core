@@ -49,6 +49,8 @@ public class BundlePublisherResource extends WebResource {
 			@FormDataParam("bundle") InputStream bundle,
 			@FormDataParam("bundle") FormDataContentDisposition fileDetail,
 			@FormDataParam("AUTH_TOKEN") String auth_token_enc,
+			@FormDataParam("GROUP_ID") String groupId,
+			@FormDataParam("ENDPOINT_ID") String endpointId,
 			@Context HttpServletRequest req) {
 		
 		try {
@@ -65,14 +67,14 @@ public class BundlePublisherResource extends WebResource {
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
 			String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
 			
-			PublishAuditStatus status =updateAuditTable(mySelf, bundleFolder);
+			PublishAuditStatus status =updateAuditTable(endpointId, groupId, bundleFolder);
 			
 			//Write file on FS
 			writeToFile(bundle, bundlePath+bundleName);
 			
 			
 			//Start thread
-			new Thread(new PublishThread(bundleName, mySelf.getId(), status)).start();
+			new Thread(new PublishThread(bundleName, groupId, endpointId, status)).start();
 			
 			return Response.status(HttpStatus.SC_OK).build();
 		} catch (NumberFormatException e) {
@@ -87,12 +89,14 @@ public class BundlePublisherResource extends WebResource {
 	class PublishThread implements Runnable {
 		private String bundleName;
 		private String endpointId;
+		private String groupId;
 		private PublishAuditStatus status;
 		
-		public PublishThread(String bundleName, String endpointId, PublishAuditStatus status) {
+		public PublishThread(String bundleName, String groupId, String endpointId, PublishAuditStatus status) {
 			this.bundleName = bundleName;
 			this.endpointId = endpointId;
 			this.status = status;
+			this.groupId = groupId;
 		}
 		
 	    public void run() {
@@ -103,6 +107,7 @@ public class BundlePublisherResource extends WebResource {
 			BundlePublisher bundlePublisher = new BundlePublisher();
 			pconf.setId(bundleName);
 			pconf.setEndpoint(endpointId);
+			pconf.setGroupId(groupId);
 			try {
 				bundlePublisher.init(pconf);
 				bundlePublisher.process(null);
@@ -111,7 +116,7 @@ public class BundlePublisherResource extends WebResource {
 				EndpointDetail detail = new EndpointDetail();
 				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
 				detail.setInfo("Failed to publish because an error occurred: "+e.getMessage());
-				status.getStatusPojo().addOrUpdateEndpoint("",endpointId, detail);
+				status.getStatusPojo().addOrUpdateEndpoint(groupId,endpointId, detail);
 				
 				try {
 					auditAPI.updatePublishAuditStatus(bundleName.substring(0, bundleName.indexOf(".tar.gz")), 
@@ -126,7 +131,7 @@ public class BundlePublisherResource extends WebResource {
 	    }
 	}
 
-	private PublishAuditStatus updateAuditTable(PublishingEndPoint mySelf, String bundleFolder)
+	private PublishAuditStatus updateAuditTable(String endpointId, String groupId, String bundleFolder)
 			throws DotPublisherException {
 		//Status
 		PublishAuditStatus status =  new PublishAuditStatus(bundleFolder);
@@ -136,7 +141,7 @@ public class BundlePublisherResource extends WebResource {
 		detail.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
 		detail.setInfo("Received bundle");
 		
-		historyPojo.addOrUpdateEndpoint("", mySelf.getId(), detail);
+		historyPojo.addOrUpdateEndpoint(groupId, endpointId, detail);
 		status.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE);
 		status.setStatusPojo(historyPojo);
 		
