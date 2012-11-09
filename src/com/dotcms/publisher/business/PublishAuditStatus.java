@@ -26,7 +26,8 @@ public class PublishAuditStatus implements Serializable {
 		
 		BUNDLE_SENT_SUCCESSFULLY(10),
 		RECEIVED_BUNDLE(11),
-		PUBLISHING_BUNDLE(12);
+		PUBLISHING_BUNDLE(12),
+		TEMPORARY_FAILED_TO_PUBLISH(13);
 		
 
 		private int code;
