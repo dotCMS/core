@@ -1,5 +1,6 @@
 package com.dotcms.publishing;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -306,13 +308,33 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 	public void setBundlers(List<IBundler> bundlers) {
 
-		params.put(Config.BUNDLERS.name(), bundlers);
+		List<String> bs = new ArrayList<String>();
+		for(IBundler clazz : bundlers){
+			bs.add(clazz.getClass().getName());
+		}
+
+		params.put(Config.BUNDLERS.name(), bs);
+		
+		
+		
+		
+		
 	}
 	
 	
 	public List<IBundler> getBundlers() {
 
-		return (List<IBundler>) params.get(Config.BUNDLERS.name());
+		 List<String> x = (List<String>) params.get(Config.BUNDLERS.name());
+		 List<IBundler> bs = new ArrayList<IBundler>();
+		 for(String name : x){
+			 try {
+				bs.add((IBundler) Class.forName(name).newInstance());
+			} catch (Exception e) {
+				Logger.error(this.getClass(), "Cannont get bundler:" + e.getMessage(), e);
+			}
+			 
+		 }
+		 return bs;
 	}
 	public boolean isIncremental(){
 		return (params.get(Config.INCREMENTAL.name()) !=null);
