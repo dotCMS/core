@@ -482,7 +482,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotStateException
 	 */
 
-	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
+	public void save(Folder folder, String existingId, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
 		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(id ==null || !UtilMethods.isSet(id.getId())){
@@ -503,8 +503,15 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user + " does not have permission to add to " + name);
 		}
 
-		ffac.save(folder);
+		ffac.save(folder, existingId);
 
+	}
+	
+	
+	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
+
+		save( folder, null,  user,  respectFrontEndPermissions);
+		
 	}
 
 

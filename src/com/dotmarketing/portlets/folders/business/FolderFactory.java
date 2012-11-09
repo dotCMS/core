@@ -36,6 +36,10 @@ public abstract class FolderFactory {
 	abstract void save(Folder folderInode) throws DotDataException;
 
 
+	abstract void save(Folder folderInode, String existingId) throws DotDataException;
+
+
+	
 	abstract boolean exists(String folderInode) throws DotDataException;
 
 	protected boolean isChildFolder(Folder folder1,Folder folder2) throws DotIdentifierStateException, DotDataException, DotSecurityException{
