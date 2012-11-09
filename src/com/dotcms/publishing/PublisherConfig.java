@@ -11,7 +11,6 @@ import java.util.Set;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -34,11 +33,11 @@ public class PublisherConfig implements Map<String, Object> {
 	private boolean liveOnly = true;
 
 	@SuppressWarnings("unchecked")
-	public List<Folder> getFolders() {
-		return (List<Folder>) params.get(Config.FOLDERS.name());
+	public List<String> getFolders() {
+		return (List<String>) params.get(Config.FOLDERS.name());
 	}
 
-	public void setFolders(List<Folder> folders) {
+	public void setFolders(List<String> folders) {
 		params.put(Config.FOLDERS.name(), folders);
 	}
 
