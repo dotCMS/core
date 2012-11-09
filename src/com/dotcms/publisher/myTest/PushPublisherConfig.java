@@ -11,6 +11,11 @@ public class PushPublisherConfig extends PublisherConfig {
 		PUBLISH,
 		UNPUBLISH
 	}
+	public static enum AssetTypes {
+		TEMPLATES,
+		HTMLPAGES,
+		CONTAINERS
+	}
 	
 	private Operation operation;
 	private List<PublishingEndPoint> endpoints;
@@ -83,5 +88,35 @@ public class PushPublisherConfig extends PublisherConfig {
 		List<Class> clazz = new ArrayList<Class>();
 		clazz.add(PushPublisher.class);
 		return clazz;
+	}
+	
+
+	@SuppressWarnings("unchecked")
+	public List<String> getContainers() {
+		return (List<String>) get(AssetTypes.CONTAINERS.name());
+	
+	}
+	@SuppressWarnings("unchecked")
+	public List<String> getTemplates() {
+		return (List<String>) get(AssetTypes.TEMPLATES.name());
+	
+	}
+	@SuppressWarnings("unchecked")
+	public List<String> getHTMLPages() {
+		return (List<String>) get(AssetTypes.HTMLPAGES.name());
+	
+	}
+	
+
+	public void setHTMLPages(List<String> folders) {
+		put(AssetTypes.HTMLPAGES.name(), folders);
+	}
+	
+	public void setContainers(List<String> containers) {
+		put(AssetTypes.CONTAINERS.name(), containers);
+	}
+	
+	public void setTemplates(List<String> templates) {
+		put(AssetTypes.TEMPLATES.name(), templates);
 	}
 }
