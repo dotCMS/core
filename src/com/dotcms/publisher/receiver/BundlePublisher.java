@@ -129,7 +129,7 @@ public class BundlePublisher extends Publisher {
              currentStatusHistory.setPublishStart(new Date());
              detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
              detail.setInfo("Publishing bundle");
-             currentStatusHistory.addOrUpdateEndpoint("", config.getEndpoint(), detail);
+             currentStatusHistory.addOrUpdateEndpoint(config.getGroupId(), config.getEndpoint(), detail);
 
              auditAPI.updatePublishAuditStatus(bundleFolder,
                      PublishAuditStatus.Status.PUBLISHING_BUNDLE,
@@ -201,7 +201,7 @@ public class BundlePublisher extends Publisher {
                 detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
                 detail.setInfo("Failed to publish because an error occurred: "+e.getMessage());
                 detail.setStackTrace(ExceptionUtils.getStackTrace(e));
-                currentStatusHistory.addOrUpdateEndpoint("", config.getEndpoint(), detail);
+                currentStatusHistory.addOrUpdateEndpoint(config.getGroupId(), config.getEndpoint(), detail);
                 currentStatusHistory.setBundleEnd(new Date());
 
                 auditAPI.updatePublishAuditStatus(bundleFolder,
@@ -245,7 +245,7 @@ public class BundlePublisher extends Publisher {
 		    //Update audit
 		    detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
 		    detail.setInfo("Everything ok");
-		    currentStatusHistory.addOrUpdateEndpoint("", config.getEndpoint(), detail);
+		    currentStatusHistory.addOrUpdateEndpoint(config.getGroupId(), config.getEndpoint(), detail);
 		    currentStatusHistory.setBundleEnd(new Date());
 		    currentStatusHistory.setAssets(assetIds);
 		    auditAPI.updatePublishAuditStatus(bundleFolder,
