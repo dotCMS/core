@@ -104,7 +104,10 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 		dc.setSQL(SELECT_ENDPOINT_GROUPS);
 		List<Map<String, Object>> res = dc.loadObjectResults();
 		for(Map<String, Object> group : res){
-			sendGroups.add(group.get("group_name").toString());
+			if(group.get("group_name") != null)
+				sendGroups.add(group.get("group_name").toString());
+			else
+				sendGroups.add("");
 		}
 		return sendGroups;
 	}

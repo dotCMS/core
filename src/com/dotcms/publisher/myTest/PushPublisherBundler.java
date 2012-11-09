@@ -1,9 +1,25 @@
 package com.dotcms.publisher.myTest;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -13,15 +29,11 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.util.*;
 
 public class PushPublisherBundler implements IBundler {
 	private PushPublisherConfig config;
@@ -30,6 +42,7 @@ public class PushPublisherBundler implements IBundler {
 	UserAPI uAPI = null;
 	PublisherAPI pubAPI = null;
 	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
+	FolderAPI fAPI = APILocator.getFolderAPI();
 
 	@Override
 	public String getName() {
@@ -168,6 +181,32 @@ public class PushPublisherBundler implements IBundler {
 
 		BundlerUtil.objectToXML(wrapper, pushContentFile, true);
 		pushContentFile.setLastModified(cal.getTimeInMillis());
+		
+		//Create the content folder tree
+		writeFolderTree(bundleRoot, con);
+	}
+	
+	private void writeFolderTree(File bundleRoot, Contentlet con)
+			throws IOException, DotBundleException, DotDataException,
+			DotSecurityException, DotPublisherException
+	{
+		//Get Folder tree
+		String contentFolder = con.getFolder();
+		if(!contentFolder.equals(FolderAPI.SYSTEM_FOLDER)) {
+			//Folder folder = fAPI.findFolderByPath(
+					//contentFolder, con.getHost(), systemUser, false);
+			
+			//Folder parent = fAPI.findParentFolder(folder, systemUser, false);
+			
+			String myFolderUrl = bundleRoot.getPath() + 
+					File.separator + "ROOT" +
+					contentFolder.replace("/", File.separator);
+			
+			File fsFolder = new File(myFolderUrl);
+			
+			if(!fsFolder.exists())
+				fsFolder.mkdirs();
+		}
 	}
 
 	@Override
