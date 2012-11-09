@@ -18,7 +18,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -158,6 +157,8 @@ public class LinkCheckerAPITest extends TestBase {
             "http://thissitedoesntexists.imsureaboutthat.badextension",
             "https://somebadhostovergoogle.google.com", // hope they don't create it in the future
             "http://thisisabadhostover.dotcms.comx", // yeah small typo
+            "mailto:dev@dotcms.com", // should ignore this one
+            "webcalc://somehostnomatter.itsbad", // should ignore this
             "http://dotcms.com" // this is a good link
         };
         HashSet<String> links=new HashSet<String>(Arrays.asList(extlinks));
@@ -180,8 +181,6 @@ public class LinkCheckerAPITest extends TestBase {
             assertEquals(il.getTitle(),"short title");
             assertTrue(links.remove(il.getUrl()));
         }
-        assertEquals(links.size(),1);
-        assertEquals(links.toArray()[0],extlinks[extlinks.length-1]);
         
         ///////////////////////////////////////
         // basic internal links to htmlpages //
@@ -276,6 +275,8 @@ public class LinkCheckerAPITest extends TestBase {
         assertTrue(invalids!=null);
         assertEquals(invalids.size(),1);
         assertEquals(invalids.get(0).getUrl(),"/test_mapped/url3");
+        
+        
         
     }
     
