@@ -1052,7 +1052,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if(pageIdent != null && UtilMethods.isSet(pageIdent.getInode())){
-                    PageServices.invalidate(APILocator.getHTMLPageAPI().loadPageByPath(pageIdent.getURI(), pageIdent.getHostId()));
+                    HTMLPage page=APILocator.getHTMLPageAPI().loadPageByPath(pageIdent.getURI(), pageIdent.getHostId());
+                    if(page!=null && UtilMethods.isSet(page.getIdentifier()))
+                        PageServices.invalidate(page);
                 }
                 MultiTreeFactory.deleteMultiTree(mt);
             }

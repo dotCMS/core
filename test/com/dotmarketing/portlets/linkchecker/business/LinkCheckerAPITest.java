@@ -14,10 +14,12 @@ import org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -37,7 +39,7 @@ public class LinkCheckerAPITest extends TestBase {
     
     protected static User sysuser=null;
     protected static Structure structure=null,urlmapstructure=null;
-    protected static Host host=null;
+    protected static Host host=null,host2=null;
     protected static Field field=null,urlmapfield=null;
     protected static Template template=null;
     protected static Container container=null;
@@ -56,6 +58,11 @@ public class LinkCheckerAPITest extends TestBase {
             host.setHostname("lickcheckertesthost"+uuid.replaceAll("-", "_")+".demo.dotcms.com");
             host=APILocator.getHostAPI().save(host, sysuser, false);
             APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+            
+            host2 = new Host();
+            host2.setHostname("lickcheckertesthost_2_"+uuid.replaceAll("-", "_")+".demo.dotcms.com");
+            host2=APILocator.getHostAPI().save(host2, sysuser, false);
+            APILocator.getContentletAPI().isInodeIndexed(host2.getInode());
             
             structure=new Structure();
             structure.setHost(host.getIdentifier());
@@ -128,7 +135,7 @@ public class LinkCheckerAPITest extends TestBase {
             contentList.addAll(APILocator.getContentletAPI().findByStructure(urlmapstructure.getInode(), sysuser, false, 0, 0));
             APILocator.getContentletAPI().delete(contentList, sysuser, false);
             
-            for(HTMLPage pp : APILocator.getHTMLPageAPI().findHtmlPages(sysuser, false, null, host.getIdentifier(), null, null, null, 0, -1, null))
+            for(HTMLPage pp : APILocator.getHTMLPageAPI().findHtmlPages(sysuser, false, null, null, null, null, template.getIdentifier(), 0, -1, null))
                 APILocator.getHTMLPageAPI().delete(pp, sysuser, false);
 
             APILocator.getTemplateAPI().delete(template, sysuser, false);
@@ -140,6 +147,8 @@ public class LinkCheckerAPITest extends TestBase {
             StructureFactory.deleteStructure(urlmapstructure);
             APILocator.getHostAPI().archive(host, sysuser, false);
             APILocator.getHostAPI().delete(host, sysuser, false);
+            APILocator.getHostAPI().archive(host2, sysuser, false);
+            APILocator.getHostAPI().delete(host2, sysuser, false);
         }
         finally {
             HibernateUtil.closeSession();
@@ -276,8 +285,54 @@ public class LinkCheckerAPITest extends TestBase {
         assertEquals(invalids.size(),1);
         assertEquals(invalids.get(0).getUrl(),"/test_mapped/url3");
         
+        /* Now using two hosts. In host1 we gonna put a content with a valid
+         * internal link to a page. Then we add the contentlet in a page that
+         * lives in another host. That should break the internal link */ 
+        con=new Contentlet();
+        con.setStringProperty("html", "<html><body>" +
+        		              "<a href='"+page2.getURI()+"'>thislink</a>" +
+        		              "<a href='"+page3.getURI()+"'>thislink</a>" +
+        		              "<a href='"+page4.getURI()+"'>thislink</a>" +
+        				      "</body></html>");
+        con.setStructureInode(structure.getInode());
+        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
+        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
+        MultiTree mtree=new MultiTree();
+        mtree.setParent1(page1.getIdentifier());
+        mtree.setParent2(container.getIdentifier());
+        mtree.setChild(con.getIdentifier());
+        mtree.setTreeOrder(1);
+        MultiTreeFactory.saveMultiTree(mtree);
         
+        // that should be ok. It is in the same host where those pages are valid
+        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+        assertTrue(invalids!=null);
+        assertEquals(invalids.size(),0);
         
+        // now lets add some salt here. If the content is added in a page in host2 it 
+        // should break the internal links
+        Folder home=APILocator.getFolderAPI().createFolders("/home/", host2, sysuser, false);
+        HTMLPage page5=new HTMLPage();
+        page5.setFriendlyName("something");
+        page5.setPageUrl("something."+pageExt);
+        page5.setTitle("something");
+        page5.setTemplateId(template.getIdentifier());
+        page5=APILocator.getHTMLPageAPI().saveHTMLPage(page5, template, home, sysuser, false);
+        
+        mtree=new MultiTree();
+        mtree.setParent1(page5.getIdentifier());
+        mtree.setParent2(container.getIdentifier());
+        mtree.setChild(con.getIdentifier());
+        mtree.setTreeOrder(1);
+        MultiTreeFactory.saveMultiTree(mtree);
+        
+        // now all those links should be broken
+        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+        assertTrue(invalids!=null);
+        assertEquals(3,invalids.size());
+        links=new HashSet<String>(Arrays.asList(new String[] {page2.getURI(),page3.getURI(),page4.getURI()}));
+        for(InvalidLink link : invalids)
+            assertTrue(links.remove(link));
     }
     
     @Test
