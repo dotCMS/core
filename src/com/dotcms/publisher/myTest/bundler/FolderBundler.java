@@ -117,7 +117,7 @@ public class FolderBundler implements IBundler {
 					fsFolder.mkdirs();
 				
 				FolderWrapper wrapper = folderWrappers.remove(0);
-				String myFileUrl = fsFolder.getParent()+ 
+				String myFileUrl = fsFolder.getParent()+ File.separator +
 						wrapper.getFolder().getIdentifier()+FOLDER_EXTENSION;
 				
 				File fileWrapper = new File(myFileUrl);
