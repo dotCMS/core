@@ -22,6 +22,7 @@ import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
@@ -74,7 +75,9 @@ public class BundlePublisherResource extends WebResource {
 			
 			
 			//Start thread
-			new Thread(new PublishThread(bundleName, groupId, endpointId, status)).start();
+			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
+				new Thread(new PublishThread(bundleName, groupId, endpointId, status)).start();
+			}
 			
 			return Response.status(HttpStatus.SC_OK).build();
 		} catch (NumberFormatException e) {
