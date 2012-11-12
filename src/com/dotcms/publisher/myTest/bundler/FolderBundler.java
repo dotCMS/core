@@ -18,6 +18,7 @@ import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -92,9 +93,12 @@ public class FolderBundler implements IBundler {
 		while(folder != null && !folder.getName().equals(FolderAPI.SYSTEM_FOLDER)) {
 			path.add(folder.getName());
 			
+			Host host =  APILocator.getHostAPI().find(folder.getHostId(), systemUser, false);
 			folderWrappers.add(
 					new FolderWrapper(folder, 
-							APILocator.getIdentifierAPI().find(folder.getIdentifier())));
+							APILocator.getIdentifierAPI().find(folder.getIdentifier()),
+							host,
+							APILocator.getIdentifierAPI().find(host.getIdentifier())));
 			
 			folder = fAPI.findParentFolder(folder, systemUser, false);
 		}
