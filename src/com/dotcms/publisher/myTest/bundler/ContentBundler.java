@@ -218,26 +218,20 @@ public class ContentBundler implements IBundler {
 			throws DotStateException, DotHibernateException, DotDataException, DotSecurityException
 	{
 		//Get Id from folder
-		List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
-				APILocator.getFolderAPI().find(folder, systemUser, false));
-		folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
-				APILocator.getFolderAPI().find(folder, systemUser, false)));
-		
-		if(config.getFolders() == null)
-			config.setFolders(new HashSet<String>());
+//		List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
+//				APILocator.getFolderAPI().find(folder, systemUser, false));
+//		folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
+//				APILocator.getFolderAPI().find(folder, systemUser, false)));
+
 		config.getFolders().add(folder);
-			
-		
-		if(config.getHTMLPages() == null)
-			config.setHTMLPages(new HashSet<String>());
+
 		config.getHTMLPages().addAll(htmlPages);
 		
-		for(HTMLPage htmlPage: folderHtmlPages) {
-			config.getHTMLPages().add(htmlPage.getIdentifier());
-		}
+//		for(HTMLPage htmlPage: folderHtmlPages) {
+//			config.getHTMLPages().add(htmlPage.getIdentifier());
+//		}
 		
-		if(config.getContainers() == null)
-			config.setContainers(new HashSet<String>());
+
 		config.getContainers().addAll(containers);
 		
 	}

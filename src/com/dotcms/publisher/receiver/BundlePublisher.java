@@ -28,7 +28,9 @@ import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
 import com.dotcms.publisher.myTest.bundler.ContentBundler;
 import com.dotcms.publisher.myTest.bundler.FolderBundler;
+import com.dotcms.publisher.myTest.bundler.HTMLPageBundler;
 import com.dotcms.publisher.myTest.wrapper.FolderWrapper;
+import com.dotcms.publisher.myTest.wrapper.HTMLPageWrapper;
 import com.dotcms.publisher.myTest.wrapper.PushContentWrapper;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
@@ -56,6 +58,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.services.PageServices;
@@ -77,6 +80,7 @@ public class BundlePublisher extends Publisher {
     private PublishAuditAPI auditAPI = null;
     private FolderAPI fAPI = null;
     private IdentifierAPI iAPI = null;
+    private HTMLPageAPI htmlAPI = null;
     Map<String,Long> infoToRemove = new HashMap<String, Long>();
     List<String> pagesToClear = new ArrayList<String>();
     List<String> assetIds = new ArrayList<String>();
@@ -93,6 +97,7 @@ public class BundlePublisher extends Publisher {
         auditAPI = PublishAuditAPI.getInstance();
         fAPI = APILocator.getFolderAPI();
         iAPI = APILocator.getIdentifierAPI();
+        htmlAPI = APILocator.getHTMLPageAPI();
 
         try {
             systemUser = uAPI.getSystemUser();
@@ -156,10 +161,12 @@ public class BundlePublisher extends Publisher {
             //For each content take the wrapper and save it on DB
             Collection<File> contents = FileUtil.listFilesRecursively(folderOut, new ContentBundler().getFileFilter());
             Collection<File> folders = FileUtil.listFilesRecursively(new File(folderOut + File.separator + "ROOT"), new FolderBundler().getFileFilter());
+            Collection<File> pages = FileUtil.listFilesRecursively(folderOut, new HTMLPageBundler().getFileFilter());
    
             
             
             handleFolders(folders);
+            handlePages(pages);
             handleContents(contents, folderOut);
             
            
@@ -470,6 +477,45 @@ public class BundlePublisher extends Publisher {
     	
     	
     	
+    }
+    
+    private void handlePages(Collection<File> pages) throws DotPublishingException{
+    	try{
+	        XStream xstream=new XStream(new DomDriver());
+	        //Handle folders
+	        for(File pageFile: pages) {
+	        	if(pageFile.isDirectory()) continue;
+	        	HTMLPageWrapper pageWrapper = (HTMLPageWrapper)  xstream.fromXML(new FileInputStream(pageFile));
+	        	
+	        	HTMLPage htmlPage = pageWrapper.getPage();
+	        	Identifier htmlPageId = pageWrapper.getPageId();
+	        	
+	        	if(!UtilMethods.isSet(iAPI.find(htmlPage))) {
+	        		Identifier id = iAPI.find(htmlPage.getIdentifier());
+	        		Folder parentFolder = fAPI.find(htmlPage.getParent(), systemUser, false);
+        			if(id ==null || !UtilMethods.isSet(id.getId())){
+        				Identifier pageIdNew = null;
+        				
+        				pageIdNew = iAPI.createNew(htmlPage, 
+        						parentFolder, 
+            					htmlPageId.getId());
+	            			
+        				
+            			htmlPage.setIdentifier(pageIdNew.getId());
+            		}
+        			
+        			htmlAPI.saveHTMLPage(htmlPage, 
+        					APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), systemUser, false), 
+        					parentFolder, 
+        					systemUser, 
+        					false);
+	        	}        			
+	        }
+        	
+    	}
+    	catch(Exception e){
+    		throw new DotPublishingException(e.getMessage(),e);
+    	}    	
     }
     
     
