@@ -35,9 +35,10 @@ public class PublisherConfig implements Map<String, Object> {
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getFolders() {
-		if(get(Config.FOLDERS.name()) == null)
-			return  new HashSet<String>();
-		
+		if(get(Config.FOLDERS.name()) == null){
+			Set<String> foldersToBuild =   new HashSet<String>();
+			params.put(Config.FOLDERS.name(), foldersToBuild);
+		}
 		return (Set<String>) params.get(Config.FOLDERS.name());
 	}
 
