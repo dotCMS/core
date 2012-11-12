@@ -69,7 +69,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		Folder f = ffac.findFolderByPath(path, host);
 
 
-		if (InodeUtils.isSet(f.getInode()) && !papi.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+		if (f != null && InodeUtils.isSet(f.getInode()) && !papi.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 
 			// SYSTEM_FOLDER means if the user has permissions to the host, then they can see host.com/
 			if(FolderAPI.SYSTEM_FOLDER.equals(f.getInode())) {

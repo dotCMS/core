@@ -63,6 +63,7 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
@@ -129,8 +130,6 @@ public class BundlePublisher extends Publisher {
 
 
         //Publish the bundle extracted
-        PushContentWrapper wrapper = null;
-        Contentlet content = null;
         PublishAuditHistory currentStatusHistory = null;
         EndpointDetail detail = new EndpointDetail();
         
@@ -161,7 +160,7 @@ public class BundlePublisher extends Publisher {
             
             
             handleFolders(folders);
-            //handleContents(contents, folderOut);
+            handleContents(contents, folderOut);
             
            
             
@@ -189,8 +188,7 @@ public class BundlePublisher extends Publisher {
                         currentStatusHistory);
 
             } catch (DotPublisherException e1) {
-                throw new DotPublishingException("Cannot check in the content with inode: " +
-                        content.getInode(), e);
+                throw new DotPublishingException("Cannot update audit: ", e);
             }
             throw new DotPublishingException("Error Publishing: " +  e, e);
         }
@@ -427,34 +425,42 @@ public class BundlePublisher extends Publisher {
 	        	FolderWrapper folderWrapper = (FolderWrapper)  xstream.fromXML(new FileInputStream(folderFile));
 	        	
 	        	Folder folder = folderWrapper.getFolder();
-	        	Identifier id = folderWrapper.getIndentifier();
+	        	Identifier folderId = folderWrapper.getFolderId();
+	        	Host host = folderWrapper.getHost();
+	        	Identifier hostId = folderWrapper.getHostId();
 	        	
-	        	Folder parentFolder = fAPI.findFolderByPath(id.getParentPath(), id.getHostId(), systemUser, false);
-	        	Folder existing = null;
-	        	try{
-	        		existing = fAPI.find(folder.getInode(), systemUser, false);
-	        	}
-	        	catch(Exception e){
-	        		Logger.debug(this.getClass(), "Folder not found");
-	        	}
 	        	
-	    		if(existing != null && existing.getInode() != null && existing.getModDate().before(folder.getModDate())) {
-					iAPI.save(id);
-					fAPI.save(folder, systemUser, false);
-				
-	    		} else {
-	    			Identifier newId = null;
-	            	if(parentFolder.getHostId() ==null || parentFolder.getHostId().equals(APILocator.getHostAPI().findSystemHost().getIdentifier())){
-	            		Host host = APILocator.getHostAPI().find(folder.getHostId(), systemUser, false);
-	            		newId = iAPI.createNew(folder, host, id.getId());
-	            	}
-	            	else{
-	            		newId = iAPI.createNew(folder, parentFolder, id.getId());
-	            	}
-	    			
-	    			fAPI.save(folder, folder.getInode(), systemUser, false);
-	    		}
-	
+	        	
+	        	//Check Host if exists otherwise create
+	        	Host localHost = APILocator.getHostAPI().findByName(host.getHostname(), systemUser, false);
+        		
+        		if(localHost == null) {
+        			host.setProperty("_dont_validate_me", true);
+        			
+        			Identifier idNew = iAPI.createNew(host, APILocator.getHostAPI().findSystemHost(), hostId.getId());
+        			host.setIdentifier(idNew.getId());
+        			localHost = APILocator.getHostAPI().save(host, systemUser, false);
+        		}
+	        	
+	        	//Loop over the folder
+        		if(!UtilMethods.isSet(fAPI.findFolderByPath(folderId.getPath(), localHost, systemUser, false).getInode())) {
+        			Identifier id = iAPI.find(folder.getIdentifier());
+        			if(id ==null || !UtilMethods.isSet(id.getId())){
+        				Identifier folderIdNew = null;
+        				if(folderId.getParentPath().equals("/")) {
+	            			folderIdNew = iAPI.createNew(folder, 
+	            					localHost, 
+	            					folderId.getId());
+        				} else {
+        					folderIdNew = iAPI.createNew(folder, 
+                					fAPI.findFolderByPath(folderId.getParentPath(), localHost, systemUser, false), 
+                					folderId.getId());
+        				}
+            			folder.setIdentifier(folderIdNew.getId());
+            		}
+        			fAPI.save(folder, folder.getInode(), systemUser, false);
+        		}
+        			
 	        }
         	
     	}
@@ -506,6 +512,8 @@ public class BundlePublisher extends Publisher {
             }
             
             for (File contentFile : contents) {
+            	if(contentFile.isDirectory() ) continue;
+            	
             	wrapper = (PushContentWrapper)xstream.fromXML(new FileInputStream(contentFile));
                 if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
 	                ContentletVersionInfo info = wrapper.getInfo();

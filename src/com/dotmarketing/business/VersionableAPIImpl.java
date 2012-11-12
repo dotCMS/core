@@ -146,6 +146,10 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(ver.getVersionId()))
         	return false;
         Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
+        
+        if(!UtilMethods.isSet(ident.getId()))
+        	return false;
+        
         if(ident.getAssetType().equals("contentlet")) {
             Contentlet cont=(Contentlet)ver;
             ContentletVersionInfo cinfo=vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());

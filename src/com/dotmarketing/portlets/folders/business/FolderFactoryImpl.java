@@ -1529,7 +1529,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			HibernateUtil.saveOrUpdate(folderInode);
 		}else{
 			folderInode.setInode(existingId);
-			HibernateUtil.save(folderInode);
+			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
 		}
 		
 	}

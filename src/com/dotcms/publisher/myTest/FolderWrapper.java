@@ -1,15 +1,20 @@
 package com.dotcms.publisher.myTest;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 public class FolderWrapper {
 	private Folder folder;
-	private Identifier indentifier;
-	
-	public FolderWrapper(Folder folder, Identifier identifier) {
+	private Identifier folderId;
+	private Host host;
+	private Identifier hostId;
+
+	public FolderWrapper(Folder folder, Identifier folderId, Host host, Identifier hostId) {
 		this.folder = folder;
-		this.indentifier = identifier;
+		this.folderId = folderId;
+		this.host = host;
+		this.hostId = hostId;
 	}
 	
 	public Folder getFolder() {
@@ -18,10 +23,28 @@ public class FolderWrapper {
 	public void setFolder(Folder folder) {
 		this.folder = folder;
 	}
-	public Identifier getIndentifier() {
-		return indentifier;
+	
+	public Host getHost() {
+		return host;
 	}
-	public void setIndentifier(Identifier indentifier) {
-		this.indentifier = indentifier;
+
+	public void setHost(Host host) {
+		this.host = host;
+	}
+
+	public Identifier getFolderId() {
+		return folderId;
+	}
+
+	public void setFolderId(Identifier folderId) {
+		this.folderId = folderId;
+	}
+
+	public Identifier getHostId() {
+		return hostId;
+	}
+
+	public void setHostId(Identifier hostId) {
+		this.hostId = hostId;
 	}
 }
