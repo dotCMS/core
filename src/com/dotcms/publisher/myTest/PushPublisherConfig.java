@@ -95,24 +95,32 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getContainers() {
-		if(get(AssetTypes.CONTAINERS.name()) == null)
-			return  new HashSet<String>();
+		if(get(AssetTypes.CONTAINERS.name()) == null){
+			Set<String> containersToBuild =   new HashSet<String>();
+			put(AssetTypes.CONTAINERS.name(), containersToBuild);
+		}
 		
 		return (Set<String>) get(AssetTypes.CONTAINERS.name());
 	
 	}
 	@SuppressWarnings("unchecked")
 	public Set<String> getTemplates() {
-		if(get(AssetTypes.TEMPLATES.name()) == null)
-			return  new HashSet<String>();
-		
+		if(get(AssetTypes.TEMPLATES.name()) == null){
+			Set<String> templatesToBuild =   new HashSet<String>();
+			put(AssetTypes.TEMPLATES.name(), templatesToBuild);
+		}
+
 		return (Set<String>) get(AssetTypes.TEMPLATES.name());
 	
 	}
 	@SuppressWarnings("unchecked")
 	public Set<String> getHTMLPages() {
-		if(get(AssetTypes.HTMLPAGES.name()) == null)
-			return  new HashSet<String>();
+		if(get(AssetTypes.HTMLPAGES.name()) == null){
+			Set<String> htmlPagesToBuild =   new HashSet<String>();
+			put(AssetTypes.HTMLPAGES.name(), htmlPagesToBuild);
+		}
+
+		
 		
 		return (Set<String>) get(AssetTypes.HTMLPAGES.name());
 	}
