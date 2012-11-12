@@ -1082,8 +1082,8 @@ function clearCategoriesList(inode, name){
 }
 
 function addKVPair(inode, key, val){    
-    var k=dijit.byId(key).attr('value');
-    var v=dijit.byId(val).attr('value');
+    var k=dojo.byId(key).value;
+    var v=dojo.byId(val).value;
     var list = dojo.byId(inode+'list').innerHTML;
     var hid = dojo.byId(inode).value;
     if(hid == ''){
