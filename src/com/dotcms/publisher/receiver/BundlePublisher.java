@@ -160,7 +160,10 @@ public class BundlePublisher extends Publisher {
 
             //For each content take the wrapper and save it on DB
             Collection<File> contents = FileUtil.listFilesRecursively(folderOut, new ContentBundler().getFileFilter());
-            Collection<File> folders = FileUtil.listFilesRecursively(new File(folderOut + File.separator + "ROOT"), new FolderBundler().getFileFilter());
+            Collection<File> folders = new ArrayList<File>();
+            if(new File(folderOut + File.separator + "ROOT").exists()){
+            	folders = FileUtil.listFilesRecursively(new File(folderOut + File.separator + "ROOT"), new FolderBundler().getFileFilter());
+            }
             Collection<File> pages = FileUtil.listFilesRecursively(folderOut, new HTMLPageBundler().getFileFilter());
    
             
@@ -292,7 +295,15 @@ public class BundlePublisher extends Publisher {
             multiTree.setRelationType((String) mRow.get("relation_type"));
             multiTree.setTreeOrder(Integer.parseInt( mRow.get("tree_order").toString()));
 
-
+            List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(multiTree.getChild());
+            for(MultiTree t : trees){
+            	MultiTreeFactory.deleteMultiTree(t);
+            	
+            }
+            
+            
+            
+            
             MultiTreeFactory.saveMultiTree(multiTree);
         }
 
