@@ -1,6 +1,7 @@
 package com.dotcms.publisher.myTest;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -94,23 +95,31 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getContainers() {
+		if(get(AssetTypes.CONTAINERS.name()) == null)
+			return  new HashSet<String>();
+		
 		return (Set<String>) get(AssetTypes.CONTAINERS.name());
 	
 	}
 	@SuppressWarnings("unchecked")
 	public Set<String> getTemplates() {
+		if(get(AssetTypes.TEMPLATES.name()) == null)
+			return  new HashSet<String>();
+		
 		return (Set<String>) get(AssetTypes.TEMPLATES.name());
 	
 	}
 	@SuppressWarnings("unchecked")
 	public Set<String> getHTMLPages() {
+		if(get(AssetTypes.HTMLPAGES.name()) == null)
+			return  new HashSet<String>();
+		
 		return (Set<String>) get(AssetTypes.HTMLPAGES.name());
-	
 	}
 	
 
-	public void setHTMLPages(Set<String> folders) {
-		put(AssetTypes.HTMLPAGES.name(), folders);
+	public void setHTMLPages(Set<String> htmlPages) {		
+		put(AssetTypes.HTMLPAGES.name(), htmlPages);
 	}
 	
 	public void setContainers(Set<String> containers) {

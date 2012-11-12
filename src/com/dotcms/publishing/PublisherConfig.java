@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,9 @@ public class PublisherConfig implements Map<String, Object> {
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getFolders() {
+		if(get(Config.FOLDERS.name()) == null)
+			return  new HashSet<String>();
+		
 		return (Set<String>) params.get(Config.FOLDERS.name());
 	}
 
