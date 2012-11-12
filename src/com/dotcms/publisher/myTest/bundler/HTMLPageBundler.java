@@ -4,29 +4,26 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublisherAPI;
-import com.dotcms.publisher.myTest.FolderWrapper;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
+import com.dotcms.publisher.myTest.wrapper.HTMLPageWrapper;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -67,8 +64,15 @@ public class HTMLPageBundler implements IBundler {
 		Set<String> htmlIds = config.getHTMLPages();
 		
 		try {
+			List<HTMLPage> htmlPages = new ArrayList<HTMLPage>();
+			
 			for (String htmlId : htmlIds) {
-				writePage(bundleRoot, htmlId);
+				htmlPages.add(APILocator.getHTMLPageAPI().loadLivePageById(htmlId, systemUser, false));
+				htmlPages.add(APILocator.getHTMLPageAPI().loadWorkingPageById(htmlId, systemUser, false));
+			}
+			
+			for(HTMLPage page : htmlPages) {
+				writePage(bundleRoot, page);
 			}
 		} catch (Exception e) {
 			status.addFailure();
@@ -81,71 +85,48 @@ public class HTMLPageBundler implements IBundler {
 
 	
 	
-	private void writePage(File bundleRoot, String idHtml)
+	private void writePage(File bundleRoot, HTMLPage page)
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
-		//Get HTML page
-		HTMLPage pageLive = APILocator.getHTMLPageAPI().loadLivePageById(idHtml, systemUser, false);
-		HTMLPage pageWorking = APILocator.getHTMLPageAPI().loadWorkingPageById(idHtml, systemUser, false);
+		Identifier pageId = APILocator.getIdentifierAPI().find(page);
+		HTMLPageWrapper wrapper = 
+				new HTMLPageWrapper(page, pageId);
 		
-		
-		//Get Folder tree
-		Folder folder = fAPI.find(idFolder, systemUser, false);
-		List<String> path = new ArrayList<String>();
-		List<FolderWrapper> folderWrappers = new ArrayList<FolderWrapper>();
-		while(folder != null && !folder.getName().equals(FolderAPI.SYSTEM_FOLDER)) {
-			path.add(folder.getName());
-			
-			Host host =  APILocator.getHostAPI().find(folder.getHostId(), systemUser, false);
-			folderWrappers.add(
-					new FolderWrapper(folder, 
-							APILocator.getIdentifierAPI().find(folder.getIdentifier()),
-							host,
-							APILocator.getIdentifierAPI().find(host.getIdentifier())));
-			
-			folder = fAPI.findParentFolder(folder, systemUser, false);
+		String liveworking = page.isLive() ? "live" :  "working";
+
+		String uri = APILocator.getIdentifierAPI().find(page).getURI().replace("/", File.separator);
+		if(!uri.endsWith(HTML_EXTENSION)){
+			uri.replace(HTML_EXTENSION, "");
+			uri.trim();
+			uri += HTML_EXTENSION;
 		}
 		
-		if(path.size() > 0) {
-			Collections.reverse(path);
-			Collections.reverse(folderWrappers);
-			StringBuilder b = new StringBuilder(File.separator);
-			for (String f : path) {
-				b.append(f);
-				b.append(File.separator);
-				
-				String myFolderUrl = bundleRoot.getPath() + 
-						File.separator + "ROOT" +
-						b.toString();
-				
-				File fsFolder = new File(myFolderUrl);
-				
-				if(!fsFolder.exists())
-					fsFolder.mkdirs();
-				
-				FolderWrapper wrapper = folderWrappers.remove(0);
-				String myFileUrl = fsFolder.getParent()+ File.separator +
-						wrapper.getFolder().getIdentifier()+FOLDER_EXTENSION;
-				
-				File fileWrapper = new File(myFileUrl);
-				
-				BundlerUtil.objectToXML(wrapper, fileWrapper, true);
-			}
-		}
+		Host h = APILocator.getHostAPI().find(pageId.getHostId(), systemUser, false);
+		
+		String myFileUrl = bundleRoot.getPath() + File.separator
+				+liveworking + File.separator
+				+ h.getHostname() + File.separator
+				+ config.getLanguage() + uri;
+
+		File htmlFile = new File(myFileUrl);
+		htmlFile.mkdirs();
+
+		BundlerUtil.objectToXML(wrapper, htmlFile, true);
+		htmlFile.setLastModified(Calendar.getInstance().getTimeInMillis());
 	}
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new FolderBundlerFilter();
+		return new HTMLPageBundlerFilter();
 	}
 	
-	public class FolderBundlerFilter implements FileFilter{
+	public class HTMLPageBundlerFilter implements FileFilter{
 
 		@Override
 		public boolean accept(File pathname) {
 
-			return (pathname.isDirectory() || pathname.getName().endsWith(FOLDER_EXTENSION));
+			return (pathname.isDirectory() || pathname.getName().endsWith(HTML_EXTENSION));
 		}
 
 	}

@@ -31,6 +31,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.myTest.bundler.ContentBundler;
 import com.dotcms.publisher.myTest.bundler.FolderBundler;
+import com.dotcms.publisher.myTest.bundler.HTMLPageBundler;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
@@ -296,6 +297,7 @@ public class PushPublisher extends Publisher {
 
 		list.add(ContentBundler.class);
 		list.add(FolderBundler.class);
+		list.add(HTMLPageBundler.class);
 		return list;
 	}
 
