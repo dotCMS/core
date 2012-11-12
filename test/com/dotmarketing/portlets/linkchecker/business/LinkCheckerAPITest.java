@@ -332,7 +332,7 @@ public class LinkCheckerAPITest extends TestBase {
         assertEquals(3,invalids.size());
         links=new HashSet<String>(Arrays.asList(new String[] {page2.getURI(),page3.getURI(),page4.getURI()}));
         for(InvalidLink link : invalids)
-            assertTrue(links.remove(link));
+            assertTrue(links.remove(link.getUrl()));
     }
     
     @Test
