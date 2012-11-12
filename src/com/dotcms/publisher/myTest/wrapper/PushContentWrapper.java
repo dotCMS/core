@@ -1,8 +1,9 @@
-package com.dotcms.publisher.myTest;
+package com.dotcms.publisher.myTest.wrapper;
 
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.publisher.myTest.PushPublisherConfig;
 import com.dotcms.publisher.myTest.PushPublisherConfig.Operation;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;

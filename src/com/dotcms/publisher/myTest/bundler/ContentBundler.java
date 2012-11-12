@@ -17,8 +17,8 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
-import com.dotcms.publisher.myTest.PushContentWrapper;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
+import com.dotcms.publisher.myTest.wrapper.PushContentWrapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
@@ -27,14 +27,17 @@ import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -88,7 +91,6 @@ public class ContentBundler implements IBundler {
 			currentStatusHistory.setBundleStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
 
-			List<String> folderList = new ArrayList<String>();
 			for(String luceneQuery: config.getLuceneQueries()) {
 				cs = conAPI.search(luceneQuery, 0, 0, "moddate", systemUser, false);
 
@@ -190,9 +192,11 @@ public class ContentBundler implements IBundler {
 		BundlerUtil.objectToXML(wrapper, pushContentFile, true);
 		pushContentFile.setLastModified(cal.getTimeInMillis());
 		
-		addToConfig(con.getFolder(), 
-				PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent1"), 
-				PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent2"));
+		Set<String> htmlIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent1");
+		Set<String> containerIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent2");
+		
+		addToConfig(con.getFolder(), htmlIds, containerIds);
+		
 	}
 
 	@Override
@@ -210,7 +214,15 @@ public class ContentBundler implements IBundler {
 
 	}
 	
-	private void addToConfig(String folder, Set<String> htmlPage, Set<String> containers) {
+	private void addToConfig(String folder, Set<String> htmlPages, Set<String> containers) 
+			throws DotStateException, DotHibernateException, DotDataException, DotSecurityException
+	{
+		//Get Id from folder
+		List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
+				APILocator.getFolderAPI().find(folder, systemUser, false));
+		folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
+				APILocator.getFolderAPI().find(folder, systemUser, false)));
+		
 		if(config.getFolders() == null)
 			config.setFolders(new HashSet<String>());
 		config.getFolders().add(folder);
@@ -218,7 +230,11 @@ public class ContentBundler implements IBundler {
 		
 		if(config.getHTMLPages() == null)
 			config.setHTMLPages(new HashSet<String>());
-		config.getHTMLPages().addAll(htmlPage);
+		config.getHTMLPages().addAll(htmlPages);
+		
+		for(HTMLPage htmlPage: folderHtmlPages) {
+			config.getHTMLPages().add(htmlPage.getIdentifier());
+		}
 		
 		if(config.getContainers() == null)
 			config.setContainers(new HashSet<String>());
