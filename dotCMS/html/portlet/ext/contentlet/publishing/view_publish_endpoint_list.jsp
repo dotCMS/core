@@ -47,7 +47,8 @@
 		<th style="width:40px"></th>		
 
 		<th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>	
-		<th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "status") %></th>
+		<th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "Status") %></th>
+		<th nowrap style="width:100px;text-align: center"><%= LanguageUtil.get(pageContext, "Group") %></th>
 		<th style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_To") %></th>
 	</tr>
 	<%
@@ -69,14 +70,14 @@
 			<td style="cursor: pointer" width="50%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
 				<%=endpoint.getServerName()%> 
 			</td>
-			<td align="center" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+			<td align="right" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+				<%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "" %>
 				<%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%>
-			</td>
-			<td style="cursor: pointer" align="center" nowrap="nowrap" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
 				
-	
+			</td>
+			<td nowrap="nowrap" style="text-align: center""><%=UtilMethods.webifyString(endpoint.getGroupId()) %></td>
+			<td style="cursor: pointer" align="center" nowrap="nowrap" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
 					<%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%>
-	
 			</td>
 	
 	
@@ -118,7 +119,8 @@
 	<tr>
 		<th style="width:40px"></th>		
 		<th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>	
-		<th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "status") %></th>
+		<th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "Status") %></th>
+
 		<th style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %></th>
 	</tr>
 	<%
@@ -143,6 +145,7 @@
 			<td align="center" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
 				<%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%>
 			</td>
+			
 			<td style="cursor: pointer" align="center" nowrap="nowrap" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
 				
 	

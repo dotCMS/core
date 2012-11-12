@@ -1862,7 +1862,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             ident = APILocator.getIdentifierAPI().find(contentlet);
 
         //If contentlet is not new
-        if(ident!=null && InodeUtils.isSet(ident.getId())) {
+        if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get("_dont_validate_me") != null) {
             workingCon = findWorkingContentlet(contentlet);
             permissions = perAPI.getPermissions(workingCon);
             cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
@@ -2128,7 +2128,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 				for (Field field : fields) {
 				    if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
-				        String value=contentlet.getStringProperty(field.getVelocityVarName()).trim();
+				    	String value= null;
+				    	if(contentlet.getStringProperty(field.getVelocityVarName()) != null)
+				    		value=contentlet.getStringProperty(field.getVelocityVarName()).trim();
+				    	
 				        if(UtilMethods.isSet(value)) {
     				        String hostId = Host.SYSTEM_HOST;
     				        if(structureHasAHostField){

@@ -13,23 +13,27 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 public class PublishAuditHistory implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private Map<String, EndpointDetail> endpointsMap;
+	//This map contains the enpoints group
+	//each group can have one or more endpoints
+	private Map<String, Map<String, EndpointDetail>> endpointsMap;
+	
 	private Date bundleStart;
 	private Date bundleEnd;
 	private Date publishStart;
 	private Date publishEnd;
+	private int numTries = 0;
 	private List<String> assets;
 	
 	public PublishAuditHistory() {
 		assets = new ArrayList<String>();
-		endpointsMap = new HashMap<String,EndpointDetail>();
+		endpointsMap = new HashMap<String, Map<String,EndpointDetail>>();
 	}
 	
 	
-	public Map<String, EndpointDetail> getEndpointsMap() {
+	public Map<String, Map<String, EndpointDetail>> getEndpointsMap() {
 		return endpointsMap;
 	}
-	public void setEndpointsMap(Map<String, EndpointDetail> endpointsMap) {
+	public void setEndpointsMap(Map<String, Map<String, EndpointDetail>> endpointsMap) {
 		this.endpointsMap = endpointsMap;
 	}
 	
@@ -81,13 +85,32 @@ public class PublishAuditHistory implements Serializable {
 		this.assets = assets;
 	}
 	
-	public void addOrUpdateEndpoint(String endpointId, EndpointDetail detail) {
-		EndpointDetail temp = endpointsMap.get(endpointId);
-		if(temp != null) {
+	public int getNumTries() {
+		return numTries;
+	}
+
+
+	public void setNumTries(int numTries) {
+		this.numTries = numTries;
+	}
+	
+	public void addNumTries(){
+		this.numTries++;
+	}
+
+
+	public void addOrUpdateEndpoint(String groupId, String endpointId, EndpointDetail detail) {
+		Map<String, EndpointDetail> groupMap = endpointsMap.get(groupId);
+		if(groupMap == null) {
+			groupMap = new HashMap<String, EndpointDetail>();
+			groupMap.put(endpointId, detail);
+			endpointsMap.put(groupId, groupMap);
+		} else if(groupMap.get(endpointId) == null) {
+			groupMap.put(endpointId, detail);
+		} else {
+			EndpointDetail temp = groupMap.get(endpointId);
 			temp.setInfo(detail.getInfo());
 			temp.setStatus(detail.getStatus());
-		} else {
-			endpointsMap.put(endpointId, detail);
 		}
 	}
 	

@@ -61,8 +61,12 @@ public interface PublisherEndpointAPI {
 	 * Oct 29, 2012 - 12:45:37 PM
 	 */
 	void deleteEndpointById(String id) throws DotDataException;
-	
-	
+	/**
+	 * Finds a distinct list of all send groups
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<String> findSendGroups()throws DotDataException;
 	
 		
 }

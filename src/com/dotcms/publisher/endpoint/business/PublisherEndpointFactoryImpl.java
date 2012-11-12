@@ -95,4 +95,20 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 			receiverEndpoints.add(PublisherUtil.getObjectByMap(singleEndpoint));
 		return receiverEndpoints;
 	}
+
+	@Override
+	public List<String> findSendGroups() throws DotDataException {
+		List<String> sendGroups = new ArrayList<String>();
+		
+		DotConnect dc = new DotConnect();
+		dc.setSQL(SELECT_ENDPOINT_GROUPS);
+		List<Map<String, Object>> res = dc.loadObjectResults();
+		for(Map<String, Object> group : res){
+			if(group.get("group_name") != null)
+				sendGroups.add(group.get("group_name").toString());
+			else
+				sendGroups.add("");
+		}
+		return sendGroups;
+	}
 }

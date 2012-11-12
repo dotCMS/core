@@ -14,6 +14,11 @@ import com.dotmarketing.exception.DotDataException;
  */
 public class PublisherEndpointAPIImpl implements PublisherEndpointAPI {
 	
+	@Override
+	public List<String> findSendGroups() throws DotDataException {
+		return publisherEndpointFactory.findSendGroups();
+	}
+
 	private PublisherEndpointFactory publisherEndpointFactory;
 	
 	public PublisherEndpointAPIImpl(PublisherEndpointFactory publisherEndpointFactory){
