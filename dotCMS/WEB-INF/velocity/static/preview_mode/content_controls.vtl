@@ -28,7 +28,7 @@
 	<div id="edit-$CONTENT_INODE" class="dotContentletEdit">	
 		#if($_widget == true)
 				#if($_isFormWidget)
-				
+					<span class="dotEditContentDisabled">${langbackendwebapi.get("modes.Form")}: ${structures.findStructure($ContentletTitle).name}</span>
 				#elseif($EDIT_CONTENT_PERMISSION && $CONTAINER_NUM_CONTENTLETS > 0)
 					<a class="dotEditWidget" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$langbackendwebapi.get("modes.Edit-Widget")</a>
 				#else
