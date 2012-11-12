@@ -2,13 +2,13 @@ package com.dotcms.timemachine.ajax;
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -17,14 +17,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
-import org.quartz.core.QuartzScheduler;
-import org.quartz.impl.QuartzServer;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -57,8 +54,8 @@ public class TimeMachineAjaxAction extends AjaxAction {
         }
     }
 
+    
 
-    private static final DateFormat fmtPretty=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final ObjectWriter jsonWritter=new ObjectMapper().writerWithDefaultPrettyPrinter();
 
     public void getHostsWithTimeMachine(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -107,12 +104,15 @@ public class TimeMachineAjaxAction extends AjaxAction {
                 return o2.compareTo(o1);
             }
         });
-
+        Locale l = PublicCompanyFactory.getDefaultCompany().getLocale();
+        
+        DateFormat fmtPretty=DateFormat.getDateInstance(DateFormat.MEDIUM, l);
+        
         List<Map<String,String>> list=new ArrayList<Map<String,String>>(snaps.size());
         for(Date dd : snaps) {
             Map<String,String> m=new HashMap<String,String>();
             m.put("id", Long.toString(dd.getTime()));
-            m.put("pretty", fmtPretty.format(dd));
+            m.put("pretty", fmtPretty.format(dd) + " -  " + UtilMethods.dateToHTMLTime(dd).toLowerCase());
             list.add(m);
         }
 

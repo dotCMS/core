@@ -246,12 +246,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetType("contentlet");
 				identifier.setParentPath(parentId.getPath());
 				identifier.setAssetName(uri);
-			}else if (versionable instanceof WebAsset) {
+			} else if (versionable instanceof WebAsset) {
 				identifier.setURI(((WebAsset) versionable).getURI(folder));
 				identifier.setAssetType(versionable.getVersionType());
 				if(versionable instanceof Link)
 				    identifier.setAssetName(versionable.getInode());
-			}else{
+			} else{
 				identifier.setURI(uri);
 				identifier.setAssetType(versionable.getVersionType());
 			}
@@ -262,8 +262,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		try {
 			host = hostAPI.findParentHost(folder, systemUser, false);
 		} catch (DotSecurityException e) {
-			throw new DotStateException("I can't find the system host!");
+			throw new DotStateException("I can't find the parent host!");
 		}
+		
+		if("folder".equals(identifier.getAssetType()) && APILocator.getHostAPI().findSystemHost().getIdentifier().equals(host.getIdentifier())){
+			throw new DotStateException("You cannot save a folder on the system host");
+			
+		}
+		
 
 		identifier.setHostId(host.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
@@ -321,7 +327,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             } else if ( versionable instanceof Link ) {
                 identifier.setAssetName( versionable.getInode() );
                 identifier.setParentPath("/");
-            } else {
+            } else if(versionable instanceof Host) {
+				identifier.setAssetName(versionable.getInode());
+				identifier.setAssetType("contentlet");
+				identifier.setParentPath("/");
+				//identifier.setURI(uri);
+			} else {
                 identifier.setURI( uri );
             }
 

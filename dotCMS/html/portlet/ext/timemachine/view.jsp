@@ -35,9 +35,9 @@ function resized() {
     var viewport_height = viewport.h;
 
     var  e =  dojo.byId("borderContainer");
-    dojo.style(e, "height", viewport_height -150+ "px");
+    dojo.style(e, "height", viewport_height -175+ "px");
 
-    dijit.byId("borderContainer").resize();
+    //dijit.byId("borderContainer").resize();
 }
 
 dojo.ready(function(){
@@ -52,6 +52,8 @@ var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
 var hostid;
 
 function hostChange() {
+    dijit.byId('timesel').required=true;
+    dijit.byId('langsel').required=true;
     <%
     String hostInode = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
     Identifier hostIdentifier = APILocator.getIdentifierAPI().findFromInode(hostInode);
@@ -69,6 +71,7 @@ function hostChange() {
     dijit.byId('langsel').set('store',emptyStore);
 }
 function timeChange() {
+
     var time=dijit.byId('timesel').get('value');
     var langid=dijit.byId('langsel').get('value');
 
@@ -86,7 +89,7 @@ function timeChange() {
     			dojo.empty('iframeWrapper');
                 dojo.create("iframe", {
                     "src": '/',
-                    "style": "border: 0; width: 100%; height: 100%"
+                    "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
                 }, dojo.byId('iframeWrapper'));
                 dijit.byId('closeBtn').set('disabled','');
                 dijit.byId('timesel').set('disabled','disabled');
@@ -104,8 +107,19 @@ function stopBrowing() {
             dijit.byId('closeBtn').set('disabled','disabled');
             dijit.byId('timesel').set('disabled','');
             dijit.byId('langsel').set('disabled','');
+            dijit.byId('timesel').required=false;
+            dijit.byId('langsel').required=false;
             dijit.byId('timesel').set('value','');
             dijit.byId('langsel').set('value','');
+            
+            dojo.create("div", {
+                "innerHTML": '<div ><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>',
+                "style": "padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"
+            }, dojo.byId('iframeWrapper'));
+          
+            
+            
+            
         }
     });
 }
@@ -139,8 +153,8 @@ function showSettings() {
     <%@ include file="/html/portlet/ext/timemachine/sub_nav.jsp" %>
 
     <div id="timemachineMain">
-        <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
-            <div dojoType="dijit.layout.ContentPane" region="top">
+        <div id="borderContainer" style="width:100%;">
+            <div style="border:1px silver solid;padding:10px;position:relative;">
                    <span id="tools">
 
 	                   <select id="timesel" dojoType="dijit.form.FilteringSelect"
@@ -168,8 +182,8 @@ function showSettings() {
 
                    </span>
             </div>
-            <div id="iframeWrapper" dojoType="dijit.layout.ContentPane" region="center">
-		        <%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>
+            <div id="iframeWrapper"  >
+		       <div style="padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %></div> 
 		    </div>
         </div>
     </div>

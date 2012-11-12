@@ -67,7 +67,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
 			endpoint.setSending("receive".equals(request.getParameter("sending")));									
-
+			endpoint.setGroupId(request.getParameter("groupId"));		
 			//Save the endpoint.
 			PublisherEndpointAPI peAPI = APILocator.getPublisherEndpointAPI();
 			peAPI.saveEndpoint(endpoint);
@@ -90,7 +90,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
 			endpoint.setSending("receive".equals(request.getParameter("sending")));	
-			
+			endpoint.setGroupId(request.getParameter("groupId"));		
 			//Update the endpoint.
 			PublisherEndpointAPI peAPI = APILocator.getPublisherEndpointAPI();
 			peAPI.updateEndpoint(endpoint);

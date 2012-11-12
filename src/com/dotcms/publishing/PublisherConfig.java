@@ -1,5 +1,6 @@
 package com.dotcms.publishing;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,8 +11,8 @@ import java.util.Set;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -21,7 +22,7 @@ public class PublisherConfig implements Map<String, Object> {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT;
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID;
 	}
 	
 	public void PublisherConfig(Map<String, Object> map){
@@ -32,11 +33,11 @@ public class PublisherConfig implements Map<String, Object> {
 	private boolean liveOnly = true;
 
 	@SuppressWarnings("unchecked")
-	public List<Folder> getFolders() {
-		return (List<Folder>) params.get(Config.FOLDERS.name());
+	public List<String> getFolders() {
+		return (List<String>) params.get(Config.FOLDERS.name());
 	}
 
-	public void setFolders(List<Folder> folders) {
+	public void setFolders(List<String> folders) {
 		params.put(Config.FOLDERS.name(), folders);
 	}
 
@@ -82,6 +83,14 @@ public class PublisherConfig implements Map<String, Object> {
 
 	public void setEndpoint(String endpoint) {
 		params.put(Config.ENDPOINT.name(), endpoint);
+	}
+	
+	public String getGroupId() {
+		return (String) params.get(Config.GROUP_ID.name());
+	}
+
+	public void setGroupId(String groupId) {
+		params.put(Config.GROUP_ID.name(), groupId);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -298,13 +307,33 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 	public void setBundlers(List<IBundler> bundlers) {
 
-		params.put(Config.BUNDLERS.name(), bundlers);
+		List<String> bs = new ArrayList<String>();
+		for(IBundler clazz : bundlers){
+			bs.add(clazz.getClass().getName());
+		}
+
+		params.put(Config.BUNDLERS.name(), bs);
+		
+		
+		
+		
+		
 	}
 	
 	
 	public List<IBundler> getBundlers() {
 
-		return (List<IBundler>) params.get(Config.BUNDLERS.name());
+		 List<String> x = (List<String>) params.get(Config.BUNDLERS.name());
+		 List<IBundler> bs = new ArrayList<IBundler>();
+		 for(String name : x){
+			 try {
+				bs.add((IBundler) Class.forName(name).newInstance());
+			} catch (Exception e) {
+				Logger.error(this.getClass(), "Cannont get bundler:" + e.getMessage(), e);
+			}
+			 
+		 }
+		 return bs;
 	}
 	public boolean isIncremental(){
 		return (params.get(Config.INCREMENTAL.name()) !=null);
