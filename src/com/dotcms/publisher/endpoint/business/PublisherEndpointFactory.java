@@ -16,7 +16,7 @@ public abstract class PublisherEndpointFactory {
 	
 	// this query is for show the endpoint list on UI
 	protected static String GET_ENDPOINTS 						= 	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
-																	"FROM publishing_end_point order by server_name";
+																	"FROM publishing_end_point order by group_id, server_name";
 	
 	// this query is for select a single endpoint for edit it
 	protected static String GET_ENDPOINT_BY_ID					=	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
@@ -50,6 +50,9 @@ public abstract class PublisherEndpointFactory {
 	protected static String DELETE_ENDPOINT_BY_ID				=	"DELETE FROM publishing_end_point " +
 																	"WHERE id = ?";		
 	
+	// this query is for distinct send groups
+	protected static String SELECT_ENDPOINT_GROUPS				=	"select distinct(group_id) as group_name FROM publishing_end_point " ;	
+	
 	public abstract List<PublishingEndPoint> getEndpoints() throws DotDataException;
 	
 	public abstract PublishingEndPoint getEndpointById(String id) throws DotDataException;
@@ -64,5 +67,5 @@ public abstract class PublisherEndpointFactory {
 	
 	public abstract void deleteEndpointById(String id) throws DotDataException;
 	
-	
+	public abstract List<String> findSendGroups() throws DotDataException;
 }

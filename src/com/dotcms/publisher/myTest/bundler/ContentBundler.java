@@ -1,9 +1,27 @@
-package com.dotcms.publisher.myTest;
+package com.dotcms.publisher.myTest.bundler;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
-import com.dotcms.publishing.*;
+import com.dotcms.publisher.myTest.PushContentWrapper;
+import com.dotcms.publisher.myTest.PushPublisherConfig;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -13,27 +31,26 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.util.*;
-
-public class PushPublisherBundler implements IBundler {
+public class ContentBundler implements IBundler {
 	private PushPublisherConfig config;
 	private User systemUser;
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
 	PublisherAPI pubAPI = null;
 	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
+	FolderAPI fAPI = APILocator.getFolderAPI();
+	
+	public final static String CONTENT_EXTENSION = ".content.xml" ;
 
 	@Override
 	public String getName() {
-		return "Push publisher bundler";
+		return "Content bundler";
 	}
 
 	@Override
@@ -46,7 +63,7 @@ public class PushPublisherBundler implements IBundler {
 		try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
-			Logger.fatal(PushPublisherBundler.class,e.getMessage(),e);
+			Logger.fatal(ContentBundler.class,e.getMessage(),e);
 		}
 	}
 
@@ -68,7 +85,7 @@ public class PushPublisherBundler implements IBundler {
 			currentStatusHistory.setBundleStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
 
-
+			List<String> folderList = new ArrayList<String>();
 			for(String luceneQuery: config.getLuceneQueries()) {
 				cs = conAPI.search(luceneQuery, 0, 0, "moddate", systemUser, false);
 
@@ -76,6 +93,7 @@ public class PushPublisherBundler implements IBundler {
 				for (Contentlet con : cs) {
 					writeFileToDisk(bundleRoot, con);
 					status.addCount();
+					folderList.add(con.getFolder());
 				}
 			}
 
@@ -84,6 +102,8 @@ public class PushPublisherBundler implements IBundler {
 			
 			currentStatusHistory.setBundleEnd(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
+			
+			config.setFolders(folderList);
 
 		} catch (Exception e) {
 			try {
@@ -151,12 +171,12 @@ public class PushPublisherBundler implements IBundler {
 		String liveworking = con.isLive() ? "live" :  "working";
 
 		String uri = APILocator.getIdentifierAPI().find(con).getURI().replace("/", File.separator);
-		if(!uri.endsWith(".content")){
-			uri.replace(".content", "");
+		if(!uri.endsWith(CONTENT_EXTENSION)){
+			uri.replace(CONTENT_EXTENSION, "");
 			uri.trim();
-			uri += ".content";
+			uri += CONTENT_EXTENSION;
 		}
-		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getIdentifier() + "." + "content"):uri;
+		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getIdentifier() + CONTENT_EXTENSION):uri;
 
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
@@ -171,9 +191,18 @@ public class PushPublisherBundler implements IBundler {
 	}
 
 	@Override
-	public FileFilter getFileFilter() {
-		// TODO Auto-generated method stub
-		return null;
+	public FileFilter getFileFilter(){
+		return new ContentBundlerFilter();
+	}
+	
+	public class ContentBundlerFilter implements FileFilter{
+
+		@Override
+		public boolean accept(File pathname) {
+
+			return (pathname.isDirectory() || pathname.getName().endsWith(CONTENT_EXTENSION));
+		}
+
 	}
 
 }

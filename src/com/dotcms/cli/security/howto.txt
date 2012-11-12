@@ -1,0 +1,31 @@
+These helper classes can be used to import an Apache .crt file and .key into
+keystores usable by Java and the dotCMS.
+
+
+KeyStoreImportKey: 
+Usage: java java com.dotcms.cli.security.KeyStoreImportKey keystore keystore_password alias keyfile certfile
+
+takes 5 parameters: kestore (absolute path), keystore_passwd, 
+cert's alias, keyfile for the cert that must be imported, certfile to import.
+
+TrustStoreImportKey: 
+
+Usage: java com.dotcms.cli.security.TrustStoreImportKey truststore truststore_password alias certfile
+takes 4 parameters: truststore (absolute path), 
+truststore_passwd, cert's alias, certfile to import.
+
+Both the classes need the certfile and the keyfile (only for KeyStoreImportKey) 
+into the right format (DER).
+
+As an example, suppose that our cert and key are under the name "server.crt" and "server.key"
+
+1. openssl pkcs8 -topk8 -nocrypt -in server.key -inform PEM -out myServerKey.der -outform DER
+
+2. openssl x509 -in server.crt -inform PEM -out myServerCert.der -outform DER
+
+3. Create a new keystore (if you don't have a keystore)
+keytool -genkey -keystore /home/xxxx/mykeystore.jks 
+
+
+4. 
+java com.dotcms.cli.security.KeyStoreImportKey /home/xxxx/mykeystore.jks keystore_password myserver.com myServerKey.der myServerCert.der

@@ -69,19 +69,22 @@
 
 <%
 	if(currentEndpointHistory.getEndpointsMap().size()>0) {
-		for(String key : currentEndpointHistory.getEndpointsMap().keySet()) {
-			EndpointDetail ed = currentEndpointHistory.getEndpointsMap().get(key);
+
+		for(String groupkey : currentEndpointHistory.getEndpointsMap().keySet()) {
+			Map<String, EndpointDetail> groupMap = currentEndpointHistory.getEndpointsMap().get(groupkey);
 			
-			
-			String serverName = key;
-			try{
-					
-				serverName = pepAPI.findEndpointById(key).getServerName().toString();
-			}
-			catch(Exception e){
+			for(String key : groupMap.keySet()) {
+				EndpointDetail ed =  groupMap.get(key);
 				
-			}
-			
+				
+				String serverName = key;
+				try{
+						
+					serverName = pepAPI.findEndpointById(key).getServerName().toString();
+				}
+				catch(Exception e){
+					
+				}
 			
 			
 			
@@ -92,6 +95,7 @@
 		<td><%=ed.getInfo()%></td>
 	</tr>	
 <%				
+			}
 		}
 	}else{
 %>	
