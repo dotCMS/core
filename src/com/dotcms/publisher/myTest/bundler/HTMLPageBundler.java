@@ -27,19 +27,17 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-public class FolderBundler implements IBundler {
+public class HTMLPageBundler implements IBundler {
 	private PushPublisherConfig config;
 	private User systemUser;
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
-	PublisherAPI pubAPI = null;
-	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
-	FolderAPI fAPI = APILocator.getFolderAPI();
 	
-	public final static String FOLDER_EXTENSION = ".folder.xml" ;
+	public final static String HTML_EXTENSION = ".html.xml" ;
 
 	@Override
 	public String getName() {
@@ -51,12 +49,11 @@ public class FolderBundler implements IBundler {
 		config = (PushPublisherConfig) pc;
 		conAPI = APILocator.getContentletAPI();
 		uAPI = APILocator.getUserAPI();
-		pubAPI = PublisherAPI.getInstance();
 
 		try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
-			Logger.fatal(FolderBundler.class,e.getMessage(),e);
+			Logger.fatal(HTMLPageBundler.class,e.getMessage(),e);
 		}
 	}
 
@@ -65,12 +62,13 @@ public class FolderBundler implements IBundler {
 			throws DotBundleException {
 		if(LicenseUtil.getLevel()<200)
 	        throw new RuntimeException("need an enterprise license to run this bundler");
-
-		Set<String> folders = config.getFolders();
+		
+		//Get HTML pages linked with the content
+		Set<String> htmlIds = config.getHTMLPages();
 		
 		try {
-			for (String folder : folders) {
-				writeFolderTree(bundleRoot, folder);
+			for (String htmlId : htmlIds) {
+				writePage(bundleRoot, htmlId);
 			}
 		} catch (Exception e) {
 			status.addFailure();
@@ -83,10 +81,15 @@ public class FolderBundler implements IBundler {
 
 	
 	
-	private void writeFolderTree(File bundleRoot, String idFolder)
+	private void writePage(File bundleRoot, String idHtml)
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
+		//Get HTML page
+		HTMLPage pageLive = APILocator.getHTMLPageAPI().loadLivePageById(idHtml, systemUser, false);
+		HTMLPage pageWorking = APILocator.getHTMLPageAPI().loadWorkingPageById(idHtml, systemUser, false);
+		
+		
 		//Get Folder tree
 		Folder folder = fAPI.find(idFolder, systemUser, false);
 		List<String> path = new ArrayList<String>();

@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -17,6 +19,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.myTest.PushContentWrapper;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
+import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
@@ -93,7 +96,6 @@ public class ContentBundler implements IBundler {
 				for (Contentlet con : cs) {
 					writeFileToDisk(bundleRoot, con);
 					status.addCount();
-					folderList.add(con.getFolder());
 				}
 			}
 
@@ -103,7 +105,6 @@ public class ContentBundler implements IBundler {
 			currentStatusHistory.setBundleEnd(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
 			
-			config.setFolders(folderList);
 
 		} catch (Exception e) {
 			try {
@@ -120,6 +121,7 @@ public class ContentBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException,
 				DotSecurityException, DotPublisherException
 	{
+		
 		Calendar cal = Calendar.getInstance();
 		File pushContentFile = null;
 		Host h = null;
@@ -167,7 +169,6 @@ public class ContentBundler implements IBundler {
 
 		}
 
-
 		String liveworking = con.isLive() ? "live" :  "working";
 
 		String uri = APILocator.getIdentifierAPI().find(con).getURI().replace("/", File.separator);
@@ -188,6 +189,10 @@ public class ContentBundler implements IBundler {
 
 		BundlerUtil.objectToXML(wrapper, pushContentFile, true);
 		pushContentFile.setLastModified(cal.getTimeInMillis());
+		
+		addToConfig(con.getFolder(), 
+				PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent1"), 
+				PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent2"));
 	}
 
 	@Override
@@ -203,6 +208,22 @@ public class ContentBundler implements IBundler {
 			return (pathname.isDirectory() || pathname.getName().endsWith(CONTENT_EXTENSION));
 		}
 
+	}
+	
+	private void addToConfig(String folder, Set<String> htmlPage, Set<String> containers) {
+		if(config.getFolders() == null)
+			config.setFolders(new HashSet<String>());
+		config.getFolders().add(folder);
+			
+		
+		if(config.getHTMLPages() == null)
+			config.setHTMLPages(new HashSet<String>());
+		config.getHTMLPages().addAll(htmlPage);
+		
+		if(config.getContainers() == null)
+			config.setContainers(new HashSet<String>());
+		config.getContainers().addAll(containers);
+		
 	}
 
 }

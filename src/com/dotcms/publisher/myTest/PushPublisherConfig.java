@@ -2,6 +2,7 @@ package com.dotcms.publisher.myTest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publishing.PublisherConfig;
@@ -92,31 +93,31 @@ public class PushPublisherConfig extends PublisherConfig {
 	
 
 	@SuppressWarnings("unchecked")
-	public List<String> getContainers() {
-		return (List<String>) get(AssetTypes.CONTAINERS.name());
+	public Set<String> getContainers() {
+		return (Set<String>) get(AssetTypes.CONTAINERS.name());
 	
 	}
 	@SuppressWarnings("unchecked")
-	public List<String> getTemplates() {
-		return (List<String>) get(AssetTypes.TEMPLATES.name());
+	public Set<String> getTemplates() {
+		return (Set<String>) get(AssetTypes.TEMPLATES.name());
 	
 	}
 	@SuppressWarnings("unchecked")
-	public List<String> getHTMLPages() {
-		return (List<String>) get(AssetTypes.HTMLPAGES.name());
+	public Set<String> getHTMLPages() {
+		return (Set<String>) get(AssetTypes.HTMLPAGES.name());
 	
 	}
 	
 
-	public void setHTMLPages(List<String> folders) {
+	public void setHTMLPages(Set<String> folders) {
 		put(AssetTypes.HTMLPAGES.name(), folders);
 	}
 	
-	public void setContainers(List<String> containers) {
+	public void setContainers(Set<String> containers) {
 		put(AssetTypes.CONTAINERS.name(), containers);
 	}
 	
-	public void setTemplates(List<String> templates) {
+	public void setTemplates(Set<String> templates) {
 		put(AssetTypes.TEMPLATES.name(), templates);
 	}
 }

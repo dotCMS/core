@@ -33,11 +33,11 @@ public class PublisherConfig implements Map<String, Object> {
 	private boolean liveOnly = true;
 
 	@SuppressWarnings("unchecked")
-	public List<String> getFolders() {
-		return (List<String>) params.get(Config.FOLDERS.name());
+	public Set<String> getFolders() {
+		return (Set<String>) params.get(Config.FOLDERS.name());
 	}
 
-	public void setFolders(List<String> folders) {
+	public void setFolders(Set<String> folders) {
 		params.put(Config.FOLDERS.name(), folders);
 	}
 
