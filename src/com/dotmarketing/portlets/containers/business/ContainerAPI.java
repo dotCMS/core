@@ -42,6 +42,18 @@ public interface ContainerAPI {
 	public Container getWorkingContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
+	 * Returns the live container by the id
+	 * 
+	 * @param id
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return Container
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public Container getLiveContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
+	/**
 	 * 
 	 * Retrieves the children working containers attached to the given template
 	 * 

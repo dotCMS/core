@@ -166,6 +166,34 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			return null;
 	}
 	
+	
+	@SuppressWarnings("unchecked")
+	public Container getLiveContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		HibernateUtil dh = new HibernateUtil(Container.class);
+		dh.setSQLQuery("select {containers.*} from containers, inode containers_1_, container_version_info vv " +
+				"where containers.inode = containers_1_.inode and vv.live_inode=containers.inode and " +
+				"vv.identifier = ?");
+		dh.setParam(id);
+		//dh.setParam(true);
+		List<Container> list = dh.list();
+		
+		if(list.size() == 0)
+			return null;
+
+		Container container = list.get(0);
+
+		if (!permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+			throw new DotSecurityException("You don't have permission to read the source file.");
+		}
+		
+		if(InodeUtils.isSet(container.getInode()))
+			return container;
+		else
+			return null;
+	}
+	
+	
 	/**
 	 * 
 	 * Retrieves the children working containers attached to the given template
