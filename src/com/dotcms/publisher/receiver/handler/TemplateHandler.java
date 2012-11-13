@@ -50,23 +50,8 @@ public class TemplateHandler implements IHandler {
 	        	
 	        	Template template = templateWrapper.getTemplate();
 	        	Identifier templateId = templateWrapper.getTemplateId();
-	        	
-	        	if(!UtilMethods.isSet(iAPI.find(template).getId())) {
-	        		Identifier id = iAPI.find(template.getIdentifier());
-	        		Host localHost = APILocator.getHostAPI().find(templateId.getHostId(), systemUser, false);
-        			if(id ==null || !UtilMethods.isSet(id.getId())){
-        				Identifier templateIdNew = null;
-        				
-        				templateIdNew = iAPI.createNew(template, 
-        						localHost, 
-        						templateId.getId());
-	            			
-        				
-        				template.setIdentifier(templateIdNew.getId());
-            		}
-        			
-        			tAPI.saveTemplate(template, localHost, systemUser, false);
-	        	}        			
+	        	Host localHost = APILocator.getHostAPI().find(templateId.getHostId(), systemUser, false);
+	        	tAPI.saveTemplate(template, localHost, systemUser, false);
 	        }
         	
     	}
