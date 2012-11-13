@@ -4,18 +4,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collection;
 
-import com.dotcms.publisher.myTest.bundler.HTMLPageBundler;
-import com.dotcms.publisher.myTest.wrapper.HTMLPageWrapper;
+import com.dotcms.publisher.myTest.bundler.ContainerBundler;
+import com.dotcms.publisher.myTest.wrapper.ContainerWrapper;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -25,8 +25,7 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 public class ContainerHandler implements IHandler {
 	private IdentifierAPI iAPI = APILocator.getIdentifierAPI();
 	private UserAPI uAPI = APILocator.getUserAPI();
-	private FolderAPI fAPI = APILocator.getFolderAPI();
-	private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
+	private ContainerAPI cAPI = APILocator.getContainerAPI();
 
 	@Override
 	public String getName() {
@@ -35,43 +34,42 @@ public class ContainerHandler implements IHandler {
 	
 	@Override
 	public void handle(File bundleFolder) throws Exception {
-		Collection<File> pages = FileUtil.listFilesRecursively(bundleFolder, new HTMLPageBundler().getFileFilter());
+		Collection<File> containers = FileUtil.listFilesRecursively(bundleFolder, new ContainerBundler().getFileFilter());
 		
-        handlePages(pages);
+        handleContainers(containers);
 	}
 	
-	private void handlePages(Collection<File> pages) throws DotPublishingException, DotDataException{
+	private void handleContainers(Collection<File> containers) throws DotPublishingException, DotDataException{
 		User systemUser = uAPI.getSystemUser();
 		
 		try{
 	        XStream xstream=new XStream(new DomDriver());
 	        //Handle folders
-	        for(File pageFile: pages) {
-	        	if(pageFile.isDirectory()) continue;
-	        	HTMLPageWrapper pageWrapper = (HTMLPageWrapper)  xstream.fromXML(new FileInputStream(pageFile));
+	        for(File containerFile: containers) {
+	        	if(containerFile.isDirectory()) continue;
 	        	
-	        	HTMLPage htmlPage = pageWrapper.getPage();
-	        	Identifier htmlPageId = pageWrapper.getPageId();
+	        	ContainerWrapper containerWrapper = (ContainerWrapper)  xstream.fromXML(new FileInputStream(containerFile));
 	        	
-	        	if(!UtilMethods.isSet(iAPI.find(htmlPage))) {
-	        		Identifier id = iAPI.find(htmlPage.getIdentifier());
-	        		Folder parentFolder = fAPI.find(htmlPage.getParent(), systemUser, false);
+	        	Container container = containerWrapper.getContainer();
+	        	Identifier containerId = containerWrapper.getContainerId();
+	        	
+	        	if(!UtilMethods.isSet(iAPI.find(container))) {
+	        		Identifier id = iAPI.find(container.getIdentifier());
+	        		Host localHost = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
         			if(id ==null || !UtilMethods.isSet(id.getId())){
-        				Identifier pageIdNew = null;
+        				Identifier containerIdNew = null;
         				
-        				pageIdNew = iAPI.createNew(htmlPage, 
-        						parentFolder, 
-            					htmlPageId.getId());
+        				containerIdNew = iAPI.createNew(container, 
+        						localHost, 
+        						containerId.getId());
 	            			
         				
-            			htmlPage.setIdentifier(pageIdNew.getId());
+        				container.setIdentifier(containerIdNew.getId());
             		}
         			
-        			htmlAPI.saveHTMLPage(htmlPage, 
-        					APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), systemUser, false), 
-        					parentFolder, 
-        					systemUser, 
-        					false);
+        			cAPI.save(container, 
+        					StructureCache.getStructureByInode(container.getStructureInode()),
+        					localHost, systemUser, false);
 	        	}        			
 	        }
         	
