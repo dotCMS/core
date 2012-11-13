@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
+import com.dotmarketing.portlets.templates.business.TemplateAPITest;
 
 /**
  * Created by Jonathan Gamba.
@@ -27,7 +28,8 @@ import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
         PermissionAPITest.class,
         ContainerAPITest.class,
         DotCMSCMISTest.class,
-        LinkCheckerAPITest.class
+        LinkCheckerAPITest.class,
+        TemplateAPITest.class
 //        CMISBaseTest.class
 } )
 public class AllTestsSuite {
