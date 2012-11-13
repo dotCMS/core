@@ -116,7 +116,6 @@ var editButtonRow="editEventButtonRow";
 
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
-
 <style media="all" type="text/css">
 	/* @import url(/html/portlet/ext/contentlet/edit_contentlet.css);
 	@import url(/html/css/widget.css);
