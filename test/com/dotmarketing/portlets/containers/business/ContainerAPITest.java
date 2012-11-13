@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.containers.business;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -97,5 +97,17 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertEquals(cc.getMaxContentlets(),c.getMaxContentlets());
         assertEquals(cc.getPreLoop(),c.getPreLoop());
         assertEquals(cc.getPostLoop(),c.getPostLoop());
+        
+        // now an update with existing inode
+        String newInode=UUIDGenerator.generateUuid();
+        cc.setPreLoop("new preloop");
+        cc.setInode(newInode);
+        cc = APILocator.getContainerAPI().save(cc, st, host, user, false);
+        assertEquals(newInode, cc.getInode());
+        assertEquals(existingIdentifier, cc.getIdentifier());
+        cc = APILocator.getContainerAPI().getWorkingContainerById(cc.getIdentifier(), user, false);
+        assertEquals(newInode, cc.getInode());
+        assertEquals(existingIdentifier, cc.getIdentifier());
+        assertEquals(cc.getPreLoop(),"new preloop");
     }
 }
