@@ -3,15 +3,14 @@ package com.dotcms.publisher.myTest.bundler;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
-import com.dotcms.publisher.myTest.wrapper.HTMLPageWrapper;
+import com.dotcms.publisher.myTest.wrapper.ContainerWrapper;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
@@ -23,22 +22,22 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-public class HTMLPageBundler implements IBundler {
+public class ContainerBundler implements IBundler {
 	private PushPublisherConfig config;
 	private User systemUser;
 	ContentletAPI conAPI = null;
 	UserAPI uAPI = null;
 	
-	public final static String HTML_EXTENSION = ".html.xml" ;
+	public final static String CONTAINER_EXTENSION = ".container.xml" ;
 
 	@Override
 	public String getName() {
-		return "HTML page bundler";
+		return "Container bundler";
 	}
 
 	@Override
@@ -50,7 +49,7 @@ public class HTMLPageBundler implements IBundler {
 		try {
 			systemUser = uAPI.getSystemUser();
 		} catch (DotDataException e) {
-			Logger.fatal(HTMLPageBundler.class,e.getMessage(),e);
+			Logger.fatal(ContainerBundler.class,e.getMessage(),e);
 		}
 	}
 
@@ -60,19 +59,21 @@ public class HTMLPageBundler implements IBundler {
 		if(LicenseUtil.getLevel()<200)
 	        throw new RuntimeException("need an enterprise license to run this bundler");
 		
-		//Get HTML pages linked with the content
-		Set<String> htmlIds = config.getHTMLPages();
+		//Get containers linked with the content
+		Set<String> containerIds = config.getContainers();
 		
 		try {
-			List<HTMLPage> htmlPages = new ArrayList<HTMLPage>();
+			Set<Container> containers = new HashSet<Container>();
 			
-			for (String htmlId : htmlIds) {
-				htmlPages.add(APILocator.getHTMLPageAPI().loadLivePageById(htmlId, systemUser, false));
-				htmlPages.add(APILocator.getHTMLPageAPI().loadWorkingPageById(htmlId, systemUser, false));
+			for (String containerId : containerIds) {
+				containers.add(APILocator.getContainerAPI().
+						getWorkingContainerById(containerId, systemUser, false));
+				containers.add(APILocator.getContainerAPI().
+						getLiveContainerById(containerId, systemUser, false));
 			}
 			
-			for(HTMLPage page : htmlPages) {
-				writePage(bundleRoot, page);
+			for(Container container : containers) {
+				writeContainer(bundleRoot, container);
 			}
 		} catch (Exception e) {
 			status.addFailure();
@@ -85,48 +86,48 @@ public class HTMLPageBundler implements IBundler {
 
 	
 	
-	private void writePage(File bundleRoot, HTMLPage page)
+	private void writeContainer(File bundleRoot, Container container)
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
-		Identifier pageId = APILocator.getIdentifierAPI().find(page);
-		HTMLPageWrapper wrapper = 
-				new HTMLPageWrapper(page, pageId);
+		Identifier containerId = APILocator.getIdentifierAPI().find(container);
+		ContainerWrapper wrapper = 
+				new ContainerWrapper(containerId, container);
 		
-		String liveworking = page.isLive() ? "live" :  "working";
+		String liveworking = container.isLive() ? "live" :  "working";
 
-		String uri = APILocator.getIdentifierAPI().find(page).getURI().replace("/", File.separator);
-		if(!uri.endsWith(HTML_EXTENSION)){
-			uri.replace(HTML_EXTENSION, "");
+		String uri = APILocator.getIdentifierAPI()
+				.find(container).getURI().replace("/", File.separator);
+		if(!uri.endsWith(CONTAINER_EXTENSION)){
+			uri.replace(CONTAINER_EXTENSION, "");
 			uri.trim();
-			uri += HTML_EXTENSION;
+			uri += CONTAINER_EXTENSION;
 		}
 		
-		Host h = APILocator.getHostAPI().find(pageId.getHostId(), systemUser, false);
+		Host h = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
 		
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
-				+ h.getHostname() + File.separator
-				+ config.getLanguage() + uri;
+				+ h.getHostname() + uri;
 
-		File htmlFile = new File(myFileUrl);
-		htmlFile.mkdirs();
+		File containerFile = new File(myFileUrl);
+		containerFile.mkdirs();
 
-		BundlerUtil.objectToXML(wrapper, htmlFile, true);
-		htmlFile.setLastModified(Calendar.getInstance().getTimeInMillis());
+		BundlerUtil.objectToXML(wrapper, containerFile, true);
+		containerFile.setLastModified(Calendar.getInstance().getTimeInMillis());
 	}
 
 	@Override
 	public FileFilter getFileFilter(){
-		return new HTMLPageBundlerFilter();
+		return new ContainerBundlerFilter();
 	}
 	
-	public class HTMLPageBundlerFilter implements FileFilter{
+	public class ContainerBundlerFilter implements FileFilter{
 
 		@Override
 		public boolean accept(File pathname) {
 
-			return (pathname.isDirectory() || pathname.getName().endsWith(HTML_EXTENSION));
+			return (pathname.isDirectory() || pathname.getName().endsWith(CONTAINER_EXTENSION));
 		}
 
 	}

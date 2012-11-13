@@ -15,10 +15,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotcms.publisher.myTest.PushPublisher;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
-import com.dotcms.publisher.myTest.bundler.ContentBundler;
-import com.dotcms.publisher.myTest.bundler.FolderBundler;
 import com.dotcms.publisher.util.TrustFactory;
-import com.dotcms.publishing.IBundler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
@@ -53,9 +50,6 @@ public class PublisherQueueJob implements StatefulJob {
 			
 			PushPublisherConfig pconf = new PushPublisherConfig();
 			List<Class> clazz = new ArrayList<Class>();
-			List<IBundler> bundler = new ArrayList<IBundler>();
-			bundler.add(new ContentBundler());
-			bundler.add(new  FolderBundler());
 			clazz.add(PushPublisher.class);
 
 			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
@@ -96,7 +90,6 @@ public class PublisherQueueJob implements StatefulJob {
 					pconf.runNow();
 	
 					pconf.setPublishers(clazz);
-					pconf.setBundlers(bundler);
 					pconf.setEndpoints(endpointAPI.findReceiverEndpoints());
 					
 					if(Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
