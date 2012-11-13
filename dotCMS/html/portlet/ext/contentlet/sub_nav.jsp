@@ -4,7 +4,14 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-
+<script type="text/javascript">
+function viewFormsList()
+{
+	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
+	href = href + "</portlet:actionURL>";
+	document.location.href = href;
+}
+</script>
 <%
     request.setAttribute("SHOW_HOST_SELECTOR", new Boolean(true));
 	RenderRequestImpl rreq = (RenderRequestImpl) pageContext.getAttribute("renderRequest");
@@ -74,6 +81,37 @@
 		String crumbTrailReferer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), params);
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "import-contentlet"), null));
+
+	} else if (portlet1.getPortletId().equals("EXT_FORM_HANDLER")) {
+		
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: viewFormsList();")); 
+
+		if(strutsAction.equals("/ext/contentlet/view_contentlets")){
+			
+			if (UtilMethods.isSet(request.getAttribute("ContentletForm"))) {
+				ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
+				cTrail.add(new CrumbTrailEntry(contentletForm.getStructure().getName(), null));
+			} else {
+				cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Form"), null));
+			}
+			
+		}else if(strutsAction.equals("/ext/contentlet/edit_contentlet")){
+
+			if (UtilMethods.isSet(request.getAttribute("ContentletForm"))) {
+				ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
+				cTrail.add(new CrumbTrailEntry(contentletForm.getStructure().getName(), "javascript: cancelEdit();"));
+			} else {
+				cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Form"), "javascript: cancelEdit();"));
+			}
+
+			if (UtilMethods.isSet(request.getAttribute("ContentletForm"))) {
+				ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
+				cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "add-edit") + " " + contentletForm.getStructure().getName(), null));
+			} else {
+				cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "edit-contentlet"), null));
+			}
+
+		}
 
 	} else {
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: cancelEdit();"));
