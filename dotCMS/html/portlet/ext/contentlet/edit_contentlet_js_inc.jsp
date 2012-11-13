@@ -75,7 +75,7 @@ dojo.require("dojox.layout.ContentPane");
 	}
 	function cancelEditCallback(callbackData){
 		<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-		//callbackData=callbackData+"&inode=<%=contentlet.getInode()%>&structure_id=<%=structure.getInode()%>";
+			callbackData=callbackData+"&structure_id=<%=structure.getInode()%>";
 		<%}%>
 		self.location = callbackData;
 	}
