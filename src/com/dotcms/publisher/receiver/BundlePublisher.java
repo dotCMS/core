@@ -55,6 +55,7 @@ public class BundlePublisher extends Publisher {
         if(LicenseUtil.getLevel()<200)
             throw new RuntimeException("need an enterprise licence to run this");
         
+        handlers = new ArrayList<IHandler>();
         //The order is really important
         handlers.add(new FolderHandler());
         handlers.add(new ContainerHandler());
@@ -117,6 +118,7 @@ public class BundlePublisher extends Publisher {
         try {
             HibernateUtil.startTransaction();
             
+            //Execute the handlers
             for(IHandler handler : handlers )
             	handler.handle(folderOut);
 

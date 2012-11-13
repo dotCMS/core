@@ -103,8 +103,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		containerFactory.save(container);
 	}
 	
+	private void save(Container container, String existingId) throws DotDataException {
+		containerFactory.save(container);
+	}
+	
 	protected void save(WebAsset webAsset) throws DotDataException {
 		save((Container) webAsset);
+	}
+	
+	protected void save(WebAsset webAsset, String existingId) throws DotDataException {
+		save((Container) webAsset, existingId);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -236,7 +244,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public Container save(Container container, Structure structure, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Container save(Container container, String existingId, Structure structure, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Container currentContainer = null;
 		List<Template> currentTemplates = null;
 		Identifier identifier = null;
@@ -297,6 +305,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		ContainerServices.invalidate(container, true);
 		
 		return container;
+	}
+	
+	public Container save(Container container, Structure structure, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return save(container,null, structure, host, user, respectFrontendRoles);
 	}
 	
 	public boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {

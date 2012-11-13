@@ -101,6 +101,23 @@ public interface ContainerAPI {
 	 */
 	public Container save(Container container, Structure structure, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
+	
+	/**
+	 * Save container
+	 * 
+	 * @param container
+	 * @param existingId
+	 * @param structure
+	 * @param host
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return Container
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public Container save(Container container, String existingId, Structure structure, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
+	
 	/**
 	 * Delete the specified container
 	 * 
