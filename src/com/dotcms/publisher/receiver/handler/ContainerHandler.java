@@ -53,24 +53,11 @@ public class ContainerHandler implements IHandler {
 	        	Container container = containerWrapper.getContainer();
 	        	Identifier containerId = containerWrapper.getContainerId();
 	        	
-	        	if(!UtilMethods.isSet(iAPI.find(container).getId())) {
-	        		Identifier id = iAPI.find(container.getIdentifier());
-	        		Host localHost = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
-        			if(id ==null || !UtilMethods.isSet(id.getId())){
-        				Identifier containerIdNew = null;
-        				
-        				containerIdNew = iAPI.createNew(container, 
-        						localHost, 
-        						containerId.getId());
-	            			
-        				
-        				container.setIdentifier(containerIdNew.getId());
-            		}
-        			
-        			cAPI.save(container, 
-        					StructureCache.getStructureByInode(container.getStructureInode()),
-        					localHost, systemUser, false);
-	        	}        			
+        		Host localHost = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
+    			cAPI.save(container, 
+    					StructureCache.getStructureByInode(container.getStructureInode()),
+    					localHost, systemUser, false);
+	        	
 	        }
         	
     	}
