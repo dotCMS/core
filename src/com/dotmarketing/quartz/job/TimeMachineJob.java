@@ -6,13 +6,14 @@ import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 
 
-public class TimeMachineJob implements Job {
+public class TimeMachineJob implements Job, StatefulJob {
 
     @Override
     public void execute(JobExecutionContext ctx) throws JobExecutionException {

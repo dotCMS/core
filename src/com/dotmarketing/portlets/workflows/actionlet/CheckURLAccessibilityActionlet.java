@@ -13,11 +13,9 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.linkchecker.util.LinkCheckerUtil;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -30,6 +28,7 @@ import com.liferay.portal.model.User;
  * Workflow actionlet that call the link checker on the given content fields. 
  * 
  * @author	Graziano Aliberti - Engineering Ingegneria Informatica
+ * @author Jorge Urdaneta - dotCMS
  * @date	Feb 28, 2012
  */
 public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
@@ -76,33 +75,24 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
             throw new WorkflowActionFailureException(exx.getMessage());
         }
 		Contentlet con = processor.getContentlet();
+				
+		List<InvalidLink> httpResponse=null;
+        try {
+            httpResponse = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+        } catch (Exception e1) {
+            Logger.error(this, e1.getMessage(), e1);
+            throw new WorkflowActionFailureException(e1.getMessage());
+        }
 		
-		for(Field f : FieldsCache.getFieldsByStructureInode(con.getStructureInode())) {
-			if(f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())){
-				
-				//get the value
-				String value = con.getStringProperty(f.getVelocityVarName());
-				
-				List<InvalidLink> httpResponse=null;
-                try {
-                    httpResponse = APILocator.getLinkCheckerAPI().findInvalidLinks(value,user);
-                } catch (Exception e1) {
-                    Logger.error(this, e1.getMessage(), e1);
-                    throw new WorkflowActionFailureException(e1.getMessage());
-                }
-				
-				//if there are unreachable URL...
-				if(httpResponse.size()>0){
-				    String msg="";
-                    try {
-                        msg = LanguageUtil.get(user, "checkURL.errorBrokenLinks");
-                    } catch (Exception e) {
-                        
-                    } 
-					throw new WorkflowActionFailureException(LinkCheckerUtil.buildPopupMsgWithLinksList(msg, httpResponse));
-				}
-			}
+		//if there are unreachable URL...
+		if(httpResponse.size()>0){
+		    String msg="";
+            try {
+                msg = LanguageUtil.get(user, "checkURL.errorBrokenLinks");
+            } catch (Exception e) {
+                
+            } 
+			throw new WorkflowActionFailureException(LinkCheckerUtil.buildPopupMsgWithLinksList(msg, httpResponse));
 		}
 	}
-
 }
