@@ -29,6 +29,7 @@ import com.dotcms.publisher.receiver.handler.ContentHandler;
 import com.dotcms.publisher.receiver.handler.FolderHandler;
 import com.dotcms.publisher.receiver.handler.HTMLPageHandler;
 import com.dotcms.publisher.receiver.handler.IHandler;
+import com.dotcms.publisher.receiver.handler.LanguageHandler;
 import com.dotcms.publisher.receiver.handler.TemplateHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
@@ -62,6 +63,7 @@ public class BundlePublisher extends Publisher {
         handlers.add(new TemplateHandler());
         handlers.add(new HTMLPageHandler());
         handlers.add(new ContentHandler());
+        handlers.add(new LanguageHandler());
         
         auditAPI = PublishAuditAPI.getInstance();
 

@@ -251,7 +251,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLMAXDATE);
 			
-			dc.addParam(Status.BUNDLE_REQUESTED.getCode());
+			dc.addParam(Status.BUNDLING.getCode());
 			
 			List<Map<String, Object>> res = dc.loadObjectResults();
 			
