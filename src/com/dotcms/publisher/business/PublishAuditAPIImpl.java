@@ -240,6 +240,31 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 	
+	
+	private final String SELECTSQLMAXDATE=
+			"select max(c.create_date) as max_date "+
+			"from publishing_queue_audit c " +
+			"where c.status != ? ";
+	
+	public Date getLastPublishAuditStatusDate() throws DotPublisherException {
+		try{
+			DotConnect dc = new DotConnect();
+			dc.setSQL(SELECTSQLMAXDATE);
+			
+			dc.addParam(Status.BUNDLE_REQUESTED.getCode());
+			
+			List<Map<String, Object>> res = dc.loadObjectResults();
+			
+			if(!res.isEmpty())
+				return (Date) res.get(0).get("max_date");
+			return null;
+			
+		}catch(Exception e){
+			Logger.debug(PublisherUtil.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}
+	}
+
 	private final String SELECTSQLALLCOUNT=
 			"SELECT count(*) as count "+
 			"FROM publishing_queue_audit ";
