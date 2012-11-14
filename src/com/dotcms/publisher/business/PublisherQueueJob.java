@@ -87,6 +87,7 @@ public class PublisherQueueJob implements StatefulJob {
 					pconf.setLuceneQueries(prepareQueries(tempBundleContents));
 					pconf.setId(tempBundleId);
 					pconf.setUser(APILocator.getUserAPI().getSystemUser());
+					pconf.setStartDate(new Date());
 					pconf.runNow();
 	
 					pconf.setPublishers(clazz);
