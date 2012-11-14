@@ -2,13 +2,16 @@ package com.dotcms.publisher.receiver.handler;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import com.dotcms.publisher.myTest.bundler.ContainerBundler;
 import com.dotcms.publisher.myTest.wrapper.ContainerWrapper;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
@@ -16,7 +19,6 @@ import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
@@ -26,6 +28,7 @@ public class ContainerHandler implements IHandler {
 	private IdentifierAPI iAPI = APILocator.getIdentifierAPI();
 	private UserAPI uAPI = APILocator.getUserAPI();
 	private ContainerAPI cAPI = APILocator.getContainerAPI();
+	private List<String> infoToRemove = new ArrayList<String>();
 
 	@Override
 	public String getName() {
@@ -57,9 +60,17 @@ public class ContainerHandler implements IHandler {
     			cAPI.save(container, 
     					StructureCache.getStructureByInode(container.getStructureInode()),
     					localHost, systemUser, false);
-	        	
+    			VersionInfo info = containerWrapper.getCvi();
+                infoToRemove.add(info.getIdentifier());
+                APILocator.getVersionableAPI().saveVersionInfo(info);
 	        }
-        	
+	        try{
+	            for (String ident : infoToRemove) {
+	                APILocator.getVersionableAPI().removeVersionInfoFromCache(ident);
+	            }
+	        }catch (Exception e) {
+	            throw new DotPublishingException("Unable to update Cache or Reindex Content", e);
+	        }
     	}
     	catch(Exception e){
     		throw new DotPublishingException(e.getMessage(),e);
