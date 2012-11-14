@@ -3,19 +3,25 @@ package com.dotmarketing.viewtools.navigation;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.tools.ViewRenderTool;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.velocity.VelocityServlet;
 
 public class NavResult {
     private String title;
     private String href;
     private int order;
-    private boolean active;
+    private boolean hrefVelocity;
     
     private String internalPath;
     private String internalHostId;
@@ -23,6 +29,13 @@ public class NavResult {
     public NavResult(String hostId, String path) {
         internalPath=path;
         internalHostId=hostId;
+        hrefVelocity=false;
+        title=href="";
+        order=0;
+    }
+    
+    public NavResult() {
+        this(null,null);
     }
     
     public String getTitle() throws Exception {
@@ -41,11 +54,20 @@ public class NavResult {
     }
 
     public String getHref() {
-        return href;
+        return hrefVelocity ?
+            UtilMethods.evaluateVelocity(href, VelocityServlet.velocityCtx.get())
+            : 
+            href;
     }
 
     public void setHref(String href) {
         this.href = href;
+        this.hrefVelocity=false;
+    }
+    
+    public void setHrefVelocity(String vtl) {
+        this.href=vtl;
+        this.hrefVelocity=true;
     }
 
     public int getOrder() {
@@ -57,11 +79,12 @@ public class NavResult {
     }
 
     public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
+        Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
+        HttpServletRequest req=(HttpServletRequest) ctx.get("request");
+        if(req!=null)
+            return !hrefVelocity && req.getRequestURI().contains(href);
+        else
+            return false;
     }
 
     public List<NavResult> getChildren() throws DotDataException, DotSecurityException {
@@ -74,12 +97,17 @@ public class NavResult {
 
 
     public String toString() {
-        String titleToShow;
-        try {
-            titleToShow=getTitle();
-        } catch (Exception e) {
-            titleToShow=title;
+        if(!hrefVelocity) {
+            String titleToShow;
+            try {
+                titleToShow=getTitle();
+            } catch (Exception e) {
+                titleToShow=title;
+            }
+            return "<a href='"+getHref()+"' title='"+titleToShow+"'>"+titleToShow+"</a>";
         }
-        return "<a href='"+getHref()+"' title='"+titleToShow+"'>"+titleToShow+"</a>";
+        else {
+            return getHref();
+        }
     }    
 }
