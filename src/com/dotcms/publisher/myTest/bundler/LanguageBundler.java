@@ -72,7 +72,9 @@ public class LanguageBundler implements IBundler {
 		
 		for(File lang : FileUtils.listFiles(messagesDir, new String []{"properties"}, false)) {
 			long lastMod = lang.lastModified();
-			long startTime = lastBundleDate.getTime();
+			long startTime = -1;
+			if(lastBundleDate != null)
+				startTime = lastBundleDate.getTime();
 			if(lastMod > startTime) {
 				if(!bundleFolderMessages.exists())
 					bundleFolderMessages.mkdirs();
