@@ -112,6 +112,8 @@ public class TemplateBundler implements IBundler {
 		TemplateWrapper wrapper = 
 				new TemplateWrapper(templateId, template);
 		
+		wrapper.setVi(APILocator.getVersionableAPI().getVersionInfo(templateId.getId()));
+		
 		String liveworking = template.isLive() ? "live" :  "working";
 
 		String uri = APILocator.getIdentifierAPI()

@@ -93,6 +93,8 @@ public class HTMLPageBundler implements IBundler {
 		HTMLPageWrapper wrapper = 
 				new HTMLPageWrapper(page, pageId);
 		
+		wrapper.setVi(APILocator.getVersionableAPI().getVersionInfo(pageId.getId()));
+		
 		String liveworking = page.isLive() ? "live" :  "working";
 
 		String uri = APILocator.getIdentifierAPI().find(page).getURI().replace("/", File.separator);
