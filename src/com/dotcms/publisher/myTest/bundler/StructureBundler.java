@@ -43,7 +43,7 @@ public class StructureBundler implements IBundler {
 
 	@Override
 	public String getName() {
-		return "Folder bundler";
+		return "Structure bundler";
 	}
 
 	@Override
