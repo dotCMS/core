@@ -485,7 +485,7 @@ public class SubmitContentUtil {
 		if(fileParameters.size() > 0){
 			for(Map<String,Object> value : fileParameters){
 				Field field = (Field)value.get("field");
-				java.io.File file = (java.io.File)value.get(field.getVelocityVarName());
+				java.io.File file = (java.io.File)value.get("file");
 				if(file!=null){
 					try {
 						contentlet.setBinary(field.getVelocityVarName(), file);
