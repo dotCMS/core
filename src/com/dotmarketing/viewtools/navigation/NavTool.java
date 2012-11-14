@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewRenderTool;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -18,10 +16,10 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 
 public class NavTool implements ViewTool {
@@ -64,13 +62,35 @@ public class NavTool implements ViewTool {
                 list.add(nav);
             }
             else if(item instanceof HTMLPage) {
-                
+                HTMLPage itemPage=(HTMLPage)item;
+                Identifier ident=APILocator.getIdentifierAPI().find(itemPage);
+                NavResult nav=new NavResult();
+                nav.setTitle(itemPage.getFriendlyName());
+                nav.setHref(ident.getURI());
+                nav.setOrder(itemPage.getSortOrder());
+                list.add(nav);
             }
             else if(item instanceof Link) {
-                
+                Link itemLink=(Link)item;
+                NavResult nav=new NavResult();
+                if(itemLink.getLinkType().equals(LinkType.CODE.toString())) {
+                    nav.setHrefVelocity(itemLink.getLinkCode());
+                }
+                else {
+                    nav.setHref(itemLink.getUrl());
+                }
+                nav.setTitle(itemLink.getTitle());
+                nav.setOrder(itemLink.getSortOrder());
+                list.add(nav);
             }
             else if(item instanceof IFileAsset) {
-                
+                IFileAsset itemFile=(IFileAsset)item;
+                Identifier ident=APILocator.getIdentifierAPI().find(itemFile.getPermissionId());
+                NavResult nav=new NavResult();
+                nav.setTitle(itemFile.getFriendlyName());
+                nav.setHref(ident.getURI());
+                nav.setOrder(itemFile.getMenuOrder());
+                list.add(nav);
             }
         }
         
