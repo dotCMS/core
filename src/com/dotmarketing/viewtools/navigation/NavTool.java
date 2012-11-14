@@ -43,7 +43,7 @@ public class NavTool implements ViewTool {
         User user=APILocator.getUserAPI().getAnonymousUser();
         
         List menuItems;
-        if(path.startsWith("/")) {
+        if(path.equals("/")) {
             menuItems = APILocator.getFolderAPI().findSubFolders(host, true);
         }
         else {
@@ -77,7 +77,7 @@ public class NavTool implements ViewTool {
                     nav.setHrefVelocity(itemLink.getLinkCode());
                 }
                 else {
-                    nav.setHref(itemLink.getUrl());
+                    nav.setHref(itemLink.getWorkingURL());
                 }
                 nav.setTitle(itemLink.getTitle());
                 nav.setOrder(itemLink.getSortOrder());
@@ -96,6 +96,10 @@ public class NavTool implements ViewTool {
         
         
         return list;
+    }
+    
+    public List<NavResult> getNav() throws DotDataException, DotSecurityException {
+        return getNav(null);
     }
     
     public List<NavResult> getNav(String path) throws DotDataException, DotSecurityException {
