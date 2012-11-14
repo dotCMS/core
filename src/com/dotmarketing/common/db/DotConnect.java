@@ -645,7 +645,7 @@ public class DotConnect {
 		                    	if(rs.getObject(x) instanceof java.sql.Clob){
 		                    		objvars.put(x, rs.getString(x));
 		                    	}else if(rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
-		                    		objvars.put(x,new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timeValue().getTime()));
+		                    		objvars.put(x,new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timestampValue().getTime()));
 		                    	}
 		                    	else{
 		                    		objvars.put(x, rs.getObject(x));

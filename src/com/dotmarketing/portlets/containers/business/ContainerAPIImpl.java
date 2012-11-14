@@ -103,8 +103,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		containerFactory.save(container);
 	}
 	
+	private void save(Container container, String existingId) throws DotDataException {
+		containerFactory.save(container, existingId);
+	}
+	
 	protected void save(WebAsset webAsset) throws DotDataException {
 		save((Container) webAsset);
+	}
+	
+	protected void save(WebAsset webAsset, String existingId) throws DotDataException {
+		save((Container) webAsset, existingId);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -240,18 +248,38 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		Container currentContainer = null;
 		List<Template> currentTemplates = null;
 		Identifier identifier = null;
+		boolean existingId=false;
+		boolean existingInode=false;
+		
+		if(UtilMethods.isSet(container.getInode())) {
+            try {
+                Container existing=(Container) HibernateUtil.load(Container.class, container.getInode());
+                existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
+            }
+            catch(Exception ex) {
+                existingInode=true;
+            }
+        }
 		
 		if (UtilMethods.isSet(container.getIdentifier())) {
-			currentContainer = getWorkingContainerById(container.getIdentifier(), user, respectFrontendRoles);
-			currentTemplates = InodeFactory.getChildrenClass(currentContainer, Template.class);
-			identifier = APILocator.getIdentifierAPI().find(currentContainer);
+		    identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
+		    if(identifier!=null && UtilMethods.isSet(identifier.getId())) {
+		        if(!existingInode) {
+        		    currentContainer = getWorkingContainerById(container.getIdentifier(), user, respectFrontendRoles);
+        			currentTemplates = InodeFactory.getChildrenClass(currentContainer, Template.class);
+		        }
+		    }
+		    else {
+		        existingId=true;
+		        identifier=null;
+		    }
 		}
 		
-		if ((identifier != null)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+		if ((identifier != null && !existingInode)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			throw new DotSecurityException("You don't have permission to write the container.");
 		}
 		
-		if((structure != null) && !permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+		if((structure != null && !existingInode) && !permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 			throw new DotSecurityException("You don't have permission to use the structure.");
 		}
 		
@@ -271,12 +299,19 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		
 		// it saves or updates the asset
 		if (identifier != null) {
-			createAsset(container, userId, identifier, false);
-			container = (Container) saveAsset(container, identifier, user, false);
+			container.setIdentifier(identifier.getId());
 		} else {
-			Identifier ident=APILocator.getIdentifierAPI().createNew(container, host);
-			container = (Container) saveAsset(container, ident, user, false);
+		    Identifier ident= (existingId) ? 
+		           APILocator.getIdentifierAPI().createNew(container, host, container.getIdentifier()) :
+			       APILocator.getIdentifierAPI().createNew(container, host);
+			container.setIdentifier(ident.getId());
 		}
+		if(existingInode)
+            save(container, container.getInode());
+        else
+            save(container);
+		
+		APILocator.getVersionableAPI().setWorking(container);
 		
 		// Get templates of the old version so you can update the working
 		// information to this new version.

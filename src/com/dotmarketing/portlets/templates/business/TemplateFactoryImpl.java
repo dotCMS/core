@@ -103,6 +103,16 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		TemplateServices.invalidate(template, true);
 
 	}
+	
+	public void save(Template template, String existingId) throws DotDataException {
+        if(!UtilMethods.isSet(template.getIdentifier())){
+            throw new DotStateException("Cannot save a tempalte without an Identifier");
+        }
+        HibernateUtil.saveWithPrimaryKey(template, existingId);
+        templateCache.add(template.getInode(), template);
+        TemplateServices.invalidate(template, true);
+
+    }
 
 	public void deleteFromCache(Template template) throws DotDataException {
 		templateCache.remove(template.getInode());
