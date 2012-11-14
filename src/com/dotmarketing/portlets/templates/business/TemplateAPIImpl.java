@@ -24,6 +24,7 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -206,6 +207,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	private void save(Template template) throws DotDataException {
 		templateFactory.save(template);
 	}
+	
+	private void save(Template template, String existingId) throws DotDataException {
+        templateFactory.save(template,existingId);
+    }
 
 	protected void save(WebAsset webAsset) throws DotDataException {
 		save((Template) webAsset);
@@ -214,7 +219,23 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 
 	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		Template oldTemplate = UtilMethods.isSet(template.getIdentifier())
+		boolean existingId=false, existingInode=false;
+	    if(UtilMethods.isSet(template.getIdentifier())) {
+		    Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
+		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
+		}
+	    
+	    if(UtilMethods.isSet(template.getInode())) {
+    	    try {
+    	        Template existing=(Template) HibernateUtil.load(Template.class, template.getInode());
+    	        existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
+    	    }
+    	    catch(Exception ex) {
+    	        existingInode=true;
+    	    }
+	    }
+	    
+	    Template oldTemplate = !existingId && UtilMethods.isSet(template.getIdentifier())
 				?findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles)
 						:null;
 
@@ -241,7 +262,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			identifier = identifierAPI.findFromInode(oldTemplate.getIdentifier());
 		}
 		else{
-			identifier = APILocator.getIdentifierAPI().createNew(template, destination);
+			identifier = (!existingId) ? APILocator.getIdentifierAPI().createNew(template, destination) :
+			                             APILocator.getIdentifierAPI().createNew(template, destination, template.getIdentifier());
 			template.setIdentifier(identifier.getId());
 		}
 		template.setModDate(new Date());
@@ -251,7 +273,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		updateParseContainerSyntax(template);
 
 		//it saves or updates the asset
-		save(template);
+		if(existingInode)
+		    // support for existing inode
+		    save(template,template.getInode());
+		else
+		    save(template);
+		
 		APILocator.getVersionableAPI().setWorking(template);
 
 

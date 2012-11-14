@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +36,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -195,7 +193,7 @@ public class ContentBundler implements IBundler {
 		Set<String> htmlIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent1");
 		Set<String> containerIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent2");
 		
-		addToConfig(con.getFolder(), htmlIds, containerIds);
+		addToConfig(con.getFolder(), htmlIds, containerIds, con.getStructureInode());
 		
 	}
 
@@ -214,7 +212,7 @@ public class ContentBundler implements IBundler {
 
 	}
 	
-	private void addToConfig(String folder, Set<String> htmlPages, Set<String> containers) 
+	private void addToConfig(String folder, Set<String> htmlPages, Set<String> containers, String structure) 
 			throws DotStateException, DotHibernateException, DotDataException, DotSecurityException
 	{
 		//Get Id from folder
@@ -233,6 +231,8 @@ public class ContentBundler implements IBundler {
 		
 
 		config.getContainers().addAll(containers);
+		
+		config.getStructures().add(structure);
 		
 	}
 

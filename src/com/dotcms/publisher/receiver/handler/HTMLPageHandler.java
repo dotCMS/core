@@ -16,7 +16,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
@@ -52,27 +51,16 @@ public class HTMLPageHandler implements IHandler {
 	        	
 	        	HTMLPage htmlPage = pageWrapper.getPage();
 	        	Identifier htmlPageId = pageWrapper.getPageId();
-	        	
-	        	if(!UtilMethods.isSet(iAPI.find(htmlPage))) {
-	        		Identifier id = iAPI.find(htmlPage.getIdentifier());
-	        		Folder parentFolder = fAPI.find(htmlPage.getParent(), systemUser, false);
-        			if(id ==null || !UtilMethods.isSet(id.getId())){
-        				Identifier pageIdNew = null;
-        				
-        				pageIdNew = iAPI.createNew(htmlPage, 
-        						parentFolder, 
-            					htmlPageId.getId());
-	            			
-        				
-            			htmlPage.setIdentifier(pageIdNew.getId());
-            		}
-        			
-        			htmlAPI.saveHTMLPage(htmlPage, 
-        					APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), systemUser, false), 
-        					parentFolder, 
-        					systemUser, 
-        					false);
-	        	}        			
+	        		
+        		Folder parentFolder = fAPI.findFolderByPath(htmlPageId.getParentPath(), 
+        		        APILocator.getHostAPI().find(htmlPageId.getHostId(), systemUser, false), systemUser, false);
+    			
+    			htmlAPI.saveHTMLPage(htmlPage, 
+    					APILocator.getTemplateAPI().findWorkingTemplate(htmlPage.getTemplateId(), systemUser, false), 
+    					parentFolder, 
+    					systemUser, 
+    					false);
+	        	     			
 	        }
         	
     	}

@@ -24,10 +24,12 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPIImpl;
+import com.dotcms.publisher.receiver.handler.ContainerHandler;
 import com.dotcms.publisher.receiver.handler.ContentHandler;
 import com.dotcms.publisher.receiver.handler.FolderHandler;
 import com.dotcms.publisher.receiver.handler.HTMLPageHandler;
 import com.dotcms.publisher.receiver.handler.IHandler;
+import com.dotcms.publisher.receiver.handler.TemplateHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
@@ -53,7 +55,11 @@ public class BundlePublisher extends Publisher {
         if(LicenseUtil.getLevel()<200)
             throw new RuntimeException("need an enterprise licence to run this");
         
+        handlers = new ArrayList<IHandler>();
+        //The order is really important
         handlers.add(new FolderHandler());
+        handlers.add(new ContainerHandler());
+        handlers.add(new TemplateHandler());
         handlers.add(new HTMLPageHandler());
         handlers.add(new ContentHandler());
         
@@ -112,6 +118,7 @@ public class BundlePublisher extends Publisher {
         try {
             HibernateUtil.startTransaction();
             
+            //Execute the handlers
             for(IHandler handler : handlers )
             	handler.handle(folderOut);
 
