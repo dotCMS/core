@@ -3,11 +3,13 @@ package com.dotcms.publisher.myTest.bundler;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.Date;
 
 import org.apache.commons.io.FileUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.myTest.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
@@ -21,6 +23,7 @@ public class LanguageBundler implements IBundler {
 	
 	public final static String LANGUAGE_EXTENSION = ".properties" ;
 	private PushPublisherConfig config;
+	private PublishAuditAPI aAPI =  PublishAuditAPI.getInstance();
 
 	@Override
 	public String getName() {
@@ -42,8 +45,11 @@ public class LanguageBundler implements IBundler {
 		String messagesPath = APILocator.getFileAPI().getRealAssetPath() + File.separator + "messages";
 		File messagesDir = new File(messagesPath);
 		try {
+			//Get last bundle date
+			Date lastBundleDate = aAPI.getLastPublishAuditStatusDate();
+			
 			if(messagesDir.exists())
-				copyFileToBundle(bundleRoot, messagesDir);
+				copyFileToBundle(bundleRoot, messagesDir, lastBundleDate);
 		} catch (Exception e) {
 			status.addFailure();
 
@@ -55,7 +61,7 @@ public class LanguageBundler implements IBundler {
 
 	
 	
-	private void copyFileToBundle(File bundleRoot, File messagesDir)
+	private void copyFileToBundle(File bundleRoot, File messagesDir, Date lastBundleDate)
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
@@ -65,7 +71,9 @@ public class LanguageBundler implements IBundler {
 		File bundleFolderMessages = new File(myFolderUrl);
 		
 		for(File lang : FileUtils.listFiles(messagesDir, new String []{"properties"}, false)) {
-			if(lang.lastModified() > config.getStartDate().getTime()) {
+			long lastMod = lang.lastModified();
+			long startTime = lastBundleDate.getTime();
+			if(lastMod > startTime) {
 				if(!bundleFolderMessages.exists())
 					bundleFolderMessages.mkdirs();
 				
