@@ -116,7 +116,6 @@ var editButtonRow="editEventButtonRow";
 
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
-
 <style media="all" type="text/css">
 	/* @import url(/html/portlet/ext/contentlet/edit_contentlet.css);
 	@import url(/html/css/widget.css);
@@ -150,11 +149,11 @@ var editButtonRow="editEventButtonRow";
 	%>
 		<div id="<%=f0.getFieldContentlet()%>" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>" onShow="showEditButtonsRow()" >
 	<% } else { %>
-		<div id="properties" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()" >
+		<div id="properties" style="padding:0;"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()" >
 	<% } %>
 
 		<!-- START Right Column -->
-		<div class="wrapperRight" style="height:400px;">
+		<div class="wrapperRight" >
 			<div style="height:20px;"></div>
 		<%
 		/*### DRAW THE DYNAMIC FIELDS ###*/
