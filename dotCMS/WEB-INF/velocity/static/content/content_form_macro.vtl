@@ -50,7 +50,8 @@ var theme = 'dmundra';
 	dojo.require("dijit.form.CheckBox");
 	dojo.require("dijit.form.DateTextBox");
 	dojo.require("dijit.form.MultiSelect");
-	dojo.require('dijit.form.Slider');
+	dojo.require("dijit.form.Slider");
+	dojo.require("dijit.Tooltip");
 	dojo.require("dijit.Dialog");
 	dojo.registerModulePath("dotcms","/html/js/dotcms");
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
@@ -361,7 +362,14 @@ var theme = 'dmundra';
 				    <div class="group">
 				    <dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
 	    			#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
-	    				<label for="${field.velocityVarName}FieldLabel">#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
+	    				<label for="${field.velocityVarName}FieldLabel">
+	    				#if($UtilMethods.isSet($field.hint))
+	    					<a href="#" id="tip-$field.getVelocityVarName()"><span class="hintIcon"></span></a>
+							<span dojoType="dijit.Tooltip" connectId="tip-$field.getVelocityVarName()" position="above" style="width:100px;">
+								<span class="contentHint">${field.hint}</span>
+							</span>
+						#end
+	    				#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
 	    			#end
 	    			</dt>
 	    			#set($velocityVarName = "default${field.velocityVarName.substring(0,1).toUpperCase()}${field.velocityVarName.substring(1)}")
