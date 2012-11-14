@@ -69,7 +69,7 @@ public class ContainerHandler implements IHandler {
 	                APILocator.getVersionableAPI().removeVersionInfoFromCache(ident);
 	            }
 	        }catch (Exception e) {
-	            throw new DotPublishingException("Unable to update Cache or Reindex Content", e);
+	            throw new DotPublishingException("Unable to remove from cache version info", e);
 	        }
     	}
     	catch(Exception e){

@@ -1,11 +1,13 @@
 package com.dotcms.publisher.myTest.wrapper;
 
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.templates.model.Template;
 
 public class TemplateWrapper {
 	private Identifier templateId;
 	private Template template;
+	private VersionInfo vi;
 	
 	public TemplateWrapper(Identifier templateId, Template template) {
 		this.templateId = templateId;
@@ -26,5 +28,19 @@ public class TemplateWrapper {
 
 	public void setTemplate(Template template) {
 		this.template = template;
+	}
+
+	/**
+	 * @return the vi
+	 */
+	public VersionInfo getVi() {
+		return vi;
+	}
+
+	/**
+	 * @param vi the vi to set
+	 */
+	public void setVi(VersionInfo vi) {
+		this.vi = vi;
 	}
 }

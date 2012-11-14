@@ -2,12 +2,15 @@ package com.dotcms.publisher.receiver.handler;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import com.dotcms.publisher.myTest.bundler.HTMLPageBundler;
 import com.dotcms.publisher.myTest.wrapper.HTMLPageWrapper;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
@@ -26,6 +29,7 @@ public class HTMLPageHandler implements IHandler {
 	private UserAPI uAPI = APILocator.getUserAPI();
 	private FolderAPI fAPI = APILocator.getFolderAPI();
 	private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
+	private List<String> infoToRemove = new ArrayList<String>();
 
 	@Override
 	public String getName() {
@@ -60,9 +64,17 @@ public class HTMLPageHandler implements IHandler {
     					parentFolder, 
     					systemUser, 
     					false);
-	        	     			
+    			VersionInfo info = pageWrapper.getVi();
+                infoToRemove.add(info.getIdentifier());
+                APILocator.getVersionableAPI().saveVersionInfo(info);
 	        }
-        	
+	        try{
+	            for (String ident : infoToRemove) {
+	                APILocator.getVersionableAPI().removeVersionInfoFromCache(ident);
+	            }
+	        }catch (Exception e) {
+	            throw new DotPublishingException("Unable to remove from cache version info", e);
+	        }
     	}
     	catch(Exception e){
     		throw new DotPublishingException(e.getMessage(),e);
