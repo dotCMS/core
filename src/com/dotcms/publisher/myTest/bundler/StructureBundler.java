@@ -66,12 +66,12 @@ public class StructureBundler implements IBundler {
 		if(LicenseUtil.getLevel()<200)
 	        throw new RuntimeException("need an enterprise license to run this bundler");
 
-		List<String> structures = config.getStructures();
+		List<Structure> structures = config.getStructures();
 		
 		try {
-			for (String structureId : structures) {
+			for (Structure s : structures) {
 				writeStructure(bundleRoot, 
-						StructureCache.getStructureByInode(structureId));
+						StructureCache.getStructureByInode(s.getInode()));
 			}
 		} catch (Exception e) {
 			status.addFailure();

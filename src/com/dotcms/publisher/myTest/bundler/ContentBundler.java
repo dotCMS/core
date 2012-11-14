@@ -232,7 +232,7 @@ public class ContentBundler implements IBundler {
 
 		config.getContainers().addAll(containers);
 		
-		config.getStructures().add(structure);
+//		config.getStructures().add(structure);
 		
 	}
 

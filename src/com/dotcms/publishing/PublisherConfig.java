@@ -47,21 +47,9 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<String> getStructures() {
-		if(get(Config.STRUCTURES.name()) == null){
-			List<String> structuresToBuild =   new ArrayList<String>();
-			put(Config.STRUCTURES.name(), structuresToBuild);
-		}
-		
-		return (List<String>) get(Config.STRUCTURES.name());
+	public List<Structure> getStructures() {
+		return (List<Structure>) params.get(Config.STRUCTURES.name());
 	}
-	
-
-	public void setStructures(List<String> structures) {		
-		put(Config.STRUCTURES.name(), structures);
-	}
-	
-	
 	public boolean makeBundle() {
 		return (Boolean) params.get(Config.MAKE_BUNDLE.name());
 	}
@@ -80,6 +68,10 @@ public class PublisherConfig implements Map<String, Object> {
 	
 	public void setLiveOnly(boolean liveOnly){
 		this.liveOnly = liveOnly;
+	}
+	
+	public void setStructures(List<Structure> structures) {
+		params.put(Config.STRUCTURES.name(), structures);
 	}
 	
 	public String getLuceneQuery() {
