@@ -26,8 +26,8 @@ import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
         ContentletAPITest.class,
         PermissionAPITest.class,
         ContainerAPITest.class,
-        DotCMSCMISTest.class,
-        LinkCheckerAPITest.class
+        DotCMSCMISTest.class
+        //LinkCheckerAPITest.class
 //        CMISBaseTest.class
 } )
 public class AllTestsSuite {
