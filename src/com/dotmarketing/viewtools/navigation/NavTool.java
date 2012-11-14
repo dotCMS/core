@@ -9,6 +9,7 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,6 +18,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
@@ -34,66 +36,71 @@ public class NavTool implements ViewTool {
             currenthost=WebAPILocator.getHostWebAPI().getCurrentHost(context.getRequest());
             user=APILocator.getUserAPI().getAnonymousUser();
         } catch (Exception e) {
-            
+            Logger.warn(this, e.getMessage(), e);
         }
     }
     
     protected static List<NavResult> getNav(Host host, String path) throws DotDataException, DotSecurityException {
-        List<NavResult> list=new ArrayList<NavResult>();
         User user=APILocator.getUserAPI().getAnonymousUser();
+        NavToolCache cache=CacheLocator.getNavToolCache();
+        List<NavResult> list=cache.getNav(host.getIdentifier(), path);
+        if(list==null) {
+            list=new ArrayList<NavResult>();
         
-        List menuItems;
-        if(path.equals("/")) {
-            menuItems = APILocator.getFolderAPI().findSubFolders(host, true);
-        }
-        else {
-            Folder folder=APILocator.getFolderAPI().findFolderByPath(path, host, user, true);
-            menuItems = APILocator.getFolderAPI().findMenuItems(folder, user, true);
-        }
-        
-        for(Object item : menuItems) {
-            if(item instanceof Folder) {
-                Folder itemFolder=(Folder)item;
-                Identifier ident=APILocator.getIdentifierAPI().find(itemFolder);
-                NavResult nav=new NavResult(host.getIdentifier(),ident.getURI());
-                nav.setTitle(itemFolder.getTitle());
-                nav.setHref(ident.getURI());
-                nav.setOrder(itemFolder.getSortOrder());
-                list.add(nav);
+            List menuItems;
+            if(path.equals("/")) {
+                menuItems = APILocator.getFolderAPI().findSubFolders(host, true);
             }
-            else if(item instanceof HTMLPage) {
-                HTMLPage itemPage=(HTMLPage)item;
-                Identifier ident=APILocator.getIdentifierAPI().find(itemPage);
-                NavResult nav=new NavResult();
-                nav.setTitle(itemPage.getFriendlyName());
-                nav.setHref(ident.getURI());
-                nav.setOrder(itemPage.getSortOrder());
-                list.add(nav);
+            else {
+                Folder folder=APILocator.getFolderAPI().findFolderByPath(path, host, user, true);
+                menuItems = APILocator.getFolderAPI().findMenuItems(folder, user, true);
             }
-            else if(item instanceof Link) {
-                Link itemLink=(Link)item;
-                NavResult nav=new NavResult();
-                if(itemLink.getLinkType().equals(LinkType.CODE.toString())) {
-                    nav.setHrefVelocity(itemLink.getLinkCode());
+            
+            for(Object item : menuItems) {
+                if(item instanceof Folder) {
+                    Folder itemFolder=(Folder)item;
+                    Identifier ident=APILocator.getIdentifierAPI().find(itemFolder);
+                    NavResult nav=new NavResult(host.getIdentifier(),ident.getURI());
+                    nav.setTitle(itemFolder.getTitle());
+                    nav.setHref(ident.getURI());
+                    nav.setOrder(itemFolder.getSortOrder());
+                    list.add(nav);
                 }
-                else {
-                    nav.setHref(itemLink.getWorkingURL());
+                else if(item instanceof HTMLPage) {
+                    HTMLPage itemPage=(HTMLPage)item;
+                    Identifier ident=APILocator.getIdentifierAPI().find(itemPage);
+                    NavResult nav=new NavResult();
+                    nav.setTitle(itemPage.getFriendlyName());
+                    nav.setHref(ident.getURI());
+                    nav.setOrder(itemPage.getSortOrder());
+                    list.add(nav);
                 }
-                nav.setTitle(itemLink.getTitle());
-                nav.setOrder(itemLink.getSortOrder());
-                list.add(nav);
+                else if(item instanceof Link) {
+                    Link itemLink=(Link)item;
+                    NavResult nav=new NavResult();
+                    if(itemLink.getLinkType().equals(LinkType.CODE.toString())) {
+                        nav.setHrefVelocity(itemLink.getLinkCode());
+                    }
+                    else {
+                        nav.setHref(itemLink.getWorkingURL());
+                    }
+                    nav.setTitle(itemLink.getTitle());
+                    nav.setOrder(itemLink.getSortOrder());
+                    list.add(nav);
+                }
+                else if(item instanceof IFileAsset) {
+                    IFileAsset itemFile=(IFileAsset)item;
+                    Identifier ident=APILocator.getIdentifierAPI().find(itemFile.getPermissionId());
+                    NavResult nav=new NavResult();
+                    nav.setTitle(itemFile.getFriendlyName());
+                    nav.setHref(ident.getURI());
+                    nav.setOrder(itemFile.getMenuOrder());
+                    list.add(nav);
+                }
             }
-            else if(item instanceof IFileAsset) {
-                IFileAsset itemFile=(IFileAsset)item;
-                Identifier ident=APILocator.getIdentifierAPI().find(itemFile.getPermissionId());
-                NavResult nav=new NavResult();
-                nav.setTitle(itemFile.getFriendlyName());
-                nav.setHref(ident.getURI());
-                nav.setOrder(itemFile.getMenuOrder());
-                list.add(nav);
-            }
+            
+            cache.putNav(host.getIdentifier(), path, list);
         }
-        
         
         return list;
     }
