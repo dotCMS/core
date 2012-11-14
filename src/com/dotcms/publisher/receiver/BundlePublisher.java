@@ -49,7 +49,7 @@ public class BundlePublisher extends Publisher {
     List<String> assetIds = new ArrayList<String>();
     boolean bundleSuccess = true;
     
-    private List<IHandler> handlers = null;
+    private List<IHandler> handlers = new ArrayList<IHandler>();
 
     @Override
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
