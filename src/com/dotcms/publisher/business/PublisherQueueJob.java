@@ -207,7 +207,7 @@ public class PublisherQueueJob implements StatefulJob {
         		pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
         	} else {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
-        				PublishAuditStatus.Status.TEMPORARY_FAILED_TO_PUBLISH, 
+        				PublishAuditStatus.Status.WAITING_FOR_PUBLISHING, 
 	        			localHistory);
         	}
         }
