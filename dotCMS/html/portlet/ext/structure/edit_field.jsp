@@ -465,7 +465,9 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		var fieldId='<%=request.getParameter("inode")%>';
 	    if(fieldId!="null"){
 	    	fieldVariablesAdmin.showFieldVariables(fieldId,false);
-	    }		
+	    } else {
+	    	fieldVariablesAdmin.showInitFieldVariables();
+	    }	
 	}
 </script>
 
