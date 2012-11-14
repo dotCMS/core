@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.dotcms.enterprise.LicenseUtil;
@@ -22,6 +23,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -98,6 +100,14 @@ public class TemplateBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
+		// need to bundle all containers associated with the template
+		List<Container> containers = APILocator.getTemplateAPI().
+				getContainersInTemplate(template, systemUser, false);
+		
+		for (Container container : containers) {
+			config.getContainers().add(container.getIdentifier());
+		}
+		
 		Identifier templateId = APILocator.getIdentifierAPI().find(template);
 		TemplateWrapper wrapper = 
 				new TemplateWrapper(templateId, template);

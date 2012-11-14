@@ -33,6 +33,7 @@ import com.dotcms.publisher.myTest.bundler.ContainerBundler;
 import com.dotcms.publisher.myTest.bundler.ContentBundler;
 import com.dotcms.publisher.myTest.bundler.FolderBundler;
 import com.dotcms.publisher.myTest.bundler.HTMLPageBundler;
+import com.dotcms.publisher.myTest.bundler.LanguageBundler;
 import com.dotcms.publisher.myTest.bundler.TemplateBundler;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.BundlerUtil;
@@ -296,12 +297,17 @@ public class PushPublisher extends Publisher {
 	@Override
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
-
-		list.add(ContentBundler.class);
+		
+		//The order is important cause 
+		//I need to add all containers associated with templates
 		list.add(FolderBundler.class);
+		list.add(TemplateBundler.class);
 		list.add(ContainerBundler.class);
 		list.add(HTMLPageBundler.class);
-		list.add(TemplateBundler.class);
+		list.add(ContentBundler.class);
+		list.add(LanguageBundler.class);
+		//list.add(StructureBundler.class);
+		
 		return list;
 	}
 

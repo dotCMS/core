@@ -52,10 +52,11 @@ public class HTMLPageHandler implements IHandler {
 	        	HTMLPage htmlPage = pageWrapper.getPage();
 	        	Identifier htmlPageId = pageWrapper.getPageId();
 	        		
-        		Folder parentFolder = fAPI.find(htmlPageId.getParentPath(), systemUser, false);
+        		Folder parentFolder = fAPI.findFolderByPath(htmlPageId.getParentPath(), 
+        		        APILocator.getHostAPI().find(htmlPageId.getHostId(), systemUser, false), systemUser, false);
     			
     			htmlAPI.saveHTMLPage(htmlPage, 
-    					APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), systemUser, false), 
+    					APILocator.getTemplateAPI().findWorkingTemplate(htmlPage.getTemplateId(), systemUser, false), 
     					parentFolder, 
     					systemUser, 
     					false);
