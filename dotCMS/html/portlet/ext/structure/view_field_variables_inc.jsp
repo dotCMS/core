@@ -43,8 +43,7 @@
 			FieldVariableAjax.getFieldVariablesForField(fieldId, dojo.hitch(this, fieldVariablesAdmin.showFieldVariablesCallback));
 			this.fieldId = fieldId;
 		},
-
-	 	showFieldVariablesCallback: function (variables) {
+		showFieldVariablesCallback: function (variables) {
 
 			if(this.isDialog)
 				dojo.html.set(dojo.byId('fieldVariablesDialogTable'), '');
@@ -77,7 +76,10 @@
 				dojo.style(dojo.byId('viewFieldVariablesTab'), 'visibility', 'visible');
 			}
 		},
-
+		showInitFieldVariables: function (){
+			dojo.style(dojo.byId('viewFieldVariablesInitTab'), 'height', '100px');
+			dojo.style(dojo.byId('viewFieldVariablesInitTab'), 'visibility', 'visible');
+		},
 		insertVariable: function (variable) {
 
 			if (this.currentIndex % 2 == 0){
@@ -217,7 +219,7 @@
     }));
 
 </script>
-
+	
 <div id="viewFieldVariablesTab">
 	<div class="yui-u" style="text-align:right;margin:5px 20px 10px 0;">
 	    <button dojoType="dijit.form.Button" onClick="fieldVariablesAdmin.addNewVariable(); return false;" iconClass="plusIcon">
@@ -288,7 +290,7 @@
 	        </tr>
     	</thead>
 		<tbody id="fieldVariablesDialogTable">
-		
+		  
 		</tbody>
 		<tbody id="noFieldVariablesDialogTable" style="visibility:hidden;">
 			<tr>
@@ -321,7 +323,11 @@
 		</button>
 	</div>
 </div> 
-
+<div id="viewFieldVariablesInitTab" style="visibility:hidden;">
+	<div class="yui-u" style="text-align:left;width:800px;">
+		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Field-No-Field-Variable")) %>
+	</div>
+</div>
 
 <script type="text/javascript">
 
