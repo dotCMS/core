@@ -93,6 +93,7 @@ public class ContainerBundler implements IBundler {
 		Identifier containerId = APILocator.getIdentifierAPI().find(container);
 		ContainerWrapper wrapper = 
 				new ContainerWrapper(containerId, container);
+		wrapper.setCvi(APILocator.getVersionableAPI().getVersionInfo(containerId.getId()));
 		
 		String liveworking = container.isLive() ? "live" :  "working";
 
