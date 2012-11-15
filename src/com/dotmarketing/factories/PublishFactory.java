@@ -141,6 +141,8 @@ public class PublishFactory {
 			WorkingCache.addToWorkingAssetToCache((WebAsset) webAsset);
 			if(RefreshMenus.shouldRefreshMenus((com.dotmarketing.portlets.files.model.File)webAsset)){
 				com.dotmarketing.menubuilders.RefreshMenus.deleteMenu((WebAsset)webAsset);
+				Identifier ident=APILocator.getIdentifierAPI().find(webAsset);
+				CacheLocator.getNavToolCache().removeNav(ident.getHostId(), ident.getParentPath());
 			}
 
 		}
@@ -217,6 +219,8 @@ public class PublishFactory {
 				if(folder != null){
 					RefreshMenus.deleteMenu(folder);
 				}
+				Identifier ident=APILocator.getIdentifierAPI().find(webAsset);
+				CacheLocator.getNavToolCache().removeNav(ident.getHostId(), ident.getParentPath());
 			}
             CacheLocator.getHTMLPageCache().remove((HTMLPage) webAsset);
 
@@ -289,6 +293,7 @@ public class PublishFactory {
 			Folder parentFolder = (Folder)APILocator.getFolderAPI().findParentFolder((Treeable) webAsset,user,false);
 			Host host = (Host) hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 			RefreshMenus.deleteMenu(host);
+			CacheLocator.getNavToolCache().removeNavAndChildren(host.getIdentifier(), "/");
 		}		
 		
 		return true;

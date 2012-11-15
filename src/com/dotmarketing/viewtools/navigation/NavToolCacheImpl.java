@@ -8,7 +8,6 @@ import com.dotmarketing.business.DotCacheException;
 
 public class NavToolCacheImpl implements NavToolCache {
     
-    private static final String GROUP="NavTool";
     private DotCacheAdministrator cache;
     
     public NavToolCacheImpl() {

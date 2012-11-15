@@ -59,6 +59,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
+import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.liferay.util.FileUtil;
 
 /**
