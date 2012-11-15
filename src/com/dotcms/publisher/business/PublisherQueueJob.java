@@ -45,6 +45,12 @@ public class PublisherQueueJob implements StatefulJob {
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
+			
+			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
+			updateAuditStatus();
+			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
+			
+			
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
 			PublisherAPI pubAPI = PublisherAPI.getInstance();  
 			
@@ -104,11 +110,6 @@ public class PublisherQueueJob implements StatefulJob {
 			}
 			
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
-			
-			
-			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
-			updateAuditStatus();
-			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
 			
 		} catch (NumberFormatException e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
