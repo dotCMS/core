@@ -56,7 +56,7 @@ public class ContainerBundler implements IBundler {
 	@Override
 	public void generate(File bundleRoot, BundlerStatus status)
 			throws DotBundleException {
-		if(LicenseUtil.getLevel()<200)
+		if(LicenseUtil.getLevel()<400)
 	        throw new RuntimeException("need an enterprise license to run this bundler");
 		
 		//Get containers linked with the content
