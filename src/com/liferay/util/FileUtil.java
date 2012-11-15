@@ -77,19 +77,28 @@ public class FileUtil {
 	}
 
 	public static void copyDirectory(File source, File destination, boolean hardLinks) {
+	    copyDirectory(source,destination,hardLinks,null);
+	}
+	
+	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
 				destination.mkdirs();
 			}
 
-			File[] fileArray = source.listFiles();
+			File[] fileArray = filter!=null ? source.listFiles(filter) : source.listFiles();
 
 			for (int i = 0; i < fileArray.length; i++) {
+			    if(fileArray[i].getName().endsWith("xml")) {
+			        String name=fileArray[i].getName();
+			        Logger.info(FileUtil.class, "copy "+name);
+			    }
+			    
 				if (fileArray[i].isDirectory()) {
 					copyDirectory(
 						fileArray[i],
 						new File(destination.getPath() + File.separator
-							+ fileArray[i].getName()), hardLinks);
+							+ fileArray[i].getName()), hardLinks, filter);
 				}
 				else {
 					copyFile(
