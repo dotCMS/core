@@ -112,7 +112,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Multi-Select") %>',
 			label: '<span class="multiSelectIcon"></span> <%= LanguageUtil.get(pageContext, "Multi-Select") %>',
 			imageurl: '/html/images/icons/ui-list-box.png',
-			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','validationRow','defaultText','hintText','userSearchable','indexed','dataTypeRow','unique','radioBlockText'],
+			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','defaultText','hintText','userSearchable','indexed','dataTypeRow','unique','radioBlockText'],
 			dataType:'text_area',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.multi_select")) %>'
 		},{
@@ -144,7 +144,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Select") %>',
 			label: '<span class="selectIcon"></span> <%= LanguageUtil.get(pageContext, "Select") %>',
 			imageurl: '/html/images/icons/ui-combo-box.png',
-			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','validationRow','defaultText','hintText','userSearchable','indexed','listed','dataTypeRow','unique','radioText','radioBool','radioDecimal','radioNumber'],
+			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','defaultText','hintText','userSearchable','indexed','listed','dataTypeRow','unique','radioText','radioBool','radioDecimal','radioNumber'],
 			dataType:'text',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.select")) %>'
 		},{
