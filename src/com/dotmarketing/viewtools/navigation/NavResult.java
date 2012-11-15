@@ -94,6 +94,11 @@ public class NavResult {
         }
         return new ArrayList<NavResult>();
     }
+    
+    public NavResult getParent() {
+        // TODO: finish this
+        return null;
+    }
 
 
     public String toString() {
