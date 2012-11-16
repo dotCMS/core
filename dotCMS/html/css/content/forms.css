@@ -168,3 +168,30 @@ button.removeFile {
 	width: 100px !important;
 	margin-left: 3px;	
 }
+.submitContent dt.formFieldLabel .contentHint{
+	display:block;
+	color:#999;
+	font-size:11px;
+	font-weight:normal;
+	line-height:14px;
+	white-space:normal;
+	font-style:italic;
+}
+.submitContent dt.formFieldLabel .hintIcon {
+	background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -900px;
+	width:18px;
+	height:18px;
+	display:inline-block;
+	vertical-align:top; 
+	opacity:.4;
+}
+.submitContent dt.formFieldLabel .hintIcon:hover{
+	opacity:.9;
+}
+
+.dmundra .dijitInputField INPUT, .dmundra .dijitTextBox, .dmundra .dijitSpinner{
+	padding:0 0 3px;
+}
+input.fileField {
+	width:auto;
+}
