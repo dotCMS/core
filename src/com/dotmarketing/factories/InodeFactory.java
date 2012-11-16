@@ -1247,12 +1247,12 @@ public class InodeFactory {
 				db.addParam(inode.getInode());
 				db.getResult();
             
-		    
-		    
-			HibernateUtil.delete(o);
+				db.setSQL("delete from inode where inode = ?");
+				db.addParam(inode.getInode());
+				db.getResult();
 				
-
-
+			HibernateUtil.delete(o);
+			
 	}
 
 	public static void deleteChildrenOfClass(Inode parent, Class c) {
@@ -1266,19 +1266,6 @@ public class InodeFactory {
 			parent.deleteChild((Inode) childrenIter.next());
 		}
 	}
-
-	public static void deleteChildrenOfClassByRelationType(Inode parent, Class c,String relationType) {
-		if( c.equals(Identifier.class)){
-			throw new DotStateException("Identifiers are no longer Inodes!");
-		}
-		java.util.List children = getChildrenClass(parent, c);
-		java.util.Iterator childrenIter = children.iterator();
-
-		while (childrenIter.hasNext()) {
-			parent.deleteChild((Inode) childrenIter.next());
-		}
-	}
-
 
 	public static int countChildrenOfClass(Inode i, Class c) {
 		return countChildrenOfClass(i, c, 0, 5);
