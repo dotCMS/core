@@ -68,6 +68,14 @@ public class HTMLPageHandler implements IHandler {
                 infoToRemove.add(info.getIdentifier());
                 APILocator.getVersionableAPI().saveVersionInfo(info);
 	        }
+	        
+	        for(File pageFile: pages) {
+	        	if(pageFile.isDirectory()) continue;
+	        	HTMLPageWrapper pageWrapper = (HTMLPageWrapper)  xstream.fromXML(new FileInputStream(pageFile));
+	        	VersionInfo info = pageWrapper.getVi();
+                infoToRemove.add(info.getIdentifier());
+                APILocator.getVersionableAPI().saveVersionInfo(info);
+	        }
 	        try{
 	            for (String ident : infoToRemove) {
 	                APILocator.getVersionableAPI().removeVersionInfoFromCache(ident);
