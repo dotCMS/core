@@ -1866,9 +1866,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //If contentlet is not new
         if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get("_dont_validate_me") != null) {
             workingCon = findWorkingContentlet(contentlet);
-            permissions = perAPI.getPermissions(workingCon);
-            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-            contentRelationships = findContentRelationships(workingCon);
+            if(workingCon != null) {
+	            permissions = perAPI.getPermissions(workingCon);
+	            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+	            contentRelationships = findContentRelationships(workingCon);
+            } else {
+            	contentRelationships = findContentRelationships(contentlet);
+            }
         }
         else
         {

@@ -57,8 +57,8 @@ public class HTMLPageBundler implements IBundler {
 	@Override
 	public void generate(File bundleRoot, BundlerStatus status)
 			throws DotBundleException {
-		if(LicenseUtil.getLevel()<200)
-	        throw new RuntimeException("need an enterprise license to run this bundler");
+		if(LicenseUtil.getLevel()<400)
+	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 		
 		//Get HTML pages linked with the content
 		Set<String> htmlIds = config.getHTMLPages();
@@ -72,7 +72,8 @@ public class HTMLPageBundler implements IBundler {
 			}
 			
 			for(HTMLPage page : htmlPages) {
-				writePage(bundleRoot, page);
+				if(page != null)
+					writePage(bundleRoot, page);
 			}
 		} catch (Exception e) {
 			status.addFailure();
@@ -89,7 +90,7 @@ public class HTMLPageBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
-		Identifier pageId = APILocator.getIdentifierAPI().find(page);
+		Identifier pageId = APILocator.getIdentifierAPI().find(page.getIdentifier());
 		HTMLPageWrapper wrapper = 
 				new HTMLPageWrapper(page, pageId);
 		
@@ -108,8 +109,7 @@ public class HTMLPageBundler implements IBundler {
 		
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
-				+ h.getHostname() + File.separator
-				+ config.getLanguage() + uri;
+				+ h.getHostname() + uri;
 
 		File htmlFile = new File(myFileUrl);
 		htmlFile.mkdirs();
