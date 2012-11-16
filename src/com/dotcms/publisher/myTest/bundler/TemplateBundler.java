@@ -72,7 +72,12 @@ public class TemplateBundler implements IBundler {
 			for (String htmlId : htmlIds) {
 				HTMLPage page = APILocator.getHTMLPageAPI()
 						.loadLivePageById(htmlId, systemUser, false);
-				templateIds.add(page.getTemplateId());
+				HTMLPage pageWork = APILocator.getHTMLPageAPI()
+						.loadWorkingPageById(htmlId, systemUser, false);
+				if(page != null)
+					templateIds.add(page.getTemplateId());
+				if(pageWork != null)
+					templateIds.add(pageWork.getTemplateId());
 			}
 			
 			for(String templateId : templateIds) {
@@ -108,7 +113,7 @@ public class TemplateBundler implements IBundler {
 			config.getContainers().add(container.getIdentifier());
 		}
 		
-		Identifier templateId = APILocator.getIdentifierAPI().find(template);
+		Identifier templateId = APILocator.getIdentifierAPI().find(template.getIdentifier());
 		TemplateWrapper wrapper = 
 				new TemplateWrapper(templateId, template);
 		

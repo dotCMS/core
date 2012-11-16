@@ -90,7 +90,7 @@ public class ContainerBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
-		Identifier containerId = APILocator.getIdentifierAPI().find(container);
+		Identifier containerId = APILocator.getIdentifierAPI().find(container.getIdentifier());
 		ContainerWrapper wrapper = 
 				new ContainerWrapper(containerId, container);
 		wrapper.setCvi(APILocator.getVersionableAPI().getVersionInfo(containerId.getId()));

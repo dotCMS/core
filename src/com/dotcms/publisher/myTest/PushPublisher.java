@@ -305,8 +305,8 @@ public class PushPublisher extends Publisher {
 		list.add(TemplateBundler.class);
 		list.add(ContainerBundler.class);
 		list.add(HTMLPageBundler.class);
-		list.add(LanguageBundler.class);
 		//list.add(StructureBundler.class);
+		list.add(LanguageBundler.class);
 		
 		return list;
 	}

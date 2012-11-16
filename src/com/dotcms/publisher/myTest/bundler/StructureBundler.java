@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.List;
+import java.util.Set;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -63,15 +63,19 @@ public class StructureBundler implements IBundler {
 	@Override
 	public void generate(File bundleRoot, BundlerStatus status)
 			throws DotBundleException {
-		if(LicenseUtil.getLevel()<200)
-	        throw new RuntimeException("need an enterprise license to run this bundler");
+		if(LicenseUtil.getLevel()<400)
+	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 
-		List<Structure> structures = config.getStructures();
+		Set<String> structures = config.getStructures();
 		
 		try {
-			for (Structure s : structures) {
-				writeStructure(bundleRoot, 
-						StructureCache.getStructureByInode(s.getInode()));
+			for (String str : structures) {
+				Structure s = StructureCache.getStructureByInode(str);
+				
+				
+				
+				
+				writeStructure(bundleRoot, s);
 			}
 		} catch (Exception e) {
 			status.addFailure();
