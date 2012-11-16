@@ -1246,13 +1246,11 @@ public class InodeFactory {
 				db.addParam(inode.getInode());
 				db.addParam(inode.getInode());
 				db.getResult();
-            
-				db.setSQL("delete from inode where inode = ?");
-				db.addParam(inode.getInode());
-				db.getResult();
-				
+            				
 			HibernateUtil.delete(o);
-			
+			db.setSQL("delete from inode where inode = ?");
+			db.addParam(inode.getInode());
+			db.getResult();
 	}
 
 	public static void deleteChildrenOfClass(Inode parent, Class c) {
