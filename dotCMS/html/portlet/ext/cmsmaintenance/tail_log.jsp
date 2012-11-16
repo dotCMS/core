@@ -123,11 +123,12 @@
         } );
 
     }
+   
 
     /**
      * Will search for all the current logs and it will populate the table with those logs details
      */
-    function getCurrentLogs () {
+    function getCurrentLogs () {  	 
 
         var xhrArgs = {
 
@@ -145,6 +146,7 @@
             }
         };
         dojo.xhrPost( xhrArgs );
+        dijit.byId( "checkAllCkBx" ).set('checked',false);        
     }
 
     /**
@@ -266,18 +268,17 @@
 		<div style="width:620px;height:300px;">
 		    <table class="listingTable" id="logsTable" align="center">
 		        <tr id="logsTableHeader">
-		            <th><input width="5%" type="checkbox" dojoType="dijit.form.CheckBox" id="checkAllCkBx" value="true" onClick="checkUncheck()" /></th>
+		            <th width="5%"><input type="checkbox" dojotype="dijit.form.CheckBox" id="checkAllCkBx" onclick="checkUncheck()"></input></th>
 		            <th nowrap="nowrap" width="5%" style="text-align:center;">Status</th>
 		            <th nowrap="nowrap" width="32%" style="text-align:center;">Log Name</th>
 		            <th nowrap="nowrap" width="58%" style="text-align:center;">Log Description</th>
 		        </tr>
 		    </table>
 		</div>
-		<div>&nbsp;</div>
-
+		<div>&nbsp;</div>		
 		<div class="buttonRow">
-		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="enableDisableLogs()"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %> </button>
-		    <button dojoType="dijit.form.Button" iconClass="resetIcon" name="refreshButton" onclick="getCurrentLogs()"> Refresh </button>
+		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onClick="enableDisableLogs()"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %> </button>
+		    <button dojoType="dijit.form.Button" iconClass="resetIcon" name="refreshButton" onClick="getCurrentLogs ()"> Refresh </button>
 		</div>
 
    </div>
