@@ -13,20 +13,13 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
-public class FolderHandler implements IHandler {
-	private FolderAPI fAPI = APILocator.getFolderAPI();
+public class HostHandler implements IHandler {
 	private IdentifierAPI iAPI = APILocator.getIdentifierAPI();
 	private UserAPI uAPI = APILocator.getUserAPI();
 	
@@ -43,10 +36,10 @@ public class FolderHandler implements IHandler {
         	folders = FileUtil.listFilesRecursively(new File(bundleFolder + File.separator + "ROOT"), new FolderBundler().getFileFilter());
         }
         
-		handleFolders(folders);
+        handleHosts(folders);
 	}
 	
-	private void handleFolders(Collection<File> folders) throws DotPublishingException, DotDataException{
+	private void handleHosts(Collection<File> folders) throws DotPublishingException, DotDataException{
 		User systemUser = uAPI.getSystemUser();
 		
 		try{
@@ -56,8 +49,6 @@ public class FolderHandler implements IHandler {
 	        	if(folderFile.isDirectory()) continue;
 	        	FolderWrapper folderWrapper = (FolderWrapper)  xstream.fromXML(new FileInputStream(folderFile));
 	        	
-	        	Folder folder = folderWrapper.getFolder();
-	        	Identifier folderId = folderWrapper.getFolderId();
 	        	Host host = folderWrapper.getHost();
 	        	Identifier hostId = folderWrapper.getHostId();
 	        	
@@ -73,33 +64,6 @@ public class FolderHandler implements IHandler {
         			host.setIdentifier(idNew.getId());
         			localHost = APILocator.getHostAPI().save(host, systemUser, false);
         		}
-	        	
-	        	//Loop over the folder
-        		if(!UtilMethods.isSet(fAPI.findFolderByPath(folderId.getPath(), localHost, systemUser, false).getInode())) {
-        			Identifier id = iAPI.find(folder.getIdentifier());
-        			if(id ==null || !UtilMethods.isSet(id.getId())){
-        				Identifier folderIdNew = null;
-        				if(folderId.getParentPath().equals("/")) {
-	            			folderIdNew = iAPI.createNew(folder, 
-	            					localHost, 
-	            					folderId.getId());
-        				} else {
-        					folderIdNew = iAPI.createNew(folder, 
-                					fAPI.findFolderByPath(folderId.getParentPath(), localHost, systemUser, false), 
-                					folderId.getId());
-        				}
-            			folder.setIdentifier(folderIdNew.getId());
-            		}
-        			
-
-        			//Set defaul type
-        			Structure defaultStr = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
-        			
-        			folder.setDefaultFileType(defaultStr.getInode());
-        			
-        			fAPI.save(folder, folder.getInode(), systemUser, false);
-        		}
-        			
 	        }
         	
     	}

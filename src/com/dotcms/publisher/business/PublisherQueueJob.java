@@ -41,7 +41,7 @@ public class PublisherQueueJob implements StatefulJob {
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
 	
 	private static final Integer maxNumTries = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 5);
-
+	
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {

@@ -72,7 +72,8 @@ public class HTMLPageBundler implements IBundler {
 			}
 			
 			for(HTMLPage page : htmlPages) {
-				writePage(bundleRoot, page);
+				if(page != null)
+					writePage(bundleRoot, page);
 			}
 		} catch (Exception e) {
 			status.addFailure();
@@ -89,7 +90,7 @@ public class HTMLPageBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
-		Identifier pageId = APILocator.getIdentifierAPI().find(page);
+		Identifier pageId = APILocator.getIdentifierAPI().find(page.getIdentifier());
 		HTMLPageWrapper wrapper = 
 				new HTMLPageWrapper(page, pageId);
 		
@@ -108,8 +109,7 @@ public class HTMLPageBundler implements IBundler {
 		
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
-				+ h.getHostname() + File.separator
-				+ config.getLanguage() + uri;
+				+ h.getHostname() + uri;
 
 		File htmlFile = new File(myFileUrl);
 		htmlFile.mkdirs();
