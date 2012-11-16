@@ -188,3 +188,10 @@ button.removeFile {
 .submitContent dt.formFieldLabel .hintIcon:hover{
 	opacity:.9;
 }
+
+.dmundra .dijitInputField INPUT, .dmundra .dijitTextBox, .dmundra .dijitSpinner{
+	padding:0 0 3px;
+}
+input.fileField {
+	width:auto;
+}

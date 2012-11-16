@@ -28,9 +28,10 @@ import com.dotmarketing.portlets.templates.business.TemplateAPITest;
         PermissionAPITest.class,
         ContainerAPITest.class,
         DotCMSCMISTest.class,
-        LinkCheckerAPITest.class,
+        //LinkCheckerAPITest.class,
         TemplateAPITest.class,
         HTMLPageAPITest.class
+
 //        CMISBaseTest.class
 } )
 public class AllTestsSuite {
