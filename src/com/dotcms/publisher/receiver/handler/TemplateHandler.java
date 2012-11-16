@@ -59,6 +59,13 @@ public class TemplateHandler implements IHandler {
                 infoToRemove.add(info.getIdentifier());
                 APILocator.getVersionableAPI().saveVersionInfo(info);
 	        }
+	        for (File templateFile : templates) {
+	        	if(templateFile.isDirectory()) continue;
+	        	TemplateWrapper templateWrapper = (TemplateWrapper)  xstream.fromXML(new FileInputStream(templateFile));
+	        	VersionInfo info = templateWrapper.getVi();
+                infoToRemove.add(info.getIdentifier());
+                APILocator.getVersionableAPI().saveVersionInfo(info);
+			}
 	        try{
 	            for (String ident : infoToRemove) {
 	                APILocator.getVersionableAPI().removeVersionInfoFromCache(ident);

@@ -66,7 +66,12 @@ public class ContainerHandler implements IHandler {
     			cAPI.save(container, 
     					StructureCache.getStructureByInode(container.getStructureInode()),
     					localHost, systemUser, false);
-    			VersionInfo info = containerWrapper.getCvi();
+	        }
+	        for(File containerFile: containers) {
+	        	if(containerFile.isDirectory()) continue;
+	        	ContainerWrapper containerWrapper = (ContainerWrapper)  xstream.fromXML(new FileInputStream(containerFile));
+	        	
+	        	VersionInfo info = containerWrapper.getCvi();
                 infoToRemove.add(info.getIdentifier());
                 APILocator.getVersionableAPI().saveVersionInfo(info);
 	        }
