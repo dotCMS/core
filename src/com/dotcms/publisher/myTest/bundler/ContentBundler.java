@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -74,8 +75,8 @@ public class ContentBundler implements IBundler {
 	@Override
 	public void generate(File bundleRoot, BundlerStatus status)
 			throws DotBundleException {
-		if(LicenseUtil.getLevel()<200)
-	        throw new RuntimeException("need an enterprise license to run this bundler");
+		if(LicenseUtil.getLevel()<400)
+	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 
 
 
@@ -177,12 +178,12 @@ public class ContentBundler implements IBundler {
 			uri.trim();
 			uri += CONTENT_EXTENSION;
 		}
-		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getIdentifier() + CONTENT_EXTENSION):uri;
+		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getInode() + CONTENT_EXTENSION):uri;
 
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
 				+ h.getHostname() + File.separator
-				+ config.getLanguage() + assetName;
+				+ con.getLanguageId() + assetName;
 
 		pushContentFile = new File(myFileUrl);
 		pushContentFile.mkdirs();
@@ -228,11 +229,10 @@ public class ContentBundler implements IBundler {
 //		for(HTMLPage htmlPage: folderHtmlPages) {
 //			config.getHTMLPages().add(htmlPage.getIdentifier());
 //		}
-		
 
 		config.getContainers().addAll(containers);
 		
-//		config.getStructures().add(structure);
+		//config.getStructures().add(structure);
 		
 	}
 

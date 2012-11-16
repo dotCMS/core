@@ -44,6 +44,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -59,8 +60,8 @@ public class PushPublisher extends Publisher {
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
-	    if(LicenseUtil.getLevel()<200)
-            throw new RuntimeException("need an enterprise licence to run this");
+		if(LicenseUtil.getLevel()<400)
+	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 	    
 		this.config = super.init(config);
 		tFactory = new TrustFactory();
@@ -71,8 +72,8 @@ public class PushPublisher extends Publisher {
 
 	@Override
 	public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
-	    if(LicenseUtil.getLevel()<200)
-            throw new RuntimeException("need an enterprise licence to run this");
+		if(LicenseUtil.getLevel()<400)
+	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 	    
 	    PublishAuditHistory currentStatusHistory = null;
 		try {
@@ -98,7 +99,14 @@ public class PushPublisher extends Publisher {
 					buffer = endpointsMap.get(pEndPoint.getGroupId());
 				
 				buffer.add(pEndPoint);
-				endpointsMap.put(pEndPoint.getGroupId(), buffer);
+				
+				// put in map with either the group key or the id if no group is set
+				if(UtilMethods.isSet(pEndPoint.getGroupId())){
+					endpointsMap.put(pEndPoint.getGroupId(), buffer);
+				}
+				else{
+					endpointsMap.put(pEndPoint.getId(), buffer);
+				}
 			}
 			
 			ClientConfig cc = new DefaultClientConfig();
@@ -305,8 +313,8 @@ public class PushPublisher extends Publisher {
 		list.add(TemplateBundler.class);
 		list.add(ContainerBundler.class);
 		list.add(HTMLPageBundler.class);
-		list.add(LanguageBundler.class);
 		//list.add(StructureBundler.class);
+		list.add(LanguageBundler.class);
 		
 		return list;
 	}

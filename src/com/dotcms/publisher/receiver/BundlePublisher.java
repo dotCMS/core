@@ -28,6 +28,7 @@ import com.dotcms.publisher.receiver.handler.ContainerHandler;
 import com.dotcms.publisher.receiver.handler.ContentHandler;
 import com.dotcms.publisher.receiver.handler.FolderHandler;
 import com.dotcms.publisher.receiver.handler.HTMLPageHandler;
+import com.dotcms.publisher.receiver.handler.HostHandler;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publisher.receiver.handler.LanguageHandler;
 import com.dotcms.publisher.receiver.handler.TemplateHandler;
@@ -58,10 +59,13 @@ public class BundlePublisher extends Publisher {
         
         handlers = new ArrayList<IHandler>();
         //The order is really important
+        handlers.add(new HostHandler());
+        //handlers.add(new StructureHandler());
         handlers.add(new FolderHandler());
         handlers.add(new ContainerHandler());
         handlers.add(new TemplateHandler());
         handlers.add(new HTMLPageHandler());
+        
         handlers.add(new ContentHandler());
         handlers.add(new LanguageHandler());
         

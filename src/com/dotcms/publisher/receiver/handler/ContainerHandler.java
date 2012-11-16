@@ -13,19 +13,19 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class ContainerHandler implements IHandler {
-	private IdentifierAPI iAPI = APILocator.getIdentifierAPI();
 	private UserAPI uAPI = APILocator.getUserAPI();
 	private ContainerAPI cAPI = APILocator.getContainerAPI();
 	private List<String> infoToRemove = new ArrayList<String>();
@@ -57,6 +57,12 @@ public class ContainerHandler implements IHandler {
 	        	Identifier containerId = containerWrapper.getContainerId();
 	        	
         		Host localHost = APILocator.getHostAPI().find(containerId.getHostId(), systemUser, false);
+        		
+        		//Set defaul type
+    			Structure defaultStr = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+    			container.setStructureInode(defaultStr.getInode());
+        		
+        		
     			cAPI.save(container, 
     					StructureCache.getStructureByInode(container.getStructureInode()),
     					localHost, systemUser, false);

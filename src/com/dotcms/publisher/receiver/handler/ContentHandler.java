@@ -148,7 +148,7 @@ public class ContentHandler implements IHandler {
 
                 File binaryFolder = new File(folderOut+File.separator+"assets"+File.separator+folderTree);
 
-                if(binaryFolder != null && binaryFolder.exists())
+                if(binaryFolder != null && binaryFolder.exists() && binaryFolder.listFiles().length > 0)
                     content.setBinary(ff.getVelocityVarName(), binaryFolder.listFiles()[0]);
             }
 
@@ -236,6 +236,14 @@ public class ContentHandler implements IHandler {
             //Parent -> identifier  for relationships
             //Child  -> inode       for categories
             dc.setSQL( "delete from tree where parent = '" + contentlet.getIdentifier() + "' or child = '" + contentlet.getInode() + "'" );
+            dc.loadResult();
+        } catch ( Exception e ) {
+            throw new DotPublishingException( "Unable to delete tree records for Contentlet.", e );
+        }
+        
+        try {
+            DotConnect dc = new DotConnect();
+            dc.setSQL( "delete from tree where parent = '" + contentlet.getInode() + "' or child = '" + contentlet.getIdentifier() + "'" );
             dc.loadResult();
         } catch ( Exception e ) {
             throw new DotPublishingException( "Unable to delete tree records for Contentlet.", e );
