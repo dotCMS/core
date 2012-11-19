@@ -292,7 +292,7 @@ public class PublishFactory {
 			Folder parentFolder = (Folder)APILocator.getFolderAPI().findParentFolder((Treeable) webAsset,user,false);
 			Host host = (Host) hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 			RefreshMenus.deleteMenu(host);
-			CacheLocator.getNavToolCache().removeNavAndChildren(host.getIdentifier(), parentFolder.getInode());
+			CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), parentFolder.getInode());
 		}		
 		
 		return true;

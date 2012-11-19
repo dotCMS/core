@@ -694,7 +694,7 @@ public class WebAssetFactory {
 						Folder parentFolder = (Folder)parent;			
 						Host host = hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), false);
 						RefreshMenus.deleteMenu(host);
-						CacheLocator.getNavToolCache().removeNavAndChildren(host.getIdentifier(), FolderAPI.SYSTEM_FOLDER);
+						CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), FolderAPI.SYSTEM_FOLDER);
 					}
 				} else if (currWebAsset instanceof File) {
 				    RefreshMenus.deleteMenu(currWebAsset);
