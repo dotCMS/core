@@ -71,21 +71,11 @@ public class FolderHandler implements IHandler {
 	        	
 	        	Folder folder = folderWrapper.getFolder();
 	        	Identifier folderId = folderWrapper.getFolderId();
-	        	Host host = folderWrapper.getHost();
-//	        	Identifier hostId = folderWrapper.getHostId();
-	        	
-	        	
+	        	Host host = folderWrapper.getHost();	        	
 	        	
 	        	//Check Host if exists otherwise create
 	        	Host localHost = APILocator.getHostAPI().find(host.getIdentifier(), systemUser, false);
         		
-//        		if(localHost == null) {
-//        			host.setProperty("_dont_validate_me", true);
-//        			
-//        			Identifier idNew = iAPI.createNew(host, APILocator.getHostAPI().findSystemHost(), hostId.getId());
-//        			host.setIdentifier(idNew.getId());
-//        			localHost = APILocator.getHostAPI().save(host, systemUser, false);
-//        		}
 	        	
 	        	//Loop over the folder
         		if(!UtilMethods.isSet(fAPI.findFolderByPath(folderId.getPath(), localHost, systemUser, false).getInode())) {
@@ -110,7 +100,11 @@ public class FolderHandler implements IHandler {
         			
         			folder.setDefaultFileType(defaultStr.getInode());
         			
-        			fAPI.save(folder, folder.getInode(), systemUser, false);
+        			Folder localFolder = fAPI.find(folder.getInode(), systemUser, false);
+        			if(localFolder == null || !UtilMethods.isSet(localFolder.getInode()))
+        				fAPI.save(folder, folder.getInode(), systemUser, false);
+        			else
+        				fAPI.save(folder, systemUser, false);
         		}
         			
 	        }
