@@ -128,14 +128,14 @@ public class PublisherQueueJob implements StatefulJob {
 		TrustFactory tFactory = new TrustFactory();
 		
 		if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
-		clientConfig.getProperties()
-		.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
+				clientConfig.getProperties()
+				.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
 		}
         Client client = Client.create(clientConfig);
         WebResource webResource = null;
         
         List<PublishAuditStatus> pendingAudits = pubAuditAPI.getPendingPublishAuditStatus();
-        
+
         //Foreach Bundle
         for(PublishAuditStatus pendingAudit: pendingAudits) {
         	//Gets groups list
@@ -177,10 +177,15 @@ public class PublisherQueueJob implements StatefulJob {
 			        		}
 		        		}
 	        		}
+	        		else if(localDetail.getStatus() == PublishAuditStatus.Status.SUCCESS.getCode() ){
+	        			Map<String, EndpointDetail> m = new HashMap<String, EndpointDetail>();
+	        			m.put(endpointId, localDetail);
+	        			bufferMap.put(group, m);
+	        		}
 		        }
 	        }
         	
-        	int countOk = 0;
+            int countOk = 0;
         	for(String groupId: bufferMap.keySet()) {
         		Map<String, EndpointDetail> group = bufferMap.get(groupId);
         		
