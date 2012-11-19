@@ -7,7 +7,7 @@ import java.util.Collection;
 
 import org.apache.commons.io.FileUtils;
 
-import com.dotcms.publisher.myTest.bundler.LanguageBundler;
+import com.dotcms.publisher.pusher.bundler.LanguageBundler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;

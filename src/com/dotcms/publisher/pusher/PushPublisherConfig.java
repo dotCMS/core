@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest;
+package com.dotcms.publisher.pusher;
 
 import java.util.ArrayList;
 import java.util.HashSet;

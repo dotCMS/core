@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest.bundler;
+package com.dotcms.publisher.pusher.bundler;
 
 import java.io.File;
 import java.io.FileFilter;

@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest;
+package com.dotcms.publisher.pusher;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -29,13 +29,13 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.myTest.bundler.ContainerBundler;
-import com.dotcms.publisher.myTest.bundler.ContentBundler;
-import com.dotcms.publisher.myTest.bundler.FolderBundler;
-import com.dotcms.publisher.myTest.bundler.HTMLPageBundler;
-import com.dotcms.publisher.myTest.bundler.LanguageBundler;
-import com.dotcms.publisher.myTest.bundler.StructureBundler;
-import com.dotcms.publisher.myTest.bundler.TemplateBundler;
+import com.dotcms.publisher.pusher.bundler.ContainerBundler;
+import com.dotcms.publisher.pusher.bundler.ContentBundler;
+import com.dotcms.publisher.pusher.bundler.FolderBundler;
+import com.dotcms.publisher.pusher.bundler.HTMLPageBundler;
+import com.dotcms.publisher.pusher.bundler.LanguageBundler;
+import com.dotcms.publisher.pusher.bundler.StructureBundler;
+import com.dotcms.publisher.pusher.bundler.TemplateBundler;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;

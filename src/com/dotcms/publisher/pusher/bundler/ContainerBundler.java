@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest.bundler;
+package com.dotcms.publisher.pusher.bundler;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -9,8 +9,8 @@ import java.util.Set;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.myTest.PushPublisherConfig;
-import com.dotcms.publisher.myTest.wrapper.ContainerWrapper;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.wrapper.ContainerWrapper;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;

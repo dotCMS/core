@@ -5,8 +5,8 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.dotcms.publisher.myTest.bundler.FolderBundler;
-import com.dotcms.publisher.myTest.wrapper.FolderWrapper;
+import com.dotcms.publisher.pusher.bundler.FolderBundler;
+import com.dotcms.publisher.pusher.wrapper.FolderWrapper;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
