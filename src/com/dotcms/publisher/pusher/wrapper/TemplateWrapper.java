@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest.wrapper;
+package com.dotcms.publisher.pusher.wrapper;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;

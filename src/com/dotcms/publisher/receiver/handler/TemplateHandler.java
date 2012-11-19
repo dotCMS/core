@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import com.dotcms.publisher.myTest.bundler.TemplateBundler;
-import com.dotcms.publisher.myTest.wrapper.TemplateWrapper;
+import com.dotcms.publisher.pusher.bundler.TemplateBundler;
+import com.dotcms.publisher.pusher.wrapper.TemplateWrapper;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

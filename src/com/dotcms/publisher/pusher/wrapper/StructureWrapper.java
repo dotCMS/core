@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest.wrapper;
+package com.dotcms.publisher.pusher.wrapper;
 
 import java.util.List;
 

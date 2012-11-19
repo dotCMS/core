@@ -5,8 +5,8 @@ import java.io.FileInputStream;
 import java.util.Collection;
 import java.util.List;
 
-import com.dotcms.publisher.myTest.bundler.StructureBundler;
-import com.dotcms.publisher.myTest.wrapper.StructureWrapper;
+import com.dotcms.publisher.pusher.bundler.StructureBundler;
+import com.dotcms.publisher.pusher.wrapper.StructureWrapper;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;

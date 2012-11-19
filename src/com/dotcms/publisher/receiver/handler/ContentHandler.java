@@ -8,9 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.publisher.myTest.PushPublisherConfig;
-import com.dotcms.publisher.myTest.bundler.ContentBundler;
-import com.dotcms.publisher.myTest.wrapper.PushContentWrapper;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.bundler.ContentBundler;
+import com.dotcms.publisher.pusher.wrapper.PushContentWrapper;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
