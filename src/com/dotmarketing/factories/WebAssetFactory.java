@@ -41,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -561,6 +562,8 @@ public class WebAssetFactory {
 		else if (currWebAsset instanceof File)
 		{
          RefreshMenus.deleteMenu(currWebAsset);
+         Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
+         CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 		}
 		
 		User userMod = null;
@@ -617,6 +620,8 @@ public class WebAssetFactory {
 	public static void unArchiveAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
 
 		RefreshMenus.deleteMenu(currWebAsset);
+		Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
+		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 		// gets the identifier for this asset
 		APILocator.getVersionableAPI().setDeleted(currWebAsset, false);
 	}
@@ -675,6 +680,7 @@ public class WebAssetFactory {
 					//Refreshing the menues
 					//RefreshMenus.deleteMenus();
 					RefreshMenus.deleteMenu(currWebAsset);
+					CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
 
 				} else if (currWebAsset instanceof Container) {
 					//remove container from the live directory
@@ -688,10 +694,12 @@ public class WebAssetFactory {
 						Folder parentFolder = (Folder)parent;			
 						Host host = hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), false);
 						RefreshMenus.deleteMenu(host);
+						CacheLocator.getNavToolCache().removeNavAndChildren(host.getIdentifier(), FolderAPI.SYSTEM_FOLDER);
 					}
 				} else if (currWebAsset instanceof File) {
 				    RefreshMenus.deleteMenu(currWebAsset);
-				   }
+				    CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
+			    }
 				
 				
 
@@ -1639,6 +1647,9 @@ public class WebAssetFactory {
 			((WebAsset)asset).setSortOrder(newValue);
 			RefreshMenus.deleteMenu(((WebAsset)asset));
 		}
+		Identifier ident=APILocator.getIdentifierAPI().find(asset);
+		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
+		
 		HibernateUtil.saveOrUpdate(asset);
 	}
 
@@ -1694,6 +1705,7 @@ public class WebAssetFactory {
 				{
 					PageServices.unpublishPageFile((HTMLPage)currWebAsset);
 					RefreshMenus.deleteMenu(currWebAsset);
+					CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
 					webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
 				}
 				else if(currWebAsset instanceof Template)
@@ -1709,6 +1721,7 @@ public class WebAssetFactory {
 				{
 					webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
 					RefreshMenus.deleteMenu(currWebAsset);
+					CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
 				}
 				for(Versionable webAsset : webAssetList)
 				{
