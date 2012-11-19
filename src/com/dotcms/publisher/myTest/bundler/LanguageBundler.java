@@ -10,7 +10,6 @@ import org.apache.commons.io.FileUtils;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.myTest.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
@@ -22,7 +21,6 @@ import com.dotmarketing.exception.DotSecurityException;
 public class LanguageBundler implements IBundler {
 	
 	public final static String LANGUAGE_EXTENSION = ".properties" ;
-	private PushPublisherConfig config;
 	private PublishAuditAPI aAPI =  PublishAuditAPI.getInstance();
 
 	@Override
@@ -32,7 +30,6 @@ public class LanguageBundler implements IBundler {
 
 	@Override
 	public void setConfig(PublisherConfig pc) {
-		config = (PushPublisherConfig) pc;
 	}
 
 	@Override
