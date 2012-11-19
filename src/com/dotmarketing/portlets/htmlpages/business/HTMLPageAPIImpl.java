@@ -421,6 +421,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 				// regenerate menu
 				//RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(newHtmlPage);
+				CacheLocator.getNavToolCache().removeNav(parentFolder.getHostId(), parentFolder.getInode());
 			}
 		} catch (Exception e) {
 			throw new DotRuntimeException(e.getMessage(), e);
