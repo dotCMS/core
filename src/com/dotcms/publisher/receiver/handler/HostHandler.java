@@ -55,7 +55,7 @@ public class HostHandler implements IHandler {
 	        	
 	        	
 	        	//Check Host if exists otherwise create
-	        	Host localHost = APILocator.getHostAPI().findByName(host.getHostname(), systemUser, false);
+	        	Host localHost = APILocator.getHostAPI().find(host.getIdentifier(), systemUser, false);
         		
         		if(localHost == null) {
         			host.setProperty("_dont_validate_me", true);

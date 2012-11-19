@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 
 import com.dotcms.publisher.myTest.bundler.FolderBundler;
 import com.dotcms.publisher.myTest.wrapper.FolderWrapper;
@@ -25,6 +27,8 @@ import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
 public class FolderHandler implements IHandler {
 	private FolderAPI fAPI = APILocator.getFolderAPI();
 	private IdentifierAPI iAPI = APILocator.getIdentifierAPI();
@@ -38,9 +42,18 @@ public class FolderHandler implements IHandler {
 	@Override
 	public void handle(File bundleFolder) throws Exception {
 		//For each content take the wrapper and save it on DB
-        Collection<File> folders = new ArrayList<File>();
+        List<File> folders = new ArrayList<File>();
         if(new File(bundleFolder + File.separator + "ROOT").exists()){
         	folders = FileUtil.listFilesRecursively(new File(bundleFolder + File.separator + "ROOT"), new FolderBundler().getFileFilter());
+        	Collections.sort(folders, new Comparator<File>() {
+				@Override
+				public int compare(File o1, File o2) {
+					if(o1.getAbsolutePath().length() > o2.getAbsolutePath().length())
+						return 1;
+					else
+						return -1;
+				}
+			});
         }
         
 		handleFolders(folders);
@@ -59,20 +72,20 @@ public class FolderHandler implements IHandler {
 	        	Folder folder = folderWrapper.getFolder();
 	        	Identifier folderId = folderWrapper.getFolderId();
 	        	Host host = folderWrapper.getHost();
-	        	Identifier hostId = folderWrapper.getHostId();
+//	        	Identifier hostId = folderWrapper.getHostId();
 	        	
 	        	
 	        	
 	        	//Check Host if exists otherwise create
-	        	Host localHost = APILocator.getHostAPI().findByName(host.getHostname(), systemUser, false);
+	        	Host localHost = APILocator.getHostAPI().find(host.getIdentifier(), systemUser, false);
         		
-        		if(localHost == null) {
-        			host.setProperty("_dont_validate_me", true);
-        			
-        			Identifier idNew = iAPI.createNew(host, APILocator.getHostAPI().findSystemHost(), hostId.getId());
-        			host.setIdentifier(idNew.getId());
-        			localHost = APILocator.getHostAPI().save(host, systemUser, false);
-        		}
+//        		if(localHost == null) {
+//        			host.setProperty("_dont_validate_me", true);
+//        			
+//        			Identifier idNew = iAPI.createNew(host, APILocator.getHostAPI().findSystemHost(), hostId.getId());
+//        			host.setIdentifier(idNew.getId());
+//        			localHost = APILocator.getHostAPI().save(host, systemUser, false);
+//        		}
 	        	
 	        	//Loop over the folder
         		if(!UtilMethods.isSet(fAPI.findFolderByPath(folderId.getPath(), localHost, systemUser, false).getInode())) {
