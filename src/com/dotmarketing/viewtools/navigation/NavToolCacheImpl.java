@@ -2,9 +2,12 @@ package com.dotmarketing.viewtools.navigation;
 
 import java.util.List;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 
 public class NavToolCacheImpl implements NavToolCache {
     
@@ -12,40 +15,6 @@ public class NavToolCacheImpl implements NavToolCache {
     
     public NavToolCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
-    }
-    
-    protected static String buildKey(String hostid, String path) {
-        return hostid+":"+path;
-    }
-    
-    @Override
-    public List<NavResult> getNav(String hostid, String path) {
-        try {
-            return (List<NavResult>) cache.get(buildKey(hostid,path),GROUP);
-        }
-        catch(DotCacheException ex) {
-            return null;
-        }
-    }
-    
-    @Override
-    public void putNav(String hostid, String path, List<NavResult> items) {
-        cache.put(buildKey(hostid,path), items, GROUP);
-    }
-    
-    @Override
-    public void removeNav(String hostid, String path) {
-        String key=buildKey(hostid,path);
-        cache.remove(key, GROUP);
-    }
-    
-    @Override
-    public void removeNavAndChildren(String hostid, String path) {
-        String key=buildKey(hostid,path);
-        cache.remove(key, GROUP);
-        for(String k : cache.getKeys(GROUP))
-            if(k.startsWith(key))
-                cache.remove(k, GROUP);
     }
 
     @Override
@@ -55,12 +24,66 @@ public class NavToolCacheImpl implements NavToolCache {
 
     @Override
     public String[] getGroups() {
-        return new String[]{GROUP};
+        return new String[] {GROUP};
     }
 
     @Override
     public void clearCache() {
         cache.flushGroup(GROUP);
+    }
+
+    protected static String key(String hostid, String folderInode) {
+        return hostid+":"+folderInode;
+    }
+    
+    @Override
+    public List<NavResult> getNav(String hostid, String folderInode) {
+        try {
+            return (List<NavResult>)cache.get(key(hostid,folderInode), GROUP);
+        } catch (DotCacheException e) {
+            Logger.warn(this, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Override
+    public void putNav(String hostid, String folderInode, List<NavResult> items) {
+        cache.put(key(hostid,folderInode), items, GROUP);
+    }
+
+    @Override
+    public void removeNav(String hostid, String folderInode) {
+        cache.remove(key(hostid,folderInode), GROUP);
+    }
+    
+    @Override
+    public void removeNav(String folderInode) {
+        Folder folder;
+        try {
+            folder = APILocator.getFolderAPI().find(folderInode, APILocator.getUserAPI().getSystemUser(), false);
+            cache.remove(key(folder.getHostId(),folderInode), GROUP);
+        } catch (Exception e) {
+            Logger.warn(this, e.getMessage(), e);
+        }
+        
+    }
+
+    @Override
+    public void removeNavAndChildren(String hostid, String folderInode) {
+        removeNav(hostid,folderInode);
+        
+        // this is the black hole eating stars
+    }
+
+    @Override
+    public void removeNavByPath(String hostid, String path) {
+        Folder folder;
+        try {
+            folder = APILocator.getFolderAPI().findFolderByPath(path, hostid, APILocator.getUserAPI().getSystemUser(), false);
+            removeNav(hostid,folder.getInode());
+        } catch (Exception e) {
+            Logger.warn(this, e.getMessage(), e);
+        }
     }
     
 }

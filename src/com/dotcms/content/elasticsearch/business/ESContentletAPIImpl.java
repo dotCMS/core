@@ -2350,7 +2350,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                Folder folder = APILocator.getFolderAPI().findFolderByPath(contIdent.getParentPath(), host , user, respectFrontendRoles);
 				                if(RefreshMenus.shouldRefreshMenus(APILocator.getFileAssetAPI().fromContentlet(workingContentlet),APILocator.getFileAssetAPI().fromContentlet(contentlet))){
 				                	RefreshMenus.deleteMenu(folder);
-				                	CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), contIdent.getParentPath());
+				                	CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), folder.getInode());
 				                }
 				            }
 				        }

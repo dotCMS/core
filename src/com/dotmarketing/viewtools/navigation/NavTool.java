@@ -14,6 +14,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -26,6 +27,8 @@ import com.liferay.portal.model.User;
 
 public class NavTool implements ViewTool {
     
+    private static NavToolCache navCache = null;
+    private static FolderAPI fAPI=null;
     private Host currenthost=null;
     private User user=null;
     
@@ -35,6 +38,8 @@ public class NavTool implements ViewTool {
         try {
             currenthost=WebAPILocator.getHostWebAPI().getCurrentHost(context.getRequest());
             user=APILocator.getUserAPI().getAnonymousUser();
+            fAPI = APILocator.getFolderAPI();
+            navCache = CacheLocator.getNavToolCache();
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
         }
@@ -42,18 +47,23 @@ public class NavTool implements ViewTool {
     
     protected static List<NavResult> getNav(Host host, String path) throws DotDataException, DotSecurityException {
         User user=APILocator.getUserAPI().getAnonymousUser();
-        NavToolCache cache=CacheLocator.getNavToolCache();
-        List<NavResult> list=cache.getNav(host.getIdentifier(), path);
+        
+        String folderId=path.equals("/") ? 
+                 FolderAPI.SYSTEM_FOLDER : fAPI.findFolderByPath(path, host, user, true).getInode();
+        if(!UtilMethods.isSet(folderId))
+            return new ArrayList<NavResult>();
+        
+        List<NavResult> list=navCache.getNav(host.getIdentifier(), folderId);
         if(list==null) {
             list=new ArrayList<NavResult>();
         
             List menuItems;
             if(path.equals("/")) {
-                menuItems = APILocator.getFolderAPI().findSubFolders(host, true);
+                menuItems = fAPI.findSubFolders(host, true);
             }
             else {
-                Folder folder=APILocator.getFolderAPI().findFolderByPath(path, host, user, true);
-                menuItems = APILocator.getFolderAPI().findMenuItems(folder, user, true);
+                Folder folder=fAPI.find(folderId, user, true);
+                menuItems = fAPI.findMenuItems(folder, user, true);
             }
             
             for(Object item : menuItems) {
@@ -99,7 +109,7 @@ public class NavTool implements ViewTool {
                 }
             }
             
-            cache.putNav(host.getIdentifier(), path, list);
+            navCache.putNav(host.getIdentifier(), folderId, list);
         }
         
         return list;

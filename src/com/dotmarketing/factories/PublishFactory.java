@@ -142,7 +142,7 @@ public class PublishFactory {
 			if(RefreshMenus.shouldRefreshMenus((com.dotmarketing.portlets.files.model.File)webAsset)){
 				com.dotmarketing.menubuilders.RefreshMenus.deleteMenu((WebAsset)webAsset);
 				Identifier ident=APILocator.getIdentifierAPI().find(webAsset);
-				CacheLocator.getNavToolCache().removeNav(ident.getHostId(), ident.getParentPath());
+				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 			}
 
 		}
@@ -218,9 +218,8 @@ public class PublishFactory {
 				Folder folder = (Folder) APILocator.getFolderAPI().findParentFolder((Treeable)webAsset,user,false);
 				if(folder != null){
 					RefreshMenus.deleteMenu(folder);
+					CacheLocator.getNavToolCache().removeNav(folder.getHostId(),folder.getInode());
 				}
-				Identifier ident=APILocator.getIdentifierAPI().find(webAsset);
-				CacheLocator.getNavToolCache().removeNav(ident.getHostId(), ident.getParentPath());
 			}
             CacheLocator.getHTMLPageCache().remove((HTMLPage) webAsset);
 
@@ -293,7 +292,7 @@ public class PublishFactory {
 			Folder parentFolder = (Folder)APILocator.getFolderAPI().findParentFolder((Treeable) webAsset,user,false);
 			Host host = (Host) hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 			RefreshMenus.deleteMenu(host);
-			CacheLocator.getNavToolCache().removeNavAndChildren(host.getIdentifier(), "/");
+			CacheLocator.getNavToolCache().removeNavAndChildren(host.getIdentifier(), parentFolder.getInode());
 		}		
 		
 		return true;
