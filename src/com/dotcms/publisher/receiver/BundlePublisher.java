@@ -31,6 +31,7 @@ import com.dotcms.publisher.receiver.handler.HTMLPageHandler;
 import com.dotcms.publisher.receiver.handler.HostHandler;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publisher.receiver.handler.LanguageHandler;
+import com.dotcms.publisher.receiver.handler.StructureHandler;
 import com.dotcms.publisher.receiver.handler.TemplateHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
@@ -40,6 +41,7 @@ import com.dotcms.rest.BundlePublisherResource;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 
@@ -60,7 +62,11 @@ public class BundlePublisher extends Publisher {
         handlers = new ArrayList<IHandler>();
         //The order is really important
         handlers.add(new HostHandler());
-        //handlers.add(new StructureHandler());
+        
+        if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES"))
+        	handlers.add(new StructureHandler());
+        
+        
         handlers.add(new FolderHandler());
         handlers.add(new ContainerHandler());
         handlers.add(new TemplateHandler());

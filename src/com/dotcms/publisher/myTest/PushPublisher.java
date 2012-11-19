@@ -34,6 +34,7 @@ import com.dotcms.publisher.myTest.bundler.ContentBundler;
 import com.dotcms.publisher.myTest.bundler.FolderBundler;
 import com.dotcms.publisher.myTest.bundler.HTMLPageBundler;
 import com.dotcms.publisher.myTest.bundler.LanguageBundler;
+import com.dotcms.publisher.myTest.bundler.StructureBundler;
 import com.dotcms.publisher.myTest.bundler.TemplateBundler;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.BundlerUtil;
@@ -313,7 +314,10 @@ public class PushPublisher extends Publisher {
 		list.add(TemplateBundler.class);
 		list.add(ContainerBundler.class);
 		list.add(HTMLPageBundler.class);
-		//list.add(StructureBundler.class);
+		
+		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES"))
+			list.add(StructureBundler.class);
+		
 		list.add(LanguageBundler.class);
 		
 		return list;

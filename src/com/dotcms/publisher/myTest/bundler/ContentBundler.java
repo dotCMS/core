@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -217,22 +218,25 @@ public class ContentBundler implements IBundler {
 			throws DotStateException, DotHibernateException, DotDataException, DotSecurityException
 	{
 		//Get Id from folder
-//		List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
-//				APILocator.getFolderAPI().find(folder, systemUser, false));
-//		folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
-//				APILocator.getFolderAPI().find(folder, systemUser, false)));
+		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES")) {
+			List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
+					APILocator.getFolderAPI().find(folder, systemUser, false));
+			folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
+					APILocator.getFolderAPI().find(folder, systemUser, false)));
+			for(HTMLPage htmlPage: folderHtmlPages) {
+				config.getHTMLPages().add(htmlPage.getIdentifier());
+			}
+		}
+		
+		config.getHTMLPages().addAll(htmlPages);
 
 		config.getFolders().add(folder);
 
-		config.getHTMLPages().addAll(htmlPages);
-		
-//		for(HTMLPage htmlPage: folderHtmlPages) {
-//			config.getHTMLPages().add(htmlPage.getIdentifier());
-//		}
-
 		config.getContainers().addAll(containers);
 		
-		//config.getStructures().add(structure);
+		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
+			config.getStructures().add(structure);
+		}
 		
 	}
 

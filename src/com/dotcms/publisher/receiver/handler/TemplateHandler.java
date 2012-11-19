@@ -13,7 +13,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -24,7 +23,6 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class TemplateHandler implements IHandler {
-	private IdentifierAPI iAPI = APILocator.getIdentifierAPI();
 	private UserAPI uAPI = APILocator.getUserAPI();
 	private TemplateAPI tAPI = APILocator.getTemplateAPI();
 	private List<String> infoToRemove = new ArrayList<String>();
@@ -55,9 +53,6 @@ public class TemplateHandler implements IHandler {
 	        	Identifier templateId = templateWrapper.getTemplateId();
 	        	Host localHost = APILocator.getHostAPI().find(templateId.getHostId(), systemUser, false);
 	        	tAPI.saveTemplate(template, localHost, systemUser, false);
-	        	VersionInfo info = templateWrapper.getVi();
-                infoToRemove.add(info.getIdentifier());
-                APILocator.getVersionableAPI().saveVersionInfo(info);
 	        }
 	        for (File templateFile : templates) {
 	        	if(templateFile.isDirectory()) continue;

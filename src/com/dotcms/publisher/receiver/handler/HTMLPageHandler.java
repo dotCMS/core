@@ -12,7 +12,6 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -25,7 +24,6 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class HTMLPageHandler implements IHandler {
-	private IdentifierAPI iAPI = APILocator.getIdentifierAPI();
 	private UserAPI uAPI = APILocator.getUserAPI();
 	private FolderAPI fAPI = APILocator.getFolderAPI();
 	private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
@@ -64,9 +62,6 @@ public class HTMLPageHandler implements IHandler {
     					parentFolder, 
     					systemUser, 
     					false);
-    			VersionInfo info = pageWrapper.getVi();
-                infoToRemove.add(info.getIdentifier());
-                APILocator.getVersionableAPI().saveVersionInfo(info);
 	        }
 	        
 	        for(File pageFile: pages) {
