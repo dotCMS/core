@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest;
+package com.dotcms.publisher.pusher;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -29,8 +29,13 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.myTest.bundler.ContentBundler;
-import com.dotcms.publisher.myTest.bundler.FolderBundler;
+import com.dotcms.publisher.pusher.bundler.ContainerBundler;
+import com.dotcms.publisher.pusher.bundler.ContentBundler;
+import com.dotcms.publisher.pusher.bundler.FolderBundler;
+import com.dotcms.publisher.pusher.bundler.HTMLPageBundler;
+import com.dotcms.publisher.pusher.bundler.LanguageBundler;
+import com.dotcms.publisher.pusher.bundler.StructureBundler;
+import com.dotcms.publisher.pusher.bundler.TemplateBundler;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
@@ -40,6 +45,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -55,8 +61,8 @@ public class PushPublisher extends Publisher {
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
-	    if(LicenseUtil.getLevel()<200)
-            throw new RuntimeException("need an enterprise licence to run this");
+		if(LicenseUtil.getLevel()<400)
+	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 	    
 		this.config = super.init(config);
 		tFactory = new TrustFactory();
@@ -67,8 +73,8 @@ public class PushPublisher extends Publisher {
 
 	@Override
 	public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
-	    if(LicenseUtil.getLevel()<200)
-            throw new RuntimeException("need an enterprise licence to run this");
+		if(LicenseUtil.getLevel()<400)
+	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 	    
 	    PublishAuditHistory currentStatusHistory = null;
 		try {
@@ -88,13 +94,19 @@ public class PushPublisher extends Publisher {
 			List<PublishingEndPoint> buffer = null;
 			//Organize the endpoints grouping them by groupId
 			for (PublishingEndPoint pEndPoint : endpoints) {
-				if(endpointsMap.get(pEndPoint.getGroupId()) == null)
+				
+				String gid = UtilMethods.isSet(pEndPoint.getGroupId()) ? pEndPoint.getGroupId() : pEndPoint.getId();
+				
+				if(endpointsMap.get(gid) == null)
 					buffer = new ArrayList<PublishingEndPoint>();
 				else 
-					buffer = endpointsMap.get(pEndPoint.getGroupId());
+					buffer = endpointsMap.get(gid);
 				
 				buffer.add(pEndPoint);
-				endpointsMap.put(pEndPoint.getGroupId(), buffer);
+				
+				// put in map with either the group key or the id if no group is set
+				endpointsMap.put(gid, buffer);
+				
 			}
 			
 			ClientConfig cc = new DefaultClientConfig();
@@ -125,7 +137,9 @@ public class PushPublisher extends Publisher {
 				        form.field("AUTH_TOKEN", 
 				        		retriveKeyString(
 				        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
-				        form.field("GROUP_ID", endpoint.getGroupId());
+				        
+				        form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
+				        
 				        form.field("ENDPOINT_ID", endpoint.getId());
 				        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 						
@@ -293,9 +307,20 @@ public class PushPublisher extends Publisher {
 	@Override
 	public List<Class> getBundlers() {
 		List<Class> list = new ArrayList<Class>();
-
+		
+		//The order is important cause 
+		//I need to add all containers associated with templates
 		list.add(ContentBundler.class);
 		list.add(FolderBundler.class);
+		list.add(TemplateBundler.class);
+		list.add(ContainerBundler.class);
+		list.add(HTMLPageBundler.class);
+		
+		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES"))
+			list.add(StructureBundler.class);
+		
+		list.add(LanguageBundler.class);
+		
 		return list;
 	}
 
