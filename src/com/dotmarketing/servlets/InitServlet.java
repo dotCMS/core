@@ -180,6 +180,7 @@ public class InitServlet extends HttpServlet {
 
         // deletes all menues that have been generated
         RefreshMenus.deleteMenus();
+        CacheLocator.getNavToolCache().clearCache();
 
 
         // maps all virtual links in memory

@@ -20,9 +20,8 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -571,6 +570,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		{
 			//existing folder with different show on menu ... need to regenerate menu
 			RefreshMenus.deleteMenu(link);
+			CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
 		}
 
 		SessionMessages.add(req, "message", "message.links.save");
@@ -684,10 +684,14 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 		if (parentInode != null && parentInode.length() != 0 && !parentInode.equalsIgnoreCase("")) 
 		{
-			Folder parent = (Folder) InodeFactory.getInode(parentInode, Folder.class); 
+			Folder parent = APILocator.getFolderAPI().find(parentInode, user, false); 
 			Folder oldParent = APILocator.getFolderAPI().findParentFolder(webAsset, user, false);
 			super._moveWebAsset(req, res, config, form, user, Link.class,WebKeys.LINK_EDIT);			
 			RefreshMenus.deleteMenu(oldParent, parent);
+			if(oldParent.isShowOnMenu())
+			    CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
+			if(parent.isShowOnMenu())
+			    CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
 		}
-			}
+	}
 }

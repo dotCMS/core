@@ -431,6 +431,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 				// existing folder with different show on menu ... need to
 				// regenerate menu
 				RefreshMenus.deleteMenu(file);
+				CacheLocator.getNavToolCache().removeNav(ident.getHostId(), ident.getParentPath());
 			}
 
 		} catch (IOException e) {

@@ -20,6 +20,7 @@ import org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
@@ -594,6 +595,7 @@ public class EditFileAction extends DotPortletAction implements DotPortletAction
 			if (previousShowMenu != file.isShowOnMenu()) {
 				//existing folder with different show on menu ... need to regenerate menu
 				RefreshMenus.deleteMenu(file);
+				CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 			}
 			
 		} catch (Exception e) {
