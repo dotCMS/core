@@ -15,7 +15,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -27,22 +26,24 @@ public class NavResult implements Iterable<NavResult> {
     private String href;
     private int order;
     private boolean hrefVelocity;
+    private String parent;
     
     private String hostId;
     private String folderId;
     private List<String> childrenFolderIds;
     private List<NavResult> children;
     
-    public NavResult(String hostId, String folderId) {
+    public NavResult(String parent, String hostId, String folderId) {
         this.hostId=hostId;
         this.folderId=folderId;
+        this.parent=parent;
         hrefVelocity=false;
         title=href="";
         order=0;
     }
     
-    public NavResult() {
-        this(null,null);
+    public NavResult(String parent) {
+        this(parent,null,null);
     }
     
     public String getTitle() throws Exception {
@@ -120,7 +121,7 @@ public class NavResult implements Iterable<NavResult> {
                     // for folders we avoid returning the same instance
                     // it could be changed elsewhere and we need it to
                     // load its children lazily
-                    NavResult ff=new NavResult(nn.hostId,nn.folderId);
+                    NavResult ff=new NavResult(folderId,nn.hostId,nn.folderId);
                     ff.setTitle(nn.getTitle());
                     ff.setHref(nn.getHref());
                     ff.setOrder(nn.getOrder());
@@ -137,11 +138,11 @@ public class NavResult implements Iterable<NavResult> {
     }
     
     public String getParentPath() throws DotDataException, DotSecurityException {
-        if(folderId==null || folderId.equals(FolderAPI.SYSTEM_FOLDER)) return null; // no parent!
+        if(parent==null) return null; // no parent! I'm the root folder
         User user=APILocator.getUserAPI().getAnonymousUser();
-        Folder folder=APILocator.getFolderAPI().find(folderId, user, true);
+        Folder folder=APILocator.getFolderAPI().find(parent, user, true);
         Identifier ident=APILocator.getIdentifierAPI().find(folder);
-        return ident.getParentPath();
+        return ident.getURI();
     }
     
     public String toString() {
