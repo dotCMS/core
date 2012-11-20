@@ -94,20 +94,19 @@ public class PushPublisher extends Publisher {
 			List<PublishingEndPoint> buffer = null;
 			//Organize the endpoints grouping them by groupId
 			for (PublishingEndPoint pEndPoint : endpoints) {
-				if(endpointsMap.get(pEndPoint.getGroupId()) == null)
+				
+				String gid = UtilMethods.isSet(pEndPoint.getGroupId()) ? pEndPoint.getGroupId() : pEndPoint.getId();
+				
+				if(endpointsMap.get(gid) == null)
 					buffer = new ArrayList<PublishingEndPoint>();
 				else 
-					buffer = endpointsMap.get(pEndPoint.getGroupId());
+					buffer = endpointsMap.get(gid);
 				
 				buffer.add(pEndPoint);
 				
 				// put in map with either the group key or the id if no group is set
-				if(UtilMethods.isSet(pEndPoint.getGroupId())){
-					endpointsMap.put(pEndPoint.getGroupId(), buffer);
-				}
-				else{
-					endpointsMap.put(pEndPoint.getId(), buffer);
-				}
+				endpointsMap.put(gid, buffer);
+				
 			}
 			
 			ClientConfig cc = new DefaultClientConfig();
@@ -138,7 +137,9 @@ public class PushPublisher extends Publisher {
 				        form.field("AUTH_TOKEN", 
 				        		retriveKeyString(
 				        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
-				        form.field("GROUP_ID", endpoint.getGroupId());
+				        
+				        form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
+				        
 				        form.field("ENDPOINT_ID", endpoint.getId());
 				        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 						
