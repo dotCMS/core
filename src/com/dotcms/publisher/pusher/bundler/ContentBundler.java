@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +39,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -90,12 +92,24 @@ public class ContentBundler implements IBundler {
 			
 			currentStatusHistory.setBundleStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
-
+			
+			Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 			for(String luceneQuery: config.getLuceneQueries()) {
 				cs = conAPI.search(luceneQuery, 0, 0, "moddate", systemUser, false);
 
-
+				//Getting all related content
 				for (Contentlet con : cs) {
+					Map<Relationship, List<Contentlet>> contentRel =
+							conAPI.findContentRelationships(con, systemUser);
+					
+					for (Relationship rel : contentRel.keySet()) {
+						contentsToProcess.addAll(contentRel.get(rel));
+					}
+					
+					contentsToProcess.add(con);
+				}
+				
+				for (Contentlet con : contentsToProcess) {
 					writeFileToDisk(bundleRoot, con);
 					status.addCount();
 				}
