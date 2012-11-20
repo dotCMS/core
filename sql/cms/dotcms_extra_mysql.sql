@@ -615,13 +615,13 @@ entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0,
 publish_date DATETIME, server_id VARCHAR(256), 
 type VARCHAR(256), bundle_id VARCHAR(256) , target text);
 
-create table publishing_queue_audit (bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, status INTEGER, status_pojo text, status_updated DATETIME, create_date DATETIME);
+create table publishing_queue_audit (bundle_id VARCHAR(40) PRIMARY KEY NOT NULL, status INTEGER, status_pojo text, status_updated DATETIME, create_date DATETIME);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE IF NOT EXISTS publishing_end_point (
-	id varchar(36) PRIMARY KEY, 
+	id varchar(40) PRIMARY KEY, 
 	group_id varchar(700), 
-	server_name varchar(700) unique,
+	server_name varchar(255) unique,
 	address varchar(250),
 	port varchar(10),
 	protocol varchar(10),	
