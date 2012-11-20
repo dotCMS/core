@@ -723,6 +723,7 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 
     	//RefreshMenus.deleteMenus();
    		RefreshMenus.deleteMenu(file);
+   		CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 
     	return true;
 
@@ -839,9 +840,11 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
             //existing folder with different show on menu ... need to regenerate menu
             if ( parent != null ) {
                 RefreshMenus.deleteMenu( oldParent, parent );
+                CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
             } else {
                 RefreshMenus.deleteMenu( oldParent );
             }
+            CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
         }
 
         return true;

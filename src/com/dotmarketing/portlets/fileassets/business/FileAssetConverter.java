@@ -135,6 +135,7 @@ public class FileAssetConverter {
 							WorkingCache.removeAssetFromCache(file);
 							CacheLocator.getIdentifierCache().removeFromCacheByVersionable(file);
 							com.dotmarketing.menubuilders.RefreshMenus.deleteMenu(file);
+							CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
 							identifier.setAssetName(identifier.getAssetName()+"_copy");
 							APILocator.getIdentifierAPI().save(identifier);
 							if(identAux!=null && UtilMethods.isSet(identAux.getId()) && identAux.getAssetType().equals("contentlet")){

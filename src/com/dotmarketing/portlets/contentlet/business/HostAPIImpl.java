@@ -926,7 +926,7 @@ public class HostAPIImpl implements HostAPI {
 		}
 		CacheLocator.getMenuLinkCache().clearCache();
 		RefreshMenus.deleteMenus();
-
+		CacheLocator.getNavToolCache().clearCache();
 
 	}
 

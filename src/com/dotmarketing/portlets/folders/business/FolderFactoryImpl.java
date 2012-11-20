@@ -559,6 +559,12 @@ public class FolderFactoryImpl extends FolderFactory {
 	private boolean move(Folder folder, Object destination) throws DotDataException, DotStateException, DotSecurityException {
 
 		IdentifierAPI identAPI = APILocator.getIdentifierAPI();
+		Identifier folderId = identAPI.find(folder.getIdentifier());
+		
+		if(folder.isShowOnMenu())
+		    CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+		CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
+		
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		boolean contains = false;
 		String newParentPath;
@@ -568,10 +574,14 @@ public class FolderFactoryImpl extends FolderFactory {
 			Identifier destinationId = identAPI.find(((Folder) destination).getIdentifier());
 			newParentPath = destinationId.getPath();
 			newParentHostId = destinationId.getHostId();
+			if(!contains)
+			    CacheLocator.getNavToolCache().removeNavByPath(destinationId.getHostId(), destinationId.getPath());
 		} else {
 			contains = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, folder.getName());
 			newParentPath = "/";
 			newParentHostId = ((Host)destination).getIdentifier();
+			if(!contains)
+			    CacheLocator.getNavToolCache().removeNav(newParentHostId, FolderAPI.SYSTEM_FOLDER);
 		}
 		if (contains)
 			return false;
@@ -582,7 +592,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		List links = getChildrenClass(folder, Link.class);
 		List<Contentlet> contentlets = APILocator.getContentletAPI().findContentletsByFolder(folder, systemUser, false);
 
-		Identifier folderId = identAPI.find(folder.getIdentifier());
+		
 		folderId.setParentPath(newParentPath);
 		folderId.setHostId(newParentHostId);
 		identAPI.save(folderId);
