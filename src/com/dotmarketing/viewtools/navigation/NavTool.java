@@ -55,8 +55,11 @@ public class NavTool implements ViewTool {
         NavResult result=navCache.getNav(host.getIdentifier(), folder.getInode());
         if(result==null) {
             String parentId;
-            if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER))
-                parentId=APILocator.getFolderAPI().findParentFolder(folder, user, true).getInode();
+            if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
+                Identifier ident=APILocator.getIdentifierAPI().find(folder);
+                parentId=ident.getParentPath().equals("/") ? 
+                        FolderAPI.SYSTEM_FOLDER : fAPI.findFolderByPath(ident.getParentPath(), host, user, true).getInode();
+            }
             else
                 parentId=null;
             result=new NavResult(parentId, host.getIdentifier(),folder.getInode());
