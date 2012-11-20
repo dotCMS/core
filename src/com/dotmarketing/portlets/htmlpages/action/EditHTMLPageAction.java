@@ -8,7 +8,6 @@ import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
@@ -659,6 +658,8 @@ public class EditHTMLPageAction extends DotPortletAction implements DotPortletAc
 
 		if (RefreshMenus.shouldRefreshMenus(workingAsset)) {
 			RefreshMenus.deleteMenu(workingAsset);
+			if(identifier!=null)
+			    CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
 		}
 
 		// Setting the new working page to publish tasks
