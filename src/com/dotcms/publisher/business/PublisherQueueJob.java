@@ -13,12 +13,9 @@ import org.quartz.StatefulJob;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
-import com.dotcms.publisher.myTest.PushPublisher;
-import com.dotcms.publisher.myTest.PushPublisherConfig;
-import com.dotcms.publisher.myTest.bundler.ContentBundler;
-import com.dotcms.publisher.myTest.bundler.FolderBundler;
+import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.TrustFactory;
-import com.dotcms.publishing.IBundler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
@@ -44,18 +41,21 @@ public class PublisherQueueJob implements StatefulJob {
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
 	
 	private static final Integer maxNumTries = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 5);
-
+	
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
+			
+			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
+			updateAuditStatus();
+			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
+			
+			
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
 			PublisherAPI pubAPI = PublisherAPI.getInstance();  
 			
 			PushPublisherConfig pconf = new PushPublisherConfig();
 			List<Class> clazz = new ArrayList<Class>();
-			List<IBundler> bundler = new ArrayList<IBundler>();
-			bundler.add(new ContentBundler());
-			bundler.add(new  FolderBundler());
 			clazz.add(PushPublisher.class);
 
 			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
@@ -93,10 +93,10 @@ public class PublisherQueueJob implements StatefulJob {
 					pconf.setLuceneQueries(prepareQueries(tempBundleContents));
 					pconf.setId(tempBundleId);
 					pconf.setUser(APILocator.getUserAPI().getSystemUser());
+					pconf.setStartDate(new Date());
 					pconf.runNow();
 	
 					pconf.setPublishers(clazz);
-					pconf.setBundlers(bundler);
 					pconf.setEndpoints(endpointAPI.findReceiverEndpoints());
 					
 					if(Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
@@ -110,11 +110,6 @@ public class PublisherQueueJob implements StatefulJob {
 			}
 			
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
-			
-			
-			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
-			updateAuditStatus();
-			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
 			
 		} catch (NumberFormatException e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
@@ -133,14 +128,14 @@ public class PublisherQueueJob implements StatefulJob {
 		TrustFactory tFactory = new TrustFactory();
 		
 		if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
-		clientConfig.getProperties()
-		.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
+				clientConfig.getProperties()
+				.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
 		}
         Client client = Client.create(clientConfig);
         WebResource webResource = null;
         
         List<PublishAuditStatus> pendingAudits = pubAuditAPI.getPendingPublishAuditStatus();
-        
+
         //Foreach Bundle
         for(PublishAuditStatus pendingAudit: pendingAudits) {
         	//Gets groups list
@@ -182,10 +177,15 @@ public class PublisherQueueJob implements StatefulJob {
 			        		}
 		        		}
 	        		}
+	        		else if(localDetail.getStatus() == PublishAuditStatus.Status.SUCCESS.getCode() ){
+	        			Map<String, EndpointDetail> m = new HashMap<String, EndpointDetail>();
+	        			m.put(endpointId, localDetail);
+	        			bufferMap.put(group, m);
+	        		}
 		        }
 	        }
         	
-        	int countOk = 0;
+            int countOk = 0;
         	for(String groupId: bufferMap.keySet()) {
         		Map<String, EndpointDetail> group = bufferMap.get(groupId);
         		
@@ -213,7 +213,7 @@ public class PublisherQueueJob implements StatefulJob {
         		pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
         	} else {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
-        				PublishAuditStatus.Status.TEMPORARY_FAILED_TO_PUBLISH, 
+        				PublishAuditStatus.Status.WAITING_FOR_PUBLISHING, 
 	        			localHistory);
         	}
         }

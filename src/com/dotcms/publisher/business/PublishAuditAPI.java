@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import java.util.Date;
 import java.util.List;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
@@ -65,6 +66,16 @@ public abstract class PublishAuditAPI {
 	 */
 	//Select
 	public abstract List<PublishAuditStatus> getAllPublishAuditStatus() throws DotPublisherException;
+	
+	
+	/**
+	 * Get the date of the last bundle sent
+	 * @param bundleId
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	//Select
+	public abstract Date getLastPublishAuditStatusDate() throws DotPublisherException;
 	
 	/**
 	 * Get all publish status paginated

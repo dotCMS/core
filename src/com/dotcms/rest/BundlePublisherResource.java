@@ -34,6 +34,7 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 
@@ -53,10 +54,13 @@ public class BundlePublisherResource extends WebResource {
 			@FormDataParam("GROUP_ID") String groupId,
 			@FormDataParam("ENDPOINT_ID") String endpointId,
 			@Context HttpServletRequest req) {
-		
+		String remoteIP = "";
 		try {
 			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
-			String remoteIP = req.getRemoteHost();
+			remoteIP = req.getRemoteHost();
+			if(!UtilMethods.isSet(remoteIP))
+				remoteIP = req.getRemoteAddr();
+			
 			PublishingEndPoint mySelf = endpointAPI.findSenderEndpointByAddress(remoteIP);
 			
 			if(!isValidToken(auth_token, remoteIP, mySelf)) {
@@ -83,6 +87,7 @@ public class BundlePublisherResource extends WebResource {
 		} catch (NumberFormatException e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		} catch (Exception e) {
+			Logger.error(PublisherQueueJob.class, "Error caused by remote call of: "+remoteIP);
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		}
 		
