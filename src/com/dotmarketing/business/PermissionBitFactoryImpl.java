@@ -53,6 +53,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.viewtools.navigation.NavResult;
 import com.liferay.portal.model.User;
 
 /**
@@ -2451,6 +2452,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 				if(permissionable instanceof Template && ((Template) permissionable).isDrawed()) {
 					 type = Template.TEMPLATE_LAYOUTS_CANONICAL_NAME;
+				}
+				
+				if(permissionable instanceof NavResult) {
+				    type = ((NavResult)permissionable).getEnclosingPermissionClassName();
 				}
 
 				Permissionable parentPermissionable = permissionable.getParentPermissionable();

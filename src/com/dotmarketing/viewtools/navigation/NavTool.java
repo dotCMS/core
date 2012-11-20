@@ -37,7 +37,7 @@ public class NavTool implements ViewTool {
         ViewContext context = (ViewContext) initData;
         try {
             currenthost=WebAPILocator.getHostWebAPI().getCurrentHost(context.getRequest());
-            user=APILocator.getUserAPI().getAnonymousUser();
+            user=APILocator.getUserAPI().getSystemUser();
             fAPI = APILocator.getFolderAPI();
             navCache = CacheLocator.getNavToolCache();
         } catch (Exception e) {
@@ -46,7 +46,7 @@ public class NavTool implements ViewTool {
     }
     
     protected static NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
-        User user=APILocator.getUserAPI().getAnonymousUser();
+        User user=APILocator.getUserAPI().getSystemUser();
         
         Folder folder=!path.equals("/") ? fAPI.findFolderByPath(path, host, user, true) : fAPI.findSystemFolder();
         if(folder==null || !UtilMethods.isSet(folder.getIdentifier()))
@@ -58,7 +58,7 @@ public class NavTool implements ViewTool {
             if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
                 Identifier ident=APILocator.getIdentifierAPI().find(folder);
                 parentId=ident.getParentPath().equals("/") ? 
-                        FolderAPI.SYSTEM_FOLDER : fAPI.findFolderByPath(ident.getParentPath(), host, user, true).getInode();
+                        FolderAPI.SYSTEM_FOLDER : fAPI.findFolderByPath(ident.getParentPath(), host, user, false).getInode();
             }
             else
                 parentId=null;
@@ -67,6 +67,8 @@ public class NavTool implements ViewTool {
             result.setHref(ident.getURI());
             result.setTitle(folder.getTitle());
             result.setOrder(folder.getSortOrder());
+            result.setType("folder");
+            result.setPermissionId(folder.getPermissionId());
             List<NavResult> children=new ArrayList<NavResult>();
             List<String> folderIds=new ArrayList<String>();
             result.setChildren(children);
@@ -86,6 +88,8 @@ public class NavTool implements ViewTool {
                     nav.setTitle(itemFolder.getTitle());
                     nav.setHref(ident.getURI());
                     nav.setOrder(itemFolder.getSortOrder());
+                    nav.setType("folder");
+                    nav.setPermissionId(itemFolder.getPermissionId());
                     // it will load lazily its children
                     folderIds.add(itemFolder.getInode());
                     children.add(nav);
@@ -93,15 +97,17 @@ public class NavTool implements ViewTool {
                 else if(item instanceof HTMLPage) {
                     HTMLPage itemPage=(HTMLPage)item;
                     ident=APILocator.getIdentifierAPI().find(itemPage);
-                    NavResult nav=new NavResult(folder.getInode());
+                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
                     nav.setTitle(itemPage.getFriendlyName());
                     nav.setHref(ident.getURI());
                     nav.setOrder(itemPage.getSortOrder());
+                    nav.setType("htmlpage");
+                    nav.setPermissionId(itemPage.getPermissionId());
                     children.add(nav);
                 }
                 else if(item instanceof Link) {
                     Link itemLink=(Link)item;
-                    NavResult nav=new NavResult(folder.getInode());
+                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
                     if(itemLink.getLinkType().equals(LinkType.CODE.toString())) {
                         nav.setHrefVelocity(itemLink.getLinkCode());
                     }
@@ -110,15 +116,19 @@ public class NavTool implements ViewTool {
                     }
                     nav.setTitle(itemLink.getTitle());
                     nav.setOrder(itemLink.getSortOrder());
+                    nav.setType("link");
+                    nav.setPermissionId(itemLink.getPermissionId());
                     children.add(nav);
                 }
                 else if(item instanceof IFileAsset) {
                     IFileAsset itemFile=(IFileAsset)item;
                     ident=APILocator.getIdentifierAPI().find(itemFile.getPermissionId());
-                    NavResult nav=new NavResult(folder.getInode());
+                    NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
                     nav.setTitle(itemFile.getFriendlyName());
                     nav.setHref(ident.getURI());
                     nav.setOrder(itemFile.getMenuOrder());
+                    nav.setType("file");
+                    nav.setPermissionId(itemFile.getPermissionId());
                     children.add(nav);
                 }
             }
@@ -145,7 +155,7 @@ public class NavTool implements ViewTool {
             if(find.size()==1) {
                 String hostname=find.get(0).getGroups().get(0).getMatch();
                 path="/"+find.get(0).getGroups().get(1).getMatch();
-                host=APILocator.getHostAPI().findByName(hostname, user, true);
+                host=APILocator.getHostAPI().findByName(hostname, user, false);
             }
         }
         
