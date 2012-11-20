@@ -13,20 +13,34 @@ import org.apache.velocity.tools.view.tools.ViewRenderTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
 
-public class NavResult implements Iterable<NavResult> {
+import edu.emory.mathcs.backport.java.util.Arrays;
+
+public class NavResult implements Iterable<NavResult>, Permissionable {
     private String title;
     private String href;
     private int order;
     private boolean hrefVelocity;
     private String parent;
+    private String type;
+    private String permissionId;
     
     private String hostId;
     private String folderId;
@@ -42,8 +56,8 @@ public class NavResult implements Iterable<NavResult> {
         order=0;
     }
     
-    public NavResult(String parent) {
-        this(parent,null,null);
+    public NavResult(String parent, String host) {
+        this(parent,host,null);
     }
     
     public String getTitle() throws Exception {
@@ -100,13 +114,13 @@ public class NavResult implements Iterable<NavResult> {
     }
     
     public boolean isFolder() {
-        return hostId!=null && folderId!=null;
+        return folderId!=null;
     }
     
     public List<NavResult> getChildren() throws Exception {
         if(children==null && hostId!=null && folderId!=null) {
             // lazy loadinge children
-            User user=APILocator.getUserAPI().getAnonymousUser();
+            User user=APILocator.getUserAPI().getSystemUser();
             Host host=APILocator.getHostAPI().find(hostId, user, true);
             Folder folder=APILocator.getFolderAPI().find(folderId, user, true);
             Identifier ident=APILocator.getIdentifierAPI().find(folder);
@@ -125,13 +139,27 @@ public class NavResult implements Iterable<NavResult> {
                     ff.setTitle(nn.getTitle());
                     ff.setHref(nn.getHref());
                     ff.setOrder(nn.getOrder());
+                    ff.setType(nn.getType());
+                    ff.setPermissionId(nn.getPermissionId());
                     list.add(ff);
                 }
                 else {
                     list.add(nn);
                 }
             }
-            return list;
+            
+            // now filtering permissions
+            List<NavResult> allow=new ArrayList<NavResult>(list.size());
+            Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
+            HttpServletRequest req=(HttpServletRequest) ctx.get("request");
+            User currentUser=WebAPILocator.getUserWebAPI().getLoggedInUser(req);
+            if(currentUser==null) currentUser=APILocator.getUserAPI().getAnonymousUser();
+            for(NavResult nv : list) {
+                if(APILocator.getPermissionAPI().doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
+                    allow.add(nv);
+                }
+            }
+            return allow;
         }
         else
             return new ArrayList<NavResult>();
@@ -139,10 +167,20 @@ public class NavResult implements Iterable<NavResult> {
     
     public String getParentPath() throws DotDataException, DotSecurityException {
         if(parent==null) return null; // no parent! I'm the root folder
-        User user=APILocator.getUserAPI().getAnonymousUser();
+        if(parent.equals(FolderAPI.SYSTEM_FOLDER)) return "/";
+        User user=APILocator.getUserAPI().getSystemUser();
         Folder folder=APILocator.getFolderAPI().find(parent, user, true);
         Identifier ident=APILocator.getIdentifierAPI().find(folder);
         return ident.getURI();
+    }
+    
+    public NavResult getParent() throws DotDataException, DotSecurityException {
+        String path=getParentPath();
+        if(path!=null) {
+            User user=APILocator.getUserAPI().getSystemUser();
+            return NavTool.getNav(APILocator.getHostAPI().find(hostId,user,true), path);
+        }
+        else return null;
     }
     
     public String toString() {
@@ -175,6 +213,79 @@ public class NavResult implements Iterable<NavResult> {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getPermissionId() {
+        return permissionId;
+    }
+
+    public void setPermissionId(String permissionId) {
+        this.permissionId = permissionId;
+    }
+
+    
+    /// Permissionable methods ///
+    
+    @Override
+    public String getOwner() {
+        try {
+            return APILocator.getUserAPI().getSystemUser().getUserId();
+        } catch (DotDataException e) {
+            Logger.warn(this, e.getMessage(),e);
+            return "system";
+        }
+    }
+
+    @Override
+    public void setOwner(String owner) {}
+
+    @Override
+    public List<PermissionSummary> acceptedPermissions() {
+        return Arrays.asList(new PermissionSummary[] {new PermissionSummary("READ", "READ", PermissionAPI.PERMISSION_READ)});
+    }
+
+    @Override
+    public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
+        return null;
+    }
+
+    @Override
+    public Permissionable getParentPermissionable() throws DotDataException {
+        try {
+            return getParent();
+        } catch (DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public String getPermissionType() {
+        return parent!=null ? Folder.class.getCanonicalName() : Host.class.getCanonicalName();
+    }
+
+    @Override
+    public boolean isParentPermissionable() {
+        return isFolder();
+    }
+    
+    public String getEnclosingPermissionClassName() {
+        if(type.equals("htmlpage"))
+            return HTMLPage.class.getCanonicalName();
+        if(type.equals("link"))
+            return Link.class.getCanonicalName();
+        if(type.equals("folder"))
+            return Folder.class.getCanonicalName();
+        if(type.equals("file"))
+            return File.class.getCanonicalName();
+        throw new IllegalStateException("unknow internal type "+type); // we shouldn't reach this point
     }
 
 }

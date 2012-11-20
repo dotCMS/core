@@ -58,7 +58,7 @@ public class NavToolCacheImpl implements NavToolCache {
     public void removeNav(String folderInode) {
         Folder folder;
         try {
-            folder = APILocator.getFolderAPI().find(folderInode, APILocator.getUserAPI().getAnonymousUser(), true);
+            folder = APILocator.getFolderAPI().find(folderInode, APILocator.getUserAPI().getSystemUser(), true);
             Identifier ident=APILocator.getIdentifierAPI().find(folder);
             removeNav(ident.getHostId(),folder.getInode());
         } catch (Exception e) {
@@ -72,7 +72,7 @@ public class NavToolCacheImpl implements NavToolCache {
         try {
             if(!folderInode.equals(FolderAPI.SYSTEM_FOLDER)) {
                 try {
-                    folder = APILocator.getFolderAPI().find(folderInode, APILocator.getUserAPI().getAnonymousUser(), true);
+                    folder = APILocator.getFolderAPI().find(folderInode, APILocator.getUserAPI().getSystemUser(), false);
                 }
                 catch(Exception ex) {
                     // here we catch the when it have been deleted
@@ -106,7 +106,7 @@ public class NavToolCacheImpl implements NavToolCache {
     public void removeNavByPath(String hostid, String path) {
         Folder folder;
         try {
-            folder = APILocator.getFolderAPI().findFolderByPath(path, hostid, APILocator.getUserAPI().getAnonymousUser(), true);
+            folder = APILocator.getFolderAPI().findFolderByPath(path, hostid, APILocator.getUserAPI().getSystemUser(), false);
             removeNav(hostid,folder.getInode());
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
