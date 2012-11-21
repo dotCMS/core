@@ -56,7 +56,23 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	fileNameExpression: '',
 	uploading: false,
 	uploadCompleted:false,
+	identifier:'0',
+	inode:'0',
+	fieldName:'fileAsset',
 	invalidFileSelectedMessage: 'You have selected a non allowed file',
+	
+	fileInfoTemplate: '<div>\
+		<table class="listingTable">\
+			<tr class="alternate_1">\
+	    		<td><b>File Name</b></td>\
+				<td>{fileName}</td>\
+			</tr>\
+			<tr class="alternate_2">\
+	    		<td><b>File Link</b></td>\
+				<td><a target="_blank" href="{path}">{path}</a></td>\
+			</tr>\
+		</table>\
+	</div>',
 
 	postMixInProperties: function (elem) {
 		if((this.name == null) || (this.name == ''))
@@ -70,6 +86,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 			dojo.style(this.fileUploadForm, { display: 'none' });
 			dojo.style(this.fileUploadStatus, { display: 'none' });
 			dojo.style(this.fileUploadRemoveButton, { display: '' });
+			dojo.style(this.fileUploadInfoButton, { display: '' });
 			this.fileNameDisplayField.innerHTML = this.fileName;
 		}
 	},
@@ -144,7 +161,22 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileNameDisplayField, { display: 'none' });
 		dojo.style(this.fileUploadForm, { display: '' });
 		dojo.style(this.fileUploadRemoveButton, { display: 'none' });
+		dojo.style(this.fileUploadInfoButton, { display: 'none' });
 		this.onRemove(this);
+	},
+	
+	_info: function () {
+		console.log(this.fileNameDisplayField);
+		var fileInfo = {};
+		fileInfo['fileName'] = this.fileName;
+		fileInfo['path'] = location.protocol +"//"+ location.host +
+		'/contentAsset/raw-data/' + this.inode + '/' + this.id + "?byInode=true";
+		var html = dojo.replace(this.fileInfoTemplate, fileInfo);
+		
+		this.fileInfoDialog.title = this.fileName;
+		var domObj = dojo._toDom(html);
+		this.fileInfoDialog.setContent(domObj);
+		this.fileInfoDialog.show();
 	},
 
 	_checkStatus: function () {
@@ -204,6 +236,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileNameDisplayField, { display: 'none' });
 		dojo.style(this.fileUploadForm, { display: '' });
 		dojo.style(this.fileUploadRemoveButton, { display: 'none' });
+		dojo.style(this.fileUploadInfoButton, { display: 'none' });
 		FileAjax.clearFileUploadStatus(this.name, function () {});
 	},
 
@@ -213,6 +246,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileUploadForm, { display: 'none' });
 		dojo.style(this.fileUploadStatus, { display: 'none' });
 		dojo.style(this.fileUploadRemoveButton, { display: '' });
+		dojo.style(this.fileUploadInfoButton, { display: '' });
 		FileAjax.clearFileUploadStatus(this.name, function () {});
 		this.onUploadFinish(this.fileName, this);
 
