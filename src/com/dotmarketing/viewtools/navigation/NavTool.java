@@ -122,7 +122,7 @@ public class NavTool implements ViewTool {
                 else if(item instanceof Link) {
                     Link itemLink=(Link)item;
                     NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
-                    if(itemLink.getLinkType().equals(LinkType.CODE.toString())) {
+                    if(itemLink.getLinkType().equals(LinkType.CODE.toString()) && LinkType.CODE.toString() !=null && (LinkType.CODE.toString().contains("$") || LinkType.CODE.toString().contains("#") )) {
                         nav.setHrefVelocity(itemLink.getLinkCode());
                     }
                     else {
