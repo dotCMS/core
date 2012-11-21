@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -48,6 +49,9 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private List<String> childrenFolderIds;
     private List<NavResult> children;
     
+    private User sysuser=null;
+    private boolean checkPermissions;
+    
     public NavResult(String parent, String hostId, String folderId) {
         this.hostId=hostId;
         this.folderId=folderId;
@@ -55,6 +59,13 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         hrefVelocity=false;
         title=href="";
         order=0;
+        checkPermissions=Config.getBooleanProperty("ENABLE_NAV_PERMISSION_CHECK",false);
+        try {
+            sysuser=APILocator.getUserAPI().getSystemUser();
+        } catch (DotDataException e) {
+            Logger.warn(this, e.getMessage(), e);
+        }
+        
     }
     
     public NavResult(String parent, String host) {
@@ -121,9 +132,8 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     public List<NavResult> getChildren() throws Exception {
         if(children==null && hostId!=null && folderId!=null) {
             // lazy loadinge children
-            User user=APILocator.getUserAPI().getSystemUser();
-            Host host=APILocator.getHostAPI().find(hostId, user, true);
-            Folder folder=APILocator.getFolderAPI().find(folderId, user, true);
+            Host host=APILocator.getHostAPI().find(hostId, sysuser, true);
+            Folder folder=APILocator.getFolderAPI().find(folderId, sysuser, true);
             Identifier ident=APILocator.getIdentifierAPI().find(folder);
             NavResult lazyMe=NavTool.getNav(host, ident.getPath());
             children=lazyMe.getChildren();
@@ -149,22 +159,26 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                 }
             }
             
-            // now filtering permissions
-            List<NavResult> allow=new ArrayList<NavResult>(list.size());
-            Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
-            HttpServletRequest req=(HttpServletRequest) ctx.get("request");
-            User currentUser=WebAPILocator.getUserWebAPI().getLoggedInUser(req);
-            if(currentUser==null) currentUser=APILocator.getUserAPI().getAnonymousUser();
-            for(NavResult nv : list) {
-                try {
-                if(APILocator.getPermissionAPI().doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
-                    allow.add(nv);
+            if(checkPermissions) {
+                // now filtering permissions
+                List<NavResult> allow=new ArrayList<NavResult>(list.size());
+                Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
+                HttpServletRequest req=(HttpServletRequest) ctx.get("request");
+                User currentUser=WebAPILocator.getUserWebAPI().getLoggedInUser(req);
+                if(currentUser==null) currentUser=APILocator.getUserAPI().getAnonymousUser();
+                for(NavResult nv : list) {
+                    try {
+                    if(APILocator.getPermissionAPI().doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
+                        allow.add(nv);
+                    }
+                    }catch(Exception ex) {
+                        Logger.error(this, ex.getMessage(), ex);
+                    }
                 }
-                }catch(Exception ex) {
-                    Logger.error(this, ex.getMessage(), ex);
-                }
+                return allow;
             }
-            return allow;
+            else
+                return list;
         }
         else {
             return new ArrayList<NavResult>();
@@ -174,8 +188,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     public String getParentPath() throws DotDataException, DotSecurityException {
         if(parent==null) return null; // no parent! I'm the root folder
         if(parent.equals(FolderAPI.SYSTEM_FOLDER)) return "/";
-        User user=APILocator.getUserAPI().getSystemUser();
-        Folder folder=APILocator.getFolderAPI().find(parent, user, true);
+        Folder folder=APILocator.getFolderAPI().find(parent, sysuser, true);
         Identifier ident=APILocator.getIdentifierAPI().find(folder);
         return ident.getURI();
     }
@@ -183,8 +196,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     public NavResult getParent() throws DotDataException, DotSecurityException {
         String path=getParentPath();
         if(path!=null) {
-            User user=APILocator.getUserAPI().getSystemUser();
-            return NavTool.getNav(APILocator.getHostAPI().find(hostId,user,true), path);
+            return NavTool.getNav(APILocator.getHostAPI().find(hostId,sysuser,true), path);
         }
         else return null;
     }
@@ -242,12 +254,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     
     @Override
     public String getOwner() {
-        try {
-            return APILocator.getUserAPI().getSystemUser().getUserId();
-        } catch (DotDataException e) {
-            Logger.warn(this, e.getMessage(),e);
-            return "system";
-        }
+        return sysuser.getUserId();        
     }
 
     @Override
@@ -267,17 +274,17 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     public Permissionable getParentPermissionable() throws DotDataException {
         try {
             if(type.equals("htmlpage"))
-                return APILocator.getHTMLPageAPI().loadLivePageById(permissionId, APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+                return APILocator.getHTMLPageAPI().loadLivePageById(permissionId, sysuser, false).getParentPermissionable();
             if(type.equals("folder"))
-                return APILocator.getFolderAPI().find(folderId, APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+                return APILocator.getFolderAPI().find(folderId, sysuser, false).getParentPermissionable();
             if(type.equals("link"))
-                return APILocator.getMenuLinkAPI().findWorkingLinkById(permissionId, APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+                return APILocator.getMenuLinkAPI().findWorkingLinkById(permissionId, sysuser, false).getParentPermissionable();
             if(type.equals("file")) {
                 Identifier ident=APILocator.getIdentifierAPI().find(permissionId);
                 if(ident.getAssetType().equals("contentlet"))
-                    return APILocator.getContentletAPI().findContentletByIdentifier(permissionId, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+                    return APILocator.getContentletAPI().findContentletByIdentifier(permissionId, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), sysuser, false).getParentPermissionable();
                 else
-                    return APILocator.getFileAPI().getWorkingFileById(permissionId, APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+                    return APILocator.getFileAPI().getWorkingFileById(permissionId, sysuser, false).getParentPermissionable();
             }
             return null;
         } catch (DotSecurityException e) {

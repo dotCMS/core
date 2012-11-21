@@ -32,15 +32,23 @@ public class NavTool implements ViewTool {
     private static NavToolCache navCache = null;
     private static FolderAPI fAPI=null;
     private Host currenthost=null;
-    private User user=null;
+    private static User user=null;
     private HttpServletRequest request = null;
+    
+    static {
+        try {
+            user=APILocator.getUserAPI().getSystemUser();
+        } catch (DotDataException e) {
+            Logger.error(NavTool.class, e.getMessage(), e);
+        }
+    }
+    
     @Override
     public void init(Object initData) {
         ViewContext context = (ViewContext) initData;
         try {
     		this.request = context.getRequest();
             currenthost=WebAPILocator.getHostWebAPI().getCurrentHost(context.getRequest());
-            user=APILocator.getUserAPI().getSystemUser();
             fAPI = APILocator.getFolderAPI();
             navCache = CacheLocator.getNavToolCache();
         } catch (Exception e) {
@@ -49,14 +57,10 @@ public class NavTool implements ViewTool {
     }
     
     protected static NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
-        User user=APILocator.getUserAPI().getSystemUser();
         
         if(path != null && path.contains(".")){
         	path = path.substring(0, path.lastIndexOf("/"));
         }
-        
-        
-        
         
         Folder folder=!path.equals("/") ? fAPI.findFolderByPath(path, host, user, true) : fAPI.findSystemFolder();
         if(folder==null || !UtilMethods.isSet(folder.getIdentifier()))
