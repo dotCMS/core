@@ -1,5 +1,6 @@
 package com.dotmarketing.viewtools.navigation;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -33,7 +34,7 @@ import com.liferay.portal.model.User;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
-public class NavResult implements Iterable<NavResult>, Permissionable {
+public class NavResult implements Iterable<NavResult>, Permissionable, Serializable {
     private String title;
     private String href;
     private int order;
@@ -155,14 +156,19 @@ public class NavResult implements Iterable<NavResult>, Permissionable {
             User currentUser=WebAPILocator.getUserWebAPI().getLoggedInUser(req);
             if(currentUser==null) currentUser=APILocator.getUserAPI().getAnonymousUser();
             for(NavResult nv : list) {
+                try {
                 if(APILocator.getPermissionAPI().doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
                     allow.add(nv);
+                }
+                }catch(Exception ex) {
+                    Logger.error(this, ex.getMessage(), ex);
                 }
             }
             return allow;
         }
-        else
+        else {
             return new ArrayList<NavResult>();
+        }
     }
     
     public String getParentPath() throws DotDataException, DotSecurityException {
@@ -260,7 +266,20 @@ public class NavResult implements Iterable<NavResult>, Permissionable {
     @Override
     public Permissionable getParentPermissionable() throws DotDataException {
         try {
-            return getParent();
+            if(type.equals("htmlpage"))
+                return APILocator.getHTMLPageAPI().loadLivePageById(permissionId, APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+            if(type.equals("folder"))
+                return APILocator.getFolderAPI().find(folderId, APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+            if(type.equals("link"))
+                return APILocator.getMenuLinkAPI().findWorkingLinkById(permissionId, APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+            if(type.equals("file")) {
+                Identifier ident=APILocator.getIdentifierAPI().find(permissionId);
+                if(ident.getAssetType().equals("contentlet"))
+                    return APILocator.getContentletAPI().findContentletByIdentifier(permissionId, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+                else
+                    return APILocator.getFileAPI().getWorkingFileById(permissionId, APILocator.getUserAPI().getSystemUser(), false).getParentPermissionable();
+            }
+            return null;
         } catch (DotSecurityException e) {
             throw new RuntimeException(e);
         }
