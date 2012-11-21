@@ -112,7 +112,7 @@ public class NavTool implements ViewTool {
                     HTMLPage itemPage=(HTMLPage)item;
                     ident=APILocator.getIdentifierAPI().find(itemPage);
                     NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
-                    nav.setTitle(itemPage.getFriendlyName());
+                    nav.setTitle(itemPage.getTitle());
                     nav.setHref(ident.getURI());
                     nav.setOrder(itemPage.getSortOrder());
                     nav.setType("htmlpage");
