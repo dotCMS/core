@@ -3,6 +3,8 @@ package com.dotmarketing.viewtools.navigation;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -31,11 +33,12 @@ public class NavTool implements ViewTool {
     private static FolderAPI fAPI=null;
     private Host currenthost=null;
     private User user=null;
-    
+    private HttpServletRequest request = null;
     @Override
     public void init(Object initData) {
         ViewContext context = (ViewContext) initData;
         try {
+    		this.request = context.getRequest();
             currenthost=WebAPILocator.getHostWebAPI().getCurrentHost(context.getRequest());
             user=APILocator.getUserAPI().getSystemUser();
             fAPI = APILocator.getFolderAPI();
@@ -47,6 +50,13 @@ public class NavTool implements ViewTool {
     
     protected static NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
         User user=APILocator.getUserAPI().getSystemUser();
+        
+        if(path != null && path.contains(".")){
+        	path = path.substring(0, path.lastIndexOf("/"));
+        }
+        
+        
+        
         
         Folder folder=!path.equals("/") ? fAPI.findFolderByPath(path, host, user, true) : fAPI.findSystemFolder();
         if(folder==null || !UtilMethods.isSet(folder.getIdentifier()))
@@ -140,14 +150,10 @@ public class NavTool implements ViewTool {
     }
     
     public NavResult getNav() throws DotDataException, DotSecurityException {
-        return getNav(null);
+    	return getNav((String)request.getAttribute("javax.servlet.forward.request_uri"));
     }
     
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
-        
-        
-        if(!UtilMethods.isSet(path))
-            path="/";
         
         Host host=currenthost;
         if(path.startsWith("//")) {
