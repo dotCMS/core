@@ -15,6 +15,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
@@ -334,6 +335,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			faker.setShowOnMenu(folder.isShowOnMenu());
 			faker.setInode(folder.getInode());
 			faker.setIdentifier(folder.getIdentifier());
+			faker.setHostId(folder.getHostId());
 
 			List<Folder> folderChildren = findSubFolders(folder, user, respectFrontEndPermissions);
 
@@ -358,6 +360,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			if (folder.isShowOnMenu()) {
 				// RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(faker);
+				CacheLocator.getNavToolCache().removeNav(faker.getHostId(), faker.getInode());
+				Identifier ident=APILocator.getIdentifierAPI().find(faker);
+				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 			}
 
 			if(localTransaction){
