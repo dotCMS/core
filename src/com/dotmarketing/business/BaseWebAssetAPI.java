@@ -295,6 +295,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				PageServices.unpublishPageFile((HTMLPage)currWebAsset);
 				if(RefreshMenus.shouldRefreshMenus((HTMLPage)currWebAsset)){
 					RefreshMenus.deleteMenu(currWebAsset);
+					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
+					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				}
 				
 				CacheLocator.getHTMLPageCache().remove((HTMLPage)currWebAsset);
@@ -316,6 +318,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				APILocator.getFileAPI().invalidateCache((File)currWebAsset);
 				if(RefreshMenus.shouldRefreshMenus((File)currWebAsset)){
 					RefreshMenus.deleteMenu(currWebAsset);
+					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
+					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				}
 			}
 			APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());

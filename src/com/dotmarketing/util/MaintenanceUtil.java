@@ -72,6 +72,7 @@ public class MaintenanceUtil {
 		}else{
 			Logger.error(MaintenanceUtil.class,file.getPath() + " is not a directory");
 		}
+		CacheLocator.getNavToolCache().clearCache();
 	}
 
 

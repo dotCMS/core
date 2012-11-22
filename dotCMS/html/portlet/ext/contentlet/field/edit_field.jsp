@@ -401,7 +401,9 @@
             }%>
             <% com.dotmarketing.portlets.contentlet.model.Contentlet contentlet = (com.dotmarketing.portlets.contentlet.model.Contentlet) request.getAttribute("contentlet"); %>
             <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
-                onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" dojoType="dotcms.dijit.form.FileAjaxUploader">
+               fieldName="<%=field.getVelocityVarName()%>" 
+               inode="<%= binInode%>"
+               identifier="<%=field.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" dojoType="dotcms.dijit.form.FileAjaxUploader">
             </div>
 
 

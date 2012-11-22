@@ -137,7 +137,7 @@
 	<tr>
 		<td align="right"><input type="checkbox" name="mailingListsInodes" value="$mailingList.inode" id="mailingListsCB-$mailingList.inode"
 		#foreach($subcribedMailinglist in $subcribedMailinglists)
-			#if ($subcribedMailinglist.inode == $InodeUtils.isSet($mailingList.inode))
+			#if ($subcribedMailinglist.inode == $mailingList.inode)
 			checked
 			#end
 		#end
