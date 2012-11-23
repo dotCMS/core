@@ -48,7 +48,7 @@ public class PublisherQueueJob implements StatefulJob {
 			
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
 			updateAuditStatus();
-			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
+			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - Audit update");
 			
 			
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
