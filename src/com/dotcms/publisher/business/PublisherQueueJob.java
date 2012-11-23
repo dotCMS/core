@@ -186,19 +186,27 @@ public class PublisherQueueJob implements StatefulJob {
 	        }
         	
             int countOk = 0;
+            int countPublishing = 0;
         	for(String groupId: bufferMap.keySet()) {
         		Map<String, EndpointDetail> group = bufferMap.get(groupId);
         		
         		boolean isGroupOk = false;
+        		boolean isGroupPublishing = false;
 	        	for(String endpoint: group.keySet()) {
 	        		EndpointDetail detail = group.get(endpoint);
 	        		localHistory.addOrUpdateEndpoint(groupId, endpoint, detail);
 	        		if(detail.getStatus() == Status.SUCCESS.getCode())
 	        			isGroupOk = true;
+	        		else if(detail.getStatus() == Status.PUBLISHING_BUNDLE.getCode())
+	        			isGroupPublishing = true;
+	        			
 	        	}
 	        	
 	        	if(isGroupOk)
 	        		countOk++;
+	        	
+	        	if(isGroupPublishing)
+	        		countPublishing++;
         	}
         	
         	if(countOk == endpointsMap.size()) {
@@ -211,6 +219,10 @@ public class PublisherQueueJob implements StatefulJob {
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
 	        			localHistory);
         		pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
+        	} else if(countPublishing == endpointsMap.size()){
+        		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
+        				PublishAuditStatus.Status.PUBLISHING_BUNDLE, 
+	        			localHistory);
         	} else {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
         				PublishAuditStatus.Status.WAITING_FOR_PUBLISHING, 
