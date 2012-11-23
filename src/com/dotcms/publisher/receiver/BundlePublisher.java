@@ -90,23 +90,7 @@ public class BundlePublisher extends Publisher {
         String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
         String bundlePath = ConfigUtils.getBundlePath()+File.separator+BundlePublisherResource.MY_TEMP;//FIXME
         
-
-        File folderOut = new File(bundlePath+bundleFolder);
-        folderOut.mkdir();
-
-        // Extract file to a directory
-        InputStream bundleIS = null;
-        try {
-            bundleIS = new FileInputStream(bundlePath+bundleName);
-            untar(bundleIS,
-                    folderOut.getAbsolutePath()+File.separator+bundleName,
-                    bundleName);
-        } catch (FileNotFoundException e) {
-            throw new DotPublishingException("Cannot extract the selected archive", e);
-        }
-
-
-        //Publish the bundle extracted
+      //Publish the bundle extracted
         PublishAuditHistory currentStatusHistory = null;
         EndpointDetail detail = new EndpointDetail();
         
@@ -125,6 +109,21 @@ public class BundlePublisher extends Publisher {
         }catch (Exception e) {
         	Logger.error(BundlePublisher.class,"Unable to update audit table : " + e.getMessage(),e);
 		}
+        
+
+        File folderOut = new File(bundlePath+bundleFolder);
+        folderOut.mkdir();
+
+        // Extract file to a directory
+        InputStream bundleIS = null;
+        try {
+            bundleIS = new FileInputStream(bundlePath+bundleName);
+            untar(bundleIS,
+                    folderOut.getAbsolutePath()+File.separator+bundleName,
+                    bundleName);
+        } catch (FileNotFoundException e) {
+            throw new DotPublishingException("Cannot extract the selected archive", e);
+        }
         
         
         try {
