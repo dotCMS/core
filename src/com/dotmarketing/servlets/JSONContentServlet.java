@@ -290,7 +290,8 @@ public class JSONContentServlet extends HttpServlet implements Servlet {
 				jo.put(key, map.get(key));
 			}
 
-		}  
+		}
+		jo.put("title", con.getTitle());
 
 		for(Field f : s.getFields()){
 			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
