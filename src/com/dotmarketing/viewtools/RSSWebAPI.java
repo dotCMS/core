@@ -333,11 +333,15 @@ public class RSSWebAPI {
 				NodeList children = title.getChildNodes();
 				Node item=children.item(0);
 				if (item!=null) {
-					ret = item.getNodeValue();
+				    ret = item.getNodeValue();
+				}
+				if(!UtilMethods.isSet(ret) && UtilMethods.isSet(children.item(1))){
+				    ret = children.item(1).getNodeValue();
 				}
 			}
 			return ret;
-		}
+		}		
+		 
 		
 		/**
 		 * ingest
