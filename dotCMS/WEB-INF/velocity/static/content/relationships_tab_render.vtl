@@ -106,15 +106,17 @@
 	function loadResults(offset, perPage,data){		
 		var results = data.contentlets;
 		var totalResults = data.total;
-		var strHTML='<ul>';
+		var strHTML='';
 		if(results !='' && results.length > 0){
+		strHTML=strHTML+'<table class="listingTable" width="100%">'
 			for(var i=0; i < results.length;i++){
-				strHTML=strHTML+'<li>'+results[i].title+'<button dojoType="dijit.form.Button" onClick=\'addRelationshipsBox("'+results[i].identifier+'","'+results[i].title+'","'+relation+'" )\' class="dojoButton addButton"> Add</button></li>';
+				strHTML=strHTML+'<tr><td style="overflow:hidden;padding:0;border-bottom:0">'+results[i].title+'</td><td style="overflow:hidden;padding:0;border-bottom:0;width:5%"><button dojoType="dijit.form.Button" onClick=\'addRelationshipsBox("'+results[i].identifier+'","'+results[i].title+'","'+relation+'" )\' class="dojoButton addButton"> Add</button></td></tr>';
 			}
+		strHTML=strHTML+'</table>'
 		}else{
-			strHTML=strHTML+'<li>No results found</li>';
+			strHTML=strHTML+'<ul><li>No results found</li></ul>';
 		}
-		strHTML=strHTML+'</ul><div id="pagination">';
+		strHTML=strHTML+'<div id="pagination">';
 		if(offset > 0){
 		    var newOffset = (offset-perPage);
 		    if(newOffset < 0){
@@ -127,7 +129,9 @@
 		}
 		strHTML=strHTML+'</div>';
 		document.getElementById('searchResults').innerHTML=strHTML;
+		dojo.parser.parse('searchResults');
 	}
+
 	
 	function addRelationshipsBox(identifier,title,relationshipName ){
 		var div = document.getElementById(relationshipName+"Div");
@@ -163,7 +167,7 @@
 			</tr>
 			<tr>
 				<td>
-					<div id="searchResults" class="left">
+					<div id="searchResults" style="height:350px;">
 		  				<ul><li>No results find yet</li></ul>
 					</div>
 				</td>
