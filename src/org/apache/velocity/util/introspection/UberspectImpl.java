@@ -114,6 +114,10 @@ public class UberspectImpl implements Uberspect
             }
             return new EnumerationIterator((Enumeration) obj);
         }
+        else if(obj instanceof Iterable)
+        {
+            return ((Iterable)obj).iterator();
+        }
         else
         {
             // look for an iterator() method to support the JDK5 Iterable
