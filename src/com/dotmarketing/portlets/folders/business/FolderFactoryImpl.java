@@ -519,7 +519,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		Map<String, Link[]> linksCopied;
 		if (copiedObjects.get("Links") == null) {
 			linksCopied = new HashMap<String, Link[]>();
-			copiedObjects.put("Links", linksCopied);
+			copiedObjects.put("Links", linksCopied); 
 		} else {
 			linksCopied = (Map<String, Link[]>) copiedObjects.get("Links");
 		}
