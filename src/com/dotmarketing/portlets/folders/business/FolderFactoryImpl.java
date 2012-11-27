@@ -35,6 +35,7 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -509,6 +510,10 @@ public class FolderFactoryImpl extends FolderFactory {
 				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
+		
+		// issues/1603
+		Structure structure = StructureCache.getStructureByVelocityVarName("FileAsset");
+		APILocator.getContentletAPI().reindex(structure);
 
 		// Copying links
 		Map<String, Link[]> linksCopied;
