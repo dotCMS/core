@@ -3,6 +3,8 @@ package com.dotmarketing.cms.content.submit.util;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import nl.captcha.Captcha;
+
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -26,8 +28,8 @@ public class CaptchaUtil {
 
 		HttpSession session = request.getSession();
 		String captcha = request.getParameter("captcha");
-		String captchaSession =  (String) session.getAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);
-
+		Captcha captchaObj = (Captcha) session.getAttribute(Captcha.NAME);
+        String captchaSession=captchaObj!=null ? captchaObj.getAnswer() : null;
 		if(!UtilMethods.isSet(captcha) || !UtilMethods.isSet(captchaSession) || !captcha.equals(captchaSession)){
 			return false;
 		}
@@ -43,15 +45,15 @@ public class CaptchaUtil {
 	public static boolean isValidAudioCaptcha(HttpServletRequest request){
 
 		HttpSession session = request.getSession();
-		String captchaSession =  (String) session.getAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);
-		
+		Captcha captcha = (Captcha) session.getAttribute(Captcha.NAME);
+        String captchaSession=captcha!=null ? captcha.getAnswer() : null;
 		Boolean isResponseCorrect = Boolean.FALSE;
 		String captchaId = request.getSession().getId();  
 		String audioCaptcha = request.getParameter("captcha");
 
 		if(UtilMethods.isSet(audioCaptcha) && UtilMethods.isSet(captchaSession) && audioCaptcha.equals(captchaSession)){
 			isResponseCorrect = Boolean.TRUE;
-			session.removeAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);
+			session.removeAttribute(Captcha.NAME);
 			
 		}else if(UtilMethods.isSet(audioCaptcha) && UtilMethods.isSet(captchaId)){
 

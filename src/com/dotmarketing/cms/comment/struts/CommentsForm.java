@@ -5,6 +5,8 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import nl.captcha.Captcha;
+
 import org.apache.struts.action.ActionError;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
@@ -171,7 +173,8 @@ public class CommentsForm extends ValidatorForm
 		ActionErrors errors = new ActionErrors(); 
 		Contentlet parentContentlet = new Contentlet();	
 		HttpSession session = request.getSession();
-		String captchaSession =  (String) session.getAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);
+		Captcha captcha = (Captcha) session.getAttribute(Captcha.NAME);
+        String captchaSession=captcha!=null ? captcha.getAnswer() : null;
 		try{
 			parentContentlet = conAPI.find(contentInode, APILocator.getUserAPI().getSystemUser(), true);
 		}catch(DotDataException e){
