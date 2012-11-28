@@ -13,6 +13,8 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
+import nl.captcha.Captcha;
+
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.octo.captcha.component.sound.soundconfigurator.FreeTTSSoundConfigurator;
@@ -52,8 +54,9 @@ public class AudioCaptchaServlet extends HttpServlet {
 		AudioInputStream challenge = null;
 		try {
 
-			String captchaSession =  (String) request.getSession().getAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);	
-
+			//String captchaSession =  (String) .getAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);	
+			Captcha captcha = (Captcha) request.getSession().getAttribute(Captcha.NAME);
+			String captchaSession=captcha!=null ? captcha.getAnswer() : null;
 			if(UtilMethods.isSet(captchaSession)){
 				
 				/*If we have a normal captcha in the session we should generate the word in the session instead of using

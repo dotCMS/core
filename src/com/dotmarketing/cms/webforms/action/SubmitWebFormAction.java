@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import nl.captcha.Captcha;
+
 import org.apache.struts.Globals;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -30,7 +32,6 @@ import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.factories.EmailFactory;
@@ -90,8 +91,9 @@ public final class SubmitWebFormAction extends DispatchAction {
 		
 		String captcha = request.getParameter("captcha");
 		if (useCaptcha) {
-			String captchaSession =  (String) session.getAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);
-			
+		    Captcha captchaObj = (Captcha) session.getAttribute(Captcha.NAME);
+            String captchaSession=captchaObj!=null ? captchaObj.getAnswer() : null;
+            
 			if(captcha ==null && Config.getBooleanProperty("FORCE_CAPTCHA",true)){
 				response.getWriter().write("Captcha is required to submit this form ( FORCE_CAPTCHA=true ).<br>To change this, edit the dotmarketing-config.properties and set FORCE_CAPTCHA=false");
 				return null;
