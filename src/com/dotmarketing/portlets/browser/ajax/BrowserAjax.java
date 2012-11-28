@@ -624,6 +624,11 @@ public class BrowserAjax {
             } else {
                 APILocator.getContentletAPI().copyContentlet( cont, host, user, false );
             }
+            
+            // issues/1616
+    		Structure structure = StructureCache.getStructureByVelocityVarName("FileAsset");
+    		APILocator.getContentletAPI().reindex(structure);
+            
             return "File-copied";
         }
 
