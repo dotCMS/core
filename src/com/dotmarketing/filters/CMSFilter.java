@@ -636,6 +636,7 @@ public class CMSFilter implements Filter {
     
     public static boolean excludeURI(String uri) {
         if (uri.trim().equals("/c")
+                || uri.endsWith(".php")
         		|| uri.trim().startsWith("/c/")
         		|| (uri.indexOf("/ajaxfileupload/upload") != -1)
         		||  new File(Config.CONTEXT.getRealPath(uri)).exists()
@@ -650,16 +651,8 @@ public class CMSFilter implements Filter {
     	for(String exclusion:excludeList) {
     		if(exclusion.endsWith("/"))
     			exclusion=exclusion.substring(0, exclusion.lastIndexOf("/"));
-    		
-    		exclusion=exclusion+"(/|#|&|\\?).*";
-    		Pattern p = Pattern.compile(exclusion);
-    		Matcher m = p.matcher(uri);
-    		if ( m.matches() ) {
-    			return true;
-    		}
-    	}
-    	if(uri.endsWith(".php")){
-    		return true;
+    		if(RegEX.contains(uri, exclusion))
+    		    return true;
     	}
     	return false;
    }
