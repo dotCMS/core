@@ -3,6 +3,8 @@ package com.dotmarketing.util;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import nl.captcha.Captcha;
+
 import com.octo.captcha.service.CaptchaServiceException;
 import com.octo.captcha.service.sound.SoundCaptchaService;
 
@@ -23,8 +25,8 @@ public class CaptchaUtil {
 
 		HttpSession session = request.getSession();
 		String captcha = request.getParameter("captcha");
-		String captchaSession =  (String) session.getAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);
-
+		Captcha captchaObj = (Captcha) session.getAttribute(Captcha.NAME);
+        String captchaSession=captchaObj!=null ? captchaObj.getAnswer() : null;
 		if(!UtilMethods.isSet(captcha) || !UtilMethods.isSet(captchaSession) || !captcha.equals(captchaSession)){
 			return false;
 		}
