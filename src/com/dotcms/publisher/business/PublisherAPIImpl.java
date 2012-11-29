@@ -1,6 +1,5 @@
 package com.dotcms.publisher.business;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +11,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -23,10 +21,7 @@ import com.dotmarketing.util.Logger;
 public class PublisherAPIImpl extends PublisherAPI{
 	
 	private PublishQueueMapper mapper = null;
-	
-	private static final int _ASSET_LENGTH_LIMIT = 20;
-	private static final String SPACE = " ";
-	private static final String IDENTIFIER = "identifier:";
+
 	private static PublisherAPIImpl instance= null;
 	
 	public static PublisherAPIImpl getInstance() {
@@ -157,42 +152,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 				throw new DotPublisherException("Unable to add element to publish queue table:" + e.getMessage(), e);
 			}
 		}
-	}
-	
-	private List<String> prepareAssets(List<Contentlet> contents, boolean isLive) {
-		StringBuilder assetBuffer = new StringBuilder();
-		List<String> assets;
-		assets = new ArrayList<String>();
-		
-		if(contents.size() == 1) {
-			assetBuffer.append("+"+IDENTIFIER+contents.get(0).getIdentifier());
-			if(isLive)
-				assets.add(assetBuffer.toString() +" +live:true");
-			else
-				assets.add(assetBuffer.toString() +" +working:true");
-			
-		} else {
-			int counter = 1;
-			Contentlet c = null;
-			for(int ii = 0; ii < contents.size(); ii++) {
-				c = contents.get(ii);
-				
-				assetBuffer.append(IDENTIFIER+c.getIdentifier());
-				assetBuffer.append(SPACE);
-				
-				if(counter == _ASSET_LENGTH_LIMIT || (ii+1 == contents.size())) {
-					if(isLive)
-						assets.add("+("+assetBuffer.toString()+") +live:true");
-					else
-						assets.add("+("+assetBuffer.toString()+") +working:true");
-					
-					assetBuffer = new StringBuilder();
-					counter = 0;
-				} else
-					counter++;
-			}
-		}
-		return assets;
 	}
 	
 	private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";
@@ -469,7 +428,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"left join publishing_queue_audit a "+ 
 			"ON p.bundle_id=a.bundle_id "+
 			"where "+
-			"(a.status != ? or a.status is null) "+
+			"((a.status != ? and a.status != ?) or a.status is null ) "+
 			"order by publish_date ";
 
 	
@@ -480,6 +439,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.setSQL(SQLGETBUNDLESTOPROCESS);
 			
 			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);

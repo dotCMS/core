@@ -668,6 +668,17 @@ public class PublisherUtil {
 		return pep;
 	}
 	
+	
+	public static Set<String> getPropertiesSet(List<Map<String, Object>> list, String property) {
+		Set<String> properties = new HashSet<String>();
+		
+		for(Map<String, Object> row : list) {
+			properties.add((String) row.get(property));
+		}
+		
+		return properties;
+	}
+	
 	/**
 	 * normalize metadata from various filetypes
 	 * this method will return an array of metadata keys
