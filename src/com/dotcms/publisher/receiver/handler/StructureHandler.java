@@ -56,7 +56,14 @@ public class StructureHandler implements IHandler {
 	        		if(FieldFactory.getFieldByInode(field.getInode()) == null || 
 	        				!UtilMethods.isSet(FieldFactory.getFieldByInode(field.getInode()).getInode())) 
 	        		{
-	        			FieldFactory.saveField(field, field.getInode());
+	        			Field localField = structure.getFieldVar(field.getVelocityVarName());
+	        			if(localField == null || !UtilMethods.isSet(localField.getInode()))
+	        				FieldFactory.saveField(field, field.getInode());
+	        			else {
+	        				FieldFactory.deleteField(localField);
+	        				FieldFactory.saveField(field, field.getInode());
+	        			}
+	        				
 	        		}
 				}
 	        	
