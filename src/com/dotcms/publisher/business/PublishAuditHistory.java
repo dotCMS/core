@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.util.Logger;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
@@ -123,7 +124,13 @@ public class PublishAuditHistory implements Serializable {
 	
 	public static PublishAuditHistory getObjectFromString(String serializedString) {
 		XStream xstream=new XStream(new DomDriver());
-		return (PublishAuditHistory) xstream.fromXML(serializedString);
+		try{
+			return (PublishAuditHistory) xstream.fromXML(serializedString);
+		}
+		catch(Exception e){
+			Logger.error(PublishAuditHistory.class, e.getMessage(), e);
+			return null;
+		}
 	}
 }
 

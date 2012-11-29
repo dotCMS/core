@@ -167,13 +167,11 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	}
 	
 	protected void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier, boolean working) throws DotDataException, DotStateException, DotSecurityException {
-		webasset.setInode(UUID.randomUUID().toString());
+		if(!UtilMethods.isSet(webasset.getInode()))
+		    webasset.setInode(UUID.randomUUID().toString());
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
-		// persists the webasset
-		if(!UtilMethods.isSet(webasset.getInode()))
-            HibernateUtil.save(webasset);
-
+		
 		// adds the webasset as child of the folder or parent inode
 		if(!parent.getType().equalsIgnoreCase("folder"))
 		   parent.addChild(webasset);
