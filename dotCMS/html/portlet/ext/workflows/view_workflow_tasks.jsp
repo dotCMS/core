@@ -66,10 +66,12 @@
 	List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 
     Role assignedTo  = APILocator.getRoleAPI().loadRoleById(searcher.getAssignedTo());
-    if(assignedTo ==null){
-    	assignedTo =new Role();
-    }
     Role myRole  = APILocator.getRoleAPI().getUserRole(user);
+    
+    if(assignedTo ==null){
+    	assignedTo = myRole;
+    }
+    
     List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemes(false);  
     
 
