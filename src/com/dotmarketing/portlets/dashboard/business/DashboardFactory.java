@@ -146,7 +146,7 @@ public abstract class DashboardFactory {
 	
 	protected StringBuffer getHostListQuery(boolean hasCategory, String selectedCategories,  String runDashboardFieldContentlet){
 		StringBuffer query = new StringBuffer();
-		query.append("select "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" distinct ")+" {contentlet.*}, " +
+		query.append("select "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" distinct ")+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) ? " contentlet.*, " : " {contentlet.*}, ")    +
 				"coalesce(d.page_views,0) as totalpageviews,  " +
 				"CASE WHEN contentinfo.live_inode is not null THEN 'Live' "+
                 " ELSE 'Stopped' "+
@@ -158,7 +158,7 @@ public abstract class DashboardFactory {
 				  "analytic_summary_period on analytic_summary.summary_period_id = analytic_summary_period.id "+
 				  "and analytic_summary_period.full_date > ? and analytic_summary_period.full_date < ? "+
 				  "group by host_id" +
-				") "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" as d") +" on d.host_id = contentlet.identifier " +
+				") "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"": DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)? " d " : " as d") +" on d.host_id = contentlet.identifier " +
 				(hasCategory?" join tree on tree.child = contentlet.inode and tree.parent in("+selectedCategories+") ":"") +
 				"join structure s on contentlet.structure_inode = s.inode " +
 				"where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and s.name ='Host' and contentlet.identifier = contentinfo.identifier "+ 
