@@ -19,6 +19,7 @@
 <style type="text/css">
 	@import url(/html/css/template/draw-template.css);
 	@import url(/html/css/template/drawed-reset-fonts-grids.css);
+	.gradient2{padding-top:30px;padding-bottom:20px;}
 </style>
 
 <%
@@ -422,13 +423,14 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "page-width")%>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "width")%>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
 									<%--<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>--%>
 									<%--<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>--%>
+                                    <option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
                                     <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
 									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
-									<option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
+									
 								</select>
 							</dd>
 						</dl>
@@ -470,8 +472,10 @@
 							</dd>
 						</dl>
 					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
+				
+				
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows")%></div>
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
@@ -511,8 +515,10 @@
 							</button>
 						</div>
 					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
+				
+				
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
 				<div id="contentletActionsHanger">
 					<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
@@ -569,13 +575,14 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "page-width") %>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
 									<%--<option value="doc-template">750px</option>--%>
 									<%--<option value="doc2-template">950px</option>--%>
+                                    <option value="resp-template" selected="selected">Responsive</option>
                                     <option value="doc4-template">975px</option>
-                                    <option value="doc3-template" selected="selected">100%</option>
-									<option value="resp-template">Responsive</option>
+                                    <option value="doc3-template">100%</option>
+									
 								</select>
 							</dd>
 						</dl>
@@ -617,8 +624,9 @@
 							</dd>
 						</dl>
 					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
+				
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows") %></div>
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
@@ -647,8 +655,9 @@
 							</button>
 						</div>
 					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
+				
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
 				<div id="contentletActionsHanger">
 					<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
@@ -687,6 +696,7 @@
 		<%
 			}
 		%>
+			<div class="clear"></div>
 		</div>
 		<div class="clear"></div>
 
