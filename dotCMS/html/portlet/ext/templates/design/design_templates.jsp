@@ -588,7 +588,9 @@
 						</dl>
 					</div>
 				</div>
+				
 				<div class="clear"></div>
+				
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -607,7 +609,9 @@
 						</dl>
 					</div>
 				</div>
+				
 				<div class="clear"></div>
+				
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
