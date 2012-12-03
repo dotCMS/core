@@ -7,7 +7,7 @@
 		pageNumber = Integer.parseInt(request.getParameter("pageNumber")); 
 	}
 	
-	int perPage = 2;//com.dotmarketing.util.Config.getIntProperty("PER_PAGE");
+	int perPage = com.dotmarketing.util.Config.getIntProperty("PER_PAGE");
 	int minIndex = (pageNumber - 1) * perPage;
 	int maxIndex = perPage * pageNumber;
 			
