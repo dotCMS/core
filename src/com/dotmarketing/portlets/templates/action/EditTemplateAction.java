@@ -12,8 +12,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.struts.Globals;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -308,7 +311,7 @@ public class EditTemplateAction extends DotPortletAction implements
 				Logger.debug(this,"Calling Full Delete Method");
 				String [] inodes = req.getParameterValues("publishInode");
 				StringBuilder dependencies = new StringBuilder();
-//				boolean returnValue = true;
+				boolean returnValue = false;
 
 				for(String inode  : inodes)	{
 					String result = APILocator.getTemplateAPI().checkDependencies(inode, user, false);
@@ -319,23 +322,21 @@ public class EditTemplateAction extends DotPortletAction implements
 						dependencies.append(LanguageUtil.get(user, "template-name")).append(": ").append(webAsset.getFriendlyName()).append("\n");
 						dependencies.append(LanguageUtil.get(user, "Pages-URLs")).append(": ").append(result);
 					} else {
-//						returnValue &= WebAssetFactory.deleteAsset(webAsset,user);
-						WebAssetFactory.deleteAsset(webAsset,user);
+						returnValue = WebAssetFactory.deleteAsset(webAsset,user);
 					}
 
 					dependencies.append("\n");
 				}
 
-				SessionMessages.add(httpReq,"error","message.template.full_delete.error");
-//				if(returnValue)
-//				{
-//					SessionMessages.add(httpReq,"message","message.template.full_delete");
-//				}
-//				else
-//				{
-//					SessionMessages.add(httpReq,"error","message.template.full_delete.error");
-//					Logger.debug(this," Template cannot be deleted if it has existing relationships");
-//				}
+				if(returnValue)
+				{
+					SessionMessages.add(httpReq,"message","message.template.full_delete");
+				}
+				else
+				{
+					SessionMessages.add(httpReq,"error","message.template.full_delete.error");
+					Logger.debug(this," Template cannot be deleted if it has existing relationships");
+				}
 			}
 			catch(Exception ae)
 			{
