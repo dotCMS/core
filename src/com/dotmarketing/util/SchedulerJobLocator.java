@@ -21,7 +21,7 @@ public class SchedulerJobLocator {
 		jobsList.add("com.dotmarketing.quartz.job.UsersToDeleteThread");
 		jobsList.add("com.dotmarketing.quartz.job.WebDavCleanupJob");
 		jobsList.add("com.dotmarketing.portlets.webforms.jobs.WebFormsMailExcelJob");
-		jobsList.add("com.dotmarketing.portlets.linkchecker.quartz.LinkCheckerJob");
+		jobsList.add("com.dotcms.enterprise.linkchecker.LinkCheckerJob");
 		
 		return jobsList;
 	}
