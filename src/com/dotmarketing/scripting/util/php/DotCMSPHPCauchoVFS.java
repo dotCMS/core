@@ -40,6 +40,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.caucho.util.CharBuffer;
 import com.caucho.vfs.FileRandomAccessStream;
@@ -56,7 +57,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
@@ -679,7 +682,13 @@ public class DotCMSPHPCauchoVFS extends FilesystemPath {
 		User mu = null; 
 
 		try{
-			com.dotmarketing.portlets.files.model.File file = fileAPI.find(inode, userAPI.getSystemUser(), false);
+			IFileAsset file;
+			try{
+				file = fileAPI.find(inode, userAPI.getSystemUser(), false);
+			}catch(DotHibernateException e){
+				inode = uri.split(Pattern.quote(File.separator))[3];
+				file = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, userAPI.getSystemUser(), false));
+			}
 			mu = userAPI.loadUserById(file.getModUser(), userAPI.getSystemUser(), true);
 		}catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
