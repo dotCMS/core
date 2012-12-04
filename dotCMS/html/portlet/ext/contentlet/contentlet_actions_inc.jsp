@@ -120,32 +120,10 @@ catch(Exception e){
 
 <%--Start workflow tasks --%>
 <%for(WorkflowAction a : wfActions){ %>
-
-	<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
-	<% boolean hasPushPublishActionlet = false; %>
-	<% for(WorkflowActionClass actionlet : actionlets){ %>
-		<% if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
-			<% hasPushPublishActionlet = true; %>
-		<% } %>
-	<% } %>
-	
-	<%if(a.requiresCheckout() && ! contentEditable) {%>
-		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
+  	<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable()%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
 		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
-		</a>
-	<%} else if(!a.requiresCheckout() && ! contentEditable && InodeUtils.isSet(contentlet.getInode())) {%>
-		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
-		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
-		</a>
-	<%} else if(a.requiresCheckout() &&  contentEditable ) {%>
-		<a onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%= hasPushPublishActionlet || a.isAssignable() || a.isCommentable() || UtilMethods.isSet(a.getCondition()) %>)">
-		<span class="<%=a.getIcon()%>"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
-		</a>
-	<%} %>
-
+		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
+	</a>
 <%} %>
 
 

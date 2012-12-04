@@ -22,6 +22,32 @@ public class DotJasperTask extends JspC {
 				
 		}
 	}
-	
+
+    private static Set<String> includeList=null;
+    private static final Integer mutex=new Integer(0);
+    private static void buildIncludeList() {
+        synchronized(mutex) {
+         if(includeList!=null) return;
+         
+         Set<String> set=new HashSet<String>();
+         
+         //Load some defaults
+         set.add("contentlet_versions_inc.jsp");
+
+         includeList=set;
+        }
+    }
+
+    public static boolean includeJSP(String jsp) {
+        
+        if(includeList==null) buildIncludeList();
+        
+        for(String str : includeList){
+        	if(jsp.endsWith(str))
+        		return true;
+        }
+        
+    	return false;
+   }
 
 }
