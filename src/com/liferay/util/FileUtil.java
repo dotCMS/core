@@ -76,6 +76,15 @@ public class FileUtil {
 		copyDirectory(new File(sourceDirName), new File(destinationDirName));
 	}
 
+	public static void copyDirectory(
+			String sourceDirName, String destinationDirName, FileFilter filter) {
+
+			copyDirectory(new File(sourceDirName), new File(destinationDirName), true, filter);
+		}
+	
+	
+	
+	
 	public static void copyDirectory(File source, File destination, boolean hardLinks) {
 	    copyDirectory(source,destination,hardLinks,null);
 	}
