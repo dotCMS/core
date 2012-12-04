@@ -69,7 +69,7 @@ function submitfm() {
 }
 
 function submitfmPublish() {
-	form = document.getElementById('fm');
+	form = document.getElementById('fm_publish');
 	form.cmd.value = 'prepublish';
 	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/publish_templates" /></portlet:actionURL>';
 	submitForm(form);
@@ -78,7 +78,7 @@ function submitfmPublish() {
 function submitfmDelete() {
 	if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.template.confirm.delete.template")) %>'))
 	{
-		form = document.getElementById('fm');
+		form = document.getElementById('fm_publish');
 		form.cmd.value = 'full_delete_list';
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="full_delete_list" /></portlet:actionURL>';
 		submitForm(form);
@@ -211,7 +211,9 @@ function processDelete(inode, referer) {
 
 	</div>
 </div>
+</form>
 
+<form id="fm_publish" method="post">
 <input type="hidden" name="referer" value="<%=referer%>">
 <input type="hidden" name="cmd" value="">
 
