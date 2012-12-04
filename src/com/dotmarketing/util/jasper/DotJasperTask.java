@@ -1,5 +1,8 @@
 package com.dotmarketing.util.jasper;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.jasper.JasperException;
 import org.apache.jasper.JspC;
 import org.apache.log4j.ConsoleAppender;
