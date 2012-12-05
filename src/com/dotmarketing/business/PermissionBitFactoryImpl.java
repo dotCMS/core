@@ -3444,7 +3444,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 getPermissions(st);
             }
             offset=offset+max;
-        } while(list.size()>0);
+        } while(listSt.size()>0);
 	}
 
 
