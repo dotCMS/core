@@ -1,8 +1,17 @@
 package com.dotmarketing.viewtools;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -13,15 +22,9 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.liferay.portal.model.User;
 
 /**
  * Created by Jonathan Gamba
@@ -31,7 +34,7 @@ public class DotTemplateTool implements ViewTool {
 
     private static HttpServletRequest request;
     Context ctx;
-
+    private static User sysUser = null;
     /**
      * @param initData the ViewContext that is automatically passed on view tool initialization, either in the request or the application
      * @return
@@ -41,6 +44,11 @@ public class DotTemplateTool implements ViewTool {
         ViewContext context = (ViewContext) initData;
         request = context.getRequest();
         ctx = context.getVelocityContext();
+        try {
+			sysUser = APILocator.getUserAPI().getSystemUser();
+		} catch (DotDataException e) {
+			Logger.error(DotTemplateTool.class,e.getMessage(),e);
+		}
     }
 
     /**
@@ -74,9 +82,11 @@ public class DotTemplateTool implements ViewTool {
         String drawedBody;
         if ( UtilMethods.isSet( themeInode ) ) {
             Identifier ident = APILocator.getIdentifierAPI().findFromInode( themeInode );
-            WebAsset template = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion( ident, APILocator.getUserAPI().getSystemUser(), false );
+            
+            Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), sysUser, false);
+
             if ( !template.getInode().equals( themeInode ) ) {
-                template = (WebAsset) InodeFactory.getInode( themeInode, Template.class );
+                template = (Template) InodeFactory.getInode( themeInode, Template.class );
             }
 
             drawedBody = ((Template) template).getDrawedBody();
