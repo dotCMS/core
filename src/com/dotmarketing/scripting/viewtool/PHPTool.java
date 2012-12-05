@@ -40,7 +40,7 @@ public class PHPTool extends AbstractScriptingTool {
 				Logger.warn(this, "Last mod user of content does nto have scripting developer role");
 				return null;
 			}
-			if(scriptletOrFile.contains("<")){
+			if(!scriptletOrFile.endsWith(".php")){
 				return ((PHPEvalWrapper)renderPHP(scriptletOrFile)).getOut();	
 			}
 			return ((PHPEvalWrapper)evalFile(scriptletOrFile)).getOut();
@@ -57,6 +57,9 @@ public class PHPTool extends AbstractScriptingTool {
 		if(code.indexOf("<?") < 0){
 			return evalPHP(code);
 		}
+		
+		code = UtilMethods.replace(code, "<?php", "<?");
+		code = UtilMethods.replace(code, "<?PHP", "<?");
 		StringWriter sw = new StringWriter();
 		String[] codelets = code.split("(\\<\\?|\\?\\>)");
 	
