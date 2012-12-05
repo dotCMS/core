@@ -2487,7 +2487,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
 					dc1.addParam(permissionable.getPermissionId());
 					List<Map<String, Object>> l = dc1.loadObjectResults();
-					if(l != null && l.size()>0){
+					
+					DotConnect dc2 = new DotConnect();
+                    dc2.setSQL("SELECT id FROM identifier WHERE id = ?");
+                    dc2.addParam(permissionable.getPermissionId());
+                    List<Map<String, Object>> l2 = dc2.loadObjectResults();
+                    
+					if((l != null && l.size()>0) || (l2!=null && l2.size()>0)){
 						dc1.setSQL(deletePermissionableReferenceSQL);
 						dc1.addParam(permissionable.getPermissionId());
 						dc1.loadResult();
@@ -3409,6 +3415,36 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		dc.loadResult();
 		permissionCache.clearCache();
 
+		// at least we need to regenerate for template and structure
+		HibernateUtil hu=new HibernateUtil(Template.class);
+		int offset=0;
+		int max=100;
+		List<Template> list=null;
+		do {
+    		hu.setQuery("from "+Template.class.getCanonicalName());
+    		hu.setFirstResult(offset);
+    		hu.setMaxResults(max);
+    		list = hu.list();
+    		for(Template t : list) {
+    		    getPermissions(t);
+    		}
+    		offset=offset+max;
+		} while(list.size()>0);
+		
+		hu=new HibernateUtil(Structure.class);
+        offset=0;
+        
+        List<Structure> listSt=null;
+        do {
+            hu.setQuery("from "+Structure.class.getCanonicalName());
+            hu.setFirstResult(offset);
+            hu.setMaxResults(max);
+            listSt = hu.list();
+            for(Structure st : listSt) {
+                getPermissions(st);
+            }
+            offset=offset+max;
+        } while(list.size()>0);
 	}
 
 
