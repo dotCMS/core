@@ -15,6 +15,7 @@ import org.apache.oro.text.regex.Perl5Matcher;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BaseWebAssetAPI;
@@ -411,13 +412,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	public Template findWorkingTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		Template t = (Template) APILocator.getVersionableAPI().findWorkingVersion(id, user, false);
-		if(t!=null && InodeUtils.isSet(t.getInode())){
-			if (!permissionAPI.doesUserHavePermission(t, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException("You don't have permission to read the source file.");
-			}
-		}
-		return t;
+		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
+		return find(info.getWorkingInode(), user, respectFrontendRoles);
+
 	}
 
 	public List<Template> findTemplates(User user, boolean includeArchived,
@@ -426,20 +423,26 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			DotDataException {
 		return templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
-
+	
+	@Override
+	public Template find(String inode, User user,  boolean respectFrontEndRoles) throws DotSecurityException,
+			DotDataException {
+		Template t =  templateFactory.find(inode);
+		if(!permissionAPI.doesUserHavePermission(t, PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
+			throw new DotSecurityException("User does not have access to template:" + inode);
+		}
+		return t;
+	
+	}
+	
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException {
 		templateFactory.associateContainers(containerIdentifiers, template);
 	}
 
 
 	public Template findLiveTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		Template t = (Template) APILocator.getVersionableAPI().findLiveVersion(id, user, false);
-		if(t!=null && InodeUtils.isSet(t.getInode())){
-			if (!permissionAPI.doesUserHavePermission(t, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException("You don't have permission to read the source file.");
-			}
-		}
-		return t;
+		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
+		return find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
 
