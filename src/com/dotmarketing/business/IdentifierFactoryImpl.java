@@ -189,9 +189,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	protected Identifier loadFromCache(Versionable versionable) {
-		if (versionable == null)
-			return null;
-		return loadFromCache(versionable.getVersionId());
+
+		String idStr= ic.getIdentifierFromInode(versionable);
+		if(idStr ==null) return null;
+		return ic.getIdentifier(idStr);
 	}
 
 	/**
@@ -208,7 +209,23 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		if (versionable == null) {
 			throw new DotStateException("Versionable cannot be null");
 		}
-		return find(versionable.getVersionId());
+		Identifier id = null;
+		String idStr = ic.getIdentifierFromInode(versionable);
+
+		if(idStr !=null){
+			id= find(idStr);
+		}
+		else{
+			id= find(versionable.getVersionId());
+			if(id != null){
+				ic.addIdentifierToCache(id, versionable);
+			}
+		}
+	
+
+		return id;
+		
+		
 	}
 	
 	protected Identifier createNewIdentifier(Versionable versionable, Folder folder) throws DotDataException {
