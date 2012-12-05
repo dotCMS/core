@@ -97,6 +97,7 @@ public class FieldFactory {
 	public static void saveField(Field field) throws DotHibernateException
 	{
 		HibernateUtil.saveOrUpdate(field);
+		FieldsCache.removeFieldVariables(field);
 	}
 	
 	//### DELETE ###
@@ -110,6 +111,7 @@ public class FieldFactory {
 	{
 		InodeFactory.deleteInode(field);
 		FieldsCache.removeField(field);
+		FieldsCache.removeFieldVariables(field);
 	}
 	
 	public static String getNextAvaliableFieldNumber (String dataType, String currentFieldInode, String structureInode) {
@@ -155,23 +157,31 @@ public class FieldFactory {
 		}
 	}
 	
-	public static void saveFieldVariable(FieldVariable object){
+	public static void saveFieldVariable(FieldVariable fieldVar){
 		
-		String id = object.getId();
+		String id = fieldVar.getId();
+		Field proxy = new Field();
+		proxy.setInode(fieldVar.getFieldId());
+		
 		
 		if(InodeUtils.isSet(id)) {
 			try {
-				HibernateUtil.saveOrUpdate(object);
+				HibernateUtil.saveOrUpdate(fieldVar);
 			} catch (DotHibernateException e) {
 				Logger.error(FieldFactory.class, e.getMessage());
 			}
 		}else{
 			try {
-				HibernateUtil.save(object);
+				HibernateUtil.save(fieldVar);
 			} catch (DotHibernateException e) {
 				Logger.error(FieldFactory.class, e.getMessage());
 			}
 		}
+		FieldsCache.removeField(proxy);
+		FieldsCache.removeFieldVariable(fieldVar);
+		FieldsCache.removeFieldVariables(proxy);
+		
+		
 	}
 	
 	public static FieldVariable getFieldVariable(String id){
@@ -215,18 +225,33 @@ public class FieldFactory {
 
 	public static List<FieldVariable> getFieldVariablesForField (String fieldId ){
 
-		List<FieldVariable> result = new ArrayList<FieldVariable>();
+		Field proxy = new Field();
+		proxy.setInode(fieldId);
+		return getFieldVariablesForField(proxy);
+	}
+	
+	public static List<FieldVariable> getFieldVariablesForField (Field field ){
+
+		if(field == null || field.getInode() ==null){
+			return new ArrayList<FieldVariable>();
+		}
+		List<FieldVariable> result = null;
 		
-		HibernateUtil dh = new HibernateUtil(FieldVariable.class);
-		
-		try {
-			dh.setQuery("from " + FieldVariable.class.getName()
-					+ " fvar where fvar.fieldId = ?");
+		result = FieldsCache.getFieldVariables(field);
+		if(result ==null){
+			HibernateUtil dh = new HibernateUtil(FieldVariable.class);
 			
-			dh.setParam(fieldId);
-			result = dh.list();
-		} catch (DotHibernateException e) {
-			Logger.error(FieldFactory.class, e.getMessage());
+			try {
+				dh.setQuery("from " + FieldVariable.class.getName()
+						+ " fvar where fvar.fieldId = ?");
+				
+				dh.setParam(field.getInode());
+				result = dh.list();
+			} catch (DotHibernateException e) {
+				Logger.error(FieldFactory.class, e.getMessage());
+			}
+			
+			FieldsCache.addFieldVariables(field, result);
 		}
 		return result;
 	}
