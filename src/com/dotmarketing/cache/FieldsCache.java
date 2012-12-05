@@ -195,4 +195,35 @@ public class FieldsCache {
         String id = fieldVar.getId();
         cache.remove(getPrimaryGroup() + id,getPrimaryGroup());
     }
+    
+    
+	public static List<FieldVariable> getFieldVariables(Field field) {
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+        String key = "FIELD_VARS_" + field.getInode();
+        
+        
+        try {
+			return (List<FieldVariable>) cache.get(key,getPrimaryGroup());
+		} catch (DotCacheException e) {
+			return null;
+		}
+    }
+    
+	public static void addFieldVariables(Field field, List<FieldVariable> vars) {
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+        String key = "FIELD_VARS_" + field.getInode();
+        cache.put(key, vars, getPrimaryGroup());
+
+    }
+	
+	
+	public static void removeFieldVariables(Field field) {
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+        String key = "FIELD_VARS_" + field.getInode();
+
+		cache.remove(key,getPrimaryGroup());
+
+    }
+    
+    
 }
