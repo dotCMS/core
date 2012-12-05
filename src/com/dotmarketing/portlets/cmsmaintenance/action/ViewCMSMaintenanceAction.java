@@ -58,6 +58,7 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm;
+import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
@@ -519,7 +520,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		}else{
 			assetDir = assetRealPath;
 		}
-		FileUtil.copyDirectory(assetDir, backupTempFilePath + File.separator + "asset");
+		FileUtil.copyDirectory(assetDir, backupTempFilePath + File.separator + "asset", new AssetFileNameFilter());
 
 		//do not ship the license.
 		String f = backupTempFilePath + File.separator + "asset" + File.separator + "license";
