@@ -72,7 +72,6 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -85,9 +84,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private ESMappingAPIImpl mapping = new ESMappingAPIImpl();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
+	private static final Contentlet cache404Content= new Contentlet();
+	private static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
 	public ESContentFactoryImpl() {
 		client = new ESClient();
-
+		cache404Content.setInode(CACHE_404_CONTENTLET);
 	}
 
 	@Override
@@ -694,6 +695,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected Contentlet find(String inode) throws ElasticSearchException, DotStateException, DotDataException, DotSecurityException {
 		Contentlet con = cc.get(inode);
 		if (con != null && InodeUtils.isSet(con.getInode())) {
+			if(CACHE_404_CONTENTLET.equals(con.getInode())){
+				return null;
+			}
 			return con;
 		}
 
@@ -718,6 +722,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 throw e;
         }
         if(fatty == null){
+        	cc.add(inode, cache404Content);
             return null;
         }else{
             Contentlet c = convertFatContentletToContentlet(fatty);
