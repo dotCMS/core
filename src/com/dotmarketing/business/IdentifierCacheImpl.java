@@ -29,6 +29,17 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		cache = CacheLocator.getCacheAdministrator();
 	}
 
+	@Override
+	protected void addIdentifierToCache(Identifier id, Versionable v) {
+		if(v!=null &&v.getInode() !=null){
+			cache.put(getVersionGroup() + v.getInode(), id.getId(), getVersionGroup());
+		}
+	}
+	
+	
+	
+	
+	
 	protected void addIdentifierToCache(Identifier id) {
 
 		if (id == null || ! InodeUtils.isSet(id.getInode())) {
@@ -87,18 +98,19 @@ public class IdentifierCacheImpl extends IdentifierCache {
 
 
 
-	protected Identifier getIdentifier(Versionable versionable)  {
+	protected String getIdentifierFromInode(Versionable versionable)  {
 
-		Identifier value = null;
+		if(versionable ==null || versionable.getInode() ==null){
+			return null;
+		}
+		String value = null;
 		try {
-			value = (Identifier) cache.get(getPrimaryGroup() + versionable.getVersionId(), getPrimaryGroup());
+			value = (String) cache.get(getVersionGroup() + versionable.getInode(), getVersionGroup());
 		} catch (DotCacheException e) {
 			Logger.debug(IdentifierCacheImpl.class, "Cache Entry not found", e);
 		}
 
-		if (value == null) {
-			value = new Identifier();
-		}
+
 		return value;
 	}
 	

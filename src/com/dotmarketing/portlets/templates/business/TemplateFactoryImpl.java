@@ -75,6 +75,27 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		return new ArrayList<Template>(new HashSet<Template>(hu.list()));
 	}
 
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Template find(String inode) throws DotStateException, DotDataException {
+		
+		Template template = templateCache.get(inode);
+		
+		if(template==null){
+		
+		
+			HibernateUtil hu = new HibernateUtil(Template.class);
+			template = (Template) hu.load(inode);
+			if(template != null && template.getInode() != null)
+				templateCache.add(inode, template);
+		}
+		return template;
+	}
+
+	
+	
+	
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived) throws DotHibernateException {
 		HibernateUtil hu = new HibernateUtil(Template.class);
@@ -91,15 +112,17 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	public void delete(Template template) throws DotDataException {
+		templateCache.remove(template.getInode());
 		HibernateUtil.delete(template);
+		
 	}
 
 	public void save(Template template) throws DotDataException {
 		if(!UtilMethods.isSet(template.getIdentifier())){
-			throw new DotStateException("Cannot save a tempalte without an Identifier");
+			throw new DotStateException("Cannot save a template without an Identifier");
 		}
 		HibernateUtil.save(template);
-		templateCache.add(template.getInode(), template);
+		
 		TemplateServices.invalidate(template, true);
 
 	}
