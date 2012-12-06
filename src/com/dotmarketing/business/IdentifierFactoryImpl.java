@@ -212,7 +212,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		Identifier id = null;
 		String idStr = ic.getIdentifierFromInode(versionable);
 
-		if(idStr !=null){
+		if(UtilMethods.isSet(idStr)){
 			id= find(idStr);
 		}
 		else{
