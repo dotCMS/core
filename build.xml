@@ -128,7 +128,7 @@
 	</target>
 
 	<target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+		<javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
 			<classpath refid="files-classpath" />
 		</javac>
 		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
