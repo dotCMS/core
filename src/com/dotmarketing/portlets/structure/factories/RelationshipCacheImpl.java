@@ -1,9 +1,12 @@
 package com.dotmarketing.portlets.structure.factories;
 
+import java.util.List;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
 
 public class RelationshipCacheImpl extends RelationshipCache {
 
@@ -36,7 +39,21 @@ public class RelationshipCacheImpl extends RelationshipCache {
 		cache.remove(String.valueOf(rel.getInode()), primaryGroup);
 		cache.remove(String.valueOf(rel.getRelationTypeValue()), secondaryGroup);
 	}
-
+	@Override
+	public List<Relationship> getRelationshipsByStruct(Structure struct) throws DotCacheException {
+		
+		return (List<Relationship>) cache.get("STRUCT" + struct.getInode(), primaryGroup);
+		
+	}
+	@Override
+	public void putRelationshipsByStruct(Structure struct, List<Relationship> rels)  {
+		cache.put("STRUCT" + struct.getInode(), rels, primaryGroup);
+	}
+	@Override
+	public void removeRelationshipsByStruct(Structure struct)  {
+		cache.remove("STRUCT" + struct.getInode(), primaryGroup);
+	}
+	
 	@Override
 	public void clearCache() {
 		for(String g : groupNames)

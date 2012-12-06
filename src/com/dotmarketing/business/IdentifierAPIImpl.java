@@ -37,8 +37,16 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 	
 	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
-		Identifier ident = null;
-		ident = ifac.loadFromCache(inodeOrIdentifier);
+		Identifier ident = ifac.loadFromCache(inodeOrIdentifier);
+
+		
+		if(ident ==null){
+			// try to load it from a id first, then by a proxy Inode
+			Contentlet proxy = new Contentlet();
+			proxy.setInode(inodeOrIdentifier);
+			ident = ifac.loadFromCache(proxy);
+		}
+		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
 			try {
 				Contentlet con = conAPI.find(inodeOrIdentifier, APILocator.getUserAPI().getSystemUser(), false);
@@ -59,11 +67,13 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 			Logger.debug(this, "Unable to find inodeOrIdentifier as identifier : ", e);
 		}
 
+		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
-			return ident = ifac.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
-		} else {
-			return ident;
-		}
+			 ident = ifac.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
+		} 
+		
+		return ident;
+		
 	}
 
 	public Identifier find(String identifier) throws DotDataException {
@@ -72,7 +82,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 
 	public Identifier find(Versionable versionable) throws DotDataException {
-		if (versionable == null || !InodeUtils.isSet(versionable.getVersionId())) {
+		if (versionable == null || (!InodeUtils.isSet(versionable.getVersionId()) && !InodeUtils.isSet(versionable.getInode()))) {
 			throw new DotStateException("Versionable is null");
 		}
 		return ifac.find(versionable);
