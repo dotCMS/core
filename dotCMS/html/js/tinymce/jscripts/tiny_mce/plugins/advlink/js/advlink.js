@@ -375,7 +375,7 @@ function getAnchorListHTML(id, target) {
 	var ed = tinyMCEPopup.editor, nodes = ed.dom.select('a'), name, i, len, html = "";
 
 	for (i=0, len=nodes.length; i<len; i++) {
-		if ((name = ed.dom.getAttrib(nodes[i], "name")) != "")
+		if ((name = ed.dom.getAttrib(nodes[i], "id")) != "")
 			html += '<option value="#' + name + '">' + name + '</option>';
 	}
 
