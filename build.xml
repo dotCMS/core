@@ -143,7 +143,7 @@
 
 	<target name="compile-anttasks" depends="prepare" description="Compiles source code need for clean and deploy plugins.">
 		<mkdir dir="${build.ant}" />
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.ant}"
+		<javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.ant}"
 			source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 			memoryinitialsize="256m" memorymaximumsize="512m" >
 			<classpath refid="files-classpath" />
@@ -155,7 +155,7 @@
 
 	<target name="compile-log4jappends" depends="prepare" description="Compiles source code need for our async appender.">
 		<mkdir dir="${build.log4j}" />
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}"
+		<javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}"
 			source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 			memoryinitialsize="256m" memorymaximumsize="512m" >
 			<classpath refid="files-classpath" />
@@ -304,7 +304,7 @@
              outputDir="${src.jsp}/">
 
 		</jasper2>
-		<javac debug="true" debuglevel="lines,vars,source"
+		<javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8" 
 		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.6"
 		target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 		memoryinitialsize="256m" memorymaximumsize="512m">
@@ -721,7 +721,7 @@
 </target>
 
 <target name="compile-tests" depends="prepare,compile,deploy-config" description="Compiles all test source code.">
-	<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+	<javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
 		<classpath refid="files-classpath" />
 	</javac>
 	<copy todir="${build.classes}">
@@ -938,7 +938,7 @@
 
 <target name="compile-autoupdater" depends="prepare" description="Compiles autoupdater source.">
 	<mkdir dir="${build.autoupdater}" />
-	<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}"
+	<javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}"
 				source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 				memoryinitialsize="256m" memorymaximumsize="512m" >
 				<classpath refid="files-classpath" />
