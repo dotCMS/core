@@ -25,6 +25,9 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
         if(info==null) {
         	//build it once
         	synchronized (this.getClass()) {
+        		if(conn == null){
+        			conn = DbConnectionFactory.getConnection();
+        		}
         		info=cache.get();
         		if(info==null) {
 		            info=new IndiciesInfo();
