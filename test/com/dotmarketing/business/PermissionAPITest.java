@@ -612,6 +612,8 @@ public class PermissionAPITest extends TestBase {
             Folder b = APILocator.getFolderAPI().createFolders("/a/b/", hh, sysuser, false);
             Folder c = APILocator.getFolderAPI().createFolders("/a/b/c/", hh, sysuser, false);
 
+            perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), a, sysuser, false);
+            
             String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
             HTMLPage pa=new HTMLPage();

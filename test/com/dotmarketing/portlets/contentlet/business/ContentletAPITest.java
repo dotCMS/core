@@ -1697,7 +1697,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         cont.setIdentifier(identifier);
         
         Contentlet saved = contentletAPI.checkin(cont, user, false);
-        contentlets.add(saved);
+        //contentlets.add(saved);
         
         assertEquals(saved.getInode(), inode);
         assertEquals(saved.getIdentifier(), identifier);
