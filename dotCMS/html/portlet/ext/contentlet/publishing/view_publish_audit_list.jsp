@@ -208,11 +208,10 @@
 			
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 				
-					<%=c.getBundleId()%>
+					<%=c.getBundleId().split("-")[0]%>...
 				</td>
 				<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 					<%try{ %>
-		
 						<span class="contentIncSpan">
 						<%for(int i =0 ;i < c.getStatusPojo().getAssets().size();i++){ %>
 							<%=APILocator.getContentletAPI().findContentletByIdentifier(c.getStatusPojo().getAssets().get(i), false,APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false ).getTitle() %>
@@ -224,7 +223,7 @@
 					
 					<%} %>
 				</td>
-			    <td valign="top" nowrap="nowrap" align="center"><%=c.getStatus().toString() %></td>
+			    <td valign="top" nowrap="nowrap" align="center"><%=LanguageUtil.get(pageContext, "publisher_status_" + c.getStatus().toString()) %></td>
 			    <td valign="top" nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(c.getCreateDate(),"MM/dd/yyyy hh:mma") %></td>
 			    <td valign="top" nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
 			</tr>

@@ -1,4 +1,4 @@
-package com.dotcms.publisher.myTest.bundler;
+package com.dotcms.publisher.pusher.bundler;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -6,13 +6,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublisherAPI;
-import com.dotcms.publisher.myTest.FolderWrapper;
-import com.dotcms.publisher.myTest.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.wrapper.FolderWrapper;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
@@ -62,10 +63,10 @@ public class FolderBundler implements IBundler {
 	@Override
 	public void generate(File bundleRoot, BundlerStatus status)
 			throws DotBundleException {
-		if(LicenseUtil.getLevel()<200)
-	        throw new RuntimeException("need an enterprise license to run this bundler");
+		if(LicenseUtil.getLevel()<400)
+	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 
-		List<String> folders = config.getFolders();
+		Set<String> folders = config.getFolders();
 		
 		try {
 			for (String folder : folders) {

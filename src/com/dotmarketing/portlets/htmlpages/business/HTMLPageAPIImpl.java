@@ -306,6 +306,10 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	private void save(HTMLPage htmlPage) throws DotDataException, DotStateException, DotSecurityException {
 		htmlPageFactory.save(htmlPage);
 	}
+	
+	private void save(HTMLPage htmlPage, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
+        htmlPageFactory.save(htmlPage, existingInode);
+    }
 
 	protected void save(WebAsset webAsset) throws DotDataException, DotStateException, DotSecurityException {
 		save((HTMLPage) webAsset);
@@ -337,6 +341,9 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		}
 
 		try {
+		    newHtmlPage.setModUser(user.getUserId());
+		    newHtmlPage.setModDate(new Date());
+		    
 			boolean previousShowMenu = false;
 
 			// parent identifier for this file
@@ -354,7 +361,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 			// get an identifier based on this new uri
 			Identifier testIdentifier = (Identifier) APILocator.getIdentifierAPI().find(host, newHtmlPage.getURI(parentFolder));
-
+			
 			// if this is a new htmlpage and there is already an identifier with
 			// this uri, return
 			if ((existingHTMLPage != null) && !InodeUtils.isSet(existingHTMLPage.getInode()) && InodeUtils.isSet(testIdentifier.getInode())) {
@@ -377,14 +384,41 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 				newHtmlPage.setTemplateId(templateIdentifier.getInode());
 			}
+			
+			boolean existingIdentifier=false;
+			Identifier currentIdentifier=null;
+			if(UtilMethods.isSet(newHtmlPage.getIdentifier())) {
+			    currentIdentifier=APILocator.getIdentifierAPI().find(newHtmlPage.getIdentifier());
+			    existingIdentifier = currentIdentifier==null || !UtilMethods.isSet(currentIdentifier.getId());
+			}
+			
+			boolean existingInode=false;
+            if(InodeUtils.isSet(newHtmlPage.getInode())) {
+                try {
+                    HTMLPage existing=(HTMLPage) HibernateUtil.load(HTMLPage.class, newHtmlPage.getInode());
+                    existingInode= existing==null || !UtilMethods.isSet(existing.getInode());
+                } catch (Exception ex) {
+                    existingInode=true;
+                }
+            }
+			
 			// Versioning
 			if (pageExists) {
 				// Creation the version asset
+			    
+			    newHtmlPage.setIdentifier(identifier.getId());
+			    
+			    if(existingInode)
+			        save(newHtmlPage,newHtmlPage.getInode());
+			    else
+			        save(newHtmlPage);
+			    APILocator.getVersionableAPI().setWorking(newHtmlPage);
+			    
 				createAsset(newHtmlPage, user.getUserId(), parentFolder, identifier, false);
 				HibernateUtil.flush();
 
 				LiveCache.removeAssetFromCache(existingHTMLPage);
-				newHtmlPage = (HTMLPage) saveAsset(newHtmlPage, identifier, user, false);
+				APILocator.getVersionableAPI().setWorking(newHtmlPage);
 
 				// if we need to update the identifier
 				if (InodeUtils.isSet(parentFolder.getInode())
@@ -407,7 +441,19 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 			} // Creating the new page
 			else {
-				createAsset(newHtmlPage, user.getUserId(), parentFolder);
+			    Identifier ident= (currentIdentifier!=null && UtilMethods.isSet(currentIdentifier.getId())) ?
+			                           currentIdentifier : 
+			                 (existingIdentifier ? 
+			                        APILocator.getIdentifierAPI().createNew(newHtmlPage, parentFolder, newHtmlPage.getIdentifier()) :
+			                        APILocator.getIdentifierAPI().createNew(newHtmlPage, parentFolder));
+			    ident=APILocator.getIdentifierAPI().save(ident);
+			    
+			    newHtmlPage.setIdentifier(ident.getId());
+			    if(existingInode)
+			        save(newHtmlPage, newHtmlPage.getInode());
+			    else
+			        save(newHtmlPage);
+				
 			}
 
 

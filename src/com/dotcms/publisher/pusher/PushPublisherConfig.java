@@ -1,7 +1,9 @@
-package com.dotcms.publisher.myTest;
+package com.dotcms.publisher.pusher;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publishing.PublisherConfig;
@@ -92,31 +94,47 @@ public class PushPublisherConfig extends PublisherConfig {
 	
 
 	@SuppressWarnings("unchecked")
-	public List<String> getContainers() {
-		return (List<String>) get(AssetTypes.CONTAINERS.name());
+	public Set<String> getContainers() {
+		if(get(AssetTypes.CONTAINERS.name()) == null){
+			Set<String> containersToBuild =   new HashSet<String>();
+			put(AssetTypes.CONTAINERS.name(), containersToBuild);
+		}
+		
+		return (Set<String>) get(AssetTypes.CONTAINERS.name());
 	
 	}
 	@SuppressWarnings("unchecked")
-	public List<String> getTemplates() {
-		return (List<String>) get(AssetTypes.TEMPLATES.name());
+	public Set<String> getTemplates() {
+		if(get(AssetTypes.TEMPLATES.name()) == null){
+			Set<String> templatesToBuild =   new HashSet<String>();
+			put(AssetTypes.TEMPLATES.name(), templatesToBuild);
+		}
+
+		return (Set<String>) get(AssetTypes.TEMPLATES.name());
 	
 	}
 	@SuppressWarnings("unchecked")
-	public List<String> getHTMLPages() {
-		return (List<String>) get(AssetTypes.HTMLPAGES.name());
-	
+	public Set<String> getHTMLPages() {
+		if(get(AssetTypes.HTMLPAGES.name()) == null){
+			Set<String> htmlPagesToBuild =   new HashSet<String>();
+			put(AssetTypes.HTMLPAGES.name(), htmlPagesToBuild);
+		}
+
+		
+		
+		return (Set<String>) get(AssetTypes.HTMLPAGES.name());
 	}
 	
 
-	public void setHTMLPages(List<String> folders) {
-		put(AssetTypes.HTMLPAGES.name(), folders);
+	public void setHTMLPages(Set<String> htmlPages) {		
+		put(AssetTypes.HTMLPAGES.name(), htmlPages);
 	}
 	
-	public void setContainers(List<String> containers) {
+	public void setContainers(Set<String> containers) {
 		put(AssetTypes.CONTAINERS.name(), containers);
 	}
 	
-	public void setTemplates(List<String> templates) {
+	public void setTemplates(Set<String> templates) {
 		put(AssetTypes.TEMPLATES.name(), templates);
 	}
 }

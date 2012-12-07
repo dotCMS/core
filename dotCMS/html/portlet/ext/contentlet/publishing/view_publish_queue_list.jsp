@@ -214,7 +214,7 @@
 			
 			
 				<div style="float:right;">
-					<%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <span style="color:gray;font-weight: normal;"><%=bundle.get("bundle_id") %></span>
+					<%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <span style="color:gray;font-weight: normal;"><%=bundle.get("bundle_id").toString().split("-")[0] %>...</span>
 				</div>
 			
 			
