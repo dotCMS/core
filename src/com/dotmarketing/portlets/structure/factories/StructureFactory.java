@@ -365,6 +365,14 @@ public class StructureFactory {
 		structure.setiDate(now);
 		HibernateUtil.saveOrUpdate(structure);
 	}
+	
+	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
+	{
+		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
+		Date now = new Date();
+		structure.setiDate(now);
+		HibernateUtil.saveWithPrimaryKey(structure, existingId);
+	}
 
 	//### DELETE ###
 	public static void deleteStructure(String inode) throws DotHibernateException, DotDataException

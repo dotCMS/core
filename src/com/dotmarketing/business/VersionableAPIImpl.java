@@ -392,6 +392,11 @@ public class VersionableAPIImpl implements VersionableAPI {
 	}
 	
 	@Override
+	public void saveVersionInfo(VersionInfo vInfo) throws DotDataException, DotStateException {
+		vfac.saveVersionInfo(vInfo);
+	}
+	
+	@Override
 	public void saveContentletVersionInfo( ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
 		ContentletVersionInfo info = vfac.findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
 		if(info == null){
@@ -428,6 +433,11 @@ public class VersionableAPIImpl implements VersionableAPI {
 	@Override
 	public void removeContentletVersionInfoFromCache(String identifier, long lang) {
 		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(identifier, lang);
+	}
+
+	@Override
+	public void removeVersionInfoFromCache(String identifier) {
+		CacheLocator.getIdentifierCache().removeVersionInfoFromCache(identifier);
 	}
 	
 }
