@@ -18,6 +18,7 @@ public interface ContainerFactory {
 	 * @throws DotDataException
 	 */
 	public void save(Container container) throws DotDataException;
+	public void save(Container container, String existingId) throws DotDataException;
 	
     /**
      * Finds all containers attached to a host

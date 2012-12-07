@@ -38,10 +38,13 @@ import com.liferay.portal.model.User;
 public class HTMLPageFactoryImpl implements HTMLPageFactory {
 	static HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
 
-	public void save(HTMLPage htmlPage) throws DotDataException, DotStateException, DotSecurityException {
+	public void save(HTMLPage htmlPage, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
 	    CacheLocator.getIdentifierCache().removeFromCacheByVersionable(htmlPage);
 		
-	    HibernateUtil.save(htmlPage);
+	    if(existingInode!=null)
+	        HibernateUtil.saveWithPrimaryKey(htmlPage, existingInode);
+	    else
+	        HibernateUtil.save(htmlPage);
 
 		htmlPageCache.remove(htmlPage);
 
@@ -53,6 +56,10 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 			LiveCache.addToLiveAssetToCache(htmlPage);
 		}
 	}
+	
+	public void save(HTMLPage htmlPage) throws DotDataException, DotStateException, DotSecurityException {
+        save(htmlPage,null);
+    }
 
 	public HTMLPage getLiveHTMLPageByPath(String path, Host host) throws DotDataException, DotSecurityException {
 	    return getLiveHTMLPageByPath (path, host.getIdentifier());

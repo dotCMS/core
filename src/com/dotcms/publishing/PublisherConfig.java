@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,6 @@ import java.util.Set;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -33,17 +33,25 @@ public class PublisherConfig implements Map<String, Object> {
 	private boolean liveOnly = true;
 
 	@SuppressWarnings("unchecked")
-	public List<String> getFolders() {
-		return (List<String>) params.get(Config.FOLDERS.name());
+	public Set<String> getFolders() {
+		if(get(Config.FOLDERS.name()) == null){
+			Set<String> foldersToBuild =   new HashSet<String>();
+			params.put(Config.FOLDERS.name(), foldersToBuild);
+		}
+		return (Set<String>) params.get(Config.FOLDERS.name());
 	}
 
-	public void setFolders(List<String> folders) {
+	public void setFolders(Set<String> folders) {
 		params.put(Config.FOLDERS.name(), folders);
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<Structure> getStructures() {
-		return (List<Structure>) params.get(Config.STRUCTURES.name());
+	public Set<String> getStructures() {
+		if(get(Config.STRUCTURES.name()) == null){
+			Set<String> structsToBuild =   new HashSet<String>();
+			params.put(Config.STRUCTURES.name(), structsToBuild);
+		}
+		return (Set<String>) params.get(Config.STRUCTURES.name());
 	}
 	public boolean makeBundle() {
 		return (Boolean) params.get(Config.MAKE_BUNDLE.name());
@@ -65,7 +73,7 @@ public class PublisherConfig implements Map<String, Object> {
 		this.liveOnly = liveOnly;
 	}
 	
-	public void setStructures(List<Structure> structures) {
+	public void setStructures(Set<String> structures) {
 		params.put(Config.STRUCTURES.name(), structures);
 	}
 	

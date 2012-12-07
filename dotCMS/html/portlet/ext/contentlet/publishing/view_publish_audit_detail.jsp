@@ -28,7 +28,10 @@
 </script>
 
 
-<h3><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Status") %>: <%=PublishAuditStatus.getStatusByCode(status) %></h3>
+<h3><%= LanguageUtil.get(pageContext, "status") %>: <%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(status))%></h3>
+<div style="padding-left:10px;font-size: small;color: gray;">
+	<b>id</b>: <%=bundleId %>
+</div>
 <div style="width: 350px; margin:20px 15px 20px 2px; text-align: left;" class="callOutBox2">            
 		
     	<table class="listingTable shadowBox">
@@ -69,42 +72,30 @@
 
 <%
 	if(currentEndpointHistory.getEndpointsMap().size()>0) {
-
 		for(String groupkey : currentEndpointHistory.getEndpointsMap().keySet()) {
 			Map<String, EndpointDetail> groupMap = currentEndpointHistory.getEndpointsMap().get(groupkey);
 			
 			for(String key : groupMap.keySet()) {
 				EndpointDetail ed =  groupMap.get(key);
-				
-				
 				String serverName = key;
 				try{
-						
 					serverName = pepAPI.findEndpointById(key).getServerName().toString();
 				}
 				catch(Exception e){
 					
-				}
-			
-			
-			
-%>
-	<tr>
-		<td nowrap="nowrap"><%=serverName%></td>
-		<td><%=PublishAuditStatus.getStatusByCode(ed.getStatus())%></td>
-		<td><%=ed.getInfo()%></td>
-	</tr>	
-<%				
-			}
-		}
-	}else{
-%>	
-	<tr>
-		<td colspan="5" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
-	</tr>	
-<%
-	}
-%>
+				}%>
+				<tr>
+					<td nowrap="nowrap" valign="top"><%=serverName%></td>
+					<td valign="top"><%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(ed.getStatus()))%></td>
+					<td valign="top"><%=ed.getInfo()%></td>
+				</tr>	
+			<%}%>
+		<%}%>
+	<%}else{%>	
+		<tr>
+			<td colspan="5" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+		</tr>	
+	<%}%>
 </table>
 <%	} else { %>
 <div style="float: left; color: red; weight: bold;">
