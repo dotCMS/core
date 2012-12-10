@@ -339,9 +339,9 @@
 						</select> 
 						<select dojoType="dijit.form.FilteringSelect" name="reviewIntervalSelect"
 							id="reviewIntervalSelectId"  style="width: 110px" value="<%= UtilMethods.isSet(contentletForm.getReviewIntervalSelect()) ? contentletForm.getReviewIntervalSelect() : "" %>" >
-							<option value="d"><%= LanguageUtil.get(pageContext, "Day") %>(s)</option>
-							<option value="m"><%= LanguageUtil.get(pageContext, "Month") %>(s)</option>
-							<option value="y"><%= LanguageUtil.get(pageContext, "Year") %>(s)</option>
+							<option value="d"><%= LanguageUtil.get(pageContext, "Day(s)") %></option>
+							<option value="m"><%= LanguageUtil.get(pageContext, "Month(s)") %></option>
+							<option value="y"><%= LanguageUtil.get(pageContext, "Year(s)") %></option>
 						</select>
 					</div>
 				</div>

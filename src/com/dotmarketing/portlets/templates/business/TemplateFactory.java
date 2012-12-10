@@ -31,6 +31,7 @@ public interface TemplateFactory {
 	 * @throws DotDataException
 	 */
 	public void save(Template template) throws DotDataException;
+	void save(Template template, String existingId)throws DotDataException;
 	
 	/**
 	 * Delete template from cache.
