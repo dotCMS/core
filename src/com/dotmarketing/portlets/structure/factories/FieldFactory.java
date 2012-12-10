@@ -100,6 +100,11 @@ public class FieldFactory {
 		FieldsCache.removeFieldVariables(field);
 	}
 	
+	public static void saveField(Field field, String existingId) throws DotHibernateException
+	{
+		HibernateUtil.saveWithPrimaryKey(field, existingId);
+	}
+	
 	//### DELETE ###
 	public static void deleteField(String inode) throws DotHibernateException
 	{

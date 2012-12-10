@@ -16,6 +16,7 @@ import com.liferay.portal.model.User;
 public interface HTMLPageFactory {
 	
 	public void save(HTMLPage htmlPage) throws DotDataException, DotStateException, DotSecurityException;
+	public void save(HTMLPage htmlPage, String existingInode)throws DotDataException, DotStateException, DotSecurityException;
 	
 	public HTMLPage getLiveHTMLPageByPath(String path, Host host) throws DotDataException, DotSecurityException;
 	

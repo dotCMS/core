@@ -195,6 +195,10 @@ public class ESIndexAPI {
 	}
 
 	public boolean delete(String indexName) {
+		if(indexName==null) {
+			Logger.error(this.getClass(), "Failed to delete a null ES index");
+			return true;
+		}
 		try {
 			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 			DeleteIndexRequest req = new DeleteIndexRequest(indexName);

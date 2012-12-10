@@ -507,7 +507,8 @@ public class FolderAPIImpl implements FolderAPI  {
 				|| !papi.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
 			throw new DotSecurityException("User " + user + " does not have permission to add to " + name);
 		}
-
+		
+		
 		ffac.save(folder, existingId);
 
 	}
