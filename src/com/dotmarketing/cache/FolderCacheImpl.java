@@ -82,7 +82,7 @@ public class FolderCacheImpl extends FolderCache {
 	
 	
 	private String cleanPath(String path){
-		return (path.length() >1) ? 
+		return (path != null && path.length() >1) ? 
 				(path.endsWith("/"))
 					? path.substring(0,path.length()-1)
 							: path
