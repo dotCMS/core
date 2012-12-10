@@ -8,6 +8,8 @@ import java.math.BigInteger;
 import org.junit.Test;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 
 public class DotCMSCMISTest extends CMISBaseTest {
@@ -26,6 +28,7 @@ public class DotCMSCMISTest extends CMISBaseTest {
 
         assertNotNull(createFile("test.txt", folderId));
         
-        //assertTrue( ! doQuery("select * from webPageContent WHERE title LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
+        assertTrue( ! doQuery("select * from webPageContent WHERE title LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
+        
     }
 }
