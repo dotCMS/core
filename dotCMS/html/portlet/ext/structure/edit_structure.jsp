@@ -604,9 +604,9 @@ function disableFormFields(){
 							<%}%>
 						</select>
 						<select dojoType="dijit.form.FilteringSelect" name="reviewIntervalSelect" id="reviewIntervalSelectId" style="width: 100px" value="<%= UtilMethods.isSet(form.getReviewIntervalSelect()) ? form.getReviewIntervalSelect() : "" %>" >
-							<option value="d"><%= LanguageUtil.get(pageContext, "Day") %></option>
-							<option value="m"><%= LanguageUtil.get(pageContext, "Month") %></option>
-							<option value="y"><%= LanguageUtil.get(pageContext, "Year") %></option>
+							<option value="d"><%= LanguageUtil.get(pageContext, "Day(s)") %></option>
+							<option value="m"><%= LanguageUtil.get(pageContext, "Month(s)") %></option>
+							<option value="y"><%= LanguageUtil.get(pageContext, "Year(s)") %></option>
 						</select>
 					</dd>
 					<dd>
