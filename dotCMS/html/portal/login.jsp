@@ -184,7 +184,7 @@ if(errorMessage != null){
 	       dojo.style(myDialog.closeButtonNode, "visibility", "hidden"); 
 	       myDialog.tabStart = dojo.byId("loginPasswordTextBox");
 	       myDialog.show();
-	       setTimeout("dijit.byId('loginPasswordTextBox').focus()",200);
+	       setTimeout("dijit.byId('loginTextBox').focus()",200);
 	}
    
 	function showForgot(){
