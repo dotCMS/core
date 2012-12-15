@@ -50,9 +50,9 @@
 	var categoriesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Category")) %>';
 
 	<%if(UtilMethods.isSet(request.getAttribute("ViewingUserRole"))){%>
-		var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "this-pageContext")) %>';
+		var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "this-user")) %>';
 	<%}else{%>
-		var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name")) %>';
+		var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "this-role")) %>';
 	<%}%>
 
 	//Global vars
