@@ -13,7 +13,9 @@
 <style type="text/css">
 @import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 @import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
+<%-- 404: no such file in dojo 1.8
 @import "<%=dojoPath%>/dojox/grid/resources/blankGrid.css?b=<%= ReleaseInfo.getVersion() %>";
+--%>
 
 /*Grid need a explicit width/height by default*/
 #addedGrid<%=counter%> { width: 43em; height:
@@ -343,7 +345,7 @@
 				<button dojoType="dijit.form.Button" onclick="doSearch<%=counter%>();" type="button" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
 				<button dojoType="dijit.form.Button" onclick="clearCatFilter<%=counter%>()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 				<div id="all<%=counter%>" style="margin-top: 10px; margin-left: 50px; ">
-				<a href="javascript:delAll<%=counter%>()" style="font-size:11px">Delete All</a>
+				<a href="javascript:delAll<%=counter%>()" style="font-size:11px"><%= LanguageUtil.get(pageContext, "Delete-All") %></a>
 		</div>
 		</div>
 
