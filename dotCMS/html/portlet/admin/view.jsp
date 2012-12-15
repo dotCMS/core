@@ -154,7 +154,7 @@ dt{font-size:12px;padding-top:12px;}
 		</dl>
 		
 
-    <div id="colorPicker" data-dojo-type="dijit.Dialog" title=Color Picker">
+    <div id="colorPicker" data-dojo-type="dijit.Dialog" title='<%= LanguageUtil.get(pageContext, "Color-Picker") %>'>
 		<div id="pickerLive" dojoType="dojox.widget.ColorPicker"
 			webSafe="false"
 			liveUpdate="true"
@@ -163,7 +163,7 @@ dt{font-size:12px;padding-top:12px;}
 		</div>
 	</div>
 	
-	<div id="bgPicker" data-dojo-type="dijit.Dialog" title=Backgrounds">
+	<div id="bgPicker" data-dojo-type="dijit.Dialog" title='<%= LanguageUtil.get(pageContext, "Backgrounds") %>'>
 		<table class="bgThumbnail">
 			<tr>
 				<td><div><a href="#" onclick="imgSwap('/html/images/backgrounds/bg-1.jpg'); dijit.byId('bgPicker').hide();"><img src="/html/images/backgrounds/bg-1-sm.jpg" width="75" height="47"></a></div></td>
