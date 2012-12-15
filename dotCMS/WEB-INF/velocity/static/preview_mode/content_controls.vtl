@@ -48,11 +48,11 @@
 
 <!-- START REORDER BUTTON -->
 	<div class="dotMoveContent">	
-		#if($STATIC_CONTAINER && $USE_CONTAINER_PERMISSION && $ADD_CHILDREN_HTMLPAGE_PERMISSION && $CONTAINER_MAX_CONTENTLETS > 1  && $CONTAINER_NUM_CONTENTLETS > 1)
-			<a class="dotMoveContentUp" href="javascript:parent.moveUp('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
+		#if($STATIC_CONTAINER && $USE_CONTAINER_PERMISSION && $ADD_CHILDREN_HTMLPAGE_PERMISSION && $CONTAINER_MAX_CONTENTLETS > 1 && $CONTAINER_NUM_CONTENTLETS > 1)
+			<a class="dotMoveContentUp" href="javascript:parent.moveUp('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');" title='$languagewebapi.getFromUserLanguage("modes.Move-Content-Up")'>
 				<!-- $langbackendwebapi.get("modes.Move-Content-Up") -->
 			</a>
-			<a class="dotMoveContentDown" href="javascript:parent.moveDown('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
+			<a class="dotMoveContentDown" href="javascript:parent.moveDown('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');" title='$languagewebapi.getFromUserLanguage("modes.Move-Content-Down")'>
 				<!-- $langbackendwebapi.get("modes.Move-Content-Down") -->
 			</a>
 		#else
@@ -60,11 +60,11 @@
 			<span class="dotMoveContentDownDisabled"> <!-- $langbackendwebapi.get("modes.Move-Content-Down") --> </span>
 		#end
 		#if($ADD_CHILDREN_HTMLPAGE_PERMISSION && $USE_CONTAINER_PERMISSION && $STATIC_CONTAINER  && $CONTAINER_NUM_CONTENTLETS > 0)
-			<a class="dotRemoveContent" href="javascript: parent.removeContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">
+			<a class="dotRemoveContent" href="javascript: parent.removeContentlet('$CONTAINER_INODE', '$CONTENT_INODE');" title='$languagewebapi.getFromUserLanguage("modes.Remove-Content")'>
 				<!-- $langbackendwebapi.get("modes.Remove-Content") -->
 			</a>
 		#else
-			<span class="dotRemoveContent"> <!-- $langbackendwebapi.get("modes.Remove-Content") --> </span>
+			<span class="dotRemoveContent" title='$languagewebapi.getFromUserLanguage("modes.Remove-Content")'> <!-- $langbackendwebapi.get("modes.Remove-Content") --> </span>
 		#end
 	</div>
 <!-- END REORDER BUTTON -->
