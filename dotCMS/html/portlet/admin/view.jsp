@@ -125,23 +125,23 @@ dt{font-size:12px;padding-top:12px;}
 			<dd><input dojoType="dijit.form.TextBox" name="<portlet:namespace />company_email_address" size="20" type="text" value="<%= company.getEmailAddress() %>"></dd>
 
 			
-			<dt>Background Color</dt>
+			<dt><%= LanguageUtil.get(pageContext, "Background-Color") %></dt>
 			<dd style="position:relative;">
 				<div id="colorBlock" style="position:absolute;left:154px;border-left:1px solid #b3b3b3;top:9px;width:50px;height:26px;display:inline-block;margin:0 0 -5px; 10px;"></div>
 				<input id="bgColor" dojoType="dijit.form.TextBox" name="<portlet:namespace />company_size" size="5" type="text" value="<%= company.getSize() %>">
 				<button id="buttonOne" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
-					Color Picker
+					<%= LanguageUtil.get(pageContext, "Color-Picker") %>
 				    <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
 				        dijit.byId("colorPicker").show();
 				    </script>
 				</button>
 			</dd>
 		
-			<dt>Background Image</dt>
+			<dt><%= LanguageUtil.get(pageContext, "Background-Image") %></dt>
 			<dd>
 				<input id="bgURL" dojoType="dijit.form.TextBox" name="<portlet:namespace />company_home_url" size="25" type="text" value="<%= company.getHomeURL() %>">
 				<button id="buttonTwo" dojoType="dijit.form.Button" type="button" iconClass="bgIcon">
-					Backgrounds
+					<%= LanguageUtil.get(pageContext, "Backgrounds") %>
 				    <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
 				        dijit.byId("bgPicker").show();
 				    </script>
