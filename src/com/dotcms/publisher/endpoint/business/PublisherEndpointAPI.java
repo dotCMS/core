@@ -21,6 +21,13 @@ public interface PublisherEndpointAPI {
 	List<PublishingEndPoint> getAllEndpoints() throws DotDataException;
 	
 	/**
+	 * Returns Sending endpoints configured into the system.
+	 * 
+	 * 
+	 */
+	List<PublishingEndPoint> getReceivingEndpoints() throws DotDataException;
+	
+	/**
 	 * Returns the single endpoint by id. Null otherwise. 
 	 * 
 	 * Oct 29, 2012 - 10:07:36 AM

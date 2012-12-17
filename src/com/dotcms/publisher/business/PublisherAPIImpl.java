@@ -7,6 +7,8 @@ import java.util.Map;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -76,18 +78,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 						dc.setSQL(OCLINSERTSQL);
 					}
 					
+					Identifier iden = APILocator.getIdentifierAPI().find(identifier);
+					
 					dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
 					dc.addObject(identifier); //asset
-					dc.addParam(new Date());
-					dc.addObject(1);
+					dc.addParam(new Date()); // entered date
+					dc.addObject(1); // language id
 					dc.addParam(false);	//in error field
 					
 					//TODO How do I get new columns value?	
 					dc.addParam(publishDate);
-					dc.addObject(null);
-					dc.addObject(null);
+					dc.addObject(null); // server id
+					dc.addObject(iden.getAssetType()); // type
 					dc.addObject(bundleId);
-					dc.addObject(null);
+					dc.addObject(null); // target
 					
 					dc.loadResult();	
 				}

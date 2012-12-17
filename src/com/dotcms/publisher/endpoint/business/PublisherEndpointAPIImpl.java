@@ -32,6 +32,10 @@ public class PublisherEndpointAPIImpl implements PublisherEndpointAPI {
 		return publisherEndpointFactory.getEndpoints();
 	}
 	
+	public List<PublishingEndPoint> getReceivingEndpoints() throws DotDataException{		
+		return publisherEndpointFactory.getReceivingEndpoints();
+	}
+	
 	/**
 	 * Returns a single endpoint based on id.
 	 */
