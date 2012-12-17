@@ -65,7 +65,7 @@ public class LoginFactory {
             if(useSalesForceLoginFilter){
             	String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
             	Logger.info(LoginFactory.class, "Try to retrieve user from SalesForce with id: " + decryptedId);
-            	User newUser = SalesForceUtils.migrateUserFromSalesforce(decryptedId, request,  response);
+            	User newUser = SalesForceUtils.migrateUserFromSalesforce(decryptedId, request,  response, true);
 
             	if(UtilMethods.isSet(newUser)){
             		 User user = null;
@@ -181,6 +181,7 @@ public class LoginFactory {
 	            match = user.getPassword().equals(password) || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
 	            
 	            if (match) {
+	            	user = SalesForceUtils.migrateUserFromSalesforce(userName, request,  response, false);
 	            	user.setLastLoginDate(new java.util.Date());
 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 	            } else {

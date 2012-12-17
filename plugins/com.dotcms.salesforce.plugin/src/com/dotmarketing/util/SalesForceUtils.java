@@ -223,12 +223,19 @@ public class SalesForceUtils {
 	}	
 	
 	
-	public static User migrateUserFromSalesforce(String emailAddress, HttpServletRequest request, HttpServletResponse response){
+	public static User migrateUserFromSalesforce(String emailAddress, HttpServletRequest request, HttpServletResponse response, boolean isNewUser){
 		Map<String,String> userAttributes = retrieveUserInfoFromSalesforce(emailAddress, request, response);
 		User liferayUser = null;
+		
 		if(userAttributes.size()>0){
 			try {
-				liferayUser = userAPI.createUser("", emailAddress);
+				
+				systemUser = userAPI.getSystemUser();
+				
+				if(isNewUser)
+					liferayUser = userAPI.createUser("", emailAddress);
+				else
+					liferayUser = userAPI.loadByUserByEmail(emailAddress, systemUser, true);
 				liferayUser.setActive(true);
 				liferayUser.setFirstName(userAttributes.get("FirstName").toString());
 				liferayUser.setLastName(userAttributes.get("LastName").toString());
