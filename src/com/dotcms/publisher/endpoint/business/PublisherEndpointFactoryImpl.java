@@ -21,6 +21,16 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 			endpoints.add(PublisherUtil.getObjectByMap(row));
 		return endpoints;
 	}
+	
+	public List<PublishingEndPoint> getReceivingEndpoints() throws DotDataException {
+		List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
+		DotConnect dc = new DotConnect();
+		dc.setSQL(GET_RECEIVING_ENDPOINTS);
+		List<Map<String, Object>> res = dc.loadObjectResults();
+		for(Map<String, Object> row : res)
+			endpoints.add(PublisherUtil.getObjectByMap(row));
+		return endpoints;
+	}
 
 	public PublishingEndPoint getEndpointById(String id) throws DotDataException {
 		DotConnect dc = new DotConnect();

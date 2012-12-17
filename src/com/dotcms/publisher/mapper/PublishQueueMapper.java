@@ -18,6 +18,7 @@ public class PublishQueueMapper extends CommonRowMapper<PublishQueueElement> {
 		objToReturn.setOperation(getIntegerFromObj(row.get("operation")));
 		objToReturn.setPublishDate((Date) row.get("publish_date"));
 		objToReturn.setLanguageId(getIntegerFromObj(row.get("language_id")));
+		objToReturn.setType((String) row.get("type"));
 		
 		
 		

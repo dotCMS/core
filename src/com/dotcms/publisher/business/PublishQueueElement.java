@@ -10,6 +10,7 @@ public class PublishQueueElement {
 	private Date publishDate;
 	private String bundleId;
 	private Integer languageId;
+	private String type;
 	
 	
 	public Integer getId() {
@@ -54,4 +55,11 @@ public class PublishQueueElement {
 	public void setLanguageId(Integer languageId) {
 		this.languageId = languageId;
 	}
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
+	
 }

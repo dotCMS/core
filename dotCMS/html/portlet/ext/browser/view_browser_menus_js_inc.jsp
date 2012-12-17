@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.liferay.portal.util.Constants"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.dotmarketing.util.Config" %>
@@ -20,6 +21,16 @@
 <%@page import="com.dotmarketing.portlets.contentlet.model.*"%>
 <%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="java.util.List"%>
+
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
+
+<%
+PublisherEndpointAPI pepAPI;
+List<PublishingEndPoint> sendingEndpoints;
+%>
+
 <script src="/dwr/interface/UserAjax.js" type="text/javascript"></script>
 <script language="JavaScript"><!--
 
@@ -161,6 +172,13 @@
 		var write = hasWritePermissions(folder.permissions);
 		var publish = hasPublishPermissions(folder.permissions);
 		var addChildren = hasAddChildrenPermissions(folder.permissions);
+		var enterprise = <%=LicenseUtil.getLevel() > 199%> 
+		
+		<%
+			pepAPI = APILocator.getPublisherEndpointAPI();
+			sendingEndpoints = pepAPI.getReceivingEndpoints();
+		%>
+		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>
 
 		var strHTML = '';
 
@@ -180,6 +198,13 @@
 		    	strHTML += '<span class="folderGlobeIcon"></span>';
         		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publishall")) %>';
 			strHTML += '</a>';
+			
+			if(enterprise && sendingEndpoints) {
+				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublishFolder(\'' + objId + '\', \'' + referer + '\');">';
+			    	strHTML += '<span class="folderGlobeIcon"></span>';
+	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+				strHTML += '</a>';
+			}
 
 			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    	strHTML += '<span class="folderCopyIcon"></span>';
@@ -547,6 +572,7 @@
 		showPopUp('context_menu_popup_'+objId, e);
 	}
 
+	// HTMLPage popup
 	function showHTMLPagePopUp(page, cmsAdminUser, origReferer, e) {
 
 		var objId = page.inode;
@@ -565,6 +591,15 @@
 		var working = page.working;
 		var archived = page.deleted;
 		var locked = page.locked;
+		
+		var enterprise = <%=LicenseUtil.getLevel() > 199%> 
+		
+		<%
+			pepAPI = APILocator.getPublisherEndpointAPI();
+			sendingEndpoints = pepAPI.getReceivingEndpoints();
+		%>
+		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>
+
 
 		var strHTML = '';
 
@@ -602,6 +637,14 @@
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
 			}
 			strHTML += '</a>';
+			
+			if(enterprise && sendingEndpoints) {
+				strHTML += '<a href="javascript: remotePublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+		    	strHTML += '<span class="publishIcon"></span>';
+		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+				strHTML += '</a>';
+			}
+			
 		}
 
 		if (live && publish) {
