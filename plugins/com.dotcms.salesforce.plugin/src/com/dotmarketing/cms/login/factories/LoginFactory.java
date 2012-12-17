@@ -44,7 +44,10 @@ public class LoginFactory {
 
         try {
             String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
-            User user = APILocator.getUserAPI().loadUserById(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
+            //User user = APILocator.getUserAPI().loadUserById(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
+            /*Custom Code*/
+            User user = APILocator.getUserAPI().loadByUserByEmail(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
+            /* End of Custom Code */
             try {
                 String userName = user.getEmailAddress();
                 Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
@@ -58,11 +61,47 @@ public class LoginFactory {
             }
         } catch (Exception e) {
             Logger.error(LoginFactory.class, "AutoLogin Failed: " + e);
+            
+            if(useSalesForceLoginFilter){
+            	String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
+            	Logger.info(LoginFactory.class, "Try to retrieve user from SalesForce with id: " + decryptedId);
+            	User newUser = SalesForceUtils.migrateUserFromSalesforce(decryptedId, request,  response);
+
+            	if(UtilMethods.isSet(newUser)){
+            		 User user = null;
+            		 Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
+                     try {
+             			if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
+        	            	user = APILocator.getUserAPI().loadByUserByEmail(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
+        	            } else {
+        	            	user = APILocator.getUserAPI().loadUserById(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
+        	            }
+             			
+              	  		String instanceURL = request.getSession().getAttribute(SalesForceUtils.INSTANCE_URL).toString();
+              	  		String accessToken = request.getSession().getAttribute(SalesForceUtils.ACCESS_TOKEN).toString();
+            		
+                  	  	if(UtilMethods.isSet(accessToken) && UtilMethods.isSet(instanceURL)){
+                  	  		SalesForceUtils.syncRoles(user.getEmailAddress(), request, response, accessToken, instanceURL);
+                  	  	}
+                         
+                        SalesForceUtils.setUserValuesOnSession(user, request, response, true);
+                         
+                        return true;
+                         
+                     } catch (Exception ex) {
+                     	return false;
+                     }
+            	}
+            	else
+            		Logger.info(LoginFactory.class, "Unable to retrieve user from SalesForce with id: " + decryptedId);
+            		
         }
 
         doLogout(request, response);
 
         return false;
+        
+        }
     }
 
     /**
@@ -145,33 +184,41 @@ public class LoginFactory {
 	            	user.setLastLoginDate(new java.util.Date());
 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 	            } else {
-	            	user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
-	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
+	            	/*Custom code*/
+	            	if(useSalesForceLoginFilter && user.getPassword().equalsIgnoreCase(SalesForceUtils.PASSWORD)){
+	            		boolean saveSalesForceInfoInDotCMSLog = new Boolean (APILocator.getPluginAPI().loadProperty("com.dotcms.salesforce.plugin", "save_log_info_dotcms_log"));
+	            		boolean saveSalesForceInfoInUserActivityLog = new Boolean (APILocator.getPluginAPI().loadProperty("com.dotcms.salesforce.plugin", "save_log_info_useractivity_log"));
+	            		        		
+	            		boolean isBoundToSalesforceServer = SalesForceUtils.accessSalesForceServer(request, response, user.getEmailAddress());
+	            		
+	            		if(isBoundToSalesforceServer){
+	            			if(saveSalesForceInfoInDotCMSLog){
+	            				Logger.info(LoginFactory.class, "dotCMS-Salesforce Plugin: User " + user.getEmailAddress()  
+	            						+ " was able to connect to Salesforce server from IP: " + request.getRemoteAddr());
+	            			}
+	            			if(saveSalesForceInfoInUserActivityLog){
+	            				ActivityLogger.logInfo(LoginFactory.class, "dotCMS-Salesforce Plugin" , 
+	        		        			"User " + user.getEmailAddress()  +
+	        	        				" was able to connect to Salesforce server from IP: " + request.getRemoteAddr(), 
+	        	        				APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(),false).getHostname());
+	            			}
+                  	  		String instanceURL = request.getSession().getAttribute(SalesForceUtils.INSTANCE_URL).toString();
+                  	  		String accessToken = request.getSession().getAttribute(SalesForceUtils.ACCESS_TOKEN).toString();
+	            		
+	                  	  	if(UtilMethods.isSet(accessToken) && UtilMethods.isSet(instanceURL)){
+	                  	  		match = true;
+	                  	  	}
+	            		}
+	            	}
+	            	/* end of custom code*/
+	            	else{
+	            		match = false;
+		            	user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
+		            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
+		            	
+	            	}
 	            }
         	}
-        	
-        	/*Custom code*/
-        	if(useSalesForceLoginFilter){
-        		
-        		boolean saveSalesForceInfoInDotCMSLog = new Boolean (APILocator.getPluginAPI().loadProperty("com.dotcms.salesforce.plugin", "save_log_info_dotcms_log"));
-        		boolean saveSalesForceInfoInUserActivityLog = new Boolean (APILocator.getPluginAPI().loadProperty("com.dotcms.salesforce.plugin", "save_log_info_useractivity_log"));
-        		        		
-        		boolean isBoundToSalesforceServer = SalesForceUtils.accessSalesForceServer(request, response, user);
-        		
-        		if(isBoundToSalesforceServer){
-        			if(saveSalesForceInfoInDotCMSLog){
-        				Logger.info(LoginFactory.class, "dotCMS-Salesforce Plugin: User " + user.getEmailAddress()  
-        						+ " was able to connect to Salesforce server from IP: " + request.getRemoteAddr());
-        			}
-        			if(saveSalesForceInfoInUserActivityLog){
-        				ActivityLogger.logInfo(LoginFactory.class, "dotCMS-Salesforce Plugin" , 
-    		        			"User " + user.getEmailAddress()  +
-    	        				" was able to connect to Salesforce server from IP: " + request.getRemoteAddr(), 
-    	        				APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(),false).getHostname());
-        			}
-        		}
-        	}
-        	/* end of custom code*/
         	
             // if passwords match
             if (match) {
@@ -297,31 +344,6 @@ public class LoginFactory {
  	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
  	            }
         	}
-        	
-        	/*Custom code*/
-        	/*
-        	        	if(useSalesForceLoginFilter){
-        		
-        		boolean saveSalesForceInfoInDotCMSLog = new Boolean (APILocator.getPluginAPI().loadProperty("com.dotcms.salesforce.plugin", "save_log_info_dotcms_log"));
-        		boolean saveSalesForceInfoInUserActivityLog = new Boolean (APILocator.getPluginAPI().loadProperty("com.dotcms.salesforce.plugin", "save_log_info_useractivity_log"));
-        		        		
-        		boolean isBoundToSalesforceServer = SalesForceUtils.accessSalesForceServer(request, response, user);
-        		
-        		if(isBoundToSalesforceServer){
-        			if(saveSalesForceInfoInDotCMSLog){
-        				Logger.info(LoginFactory.class, "dotCMS-Salesforce Plugin: User " + user.getEmailAddress()  
-        						+ " was able to connect to Salesforce server from IP: " + request.getRemoteAddr()");
-        			}
-        			if(saveSalesForceInfoInUserActivityLog){
-        				ActivityLogger.logInfo(LoginFactory.class, "dotCMS-Salesforce Plugin" , 
-    		        			"User " + user.getEmailAddress()  +
-    	        				" was able to connect to Salesforce server from IP: " + request.getRemoteAddr()", 
-    	        				APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(),false).getHostname());
-        				}
-                  }
-        	}
-        	*/
-        	/* end of custom code*/
 
             // if passwords match
             if (match) {

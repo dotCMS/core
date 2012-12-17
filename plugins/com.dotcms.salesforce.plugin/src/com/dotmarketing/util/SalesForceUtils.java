@@ -1,13 +1,16 @@
 package com.dotmarketing.util;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
@@ -21,21 +24,27 @@ import org.apache.http.message.BasicNameValuePair;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-
 
 public class SalesForceUtils {
 	
 	private static PluginAPI pluginAPI = APILocator.getPluginAPI();
 	private static RoleAPI roleAPI = APILocator.getRoleAPI();
+	private static UserAPI userAPI = APILocator.getUserAPI();
 	public static User systemUser;
 	public static Host systemHost;
 	public static boolean saveSalesForceInfoInUserActivityLog;
@@ -43,8 +52,11 @@ public class SalesForceUtils {
 	
 	public static final String ACCESS_TOKEN = "salesforce.access.token";
 	public static final String INSTANCE_URL = "salesforce.instance.url";
+	public static final String PASSWORD = "dotCMSSalesForceFakePassword";
+	
+	public static Map<String,String> attributes = new HashMap<String,String>();
      
-    public static boolean accessSalesForceServer(HttpServletRequest request, HttpServletResponse response, User user) throws DotDataException, DotSecurityException{
+    public static boolean accessSalesForceServer(HttpServletRequest request, HttpServletResponse response, String login) throws DotDataException, DotSecurityException{
     	
     	systemUser = APILocator.getUserAPI().getSystemUser();
     	systemHost = APILocator.getHostAPI().findDefaultHost(systemUser, false);
@@ -52,23 +64,35 @@ public class SalesForceUtils {
 		saveSalesForceInfoInUserActivityLog = new Boolean (APILocator.getPluginAPI().loadProperty("com.dotcms.salesforce.plugin", "save_log_info_useractivity_log"));
 		
     	DefaultHttpClient client = new DefaultHttpClient();
+    	
+    	String requestUri = request.getRequestURI();
 
         try {
         	
           String salesForceTokenRequestURL = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_token_request_url");
           String salesForceGrantType = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_grant_type");
-          String salesForceClientId = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_client_id");
-          String salesForceClientSecret = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_client_secret");
           String salesForceUserName = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_username");
           String salesForcePassword = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_password");
           String salesForceAPISecurityToken = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_api_security_token");
+          
+          String clientId = "";
+          String clientSecret = "";
+          
+			if(requestUri.contains("/admin")){
+				clientId = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_client_id_backend");
+				clientSecret = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_client_secret_backend");
+			}
+			else if(requestUri.contains("/dotCMS/login")){
+				clientId = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_client_id_frontend");
+				clientSecret = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_client_secret_frontend");
+			}
           
           HttpPost post = new HttpPost(salesForceTokenRequestURL);
           
           List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
           nameValuePairs.add(new BasicNameValuePair("grant_type", salesForceGrantType));
-          nameValuePairs.add(new BasicNameValuePair("client_id", salesForceClientId));
-          nameValuePairs.add(new BasicNameValuePair("client_secret", salesForceClientSecret));
+          nameValuePairs.add(new BasicNameValuePair("client_id", clientId));
+          nameValuePairs.add(new BasicNameValuePair("client_secret", clientSecret));
           nameValuePairs.add(new BasicNameValuePair("username",salesForceUserName));
           nameValuePairs.add(new BasicNameValuePair("password", salesForcePassword + salesForceAPISecurityToken));
           post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
@@ -90,8 +114,8 @@ public class SalesForceUtils {
         	  String accessToken = json.getString("access_token");
         	  String instanceURL = json.getString("instance_url");
         	  if(UtilMethods.isSet(accessToken) && UtilMethods.isSet(instanceURL)){
-        		  setValuesOnSession(request, instanceURL, accessToken);
-        		  syncRoles(user,instanceURL, accessToken);
+        			request.getSession().setAttribute(INSTANCE_URL, accessToken);
+        	    	request.getSession().setAttribute(ACCESS_TOKEN, accessToken);
         	  }
         	  
         	  return true;
@@ -99,13 +123,13 @@ public class SalesForceUtils {
           catch (JSONException e){
 			if(saveSalesForceInfoInDotCMSLog){
 				Logger.error(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
-					+ "User " + user.getEmailAddress() + 
+					+ "User " + login + 
 					" was unable to connect to Salesforce server. "	+ e.getMessage());
 				
 			}
 			if(saveSalesForceInfoInUserActivityLog){
 				ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
-					"User " + user.getEmailAddress() + 
+					"User " + login + 
 					" was unable to connect to Salesforce server. "	+ e.getMessage(), 
 						systemHost.getHostname());
 			}
@@ -114,13 +138,13 @@ public class SalesForceUtils {
         } catch (Exception e) {
 			if(saveSalesForceInfoInDotCMSLog){
 				Logger.error(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
-						+ "User " + user.getEmailAddress() + 
+						+ "User " + login + 
 						" was unable to connect to Salesforce server. "	+ e.getMessage());
 				
 			}
 			if(saveSalesForceInfoInUserActivityLog){
 				ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
-						"User " + user.getEmailAddress() + 
+						"User " + login + 
 						" was unable to connect to Salesforce server. "	+ e.getMessage(), 
 						systemHost.getHostname());
 			}
@@ -129,20 +153,111 @@ public class SalesForceUtils {
         return false;
     }
     
-    
-	private static void setValuesOnSession(HttpServletRequest request, String instanceURL, String accessToken){
-    	
-		request.getSession().setAttribute(INSTANCE_URL, accessToken);
-    	request.getSession().setAttribute(ACCESS_TOKEN, accessToken);
+	public static void syncRoles(String emailAddress, HttpServletRequest request, HttpServletResponse response, String accessToken, String instanceURL) {
+		try{
+			
+			Map<String,String> userAttributes = retrieveUserInfoFromSalesforce(emailAddress, request, response);
+			
+			String RolesValues = userAttributes.get("RolesValues");
+	        
+	        if(UtilMethods.isSet(RolesValues)){
+	        	
+	        	String[] roleKeysToImport = RolesValues.split(";");
+	        	int rolesSynced = 0;
+	        	for(String roleKey: roleKeysToImport){
+	        		Role role = null;
+	        		try{
+	        			User user = APILocator.getUserAPI().loadByUserByEmail(emailAddress, APILocator.getUserAPI().getSystemUser(), false);
+	        			role = roleAPI.loadRoleByKey(roleKey);
+	        			if(UtilMethods.isSet(role) && !roleAPI.doesUserHaveRole(user, role)){
+	        				roleAPI.addRoleToUser(role, user);
+	        				rolesSynced++;
+	        			}
+	        		}
+	        		catch (Exception e){
+						if(saveSalesForceInfoInDotCMSLog){
+							Logger.error(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
+									+ "User " + emailAddress + 
+									" was unable to sync roles with Salesforce server. "	+ e.getMessage());
+							
+						}
+						if(saveSalesForceInfoInUserActivityLog){
+							ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
+									"User " + emailAddress + 
+									" was unable to sync roles with Salesforce server. "	+ e.getMessage(), 
+									systemHost.getHostname());
+						}
+			        }
+	        	}
+	        	if(rolesSynced > 0){
+					if(saveSalesForceInfoInDotCMSLog){
+						Logger.info(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
+								+ rolesSynced +" Roles for User " + emailAddress  +
+		        				" were synced with with Salesforce server.");
+						
+					}
+					if(saveSalesForceInfoInUserActivityLog){
+						ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
+								rolesSynced +" Roles for User " + emailAddress  +
+		        				" were synced with with Salesforce server.",  
+								systemHost.getHostname());
+					}
+	        	}
 
+	        }
+		}
+		catch (Exception e){
+			if(saveSalesForceInfoInDotCMSLog){
+				Logger.error(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
+						+ "User " + emailAddress + 
+						" was unable to sync roles with Salesforce server. "	+ e.getMessage());
+				
+			}
+			if(saveSalesForceInfoInUserActivityLog){
+				ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
+						"User " + emailAddress + 
+						" was unable to sync roles with Salesforce server. "	+ e.getMessage(), 
+						systemHost.getHostname());
+			}
+		}
+	}	
+	
+	
+	public static User migrateUserFromSalesforce(String emailAddress, HttpServletRequest request, HttpServletResponse response){
+		Map<String,String> userAttributes = retrieveUserInfoFromSalesforce(emailAddress, request, response);
+		User liferayUser = null;
+		if(userAttributes.size()>0){
+			try {
+				liferayUser = userAPI.createUser("", emailAddress);
+				liferayUser.setActive(true);
+				liferayUser.setFirstName(userAttributes.get("FirstName").toString());
+				liferayUser.setLastName(userAttributes.get("LastName").toString());
+				liferayUser.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
+				liferayUser.setPassword(SalesForceUtils.PASSWORD);
+				liferayUser.setCreateDate(new java.util.Date());
+				userAPI.save(liferayUser, userAPI.getSystemUser(), true);
+				return liferayUser;
+			} catch (DuplicateUserException e) {
+				Logger.error(SalesForceUtils.class, "Unable to add user " + liferayUser.getUserId() + " because it already exists on database");
+				return null;
+			} catch (Exception e) {
+				Logger.error(SalesForceUtils.class, "Unable to add user " + liferayUser.getUserId() , e);
+				return null;
+			}
+		} else{
+			return null;
+		}
 	}
 	
-	private static void syncRoles(User user, String instanceURL, String accessToken) {
+	public static Map<String,String> retrieveUserInfoFromSalesforce(String emailAddress, HttpServletRequest req, HttpServletResponse res){
+		
 		try{
 			
 			String salesforceSearchURL = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_url");
 			String salesforceSearchObject = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_object");
 			String salesforceSearchObjectField = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_object_field");
+			String accessToken = req.getSession().getAttribute(ACCESS_TOKEN).toString();
+			String instanceURL = req.getSession().getAttribute(INSTANCE_URL).toString();
 			
 			if(!UtilMethods.isSet(salesforceSearchURL)){
 				salesforceSearchURL = "/services/data/v26.0/search";
@@ -152,10 +267,14 @@ public class SalesForceUtils {
 				salesforceSearchObject = "CONTACT";
 			}
 			
-			String searchQuery = "FIND {" + user.getEmailAddress() + "} " 
-					+ "IN ALL FIELDS RETURNING " 
+			String searchQuery = "FIND {" 
+					+ emailAddress 
+					+ "} " 
+					+ "IN ALL FIELDS RETURNING USER(FirstName,LastName,Email,ContactId),"
 					+ salesforceSearchObject
-					+ "(" + salesforceSearchObjectField + ")";
+					+"("
+					+ salesforceSearchObjectField 
+					+")";
 			
 			searchQuery = UtilMethods.encodeURL(searchQuery);
 			
@@ -165,96 +284,94 @@ public class SalesForceUtils {
 	        	          
 	        method.setRequestHeader("Authorization", "Bearer " + accessToken);
 	          
-	        int res = httpclient.executeMethod(method); 
+	        int status = httpclient.executeMethod(method); 
 	        
-	        if(res == HttpStatus.SC_OK){
+	        if(status == HttpStatus.SC_OK){
 	        	
 	        	String result = method.getResponseBodyAsString();
 	        		        
 		        JSONArray jsonArray = null;
-		        String objectType = "";
-		        String value = "";
+		        String FirstNameValue = "";
+		        String LastNameValue = "";
+		        String ContactIdValue = "";
+		        String RolesValues="";
 		          
 		        try{
 		        	jsonArray = new JSONArray(result);
 		        	for(int i = 0; i < jsonArray.length(); i++) {
 		        		JSONObject tempJSON = jsonArray.getJSONObject(i);
-		        		value = tempJSON.get(salesforceSearchObjectField).toString();
-		        		objectType = tempJSON.getJSONObject("attributes").getString("type");
+		        		FirstNameValue = tempJSON.get("FirstName").toString();
+		        		LastNameValue = tempJSON.get("LastName").toString();
+		        		ContactIdValue = tempJSON.get("ContactId").toString();
+		        		RolesValues = tempJSON.get(salesforceSearchObjectField).toString();
 		              }
 		        }
 		        catch (JSONException e){
 					if(saveSalesForceInfoInDotCMSLog){
 						Logger.error(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
-								+ "User " + user.getEmailAddress() + 
+								+ "User " + emailAddress + 
 								" was unable to get information from Salesforce. "	+ e.getMessage());
 						
 					}
 					if(saveSalesForceInfoInUserActivityLog){
 						ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
-								"User " + user.getEmailAddress() + 
+								"User " + emailAddress + 
 								" was unable to get information from Salesforce. "	+ e.getMessage(), 
 								systemHost.getHostname());
 					}
 		        }
-		        
-		        if(UtilMethods.isSet(value)){
-		        	String[] roleKeysToImport = value.split(";");
-		        	int rolesSynced = 0;
-		        	for(String roleKey: roleKeysToImport){
-		        		Role role = null;
-		        		try{
-		        			role = roleAPI.loadRoleByKey(roleKey);
-		        			if(UtilMethods.isSet(role) && !roleAPI.doesUserHaveRole(user, role)){
-		        				roleAPI.addRoleToUser(role, user);
-		        				rolesSynced++;
-		        			}
-		        		}
-		        		catch (Exception e){
-							if(saveSalesForceInfoInDotCMSLog){
-								Logger.error(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
-										+ "User " + user.getEmailAddress() + 
-										" was unable to sync roles with Salesforce server. "	+ e.getMessage());
-								
-							}
-							if(saveSalesForceInfoInUserActivityLog){
-								ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
-										"User " + user.getEmailAddress() + 
-										" was unable to sync roles with Salesforce server. "	+ e.getMessage(), 
-										systemHost.getHostname());
-							}
-				        }
-		        	}
-		        	if(rolesSynced > 0){
-						if(saveSalesForceInfoInDotCMSLog){
-							Logger.info(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
-									+ rolesSynced +" Roles for User " + user.getEmailAddress()  +
-			        				" were synced with with Salesforce server.");
-							
-						}
-						if(saveSalesForceInfoInUserActivityLog){
-							ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
-									rolesSynced +" Roles for User " + user.getEmailAddress()  +
-			        				" were synced with with Salesforce server.",  
-									systemHost.getHostname());
-						}
-		        	}
-		        }
+		        attributes.put("FirstName", FirstNameValue);
+		        attributes.put("LastName", LastNameValue);
+		        attributes.put("ContactId", ContactIdValue);
+		        attributes.put(salesforceSearchObjectField, RolesValues);
 	        }
 		}
 		catch (Exception e){
 			if(saveSalesForceInfoInDotCMSLog){
 				Logger.error(SalesForceUtils.class, "dotCMS-SalesForce Plugin: " 
-						+ "User " + user.getEmailAddress() + 
+						+ "User " + emailAddress + 
 						" was unable to sync roles with Salesforce server. "	+ e.getMessage());
 				
 			}
 			if(saveSalesForceInfoInUserActivityLog){
 				ActivityLogger.logInfo(SalesForceUtils.class, "dotCMS-SalesForce Plugin" , 
-						"User " + user.getEmailAddress() + 
+						"User " + emailAddress + 
 						" was unable to sync roles with Salesforce server. "	+ e.getMessage(), 
 						systemHost.getHostname());
 			}
 		}
+
+		return attributes;
+		
 	}
+	
+	public static void setUserValuesOnSession(User user, HttpServletRequest req, HttpServletResponse res, boolean rememberMe) throws PortalException, SystemException, DotDataException, DuplicateUserException, DotSecurityException{
+
+		HttpSession ses = req.getSession();
+    	
+        // session stuff
+        ses.setAttribute(WebKeys.CMS_USER, user);
+        
+        //set personalization stuff on session
+        
+        // set id cookie
+		Cookie autoLoginCookie = UtilMethods.getCookie(req.getCookies(), WebKeys.CMS_USER_ID_COOKIE);
+		
+		if(autoLoginCookie == null && rememberMe) {
+			autoLoginCookie = new Cookie(WebKeys.CMS_USER_ID_COOKIE, APILocator.getUserAPI().encryptUserId(user.getUserId()));
+		}
+		
+        if (rememberMe) {
+        	autoLoginCookie.setMaxAge(60 * 60 * 24 * 356);
+        } else if (autoLoginCookie != null) {
+        	autoLoginCookie.setMaxAge(0);
+        }
+        
+        if (autoLoginCookie != null) {
+			autoLoginCookie.setPath("/");
+        	res.addCookie(autoLoginCookie);
+        }
+
+	}
+	
 }
