@@ -109,7 +109,22 @@ public class ContentBundler implements IBundler {
 					contentsToProcess.add(con);
 				}
 				
-				for (Contentlet con : contentsToProcess) {
+				Set<Contentlet> contentsToProcessWithFiles = new HashSet<Contentlet>();
+				//Getting all linked files
+				for(Contentlet con: contentsToProcess) {
+					List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+					for(Field ff : fields) {
+						if(ff.getFieldType().toString().equals(Field.FieldType.FILE.toString())) {
+							String identifier = (String) con.get(ff.getVelocityVarName());
+							contentsToProcessWithFiles.addAll(conAPI.search("+identifier:"+identifier, 0, -1, null, systemUser, false));
+					    }
+					}
+					contentsToProcessWithFiles.add(con);
+				}
+				
+				
+				
+				for (Contentlet con : contentsToProcessWithFiles) {
 					writeFileToDisk(bundleRoot, con);
 					status.addCount();
 				}
