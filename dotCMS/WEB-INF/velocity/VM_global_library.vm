@@ -1,10 +1,5 @@
 ####Creates the Horizontal Menu based on the path
 
-#macro(fixBreaks $stringToFix)
-	${UtilMethods.fixBreaks($stringToFix)}
-#end
-
-
 ##DEPRECATED - OLD CALENDAR - WE CANT REMOVE UNTIL EVERYONE STOPS USING THIS CALENDAR
 ###Calendar Macros
 #macro(getCalendar)
