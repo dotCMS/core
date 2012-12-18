@@ -1,6 +1,21 @@
 package com.dotmarketing.services;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.velocity.runtime.resource.ResourceManager;
+
 import bsh.This;
+
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -19,16 +34,12 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
-import org.apache.velocity.runtime.resource.ResourceManager;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.*;
 
 /**
  * @author will
@@ -118,20 +129,12 @@ public class PageServices {
 		sb.append("#set ($HTMLPAGE_TITLE = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getTitle()) ).append( "\" )");
 		sb.append("#set ($HTMLPAGE_FRIENDLY_NAME = \"" + UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) ).append( "\" )");
 		sb.append("#set ($TEMPLATE_INODE = \"" ).append( String.valueOf(cmsTemplate.getInode()) ).append( "\" )");
-		sb.append("#set ($HTMLPAGE_META = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getMetadata()) ).append( "\" )");
-		sb.append("#set ($HTMLPAGE_META = \"#fixBreaks($HTMLPAGE_META)\")");
-		
-		sb.append("#set ($HTMLPAGE_DESCRIPTION = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getSeoDescription()) ).append( "\" )");
-		sb.append("#set ($HTMLPAGE_DESCRIPTION = \"#fixBreaks($HTMLPAGE_DESCRIPTION)\")");
-		
-		sb.append("#set ($HTMLPAGE_KEYWORDS = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getSeoKeywords()) ).append( "\" )");
-		sb.append("#set ($HTMLPAGE_KEYWORDS = \"#fixBreaks($HTMLPAGE_KEYWORDS)\")");
-		
-		
+		sb.append("#set ($HTMLPAGE_META = \"" ).append( UtilMethods.fixBreaks(UtilMethods.espaceForVelocity(htmlPage.getMetadata())) ).append( "\" )");
+		sb.append("#set ($HTMLPAGE_DESCRIPTION = \"" ).append( UtilMethods.fixBreaks(UtilMethods.espaceForVelocity(htmlPage.getSeoDescription())) ).append( "\" )");
+		sb.append("#set ($HTMLPAGE_KEYWORDS = \"" ).append( UtilMethods.fixBreaks(UtilMethods.espaceForVelocity(htmlPage.getSeoKeywords())) ).append( "\" )");
 		sb.append("#set ($HTMLPAGE_SECURE = \"" ).append( String.valueOf(htmlPage.isHttpsRequired()) ).append( "\" )");
 		sb.append("#set ($VTLSERVLET_URI = \"" ).append( UtilMethods.encodeURIComponent(identifier.getURI()) ).append( "\" )");
 		sb.append("#set ($HTMLPAGE_REDIRECT = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getRedirect()) ).append( "\" )");
-		
 		sb.append("#set ($pageTitle = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getTitle()) ).append( "\" )");
 		sb.append("#set ($pageChannel = \"" ).append( pageChannel ).append( "\" )");
 		sb.append("#set ($friendlyName = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) ).append( "\" )");
