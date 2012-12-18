@@ -80,6 +80,7 @@ function addRow(tableID,prefixSelect,prefixDiv) {
 	    createOption(select, "yui-ge-template", "2 Column (75/25)",false);
 	    createOption(select, "yui-gf-template", "2 Column (25/75)",false);
 	    createOption(select, "yui-gb-template", "3 Column (33/33/33)",false);
+	    createOption(select, "yui-js-template", "4 Column (25/25/25/25)",false);
 	    select.onchange=function(){addGrid(select.value, select.getAttribute("name"));};
 	    cell2.appendChild(select);
 	    dojo.parser.parse(cell2);
@@ -99,6 +100,7 @@ function addRow(tableID,prefixSelect,prefixDiv) {
 	    createOption(select, "yui-ge-template", "2 Column (75/25)",false);
 	    createOption(select, "yui-gf-template", "2 Column (25/75)",false);
 	    createOption(select, "yui-gb-template", "3 Column (33/33/33)",false);
+	    createOption(select, "yui-js-template", "4 Column (25/25/25/25)",false);
 	    select.onchange=function(){addGrid(select.value, select.getAttribute("name"));};
 	    cell2.appendChild(select);
 	    dojo.parser.parse(cell2);

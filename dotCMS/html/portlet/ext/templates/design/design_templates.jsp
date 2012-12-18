@@ -648,6 +648,8 @@
 												<option value="yui-ge-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
 												<option value="yui-gf-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
 												<option value="yui-gb-template"><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
+												<option value="yui-js-template"><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
+											
 											</select>
 								        </td>
 									</tr>
