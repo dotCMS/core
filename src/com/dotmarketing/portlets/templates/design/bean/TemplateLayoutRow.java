@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.templates.design.bean;
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_FOUR_COLUMN_CLASS;
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_ONE_COLUMN_CLASS;
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_THREE_COLUMN_CLASS;
+import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_TWO_COLUMN_CLASS_G;
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_TWO_COLUMN_CLASS_GC;
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_TWO_COLUMN_CLASS_GD;
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.YUI_TWO_COLUMN_CLASS_GE;
@@ -57,6 +58,9 @@ public class TemplateLayoutRow {
         if ( value.equals( YUI_ONE_COLUMN_CLASS ) ) {//1 Column (100)
             columnsCount = 1;
             gridWidths = new Integer[]{100};
+        } else if ( value.equals( YUI_TWO_COLUMN_CLASS_G ) ) {//2 Column (66/33)
+            columnsCount = 2;
+            gridWidths = new Integer[]{50, 50};
         } else if ( value.equals( YUI_TWO_COLUMN_CLASS_GC ) ) {//2 Column (66/33)
             columnsCount = 2;
             gridWidths = new Integer[]{66, 33};
