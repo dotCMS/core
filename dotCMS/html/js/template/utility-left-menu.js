@@ -228,7 +228,7 @@ function addGrid(gridId, yuiBId, rowCount){
 		var yuiUFirst = document.createElement("div");
 		var yuiU2 = document.createElement("div");
 		var yuiU3 = document.createElement("div");
-
+		var yuiU4 = document.createElement("div");
 		gridDiv.setAttribute("class",gridId);
 		gridDiv.setAttribute("id",gridId);
 		yuiUFirst.setAttribute("class","yui-u-template first");
@@ -245,11 +245,27 @@ function addGrid(gridId, yuiBId, rowCount){
 			yuiU3.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
 			gridDiv.appendChild(yuiU3);
 		}
+		if("yui-js-template"==gridId){
+			yuiU3.setAttribute("class","yui-u-template");
+			yuiU3.setAttribute("id",rowCount+"_yui-u-grid-3");
+			yuiU3.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
+			gridDiv.appendChild(yuiU3);
+			
+			yuiU4.setAttribute("class","yui-u-template");
+			yuiU4.setAttribute("id",rowCount+"_yui-u-grid-4");
+			yuiU4.innerHTML=getAddContainer(rowCount+"_yui-u-grid-4")+"<h1>Body</h1>";
+			gridDiv.appendChild(yuiU4);
+		}
+		
+		
 		yuiBDiv.appendChild(gridDiv);
 	}else{
 		yuiBDiv.innerHTML=getAddContainer(yuiBId)+"<h1>Body</h1>";
 	}
 
+	
+	
+	
     //In order to keep a list of the containers used by this template
     parseCurrentContainers();
 }
