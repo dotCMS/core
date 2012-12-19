@@ -2,7 +2,6 @@
 
 
 <project name="dotcms.org" default="compile" basedir=".">
-	<!-- property name="build.compiler" value="jikes" / -->
 
 	<!-- Load version props -->
 	<property file="src/com/liferay/portal/util/build.properties"/>
@@ -13,25 +12,7 @@
 	<property name="src.conf.dir" value="src-conf" />
 	<property name="src.tests.dir" value="test" />
 	<property name="src.jsp" value="build/jsp" />
-	<property name="sql.dotcms.dir" value="sql/cms" />
-	<property name="sql.liferay.dir" value="sql/portal" />
-	<property name="sql.quartz.dir" value="sql/quartz" />
-	<property name="sql.dotcms.oracle" value="dotcms_oracle.sql" />
-	<property name="sql.liferay.oracle" value="portal-oracle.sql" />
-	<property name="sql.quartz.oracle" value="tables_oracle.sql" />
-	<property name="sql.dotcms.postgres" value="dotcms_postgresql.sql" />
-	<property name="sql.dotcms.extra.postgres" value="dotcms_extra_postgres.sql" />
-	<property name="sql.dotcms.extra.oracle" value="dotcms_extra_oracle.sql" />
-	<property name="sql.dotcms.extra.mssql" value="dotcms_extra_mssql.sql" />
-	<property name="sql.dotcms.extra.mysql" value="dotcms_extra_mysql.sql" />
-	<property name="sql.liferay.postgres" value="portal-postgresql.sql" />
-	<property name="sql.quartz.postgres" value="tables_postgres.sql" />
-	<property name="sql.dotcms.mssql" value="dotcms_mssql-sybase.sql" />
-	<property name="sql.liferay.mssql" value="portal-sql-server.sql" />
-	<property name="sql.quartz.mssql" value="tables_mssql.sql" />
-	<property name="sql.dotcms.mysql" value="dotcms_mysql.sql" />
-	<property name="sql.liferay.mysql" value="portal-mysql.sql" />
-	<property name="sql.quartz.mysql" value="tables_mysql.sql" />
+	<property name="sql.dotcms.dir" value="sql" />
 	<property name="build.dir" value="build" />
 	<property name="build.classes" value="${build.dir}/classes" />
 	<property name="build.ant" value="${build.dir}/ant" />
@@ -178,7 +159,7 @@
 		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
 		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
 		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml" />
-		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
+		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/SQL" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
 		<copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
 		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" >
@@ -228,7 +209,7 @@
 	</target>
 
 
-	<target name="deploy-core" depends="jsp,jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+	<target name="deploy-core" depends="jsp,jar,buildsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -237,7 +218,7 @@
 		<delete dir="${build.classes}" />
 	</target>
 
-    <target name="deploy-core-with-tests" depends="jsp,jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+    <target name="deploy-core-with-tests" depends="jsp,jar-with-tests,buildsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -246,11 +227,11 @@
 		<delete dir="${build.classes}" />
 	</target>
 
-	<target name="build-core" depends="jsp,jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+	<target name="build-core" depends="jsp,jar,buildsql" description="will compile, build sql scripts and update the about page of the site" />
 
-	<target name="build-core-no-jsp" depends="jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+	<target name="build-core-no-jsp" depends="jar,buildsql" description="will compile, build sql scripts and update the about page of the site" />
 
-	<target name="deploy-no-jsp" depends="jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+	<target name="deploy-no-jsp" depends="jar,buildsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -304,6 +285,7 @@
              outputDir="${src.jsp}/">
 
 		</jasper2>
+		
 		<javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8" 
 		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.6"
 		target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
@@ -322,78 +304,12 @@
 		</replaceregexp>
 	</target>
 
-	<target name="buildsql" depends="buildseqsql, buildmXsql">
-	</target>
-
-	<target name="buildseqsql" depends="compile" description="builds the oracle and postgresql sql schema for dotcms. also leaves Inode.hbm.xml in a state for sequence databases">
-
-		<taskdef name="buildSQLTask" classname="com.dotmarketing.db.DotSQLGeneratorTask" >
-			<classpath>
-				<path refid="files-classpath" />
-			</classpath>
-		</taskdef>
-
-		<buildSQLTask dialect="net.sf.hibernate.dialect.PostgreSQLDialect" />
-		<buildSQLTask dialect="net.sf.hibernate.dialect.OracleDialect" />
-		<concat destfile="${build.dir}/sql/postgres.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.postgres}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.postgres}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.postgres}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.postgres}" />
-		</concat>
-
-		<concat destfile="${build.dir}/sql/oracle.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.oracle}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.oracle}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.oracle}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.oracle}" />
-		</concat>
-
-		<replaceregexp byline="true" file="${build.dir}/sql/oracle.sql">
-			<regexp pattern="nclob_description" />
-			<substitution expression="long_description" />
-		</replaceregexp>
-		<copy file="${build.dir}/sql/oracle.sql" todir="${classes.app}"/>
-		<copy file="${build.dir}/sql/postgres.sql" todir="${classes.app}"/>
-
-	</target>
-
-	<target name="buildmXsql" depends="compile" description="builds the mssql and mysql sql schema for dotcms. Leaves Inode.hbm.xml in a state for mssql/mysql">
-
-		<taskdef name="buildSQLTask" classname="com.dotmarketing.db.DotSQLGeneratorTask">
-			<classpath>
-				<path refid="files-classpath" />
-			</classpath>
-		</taskdef>
-
-		<buildSQLTask dialect="net.sf.hibernate.dialect.MySQLDialect" />
-		<buildSQLTask dialect="net.sf.hibernate.dialect.SybaseDialect" />
-
-		<concat destfile="${build.dir}/sql/mssql.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.mssql}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.mssql}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.mssql}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.mssql}" />
-		</concat>
-
-		<concat destfile="${build.dir}/sql/mysql.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.mysql}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.mysql}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.mysql}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.mysql}" />
-		</concat>
-		<replace file="${build.dir}/sql/mysql.sql">
-			<replacetoken>VARCHAR(1)</replacetoken>
-			<replacevalue>tinyint(1)</replacevalue>
-		</replace>
-
-		<replace file="${build.dir}/sql/mysql.sql">
-			<replacetoken>varchar(1)</replacetoken>
-			<replacevalue>tinyint(1)</replacevalue>
-		</replace>
+	<target name="buildsql"  description="builds the oracle and postgresql sql schema for dotcms. also leaves Inode.hbm.xml in a state for sequence databases">
 		<mkdir dir="dotCMS/WEB-INF/classes"/>
-		<copy file="${build.dir}/sql/mysql.sql" todir="${classes.app}"/>
-		<copy file="${build.dir}/sql/mssql.sql" todir="${classes.app}"/>
+		<copy file="${sql.dotcms.dir}/oracle.sql" todir="${classes.app}"/>
+		<copy file="${sql.dotcms.dir}/postgres.sql" todir="${classes.app}"/>
+		<copy file="${sql.dotcms.dir}/mysql.sql" todir="${classes.app}"/>
+		<copy file="${sql.dotcms.dir}/mssql.sql" todir="${classes.app}"/>
 	</target>
 
 	<target name="create-dist" description="creates a zip file for dbs that autoincrement like MSSQL and MySQL distribution">
@@ -485,11 +401,11 @@
                         <classpath refid="files-classpath" />
                         <doctitle>
                                 <![CDATA[
-                        <h1>dotCMS 2.1 API Specification</h1>
+                        <h1>dotCMS 2.5 API Specification</h1>
                         ]]>
                         </doctitle>
                         <bottom>
-                                <![CDATA[<i>Copyright &#169; 2012 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
+                                <![CDATA[<i>Copyright &#169; 2013 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
                 <tag name="todo" scope="all" description="To do:" />
         </javadoc>
 
@@ -733,7 +649,7 @@
 </target>
 
 
-<target name="tests" depends="compile, buildsql, buildmXsql, compile-tests, instrument-classes, start-server-for-tests" description="runs unit tests">
+<target name="tests" depends="compile, buildsql, compile-tests, instrument-classes, start-server-for-tests" description="runs unit tests">
 
 
 	<mkdir dir="${tests.dir}" />
