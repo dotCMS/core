@@ -251,10 +251,11 @@
 }
 
 .yui-js-template div.yui-u-template{
-	width:23%;
+	width:22%;
+	margin-left:2%;
 	float:left;
-	margin-left:15px;
 }
+
 
 /* *********************************************************************************************************** */
 /* 	YUI Grid extensions
