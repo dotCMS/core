@@ -250,6 +250,12 @@
 	zoom:1
 }
 
+.yui-js-template div.yui-u-template{
+	width:23%;
+	float:left;
+	margin-left:15px;
+}
+
 /* *********************************************************************************************************** */
 /* 	YUI Grid extensions
 	Alter properties for Edit Mode of the HTMLPage
