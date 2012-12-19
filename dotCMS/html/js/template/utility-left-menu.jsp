@@ -1,3 +1,4 @@
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 /**
  * This file contains all the Javascript function for drawing the template.
  *
@@ -74,13 +75,14 @@ function addRow(tableID,prefixSelect,prefixDiv) {
 	    select.setAttribute("name", prefixSelect+(rowCount));
 	    select.setAttribute("id", prefixSelect+(rowCount));
 	    select.setAttribute("dojoType", "dijit.form.FilteringSelect");
-	    createOption(select, "1", "1 Column (100)",true);
-	    createOption(select, "yui-gc-template", "2 Column (66/33)",false);
-	    createOption(select, "yui-gd-template", "2 Column (33/66)",false);
-	    createOption(select, "yui-ge-template", "2 Column (75/25)",false);
-	    createOption(select, "yui-gf-template", "2 Column (25/75)",false);
-	    createOption(select, "yui-gb-template", "3 Column (33/33/33)",false);
-	    createOption(select, "yui-js-template", "4 Column (25/25/25/25)",false);
+	    createOption(select, "1", "<%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %>",true);
+	    createOption(select, "yui-g-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %>",false);
+	    createOption(select, "yui-gc-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %>",false);
+	    createOption(select, "yui-gd-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %>",false);
+	    createOption(select, "yui-ge-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %>",false);
+	    createOption(select, "yui-gf-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %>",false);
+	    createOption(select, "yui-gb-template", "<%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %>",false);
+	    createOption(select, "yui-js-template", "<%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %>",false);
 	    select.onchange=function(){addGrid(select.value, select.getAttribute("name"));};
 	    cell2.appendChild(select);
 	    dojo.parser.parse(cell2);
@@ -94,13 +96,14 @@ function addRow(tableID,prefixSelect,prefixDiv) {
 	    select.setAttribute("name", prefixSelect+(rowCount));
 	    select.setAttribute("id", prefixSelect+(rowCount));
 	    select.setAttribute("dojoType", "dijit.form.FilteringSelect");
-	    createOption(select, "1", "1 Column (100)",true);
-	    createOption(select, "yui-gc-template", "2 Column (66/33)",false);
-	    createOption(select, "yui-gd-template", "2 Column (33/66)",false);
-	    createOption(select, "yui-ge-template", "2 Column (75/25)",false);
-	    createOption(select, "yui-gf-template", "2 Column (25/75)",false);
-	    createOption(select, "yui-gb-template", "3 Column (33/33/33)",false);
-	    createOption(select, "yui-js-template", "4 Column (25/25/25/25)",false);
+	    createOption(select, "1", "<%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %>",true);
+	    createOption(select, "yui-g-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %>",false);
+	    createOption(select, "yui-gc-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %>",false);
+	    createOption(select, "yui-gd-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %>",false);
+	    createOption(select, "yui-ge-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %>",false);
+	    createOption(select, "yui-gf-template", "<%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %>",false);
+	    createOption(select, "yui-gb-template", "<%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %>",false);
+	    createOption(select, "yui-js-template", "<%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %>",false);
 	    select.onchange=function(){addGrid(select.value, select.getAttribute("name"));};
 	    cell2.appendChild(select);
 	    dojo.parser.parse(cell2);

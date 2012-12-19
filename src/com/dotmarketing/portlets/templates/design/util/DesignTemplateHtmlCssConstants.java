@@ -20,6 +20,7 @@ public class DesignTemplateHtmlCssConstants {
 	public static final String COLUMN_CONTAINER_CLASS					= "yui-u-template";
 
     public static final String YUI_ONE_COLUMN_CLASS                     = "1";//1 Column (100)
+    public static final String YUI_TWO_COLUMN_CLASS_G                  	= "yui-g-template";//2 Column (50/50)
     public static final String YUI_TWO_COLUMN_CLASS_GC                  = "yui-gc-template";//2 Column (66/33)
     public static final String YUI_TWO_COLUMN_CLASS_GD                  = "yui-gd-template";//2 Column (33/66)
     public static final String YUI_TWO_COLUMN_CLASS_GE                  = "yui-ge-template";//2 Column (75/25)
