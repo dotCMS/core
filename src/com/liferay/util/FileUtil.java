@@ -357,8 +357,11 @@ public class FileUtil {
 		}
 
 		destination.delete();
-
-		return source.renameTo(destination);
+		
+		copyFile(source, destination);
+		
+		
+		return source.delete();
 	}
 
 	public static String read(String fileName) throws IOException {
