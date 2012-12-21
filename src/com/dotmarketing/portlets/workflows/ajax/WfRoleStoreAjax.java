@@ -11,16 +11,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.beanutils.BeanUtils;
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.DeserializationConfig.Feature;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -38,32 +34,25 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
 		if(searchName ==null) searchName ="";
 		String roleId = request.getParameter("roleId");
-		RoleAPI rapi = APILocator.getRoleAPI();	
-		UserAPI uapi = APILocator.getUserAPI();
-		
+		RoleAPI rapi = APILocator.getRoleAPI();
+
+
 		int start = 0 ;
-		int count = 20;
+		int count = 30;
 		try{
 			start = Integer.parseInt(request.getParameter("start"));
 		}
 		catch(Exception e){
-			
+
 		}
 		try {
 			count = Integer.parseInt(request.getParameter("count"));
 		} catch (Exception e) {
 
 		}
-		
+
 		try {
-			Role cmsAnon = rapi.loadCMSAnonymousRole();
-			
-			// Get the default User's Role
-			User defaultUser = uapi.getDefaultUser();
-			Role defaultUserRole = null;
-			if(defaultUser != null) {
-				defaultUserRole = rapi.getUserRole(defaultUser);
-			}
+			Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
 
 			String cmsAnonName =LanguageUtil.get(getUser(), "current-user");
 			cmsAnon.setName(cmsAnonName);
@@ -86,14 +75,12 @@ public class WfRoleStoreAjax extends WfBaseAction {
 	        		}	        		
 	        	}
 	        	catch(Exception e){
-	        		
+
 	        	}
-	        	
+
 	        }	        
-	        
-	        //ISSUE 1734:
-	        //returning 1 extra if possible to allow filtering select to know there are more to pull
-			while(roleList.size() < count+1) { 			
+
+			while(roleList.size() < count){				
 				List<Role> roles = rapi.findRolesByFilterLeftWildcard(searchName, start, count);
 				if(roles.size() ==0){
 					break;
@@ -101,33 +88,23 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		        for(Role role : roles){
 		        	if(role.isUser()){		        		
 			        	try {		        		
-			        		uapi.loadUserById(role.getRoleKey(), uapi.getSystemUser(), false);
+			        		APILocator.getUserAPI().loadUserById(role.getRoleKey(), APILocator.getUserAPI().getSystemUser(), false);
 						} catch (Exception e) {						
 							//Logger.error(WfRoleStoreAjax.class,e.getMessage(),e);
 							continue;
 						}
 		        	}
-		        	if(role.getId().equals(cmsAnon.getId())) {
+		        	if(role.getId().equals(cmsAnon.getId())){
 		        		role = cmsAnon;
 		        		addSystemUser = false;
-		        	}
-		        	
-		        	// Exclude System Roles
-		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId()) && !role.getId().equals(rapi.loadCMSAdminRole().getId())){
+		        	}		        	
+		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId()) && !role.getId().equals(APILocator.getRoleAPI().loadCMSAdminRole().getId())){
 		        		continue;
 		        	}
-		        	
-		            //Exclude default user
-		            try {
-		            	if(defaultUserRole != null && role.getId().equals(defaultUserRole.getId())) {
-		            		continue;
-			            }
-		            } catch (Exception e) { }
-
-
-		        	if(role.getName().equals(searchName)) {
+		        	if(role.getName().equals(searchName)){
 		        		roleList.add(0,role);
-		        	} else {
+		        	}
+		        	else{
 		        		roleList.add(role);		        		
 		        	}		        		        
 		        }
@@ -138,18 +115,18 @@ public class WfRoleStoreAjax extends WfBaseAction {
 				roleList.add(0,cmsAnon);
 			}
 
-			
+
 			//x = x.replaceAll("identifier", "x");
             response.getWriter().write(rolesToJson(roleList));
 
 		} catch (Exception e) {
 			Logger.error(WfRoleStoreAjax.class,e.getMessage(),e);
 		}
-		
+
 	}
-	
+
 	public void assignable(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	
+
 		String name = request.getParameter("name");
 
 		try {
@@ -170,12 +147,12 @@ public class WfRoleStoreAjax extends WfBaseAction {
 			}
 			else{
 				userList.add(APILocator.getUserAPI().loadUserById(role.getRoleKey(), APILocator.getUserAPI().getSystemUser(), false));	
-			
-			}
-			
-			
 
-	        
+			}
+
+
+
+
 
 			for(User user :userList){
 				Role r =APILocator.getRoleAPI().getUserRole(user);
@@ -184,7 +161,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 				}
 			}
 			if(name != null){
-				
+
 				name = name.toLowerCase().replaceAll("\\*", "");
 				if(UtilMethods.isSet(name)){
 					List<Role> newRoleList = new ArrayList<Role>();
@@ -195,20 +172,20 @@ public class WfRoleStoreAjax extends WfBaseAction {
 					}
 					roleList = newRoleList;
 				}
-				
+
 			}
-			
-			
-			
-			
-			
-			
+
+
+
+
+
+
             response.getWriter().write(rolesToJson(roleList));
 		} catch (Exception e) {
 			Logger.error(WfRoleStoreAjax.class,e.getMessage(),e);
 		}
-		
-		
+
+
 	}
 
     private String rolesToJson ( List<Role> roles ) throws IOException, DotDataException, LanguageException {
@@ -220,9 +197,26 @@ public class WfRoleStoreAjax extends WfBaseAction {
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
         Map<String, Object> map;
 
-        //Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
         for ( Role role : roles ) {
+
             map = new HashMap<String, Object>();
+
+            //Exclude default user
+            try{
+	            User u = APILocator.getUserAPI().getDefaultUser();
+	            if(u!=null){
+		            Role r = APILocator.getRoleAPI().getUserRole(u);
+		            if(r != null && role.getId().equals(r.getId())){
+		            	continue;
+		            }
+	            }
+            }catch (Exception e) {}
+
+            //We need to exclude also the anonymous Role
+//            if ( role.getId().equals( cmsAnon.getId() ) ) {
+//                continue;
+//            }
 
             map.put( "name", role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get( PublicCompanyFactory.getDefaultCompany(), "User" ) + ")" : "") );
             map.put( "id", role.getId() );
@@ -233,7 +227,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
         m.put( "identifier", "id" );
         m.put( "label", "name" );
         m.put( "items", list );
-
+        m.put( "numRows", "1000000");
         return mapper.defaultPrettyPrintingWriter().writeValueAsString( m );
     }
 
