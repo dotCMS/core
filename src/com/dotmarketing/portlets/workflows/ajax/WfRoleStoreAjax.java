@@ -20,6 +20,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -37,8 +38,8 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
 		if(searchName ==null) searchName ="";
 		String roleId = request.getParameter("roleId");
-		RoleAPI rapi = APILocator.getRoleAPI();
-		
+		RoleAPI rapi = APILocator.getRoleAPI();	
+		UserAPI uapi = APILocator.getUserAPI();
 		
 		int start = 0 ;
 		int count = 20;
@@ -55,7 +56,14 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		}
 		
 		try {
-			Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+			Role cmsAnon = rapi.loadCMSAnonymousRole();
+			
+			// Get the default User's Role
+			User defaultUser = uapi.getDefaultUser();
+			Role defaultUserRole = null;
+			if(defaultUser != null) {
+				rapi.getUserRole(defaultUser);
+			}
 
 			String cmsAnonName =LanguageUtil.get(getUser(), "current-user");
 			cmsAnon.setName(cmsAnonName);
@@ -83,7 +91,9 @@ public class WfRoleStoreAjax extends WfBaseAction {
 	        	
 	        }	        
 	        
-			while(roleList.size() < count){				
+	        //ISSUE 1734:
+	        //returning 1 extra if possible to allow filtering select to know there are more to pull
+			while(roleList.size() < count+1) { 			
 				List<Role> roles = rapi.findRolesByFilterLeftWildcard(searchName, start, count);
 				if(roles.size() ==0){
 					break;
@@ -91,23 +101,33 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		        for(Role role : roles){
 		        	if(role.isUser()){		        		
 			        	try {		        		
-			        		APILocator.getUserAPI().loadUserById(role.getRoleKey(), APILocator.getUserAPI().getSystemUser(), false);
+			        		uapi.loadUserById(role.getRoleKey(), uapi.getSystemUser(), false);
 						} catch (Exception e) {						
 							//Logger.error(WfRoleStoreAjax.class,e.getMessage(),e);
 							continue;
 						}
 		        	}
-		        	if(role.getId().equals(cmsAnon.getId())){
+		        	if(role.getId().equals(cmsAnon.getId())) {
 		        		role = cmsAnon;
 		        		addSystemUser = false;
-		        	}		        	
-		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId()) && !role.getId().equals(APILocator.getRoleAPI().loadCMSAdminRole().getId())){
+		        	}
+		        	
+		        	// Exclude System Roles
+		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId()) && !role.getId().equals(rapi.loadCMSAdminRole().getId())){
 		        		continue;
 		        	}
-		        	if(role.getName().equals(searchName)){
+		        	
+		            //Exclude default user
+		            try {
+		            	if(defaultUserRole != null && role.getId().equals(defaultUserRole.getId())) {
+		            		continue;
+			            }
+		            } catch (Exception e) { }
+
+
+		        	if(role.getName().equals(searchName)) {
 		        		roleList.add(0,role);
-		        	}
-		        	else{
+		        	} else {
 		        		roleList.add(role);		        		
 		        	}		        		        
 		        }
@@ -200,26 +220,9 @@ public class WfRoleStoreAjax extends WfBaseAction {
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
         Map<String, Object> map;
 
-        Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        //Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
         for ( Role role : roles ) {
-
             map = new HashMap<String, Object>();
-
-            //Exclude default user
-            try{
-	            User u = APILocator.getUserAPI().getDefaultUser();
-	            if(u!=null){
-		            Role r = APILocator.getRoleAPI().getUserRole(u);
-		            if(r != null && role.getId().equals(r.getId())){
-		            	continue;
-		            }
-	            }
-            }catch (Exception e) {}
-
-            //We need to exclude also the anonymous Role
-//            if ( role.getId().equals( cmsAnon.getId() ) ) {
-//                continue;
-//            }
 
             map.put( "name", role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get( PublicCompanyFactory.getDefaultCompany(), "User" ) + ")" : "") );
             map.put( "id", role.getId() );
