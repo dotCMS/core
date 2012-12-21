@@ -62,7 +62,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 			User defaultUser = uapi.getDefaultUser();
 			Role defaultUserRole = null;
 			if(defaultUser != null) {
-				rapi.getUserRole(defaultUser);
+				defaultUserRole = rapi.getUserRole(defaultUser);
 			}
 
 			String cmsAnonName =LanguageUtil.get(getUser(), "current-user");
