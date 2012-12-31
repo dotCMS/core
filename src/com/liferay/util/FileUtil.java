@@ -358,10 +358,16 @@ public class FileUtil {
 
 		destination.delete();
 		
-		copyFile(source, destination);
+		boolean success = source.renameTo(destination);
+
+		// if the rename fails, copy
+		if(!success){
+			copyFile(source, destination);
+			success =  source.delete();
 		
+		}
 		
-		return source.delete();
+		return success;
 	}
 
 	public static String read(String fileName) throws IOException {
