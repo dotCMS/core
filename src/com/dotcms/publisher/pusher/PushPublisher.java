@@ -31,6 +31,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.bundler.ContainerBundler;
 import com.dotcms.publisher.pusher.bundler.ContentBundler;
+import com.dotcms.publisher.pusher.bundler.DependencyBundler;
 import com.dotcms.publisher.pusher.bundler.FolderBundler;
 import com.dotcms.publisher.pusher.bundler.HTMLPageBundler;
 import com.dotcms.publisher.pusher.bundler.LanguageBundler;
@@ -310,6 +311,7 @@ public class PushPublisher extends Publisher {
 		
 		//The order is important cause 
 		//I need to add all containers associated with templates
+//		list.add(DependencyBundler.class);
 		list.add(ContentBundler.class);
 		list.add(FolderBundler.class);
 		list.add(TemplateBundler.class);
