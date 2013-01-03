@@ -1228,6 +1228,12 @@
 		<property name="assetType" type="string" not-null="true">
 			<column name="asset_type" length="64" />
 		</property>
+		<property name="sysPublishDate" type="java.util.Date" not-null="false">
+		    <column name="syspublish_date" index="idx_identifier_pub" />
+		</property>
+		<property name="sysExpireDate" type="java.util.Date" not-null="false">
+            <column name="sysexpire_date" index="idx_identifier_exp"/>
+        </property>
 	</class>
 
 	<class name="com.dotmarketing.beans.TemplateContainers" table="template_containers">
