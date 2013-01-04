@@ -51,6 +51,7 @@ public class DependencyUtil {
 				Identifier iden = idenAPI.find(page);
 				Folder folder = folderAPI.findFolderByPath(iden.getParentPath(), iden.getHostId(), user, false);
 				folders.add(folder.getInode());
+				setHTMLPageContentsAndStructures(page, config, user);
 			}
 			
 			config.setFolders(folders);
@@ -65,34 +66,39 @@ public class DependencyUtil {
 		}
 	}
 	
-	public static void setHTMLPageContent(String id, PublisherConfig config, User user) {
+	public static void setHTMLPageContentsAndStructures(String id, PushPublisherConfig config, User user) {
 		try {
 			HTMLPage workingPage = APILocator.getHTMLPageAPI().loadWorkingPageById(id, user, false);
 			HTMLPage livePage = APILocator.getHTMLPageAPI().loadLivePageById(id, user, false);
-			Template workingTemplate = APILocator.getTemplateAPI().find(workingPage.getTemplateId(), user, false);
-			Template liveTemplate = APILocator.getTemplateAPI().find(livePage.getTemplateId(), user, false);
+			// working template working page
+			Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(workingPage.getTemplateId(), user, false);
+			// live template working page
+			Template liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(workingPage.getTemplateId(), user, false);
+			// live template live page
+			Template liveTemplateLP = APILocator.getTemplateAPI().findLiveTemplate(livePage.getTemplateId(), user, false);
 			
 			List<Container> containers = new ArrayList<Container>();
 			Set<String> containersSet = new HashSet<String>();
 			
-			containers.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplate, user, false));
-			containers.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplate, user, false));
+			containers.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
+			containers.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
+			containers.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateLP, user, false));
 			Set<String> structuresSet = new HashSet<String>();
 			Set<String> contentSet = new HashSet<String>();
 			
 			for (Container container : containers) {
 				containersSet.add(container.getInode());
 				structuresSet.add(container.getStructureInode());
-				List<MultiTree> treeList = MultiTreeFactory.getMultiTree(container.getInode());
+				List<MultiTree> treeList = MultiTreeFactory.getMultiTree(container.getIdentifier());
 				
 				for (MultiTree mt : treeList) {
-					String contentInode = mt.getChild();
-					contentSet.add(contentInode);
+					String contentIdentifier = mt.getChild();
+					contentSet.add(contentIdentifier);
 				}
 			}
 
-//			config.
-			
+			config.setStructures(structuresSet);
+			config.setContents(contentSet);
 			
 		} catch (DotSecurityException e) {
 			// TODO Auto-generated catch block

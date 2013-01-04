@@ -311,7 +311,7 @@ public class PushPublisher extends Publisher {
 		
 		//The order is important cause 
 		//I need to add all containers associated with templates
-//		list.add(DependencyBundler.class);
+		list.add(DependencyBundler.class);
 		list.add(ContentBundler.class);
 		list.add(FolderBundler.class);
 		list.add(TemplateBundler.class);
