@@ -85,7 +85,7 @@ public class PublisherQueueJob implements StatefulJob {
 					}
 					historyPojo.setAssets(assets);
 					
-					// assets in the queue without contentlets, which are passed through lucene queries
+					// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
 					pconf.setAssets(assetsToPublish);
 					
 					//Status
