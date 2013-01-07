@@ -146,7 +146,7 @@ public abstract class DashboardFactory {
 	
 	protected StringBuffer getHostListQuery(boolean hasCategory, String selectedCategories,  String runDashboardFieldContentlet){
 		StringBuffer query = new StringBuffer();
-		query.append("select "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" distinct ")+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) ? " contentlet.*, " : " {contentlet.*}, ")    +
+		query.append("select "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" distinct ")+ (" {contentlet.*}, ")    + 
 				"coalesce(d.page_views,0) as totalpageviews,  " +
 				"CASE WHEN contentinfo.live_inode is not null THEN 'Live' "+
                 " ELSE 'Stopped' "+
