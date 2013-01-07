@@ -633,6 +633,41 @@ function disableFormFields(){
 	                   	</span>
 					</dd>
 				</div>
+				<%-- 
+				<dt>Date fields</dt>
+                <dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="publishDates" id="publishDates" value="true" <%//if(form.isReviewContent()){ %>checked="checked"<%//}%> onclick="publishDateChange(true);"/></dd>
+                --%>
+                <div id="datesFieldsDiv">
+                    <dt>Publish Date Field</dt>
+                    <% // building date fields
+                    ArrayList<Field> dateFields=new ArrayList<Field>();
+                    if(UtilMethods.isSet(structure.getInode()))
+                      for(Field f : structure.getFields())
+                        if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
+                            dateFields.add(f);
+                    %>
+                    <dd>
+                       <select id="pdate" dojoType="dijit.form.FilteringSelect">
+                         <option value="--"></option>
+                         <% for(Field f : dateFields) {%>
+                            <option value="<%= f.getVelocityVarName() %>"> 
+                              <%=f.getFieldName() %>
+                            </option>
+                         <% } %>
+                       </select>
+                    </dd>
+                    <dt>Expire Date Field</dt>
+                    <dd>
+                       <select id="edate" dojoType="dijit.form.FilteringSelect">
+                         <option value="--"></option>
+                       <% for(Field f : dateFields) {%>
+                            <option value="<%= f.getVelocityVarName() %>"> 
+                              <%=f.getFieldName() %>
+                            </option>
+                         <% } %>
+                       </select>
+                    </dd>
+                </div>
 			</dl>
 		</div>
 	<!-- END Second Column -->
