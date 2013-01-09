@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UUIDGenerator;
 
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.lucene.queryParser.ParseException;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1760,9 +1761,49 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(ll.getId()!=deflang)
                 altlang=ll.getId();
         
+        // if we save using d1 & d1 then the identifier should 
+        // have those values after save
+        Contentlet c1=new Contentlet();
+        c1.setStructureInode(testStructure.getInode());
+        c1.setStringProperty(field.getVelocityVarName(), "c1");
+        c1.setDateProperty(fieldPubDate.getVelocityVarName(), d1);
+        c1.setDateProperty(fieldExpDate.getVelocityVarName(), d2);
+        c1.setLanguageId(deflang);
+        c1=APILocator.getContentletAPI().checkin(c1, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
         
+        Identifier ident=APILocator.getIdentifierAPI().find(c1);
+        assertEquals(d1,ident.getSysPublishDate());
+        assertEquals(d2,ident.getSysExpireDate());
         
+        // if we save another language version for the same identifier
+        // then the identifier should be updated with those dates d3&d4
+        Contentlet c2=new Contentlet();
+        c2.setStructureInode(testStructure.getInode());
+        c2.setStringProperty(field.getVelocityVarName(), "c2");
+        c2.setIdentifier(c1.getIdentifier());
+        c2.setDateProperty(fieldPubDate.getVelocityVarName(), d3);
+        c2.setDateProperty(fieldExpDate.getVelocityVarName(), d4);
+        c2.setLanguageId(altlang);
+        c2=APILocator.getContentletAPI().checkin(c2, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
         
+        Identifier ident2=APILocator.getIdentifierAPI().find(c2);
+        assertEquals(d3,ident2.getSysPublishDate());
+        assertEquals(d4,ident2.getSysExpireDate());
+        
+        // the other contentlet should have the same dates if we read it again
+        Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
+        assertEquals(d3,c11.getDateProperty(fieldPubDate.getVelocityVarName()));
+        assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
+        
+        // also it should be in the index update with the new dates
+        FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+        String q="+structureName:"+testStructure.getVelocityVarName()+
+                " +inode:"+c11.getInode()+
+                " +"+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
+                " +"+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
+        assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
     }
 
 }
