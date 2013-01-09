@@ -18,9 +18,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -1723,6 +1725,44 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(identifier, saved.getIdentifier());
         
         contentletAPI.isInodeIndexed(newInode);
+    }
+    
+    /**
+     * Making sure we set pub/exp dates on identifier when saving content
+     * and we set them back to the content when reading.
+     * 
+     * https://github.com/dotCMS/dotCMS/issues/1763
+     */
+    @Test
+    public void testPubExpDatesFromIdentifier() throws Exception {
+        // set up a structure with pub/exp variables
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
+        Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, false, 1, false, false, false );
+        FieldFactory.saveField( field );
+        Field fieldPubDate = new Field( "Pub Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, false, 2, false, false, false );
+        FieldFactory.saveField( fieldPubDate );
+        Field fieldExpDate = new Field( "Exp Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, false, 3, false, false, false );
+        FieldFactory.saveField( fieldExpDate );
+        testStructure.setPublishDateVar(fieldPubDate.getVelocityVarName());
+        testStructure.setExpireDateVar(fieldExpDate.getVelocityVarName());
+        StructureFactory.saveStructure(testStructure);
+        
+        // some dates to play with
+        Date d1=new Date();
+        Date d2=new Date(d1.getTime()+60000L);
+        Date d3=new Date(d2.getTime()+60000L);
+        Date d4=new Date(d3.getTime()+60000L);
+        
+        // get default lang and one alternate to play with sibblings
+        long deflang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        long altlang=-1;
+        for(Language ll : APILocator.getLanguageAPI().getLanguages())
+            if(ll.getId()!=deflang)
+                altlang=ll.getId();
+        
+        
+        
+        
     }
 
 }
