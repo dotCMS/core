@@ -511,9 +511,8 @@ public class FolderFactoryImpl extends FolderFactory {
 			}
 		}
 		
-		// issues/1603
-		Structure structure = StructureCache.getStructureByVelocityVarName("FileAsset");
-		APILocator.getContentletAPI().reindex(structure);
+		// issues/1736
+		APILocator.getContentletAPI().refreshContentUnderFolder(newFolder);
 
 		// Copying links
 		Map<String, Link[]> linksCopied;
