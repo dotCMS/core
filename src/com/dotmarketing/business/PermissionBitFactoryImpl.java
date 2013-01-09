@@ -2450,7 +2450,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					}
 				}
 
-				if(permissionable instanceof Template && ((Template) permissionable).isDrawed()) {
+				if(permissionable instanceof Template && UtilMethods.isSet(((Template) permissionable).isDrawed()) && ((Template) permissionable).isDrawed()) {
 					 type = Template.TEMPLATE_LAYOUTS_CANONICAL_NAME;
 				}
 				
