@@ -2312,7 +2312,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     			        Identifier ident=APILocator.getIdentifierAPI().find(contentlet);
     			        boolean save=false;
     			        if(UtilMethods.isSet(st.getPublishDateVar())) {
-    			            Date pdate=contentlet.getDateProperty(st.getPublishDateVar());
+    			            Date pdate=contentletRaw.getDateProperty(st.getPublishDateVar());
+    			            contentlet.setDateProperty(st.getPublishDateVar(), pdate);
     			            if((ident.getSysPublishDate()==null && pdate!=null) || // was null and now we have a value
     			                (ident.getSysPublishDate()!=null && //wasn't null and now is null or different 
     			                   (pdate==null || !pdate.equals(ident.getSysPublishDate())))) {
@@ -2321,7 +2322,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     			            }
     			        }
     			        if(UtilMethods.isSet(st.getExpireDateVar())) {
-                            Date edate=contentlet.getDateProperty(st.getExpireDateVar());
+                            Date edate=contentletRaw.getDateProperty(st.getExpireDateVar());
+                            contentlet.setDateProperty(st.getExpireDateVar(), edate);
                             if((ident.getSysExpireDate()==null && edate!=null) || // was null and now we have a value
                                 (ident.getSysExpireDate()!=null && //wasn't null and now is null or different 
                                    (edate==null || !edate.equals(ident.getSysExpireDate())))) {

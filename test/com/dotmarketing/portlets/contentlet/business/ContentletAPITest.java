@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -1738,11 +1739,11 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testPubExpDatesFromIdentifier() throws Exception {
         // set up a structure with pub/exp variables
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
-        Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, false, 1, false, false, false );
+        Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
         FieldFactory.saveField( field );
-        Field fieldPubDate = new Field( "Pub Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, false, 2, false, false, false );
+        Field fieldPubDate = new Field( "Pub Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, true, 2, false, false, false );
         FieldFactory.saveField( fieldPubDate );
-        Field fieldExpDate = new Field( "Exp Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, false, 3, false, false, false );
+        Field fieldExpDate = new Field( "Exp Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, true, 3, false, false, false );
         FieldFactory.saveField( fieldExpDate );
         testStructure.setPublishDateVar(fieldPubDate.getVelocityVarName());
         testStructure.setExpireDateVar(fieldExpDate.getVelocityVarName());
@@ -1798,11 +1799,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
         
         // also it should be in the index update with the new dates
-        FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
+        FastDateFormat datetimeFormat = ESMappingAPIImpl.datetimeFormat;
         String q="+structureName:"+testStructure.getVelocityVarName()+
                 " +inode:"+c11.getInode()+
-                " +"+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
-                " +"+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
+                " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
+                " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
         assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
     }
 
