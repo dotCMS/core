@@ -63,8 +63,9 @@
 		<div class="${cssClass}">
 			<a href="?indexFolder=$img.get('galleryPath')&amp;crumbTitle=$img.get('galleryName')">
 				<img src="/thumbnail?inode=$img.get('indexImageInode')&amp;w=${thumbnailWidth}&amp;h=${thumbnailHeight}&amp;r=246&amp;g=243&amp;b=238" border="0" style="border: solid 1px #666666;"/>
+			
+				#if($showSubgalleryTitle)<h2>$img.get('galleryName')($img.get('totalImages'))</h2>#end
 			</a>
-			#if($showSubgalleryTitle)<h2>$img.get('galleryName')($img.get('totalImages'))</h2>#end
 		</div>
 		#end
 	</div>
