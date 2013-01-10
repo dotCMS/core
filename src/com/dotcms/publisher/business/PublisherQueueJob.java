@@ -17,7 +17,10 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
@@ -45,6 +48,9 @@ public class PublisherQueueJob implements StatefulJob {
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
+		    Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
+		    updatePublishExpireDates(arg0.getFireTime());
+		    Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
 			
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
 			updateAuditStatus();
@@ -121,6 +127,32 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		}
 
+	}
+	
+	private void updatePublishExpireDates(Date fireTime) throws DotDataException, DotSecurityException {
+	    String toPublish="select working_inode from identifier join contentlet_version_info " +
+	    		" on (identifier.id=contentlet_version_info.identifier) " +
+	    		" where syspublish_date is not null and syspublish_date<=? " +
+	    		" and (live_inode is null or live_inode<>working_inode) ";
+	    
+	    DotConnect dc=new DotConnect();
+	    dc.setSQL(toPublish);
+	    dc.addParam(fireTime);
+	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults())
+	        APILocator.getVersionableAPI().setLive(
+	           APILocator.getContentletAPI().find(
+	              (String)mm.get("working_inode"), APILocator.getUserAPI().getSystemUser(), false));
+	    
+	    String toExpire="select id,lang from identifier join contentlet_version_info " +
+	    		" on (identifier.id=contentlet_version_info.identifier) " +
+	    		" where sysexpire_date is not null and sysexpire_date<=? " +
+	    		" and live_inode is not null";
+	    dc.setSQL(toExpire);
+	    dc.addParam(fireTime);
+	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults())
+	        APILocator.getVersionableAPI().removeLive(
+	            (String)mm.get("id"), ((Number)mm.get("lang")).longValue());
+        
 	}
 	
 	private void updateAuditStatus() throws DotPublisherException, DotDataException {
