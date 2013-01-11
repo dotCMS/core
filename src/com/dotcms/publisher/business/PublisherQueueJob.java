@@ -132,7 +132,7 @@ public class PublisherQueueJob implements StatefulJob {
 	    String toPublish="select working_inode from identifier join contentlet_version_info " +
 	    		" on (identifier.id=contentlet_version_info.identifier) " +
 	    		" where syspublish_date is not null and syspublish_date<=? " +
-	    		" and (live_inode is null or live_inode<>working_inode) ";
+	    		" and (live_inode is null or live_inode<>working_inode) "; 
 	    
 	    DotConnect dc=new DotConnect();
 	    dc.setSQL(toPublish);
