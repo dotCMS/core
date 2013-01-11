@@ -20,7 +20,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.sun.jersey.api.client.Client;
