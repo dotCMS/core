@@ -6,13 +6,16 @@ dojo.require("dijit._Widget");
 
 dojo.require("dijit.Dialog");
 
+dojo.require("dijit.form.Button");
+
 
 
 dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 	myId:"remotePublisherDia",
 	title:"",
-	show : function(){
-		
+	admin:"",
+	show : function(admin){
+		this.admin = admin;
 		var dia = dijit.byId(this.myId);
 		if(dia){
 			dia.destroyRecursive();
@@ -21,7 +24,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 		dia = new dijit.Dialog({
 			id			: this.myId,
 			title		: this.title,
-			href 		: "/html/portlet/ext/remotepublish/remote_publish_dialog.jsp?contentletId=",
+			href 		: "/html/portlet/ext/remotepublish/remote_publish_dialog.jsp?admin="+this.admin,
 			
 		});
 		

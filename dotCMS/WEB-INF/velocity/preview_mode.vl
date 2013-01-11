@@ -53,6 +53,7 @@
 				dojo.style('frameMain', { width: ((windowDim.w) - menuFrameDim.w) + "px", height: windowDim.h + "px" });
 				dojo.style('frameMenu', { height: (windowDim.h -1) + "px" });
 			}
+			
 			dojo.connect(window, 'onresize', this, resetFrameWidth);
 		</script>		
 	</head>

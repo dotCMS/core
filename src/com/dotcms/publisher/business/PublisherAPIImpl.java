@@ -9,11 +9,14 @@ import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * Implement the PublishQueueAPI abstract class methods
@@ -79,6 +82,17 @@ public class PublisherAPIImpl extends PublisherAPI{
 					}
 					
 					Identifier iden = APILocator.getIdentifierAPI().find(identifier);
+					String type = "";
+					
+					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
+						// check if it is a structure
+						Structure st = StructureCache.getStructureByInode(identifier);
+						if(UtilMethods.isSet(st)) 
+							type = "structure";
+						
+					} else {
+						type = iden.getAssetType();
+					}
 					
 					dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
 					dc.addObject(identifier); //asset
@@ -89,7 +103,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					//TODO How do I get new columns value?	
 					dc.addParam(publishDate);
 					dc.addObject(null); // server id
-					dc.addObject(iden.getAssetType()); // type
+					dc.addObject(type); 
 					dc.addObject(bundleId);
 					dc.addObject(null); // target
 					

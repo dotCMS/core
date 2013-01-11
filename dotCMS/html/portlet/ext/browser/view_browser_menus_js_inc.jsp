@@ -639,7 +639,7 @@ List<PublishingEndPoint> sendingEndpoints;
 			strHTML += '</a>';
 			
 			if(enterprise && sendingEndpoints) {
-				strHTML += '<a href="javascript: remotePublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: remotePublishHTMLPage(\'' + objId + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    	strHTML += '<span class="publishIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';

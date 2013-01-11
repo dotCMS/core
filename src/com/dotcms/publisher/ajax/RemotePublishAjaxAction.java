@@ -18,6 +18,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
@@ -62,8 +63,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	public void publish(HttpServletRequest request, HttpServletResponse response) 		
 		throws WorkflowActionFailureException {
 			try {
-				//Gets available languages
-				//List<Language> languages = languagesAPI.getLanguages();
 				PublisherAPI publisherAPI = PublisherAPI.getInstance();
 				String _assetId = request.getParameter("assetIdentifier");
 				String _contentPushPublishDate = request.getParameter("remotePublishDate");
@@ -71,21 +70,28 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				String _contentPushExpireDate = request.getParameter("remotePublishExpireDate");
 				String _contentPushExpireTime = request.getParameter("remotePublishExpireTime");
 				boolean _contentPushNeverExpire = "on".equals(request.getParameter("remotePublishNeverExpire"))?true:false;
+				String type = request.getParameter("type");
 
 				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 				Date publishDate = dateFormat.parse(_contentPushPublishDate+"-"+_contentPushPublishTime);
 				
-				Identifier iden = APILocator.getIdentifierAPI().findFromInode(_assetId);
+				List<String> ids = new ArrayList<String>();			
+
+				try {
+					// if the asset has identifier, put it, if not, put the inode
+					Identifier iden = APILocator.getIdentifierAPI().findFromInode(_assetId);
+					ids.add(iden.getId());
+				} catch(DotStateException e) {
+					ids.add(_assetId);
+				}
 				
-				List<String> identifiers = new ArrayList<String>();			
 				String bundleId = UUID.randomUUID().toString();			
-				identifiers.add(iden.getId());
 				
-				publisherAPI.addContentsToPublish(identifiers, bundleId, publishDate);
+				publisherAPI.addContentsToPublish(ids, bundleId, publishDate);
 				if(!_contentPushNeverExpire && (!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
 					bundleId = UUID.randomUUID().toString();
 					Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);
-					publisherAPI.addContentsToUnpublish(identifiers, bundleId, expireDate);
+					publisherAPI.addContentsToUnpublish(ids, bundleId, expireDate);
 				}
 			} catch (DotPublisherException e) {
 				Logger.debug(PushPublishActionlet.class, e.getMessage());
