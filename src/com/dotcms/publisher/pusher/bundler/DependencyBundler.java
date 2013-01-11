@@ -2,8 +2,6 @@ package com.dotcms.publisher.pusher.bundler;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -12,7 +10,7 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.util.DependencyUtil;
+import com.dotcms.publisher.util.DependencyManager;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
@@ -21,7 +19,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -62,19 +59,11 @@ public class DependencyBundler implements IBundler {
 		if(LicenseUtil.getLevel()<400)
 	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 
-		PublishAuditHistory currentStatusHistory = null;
 		try {
-			
-			DependencyUtil.setDependencies(config, systemUser);
+			DependencyManager dp = new DependencyManager(systemUser);
+			dp.setDependencies(config);
 
 		} catch (Exception e) {
-			try {
-				pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, currentStatusHistory);
-			} catch (DotPublisherException e1) { }
-			status.addFailure();
-
-			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
-			+ e.getMessage() + ": Unable to pull content", e);
 		}
 	}
 

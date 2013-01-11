@@ -18,6 +18,7 @@
 <%@page import="com.dotmarketing.portlets.structure.business.FieldAPI"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.util.HostUtils" %>
+<%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%><script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
@@ -95,10 +96,13 @@
 	dojo.require("dojo.dnd.Container");
 	dojo.require("dojo.dnd.Manager");
 	dojo.require("dojo.dnd.Source");
+	dojo.require("dotcms.dojo.push.PushHandler");
 
 	var structureInode = '<%=structure.getInode()%>';
 	<%-- This is the javascript Array that controls what is shown or hidden --%>
 	<%@ include file="/html/portlet/ext/structure/field_type_js_array.jsp" %>
+
+	var editStructurePushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>', 'editStructure');
 
 
 	function writeLabel(fieldType){
@@ -448,6 +452,12 @@ function disableFormFields(){
 		    }
 		toggleSaveButton(true);
 }
+
+function remotePublishStructure () {
+	editStructurePushHandler.showDialog(structureInode);
+}
+
+
 </script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
@@ -654,7 +664,19 @@ function disableFormFields(){
 			</button>
 		<%}%>
 	<%} %>
-	<button dojoType="dijit.form.Button" id="saveButton" onClick="addNewStructure();" iconClass="saveIcon" type="button">
+		<%
+			boolean enterprise = LicenseUtil.getLevel() > 199;
+			List<PublishingEndPoint> sendingEndpoints = APILocator.getPublisherEndpointAPI().getReceivingEndpoints();
+			boolean areSendingEndPoints = UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty();
+			
+			if(UtilMethods.isSet(structure.getInode()) && enterprise && areSendingEndPoints) {
+		%>
+		
+				<button dojoType="dijit.form.Button" id="remotePublishButton" onClick="remotePublishStructure();" iconClass="pushIcon" type="button">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
+				</button>
+		<% } %>
+		<button dojoType="dijit.form.Button" id="saveButton" onClick="addNewStructure();" iconClass="saveIcon" type="button">
 
 				<%if(structure.getStructureType() == 3 ){%>
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Form")) %>
@@ -858,3 +880,13 @@ function disableFormFields(){
 
 	<div id="depDiv" style="overflow: auto; height: 220px"></div>
 </div>
+
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="remotePublishNeverExpire" id="remotePublishNeverExpire" type="hidden" value="">
+	<input name="type" id="type" type="hidden" value="structure">
+</form>

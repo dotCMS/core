@@ -24,8 +24,14 @@
     @import "$dojoPath/dijit/themes/dmundra/dmundra.css";
     @import "/html/css/leftPreview.css";
 </style>
-
-<script type="text/javascript" src="$dojoPath/dojo/dojo.js" djConfig="parseOnLoad:true, isDebug:false"></script>
+<script type="text/javascript">
+   	djConfig={
+           parseOnLoad: true,
+           isDebug: false,
+           modulePaths: { dotcms: "/html/js/dotcms", dwr: '/dwr' }
+   };
+</script>
+<script type="text/javascript" src="$dojoPath/dojo/dojo.js"></script>
 <script type="text/javascript" src="$dojoPath/dojo/dot-dojo.js"></script>
 <script type="text/javascript">
     dojo.require("dojo.parser");
@@ -35,6 +41,7 @@
     dojo.require('dijit.form.FilteringSelect');
     dojo.require('dojo.data.ItemFileReadStore');
     dojo.require("dojo.fx");
+    
 </script>
 
 #if($VTLSERVLET_URI.indexOf("?") > -1)
@@ -133,6 +140,10 @@
             document.getElementById('cmd').value="publishHTMLPage";
             document.getElementById('submitParent').submit();
         }
+    }
+    
+    function remotePublishCall(){
+    	parent.remotePublish();
     }
     function editTemplate(){
             //document.getElementById('htmlPage').value='$htmlPageInode';
@@ -237,7 +248,7 @@
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
                 </a>
                 #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
-	                <a href="javascript: remotePublish();">
+	                <a href="javascript: remotePublishCall();">
 	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
 	                </a>
                 #end
@@ -284,7 +295,7 @@
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
                 </a>
                 #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
-	                <a href="javascript: remotePublish();">
+	                <a href="javascript: remotePublishCall();">
 	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
 	                </a>
                 #end
