@@ -26,6 +26,7 @@ import com.liferay.portal.model.User;
 
 public class DependencyManager {
 	
+	private Set<String> hosts;
 	private Set<String> folders;
 	private Set<String> htmlPages;
 	private Set<String> templates;
@@ -35,6 +36,7 @@ public class DependencyManager {
 	private User user;
 	
 	public DependencyManager(User user) {
+		hosts = new HashSet<String>();
 		folders = new HashSet<String>();
 		htmlPages = new HashSet<String>();
 		templates = new HashSet<String>();
@@ -58,6 +60,7 @@ public class DependencyManager {
 		setHTMLPagesDependencies();
 		setStructureDependencies();
 		
+		config.setHostSet(hosts);
 		config.setFolders(folders);
 		config.setHTMLPages(htmlPages);
 		config.setTemplates(templates);
@@ -70,7 +73,7 @@ public class DependencyManager {
 			
 			for (String inode : structures) {
 				Structure st = StructureCache.getStructureByInode(inode);
-				contents.add(st.getHost()); // add the host dependency
+				hosts.add(st.getHost()); // add the host dependency
 				folders.add(st.getFolder()); // add the folder dependency
 			}
 			
@@ -85,7 +88,7 @@ public class DependencyManager {
 			for (String pageId : htmlPages) {
 				Identifier iden = idenAPI.find(pageId);
 				// Host dependency
-				contents.add(iden.getHostId());
+				hosts.add(iden.getHostId());
 				// Templates dependencies are added inside HTMLPageBundler, not here
 				Folder folder = folderAPI.findFolderByPath(iden.getParentPath(), iden.getHostId(), user, false);
 				folders.add(folder.getInode());

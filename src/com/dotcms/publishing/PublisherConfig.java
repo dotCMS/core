@@ -45,6 +45,19 @@ public class PublisherConfig implements Map<String, Object> {
 	public void setFolders(Set<String> folders) {
 		params.put(Config.FOLDERS.name(), folders);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public Set<String> getHostSet() {
+		if(get(Config.HOSTS.name()) == null){
+			Set<String> hostsToBuild =   new HashSet<String>();
+			params.put(Config.HOSTS.name(), hostsToBuild);
+		}
+		return (Set<String>) params.get(Config.HOSTS.name());
+	}
+
+	public void setHostSet(Set<String> hosts) {
+		params.put(Config.HOSTS.name(), hosts);
+	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getStructures() {
