@@ -97,10 +97,15 @@
 	}
 	
 	function nextRangeListView() {
-		var range = currentRange;
-		
-		if(range == 'day') {
-			selectedDate = new Date(selectedDate.getTime()+(1000*60*60*24*1));
+		var range = currentRange;			
+        if(range == 'day') {
+        	var tmz_present = selectedDate.getTimezoneOffset();
+            selectedDate = new Date(selectedDate.getTime()+(1000*60*60*24*1));
+            var tmz_changed = selectedDate.getTimezoneOffset();
+            if(tmz_present != tmz_changed){
+            	var x = tmz_changed - tmz_present;
+                selectedDate = new Date(selectedDate.getTime()+(x*60*1000));
+            }
 		} else if(range == 'week') {
 			selectedDate = new Date(selectedDate.getTime()+(1000*60*60*24*7));
 		} else if(range == 'month') {
