@@ -166,12 +166,12 @@ function showSettings() {
 }
 
 function toggleDatePick() {
+	var past='';
+	var future='';
 	if(dojo.byId("future").checked) {
 		past='disabled';
-		future='';
 	}
 	else {
-		past='';
         future='disabled';
 	}
 	dijit.byId('timesel').set('disabled',past);
