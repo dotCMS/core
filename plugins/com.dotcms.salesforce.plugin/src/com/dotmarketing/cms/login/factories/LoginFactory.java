@@ -181,9 +181,19 @@ public class LoginFactory {
 	            match = user.getPassword().equals(password) || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
 	            
 	            if (match) {
+	            	/*Custom Code
 	            	user = SalesForceUtils.migrateUserFromSalesforce(userName, request,  response, false);
+	            	
+          	  		String instanceURL = request.getSession().getAttribute(SalesForceUtils.INSTANCE_URL).toString();
+          	  		String accessToken = request.getSession().getAttribute(SalesForceUtils.ACCESS_TOKEN).toString();
+          	  		
+              	  	if(UtilMethods.isSet(accessToken) && UtilMethods.isSet(instanceURL)){
+              	  		SalesForceUtils.syncRoles(user.getEmailAddress(), request, response, accessToken, instanceURL);
+              	  	}
+              	  	*/
 	            	user.setLastLoginDate(new java.util.Date());
 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
+	            	
 	            } else {
 	            	/*Custom code*/
 	            	if(useSalesForceLoginFilter && user.getPassword().equalsIgnoreCase(SalesForceUtils.PASSWORD)){

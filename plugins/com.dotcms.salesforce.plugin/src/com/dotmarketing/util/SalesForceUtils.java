@@ -54,7 +54,6 @@ public class SalesForceUtils {
 	public static final String INSTANCE_URL = "salesforce.instance.url";
 	public static final String PASSWORD = "dotCMSSalesForceFakePassword";
 	
-	public static Map<String,String> attributes = new HashMap<String,String>();
      
     public static boolean accessSalesForceServer(HttpServletRequest request, HttpServletResponse response, String login) throws DotDataException, DotSecurityException{
     	
@@ -258,11 +257,14 @@ public class SalesForceUtils {
 	
 	public static Map<String,String> retrieveUserInfoFromSalesforce(String emailAddress, HttpServletRequest req, HttpServletResponse res){
 		
+		Map<String,String> attributes = new HashMap<String,String>();
+		
 		try{
-			
+
 			String salesforceSearchURL = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_url");
 			String salesforceSearchObject = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_object");
-			String salesforceSearchObjectField = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_object_field");
+			String salesforceSearchObjectFields = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_object_fields");
+			String salesforceSearchRoleField = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_object_role_field");
 			String accessToken = req.getSession().getAttribute(ACCESS_TOKEN).toString();
 			String instanceURL = req.getSession().getAttribute(INSTANCE_URL).toString();
 			
@@ -271,16 +273,20 @@ public class SalesForceUtils {
 			}
 			
 			if(!UtilMethods.isSet(salesforceSearchObject)){
-				salesforceSearchObject = "CONTACT";
+				salesforceSearchObject = "USER";
+			}
+			
+			if(!UtilMethods.isSet(salesforceSearchObjectFields)){
+				salesforceSearchObject = "FirstName,LastName,Email,ContactId";
 			}
 			
 			String searchQuery = "FIND {" 
 					+ emailAddress 
 					+ "} " 
-					+ "IN ALL FIELDS RETURNING USER(FirstName,LastName,Email,ContactId),"
+					+ "IN ALL FIELDS RETURNING "
 					+ salesforceSearchObject
 					+"("
-					+ salesforceSearchObjectField 
+					+ salesforceSearchObjectFields + ',' +salesforceSearchRoleField
 					+")";
 			
 			searchQuery = UtilMethods.encodeURL(searchQuery);
@@ -310,7 +316,7 @@ public class SalesForceUtils {
 		        		FirstNameValue = tempJSON.get("FirstName").toString();
 		        		LastNameValue = tempJSON.get("LastName").toString();
 		        		ContactIdValue = tempJSON.get("ContactId").toString();
-		        		RolesValues = tempJSON.get(salesforceSearchObjectField).toString();
+		        		RolesValues = tempJSON.get(salesforceSearchRoleField).toString();
 		              }
 		        }
 		        catch (JSONException e){
@@ -330,7 +336,7 @@ public class SalesForceUtils {
 		        attributes.put("FirstName", FirstNameValue);
 		        attributes.put("LastName", LastNameValue);
 		        attributes.put("ContactId", ContactIdValue);
-		        attributes.put(salesforceSearchObjectField, RolesValues);
+		        attributes.put(salesforceSearchRoleField, RolesValues);
 	        }
 		}
 		catch (Exception e){
