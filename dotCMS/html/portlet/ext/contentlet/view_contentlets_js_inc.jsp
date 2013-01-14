@@ -87,7 +87,7 @@
                 var total = counters["total"];
                 var begin = counters["begin"];
                 var end = counters["end"];
-        var totalPages = counters["totalPages"];
+        		var totalPages = counters["totalPages"];
                 
                 headers = data[1];
                 
@@ -280,12 +280,12 @@
                 var fieldContentlet = field["fieldVelocityVarName"];
                 var fieldContentlet2 = field["fieldContentlet"];
                 var value = "";
-        var selectedStruct="";   
+        		var selectedStruct="";   
                 for(var m=0; m <= structInode.length ; m++ ){
-             if(fieldStructureInode==structInode[m]){
-                 selectedStruct=structureVel[m];
-                 }
-                        }
+             		if(fieldStructureInode==structInode[m]){
+                 		selectedStruct=structureVel[m];
+                 	}
+                }
                 selectedStructureVarName = selectedStruct;
         
         <%
@@ -334,7 +334,7 @@
                     
                        
                        
-                                result = result + "<input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\"" 
+                                result = result + "<input onchange='doSearch()' type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\"" 
                                                         + actual_option[1] + "\" id=\"" + selectedStruct + "." + fieldContentlet + "Field"+ counter_checkbox
                                                         + "\" name=\"" + selectedStruct + "." + fieldContentlet + "\"";
                                 for(var j = 0;j < lastChecked.length; j++){
@@ -370,7 +370,7 @@
                     
                        var actual_option = option[i].split("|");
                        if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-                                result = result + "<input type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" 
+                                result = result + "<input onchange='doSearch()' type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" 
                                                         + actual_option[1] + "\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field"+ counter_radio 
                                                         + "\" name=\"" + selectedStruct+ "." + fieldContentlet + "\"";
                                         if(value == actual_option[1]){
@@ -396,9 +396,9 @@
                     var option = field["fieldValues"].split("\r\n");
                     var result="";
                     if (type=='multi_select')
-                                result = result+"<select  dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
+                                result = result+"<select onchange='doSearch()' dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
                         else 
-                                result = result+"<select  dojoType='dijit.form.FilteringSelect' id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" style=\"width:160px;\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n<option value=\"\"></option>";
+                                result = result+"<select onchange='doSearch()' dojoType='dijit.form.FilteringSelect' id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" style=\"width:160px;\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n<option value=\"\"></option>";
                         
                     for(var i = 0; i < option.length; i++){
                        var actual_option = option[i].split("|");
@@ -439,9 +439,9 @@
                     var option = field["fieldValues"].split("\r\n");
                     var result="";
                     if (type=='multi_select')
-                                result = result+"<select  dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
+                                result = result+"<select onmouseup='doSearch()'  dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
                         else 
-                                result = result+"<select  dojoType='dijit.form.FilteringSelect' id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" style=\"width:160px;\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n<option value=\"\">None</option>";
+                                result = result+"<select onmouseup='doSearch()' dojoType='dijit.form.FilteringSelect' id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" style=\"width:160px;\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n<option value=\"\">None</option>";
                         
                     for(var i = 0; i < option.length; i++){
                        var actual_option = option[i].split("|");
@@ -481,7 +481,7 @@
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
                         var result="<table style='width:210px;' border=\"0\">";
                         result = result + "<tr><td style='padding:0px;'>";
-                        result = result +"<textarea value=\""+value+"\" dojoType=\"dijit.form.Textarea\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"+ selectedStruct+"."+ fieldContentlet + "suggestedTagsDiv');\" style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; font-family: Verdana, Arial,Helvetica; font-size: 11px; height: 50px; width: 160px;\"></textarea><br/><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span></td></tr>";
+                        result = result +"<textarea onchange='doSearch()' value=\""+value+"\" dojoType=\"dijit.form.Textarea\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"+ selectedStruct+"."+ fieldContentlet + "suggestedTagsDiv');\" style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; font-family: Verdana, Arial,Helvetica; font-size: 11px; height: 50px; width: 160px;\"></textarea><br/><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span></td></tr>";
                         result = result + "<tr><td valign=\"top\" style='padding:0px;'>";
                         result = result + "<div id=\"" + selectedStruct+"." + fieldContentlet + "suggestedTagsDiv\" style=\"height: 50px; font-size:10px;font-color:gray; width: 146px; border:1px solid #ccc;overflow: auto;\"></div><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Suggested-Tags") %></span><br></td></tr></table>";
                         
@@ -519,7 +519,7 @@
                         fieldValue = '<%= conFolderValue %>';
                   <%}%>
                                   
-                  var result = "<div id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
+                  var result = "<div onchange='doSearch()' id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
                                                 +" hostId=\"" + hostId + "\" value = \"" + fieldValue + "\"" + "></div>";
                                                 
           hasHostFolderField = true;
@@ -536,7 +536,7 @@
                                 dijit.byId(selectedStruct+"."+ fieldContentlet + "Field").destroy();
                         }
                         dojo.require("dijit.form.DateTextBox");
-                var result = "<input type=\"text\" displayedValue=\""+value+"\" constraints={datePattern:'MM/dd/yyyy'} dojoType=\"dijit.form.DateTextBox\" validate='return false;' invalidMessage=\"\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\" >";
+                var result = "<input onchange='doSearch()' type=\"text\" displayedValue=\""+value+"\" constraints={datePattern:'MM/dd/yyyy'} dojoType=\"dijit.form.DateTextBox\" validate='return false;' invalidMessage=\"\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\" >";
                 return result;                    
           }
           
@@ -546,7 +546,7 @@
                 if(dijit.byId(selectedStruct+"."+ fieldContentlet + "Field")){
                         dijit.byId(selectedStruct+"."+ fieldContentlet + "Field").destroy();
                 }
-        return "<input type=\"text\" dojoType=\"dijit.form.TextBox\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\" value=\"" + value + "\">";
+        return "<input type=\"text\" dojoType=\"dijit.form.TextBox\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\"  onkeyup='doSearch()'  value=\"" + value + "\">";
         
       }
           
