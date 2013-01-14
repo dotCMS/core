@@ -110,8 +110,7 @@ function timeChange() {
                     "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
                 }, dojo.byId('iframeWrapper'));
                 dijit.byId('closeBtn').set('disabled','');
-                dijit.byId('timesel').set('disabled','disabled');
-                dijit.byId('langsel').set('disabled','disabled');
+
                 showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
     		}
     	});
@@ -124,20 +123,16 @@ function stopBrowing() {
             dojo.empty('iframeWrapper');
             dijit.byId('closeBtn').set('disabled','disabled');
             if(dojo.byId("future").checked) {
-            	dijit.byId('fdate').set('disabled','');
-                dijit.byId('flang').set('disabled','');
+
 
             }
             else {
-	            dijit.byId('timesel').set('disabled','');
-	            dijit.byId('langsel').set('disabled','');
+
 	            dijit.byId('timesel').required=false;
 	            dijit.byId('langsel').required=false;
 	            dijit.byId('timesel').set('value','');
 	            dijit.byId('langsel').set('value','');
 
-	            dijit.byId('fdate').set('value','');
-	            dijit.byId('flang').set('value','');
 	            
             }
             
@@ -207,8 +202,7 @@ function futureChange() {
                 "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
             }, dojo.byId('iframeWrapper'));
             dijit.byId('closeBtn').set('disabled','');
-            dijit.byId('flang').set('disabled','disabled');
-            dijit.byId('fdate').set('disabled','disabled');
+
             showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
         }
     });
