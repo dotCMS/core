@@ -49,7 +49,7 @@
     structureTypes.add(STRUCTURE_TYPE_WIDGET);
     structureTypes.add(STRUCTURE_TYPE_FORM);
     structureTypes.add(STRUCTURE_TYPE_FILEASSET);
-    int structureType = 1;
+    int structureType = 0;
     try {
 		if (session.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE) != null)
 			structureType = (Integer)session.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE);
