@@ -46,7 +46,8 @@ function resized() {
 
     var  e =  dojo.byId("borderContainer");
     dojo.style(e, "height", viewport_height -175+ "px");
-
+    var p = dojo.byId("iframeWrapper");
+    dojo.style(p, "height", viewport_height -225+ "px");
     //dijit.byId("borderContainer").resize();
 }
 
