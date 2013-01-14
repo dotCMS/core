@@ -294,8 +294,7 @@ dojo.addOnLoad(function(){
     <div id="timemachineMain">
 
         <div id="borderContainer" style="width:100%;">
-            <div style="border:1px silver solid;padding:10px;position:relative;height:70px;">
-
+            <div style="border:1px silver solid;padding:10px;">
                    <table style="float:left">
                        <tr>
 	                       <td class="title">
@@ -341,7 +340,7 @@ dojo.addOnLoad(function(){
                    <button style="float:right" id="closeBtn" dojoType="dijit.form.Button" onClick="stopBrowing()">
                       <%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE_SNAP")%>
                    </button>
-
+				<div class="clear"></div>
             </div>
             <div id="iframeWrapper"  >
 		       <div style="padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %></div> 
