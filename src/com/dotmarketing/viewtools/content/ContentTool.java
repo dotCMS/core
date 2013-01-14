@@ -215,11 +215,11 @@ public class ContentTool implements ViewTool {
 	            query=query.replaceAll("\\+live\\:true", "").replaceAll("\\+working\\:true", "");
 	            String ffdate=ESMappingAPIImpl.datetimeFormat.format(futureDate);
 	            
+	            String notexpired=" +expdate:["+ffdate+" TO 29990101000000] ";
 	            String wquery=query + " +working:true " +
 	            		"+pubdate:["+ESMappingAPIImpl.datetimeFormat.format(new Date())+
-	            				" TO "+ffdate+"]";
-	            String lquery=query + " +live:true " +
-	            		"+expdate:["+ffdate+" TO 29990101000000]";
+	            				" TO "+ffdate+"] "+notexpired;
+	            String lquery=query + " +live:true " + notexpired;
 	            
 	            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, true);
 	            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, true);
