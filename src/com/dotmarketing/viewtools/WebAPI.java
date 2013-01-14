@@ -1059,7 +1059,14 @@ public class WebAPI implements ViewTool {
 	}
 	
 	
-	
-	
+	public Identifier findIdentifierById(String id) {
+	    try{
+            return identAPI.find(id);
+        }
+        catch(Exception e){
+            Logger.warn(this.getClass(), e.getMessage());
+        }
+        return null;
+	}
 	
 }

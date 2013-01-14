@@ -47,6 +47,8 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	private String urlMapPattern;
 	private String host;
 	private String folder;
+	private String publishDateVar;
+	private String expireDateVar;
 
 	public List<Exportable> getDependencies() {
 		// TODO Auto-generated method stub
@@ -327,6 +329,26 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 
 	public String toString() {
         return ToStringBuilder.reflectionToString(this);
+    }
+
+
+    public String getPublishDateVar() {
+        return publishDateVar;
+    }
+
+
+    public void setPublishDateVar(String publishDateVar) {
+        this.publishDateVar = publishDateVar;
+    }
+
+
+    public String getExpireDateVar() {
+        return expireDateVar;
+    }
+
+
+    public void setExpireDateVar(String expireDateVar) {
+        this.expireDateVar = expireDateVar;
     }
 
 }
