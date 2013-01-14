@@ -1483,9 +1483,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
 		}
 	}
 	
-	function remotePublishHTMLPage (objId) {
+	function remotePublish (objId) {
 		
-		browserPushHandler.showDialog(objId);
+		pushHandler.showDialog(objId);
 		
 	}
 
@@ -2160,7 +2160,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    }
     }
 
-    var browserPushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>', 'browser');
+    var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 
 </script>

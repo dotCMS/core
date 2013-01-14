@@ -102,7 +102,7 @@
 	<%-- This is the javascript Array that controls what is shown or hidden --%>
 	<%@ include file="/html/portlet/ext/structure/field_type_js_array.jsp" %>
 
-	var editStructurePushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>', 'editStructure');
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 
 	function writeLabel(fieldType){
@@ -454,7 +454,7 @@ function disableFormFields(){
 }
 
 function remotePublishStructure () {
-	editStructurePushHandler.showDialog(structureInode);
+	pushHandler.showDialog(structureInode);
 }
 
 
@@ -888,5 +888,4 @@ function remotePublishStructure () {
 	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
 	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
 	<input name="remotePublishNeverExpire" id="remotePublishNeverExpire" type="hidden" value="">
-	<input name="type" id="type" type="hidden" value="structure">
 </form>

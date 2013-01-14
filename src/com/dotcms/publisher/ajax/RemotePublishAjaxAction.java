@@ -21,10 +21,13 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class RemotePublishAjaxAction extends AjaxAction {
 
@@ -70,7 +73,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				String _contentPushExpireDate = request.getParameter("remotePublishExpireDate");
 				String _contentPushExpireTime = request.getParameter("remotePublishExpireTime");
 				boolean _contentPushNeverExpire = "on".equals(request.getParameter("remotePublishNeverExpire"))?true:false;
-				String type = request.getParameter("type");
 
 				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 				Date publishDate = dateFormat.parse(_contentPushPublishDate+"-"+_contentPushPublishTime);
@@ -78,16 +80,31 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				List<String> ids = new ArrayList<String>();			
 
 				try {
-					// if the asset has identifier, put it, if not, put the inode
-					Identifier iden = APILocator.getIdentifierAPI().findFromInode(_assetId);
-					ids.add(iden.getId());
+					
+					// if the asset is a folder put the inode instead of the identifier
+					Folder folder = null;
+					try {
+						folder = APILocator.getFolderAPI().find(_assetId, getUser(), false);
+					} catch(DotDataException e) {
+					}
+					
+					if(UtilMethods.isSet(folder)) {
+						ids.add(_assetId);
+					} else {
+						// if the asset is not a folder and has identifier, put it, if not, put the inode
+						Identifier iden = APILocator.getIdentifierAPI().findFromInode(_assetId);
+						ids.add(iden.getId());
+					}
 				} catch(DotStateException e) {
 					ids.add(_assetId);
+				} catch (DotSecurityException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 				
 				String bundleId = UUID.randomUUID().toString();			
 				
-				publisherAPI.addContentsToPublish(ids, bundleId, publishDate);
+				publisherAPI.addContentsToPublish(ids, bundleId, publishDate, getUser());
 				if(!_contentPushNeverExpire && (!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
 					bundleId = UUID.randomUUID().toString();
 					Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);

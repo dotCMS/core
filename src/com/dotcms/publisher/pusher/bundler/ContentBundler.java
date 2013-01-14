@@ -252,12 +252,12 @@ public class ContentBundler implements IBundler {
 		BundlerUtil.objectToXML(wrapper, pushContentFile, true);
 		pushContentFile.setLastModified(cal.getTimeInMillis());
 		
-		Set<String> htmlIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent1");
-		Set<String> containerIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent2");
+//		Set<String> htmlIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent1");
+//		Set<String> containerIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent2");
 		
 		// adding content dependencies only if pushing content explicitly, not when it is a dependency of other asset
 		if(!UtilMethods.isSet(config.getContentlets()) || config.getContentlets().isEmpty()) 
-			addToConfig(con.getFolder(), htmlIds, containerIds, con.getStructureInode());
+			addToConfig(con.getFolder(), con.getStructureInode());
 		
 	}
 
@@ -276,7 +276,7 @@ public class ContentBundler implements IBundler {
 
 	}
 	
-	private void addToConfig(String folder, Set<String> htmlPages, Set<String> containers, String structure) 
+	private void addToConfig(String folder, String structure) 
 			throws DotStateException, DotHibernateException, DotDataException, DotSecurityException
 	{
 		//Get Id from folder
@@ -290,11 +290,11 @@ public class ContentBundler implements IBundler {
 			}
 		}
 		
-		config.getHTMLPages().addAll(htmlPages);
+//		config.getHTMLPages().addAll(htmlPages);
 
 		config.getFolders().add(folder);
 
-		config.getContainers().addAll(containers);
+//		config.getContainers().addAll(containers);
 		
 		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
 			config.getStructures().add(structure);

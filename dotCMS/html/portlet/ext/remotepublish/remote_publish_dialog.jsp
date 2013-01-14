@@ -24,7 +24,6 @@ GregorianCalendar cal = new GregorianCalendar();
 		<%
 			String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
 			String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
-			String admin = request.getParameter("admin");
 		%>
 		
 		<div class="fieldWrapper">
@@ -70,7 +69,7 @@ GregorianCalendar cal = new GregorianCalendar();
 		</div>
 		
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="<%=admin%>PushHandler.remotePublish()" type="button">
+			<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="pushHandler.remotePublish()" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 			</button>
 			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('remotePublisherDia').hide()" type="button">
