@@ -211,7 +211,7 @@ public class ContentTool implements ViewTool {
 		        // with timemachine on!
 	            String datestr=(String)req.getSession().getAttribute("tm_date");
 	            Date futureDate=new Date(Long.parseLong(datestr));
-	            query=query.replaceAll("+live:true", "").replaceAll("+working:true", "");
+	            query=query.replaceAll("\\+live\\:true", "").replaceAll("\\+working\\:true", "");
 	            String ffdate=ESMappingAPIImpl.datetimeFormat.format(futureDate);
 	            
 	            String wquery=query + " +working:true " +

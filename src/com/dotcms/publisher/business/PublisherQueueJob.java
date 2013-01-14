@@ -148,9 +148,11 @@ public class PublisherQueueJob implements StatefulJob {
 	    		" and live_inode is not null";
 	    dc.setSQL(toExpire);
 	    dc.addParam(fireTime);
-	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults())
+	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()) {
+	        long lang=mm.get("lang") instanceof String ? Long.parseLong((String)mm.get("lang")) : ((Number)mm.get("lang")).longValue();
 	        APILocator.getVersionableAPI().removeLive(
-	            (String)mm.get("id"), ((Number)mm.get("lang")).longValue());
+	            (String)mm.get("id"), lang);
+	    }
         
 	}
 	
