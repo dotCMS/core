@@ -64,6 +64,7 @@ public class DependencyBundler implements IBundler {
 			dp.setDependencies(config);
 
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 

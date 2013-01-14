@@ -36,12 +36,12 @@
 	var _dotWidgetNameSelected, _dotWidgetInodeSelected;
 	var _dotWidgetSearchString = "";
 	var _inodeCounter = 0;
-	var editPagePushHandler = null;
+	var pushHandler = null;
 	
 	 function remotePublish(){
     	dojo.require("dotcms.dojo.push.PushHandler");	
-    	editPagePushHandler = new dotcms.dojo.push.PushHandler('$languagewebapi.getFromUserLanguage("modes.Create-New-Page")', 'editPage');
-        editPagePushHandler.showDialog('$htmlPageInode');
+    	pushHandler = new dotcms.dojo.push.PushHandler('$languagewebapi.getFromUserLanguage("modes.Create-New-Page")');
+        pushHandler.showDialog('$htmlPageInode');
     }
 	
 	function openAddWidget(containerInode) {

@@ -13,16 +13,14 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	assetIdentifier:"", 
 	dialog:null,
 	title:"",
-	caller:"",
-	constructor: function(title, caller){
+	constructor: function(title){
 		this.title = title;
-		this.caller = caller;
 	},
 	showDialog: function(assetId){
 		this.assetIdentifier = assetId;
 		dialog = new dotcms.dijit.RemotePublisherDialog();
 		dialog.title = this.title;
-		dialog.show(this.caller);
+		dialog.show();
 	}, 
 	remotePublish : function(){
 		
