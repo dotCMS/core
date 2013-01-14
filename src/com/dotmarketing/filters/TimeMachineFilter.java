@@ -42,6 +42,12 @@ public class TimeMachineFilter implements Filter {
 		        resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
 		        return;
 		    }
+		    
+		    // future date. Lets handle in other places
+		    if(date.after(new Date())) {
+		        chain.doFilter(request, response);
+		        return;
+		    }
 
 		    Host host=(Host) req.getSession().getAttribute("tm_host");
 		    String langid=(String) req.getSession().getAttribute("tm_lang");

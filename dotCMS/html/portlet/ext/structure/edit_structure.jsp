@@ -633,6 +633,45 @@ function disableFormFields(){
 	                   	</span>
 					</dd>
 				</div>
+				<%-- 
+				<dt>Date fields</dt>
+                <dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="publishDates" id="publishDates" value="true" <%//if(form.isReviewContent()){ %>checked="checked"<%//}%> onclick="publishDateChange(true);"/></dd>
+                --%>
+                <div id="datesFieldsDiv">
+                    <dt><%= LanguageUtil.get(pageContext, "Publish-Date-Field") %>:</dt>
+                    <% // building date fields
+                    ArrayList<Field> dateFields=new ArrayList<Field>();
+                    if(UtilMethods.isSet(structure.getInode()))
+                      for(Field f : structure.getFields())
+                        if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
+                            dateFields.add(f);
+                    %>
+                    <dd>
+                       <select id="publishDateVar" name="publishDateVar" dojoType="dijit.form.FilteringSelect">
+                         <option value=""></option>
+                         <% String current=(UtilMethods.isSet(structure.getPublishDateVar())) ? structure.getPublishDateVar() : "--";
+                            for(Field f : dateFields) {%>
+                            <option value="<%= f.getVelocityVarName() %>" 
+                                     <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
+                              <%=f.getFieldName() %>
+                            </option>
+                         <% } %>
+                       </select>
+                    </dd>
+                    <dt><%= LanguageUtil.get(pageContext, "Expire-Date-Field") %>:</dt>
+                    <dd>
+                       <select id="expireDateVar" name="expireDateVar" dojoType="dijit.form.FilteringSelect">
+                         <option value=""></option>
+                       <%  current=(UtilMethods.isSet(structure.getExpireDateVar())) ? structure.getExpireDateVar() : "--";
+                           for(Field f : dateFields) {%>
+                            <option value="<%= f.getVelocityVarName() %>"
+                              <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
+                              <%=f.getFieldName() %>
+                            </option>
+                         <% } %>
+                       </select>
+                    </dd>
+                </div>
 			</dl>
 		</div>
 	<!-- END Second Column -->
