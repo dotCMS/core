@@ -2,6 +2,7 @@ package com.dotcms.timemachine.ajax;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -178,6 +179,25 @@ public class TimeMachineAjaxAction extends AjaxAction {
             req.getSession().setAttribute("tm_date", datestr);
             req.getSession().setAttribute("tm_lang", langid);
         }
+    }
+    
+    public void startBrowsingFutureDate(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        Map<String, String> map = getURIParams();
+        String datestr=map.get("date");
+        String hostid=map.get("hostid");
+        String langid=map.get("langid");
+        
+        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+        datestr=Long.toString(sdf.parse(datestr).getTime());
+        
+        if(!new Date().before(new Date(Long.parseLong(datestr))))
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        else {
+            req.getSession().setAttribute("tm_host",
+                    APILocator.getHostAPI().find(hostid, getUser(), false));
+            req.getSession().setAttribute("tm_date", datestr);
+            req.getSession().setAttribute("tm_lang", langid);
+        }   
     }
 
     public void stopBrowsing(HttpServletRequest req, HttpServletResponse resp) throws Exception {

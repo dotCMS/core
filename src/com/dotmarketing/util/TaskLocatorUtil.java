@@ -74,6 +74,7 @@ public class TaskLocatorUtil {
         ret.add(Task00950AddTablePublishingEndpoint.class);
         ret.add(Task01000LinkChequerTable.class);
         ret.add(Task01005TemplateThemeField.class);
+        ret.add(Task01015AddPublishExpireDateToIdentifier.class);
         return ret;
     }
 

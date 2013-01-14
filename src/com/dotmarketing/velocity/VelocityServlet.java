@@ -183,10 +183,11 @@ public abstract class VelocityServlet extends HttpServlet {
 				return;
 			}
 
-			HttpSession session = request.getSession(false);
-			boolean ADMIN_MODE = session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			boolean PREVIEW_MODE = ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
-			boolean EDIT_MODE = ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
+			HttpSession session = request.getSession();
+			boolean timemachine=session.getAttribute("tm_date")!=null;
+			boolean ADMIN_MODE = !timemachine && session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			boolean PREVIEW_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
+			boolean EDIT_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
 
 			String value = request.getHeader("X-Requested-With");
 			if ((value != null) && value.equals("XMLHttpRequest") && EDIT_MODE && ADMIN_MODE) {
