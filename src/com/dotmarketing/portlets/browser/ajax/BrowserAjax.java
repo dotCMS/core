@@ -630,11 +630,11 @@ public class BrowserAjax {
                 APILocator.getContentletAPI().copyContentlet( cont, host, user, false );
             }
             
-            // issues/1616
-    		Structure structure = StructureCache.getStructureByVelocityVarName("FileAsset");
-    		APILocator.getContentletAPI().reindex(structure);
+            // issues/1788
+           
     		
     		Folder srcFolder = APILocator.getFolderAPI().find(cont.getFolder(),user,false);
+    		APILocator.getContentletAPI().refreshContentUnderFolder(srcFolder);
     		refreshIndex(null, parent, user, host, srcFolder );
 
             
