@@ -267,6 +267,7 @@ public class DotConnect {
     
     public void setSQL(String x, int limit) {
         if(DbConnectionFactory.isMsSql()){
+        	x = x.trim();
             if(x.startsWith("select distinct"))
                 setSQL(x.replaceFirst("select distinct", "select distinct top "+limit+" "));
             else
