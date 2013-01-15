@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@ include file="/html/common/init.jsp" %>
@@ -27,6 +29,19 @@ if(action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.g
 	mustShow = true;
 }
 
+String conPublishDateVar = request.getParameter("publishDate");
+String conExpireDateVar = request.getParameter("expireDate");
+String structureInode = request.getParameter("structureInode");
+if(conPublishDateVar ==null && structureInode != null){
+	Structure s = StructureFactory.getStructureByInode(structureInode);
+	if(s!=null){
+		conPublishDateVar = s.getPublishDateVar();
+		conExpireDateVar = s.getExpireDateVar();
+	}
+}
+
+
+
 %>
 
 <script>
@@ -37,87 +52,147 @@ var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.
 
 
 
+function toggleExpire(){
+
+	var x = dijit.byId("wfNeverExpire").getValue();
+	dijit.byId("wfExpireDateAux").disabled = x;
+	dijit.byId("wfExpireTimeAux").disabled = x;
+	
+}
+
+function setDates(){
+	// force dojo to parse
+
+	
+	var pubDay = new Date();
+	var pubTime = new Date();
+	var expireDate = new Date();
+	var expireTime = new Date();
+	
+	
+	
+	
+	if(dijit.byId("<%=conPublishDateVar%>Date")){
+		 pubDay = dijit.byId("<%=conPublishDateVar%>Date").getValue();
+		 dijit.byId("wfPublishDateAux").setValue(pubDay);
+	}
+	if(dijit.byId("<%=conPublishDateVar%>Time")){
+		 pubTime= dijit.byId("<%=conPublishDateVar%>Time").getValue();
+		 dijit.byId("wfPublishTimeAux").setValue(pubTime);
+	}
+	
+	
+	if(dijit.byId("<%=conExpireDateVar%>Date") && dijit.byId("<%=conExpireDateVar%>Date").getValue()){
+		expireDate = dijit.byId("<%=conExpireDateVar%>Date").getValue();
+		dijit.byId("wfExpireDateAux").setValue(expireDate);
+		dijit.byId("wfNeverExpire").setValue(false);
+		toggleExpire();
+	}
+	else{
+		dijit.byId("wfNeverExpire").setValue(true);
+		toggleExpire();
+	}
+	if(dijit.byId("<%=conExpireDateVar%>Time")){
+		expireTime= dijit.byId("<%=conExpireDateVar%>Time").getValue();
+		 dijit.byId("wfExpireTimeAux").setValue(expireTime);
+	}
+
+
+}
 </script>
+
 <!--  DOTCMS-7085 -->
 <input name="wfConId" id="wfConId" type="hidden" value="<%=inode%>"> 
 
 <% if(mustShow){ %>
-	<%if(hasPushPublishActionlet){ %>
-	<div style="margin:auto;width:350px;">
-	<%}else{ %>		
-	<div style="margin:auto;width:300px;">
-	<%} %>
-		<div style="margin:10px;">
-			<b><%= LanguageUtil.get(pageContext, "Perform-Workflow") %></b>: <%=action.getName() %>
-		</div>
-	<%if(action.isCommentable()){ %>
-		<div style="margin:10px;margin-top:0px">
-				<b><%= LanguageUtil.get(pageContext, "Comments") %>: </b><br />
-				<textarea name="taskCommentsAux" id="taskCommentsAux" cols=40 rows=8 style="min-height:100px;" dojoType="dijit.form.Textarea"></textarea>
-		</div>
-	<%}else{ %>
-		<div style="margin:10px;margin-top:0px">
-				<b><%= LanguageUtil.get(pageContext, "Comments") %>: </b><%= LanguageUtil.get(pageContext, "None") %>
-		</div>
-	<%} %>
-		<div style="margin:10px;">
-			<b><%= LanguageUtil.get(pageContext, "Assignee") %>: </b> 
-		
-			<%if(action.isAssignable()){ %>
-				<select id="taskAssignmentAux" name="taskAssignmentAux" dojoType="dijit.form.FilteringSelect" 
-						store="myRoleReadStore" searchDelay="300" pageSize="30" labelAttr="name" 
-						invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
-				</select>
+	<div id="wfDivWrapperForDojo">
+		<div style="margin:auto;width:<%=(hasPushPublishActionlet) ? "350px;" : "300px;" %>">
+			<div style="margin:10px;">
+				<b><%= LanguageUtil.get(pageContext, "Perform-Workflow") %></b>: <%=action.getName() %>
+			</div>
+			<%if(action.isCommentable()){ %>
+				<div style="margin:10px;margin-top:0px">
+						<b><%= LanguageUtil.get(pageContext, "Comments") %>: </b><br />
+						<textarea name="taskCommentsAux" id="taskCommentsAux" cols=40 rows=8 style="min-height:100px;" dojoType="dijit.form.Textarea"></textarea>
+				</div>
 			<%}else{ %>
-				<%=role.getName() %>
-				<input type="text" dojoType="dijit.form.TextBox" style="display:none" name="taskAssignmentAux" id="taskAssignmentAux" value="<%=role.getId()%>">
+				<div style="margin:10px;margin-top:0px">
+						<b><%= LanguageUtil.get(pageContext, "Comments") %>: </b><%= LanguageUtil.get(pageContext, "None") %>
+				</div>
 			<%} %>
-		</div>
-		<%if(hasPushPublishActionlet){
-			String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
-			String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
-		%>
-		
-		<div style="margin:10px;">
-			<strong><%= LanguageUtil.get(pageContext, "Publish") %> </strong>: <br />
-			<input 
-				type="text" 
-				dojoType="dijit.form.DateTextBox" 
-				validate="return false;" 
-				invalidMessage=""  
-				id="publishDate"
-				name="publishDate" value="now" style="width: 110px;">
-							
-								
-			<input type="text" name="publishTime" id="publishTime" value="now"
-			 	data-dojo-type="dijit.form.TimeTextBox"
-				required="true" style="width: 100px;"/>
-		</div>
-							
-		<div style="margin:10px;">
-			<strong><%= LanguageUtil.get(pageContext, "publisher_Expire") %> </strong>: <br />
-			<input 
-				type="text" 
-				dojoType="dijit.form.DateTextBox" 
-				validate="return false;"   
-				id="expireDate" name="expireDate" value="" style="width: 110px;">
-							
-							
-			<input type="text" name="expireTime" id="expireTime" value=""
-			    data-dojo-type="dijit.form.TimeTextBox"	
-				style="width: 100px;" />
+				<div style="margin:10px;">
+					<b><%= LanguageUtil.get(pageContext, "Assignee") %>: </b> 
 				
-			&nbsp;&nbsp;<input type="checkbox" dojoType="dijit.form.CheckBox" name="neverExpire" id="neverExpire" > <%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %>
+					<%if(action.isAssignable()){ %>
+						<select id="taskAssignmentAux" name="taskAssignmentAux" dojoType="dijit.form.FilteringSelect" 
+								store="myRoleReadStore" searchDelay="300" pageSize="30" labelAttr="name" 
+								invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
+						</select>
+					<%}else{ %>
+						<%=role.getName() %>
+						<input type="text" dojoType="dijit.form.TextBox" style="display:none" name="taskAssignmentAux" id="taskAssignmentAux" value="<%=role.getId()%>">
+					<%} %>
+				</div>
+				<%if(hasPushPublishActionlet){
+					String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
+					String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
+				%>
+				
+				<div style="margin:10px;">
+					<strong><%= LanguageUtil.get(pageContext, "Publish") %> </strong>: <br />
+					<input 
+						type="text" 
+						dojoType="dijit.form.DateTextBox" 
+						validate="return false;" 
+						invalidMessage=""  
+						id="wfPublishDateAux"
+						name="wfPublishDateAux" value="now" style="width: 110px;">
+									
+										
+					<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value="now"
+					 	data-dojo-type="dijit.form.TimeTextBox"
+						required="true" style="width: 100px;"/>
+				</div>
+									
+				<div style="margin:10px;">
+					<strong><%= LanguageUtil.get(pageContext, "publisher_Expire") %> </strong>: <br />
+					<input 
+						type="text" 
+						dojoType="dijit.form.DateTextBox" 
+						validate="return false;"   
+						id="wfExpireDateAux" 
+						name="wfExpireDateAux" 
+						value="" 
+				
+						style="width: 110px;">
+									
+									
+					<input 	type="text" 
+							name="wfExpireTimeAux" 
+							id="wfExpireTimeAux" 
+							value=""
+					    	data-dojo-type="dijit.form.TimeTextBox"	
+							style="width: 100px;"
+							  />
+						
+					&nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire()" dojoType="dijit.form.CheckBox" value="true" name="wfNeverExpire" checked="true" id="wfNeverExpire" > <label for="wfNeverExpire"><%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %></label>
+				</div>
+				<%}%>	
+			<div class="buttonRow">
+				<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="contentAdmin.saveAssign()" type="button">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
+				</button>
+				<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('contentletWfDialog').hide()" type="button">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+					</button>
+				
+				</div>
+			</div>
 		</div>
-		<%}%>	
-	<div class="buttonRow">
-		<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="contentAdmin.saveAssign()" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-		</button>
-		<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('contentletWfDialog').hide()" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-		</button>
-	
-	</div>
-</div>
+<script>
+	dojo.parser.parse(dojo.byId("wfDivWrapperForDojo"));
+	setDates();
+
+</script>
 <% } %>
+
