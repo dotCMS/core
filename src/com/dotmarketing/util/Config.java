@@ -32,7 +32,7 @@ public class Config {
 	//Config internal properties
 	private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
 	private static Date lastRefreshTime = new Date ();
-	
+	private static boolean configInited = false;
 	private static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
 	private static URL url = null;
@@ -44,6 +44,10 @@ public class Config {
 	}
 	
 	private static void _loadProperties () {
+		
+
+		AsciiArt.doArt();
+		
 	    if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
 		    Logger.info(Config.class, "Initializing properties reader.");
