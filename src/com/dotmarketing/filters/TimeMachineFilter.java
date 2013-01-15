@@ -19,18 +19,27 @@ import org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.WebKeys;
 
 public class TimeMachineFilter implements Filter {
 
     ServletContext ctx;
 
+    public static final String TM_DATE_VAR="tm_date";
+    public static final String TM_LANG_VAR="tm_lang";
+    public static final String TM_HOST_VAR="tm_host";
+    
+    
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse resp = (HttpServletResponse) response;
 		String uri=req.getRequestURI();
 
+		if(uri != null && uri.startsWith("/admin") && req.getSession().getAttribute("tm_date")!=null){
+			req.getSession().removeAttribute(TM_DATE_VAR);
+			req.getSession().removeAttribute(TM_LANG_VAR);
+			req.getSession().removeAttribute(TM_HOST_VAR);
+		}
 		if(req.getSession().getAttribute("tm_date")!=null && !CMSFilter.excludeURI(uri)) {
 		    String datestr=(String)req.getSession().getAttribute("tm_date");
 
