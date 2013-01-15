@@ -20,8 +20,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
@@ -129,6 +131,7 @@ public class PublisherQueueJob implements StatefulJob {
 	}
 	
 	private void updatePublishExpireDates(Date fireTime) throws DotDataException, DotSecurityException {
+		User systemU = APILocator.getUserAPI().getSystemUser();
 	    String toPublish="select working_inode from identifier join contentlet_version_info " +
 	    		" on (identifier.id=contentlet_version_info.identifier) " +
 	    		" where syspublish_date is not null and syspublish_date<=? " +
@@ -137,11 +140,16 @@ public class PublisherQueueJob implements StatefulJob {
 	    DotConnect dc=new DotConnect();
 	    dc.setSQL(toPublish);
 	    dc.addParam(fireTime);
-	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults())
-	        APILocator.getVersionableAPI().setLive(
-	           APILocator.getContentletAPI().find(
-	              (String)mm.get("working_inode"), APILocator.getUserAPI().getSystemUser(), false));
-	    
+	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()){
+	    	
+	    	try{
+	    		Contentlet c = APILocator.getContentletAPI().find( (String)mm.get("working_inode"), systemU, false);
+	    		APILocator.getContentletAPI().publish(c, APILocator.getUserAPI().loadUserById(c.getModUser(), systemU, false), false);
+	    	}
+			catch(Exception e){
+				Logger.debug(this.getClass(), "content failed to publish: " +  e.getMessage());
+			}
+	    }
 	    String toExpire="select id,lang from identifier join contentlet_version_info " +
 	    		" on (identifier.id=contentlet_version_info.identifier) " +
 	    		" where sysexpire_date is not null and sysexpire_date<=? " +
@@ -150,8 +158,13 @@ public class PublisherQueueJob implements StatefulJob {
 	    dc.addParam(fireTime);
 	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()) {
 	        long lang=mm.get("lang") instanceof String ? Long.parseLong((String)mm.get("lang")) : ((Number)mm.get("lang")).longValue();
-	        APILocator.getVersionableAPI().removeLive(
-	            (String)mm.get("id"), lang);
+	        try{
+		    	Contentlet c = APILocator.getContentletAPI().findContentletByIdentifier((String)mm.get("id"), true, lang, systemU, false);
+		    	APILocator.getContentletAPI().unpublish(c, APILocator.getUserAPI().loadUserById(c.getModUser(), systemU, false), false);
+	    	}
+			catch(Exception e){
+				Logger.debug(this.getClass(), "content failed to publish: " +  e.getMessage());
+			}
 	    }
         
 	}
