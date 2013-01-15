@@ -49,6 +49,11 @@
 </style>
 
 <script type="text/javascript">
+
+
+var browsingTimeMachine=false;
+
+
 dojo.require('dojo.data.ItemFileReadStore');
 function resized() {
 	var viewport = dijit.getViewport();
@@ -67,7 +72,28 @@ dojo.ready(function(){
 	dijit.byId('closeBtn').set('disabled','disabled');
 	hostChange();
 	toggleDatePick();
+	
+	var today = new Date();
+	var tomorrow = new Date();
+	tomorrow.setDate(today.getDate()+1);
+	
+	dijit.byId('fdate').constraints.min = tomorrow;
 });
+
+
+
+// pass a function pointer
+dojo.addOnUnload(function(){
+	
+	
+	stopBrowing();
+	if(browsingTimeMachine){
+		
+		return "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-LEAVE-THIS-PAGE")%>";
+	}
+});
+
+
 
 var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
 var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
@@ -88,8 +114,9 @@ function hostChange() {
     }
     dijit.byId('langsel').set('store',emptyStore);
 }
-function timeChange() {
 
+
+function timeChange() {
     var time=dijit.byId('timesel').get('value');
     var langid=dijit.byId('langsel').get('value');
 
@@ -110,40 +137,30 @@ function timeChange() {
                     "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
                 }, dojo.byId('iframeWrapper'));
                 dijit.byId('closeBtn').set('disabled','');
-
+                browsingTimeMachine=true;
                 showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
+                
     		}
     	});
     }
 }
+
 function stopBrowing() {
 	dojo.xhr('GET',{
         url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/stopBrowsing',
         handle: function() {
             dojo.empty('iframeWrapper');
             dijit.byId('closeBtn').set('disabled','disabled');
-            if(dojo.byId("future").checked) {
 
 
-            }
-            else {
+            dijit.byId('timesel').required=false;
+            dijit.byId('langsel').required=false;
 
-	            dijit.byId('timesel').required=false;
-	            dijit.byId('langsel').required=false;
-	            dijit.byId('timesel').set('value','');
-	            dijit.byId('langsel').set('value','');
-
-	            
-            }
-            
             dojo.create("div", {
                 "innerHTML": '<div ><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>',
                 "style": "padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"
             }, dojo.byId('iframeWrapper'));
-          
-            
-            
-            
+            browsingTimeMachine=false;
         }
     });
 }
@@ -175,10 +192,24 @@ function toggleDatePick() {
 	if(dojo.byId("future").checked) {
 		dojo.style('pastPicker','display','none');
 	    dojo.style('futurePicker','display','');
+	    var time=dijit.byId('fdate').get('value');
+	    var langid=dijit.byId('flang').get('value');
+	    if(time != null && langid!=null){
+	    	futureChange();
+	    }else{
+	    	stopBrowing();
+	    }
 	}
 	else {
 		dojo.style('futurePicker','display','none');
 		dojo.style('pastPicker','display','');
+	    var time=dijit.byId('timesel').get('value');
+	    var langid=dijit.byId('langsel').get('value');
+	    if(time != null && langid!=null){
+	    	timeChange();
+	    }else{
+	    	stopBrowing();
+	    }
 	}
 
 }
@@ -194,7 +225,7 @@ function futureChange() {
 	
 	dojo.xhr('GET',{
         url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/startBrowsingFutureDate/date/'
-               +formated+'/hostid/'+hostid+'/langid/'+flang,
+               +formated+'/hostid/'+hostid+'/langid/'+flang+'/rand/' + Math.random(),
         handle: function() {
             dojo.empty('iframeWrapper');
             dojo.create("iframe", {
@@ -204,86 +235,13 @@ function futureChange() {
             dijit.byId('closeBtn').set('disabled','');
 
             showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
+            browsingTimeMachine=true;
         }
     });
 	
 }
 
 
-
-function buildAvailableDatesStore() {
-	var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableTimeMachineForSite/hostid/<%= hostIdentifier.getId() %>" ;
-	var x = {url:myUrl};		
-
-	
-	require(["dojo/request", "dojo/ready","dijit/dijit","dijit/Calendar","dojo/date"], function(request){
-		  request(myUrl).then(function(data){
-			  timeStore = data;
-			  
-				 
-	             new Calendar({
-	             value: new Date(),
-	             isDisabledDate: function(d){
-					var d = new Date(d); 
-					d.setHours(0, 0, 0, 0);
-					
-					
-					var sod = new Date(); 
-					sod.setHours(0, 0, 0, 0);
-					
-					
-					if( d.getTime() >= sod.getTime()){
-						return false;	 
-					}
-
-					var eod =new Date(d); 
-					eod.setHours(23, 59, 59, 999);
-
-	                 
-	                var returnMe = true;
-					var gotItems = function(items, request){
-						for(i=0;i< items.length;i++){
-							console.log(items);
-							if(Math.abs(id[0]) > sod.getTime()){
-								returnMe= false;
-								
-								console.log( "Asdsad" );
-							}
-					
-					}
-
-	                	 
-	                	 
-	                	 
-	                	 
-					};
-					timeStore.fetch({onComplete:  gotItems });
-					console.log( "return:"+ returnMe );
-	                 
-	                 
-	                 
-	                 
-	                 //console.log(eod.getTime());
-                	return true;
-	             }
-	             }, "mycal");
-			  
-
-		  }, function(err){
-		    // handle an error condition
-		  }, function(evt){
-		    // handle a progress event
-		  });
-		});
-}
-
-dojo.addOnLoad(function(){
-	var today = new Date();
-	var tomorrow = new Date();
-	tomorrow.setDate(today.getDate()+1);
-	
-	dijit.byId('fdate').constraints.min = tomorrow;
-});
 
 </script>
 
