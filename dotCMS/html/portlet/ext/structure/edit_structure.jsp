@@ -776,7 +776,7 @@ function disableFormFields(){
 	                    ArrayList<Field> dateFields=new ArrayList<Field>();
 	                    if(UtilMethods.isSet(structure.getInode()))
 	                      for(Field f : structure.getFields())
-	                        if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
+	                        if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) && f.isIndexed())
 	                            dateFields.add(f);
 	                    %>
 	                    <dd>
