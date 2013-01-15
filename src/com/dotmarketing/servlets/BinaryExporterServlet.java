@@ -218,7 +218,19 @@ public class BinaryExporterServlet extends HttpServlet {
 					content = contentAPI.find(assetInode, user, respectFrontendRoles);
 					assetIdentifier = content.getIdentifier();
 				} else {
-					content = contentAPI.findContentletByIdentifier(assetIdentifier, userWebAPI.isLoggedToFrontend(req), lang, user, respectFrontendRoles);
+				    boolean live=userWebAPI.isLoggedToFrontend(req);
+				    if(req.getSession().getAttribute("tm_date")!=null) {
+				        live=true;
+				        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
+				        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
+				            Date fdate=new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
+				            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().before(fdate))
+				                live=false;
+				            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(fdate))
+				                return; // expired!
+				        }
+				    }
+					content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
 					assetInode = content.getInode();
 				}
 				Field field = content.getStructure().getFieldVar(fieldVarName);
