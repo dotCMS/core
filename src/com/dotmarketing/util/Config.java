@@ -11,6 +11,7 @@ import java.util.NoSuchElementException;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
 
+import com.dotcms.util.AsciiArt;
 import com.dotmarketing.db.DbConnectionFactory;
 
 public class Config {
