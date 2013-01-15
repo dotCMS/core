@@ -156,8 +156,8 @@ public class SalesForceUtils {
 		try{
 			
 			Map<String,String> userAttributes = retrieveUserInfoFromSalesforce(emailAddress, request, response);
-			
-			String RolesValues = userAttributes.get("RolesValues");
+			String salesforceSearchRoleField = pluginAPI.loadProperty("com.dotcms.salesforce.plugin","salesforce_search_object_role_field");
+			String RolesValues = userAttributes.get(salesforceSearchRoleField);
 	        
 	        if(UtilMethods.isSet(RolesValues)){
 	        	
