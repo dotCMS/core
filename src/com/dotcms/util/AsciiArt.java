@@ -10,7 +10,10 @@ public class AsciiArt {
 	public static void doArt(){
 		
 		if(artDone) return;
-			artDone=true;
+		
+
+		
+		artDone=true;
 		
 		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
 		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
@@ -30,6 +33,13 @@ public class AsciiArt {
 		// Logger.info(com.dotcms.util.AsciiArt.class, "                                                        copyright " + Calendar.getInstance().get(Calendar.YEAR) + ", dotCMS LLC");
 		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
 		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
+	
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			//Logger.error(AsciiArt.class,e.getMessage(),e);
+		}
+	
 	}
 	
 	
