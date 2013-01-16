@@ -17,7 +17,8 @@ public class PushPublisherConfig extends PublisherConfig {
 		TEMPLATES,
 		HTMLPAGES,
 		CONTAINERS, 
-		CONTENTS
+		CONTENTS, 
+		LINKS
 	}
 	
 	private Operation operation;
@@ -131,8 +132,18 @@ public class PushPublisherConfig extends PublisherConfig {
 			Set<String> contentletsToBuild =   new HashSet<String>();
 			put(AssetTypes.CONTENTS.name(), contentletsToBuild);
 		}
-
+		
 		return (Set<String>) get(AssetTypes.CONTENTS.name());
+		
+	}
+	@SuppressWarnings("unchecked")
+	public Set<String> getLinks() {
+		if(get(AssetTypes.LINKS.name()) == null){
+			Set<String> linksToBuild =   new HashSet<String>();
+			put(AssetTypes.LINKS.name(), linksToBuild);
+		}
+
+		return (Set<String>) get(AssetTypes.LINKS.name());
 	
 	}
 
@@ -150,6 +161,10 @@ public class PushPublisherConfig extends PublisherConfig {
 	
 	public void setContents(Set<String> contents) {
 		put(AssetTypes.CONTENTS.name(), contents);
+	}
+	
+	public void setLinks(Set<String> links) {
+		put(AssetTypes.LINKS.name(), links);
 	}
 	
 }

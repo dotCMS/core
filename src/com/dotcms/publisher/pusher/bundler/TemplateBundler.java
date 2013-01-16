@@ -93,13 +93,6 @@ public class TemplateBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
-		// need to bundle all containers associated with the template
-		List<Container> containers = APILocator.getTemplateAPI().
-				getContainersInTemplate(template, systemUser, false);
-		
-		for (Container container : containers) {
-			config.getContainers().add(container.getIdentifier());
-		}
 		
 		Identifier templateId = APILocator.getIdentifierAPI().find(template.getIdentifier());
 		TemplateWrapper wrapper = 

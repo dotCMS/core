@@ -75,7 +75,7 @@
 			}
 			
 			if(enterprise && sendingEndpoints) {
-				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\');">';
+				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
 			    	strHTML += '<span class="pushIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
@@ -203,7 +203,7 @@
 			strHTML += '</a>';
 			
 			if(enterprise && sendingEndpoints) {
-				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\');">';
+				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
 			    	strHTML += '<span class="folderGlobeIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
