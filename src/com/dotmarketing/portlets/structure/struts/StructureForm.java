@@ -9,6 +9,9 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.validator.ValidatorForm;
 
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -32,6 +35,8 @@ public class StructureForm extends ValidatorForm {
     private String urlMapPattern = "";
     private String folder;
     private String host;
+    private String publishDateVar;
+    private String expireDateVar;
     
 	private List fields;
 
@@ -91,6 +96,28 @@ public class StructureForm extends ValidatorForm {
         if(!UtilMethods.isSet(host) && (!UtilMethods.isSet(folder) || folder.equals("SYSTEM_FOLDER"))){
        	   errors.add("host", new ActionMessage ("Host-or-folder-is-required"));
 		}
+        
+        if(!UtilMethods.isSet(publishDateVar)) {
+            publishDateVar=null;
+        }
+        else if(UtilMethods.isSet(inode)) {
+            boolean found=false;
+            for(Field f : FieldsCache.getFieldsByStructureInode(inode))
+                found=found || f.getVelocityVarName().equals(publishDateVar);
+            if(!found)
+                errors.add("publishDateVar", new ActionMessage("publish-date-invalid"));
+        }
+        
+        if(!UtilMethods.isSet(expireDateVar)) {
+            expireDateVar=null;
+        }
+        else if(UtilMethods.isSet(inode)) {
+            boolean found=false;
+            for(Field f : FieldsCache.getFieldsByStructureInode(inode))
+                found=found || f.getVelocityVarName().equals(expireDateVar);
+            if(!found)
+                errors.add("expireDateVar", new ActionMessage("expire-date-invalid"));
+        }       
         return errors;
 	}
 	public String getDetailPage() {
@@ -166,6 +193,18 @@ public class StructureForm extends ValidatorForm {
 	public void setHost(String host) {
 		this.host = host;
 	}
+    public String getPublishDateVar() {
+        return publishDateVar;
+    }
+    public void setPublishDateVar(String publishDateVar) {
+        this.publishDateVar = publishDateVar;
+    }
+    public String getExpireDateVar() {
+        return expireDateVar;
+    }
+    public void setExpireDateVar(String expireDateVar) {
+        this.expireDateVar = expireDateVar;
+    }
 	
 	
 	

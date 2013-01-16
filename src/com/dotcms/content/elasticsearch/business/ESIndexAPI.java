@@ -591,7 +591,7 @@ public class ESIndexAPI {
 	   try{
 		   Client client=new ESClient().getClient();
 
-		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", id)
+		   IndexResponse response = client.prepareIndex(idx, SiteSearchAPI.ES_SITE_SEARCH_MAPPING, id)
 			        .setSource(json)
 			        .execute()
 			        .actionGet();

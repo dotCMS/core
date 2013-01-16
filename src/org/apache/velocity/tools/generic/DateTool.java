@@ -27,6 +27,11 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+
 
 /**
  * Tool for working with {@link Date} and {@link Calendar}
@@ -56,16 +61,13 @@ import java.util.TimeZone;
  * </pre></p>
  *
  * <p>This tool is entirely threadsafe, and has no instance members.
- * It may be used in any scope (request, session, or application).
- * As such, the methods are highly interconnected, and overriding 
- * key methods provides an easy way to create subclasses that use 
- * a non-default format, calendar, locale, or timezone.</p>
+ * session scope only as it looks at the request.</p>
  *
  * @author <a href="mailto:nathan@esha.com">Nathan Bubna</a>
  * @since VelocityTools 1.0
  * @version $Revision: 154105 $ $Date: 2005-02-16 16:56:54 -0800 (Wed, 16 Feb 2005) $
  */
-public class DateTool
+public class DateTool implements ViewTool
 {
 
     /** 
@@ -75,12 +77,21 @@ public class DateTool
      */
     public static final String DEFAULT_FORMAT = "default";
 
+    private Date tmDate=null;
+    
     /**
      * Default constructor.
      */
     public DateTool()
     {
         // do nothing
+    }
+    
+    @Override
+    public void init(Object initData) {
+        if(((ViewContext) initData).getRequest().getSession().getAttribute("tm_date")!=null) {
+            tmDate=new Date(Long.parseLong((String)((ViewContext) initData).getRequest().getSession().getAttribute("tm_date")));
+        }
     }
 
 
@@ -89,7 +100,7 @@ public class DateTool
     /**
      * @return the system's current time as a {@link Date}
      */
-    public static final Date getSystemDate()
+    public Date getSystemDate()
     {
         return getSystemCalendar().getTime();
     }
@@ -98,9 +109,12 @@ public class DateTool
     /**
      * @return the system's current time as a {@link Calendar}
      */
-    public static final Calendar getSystemCalendar()
+    public Calendar getSystemCalendar()
     {
-        return Calendar.getInstance();
+        Calendar c=Calendar.getInstance();
+        if(tmDate!=null)
+            c.setTime(tmDate);
+        return c;
     }
 
 
@@ -160,7 +174,10 @@ public class DateTool
      */
     public Calendar getCalendar()
     {
-        return Calendar.getInstance(getTimeZone(), getLocale());
+        Calendar c = Calendar.getInstance(getTimeZone(), getLocale());
+        if(tmDate!=null)
+            c.setTime(tmDate);
+        return c;
     }
 
     /**
@@ -293,7 +310,7 @@ public class DateTool
         try
         {
             Field clsf = Calendar.class.getField(fstr);
-            fieldValue = clsf.getInt(Calendar.getInstance());
+            fieldValue = clsf.getInt(getCalendar());
         }
         catch (Exception e)
         {
@@ -871,6 +888,5 @@ public class DateTool
     {
         return format(getFormat(), getDate());
     }
-
 
 }
