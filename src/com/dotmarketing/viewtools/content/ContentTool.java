@@ -1,37 +1,24 @@
 package com.dotmarketing.viewtools.content;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
-
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
 
 /**
@@ -49,14 +36,16 @@ import com.liferay.portal.model.User;
 public class ContentTool implements ViewTool {
 
 	private ContentletAPI conAPI;
-	private HttpServletRequest req;
 	private UserWebAPI userAPI;
+
+	private HttpServletRequest req;
 	private User user = null;
 	private int MAX_LIMIT = 100;
 	private boolean ADMIN_MODE;
 	private boolean PREVIEW_MODE;
 	private boolean EDIT_MODE;
 	private boolean EDIT_OR_PREVIEW_MODE;
+	private String tmDate;
 	private Context context;
 	private Host currentHost;
 	
@@ -71,7 +60,8 @@ public class ContentTool implements ViewTool {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
 		HttpSession session = req.getSession();
-		boolean tm=session.getAttribute("tm_date")!=null;
+		tmDate = (String) session.getAttribute("tm_date");
+		boolean tm=tmDate!=null;
 		ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
 		PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
 		EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
@@ -94,72 +84,8 @@ public class ContentTool implements ViewTool {
 	 * @return NULL if not found
 	 */
 	public ContentMap find(String inodeOrIdentifier){
-		String[] recDates = null;
-		try {
-			recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
-			inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifier);
-			Contentlet c = conAPI.find(inodeOrIdentifier, user, true);
-			if(c != null){
-				if(c.getStructure().getVelocityVarName().equals("calendarEvent")
-						&& (recDates!=null && recDates.length==2)){
-					String startDate = recDates[0];
-					String endDate = recDates[1];
-					if(UtilMethods.isSet(startDate) && UtilMethods.isSet(endDate)){
-						c.setDateProperty("startDate", new Date(Long.parseLong(startDate)));
-						c.setDateProperty("endDate", new Date(Long.parseLong(endDate)));
-					}
-				}
-				return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
-			}
-		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
-			return null;
-		}
-		
-		try {
-		
-    		List<Contentlet> l=null;
-    		if(req.getSession().getAttribute("tm_date")!=null) {                      
-    		    // timemachine future dates
-    		    Date ffdate=new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
-    		    Identifier ident=APILocator.getIdentifierAPI().find(inodeOrIdentifier);
-    		    if(ident==null || !UtilMethods.isSet(ident.getId())) return null;
-    		    boolean showlive=true;
-    		    if(UtilMethods.isSet(ident.getSysExpireDate()) && ffdate.after(ident.getSysExpireDate()))
-    		        return null; // it has expired. return nothing
-    		    if(UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate()))
-    		        showlive=false; // it would be published. show the working
-    		    l = conAPI.search("+identifier:" + inodeOrIdentifier + 
-    		            " +deleted:false " + (showlive ? "+live:true" : "+working:true"), 0, -1, "modDate", user, true);
-    		}
-    		else {
-    		   String stateQuery = PREVIEW_MODE || EDIT_MODE ? "+working:true +deleted:false" : "+live:true +deleted:false";
-    		   l = conAPI.search("+identifier:" + inodeOrIdentifier + " " + stateQuery, 0, -1, "modDate", user, true);
-    		}
-		
-			
-			if(l== null || l.size() < 1){
-				return null;
-			}else{
-				if(l.size()>1){
-					Logger.warn(this, "More then one live or working content found with identifier = " + inodeOrIdentifier);
-				}
-				if(l.get(0).getStructure().getVelocityVarName().equals("calendarEvent")
-						&& (recDates!=null && recDates.length==2)){
-					String startDate = recDates[0];
-					String endDate = recDates[1];
-					if(UtilMethods.isSet(startDate) && UtilMethods.isSet(endDate)){
-						l.get(0).setDateProperty("startDate", new Date(Long.parseLong(startDate)));
-						l.get(0).setDateProperty("endDate", new Date(Long.parseLong(endDate)));
-					}
-				}
-				return new ContentMap(l.get(0), user,EDIT_OR_PREVIEW_MODE,currentHost,context);
-			}
-		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage());
-			Logger.debug(ContentTool.class,e.getMessage(),e);
-			return null;
-		}
+		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE);
+		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
 	}
 	
 	/**
@@ -205,83 +131,11 @@ public class ContentTool implements ViewTool {
 	
 	public PaginatedArrayList<ContentMap> pull(String query, int offset,int limit, String sort){
 	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-		try {
-		    query=addDefaultsToQuery(query);
-		    List<Contentlet> contentlets=null;
-		    if(req.getSession().getAttribute("tm_date")!=null && query.contains("+live:true")) {
-		        // with timemachine on!
-	            String datestr=(String)req.getSession().getAttribute("tm_date");
-	            Date futureDate=new Date(Long.parseLong(datestr));
-	            query=query.replaceAll("\\+live\\:true", "").replaceAll("\\+working\\:true", "");
-	            String ffdate=ESMappingAPIImpl.datetimeFormat.format(futureDate);
-	            
-	            String notexpired=" +expdate:["+ffdate+" TO 29990101000000] ";
-	            String wquery=query + " +working:true " +
-	            		"+pubdate:["+ESMappingAPIImpl.datetimeFormat.format(new Date())+
-	            				" TO "+ffdate+"] "+notexpired;
-	            String lquery=query + " +live:true " + notexpired;
-	            
-	            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, true);
-	            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, true);
-	            
-	            // merging both results avoiding repeated inodes
-	            Set<String> inodes=new HashSet<String>();
-	            contentlets=new ArrayList<Contentlet>();
-	            ret.setTotalResults(
-	                    wc.getTotalResults()>lc.getTotalResults() ? 
-	                            wc.getTotalResults() : lc.getTotalResults());
-	            contentlets.addAll(wc);
-	            for(Contentlet cc : wc) 
-	                inodes.add(cc.getInode());
-	            for(Contentlet cc : lc) {
-	                if(!inodes.contains(cc.getInode())) {
-	                    contentlets.add(cc);
-	                    inodes.add(cc.getInode());
-	                }
-	            }
-	            
-	            // sorting the result
-	            if(UtilMethods.isSet(sort) && !sort.trim().equals("random")) {
-    	            final String[] sorts=sort.split(",");
-    	            Collections.sort(contentlets, new Comparator<Contentlet>() {
-    	                @SuppressWarnings({"unchecked","rawtypes"})
-                        @Override
-    	                public int compare(Contentlet a, Contentlet b) {
-    	                    int comp=0;
-    	                    for(int x=0;x<sorts.length && comp==0;x++) {
-    	                        String[] ss=sorts[x].split(" ");
-    	                        Comparable c1=(Comparable)a.get(ss[0]);
-    	                        Comparable c2=(Comparable)b.get(ss[0]);
-    	                        if(c1!=null && c2!=null) {
-        	                        if(ss.length==1 || ss[1].equals("asc"))
-        	                            comp=c1.compareTo(c2);
-        	                        else
-        	                            comp=c2.compareTo(c1);
-    	                        }
-    	                    }   
-    	                    return comp;
-    	                }
-    	            });
-	            }
-	            
-	            // truncate to respect limit
-	            if(contentlets.size()>limit)
-	                contentlets=contentlets.subList(0, limit);
-		    }
-		    else {
-		        // normal query
-		        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, true);
-		        ret.setTotalResults(conts.getTotalResults());
-		        contentlets=conts;
-		    }
-		    
-			for(Contentlet c : contentlets)
-				ret.add(new ContentMap(c,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
-		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage());
-			Logger.debug(ContentTool.class,e.getMessage(),e);
-		}
-		
+	    
+	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(addDefaultsToQuery(query), offset, limit, sort, user, tmDate);
+	    for(Contentlet cc : cons) {
+	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+	    }
 		return ret;
 	}
 	
@@ -338,22 +192,11 @@ public class ContentTool implements ViewTool {
 	 * 
 	 */
 	public PaginatedContentList<ContentMap> pullPerPage(String query, int currentPage, int contentsPerPage, String sort){
-		PaginatedArrayList<ContentMap> cmaps = pullPagenated(addDefaultsToQuery(query), contentsPerPage, contentsPerPage * (currentPage - 1), sort);
 		PaginatedContentList<ContentMap> ret = new PaginatedContentList<ContentMap>();
-		if(cmaps.size()>0){
-			long minIndex = (currentPage - 1) * contentsPerPage;
-	        long totalCount = cmaps.getTotalResults();
-	        long maxIndex = contentsPerPage * currentPage;
-	        if((minIndex + contentsPerPage) >= totalCount){
-	        	maxIndex = totalCount;
-	        }
-			ret.addAll(cmaps);
-			ret.setTotalResults(cmaps.getTotalResults());
-			ret.setTotalPages((long)Math.ceil(((double)cmaps.getTotalResults())/((double)contentsPerPage)));
-			ret.setNextPage(maxIndex < totalCount);
-			ret.setPreviousPage(minIndex > 0);
-			cmaps = null;
-		}
+	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(addDefaultsToQuery(query), currentPage, contentsPerPage, sort, user, tmDate);
+	    for(Contentlet cc : cons) {
+	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+	    }
 		return ret;
 	}
 	
@@ -384,33 +227,7 @@ public class ContentTool implements ViewTool {
 	 * @return Returns empty List if no results are found
 	 */
 	public List<ContentletSearch> query(String query, int limit, String sort){
-		List<ContentletSearch> ret = null;
-		try {
-		    query=addDefaultsToQuery(query);
-            if(req.getSession().getAttribute("tm_date")!=null && query.contains("+live:true")) {
-                // with timemachine on!
-                // as we need to load contentlets anyway to sort 
-                // lets just call pull here
-                List<ContentMap> conts=pull(query, limit, sort);
-                ret = new ArrayList<ContentletSearch>(conts.size());
-                for(ContentMap cm : conts) {
-                    ContentletSearch cs=new ContentletSearch();
-                    cs.setInode((String)cm.get("inode"));
-                    cs.setIdentifier((String)cm.get("identifier"));
-                    ret.add(cs);
-                }   
-            }
-            else {
-                // normal query
-                ret = conAPI.searchIndex(query, limit, -1, sort, user, true);
-            }
-		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage(),e);
-		}
-		if(ret == null){
-			ret = new ArrayList<ContentletSearch>();
-		}
-		return ret;
+		return ContentUtils.query(addDefaultsToQuery(query), limit, user, sort);
 	}
 	
 	/**
@@ -419,15 +236,7 @@ public class ContentTool implements ViewTool {
 	 * @return
 	 */
 	public long count(String query) {
-		try {
-		    if(req.getSession().getAttribute("tm_date")!=null && query.contains("+live:true"))
-		        return query(query,0).size();
-		    else
-		        return conAPI.indexCount(query, user, true);
-        } catch (Exception e) {
-            Logger.error(this, "can't get indexCount for query: "+query,e);
-            return 0;
-        }
+		return ContentUtils.count(query, user, tmDate);
 	}
 	
 	/**
@@ -503,32 +312,14 @@ public class ContentTool implements ViewTool {
 	 * @return Returns empty List if no results are found
 	 */
 	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort) {	
-		Relationship rel = RelationshipFactory.getRelationshipByRelationTypeValue(relationshipName);
-		String relNameForQuery = "";
-		if(rel.getParentStructureInode().equals(rel.getChildStructureInode())){
-			if(pullParents){
-				relNameForQuery = relationshipName.trim() + "-child";
-			}else{
-				relNameForQuery = relationshipName.trim() + "-parent";
-			}
-		}
-		
-		if(!UtilMethods.isSet(relNameForQuery))//DOTCMS-5328
-			relNameForQuery = rel.getRelationTypeValue();
-		
-		contentletIdentifier = RecurrenceUtil.getBaseEventIdentifier(contentletIdentifier);
-		
-					
-		String pullquery = "+type:content +" + relNameForQuery + ":" + contentletIdentifier;
-				
-		if(UtilMethods.isSet(condition)){
-	           pullquery += " " + condition;
-		}
 
-		if(!UtilMethods.isSet(sort)){ 
-			sort = relationshipName + "-" + contentletIdentifier + "-order";
+		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
+		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit, sort, user, tmDate);
+
+		for(Contentlet cc : cons) {
+			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
 		}
-		return pull(pullquery, limit, sort);
+		return ret;
 	}
 	
 	private String addDefaultsToQuery(String query){
