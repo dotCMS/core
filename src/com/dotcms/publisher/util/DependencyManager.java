@@ -18,10 +18,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -37,6 +38,7 @@ public class DependencyManager {
 	private Set<String> structures;
 	private Set<String> containers;
 	private Set<String> contents;
+	private Set<String> links;
 	private User user;
 	
 	public DependencyManager(User user) { 
@@ -47,6 +49,7 @@ public class DependencyManager {
 		structures = new HashSet<String>();
 		containers = new HashSet<String>();
 		contents = new HashSet<String>();
+		links = new HashSet<String>();
 		this.user = user;
 	}
 	
@@ -83,6 +86,7 @@ public class DependencyManager {
 		config.setContainers(containers);
 		config.setStructures(structures);
 		config.setContents(contents);
+		config.setLinks(links);
 	}
 	
 	private void setHostDependencies() {
@@ -102,12 +106,15 @@ public class DependencyManager {
 					containers.add(container.getIdentifier());
 				}
 				
-				// FileAsset dependencies 
-				List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByHost(h, user, false);
-				for (FileAsset fileAsset : files) {
-					contents.add(fileAsset.getIdentifier());
+				// Content dependencies
+				String luceneQuery = "+conHost:" + h.getInode();
+				
+				List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
+				for (Contentlet contentlet : contentList) {
+					contents.add(contentlet.getIdentifier());
 				}
 				
+				// Structure dependencies
 				List<Structure> structuresList = StructureFactory.getStructuresUnderHost(h, user, false);;
 				for (Structure structure : structuresList) {
 					structures.add(structure.getInode());
@@ -158,12 +165,19 @@ public class DependencyManager {
 			// Host dependency
 			hosts.add(f.getHostId());
 			
-			// FileAsset Dependencies
+			// Content dependencies
+			String luceneQuery = "+conFolder:" + f.getInode();
 			
-			List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(f, user, false );
+			List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
+			for (Contentlet contentlet : contentList) {
+				contents.add(contentlet.getIdentifier());
+			}
 			
-			for (FileAsset fileAsset : files) {
-				contents.add(fileAsset.getIdentifier());
+			// Menu Link dependencies
+			
+			List<Link> linkList = APILocator.getMenuLinkAPI().findFolderMenuLinks(f);
+			for (Link link : linkList) {
+				links.add(link.getIdentifier());
 			}
 			
 			// Structure dependencies
