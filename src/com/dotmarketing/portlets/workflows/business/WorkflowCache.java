@@ -1,8 +1,11 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import java.util.List;
+
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
@@ -12,6 +15,7 @@ public abstract class WorkflowCache implements Cachable{
 	protected static String PRIMARY_GROUP = "WorkflowCache";
 	protected static String TASK_GROUP = "WorkflowTaskCache";
 	protected static String STEP_GROUP = "WorkflowStepCache";
+	protected static String ACTION_GROUP = "WorkflowActionCache";
 	abstract protected WorkflowScheme add(WorkflowScheme scheme);
 
 	abstract protected WorkflowScheme getScheme(String key);
@@ -23,10 +27,14 @@ public abstract class WorkflowCache implements Cachable{
 	abstract protected WorkflowTask addTask(WorkflowTask step) ;
 	abstract protected WorkflowTask addTask(Contentlet contentlet, WorkflowTask task);
 	abstract protected WorkflowStep add(WorkflowStep step);
+	abstract protected List<WorkflowAction> addActions(WorkflowStep step, List<WorkflowAction> actions);
+	abstract protected List<WorkflowAction> getActions(WorkflowStep step);
+	
 	abstract public void clearCache();
 	abstract protected void remove(Contentlet contentlet);
 	abstract protected void remove(WorkflowScheme scheme);
 	abstract protected void remove(WorkflowStep step);
+	abstract protected void removeActions(WorkflowStep step);
 	abstract protected void remove(WorkflowTask task) ;
 	abstract protected WorkflowScheme getSchemeByStruct(String key) ;
 	abstract protected WorkflowScheme addForStructure(String struct, WorkflowScheme scheme) ;
