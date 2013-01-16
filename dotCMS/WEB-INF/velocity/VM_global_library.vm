@@ -129,7 +129,7 @@
    #if ($request.session.getAttribute("com.dotmarketing.htmlpage.language"))
 	   #set($lang = $request.session.getAttribute("com.dotmarketing.htmlpage.language"))
    #end
-   #if($EDIT_MODE || $PREVIEW_MODE)
+   #if($EDIT_MODE || $PREVIEW_MODE || $_show_working_)
 		#if($map)
 			#set($content_path="working/${id}_${lang}.contentMap")
 		#else

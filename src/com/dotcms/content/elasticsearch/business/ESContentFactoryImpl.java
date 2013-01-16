@@ -323,6 +323,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        con.setHost(identifier.getHostId());
 	        con.setFolder(folder.getInode());
 	        
+	        // lets check if we have publish/expire fields to set
+	        Structure st=con.getStructure();
+	        if(UtilMethods.isSet(st.getPublishDateVar()))
+	            con.setDateProperty(st.getPublishDateVar(), identifier.getSysPublishDate());
+	        if(UtilMethods.isSet(st.getExpireDateVar()))
+	            con.setDateProperty(st.getExpireDateVar(), identifier.getSysExpireDate());
 		}
 	     else{
 	         con.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());

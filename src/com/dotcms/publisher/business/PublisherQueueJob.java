@@ -17,9 +17,13 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
@@ -45,6 +49,9 @@ public class PublisherQueueJob implements StatefulJob {
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
+		    Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
+		    updatePublishExpireDates(arg0.getFireTime());
+		    Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
 			
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
 			updateAuditStatus();
@@ -127,6 +134,47 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		}
 
+	}
+	
+	private void updatePublishExpireDates(Date fireTime) throws DotDataException, DotSecurityException {
+		User systemU = APILocator.getUserAPI().getSystemUser();
+	    String toPublish="select working_inode from identifier join contentlet_version_info " +
+	    		" on (identifier.id=contentlet_version_info.identifier) " +
+	    		" where syspublish_date is not null and syspublish_date<=? " +
+	    		" and (sysexpire_date is null or sysexpire_date >= ?) " + 
+	    		" and (live_inode is null or live_inode<>working_inode) "; 
+	    
+	    DotConnect dc=new DotConnect();
+	    dc.setSQL(toPublish);
+	    dc.addParam(fireTime);
+	    dc.addParam(fireTime);
+	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()){
+	    	
+	    	try{
+	    		Contentlet c = APILocator.getContentletAPI().find( (String)mm.get("working_inode"), systemU, false);
+	    		APILocator.getContentletAPI().publish(c, APILocator.getUserAPI().loadUserById(c.getModUser(), systemU, false), false);
+	    	}
+			catch(Exception e){
+				Logger.debug(this.getClass(), "content failed to publish: " +  e.getMessage());
+			}
+	    }
+	    String toExpire="select id,lang from identifier join contentlet_version_info " +
+	    		" on (identifier.id=contentlet_version_info.identifier) " +
+	    		" where sysexpire_date is not null and sysexpire_date<=? " +
+	    		" and live_inode is not null";
+	    dc.setSQL(toExpire);
+	    dc.addParam(fireTime);
+	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()) {
+	        long lang=mm.get("lang") instanceof String ? Long.parseLong((String)mm.get("lang")) : ((Number)mm.get("lang")).longValue();
+	        try{
+		    	Contentlet c = APILocator.getContentletAPI().findContentletByIdentifier((String)mm.get("id"), true, lang, systemU, false);
+		    	APILocator.getContentletAPI().unpublish(c, APILocator.getUserAPI().loadUserById(c.getModUser(), systemU, false), false);
+	    	}
+			catch(Exception e){
+				Logger.debug(this.getClass(), "content failed to publish: " +  e.getMessage());
+			}
+	    }
+        
 	}
 	
 	private void updateAuditStatus() throws DotPublisherException, DotDataException {

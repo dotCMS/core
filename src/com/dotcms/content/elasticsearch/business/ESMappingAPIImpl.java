@@ -53,7 +53,6 @@ import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
@@ -197,7 +196,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		m = getDefaultFieldMap();
 		m.put("type", "title");
 		fields.put("title", m);
+		
+		m = getDefaultFieldMap();
+        m.put("type", "date");
+        fields.put("pubdate", m);
 
+        m = getDefaultFieldMap();
+        m.put("type", "date");
+        fields.put("expdate", m);
+        
 		return fields;
 
 	}
@@ -255,7 +262,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("parentPath", ident.getParentPath());
             m.put("path", ident.getPath());
             
+            if(UtilMethods.isSet(ident.getSysPublishDate()))
+                m.put("pubdate", datetimeFormat.format(ident.getSysPublishDate()));
+            else
+                m.put("pubdate", datetimeFormat.format(cvi.getVersionTs()));
+            
+            if(UtilMethods.isSet(ident.getSysExpireDate()))
+                m.put("expdate", datetimeFormat.format(ident.getSysExpireDate()));
+            else
+                m.put("expdate", "29990101000000");
+            
             m.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
+            
             String urlMap = null;
             try{
             	urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);

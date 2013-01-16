@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -18,15 +19,18 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UUIDGenerator;
 
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.lucene.queryParser.ParseException;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1723,6 +1727,84 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(identifier, saved.getIdentifier());
         
         contentletAPI.isInodeIndexed(newInode);
+    }
+    
+    /**
+     * Making sure we set pub/exp dates on identifier when saving content
+     * and we set them back to the content when reading.
+     * 
+     * https://github.com/dotCMS/dotCMS/issues/1763
+     */
+    @Test
+    public void testPubExpDatesFromIdentifier() throws Exception {
+        // set up a structure with pub/exp variables
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
+        Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
+        FieldFactory.saveField( field );
+        Field fieldPubDate = new Field( "Pub Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, true, 2, false, false, false );
+        FieldFactory.saveField( fieldPubDate );
+        Field fieldExpDate = new Field( "Exp Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, true, 3, false, false, false );
+        FieldFactory.saveField( fieldExpDate );
+        testStructure.setPublishDateVar(fieldPubDate.getVelocityVarName());
+        testStructure.setExpireDateVar(fieldExpDate.getVelocityVarName());
+        StructureFactory.saveStructure(testStructure);
+        
+        // some dates to play with
+        Date d1=new Date();
+        Date d2=new Date(d1.getTime()+60000L);
+        Date d3=new Date(d2.getTime()+60000L);
+        Date d4=new Date(d3.getTime()+60000L);
+        
+        // get default lang and one alternate to play with sibblings
+        long deflang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        long altlang=-1;
+        for(Language ll : APILocator.getLanguageAPI().getLanguages())
+            if(ll.getId()!=deflang)
+                altlang=ll.getId();
+        
+        // if we save using d1 & d1 then the identifier should 
+        // have those values after save
+        Contentlet c1=new Contentlet();
+        c1.setStructureInode(testStructure.getInode());
+        c1.setStringProperty(field.getVelocityVarName(), "c1");
+        c1.setDateProperty(fieldPubDate.getVelocityVarName(), d1);
+        c1.setDateProperty(fieldExpDate.getVelocityVarName(), d2);
+        c1.setLanguageId(deflang);
+        c1=APILocator.getContentletAPI().checkin(c1, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
+        
+        Identifier ident=APILocator.getIdentifierAPI().find(c1);
+        assertEquals(d1,ident.getSysPublishDate());
+        assertEquals(d2,ident.getSysExpireDate());
+        
+        // if we save another language version for the same identifier
+        // then the identifier should be updated with those dates d3&d4
+        Contentlet c2=new Contentlet();
+        c2.setStructureInode(testStructure.getInode());
+        c2.setStringProperty(field.getVelocityVarName(), "c2");
+        c2.setIdentifier(c1.getIdentifier());
+        c2.setDateProperty(fieldPubDate.getVelocityVarName(), d3);
+        c2.setDateProperty(fieldExpDate.getVelocityVarName(), d4);
+        c2.setLanguageId(altlang);
+        c2=APILocator.getContentletAPI().checkin(c2, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
+        
+        Identifier ident2=APILocator.getIdentifierAPI().find(c2);
+        assertEquals(d3,ident2.getSysPublishDate());
+        assertEquals(d4,ident2.getSysExpireDate());
+        
+        // the other contentlet should have the same dates if we read it again
+        Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
+        assertEquals(d3,c11.getDateProperty(fieldPubDate.getVelocityVarName()));
+        assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
+        
+        // also it should be in the index update with the new dates
+        FastDateFormat datetimeFormat = ESMappingAPIImpl.datetimeFormat;
+        String q="+structureName:"+testStructure.getVelocityVarName()+
+                " +inode:"+c11.getInode()+
+                " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
+                " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
+        assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
     }
 
 }

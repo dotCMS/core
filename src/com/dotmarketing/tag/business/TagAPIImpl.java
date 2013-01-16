@@ -216,7 +216,7 @@ public class TagAPIImpl implements TagAPI{
 	 * @return tag
 	 */
 	public Tag getTag(String name, String userId, String hostId) throws Exception {
-
+		String existHostId;
 		// validating if exists a tag with the name provided
         HibernateUtil dh = new HibernateUtil(List.class);
     	dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where lower(tagName) = ?");
@@ -237,14 +237,19 @@ public class TagAPIImpl implements TagAPI{
         	boolean tagExists = false;
 
         	Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), true);
-
+        	if(host.getMap().get("tagStorage") == null){
+        		existHostId = host.getMap().get("identifier").toString();
+        	}
+        	else {
+        		existHostId = host.getMap().get("tagStorage").toString();
+        	}
         	for(Tag tag : tags){
 
         		if(isGlobalTag(tag)){
         			newTag = tag;
         			globalTagExists = true;
         		}
-        		if(tag.getHostId().equals(host.getIdentifier())){
+        		if(tag.getHostId().equals(existHostId)){
         			newTag = tag;
             		tagExists = true;
         		}
