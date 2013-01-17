@@ -63,12 +63,11 @@ public class BundlePublisher extends Publisher {
         handlers = new ArrayList<IHandler>();
         //The order is really important
         handlers.add(new HostHandler());
+        handlers.add(new FolderHandler());
         
         if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES"))
         	handlers.add(new StructureHandler());
-        
-        
-        handlers.add(new FolderHandler());
+
         handlers.add(new ContainerHandler());
         handlers.add(new TemplateHandler());
         handlers.add(new HTMLPageHandler());
