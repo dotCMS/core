@@ -14,6 +14,7 @@ Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAsse
 <script language="JavaScript">
 
 dojo.require("dotcms.dojo.data.StructureReadStore");
+dojo.require("dotcms.dojo.push.PushHandler");
 	 //Global Variables
      var openFolders = new Array ();
 
@@ -1482,13 +1483,10 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		}
 	}
 	
-	function remotePublishHTMLPage (objId, referer) {
+	function remotePublish (objId) {
 		
-		remotePublisherAdmin.showDialog(objId);
-// 		publishHTMLPageInode = objId;
-// 		publishHTMLPageReferer = referer;
-// 		dwr.engine.setErrorHandler(publishHTMLPageExceptionHandler);
-// 		BrowserAjax.publishAsset(objId, publishHTMLPageCallback);
+		pushHandler.showDialog(objId);
+		
 	}
 
 	function unpublishHTMLPage (objId, referer) {
@@ -2161,99 +2159,8 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 	    	$('statusDiv').innerHTML = dateStr + ' - ' + msg + '<br>' + $('statusDiv').innerHTML;
 	    }
     }
-	
-	 //*************************************
-    //
-    //
-    //  RemotePublisher Obj
-    //
-    //
-    //*************************************
 
-    dojo.declare("dotcms.dijit.contentlet.RemotePublisherAdmin", null, {
-
-		assetIdentifier:"", 
-    	showDialog: function(assetId){
-    		dojo.require("dotcms.dijit.RemotePublisherDialog");
-    		var remotePublisherDia = new dotcms.dijit.RemotePublisherDialog();
-    		this.assetIdentifier = assetId;
-    		remotePublisherDia.title = "<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>";
-    		remotePublisherDia.show();
-    	},
-
-    	remotePublish : function(){
-    		
-			// BEGIN: PUSH PUBLISHING ACTIONLET						
-			var publishDate = (dijit.byId("publishDate"))			
-				? dojo.date.locale.format(dijit.byId("publishDate").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
-					: (dojo.byId("publishDate"))	
-						? dojo.date.locale.format(dojo.byId("publishDate").value,{datePattern: "yyyy-MM-dd", selector: "date"})
-								: "";
-
-			var publishTime = (dijit.byId("publishTime"))			
-				? dojo.date.locale.format(dijit.byId("publishTime").getValue(),{timePattern: "H-m", selector: "time"})
-					: (dojo.byId("publishTime"))	
-						? dojo.date.locale.format(dojo.byId("publishTime").value,{timePattern: "H-m", selector: "time"})
-								: "";
-			
-						
-			var expireDate = (dijit.byId("expireDate"))			
-				? dijit.byId("expireDate").getValue()!=null ? dojo.date.locale.format(dijit.byId("expireDate").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-					: (dojo.byId("expireDate"))	
-						? dojo.byId("expireDate").value!=null ? dojo.date.locale.format(dojo.byId("expireDate").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-								: "";
-			
-			var expireTime = (dijit.byId("expireTime"))			
-				? dijit.byId("expireTime").getValue()!=null ? dojo.date.locale.format(dijit.byId("expireTime").getValue(),{timePattern: "H-m", selector: "time"}) : ""
-					: (dojo.byId("expireTime"))	
-						? dojo.byId("expireTime").value!=null ? dojo.date.locale.format(dojo.byId("expireTime").value,{timePattern: "H-m", selector: "time"}) : ""
-								: "";			
-			var neverExpire = (dijit.byId("neverExpire"))			
-				? dijit.byId("neverExpire").getValue()
-					: (dojo.byId("neverExpire"))	
-						? dojo.byId("neverExpire").value
-								: "";
-						
-			// END: PUSH PUBLISHING ACTIONLET
-			
-			
-			// BEGIN: PUSH PUBLISHING ACTIONLET
-			dojo.byId("assetIdentifier").value=this.assetIdentifier;
-			dojo.byId("remotePublishDate").value=publishDate;
-			dojo.byId("remotePublishTime").value=publishTime;
-			dojo.byId("remotePublishExpireDate").value=expireDate;
-			dojo.byId("remotePublishExpireTime").value=expireTime;
-			dojo.byId("remotePublishNeverExpire").value=neverExpire;
-			// END: PUSH PUBLISHING ACTIONLET
-			
-			var xhrArgs = {
-					url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish",
-					form: dojo.byId("remotePublishForm"),
-					handleAs: "text",
-					load: function(data){
-						if(data.indexOf("FAILURE") > -1){
-							
-							alert(data);
-						}
-						else{
-							backToEndpointsList();
-						}
-					},
-					error: function(error){
-						alert(error);
-						
-					}
-				}
-
-				var deferred = dojo.xhrPost(xhrArgs);		
-
-    	}
-
-    });
-
-    var remotePublisherAdmin = new dotcms.dijit.contentlet.RemotePublisherAdmin();
-
-
+    var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 
 </script>

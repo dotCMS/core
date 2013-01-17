@@ -38,10 +38,8 @@ import javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -492,14 +490,7 @@ public class DirectorAction extends DotPortletAction {
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to add content to page", e);
 				} finally {
-					try {
-						HibernateUtil.commitTransaction();
-					}catch(Exception e){
-						ActionErrors errors = new ActionErrors();
-						errors.add(ActionErrors.GLOBAL_ERROR, new ActionMessage("duplicated-content-error"));
-						session.setAttribute(ActionErrors.GLOBAL_ERROR, errors);
-						throw new Exception(e);
-					}
+					HibernateUtil.commitTransaction();
 				}
 				_sendToReferral(req, res, referer);
 				return;

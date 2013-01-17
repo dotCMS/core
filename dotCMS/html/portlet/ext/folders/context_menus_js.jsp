@@ -1,9 +1,24 @@
 <%@page import="javax.portlet.WindowState"%>
 <%@ include file="/html/portlet/ext/folders/init.jsp" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="java.util.List"%>
 
 <%String r = String.valueOf(System.currentTimeMillis()); %>
 <script language="JavaScript">
+
+
+var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+
+<%
+	PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
+	List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndpoints();
+%>
+var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 
 // File Flyout
 function getFilePopUp(i,ctxPath, objId, parentId, openNodes, referer,fileExt,live,working,deleted,locked,read,write,publish,userId,imageIdentifier) {
@@ -90,6 +105,7 @@ function getFilePopUp(i,ctxPath, objId, parentId, openNodes, referer,fileExt,liv
 
 // Container Flyout
 function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+	
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -105,6 +121,12 @@ function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,del
 		if ((working=="1") && (publish=="1") && (deleted!="1")) {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="publishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/publish_containers" /></portlet:actionURL>&r=<%=r%>&publishInode=' + objId + '&referer=' + referer + openNodes + '\'">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
+			strHTML += '</div>';
+		}
+		
+		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 			strHTML += '</div>';
 		}
 
@@ -235,6 +257,7 @@ function getLinkPopUp(i,ctxPath, objId, parentId, openNodes, referer,live,workin
 
 // Template Flyout
 function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+	
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -246,6 +269,11 @@ function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,dele
 		if ((working=="1") && (publish=="1") && (deleted!="1")) {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="publishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/publish_templates" /><portlet:param name="cmd" value="prepublish" /></portlet:actionURL>&publishInode=' + objId + '&r=<%=r%>&referer=' + referer + openNodes + '\';">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish"))%>';
+			strHTML += '</div>';
+		}
+		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 			strHTML += '</div>';
 		}
 		if ((live!="1") && (working=="1") && (publish=="1")) {
