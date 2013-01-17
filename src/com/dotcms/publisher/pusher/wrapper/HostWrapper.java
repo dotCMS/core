@@ -10,10 +10,10 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.tag.model.Tag;
 
 
-public class PushContentWrapper implements ContentWrapper {
+public class HostWrapper implements ContentWrapper {
 	
 	private ContentletVersionInfo info;
-	private Contentlet content;
+	private Contentlet host;
 	private Identifier id;
 	private List<Map<String,Object>> multiTree;
 	private List<Map<String,Object>> tree;
@@ -26,12 +26,12 @@ public class PushContentWrapper implements ContentWrapper {
 	public void setInfo(ContentletVersionInfo info) {
 		this.info = info;
 	}
-	
+	 
 	public Contentlet getContent() {
-		return content;
+		return host;
 	}
-	public void setContent(Contentlet content) {
-		this.content = content;
+	public void setContent(Contentlet host) {
+		this.host = host;
 	}
 	
 	public Identifier getId() {

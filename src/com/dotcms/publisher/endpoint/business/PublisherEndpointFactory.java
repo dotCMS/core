@@ -19,7 +19,7 @@ public abstract class PublisherEndpointFactory {
 			"FROM publishing_end_point order by group_id, server_name";
 	
 	protected static String GET_RECEIVING_ENDPOINTS 				= 	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
-																	"FROM publishing_end_point WHERE sending = ? order by group_id, server_name";
+																	"FROM publishing_end_point WHERE sending = 'f' order by group_id, server_name";
 	
 	// this query is for select a single endpoint for edit it
 	protected static String GET_ENDPOINT_BY_ID					=	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +

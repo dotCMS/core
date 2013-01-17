@@ -81,7 +81,7 @@ public class StructureServices {
 			}
 
 			if (field.getFieldType().equals(Field.FieldType.TEXT.toString()) || field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ ${UtilMethods.fixBreaks($" ).append( field.getVelocityVarName() ).append( ")} ]\")");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ #fixBreaks($" ).append( field.getVelocityVarName() ).append( ") ]\")");
 			} else if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())) {
 				//Identifier id = (Identifier) InodeFactory.getChildOfClassByRelationType(content, Identifier.class, field.getFieldRelationType());				
 				String uri = "/html/images/shim.gif";				       		

@@ -26,7 +26,6 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 		List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(GET_RECEIVING_ENDPOINTS);
-		dc.addParam(false);
 		List<Map<String, Object>> res = dc.loadObjectResults();
 		for(Map<String, Object> row : res)
 			endpoints.add(PublisherUtil.getObjectByMap(row));

@@ -30,7 +30,20 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 	static MenuLinkCache menuLinkCache = CacheLocator.getMenuLinkCache();
 
 	public void save(Link menuLink) throws DotDataException, DotStateException, DotSecurityException {
-		HibernateUtil.save(menuLink);
+		
+		
+		if(UtilMethods.isSet(menuLink.getInode())) {
+			Link oldLink = (Link) HibernateUtil.load(Link.class, menuLink.getInode());
+			if(oldLink!=null) {
+				oldLink.copy(menuLink);
+				HibernateUtil.saveOrUpdate(oldLink);
+			} else {
+				HibernateUtil.saveWithPrimaryKey(menuLink, menuLink.getInode());
+			}
+			
+		} else {
+			HibernateUtil.save(menuLink);
+		}
 		if(UtilMethods.isSet(menuLink.getIdentifier())) {
     		menuLinkCache.add(menuLink.getInode(), menuLink);
     		WorkingCache.removeAssetFromCache(menuLink);

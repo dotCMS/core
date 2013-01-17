@@ -33,7 +33,6 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 import javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
 import org.apache.struts.action.ActionForm;
@@ -88,24 +87,7 @@ public class ViewReportsAction extends DotPortletAction {
 
 		try {
 			String[] formTypes = WebFormFactory.getWebFormsTypes();
-			
-			com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
-			HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-			// gets the session object for the messages
-			HttpSession session = httpReq.getSession();
-			String reportType = (String) session.getAttribute(com.dotmarketing.util.WebKeys.Report.REPORT_TYPE);
-			if (UtilMethods.isSet(req.getParameter("reportType"))){
-				reportType = req.getParameter("reportType");
-			}	
-			if (reportType == null){
-					reportType="";
-			}			
-			//session.setAttribute(com.dotmarketing.util.WebKeys.Report.REPORT_TYPE, reportType);	
-			
-			String query = req.getParameter("query");	
-			//session.setAttribute(com.dotmarketing.util.WebKeys.REPORTS_QUERY, query);		
-			ArrayList<PermissionAsset> pas = ReportFactory.getAllReports(reportType, query);
-			
+			ArrayList<PermissionAsset> pas = ReportFactory.getAllReports();
 			Report report, newReport;
 //			User user = PublicUserFactory.getDefaultUser();
 //			List<Role> userRoles;
@@ -161,7 +143,7 @@ public class ViewReportsAction extends DotPortletAction {
 			}
 			
 			User user = _getUser(req);
-			pas = ReportFactory.getAllReports(user, reportType, query);
+			pas = ReportFactory.getAllReports(user);
 			req.setAttribute(WebKeys.Report.ReportList,pas);
 
 			List<Role> roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId());

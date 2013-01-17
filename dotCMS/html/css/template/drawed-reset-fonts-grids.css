@@ -243,25 +243,12 @@
 .yui-ge-template div.first .yui-gd-template div.first {
 	width:32%
 }
-#hd-template:after,#bd-template:after,#ft-template:after,.yui-js-template:after,.yui-g-template:after,.yui-gb-template:after,.yui-gc-template:after,.yui-gd-template:after,.yui-ge-template:after,.yui-gf-template:after{
+#hd-template:after,#bd-template:after,#ft-template:after,.yui-g-template:after,.yui-gb-template:after,.yui-gc-template:after,.yui-gd-template:after,.yui-ge-template:after,.yui-gf-template:after{
 	content:"";display:block;clear:both
 }
 #hd-template,#bd-template,#ft-template,.yui-g-template,.yui-gb-template,.yui-gc-template,.yui-gd-template,.yui-ge-template,.yui-gf-template{
 	zoom:1
 }
-
-.yui-js-template div.yui-u-template{
-	width:22%;
-	margin-left:2%;
-	float:left;
-}
-
-.yui-g-template div.yui-u-template{
-	width:47%;
-	margin-left:2%;
-	float:left;
-}
-
 
 /* *********************************************************************************************************** */
 /* 	YUI Grid extensions
