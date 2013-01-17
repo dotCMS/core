@@ -304,7 +304,7 @@ public class ContentTool implements ViewTool {
 	 * @return Returns empty List if no results are found
 	 */
 	public PaginatedArrayList<ContentMap> pullPagenated(String query, int limit, int offset, String sort){
-		return pull(query, limit, offset, sort);
+		return pull(query, offset, limit, sort);
 	}
 	
 	/**
