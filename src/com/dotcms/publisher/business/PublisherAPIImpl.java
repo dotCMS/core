@@ -132,7 +132,11 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 	
-	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate) throws DotPublisherException {		
+	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException { 
+		addContentsToUnpublish(identifiers, bundleId, publishDate, null);
+	} 
+	
+	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException {		
 		if(identifiers != null) {
 		
 			
@@ -150,6 +154,23 @@ public class PublisherAPIImpl extends PublisherAPI{
 						dc.setSQL(OCLINSERTSQL);
 					}
 					
+					Identifier iden = APILocator.getIdentifierAPI().find(identifier);
+					String type = ""; 
+					
+					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
+						// check if it is a structure
+						Structure st = StructureCache.getStructureByInode(identifier);
+						if(UtilMethods.isSet(st)) 
+							type = "structure";
+						// check if it is a folder
+						else if(UtilMethods.isSet(APILocator.getFolderAPI().find(identifier, user, false))) {
+							type = "folder";
+						}
+						
+					} else {
+						type = UtilMethods.isSet(APILocator.getHostAPI().find(identifier, user, false))?"host":iden.getAssetType();
+					}
+					
 					dc.addParam(PublisherAPI.DELETE_ELEMENT);
 					dc.addObject(identifier); //asset
 					dc.addParam(new Date());
@@ -159,7 +180,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					//TODO How do I get new columns value?	
 					dc.addParam(unpublishDate);
 					dc.addObject(null);
-					dc.addObject(null);
+					dc.addObject(type); 
 					dc.addObject(bundleId);
 					dc.addObject(null);
 					
