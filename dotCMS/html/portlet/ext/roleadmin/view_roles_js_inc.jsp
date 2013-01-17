@@ -712,7 +712,7 @@
 		var usersGridLayout = [
 		{
             field: 'check',
-            name: '<input type="checkbox" class="userCheckbox" id="userChkAll" value="All" onClick="toggleUsers()">',
+            name: '&nbsp;',
             width: '30px',
 			get: userCheckCellGetter,
 			formatter: userCheckCellFormatter
@@ -750,22 +750,10 @@
 
 		dijit.byId('usersGrid').resize();
 		dijit.byId('usersGrid').setSortIndex(1,true);
-		dijit.byId('usersGrid').canSort=function(inSortInfo){return inSortInfo == 1 ? false : true};
 
 		
 	});
 
-	function toggleUsers(){		
-		var selectAll = dojo.byId('userChkAll').checked;
-		usersData.items.each((function (user) {
-			var checkbox = dojo.byId('userChk' + norm(user.id));
-			if(selectAll) {
-				checkbox.checked=true
-			}else{
-				checkbox.checked=false;
-			}
-		}));
-	}
 	function renderRoleUsers (roleId) {
 		currentBranchOfRoles = getRoleFlatUpBranch(roleId);
 		var roleIds = [];

@@ -60,10 +60,10 @@ public final class WebKeys {
     public static final String FILE_SHOW_DELETED = "com.dotmarketing.file.show_deleted";
     public static final String FILE_HOST_CHANGED = "com.dotmarketing.file.host_changed";
 
-    public static final String REPORTS_VIEW = "com.dotmarketing.reports.view";
-    public static final String REPORTS_VIEW_COUNT = "com.dotmarketing.reports.view.count";
-    public static final String REPORTS_QUERY = "com.dotmarketing.reports.query";
-    public static final String REPORTS_SHOW_DELETED = "com.dotmarketing.reports.show_deleted";
+    public static final String REPORTS_VIEW = "com.dotmarketing.files.view";
+    public static final String REPORTS_VIEW_COUNT = "com.dotmarketing.files.view.count";
+    public static final String REPORTS_QUERY = "com.dotmarketing.file.query";
+    public static final String REPORTS_SHOW_DELETED = "com.dotmarketing.file.show_deleted";
 
 	public static final String CATEGORY_VIEW_PORTLET = "com.dotmarketing.categories.view.portlet";
 	public static final String CATEGORY_VIEW = "com.dotmarketing.categories.view";
@@ -446,7 +446,7 @@ public final class WebKeys {
     public static final String SEARCH_HOST_ID = "com.dotmarketing.search_host_id";
     public static final String HOST_SHOW_DELETED = "com.dotmarketing.host.show_deleted";
 
-    //Structure
+	//Structure
     public static final String SEARCH_STRUCTURE_ID = "com.dotmarketing.search_structure_id";
     public static final String STRUCTURES_VIEW = "com.dotmarketing.structures.view";
     public static final String STRUCTURE_QUERY = "com.dotmarketing.structures.query";
@@ -563,9 +563,7 @@ public final class WebKeys {
 
     //REPORTS
 	public static final String REPORT_EDIT = "com.dotmarketing.report.edit";
-    public static final String REPORT_QUERY = "com.dotmarketing.reports.query";
-    public static final String REPORT_VIEW_COUNT = "com.dotmarketing.reports.view.count";
-    
+
 	//WIki
     public static final String WIKI_CONTENTLET = "com.dotmarketing.wiki.contentlet";
     public static final String WIKI_CONTENTLET_INODE = "com.dotmarketing.wiki.contentlet.inode";
@@ -641,7 +639,6 @@ public final class WebKeys {
     public static class Report
     {
     	public static final String ReportList = "reportList";
-    	public static final String REPORT_TYPE = "reportType";
     }
 
     //COMMUNICATION

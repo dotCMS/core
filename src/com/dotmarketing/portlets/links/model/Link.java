@@ -49,6 +49,8 @@ public class Link extends WebAsset implements Serializable, Comparable {
     private String linkType = "";
     
     private String linkCode = "";
+    
+    private String hostId;
 
     /** default constructor */
     public Link() {
@@ -253,8 +255,16 @@ public class Link extends WebAsset implements Serializable, Comparable {
 	public void setInternalLinkIdentifier(String internalLinkIdentifier) {
 		this.internalLinkIdentifier = internalLinkIdentifier;
 	}
+	
+    public String getHostId() {
+		return hostId;
+	}
 
-    public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException {
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
+
+	public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException {
         Map<String, Object> map = super.getMap();
 
         map.put("parent", parent);

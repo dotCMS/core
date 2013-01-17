@@ -20,14 +20,12 @@ public class DesignTemplateHtmlCssConstants {
 	public static final String COLUMN_CONTAINER_CLASS					= "yui-u-template";
 
     public static final String YUI_ONE_COLUMN_CLASS                     = "1";//1 Column (100)
-    public static final String YUI_TWO_COLUMN_CLASS_G                  	= "yui-g-template";//2 Column (50/50)
     public static final String YUI_TWO_COLUMN_CLASS_GC                  = "yui-gc-template";//2 Column (66/33)
     public static final String YUI_TWO_COLUMN_CLASS_GD                  = "yui-gd-template";//2 Column (33/66)
     public static final String YUI_TWO_COLUMN_CLASS_GE                  = "yui-ge-template";//2 Column (75/25)
     public static final String YUI_TWO_COLUMN_CLASS_GF                  = "yui-gf-template";//2 Column (25/75)
     public static final String YUI_THREE_COLUMN_CLASS                   = "yui-gb-template";//3 Column (33/33/33)
-    public static final String YUI_FOUR_COLUMN_CLASS                    = "yui-js-template";//4 Column (25/25/25/25)
-    
+
     public static final String YUI_LAYOUT_LEFT_CLASS_T1                 = "yui-t1-template";//layout-160-left
     public static final String YUI_LAYOUT_LEFT_CLASS_T2                 = "yui-t2-template";//layout-240-left
     public static final String YUI_LAYOUT_LEFT_CLASS_T3                 = "yui-t3-template";//layout-300-left

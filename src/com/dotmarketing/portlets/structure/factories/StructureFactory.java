@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -66,9 +67,13 @@ public class StructureFactory {
 	 * @deprecated  Use StructureCache.getStructureByInode instead
 	 * @param inode is the contentlet inode
 	 */
-	public static Structure getStructureByInode(String inode)
-	{
-		return (Structure) InodeFactory.getInode(inode,Structure.class);
+	public static Structure getStructureByInode(String inode) {
+		Structure st = null;
+		try {
+			st =  (Structure) InodeFactory.getInode(inode,Structure.class);
+		} catch(ClassCastException e) {
+		}
+		return st;
 	}
 	/**
 	 * Gets the structure by Type
@@ -292,6 +297,28 @@ public class StructureFactory {
 			}
 		}
 		return retList;
+	}
+	
+	public static List<Structure> getStructuresUnderHost(Host h, User user, boolean respectFrontendRoles) throws DotDataException
+	{
+
+		HibernateUtil dh = new HibernateUtil(Structure.class);
+
+
+		try{
+			String query = "from Structure where host = ?";
+			// order
+			dh.setQuery(query);
+			dh.setParam(h.getIdentifier());
+
+			List<Structure> resultList = dh.list();
+			return resultList;
+		}
+		catch(Exception e){
+			Logger.error(StructureFactory.class, e.getMessage(), e);
+			throw new DotDataException(e.getMessage());
+
+		}
 	}
 
 	public static List<Structure> getStructuresByWFScheme(WorkflowScheme scheme, User user, boolean respectFrontendRoles) throws DotDataException
