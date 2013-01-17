@@ -164,13 +164,14 @@ if("del".equals(action)){
 	dc.getResult();
 	dc.setSQL("delete from analytic_summary_content");
   	dc.getResult();
-
-	dc.setSQL("delete from analytic_summary");
-  	dc.getResult();
-	dc.setSQL("delete from analytic_summary_period");
-  	dc.getResult();
 	dc.setSQL("delete from analytic_summary_pages");
   	dc.getResult();
+	dc.setSQL("delete from analytic_summary");
+  	dc.getResult();
+  	
+	dc.setSQL("delete from analytic_summary_period");
+  	dc.getResult();
+
 
 
   	out.println("data deleted");
