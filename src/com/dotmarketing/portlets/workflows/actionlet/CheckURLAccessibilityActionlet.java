@@ -39,12 +39,12 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 	
 	@Override
 	public List<WorkflowActionletParameter> getParameters() {
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
+		
 		try{
 			if(null==paramList){
 				paramList = new ArrayList<WorkflowActionletParameter>();
-				paramList.add(new WorkflowActionletParameter("fieldList", LanguageUtil.get(uWebAPI.getLoggedInUser(request), "checkURL.fieldList"), "", true));
+				paramList.add(new WorkflowActionletParameter("fieldList", 
+				        LanguageUtil.get(APILocator.getUserAPI().getSystemUser(), "checkURL.fieldList"), "", true));
 			}
 		}catch(Exception e){			
 		}
