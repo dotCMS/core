@@ -153,6 +153,10 @@ public class ContainerServices {
            	    sb.append("   #set($_show_working_=true) ");
            	    sb.append("  #end ");
            	    
+           	    sb.append("  #if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_) ")
+           	      .append("   #set($contentletId='')") // working contentlet still not published
+           	      .append("  #end ");
+           	    
            	    sb.append(" #end ");
            	
            		sb.append("#set($CONTENT_INODE = '')");
