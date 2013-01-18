@@ -284,6 +284,8 @@ public class VersionableAPIImpl implements VersionableAPI {
             
             if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().after(new Date()))
                 throw new PublishStateException("Can't publish content is scheduled to be published on future date");
+            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+                throw new PublishStateException("Can't publish content is expired");
             
             info.setLiveInode(versionable.getInode());
             vfac.saveContentletVersionInfo(info);
