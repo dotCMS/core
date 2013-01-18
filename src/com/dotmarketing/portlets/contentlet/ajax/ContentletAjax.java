@@ -23,6 +23,7 @@ import org.directwebremoting.WebContextFactory;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -790,10 +791,18 @@ public class ContentletAjax {
 		// we add the total hists for the query
 		results.add(totalHits);
 
+		List<String> expiredInodes=new ArrayList<String>();
+		
 		//Adding the query results
 		Contentlet con;
 		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
 			con = hits.get(i);
+			
+			if(!con.isLive()) {
+    			Identifier ident=APILocator.getIdentifierAPI().find(con);
+    			if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+    			    expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
+			}
 
 			Map<String, String> searchResult = new HashMap<String, String>();
 
@@ -923,6 +932,7 @@ public class ContentletAjax {
 		counters.put("luceneQueryRaw", luceneQueryToShow);
 		counters.put("luceneQueryFrontend", luceneQueryToShow2);
 		counters.put("sortByUF", orderBy);
+		counters.put("expiredInodes", expiredInodes);
 
 		long end = total;
 		if (page != 0)
