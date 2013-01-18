@@ -8,7 +8,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -176,12 +175,17 @@ public class PageServices {
 
 
 			List<Contentlet> contentlets = new ArrayList<Contentlet>();
+			List<Contentlet> contentletsFull = new ArrayList<Contentlet>();
 			if (!dynamicContainer) {
 				Identifier idenHtmlPage = APILocator.getIdentifierAPI().find(htmlPage);
 				Identifier idenContainer = APILocator.getIdentifierAPI().find(c);
 				//The container doesn't have categories
 				try{
 					contentlets = conAPI.findPageContentlets(idenHtmlPage.getId(), idenContainer.getId(), sort, EDIT_MODE, -1,APILocator.getUserAPI().getSystemUser() ,false);
+					if(EDIT_MODE)
+					    contentletsFull=contentlets;
+					else
+					    contentletsFull = conAPI.findPageContentlets(idenHtmlPage.getId(), idenContainer.getId(), sort, true, -1,APILocator.getUserAPI().getSystemUser() ,false);
 				}catch(Exception e){
 					Logger.error(PageServices.class,"Unable to retrive contentlets on page", e);
 				}
@@ -199,39 +203,61 @@ public class PageServices {
 				}
 				contentlets = contentletsFilter;
 			}
-
+			if(contentletsFull.size() > 0){
+                Set<String> contentletIdentList = new HashSet<String>();
+                List<Contentlet> contentletsFilter = new ArrayList<Contentlet>();
+                for(Contentlet cont : contentletsFull){
+                    if(!contentletIdentList.contains(cont.getIdentifier())){
+                        contentletIdentList.add(cont.getIdentifier());
+                        contentletsFilter.add(cont);
+                    }
+                }
+                contentletsFull = contentletsFilter;
+            }
+			
+			StringBuilder widgetpree=new StringBuilder();
+			StringBuilder widgetpreeFull=new StringBuilder();
+			
 			StringBuilder contentletList = new StringBuilder();
-			Iterator iter = contentlets.iterator();
-			int count = 0;
-			while (iter.hasNext() && count < c.getMaxContentlets()) {
-				Contentlet contentlet = (Contentlet) iter.next();
-				Identifier contentletIdentifier;
-				try {
-					contentletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
-				} catch (DotHibernateException dhe) {
-					contentletIdentifier = new Identifier();
-					Logger.error(PageServices.class,"Unable to rertive identifier for contentlet",dhe);
-				}
-
-					contentletList.append("\"").append(contentletIdentifier.getInode()).append("\"");
-					if (iter.hasNext() && count < c.getMaxContentlets()) {
-						contentletList.append(",");	
-					}
-				count++;
-				Structure contStructure =contentlet.getStructure();
-				if(contStructure.getStructureType()== Structure.STRUCTURE_TYPE_WIDGET){
-					Field field=contStructure.getFieldVar("widgetPreexecute");
-					if (field!= null && UtilMethods.isSet(field.getValues())) {
-						sb.append(field.getValues().trim());
-					}
-				}
-				
-				
+			int count=0;
+			for(Contentlet contentlet : contentlets) {
+			    contentletList.append(count==0 ? "" : ",")
+			        .append('"').append(contentlet.getIdentifier()).append('"');
+			    if(contentlet.getStructure().getStructureType()== Structure.STRUCTURE_TYPE_WIDGET) {
+                    Field field=contentlet.getStructure().getFieldVar("widgetPreexecute");
+                    if (field!= null && UtilMethods.isSet(field.getValues()))
+                        widgetpree.append(field.getValues().trim());
+                }
+			    if(++count>=c.getMaxContentlets()) break;
 			}
-			sb.append("#set ($contentletList" ).append( ident.getIdentifier() ).append( " = [" ).append( contentletList.toString() ).append( "] )");
-			sb.append("#set ($totalSize" ).append( ident.getIdentifier() ).append( "=" ).append( count ).append( ")");
+			
+			StringBuilder contentletListFull = new StringBuilder();
+            int countFull=0;
+            for(Contentlet contentlet : contentletsFull) {
+                contentletListFull.append(countFull==0 ? "" : ",")
+                    .append('"').append(contentlet.getIdentifier()).append('"');
+                if(contentlet.getStructure().getStructureType()== Structure.STRUCTURE_TYPE_WIDGET) {
+                    Field field=contentlet.getStructure().getFieldVar("widgetPreexecute");
+                    if (field!= null && UtilMethods.isSet(field.getValues()))
+                        widgetpreeFull.append(field.getValues().trim());
+                }
+                if(++countFull>=c.getMaxContentlets()) break;
+            }
+			
+			sb.append("#if($request.session.getAttribute(\"tm_date\"))");
+			   sb.append(widgetpreeFull);
+			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
+                 .append( " = [" ).append( contentletListFull.toString() ).append( "] )");
+               sb.append("#set ($totalSize" ).append( ident.getIdentifier() )
+                 .append( "=" ).append( countFull ).append( ")");
+			sb.append("#else ");
+			   sb.append(widgetpree);
+			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
+			     .append( " = [" ).append( contentletList.toString() ).append( "] )");
+			   sb.append("#set ($totalSize" ).append( ident.getIdentifier() )
+			     .append( "=" ).append( count ).append( ")");
+			sb.append("#end ");
 			langCounter++;
-
 
 		}
 

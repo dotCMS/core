@@ -43,6 +43,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TrackbackFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -1067,6 +1068,12 @@ public class WebAPI implements ViewTool {
             Logger.warn(this.getClass(), e.getMessage());
         }
         return null;
+	}
+	
+	public boolean contentHasLiveVersion(String identifier) throws Exception {
+	    long lang=Long.parseLong((String)request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
+	    ContentletVersionInfo cvi=APILocator.getVersionableAPI().getContentletVersionInfo(identifier, lang);
+	    return UtilMethods.isSet(cvi.getLiveInode());
 	}
 	
 }
