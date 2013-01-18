@@ -29,6 +29,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
@@ -1437,7 +1438,10 @@ public class ContentletAjax {
 			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");
 			saveContentErrors.add(errorString);
 		}
-
+		catch(PublishStateException pe) {
+		    String errorString = LanguageUtil.get(user,"message.contentlet.pubfuturedate");
+		    saveContentErrors.add(errorString);
+		}
 		catch (Exception e) {
 			saveContentErrors.add(e.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
