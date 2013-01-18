@@ -18,10 +18,13 @@ import org.apache.velocity.context.Context;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -312,6 +315,13 @@ public class ContentMap {
 	public String getContentletsTitle() {
 		title = content.getTitle();
 		return title;
+	}
+	
+	public boolean isLive() throws Exception {
+	    return content.isLive();
+	}
+	public boolean isWorking() throws Exception {
+	    return content.isWorking();
 	}
 
 	public String toString() {
