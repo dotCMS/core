@@ -204,7 +204,7 @@
 			
 			if(enterprise && sendingEndpoints) {
 				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-			    	strHTML += '<span class="folderGlobeIcon"></span>';
+			    	strHTML += '<span class="pushIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 			}
