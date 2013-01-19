@@ -63,7 +63,7 @@ GregorianCalendar cal = new GregorianCalendar();
 			    data-dojo-type="dijit.form.TimeTextBox"	
 				style="width: 100px;" />
 				
-			&nbsp;&nbsp;<input type="checkbox" dojoType="dijit.form.CheckBox" name="neverExpire" id="neverExpire" > <%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %>
+			&nbsp;&nbsp;<input type="checkbox" dojoType="dijit.form.CheckBox" checked="checked" name="neverExpire" id="neverExpire" > <%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %>
 			</div>
 			<div class="clear"></div>
 		</div>
