@@ -253,7 +253,8 @@ public class BrowserAjax {
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc);
 	}
-	public void saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId) throws  DotSecurityException, ServletException{
+	public void saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate, 
+			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire) throws  DotSecurityException, ServletException{
 		WebContext ctx = WebContextFactory.get();
         User usr = getUser(ctx.getHttpServletRequest());
 		Contentlet c = null;
@@ -267,6 +268,12 @@ public class BrowserAjax {
 			c.setStringProperty("wfActionId", action.getId());
 			c.setStringProperty("wfActionComments", wfActionComments);
 			c.setStringProperty("wfActionAssign", wfActionAssign);
+			
+			c.setStringProperty("wfPublishDate", wfPublishDate);
+			c.setStringProperty("wfPublishTime", wfPublishTime);
+			c.setStringProperty("wfExpireDate", wfExpireDate);
+			c.setStringProperty("wfExpireTime", wfExpireTime);
+			c.setStringProperty("wfNeverExpire", wfNeverExpire);
 
 			wapi.fireWorkflowNoCheckin(c, usr);
 
