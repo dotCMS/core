@@ -753,8 +753,21 @@
                 
         }
         
-        function publishSelectedContentlets(){
+        var dialog;
+        function closeDialog() {
+            dialog.hide();
+        }
+        function publishReset() {
+            var rdate=dijit.byId('resetDate').get('value');
+            var rtime=dijit.byId('resetTime').get('value');
+            dojo.byId('expireDateReset').value=dijit.byId('resetDate')+dijit.byId('resetTime');
+            closeDialog();
+            publishSelectedContentlets();
+        }
         
+        function publishSelectedContentlets(){
+            
+            if(dojo.byId('expireDateReset').value=='') {
                 var expiredInodes=dojo.byId("expiredInodes").value.split(",");
                 var selectedInodes=dojo.query("input[name='publishInode']")
                                        .filter(function(x){return x.checked;})
@@ -762,20 +775,22 @@
                                        .filter(function(x){return expiredInodes.indexOf(x)!=-1;});
                 
                 if(selectedInodes.length>0) {
-                    var dialog=new dijit.Dialog({
+                    dialog=new dijit.Dialog({
                         title: "dotCMS",
                         content: "<p><%=LanguageUtil.get(pageContext, "message.contentlet.resetexpire") %></p>"+
                                  "<p>"+
                                  "<input type='text' dojoType='dijit.form.DateTextBox' id='resetDate' constraints= '{min:<%=new SimpleDateFormat("yyyy-MM-dd").format(new Date())%>}'/>"+
                                  "<input type='text' dojoType='dijit.form.TimeTextBox' id='resetTime'/>"+
                                  "</p>"+
-                                 "<button dojoType='dijit.form.Button'><%=LanguageUtil.get(pageContext, "Publish") %></button>"+
-                                 "<button dojoType='dijit.form.Button'><%=LanguageUtil.get(pageContext, "Cancel") %></button>",
-                        style: "width:400px"
+                                 "<button dojoType='dijit.form.Button' onClick='publishReset()'><%=LanguageUtil.get(pageContext, "Publish") %></button>"+
+                                 "<button dojoType='dijit.form.Button' onClick='closeDialog()'><%=LanguageUtil.get(pageContext, "Cancel") %></button>",
+                        style: "width:400px",
+                        onHide: function() { this.destroyRecursive(); }
                     });
                     dialog.show();
                     return;
                 }
+            }
                 
                 disableButtonRow();     
                 var form = document.getElementById("search_form");
