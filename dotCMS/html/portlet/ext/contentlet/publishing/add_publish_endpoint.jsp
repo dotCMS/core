@@ -190,7 +190,7 @@
 					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_sendGroup") %>:
 				</td>
 				<td>		
-					<select name="groupId" id="groupId" dojoType="dijit.form.ComboBox">
+					<select name="groupId" id="groupId" dojoType="dijit.form.ComboBox"   promptMessage="<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "publisher_Endpoint_Server_Group_Prompt_Message")) %>" >
 
 						<%for(String s : groups){ %>
 							<option <%if(s!=null && s.equals(currentEndpoint.getGroupId())){ %>selected="true"<%} %> value="<%=UtilMethods.escapeDoubleQuotes(UtilMethods.webifyString(s))%>"><%=s%></option>
