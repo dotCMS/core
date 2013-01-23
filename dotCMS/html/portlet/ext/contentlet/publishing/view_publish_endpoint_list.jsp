@@ -70,7 +70,7 @@
 			<td style="cursor: pointer" width="50%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
 				<%=endpoint.getServerName()%> 
 			</td>
-			<td align="right" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+			<td align="center" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
 				<%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "" %>
 				<%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%>
 				
