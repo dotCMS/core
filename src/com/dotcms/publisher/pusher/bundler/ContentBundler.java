@@ -34,7 +34,6 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -266,7 +265,7 @@ public class ContentBundler implements IBundler {
                         } catch(DotContentletStateException se) {
                         	fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
                         }
-                        writeFileToDisk(bundleRoot, fileAssetCont);
+                        writeFileToDisk(bundleRoot, fileAssetCont, countOrder);
                     }
                 } catch (Exception ex) {
                     Logger.debug(this, ex.toString());
