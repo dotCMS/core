@@ -4,10 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.DependencyManager;
