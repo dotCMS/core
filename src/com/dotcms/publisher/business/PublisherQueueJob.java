@@ -58,71 +58,75 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - Audit update");
 			
 			
-			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
-			PublisherAPI pubAPI = PublisherAPI.getInstance();  
+			List<PublishingEndPoint> endpoints = endpointAPI.findReceiverEndpoints();
 			
-			PushPublisherConfig pconf = new PushPublisherConfig();
-			List<Class> clazz = new ArrayList<Class>();
-			clazz.add(PushPublisher.class);
+			if(endpoints != null && endpoints.size() > 0)  {
+				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
+				PublisherAPI pubAPI = PublisherAPI.getInstance();  
 
-			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
-			List<PublishQueueElement> tempBundleContents = null;
-			PublishAuditStatus status = null;
-			PublishAuditHistory historyPojo = null;
-			String tempBundleId = null;
-
-			for(Map<String,Object> bundle: bundles) {
-				Date publishDate = (Date) bundle.get("publish_date");
-				
-				if(publishDate.before(new Date())) {
-					tempBundleId = (String)bundle.get("bundle_id");
-					tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
-					
-					//Setting Audit objects
-					//History
-					historyPojo = new PublishAuditHistory();
-					//Retriving assets
-					List<String> assets = new ArrayList<String>();
-					List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
-					
-					for(PublishQueueElement c : tempBundleContents) {
-						assets.add((String) c.getAsset());
-						if(!c.getType().equals("contentlet"))
-							assetsToPublish.add(c);
-					}
-					historyPojo.setAssets(assets);
-					
-					// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
-					pconf.setAssets(assetsToPublish);
-					
-					//Status
-					status =  new PublishAuditStatus(tempBundleId);
-					status.setStatusPojo(historyPojo);
-					
-					//Insert in Audit table
-					pubAuditAPI.insertPublishAuditStatus(status);
-					
-					//Queries creation
-					pconf.setLuceneQueries(prepareQueries(tempBundleContents));
-					pconf.setId(tempBundleId);
-					pconf.setUser(APILocator.getUserAPI().getSystemUser());
-					pconf.setStartDate(new Date());
-					pconf.runNow();
+				PushPublisherConfig pconf = new PushPublisherConfig();
+				List<Class> clazz = new ArrayList<Class>();
+				clazz.add(PushPublisher.class);
 	
-					pconf.setPublishers(clazz);
-					pconf.setEndpoints(endpointAPI.findReceiverEndpoints());
+				List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
+				List<PublishQueueElement> tempBundleContents = null;
+				PublishAuditStatus status = null;
+				PublishAuditHistory historyPojo = null;
+				String tempBundleId = null;
+	
+				for(Map<String,Object> bundle: bundles) {
+					Date publishDate = (Date) bundle.get("publish_date");
 					
-					if(Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
-						pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
-					else
-						pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
+					if(publishDate.before(new Date())) {
+						tempBundleId = (String)bundle.get("bundle_id");
+						tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
+						
+						//Setting Audit objects
+						//History
+						historyPojo = new PublishAuditHistory();
+						//Retriving assets
+						List<String> assets = new ArrayList<String>();
+						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
+						
+						for(PublishQueueElement c : tempBundleContents) {
+							assets.add((String) c.getAsset());
+							if(!c.getType().equals("contentlet"))
+								assetsToPublish.add(c);
+						}
+						historyPojo.setAssets(assets);
+						
+						// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
+						pconf.setAssets(assetsToPublish);
+						
+						//Status
+						status =  new PublishAuditStatus(tempBundleId);
+						status.setStatusPojo(historyPojo);
+						
+						//Insert in Audit table
+						pubAuditAPI.insertPublishAuditStatus(status);
+						
+						//Queries creation
+						pconf.setLuceneQueries(prepareQueries(tempBundleContents));
+						pconf.setId(tempBundleId);
+						pconf.setUser(APILocator.getUserAPI().getSystemUser());
+						pconf.setStartDate(new Date());
+						pconf.runNow();
+		
+						pconf.setPublishers(clazz);
+						pconf.setEndpoints(endpoints);
+						
+						if(Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
+							pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
+						else
+							pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
+						
+						APILocator.getPublisherAPI().publish(pconf);
+					}
 					
-					APILocator.getPublisherAPI().publish(pconf);
 				}
 				
+				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
 			}
-			
-			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
 			
 		} catch (NumberFormatException e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
