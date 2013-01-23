@@ -36,12 +36,12 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 
 	@Override
 	public String getName() {
-		return "Add Content to publish queue";
+		return "Remote Publish";
 	}
 
 	@Override
 	public String getHowTo() {
-		return "This actionlet will add the content to the publish queue";
+		return "This actionlet will add the content to the remote publish queue";
 	}
 
 	/**
