@@ -1,3 +1,4 @@
+<%@page import="java.io.StringWriter"%>
 <%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@page import="java.text.SimpleDateFormat"%>
@@ -55,8 +56,8 @@
     }
     String query = request.getParameter("query");
     if(!UtilMethods.isSet(query)){
-    	query="";
-    	nastyError=LanguageUtil.get(pageContext, "publisher_Query_required");
+    	query="*";
+    	//nastyError=LanguageUtil.get(pageContext, "publisher_Query_required");
     }
 
 
@@ -90,9 +91,36 @@
     }
     try{
     	if(UtilMethods.isSet(query)){
+    		
+    		
+    		// if this is not a lucene query, lets query _all
+    		if(query.indexOf(":") == -1){
+    			
+    			StringWriter sw = new StringWriter();
+    			
+    			String[] terms = query.split("\\s");
+    			for(String x : terms){
+    				if(UtilMethods.isSet(x))
+    					sw.append("title:" + x + "* ");
+    					sw.append("+_all:" + x + "* ");
+    					
+    			}
+    			
+    			
+    			query = sw.toString();
+    		}
+    		
+    		
+    		
+    		
     		//contador de procesados y fallidos
     		//Add 'only not archived' condition
     		query+=" +deleted:false";
+    		
+    		
+    		
+    		
+    		
     		
 	    	if(addQueueElements){
 	    		String bundeId = UUID.randomUUID().toString();
@@ -149,6 +177,8 @@
     	nastyError = pe.toString();
     }
   %>
+  
+  
 <script type="text/javascript">
  function solrAddCheckUncheckAll(){
 	   var check=false;
