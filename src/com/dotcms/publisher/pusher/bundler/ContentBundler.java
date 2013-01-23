@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,19 +100,21 @@ public class ContentBundler implements IBundler {
 
 				//Getting all related content
 				for (Contentlet con : cs) {
+					contentsToProcess.add(con);
+				
 					Map<Relationship, List<Contentlet>> contentRel =
 							conAPI.findContentRelationships(con, systemUser);
 					
 					for (Relationship rel : contentRel.keySet()) {
 						contentsToProcess.addAll(contentRel.get(rel));
 					}
-					
-					contentsToProcess.add(con);
 				}
 				
 				Set<Contentlet> contentsToProcessWithFiles = new HashSet<Contentlet>();
 				//Getting all linked files
 				for(Contentlet con: contentsToProcess) {
+					contentsToProcessWithFiles.add(con);
+					
 					List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
 					for(Field ff : fields) {
 						if(ff.getFieldType().toString().equals(Field.FieldType.FILE.toString())) {
@@ -119,13 +122,22 @@ public class ContentBundler implements IBundler {
 							contentsToProcessWithFiles.addAll(conAPI.search("+identifier:"+identifier, 0, -1, null, systemUser, false));
 					    }
 					}
-					contentsToProcessWithFiles.add(con);
+				}
+				
+				Set<ContentletUniqueWrapper> contentsToProcessFinal = new HashSet<ContentletUniqueWrapper>();
+				
+				//Delete duplicate
+				
+				
+				for(Contentlet con: contentsToProcessWithFiles) {
+					contentsToProcessFinal.add(new ContentletUniqueWrapper(con));
 				}
 				
 				
-				
-				for (Contentlet con : contentsToProcessWithFiles) {
-					writeFileToDisk(bundleRoot, con);
+				Iterator<ContentletUniqueWrapper> it = contentsToProcessFinal.iterator();
+				for (int ii = 0; it.hasNext(); ii++) {
+					Contentlet con = it.next().getContentlet();
+					writeFileToDisk(bundleRoot, con, ii);
 					status.addCount();
 				}
 			}
@@ -148,7 +160,7 @@ public class ContentBundler implements IBundler {
 		}
 	}
 
-	private void writeFileToDisk(File bundleRoot, Contentlet con)
+	private void writeFileToDisk(File bundleRoot, Contentlet con, int countOrder)
 			throws IOException, DotBundleException, DotDataException,
 				DotSecurityException, DotPublisherException
 	{
@@ -208,11 +220,13 @@ public class ContentBundler implements IBundler {
 			uri.trim();
 			uri += CONTENT_EXTENSION;
 		}
-		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getInode() + CONTENT_EXTENSION):uri;
+		uri = uri.replace(uri.substring(uri.lastIndexOf(File.separator)+1, uri.length()), countOrder +"-"+ uri.substring(uri.lastIndexOf(File.separator)+1, uri.length()));
+		
+		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + countOrder +"-" +con.getInode() + CONTENT_EXTENSION):uri;
 
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
-				+ h.getHostname() + File.separator
+				+ h.getHostname() + File.separator + 
 				+ con.getLanguageId() + assetName;
 
 		pushContentFile = new File(myFileUrl);
@@ -269,4 +283,43 @@ public class ContentBundler implements IBundler {
 		
 	}
 
+}
+
+class ContentletUniqueWrapper {
+	private Contentlet contentlet;
+	
+	public ContentletUniqueWrapper (Contentlet contentlet) {
+		this.contentlet = contentlet;
+	}
+	
+	public Contentlet getContentlet() {
+		return contentlet;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((contentlet == null) ? 0 : contentlet.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ContentletUniqueWrapper other = (ContentletUniqueWrapper) obj;
+		if (contentlet == null) {
+			if (other.contentlet != null)
+				return false;
+		} else if (!contentlet.getInode().equals(other.contentlet.getInode()))
+			return false;
+		return true;
+	}
+	
 }
