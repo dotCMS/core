@@ -1,5 +1,8 @@
 package com.dotcms.publisher.ajax;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -14,11 +17,20 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,11 +38,14 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 
 public class RemotePublishAjaxAction extends AjaxAction {
-
+	
 	@Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {		
 		return;
@@ -41,6 +56,49 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		Map<String, String> map = getURIParams();
 		String cmd = map.get("cmd");
 		Method dispatchMethod = null;
+		
+		User user = getUser();
+		
+		try{
+			// Check permissions if the user has access to the CMS Maintenance Portlet
+			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+				String userName = map.get("u") !=null 
+					? map.get("u") 
+						: map.get("user") !=null 
+							? map.get("user") 
+								: null;
+			
+				String password = map.get("p") !=null 
+					? map.get("p") 
+							: map.get("passwd") !=null 
+								? map.get("passwd") 
+									: null;
+			
+
+				
+				LoginFactory.doLogin(userName, password, false, request, response);
+				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+				if(user==null) {
+				    setUser(request);
+	                user = getUser();
+				}
+				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", user)){
+					response.sendError(401);
+					return;
+				}
+			}
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), e.getMessage());
+			response.sendError(401);
+			return;
+		}
+		
+		
+		
+		
+		
+		
 		if(null!=cmd){
 			try {
 				dispatchMethod = this.getClass().getMethod(cmd, new Class[]{HttpServletRequest.class, HttpServletResponse.class});
@@ -61,6 +119,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				throw new DotRuntimeException(e.getMessage());
 			}			
 		}
+
 	}
 	
 	public void publish(HttpServletRequest request, HttpServletResponse response) 		
@@ -98,7 +157,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				} catch(DotStateException e) {
 					ids.add(_assetId);
 				} catch (DotSecurityException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -117,9 +175,76 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				Logger.debug(PushPublishActionlet.class, e.getMessage());
 				throw new  WorkflowActionFailureException(e.getMessage());			
 			} catch (DotDataException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Logger.error(PushPublishActionlet.class, e.getMessage(), e);
 			}	
 	}
+	
+	
+	public void downloadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
+		Map<String, String> map = getURIParams();
+		response.setContentType("application/x-tgz");
 		
+		String bid = map.get("bid");
+		PublisherConfig config = new PublisherConfig();
+		config.setId(bid);
+		File bundleRoot = BundlerUtil.getBundleRoot(config);
+
+		ArrayList<File> list = new ArrayList<File>(1);
+		list.add(bundleRoot);
+		File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
+		if(!bundle.exists()){
+			response.sendError(500, "No Bundle Found");
+			return;
+		}
+		
+		response.setHeader("Content-Disposition", "attachment; filename=" + config.getId()+".tar.gz");
+		BufferedInputStream in = null;
+		try{
+			in = new BufferedInputStream(new FileInputStream(bundle));
+			byte[] buf = new byte[4096]; 
+			int len;
+	
+			while ((len = in.read(buf, 0, buf.length))!= -1){
+				response.getOutputStream().write(buf, 0, len);
+			}
+		}
+		catch(Exception e){
+			
+		}
+		finally{
+			try{
+				in.close();
+			}
+			catch(Exception ex){};
+		}
+		return;
+	}
+	
+	public void uploadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException, FileUploadException {
+		Map<String, String> map = getURIParams();
+
+        FileItemFactory factory = new DiskFileItemFactory();
+        ServletFileUpload upload = new ServletFileUpload(factory);
+        List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
+		String remoteIP = "";
+
+		String bundleName = items.get(0).getName();
+		String bundlePath = ConfigUtils.getBundlePath()+File.separator;
+		String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+		
+		
+		
+		//PublishAuditStatus status =updateAuditTable("local-upload", null, bundleFolder);
+		
+		//Write file on FS
+		//writeToFile(bundle, bundlePath+bundleName);
+		
+		
+		/*
+		if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
+			//new Thread(new PublishThread(bundleName, groupId, endpointId, status)).start();
+		}
+		*/
+		return;
+	}
 }
