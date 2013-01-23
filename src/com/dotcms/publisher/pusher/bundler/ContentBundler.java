@@ -175,7 +175,8 @@ public class ContentBundler implements IBundler {
 			for(Field ff : fields) {
 				if(ff.getFieldType().toString().equals(Field.FieldType.FILE.toString())) {
 					String identifier = (String) con.get(ff.getVelocityVarName());
-					contentsToProcessWithFiles.addAll(conAPI.search("+identifier:"+identifier, 0, -1, null, systemUser, false));
+					if(UtilMethods.isSet(identifier))
+						contentsToProcessWithFiles.addAll(conAPI.search("+identifier:"+identifier, 0, -1, null, systemUser, false));
 			    }
 			}
 			contentsToProcessWithFiles.add(con);
