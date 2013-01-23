@@ -380,10 +380,10 @@
 <div dojoType="dijit.Dialog" id="uploadBundleDiv" >
 	<form action="/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle" enctype="multipart/form-data" id="uploadBundleForm" name="uploadBundleForm" method="post">
 		<div>
-			<%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" style="width:400px;height:200px;"  id="uploadBundleFile" name="uploadBundleFile"><br>
+			<%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" style="width:400px;"  id="uploadBundleFile" name="uploadBundleFile"><br>
 		</div>
-		
-		<div>
+		<div>&nbsp;</div>
+		<div style="text-align: center">
 			<button  dojoType="dijit.form.Button" onClick="doBundleUpload();" iconClass="uploadIcon">
 				<%= LanguageUtil.get(pageContext, "publisher_upload") %> 
 			</button> 
