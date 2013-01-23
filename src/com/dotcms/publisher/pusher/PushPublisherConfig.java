@@ -16,7 +16,9 @@ public class PushPublisherConfig extends PublisherConfig {
 	public static enum AssetTypes {
 		TEMPLATES,
 		HTMLPAGES,
-		CONTAINERS
+		CONTAINERS, 
+		CONTENTS, 
+		LINKS
 	}
 	
 	private Operation operation;
@@ -124,7 +126,26 @@ public class PushPublisherConfig extends PublisherConfig {
 		
 		return (Set<String>) get(AssetTypes.HTMLPAGES.name());
 	}
+	@SuppressWarnings("unchecked")
+	public Set<String> getContentlets() {
+		if(get(AssetTypes.CONTENTS.name()) == null){
+			Set<String> contentletsToBuild =   new HashSet<String>();
+			put(AssetTypes.CONTENTS.name(), contentletsToBuild);
+		}
+		
+		return (Set<String>) get(AssetTypes.CONTENTS.name());
+		
+	}
+	@SuppressWarnings("unchecked")
+	public Set<String> getLinks() {
+		if(get(AssetTypes.LINKS.name()) == null){
+			Set<String> linksToBuild =   new HashSet<String>();
+			put(AssetTypes.LINKS.name(), linksToBuild);
+		}
+
+		return (Set<String>) get(AssetTypes.LINKS.name());
 	
+	}
 
 	public void setHTMLPages(Set<String> htmlPages) {		
 		put(AssetTypes.HTMLPAGES.name(), htmlPages);
@@ -137,4 +158,13 @@ public class PushPublisherConfig extends PublisherConfig {
 	public void setTemplates(Set<String> templates) {
 		put(AssetTypes.TEMPLATES.name(), templates);
 	}
+	
+	public void setContents(Set<String> contents) {
+		put(AssetTypes.CONTENTS.name(), contents);
+	}
+	
+	public void setLinks(Set<String> links) {
+		put(AssetTypes.LINKS.name(), links);
+	}
+	
 }

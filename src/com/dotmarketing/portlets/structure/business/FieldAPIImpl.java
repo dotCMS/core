@@ -5,6 +5,7 @@ package com.dotmarketing.portlets.structure.business;
 
 import java.util.List;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -82,12 +83,14 @@ public class FieldAPIImpl implements FieldAPI {
 	public void deleteFieldVariable(FieldVariable fieldVar, User user,
 			boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
+		Field field = APILocator.getFieldAPI().find(fieldVar.getFieldId(), APILocator.getUserAPI().getSystemUser(), true);
 		FieldFactory.deleteFieldVariable(fieldVar);
+		FieldsCache.removeFieldVariables(field);
 	}
 	public FieldVariable findFieldVariable(String id, User user,
 			boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {		
-		return FieldsCache.getFieldVariable(id);		
+		return FieldFactory.getFieldVariable(id);		
 	}
 	public List<FieldVariable> getAllFieldVariables(User user,
 			boolean respectFrontendRoles) throws DotDataException,

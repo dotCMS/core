@@ -11,7 +11,8 @@ import java.util.Map;
 
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.bundler.ContentBundler;
-import com.dotcms.publisher.pusher.wrapper.PushContentWrapper;
+import com.dotcms.publisher.pusher.bundler.HostBundler;
+import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -53,7 +54,12 @@ public class ContentHandler implements IHandler {
 	
 	@Override
 	public void handle(File bundleFolder) throws Exception {
-		List<File> contents = FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
+		handle(bundleFolder, false);
+	}
+	
+	public void handle(File bundleFolder, Boolean isHost) throws Exception {
+		List<File> contents = isHost?FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()):
+				FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
 		Collections.sort(contents);
 		
 		handleContents(contents, bundleFolder);
@@ -86,18 +92,17 @@ public class ContentHandler implements IHandler {
 		
     	try{
 	        XStream xstream=new XStream(new DomDriver());
-	        PushContentWrapper wrapper =null;
+	        ContentWrapper wrapper =null;
             for (File contentFile : contents) {
             	if(contentFile.isDirectory() ) continue;
             	 wrapper =
-                        (PushContentWrapper)
+                        (ContentWrapper)
                                 xstream.fromXML(new FileInputStream(contentFile));
 
             	Contentlet content = wrapper.getContent();
             	
             	
             	
-                content = wrapper.getContent();
                 content.setProperty("_dont_validate_me", true);
                 content.setProperty(Contentlet.WORKFLOW_ASSIGN_KEY, null);
                 content.setProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
@@ -123,7 +128,7 @@ public class ContentHandler implements IHandler {
             for (File contentFile : contents) {
             	if(contentFile.isDirectory() ) continue;
             	
-            	wrapper = (PushContentWrapper)xstream.fromXML(new FileInputStream(contentFile));
+            	wrapper = (ContentWrapper)xstream.fromXML(new FileInputStream(contentFile));
                 if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
 	                ContentletVersionInfo info = wrapper.getInfo();
 	                infoToRemove.put(info.getIdentifier(), info.getLang());
@@ -137,7 +142,7 @@ public class ContentHandler implements IHandler {
     	}    	
     }
 	
-	private void publish(Contentlet content, File folderOut, User userToUse, PushContentWrapper wrapper)
+	private void publish(Contentlet content, File folderOut, User userToUse, ContentWrapper wrapper)
             throws Exception
     {
         //Copy asset files to bundle folder keeping original folders structure
@@ -200,7 +205,7 @@ public class ContentHandler implements IHandler {
         }
     }
 
-    private void unpublish(Contentlet content, File folderOut, User userToUse, PushContentWrapper wrapper)
+    private void unpublish(Contentlet content, File folderOut, User userToUse, ContentWrapper wrapper)
             throws Exception
     {
         String luceneQuery = "+identifier:"+content.getIdentifier()+" +live:true";

@@ -338,7 +338,7 @@
 </script>
 
 <script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
-<script src="/html/js/template/utility-left-menu.jsp" type="text/javascript"></script>
+<script src="/html/js/template/utility-left-menu.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-add-metadata.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-add-head-code.js" type="text/javascript"></script>
 <script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
@@ -495,13 +495,11 @@
 									        <td>
 												<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)">
 													<option value="1" <%if(sb.getValue().equals("")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
-													<option value="yui-g-template" <%if(sb.getValue().equals("yui-g-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
 													<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
 													<option value="yui-gd-template" <%if(sb.getValue().equals("yui-gd-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
 													<option value="yui-ge-template" <%if(sb.getValue().equals("yui-ge-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
 													<option value="yui-gf-template" <%if(sb.getValue().equals("yui-gf-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
 													<option value="yui-gb-template" <%if(sb.getValue().equals("yui-gb-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
-													<option value="yui-js-template" <%if(sb.getValue().equals("yui-js-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
 												</select>
 									        </td>
 										</tr>
@@ -644,14 +642,11 @@
 								        <td>
 											<select name="select_splitBody0" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody0',0)">
 												<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
-												<option value="yui-g-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
 												<option value="yui-gc-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
 												<option value="yui-gd-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
 												<option value="yui-ge-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
 												<option value="yui-gf-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
 												<option value="yui-gb-template"><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
-												<option value="yui-js-template"><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
-											
 											</select>
 								        </td>
 									</tr>

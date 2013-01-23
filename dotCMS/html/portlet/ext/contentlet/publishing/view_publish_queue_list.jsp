@@ -20,6 +20,11 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.beans.Identifier"%>
 <%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
+<%@ page import="com.dotmarketing.portlets.folders.model.Folder"%>
+<%@ page import="com.dotmarketing.portlets.templates.model.Template"%>
+<%@ page import="com.dotmarketing.portlets.containers.model.Container"%>
+<%@ page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@ page import="com.dotmarketing.cache.StructureCache"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
 
@@ -251,20 +256,49 @@
 						String title = "";
 						String inode = "";
 						
-						if(assetType.equals("contentlet")) {
+						if(assetType.equals("contentlet") || assetType.equals("host")) {
 							Contentlet con = conAPI.findContentletByIdentifier(c.getAsset(),false, c.getLanguageId(),user, false);
 							inode = con.getInode();
 							title = con.getTitle();
-							structureName = con.getStructure().getName();
-						} else {
+							structureName = assetType.equals("contentlet")?con.getStructure().getName():c.getType();
+						} else if (assetType.equals("htmlpage")) {
 							HTMLPage htmlPage = APILocator.getHTMLPageAPI().loadWorkingPageById(identifier, user, false);
 							inode = htmlPage.getInode();
 							title = htmlPage.getTitle();
 							structureName = assetType;
+						} else if (assetType.equals("folder")) {
+							Folder f = APILocator.getFolderAPI().find(c.getAsset(), user, false);
+							inode = f.getInode();
+							title = f.getTitle();
+							structureName = assetType;
+						} else if (assetType.equals("template")) {
+							Template t = APILocator.getTemplateAPI().findWorkingTemplate(c.getAsset(), user, false);
+							inode = t.getInode();
+							title = t.getTitle();
+							structureName = assetType;
+						} else if (assetType.equals("containers")) {
+							Container con = APILocator.getContainerAPI().getWorkingContainerById(c.getAsset(), user, false);
+							inode = con.getInode();
+							title = con.getTitle();
+							structureName = assetType;
+						} else if (assetType.equals("structure")) {
+							Structure st = StructureCache.getStructureByInode(c.getAsset());
+							inode = st.getInode();
+							title = st.getName();
+							structureName = assetType;
+						} else {
+							title = LanguageUtil.get(pageContext, "publisher_No_Title");
 						}
-						
+
+						if(assetType.equals("contentlet")) {
 						%>
 						<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=inode %>&referer=<%=referer %>"><%=title%></a>
+						
+						<% } else { %>
+						<%=title%>
+						<% } %>
+						
+						
 						<div style="float:right;color:silver">
 							<%=structureName %>
 						

@@ -10,7 +10,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.tag.model.Tag;
 
 
-public class PushContentWrapper {
+public class PushContentWrapper implements ContentWrapper {
 	
 	private ContentletVersionInfo info;
 	private Contentlet content;
