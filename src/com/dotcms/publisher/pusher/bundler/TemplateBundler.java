@@ -63,22 +63,10 @@ public class TemplateBundler implements IBundler {
 	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 		
 		//Get containers linked with the content
-		Set<String> htmlIds = config.getHTMLPages();
-		Set<String> templateIds = new HashSet<String>();
+		Set<String> templateIds = config.getTemplates();
 		
 		try {
 			Set<Template> templates = new HashSet<Template>();
-			
-			for (String htmlId : htmlIds) {
-				HTMLPage page = APILocator.getHTMLPageAPI()
-						.loadLivePageById(htmlId, systemUser, false);
-				HTMLPage pageWork = APILocator.getHTMLPageAPI()
-						.loadWorkingPageById(htmlId, systemUser, false);
-				if(page != null)
-					templateIds.add(page.getTemplateId());
-				if(pageWork != null)
-					templateIds.add(pageWork.getTemplateId());
-			}
 			
 			for(String templateId : templateIds) {
 				templates.add(APILocator.getTemplateAPI()
@@ -105,13 +93,6 @@ public class TemplateBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
-		// need to bundle all containers associated with the template
-		List<Container> containers = APILocator.getTemplateAPI().
-				getContainersInTemplate(template, systemUser, false);
-		
-		for (Container container : containers) {
-			config.getContainers().add(container.getIdentifier());
-		}
 		
 		Identifier templateId = APILocator.getIdentifierAPI().find(template.getIdentifier());
 		TemplateWrapper wrapper = 

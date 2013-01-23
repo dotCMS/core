@@ -1,9 +1,12 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import java.util.List;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
@@ -85,6 +88,12 @@ public class WorkflowCacheImpl extends WorkflowCache {
 
 	protected void remove(WorkflowStep step) {
 		cache.remove(step.getId(), STEP_GROUP);
+		cache.remove(step.getId(), ACTION_GROUP);
+	}
+	
+	protected void removeActions(WorkflowStep step) {
+		if(step != null)
+			cache.remove(step.getId(), ACTION_GROUP);
 	}
 	
 	protected void remove(WorkflowTask task) {
@@ -206,5 +215,24 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		// Add the key to the cache
 		cache.put(contentlet.getIdentifier(), task.getId(), TASK_GROUP);
 		return addTask(task);
+	}
+
+	@Override
+	protected List<WorkflowAction> addActions(WorkflowStep step, List<WorkflowAction> actions) {
+		if(step == null || actions==null)return null;
+		cache.put(step.getId(), actions, ACTION_GROUP);
+		return actions;
+		
+	}
+
+	@Override
+	protected List<WorkflowAction> getActions(WorkflowStep step) {
+		if(step == null ) return null;
+		try {
+			return (List<WorkflowAction>) cache.get(step.getId(), ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
+		}
+		return null;
 	}
 }

@@ -26,10 +26,6 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
 
-<%
-PublisherEndpointAPI pepAPI;
-List<PublishingEndPoint> sendingEndpoints;
-%>
 
 <script src="/dwr/interface/UserAjax.js" type="text/javascript"></script>
 <script language="JavaScript"><!--
@@ -39,6 +35,14 @@ List<PublishingEndPoint> sendingEndpoints;
 	dojo.addOnLoad(function() {
 		UserAjax.getUserRolesValues('<%=user.getUserId()%>', '<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>', getUserRolesValuesCallBack);
 	});
+	
+	var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+
+	<%
+		PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
+		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndpoints();
+	%>
+	var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 
 
 	function getUserRolesValuesCallBack(response) {
@@ -49,7 +53,6 @@ List<PublishingEndPoint> sendingEndpoints;
 
 
 	function showHostPopUp(host, cmsAdminUser, origReferer, e) {
-
 		var referer = encodeURIComponent(origReferer);
 		if($('context_menu_popup_'+objId) == null) {
 
@@ -68,6 +71,13 @@ List<PublishingEndPoint> sendingEndpoints;
 				strHTML += '<a class="contextPopupMenu" href="javascript: editHost(\'' + objInode + '\',\''+referer+'\')">';
 		    		strHTML += '<span class="hostIcon"></span>';
     				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Host")) %>';
+				strHTML += '</a>';
+			}
+			
+			if(enterprise && sendingEndpoints) {
+				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+			    	strHTML += '<span class="pushIcon"></span>';
+	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 			}
 
@@ -172,14 +182,7 @@ List<PublishingEndPoint> sendingEndpoints;
 		var write = hasWritePermissions(folder.permissions);
 		var publish = hasPublishPermissions(folder.permissions);
 		var addChildren = hasAddChildrenPermissions(folder.permissions);
-		var enterprise = <%=LicenseUtil.getLevel() > 199%> 
 		
-		<%
-			pepAPI = APILocator.getPublisherEndpointAPI();
-			sendingEndpoints = pepAPI.getReceivingEndpoints();
-		%>
-		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>
-
 		var strHTML = '';
 
 		if (write) {
@@ -200,8 +203,8 @@ List<PublishingEndPoint> sendingEndpoints;
 			strHTML += '</a>';
 			
 			if(enterprise && sendingEndpoints) {
-				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublishFolder(\'' + objId + '\', \'' + referer + '\');">';
-			    	strHTML += '<span class="folderGlobeIcon"></span>';
+				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+			    	strHTML += '<span class="pushIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 			}
@@ -591,15 +594,6 @@ List<PublishingEndPoint> sendingEndpoints;
 		var working = page.working;
 		var archived = page.deleted;
 		var locked = page.locked;
-		
-		var enterprise = <%=LicenseUtil.getLevel() > 199%> 
-		
-		<%
-			pepAPI = APILocator.getPublisherEndpointAPI();
-			sendingEndpoints = pepAPI.getReceivingEndpoints();
-		%>
-		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>
-
 
 		var strHTML = '';
 
@@ -639,8 +633,8 @@ List<PublishingEndPoint> sendingEndpoints;
 			strHTML += '</a>';
 			
 			if(enterprise && sendingEndpoints) {
-				strHTML += '<a href="javascript: remotePublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="publishIcon"></span>';
+				strHTML += '<a href="javascript: remotePublish(\'' + objId + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+		    	strHTML += '<span class="pushIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 			}
@@ -1000,8 +994,43 @@ List<PublishingEndPoint> sendingEndpoints;
     		var wfActionComments 	= comments;
 
     		var dia = dijit.byId("contentletWfDialog").hide();
+    		
+    		// BEGIN: PUSH PUBLISHING ACTIONLET						
+			var publishDate = (dijit.byId("wfPublishDateAux"))			
+				? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
+					: (dojo.byId("wfPublishDateAux"))	
+						? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
+								: "";
 
-    		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, fileActionCallback);
+			var publishTime = (dijit.byId("wfPublishTimeAux"))			
+				? dojo.date.locale.format(dijit.byId("wfPublishTimeAux").getValue(),{timePattern: "H-m", selector: "time"})
+					: (dojo.byId("wfPublishTimeAux"))	
+						? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
+								: "";
+			
+						
+			var expireDate = (dijit.byId("wfExpireDateAux"))			
+				? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("expireDate").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
+					: (dojo.byId("wfExpireDateAux"))	
+						? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("expireDate").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
+								: "";
+			
+			var expireTime = (dijit.byId("wfExpireTimeAux"))			
+				? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("expireTime").getValue(),{timePattern: "H-m", selector: "time"}) : ""
+					: (dojo.byId("wfExpireTimeAux"))	
+						? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("expireTime").value,{timePattern: "H-m", selector: "time"}) : ""
+								: "";			
+			var neverExpire = (dijit.byId("wfNeverExpire"))			
+				? dijit.byId("wfNeverExpire").getValue()
+					: (dojo.byId("wfNeverExpire"))	
+						? dojo.byId("wfNeverExpire").value
+								: "";
+						
+			// END: PUSH PUBLISHING ACTIONLET
+			
+			
+    		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate, 
+    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);
 
     	}
 

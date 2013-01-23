@@ -63,7 +63,7 @@ public class PublisherQueueJob implements StatefulJob {
 			if(endpoints != null && endpoints.size() > 0)  {
 				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
 				PublisherAPI pubAPI = PublisherAPI.getInstance();  
-				
+
 				PushPublisherConfig pconf = new PushPublisherConfig();
 				List<Class> clazz = new ArrayList<Class>();
 				clazz.add(PushPublisher.class);
@@ -86,11 +86,17 @@ public class PublisherQueueJob implements StatefulJob {
 						historyPojo = new PublishAuditHistory();
 						//Retriving assets
 						List<String> assets = new ArrayList<String>();
+						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
 						
 						for(PublishQueueElement c : tempBundleContents) {
 							assets.add((String) c.getAsset());
+							if(!c.getType().equals("contentlet"))
+								assetsToPublish.add(c);
 						}
 						historyPojo.setAssets(assets);
+						
+						// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
+						pconf.setAssets(assetsToPublish);
 						
 						//Status
 						status =  new PublishAuditStatus(tempBundleId);
@@ -289,7 +295,7 @@ public class PublisherQueueJob implements StatefulJob {
 		List<String> assets;
 		assets = new ArrayList<String>();
 		
-		if(bundle.size() == 1) {
+		if(bundle.size() == 1 && bundle.get(0).getType().equals("contentlet")) {
 			assetBuffer.append("+"+IDENTIFIER+(String) bundle.get(0).getAsset());
 			
 			assets.add(assetBuffer.toString() +" +live:true");
@@ -300,6 +306,9 @@ public class PublisherQueueJob implements StatefulJob {
 			PublishQueueElement c = null;
 			for(int ii = 0; ii < bundle.size(); ii++) {
 				c = bundle.get(ii);
+				
+				if(!c.getType().equals("contentlet")) 
+					continue;
 				
 				assetBuffer.append(IDENTIFIER+c.getAsset());
 				assetBuffer.append(" ");

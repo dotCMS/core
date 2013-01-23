@@ -183,7 +183,6 @@ public class FieldFactory {
 			}
 		}
 		FieldsCache.removeField(proxy);
-		FieldsCache.removeFieldVariable(fieldVar);
 		FieldsCache.removeFieldVariables(proxy);
 		
 		
@@ -208,7 +207,6 @@ public class FieldFactory {
 	public static void deleteFieldVariable(FieldVariable fieldVar){
 		try {
 			HibernateUtil.delete(fieldVar);
-			FieldsCache.removeFieldVariable(fieldVar);
 		} catch (DotHibernateException e) {
 			Logger.error(FieldFactory.class, e.getMessage());
 		}

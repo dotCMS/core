@@ -25,6 +25,9 @@
 	dojo.require("dijit.ProgressBar");
 	dojo.require("dijit.form.Button");
 	dojo.require("dijit.form.TextBox");
+	dojo.require("dijit.form.DateTextBox");
+	dojo.require("dijit.form.TimeTextBox");
+	dojo.require("dijit.form.CheckBox");
 	
 	//Widget functions
 	var _dotStructureTypeName = "";
@@ -33,6 +36,13 @@
 	var _dotWidgetNameSelected, _dotWidgetInodeSelected;
 	var _dotWidgetSearchString = "";
 	var _inodeCounter = 0;
+	var pushHandler = null;
+	
+	 function remotePublish(){
+    	dojo.require("dotcms.dojo.push.PushHandler");	
+    	pushHandler = new dotcms.dojo.push.PushHandler('$languagewebapi.getFromUserLanguage("modes.Create-New-Page")');
+        pushHandler.showDialog('$htmlPageInode');
+    }
 	
 	function openAddWidget(containerInode) {
 		hideCurrentMenu();	
@@ -756,6 +766,14 @@
         <input type="hidden" name="selectedStructure" id="selectedStructure" value="">
         <input type="hidden" name="selectedStructureFake" id="selectedStructureFake" value="">
     </form>
+    <form id="remotePublishForm">
+		<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+		<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+		<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+		<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+		<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+		<input name="remotePublishNeverExpire" id="remotePublishNeverExpire" type="hidden" value="">
+	</form>
 </div>
 
 <div id="savingContentDialog" dojoType="dijit.Dialog" title="$langbackendwebapi.get("saving-content")" style="display: none;color:#555555; font:13px/138.5% Verdana,Geneva,Arial,sans-serif;">

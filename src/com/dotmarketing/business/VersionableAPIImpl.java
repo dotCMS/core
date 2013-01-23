@@ -241,6 +241,9 @@ public class VersionableAPIImpl implements VersionableAPI {
     public void removeLive(String identifier, long lang) throws DotDataException, DotStateException, DotSecurityException {
         if(!UtilMethods.isSet(identifier))
             throw new DotStateException("invalid identifier");
+        Identifier ident=APILocator.getIdentifierAPI().find(identifier);
+        if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().after(new Date()))
+            throw new PublishStateException("Can't unpublish. Content is scheduled to expire on a future date");
         ContentletVersionInfo ver = vfac.getContentletVersionInfo(identifier, lang);
         if(ver ==null || !UtilMethods.isSet(ver.getIdentifier()))
             throw new DotStateException("No version info. Call setWorking first");
@@ -278,6 +281,12 @@ public class VersionableAPIImpl implements VersionableAPI {
             ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
             if(info ==null ||!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
+            
+            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().after(new Date()))
+                throw new PublishStateException("Can't publish content is scheduled to be published on future date");
+            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+                throw new PublishStateException("Can't publish content is expired");
+            
             info.setLiveInode(versionable.getInode());
             vfac.saveContentletVersionInfo(info);
         }

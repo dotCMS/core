@@ -6,15 +6,16 @@
 <html lang="en">
 
     <head>
-    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap.grid.min.css" />
-		<script src="/html/js/jquery/jquery-1.8.2.min.js"></script>
 		
 		#if($dotTheme.htmlHead)
             #dotParse("${dotTheme.path}html_head.vtl")
         #end
 
+		<script src="/html/js/jquery/jquery-1.8.2.min.js"></script>
+		
 		#if($dotThemeLayout.width == "responsive")
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<link rel="stylesheet" type="text/css" href="/html/css/template/bootstrap-responsive.css" />
 			<script src="/html/js/bootstrap/bootstrap.min.js"></script>
 			<script src="/html/js/bootstrap/bootstrap-collapse.js"></script>
@@ -105,8 +106,6 @@
                                         #set ($currentColumnSpan = "span9" )
                                     #elseif ( $column.widthPercent == 66)
                                         #set ($currentColumnSpan = "span8" )
-                                    #elseif ( $column.widthPercent == 50)
-                                        #set ($currentColumnSpan = "span6" )
                                     #elseif ( $column.widthPercent == 33)
                                         #set ($currentColumnSpan = "span4" )
                                     #elseif ( $column.widthPercent == 25)

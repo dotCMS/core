@@ -796,6 +796,11 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate );
 
         com.dotmarketing.portlets.templates.model.Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory.getHTMLPageTemplate( htmlPage, true );
+        //issue- 1775 If User doesn't have edit permission on HTML Pages
+        if(!hasWritePermOverHTMLPage){
+        	doPreviewMode(request, response);
+        	return;
+        }
         if ( cmsTemplate == null ) {// DOTCMS-4051
             cmsTemplate = new com.dotmarketing.portlets.templates.model.Template();
             Logger.debug( VelocityServlet.class, "HTMLPAGE TEMPLATE NOT FOUND" );
