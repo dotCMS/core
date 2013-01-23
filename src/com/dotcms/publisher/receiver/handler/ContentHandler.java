@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
@@ -51,7 +53,9 @@ public class ContentHandler implements IHandler {
 	
 	@Override
 	public void handle(File bundleFolder) throws Exception {
-		Collection<File> contents = FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
+		List<File> contents = FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
+		Collections.sort(contents);
+		
 		handleContents(contents, bundleFolder);
 		
 		try{
@@ -166,8 +170,10 @@ public class ContentHandler implements IHandler {
             tree.setParent((String) tRow.get("parent"));
             tree.setRelationType((String) tRow.get("relation_type"));
             tree.setTreeOrder(Integer.parseInt(tRow.get("tree_order").toString()));
-
-            TreeFactory.saveTree(tree);
+            
+            Tree temp = TreeFactory.getTree(tree);
+            if(temp == null || !UtilMethods.isSet(temp.getParent()))
+            	TreeFactory.saveTree(tree);
         }
         
         //Multitree
@@ -184,9 +190,6 @@ public class ContentHandler implements IHandler {
             	MultiTreeFactory.deleteMultiTree(t);
             	
             }
-            
-            
-            
             
             MultiTreeFactory.saveMultiTree(multiTree);
         }
