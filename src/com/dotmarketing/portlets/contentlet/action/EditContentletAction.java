@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.action;
 
 import java.io.PrintWriter;
 import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +25,7 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.struts.Globals;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -2007,18 +2009,24 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
 				inodes = getSelectedInodes(req,user);
 			}
-
-
+			String resetExpiredStr=req.getParameter("expireDateReset");
+			Date resetExpireDate=null;
+			if(UtilMethods.isSet(resetExpiredStr)) {
+			    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+			    resetExpireDate=df.parse(resetExpiredStr);
+			}
 
 			class PublishThread extends Thread {
 				private String[] inodes = new String[0];
 				private User user;
 				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<Contentlet>();
+				Date resetExpireDate;
 
-				public PublishThread(String[] inodes, User user,List<Contentlet> contentToIndexAfterCommit) {
+				public PublishThread(String[] inodes, User user,List<Contentlet> contentToIndexAfterCommit,Date resetExpireDate) {
 					this.inodes = inodes;
 					this.user = user;
 					this.contentToIndexAfterCommit = contentToIndexAfterCommit;
+					this.resetExpireDate=resetExpireDate;
 				}
 
 				public void run() {
@@ -2040,8 +2048,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						Contentlet contentlet = new Contentlet();
 						try{
 							contentlet = conAPI.find(inode, user, false);
-							contentToIndexAfterCommit.add(contentlet);
-							
 							if(contentlet.isLive()){
 								continue;
 							}
@@ -2052,7 +2058,18 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						}
 
 						if (perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user) && !contentlet.isLive()) {
-							contentlets.add(contentlet);
+							if(resetExpireDate!=null) {
+							    Identifier ident=APILocator.getIdentifierAPI().find(contentlet);
+							    if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date())) {
+							        Structure st=contentlet.getStructure();
+							        contentlet=APILocator.getContentletAPI().checkout(inode, user, false);
+							        contentlet.setDateProperty(st.getExpireDateVar(), resetExpireDate);
+							        contentlet=APILocator.getContentletAPI().checkin(contentlet, user, false);
+							        APILocator.getContentletAPI().unlock(contentlet, user, false);
+							    }
+							}
+						    contentlets.add(contentlet);
+							contentToIndexAfterCommit.add(contentlet);
 						} else
 							hasNoPermissionOnAllContent = true;
 					}
@@ -2085,7 +2102,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 
-			PublishThread thread = new PublishThread(inodes, user,contentToIndexAfterCommit);
+			PublishThread thread = new PublishThread(inodes, user,contentToIndexAfterCommit,resetExpireDate);
 
 			if (inodes.length > 50) {
 
