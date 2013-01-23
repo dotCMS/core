@@ -26,6 +26,7 @@ import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
@@ -33,7 +34,9 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -41,6 +44,7 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -227,7 +231,30 @@ public class ContentBundler implements IBundler {
 		            destFile.getParentFile().mkdirs();
 		            FileUtil.copyFile(sourceFile, destFile);
 				}
-		    }
+		    } else if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
+                    || ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
+
+                try {
+                    String value = "";
+                    if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
+                        value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
+                    }
+                    //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
+                    Identifier id = APILocator.getIdentifierAPI().find(value);
+                    if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
+                    	Contentlet fileAssetCont = null;
+                    	try {
+                    		fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        } catch(DotContentletStateException se) {
+                        	fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        }
+                        writeFileToDisk(bundleRoot, fileAssetCont);
+                    }
+                } catch (Exception ex) {
+                    Logger.debug(this, ex.toString());
+                    throw new DotStateException("Problem occured while publishing file");
+                }
+            }
 
 		}
 
