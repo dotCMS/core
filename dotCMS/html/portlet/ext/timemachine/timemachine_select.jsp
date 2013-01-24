@@ -170,6 +170,7 @@ function showSettings() {
         title: "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>",
         style: "width: 600px;",
         content: new dojox.layout.ContentPane({
+        	style: "height:500px;",
             href: "/html/portlet/ext/timemachine/settings.jsp"
         }),
         onHide: function() {
@@ -182,7 +183,8 @@ function showSettings() {
 
         }
     });
-
+	
+	
     dialog.show();
 
     dojo.style(dialog.domNode,'top','100px');
