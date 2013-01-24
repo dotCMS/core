@@ -687,6 +687,9 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		//Calling the copy method from the factory
 		TemplateFactory.copyTemplate(currentTemplate);
+		
+		super._editWebAsset(req, res, config, form, user,
+				WebKeys.TEMPLATE_EDIT);
 
 		SessionMessages.add(httpReq, "message", "message.template.copy");
 	}
