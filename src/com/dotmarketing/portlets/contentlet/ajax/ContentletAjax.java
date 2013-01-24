@@ -1458,6 +1458,13 @@ public class ContentletAjax {
 			callbackData.put("referer", referer);
 			return callbackData;
 		}
+		catch (Throwable t) {
+			Logger.error(this, t.toString());
+			saveContentErrors.add(t.toString());
+			callbackData.put("saveContentErrors", saveContentErrors);
+			callbackData.put("referer", referer);
+			return callbackData;
+		}
 
 		finally{
 		    if(saveContentErrors.size()>0) {
