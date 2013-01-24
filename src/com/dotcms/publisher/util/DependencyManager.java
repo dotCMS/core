@@ -3,16 +3,20 @@ package com.dotcms.publisher.util;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.DotBundleException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotIdentifierStateException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,8 +28,13 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -53,7 +62,7 @@ public class DependencyManager {
 		this.user = user;
 	}
 	
-	public void setDependencies(PushPublisherConfig config) throws DotDataException {
+	public void setDependencies(PushPublisherConfig config) throws DotDataException, DotBundleException {
 		List<PublishQueueElement> assets = config.getAssets();
 		
 		for (PublishQueueElement asset : assets) {
@@ -78,6 +87,7 @@ public class DependencyManager {
 		setTemplateDependencies();
 		setContainerDependencies();
 		setStructureDependencies();
+		setContentDependencies(config.getLuceneQueries());
 		
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -329,6 +339,89 @@ public class DependencyManager {
 		
 	}
 	
+	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
+		
+		List<Contentlet> cs = new ArrayList<Contentlet>();
+		
+		try {
+		
+		for(String luceneQuery: luceneQueries) {
+			cs = APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false);
+			
+			Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
+			
+			//Getting all related content
+			for (Contentlet con : cs) {
+				Map<Relationship, List<Contentlet>> contentRel =
+						APILocator.getContentletAPI().findContentRelationships(con, user);
+				
+				for (Relationship rel : contentRel.keySet()) {
+					contentsToProcess.addAll(contentRel.get(rel));
+				}
+				
+				contentsToProcess.add(con);
+			}
+			
+			// Adding the Contents (including related) and adding filesAsContent 
+			
+			for (Contentlet con : contentsToProcess) {
+
+				contents.add(con.getIdentifier()); // adding the content (including related)
+				folders.add(con.getFolder()); // adding content folder
+				
+				try {
+					if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES")) {
+						List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
+								APILocator.getFolderAPI().find(con.getFolder(), user, false));
+						folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
+								APILocator.getFolderAPI().find(con.getFolder(), user, false)));
+						for(HTMLPage htmlPage: folderHtmlPages) {
+							htmlPages.add(htmlPage.getIdentifier());
+						}
+					}
+				} catch (Exception e) {
+					Logger.debug(this, e.toString());
+				}
+				
+				if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
+					structures.add(con.getStructureInode());
+				}
+				
+				//Copy asset files to bundle folder keeping original folders structure
+				List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+
+				for(Field ff : fields) {
+					if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
+		                    || ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
 	
+		                try {
+		                    String value = "";
+		                    if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
+		                        value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
+		                    }
+		                    //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
+		                    Identifier id = APILocator.getIdentifierAPI().find(value);
+		                    if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
+		                        contents.add(id.getId()); // adding files as content
+		                    }
+		                } catch (Exception ex) {
+		                    Logger.debug(this, ex.toString());
+		                    throw new DotStateException("Problem occured while publishing file");
+		                }
+		            }
+	
+				}
+			
+			}
+			
+			
+		}
+		
+		} catch (Exception e) {
+			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
+			+ e.getMessage() + ": Unable to pull content", e);
+		}
+		
+	}
 
 }
