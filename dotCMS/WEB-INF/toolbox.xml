@@ -99,6 +99,7 @@
 	</tool>
 	<tool>
 	   <key>parser</key>
+	   <scope>request</scope>
 	   <class>org.apache.velocity.tools.generic.ValueParser</class>
  	</tool>
 	<!-- Velocity View Tools End -->
