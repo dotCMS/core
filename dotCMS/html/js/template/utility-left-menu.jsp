@@ -1,10 +1,11 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-/**
+<script language="Javascript">
+<%--
  * This file contains all the Javascript function for drawing the template.
  *
  * @author Graziano Aliberti
  *
- */
+ --%>
 
 var addContainerMSG;
 var removeContainerMSG;
@@ -521,3 +522,5 @@ function parseCurrentContainers() {
 
     countContainersAdded.value = containersAdded.length;
 }
+
+</script>

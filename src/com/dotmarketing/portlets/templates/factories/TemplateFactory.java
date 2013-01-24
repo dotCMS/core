@@ -62,6 +62,8 @@ public class TemplateFactory {
 		Template newTemplate = new Template();
 
 		newTemplate.copy(currentTemplate);
+		newTemplate.setDrawed(currentTemplate.isDrawed());
+		newTemplate.setDrawedBody(currentTemplate.getDrawedBody());
 		newTemplate.setImage(currentTemplate.getImage());
 		newTemplate.setFriendlyName(currentTemplate.getFriendlyName()
 				+ " (COPY) ");
