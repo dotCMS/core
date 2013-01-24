@@ -69,7 +69,7 @@ function resized() {
 dojo.ready(function(){
 	dojo.connect(window,"onresize",resized);
 	resized();
-	dijit.byId('closeBtn').set('disabled','disabled');
+	dijit.byId('closeBtn').setDisabled(true);
 	hostChange();
 	toggleDatePick();
 	
@@ -136,7 +136,7 @@ function timeChange() {
                     "src": '/',
                     "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
                 }, dojo.byId('iframeWrapper'));
-                dijit.byId('closeBtn').set('disabled','');
+                dijit.byId('closeBtn').setDisabled(false);
                 browsingTimeMachine=true;
                 showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
                 
@@ -150,7 +150,7 @@ function stopBrowing() {
         url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/stopBrowsing',
         handle: function() {
             dojo.empty('iframeWrapper');
-            dijit.byId('closeBtn').set('disabled','disabled');
+            dijit.byId('closeBtn').setDisabled(true);
 
 
             dijit.byId('timesel').required=false;
@@ -234,7 +234,7 @@ function futureChange() {
                 "src": '/',
                 "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
             }, dojo.byId('iframeWrapper'));
-            dijit.byId('closeBtn').set('disabled','');
+            dijit.byId('closeBtn').setDisabled(false);
 
             showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
             browsingTimeMachine=true;
