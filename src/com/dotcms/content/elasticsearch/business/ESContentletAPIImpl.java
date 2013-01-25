@@ -2080,10 +2080,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
 				String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
 				
-				if(saveWithExistingID)
-				    contentlet = conFac.save(contentlet, existingInode);
-				else
-				    contentlet = conFac.save(contentlet);
 
 				if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 				    Treeable parent = null;
@@ -2099,7 +2095,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    else
 				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
 				    contentlet.setIdentifier(ident.getId());
-				    contentlet = conFac.save(contentlet);
+				    //contentlet = conFac.save(contentlet);
 				} else {
 				    Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
 
@@ -2126,6 +2122,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    }
 				    APILocator.getIdentifierAPI().save(ident);
 				}
+				
+				if(saveWithExistingID)
+				    contentlet = conFac.save(contentlet, existingInode);
+				else
+				    contentlet = conFac.save(contentlet);
 
 
 				APILocator.getVersionableAPI().setWorking(contentlet);

@@ -151,11 +151,14 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
             Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
             Class clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
-            HibernateUtil dh = new HibernateUtil(clazz);
-            dh.setQuery("from "+clazz.getName()+" where identifier=?");
-            dh.setParam(info.getIdentifier());
-            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
-            VersionInfo vi=(VersionInfo)dh.load();
+            VersionInfo vi= null;
+            if(clazz != null) {
+	            HibernateUtil dh = new HibernateUtil(clazz);
+	            dh.setQuery("from "+clazz.getName()+" where identifier=?");
+	            dh.setParam(info.getIdentifier());
+	            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
+	            vi=(VersionInfo)dh.load();
+            }
             if(vi ==null || !UtilMethods.isSet(vi.getIdentifier())) {
             	try {
                     vi = (VersionInfo) clazz.newInstance();
