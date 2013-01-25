@@ -160,7 +160,6 @@ public class ContentHandler implements IHandler {
                 if(binaryFolder != null && binaryFolder.exists() && binaryFolder.listFiles().length > 0)
                     content.setBinary(ff.getVelocityVarName(), binaryFolder.listFiles()[0]);
             }
-
         }
 
         content = conAPI.checkin(content, userToUse, false);
