@@ -4,8 +4,11 @@
 package com.dotcms.publisher.endpoint.business;
 
 import java.util.*;
+
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.business.*;
+import com.dotcms.TestBase;
 import com.dotcms.publisher.endpoint.bean.*;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -18,7 +21,7 @@ import com.dotmarketing.util.Logger;
  * @author brent griffin
  *
  */
-public class PublisherEndpointAPITest {
+public class PublisherEndpointAPITest extends TestBase{
 
 	private static PublisherEndpointAPI api;
 	private static ArrayList<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
@@ -40,6 +43,7 @@ public class PublisherEndpointAPITest {
 	@BeforeClass
 	public static void init() {
 		api = APILocator.getPublisherEndpointAPI();
+		endPoints.clear();
 		endPoints.add(CreatePublishingEndPoint("01", "G01", "Alpha", "192.168.1.1", "81", "HTTPS", true, "AuthKey01", false));
 		endPoints.add(CreatePublishingEndPoint("02", "G01", "Beta", "192.168.1.2", "82", "HTTPS", true, "AuthKey02", false));
 		endPoints.add(CreatePublishingEndPoint("03", "G01", "Gamma", "192.168.1.3", "83", "HTTPS", false, "AuthKey03", false));
@@ -70,9 +74,11 @@ public class PublisherEndpointAPITest {
 	
 	@Test
 	public void insertionOfEndPoints() throws DotDataException {
+		HibernateUtil.startTransaction();
 		for(PublishingEndPoint endPoint : endPoints) {
 			api.saveEndpoint(endPoint);
 		}
+		HibernateUtil.commitTransaction();
 		List<PublishingEndPoint> savedEndPoints = api.getAllEndpoints();
 		assertTrue(savedEndPoints.size() == endPoints.size());
 	}
@@ -85,10 +91,12 @@ public class PublisherEndpointAPITest {
 	
 	@Test
 	public void deletionOfEndPoints() throws DotDataException {
+		HibernateUtil.startTransaction();
 		List<PublishingEndPoint> savedEndPoints = api.getAllEndpoints();
 		for(PublishingEndPoint endPoint : savedEndPoints) {
 			api.deleteEndpointById(endPoint.getId());
 		}
+		HibernateUtil.commitTransaction();
 		savedEndPoints = api.getAllEndpoints();
 		assertTrue(savedEndPoints.size() == 0);
 	}
