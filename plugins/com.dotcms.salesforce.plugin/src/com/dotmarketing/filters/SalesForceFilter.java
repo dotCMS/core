@@ -45,14 +45,6 @@ import com.liferay.portal.util.PropsUtil;
 
 
 public class SalesForceFilter implements Filter {
-
-    public final static String TOKEN_URL_INIT_PARAM = "com.dotmarketing.filters.salesforce.filter.tokenUrl";
-    
-    public final static String SERVERNAME_INIT_PARAM = "com.dotmarketing.filters.salesforce.filter.serverName";
-    
-    public final static String CALLBACK_URL_INIT_PARAM = "com.dotmarketing.filters.salesforce.filter.callbackURL";
-    
-    public final static String ENVIRONMENT_INIT_PARAM = "com.dotmarketing.filters.salesforce.filter.environment";
     
 	private static PluginAPI pluginAPI = APILocator.getPluginAPI();
 	public static User systemUser;
@@ -71,10 +63,6 @@ public class SalesForceFilter implements Filter {
 	private String tokenUrl;
 	private String searchUsersURL;
     
-    public void init(FilterConfig config) throws ServletException {
-
-    }
-
     public void doFilter (ServletRequest req, ServletResponse res, FilterChain fc)
         throws ServletException, IOException {
     	
@@ -307,8 +295,14 @@ public class SalesForceFilter implements Filter {
 		}
 	}
 
+	@Override
 	public void destroy() {
 		
 	}
+	
+	@Override
+    public void init(FilterConfig config) throws ServletException {
+
+    }
 
 }

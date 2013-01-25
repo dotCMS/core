@@ -17,10 +17,6 @@
 	<filter-name>SalesForceFilter</filter-name>
 	<url-pattern>/admin</url-pattern>
 </filter-mapping>
-<filter-mapping>
-	<filter-name>SalesForceFilter</filter-name>
-	<url-pattern>/c</url-pattern>
-</filter-mapping>
 <!-- 
 <filter-mapping>
 	<filter-name>SalesForceFilter</filter-name>
