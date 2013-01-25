@@ -352,14 +352,14 @@ public class DependencyManager {
 			
 			//Getting all related content
 			for (Contentlet con : cs) {
+				contentsToProcess.add(con);
+				
 				Map<Relationship, List<Contentlet>> contentRel =
 						APILocator.getContentletAPI().findContentRelationships(con, user);
 				
 				for (Relationship rel : contentRel.keySet()) {
 					contentsToProcess.addAll(contentRel.get(rel));
 				}
-				
-				contentsToProcess.add(con);
 			}
 			
 			// Adding the Contents (including related) and adding filesAsContent 

@@ -89,13 +89,8 @@ public class ContentBundler implements IBundler {
 			if(UtilMethods.isSet(contentsIds) && !contentsIds.isEmpty()) { // this content set is a dependency of other assets, like htmlpages
 				Set<Contentlet> contents = new HashSet<Contentlet>();
 				for (String contentIdentifier : contentsIds) {
-					try{
-						contents.add(APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false));
-					}catch (Exception e) {
-						try{
-							contents.add(APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false));
-						}catch (Exception e1) {	}
-					}
+					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +live:true +deleted:false", 0, -1, null, systemUser, false));
+					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +working:true +deleted:false", 0, -1, null, systemUser, false));
 				}
 				
 				//Delete duplicate
