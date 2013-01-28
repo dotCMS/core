@@ -59,6 +59,8 @@
 	if(!searcher.isOpen() && ! searcher.isClosed()){
 		searcher.setOpen(true);
 	}
+	
+	Structure structure = null;
 
 
     boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())

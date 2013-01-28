@@ -33,12 +33,13 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@ page import="com.dotmarketing.util.Config" %>
+<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
 
 <%
 
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
 	Contentlet contentlet 	= APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
-
+	Structure structure = contentlet.getStructure();
 
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
 	Role assignedTo 	= APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
@@ -329,7 +330,16 @@
 
 				<%for(WorkflowAction a : actions){ %>
 					<%if(a.requiresCheckout())continue; %>
-					<div class="workflowActionLink" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable()%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>')">
+					
+					<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
+					<% boolean hasPushPublishActionlet = false; %>
+					<% for(WorkflowActionClass actionlet : actionlets){ %>
+						<% if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
+							<% hasPushPublishActionlet = true; %>
+						<% } %>
+					<% } %>
+					
+					<div class="workflowActionLink" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>)">
 
 							<span class="<%=a.getIcon()%>"></span>
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
@@ -534,4 +544,11 @@
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
 	<input name="wfContentletId" id="wfContentletId" type="hidden" value="<%=contentlet.getInode()%>">
+	
+	<!-- PUSH PUBLISHING ACTIONLET -->
+	<input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
+	<input name="wfPublishTime" id="wfPublishTime" type="hidden" value="">
+	<input name="wfExpireDate" id="wfExpireDate" type="hidden" value="">
+	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
+	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 </form>
