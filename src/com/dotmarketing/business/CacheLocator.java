@@ -8,6 +8,8 @@ import org.jgroups.JChannel;
 
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.db.HibernateUtil;
@@ -228,6 +230,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static NavToolCache getNavToolCache() {
 	    return (NavToolCache)getInstance(CacheIndex.NavTool);
 	}
+	
+	public static PublishingEndPointCache getPublishingEndPointCache() {
+		return (PublishingEndPointCache)getInstance(CacheIndex.PublishingEndPoint);
+	}
 
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
@@ -308,7 +314,8 @@ enum CacheIndex
 	HostVariables("Host Variables"),
 	Block_Directive("Block Directive"),
 	Indicies("Indicies"),
-	NavTool("Navigation Tool");
+	NavTool("Navigation Tool"),
+	PublishingEndPoint("PublishingEndPoint Cache");
 	
 	Cachable create() {
 		switch(this) {
@@ -341,6 +348,7 @@ enum CacheIndex
       	case VirtualLinkCache : return new VirtualLinkCacheImpl();
       	case Indicies: return new IndiciesCacheImpl();
       	case NavTool: return new NavToolCacheImpl();
+      	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
