@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Plugin-Name: dotCMS-SalesForce Plugin
-Plugin-Version: 1.0
-Author: dotCMS
