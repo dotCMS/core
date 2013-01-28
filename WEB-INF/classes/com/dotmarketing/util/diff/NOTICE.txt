@@ -1,0 +1,9 @@
+This Library is Licensed under the Apache 2.0 license
+
+More importantly, much thanks is given to the guys and gals 
+who have worked so hard on DaisyDiff
+
+For more information, see: http://code.google.com/p/daisydiff
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).

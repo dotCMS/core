@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portlet_Polls_PollsDisplayService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.polls.portlet.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="PollsDisplayManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portlet_Polls_PollsDisplayService"/>
+		<parameter name="className" value="com.liferay.portlet.polls.ejb.PollsDisplayManagerSoap"/>
+		<parameter name="wsdlPortType" value="PollsDisplayManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="http://model.polls.portlet.liferay.com" name="getDisplay" qname="operNS:getDisplay" returnQName="getDisplayReturn" returnType="rtns:PollsDisplayModel" soapAction="">
+			<parameter xmlns:tns="http://ejb.portal.liferay.com" qname="layoutPK" type="tns:LayoutPK"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="portletId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="http://model.polls.portlet.liferay.com" name="updateDisplay" qname="operNS:updateDisplay" returnQName="updateDisplayReturn" returnType="rtns:PollsDisplayModel" soapAction="">
+			<parameter xmlns:tns="http://ejb.portal.liferay.com" qname="layoutPK" type="tns:LayoutPK"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="portletId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="questionId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="hasAdmin" qname="operNS:hasAdmin" returnQName="hasAdminReturn" returnType="rtns:boolean" soapAction=""></operation>
+		<parameter name="allowedMethods" value="getDisplay updateDisplay hasAdmin"/>
+		<typeMapping xmlns:ns="http://ejb.portal.liferay.com" qname="ns:LayoutPK" type="java:com.liferay.portal.ejb.LayoutPK" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://ejb.polls.portlet.liferay.com" qname="ns:PollsDisplayPK" type="java:com.liferay.portlet.polls.ejb.PollsDisplayPK" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.polls.portlet.liferay.com" qname="ns:PollsDisplayModel" type="java:com.liferay.portlet.polls.model.PollsDisplayModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 2.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
+<hibernate-mapping>
+	
+	<!-- Begin Mapping for Plugin Tables -->
+	
+	<class name="com.dotmarketing.plugin.model.PluginProperty" table="plugin_property">
+		<composite-id unsaved-value="any">
+			<key-property name="pluginId" column="plugin_id" type="string" length="255"/>
+			<key-property name="propkey" column="propkey" type="string" length="255"/>
+		</composite-id>	
+		<property name="originalValue" column="original_value" type="string" not-null="true"/>	
+		<property name="currentValue" column="current_value" type="string" not-null="true"/>	
+	</class>
+	
+	<!-- End Mapping for Plugin Tables -->
+	
+</hibernate-mapping>

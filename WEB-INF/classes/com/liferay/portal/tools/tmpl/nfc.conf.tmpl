@@ -1,0 +1,16 @@
+listen.port=[$LISTEN_PORT$]
+
+idle.timeout=60
+
+commands=nfc/commands.properties
+messages=nfc/messages.properties
+
+kick.banseconds=0
+kill.banminutes=0
+
+auth.allowGuests=true
+auth.storeGuests=false
+
+auth.class=com.lyrisoft.chat.server.remote.persistence.auth.NullAuthenticator
+ignoreStore.class=com.lyrisoft.chat.server.remote.persistence.ignore.NullIgnoreStorage
+roomAuth.class=com.lyrisoft.chat.server.remote.persistence.auth.room.NullRoomAuthenticator
