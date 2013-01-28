@@ -1,18 +1,23 @@
 package com.dotmarketing.viewtools.content;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.lucene.queryParser.ParseException;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
+import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
 
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -66,9 +71,10 @@ public class ContentTool implements ViewTool {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
 		HttpSession session = req.getSession();
-		ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-		PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-		EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
+		boolean tm=session.getAttribute("tm_date")!=null;
+		ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+		PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
+		EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
 		if(EDIT_MODE || PREVIEW_MODE){
 			EDIT_OR_PREVIEW_MODE = true;
 		}
@@ -110,9 +116,28 @@ public class ContentTool implements ViewTool {
 			return null;
 		}
 		
-		String stateQuery = PREVIEW_MODE || EDIT_MODE ? "+working:true +deleted:false" : "+live:true +deleted:false";
 		try {
-			List<Contentlet> l = conAPI.search("+identifier:" + inodeOrIdentifier + " " + stateQuery, 0, -1, "modDate", user, true);
+		
+    		List<Contentlet> l=null;
+    		if(req.getSession().getAttribute("tm_date")!=null) {                      
+    		    // timemachine future dates
+    		    Date ffdate=new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
+    		    Identifier ident=APILocator.getIdentifierAPI().find(inodeOrIdentifier);
+    		    if(ident==null || !UtilMethods.isSet(ident.getId())) return null;
+    		    boolean showlive=true;
+    		    if(UtilMethods.isSet(ident.getSysExpireDate()) && ffdate.after(ident.getSysExpireDate()))
+    		        return null; // it has expired. return nothing
+    		    if(UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate()))
+    		        showlive=false; // it would be published. show the working
+    		    l = conAPI.search("+identifier:" + inodeOrIdentifier + 
+    		            " +deleted:false " + (showlive ? "+live:true" : "+working:true"), 0, -1, "modDate", user, true);
+    		}
+    		else {
+    		   String stateQuery = PREVIEW_MODE || EDIT_MODE ? "+working:true +deleted:false" : "+live:true +deleted:false";
+    		   l = conAPI.search("+identifier:" + inodeOrIdentifier + " " + stateQuery, 0, -1, "modDate", user, true);
+    		}
+		
+			
 			if(l== null || l.size() < 1){
 				return null;
 			}else{
@@ -174,22 +199,89 @@ public class ContentTool implements ViewTool {
 	 * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
 	 * @return Returns empty List if no results are found
 	 */
-	public List<ContentMap> pull(String query, int limit, String sort){
-		List<ContentMap> ret = null;
+	public List<ContentMap> pull(String query,int limit, String sort){
+	    return pull(query,-1,limit,sort);
+	}
+	
+	public PaginatedArrayList<ContentMap> pull(String query, int offset,int limit, String sort){
+	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
 		try {
-			for(Contentlet c : conAPI.search(addDefaultsToQuery(query), limit, -1, sort, user, true)){
-				if(ret == null){
-					ret = new ArrayList<ContentMap>();
-				}
+		    query=addDefaultsToQuery(query);
+		    List<Contentlet> contentlets=null;
+		    if(req.getSession().getAttribute("tm_date")!=null && query.contains("+live:true")) {
+		        // with timemachine on!
+	            String datestr=(String)req.getSession().getAttribute("tm_date");
+	            Date futureDate=new Date(Long.parseLong(datestr));
+	            query=query.replaceAll("\\+live\\:true", "").replaceAll("\\+working\\:true", "");
+	            String ffdate=ESMappingAPIImpl.datetimeFormat.format(futureDate);
+	            
+	            String notexpired=" +expdate:["+ffdate+" TO 29990101000000] ";
+	            String wquery=query + " +working:true " +
+	            		"+pubdate:["+ESMappingAPIImpl.datetimeFormat.format(new Date())+
+	            				" TO "+ffdate+"] "+notexpired;
+	            String lquery=query + " +live:true " + notexpired;
+	            
+	            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, true);
+	            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, true);
+	            
+	            // merging both results avoiding repeated inodes
+	            Set<String> inodes=new HashSet<String>();
+	            contentlets=new ArrayList<Contentlet>();
+	            ret.setTotalResults(
+	                    wc.getTotalResults()>lc.getTotalResults() ? 
+	                            wc.getTotalResults() : lc.getTotalResults());
+	            contentlets.addAll(wc);
+	            for(Contentlet cc : wc) 
+	                inodes.add(cc.getInode());
+	            for(Contentlet cc : lc) {
+	                if(!inodes.contains(cc.getInode())) {
+	                    contentlets.add(cc);
+	                    inodes.add(cc.getInode());
+	                }
+	            }
+	            
+	            // sorting the result
+	            if(UtilMethods.isSet(sort) && !sort.trim().equals("random")) {
+    	            final String[] sorts=sort.split(",");
+    	            Collections.sort(contentlets, new Comparator<Contentlet>() {
+    	                @SuppressWarnings({"unchecked","rawtypes"})
+                        @Override
+    	                public int compare(Contentlet a, Contentlet b) {
+    	                    int comp=0;
+    	                    for(int x=0;x<sorts.length && comp==0;x++) {
+    	                        String[] ss=sorts[x].split(" ");
+    	                        Comparable c1=(Comparable)a.get(ss[0]);
+    	                        Comparable c2=(Comparable)b.get(ss[0]);
+    	                        if(c1!=null && c2!=null) {
+        	                        if(ss.length==1 || ss[1].equals("asc"))
+        	                            comp=c1.compareTo(c2);
+        	                        else
+        	                            comp=c2.compareTo(c1);
+    	                        }
+    	                    }   
+    	                    return comp;
+    	                }
+    	            });
+	            }
+	            
+	            // truncate to respect limit
+	            if(contentlets.size()>limit)
+	                contentlets=contentlets.subList(0, limit);
+		    }
+		    else {
+		        // normal query
+		        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, true);
+		        ret.setTotalResults(conts.getTotalResults());
+		        contentlets=conts;
+		    }
+		    
+			for(Contentlet c : contentlets)
 				ret.add(new ContentMap(c,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
-			}
 		} catch (Exception e) {
 			Logger.error(ContentTool.class,e.getMessage());
 			Logger.debug(ContentTool.class,e.getMessage(),e);
 		}
-		if(ret == null){
-			ret = new ArrayList<ContentMap>();
-		}
+		
 		return ret;
 	}
 	
@@ -212,20 +304,7 @@ public class ContentTool implements ViewTool {
 	 * @return Returns empty List if no results are found
 	 */
 	public PaginatedArrayList<ContentMap> pullPagenated(String query, int limit, int offset, String sort){
-		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-		try {
-			PaginatedArrayList<Contentlet> cons = (PaginatedArrayList<Contentlet>)conAPI.search(addDefaultsToQuery(query), limit, offset<0?0:offset, sort, user, true);
-			if(cons != null){
-				ret.setTotalResults(cons.getTotalResults());
-				for(Contentlet c : cons){
-					ret.add(new ContentMap(c,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
-				}
-			}
-		} catch (Exception e) {
-			Logger.error(ContentTool.class,e.getMessage());
-			Logger.debug(ContentTool.class,e.getMessage(),e);
-		}
-		return ret;
+		return pull(query, offset, limit, sort);
 	}
 	
 	/**
@@ -307,7 +386,24 @@ public class ContentTool implements ViewTool {
 	public List<ContentletSearch> query(String query, int limit, String sort){
 		List<ContentletSearch> ret = null;
 		try {
-			 ret = conAPI.searchIndex(addDefaultsToQuery(query), limit, -1, sort, user, true);
+		    query=addDefaultsToQuery(query);
+            if(req.getSession().getAttribute("tm_date")!=null && query.contains("+live:true")) {
+                // with timemachine on!
+                // as we need to load contentlets anyway to sort 
+                // lets just call pull here
+                List<ContentMap> conts=pull(query, limit, sort);
+                ret = new ArrayList<ContentletSearch>(conts.size());
+                for(ContentMap cm : conts) {
+                    ContentletSearch cs=new ContentletSearch();
+                    cs.setInode((String)cm.get("inode"));
+                    cs.setIdentifier((String)cm.get("identifier"));
+                    ret.add(cs);
+                }   
+            }
+            else {
+                // normal query
+                ret = conAPI.searchIndex(query, limit, -1, sort, user, true);
+            }
 		} catch (Exception e) {
 			Logger.error(ContentTool.class,e.getMessage(),e);
 		}
@@ -324,7 +420,10 @@ public class ContentTool implements ViewTool {
 	 */
 	public long count(String query) {
 		try {
-            return conAPI.indexCount(query, user, true);
+		    if(req.getSession().getAttribute("tm_date")!=null && query.contains("+live:true"))
+		        return query(query,0).size();
+		    else
+		        return conAPI.indexCount(query, user, true);
         } catch (Exception e) {
             Logger.error(this, "can't get indexCount for query: "+query,e);
             return 0;

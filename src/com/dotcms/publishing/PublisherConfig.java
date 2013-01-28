@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
@@ -22,7 +23,7 @@ public class PublisherConfig implements Map<String, Object> {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID;
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS;
 	}
 	
 	public void PublisherConfig(Map<String, Object> map){
@@ -43,6 +44,19 @@ public class PublisherConfig implements Map<String, Object> {
 
 	public void setFolders(Set<String> folders) {
 		params.put(Config.FOLDERS.name(), folders);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Set<String> getHostSet() {
+		if(get(Config.HOSTS.name()) == null){
+			Set<String> hostsToBuild =   new HashSet<String>();
+			params.put(Config.HOSTS.name(), hostsToBuild);
+		}
+		return (Set<String>) params.get(Config.HOSTS.name());
+	}
+
+	public void setHostSet(Set<String> hosts) {
+		params.put(Config.HOSTS.name(), hosts);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -202,10 +216,7 @@ public class PublisherConfig implements Map<String, Object> {
 			List<String> ids = BundlerUtil.getUpdatedHTMLPageIds(getStartDate(), getEndDate());
 			params.put(Config.UPDATED_HTML_PAGE_IDS.name(), ids);
 		}
-		
-		
-		
-		
+
 		return (List<String>) params.get(Config.UPDATED_HTML_PAGE_IDS.name());
 	}
 	
@@ -354,5 +365,15 @@ public class PublisherConfig implements Map<String, Object> {
 		else{
 			params.remove(Config.INCREMENTAL.name());
 		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<PublishQueueElement> getAssets() {
+		
+		return (List<PublishQueueElement>) params.get(Config.ASSETS.name());
+	}
+	
+	public void setAssets(List<PublishQueueElement> pageIds) {
+		params.put(Config.ASSETS.name(), pageIds);
 	}
 }

@@ -3,10 +3,10 @@ package com.dotcms.publisher.pusher.bundler;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,7 +19,6 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.PushContentWrapper;
-import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotBundleException;
@@ -27,21 +26,17 @@ import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
@@ -81,10 +76,6 @@ public class ContentBundler implements IBundler {
 		if(LicenseUtil.getLevel()<400)
 	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 
-
-
-		List<Contentlet> cs = new ArrayList<Contentlet>();
-
 		PublishAuditHistory currentStatusHistory = null;
 		try {
 			//Updating audit table
@@ -93,27 +84,28 @@ public class ContentBundler implements IBundler {
 			currentStatusHistory.setBundleStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLING, currentStatusHistory);
 			
-			Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
-			for(String luceneQuery: config.getLuceneQueries()) {
-				cs = conAPI.search(luceneQuery, 0, 0, "moddate", systemUser, false);
-
-				//Getting all related content
-				for (Contentlet con : cs) {
-					Map<Relationship, List<Contentlet>> contentRel =
-							conAPI.findContentRelationships(con, systemUser);
-					
-					for (Relationship rel : contentRel.keySet()) {
-						contentsToProcess.addAll(contentRel.get(rel));
-					}
-					
-					contentsToProcess.add(con);
+			Set<String> contentsIds = config.getContentlets();
+			
+			if(UtilMethods.isSet(contentsIds) && !contentsIds.isEmpty()) { // this content set is a dependency of other assets, like htmlpages
+				Set<Contentlet> contents = new HashSet<Contentlet>();
+				for (String contentIdentifier : contentsIds) {
+					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +live:true +deleted:false", 0, -1, null, systemUser, false));
+					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +working:true +deleted:false", 0, -1, null, systemUser, false));
 				}
 				
-				for (Contentlet con : contentsToProcess) {
-					writeFileToDisk(bundleRoot, con);
+				//Delete duplicate
+				Set<ContentletUniqueWrapper> contentsToProcessFinal = new HashSet<ContentletUniqueWrapper>();
+				for(Contentlet con: contents) {
+					contentsToProcessFinal.add(new ContentletUniqueWrapper(con));
+				}
+				
+				Iterator<ContentletUniqueWrapper> it = contentsToProcessFinal.iterator();
+				for (int ii = 0; it.hasNext(); ii++) {
+					Contentlet con = it.next().getContentlet();
+					writeFileToDisk(bundleRoot, con, ii);
 					status.addCount();
 				}
-			}
+			} 
 
 			//Updating audit table
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
@@ -133,7 +125,8 @@ public class ContentBundler implements IBundler {
 		}
 	}
 
-	private void writeFileToDisk(File bundleRoot, Contentlet con)
+
+	private void writeFileToDisk(File bundleRoot, Contentlet con, int countOrder)
 			throws IOException, DotBundleException, DotDataException,
 				DotSecurityException, DotPublisherException
 	{
@@ -181,7 +174,7 @@ public class ContentBundler implements IBundler {
 		            destFile.getParentFile().mkdirs();
 		            FileUtil.copyFile(sourceFile, destFile);
 				}
-		    }
+		    } 
 
 		}
 
@@ -193,11 +186,13 @@ public class ContentBundler implements IBundler {
 			uri.trim();
 			uri += CONTENT_EXTENSION;
 		}
-		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + con.getInode() + CONTENT_EXTENSION):uri;
+		uri = uri.replace(uri.substring(uri.lastIndexOf(File.separator)+1, uri.length()), countOrder +"-"+ uri.substring(uri.lastIndexOf(File.separator)+1, uri.length()));
+		
+		String assetName = APILocator.getFileAssetAPI().isFileAsset(con)?(File.separator + countOrder +"-" +con.getInode() + CONTENT_EXTENSION):uri;
 
 		String myFileUrl = bundleRoot.getPath() + File.separator
 				+liveworking + File.separator
-				+ h.getHostname() + File.separator
+				+ h.getHostname() + File.separator + 
 				+ con.getLanguageId() + assetName;
 
 		pushContentFile = new File(myFileUrl);
@@ -205,11 +200,6 @@ public class ContentBundler implements IBundler {
 
 		BundlerUtil.objectToXML(wrapper, pushContentFile, true);
 		pushContentFile.setLastModified(cal.getTimeInMillis());
-		
-		Set<String> htmlIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent1");
-		Set<String> containerIds = PublisherUtil.getPropertiesSet(wrapper.getMultiTree(), "parent2");
-		
-		addToConfig(con.getFolder(), htmlIds, containerIds, con.getStructureInode());
 		
 	}
 
@@ -228,30 +218,43 @@ public class ContentBundler implements IBundler {
 
 	}
 	
-	private void addToConfig(String folder, Set<String> htmlPages, Set<String> containers, String structure) 
-			throws DotStateException, DotHibernateException, DotDataException, DotSecurityException
-	{
-		//Get Id from folder
-		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES")) {
-			List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
-					APILocator.getFolderAPI().find(folder, systemUser, false));
-			folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
-					APILocator.getFolderAPI().find(folder, systemUser, false)));
-			for(HTMLPage htmlPage: folderHtmlPages) {
-				config.getHTMLPages().add(htmlPage.getIdentifier());
-			}
-		}
-		
-		config.getHTMLPages().addAll(htmlPages);
+}
 
-		config.getFolders().add(folder);
-
-		config.getContainers().addAll(containers);
-		
-		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
-			config.getStructures().add(structure);
-		}
-		
+class ContentletUniqueWrapper {
+	private Contentlet contentlet;
+	
+	public ContentletUniqueWrapper (Contentlet contentlet) {
+		this.contentlet = contentlet;
+	}
+	
+	public Contentlet getContentlet() {
+		return contentlet;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((contentlet == null) ? 0 : contentlet.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ContentletUniqueWrapper other = (ContentletUniqueWrapper) obj;
+		if (contentlet == null) {
+			if (other.contentlet != null)
+				return false;
+		} else if (!contentlet.getInode().equals(other.contentlet.getInode()))
+			return false;
+		return true;
+	}
+	
 }

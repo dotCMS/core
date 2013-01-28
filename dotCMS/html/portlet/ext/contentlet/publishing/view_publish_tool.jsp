@@ -88,11 +88,10 @@
 	function doLuceneFilter () {
 		
 		var url="";
-		url="&query="+encodeURIComponent(dijit.byId("query").value);
+		url="&query="+encodeURIComponent(dijit.byId("luceneQuery").getValue());
 		url+="&sort="+dijit.byId("sort").value;
 		
-		url="layout=<%=layout%>"+url;
-		
+		url="layout=<%=layout.getId()%>"+url;
 		refreshLuceneList(url);
 		dijit.byId("clearButton").setDisabled(false);
 	}
@@ -215,7 +214,7 @@
    }
 	   
 	function clearLuceneSearch(){
-		   dijit.byId("query").setValue("*");
+		   dijit.byId("luceneQuery").setValue("*");
 		   dojo.byId("lucene_results").innerHTML="";
 		   dijit.byId("clearButton").setDisabled(true);
 		   doLuceneFilter ();
@@ -249,6 +248,41 @@
 			});
 
 	});
+	
+	
+	function doEnterSearch(e){
+	    if(e.keyCode == dojo.keys.ENTER){
+	        dojo.stopEvent(e);
+	        doLuceneFilter();
+	    }
+	}
+	
+	
+	function showBundleUpload(){
+		dijit.byId("uploadBundleDiv").show();
+
+	}
+	
+	function doBundleUpload(){
+		var suffix = ".tar.gz";
+		var filename = dojo.byId("uploadBundleFile").value;
+		
+		
+		if(filename.indexOf(suffix) == -1 || (filename.length - suffix.length != filename.indexOf(suffix))){
+			alert("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_please_upload_bundle_ending_with_targz")) %>");
+			return false;
+		}
+		
+    	dojo.byId("uploadBundleForm").submit();
+		
+	}
+	
+	
+	
+	
+	
+
+	
 </script>
 
 
@@ -259,29 +293,26 @@
   		<div id="searchLucene" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Search") %>" >
   			<div>
 				<dl>	
-					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Lucene_Query") %> </strong></dt>
+					<dt><strong><%= LanguageUtil.get(pageContext, "Search") %>:</strong></dt>
 					<dd>
-						<textarea dojoType="dijit.form.Textarea" name="query" style="width:500px;min-height: 150px;" id="query" type="text">*</textarea>
+						<textarea onkeydown="doEnterSearch" dojoType="dijit.form.Textarea" name="luceneQuery" style="width:500px;min-height:75px;"  id="luceneQuery" ></textarea>
 					</dd>
 					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Sort") %> </strong></dt><dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="modDate desc" size="10" /></dd>	
 					
-					<dt></dt><dd>
+					<dt></dt>
+					<dd>
 					
-					<button dojoType="dijit.form.Button" onclick="doLuceneFilter();" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "publisher_Search_Content") %></button>
-                    &nbsp;
-                    <button dojoType="dijit.form.Button" id="clearButton" disabled="true" onClick="clearLuceneSearch();" iconClass="resetIcon">
-                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
-                    </button>
-					
-					
-					
+						<button dojoType="dijit.form.Button" onclick="doLuceneFilter();" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "publisher_Search_Content") %></button>
+	                    &nbsp;
+	                    <button dojoType="dijit.form.Button" id="clearButton" disabled="true" onClick="clearLuceneSearch();" iconClass="resetIcon">
+	                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
+	                    </button>
 					</dd>
 				</dl>
 			</div>
 			<hr>
 			<div>&nbsp;</div>
-			<div id="lucene_results">
-			</div>
+			<div id="lucene_results"></div>
 		</div>	
 		
 		
@@ -312,15 +343,7 @@
 
   		</div>
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+
 		
   		<div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
 			<div class="buttonRow" >
@@ -332,6 +355,9 @@
 				
 				
 				<div style="float:right">
+					<button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+						<%= LanguageUtil.get(pageContext, "publisher_upload") %> 
+					</button> 
 					<button  dojoType="dijit.form.Button" onClick="doAuditFilter();" iconClass="resetIcon">
 						<%= LanguageUtil.get(pageContext, "publisher_Refresh") %> 
 					</button> 
@@ -340,8 +366,6 @@
 			</div>
 			<div style="height:10px;"></div>
   			<div id="audit_results"></div>
-
-
   		</div>
   		
   		<div id="endpoints" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Endpoints") %>" >
@@ -352,4 +376,18 @@
 	</div>
 </div>
 
+
+<div dojoType="dijit.Dialog" id="uploadBundleDiv" >
+	<form action="/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle" enctype="multipart/form-data" id="uploadBundleForm" name="uploadBundleForm" method="post">
+		<div>
+			<%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" style="width:400px;"  id="uploadBundleFile" name="uploadBundleFile"><br>
+		</div>
+		<div>&nbsp;</div>
+		<div style="text-align: center">
+			<button  dojoType="dijit.form.Button" onClick="doBundleUpload();" iconClass="uploadIcon">
+				<%= LanguageUtil.get(pageContext, "publisher_upload") %> 
+			</button> 
+		</div>
+	</form>
+</div>
 

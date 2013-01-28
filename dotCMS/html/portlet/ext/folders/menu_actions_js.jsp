@@ -701,7 +701,24 @@
 			top.location = loc;
 		//}
 	}
+	
+	function remotePublish (objId) {
+		
+		pushHandler.showDialog(objId);
+		
+	}
+	
+	dojo.require("dotcms.dojo.push.PushHandler");
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 
 </script>
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="remotePublishNeverExpire" id="remotePublishNeverExpire" type="hidden" value="">
+</form>
 

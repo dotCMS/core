@@ -53,7 +53,10 @@ public class StructureCache {
     	}
         if (st == null) {
             st = StructureFactory.getStructureByInode(inode);
-            addStructure(st);
+            if(st != null && UtilMethods.isSet(st.getInode()))
+            	addStructure(st);
+            else
+            	return null;
         }
         return st;
     }

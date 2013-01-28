@@ -248,7 +248,7 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		DotConnect dc = new DotConnect();
 		HibernateUtil.startTransaction();
 		  try {
-			conn = DbConnectionFactory.getDataSource().getConnection();
+			conn = DbConnectionFactory.getConnection();
 			  if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))
 				 dc.executeStatement("SET storage_engine=INNODB", conn);
 			  if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))

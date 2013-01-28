@@ -31,6 +31,7 @@ import com.dotcms.publisher.receiver.handler.HTMLPageHandler;
 import com.dotcms.publisher.receiver.handler.HostHandler;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publisher.receiver.handler.LanguageHandler;
+import com.dotcms.publisher.receiver.handler.LinkHandler;
 import com.dotcms.publisher.receiver.handler.StructureHandler;
 import com.dotcms.publisher.receiver.handler.TemplateHandler;
 import com.dotcms.publishing.DotPublishingException;
@@ -62,18 +63,18 @@ public class BundlePublisher extends Publisher {
         handlers = new ArrayList<IHandler>();
         //The order is really important
         handlers.add(new HostHandler());
+        handlers.add(new FolderHandler());
         
         if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES"))
         	handlers.add(new StructureHandler());
-        
-        
-        handlers.add(new FolderHandler());
+
         handlers.add(new ContainerHandler());
         handlers.add(new TemplateHandler());
         handlers.add(new HTMLPageHandler());
         
         handlers.add(new ContentHandler());
         handlers.add(new LanguageHandler());
+        handlers.add(new LinkHandler());
         
         auditAPI = PublishAuditAPI.getInstance();
 
@@ -83,7 +84,7 @@ public class BundlePublisher extends Publisher {
 
     @Override
     public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
-        if(LicenseUtil.getLevel()<200)
+        if(LicenseUtil.getLevel()<300)
             throw new RuntimeException("need an enterprise licence to run this");
 
         String bundleName = config.getId();

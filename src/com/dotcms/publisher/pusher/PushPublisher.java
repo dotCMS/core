@@ -1,26 +1,17 @@
 package com.dotcms.publisher.pusher;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.GZIPOutputStream;
 
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -31,9 +22,12 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.bundler.ContainerBundler;
 import com.dotcms.publisher.pusher.bundler.ContentBundler;
+import com.dotcms.publisher.pusher.bundler.DependencyBundler;
 import com.dotcms.publisher.pusher.bundler.FolderBundler;
 import com.dotcms.publisher.pusher.bundler.HTMLPageBundler;
+import com.dotcms.publisher.pusher.bundler.HostBundler;
 import com.dotcms.publisher.pusher.bundler.LanguageBundler;
+import com.dotcms.publisher.pusher.bundler.LinkBundler;
 import com.dotcms.publisher.pusher.bundler.StructureBundler;
 import com.dotcms.publisher.pusher.bundler.TemplateBundler;
 import com.dotcms.publisher.util.TrustFactory;
@@ -84,7 +78,7 @@ public class PushPublisher extends Publisher {
 			ArrayList<File> list = new ArrayList<File>(1);
 			list.add(bundleRoot);
 			File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
-			compressFiles(list, bundle, bundleRoot.getAbsolutePath());
+			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
 			
 			
 			
@@ -221,73 +215,8 @@ public class PushPublisher extends Publisher {
 	
 	
 
-	/**
-	 * Compress (tar.gz) the input files to the output file
-	 *
-	 * @param files The files to compress
-	 * @param output The resulting output file (should end in .tar.gz)
-	 * @param bundleRoot
-	 * @throws IOException
-	 */
-	private void compressFiles(Collection<File> files, File output, String bundleRoot)
-		throws IOException
-	{
-		Logger.info(this.getClass(), "Compressing "+files.size() + " to "+output.getAbsoluteFile());
-	               // Create the output stream for the output file
-		FileOutputStream fos = new FileOutputStream(output);
-	               // Wrap the output file stream in streams that will tar and gzip everything
-		TarArchiveOutputStream taos = new TarArchiveOutputStream(
-			new GZIPOutputStream(new BufferedOutputStream(fos)));
 
-	               // TAR originally didn't support long file names, so enable the support for it
-		taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
 
-	               // Get to putting all the files in the compressed output file
-		for (File f : files) {
-			addFilesToCompression(taos, f, ".", bundleRoot);
-		}
-
-	               // Close everything up
-		taos.close();
-		fos.close();
-	}
-
-	/**
-	 * Does the work of compression and going recursive for nested directories
-	 * <p/>
-	 *
-	 *
-	 * @param taos The archive
-	 * @param file The file to add to the archive
-	        * @param dir The directory that should serve as the parent directory in the archivew
-	 * @throws IOException
-	 */
-	private void addFilesToCompression(TarArchiveOutputStream taos, File file, String dir, String bundleRoot)
-		throws IOException
-	{
-	    	if(!file.isHidden()) {
-	    		// Create an entry for the file
-	    		if(!dir.equals("."))
-	    			taos.putArchiveEntry(new TarArchiveEntry(file, dir+File.separator+file.getName()));
-				if (file.isFile()) {
-			        // Add the file to the archive
-					BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-					IOUtils.copy(new FileInputStream(file), taos);
-					taos.closeArchiveEntry();
-					bis.close();
-				} else if (file.isDirectory()) {
-					//Logger.info(this.getClass(),file.getPath().substring(bundleRoot.length()));
-			         // close the archive entry
-					if(!dir.equals("."))
-						taos.closeArchiveEntry();
-			         // go through all the files in the directory and using recursion, add them to the archive
-					for (File childFile : file.listFiles()) {
-						addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
-					}
-				}
-	    	}
-	    
-	}
 	
 	private String retriveKeyString(String token) throws IOException {
 		String key = null;
@@ -310,11 +239,14 @@ public class PushPublisher extends Publisher {
 		
 		//The order is important cause 
 		//I need to add all containers associated with templates
+		list.add(DependencyBundler.class);
+		list.add(HostBundler.class);
 		list.add(ContentBundler.class);
 		list.add(FolderBundler.class);
 		list.add(TemplateBundler.class);
 		list.add(ContainerBundler.class);
 		list.add(HTMLPageBundler.class);
+		list.add(LinkBundler.class);
 		
 		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES"))
 			list.add(StructureBundler.class);

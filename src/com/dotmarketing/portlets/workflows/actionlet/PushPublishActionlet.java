@@ -36,12 +36,12 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 
 	@Override
 	public String getName() {
-		return "Add Content to publish queue";
+		return "Remote Publish";
 	}
 
 	@Override
 	public String getHowTo() {
-		return "This actionlet will add the content to the publish queue";
+		return "This actionlet will add the content to the remote publish queue";
 	}
 
 	/**
@@ -59,7 +59,7 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 			String _contentPushPublishTime = ref.getStringProperty("wfPublishTime");
 			String _contentPushExpireDate = ref.getStringProperty("wfExpireDate");
 			String _contentPushExpireTime = ref.getStringProperty("wfExpireTime");
-			boolean _contentPushNeverExpire = "on".equals(ref.getStringProperty("wfNeverExpire"))?true:false;
+			boolean _contentPushNeverExpire = "on".equals(ref.getStringProperty("wfNeverExpire")) || "true".equals(ref.getStringProperty("wfNeverExpire"))?true:false;
 
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 			Date publishDate = dateFormat.parse(_contentPushPublishDate+"-"+_contentPushPublishTime);

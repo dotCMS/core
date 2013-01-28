@@ -500,7 +500,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String selectChildrenFileSQL =
 		"select distinct identifier.id from identifier where " +
-		"asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ?";
+		"asset_type='contentlet' and identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load file identifiers that are children of a host and have inheritable permissions
@@ -2450,7 +2450,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					}
 				}
 
-				if(permissionable instanceof Template && ((Template) permissionable).isDrawed()) {
+				if(permissionable instanceof Template && UtilMethods.isSet(((Template) permissionable).isDrawed()) && ((Template) permissionable).isDrawed()) {
 					 type = Template.TEMPLATE_LAYOUTS_CANONICAL_NAME;
 				}
 				

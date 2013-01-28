@@ -23,12 +23,14 @@ import org.directwebremoting.WebContextFactory;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
@@ -789,10 +791,18 @@ public class ContentletAjax {
 		// we add the total hists for the query
 		results.add(totalHits);
 
+		List<String> expiredInodes=new ArrayList<String>();
+		
 		//Adding the query results
 		Contentlet con;
 		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
 			con = hits.get(i);
+			
+			if(!con.isLive()) {
+    			Identifier ident=APILocator.getIdentifierAPI().find(con);
+    			if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+    			    expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
+			}
 
 			Map<String, String> searchResult = new HashMap<String, String>();
 
@@ -922,6 +932,7 @@ public class ContentletAjax {
 		counters.put("luceneQueryRaw", luceneQueryToShow);
 		counters.put("luceneQueryFrontend", luceneQueryToShow2);
 		counters.put("sortByUF", orderBy);
+		counters.put("expiredInodes", expiredInodes);
 
 		long end = total;
 		if (page != 0)
@@ -1437,9 +1448,19 @@ public class ContentletAjax {
 			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");
 			saveContentErrors.add(errorString);
 		}
-
+		catch(PublishStateException pe) {
+		    String errorString = LanguageUtil.get(user,"message.contentlet.pubfuturedate");
+		    saveContentErrors.add(errorString);
+		}
 		catch (Exception e) {
 			saveContentErrors.add(e.toString());
+			callbackData.put("saveContentErrors", saveContentErrors);
+			callbackData.put("referer", referer);
+			return callbackData;
+		}
+		catch (Throwable t) {
+			Logger.error(this, t.toString());
+			saveContentErrors.add(t.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
 			callbackData.put("referer", referer);
 			return callbackData;

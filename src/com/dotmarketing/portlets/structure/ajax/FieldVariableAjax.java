@@ -85,6 +85,7 @@ public class FieldVariableAjax {
 			}
 			if(UtilMethods.isSet(id) && next.getId().equals(id)) {
 				fieldVariable = next;
+				continue;
 			}
 		}
 		

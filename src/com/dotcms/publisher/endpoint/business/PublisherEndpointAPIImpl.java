@@ -29,7 +29,11 @@ public class PublisherEndpointAPIImpl implements PublisherEndpointAPI {
 	 * Returns the endpoints list.
 	 */
 	public List<PublishingEndPoint> getAllEndpoints() throws DotDataException{		
-		return publisherEndpointFactory.getEndpoints();
+		return publisherEndpointFactory.getEndpoints(); 
+	}
+	
+	public List<PublishingEndPoint> getReceivingEndpoints() throws DotDataException{		
+		return publisherEndpointFactory.getReceivingEndpoints();
 	}
 	
 	/**

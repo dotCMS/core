@@ -20,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -102,6 +101,9 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		
 		if (InodeUtils.isSet(menuLink.getIdentifier())) {
 			Identifier identifier = APILocator.getIdentifierAPI().find(menuLink);
+			if(!UtilMethods.isSet(identifier.getId())) {
+				identifier = APILocator.getIdentifierAPI().createNew(menuLink, destination, menuLink.getIdentifier());
+			}
 			createAsset(menuLink, user.getUserId(), destination, identifier, false);
 			workingLink = (Link) saveAsset(menuLink, identifier, user, false);
 		} else {

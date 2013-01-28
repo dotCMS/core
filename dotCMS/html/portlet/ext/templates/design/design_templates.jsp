@@ -15,7 +15,7 @@
 <%@ page import="com.dotmarketing.portlets.containers.business.ContainerAPI"%>
 
 <%@ page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
-
+<%@ include file="/html/js/template/utility-left-menu.jsp" %>
 <style type="text/css">
 	@import url(/html/css/template/draw-template.css);
 	@import url(/html/css/template/drawed-reset-fonts-grids.css);
@@ -338,7 +338,6 @@
 </script>
 
 <script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
-<script src="/html/js/template/utility-left-menu.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-add-metadata.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-add-head-code.js" type="text/javascript"></script>
 <script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>

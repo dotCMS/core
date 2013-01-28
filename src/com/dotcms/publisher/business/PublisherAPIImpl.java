@@ -7,11 +7,17 @@ import java.util.Map;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 /**
  * Implement the PublishQueueAPI abstract class methods
@@ -58,8 +64,11 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSINSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	private static final String OCLINSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	
+	public void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException { 
+		addContentsToPublish(identifiers, bundleId, publishDate, null);
+	}
 	
-	public void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException {		
+	public void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException {		
 		if(identifiers != null) {
 			
 			try{
@@ -76,18 +85,35 @@ public class PublisherAPIImpl extends PublisherAPI{
 						dc.setSQL(OCLINSERTSQL);
 					}
 					
+					Identifier iden = APILocator.getIdentifierAPI().find(identifier);
+					String type = ""; 
+					
+					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
+						// check if it is a structure
+						Structure st = StructureCache.getStructureByInode(identifier);
+						if(UtilMethods.isSet(st)) 
+							type = "structure";
+						// check if it is a folder
+						else if(UtilMethods.isSet(APILocator.getFolderAPI().find(identifier, user, false))) {
+							type = "folder";
+						}
+						
+					} else {
+						type = UtilMethods.isSet(APILocator.getHostAPI().find(identifier, user, false))?"host":iden.getAssetType();
+					}
+					
 					dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
 					dc.addObject(identifier); //asset
-					dc.addParam(new Date());
-					dc.addObject(1);
+					dc.addParam(new Date()); // entered date
+					dc.addObject(1); // language id
 					dc.addParam(false);	//in error field
 					
 					//TODO How do I get new columns value?	
 					dc.addParam(publishDate);
-					dc.addObject(null);
-					dc.addObject(null);
+					dc.addObject(null); // server id
+					dc.addObject(type); 
 					dc.addObject(bundleId);
-					dc.addObject(null);
+					dc.addObject(null); // target
 					
 					dc.loadResult();	
 				}
@@ -106,7 +132,11 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 	
-	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate) throws DotPublisherException {		
+	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException { 
+		addContentsToUnpublish(identifiers, bundleId, publishDate, null);
+	} 
+	
+	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException {		
 		if(identifiers != null) {
 		
 			
@@ -124,6 +154,23 @@ public class PublisherAPIImpl extends PublisherAPI{
 						dc.setSQL(OCLINSERTSQL);
 					}
 					
+					Identifier iden = APILocator.getIdentifierAPI().find(identifier);
+					String type = ""; 
+					
+					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
+						// check if it is a structure
+						Structure st = StructureCache.getStructureByInode(identifier);
+						if(UtilMethods.isSet(st)) 
+							type = "structure";
+						// check if it is a folder
+						else if(UtilMethods.isSet(APILocator.getFolderAPI().find(identifier, user, false))) {
+							type = "folder";
+						}
+						
+					} else {
+						type = UtilMethods.isSet(APILocator.getHostAPI().find(identifier, user, false))?"host":iden.getAssetType();
+					}
+					
 					dc.addParam(PublisherAPI.DELETE_ELEMENT);
 					dc.addObject(identifier); //asset
 					dc.addParam(new Date());
@@ -133,7 +180,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					//TODO How do I get new columns value?	
 					dc.addParam(unpublishDate);
 					dc.addObject(null);
-					dc.addObject(null);
+					dc.addObject(type); 
 					dc.addObject(bundleId);
 					dc.addObject(null);
 					

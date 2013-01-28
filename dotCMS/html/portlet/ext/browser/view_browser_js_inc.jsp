@@ -14,6 +14,7 @@ Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAsse
 <script language="JavaScript">
 
 dojo.require("dotcms.dojo.data.StructureReadStore");
+dojo.require("dotcms.dojo.push.PushHandler");
 	 //Global Variables
      var openFolders = new Array ();
 
@@ -1481,6 +1482,12 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Page-published")) %>');
 		}
 	}
+	
+	function remotePublish (objId) {
+		
+		pushHandler.showDialog(objId);
+		
+	}
 
 	function unpublishHTMLPage (objId, referer) {
 		BrowserAjax.unPublishAsset(objId, unpublishHTMLPageCallback);
@@ -2153,6 +2160,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 	    }
     }
 
+    var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 
 </script>

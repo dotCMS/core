@@ -82,10 +82,7 @@
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
  <!-- END FILTERS -->
-		<!-- Don't ever delete the following comment tags, it will break the plugin system -->
-	<!-- BEGIN FILTER-MAPPINGS -->
- <!-- END FILTER-MAPPINGS -->
-	<!--DOTMARKETING FILTER-MAPPINGS-->
+		
 	<!-- compression Mappings -->
 <!--
   <filter-mapping>
@@ -105,6 +102,11 @@
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN FILTER-MAPPINGS -->
+ <!-- END FILTER-MAPPINGS -->
+	<!--DOTMARKETING FILTER-MAPPINGS-->
 	
   <filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>

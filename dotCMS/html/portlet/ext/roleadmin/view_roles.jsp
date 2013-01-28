@@ -150,7 +150,7 @@
 		<div id="roleTabs" style="">
 			
 		<!-- START TABS -->
-			<div dojoType="dijit.layout.TabContainer" id="roleTabsContainer">
+			<div dojoType="dijit.layout.TabContainer" id="roleTabsContainer" style="overflow:hidden">
 				
 				<!-- START Users tab -->
 				<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="usersTab" title="<%= LanguageUtil.get(pageContext, "Users") %>"> 

@@ -137,9 +137,32 @@ public class ContainerServices {
            		  sb.append("#if($webapi.canParseContent($contentletId,true))");
            	}
            	    //sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
+           	    sb.append(" #set($_show_working_=false) ");
+           	    // if timemachine future enabled
+           	    sb.append(" #if($request.session.getAttribute(\"tm_date\")) ");
+           	    sb.append("  #set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\")))) ");
+           	    sb.append("  #set($_ident=$webapi.findIdentifierById($contentletId)) ");
+           	    
+           	    // if the content has expired we rewrite the identifier so it isn't loaded
+           	    sb.append("  #if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
+           	    sb.append("   #set($contentletId='') ");
+           	    sb.append("  #end ");
+           	    
+           	    // if the content should be published then force to show the working version
+           	    sb.append("  #if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))");
+           	    sb.append("   #set($_show_working_=true) ");
+           	    sb.append("  #end ");
+           	    
+           	    sb.append("  #if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_) ")
+           	      .append("   #set($contentletId='')") // working contentlet still not published
+           	      .append("  #end ");
+           	    
+           	    sb.append(" #end ");
            	
            		sb.append("#set($CONTENT_INODE = '')");
-           	    sb.append("#getContentDetail($contentletId)");
+           		sb.append(" #if($contentletId != '') ");
+           	    sb.append("  #getContentDetail($contentletId) ");
+           	    sb.append(" #end ");
            	    sb.append("#if($CONTENT_INODE != '')");
 
                	if (!EDIT_MODE) {
@@ -164,8 +187,8 @@ public class ContainerServices {
                 }
                 else
                 {
-                	String headerString = "#if($EDIT_MODE) " +
-                			"<div class=\"dotContentlet\"> " + "<div>" +
+                	String headerString = "#if($EDIT_MODE)" +
+                			"<div class=\"dotContentlet\">" + "<div>" +
                 			"#end ";
                 	code = code.replace(startTag,headerString);
                 }
@@ -181,7 +204,7 @@ public class ContainerServices {
                 			" #end " +
                 			"#if($EDIT_MODE) " +
                 			"<div class=\"dotClear\"></div></div>" +
-                			" #end ";                		
+                			"#end ";                		
                 	code = code.replace(endTag,footerString);
                 }               
                 
@@ -193,8 +216,8 @@ public class ContainerServices {
               //The empty div added for styling issue in Internet Explorer is closed here
                 //http://jira.dotmarketing.net/browse/DOTCMS-1974
             	sb.append("#if($EDIT_MODE)");
-                sb.append(" </div> ");
-                sb.append("#end");
+                sb.append("</div>");
+                sb.append("#end ");
                 //### END BODY ###
                 
                 //### FOOTER ###
@@ -202,37 +225,38 @@ public class ContainerServices {
                 if(!containsEndTag)
                 {
                 	sb.append("#if($EDIT_MODE && ${contentletId.indexOf(\".structure\")}==-1)");
-                	    sb.append("#getContentDetail($contentletId) ");
-                		sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl') ");
-                	sb.append(" #end ");
+                	    sb.append("#getContentDetail($contentletId)");
+                		sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl')");
+                	sb.append("#end ");
                 	sb.append("#if($EDIT_MODE) ");
                 		sb.append("<div class=\"dotClear\"></div></div>");
-                	sb.append(" #end ");
+                	sb.append("#end ");
                 }               
                 //### END FOOTER ###                
                 
                 if (!EDIT_MODE) {
 	                //##End of checking permission to see content
-	       			sb.append(" #end ");
+	       			sb.append("#end ");
                 }
                 //##Ends the inner canParse call 
-                sb.append(" #end ");
+                sb.append("#end ");
        		//##Case the contentlet is not parseable and throwing errors
             if (EDIT_MODE) {
-                sb.append(" #else ");
+                sb.append("#else ");
                 	sb.append("#set($CONTENT_INODE =\"$webapi.getContentInode($contentletId)\")");
                 	sb.append("#set($EDIT_CONTENT_PERMISSION =\"$webapi.getContentPermissions($contentletId)\")");
                	
                 	sb.append("<div class=\"dotContentlet\">");
                     sb.append("	Content Parse Error. Check your Content Code. ");
                     sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl')");
-                    sb.append("<div class=\"dotClear\"></div></div> ");
-                sb.append(" #end ");
+                    sb.append("<div class=\"dotClear\"></div></div>");
+                sb.append("#end ");
                 
             }
-       			
+            
+            	
        		//##End of foreach loop
-            sb.append(" #end ");
+            sb.append("#end ");
             
             // post loop if it exists
            
@@ -243,7 +267,7 @@ public class ContainerServices {
             sb.append("#if($EDIT_MODE) ");
             	sb.append("$velutil.mergeTemplate('static/preview_mode/container_controls.vtl')");
                 sb.append("</div>");
-            sb.append(" #end ");
+            sb.append("#end ");
             
         }
         else {

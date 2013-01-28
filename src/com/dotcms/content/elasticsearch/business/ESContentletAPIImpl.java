@@ -2062,8 +2062,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				}
 
 				// check contentlet Host
-				if (!UtilMethods.isSet(contentlet.getHost())) {
-				    contentlet.setHost(APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
+				User sysuser = APILocator.getUserAPI().getSystemUser();
+                if (!UtilMethods.isSet(contentlet.getHost())) {
+				    contentlet.setHost(APILocator.getHostAPI().findSystemHost(sysuser, true).getIdentifier());
 				}
 				if (!UtilMethods.isSet(contentlet.getFolder())) {
 				    contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
@@ -2087,9 +2088,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 				    Treeable parent = null;
 				    if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-				        parent = APILocator.getFolderAPI().find(contentletRaw.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+				        parent = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
 				    }else{
-				        parent = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
+				        parent = APILocator.getHostAPI().find(contentlet.getHost(), sysuser, false);
 				    }
 				    Identifier ident;
 				    final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
@@ -2116,7 +2117,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        }
 				    }
 				    if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-				        Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+				        Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
 				        Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
 				        ident.setParentPath(folderIdent.getPath());
 				    }
@@ -2125,6 +2126,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    }
 				    APILocator.getIdentifierAPI().save(ident);
 				}
+				
+				
 
 
 				APILocator.getVersionableAPI().setWorking(contentlet);
@@ -2304,11 +2307,56 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			    }
 
 
-
-
-
-
-
+			    // lets update identifier's syspubdate & sysexpiredate
+			    if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())) {
+			        Structure st=contentlet.getStructure();
+			        if(UtilMethods.isSet(st.getPublishDateVar()) || UtilMethods.isSet(st.getPublishDateVar())) {
+    			        Identifier ident=APILocator.getIdentifierAPI().find(contentlet);
+    			        boolean save=false;
+    			        if(UtilMethods.isSet(st.getPublishDateVar())) {
+    			            Date pdate=contentletRaw.getDateProperty(st.getPublishDateVar());
+    			            contentlet.setDateProperty(st.getPublishDateVar(), pdate);
+    			            if((ident.getSysPublishDate()==null && pdate!=null) || // was null and now we have a value
+    			                (ident.getSysPublishDate()!=null && //wasn't null and now is null or different 
+    			                   (pdate==null || !pdate.equals(ident.getSysPublishDate())))) {
+    			                ident.setSysPublishDate(pdate);
+    			                save=true;
+    			            }
+    			        }
+    			        if(UtilMethods.isSet(st.getExpireDateVar())) {
+                            Date edate=contentletRaw.getDateProperty(st.getExpireDateVar());
+                            contentlet.setDateProperty(st.getExpireDateVar(), edate);
+                            if((ident.getSysExpireDate()==null && edate!=null) || // was null and now we have a value
+                                (ident.getSysExpireDate()!=null && //wasn't null and now is null or different 
+                                   (edate==null || !edate.equals(ident.getSysExpireDate())))) {
+                                ident.setSysExpireDate(edate);
+                                save=true;
+                            }
+                        }
+    			        if(save) {
+    			            // publish/expire dates changed
+    			            APILocator.getIdentifierAPI().save(ident);
+    			            
+    			            // we take all inodes associated with that identifier
+    			            // remove them from cache and then reindex them
+    			            HibernateUtil hu=new HibernateUtil(ContentletVersionInfo.class);
+    			            hu.setQuery("from "+ContentletVersionInfo.class.getCanonicalName()+" where identifier=?");
+    			            hu.setParam(ident.getId());
+    			            List<ContentletVersionInfo> list=hu.list();
+    			            List<String> inodes=new ArrayList<String>();
+    			            for(ContentletVersionInfo cvi : list) {
+    			                inodes.add(cvi.getWorkingInode());
+    			                if(UtilMethods.isSet(cvi.getLiveInode()) && !cvi.getWorkingInode().equals(cvi.getLiveInode()))
+    			                    inodes.add(cvi.getLiveInode());
+    			            }
+    			            for(String inode : inodes) {
+    			                CacheLocator.getContentletCache().remove(inode);
+    			                Contentlet ct=APILocator.getContentletAPI().find(inode, sysuser, false);
+    			                APILocator.getContentletIndexAPI().addContentToIndex(ct,false);
+    			            }
+    			        }
+			        }
+			    }
 
 				Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
 				if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier()) && contentlet.getStructureInode().equals(hostStructure.getInode())) {

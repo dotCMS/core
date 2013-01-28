@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.liferay.portal.model.User;
 
 /**
  * This class allow to add/update, delete and search error in the publishing_queue table
@@ -35,12 +36,22 @@ public abstract class PublisherAPI {
 	 * @param con Contentlet
 	 */
 	public abstract void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException;
+	/**
+	 * Include in the publishing_queue table the identifier used to get contents to publish
+	 * @param con Contentlet
+	 */
+	public abstract void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException;
 	
 	/**
 	 * Include in the publishing_queue table the identifier used to get contents to UN-publish
 	 * @param con Contentlet
 	 */
 	public abstract void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate) throws DotPublisherException;
+	/**
+	 * Include in the publishing_queue table the identifier used to get contents to UN-publish
+	 * @param con Contentlet
+	 */
+	public abstract void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException;
 	
 	/**
 	 * Get tree data of a content

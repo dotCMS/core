@@ -17,9 +17,13 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
@@ -45,71 +49,84 @@ public class PublisherQueueJob implements StatefulJob {
 	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
+		    Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
+		    updatePublishExpireDates(arg0.getFireTime());
+		    Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
 			
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
 			updateAuditStatus();
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - Audit update");
 			
 			
-			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
-			PublisherAPI pubAPI = PublisherAPI.getInstance();  
+			List<PublishingEndPoint> endpoints = endpointAPI.findReceiverEndpoints();
 			
-			PushPublisherConfig pconf = new PushPublisherConfig();
-			List<Class> clazz = new ArrayList<Class>();
-			clazz.add(PushPublisher.class);
+			if(endpoints != null && endpoints.size() > 0)  {
+				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
+				PublisherAPI pubAPI = PublisherAPI.getInstance();  
 
-			List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
-			List<PublishQueueElement> tempBundleContents = null;
-			PublishAuditStatus status = null;
-			PublishAuditHistory historyPojo = null;
-			String tempBundleId = null;
-
-			for(Map<String,Object> bundle: bundles) {
-				Date publishDate = (Date) bundle.get("publish_date");
-				
-				if(publishDate.before(new Date())) {
-					tempBundleId = (String)bundle.get("bundle_id");
-					tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
-					
-					//Setting Audit objects
-					//History
-					historyPojo = new PublishAuditHistory();
-					//Retriving assets
-					List<String> assets = new ArrayList<String>();
-					
-					for(PublishQueueElement c : tempBundleContents) {
-						assets.add((String) c.getAsset());
-					}
-					historyPojo.setAssets(assets);
-					
-					//Status
-					status =  new PublishAuditStatus(tempBundleId);
-					status.setStatusPojo(historyPojo);
-					
-					//Insert in Audit table
-					pubAuditAPI.insertPublishAuditStatus(status);
-					
-					//Queries creation
-					pconf.setLuceneQueries(prepareQueries(tempBundleContents));
-					pconf.setId(tempBundleId);
-					pconf.setUser(APILocator.getUserAPI().getSystemUser());
-					pconf.setStartDate(new Date());
-					pconf.runNow();
+				PushPublisherConfig pconf = new PushPublisherConfig();
+				List<Class> clazz = new ArrayList<Class>();
+				clazz.add(PushPublisher.class);
 	
-					pconf.setPublishers(clazz);
-					pconf.setEndpoints(endpointAPI.findReceiverEndpoints());
+				List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
+				List<PublishQueueElement> tempBundleContents = null;
+				PublishAuditStatus status = null;
+				PublishAuditHistory historyPojo = null;
+				String tempBundleId = null;
+	
+				for(Map<String,Object> bundle: bundles) {
+					Date publishDate = (Date) bundle.get("publish_date");
 					
-					if(Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
-						pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
-					else
-						pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
+					if(publishDate.before(new Date())) {
+						tempBundleId = (String)bundle.get("bundle_id");
+						tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
+						
+						//Setting Audit objects
+						//History
+						historyPojo = new PublishAuditHistory();
+						//Retriving assets
+						List<String> assets = new ArrayList<String>();
+						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
+						
+						for(PublishQueueElement c : tempBundleContents) {
+							assets.add((String) c.getAsset());
+							if(!c.getType().equals("contentlet"))
+								assetsToPublish.add(c);
+						}
+						historyPojo.setAssets(assets);
+						
+						// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
+						pconf.setAssets(assetsToPublish);
+						
+						//Status
+						status =  new PublishAuditStatus(tempBundleId);
+						status.setStatusPojo(historyPojo);
+						
+						//Insert in Audit table
+						pubAuditAPI.insertPublishAuditStatus(status);
+						
+						//Queries creation
+						pconf.setLuceneQueries(prepareQueries(tempBundleContents));
+						pconf.setId(tempBundleId);
+						pconf.setUser(APILocator.getUserAPI().getSystemUser());
+						pconf.setStartDate(new Date());
+						pconf.runNow();
+		
+						pconf.setPublishers(clazz);
+						pconf.setEndpoints(endpoints);
+						
+						if(Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
+							pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
+						else
+							pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
+						
+						APILocator.getPublisherAPI().publish(pconf);
+					}
 					
-					APILocator.getPublisherAPI().publish(pconf);
 				}
 				
+				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
 			}
-			
-			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
 			
 		} catch (NumberFormatException e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
@@ -121,6 +138,47 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		}
 
+	}
+	
+	private void updatePublishExpireDates(Date fireTime) throws DotDataException, DotSecurityException {
+		User systemU = APILocator.getUserAPI().getSystemUser();
+	    String toPublish="select working_inode from identifier join contentlet_version_info " +
+	    		" on (identifier.id=contentlet_version_info.identifier) " +
+	    		" where syspublish_date is not null and syspublish_date<=? " +
+	    		" and (sysexpire_date is null or sysexpire_date >= ?) " + 
+	    		" and (live_inode is null or live_inode<>working_inode) "; 
+	    
+	    DotConnect dc=new DotConnect();
+	    dc.setSQL(toPublish);
+	    dc.addParam(fireTime);
+	    dc.addParam(fireTime);
+	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()){
+	    	
+	    	try{
+	    		Contentlet c = APILocator.getContentletAPI().find( (String)mm.get("working_inode"), systemU, false);
+	    		APILocator.getContentletAPI().publish(c, APILocator.getUserAPI().loadUserById(c.getModUser(), systemU, false), false);
+	    	}
+			catch(Exception e){
+				Logger.debug(this.getClass(), "content failed to publish: " +  e.getMessage());
+			}
+	    }
+	    String toExpire="select id,lang from identifier join contentlet_version_info " +
+	    		" on (identifier.id=contentlet_version_info.identifier) " +
+	    		" where sysexpire_date is not null and sysexpire_date<=? " +
+	    		" and live_inode is not null";
+	    dc.setSQL(toExpire);
+	    dc.addParam(fireTime);
+	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()) {
+	        long lang=mm.get("lang") instanceof String ? Long.parseLong((String)mm.get("lang")) : ((Number)mm.get("lang")).longValue();
+	        try{
+		    	Contentlet c = APILocator.getContentletAPI().findContentletByIdentifier((String)mm.get("id"), true, lang, systemU, false);
+		    	APILocator.getContentletAPI().unpublish(c, APILocator.getUserAPI().loadUserById(c.getModUser(), systemU, false), false);
+	    	}
+			catch(Exception e){
+				Logger.debug(this.getClass(), "content failed to publish: " +  e.getMessage());
+			}
+	    }
+        
 	}
 	
 	private void updateAuditStatus() throws DotPublisherException, DotDataException {
@@ -237,7 +295,7 @@ public class PublisherQueueJob implements StatefulJob {
 		List<String> assets;
 		assets = new ArrayList<String>();
 		
-		if(bundle.size() == 1) {
+		if(bundle.size() == 1 && bundle.get(0).getType().equals("contentlet")) {
 			assetBuffer.append("+"+IDENTIFIER+(String) bundle.get(0).getAsset());
 			
 			assets.add(assetBuffer.toString() +" +live:true");
@@ -248,6 +306,9 @@ public class PublisherQueueJob implements StatefulJob {
 			PublishQueueElement c = null;
 			for(int ii = 0; ii < bundle.size(); ii++) {
 				c = bundle.get(ii);
+				
+				if(!c.getType().equals("contentlet")) 
+					continue;
 				
 				assetBuffer.append(IDENTIFIER+c.getAsset());
 				assetBuffer.append(" ");

@@ -18,6 +18,7 @@
 <%@page import="com.dotmarketing.portlets.structure.business.FieldAPI"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.util.HostUtils" %>
+<%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%><script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
@@ -84,7 +85,7 @@
 	if(!UtilMethods.isSet(form.getInode())){
 		form.setStructureType(structureType);
 	}
-
+	boolean canEditAsset = strPerAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 %>
 
 
@@ -95,10 +96,13 @@
 	dojo.require("dojo.dnd.Container");
 	dojo.require("dojo.dnd.Manager");
 	dojo.require("dojo.dnd.Source");
+	dojo.require("dotcms.dojo.push.PushHandler");
 
 	var structureInode = '<%=structure.getInode()%>';
 	<%-- This is the javascript Array that controls what is shown or hidden --%>
 	<%@ include file="/html/portlet/ext/structure/field_type_js_array.jsp" %>
+
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 
 	function writeLabel(fieldType){
@@ -198,7 +202,20 @@
 		}
 
 	}
+	function  crumbType(stType)
+	{
 
+		if(stType == undefined){
+			stType=0;
+		}
+		var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
+		href = href + "<portlet:param name='struts_action' value='/ext/structure/view_structure' />";
+		href = href + "</portlet:actionURL>";
+		document.location = href + "&structureType=" + stType;
+
+
+
+	}
 	function deleteStructure() {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.structure.and.content")) %>')) {
 	  	  StructureAjax.checkDependencies(structureInode, handleDepResponse);
@@ -338,7 +355,7 @@
 
 	 };
 	function hideEditButtonsRow() {
-		dojo.style('editStructureButtonRow', { display: 'none' });
+		dojo.style('editStructureButtonRow', { display: '' });
 	}
 
 	function showEditButtonsRow() {
@@ -362,26 +379,26 @@ function changeStructureType(){
 		if(ele){
 			val = ele.value;
 		}
-		dojo.style("formBuilderHelpDiv", { display: 'none' });
-		dojo.style("widgetHelpDiv", { display: 'none' });
+		//dojo.style("formBuilderHelpDiv", { display: 'none' });
+		//dojo.style("widgetHelpDiv", { display: 'none' });
 		dojo.style("reviewDiv", { display: 'none' });
 		dojo.style("detailPageDiv", { display: 'none' });
 
 		if(val==1){
-			dojo.style("reviewDiv", { display: '' });
+			dojo.style("reviewDiv", { display: 'none' });
 			dojo.style("detailPageDiv", { display: '' });
 			<%if (!InodeUtils.isSet(structure.getInode()) || hasWritePermissions) {%>
 			 toggleSaveButton(false);
 			<%}%>
 		}
 		else if(val==2){
-			dojo.style("widgetHelpDiv", { display: '' });
+			//dojo.style("widgetHelpDiv", { display: '' });
 			<%if (!InodeUtils.isSet(structure.getInode()) || hasWritePermissions) {%>
 			  toggleSaveButton(false);
 			<%}%>
 		}
 		else if(val==3){
-			dojo.style("formBuilderHelpDiv", { display: '' });
+			//dojo.style("formBuilderHelpDiv", { display: '' });
 			<%if (InodeUtils.isSet(structure.getInode()) && !hasWritePermissions) {%>
 			   disableFormFields();
 			<%}%>
@@ -448,6 +465,12 @@ function disableFormFields(){
 		    }
 		toggleSaveButton(true);
 }
+
+function remotePublishStructure () {
+	pushHandler.showDialog(structureInode);
+}
+
+
 </script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
@@ -465,22 +488,19 @@ function disableFormFields(){
 
 
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-
+<% if(InodeUtils.isSet(structure.getInode())){ // >0%>
 <!-- START Properties Tab -->
-<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" style="overflow:hidden;" onShow="showEditButtonsRow()">
+<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Fields") %>" style="overflow:hidden;" onShow="showEditButtonsRow()">
 
 
-	<div class="yui-g">
+	
 
-	<!-- START First Colum -->
-		<div class="yui-u first">
-			<dl>
-				<dt><%= LanguageUtil.get(pageContext, "Type") %>:</dt>
-				<dd>
-					<% boolean typeDisabled = (UtilMethods.isSet(structure.getInode()) && InodeUtils.isSet(structure.getInode())) || (structureType== Structure.STRUCTURE_TYPE_FORM)? true : false;%>
+		<div class="buttonRow" style="width:97%;">
+			<div class="yui-g">
 
-						<%if(typeDisabled){%>
-							<input type="hidden"  name="structureType" id="structureType" value="<%= form.getStructureType()  %>">
+				<div class="yui-u first" style="text-align:left">
+					<h2>
+						<span style="color:#aaa; cursor: pointer;" onclick="crumbType(<%=form.getStructureType()%>)">
 							<%if(form.getStructureType() ==1){%>
 								<%= LanguageUtil.get(pageContext, "Content") %>
 							<%}else if( form.getStructureType() ==2){%>
@@ -489,198 +509,11 @@ function disableFormFields(){
 								<%= LanguageUtil.get(pageContext, "Form") %>
 							<%}else if(form.getStructureType() ==4){%>
 								<%= LanguageUtil.get(pageContext, "File") %>
-							<%} %>
-						<%}else{ %>
-							<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
-								<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_CONTENT) %>"><%= LanguageUtil.get(pageContext, "Content") %></option>
-								<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_WIDGET) %>"><%= LanguageUtil.get(pageContext, "Widget") %></option>
-								<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_FILEASSET) %>"><%= LanguageUtil.get(pageContext, "File") %></option>
-							</select>
-						<%} %>
-					<html:hidden property="system" styleId="system" />
-				</dd>
-
-				<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
-				<dd><input type="text" dojoType="dijit.form.TextBox" name="name" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= UtilMethods.isSet(form.getName()) ? form.getName() : "" %>" /></dd>
-				<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
-				<dd><input type="text" dojoType="dijit.form.TextBox" name="description" style="width:250px" value="<%= UtilMethods.isSet(form.getDescription()) ? form.getDescription() : "" %>" /></dd>
-
-				<% if(UtilMethods.isSet(structure.getInode())) { %>
-					<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
-					<dd><%= structure.getInode() %></dd>
-					<dt>
-						<span id="VariableIdTitle">
-						<%= LanguageUtil.get(pageContext, "Variable-ID") %>:
+							<%} %> &gt; 
 						</span>
-					</dt>
-					<dd style="clear: none;">
-				    <input type="text" value="<%= structure.getVelocityVarName() %>" readonly="readonly" style="width:250px;border:1px;" />
-				    </dd>
-
-				<% } %>
-				<%
-				String host = structure.getHost() != null?structure.getHost():"";
-		    	String folder = structure.getFolder()!= null?structure.getFolder():"";
-
-		    	if(!UtilMethods.isSet(structure.getInode())){
-		    		String defaultHostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		    		if(structureType == Structure.STRUCTURE_TYPE_FORM){
-		    			host = HostUtils.filterDefaultHostForSelect(defaultHostId, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", STRUCTURES:"+ PermissionAPI.PERMISSION_PUBLISH, user);
-		    		}else{
-		    			host = HostUtils.filterDefaultHostForSelect(defaultHostId, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user);
-
-		    		}
-		    	}
-
-		    	String selectorValue = UtilMethods.isSet(folder) && !folder.equals(com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER)?folder:host;
-				%>
-				<dt><%= LanguageUtil.get(pageContext, "Host-Folder") %>:</dt>
-				<dd>
-				<% if(structureType== Structure.STRUCTURE_TYPE_FORM){%>
-				 <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" requiredPermissions="PARENT:<%=PermissionAPI.PERMISSION_CAN_ADD_CHILDREN%>, STRUCTURES:<%= PermissionAPI.PERMISSION_PUBLISH %>" onChange="updateHostFolderValues();" value="<%= selectorValue %>"></div>
-                    <input type="hidden" name="hostFolder" id="hostFolder" value="<%= selectorValue %>"/>
-                    <input type="hidden" name="host" id="host" value="<%=host%>"/>
-                    <input type="hidden" name="folder" id="folder" value="<%=folder%>"/>
-                 <%}else{ %>
-                 <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" requiredPermissions="PARENT:<%=PermissionAPI.PERMISSION_CAN_ADD_CHILDREN%>" onChange="updateHostFolderValues();" value="<%= selectorValue %>"></div>
-                    <input type="hidden" name="hostFolder" id="hostFolder" value="<%= selectorValue %>"/>
-                    <input type="hidden" name="host" id="host" value="<%=host%>"/>
-                    <input type="hidden" name="folder" id="folder" value="<%=folder%>"/>
-                 <%} %>
-				</dd>
-				<dt><%= LanguageUtil.get(pageContext, "Workflow-Scheme") %>:</dt>
-				<dd>
-				<%	if(LicenseUtil.getLevel() > 100){ %>
-					<select name="workflowScheme" id="workflowScheme" dojoType="dijit.form.FilteringSelect" value="<%=wfScheme.getId()%>">
-						<%for(WorkflowScheme scheme : wfSchemes){ %>
-							<option value="<%=scheme.getId()%>"><%=scheme.getName() %></option>
-						<%} %>
-					</select>
-				<%}else{ %>
-					<input type="hidden" name="workflowScheme" value="<%=APILocator.getWorkflowAPI().findDefaultScheme().getId()%>"><%=LanguageUtil.get(pageContext, "Only-Default-Scheme-is-available-in-Community") %>
-				<%} %>
-				</dd>
-
-
-			</dl>
-		</div>
-
-	<!-- End First Column -->
-
-	<!-- Start Second Column -->
-		<div class="yui-u" id="secondColumnDiv">
-
-		<div class="callOutBox2" id="formBuilderHelpDiv" style="width:400px;display:none;text-align:left;">
-			<h3><%= LanguageUtil.get(pageContext, "getting-started-forms") %></h3>
-			<span style="font-size:88%;">
-				<%= LanguageUtil.get(pageContext, "getting-started-forms-help") %>
-			</span>
-		</div>
-		<div class="callOutBox2" id="widgetHelpDiv" style="width:400px;display:none;text-align:left;">
-			<h3><%= LanguageUtil.get(pageContext, "getting-started-widgets") %></h3>
-			<span style="font-size:88%;">
-				<%= LanguageUtil.get(pageContext, "getting-started-widgets-help") %>
-			</span>
-
-
-		</div>
-			<dl class="secondColumn">
-				<div id="reviewDiv" style="display:none">
-					<dt><%= LanguageUtil.get(pageContext, "Enable-Review") %>:</dt>
-					<dd>
-						<input type="checkbox" dojoType="dijit.form.CheckBox" name="reviewContent" id="reviewContent" value="true" <%if(form.isReviewContent()){ %>checked="checked"<%}%> onclick="reviewChange(true);">
-						&nbsp;&nbsp;
-						<% if(InodeUtils.isSet(structure.getInode())){ %>
-							<button dojoType="dijit.form.Button" <%if(!form.isReviewContent()){ %>disabled='true'<%}%> name="resetReviewsButton" id="resetReviewsButtonId" onclick="resetReviews()" iconClass="resetIcon" type="button">
-								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset-Review-in-All-Contents")) %>
-							</button>
-						<%} %>
-					</dd>
-					<dt style="font-weight:normal;"><%= LanguageUtil.get(pageContext, "Review-Every") %>:</dt>
-					<dd>
-			 			<select dojoType="dijit.form.FilteringSelect" name="reviewIntervalNum" id="reviewIntervalNumId" style="width: 65px" value="<%= UtilMethods.isSet(form.getReviewIntervalNum()) ? form.getReviewIntervalNum() : "" %>" >
-							<%for (int i = 1; i < 32; ++i) {%>
-								<option value="<%= i %>"><%= i %></option>
-							<%}%>
-						</select>
-						<select dojoType="dijit.form.FilteringSelect" name="reviewIntervalSelect" id="reviewIntervalSelectId" style="width: 100px" value="<%= UtilMethods.isSet(form.getReviewIntervalSelect()) ? form.getReviewIntervalSelect() : "" %>" >
-							<option value="d"><%= LanguageUtil.get(pageContext, "Day(s)") %></option>
-							<option value="m"><%= LanguageUtil.get(pageContext, "Month(s)") %></option>
-							<option value="y"><%= LanguageUtil.get(pageContext, "Year(s)") %></option>
-						</select>
-					</dd>
-					<dd>
-						<select dojoType="dijit.form.FilteringSelect" name="reviewerRole" id="reviewerRoleId" value="<%= UtilMethods.isSet(form.getReviewerRole()) ? form.getReviewerRole() : "" %>" >/
-							<option value="0"><%=LanguageUtil.get(pageContext, "Select-a-Role")%></option>
-							<%for (Role role: roles) {%>
-								<option value="<%= role.getId() %>"><%= role.getName() %></option>
-							<%}%>
-				        </select>
-					</dd>
+						<%=structure.getName() %>
+					</h2>
 				</div>
-				<div id="detailPageDiv" style="display:none">
-					<dt><%= LanguageUtil.get(pageContext, "Detail-Page") %>:</dt>
-					<dd>
-						<input type="text" name="detailPage" dojoType="dotcms.dijit.form.FileSelector" allowFileUpload="false" fileBrowserView="details"
-							mimeTypes="application/dotpage" value="<%= UtilMethods.isSet(form.getDetailPage())?form.getDetailPage():"" %>" showThumbnail="false" style="width: 450px;" />
-					</dd>
-					<dt><%= LanguageUtil.get(pageContext, "URL-Map-Pattern") %>:</dt>
-					<dd>
-						<input type="text" dojoType="dijit.form.TextBox" name="urlMapPattern" id="urlMapPattern" style="width:250px" value="<%= UtilMethods.isSet(form.getUrlMapPattern()) ? form.getUrlMapPattern() : "" %>" />
-						<span id="multiHintHook" style="cursor:pointer;">?</span>
-	                    <span dojoType="dijit.Tooltip" connectId="multiHintHook" id="multiHint" class="fieldHint">
-	                   		<%= LanguageUtil.get(pageContext, "URL-Map-Pattern-hint1") %>
-	                   	</span>
-					</dd>
-				</div>
-			</dl>
-		</div>
-	<!-- END Second Column -->
-
-	</div>
-<div class="clear"></div>
-
-
-<!-- START Button Row -->
-<div class="buttonRow" id="editStructureButtonRow">
-	<%if(InodeUtils.isSet(structure.getInode())){ // >0%>
-		<% if (hasWritePermissions && !structure.isFixed()) { %>
-			<button dojoType="dijit.form.Button" id="delete" onClick="deleteStructure('<%=structure.getInode()%>');" iconClass="deleteIcon" type="button">
-				<%if(structure.getStructureType() == 3 ){%>
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Form-and-Entries")) %>
-				<%}else{ %>
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Structure-and-Content")) %>
-				<%} %>
-			</button>
-		<%}%>
-	<%} %>
-	<button dojoType="dijit.form.Button" id="saveButton" onClick="addNewStructure();" iconClass="saveIcon" type="button">
-
-				<%if(structure.getStructureType() == 3 ){%>
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Form")) %>
-				<%}else{ %>
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-				<%} %>
-	</button>&nbsp;&nbsp;
-	<button dojoType="dijit.form.Button" onClick="cancel" iconClass="cancelIcon" type="button">
-		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-	</button>
-</div>
-<!-- END Button Row -->
-
-
-
-	<% if(InodeUtils.isSet(structure.getInode())){ // >0%>
-
-	<hr/>
-
-		<div class="buttonRow" style="width:97%;">
-			<div class="yui-g">
-				<% if(structure.getFields().size() > 1){%>
-				<div class="yui-u first" style="text-align:left">
-					<%= LanguageUtil.get(pageContext, "Drag-and-drop-the-items-to-the-desired-position-order") %>
-				</div>
-				<%} %>
 				<div class="yui-u" style="text-align:right">
 					<%if(InodeUtils.isSet(structure.getInode())){// >0%>
 						<button dojoType="dijit.form.Button" id="field" onClick="addNewField" iconClass="plusIcon" type="button">
@@ -692,7 +525,7 @@ function disableFormFields(){
 		</div>
 
 
-<!-- START Listing Table -->
+	<!-- START Listing Table -->
 
 	<div id="fieldsTable" style="width:97%;">
 
@@ -776,23 +609,268 @@ function disableFormFields(){
 	  		<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-fields-to-display") %></div>
 		<%}//end if (fields.size() > 0)%>
 		</div>
+		
+
 		<!-- END Table Results -->
 
 	</div>
-<!-- END Listing Table -->
-
-<%} %>
+	<!-- END Listing Table -->
+		<% if(structure.getFields().size() > 1){%>
+			<div class="callOutBox" style="width:50%;margin:20px auto 0px auto;">
+				<%= LanguageUtil.get(pageContext, "Drag-and-drop-the-items-to-the-desired-position-order") %>
+			</div>
+		<%} %>
 
 
 	</div>
-<!-- END Property Tab -->
+	<!-- END Property Tab -->
+<%} %>
+
+	<div id="TabOneAndAHalf" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="hideEditButtonsRow()">
+		
+	<div class="yui-g">
+	
+		<!-- START First Colum -->
+			<div class="yui-u first">
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "Type") %>:</dt>
+					<dd>
+						<% boolean typeDisabled = (UtilMethods.isSet(structure.getInode()) && InodeUtils.isSet(structure.getInode())) || (structureType== Structure.STRUCTURE_TYPE_FORM)? true : false;%>
+	
+							<%if(typeDisabled){%>
+								<input type="hidden"  name="structureType" id="structureType" value="<%= form.getStructureType()  %>">
+								<%if(form.getStructureType() ==1){%>
+									<%= LanguageUtil.get(pageContext, "Content") %>
+								<%}else if( form.getStructureType() ==2){%>
+									<%= LanguageUtil.get(pageContext, "Widget") %>
+								<%}else if(form.getStructureType() ==3){%>
+									<%= LanguageUtil.get(pageContext, "Form") %>
+								<%}else if(form.getStructureType() ==4){%>
+									<%= LanguageUtil.get(pageContext, "File") %>
+								<%} %>
+							<%}else{ %>
+								<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
+									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_CONTENT) %>"><%= LanguageUtil.get(pageContext, "Content") %></option>
+									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_WIDGET) %>"><%= LanguageUtil.get(pageContext, "Widget") %></option>
+									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_FILEASSET) %>"><%= LanguageUtil.get(pageContext, "File") %></option>
+								</select>
+							<%} %>
+						<html:hidden property="system" styleId="system" />
+					</dd>
+	
+					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
+					<dd><input type="text" dojoType="dijit.form.TextBox" name="name" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= UtilMethods.isSet(form.getName()) ? form.getName() : "" %>" /></dd>
+					<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
+					<dd><input type="text" dojoType="dijit.form.TextBox" name="description" style="width:250px" value="<%= UtilMethods.isSet(form.getDescription()) ? form.getDescription() : "" %>" /></dd>
+	
+					<% if(UtilMethods.isSet(structure.getInode())) { %>
+						<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
+						<dd><%= structure.getInode() %></dd>
+						<dt>
+							<span id="VariableIdTitle">
+							<%= LanguageUtil.get(pageContext, "Variable-ID") %>:
+							</span>
+						</dt>
+						<dd style="clear: none;">
+					    <input type="text" value="<%= structure.getVelocityVarName() %>" readonly="readonly" style="width:250px;border:1px;" />
+					    </dd>
+	
+					<% } %>
+					<%
+					String host = structure.getHost() != null?structure.getHost():"";
+			    	String folder = structure.getFolder()!= null?structure.getFolder():"";
+	
+			    	if(!UtilMethods.isSet(structure.getInode())){
+			    		String defaultHostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+			    		if(structureType == Structure.STRUCTURE_TYPE_FORM){
+			    			host = HostUtils.filterDefaultHostForSelect(defaultHostId, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", STRUCTURES:"+ PermissionAPI.PERMISSION_PUBLISH, user);
+			    		}else{
+			    			host = HostUtils.filterDefaultHostForSelect(defaultHostId, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user);
+	
+			    		}
+			    	}
+	
+			    	String selectorValue = UtilMethods.isSet(folder) && !folder.equals(com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER)?folder:host;
+					%>
+					<dt><%= LanguageUtil.get(pageContext, "Host-Folder") %>:</dt>
+					<dd>
+					<% if(structureType== Structure.STRUCTURE_TYPE_FORM){%>
+					 <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" requiredPermissions="PARENT:<%=PermissionAPI.PERMISSION_CAN_ADD_CHILDREN%>, STRUCTURES:<%= PermissionAPI.PERMISSION_PUBLISH %>" onChange="updateHostFolderValues();" value="<%= selectorValue %>"></div>
+	                    <input type="hidden" name="hostFolder" id="hostFolder" value="<%= selectorValue %>"/>
+	                    <input type="hidden" name="host" id="host" value="<%=host%>"/>
+	                    <input type="hidden" name="folder" id="folder" value="<%=folder%>"/>
+	                 <%}else{ %>
+	                 <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" requiredPermissions="PARENT:<%=PermissionAPI.PERMISSION_CAN_ADD_CHILDREN%>" onChange="updateHostFolderValues();" value="<%= selectorValue %>"></div>
+	                    <input type="hidden" name="hostFolder" id="hostFolder" value="<%= selectorValue %>"/>
+	                    <input type="hidden" name="host" id="host" value="<%=host%>"/>
+	                    <input type="hidden" name="folder" id="folder" value="<%=folder%>"/>
+	                 <%} %>
+					</dd>
+					<dt><%= LanguageUtil.get(pageContext, "Workflow-Scheme") %>:</dt>
+					<dd>
+					<%	if(LicenseUtil.getLevel() > 100){ %>
+						<select name="workflowScheme" id="workflowScheme" dojoType="dijit.form.FilteringSelect" value="<%=wfScheme.getId()%>">
+							<%for(WorkflowScheme scheme : wfSchemes){ %>
+								<option value="<%=scheme.getId()%>"><%=scheme.getName() %></option>
+							<%} %>
+						</select>
+					<%}else{ %>
+						<input type="hidden" name="workflowScheme" value="<%=APILocator.getWorkflowAPI().findDefaultScheme().getId()%>"><%=LanguageUtil.get(pageContext, "Only-Default-Scheme-is-available-in-Community") %>
+					<%} %>
+					</dd>
+	
+	
+				</dl>
+			</div>
+	
+		<!-- End First Column -->
+	
+		<!-- Start Second Column -->
+			<div class="yui-u" id="secondColumnDiv">
+				<dl class="secondColumn">
+					<div id="reviewDiv" style="display:none">
+						<dt><%= LanguageUtil.get(pageContext, "Enable-Review") %>:</dt>
+						<dd>
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="reviewContent" id="reviewContent" value="true" <%if(form.isReviewContent()){ %>checked="checked"<%}%> onclick="reviewChange(true);">
+							&nbsp;&nbsp;
+							<% if(InodeUtils.isSet(structure.getInode())){ %>
+								<button dojoType="dijit.form.Button" <%if(!form.isReviewContent()){ %>disabled='true'<%}%> name="resetReviewsButton" id="resetReviewsButtonId" onclick="resetReviews()" iconClass="resetIcon" type="button">
+									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset-Review-in-All-Contents")) %>
+								</button>
+							<%} %>
+						</dd>
+						<dt style="font-weight:normal;"><%= LanguageUtil.get(pageContext, "Review-Every") %>:</dt>
+						<dd>
+				 			<select dojoType="dijit.form.FilteringSelect" name="reviewIntervalNum" id="reviewIntervalNumId" style="width: 65px" value="<%= UtilMethods.isSet(form.getReviewIntervalNum()) ? form.getReviewIntervalNum() : "" %>" >
+								<%for (int i = 1; i < 32; ++i) {%>
+									<option value="<%= i %>"><%= i %></option>
+								<%}%>
+							</select>
+							<select dojoType="dijit.form.FilteringSelect" name="reviewIntervalSelect" id="reviewIntervalSelectId" style="width: 100px" value="<%= UtilMethods.isSet(form.getReviewIntervalSelect()) ? form.getReviewIntervalSelect() : "" %>" >
+								<option value="d"><%= LanguageUtil.get(pageContext, "Day(s)") %></option>
+								<option value="m"><%= LanguageUtil.get(pageContext, "Month(s)") %></option>
+								<option value="y"><%= LanguageUtil.get(pageContext, "Year(s)") %></option>
+							</select>
+						</dd>
+						<dd>
+							<select dojoType="dijit.form.FilteringSelect" name="reviewerRole" id="reviewerRoleId" value="<%= UtilMethods.isSet(form.getReviewerRole()) ? form.getReviewerRole() : "" %>" >/
+								<option value="0"><%=LanguageUtil.get(pageContext, "Select-a-Role")%></option>
+								<%for (Role role: roles) {%>
+									<option value="<%= role.getId() %>"><%= role.getName() %></option>
+								<%}%>
+					        </select>
+						</dd>
+					</div>
+					<div id="detailPageDiv" style="display:none">
+						<dt><%= LanguageUtil.get(pageContext, "Detail-Page") %>:</dt>
+						<dd>
+							<input type="text" name="detailPage" dojoType="dotcms.dijit.form.FileSelector" allowFileUpload="false" fileBrowserView="details" mimeTypes="application/dotpage" value="<%= UtilMethods.isSet(form.getDetailPage())?form.getDetailPage():"" %>" showThumbnail="false" style="width: 450px;" />
+						</dd>
+						<dt><%= LanguageUtil.get(pageContext, "URL-Map-Pattern") %>:</dt>
+						<dd>
+							<input type="text" dojoType="dijit.form.TextBox" name="urlMapPattern" id="urlMapPattern" style="width:250px" value="<%= UtilMethods.isSet(form.getUrlMapPattern()) ? form.getUrlMapPattern() : "" %>" />
+							<span id="multiHintHook" style="cursor:pointer;">?</span>
+		                    <span dojoType="dijit.Tooltip" connectId="multiHintHook" id="multiHint" class="fieldHint">
+		                   		<%= LanguageUtil.get(pageContext, "URL-Map-Pattern-hint1") %>
+		                   	</span>
+						</dd>
+					</div>
+					<%-- 
+					<dt>Date fields</dt>
+	                <dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="publishDates" id="publishDates" value="true" <%//if(form.isReviewContent()){ %>checked="checked"<%//}%> onclick="publishDateChange(true);"/></dd>
+	                --%>
+	                <div id="datesFieldsDiv">
+	                    <dt><%= LanguageUtil.get(pageContext, "Publish-Date-Field") %>:</dt>
+	                    <% // building date fields
+	                    ArrayList<Field> dateFields=new ArrayList<Field>();
+	                    if(UtilMethods.isSet(structure.getInode()))
+	                      for(Field f : structure.getFields())
+	                        if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) && f.isIndexed())
+	                            dateFields.add(f);
+	                    %>
+	                    <dd>
+	                       <select id="publishDateVar" name="publishDateVar" dojoType="dijit.form.FilteringSelect">
+	                         <option value=""></option>
+	                         <% String current=(UtilMethods.isSet(structure.getPublishDateVar())) ? structure.getPublishDateVar() : "--";
+	                            for(Field f : dateFields) {%>
+	                            <option value="<%= f.getVelocityVarName() %>" 
+	                                     <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
+	                              <%=f.getFieldName() %>
+	                            </option>
+	                         <% } %>
+	                       </select>
+	                    </dd>
+	                    <dt><%= LanguageUtil.get(pageContext, "Expire-Date-Field") %>:</dt>
+	                    <dd>
+	                       <select id="expireDateVar" name="expireDateVar" dojoType="dijit.form.FilteringSelect">
+	                         <option value=""></option>
+	                       <%  current=(UtilMethods.isSet(structure.getExpireDateVar())) ? structure.getExpireDateVar() : "--";
+	                           for(Field f : dateFields) {%>
+	                            <option value="<%= f.getVelocityVarName() %>"
+	                              <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
+	                              <%=f.getFieldName() %>
+	                            </option>
+	                         <% } %>
+	                       </select>
+	                    </dd>
+	                </div>
+				</dl>
+			</div>
+		<!-- END Second Column -->
+		</div>
+	
+	
+	<div class="clear"></div>
+	
+	
+	<!-- START Button Row -->
+	<div class="buttonRow" id="editStructureButtonRow">
+		
+		<%if(InodeUtils.isSet(structure.getInode())){ // >0%>
+			<% if (hasWritePermissions && !structure.isFixed()) { %>
+				<button dojoType="dijit.form.Button" id="delete" onClick="deleteStructure('<%=structure.getInode()%>');" iconClass="deleteIcon" type="button">
+					<%if(structure.getStructureType() == 3 ){%>
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Form-and-Entries")) %>
+					<%}else{ %>
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Structure-and-Content")) %>
+					<%} %>
+				</button>
+			<%}%>
+		<%} %>
+		<%
+			boolean enterprise = LicenseUtil.getLevel() > 199;
+			List<PublishingEndPoint> sendingEndpoints = APILocator.getPublisherEndpointAPI().getReceivingEndpoints();
+			boolean areSendingEndPoints = UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty();
+			
+			if(UtilMethods.isSet(structure.getInode()) && enterprise && areSendingEndPoints) {
+		%>
+		
+				<button dojoType="dijit.form.Button" id="remotePublishButton" onClick="remotePublishStructure();" iconClass="pushIcon" type="button">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
+				</button>
+		<% } %>
+		<button dojoType="dijit.form.Button" id="saveButton" onClick="addNewStructure();" iconClass="saveIcon" type="button">
+	
+					<%if(structure.getStructureType() == 3 ){%>
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Form")) %>
+					<%}else{ %>
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+					<%} %>
+		</button>&nbsp;&nbsp;
+		<button dojoType="dijit.form.Button" onClick="cancel" iconClass="cancelIcon" type="button">
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+		</button>
+	</div>
+	<!-- END Button Row -->
+	
+	
+	
+
+	</div>
 
 
 <!-- START Permission Tab -->
-<%
-	boolean canEditAsset = strPerAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
-	if (canEditAsset) {
-%>
+<% if (canEditAsset) {%>
 	<div id="TabTwo" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()">
 		<%
 			request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, structure);
@@ -800,9 +878,7 @@ function disableFormFields(){
 		%>
 		<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
 	</div>
-<%
-	}
-%>
+<%}%>
 <!-- END Permission Tab -->
 
 </div>
@@ -858,3 +934,12 @@ function disableFormFields(){
 
 	<div id="depDiv" style="overflow: auto; height: 220px"></div>
 </div>
+
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="remotePublishNeverExpire" id="remotePublishNeverExpire" type="hidden" value="">
+</form>

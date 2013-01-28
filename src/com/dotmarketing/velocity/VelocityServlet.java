@@ -40,6 +40,8 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.tools.view.context.ChainedContext;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -181,10 +183,11 @@ public abstract class VelocityServlet extends HttpServlet {
 				return;
 			}
 
-			HttpSession session = request.getSession(false);
-			boolean ADMIN_MODE = session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			boolean PREVIEW_MODE = ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
-			boolean EDIT_MODE = ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
+			HttpSession session = request.getSession();
+			boolean timemachine=session.getAttribute("tm_date")!=null;
+			boolean ADMIN_MODE = !timemachine && session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			boolean PREVIEW_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
+			boolean EDIT_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
 
 			String value = request.getHeader("X-Requested-With");
 			if ((value != null) && value.equals("XMLHttpRequest") && EDIT_MODE && ADMIN_MODE) {
@@ -531,10 +534,9 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		// Getting the user to check the permissions
 		com.liferay.portal.model.User user = null;
-		HttpSession session = request.getSession(false);
-		try {
-			if(session!=null)
-				user = (com.liferay.portal.model.User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+		
+		try {			
+				user = com.liferay.portal.util.PortalUtil.getUser( request );
 		} catch (Exception nsue) {
 			Logger.warn(this, "Exception trying getUser: " + nsue.getMessage(), nsue);
 		}
@@ -553,11 +555,16 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, user, true);
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
+		PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
+		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndpoints();
 		// to check user has permission to write on this page
 		boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
 		boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
+		boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199 && UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
+		
 		context.put("EDIT_HTMLPAGE_PERMISSION", new Boolean(hasWritePermOverHTMLPage));
 		context.put("PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasPublishPermOverHTMLPage));
+		context.put("REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasRemotePublishPermOverHTMLPage));
 
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(htmlPageAPI.getTemplateForWorkingHTMLPage(htmlPage),
 				PERMISSION_WRITE, user, true);
@@ -769,13 +776,18 @@ public abstract class VelocityServlet extends HttpServlet {
 
         HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion( id, APILocator.getUserAPI().getSystemUser(), false );
         HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
+        PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
+		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndpoints();
         // to check user has permission to write on this page
         boolean hasAddChildrenPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_CAN_ADD_CHILDREN, backendUser );
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, backendUser );
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, backendUser );
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199 && UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
+		
         context.put( "ADD_CHILDREN_HTMLPAGE_PERMISSION", new Boolean( hasAddChildrenPermOverHTMLPage ) );
         context.put( "EDIT_HTMLPAGE_PERMISSION", new Boolean( hasWritePermOverHTMLPage ) );
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
+        context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasRemotePublishPermOverHTMLPage) );
         context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
         context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
 
@@ -783,6 +795,11 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate );
 
         com.dotmarketing.portlets.templates.model.Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory.getHTMLPageTemplate( htmlPage, true );
+        //issue- 1775 If User doesn't have edit permission on HTML Pages
+       /* if(!hasWritePermOverHTMLPage){
+        	doPreviewMode(request, response);
+        	return;
+        }*/
         if ( cmsTemplate == null ) {// DOTCMS-4051
             cmsTemplate = new com.dotmarketing.portlets.templates.model.Template();
             Logger.debug( VelocityServlet.class, "HTMLPAGE TEMPLATE NOT FOUND" );
