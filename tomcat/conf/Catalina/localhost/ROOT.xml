@@ -15,7 +15,7 @@
 	        type="javax.sql.DataSource"
 	        driverClassName="org.postgresql.Driver"
 	        url="jdbc:postgresql://localhost/dotcms"
-	        username="josema" password="dotcms" maxActive="60" maxIdle="10" maxWait="60000"
+	        username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
 		  validationQuery="SELECT 1" testOnBorrow="true" />		  
 	
