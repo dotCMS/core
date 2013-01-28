@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portlet_Polls_PollsVoteService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.polls.portlet.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="PollsVoteManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portlet_Polls_PollsVoteService"/>
+		<parameter name="className" value="com.liferay.portlet.polls.ejb.PollsVoteManagerSoap"/>
+		<parameter name="wsdlPortType" value="PollsVoteManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="countByVoteDate" qname="operNS:countByVoteDate" returnQName="countByVoteDateReturn" returnType="rtns:int" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="companyId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="voteDate" type="tns:dateTime"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="before" type="tns:boolean"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="http://model.polls.portlet.liferay.com" name="getVote" qname="operNS:getVote" returnQName="getVoteReturn" returnType="rtns:PollsVoteModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="questionId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="http://model.polls.portlet.liferay.com" name="getVote" qname="operNS:getVote" returnQName="getVoteReturn" returnType="rtns:PollsVoteModel" soapAction="">
+			<parameter xmlns:tns="http://ejb.polls.portlet.liferay.com" qname="pk" type="tns:PollsVotePK"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="getVotesSize" qname="operNS:getVotesSize" returnQName="getVotesSizeReturn" returnType="rtns:int" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="questionId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="choiceId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.polls.portlet.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="getVotesSize" qname="operNS:getVotesSize" returnQName="getVotesSizeReturn" returnType="rtns:int" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="questionId" type="tns:string"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="getVote countByVoteDate getVotesSize"/>
+		<typeMapping xmlns:ns="http://ejb.polls.portlet.liferay.com" qname="ns:PollsVotePK" type="java:com.liferay.portlet.polls.ejb.PollsVotePK" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.polls.portlet.liferay.com" qname="ns:PollsVoteModel" type="java:com.liferay.portlet.polls.model.PollsVoteModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

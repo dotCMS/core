@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_ImageService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="ImageManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_ImageService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.ImageManagerSoap"/>
+		<parameter name="wsdlPortType" value="ImageManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="deleteImage" qname="operNS:deleteImage" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="imageId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getImage" qname="operNS:getImage" returnQName="getImageReturn" returnType="rtns:ImageModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="imageId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getImageIds" qname="operNS:getImageIds" returnQName="getImageIdsReturn" returnType="rtns:ArrayOf_tns2_ImageModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="imageId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="updateImage" qname="operNS:updateImage" returnQName="updateImageReturn" returnType="rtns:ImageModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="imageId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="bytes" type="tns:base64Binary"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="getImageIds getImage deleteImage updateImage"/>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:ImageModel" type="java:com.liferay.portal.model.ImageModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_tns2_ImageModel" type="java:com.liferay.portal.model.ImageModel[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_SkinService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="SkinManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_SkinService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.SkinManagerSoap"/>
+		<parameter name="wsdlPortType" value="SkinManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="init" qname="operNS:init" soapAction="">
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="xmls" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getSkin" qname="operNS:getSkin" returnQName="getSkinReturn" returnType="rtns:SkinModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="skinId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getSkins" qname="operNS:getSkins" returnQName="getSkinsReturn" returnType="rtns:ArrayOf_tns2_SkinModel" soapAction=""></operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="updateSkin" qname="operNS:updateSkin" returnQName="updateSkinReturn" returnType="rtns:SkinModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="skinId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="alphaBackground" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="alphaForeground" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="betaBackground" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="betaForeground" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="gammaBackground" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="gammaForeground" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="bgBackground" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="bgForeground" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="href" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="negAlert" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="posAlert" type="tns:string"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="updateSkin getSkin init getSkins"/>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:SkinModel" type="java:com.liferay.portal.model.SkinModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_tns2_SkinModel" type="java:com.liferay.portal.model.SkinModel[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_xsd_string" type="java:java.lang.String[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

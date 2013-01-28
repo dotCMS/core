@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_NoteService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="NoteManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_NoteService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.NoteManagerSoap"/>
+		<parameter name="wsdlPortType" value="NoteManagerSoap"/>
+		<parameter name="allowedMethods" value="*"/>
+	</service>
+</deployment>

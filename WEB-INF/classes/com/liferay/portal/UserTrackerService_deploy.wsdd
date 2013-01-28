@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_UserTrackerService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="UserTrackerManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_UserTrackerService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.UserTrackerManagerSoap"/>
+		<parameter name="wsdlPortType" value="UserTrackerManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="deleteUserTracker" qname="operNS:deleteUserTracker" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="userTrackerId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getUserTrackers" qname="operNS:getUserTrackers" returnQName="getUserTrackersReturn" returnType="rtns:ArrayOf_tns2_UserTrackerModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="begin" type="tns:int"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="end" type="tns:int"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="deleteUserTracker getUserTrackers"/>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_tns2_UserTrackerModel" type="java:com.liferay.portal.model.UserTrackerModel[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:UserTrackerModel" type="java:com.liferay.portal.model.UserTrackerModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

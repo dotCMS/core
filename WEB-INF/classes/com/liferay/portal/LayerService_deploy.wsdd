@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_LayerService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="LayerManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_LayerService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.LayerManagerSoap"/>
+		<parameter name="wsdlPortType" value="LayerManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getLayer" qname="operNS:getLayer" returnQName="getLayerReturn" returnType="rtns:LayerModel" soapAction="">
+			<parameter xmlns:tns="http://ejb.portal.liferay.com" qname="pk" type="tns:LayerPK"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="getLayer"/>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:LayerModel" type="java:com.liferay.portal.model.LayerModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://ejb.portal.liferay.com" qname="ns:LayerPK" type="java:com.liferay.portal.ejb.LayerPK" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_CompanyService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="CompanyManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_CompanyService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.CompanyManagerSoap"/>
+		<parameter name="wsdlPortType" value="CompanyManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://lucene.util.liferay.com" name="search" qname="operNS:search" returnQName="searchReturn" returnType="rtns:Hits" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="companyId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="keywords" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getRoles" qname="operNS:getRoles" returnQName="getRolesReturn" returnType="rtns:ArrayOf_tns3_CompanyModel" soapAction=""></operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getCompany" qname="operNS:getCompany" returnQName="getCompanyReturn" returnType="rtns:CompanyModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="companyId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getCompany" qname="operNS:getCompany" returnQName="getCompanyReturn" returnType="rtns:CompanyModel" soapAction=""></operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getGroups" qname="operNS:getGroups" returnQName="getGroupsReturn" returnType="rtns:ArrayOf_tns3_CompanyModel" soapAction=""></operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getUsers" qname="operNS:getUsers" returnQName="getUsersReturn" returnType="rtns:ArrayOf_tns3_CompanyModel" soapAction=""></operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="updateCompany" qname="operNS:updateCompany" returnQName="updateCompanyReturn" returnType="rtns:CompanyModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="portalURL" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="homeURL" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="mx" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="shortName" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="type" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="size" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="street" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="city" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="state" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="zip" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="phone" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="fax" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="emailAddress" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="authType" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="autoLogin" type="tns:boolean"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="strangers" type="tns:boolean"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="updateDefaultUser" qname="operNS:updateDefaultUser" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="languageId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="timeZoneId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="skinId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="dottedSkins" type="tns:boolean"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roundedSkins" type="tns:boolean"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="resolution" type="tns:string"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="search updateDefaultUser updateCompany getUsers getRoles getGroups getCompany"/>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_tns3_CompanyModel" type="java:com.liferay.portal.model.CompanyModel[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://lucene.util.liferay.com" qname="ns:Hits" type="java:com.liferay.util.lucene.Hits" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:CompanyModel" type="java:com.liferay.portal.model.CompanyModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

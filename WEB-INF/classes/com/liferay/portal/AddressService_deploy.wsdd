@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_AddressService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="AddressManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_AddressService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.AddressManagerSoap"/>
+		<parameter name="wsdlPortType" value="AddressManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getAddress" qname="operNS:getAddress" returnQName="getAddressReturn" returnType="rtns:AddressModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="addressId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="addAddress" qname="operNS:addAddress" returnQName="addAddressReturn" returnType="rtns:AddressModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="userId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="className" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="classPK" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="description" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="street1" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="street2" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="city" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="state" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="zip" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="country" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="phone" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="fax" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="cell" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="deleteAddress" qname="operNS:deleteAddress" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="addressId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getAddresses" qname="operNS:getAddresses" returnQName="getAddressesReturn" returnType="rtns:ArrayOf_tns2_AddressModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="className" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="classPK" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getPrimaryAddress" qname="operNS:getPrimaryAddress" returnQName="getPrimaryAddressReturn" returnType="rtns:AddressModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="className" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="classPK" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="updateAddress" qname="operNS:updateAddress" returnQName="updateAddressReturn" returnType="rtns:AddressModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="addressId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="description" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="street1" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="street2" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="city" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="state" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="zip" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="country" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="phone" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="fax" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="cell" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="updateAddresses" qname="operNS:updateAddresses" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="className" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="classPK" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="addressIds" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="updateAddressPriority" qname="operNS:updateAddressPriority" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="className" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="classPK" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="addressId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="priority" type="tns:boolean"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="hasWrite" qname="operNS:hasWrite" returnQName="hasWriteReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="addressId" type="tns:string"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="addAddress updateAddressPriority getPrimaryAddress updateAddress updateAddresses getAddress deleteAddress hasWrite getAddresses"/>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_tns2_AddressModel" type="java:com.liferay.portal.model.AddressModel[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_xsd_string" type="java:java.lang.String[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:AddressModel" type="java:com.liferay.portal.model.AddressModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+	<service name="Portal_RoleService" provider="java:RPC" style="rpc" use="encoded">
+		<parameter name="wsdlTargetNamespace" value="urn:ejb.portal.liferay.com"/>
+		<parameter name="wsdlServiceElement" value="RoleManagerSoapService"/>
+		<parameter name="wsdlServicePort" value="Portal_RoleService"/>
+		<parameter name="className" value="com.liferay.portal.ejb.RoleManagerSoap"/>
+		<parameter name="wsdlPortType" value="RoleManagerSoap"/>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="exists" qname="operNS:exists" returnQName="existsReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="names" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="exists" qname="operNS:exists" returnQName="existsReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getGroups" qname="operNS:getGroups" returnQName="getGroupsReturn" returnType="rtns:ArrayOf_tns2_RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getGroups" qname="operNS:getGroups" returnQName="getGroupsReturn" returnType="rtns:ArrayOf_tns2_RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="begin" type="tns:int"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="end" type="tns:int"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getUsers" qname="operNS:getUsers" returnQName="getUsersReturn" returnType="rtns:ArrayOf_tns2_RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="urn:ejb.portal.liferay.com" name="getUsers" qname="operNS:getUsers" returnQName="getUsersReturn" returnType="rtns:ArrayOf_tns2_RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="begin" type="tns:int"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="end" type="tns:int"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="addUsers" qname="operNS:addUsers" returnQName="addUsersReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="users" type="tns:ArrayOf_tns3_anyType"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="getUsersSize" qname="operNS:getUsersSize" returnQName="getUsersSizeReturn" returnType="rtns:int" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="removeUsers" qname="operNS:removeUsers" returnQName="removeUsersReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="userIds" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="setUsers" qname="operNS:setUsers" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="userIds" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="hasAdmin" qname="operNS:hasAdmin" returnQName="hasAdminReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="addGroups" qname="operNS:addGroups" returnQName="addGroupsReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="groups" type="tns:ArrayOf_tns3_anyType"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="addRole" qname="operNS:addRole" returnQName="addRoleReturn" returnType="rtns:RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="checkSystemRoles" qname="operNS:checkSystemRoles" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="companyId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="deleteRole" qname="operNS:deleteRole" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="getGroupsSize" qname="operNS:getGroupsSize" returnQName="getGroupsSizeReturn" returnType="rtns:int" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getRoleById" qname="operNS:getRoleById" returnQName="getRoleByIdReturn" returnType="rtns:RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="getRoleByName" qname="operNS:getRoleByName" returnQName="getRoleByNameReturn" returnType="rtns:RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="name" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="hasRole" qname="operNS:hasRole" returnQName="hasRoleReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="userId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleName" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="hasRoles" qname="operNS:hasRoles" returnQName="hasRolesReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="userId" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="roleNames" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="isAdministrator" qname="operNS:isAdministrator" returnQName="isAdministratorReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="userId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="isGuest" qname="operNS:isGuest" returnQName="isGuestReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="userId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="isPowerUser" qname="operNS:isPowerUser" returnQName="isPowerUserReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="userId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="isUser" qname="operNS:isUser" returnQName="isUserReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="userId" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://www.w3.org/2001/XMLSchema" name="removeGroups" qname="operNS:removeGroups" returnQName="removeGroupsReturn" returnType="rtns:boolean" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="groupIds" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="renameRoleById" qname="operNS:renameRoleById" returnQName="renameRoleByIdReturn" returnType="rtns:RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="newName" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" xmlns:rtns="http://model.portal.liferay.com" name="renameRoleByName" qname="operNS:renameRoleByName" returnQName="renameRoleByNameReturn" returnType="rtns:RoleModel" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="oldName" type="tns:string"></parameter>
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="newName" type="tns:string"></parameter>
+		</operation>
+		<operation xmlns:operNS="urn:ejb.portal.liferay.com" name="setGroups" qname="operNS:setGroups" soapAction="">
+			<parameter xmlns:tns="http://www.w3.org/2001/XMLSchema" qname="roleId" type="tns:string"></parameter>
+			<parameter xmlns:tns="urn:ejb.portal.liferay.com" qname="groupIds" type="tns:ArrayOf_xsd_string"></parameter>
+		</operation>
+		<parameter name="allowedMethods" value="getRoleById isGuest addRole getUsers hasRoles addUsers exists isPowerUser setGroups isAdministrator getUsersSize getGroupsSize setUsers deleteRole removeGroups renameRoleByName addGroups removeUsers hasRole isUser getGroups checkSystemRoles getRoleByName hasAdmin renameRoleById"/>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:RoleModel" type="java:com.liferay.portal.model.RoleModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_tns2_RoleModel" type="java:com.liferay.portal.model.RoleModel[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_xsd_string" type="java:java.lang.String[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="urn:ejb.portal.liferay.com" qname="ns:ArrayOf_tns3_anyType" type="java:java.lang.Object[]" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+		<typeMapping xmlns:ns="http://model.portal.liferay.com" qname="ns:BaseModel" type="java:com.liferay.portal.model.BaseModel" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"></typeMapping>
+	</service>
+</deployment>

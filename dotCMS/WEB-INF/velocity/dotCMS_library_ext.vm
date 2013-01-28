@@ -1,6 +1,9 @@
 ### This file should include client specific macros
 ## Don't ever delete or modify the following comments it will break the plugin system
 ## BEGIN PLUGINS
+## BEGIN PLUGIN:com.dotcms.salesforce.plugin
+null
+## END PLUGIN:com.dotcms.salesforce.plugin
 ## BEGIN PLUGIN:com.dotcms.config
 null
 ## END PLUGIN:com.dotcms.config

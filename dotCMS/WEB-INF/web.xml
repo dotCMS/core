@@ -78,6 +78,21 @@
 			<param-value>axis.servlet.</param-value>
 		</init-param>
 	</filter>
+
+	<!-- SalesForce filter -->
+	<!--
+	<filter>
+		<filter-name>SalesForceFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.SalesForceFilter</filter-class>
+		<init-param>
+			<param-name>com.dotmarketing.filters.salesforce.filter.serverName</param-name>
+			<param-value>localhost</param-value>
+		</init-param>
+	</filter>
+	-->
+	<!-- End of SalesForce filters -->
+
+
 	<!--END DOTMARKETING FILTERS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
@@ -230,6 +245,25 @@
 		<filter-name>Secure AxisServlet Filter</filter-name>
 		<url-pattern>/webxservices/*</url-pattern>
 	</filter-mapping>
+
+	<!--SALESFORCE FILTER-MAPPINGS-->
+	<!--
+	<filter-mapping>
+		<filter-name>SalesForceFilter</filter-name>
+		<url-pattern>/dotCMS/login</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>SalesForceFilter</filter-name>
+		<url-pattern>/admin</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>SalesForceFilter</filter-name>
+		<url-pattern>/c</url-pattern>
+	</filter-mapping>
+	-->
+	<!--SALESFORCE FILTER-MAPPINGS-->
+
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN LISTENERS -->
