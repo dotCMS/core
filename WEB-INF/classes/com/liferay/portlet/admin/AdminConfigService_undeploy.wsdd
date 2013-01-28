@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-
-<undeployment xmlns="http://xml.apache.org/axis/wsdd/">
-	<service name="Portlet_Admin_AdminConfigService"/>
-</undeployment>
