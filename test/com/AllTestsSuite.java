@@ -32,7 +32,7 @@ import com.dotcms.publisher.endpoint.business.*;
         //LinkCheckerAPITest.class,
         TemplateAPITest.class,
         HTMLPageAPITest.class,
-        PublisherEndpointAPITest.class
+        PublishingEndPointAPITest.class
 
 //        CMISBaseTest.class
 } )

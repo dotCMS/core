@@ -12,7 +12,7 @@ import org.quartz.StatefulJob;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.TrustFactory;
@@ -41,7 +41,7 @@ public class PublisherQueueJob implements StatefulJob {
 	private static final int _ASSET_LENGTH_LIMIT = 20;
 	
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance(); 
-	private PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
+	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
 	
 	private static final Integer maxNumTries = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 5);
@@ -58,7 +58,7 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - Audit update");
 			
 			
-			List<PublishingEndPoint> endpoints = endpointAPI.findReceiverEndpoints();
+			List<PublishingEndPoint> endpoints = endpointAPI.getEnabledReceivingEndPoints();
 			
 			if(endpoints != null && endpoints.size() > 0)  {
 				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
@@ -214,7 +214,7 @@ public class PublisherQueueJob implements StatefulJob {
 	        		if(localDetail.getStatus() != PublishAuditStatus.Status.SUCCESS.getCode() && 
 	        			localDetail.getStatus() != PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()) 
 	        		{
-		        		PublishingEndPoint target = endpointAPI.findEndpointById(endpointId);
+		        		PublishingEndPoint target = endpointAPI.findEndPointById(endpointId);
 		        		
 		        		if(target != null) {
 			        		webResource = client.resource(target.toURL()+"/api/auditPublishing");

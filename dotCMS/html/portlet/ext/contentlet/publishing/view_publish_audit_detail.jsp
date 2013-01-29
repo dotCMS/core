@@ -1,5 +1,5 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
+<%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.publisher.business.EndpointDetail"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
@@ -10,7 +10,7 @@
 
 <%
 	String bundleId = request.getParameter("bundle");
-	PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
+	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	PublishAuditHistory currentEndpointHistory = null;
 	int status = 0;
 	if(null!=bundleId){
@@ -79,19 +79,21 @@
 			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Audit_Endpoint_Status_Info") %></strong></th>
 		</tr>
 	
-		<%if(currentEndpointHistory.getEndpointsMap().size()>0) {
-			for(String groupkey : currentEndpointHistory.getEndpointsMap().keySet()) {
-				Map<String, EndpointDetail> groupMap = currentEndpointHistory.getEndpointsMap().get(groupkey);
-				
-				for(String key : groupMap.keySet()) {
-					EndpointDetail ed =  groupMap.get(key);
-					String serverName = key;
-					try{
-						serverName = pepAPI.findEndpointById(key).getServerName().toString();
-					}
-					catch(Exception e){
-						
-					}%>
+		<%
+				if(currentEndpointHistory.getEndpointsMap().size()>0) {
+				for(String groupkey : currentEndpointHistory.getEndpointsMap().keySet()) {
+					Map<String, EndpointDetail> groupMap = currentEndpointHistory.getEndpointsMap().get(groupkey);
+					
+					for(String key : groupMap.keySet()) {
+						EndpointDetail ed =  groupMap.get(key);
+						String serverName = key;
+						try{
+							serverName = pepAPI.findEndPointById(key).getServerName().toString();
+						}
+						catch(Exception e){
+							
+						}
+			%>
 					<tr>
 						<td nowrap="nowrap" valign="top"><%=serverName%></td>
 						<td valign="top"><%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(ed.getStatus()))%></td>

@@ -839,7 +839,7 @@ function remotePublishStructure () {
 		<%} %>
 		<%
 			boolean enterprise = LicenseUtil.getLevel() > 199;
-			List<PublishingEndPoint> sendingEndpoints = APILocator.getPublisherEndpointAPI().getReceivingEndpoints();
+			List<PublishingEndPoint> sendingEndpoints = APILocator.getPublisherEndPointAPI().getReceivingEndPoints();
 			boolean areSendingEndPoints = UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty();
 			
 			if(UtilMethods.isSet(structure.getInode()) && enterprise && areSendingEndPoints) {
