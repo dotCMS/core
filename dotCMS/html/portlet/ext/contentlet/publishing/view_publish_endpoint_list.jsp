@@ -1,17 +1,17 @@
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="java.util.List"%>
-<%@ page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@ page import="com.dotmarketing.business.APILocator"%>
 <%@ page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%
-	PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
+	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	if(null!=request.getParameter("delEp")){
 		String id = request.getParameter("delEp");
-		pepAPI.deleteEndpointById(id);
+		pepAPI.deleteEndPointById(id);
 	}
-	List<PublishingEndPoint> endpoints = pepAPI.getAllEndpoints();
+	List<PublishingEndPoint> endpoints = pepAPI.getAllEndPoints();
 %>
 
 
