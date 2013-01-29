@@ -18,6 +18,8 @@ import com.dotmarketing.util.Logger;
 public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cachable {
 	private final static String cacheGroup = "PublishingEndPointCache";
 	private final static String[] cacheGroups = {cacheGroup};
+	private final static String initialEntryKey = "_aaaa_";
+	private PublishingEndPoint initialEntryObject = new PublishingEndPoint();
 	private DotCacheAdministrator cache;
 	private boolean isLoaded = false;
 
@@ -25,29 +27,36 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 		cache = CacheLocator.getCacheAdministrator();		
 	}
 	
-	public boolean isLoaded() {
+	public synchronized boolean isLoaded()
+	{	
+		if(cache.getKeys(cacheGroup).size() == 0) {
+			isLoaded = false;
+			cache.put(initialEntryKey, initialEntryObject, cacheGroup);
+		}
 		return isLoaded;
 	}
 	
-	public void setLoaded(boolean isLoaded) {
+	public synchronized void setLoaded(boolean isLoaded) {
 		this.isLoaded = isLoaded;
 	}
 
-	public List<PublishingEndPoint> getEndPoints() {
+	public synchronized List<PublishingEndPoint> getEndPoints() {
 		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
 		Set<String> keys = cache.getKeys(cacheGroup);
 		for(String key : keys) {
-			try {
-				endPoints.add((PublishingEndPoint)cache.get(key, cacheGroup));
-			}
-			catch(DotCacheException e) {
-				Logger.error(PublishingEndPointCacheImpl.class, "Cache does not contain object for key returned via getKeys().  Key = " + key, e);
+			if(!key.equals(initialEntryKey)) {
+				try {
+					endPoints.add((PublishingEndPoint)cache.get(key, cacheGroup));
+				}
+				catch(DotCacheException e) {
+					Logger.error(PublishingEndPointCacheImpl.class, "Cache does not contain object for key returned via getKeys().  Key = " + key, e);
+				}
 			}
 		}
 		return endPoints;
 	}
 
-	public PublishingEndPoint getEndPointById(String id) {
+	public synchronized PublishingEndPoint getEndPointById(String id) {
 		PublishingEndPoint endPoint = null;
 		try {
 			endPoint = (PublishingEndPoint) cache.get(id, cacheGroup);
@@ -58,13 +67,13 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 		return endPoint;
 	}
 
-	public void add(PublishingEndPoint anEndPoint) {
+	public synchronized void add(PublishingEndPoint anEndPoint) {
 		if(anEndPoint != null) {
 			cache.put(anEndPoint.getId(), anEndPoint, cacheGroup);
 		}
 	}
 
-	public void removeEndPointById(String id) {
+	public synchronized void removeEndPointById(String id) {
 		if(id != null)
 			cache.remove(id, cacheGroup);
 	}
@@ -77,9 +86,8 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 		return cacheGroups;
 	}
 
-	public void clearCache() {
+	public synchronized void clearCache() {
 		cache.flushGroup(cacheGroup);
 		isLoaded = false;
 	}
-
 }
