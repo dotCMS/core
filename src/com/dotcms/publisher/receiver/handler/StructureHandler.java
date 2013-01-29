@@ -8,6 +8,7 @@ import java.util.List;
 import com.dotcms.publisher.pusher.bundler.StructureBundler;
 import com.dotcms.publisher.pusher.wrapper.StructureWrapper;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -66,7 +67,9 @@ public class StructureHandler implements IHandler {
 	        				
 //	        		}
 				}
-	        	
+	        	FieldsCache.removeFields(structure);
+	        	FieldsCache.addFields(structure, structureWrapper.getFields());
+
 	        	//StructureFactory.saveStructure(structure);
 	        	
 	        }
