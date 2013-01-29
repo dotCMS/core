@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
+
 import org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Identifier;
@@ -13,6 +16,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -274,10 +278,16 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	@Override
 	protected void deleteContentletVersionInfo(String id, long lang) throws DotDataException {
-	    ContentletVersionInfo vinfo=getContentletVersionInfo(id, lang);
-	    if(UtilMethods.isSet(vinfo.getIdentifier())) {
-	        HibernateUtil.delete(vinfo);
-	        icache.removeContentletVersionInfoToCache(id, lang);
-	    }
+		HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
+        dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
+        dh.setParam(id);
+        dh.setParam(lang);
+        Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
+        ContentletVersionInfo contv = (ContentletVersionInfo)dh.load();
+     
+        if(UtilMethods.isSet(contv.getIdentifier())) {
+        	HibernateUtil.delete(contv);
+        	icache.removeContentletVersionInfoToCache(id, lang);
+        }
 	}
 }
