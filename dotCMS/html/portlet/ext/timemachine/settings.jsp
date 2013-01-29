@@ -141,9 +141,6 @@ function saveAndRun(dorun) {
 	var form=dijit.byId('settingform');
 
 	if(form.validate()) {
-		dijit.byId('saveButton').set('disabled','disabled');
-		dijit.byId('runButton').set('disabled','disabled');
-
 		dojo.xhrPost({
 			url: actionURL,
             form : "settingform",
@@ -154,11 +151,15 @@ function saveAndRun(dorun) {
             	dijit.byId('settingsDialog').hide();
             },
             load : function(dataOrError, ioArgs) {
-            	if(dorun)
-            		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMEMACHINE-SAVED-RUN")%>", false);
-            	else
-            	    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMEMACHINE-SAVED")%>", false);
-                dijit.byId('settingsDialog').hide();
+            	if(dataOrError.indexOf("FAILURE") == 0)
+                    showDotCMSSystemMessage(dataOrError, true);
+            	else {
+                	 if(dorun)
+                     	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMEMACHINE-SAVED-RUN")%>", false);
+                     else
+                        showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMEMACHINE-SAVED")%>", false);
+                     dijit.byId('settingsDialog').hide();
+            	}
             }
         });
 	}
