@@ -12,41 +12,41 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
-public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
+public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	private PublishingEndPointCache cache = null;
 
-	public PublisherEndpointFactoryImpl() {
+	public PublishingEndPointFactoryImpl() {
 		super();
 		cache = CacheLocator.getPublishingEndPointCache();
 	}
 	
 	public void ensureCacheIsLoaded() throws DotDataException{
 		if(cache.isLoaded() == false) {
-			getEndpoints();
+			getEndPoints();
 		}
 	}
 
-	public List<PublishingEndPoint> getEndpoints() throws DotDataException {
+	public List<PublishingEndPoint> getEndPoints() throws DotDataException {
 		if(cache.isLoaded())
 			return cache.getEndPoints();
 		
-		List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
+		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
 		DotConnect dc = new DotConnect();
-		dc.setSQL(GET_ENDPOINTS);
+		dc.setSQL(GET_END_POINTS);
 		List<Map<String, Object>> res = dc.loadObjectResults();
 		for(Map<String, Object> row : res){
 			PublishingEndPoint endPoint = PublisherUtil.getObjectByMap(row);
-			endpoints.add(endPoint);
+			endPoints.add(endPoint);
 			cache.add(endPoint);
 		}
 		cache.setLoaded(true);
-		return endpoints;
+		return endPoints;
 	}
 	
-	public List<PublishingEndPoint> getReceivingEndpoints() throws DotDataException {
+	public List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
-		List<PublishingEndPoint> allEndPoints = getEndpoints();
+		List<PublishingEndPoint> allEndPoints = getEndPoints();
 		for(PublishingEndPoint endPoint : allEndPoints) {
 			if(endPoint.isSending() == false)
 				endPoints.add(endPoint);
@@ -54,76 +54,76 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 		return endPoints;		
 	}
 
-	public PublishingEndPoint getEndpointById(String id) throws DotDataException {
+	public PublishingEndPoint getEndPointById(String id) throws DotDataException {
 		ensureCacheIsLoaded();
 		return cache.getEndPointById(id);
 	}
 
-	public void store(PublishingEndPoint anEndpoint) throws DotDataException {
+	public void store(PublishingEndPoint anEndPoint) throws DotDataException {
 		try{
 			ensureCacheIsLoaded();
-			anEndpoint.setId(UUID.randomUUID().toString());
+			anEndPoint.setId(UUID.randomUUID().toString());
 			DotConnect dc = new DotConnect();
-			dc.setSQL(SET_ENDPOINT);
-			dc.addParam(anEndpoint.getId());
-			dc.addParam(anEndpoint.getGroupId());
-			dc.addParam(anEndpoint.getServerName().toString());
-			dc.addParam(anEndpoint.getAddress());
-			dc.addParam(anEndpoint.getPort());
-			dc.addParam(anEndpoint.getProtocol());
-			dc.addParam(anEndpoint.isEnabled());
-			dc.addParam(anEndpoint.getAuthKey().toString());
-			dc.addParam(anEndpoint.isSending());
+			dc.setSQL(SET_END_POINT);
+			dc.addParam(anEndPoint.getId());
+			dc.addParam(anEndPoint.getGroupId());
+			dc.addParam(anEndPoint.getServerName().toString());
+			dc.addParam(anEndPoint.getAddress());
+			dc.addParam(anEndPoint.getPort());
+			dc.addParam(anEndPoint.getProtocol());
+			dc.addParam(anEndPoint.isEnabled());
+			dc.addParam(anEndPoint.getAuthKey().toString());
+			dc.addParam(anEndPoint.isSending());
 			dc.loadResult();
 			cache.clearCache(); // clear cache to make sure that all nodes in the cluster update
 		}
 		catch(DotDataException e) {
-			Logger.debug(PublisherEndpointFactoryImpl.class, "Unexpected DotDataException in store method", e);
+			Logger.debug(PublishingEndPointFactoryImpl.class, "Unexpected DotDataException in store method", e);
 			throw e;
 		}
 	}
 
-	public void update(PublishingEndPoint anEndpoint) throws DotDataException {
+	public void update(PublishingEndPoint anEndPoint) throws DotDataException {
 		try {
 			ensureCacheIsLoaded();
 			DotConnect dc = new DotConnect();
-			dc.setSQL(UPDATE_ENDPOINT);
-			dc.addParam(anEndpoint.getGroupId());
-			dc.addParam(anEndpoint.getServerName().toString());
-			dc.addParam(anEndpoint.getAddress());
-			dc.addParam(anEndpoint.getPort());
-			dc.addParam(anEndpoint.getProtocol());
-			dc.addParam(anEndpoint.isEnabled());
-			dc.addParam(anEndpoint.getAuthKey().toString());
-			dc.addParam(anEndpoint.isSending());
-			dc.addParam(anEndpoint.getId());
+			dc.setSQL(UPDATE_END_POINT);
+			dc.addParam(anEndPoint.getGroupId());
+			dc.addParam(anEndPoint.getServerName().toString());
+			dc.addParam(anEndPoint.getAddress());
+			dc.addParam(anEndPoint.getPort());
+			dc.addParam(anEndPoint.getProtocol());
+			dc.addParam(anEndPoint.isEnabled());
+			dc.addParam(anEndPoint.getAuthKey().toString());
+			dc.addParam(anEndPoint.isSending());
+			dc.addParam(anEndPoint.getId());
 			dc.loadResult();
 			cache.clearCache();		//clear cache to make sure all nodes in the cluster update
 		}
 		catch(DotDataException e) {
-			Logger.debug(PublisherEndpointFactoryImpl.class, "Unexpected DotDataException in update method", e);
+			Logger.debug(PublishingEndPointFactoryImpl.class, "Unexpected DotDataException in update method", e);
 			throw e;
 		}
 	}
 
-	public void deleteEndpointById(String id) throws DotDataException {
+	public void deleteEndPointById(String id) throws DotDataException {
 		try {
 			ensureCacheIsLoaded();
 			DotConnect dc = new DotConnect();
-			dc.setSQL(DELETE_ENDPOINT_BY_ID);
+			dc.setSQL(DELETE_END_POINT_BY_ID);
 			dc.addParam(id);
 			dc.loadResult();
 			cache.removeEndPointById(id);
 		}
 		catch(DotDataException e) {
-			Logger.debug(PublisherEndpointFactoryImpl.class, "Unexpected DotDataException in deleteEndpointById method", e);
+			Logger.debug(PublishingEndPointFactoryImpl.class, "Unexpected DotDataException in deleteEndPointById method", e);
 			throw e;
 		}	
 	}
 
-	public PublishingEndPoint getSenderEndpointByAddress(String address) throws DotDataException {
+	public PublishingEndPoint getEnabledSendingEndPointByAddress(String address) throws DotDataException {
 		ensureCacheIsLoaded();
-		List<PublishingEndPoint> allEndPoints = getEndpoints();
+		List<PublishingEndPoint> allEndPoints = getEndPoints();
 		for(PublishingEndPoint endPoint : allEndPoints) {
 			if(endPoint.getAddress().equals(address) && endPoint.isEnabled() && endPoint.isSending())
 				return endPoint;
@@ -131,10 +131,10 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 		return null;
 	}
 	
-	public List<PublishingEndPoint> getReceiverEndpoints() throws DotDataException {
+	public List<PublishingEndPoint> getEnabledReceivingEndPoints() throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> receiverEndPoints = new ArrayList<PublishingEndPoint>();
-		List<PublishingEndPoint> allEndPoints = getEndpoints();
+		List<PublishingEndPoint> allEndPoints = getEndPoints();
 		for(PublishingEndPoint endPoint : allEndPoints) {
 			if(endPoint.isSending() == false && endPoint.isEnabled()) {
 				receiverEndPoints.add(endPoint);
@@ -147,7 +147,7 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 	public List<String> findSendGroups() throws DotDataException {
 		ensureCacheIsLoaded();
 		List<String> sendGroups = new ArrayList<String>();
-		List<PublishingEndPoint> allEndPoints = getEndpoints();
+		List<PublishingEndPoint> allEndPoints = getEndPoints();
 		for(PublishingEndPoint endPoint : allEndPoints) {
 			if(endPoint.getGroupId() != null && sendGroups.contains(endPoint.getGroupId()) == false) {
 				sendGroups.add(endPoint.getGroupId());

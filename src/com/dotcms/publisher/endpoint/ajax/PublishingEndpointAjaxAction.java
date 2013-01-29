@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -69,8 +69,8 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setSending("receive".equals(request.getParameter("sending")));									
 			endpoint.setGroupId(request.getParameter("groupId"));		
 			//Save the endpoint.
-			PublisherEndpointAPI peAPI = APILocator.getPublisherEndpointAPI();
-			peAPI.saveEndpoint(endpoint);
+			PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
+			peAPI.saveEndPoint(endpoint);
 				
 		} catch (DotDataException e) {
 			response.getWriter().println("FAILURE: " + e.getMessage() );
@@ -92,8 +92,8 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			endpoint.setSending("receive".equals(request.getParameter("sending")));	
 			endpoint.setGroupId(request.getParameter("groupId"));		
 			//Update the endpoint.
-			PublisherEndpointAPI peAPI = APILocator.getPublisherEndpointAPI();
-			peAPI.updateEndpoint(endpoint);
+			PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
+			peAPI.updateEndPoint(endpoint);
 			
 		} catch (DotDataException e) {
 			response.getWriter().println("FAILURE: " + e.getMessage() );
