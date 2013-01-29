@@ -74,93 +74,100 @@ public class PublisherEndpointAPITest extends TestBase{
 	// There should not be any endpoints at the beginning of the test
 	@Test
 	public void test() throws DotDataException {
-		HibernateUtil.startTransaction();
-		
-		// Ensure proper starting state - no endpoint in database
-		{
-			List<PublishingEndPoint> savedEndPoints = api.getAllEndpoints();
-			assertTrue(savedEndPoints.size() == 0);
-			savedEndPoints = api.findReceiverEndpoints();
-			assertTrue(savedEndPoints.size() == 0);
-			savedEndPoints = api.getAllEndpoints();
-			assertTrue(savedEndPoints.size() == 0);
-			
-			// Insert test endpoints
-			for(PublishingEndPoint endPoint : _endPoints) {
-				api.saveEndpoint(endPoint);
-			}
-			savedEndPoints = api.getAllEndpoints();
-			assertTrue(savedEndPoints.size() == _endPoints.size());
-			
-			for(PublishingEndPoint savedEndPoint : savedEndPoints) {
+		try {
+			HibernateUtil.startTransaction();
+			// Ensure proper starting state - no endpoints in database
+			{
+				List<PublishingEndPoint> savedEndPoints = api.getAllEndpoints();
+				assertTrue(savedEndPoints.size() == 0);
+				savedEndPoints = api.findReceiverEndpoints();
+				assertTrue(savedEndPoints.size() == 0);
+				savedEndPoints = api.getAllEndpoints();
+				assertTrue(savedEndPoints.size() == 0);
+				
+				// Insert test endpoints
 				for(PublishingEndPoint endPoint : _endPoints) {
-					if(savedEndPoint.getServerName().equals(endPoint.getServerName())){
-						endPoint.setId(savedEndPoint.getId());
-						break;
+					api.saveEndpoint(endPoint);
+				}
+				savedEndPoints = api.getAllEndpoints();
+				assertTrue(savedEndPoints.size() == _endPoints.size());
+				
+				for(PublishingEndPoint savedEndPoint : savedEndPoints) {
+					for(PublishingEndPoint endPoint : _endPoints) {
+						if(savedEndPoint.getServerName().equals(endPoint.getServerName())){
+							endPoint.setId(savedEndPoint.getId());
+							break;
+						}
 					}
 				}
 			}
-		}
-
-		// test receiving endpoint lookups
-		{
-			List<PublishingEndPoint> savedEndPoints = api.getReceivingEndpoints();
-			assertTrue(savedEndPoints.size() == 6);
-			
-			savedEndPoints = api.findReceiverEndpoints();
-			assertTrue(savedEndPoints.size() == 4);
-		}
-		
-		// find endpoint by id
-		{
-			PublishingEndPoint searchForEndpoint = _endPoints.get(5);
-			PublishingEndPoint foundEndpoint = api.findEndpointById(searchForEndpoint.getId());
-			assertFalse(foundEndpoint == null);
-			TestEndpointsForEquality(searchForEndpoint, foundEndpoint);
-		}
-
-		// find sender by endpoint address
-		{
-			PublishingEndPoint searchForEndpoint = _endPoints.get(0);
-			assertFalse(searchForEndpoint.isSending());
 	
-			// looking for address that is not a sender - should return null
-			PublishingEndPoint foundEndpoint = api.findSenderEndpointByAddress(searchForEndpoint.getAddress());
-			assertTrue(foundEndpoint == null);
+			// test receiving endpoint lookups
+			{
+				List<PublishingEndPoint> savedEndPoints = api.getReceivingEndpoints();
+				assertTrue(savedEndPoints.size() == 6);
+				
+				savedEndPoints = api.findReceiverEndpoints();
+				assertTrue(savedEndPoints.size() == 4);
+			}
+			
+			// find endpoint by id
+			{
+				PublishingEndPoint searchForEndpoint = _endPoints.get(5);
+				PublishingEndPoint foundEndpoint = api.findEndpointById(searchForEndpoint.getId());
+				assertFalse(foundEndpoint == null);
+				TestEndpointsForEquality(searchForEndpoint, foundEndpoint);
+			}
+	
+			// find sender by endpoint address
+			{
+				PublishingEndPoint searchForEndpoint = _endPoints.get(0);
+				assertFalse(searchForEndpoint.isSending());
+		
+				// looking for address that is not a sender - should return null
+				PublishingEndPoint foundEndpoint = api.findSenderEndpointByAddress(searchForEndpoint.getAddress());
+				assertTrue(foundEndpoint == null);
+			}
+			
+			// looking for address of valid sender
+			{
+				PublishingEndPoint searchForEndpoint = _endPoints.get(3);
+				assertTrue(searchForEndpoint.isEnabled() == true);
+				assertTrue(searchForEndpoint.isSending() == true);
+				PublishingEndPoint foundEndpoint = api.findSenderEndpointByAddress(searchForEndpoint.getAddress());
+				TestEndpointsForEquality(searchForEndpoint, foundEndpoint);
+			}
+			
+			// find send groups
+			List<String> groupList = api.findSendGroups();
+			assertTrue(groupList.size() == 2);
+			assertTrue(groupList.contains("G01"));
+			assertTrue(groupList.contains("G02"));
+	
+			// update endpoint
+			PublishingEndPoint endpointToUpdate = api.findEndpointById(_endPoints.get(8).getId());
+			assertTrue(endpointToUpdate.getAuthKey().toString().equals(_endPoints.get(8).getAuthKey().toString()));
+			endpointToUpdate.setAuthKey(new StringBuilder("NewAuthKey"));
+			api.updateEndpoint(endpointToUpdate);
+			PublishingEndPoint endpointToValidate = api.findEndpointById(endpointToUpdate.getId());
+			assertTrue(endpointToValidate.getAuthKey().toString().equals("NewAuthKey"));
+	
+			// delete endpoints
+			{
+				List<PublishingEndPoint>savedEndPoints = api.getAllEndpoints();
+				for(PublishingEndPoint endPoint : savedEndPoints) {
+					api.deleteEndpointById(endPoint.getId());
+				}		
+				savedEndPoints = api.getAllEndpoints();
+				assertTrue(savedEndPoints.size() == 0);
+			}
+		}
+		catch (DotDataException e)
+		{
+			HibernateUtil.rollbackTransaction();
+			throw (e);
 		}
 		
-		// looking for address of valid sender
-		{
-			PublishingEndPoint searchForEndpoint = _endPoints.get(3);
-			assertTrue(searchForEndpoint.isEnabled() == true);
-			assertTrue(searchForEndpoint.isSending() == true);
-			PublishingEndPoint foundEndpoint = api.findSenderEndpointByAddress(searchForEndpoint.getAddress());
-			TestEndpointsForEquality(searchForEndpoint, foundEndpoint);
-		}
-		
-		// find send groups
-		List<String> groupList = api.findSendGroups();
-		assertTrue(groupList.size() == 2);
-		assertTrue(groupList.contains("G01"));
-		assertTrue(groupList.contains("G02"));
-
-		// update endpoint
-		PublishingEndPoint endpointToUpdate = api.findEndpointById(_endPoints.get(8).getId());
-		assertTrue(endpointToUpdate.getAuthKey().toString().equals(_endPoints.get(8).getAuthKey().toString()));
-		endpointToUpdate.setAuthKey(new StringBuilder("NewAuthKey"));
-		api.updateEndpoint(endpointToUpdate);
-		PublishingEndPoint endpointToValidate = api.findEndpointById(endpointToUpdate.getId());
-		assertTrue(endpointToValidate.getAuthKey().toString().equals("NewAuthKey"));
-
-		// delete endpoints
-		{
-			List<PublishingEndPoint>savedEndPoints = api.getAllEndpoints();
-			for(PublishingEndPoint endPoint : savedEndPoints) {
-				api.deleteEndpointById(endPoint.getId());
-			}		
-			savedEndPoints = api.getAllEndpoints();
-			assertTrue(savedEndPoints.size() == 0);
-			HibernateUtil.commitTransaction();
-		}
+		HibernateUtil.commitTransaction();
 	}
 }

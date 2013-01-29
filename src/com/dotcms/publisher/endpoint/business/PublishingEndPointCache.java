@@ -18,4 +18,5 @@ public interface PublishingEndPointCache {
 	public PublishingEndPoint getEndPointById(String id);
 	public void add(PublishingEndPoint anEndPoint);
 	public void removeEndPointById(String id);
+	public void clearCache();
 }

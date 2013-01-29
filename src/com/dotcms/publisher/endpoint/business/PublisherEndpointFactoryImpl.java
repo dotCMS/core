@@ -75,7 +75,7 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 			dc.addParam(anEndpoint.getAuthKey().toString());
 			dc.addParam(anEndpoint.isSending());
 			dc.loadResult();
-			cache.add(anEndpoint);
+			cache.clearCache(); // clear cache to make sure that all nodes in the cluster update
 		}
 		catch(DotDataException e) {
 			Logger.debug(PublisherEndpointFactoryImpl.class, "Unexpected DotDataException in store method", e);
@@ -98,8 +98,7 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 			dc.addParam(anEndpoint.isSending());
 			dc.addParam(anEndpoint.getId());
 			dc.loadResult();
-			cache.removeEndPointById(anEndpoint.getId());
-			cache.add(anEndpoint);
+			cache.clearCache();		//clear cache to make sure all nodes in the cluster update
 		}
 		catch(DotDataException e) {
 			Logger.debug(PublisherEndpointFactoryImpl.class, "Unexpected DotDataException in update method", e);
@@ -117,7 +116,7 @@ public class PublisherEndpointFactoryImpl extends PublisherEndpointFactory {
 			cache.removeEndPointById(id);
 		}
 		catch(DotDataException e) {
-			Logger.debug(PublisherEndpointFactoryImpl.class, "Unexpected DotDataException in deletEndpointById method", e);
+			Logger.debug(PublisherEndpointFactoryImpl.class, "Unexpected DotDataException in deleteEndpointById method", e);
 			throw e;
 		}	
 	}
