@@ -68,7 +68,6 @@ public class StructureHandler implements IHandler {
 //	        		}
 				}
 	        	FieldsCache.removeFields(structure);
-	        	FieldsCache.addFields(structure, structureWrapper.getFields());
 
 	        	//StructureFactory.saveStructure(structure);
 	        	
