@@ -26,8 +26,9 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 
-public class TimeMachineAjaxAction extends AjaxAction {
+public class TimeMachineAjaxAction extends IndexAjaxAction {
 
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -254,7 +255,15 @@ public class TimeMachineAjaxAction extends AjaxAction {
         for(String id : langids)
             langs.add(APILocator.getLanguageAPI().getLanguage(id));
 
-        APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,false,langs);
+
+        try {        	
+               APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,false,langs);
+        	
+        	}catch (Exception ex) {
+               Logger.error(this, ex.getMessage(),ex);
+               writeError(resp, ex.getCause().getMessage());
+               return;
+        	}
 
         if(runnow) {
             final List<Host> dhosts=hosts;
