@@ -5,6 +5,8 @@ import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
@@ -16,13 +18,19 @@ import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.quartz.SchedulerException;
 
 import java.beans.IntrospectionException;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Jonathan Gamba
@@ -34,24 +42,49 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private WorkflowAPIOsgiService workflowOsgiService;
     private Collection<ToolInfo> viewTools;
     private Collection<WorkFlowActionlet> actionlets;
+    private Map<String, String> jobs;
     private Collection preHooks;
     private Collection postHooks;
+
+    private ClassLoader getFelixClassLoader () {
+        return this.getClass().getClassLoader();
+    }
+
+    private ClassLoader getContextClassLoader () {
+        //return ClassLoader.getSystemClassLoader();
+        return Thread.currentThread().getContextClassLoader();
+    }
+
+    /**
+     * Verify and initialize if necessary the required OSGI services to create plugins
+     *
+     * @param context
+     */
+    protected void initializeServices ( BundleContext context ) {
+
+        forceHttpServiceLoading( context );
+        //Forcing the loading of the ToolboxManager
+        forceToolBoxLoading( context );
+        //Forcing the loading of the WorkflowService
+        forceWorkflowServiceLoading( context );
+    }
 
     /**
      * Allow to this bundle/elements to be visible and accessible from the host classpath
      */
     protected void publishBundleServices ( BundleContext context ) {
 
-        //Felix classloader
+        //Classloaders
         ClassLoader felixClassLoader = getFelixClassLoader();
+        ClassLoader contextClassLoader = getContextClassLoader();
 
         //Create a new class loader where we can "combine" our classloaders
         CombinedLoader combinedLoader;
-        if ( Thread.currentThread().getContextClassLoader() instanceof CombinedLoader ) {
-            combinedLoader = (CombinedLoader) Thread.currentThread().getContextClassLoader();
+        if ( contextClassLoader instanceof CombinedLoader ) {
+            combinedLoader = (CombinedLoader) contextClassLoader;
             combinedLoader.addLoader( felixClassLoader );
         } else {
-            combinedLoader = new CombinedLoader( Thread.currentThread().getContextClassLoader() );
+            combinedLoader = new CombinedLoader( contextClassLoader );
             combinedLoader.addLoader( felixClassLoader );
         }
 
@@ -71,21 +104,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         //Use this new "combined" class loader
         Thread.currentThread().setContextClassLoader( combinedLoader );
-    }
-
-    /**
-     * Unpublish this bundle elements
-     */
-    protected void unpublishBundleServices () {
-
-        //Get the current classloader
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        if ( classLoader instanceof CombinedLoader ) {
-
-            //Try to remove this class loader
-            ClassLoader felixClassLoader = getFelixClassLoader();
-            ((CombinedLoader) classLoader).removeLoader( felixClassLoader );
-        }
     }
 
     /**
@@ -129,94 +147,24 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
     private void addURLToApplicationClassLoader ( URL url ) throws IntrospectionException {
 
-        ClassLoader currentThreadClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader contextClassLoader = getContextClassLoader();
 
         // Create a ClassLoader using the given url
         URLClassLoader urlClassLoader = new URLClassLoader( new URL[]{url} );
 
         CombinedLoader combinedLoader;
-        if ( currentThreadClassLoader instanceof CombinedLoader ) {
-            combinedLoader = (CombinedLoader) currentThreadClassLoader;
+        if ( contextClassLoader instanceof CombinedLoader ) {
+            combinedLoader = (CombinedLoader) contextClassLoader;
             //Chain to the current thread classloader
             combinedLoader.addLoader( urlClassLoader );
         } else {
-            combinedLoader = new CombinedLoader( Thread.currentThread().getContextClassLoader() );
+            combinedLoader = new CombinedLoader( contextClassLoader );
             //Chain to the current thread classloader
             combinedLoader.addLoader( urlClassLoader );
         }
 
         //Use this new "combined" class loader
         Thread.currentThread().setContextClassLoader( combinedLoader );
-    }
-
-    private ClassLoader getFelixClassLoader () {
-        return this.getClass().getClassLoader();
-    }
-
-    /**
-     * Register a WorkFlowActionlet service
-     *
-     * @param context
-     * @param actionlet
-     */
-    @SuppressWarnings ("unchecked")
-    protected void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
-
-        //Getting the service to register our Actionlet
-        ServiceReference serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
-        if ( serviceRefSelected == null ) {
-            return;
-        }
-
-        if ( actionlets == null ) {
-            actionlets = new ArrayList<WorkFlowActionlet>();
-        }
-
-        this.workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
-        this.workflowOsgiService.addActionlet( actionlet.getClass() );
-        actionlets.add( actionlet );
-
-        Logger.info( this, "Added actionlet: " + actionlet.getName() );
-    }
-
-    /**
-     * Unregister the registered WorkFlowActionlet services
-     */
-    protected void unregisterActionlets () {
-
-        if ( this.workflowOsgiService != null && actionlets != null ) {
-            for ( WorkFlowActionlet actionlet : actionlets ) {
-
-                this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
-                Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName() );
-            }
-        }
-    }
-
-    /**
-     * Register a ViewTool service using a ToolInfo object
-     *
-     * @param context
-     * @param info
-     */
-    @SuppressWarnings ("unchecked")
-    protected void registerViewToolService ( BundleContext context, ToolInfo info ) {
-
-        //Getting the service to register our ViewTool
-        ServiceReference serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
-        if ( serviceRefSelected == null ) {
-            return;
-        }
-
-        if ( viewTools == null ) {
-            viewTools = new ArrayList<ToolInfo>();
-        }
-
-        this.toolboxManager = (PrimitiveToolboxManager) context.getService( serviceRefSelected );
-        this.toolboxManager.addTool( info );
-        viewTools.add( info );
-
-        Logger.info( this, "Added View Tool: " + info.getKey() );
     }
 
     /**
@@ -295,32 +243,119 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
     }
 
-    /**
-     * Verify and initialize if necessary the required OSGI services to create plugins
-     *
-     * @param context
-     */
-    protected void initializeServices ( BundleContext context ) {
+    //*******************************************************************
+    //*******************************************************************
+    //****************REGISTER SERVICES METHODS**************************
+    //*******************************************************************
+    //*******************************************************************
 
-        forceHttpServiceLoading( context );
-        //Forcing the loading of the ToolboxManager
-        forceToolBoxLoading( context );
-        //Forcing the loading of the WorkflowService
-        forceWorkflowServiceLoading( context );
+    protected void scheduleQuartzJob ( ScheduledTask taskJob ) throws Exception {
+
+        String jobName = taskJob.getJobName();
+        String jobGroup = taskJob.getJobGroup();
+
+        if ( jobs == null ) {
+            jobs = new HashMap<String, String>();
+        }
+
+        try {
+            //Verify if we already have this class in the dotcms class path
+            Class.forName( taskJob.getJavaClassName(), true, ClassLoader.getSystemClassLoader() );
+
+            //And we it is already in the class loader we need to reload it because could change
+
+            //Just loading the custom implementation will allows to override the one the classloader already had loaded
+            //getContextClassLoader().loadClass( taskJob.getJavaClassName() );
+            ClassLoader.getSystemClassLoader().loadClass( taskJob.getJavaClassName() );
+        } catch ( ClassNotFoundException e ) {
+
+            Class jobClass = Class.forName( taskJob.getJavaClassName(), true, getContextClassLoader() );
+            URL jobClassUrl = jobClass.getResource( jobClass.getSimpleName() + ".class" );
+
+            //We need to manually insert this quartz job inside dotcms class loader using reflection
+            ClassLoader scl = ClassLoader.getSystemClassLoader();
+            Method defineClass = ClassLoader.class.getDeclaredMethod( "defineClass", String.class, byte[].class, int.class, int.class );
+            defineClass.setAccessible( true );
+
+            //Reading the job class
+            InputStream in = jobClassUrl.openStream();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ( (length = in.read( buffer )) > 0 ) {
+                out.write( buffer, 0, length );
+            }
+            byte[] byteCode = out.toByteArray();
+
+            //Inject the class
+            defineClass.invoke( scl, taskJob.getJavaClassName(), byteCode, 0, byteCode.length );
+            defineClass.setAccessible( false );
+
+            in.close();
+            out.close();
+        }
+
+        /*
+        Schedules the given job in the quartz system, and depending on the sequentialScheduled
+        property it will use the sequential of the standard scheduler.
+         */
+        QuartzUtils.scheduleTask( taskJob );
+        jobs.put( jobName, jobGroup );
+
+        Logger.info( this, "Added Quartz Job: " + jobName );
     }
 
     /**
-     * Unregister the registered ViewTool services
+     * Register a WorkFlowActionlet service
+     *
+     * @param context
+     * @param actionlet
      */
-    protected void unregisterViewToolServices () {
+    @SuppressWarnings ("unchecked")
+    protected void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
 
-        if ( this.toolboxManager != null && viewTools != null ) {
-            for ( ToolInfo toolInfo : viewTools ) {
-
-                this.toolboxManager.removeTool( toolInfo );
-                Logger.info( this, "Removed View Tool: " + toolInfo.getKey() );
-            }
+        //Getting the service to register our Actionlet
+        ServiceReference serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
+        if ( serviceRefSelected == null ) {
+            return;
         }
+
+        if ( actionlets == null ) {
+            actionlets = new ArrayList<WorkFlowActionlet>();
+        }
+
+        this.workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
+        this.workflowOsgiService.addActionlet( actionlet.getClass() );
+        actionlets.add( actionlet );
+
+        Logger.info( this, "Added actionlet: " + actionlet.getName() );
+    }
+
+    /**
+     * Register a ViewTool service using a ToolInfo object
+     *
+     * @param context
+     * @param info
+     */
+    @SuppressWarnings ("unchecked")
+    protected void registerViewToolService ( BundleContext context, ToolInfo info ) {
+
+        //Getting the service to register our ViewTool
+        ServiceReference serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
+        if ( serviceRefSelected == null ) {
+            return;
+        }
+
+        if ( viewTools == null ) {
+            viewTools = new ArrayList<ToolInfo>();
+        }
+
+        this.toolboxManager = (PrimitiveToolboxManager) context.getService( serviceRefSelected );
+        this.toolboxManager.addTool( info );
+        viewTools.add( info );
+
+        Logger.info( this, "Added View Tool: " + info.getKey() );
     }
 
     /**
@@ -342,22 +377,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
-     * Unregister all the registered pre hooks
-     *
-     * @throws Exception
-     */
-    protected void unregisterPreHooks () {
-
-        if ( preHooks != null ) {
-
-            Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
-            for ( Object preHook : preHooks ) {
-                interceptor.delPreHook( preHook );
-            }
-        }
-    }
-
-    /**
      * Adds a hook to the end of the chain
      *
      * @param postHook
@@ -373,6 +392,68 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         interceptor.addPostHook( postHook );
         postHooks.add( postHook );
+    }
+
+    //*******************************************************************
+    //*******************************************************************
+    //****************UNREGISTER SERVICES METHODS************************
+    //*******************************************************************
+    //*******************************************************************
+
+    /**
+     * Utility method to unregister all the possible services and/or tools registered by this activator class.
+     * Some how we have to try to clean up anything added on the deploy if this bundle.
+     */
+    protected void unregisterServices () throws Exception {
+
+        unregisterActionlets();
+        unregisterViewToolServices();
+        unpublishBundleServices();
+        unregisterPreHooks();
+        unregisterPostHooks();
+        unregisterQuartzJobs();
+    }
+
+    /**
+     * Unpublish this bundle elements
+     */
+    protected void unpublishBundleServices () {
+
+        //Get the current classloader
+        ClassLoader contextClassLoader = getContextClassLoader();
+        if ( contextClassLoader instanceof CombinedLoader ) {
+            //Try to remove this class loader
+            ClassLoader felixClassLoader = getFelixClassLoader();
+            ((CombinedLoader) contextClassLoader).removeLoader( felixClassLoader );
+        }
+    }
+
+    /**
+     * Unregister the registered WorkFlowActionlet services
+     */
+    protected void unregisterActionlets () {
+
+        if ( this.workflowOsgiService != null && actionlets != null ) {
+            for ( WorkFlowActionlet actionlet : actionlets ) {
+
+                this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
+                Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName() );
+            }
+        }
+    }
+
+    /**
+     * Unregister the registered ViewTool services
+     */
+    protected void unregisterViewToolServices () {
+
+        if ( this.toolboxManager != null && viewTools != null ) {
+            for ( ToolInfo toolInfo : viewTools ) {
+
+                this.toolboxManager.removeTool( toolInfo );
+                Logger.info( this, "Removed View Tool: " + toolInfo.getKey() );
+            }
+        }
     }
 
     /**
@@ -392,16 +473,33 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
-     * Utility method to unregister all the possible services and/or tools registered by this activator class.
-     * Some how we have to try to clean up anything added on the deploy if this bundle.
+     * Unregister all the registered pre hooks
+     *
+     * @throws Exception
      */
-    protected void unregisterServices () {
+    protected void unregisterPreHooks () {
 
-        unregisterActionlets();
-        unregisterViewToolServices();
-        unpublishBundleServices();
-        unregisterPreHooks();
-        unregisterPostHooks();
+        if ( preHooks != null ) {
+
+            Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+            for ( Object preHook : preHooks ) {
+                interceptor.delPreHook( preHook );
+            }
+        }
+    }
+
+    /**
+     * Unregister all the registered Quartz Jobs
+     *
+     * @throws SchedulerException
+     */
+    protected void unregisterQuartzJobs () throws SchedulerException {
+
+        if ( jobs != null ) {
+            for ( String jobName : jobs.keySet() ) {
+                QuartzUtils.removeJob( jobName, jobs.get( jobName ) );
+            }
+        }
     }
 
 }
