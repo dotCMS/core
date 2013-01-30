@@ -18,6 +18,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.exceptions.DuplicateFileException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -25,6 +26,8 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -41,6 +44,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
@@ -436,143 +440,134 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	}
 
 	public void _saveFileAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user, String subcmd)
-	throws WebAssetException, Exception {
+	throws WebAssetException, ActionException, DotDataException, DotSecurityException, LanguageException {
 
-		try {
-		    boolean isAdmin = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
-		    
-		    com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
-	        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-	        HttpSession session = httpReq.getSession();
-		    
-			UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
+	    boolean isAdmin = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
+	    
+	    com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+        HttpSession session = httpReq.getSession();
+	    
+		UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
 
-			String parent = ParamUtil.getString(req, "parent");
+		String parent = ParamUtil.getString(req, "parent");
 
-			//parent folder
-			Folder folder = (Folder) APILocator.getFolderAPI().find(parent, user, false);
-			
-			String hostId=folder.getHostId();
-			boolean isRootHost=APILocator.getFolderAPI().findSystemFolder().equals(folder);
-			if(isRootHost)
-			    hostId=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		//parent folder
+		Folder folder = (Folder) APILocator.getFolderAPI().find(parent, user, false);
+		
+		String hostId=folder.getHostId();
+		boolean isRootHost=APILocator.getFolderAPI().findSystemFolder().equals(folder);
+		if(isRootHost)
+		    hostId=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
-			Host host=APILocator.getHostAPI().find(hostId, user, false);
-			
-			//check permissions
-			if(isRootHost) {
-			    if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user))
-			        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-			}
-			else {
-			    _checkUserPermissions(folder, user, PERMISSION_CAN_ADD_CHILDREN);
-			}
+		Host host=APILocator.getHostAPI().find(hostId, user, false);
+		
+		//check permissions
+		if(isRootHost) {
+		    if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user))
+		        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+		}
+		else {
+		    _checkUserPermissions(folder, user, PERMISSION_CAN_ADD_CHILDREN);
+		}
 
-			String fileNamesStr = ParamUtil.getString(req, "fileNames");
-			if(!UtilMethods.isSet(fileNamesStr))
-				throw new ActionException(LanguageUtil.get(user, "message.file_asset.alert.please.upload"));
+		String fileNamesStr = ParamUtil.getString(req, "fileNames");
+		if(!UtilMethods.isSet(fileNamesStr))
+			throw new ActionException(LanguageUtil.get(user, "message.file_asset.alert.please.upload"));
 
-			String selectedStructureInode = ParamUtil.getString(req, "selectedStructure");
-			if(!UtilMethods.isSet(selectedStructureInode))
-				selectedStructureInode = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
+		String selectedStructureInode = ParamUtil.getString(req, "selectedStructure");
+		if(!UtilMethods.isSet(selectedStructureInode))
+			selectedStructureInode = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
-			String[] fileNamesArray = fileNamesStr.split(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR);
-			String customMessage = LanguageUtil.get(user, "message.file_asset.error.filename.filters"+" : ");
-			if(fileNamesArray.length > 2)
-				SessionMessages.add(req, "custommessage", LanguageUtil.get(user, "message.contentlets.batch.reindexing.background"));
-			boolean filterError = false;
+		String[] fileNamesArray = fileNamesStr.split(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR);
+		String customMessage = LanguageUtil.get(user, "message.file_asset.error.filename.filters"+" : ");
+		if(fileNamesArray.length > 2)
+			SessionMessages.add(req, "custommessage", LanguageUtil.get(user, "message.contentlets.batch.reindexing.background"));
+		boolean filterError = false;
 
-			ContentletAPI conAPI = APILocator.getContentletAPI();
-			List<String> existingFileNames = new ArrayList<String>();
-			for (int k=0;k<fileNamesArray.length;k++) {
-
+		List<String> existingFileNames = new ArrayList<String>();
+		for (int k=0;k<fileNamesArray.length;k++) {
+			try{
+				HibernateUtil.startTransaction();
 				Contentlet contentlet = new Contentlet();
 				contentlet.setStructureInode(selectedStructureInode);
 				contentlet.setHost(hostId);
 				contentlet.setFolder(folder.getInode());
 				String fileName = fileNamesArray[k];
 				String title = getFriendlyName(fileName);
-
+	
 				fileName = checkMACFileName(fileName);
-
+	
 				if(!APILocator.getFolderAPI().matchFilter(folder,fileName))
 	            {
 				   customMessage += fileName + ", ";
 	               filterError = true;
 	               continue;
 	            }
-
+	
 				if (fileName.length()>0) {
-
+	
 					//checks if another identifier with the same name exists in the same folder
 					if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "")) {
-						existingFileNames.add(fileName);
+						throw new DuplicateFileException(fileName);
 					}
 					else {
 						//sets filename for this new file
-
 						contentlet.setStringProperty("title", title);
 						contentlet.setStringProperty("fileName", fileName);
 						java.io.File uploadedFile = uploadReq.getFile(fileName);
 						contentlet.setBinary("fileAsset", uploadedFile);
-						try {
-							contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
-							if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
-							    if(isRootHost && !APILocator.getPermissionAPI().doesUserHaveInheriablePermissions(
-							             host,  com.dotmarketing.portlets.files.model.File.class.getCanonicalName(), 
-							             PermissionAPI.PERMISSION_PUBLISH, user) && !isAdmin)
-							        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-								APILocator.getVersionableAPI().setLive(contentlet);
-							}
-							HibernateUtil.commitTransaction();
-
-							if(InodeUtils.isSet(contentlet.getInode()) && !conAPI.isInodeIndexed(contentlet.getInode())){
-								Logger.error(this, "Timed Out waiting for index to return");
-							}
-						} catch (Exception e) {
-							Logger.error(this, e.getMessage());
-							SessionMessages.add(req, "error", e.getMessage());
+						contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
+						if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
+						    if(isRootHost && !APILocator.getPermissionAPI().doesUserHaveInheriablePermissions(
+						             host,  com.dotmarketing.portlets.files.model.File.class.getCanonicalName(), 
+						             PermissionAPI.PERMISSION_PUBLISH, user) && !isAdmin)
+						        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+							APILocator.getVersionableAPI().setLive(contentlet);
 						}
 					}
 
 				}
+				HibernateUtil.commitTransaction();
 			}
-
-			if(!existingFileNames.isEmpty()){
-				StringBuffer messageText = new StringBuffer();
-				if(existingFileNames.size()>1){
-					messageText.append("The uploaded files ");
-				}else{
-					messageText.append("The uploaded file ");
-				}
-
-				for(int i=0;i<existingFileNames.size();i++){
-					if(i==0){
-						messageText.append(existingFileNames.get(i));
-					}else{
-						messageText.append(", "  + existingFileNames.get(i));
-					}
-				}
-				if(existingFileNames.size()>1){
-					messageText.append(" already exist in this folder");
-				}else{
-					messageText.append(" already exists in this folder");
-				}
-
-				SessionMessages.add(req, "custommessage", messageText.toString());
+			catch (DuplicateFileException e){
+				existingFileNames.add(e.getMessage());
+				HibernateUtil.rollbackTransaction();
 			}
-
-
-			if(filterError)
-			{
-				customMessage = customMessage.substring(0,customMessage.lastIndexOf(","));
-				SessionMessages.add(req, "custommessage",customMessage);
+			catch (IOException e) {
+				Logger.error(this, "Exception saving file: " + e.getMessage());
+				SessionMessages.add(req, "error", e.getMessage());
+				HibernateUtil.rollbackTransaction();
 			}
-
+			catch (Exception e) {
+				Logger.error(this, e.getMessage());
+				SessionMessages.add(req, "error", e.getMessage());
+				HibernateUtil.rollbackTransaction();
+			}
 		}
-		catch (IOException e) {
-			Logger.error(this, "Exception saving file: " + e.getMessage());
-			throw new ActionException(e.getMessage());
+
+		if(!existingFileNames.isEmpty()){
+			StringBuffer messageText = new StringBuffer();
+			if(existingFileNames.size()>1){
+				messageText.append(LanguageUtil.get(user, "The-following-uploaded-files-already-exist"));
+			}else{
+				messageText.append(LanguageUtil.get(user, "The-uploaded-file-already-exists"));
+			}
+
+			for(int i=0;i<existingFileNames.size();i++){
+				if(i==0){
+					messageText.append(existingFileNames.get(i));
+				}else{
+					messageText.append(", "  + existingFileNames.get(i));
+				}
+			}
+			SessionMessages.add(req, "custommessage", messageText.toString());
 		}
-}
+
+		if(filterError)
+		{
+			customMessage = customMessage.substring(0,customMessage.lastIndexOf(","));
+			SessionMessages.add(req, "custommessage",customMessage);
+		}
+	}
 }
