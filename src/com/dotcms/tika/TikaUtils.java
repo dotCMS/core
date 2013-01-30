@@ -56,7 +56,6 @@ public class TikaUtils {
 			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath());
 		} catch (Throwable t) {
 			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + " " + t.getMessage());
-			
 		} finally {
 			try{
 			metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
