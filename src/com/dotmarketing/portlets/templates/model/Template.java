@@ -141,12 +141,6 @@ public class Template extends WebAsset implements Serializable, Comparable {
 		this.body = body;
 	}
 
-	public void copy(Template currentTemplate) {
-		this.body = currentTemplate.getBody();
-		this.header = currentTemplate.getHeader();
-		this.footer = currentTemplate.getFooter();
-		super.copy(currentTemplate);
-	}
 
 	/**
 	 * Returns the footer.
