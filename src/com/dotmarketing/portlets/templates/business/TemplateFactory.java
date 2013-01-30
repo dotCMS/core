@@ -51,4 +51,10 @@ public interface TemplateFactory {
 
 	public Template find(String inode) throws DotStateException, DotDataException;
 	
+
+	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException;
+
+
 }
