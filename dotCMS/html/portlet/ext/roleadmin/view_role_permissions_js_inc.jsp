@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
@@ -12,6 +13,13 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
 
+<%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
+<style>
+    tr.legacy_files_row {
+        display:none !important;
+    }
+</style>
+<%}%>
 
 
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%><script type="text/javascript">
@@ -26,10 +34,10 @@
 	var templatesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Templates")) %>';
 	var templateLayoutsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Template-Layouts")) %>';
 	var pagesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Pages")) %>';
-	var filesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Files")) %>';
+	var filesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Files-Legacy")) %>';
 	var linksWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Links")) %>';
 	var structuresWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Structures")) %>';
-	var contentWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Content")) %>';
+	var contentWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Content-Files")) %>';
 	var cascadeChangesMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cascade-Changes")) %>';
 	var applyChangesMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Apply-Changes")) %>';
 	var selectAFolderOrHostMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "please-select-a-folder-or-host")) %>';
