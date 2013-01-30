@@ -16,16 +16,18 @@ public class CustomJob implements Job {
 
         Logger.info( this, "------------------------------------------" );
         Logger.info( this, "Start custom job" );
+        Logger.info( this, "" );
 
         Logger.info( this, "param1: " + context.getJobDetail().getJobDataMap().get( "param1" ) );
         Logger.info( this, "param2: " + context.getJobDetail().getJobDataMap().get( "param2" ) );
 
-        //Logger.info( this, "____________XXXXXXXXXXXX____________" );
+        Logger.info( this, "" );
 
-        /*TestClass testClass = new TestClass();
+        TestClass testClass = new TestClass();
         testClass.printA();
-        testClass.printB();*/
+        testClass.printB();
 
+        Logger.info( this, "" );
         Logger.info( this, "Finish custom job (osgi version)." );
         Logger.info( this, "------------------------------------------" );
     }
