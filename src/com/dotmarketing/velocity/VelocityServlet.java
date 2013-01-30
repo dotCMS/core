@@ -41,7 +41,7 @@ import org.apache.velocity.tools.view.context.ChainedContext;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -555,8 +555,8 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, user, true);
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
-		PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
-		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndpoints();
+		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
 		// to check user has permission to write on this page
 		boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
 		boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
@@ -776,8 +776,8 @@ public abstract class VelocityServlet extends HttpServlet {
 
         HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion( id, APILocator.getUserAPI().getSystemUser(), false );
         HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
-        PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
-		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndpoints();
+        PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
         // to check user has permission to write on this page
         boolean hasAddChildrenPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_CAN_ADD_CHILDREN, backendUser );
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, backendUser );

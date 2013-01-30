@@ -24,7 +24,7 @@
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
-<%@ page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 
 
 <script src="/dwr/interface/UserAjax.js" type="text/javascript"></script>
@@ -38,10 +38,8 @@
 	
 	var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
-	<%
-		PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
-		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndpoints();
-	%>
+	<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
 	var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 
 

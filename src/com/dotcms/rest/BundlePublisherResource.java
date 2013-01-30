@@ -25,7 +25,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublisherEndpointAPI;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
@@ -41,7 +41,7 @@ import com.sun.jersey.multipart.FormDataParam;
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {
 	public static String MY_TEMP = "";
-	private PublisherEndpointAPI endpointAPI = APILocator.getPublisherEndpointAPI();
+	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
 
 	@POST
@@ -61,7 +61,7 @@ public class BundlePublisherResource extends WebResource {
 			if(!UtilMethods.isSet(remoteIP))
 				remoteIP = req.getRemoteAddr();
 			
-			PublishingEndPoint mySelf = endpointAPI.findSenderEndpointByAddress(remoteIP);
+			PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 			
 			if(!isValidToken(auth_token, remoteIP, mySelf)) {
 				bundle.close();
