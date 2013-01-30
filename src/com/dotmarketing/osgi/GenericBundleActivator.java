@@ -21,9 +21,7 @@ import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
 import java.beans.IntrospectionException;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -258,42 +256,23 @@ public abstract class GenericBundleActivator implements BundleActivator {
             jobs = new HashMap<String, String>();
         }
 
+        URLClassLoader systemClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+
         try {
-            //Verify if we already have this class in the dotcms class path
-            Class.forName( taskJob.getJavaClassName(), true, ClassLoader.getSystemClassLoader() );
+            Class.forName( taskJob.getJavaClassName(), true, systemClassLoader );
 
-            //And we it is already in the class loader we need to reload it because could change
-
-            //Just loading the custom implementation will allows to override the one the classloader already had loaded
-            //getContextClassLoader().loadClass( taskJob.getJavaClassName() );
-            ClassLoader.getSystemClassLoader().loadClass( taskJob.getJavaClassName() );
+            //FIXME: Now somehow reload the job classes in order to use the new ones and not the ones on memory...
         } catch ( ClassNotFoundException e ) {
 
+            //We need to manually insert these quartz job classes inside the dotcms class loader using reflection
             Class jobClass = Class.forName( taskJob.getJavaClassName(), true, getContextClassLoader() );
-            URL jobClassUrl = jobClass.getResource( jobClass.getSimpleName() + ".class" );
 
-            //We need to manually insert this quartz job inside dotcms class loader using reflection
-            ClassLoader scl = ClassLoader.getSystemClassLoader();
-            Method defineClass = ClassLoader.class.getDeclaredMethod( "defineClass", String.class, byte[].class, int.class, int.class );
+            Method defineClass = URLClassLoader.class.getDeclaredMethod( "addURL", URL.class );
             defineClass.setAccessible( true );
 
-            //Reading the job class
-            InputStream in = jobClassUrl.openStream();
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-            byte[] buffer = new byte[1024];
-            int length;
-            while ( (length = in.read( buffer )) > 0 ) {
-                out.write( buffer, 0, length );
-            }
-            byte[] byteCode = out.toByteArray();
-
             //Inject the class
-            defineClass.invoke( scl, taskJob.getJavaClassName(), byteCode, 0, byteCode.length );
+            defineClass.invoke( systemClassLoader, new Object[]{jobClass.getProtectionDomain().getCodeSource().getLocation()} );
             defineClass.setAccessible( false );
-
-            in.close();
-            out.close();
         }
 
         /*
