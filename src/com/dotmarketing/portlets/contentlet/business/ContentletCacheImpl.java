@@ -42,7 +42,7 @@ public class ContentletCacheImpl extends ContentletCache {
 	    // http://jira.dotmarketing.net/browse/DOTCMS-7335
         // we need metadata in other cache region
         Structure st=content.getStructure();
-        if(st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+        if(st!=null && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
             Field f=st.getFieldVar(FileAssetAPI.META_DATA_FIELD);
             if(UtilMethods.isSet(f.getInode())) {
                 String metadata=(String)content.get(FileAssetAPI.META_DATA_FIELD);
