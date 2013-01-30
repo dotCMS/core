@@ -1,9 +1,15 @@
 package com.dotmarketing.portlets.templates.business;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -30,6 +36,7 @@ import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -77,7 +84,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	
 	@SuppressWarnings("unchecked")
-	@Override
+
 	public Template find(String inode) throws DotStateException, DotDataException {
 		
 		Template template = templateCache.get(inode);
@@ -156,7 +163,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	}
 
-
+	@Override
 	public List<Template> findTemplates(User user, boolean includeArchived,
 			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
 			int offset, int limit, String orderBy) throws DotSecurityException,
@@ -299,7 +306,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 
 	}
-
+	@Override
 	public List<HTMLPage> getPagesUsingTemplate(Template template) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(HTMLPage.class);
 		hu.setSQLQuery(pagesUsingTemplateSQL);
@@ -307,7 +314,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		return new ArrayList<HTMLPage>(new HashSet<HTMLPage>(hu.list()));
 
 	}
-
+	@Override
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException{
 		HibernateUtil.startTransaction();
 			try {
@@ -323,5 +330,95 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			}
 		HibernateUtil.commitTransaction();
 	}
+	
+	@Override
+	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		
+		List<Container> result = new ArrayList<Container>();
+		List<String> ids = getContainerIds(template.getBody());
+		for(String containerId : ids) {
+			Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, user, respectFrontendRoles);
+			if(container != null) {
+				result.add(container);
+			} else {
+				Logger.warn(this,"ERROR The Container Id: '" + containerId + "' doesn't exist and its reference by template " + template.getIdentifier());
+			}
+		}
+		return result;
+	}
+	
+	private List<String> getContainerIds(String templateBody) {
+		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s)]+)\\s*\\)");
+		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
+		Matcher matcher = oldContainerReferencesRegex.matcher(templateBody);
+		List<String> ids = new LinkedList<String>();
+		while(matcher.find()) {
+			String containerId = matcher.group(1).trim();
+			if(!ids.contains(containerId))
+			ids.add(containerId);
+		}
+		matcher = newContainerReferencesRegex.matcher(templateBody);
+		while(matcher.find()) {
+			String containerId = matcher.group(1).trim();
+			if(!ids.contains(containerId))
+			ids.add(containerId);
+		}
+		return ids;
+	}
+	
+	
+	@Override
+	public Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException {
+		if(currentTemplate ==null){
+			throw new DotDataException("Template is null");
+		}
+		Template newTemplate = new Template();
 
+		try {
+			BeanUtils.copyProperties(newTemplate, currentTemplate);
+		} catch (Exception e1) {
+			Logger.error(TemplateFactoryImpl.class,e1.getMessage(),e1);
+			throw new DotDataException(e1.getMessage());
+		}
+		newTemplate.setInode(null);
+		newTemplate.setModDate(new Date());
+		newTemplate.setDrawed(currentTemplate.isDrawed());
+		newTemplate.setDrawedBody(currentTemplate.getDrawedBody());
+		newTemplate.setImage(currentTemplate.getImage());
+		newTemplate.setIdentifier(null);
+		String newTemplateName = currentTemplate.getTitle();
+		String testName = currentTemplate.getTitle();
+
+		if(RegEX.contains(newTemplateName, " - [0-9]+$")){
+			newTemplateName = newTemplateName.substring(0,newTemplateName.lastIndexOf("-")).trim();
+		}
+		
+		
+		
+		Template test = null;
+		for(int iter=1;iter<100000;iter++){		
+			try{
+				test = findWorkingTemplateByName(testName, host);
+			}
+			catch(Exception e){
+				Logger.debug(this.getClass(), e.getMessage());
+				break;
+			}
+			if(test != null && UtilMethods.isSet(test.getInode())){
+				testName = newTemplateName + " - " + iter ;
+			}
+			else{
+				newTemplateName = testName;
+				break;
+			}
+		}
+		
+		newTemplate.setFriendlyName(newTemplateName);
+		newTemplate.setTitle(newTemplateName);
+
+
+
+
+		return newTemplate;
+	}
 }

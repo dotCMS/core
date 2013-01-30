@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.templates.business;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -97,7 +96,20 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		FactoryLocator.getTemplateFactory().delete(template);
 	}
 
+	@Override
+	public Template copy(Template sourceTemplate, User user) throws DotDataException, DotSecurityException {
+		
+		Identifier id = APILocator.getIdentifierAPI().find(sourceTemplate.getIdentifier());
+		
+		Host  h = APILocator.getHostAPI().find(id.getHostId(), user, false);
 
+		
+		
+		return copy(sourceTemplate, h, false, false, user, false);
+		
+	}
+
+	@Override
 	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite, List<ContainerRemapTuple> containerMappings, User user,
 			boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
@@ -121,17 +133,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			isNew = true;
 		}
 
-		newTemplate = new Template();
-
-		newTemplate.copy(sourceTemplate);
-		newTemplate.setImage(sourceTemplate.getImage());
-
-		if (!forceOverwrite) {
-			newTemplate.setTitle(getCopyTemplateName(sourceTemplate.getTitle(), destination));
-
-			if (!newTemplate.getTitle().equals(sourceTemplate.getTitle()))
-				newTemplate.setFriendlyName(sourceTemplate.getFriendlyName() + " (COPY)");
-		}
+		newTemplate  =templateFactory.copyTemplate(sourceTemplate, destination);
+		newTemplate.setModDate(new Date());
+		newTemplate.setModUser(user.getUserId());
 
 
 		updateParseContainerSyntax(newTemplate);
@@ -156,9 +160,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 
 		APILocator.getVersionableAPI().setWorking(newTemplate);
-		if(sourceTemplate.isLive())
+		if(sourceTemplate.isLive()){
 		    APILocator.getVersionableAPI().setLive(newTemplate);
-
+		}
 		// Copy permissions
 		permissionAPI.copyPermissions(sourceTemplate, newTemplate);
 
@@ -292,6 +296,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return template;
 	}
 
+	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 
@@ -299,38 +304,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throw new DotSecurityException("You don't have permission to read the source file.");
 		}
 
-		List<Container> result = new ArrayList<Container>();
-		List<String> ids = getContainerIds(template.getBody());
-		for(String containerId : ids) {
-			Container container = containerAPI.getWorkingContainerById(containerId, user, respectFrontendRoles);
-			if(container != null) {
-				result.add(container);
-			} else {
-				Logger.warn(this,"ERROR The Container Id: '" + containerId + "' doesn't exist and its reference by template " + template.getIdentifier());
-			}
-		}
-		return result;
 
+		return templateFactory.getContainersInTemplate(template, user, respectFrontendRoles);
 	}
 
-	private List<String> getContainerIds(String templateBody) {
-		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s)]+)\\s*\\)");
-		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
-		Matcher matcher = oldContainerReferencesRegex.matcher(templateBody);
-		List<String> ids = new LinkedList<String>();
-		while(matcher.find()) {
-			String containerId = matcher.group(1).trim();
-			if(!ids.contains(containerId))
-			ids.add(containerId);
-		}
-		matcher = newContainerReferencesRegex.matcher(templateBody);
-		while(matcher.find()) {
-			String containerId = matcher.group(1).trim();
-			if(!ids.contains(containerId))
-			ids.add(containerId);
-		}
-		return ids;
-	}
+
 
 	private String replaceWithNewContainerIds(String body, List<ContainerRemapTuple> containerMappings) {
 
