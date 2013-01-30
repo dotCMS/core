@@ -134,8 +134,41 @@ public class DotTemplateTool implements ViewTool {
      */
     public static Map<String, Object> themeByPath ( String themeFolderPath, String hostId ) throws DotDataException, DotSecurityException {
 
+    	
+    	
+    	if(themeFolderPath ==null ){
+    		return null;
+    	}
+    	
+    	
+    	// get theme host
+    	if(themeFolderPath.startsWith("//")){
+    		String[] uriArray = themeFolderPath.split("/");
+    		String hostName = uriArray[2];
+    		
+    		hostId = APILocator.getHostAPI().resolveHostName(hostName, APILocator.getUserAPI().getSystemUser(), true).getIdentifier();
+    		
+    		java.io.StringWriter sw = new java.io.StringWriter();
+    		
+    		for(int i= 3;i< uriArray.length;i++){
+    			sw.append("/");
+    			sw.append(uriArray[i]);
+    			
+    		}
+    		themeFolderPath = sw.toString();
+    		
+    	}
+    	
+    	
+    	
         //Get the theme folder
         Folder themeFolder = APILocator.getFolderAPI().findFolderByPath( themeFolderPath, hostId, APILocator.getUserAPI().getSystemUser(), false );
+        
+        
+        
+        
+        
+        
         return setThemeData( themeFolder, hostId );
     }
 
