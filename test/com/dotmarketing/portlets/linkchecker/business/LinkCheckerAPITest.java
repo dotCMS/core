@@ -268,6 +268,8 @@ public class LinkCheckerAPITest extends TestBase {
         
         extlinks=new String[] {
            "/test_mapped/url1","/test_mapped/url2/", // those should be good
+           "/test_mapped/url1#ignorethis",
+           "/test_mapped/url2/#againignore",
            "/test_mapped/url3" // a bad one
         };
         sb=new StringBuilder("<html><body>\n");
