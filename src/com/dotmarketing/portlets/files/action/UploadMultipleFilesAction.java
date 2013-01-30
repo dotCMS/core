@@ -4,9 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.portlet.ActionRequest;
@@ -23,13 +21,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.PublishFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.business.FileAPI;
@@ -37,7 +31,6 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.files.struts.FileForm;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -76,40 +69,29 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 		}
 		Logger.debug(this, "UploadMultipleFilesAction cmd=" + cmd);
 
-        HibernateUtil.startTransaction();
-
 		User user = _getUser(req);
-
-		try {
-			Logger.debug(this, "Calling Retrieve method");
-			_retrieveWebAsset(req, res, config, form, user, File.class, WebKeys.FILE_EDIT);
-
-		} catch (Exception ae) {
-			_handleException(ae, req);
-			return;
+		if(cmd != null && cmd.equals(Constants.EDIT)) {
+	        HibernateUtil.startTransaction();			
+			try {
+				Logger.debug(this, "Calling Retrieve method");
+				_retrieveWebAsset(req, res, config, form, user, File.class, WebKeys.FILE_EDIT);
+	            Logger.debug(this, "Calling Edit Method");
+				_editWebAsset(req, res, config, form, user);	
+			}
+			catch (Exception ae) {
+				_handleException(ae, req);
+				return;
+			}
+	        HibernateUtil.commitTransaction();
 		}
-
-        try {
-            Logger.debug(this, "Calling Edit Method");
-			_editWebAsset(req, res, config, form, user);
-
-        }
-        catch (Exception e) {
-
-        }
-
-        if ((cmd != null) && cmd.equals(Constants.ADD)) {
+		else if (cmd != null && cmd.equals(Constants.ADD)) {
             try {
-
                 Logger.debug(this, "Calling Save Method");
-
 				String subcmd = req.getParameter("subcmd");
-
 				_saveFileAsset(req, res, config, form, user, subcmd);
-
 				_sendToReferral(req,res,referer);
-
-            } catch (ActionException ae) {
+            }
+            catch (ActionException ae) {
 				_handleException(ae, req);
 				if (ae.getMessage().equals("message.file_asset.error.filename.exists")) {
 					_sendToReferral(req,res,referer);
@@ -119,11 +101,10 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 					_sendToReferral(req,res,referer);
 				}
             }
-
         }
-        Logger.debug(this, "Unspecified Action");
-        HibernateUtil.commitTransaction();
-
+		else {
+			Logger.debug(this, "Unspecified Action");
+		}
 		setForward(req, "portlet.ext.files.upload_multiple");
     }
 
@@ -247,7 +228,6 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				SessionMessages.add(req, "custommessage", LanguageUtil.get(user, "message.contentlets.batch.reindexing.background"));
 			boolean filterError = false;
 
-			ContentletAPI conAPI = APILocator.getContentletAPI();
 			List<String> existingFileNames = new ArrayList<String>();
 			for (int k=0;k<fileNamesArray.length;k++) {
 
@@ -289,19 +269,11 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 							        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 								APILocator.getVersionableAPI().setLive(contentlet);
 							}
-							/*
-							HibernateUtil.commitTransaction();
-
-							if(InodeUtils.isSet(contentlet.getInode()) && !conAPI.isInodeIndexed(contentlet.getInode())){
-								Logger.error(this, "Timed Out waiting for index to return");
-							}
-							*/
 						} catch (Exception e) {
 							Logger.error(this, e.getMessage());
 							SessionMessages.add(req, "error", e.getMessage());
 						}
 					}
-
 				}
 			}
 
