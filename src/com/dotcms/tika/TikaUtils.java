@@ -1,9 +1,9 @@
 package com.dotcms.tika;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,9 +35,9 @@ public class TikaUtils {
 		// set -1 for no limit when parsing text content
 		ContentHandler handler = new BodyContentHandler(Config.getIntProperty("TIKA_PARSE_CHARACTER_LIMIT", -1));
 		ParseContext context = new ParseContext();
-		InputStream fis = null;
+		BufferedInputStream fis = null;
 		try {
-			fis = new FileInputStream(binFile);
+			fis = new BufferedInputStream(new FileInputStream(binFile));
 			parser.parse(fis, handler, met, context);
 			metaMap = new HashMap<String, String>();
 
@@ -54,13 +54,20 @@ public class TikaUtils {
 				metaMap.put(FileAssetAPI.CONTENT_FIELD, handler.toString());
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath());
+		} catch (Throwable t) {
+			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + " " + t.getMessage());
 		} finally {
+			try{
 			metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
 			if (fis != null) {
 				try {
 					fis.close();
 				} catch (IOException e) {
 				}
+			}
+			}
+			catch(Exception ex){
+				Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath());
 			}
 		}
 
