@@ -3,21 +3,21 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
-<%@ page import="com.dotcms.publisher.endpoint.business.PublisherEndpointAPI"%>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="java.util.List"%>
 
-<%String r = String.valueOf(System.currentTimeMillis()); %>
+<%
+	String r = String.valueOf(System.currentTimeMillis());
+%>
 <script language="JavaScript">
 
 
 var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
-<%
-	PublisherEndpointAPI pepAPI = APILocator.getPublisherEndpointAPI();
-	List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndpoints();
-%>
+<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+	List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
 var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 
 // File Flyout
