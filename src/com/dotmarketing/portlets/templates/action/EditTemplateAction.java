@@ -12,11 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.struts.Globals;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -35,7 +32,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
-import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.struts.TemplateForm;
 import com.dotmarketing.services.TemplateServices;
@@ -686,7 +682,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		_checkCopyAndMovePermissions(currentTemplate, user, httpReq,"copy");
 
 		//Calling the copy method from the factory
-		TemplateFactory.copyTemplate(currentTemplate);
+		APILocator.getTemplateAPI().copy(currentTemplate, user);
 		
 		super._editWebAsset(req, res, config, form, user,
 				WebKeys.TEMPLATE_EDIT);
