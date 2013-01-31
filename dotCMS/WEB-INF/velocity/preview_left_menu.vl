@@ -338,7 +338,7 @@
 <!-- /Preview Mode -->
 
 <!-- Live Mode -->
-    <div id="liveModeTab" dojoType="dijit.layout.ContentPane" title="$langbackendwebapi.get("modes.Live")" #if (!$EDIT_MODE && $ADMIN_MODE) selected="true" #end>
+    <div id="liveModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Live")" #if (!$EDIT_MODE && $ADMIN_MODE) selected="true" #end>
         <div class="pageTools">
             
             <span class="disabled">

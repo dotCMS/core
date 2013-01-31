@@ -30,15 +30,15 @@
 				#if($_isFormWidget)
 					<span class="dotEditContentDisabled">${langbackendwebapi.get("modes.Form")}: ${structures.findStructure($ContentletTitle).name}</span>
 				#elseif($EDIT_CONTENT_PERMISSION && $CONTAINER_NUM_CONTENTLETS > 0)
-					<a class="dotEditWidget" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$langbackendwebapi.get("modes.Edit-Widget")</a>
+					<a class="dotEditWidget" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$languagewebapi.getFromUserLanguage("modes.Edit-Widget")</a>
 				#else
-					<span class="dotEditWidgetDisabled">$langbackendwebapi.get("modes.Edit-Widget")</span>
+					<span class="dotEditWidgetDisabled">$languagewebapi.getFromUserLanguage("modes.Edit-Widget")</span>
 				#end
 		#else
 			#if($EDIT_CONTENT_PERMISSION && $CONTAINER_NUM_CONTENTLETS > 0)
-				<a class="dotEditContent" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$langbackendwebapi.get("modes.Edit-Content")</a>
+				<a class="dotEditContent" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
 			#else
-				<span class="dotEditContentDisabled">$langbackendwebapi.get("modes.Edit-Content")</span>
+				<span class="dotEditContentDisabled">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</span>
 			#end
 		#end
 	</div>		
@@ -50,21 +50,21 @@
 	<div class="dotMoveContent">	
 		#if($STATIC_CONTAINER && $USE_CONTAINER_PERMISSION && $ADD_CHILDREN_HTMLPAGE_PERMISSION && $CONTAINER_MAX_CONTENTLETS > 1  && $CONTAINER_NUM_CONTENTLETS > 1)
 			<a class="dotMoveContentUp" href="javascript:parent.moveUp('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
-				<!-- $langbackendwebapi.get("modes.Move-Content-Up") -->
+				<!-- $languagewebapi.getFromUserLanguage("modes.Move-Content-Up") -->
 			</a>
 			<a class="dotMoveContentDown" href="javascript:parent.moveDown('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
-				<!-- $langbackendwebapi.get("modes.Move-Content-Down") -->
+				<!-- $languagewebapi.getFromUserLanguage("modes.Move-Content-Down") -->
 			</a>
 		#else
-			<span class="dotMoveContentUpDisabled"> <!-- $langbackendwebapi.get("modes.Move-Content-Up") --> </span>
-			<span class="dotMoveContentDownDisabled"> <!-- $langbackendwebapi.get("modes.Move-Content-Down") --> </span>
+			<span class="dotMoveContentUpDisabled"> <!-- $languagewebapi.getFromUserLanguage("modes.Move-Content-Up") --> </span>
+			<span class="dotMoveContentDownDisabled"> <!-- $languagewebapi.getFromUserLanguage("modes.Move-Content-Down") --> </span>
 		#end
 		#if($ADD_CHILDREN_HTMLPAGE_PERMISSION && $USE_CONTAINER_PERMISSION && $STATIC_CONTAINER  && $CONTAINER_NUM_CONTENTLETS > 0)
 			<a class="dotRemoveContent" href="javascript: parent.removeContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">
-				<!-- $langbackendwebapi.get("modes.Remove-Content") -->
+				<!-- $languagewebapi.getFromUserLanguage("modes.Remove-Content") -->
 			</a>
 		#else
-			<span class="dotRemoveContent"> <!-- $langbackendwebapi.get("modes.Remove-Content") --> </span>
+			<span class="dotRemoveContent"> <!-- $languagewebapi.getFromUserLanguage("modes.Remove-Content") --> </span>
 		#end
 	</div>
 <!-- END REORDER BUTTON -->
