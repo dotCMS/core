@@ -48,7 +48,7 @@
 		hideCurrentMenu();	
 	   	document.getElementById('container').value = containerInode;
        	var myDialog = dijit.byId("dotAddWidget");
-       	myDialog.titleNode.innerHTML='<img src="/html/images/icons/gear.png" width="16" height="16" align="absbottom" hspace="3" />$langbackendwebapi.get("modes.Add-Widget")';
+       	myDialog.titleNode.innerHTML='<img src="/html/images/icons/gear.png" width="16" height="16" align="absbottom" hspace="3" />$languagewebapi.getFromUserLanguage("modes.Add-Widget")';
        	dojo.parser.parse("dotAddWidget");
       	myDialog.show();
 	}
