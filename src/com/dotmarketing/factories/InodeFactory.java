@@ -1596,7 +1596,7 @@ public class InodeFactory {
     //To Check whether given inode exists in DB or not
 	public static boolean isInode(String inode){
 		DotConnect dc = new DotConnect();
-		String InodeQuery = "Select count(*) as count from Inode where inode = ?";
+		String InodeQuery = "Select count(*) as count from inode where inode = ?";
 		dc.setSQL(InodeQuery);
 		dc.addParam(inode);
 		ArrayList<Map<String, String>> results = new ArrayList<Map<String, String>>();
