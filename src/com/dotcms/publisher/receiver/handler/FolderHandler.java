@@ -101,7 +101,7 @@ public class FolderHandler implements IHandler {
         			folder.setDefaultFileType(defaultStr.getInode());
         			
         			Folder localFolder = fAPI.findFolderByPath(folderId.getPath(), localHost, systemUser, false);
-        			if(localFolder == null || !UtilMethods.isSet(localFolder.getInode()))
+        			if((localFolder == null || !UtilMethods.isSet(localFolder.getInode())) && !fAPI.exists(folder.getInode()))
         				fAPI.save(folder, folder.getInode(), systemUser, false);
         			else
         				fAPI.save(folder, systemUser, false);
