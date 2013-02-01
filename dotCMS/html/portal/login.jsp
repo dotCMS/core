@@ -277,7 +277,8 @@ function showLanguageSelector(){
 </script>
 
 
-	<% if(editPassword){ %>
+	<% boolean salesforceFilterOn = Boolean.valueOf(Config.getStringProperty("SALESFORCE_LOGIN_FILTER_ON"));
+	if(editPassword || salesforceFilterOn){ %>
 		<div id="forgotPassword" style="display:none" draggable="false" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "forgot-password") %>">
 			<dl>
 				<dt><label for="forgotPasswordEmailBox" class="formLabel"><%if(company.getAuthType().equals(Company.AUTH_TYPE_EA)){%>
@@ -365,12 +366,6 @@ function showLanguageSelector(){
 			   </div>
 			<%------/  Language Selector -----%>
 			
-			
-			<% if(editPassword){ %>
-				<div class="inputCaption" style="float:right;">
-					<a href="javascript:showForgot()"><%= LanguageUtil.get(pageContext, "forgot-password") %></a>
-				</div>
-			<%} %>
 		<!-- /Button Row --->
 	</div>
 
