@@ -30,35 +30,46 @@ if(request.getParameter("pageNumber")!=null)
 
 %>
 function movePage(x) {
-	var cp=parseInt(dojo.byId('currentPage').textContent);
-	dojo.byId('currentPage').textContent=cp+x;
-	loadTable();
+    var cp=parseInt(dojo.byId('currentPage').textContent);
+    var id = dojo.byId('currentPage');
+    if(typeof id.textContent == "undefined"){
+            cp=parseInt(dojo.byId('currentPage').innerText);
+            dojo.byId('currentPage').innerText=cp+x;
+    }
+    else
+            dojo.byId('currentPage').textContent=cp+x;
+    loadTable();
 }
 
 function disableButtons(x) {
-	dijit.byId('refreshBtn').set('disabled',x);
-	dijit.byId('runBtn').set('disabled',x);
-	if(x=="") {
-		var cp=parseInt(dojo.byId('currentPage').textContent);
-		var tp=parseInt(dojo.byId('totalPages').textContent);
-		if(cp>1)
-			dijit.byId('prevBtn').set('disabled','');
-		else
-			dijit.byId('prevBtn').set('disabled','disabled');
-		
-		if(cp<tp)
-			dijit.byId('nextBtn').set('disabled','');
-		else
-			dijit.byId('nextBtn').set('disabled','disabled');
-	}
-	else {
-		dijit.byId('nextBtn').set('disabled',x);
-	    dijit.byId('prevBtn').set('disabled',x);
-	}
+    dijit.byId('refreshBtn').setDisabled(x);
+    dijit.byId('runBtn').setDisabled(x);
+    if(x==false) {
+            var cp=parseInt(dojo.byId('currentPage').textContent);
+            var tp=parseInt(dojo.byId('totalPages').textContent);
+            var id = dojo.byId('currentPage');
+            if(typeof id.textContent == "undefined"){
+                    cp=parseInt(dojo.byId('currentPage').innerText);
+                    tp=parseInt(dojo.byId('totalPages').innerText);
+            }
+            if(cp>1)
+                    dijit.byId('prevBtn').setDisabled(false);
+            else
+                    dijit.byId('prevBtn').setDisabled(true);
+            
+            if(cp<tp)
+                    dijit.byId('nextBtn').setDisabled(false);
+            else
+                    dijit.byId('nextBtn').setDisabled(true);
+    }
+    else {
+            dijit.byId('nextBtn').setDisabled(x);
+        dijit.byId('prevBtn').setDisabled(x);
+    }
 }
 
 function runNow() {
-	disableButtons('disabled');
+	disableButtons(true);
 	dojo.xhr('GET',{
         url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/runCheckNow',
         handleAs: 'json',
@@ -70,7 +81,7 @@ function runNow() {
 }
 
 function loadTable() {
-	disableButtons('disabled'); //71b8a1ca-37b6-4b6e-a43b-c7482f28db6c&   p_l_id=a8e430e3-8010-40cf-ade1-5978e61241a8
+	disableButtons(true); //71b8a1ca-37b6-4b6e-a43b-c7482f28db6c&   p_l_id=a8e430e3-8010-40cf-ade1-5978e61241a8
 	var currentUser="<%=user.getUserId()%>";
 	var lid="<%=contentLayout%>";
 	var lidBL="<%=layout.getId()%>";
@@ -79,6 +90,11 @@ function loadTable() {
 	dojo.empty('table_body');
 	var pageSize=10;
 	var page=(parseInt(dojo.byId('currentPage').textContent)-1)*pageSize;
+	var id = dojo.byId('currentPage');
+    if(typeof id.textContent == "undefined"){
+            referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=EXT_BROKEN_LINKS&p_p_action=0&pageNumber="+dojo.byId('currentPage').innerText;
+            page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
+    }
 	dojo.xhr('GET',{
 		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/'+page+'/pageSize/'+pageSize,
 		handleAs: 'json',
@@ -103,8 +119,12 @@ function loadTable() {
 				         "</tr>";
 				dojo.place(dojo.toDom(row),'table_body');				
 			}
-			dojo.byId('totalPages').textContent=Math.ceil(data.total/pageSize);
-            disableButtons('');
+			if(typeof id.textContent == "undefined"){
+                dojo.byId('totalPages').innerText=Math.ceil(data.total/pageSize);
+        	}
+        	else
+                dojo.byId('totalPages').textContent=Math.ceil(data.total/pageSize);
+			disableButtons(false);
 		},
 		error: function(err) {
 			console.log(err);
