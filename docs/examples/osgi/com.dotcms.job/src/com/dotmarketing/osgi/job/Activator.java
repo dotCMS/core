@@ -14,20 +14,11 @@ public class Activator extends GenericBundleActivator {
     public final static String JOB_NAME = "Custom Job";
     public final static String JOB_CLASS = "com.dotmarketing.osgi.job.CustomJob";
     public final static String JOB_GROUP = "User Jobs";
-    //public final static String TRIGGER_NAME = JOB_NAME + "_trigger";
-    //public final static String TRIGGER_GROUP = JOB_GROUP;
 
-    //public final static String CRON_EXPRESSION = "0 * * * * ?";
     public final static String CRON_EXPRESSION = "0/10 * * * * ?";//Every 10 seconds
 
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
-
-        //Initializing services...
-        initializeServices( context );
-
-        //Expose bundle elements
-        publishBundleServices( context );
 
         // Job params
         Map<String, Object> params = new HashMap<String, Object>();
@@ -45,7 +36,6 @@ public class Activator extends GenericBundleActivator {
     }
 
     public void stop ( BundleContext context ) throws Exception {
-
         //Unregister all the bundle services
         unregisterServices();
     }
