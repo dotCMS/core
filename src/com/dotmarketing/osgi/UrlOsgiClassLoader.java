@@ -68,6 +68,11 @@ public class UrlOsgiClassLoader extends URLClassLoader {
         super.addURL( url );
     }
 
+    /**
+     * Reload all the loaded classes of this custom class loader, by reload we mean to redefine those classes.
+     *
+     * @throws Exception
+     */
     public void reload () throws Exception {
 
         for ( URL url : urls ) {
@@ -78,6 +83,7 @@ public class UrlOsgiClassLoader extends URLClassLoader {
             Enumeration resources = jar.entries();
             while ( resources.hasMoreElements() ) {
 
+                //We will try to redefine class by class
                 JarEntry entry = (JarEntry) resources.nextElement();
                 if ( !entry.isDirectory() && entry.getName().contains( ".class" ) ) {
 
@@ -95,13 +101,13 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                         byte[] byteCode = out.toByteArray();
 
                         try {
+                            //And finally redefine the class
                             String className = entry.getName().replace( "/", "." ).replace( ".class", "" );
                             ClassDefinition classDefinition = new ClassDefinition( Class.forName( className ), byteCode );
                             instrumentation.redefineClasses( classDefinition );
                         } catch ( ClassNotFoundException e ) {
                             //If the class has not been loaded we don't need to redefine it
                         }
-                        //result = defineClass( className, byteCode, 0, byteCode.length );
                     } finally {
                         if ( in != null ) {
                             in.close();
