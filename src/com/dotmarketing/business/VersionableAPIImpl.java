@@ -243,7 +243,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             throw new DotStateException("invalid identifier");
         Identifier ident=APILocator.getIdentifierAPI().find(identifier);
         if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().after(new Date()))
-            throw new PublishStateException("Can't unpublish. Content is scheduled to expire on a future date");
+            throw new PublishStateException("Can't unpublish content that is scheduled to expire on a future date");
         ContentletVersionInfo ver = vfac.getContentletVersionInfo(identifier, lang);
         if(ver ==null || !UtilMethods.isSet(ver.getIdentifier()))
             throw new DotStateException("No version info. Call setWorking first");
@@ -283,9 +283,9 @@ public class VersionableAPIImpl implements VersionableAPI {
                 throw new DotStateException("No version info. Call setWorking first");
             
             if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().after(new Date()))
-                throw new PublishStateException("Can't publish content is scheduled to be published on future date");
+                throw new PublishStateException("Can't publish content that is scheduled to be published on future date");
             if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
-                throw new PublishStateException("Can't publish content is expired");
+                throw new PublishStateException("Can't publish content that is expired");
             
             info.setLiveInode(versionable.getInode());
             vfac.saveContentletVersionInfo(info);
