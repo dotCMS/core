@@ -15,6 +15,7 @@ import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
+import org.github.jamm.MemoryMeter;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -22,7 +23,8 @@ import org.quartz.SchedulerException;
 
 import java.beans.IntrospectionException;
 import java.io.File;
-import java.lang.reflect.Method;
+import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -43,6 +45,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Map<String, String> jobs;
     private Collection preHooks;
     private Collection postHooks;
+    private ClassLoaderUtil classLoaderUtil = new ClassLoaderUtil();
 
     private ClassLoader getFelixClassLoader () {
         return this.getClass().getClassLoader();
@@ -247,39 +250,89 @@ public abstract class GenericBundleActivator implements BundleActivator {
     //*******************************************************************
     //*******************************************************************
 
-    protected void scheduleQuartzJob ( ScheduledTask taskJob ) throws Exception {
+    /**
+     * Register a given Quartz Job scheduled task
+     *
+     * @param scheduledTask
+     * @throws Exception
+     */
+    protected void scheduleQuartzJob ( ScheduledTask scheduledTask ) throws Exception {
 
-        String jobName = taskJob.getJobName();
-        String jobGroup = taskJob.getJobGroup();
+        String jobName = scheduledTask.getJobName();
+        String jobGroup = scheduledTask.getJobGroup();
 
         if ( jobs == null ) {
             jobs = new HashMap<String, String>();
         }
 
-        URLClassLoader systemClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+        /*
+         We need to access to the instrumentation (This class provides services needed to instrument Java
+         programming language code.
+         Instrumentation is the addition of byte-codes to methods for the purpose of gathering data to be
+         utilized by tools, or on this case to modify on run time classes content in order to reload
+         them.)
+        */
+        MemoryMeter mm = new MemoryMeter();
+        Field instrumentationField = MemoryMeter.class.getDeclaredField( "instrumentation" );//We need to access it using reflection
+        instrumentationField.setAccessible( true );
+        Instrumentation instrumentation = (Instrumentation) instrumentationField.get( mm );
+        instrumentationField.setAccessible( false );
 
+        //Verify if the job class is already in the system class loader
+        Class currentJobClass = null;
         try {
-            Class.forName( taskJob.getJavaClassName(), true, systemClassLoader );
-
-            //FIXME: Now somehow reload the job classes in order to use the new ones and not the ones on memory...
+            currentJobClass = Class.forName( scheduledTask.getJavaClassName(), true, ClassLoader.getSystemClassLoader() );
         } catch ( ClassNotFoundException e ) {
+            //Do nothing, the class is not inside the system classloader
+        }
 
-            //We need to manually insert these quartz job classes inside the dotcms class loader using reflection
-            Class jobClass = Class.forName( taskJob.getJavaClassName(), true, getContextClassLoader() );
+        //Get the job class from this bundle context
+        Class jobClass = Class.forName( scheduledTask.getJavaClassName(), true, getFelixClassLoader() );
 
-            Method defineClass = URLClassLoader.class.getDeclaredMethod( "addURL", URL.class );
-            defineClass.setAccessible( true );
+        //Verify if we have our UrlOsgiClassLoader on the main class loaders
+        UrlOsgiClassLoader urlOsgiClassLoader = classLoaderUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
+        if ( urlOsgiClassLoader != null ) {
+            //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
+            urlOsgiClassLoader.reload();
+        } else {
 
-            //Inject the class
-            defineClass.invoke( systemClassLoader, new Object[]{jobClass.getProtectionDomain().getCodeSource().getLocation()} );
-            defineClass.setAccessible( false );
+            if ( currentJobClass != null ) {
+                if ( currentJobClass.getClassLoader() instanceof UrlOsgiClassLoader ) {
+                    urlOsgiClassLoader = (UrlOsgiClassLoader) currentJobClass.getClassLoader();
+                }
+            }
+
+            if ( urlOsgiClassLoader == null ) {
+
+                //Creates out custom class loader in order to use it to inject the job code inside dotcms context
+                urlOsgiClassLoader = new UrlOsgiClassLoader( jobClass.getProtectionDomain().getCodeSource().getLocation() );
+
+                //Create out transformer, a class that will allows to override a class content
+                OSGIClassTransformer transformer = new OSGIClassTransformer();
+                instrumentation.addTransformer( transformer, true );
+                urlOsgiClassLoader.setInstrumentation( instrumentation, transformer );
+            } else {
+                //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
+                urlOsgiClassLoader.reload();
+            }
+
+            /*
+            In order to inject the job code inside dotcms context this is the main part of the process,
+            is required to insert our custom class loader inside dotcms class loaders hierarchy.
+             */
+            ClassLoader loader = classLoaderUtil.findFirstLoader( ClassLoader.getSystemClassLoader() );
+
+            Field parentLoaderField = ClassLoader.class.getDeclaredField( "parent" );
+            parentLoaderField.setAccessible( true );
+            parentLoaderField.set( loader, urlOsgiClassLoader );
+            parentLoaderField.setAccessible( false );
         }
 
         /*
         Schedules the given job in the quartz system, and depending on the sequentialScheduled
         property it will use the sequential of the standard scheduler.
          */
-        QuartzUtils.scheduleTask( taskJob );
+        QuartzUtils.scheduleTask( scheduledTask );
         jobs.put( jobName, jobGroup );
 
         Logger.info( this, "Added Quartz Job: " + jobName );
@@ -472,13 +525,42 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @throws SchedulerException
      */
-    protected void unregisterQuartzJobs () throws SchedulerException {
+    protected void unregisterQuartzJobs () throws Exception {
 
         if ( jobs != null ) {
             for ( String jobName : jobs.keySet() ) {
                 QuartzUtils.removeJob( jobName, jobs.get( jobName ) );
             }
+
+            /*UrlOsgiClassLoader loader = classLoaderUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
+            if ( loader != null ) {
+                loader.getInstrumentation().removeTransformer( loader.getTransformer() );
+            }*/
         }
+    }
+
+    class ClassLoaderUtil {
+
+        public UrlOsgiClassLoader findCustomURLLoader ( ClassLoader loader ) {
+
+            if ( loader == null ) {
+                return null;
+            } else if ( loader instanceof UrlOsgiClassLoader ) {
+                return (UrlOsgiClassLoader) loader;
+            } else {
+                return findCustomURLLoader( loader.getParent() );
+            }
+        }
+
+        public ClassLoader findFirstLoader ( ClassLoader loader ) {
+
+            if ( loader.getParent() == null ) {
+                return loader;
+            } else {
+                return findFirstLoader( loader.getParent() );
+            }
+        }
+
     }
 
 }

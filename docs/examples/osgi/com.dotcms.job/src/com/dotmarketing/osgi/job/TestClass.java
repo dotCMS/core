@@ -13,7 +13,7 @@ public class TestClass {
     }
 
     public void printB () {
-        Logger.info( this, "Printing from TestClass.printA" );
+        Logger.info( this, "Printing from TestClass.printB" );
     }
 
 }
