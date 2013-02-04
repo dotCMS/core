@@ -71,27 +71,37 @@ var cmsfile=null;
 	function updateDate(varName) {
 		var field = $(varName);
 		var dateValue ="";
-		var myDate = dijit.byId(varName + "Date");
-		var x = new Date();
-		if(myDate != null){
-			x = myDate.getValue();
+		var datePart=dijit.byId(varName + "Date");
+		var timePart=dijit.byId(varName + 'Time');
+		
+		if(datePart != null) {
+			var x = datePart.getValue();
+			if(x) {
+				var month = (x.getMonth() +1) + "";
+				month = (month.length < 2) ? "0" + month : month;
+				var day = (x.getDate() ) + "";
+				day = (day.length < 2) ? "0" + day : day;
+				year = x.getFullYear();
+				dateValue= year + "-" + month + "-" + day + " ";
+			}
 		}
-		var month = (x.getMonth() +1) + "";
-		month = (month.length < 2) ? "0" + month : month;
-		var day = (x.getDate() ) + "";
-		day = (day.length < 2) ? "0" + day : day;
-		year = x.getFullYear();
-		dateValue= year + "-" + month + "-" + day + " ";
-
-		if (dijit.byId(varName + 'Time') != null) {
-			var time = dijit.byId(varName + 'Time').value;
-			var hour = time.getHours();
-			if(hour < 10) hour = "0" + hour;
-			var min = time.getMinutes();
-			if(min < 10) min = "0" + min;
-			dateValue += hour + ":" + min;
-		} else {
-			dateValue += "00:00";
+		
+		if(datePart==null || dateValue!="") {
+			// if it is just time or date_time but the value exists
+			if (timePart != null) {
+				var time = timePart.value;
+				if(time) {
+					var hour = time.getHours();
+					if(hour < 10) hour = "0" + hour;
+					var min = time.getMinutes();
+					if(min < 10) min = "0" + min;
+					dateValue += hour + ":" + min;
+					if(datePart==null)
+						dateValue+=":00";
+				}
+			} else {
+				dateValue += "00:00";
+			}
 		}
 
 		field.value = dateValue;
