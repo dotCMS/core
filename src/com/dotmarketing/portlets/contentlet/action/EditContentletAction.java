@@ -40,6 +40,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -409,6 +410,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					SessionMessages.add(httpReq, "error", "message.contentlet.cannot.be.unlocked");
 				}catch(DotContentletStateException dcse){
 					SessionMessages.add(httpReq, "message", "message.contentlet.unpublish.notlive_or_locked");
+				}catch (PublishStateException e) {
+					SessionMessages.add(httpReq, "message", e.getMessage());
 				}
 			} catch (Exception ae) {
 				_handleException(ae, req);
@@ -2122,6 +2125,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					SessionMessages.add(httpReq, "message", "message.contentlets.batch.publish.locked");
 				} catch (DotSecurityException dse) {
 					SessionMessages.add(httpReq, "message", "message.contentlets.batch.publish.nopermissions");
+				} catch (PublishStateException e) {
+					SessionMessages.add(httpReq, "message", e.getMessage());
 				} catch (Exception e) {
 					SessionMessages.add(httpReq, "message", "message.contentlets.batch.publish.error");
 				}
