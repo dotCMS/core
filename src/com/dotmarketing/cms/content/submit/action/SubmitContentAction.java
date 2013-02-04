@@ -36,7 +36,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DNSUtil;
 import com.dotmarketing.util.EmailUtils;
 import com.dotmarketing.util.Logger;
@@ -158,7 +157,7 @@ public class SubmitContentAction extends DispatchAction{
 			String emailvalues;
 			String []emailvaluessep;
 			List <String> emails= new ArrayList <String>();
-			if (st.getStructureType() == st.STRUCTURE_TYPE_FORM) {
+			if (st.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
 				emailvalues = st.getFieldVar("formEmail").getValues();
 				if(UtilMethods.isSet(emailvalues)){
 					emailvalues = emailvalues.trim().toLowerCase();
@@ -342,8 +341,8 @@ public class SubmitContentAction extends DispatchAction{
 			//http://jira.dotmarketing.net/browse/DOTCMS-3463
 			Map <String, Object> tempBinaryValues= new HashMap <String, Object>();
 			fileFields = StructureFactory.getFilesFieldsList(st, parametersfileName, filevalues);
-			List <Field> catfields = st.getFields();
-			for(Field field:catfields){
+			List <Field> fields = st.getFields();
+			for(Field field:fields){
 				Map <String, Object> binaryvalues= new HashMap <String, Object>();
 				if (field.getFieldType().equals("binary"))
 				{
@@ -353,7 +352,7 @@ public class SubmitContentAction extends DispatchAction{
 					Object ob = tempBinaryValues.get("parameterValues");
 					if(ob != null){
 						File f = (File)ob;
-						binaryvalues.put(field.getVelocityVarName(), f);
+						binaryvalues.put("file", f);
 						values.add(new String []{f.getAbsolutePath()});
 					}else{
 					  binaryvalues.put(field.getVelocityVarName(), null);
@@ -402,7 +401,7 @@ public class SubmitContentAction extends DispatchAction{
 			if(!APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode())){
 				Logger.error(this, "Unable to index contentlet");
 			}
-			if (st.getStructureType()== st.STRUCTURE_TYPE_FORM ){
+			if (st.getStructureType()== Structure.STRUCTURE_TYPE_FORM ){
 				if(st.getFieldVar("formReturnPage")!= null && UtilMethods.isSet(st.getFieldVar("formReturnPage").getValues())){
 					af.setPath(st.getFieldVar("formReturnPage").getValues());
 				}
@@ -543,13 +542,10 @@ public class SubmitContentAction extends DispatchAction{
 			SystemException, Exception {
 
 		UploadServletRequest uploadRequest = (UploadServletRequest) request;
-		HttpSession session = request.getSession();
 		File f = uploadRequest.getFile(binaryFieldName);
 		Map<String, Object> values = new HashMap<String, Object>();
-		boolean hasError = false;
 		boolean isEmptyFile = false;
 		String fileName;
-		Host host = hostWebAPI.getCurrentHost(request);
 		String userId = request.getParameter("userId");
 		User user = null;
 		if (userId != null && !userId.equals("")) {
