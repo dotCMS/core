@@ -87,33 +87,39 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                 JarEntry entry = (JarEntry) resources.nextElement();
                 if ( !entry.isDirectory() && entry.getName().contains( ".class" ) ) {
 
-                    InputStream in = null;
-                    ByteArrayOutputStream out = null;
-                    try {
-                        in = jar.getInputStream( entry );
-                        out = new ByteArrayOutputStream();
+                    String className = entry.getName().replace( "/", "." ).replace( ".class", "" );
 
-                        byte[] buffer = new byte[1024];
-                        int length;
-                        while ( (length = in.read( buffer )) > 0 ) {
-                            out.write( buffer, 0, length );
-                        }
-                        byte[] byteCode = out.toByteArray();
+                    //We just want to redefine loaded classes, we don't want to load something that will not be use it
+                    Class currentClass = findLoadedClass( className );
+                    if ( currentClass != null ) {
 
+                        InputStream in = null;
+                        ByteArrayOutputStream out = null;
                         try {
-                            //And finally redefine the class
-                            String className = entry.getName().replace( "/", "." ).replace( ".class", "" );
-                            ClassDefinition classDefinition = new ClassDefinition( Class.forName( className ), byteCode );
-                            instrumentation.redefineClasses( classDefinition );
-                        } catch ( ClassNotFoundException e ) {
-                            //If the class has not been loaded we don't need to redefine it
-                        }
-                    } finally {
-                        if ( in != null ) {
-                            in.close();
-                        }
-                        if ( out != null ) {
-                            out.close();
+                            in = jar.getInputStream( entry );
+                            out = new ByteArrayOutputStream();
+
+                            byte[] buffer = new byte[1024];
+                            int length;
+                            while ( (length = in.read( buffer )) > 0 ) {
+                                out.write( buffer, 0, length );
+                            }
+                            byte[] byteCode = out.toByteArray();
+
+                            try {
+                                //And finally redefine the class
+                                ClassDefinition classDefinition = new ClassDefinition( currentClass, byteCode );
+                                instrumentation.redefineClasses( classDefinition );
+                            } catch ( ClassNotFoundException e ) {
+                                //If the class has not been loaded we don't need to redefine it
+                            }
+                        } finally {
+                            if ( in != null ) {
+                                in.close();
+                            }
+                            if ( out != null ) {
+                                out.close();
+                            }
                         }
                     }
 
