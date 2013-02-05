@@ -15,7 +15,6 @@ import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.github.jamm.MemoryMeter;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -23,7 +22,6 @@ import org.quartz.SchedulerException;
 
 import java.beans.IntrospectionException;
 import java.io.File;
-import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -296,18 +294,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
 
             if ( urlOsgiClassLoader == null ) {
-
-                //Creates out custom class loader in order to use it to inject the job code inside dotcms context
+                //Creates our custom class loader in order to use it to inject the job code inside dotcms context
                 urlOsgiClassLoader = new UrlOsgiClassLoader( jobClassURL );
-
-                //Get the instrumentation object
-                Instrumentation instrumentation = classLoaderUtil.findInstrumentation();
-
-                //Creates our transformer, a class that will allows to override a class content
-                OSGIClassTransformer transformer = new OSGIClassTransformer();
-                instrumentation.removeTransformer( transformer );//Just to be sure we don't have two instances of the same transformer
-                instrumentation.addTransformer( transformer, true );
-                urlOsgiClassLoader.setInstrumentation( instrumentation, transformer );
             } else {
                 //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
                 urlOsgiClassLoader.reload( jobClassURL );
@@ -537,32 +525,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     class ClassLoaderUtil {
-
-        private Instrumentation instrumentation;
-
-        /**
-         * We need to access to the instrumentation (This class provides services needed to instrument Java programming language code.
-         * Instrumentation is the addition of byte-codes to methods for the purpose of gathering data to be
-         * utilized by tools, or on this case to modify on run time classes content in order to reload them.)
-         *
-         * @return
-         * @throws Exception
-         */
-        public Instrumentation findInstrumentation () throws Exception {
-
-            if ( instrumentation != null ) {
-                return instrumentation;
-            }
-
-            //Find the instrumentation object
-            MemoryMeter mm = new MemoryMeter();
-            Field instrumentationField = MemoryMeter.class.getDeclaredField( "instrumentation" );//We need to access it using reflection
-            instrumentationField.setAccessible( true );
-            instrumentation = (Instrumentation) instrumentationField.get( mm );
-            instrumentationField.setAccessible( false );
-
-            return instrumentation;
-        }
 
         public UrlOsgiClassLoader findCustomURLLoader ( ClassLoader loader ) {
 
