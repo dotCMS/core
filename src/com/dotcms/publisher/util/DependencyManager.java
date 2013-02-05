@@ -377,6 +377,25 @@ public class DependencyManager {
 								APILocator.getFolderAPI().find(con.getFolder(), user, false)));
 						for(HTMLPage htmlPage: folderHtmlPages) {
 							htmlPages.add(htmlPage.getIdentifier());
+							
+							// working template working page
+							Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(htmlPage.getTemplateId(), user, false);
+							// live template working page
+							Template liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), user, false);
+							
+							// Templates dependencies
+							templates.add(htmlPage.getTemplateId());
+
+							// Containers dependencies 
+							List<Container> containerList = new ArrayList<Container>();
+							containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
+							containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
+							
+							for (Container container : containerList) {
+								containers.add(container.getIdentifier());
+								// Structure dependencies
+								structures.add(container.getStructureInode());
+							}
 						}
 					}
 				} catch (Exception e) {
