@@ -265,19 +265,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             jobs = new HashMap<String, String>();
         }
 
-        /*
-         We need to access to the instrumentation (This class provides services needed to instrument Java
-         programming language code.
-         Instrumentation is the addition of byte-codes to methods for the purpose of gathering data to be
-         utilized by tools, or on this case to modify on run time classes content in order to reload
-         them.)
-        */
-        MemoryMeter mm = new MemoryMeter();
-        Field instrumentationField = MemoryMeter.class.getDeclaredField( "instrumentation" );//We need to access it using reflection
-        instrumentationField.setAccessible( true );
-        Instrumentation instrumentation = (Instrumentation) instrumentationField.get( mm );
-        instrumentationField.setAccessible( false );
-
         //Verify if the job class is already in the system class loader
         Class currentJobClass = null;
         try {
@@ -288,12 +275,18 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         //Get the job class from this bundle context
         Class jobClass = Class.forName( scheduledTask.getJavaClassName(), true, getFelixClassLoader() );
+        URL jobClassURL = jobClass.getProtectionDomain().getCodeSource().getLocation();
 
         //Verify if we have our UrlOsgiClassLoader on the main class loaders
         UrlOsgiClassLoader urlOsgiClassLoader = classLoaderUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
         if ( urlOsgiClassLoader != null ) {
-            //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
-            urlOsgiClassLoader.reload();
+
+            if ( urlOsgiClassLoader.contains( jobClassURL ) ) {
+                //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
+                urlOsgiClassLoader.reload( jobClassURL );
+            } else {
+                urlOsgiClassLoader.addURL( jobClassURL );
+            }
         } else {
 
             if ( currentJobClass != null ) {
@@ -305,15 +298,19 @@ public abstract class GenericBundleActivator implements BundleActivator {
             if ( urlOsgiClassLoader == null ) {
 
                 //Creates out custom class loader in order to use it to inject the job code inside dotcms context
-                urlOsgiClassLoader = new UrlOsgiClassLoader( jobClass.getProtectionDomain().getCodeSource().getLocation() );
+                urlOsgiClassLoader = new UrlOsgiClassLoader( jobClassURL );
 
-                //Create out transformer, a class that will allows to override a class content
+                //Get the instrumentation object
+                Instrumentation instrumentation = classLoaderUtil.findInstrumentation();
+
+                //Creates our transformer, a class that will allows to override a class content
                 OSGIClassTransformer transformer = new OSGIClassTransformer();
+                instrumentation.removeTransformer( transformer );//Just to be sure we don't have two instances of the same transformer
                 instrumentation.addTransformer( transformer, true );
                 urlOsgiClassLoader.setInstrumentation( instrumentation, transformer );
             } else {
                 //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
-                urlOsgiClassLoader.reload();
+                urlOsgiClassLoader.reload( jobClassURL );
             }
 
             /*
@@ -540,6 +537,32 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     class ClassLoaderUtil {
+
+        private Instrumentation instrumentation;
+
+        /**
+         * We need to access to the instrumentation (This class provides services needed to instrument Java programming language code.
+         * Instrumentation is the addition of byte-codes to methods for the purpose of gathering data to be
+         * utilized by tools, or on this case to modify on run time classes content in order to reload them.)
+         *
+         * @return
+         * @throws Exception
+         */
+        public Instrumentation findInstrumentation () throws Exception {
+
+            if ( instrumentation != null ) {
+                return instrumentation;
+            }
+
+            //Find the instrumentation object
+            MemoryMeter mm = new MemoryMeter();
+            Field instrumentationField = MemoryMeter.class.getDeclaredField( "instrumentation" );//We need to access it using reflection
+            instrumentationField.setAccessible( true );
+            instrumentation = (Instrumentation) instrumentationField.get( mm );
+            instrumentationField.setAccessible( false );
+
+            return instrumentation;
+        }
 
         public UrlOsgiClassLoader findCustomURLLoader ( ClassLoader loader ) {
 

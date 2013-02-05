@@ -31,14 +31,6 @@ public class UrlOsgiClassLoader extends URLClassLoader {
         urls.add( url );
     }
 
-    public Instrumentation getInstrumentation () {
-        return instrumentation;
-    }
-
-    public OSGIClassTransformer getTransformer () {
-        return transformer;
-    }
-
     public void setInstrumentation ( Instrumentation instrumentation, OSGIClassTransformer transformer ) {
         this.instrumentation = instrumentation;
         this.transformer = transformer;
@@ -64,8 +56,15 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
     @Override
     protected void addURL ( URL url ) {
-        urls.add( url );
-        super.addURL( url );
+
+        if ( !urls.contains( url ) ) {
+            urls.add( url );
+            super.addURL( url );
+        }
+    }
+
+    public Boolean contains ( URL url ) {
+        return urls.contains( url );
     }
 
     /**
@@ -76,56 +75,65 @@ public class UrlOsgiClassLoader extends URLClassLoader {
     public void reload () throws Exception {
 
         for ( URL url : urls ) {
+            reload( url );
+        }
+    }
 
-            File jarFile = new File( url.toURI() );
-            JarFile jar = new JarFile( jarFile );
+    /**
+     * Reload all the loaded classes of this custom class loader of a given url, by reload we mean to redefine those classes.
+     * <br>USE THIS METHOD IF YOU DON'T WANT TO RELOAD ALL THE CLASSES FOR ALL THE URLS ADDED TO THIS CLASSLOADER
+     *
+     * @throws Exception
+     */
+    public void reload ( URL url ) throws Exception {
 
-            Enumeration resources = jar.entries();
-            while ( resources.hasMoreElements() ) {
+        File jarFile = new File( url.toURI() );
+        JarFile jar = new JarFile( jarFile );
 
-                //We will try to redefine class by class
-                JarEntry entry = (JarEntry) resources.nextElement();
-                if ( !entry.isDirectory() && entry.getName().contains( ".class" ) ) {
+        Enumeration resources = jar.entries();
+        while ( resources.hasMoreElements() ) {
 
-                    String className = entry.getName().replace( "/", "." ).replace( ".class", "" );
+            //We will try to redefine class by class
+            JarEntry entry = (JarEntry) resources.nextElement();
+            if ( !entry.isDirectory() && entry.getName().contains( ".class" ) ) {
 
-                    //We just want to redefine loaded classes, we don't want to load something that will not be use it
-                    Class currentClass = findLoadedClass( className );
-                    if ( currentClass != null ) {
+                String className = entry.getName().replace( "/", "." ).replace( ".class", "" );
 
-                        InputStream in = null;
-                        ByteArrayOutputStream out = null;
+                //We just want to redefine loaded classes, we don't want to load something that will not be use it
+                Class currentClass = findLoadedClass( className );
+                if ( currentClass != null ) {
+
+                    InputStream in = null;
+                    ByteArrayOutputStream out = null;
+                    try {
+                        in = jar.getInputStream( entry );
+                        out = new ByteArrayOutputStream();
+
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ( (length = in.read( buffer )) > 0 ) {
+                            out.write( buffer, 0, length );
+                        }
+                        byte[] byteCode = out.toByteArray();
+
                         try {
-                            in = jar.getInputStream( entry );
-                            out = new ByteArrayOutputStream();
-
-                            byte[] buffer = new byte[1024];
-                            int length;
-                            while ( (length = in.read( buffer )) > 0 ) {
-                                out.write( buffer, 0, length );
-                            }
-                            byte[] byteCode = out.toByteArray();
-
-                            try {
-                                //And finally redefine the class
-                                ClassDefinition classDefinition = new ClassDefinition( currentClass, byteCode );
-                                instrumentation.redefineClasses( classDefinition );
-                            } catch ( ClassNotFoundException e ) {
-                                //If the class has not been loaded we don't need to redefine it
-                            }
-                        } finally {
-                            if ( in != null ) {
-                                in.close();
-                            }
-                            if ( out != null ) {
-                                out.close();
-                            }
+                            //And finally redefine the class
+                            ClassDefinition classDefinition = new ClassDefinition( currentClass, byteCode );
+                            instrumentation.redefineClasses( classDefinition );
+                        } catch ( ClassNotFoundException e ) {
+                            //If the class has not been loaded we don't need to redefine it
+                        }
+                    } finally {
+                        if ( in != null ) {
+                            in.close();
+                        }
+                        if ( out != null ) {
+                            out.close();
                         }
                     }
-
                 }
-            }
 
+            }
         }
     }
 
