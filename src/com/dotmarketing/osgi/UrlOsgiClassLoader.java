@@ -1,10 +1,13 @@
 package com.dotmarketing.osgi;
 
+import org.github.jamm.MemoryMeter;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -24,16 +27,21 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
     private Collection<URL> urls;
 
-    public UrlOsgiClassLoader ( URL url ) {
+    public UrlOsgiClassLoader ( URL url ) throws Exception {
+
         super( new URL[]{url}, null );
 
         urls = new ArrayList<URL>();
         urls.add( url );
-    }
 
-    public void setInstrumentation ( Instrumentation instrumentation, OSGIClassTransformer transformer ) {
-        this.instrumentation = instrumentation;
-        this.transformer = transformer;
+        //Find and set the instrumentation object
+        instrumentation = findInstrumentation();
+        //Creates our transformer, a class that will allows to redefine a class content
+        transformer = new OSGIClassTransformer();
+
+        //Adding the transformer
+        instrumentation.removeTransformer( transformer );//Just to be sure we don't have two instances of the same transformer
+        instrumentation.addTransformer( transformer, true );
     }
 
     @Override
@@ -135,6 +143,29 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
             }
         }
+    }
+
+    /**
+     * We need to access to the instrumentation (This class provides services needed to instrument Java programming language code.
+     * Instrumentation is the addition of byte-codes to methods for the purpose of gathering data to be
+     * utilized by tools, or on this case to modify on run time classes content in order to reload them.)
+     *
+     * @return an Instrumentation instance
+     * @throws Exception
+     */
+    public Instrumentation findInstrumentation () throws Exception {
+
+        //Find the instrumentation object
+        MemoryMeter mm = new MemoryMeter();
+
+        Field instrumentationField = MemoryMeter.class.getDeclaredField( "instrumentation" );//We need to access it using reflection
+        instrumentationField.setAccessible( true );
+
+        Instrumentation instrumentation = (Instrumentation) instrumentationField.get( mm );
+
+        instrumentationField.setAccessible( false );
+
+        return instrumentation;
     }
 
 }
