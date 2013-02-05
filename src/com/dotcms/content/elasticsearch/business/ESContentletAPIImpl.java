@@ -2865,10 +2865,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(value instanceof Date){
                 contentlet.setDateProperty(field.getVelocityVarName(), (Date)value);
             }else if(value instanceof String){
-                try{
-                    contentlet.setDateProperty(field.getVelocityVarName(),DateUtil.convertDate((String)value, dateFormats));
-                }catch (Exception e) {
-                    throw new DotContentletStateException("Unable to convert string to date " + value);
+                if(((String) value).trim().length()>0) {
+                    try {
+                        contentlet.setDateProperty(field.getVelocityVarName(),
+                                DateUtil.convertDate((String)value, dateFormats));
+                    }catch (Exception e) {
+                        throw new DotContentletStateException("Unable to convert string to date " + value);
+                    }
+                }
+                else {
+                    contentlet.setDateProperty(field.getVelocityVarName(), null);
                 }
             }else{
                 throw new DotContentletStateException("Date fields must either be of type String or Date");
