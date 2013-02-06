@@ -409,7 +409,7 @@
 					<tr <%=str_style2 %>>
 						<td>
 							<p>
-								<strong><%= LanguageUtil.get(pageContext, "Comment-By") %>:</strong> <%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %><br/>
+								<strong><%= LanguageUtil.get(pageContext, "Comment-By") %>:</strong> <%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %><br/>
 								<strong><%= LanguageUtil.get(pageContext, "Created") %>:</strong> <%= DateUtil.prettyDateSince(comment.getCreationDate()) %>
 								<div style="font-size: 10pt;margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></span>
 							</p>
