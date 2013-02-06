@@ -28,6 +28,7 @@ import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -49,16 +50,21 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	 * @param path
 	 */
 	public LanguageFolderResourceImpl(String path) {
-		ClassLoader classLoader = getClass().getClassLoader();
 		dotDavHelper = new DotWebdavHelper();
 		this.path = path;
 		if(!UtilMethods.isSet(path)){
 			isLanguageRoot = true;
-			folder = new File(classLoader.getResource("content").getFile());
+			folder = new File(Config.CONTEXT.getRealPath("/assets/messages"));
 			path = "";
 		}else{
 			if(path.contains("/")){
-				path = path.replaceAll("/", File.separator);
+				if(path.contains("/")){
+					String[] splitPath = path.split("/");
+					path = "";
+					for(int i = 0; i<splitPath.length ; i++)
+						path = path + splitPath[i] + File.separator;
+				}
+
 			}
 			if(path.contains("null")){
 				path = path.replace("null", "");
@@ -72,7 +78,7 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 				}
 			}
 			isLanguageRoot = false;
-			folder = new File(classLoader.getResource("content").getFile() + File.separator + path);
+			folder = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + path);
 		}
 	}
 
@@ -231,12 +237,13 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 		if(!(newName.endsWith(".properties") || newName.endsWith(".native"))){
 			throw new RuntimeException("You cannot add/edit languages files that are not properties files.");
 		}
-		ClassLoader classLoader = getClass().getClassLoader();
-		File f = new File(classLoader.getResource("content").getFile() + File.separator + newName);
+		File f = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + newName);
 		if(f.exists()){
-			File folder = new File(classLoader.getResource("content").getFile() + File.separator + "archived" + File.separator + f.getName());
+			File folder = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + "archived" + File.separator + f.getName());
 			folder.mkdirs();
-			FileUtil.copyFile(f, new File(folder.getPath() + File.separator + new Date().toString() + f.getName()));
+			String date = new Date().toString();
+			date = date.replace(":", "");
+			FileUtil.copyFile(f, new File(folder.getPath() + File.separator + date + f.getName()));
 		}
 
 		if(!f.exists()){

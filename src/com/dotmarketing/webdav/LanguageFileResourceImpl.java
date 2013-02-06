@@ -38,7 +38,11 @@ public class LanguageFileResourceImpl implements FileResource, LockableResource 
 
 	public LanguageFileResourceImpl(String path) {
 		if(path.contains("/")){
-			path = path.replaceAll("/", File.separator);
+			String[] splitPath = path.split("/");
+			path = "";
+			for(int i = 0; i<splitPath.length ; i++)
+				path = path + splitPath[i] + File.separator;
+
 		}
 		if(path.contains("null")){
 			path = path.replace("null", "");
@@ -55,8 +59,7 @@ public class LanguageFileResourceImpl implements FileResource, LockableResource 
 			}
 		}
 		dotDavHelper = new DotWebdavHelper();
-		ClassLoader classLoader = getClass().getClassLoader();
-		file = new File(classLoader.getResource("content").getFile() + File.separator + path);
+		file = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + path);
 
 	}
 
