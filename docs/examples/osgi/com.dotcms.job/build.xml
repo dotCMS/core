@@ -1,4 +1,4 @@
-<project name="Custom Job - Bundle Builder" default="build">
+<project name="Quartz Job Example - Bundle Builder" default="build">
 
     <basename file="${basedir}" property="plugin.name"/>
 
