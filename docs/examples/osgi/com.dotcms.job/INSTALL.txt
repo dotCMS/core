@@ -12,12 +12,8 @@ In order to install this bundle:
 		
 	This will build the monolithic dotCMS .jar with the libraries needed to build OSGi plugins 
 	and place it in the dotCMS/WEB-INF/lib directory.
-
-2)  This bundle plugin uses services provide by the com.dotcms.service bundle, for that reason is required
-    to have installed the com.dotcms.service plugin (It needs to be build and uploaded, please refer to the INSTALL.txt
-    file for the com.dotcms.service plugin) before to build this bundle plugin.
-
-3) 	From this directory (ROOT of the plugin), execute the "build" task of the build.xml ant
+		
+2) 	From this directory (ROOT of the plugin), execute the "build" task of the build.xml ant 
 	file to create the bundle jar file.
 
 To install this bundle:

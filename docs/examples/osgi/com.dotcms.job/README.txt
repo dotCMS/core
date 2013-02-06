@@ -2,10 +2,9 @@
 README
 ------
 
-This bundle plugin is an example of how to use services provide by other bundles and
- how to register servlets and filters.
+This bundle plugin is an example of how to Schedule Quartz Jobs using an OSGI bundle plugin.
 
-How to create a bundle plugin using services and registering servlets and filters
+How to create a bundle plugin for Schedule Quartz Jobs
 -------------------------------------------
 
 --
@@ -18,7 +17,7 @@ Bundle-Name: The name of your bundle
 
 Bundle-SymbolicName: A short an unique name for the bundle
 
-Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.servlet.Activator)
+Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.job.Activator)
 
 DynamicImport-Package: *
     Dynamically add required imports the plugin may need without add them explicitly
@@ -27,7 +26,7 @@ Import-Package: This is a comma separated list of package's name.
                 In this list there must be the packages that you are using inside
                 the bundle plugin and that are exported by the dotCMS runtime.
 
-Beware!!!
+#Beware!!!
 ---------
 
 In order to work inside the Apache Felix OSGI runtime, the import
@@ -44,35 +43,33 @@ a plugin can Import the packages to use them inside the OSGI blundle.
 --
 --
 --
-com.dotmarketing.osgi.servlet.HelloWorldServlet
+com.dotmarketing.osgi.job.CustomJob
 -----------------------------------------------
 
-Simple and standard implementation of a HttpServlet that will use
-the HelloWorld service provide by the com.dotcms.service bundle plugin (Please refer to INSTALL.txt (!)).
-
---
-com.dotmarketing.osgi.servlet.TestFilter
-----------------------------------------
-
-Simple and standard implementation of a Filter
+Simple Job class that implements the regular Quartz Job interface
 
 --
 Activator
 ---------
 
 This bundle activator extends from com.dotmarketing.osgi.GenericBundleActivator and implements BundleActivator.start().
-Gets a reference for the HelloWorldService via HelloWorld interface (com.dotcms.service bundle plugin - Please refer to INSTALL.txt (!)) and register
-our HelloWorldServlet servlet and the TestFilter filter.
+Will manually register a *CronScheduledTask* making use of the method *scheduleQuartzJob*
+
+* PLEASE note the "unregisterServices()" call, this call is MANDATORY (!) as it will allow us to stop and remove the register Quartz Job.
 
 --
 --
 --
-Testing
+Limitations (!)
 -------
 
-The HelloWorldServlet is registered under the url pattern "/helloworld" can be test it running and assuming your dotcms url is localhost:8080:
-    http://localhost:8080/app/helloworld
+There are limitations on the hot deploy functionality for the OSGI Quartz Jobs plugins, once you upload this plugin you will have some limitations
+on what code you can modify for the Quartz Job.
 
-The TestFilter filter is registered for the url pattern "/helloworld/.*" can be test it running and assuming your dotcms url is localhost:8080:
-    http://localhost:8080/app/helloworld/
-    http://localhost:8080/app/helloworld/testing.dot
+The java hot swapping allows to redefine (Reload) classes, but this are the limitations:
+
+    The redefinition may change method bodies, the constant pool and attributes.
+    The redefinition must not add, remove or rename fields or methods, change the signatures of methods, or change inheritance.
+
+This limitations will apply only for the OSGI Quartz plugins because in order to integrate our OSGI plugins with the dotCMS/Quartz code we had to
+work outside the OSGI and the plugin context.
