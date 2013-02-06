@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -109,8 +110,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			// handle language files
 			if(actualPath.endsWith("system/languages") || actualPath.endsWith("system/languages/") 
 					|| actualPath.endsWith("system/languages/archived") || actualPath.endsWith("system/languages/archived/")){
-		        ClassLoader classLoader = getClass().getClassLoader();
-				java.io.File file = new java.io.File(classLoader.getResource("content").getFile());
+		        java.io.File file = new java.io.File(Config.CONTEXT.getRealPath("/assets/messages"));
 				if(file.exists() && file.isDirectory()){
 					if(actualPath.contains("/archived") && actualPath.endsWith("/")){
 						actualPath = actualPath.replace("system/languages/", "");
@@ -127,16 +127,28 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			}
 			
 			// handle the language files
+			if(actualPath.endsWith("/")){
+				actualPath = actualPath.substring(0, actualPath.length()-1);
+			}
 			if(actualPath.startsWith("system/languages") && (actualPath.endsWith(".properties") || actualPath.endsWith(".native"))){
-				ClassLoader classLoader = getClass().getClassLoader();
 				String fileRelPath = actualPath;
 				if(actualPath.contains("system/languages/")){
 					fileRelPath = actualPath.replace("system/languages/", "");
 					if(fileRelPath.contains("archived")){
-						fileRelPath = fileRelPath.replace("archived/", "");
+						java.io.File file = new java.io.File(Config.CONTEXT.getRealPath("/assets/messages") + java.io.File.separator + fileRelPath);
+						//fileRelPath = fileRelPath.replace("archived/", "");
+						if(fileRelPath.contains(".properties/")){
+							LanguageFileResourceImpl lfr = new LanguageFileResourceImpl(fileRelPath);
+							return lfr;
+						}
+						if(file.exists()){
+							LanguageFolderResourceImpl lfr = new LanguageFolderResourceImpl(fileRelPath);
+							return lfr;
+						}
 					}
+
 				}
-				java.io.File file = new java.io.File(classLoader.getResource("content").getFile() + java.io.File.separator + fileRelPath);
+				java.io.File file = new java.io.File(Config.CONTEXT.getRealPath("/assets/messages") + java.io.File.separator + fileRelPath);
 				if(file.exists()){
 					LanguageFileResourceImpl lfr = new LanguageFileResourceImpl(fileRelPath);
 					return lfr;
