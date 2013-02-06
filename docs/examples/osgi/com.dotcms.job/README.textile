@@ -47,12 +47,12 @@ ________________________________________________________________________________
 
 h1. Limitations (!)
 
-There are limitations on the hot deploy functionality for the OSGI Quartz Jobs plugins, once you upload this plugin you are limited
-on what code you can modify for the Quartz Job in order to see those changes the next time you upload the plugin.
+There are limitations on the hot deploy functionality for the OSGI Quartz Job plugin, once you upload this plugin you are limited
+on what code you can modify for the Quartz Job classes in order to see those changes the next time you upload the plugin.
 
-This will apply only for the OSGI Quartz plugins, exactly to the Quartz Job class you implement and the classes use it by it, because in order
-to integrate this plugin with the dotCMS/Quartz code we are using our plugin code outside the OSGI and the plugin context, trying to let know
-to dotCMS/Quartz that there is a Job outside its classpath trying to be use it and instantiate by them.
+This will apply only for the OSGI Quartz plugins, exactly to the Quartz Job class you implement and the classes use it by it, because
+in order to integrate this plugin with the dotCMS/Quartz code we are using our plugin code outside the OSGI and the plugin context,
+trying to let know to dotCMS/Quartz that there is a Job outside its classpath trying to be use it and instantiate by them.
 
 In order to support the use of the Quartz Jobs inside ours OSGI plugins we use the java hot swapping, it allows to redefine classes,
 unfortunately, this redefinition is limited only to changing method bodies:
@@ -60,4 +60,4 @@ unfortunately, this redefinition is limited only to changing method bodies:
 bq. The redefinition may change method bodies, the constant pool and attributes. The redefinition must not add, remove or rename fields or methods, change the signatures of methods, or change inheritance.
 
 As long as you don't add, remove or change methods (ONLY the methods bodies) for your Job code you will have an OSGI plugin that
-will reflect you changes when a redeploy is done. If you need to change the signature of the class a restart of the dotCMS app will be require.
+will reflect you changes when a redeploy is done. If you need to change the signature of the Job classes a restart of the dotCMS app will be require.
