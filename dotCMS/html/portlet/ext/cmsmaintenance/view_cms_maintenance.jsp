@@ -511,25 +511,28 @@ function doDownloadIndex(indexName){
 
 }
 
-function doFullReindex(){
-
-
-	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-
-	var shards = parseInt(number);
-	if(shards <1){
-		return;
-	}
-	dojo.byId("numberOfShards").value = shards;
-
-	dijit.byId('idxReindexButton').setDisabled(true);
-	dijit.byId('idxShrinkBtn').setDisabled(true);
-	submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
-	return false;
-
+function doReindex(){
+	var shards;
+    if(dojo.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
+    	
+		var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+		
+		if(!number){
+			return;
+		}
+			shards = parseInt(number);
+    	}
+    else{
+    		shards =1
+     	 }
+		if(shards <1){
+			return;
+		}
+		dojo.byId("numberOfShards").value = shards;
+		dijit.byId('idxReindexButton').setDisabled(true);
+		dijit.byId('idxShrinkBtn').setDisabled(true);
+		submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
+		return false;
 }
 
 function doCloseIndex(indexName) {
@@ -1390,7 +1393,7 @@ dd.leftdl {
 
                         </td>
                         <td style="text-align:center;white-space:nowrap;" width="350">
-                            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doFullReindex()">
+                            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doReindex()">
                                 <%= LanguageUtil.get(pageContext,"Reindex") %>
                             </button>
                             <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton" disabled="disabled">
