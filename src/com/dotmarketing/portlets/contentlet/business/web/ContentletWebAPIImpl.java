@@ -146,6 +146,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				try {
 					Logger.debug(this, "I'm setting my contentlet parents");
 					_addToParents(contentletFormData, user, isAutoSave);
+				} catch (DotSecurityException e) {
+					throw new DotSecurityException(e.getMessage());
 				} catch (Exception ae) {
 					throw new Exception(ae.getMessage());
 				}
@@ -213,7 +215,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				containerParent = (Container) versionableAPI.findWorkingVersion(containerParentId, user, false);
 			}
 			catch(Exception e){
-
+				SessionMessages.add(req, "message", "User needs 'View' Permissions on container");
+				throw new DotSecurityException("User have no View Permissions on container");
 			}
 
 			if(containerParent != null){
