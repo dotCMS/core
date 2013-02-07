@@ -1445,7 +1445,7 @@ public class ContentletAjax {
 
 		}
 		catch(DotSecurityException dse){
-			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");
+			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
 			saveContentErrors.add(errorString);
 		}
 		catch(PublishStateException pe) {
