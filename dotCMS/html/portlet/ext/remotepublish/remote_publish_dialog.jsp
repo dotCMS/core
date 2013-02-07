@@ -37,11 +37,11 @@ GregorianCalendar cal = new GregorianCalendar();
 					dojoType="dijit.form.DateTextBox" 
 					validate="return false;" 
 					invalidMessage=""  
-					id="publishDate"
-					name="publishDate" value="now" style="width: 110px;">
+					id="wfPublishDateAux"
+					name="wfPublishDateAux" value="now" style="width: 110px;">
 								
 									
-				<input type="text" name="publishTime" id="publishTime" value="now"
+				<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value="now"
 				 	data-dojo-type="dijit.form.TimeTextBox"
 					required="true" style="width: 100px;"/>
 			</div>
@@ -56,14 +56,14 @@ GregorianCalendar cal = new GregorianCalendar();
 				type="text" 
 				dojoType="dijit.form.DateTextBox" 
 				validate="return false;"   
-				id="expireDate" name="expireDate" value="" style="width: 110px;">
+				id="wfExpireDateAux" name="wfExpireDateAux" value="" style="width: 110px;">
 							
 							
-			<input type="text" name="expireTime" id="expireTime" value=""
+			<input type="text" name="wfExpireTimeAux" id="wfExpireTimeAux" value=""
 			    data-dojo-type="dijit.form.TimeTextBox"	
 				style="width: 100px;" />
 				
-			&nbsp;&nbsp;<input type="checkbox" dojoType="dijit.form.CheckBox" checked="checked" name="neverExpire" id="neverExpire" > <%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %>
+			&nbsp;&nbsp;<input type="checkbox" dojoType="dijit.form.CheckBox" checked="checked" name="wfNeverExpire" id="wfNeverExpire" > <%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %>
 			</div>
 			<div class="clear"></div>
 		</div>
