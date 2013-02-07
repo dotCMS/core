@@ -217,15 +217,6 @@ public class RoleFactoryImpl extends RoleFactory {
 		dc.addParam(user.getUserId());
 		dc.addParam(role.getId());
 		dc.loadResult();
-		if(UtilMethods.isSet(role.getRoleKey())&& role.getRoleKey().equalsIgnoreCase(user.getUserId())){
-			dc.setSQL("delete from permission where roleid like ?");
-			dc.addParam(role.getId());
-			dc.loadResult();
-			dc.setSQL("delete from cms_role where role_key like ?");
-			dc.addParam(user.getUserId());
-			dc.loadResult();
-			CacheLocator.getPermissionCache().clearCache();
-		}
 		rc.remove(user.getUserId());
 	}
 	
