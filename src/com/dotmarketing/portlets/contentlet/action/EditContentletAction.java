@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.action;
 import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,9 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.struts.Globals;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -914,28 +913,43 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		List<Field> list = (List<Field>) FieldsCache.getFieldsByStructureInode(structure.getInode());
 		for (Field field : list) {
-			Object value = null;
 			String defaultValue = field.getDefaultValue();
 			if (UtilMethods.isSet(defaultValue)) {
 				String typeField = field.getFieldContentlet();
 				if (typeField.startsWith("bool")) {
-					value = defaultValue;
+					contentlet.setBoolProperty(field.getVelocityVarName(), Boolean.getBoolean(defaultValue));
 				} else if (typeField.startsWith("date")) {
-					SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-					String date = defaultValue;
-					value = dateFormatter.parse(date);
+				    if(defaultValue.equals("now"))
+				        contentlet.setDateProperty(field.getVelocityVarName(), new Date());
+				    else {
+				        DateFormat df=null;
+				        final String ft=field.getFieldType();
+			            if(ft.equals(Field.FieldType.DATE.toString()))
+			                df=new SimpleDateFormat("yyyy-MM-dd");
+			            else if(ft.equals(Field.FieldType.DATE_TIME.toString()))
+			                df=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			            else if(ft.equals(Field.FieldType.TIME.toString()))
+			                df=new SimpleDateFormat("HH:mm:ss");
+			            try {
+			                contentlet.setDateProperty(field.getVelocityVarName(), df.parse(defaultValue));
+			            }
+			            catch(ParseException e) {
+			                // pass it as null
+			            }
+				    }
 				} else if (typeField.startsWith("float")) {
-					value = defaultValue;
+				    contentlet.setFloatProperty(field.getVelocityVarName(), Float.parseFloat(defaultValue));
 				} else if (typeField.startsWith("integer")) {
-					value = defaultValue;
+				    contentlet.setLongProperty(field.getVelocityVarName(), Long.parseLong(defaultValue));
 				} else if (typeField.startsWith("text")) {
-					value = defaultValue;
+				    contentlet.setStringProperty(field.getVelocityVarName(), defaultValue);
 				}
 
-				if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
+ 				if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
 						|| field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 					try {
 						//Identifier id = (Identifier) InodeFactory.getInode((String) value, Identifier.class);
+					    String value=contentlet.getStringProperty(field.getVelocityVarName());
 						Identifier id = APILocator.getIdentifierAPI().find((String) value);
 						if (InodeUtils.isSet(id.getInode())) {
 							if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())) {
@@ -945,12 +959,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								File inodeAux = (File) APILocator.getVersionableAPI().findWorkingVersion(id,  APILocator.getUserAPI().getSystemUser(), false);
 								value = inodeAux.getInode();
 							}
+							contentlet.setStringProperty(field.getVelocityVarName(), value);
 						}
 					} catch (Exception ex) {
 						Logger.debug(this, ex.toString());
 					}
 				}
-				BeanUtils.setProperty(contentlet, typeField, value);
+				
 			}
 		}
 
