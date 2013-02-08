@@ -57,8 +57,8 @@ public class SalesForceUtils {
     	
     	systemUser = APILocator.getUserAPI().getSystemUser();
     	systemHost = APILocator.getHostAPI().findDefaultHost(systemUser, false);
-    	saveSalesForceInfoInDotCMSLog = new Boolean (Config.getStringProperty("save_log_info_dotcms_log"));
-		saveSalesForceInfoInUserActivityLog = new Boolean (Config.getStringProperty("save_log_info_useractivity_log"));
+    	saveSalesForceInfoInDotCMSLog = Config.getBooleanProperty("save_log_info_dotcms_log", false);
+		saveSalesForceInfoInUserActivityLog = Config.getBooleanProperty("save_log_info_useractivity_log",false);
 		
     	DefaultHttpClient client = new DefaultHttpClient();
     	
