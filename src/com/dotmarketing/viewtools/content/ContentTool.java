@@ -312,9 +312,9 @@ public class ContentTool implements ViewTool {
 	 * @return Returns empty List if no results are found
 	 */
 	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort) {	
-
+		
 		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit, sort, user, tmDate);
+		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, addDefaultsToQuery(condition), pullParents, limit, sort, user, tmDate);
 
 		for(Contentlet cc : cons) {
 			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
@@ -323,7 +323,13 @@ public class ContentTool implements ViewTool {
 	}
 	
 	private String addDefaultsToQuery(String query){
-		String q = query;
+		String q = "";
+		
+		if(query != null)
+			q = query;
+		else
+			query = q;
+		
 		if(!query.contains("languageId")){
 			if(UtilMethods.isSet(req.getSession().getAttribute("com.dotmarketing.htmlpage.language"))){
 				q += " +languageId:" + req.getSession().getAttribute("com.dotmarketing.htmlpage.language");
